@@ -1322,7 +1322,8 @@
     ],
     "methods" : [
       "public com.yahoo.config.provision.HostSpec allocateHost(java.lang.String)",
-      "public abstract java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionLogger)"
+      "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionLogger)",
+      "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionContext)"
     ],
     "fields" : [ ]
   },
@@ -1426,6 +1427,7 @@
       "public java.lang.String unknownConfigDefinition()",
       "public boolean sortBlueprintsByCost()",
       "public boolean logserverOtelCol()",
+      "public boolean tokenAuthForDeploy()",
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public double logserverNodeMemory()",
@@ -1448,6 +1450,7 @@
       "public boolean applyOnRestartForApplicationMetadataConfig()",
       "public boolean scaleMetricsproxyHeapByNodeCount()",
       "public java.util.OptionalInt metricsProxyHeapSizeInMib()",
+      "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
       "public double searchNodeReservedDiskSpaceFactor()"

@@ -215,7 +215,7 @@ public class Flags {
             List.of("hmusum"), "2026-04-29", "2026-09-01",
             "Amount of memory (in MiB) to use for metrics proxy JVM heap on non-admin nodes. 0 means use the default.",
             "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
     public static final UnboundIntFlag METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-admin-heap-size-in-mib", 0,
@@ -231,6 +231,13 @@ public class Flags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+
+    public static final UnboundBooleanFlag TOKEN_AUTH_FOR_DEPLOY = defineFeatureFlag(
+            "token-auth-for-deploy", false, 
+            List.of("bragehk"), "2026-05-19", "2026-09-01",
+            "Whether to activate token auth for vespa deploy", 
+            "Takes effect at deployment", 
+            TENANT_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

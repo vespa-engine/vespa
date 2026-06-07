@@ -135,6 +135,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
+import static com.yahoo.vespa.model.container.http.Client.Permission.WRITE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -597,8 +598,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .flatMap(elem -> getClient(elem, deployState).stream())
                     .toList();
             boolean atLeastOneClientWithCertificate = clients.stream().anyMatch(client -> !client.certificates().isEmpty());
-            if (!atLeastOneClientWithCertificate)
-                throw new IllegalArgumentException("At least one client must require a certificate");
+            boolean atLeastOneClientWithWriteToken = deployState.featureFlags().tokenAuthForDeploy() &&
+                clients.stream()
+                    .filter(client -> !client.tokens().isEmpty())
+                    .anyMatch(client -> client.permissions().contains(WRITE));
+
+            if (!atLeastOneClientWithCertificate && !atLeastOneClientWithWriteToken)
+                throw new IllegalArgumentException("At least one client must require a certificate" +
+                        (deployState.featureFlags().tokenAuthForDeploy() ? " or a write token" : ""));
 
             List<String> duplicates = clients.stream().collect(Collectors.groupingBy(Client::id))
                     .entrySet().stream().filter(entry -> entry.getValue().size() > 1)
@@ -712,11 +719,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             boolean isPublic = state.zone().system().isPublicCloudLike();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (isPublic) {
-                if (clientCertificates.isEmpty())
-                    throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                               "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
-                builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
-                        .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+                if (clientCertificates.isEmpty()) {
+                    boolean hasTokenClients = state.featureFlags().tokenAuthForDeploy() &&
+                            cluster.getClients().stream()
+                                    .filter(c -> !c.internal())
+                                    .anyMatch(c -> !c.tokens().isEmpty());
+                    if (!hasTokenClients)
+                        throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
+                                                                   "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
+                    builder.clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+                } else {
+                    builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
+                            .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+                }
             } else {
                 builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem");
                 var needAuth = cluster.getHttp().getAccessControl()
@@ -1227,7 +1242,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             ClusterSpec.Type.container,
                                             clusterId,
                                             zoneEndpoint(context, clusterId),
-                                            deployState.getDeployLogger(),
+                                            deployState,
                                             false,
                                             context.clusterInfo().build(),
                                             sidecars);
@@ -1266,7 +1281,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                       ClusterSpec.Type.container,
                                                                                       clusterId,
                                                                                       zoneEndpoint(context, clusterId),
-                                                                                      deployLogger,
+                                                                                      context.getDeployState(),
                                                                                       getZooKeeper(containerElement) != null,
                                                                                       context.clusterInfo().build(),
                                                                                       sidecars);
@@ -1287,7 +1302,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .availabilityZones(context.availabilityZones())
                 .build();
         Map<HostResource, ClusterMembership> hosts =
-                cluster.getRoot().hostSystem().allocateHosts(clusterSpec, Capacity.fromRequiredNodeType(type), deployLogger);
+                cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
+                                                             Capacity.fromRequiredNodeType(type),
+                                                             context.getDeployState());
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
 

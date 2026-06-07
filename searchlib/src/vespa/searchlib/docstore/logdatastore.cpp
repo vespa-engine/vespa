@@ -87,6 +87,8 @@ LogDataStore::LogDataStore(vespalib::Executor& executor, const std::string& dirN
       _holdFileChunks(),
       _active(0),
       _prevActive(FileId::active()),
+      _updateLock(),
+      _update_cond(),
       _readOnly(readOnly),
       _executor(executor),
       _initFlushSyncToken(0),
@@ -94,7 +96,9 @@ LogDataStore::LogDataStore(vespalib::Executor& executor, const std::string& dirN
       _bucketizer(std::move(bucketizer)),
       _currentlyCompacting(),
       _compactLidSpaceGeneration(),
-      _last_name_id(0) {
+      _last_name_id(0),
+      _frozen_prev_modification_time(),
+      _frozen_prev_persisted_serial_num(0) {
     // Reserve space for 1TB summary in order to avoid locking.
     // Even if we have reserved 16 bits for file id there is no chance that we will even get close to that.
     // Size of files grows with disk size, so 8k files should be more than sufficient.
@@ -105,6 +109,7 @@ LogDataStore::LogDataStore(vespalib::Executor& executor, const std::string& dirN
     preload();
     updateLidMap(getLastFileChunkDocIdLimit());
     updateSerialNum();
+    on_freeze_prev_active();
 }
 
 void LogDataStore::reconfigure(const Config& config) {
@@ -118,6 +123,32 @@ void LogDataStore::updateSerialNum() {
             getActive(guard).setSerialNum(getPrevActive(guard)->getLastPersistedSerialNum());
         }
     }
+}
+
+void LogDataStore::on_freeze_prev_active() {
+    std::unique_lock guard(_updateLock);
+    auto*            prev = getPrevActive(guard);
+    if (prev != nullptr) {
+        _frozen_prev_modification_time = prev->getModificationTime();
+        _frozen_prev_persisted_serial_num = prev->getLastPersistedSerialNum();
+    }
+    if (!isReadOnly()) {
+        getActive(guard).enable_flush_pending_chunks();
+    }
+    _prevActive = FileId::active();
+    _update_cond.notify_all();
+}
+
+bool LogDataStore::wait_for_prev_active(MonitorGuard& guard) {
+    if (_prevActive != FileId::active()) {
+        // Wait for previous active chunk to be flushed and frozen
+        auto wait_start_prev_active = _prevActive;
+        while (wait_start_prev_active == _prevActive) {
+            _update_cond.wait(guard);
+        }
+        return true;
+    }
+    return false;
 }
 
 LogDataStore::~LogDataStore() {
@@ -212,6 +243,9 @@ void LogDataStore::requireSpace(MonitorGuard guard, WriteableFileChunk& active, 
     LOG(spam, "Checking file %s size %ld < %ld AND #lids %u < %u", active.getName().c_str(), oldSz,
         _config.getMaxFileSize(), active.getNumLids(), _config.getMaxNumLids());
     if ((oldSz > _config.getMaxFileSize()) || (active.getNumLids() >= _config.getMaxNumLids())) {
+        if (wait_for_prev_active(guard)) {
+            return; // Active file chunk might have changed.
+        }
         FileId fileId = allocateFileId(guard);
         setNewFileChunk(guard, createWritableFile(fileId, active.getSerialNum()));
         setActive(guard, fileId);
@@ -226,6 +260,7 @@ void LogDataStore::requireSpace(MonitorGuard guard, WriteableFileChunk& active, 
         // and sync old .idx file to disk.
         active.flushPendingChunks(active.getSerialNum());
         active.freeze(cpu_category);
+        on_freeze_prev_active();
         // TODO: Delay create of new file
         LOG(debug, "Closed file %s of size %ld and %u lids due to maxsize of %ld or maxlids %u reached. Bloat is %ld",
             active.getName().c_str(), active.getDiskFootprint(), active.getNumLids(), _config.getMaxFileSize(),
@@ -240,6 +275,9 @@ uint64_t LogDataStore::lastSyncToken() const {
         const FileChunk* prev = getPrevActive(guard);
         if (prev != nullptr) {
             lastSerial = prev->getLastPersistedSerialNum();
+        }
+        if (lastSerial == 0) {
+            lastSerial = _frozen_prev_persisted_serial_num;
         }
     }
     return lastSerial;
@@ -260,6 +298,9 @@ vespalib::system_time LogDataStore::getLastFlushTime() const {
         const FileChunk* prev = getPrevActive(guard);
         if (prev != nullptr) {
             timeStamp = prev->getModificationTime();
+        }
+        if (timeStamp == vespalib::system_time()) {
+            timeStamp = _frozen_prev_modification_time;
         }
     }
     // TODO Needs to change when we decide on Flush time reference
@@ -449,6 +490,8 @@ void LogDataStore::compactFile(FileId fileId) {
             destinationFileId = allocateFileId(guard);
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(),
                                                       fc->getNameId().next()));
+            auto& compact_to = dynamic_cast<WriteableFileChunk&>(*_fileChunks[destinationFileId.getId()]);
+            compact_to.enable_flush_pending_chunks();
         }
         guard.unlock();
         size_t numSignificantBucketBits = computeNumberOfSignificantBucketIdBits(*_bucketizer, fc->getFileId());

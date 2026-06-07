@@ -1,7 +1,10 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 install_jar(vespaclient-java-jar-with-dependencies.jar)
+# Fat JAR bundling all deps (incl. provided scope), for the standalone crypto CLI (no Vespa install required)
+install_jar(vespaclient-java-fat-with-provided.jar)
 
 vespa_install_script(src/main/sh/vespa-crypto-cli.sh vespa-crypto-cli bin)
+vespa_install_script(src/main/sh/vespa-crypto-cli-standalone.sh vespa-crypto-cli-standalone bin)
 vespa_install_script(src/main/sh/vespa-stat.sh vespa-stat bin)
 vespa_install_script(src/main/sh/vespa-query-profile-dump-tool.sh vespa-query-profile-dump-tool bin)
 vespa_install_script(src/main/sh/vespa-summary-benchmark.sh vespa-summary-benchmark bin)

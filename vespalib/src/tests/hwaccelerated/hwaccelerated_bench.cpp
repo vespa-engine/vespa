@@ -101,6 +101,13 @@ void register_all_benchmark_suites() {
     register_benchmarks<int8_t>("Squared Euclidean Distance", FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8,
                                 euclidean_dist_fn);
 
+    auto euclidean_length_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
+        (void)rhs; // ... a little bit sneaky; overestimates bytes processed/sec by 2x
+        return squared_euclidean_length(lhs, my_sz);
+    };
+    register_benchmarks<float>("Squared Euclidean Length", FnTable::FnId::SQUARED_EUCLIDEAN_LENGTH_F32,
+                               euclidean_length_fn);
+
     auto dot_product_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) { return dot_product(lhs, rhs, my_sz); };
     register_benchmarks<double>("Dot Product", FnTable::FnId::DOT_PRODUCT_F64, dot_product_fn);
     register_benchmarks<float>("Dot Product", FnTable::FnId::DOT_PRODUCT_F32, dot_product_fn);

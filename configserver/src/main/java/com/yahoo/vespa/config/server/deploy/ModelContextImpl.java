@@ -256,6 +256,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
         @Override public OptionalInt metricsProxyHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB).value()); }
+        @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB); }
         @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB).value()); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
         @Override public double docprocHandlerThreadpool() { return flag(Flags.DOCPROC_HANDLER_THREADPOOL).value(); }
@@ -265,6 +266,7 @@ public class ModelContextImpl implements ModelContext {
             var flag = flag(Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE);
             return clusterId.map(id -> flag.withClusterId(ClusterSpec.Id.from(id)).value()).orElseGet(flag::value);
         }
+        @Override public boolean tokenAuthForDeploy() { return flag(Flags.TOKEN_AUTH_FOR_DEPLOY).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

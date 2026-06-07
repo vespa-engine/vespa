@@ -47,7 +47,7 @@ public class MockProvisioner implements Provisioner {
             throw new LoadBalancerServiceException("Unable to create load balancer", new Exception("some internal exception"));
         }
         if (hostProvisioner != null) {
-            return hostProvisioner.prepare(cluster, capacity, context.provisionLogger());
+            return hostProvisioner.prepare(cluster, capacity, context);
         }
         throw new UnsupportedOperationException("This mock does not support prepare");
     }

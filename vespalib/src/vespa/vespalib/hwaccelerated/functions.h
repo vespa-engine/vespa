@@ -56,6 +56,10 @@ namespace vespalib::hwaccelerated {
     return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(squared_euclidean_distance_f64)(a, b, sz);
 }
 
+[[nodiscard]] inline float squared_euclidean_length(const float* v, size_t sz) noexcept {
+    return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(squared_euclidean_length_f32)(v, sz);
+}
+
 [[nodiscard]] inline size_t binary_hamming_distance(const void* a, const void* b, size_t sz) noexcept {
     return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(binary_hamming_distance)(a, b, sz);
 }

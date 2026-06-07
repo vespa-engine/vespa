@@ -107,6 +107,7 @@ struct WriteFixture : public FixtureBase {
         : FixtureBase(baseName, dirCleanup),
           chunk(executor, FileChunk::FileId(0), FileChunk::NameId(1234), baseName, serialNum, docIdLimit,
                 {CompressionConfig(), 0x1000}, tuneFile, fileHeaderCtx, &bucketizer) {
+        chunk.enable_flush_pending_chunks();
         dir.cleanup(dirCleanup);
     }
     void flush() {

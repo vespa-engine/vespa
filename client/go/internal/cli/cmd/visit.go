@@ -42,8 +42,9 @@ type visitArgs struct {
 	headers        []string
 	stream         bool
 
-	cli    *CLI
-	header http.Header
+	cli         *CLI
+	header      http.Header
+	feedStarted bool
 }
 
 func (v *visitArgs) writeBytes(b []byte) {
@@ -59,30 +60,25 @@ func (v *visitArgs) debugPrint(s string) {
 }
 
 func (v *visitArgs) dumpDocuments(documents []DocumentBlob) {
-	comma := false
-	pretty := false
-	if v.makeFeed {
-		comma = true
-		pretty = v.pretty
-	} else if !v.jsonLines {
+	if !v.makeFeed && !v.jsonLines {
 		return
 	}
-	for i, value := range documents {
-		if pretty {
+	for _, value := range documents {
+		blob := value.blob
+		if v.makeFeed && v.pretty {
 			var prettyJSON bytes.Buffer
-			parseError := json.Indent(&prettyJSON, value.blob, "", "    ")
-			if parseError != nil {
-				v.writeBytes(value.blob)
-			} else {
-				v.writeBytes(prettyJSON.Bytes())
+			if err := json.Indent(&prettyJSON, value.blob, "", "    "); err == nil {
+				blob = prettyJSON.Bytes()
 			}
-		} else {
-			v.writeBytes(value.blob)
 		}
-		var lastDocument = i == (len(documents) - 1)
-		if comma && !lastDocument {
-			v.writeString(",\n")
+		if v.makeFeed {
+			if v.feedStarted {
+				v.writeString(",\n")
+			}
+			v.feedStarted = true
+			v.writeBytes(blob)
 		} else {
+			v.writeBytes(blob)
 			v.writeString("\n")
 		}
 	}
@@ -311,7 +307,7 @@ func visitClusters(vArgs *visitArgs, service *vespa.Service) (res OperationResul
 		}
 	}
 	if vArgs.makeFeed {
-		vArgs.writeString("]\n")
+		vArgs.writeString("\n]\n")
 	}
 	return res
 }

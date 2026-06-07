@@ -68,13 +68,13 @@ jobs:
           gradle buildPlugin
         working-directory: ./integration/schema-language-server/clients/intellij
 
-      # Disable temporarily
-      #- name: Publish VScode extension
-      #  if: github.event_name == 'workflow_dispatch'
-      #  run: npm run publish
-      #  working-directory: ./integration/schema-language-server/clients/vscode
-      #  env:
-      #    VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Publish VScode extension
+        if: github.event_name == 'workflow_dispatch'
+        run: npm run publish
+        continue-on-error: true
+        working-directory: ./integration/schema-language-server/clients/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish IntelliJ plugin
         if: github.event_name == 'workflow_dispatch'
