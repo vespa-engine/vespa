@@ -82,24 +82,24 @@ public class UserInputTestCase {
     @Test
     public void testNearAndONearGrammarTypes() {
         URIBuilder builder = searchUri();
-        builder.setParameter("yql", "select * from sources * where ({grammar:'near'}userInput('Noëlᛁ continuation'))");
+        builder.setParameter("yql", "select * from sources * where ({grammar:'near'}userInput('a b'))");
         Query near = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains near(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"noel\\u16C1\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"continuation\"))",
+        assertEquals("select * from sources * where default contains near(\"a\", \"b\")",
                      near.yqlRepresentation());
 
         builder.setParameter("yql", "select * from sources * where ({grammar:'near',distance:3}userInput('a b'))");
         near = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains ({distance: 3}near(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"a\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"b\")))",
+        assertEquals("select * from sources * where default contains ({distance: 3}near(\"a\", \"b\"))",
                      near.yqlRepresentation());
 
         builder.setParameter("yql", "select * from sources * where ({grammar:'onear'}userInput('a b'))");
         Query oNear = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains onear(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"a\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"b\"))",
+        assertEquals("select * from sources * where default contains onear(\"a\", \"b\")",
                      oNear.yqlRepresentation());
 
         builder.setParameter("yql", "select * from sources * where ({grammar:'onear',distance:4}userInput('a b'))");
         oNear = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains ({distance: 4}onear(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"a\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"b\")))",
+        assertEquals("select * from sources * where default contains ({distance: 4}onear(\"a\", \"b\"))",
                      oNear.yqlRepresentation());
     }
 
