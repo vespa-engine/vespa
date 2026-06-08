@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -171,9 +172,12 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, newKeyA
 		}
 		backupKeyPath, err := cli.config.backupPrivateKey(app, targetType.name)
 		if err != nil {
-			return err
+			if !errors.Is(err, os.ErrNotExist) {
+				return fmt.Errorf("could not back up private key: %w", err)
+			}
+		} else {
+			cli.printInfo("Private key backup created at ", backupKeyPath)
 		}
-		cli.printInfo("Private key backup created at ", backupKeyPath)
 	}
 
 	keyPair, err := vespa.CreateKeyPair()
@@ -222,7 +226,7 @@ func doPruneOldCertificates(cli *CLI, force, skipApplicationPackage bool, args [
 	if err != nil {
 		return fmt.Errorf("could not parse certificates: %w", err)
 	}
-	if len(certs) <= 1 {
+	if len(certs) == 1 {
 		cli.printInfo("Only one certificate is present, nothing to remove.")
 		return nil
 	}

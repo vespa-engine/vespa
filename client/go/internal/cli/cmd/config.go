@@ -446,24 +446,11 @@ func (c *Config) credentialsFile(app vespa.ApplicationID, targetType string, cer
 }
 
 func (c *Config) oldPrivateKeyPath(app vespa.ApplicationID, targetType string) (credentialsFile, error) {
-	applicationFile := "data-plane-private-key.pem"
-	envVar := "VESPA_CLI_DATA_PLANE_KEY_FILE"
-	if override, ok := c.environment[envVar]; ok {
-		return credentialsFile{override + ".old", false}, nil
-	}
-	if targetType == vespa.TargetHosted {
-		authenzFile := "key"
-		path, err := athenzPath(authenzFile)
-		if err != nil {
-			return credentialsFile{}, err
-		}
-		return credentialsFile{path + ".old", false}, nil
-	}
-	path, err := c.applicationFilePath(app, applicationFile)
+	f, err := c.privateKeyPath(app, targetType)
 	if err != nil {
 		return credentialsFile{}, err
 	}
-	return credentialsFile{path + ".old", true}, nil
+	return credentialsFile{f.path + ".old", f.optional}, nil
 }
 
 func (c *Config) backupPrivateKey(app vespa.ApplicationID, targetType string) (backupKeyPath string, err error) {

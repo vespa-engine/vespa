@@ -60,8 +60,9 @@ func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite boo
 	if addNewCretential {
 		existing, err := os.ReadFile(certificateFile)
 		if err == nil {
-			// TODO: does there exist a weird error that can be bad?
 			data = append(data, existing...)
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("could not read existing certificate file %s: %w", certificateFile, err)
 		}
 	}
 	return ioutil.AtomicWriteFile(certificateFile, data)
