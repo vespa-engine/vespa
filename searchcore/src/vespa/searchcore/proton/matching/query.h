@@ -138,7 +138,7 @@ public:
 
     static void perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom,
                                      const AnnDeadlineConfiguration&     ann_deadline_config,
-                                     search::queryeval::QuerySetupStats& setup_stats);
+                                     search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace* trace);
 
     void freeze();
     void set_matching_phase(search::queryeval::MatchingPhase matching_phase) const noexcept;

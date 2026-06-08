@@ -257,7 +257,17 @@ void NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) co
     visitor.visitString("query_tensor", _query_tensor.type().to_spec());
     visitor.visitInt("target_hits", _target_hits);
     visitor.visitInt("adjusted_target_hits", _adjusted_target_hits);
+
+    // Dump parameters
     visitor.visitInt("explore_additional_hits", _hnsw_params.explore_additional_hits);
+    visitor.visitFloat("distance_threshold", _hnsw_params.distance_threshold);
+    // global_filter_lower_limit and global_filter_upper_limit are included in global_filter struct below
+    visitor.visitFloat("filter_first_upper_limit", _hnsw_params.filter_first_upper_limit);
+    visitor.visitFloat("filter_first_exploration", _hnsw_params.filter_first_exploration);
+    visitor.visitFloat("exploration_slack", _hnsw_params.exploration_slack);
+    visitor.visitBool("prefetch_tensors", _hnsw_params.prefetch_tensors);
+    visitor.visitFloat("target_hits_max_adjustment_factor", _hnsw_params.target_hits_max_adjustment_factor);
+
     visitor.visitBool("wanted_approximate", _approximate);
     visitor.visitBool("has_index", _attr_tensor.nearest_neighbor_index());
     visitor.visitString("algorithm", to_string(_algorithm));
