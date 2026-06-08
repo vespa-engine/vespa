@@ -4,6 +4,9 @@
 package cmd
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,10 +20,10 @@ import (
 
 func newCertCmd(cli *CLI) *cobra.Command {
 	var (
-		skipApplicationPackage bool
-		overwriteCertificate   bool
-		appendCertificate      bool
-		keepOneCertificate     bool
+		skipApplicationPackage      bool
+		overwriteCertificate        bool
+		newPrivateKeyAndCertificate bool
+		pruneOldCertificates        bool
 	)
 	cmd := &cobra.Command{
 		Use:   "cert",
@@ -69,16 +72,16 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if keepOneCertificate {
-				return doKeepOne(cli, skipApplicationPackage, args)
+			if pruneOldCertificates {
+				return doPruneOldCertificates(cli, overwriteCertificate, skipApplicationPackage, args)
 			}
-			return doCert(cli, overwriteCertificate, skipApplicationPackage, appendCertificate, args)
+			return doCert(cli, overwriteCertificate, skipApplicationPackage, newPrivateKeyAndCertificate, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
-	cmd.Flags().BoolVarP(&appendCertificate, "append", "A", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
-	cmd.Flags().BoolVarP(&keepOneCertificate, "keep-one", "k", false, "Remove all but the newest certificate from the certificate file. Useful after completing credential rotation")
-	cmd.MarkFlagsMutuallyExclusive("keep-one", "force", "append")
+	cmd.Flags().BoolVar(&newPrivateKeyAndCertificate, "new-key", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
+	cmd.Flags().BoolVar(&pruneOldCertificates, "prune-old", false, "Remove all but the newest certificate from the certificate file. Useful after completing credential rotation")
+	cmd.MarkFlagsMutuallyExclusive("new-key", "prune-old")
 	// TODO(mpolden): Stop adding certificate to application package and remove this flag
 	cmd.Flags().BoolVarP(&skipApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
@@ -116,7 +119,7 @@ $ vespa auth cert add -a my-tenant.my-app.my-instance path/to/application/packag
 	return cmd
 }
 
-func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendCertificate bool, args []string) error {
+func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, newKeyAndCertificate bool, args []string) error {
 	targetType, err := cli.targetType(cloudTargetOnly)
 	if err != nil {
 		return err
@@ -134,8 +137,8 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendC
 		return err
 	}
 
-	if !overwriteCertificate && !appendCertificate {
-		hint := "Use -f flag to force overwriting or -A flag to append new certificate"
+	if !overwriteCertificate && !newKeyAndCertificate {
+		hint := "Use -f flag to force overwriting of certificate, or use --new-key flag to rotate certificates"
 		if ioutil.Exists(privateKeyFile.path) {
 			return errHint(fmt.Errorf("private key '%s' already exists", color.CyanString(privateKeyFile.path)), hint)
 		}
@@ -143,46 +146,58 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendC
 			return errHint(fmt.Errorf("certificate '%s' already exists", color.CyanString(certificateFile.path)), hint)
 		}
 	}
-	if appendCertificate {
-		if !ioutil.Exists(certificateFile.path) {
-			return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
-				"Run 'vespa auth cert' first to create an initial certificate")
+
+	if newKeyAndCertificate {
+		oldPrivateKeyFile, err := cli.config.oldPrivateKeyPath(app, targetType.name)
+		if err == nil && ioutil.Exists(oldPrivateKeyFile.path) {
+			return errHint(fmt.Errorf("backup of private key already exists at %s", color.CyanString(oldPrivateKeyFile.path)),
+				"If you still want to rotate your private key and certificate, remove the old private key first. Documentation for rotation help: "+color.GreenString("https://docs.vespa.ai/en/security/guide.html"))
 		}
-		ok, err := cli.confirm("Your old private key will be overwritten.", false)
+
+		if !ioutil.Exists(certificateFile.path) {
+			cli.printWarning("No certificate file exists. A new certificate will be created.")
+		}
+		if !ioutil.Exists(privateKeyFile.path) {
+			cli.printWarning("No private key file exists. A new private key will be created.")
+		}
+		if !overwriteCertificate {
+			ok, err := cli.confirm("This will create a backup of your existing private key and add a new certificate. Continue?", false)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return nil
+			}
+		}
+		backupKeyPath, err := cli.config.backupPrivateKey(app, targetType.name)
 		if err != nil {
 			return err
 		}
-		if !ok {
-			return nil
-		}
+		cli.printInfo("Private key backup created at ", backupKeyPath)
 	}
-	if appendCertificate {
-		if _, err := os.Stat(privateKeyFile.path); err != nil {
-			if os.IsNotExist(err) {
-				return fmt.Errorf("private key file does not exist: %s", privateKeyFile.path)
-			}
-			return fmt.Errorf("could not stat private key file %s: %w", privateKeyFile.path, err)
-		}
-	}
+
 	keyPair, err := vespa.CreateKeyPair()
 	if err != nil {
 		return err
 	}
-	if err := keyPair.WriteCertificateFile(certificateFile.path, overwriteCertificate, appendCertificate); err != nil {
+	if err := keyPair.WriteCertificateFile(certificateFile.path, overwriteCertificate, newKeyAndCertificate); err != nil {
 		return fmt.Errorf("could not write certificate: %w", err)
 	}
-	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate || appendCertificate); err != nil {
+	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate || newKeyAndCertificate); err != nil {
 		return fmt.Errorf("could not write private key: %w", err)
 	}
 	cli.printSuccess("Certificate written to ", color.CyanString("'"+certificateFile.path+"'"))
 	cli.printSuccess("Private key written to ", color.CyanString("'"+privateKeyFile.path+"'"))
+	if newKeyAndCertificate {
+		cli.printSuccess("Next step: deploy with 'vespa prod deploy' and then remove unused certificates with 'vespa auth cert --prune-old'. See ", color.GreenString("https://docs.vespa.ai/en/security/guide.html"))
+	}
 	if !skipApplicationPackage {
-		return doCertAdd(cli, overwriteCertificate, appendCertificate, args)
+		return doCertAdd(cli, overwriteCertificate, newKeyAndCertificate, args)
 	}
 	return nil
 }
 
-func doKeepOne(cli *CLI, skipApplicationPackage bool, args []string) error {
+func doPruneOldCertificates(cli *CLI, force, skipApplicationPackage bool, args []string) error {
 	targetType, err := cli.targetType(cloudTargetOnly)
 	if err != nil {
 		return err
@@ -199,45 +214,138 @@ func doKeepOne(cli *CLI, skipApplicationPackage bool, args []string) error {
 		return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
 			"Run 'vespa auth cert' first to create an initial certificate")
 	}
-	data, err := os.ReadFile(certificateFile.path)
+	certificateData, err := os.ReadFile(certificateFile.path)
 	if err != nil {
 		return fmt.Errorf("could not read certificate file: %w", err)
 	}
-	certs, err := vespa.ParseCertificates(data)
+	certs, err := vespa.ParseCertificates(certificateData)
 	if err != nil {
 		return fmt.Errorf("could not parse certificates: %w", err)
 	}
-	if len(certs) == 1 {
-		cli.printInfo("Only one certificate is present, will not remove any other certificates.")
+	if len(certs) <= 1 {
+		cli.printInfo("Only one certificate is present, nothing to remove.")
 		return nil
 	}
-	for i, cert := range certs[1:] {
-		cli.printWarning(fmt.Sprintf("Will remove certificate %d: CN=%s, issued %s, expires %s",
-			i+1,
-			cert.Subject.CommonName,
-			cert.NotBefore.Format(time.RFC3339),
-			cert.NotAfter.Format(time.RFC3339),
-		))
-	}
-	hints := []string{}
-	if !skipApplicationPackage {
-		hints = append(hints, "This will also overwrite security/clients.pem in the current application package (use --no-add to skip)")
-	}
-	cli.printWarning("Any clients still using old certificates will stop working after pruning", hints...)
-	ok, err := cli.confirm("Prune old certificates from '"+certificateFile.path+"'?", false)
+	privateKeyFile, err := cli.config.privateKeyPath(app, targetType.name)
 	if err != nil {
 		return err
 	}
-	if !ok {
+	privateKeyData, err := os.ReadFile(privateKeyFile.path)
+	if err != nil {
+		return fmt.Errorf("could not read private key file: %w", err)
+	}
+	// Old key backup is optional — used only to label certs.
+	oldPrivateKeyFile, _ := cli.config.oldPrivateKeyPath(app, targetType.name)
+	oldPrivateKeyData, _ := os.ReadFile(oldPrivateKeyFile.path)
+
+	// Classify every certificate in the file.
+	var currentCerts, oldCerts, unknownCerts []*x509.Certificate
+	for _, cert := range certs {
+		certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+		if _, err := tls.X509KeyPair(certPEM, privateKeyData); err == nil {
+			currentCerts = append(currentCerts, cert)
+			continue
+		}
+		if len(oldPrivateKeyData) > 0 {
+			if _, err := tls.X509KeyPair(certPEM, oldPrivateKeyData); err == nil {
+				oldCerts = append(oldCerts, cert)
+				continue
+			}
+		}
+		unknownCerts = append(unknownCerts, cert)
+	}
+
+	if len(currentCerts) == 0 {
+		return errHint(
+			fmt.Errorf("no certificate in '%s' matches the current private key", color.CyanString(certificateFile.path)),
+			"Ensure the private key at '"+privateKeyFile.path+"' is correct, or re-create the certificate with 'vespa auth cert -f'",
+		)
+	}
+	certInfo := func(cert *x509.Certificate) string {
+		return fmt.Sprintf("CN=%s, issued %s, expires %s", cert.Subject.CommonName,
+			cert.NotBefore.Format(time.RFC3339), cert.NotAfter.Format(time.RFC3339))
+	}
+
+	removeSet := make(map[*x509.Certificate]bool)
+
+	if len(currentCerts) > 1 {
+		cli.printWarning(fmt.Sprintf("%d certificates match the current private key", len(currentCerts)))
+		newestCurrent := currentCerts[0]
+		for _, cert := range currentCerts[1:] {
+			if cert.NotAfter.After(newestCurrent.NotAfter) {
+				newestCurrent = cert
+			}
+		}
+		if force {
+			for _, cert := range currentCerts {
+				if cert != newestCurrent {
+					removeSet[cert] = true
+				}
+			}
+		} else {
+			ok, err := cli.confirm(fmt.Sprintf(
+				"Remove %d extra certificate(s) matching the current key, keeping the one expiring %s?",
+				len(currentCerts)-1, newestCurrent.NotAfter.Format(time.RFC3339),
+			), false)
+			if err != nil {
+				return err
+			}
+			if ok {
+				for _, cert := range currentCerts {
+					if cert != newestCurrent {
+						removeSet[cert] = true
+					}
+				}
+			}
+		}
+	}
+	for _, cert := range oldCerts {
+		if force {
+			removeSet[cert] = true
+		} else {
+			cli.printInfo("This certificate is associated with the private key in ", oldPrivateKeyFile.path)
+			ok, err := cli.confirm(fmt.Sprintf("Remove certificate %s?", certInfo(cert)), false)
+			if err != nil {
+				return err
+			}
+			if ok {
+				removeSet[cert] = true
+			}
+		}
+	}
+	for _, cert := range unknownCerts {
+		cli.printWarning("This certificate is not associated with any of your saved private keys")
+		if force {
+			removeSet[cert] = true
+		} else {
+			ok, err := cli.confirm(fmt.Sprintf("Remove certificate %s?", certInfo(cert)), false)
+			if err != nil {
+				return err
+			}
+			if ok {
+				removeSet[cert] = true
+			}
+		}
+	}
+
+	if len(removeSet) == 0 {
+		cli.printInfo("No certificates removed.")
 		return nil
 	}
-	if err := vespa.KeepOneCertificateFile(certificateFile.path); err != nil {
+
+	// Write all certs not selected for removal, preserving original order.
+	var keepPEM []byte
+	for _, cert := range certs {
+		if !removeSet[cert] {
+			keepPEM = append(keepPEM, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})...)
+		}
+	}
+	if err := ioutil.AtomicWriteFile(certificateFile.path, keepPEM); err != nil {
 		return fmt.Errorf("could not prune certificate file: %w", err)
 	}
 	cli.printSuccess("Pruned certificate file ", color.CyanString("'"+certificateFile.path+"'"))
 	if !skipApplicationPackage {
-		overwrite, appendCertificate := true, false
-		return doCertAdd(cli, overwrite, appendCertificate, args)
+		return doCertAdd(cli, true, false, args)
 	}
 	return nil
 }

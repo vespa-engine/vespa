@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/config"
+	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -442,6 +443,43 @@ func (c *Config) credentialsFile(app vespa.ApplicationID, targetType string, cer
 		return credentialsFile{}, err
 	}
 	return credentialsFile{path, true}, nil
+}
+
+func (c *Config) oldPrivateKeyPath(app vespa.ApplicationID, targetType string) (credentialsFile, error) {
+	applicationFile := "data-plane-private-key.pem"
+	envVar := "VESPA_CLI_DATA_PLANE_KEY_FILE"
+	if override, ok := c.environment[envVar]; ok {
+		return credentialsFile{override + ".old", false}, nil
+	}
+	if targetType == vespa.TargetHosted {
+		authenzFile := "key"
+		path, err := athenzPath(authenzFile)
+		if err != nil {
+			return credentialsFile{}, err
+		}
+		return credentialsFile{path + ".old", false}, nil
+	}
+	path, err := c.applicationFilePath(app, applicationFile)
+	if err != nil {
+		return credentialsFile{}, err
+	}
+	return credentialsFile{path + ".old", true}, nil
+}
+
+func (c *Config) backupPrivateKey(app vespa.ApplicationID, targetType string) (backupKeyPath string, err error) {
+	src, err := c.privateKeyPath(app, targetType)
+	if err != nil {
+		return "", err
+	}
+	dst, err := c.oldPrivateKeyPath(app, targetType)
+	if err != nil {
+		return "", err
+	}
+	data, err := os.ReadFile(src.path)
+	if err != nil {
+		return "", err
+	}
+	return dst.path, ioutil.AtomicWriteFile(dst.path, data)
 }
 
 func (c *Config) certificatePath(app vespa.ApplicationID, targetType string) (credentialsFile, error) {

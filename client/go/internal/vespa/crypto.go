@@ -51,18 +51,18 @@ type PemKeyPair struct {
 }
 
 // WriteCertificateFile writes the certificate contained in this key pair to certificateFile.
-func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool, appendCredentials bool) error {
-	if ioutil.Exists(certificateFile) && !overwrite && !appendCredentials {
+func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool, addNewCretential bool) error {
+	if ioutil.Exists(certificateFile) && !overwrite && !addNewCretential {
 		return fmt.Errorf("cannot overwrite existing file: %s", certificateFile)
 	}
 	data := kp.Certificate
 
-	if appendCredentials {
+	if addNewCretential {
 		existing, err := os.ReadFile(certificateFile)
-		if err != nil {
-			return fmt.Errorf("could not read existing certificate file %s: %w", certificateFile, err)
+		if err == nil {
+			// TODO: does there exist a weird error that can be bad?
+			data = append(data, existing...)
 		}
-		data = append(data, existing...)
 	}
 	return ioutil.AtomicWriteFile(certificateFile, data)
 }

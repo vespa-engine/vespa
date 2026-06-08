@@ -117,118 +117,296 @@ func countPEMBlocks(t *testing.T, path string) int {
 	return count
 }
 
-func TestCertAppendNoExisting(t *testing.T) {
+// setupRotation creates an initial certificate and performs one key rotation.
+// Returns the homeDir and path to the certificate file.
+func setupRotation(t *testing.T) (homeDir string, certFile string) {
+	t.Helper()
+	cli, _, _ := newTestCLI(t)
+	configureCloud(t, cli)
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--new-key"))
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	return cli.config.homeDir, filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+}
+
+func TestCertNewKey(t *testing.T) {
+	cli, stdout, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+	backupKeyFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-private-key.pem.old")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+
+	stdout.Reset()
+	stderr.Reset()
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--new-key"))
+
+	assert.Contains(t, stdout.String(), "Certificate written to")
+	assert.Contains(t, stderr.String(), "Private key backup created at")
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+	_, err = os.Stat(backupKeyFile)
+	assert.Nil(t, err, "backup key file should exist after rotation")
+}
+
+func TestCertNewKeyDecline(t *testing.T) {
+	cli, _, _ := newTestCLI(t)
+	configureCloud(t, cli)
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+	backupKeyFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-private-key.pem.old")
+
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("n\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--new-key"))
+
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+	_, err = os.Stat(backupKeyFile)
+	assert.True(t, os.IsNotExist(err), "backup key file should not exist after declining rotation")
+}
+
+func TestCertNewKeyForce(t *testing.T) {
+	cli, stdout, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+	backupKeyFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-private-key.pem.old")
+
+	stdout.Reset()
+	stderr.Reset()
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--new-key", "-f"))
+
+	assert.Contains(t, stdout.String(), "Certificate written to")
+	assert.Contains(t, stderr.String(), "Private key backup created at")
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+	_, err = os.Stat(backupKeyFile)
+	assert.Nil(t, err, "backup key file should exist after forced rotation")
+}
+
+func TestCertNewKeyBackupExists(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--new-key"))
+
+	// Subsequent rotations blocked because backup key still exists.
+	cli.Stdin = bytes.NewBufferString("y\n")
+	err := cli.Run("auth", "cert", "-N", "--new-key")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "backup of private key already exists")
+
+	err = cli.Run("auth", "cert", "-N", "--new-key", "-f")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "backup of private key already exists")
+}
+
+func TestPruneOldNoExisting(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
 
-	err := cli.Run("auth", "cert", "-N", "-A")
+	err := cli.Run("auth", "cert", "-N", "--prune-old")
 	require.NotNil(t, err)
 	assert.Contains(t, stderr.String(), "no certificate found")
 	assert.Contains(t, stderr.String(), "Run 'vespa auth cert' first")
 }
 
-func TestCertAppend(t *testing.T) {
-	cli, stdout, _ := newTestCLI(t)
-	configureCloud(t, cli)
-	stdout.Reset()
-
-	require.Nil(t, cli.Run("auth", "cert", "-N"))
-
-	app, err := vespa.ApplicationFromString("t1.a1.i1")
-	require.Nil(t, err)
-	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
-
-	assert.Equal(t, 1, countPEMBlocks(t, certFile))
-
-	stdout.Reset()
-	cli.isTerminal = func() bool { return true }
-	cli.Stdin = bytes.NewBufferString("y\n")
-	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
-	assert.Contains(t, stdout.String(), "Certificate written to")
-	assert.Equal(t, 2, countPEMBlocks(t, certFile))
-}
-
-func TestCertAppendTwice(t *testing.T) {
-	cli, _, _ := newTestCLI(t)
-	configureCloud(t, cli)
-	cli.isTerminal = func() bool { return true }
-	cli.Stdin = bytes.NewBufferString("y\ny\n")
-
-	require.Nil(t, cli.Run("auth", "cert", "-N"))
-
-	app, err := vespa.ApplicationFromString("t1.a1.i1")
-	require.Nil(t, err)
-	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
-
-	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
-	assert.Equal(t, 2, countPEMBlocks(t, certFile))
-
-	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
-	assert.Equal(t, 3, countPEMBlocks(t, certFile))
-}
-
-func TestCertKeepOneNoExisting(t *testing.T) {
+func TestPruneOldSingleCert(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
 
-	err := cli.Run("auth", "cert", "-N", "--keep-one")
-	require.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "no certificate found")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune-old"))
+	assert.Contains(t, stderr.String(), "Only one certificate is present")
 }
 
-func TestCertKeepOne(t *testing.T) {
-	cli, _, _ := newTestCLI(t)
+func TestPruneOldNoCertMatchingCurrentKey(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
-	cli.isTerminal = func() bool { return true }
-	cli.Stdin = bytes.NewBufferString("y\ny\n")
-
 	require.Nil(t, cli.Run("auth", "cert", "-N"))
-	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
-	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
 
 	app, err := vespa.ApplicationFromString("t1.a1.i1")
 	require.Nil(t, err)
 	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
-	assert.Equal(t, 3, countPEMBlocks(t, certFile))
+	keyFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-private-key.pem")
 
-	// Read newest cert (first block) before keeping one
+	// Duplicate cert to satisfy the len > 1 check.
 	certData, err := os.ReadFile(certFile)
 	require.Nil(t, err)
-	newestBlock, _ := pem.Decode(certData)
-	require.NotNil(t, newestBlock)
+	require.Nil(t, os.WriteFile(certFile, append(certData, certData...), 0o600))
 
-	// Fresh CLI needed: pflag doesn't reset flag vars between Execute() calls, so
-	// appendCertificate stays true from the -A runs above and would trip the
-	// "cannot combine --keep-one with --append" guard when using --keep-one.
-	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+cli.config.homeDir)
+	// Replace private key with an unrelated key so no cert matches.
+	unrelatedPair, err := vespa.CreateKeyPair()
+	require.Nil(t, err)
+	require.Nil(t, os.WriteFile(keyFile, unrelatedPair.PrivateKey, 0o600))
+
+	err = cli.Run("auth", "cert", "-N", "--prune-old")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "no certificate in")
+	assert.Contains(t, stderr.String(), "matches the current private key")
+}
+
+func TestPruneOldConfirm(t *testing.T) {
+	homeDir, certFile := setupRotation(t)
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+
+	cli, stdout, _ := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune-old"))
+
+	assert.Contains(t, stdout.String(), "Pruned certificate file")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+}
+
+func TestPruneOldDecline(t *testing.T) {
+	homeDir, certFile := setupRotation(t)
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+
+	cli, _, _ := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("n\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune-old"))
+
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+}
+
+func TestPruneOldForce(t *testing.T) {
+	homeDir, certFile := setupRotation(t)
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+
+	cli, stdout, _ := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune-old", "-f"))
+
+	assert.Contains(t, stdout.String(), "Pruned certificate file")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+}
+
+func TestPruneOldPartialRemoval(t *testing.T) {
+	homeDir, certFile := setupRotation(t)
+
+	// Append a third cert from an unknown key pair.
+	unknownPair, err := vespa.CreateKeyPair()
+	require.Nil(t, err)
+	certData, err := os.ReadFile(certFile)
+	require.Nil(t, err)
+	require.Nil(t, os.WriteFile(certFile, append(certData, unknownPair.Certificate...), 0o600))
+	assert.Equal(t, 3, countPEMBlocks(t, certFile))
+
+	// Confirm removal of old cert (y), decline removal of unknown cert (n).
+	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
+	cli2.isTerminal = func() bool { return true }
+	cli2.Stdin = bytes.NewBufferString("y\nn\n")
+	require.Nil(t, cli2.Run("auth", "cert", "-N", "--prune-old"))
+
+	assert.Contains(t, stdout2.String(), "Pruned certificate file")
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+}
+
+func multipleCurrentCertsSetup(t *testing.T) (homeDir, certFile string) {
+	t.Helper()
+	cli, _, _ := newTestCLI(t)
+	configureCloud(t, cli)
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile = filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+	certData, err := os.ReadFile(certFile)
+	require.Nil(t, err)
+	require.Nil(t, os.WriteFile(certFile, append(certData, certData...), 0o600))
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+	return cli.config.homeDir, certFile
+}
+
+func TestPruneOldMultipleCurrentCertsDecline(t *testing.T) {
+	homeDir, certFile := multipleCurrentCertsSetup(t)
+
+	cli, _, stderr := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("n\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune-old"))
+
+	assert.Contains(t, stderr.String(), "2 certificates match the current private key")
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+}
+
+func TestPruneOldMultipleCurrentCertsConfirm(t *testing.T) {
+	homeDir, certFile := multipleCurrentCertsSetup(t)
+
+	cli, stdout, stderr := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune-old"))
+
+	assert.Contains(t, stderr.String(), "2 certificates match the current private key")
+	assert.Contains(t, stdout.String(), "Pruned certificate file")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+}
+
+func TestPruneOldMultipleCurrentCertsForce(t *testing.T) {
+	homeDir, certFile := multipleCurrentCertsSetup(t)
+
+	cli, stdout, _ := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune-old", "-f"))
+
+	assert.Contains(t, stdout.String(), "Pruned certificate file")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+}
+
+func TestPruneOldUnknownCert(t *testing.T) {
+	cli, stdout, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+
+	// Append a cert from an unknown key pair.
+	unknownPair, err := vespa.CreateKeyPair()
+	require.Nil(t, err)
+	certData, err := os.ReadFile(certFile)
+	require.Nil(t, err)
+	require.Nil(t, os.WriteFile(certFile, append(certData, unknownPair.Certificate...), 0o600))
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune-old"))
+
+	assert.Contains(t, stderr.String(), "not associated with any of your saved private keys")
+	assert.Contains(t, stdout.String(), "Pruned certificate file")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+}
+
+func TestPruneOldUpdatesAppPackage(t *testing.T) {
+	homeDir, certFile := setupRotation(t)
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+
+	appDir, pkgDir := mock.ApplicationPackageDir(t, false, false)
+	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
 	cli2.isTerminal = func() bool { return true }
 	cli2.Stdin = bytes.NewBufferString("y\n")
-	require.Nil(t, cli2.Run("auth", "cert", "-N", "--keep-one"))
+	require.Nil(t, cli2.Run("auth", "cert", "--prune-old", pkgDir))
+
 	assert.Contains(t, stdout2.String(), "Pruned certificate file")
+	assert.Contains(t, stdout2.String(), "Copied certificate")
 	assert.Equal(t, 1, countPEMBlocks(t, certFile))
-
-	// Verify pruned file contains the newest cert
-	prunedData, err := os.ReadFile(certFile)
-	require.Nil(t, err)
-	prunedBlock, _ := pem.Decode(prunedData)
-	require.NotNil(t, prunedBlock)
-	assert.Equal(t, newestBlock.Bytes, prunedBlock.Bytes)
-}
-
-func TestCertKeepOneInvalidFlagForce(t *testing.T) {
-	cli, _, stderr := newTestCLI(t)
-	configureCloud(t, cli)
-	err := cli.Run("auth", "cert", "-N", "--keep-one", "-f")
-	require.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "if any flags in the group [keep-one force append] are set none of the others can be")
-}
-
-func TestCertKeepOneInvalidFlagAppend(t *testing.T) {
-	cli, _, stderr := newTestCLI(t)
-	configureCloud(t, cli)
-	err := cli.Run("auth", "cert", "-N", "--keep-one", "-A")
-	require.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "if any flags in the group [keep-one force append] are set none of the others can be")
+	assert.Equal(t, 1, countPEMBlocks(t, filepath.Join(appDir, "security", "clients.pem")))
 }
 
 func TestCertNoAdd(t *testing.T) {
