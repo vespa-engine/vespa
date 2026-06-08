@@ -141,6 +141,8 @@ func TestCertAppend(t *testing.T) {
 	assert.Equal(t, 1, countPEMBlocks(t, certFile))
 
 	stdout.Reset()
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
 	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
 	assert.Contains(t, stdout.String(), "Certificate written to")
 	assert.Equal(t, 2, countPEMBlocks(t, certFile))
@@ -149,6 +151,8 @@ func TestCertAppend(t *testing.T) {
 func TestCertAppendTwice(t *testing.T) {
 	cli, _, _ := newTestCLI(t)
 	configureCloud(t, cli)
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\ny\n")
 
 	require.Nil(t, cli.Run("auth", "cert", "-N"))
 
@@ -175,6 +179,8 @@ func TestCertKeepOneNoExisting(t *testing.T) {
 func TestCertKeepOne(t *testing.T) {
 	cli, _, _ := newTestCLI(t)
 	configureCloud(t, cli)
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\ny\n")
 
 	require.Nil(t, cli.Run("auth", "cert", "-N"))
 	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))

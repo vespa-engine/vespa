@@ -143,14 +143,18 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendC
 			return errHint(fmt.Errorf("certificate '%s' already exists", color.CyanString(certificateFile.path)), hint)
 		}
 	}
-	if appendCertificate && !ioutil.Exists(certificateFile.path) {
-		return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
-			"Run 'vespa auth cert' first to create an initial certificate")
-	}
-
-	if appendCertificate && !ioutil.Exists(certificateFile.path) {
-		return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
-			"Run 'vespa auth cert' first to create an initial certificate")
+	if appendCertificate {
+		if !ioutil.Exists(certificateFile.path) {
+			return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
+				"Run 'vespa auth cert' first to create an initial certificate")
+		}
+		ok, err := cli.confirm("Your old private key will be overwritten.", false)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
 	}
 	if appendCertificate {
 		if _, err := os.Stat(privateKeyFile.path); err != nil {
