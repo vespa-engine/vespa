@@ -36,8 +36,9 @@ using search::index::Schema;
 
 using vespalib::make_string_short::fmt;
 
-const std::string field_name = "myfield";
-double            budget_sec = 1.0;
+const std::string     field_name = "myfield";
+double                budget_sec = 1.0;
+std::optional<double> in_flow_filter = std::nullopt;
 
 double estimate_actual_cost(Blueprint& bp, InFlow in_flow) {
     if (in_flow.strict()) {
@@ -1366,6 +1367,80 @@ TEST(IteratorBenchmark, analyze_attr_range) {
     run_benchmarks("ATTR_RANGE", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
 }
 
+/**
+ * Handles iteration of arguments. Use flag() when checking only for precence of flag,
+ * use arg_string() or arg_double() when arguments should be provided.
+ */
+struct Args {
+    int                        argc;
+    char**                     argv;
+    int                        i{};
+    double                     double_value{};
+    std::string                string_value{};
+    std::optional<std::string> error{};
+
+    ~Args();
+
+    bool next() {
+        if (error) {
+            return false;
+        }
+        i++;
+        return i < argc;
+    }
+
+    bool flag(const std::string& name) {
+        assert(i < argc);
+        return name == argv[i];
+    }
+
+    bool expect_arg(const std::string& name) {
+        if (!next()) {
+            error = std::format("Option {} expected an argument, but none were provided.", name);
+            return false;
+        }
+        return true;
+    }
+
+    bool arg_double(const std::string& name) {
+        assert(i < argc);
+        if (!flag(name)) {
+            return false;
+        }
+        if (!expect_arg(name)) {
+            return false;
+        }
+        try {
+            std::string value = argv[i];
+            size_t      pos = 0;
+            double_value = std::stod(value, &pos);
+            // In case stod matches "0.5hello" as 0.5.
+            if (pos != value.size()) {
+                error = std::format("Option {} expected a double, but got '{}'", name, argv[i]);
+                return false;
+            }
+        } catch (const std::exception&) {
+            error = std::format("Option {} expected a double, but got '{}'", name, argv[i]);
+            return false;
+        }
+        return true;
+    }
+
+    bool arg_string(const std::string& name) {
+        assert(i < argc);
+        if (!flag(name)) {
+            return false;
+        }
+        if (!expect_arg(name)) {
+            return false;
+        }
+        string_value = argv[i];
+        return true;
+    }
+};
+
+Args::~Args() = default;
+
 static std::string smoke_test_filter = "--gtest_filter="
                                        "IteratorBenchmark.analyze_ENN";
 
@@ -1373,35 +1448,28 @@ int main(int argc, char** argv) {
     bool                       opt_dump_pond = false;
     std::optional<std::string> opt_save_pond = std::nullopt;
     std::optional<std::string> opt_load_pond = std::nullopt;
-    for (int i = 0; i < argc; i++) {
-        const std::string& smoke_test{"--smoke-test"};
-        if (smoke_test == argv[i]) {
+
+    Args args = {argc, argv};
+    while (args.next()) {
+        if (args.flag("--smoke-test")) {
             std::println(stderr, "Adding --smoke-test filter");
-            argv[i] = smoke_test_filter.data();
-        }
-        const std::string& dump_pond_flag{"--dump-pond"};
-        if (dump_pond_flag == argv[i]) {
+            argv[args.i] = smoke_test_filter.data();
+        } else if (args.flag("--dump-pond")) {
             opt_dump_pond = true;
-        }
-        const std::string& save_pond_flag{"--save-pond"};
-        if (save_pond_flag == argv[i]) {
-            if (i + 1 >= argc) {
-                std::println(stderr, "Expected --save-pond <FILE>, but got no argument");
-                return 1;
-            }
-            opt_save_pond = std::string(argv[++i]);
-            continue;
-        }
-        const std::string& load_pond_flag{"--load-pond"};
-        if (load_pond_flag == argv[i]) {
-            if (i + 1 >= argc) {
-                std::println(stderr, "Expected --load-pond <FILE>, but got no argument");
-                return 1;
-            }
-            opt_load_pond = std::string(argv[++i]);
-            continue;
+        } else if (args.arg_string("--save-pond")) {
+            opt_save_pond = args.string_value;
+        } else if (args.arg_string("--load-pond")) {
+            opt_load_pond = args.string_value;
+        } else if (args.arg_double("--filter-in-flow")) {
+            in_flow_filter = args.double_value;
         }
     }
+
+    if (args.error) {
+        std::println(stderr, "error: {}", *args.error);
+        return 1;
+    }
+
     if (opt_load_pond) {
         try {
             read_file_into_data_pond(*opt_load_pond, global_pond);
