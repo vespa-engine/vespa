@@ -22,6 +22,7 @@ import (
 func newLoginCmd(cli *CLI) *cobra.Command {
 	var useFileStorage bool
 	var noBrowser bool
+	var batch bool
 	cmd := &cobra.Command{
 		Use:   "login",
 		Args:  cobra.NoArgs,
@@ -36,20 +37,27 @@ This is useful in SSH/CI/Docker environments where keyring access may not be ava
 Use --no-browser to print the login URL to standard output instead of opening a browser automatically.
 This is useful in non-interactive terminals (e.g. Git Bash on Windows) or remote sessions where
 a browser cannot be opened.
+
+Use --batch to suppress all human-readable output and print only machine-readable key=value pairs:
+  code=<device-confirmation-code>
+  url=<verification-url>
+This is useful for scripting or automation where the output is parsed programmatically.
 `,
 		Example:           "$ vespa auth login",
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doLogin(cli, cmd, useFileStorage, noBrowser)
+			return doLogin(cli, cmd, useFileStorage, noBrowser, batch)
 		},
 	}
 	cmd.Flags().BoolVar(&useFileStorage, "file-storage", false, "Use file storage (unencrypted) instead of keyring for storing refresh token")
 	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Print login URL to standard output without confirmation and without automatic opening of browser")
+	cmd.Flags().BoolVar(&batch, "batch", false, "Print machine-readable key=value pairs (code, url) and suppress all other output")
+	cmd.MarkFlagsMutuallyExclusive("no-browser", "batch")
 	return cmd
 }
 
-func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool, noBrowser bool) error {
+func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool, noBrowser bool, batch bool) error {
 	ctx := cmd.Context()
 	targetType, err := cli.targetType(cloudTargetOnly)
 	if err != nil {
@@ -68,27 +76,36 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool, noBrowser bool) 
 		return fmt.Errorf("could not start the authentication process: %w", err)
 	}
 
-	log.Printf("Your Device Confirmation code is: %s\n", state.UserCode)
-
-	autoOpen := !noBrowser && isBrowserOpenPossible()
-	if autoOpen {
-		autoOpen, _ = cli.confirm("Automatically open confirmation page in your default browser?", true)
-	}
-	if autoOpen {
-		log.Printf("Opened link in your browser:\n\t %s\n", state.VerificationURI)
-		err = browser.OpenURL(state.VerificationURI)
-		if err != nil {
-			log.Println("Couldn't open the URL, please do it manually")
-		}
+	if batch {
+		fmt.Fprintf(cli.Stdout, "code=%s\n", state.UserCode)
+		fmt.Fprintf(cli.Stdout, "url=%s\n", state.VerificationURI)
 	} else {
-		log.Printf("Please open link in your browser:\n\t %s\n", state.VerificationURI)
+		log.Printf("Your Device Confirmation code is: %s\n", state.UserCode)
+
+		autoOpen := !noBrowser && isBrowserOpenPossible()
+		if autoOpen {
+			autoOpen, _ = cli.confirm("Automatically open confirmation page in your default browser?", true)
+		}
+		if autoOpen {
+			log.Printf("Opened link in your browser:\n\t %s\n", state.VerificationURI)
+			err = browser.OpenURL(state.VerificationURI)
+			if err != nil {
+				log.Println("Couldn't open the URL, please do it manually")
+			}
+		} else {
+			log.Printf("Please open link in your browser:\n\t %s\n", state.VerificationURI)
+		}
 	}
 
 	var res auth.Result
-	err = cli.spinner(os.Stderr, "Waiting for login to complete in browser ...", func() error {
+	if batch {
 		res, err = a.Authenticator.Wait(ctx, state)
-		return err
-	})
+	} else {
+		err = cli.spinner(os.Stderr, "Waiting for login to complete in browser ...", func() error {
+			res, err = a.Authenticator.Wait(ctx, state)
+			return err
+		})
+	}
 	if err != nil {
 		switch err.Error() {
 		case "600":
@@ -123,7 +140,9 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool, noBrowser bool) 
 		return fmt.Errorf("failed to write credentials: %w", err)
 	}
 
-	cli.printSuccess("Logged in")
+	if !batch {
+		cli.printSuccess("Logged in")
+	}
 	return nil
 }
 
