@@ -90,10 +90,7 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 }
 
 func newCertAddCmd(cli *CLI) *cobra.Command {
-	var (
-		overwriteCertificate bool
-		appendCertificate    bool
-	)
+	var overwriteCertificate bool
 
 	cmd := &cobra.Command{
 		Use:   "add",
@@ -111,11 +108,10 @@ $ vespa auth cert add -a my-tenant.my-app.my-instance path/to/application/packag
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doCertAdd(cli, overwriteCertificate, appendCertificate, args)
+			return doCertAdd(cli, overwriteCertificate, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate")
-	cmd.Flags().BoolVarP(&appendCertificate, "append", "A", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
 	return cmd
 }
@@ -196,7 +192,7 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, newKeyA
 		cli.printSuccess("Next step: deploy with 'vespa prod deploy' and then remove unused certificates with 'vespa auth cert --prune-old'. See ", color.GreenString("https://docs.vespa.ai/en/security/guide.html"))
 	}
 	if !skipApplicationPackage {
-		return doCertAdd(cli, overwriteCertificate, newKeyAndCertificate, args)
+		return doCertAdd(cli, overwriteCertificate, args)
 	}
 	return nil
 }
@@ -349,12 +345,12 @@ func doPruneOldCertificates(cli *CLI, force, skipApplicationPackage bool, args [
 	}
 	cli.printSuccess("Pruned certificate file ", color.CyanString("'"+certificateFile.path+"'"))
 	if !skipApplicationPackage {
-		return doCertAdd(cli, true, false, args)
+		return doCertAdd(cli, force, args)
 	}
 	return nil
 }
 
-func doCertAdd(cli *CLI, overwriteCertificate bool, appendCertificate bool, args []string) error {
+func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 	targetType, err := cli.targetType(cloudTargetOnly)
 	if err != nil {
 		return err
@@ -367,8 +363,8 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, appendCertificate bool, args
 	if err != nil {
 		return err
 	}
-	if pkg.HasCertificate() && !overwriteCertificate && !appendCertificate {
-		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f to force overwriting, or -A to append a new certificate for rotation")
+	if pkg.HasCertificate() && !overwriteCertificate {
+		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f to force overwriting")
 	}
 	if pkg.IsZip() {
 		return errHint(fmt.Errorf("cannot add certificate to compressed application package: '%s'", pkg.Path),
