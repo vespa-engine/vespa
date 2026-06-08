@@ -163,16 +163,16 @@ func TestCertAppendTwice(t *testing.T) {
 	assert.Equal(t, 3, countPEMBlocks(t, certFile))
 }
 
-func TestCertPruneNoExisting(t *testing.T) {
+func TestCertKeepOneNoExisting(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
 
-	err := cli.Run("auth", "cert", "-N", "--prune")
+	err := cli.Run("auth", "cert", "-N", "--keep-one")
 	require.NotNil(t, err)
 	assert.Contains(t, stderr.String(), "no certificate found")
 }
 
-func TestCertPrune(t *testing.T) {
+func TestCertKeepOne(t *testing.T) {
 	cli, _, _ := newTestCLI(t)
 	configureCloud(t, cli)
 
@@ -185,7 +185,7 @@ func TestCertPrune(t *testing.T) {
 	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
 	assert.Equal(t, 3, countPEMBlocks(t, certFile))
 
-	// Read newest cert (first block) before pruning
+	// Read newest cert (first block) before keeping one
 	certData, err := os.ReadFile(certFile)
 	require.Nil(t, err)
 	newestBlock, _ := pem.Decode(certData)
@@ -193,11 +193,11 @@ func TestCertPrune(t *testing.T) {
 
 	// Fresh CLI needed: pflag doesn't reset flag vars between Execute() calls, so
 	// appendCertificate stays true from the -A runs above and would trip the
-	// "cannot combine --prune with --append" guard when using --prune.
+	// "cannot combine --keep-one with --append" guard when using --keep-one.
 	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+cli.config.homeDir)
 	cli2.isTerminal = func() bool { return true }
 	cli2.Stdin = bytes.NewBufferString("y\n")
-	require.Nil(t, cli2.Run("auth", "cert", "-N", "--prune"))
+	require.Nil(t, cli2.Run("auth", "cert", "-N", "--keep-one"))
 	assert.Contains(t, stdout2.String(), "Pruned certificate file")
 	assert.Equal(t, 1, countPEMBlocks(t, certFile))
 
@@ -209,20 +209,20 @@ func TestCertPrune(t *testing.T) {
 	assert.Equal(t, newestBlock.Bytes, prunedBlock.Bytes)
 }
 
-func TestCertPruneInvalidFlagForce(t *testing.T) {
+func TestCertKeepOneInvalidFlagForce(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
-	err := cli.Run("auth", "cert", "-N", "--prune", "-f")
+	err := cli.Run("auth", "cert", "-N", "--keep-one", "-f")
 	require.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "if any flags in the group [prune force append] are set none of the others can be")
+	assert.Contains(t, stderr.String(), "if any flags in the group [keep-one force append] are set none of the others can be")
 }
 
-func TestCertPruneInvalidFlagAppend(t *testing.T) {
+func TestCertKeepOneInvalidFlagAppend(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
-	err := cli.Run("auth", "cert", "-N", "--prune", "-A")
+	err := cli.Run("auth", "cert", "-N", "--keep-one", "-A")
 	require.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "if any flags in the group [prune force append] are set none of the others can be")
+	assert.Contains(t, stderr.String(), "if any flags in the group [keep-one force append] are set none of the others can be")
 }
 
 func TestCertNoAdd(t *testing.T) {

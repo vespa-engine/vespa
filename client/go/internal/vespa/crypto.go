@@ -67,8 +67,25 @@ func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite boo
 	return ioutil.AtomicWriteFile(certificateFile, data)
 }
 
-// PruneCertificateFile keeps only the first (newest) PEM certificate in certificateFile, removing any older ones.
-func PruneCertificateFile(certificateFile string) error {
+func ParseCertificates(data []byte) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
+	for rest := data; ; {
+		var block *pem.Block
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			break
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		certs = append(certs, cert)
+	}
+	return certs, nil
+}
+
+// KeepOneCertificateFile keeps only the first (newest) PEM certificate in certificateFile, removing any older ones.
+func KeepOneCertificateFile(certificateFile string) error {
 	data, err := os.ReadFile(certificateFile)
 	if err != nil {
 		return fmt.Errorf("could not read certificate file: %w", err)

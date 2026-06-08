@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -19,7 +20,7 @@ func newCertCmd(cli *CLI) *cobra.Command {
 		skipApplicationPackage bool
 		overwriteCertificate   bool
 		appendCertificate      bool
-		pruneCertificate       bool
+		keepOneCertificate     bool
 	)
 	cmd := &cobra.Command{
 		Use:   "cert",
@@ -68,16 +69,16 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if pruneCertificate {
-				return doPruneCert(cli, skipApplicationPackage, args)
+			if keepOneCertificate {
+				return doKeepOne(cli, skipApplicationPackage, args)
 			}
 			return doCert(cli, overwriteCertificate, skipApplicationPackage, appendCertificate, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
 	cmd.Flags().BoolVarP(&appendCertificate, "append", "A", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
-	cmd.Flags().BoolVarP(&pruneCertificate, "prune", "p", false, "Remove all but the newest certificate from the certificate file. Useful after completing credential rotation")
-	cmd.MarkFlagsMutuallyExclusive("prune", "force", "append")
+	cmd.Flags().BoolVarP(&keepOneCertificate, "keep-one", "k", false, "Remove all but the newest certificate from the certificate file. Useful after completing credential rotation")
+	cmd.MarkFlagsMutuallyExclusive("keep-one", "force", "append")
 	// TODO(mpolden): Stop adding certificate to application package and remove this flag
 	cmd.Flags().BoolVarP(&skipApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
@@ -177,7 +178,7 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendC
 	return nil
 }
 
-func doPruneCert(cli *CLI, skipApplicationPackage bool, args []string) error {
+func doKeepOne(cli *CLI, skipApplicationPackage bool, args []string) error {
 	targetType, err := cli.targetType(cloudTargetOnly)
 	if err != nil {
 		return err
@@ -194,6 +195,26 @@ func doPruneCert(cli *CLI, skipApplicationPackage bool, args []string) error {
 		return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
 			"Run 'vespa auth cert' first to create an initial certificate")
 	}
+	data, err := os.ReadFile(certificateFile.path)
+	if err != nil {
+		return fmt.Errorf("could not read certificate file: %w", err)
+	}
+	certs, err := vespa.ParseCertificates(data)
+	if err != nil {
+		return fmt.Errorf("could not parse certificates: %w", err)
+	}
+	if len(certs) == 1 {
+		cli.printInfo("Only one certificate is present, will not remove any other certificates.")
+		return nil
+	}
+	for i, cert := range certs[1:] {
+		cli.printWarning(fmt.Sprintf("Will remove certificate %d: CN=%s, issued %s, expires %s",
+			i+1,
+			cert.Subject.CommonName,
+			cert.NotBefore.Format(time.RFC3339),
+			cert.NotAfter.Format(time.RFC3339),
+		))
+	}
 	hints := []string{}
 	if !skipApplicationPackage {
 		hints = append(hints, "This will also overwrite security/clients.pem in the current application package (use --no-add to skip)")
@@ -206,7 +227,7 @@ func doPruneCert(cli *CLI, skipApplicationPackage bool, args []string) error {
 	if !ok {
 		return nil
 	}
-	if err := vespa.PruneCertificateFile(certificateFile.path); err != nil {
+	if err := vespa.KeepOneCertificateFile(certificateFile.path); err != nil {
 		return fmt.Errorf("could not prune certificate file: %w", err)
 	}
 	cli.printSuccess("Pruned certificate file ", color.CyanString("'"+certificateFile.path+"'"))
