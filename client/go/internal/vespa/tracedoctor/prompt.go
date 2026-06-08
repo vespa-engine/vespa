@@ -90,11 +90,23 @@ The following table shows the overall timeline of a search on a back-end node.
 The *timestamp* column shows times relative to when the node began handling this search.  
 Time until the next row is attributed to the current event.  
 If the row is a marker (e.g. "Start …", "Done"), describe the time as "between [this marker] and [next event]".  
-The *ann setup* task from the table above happens as part of the event "Handle global filter in query execution plan".
+The *ann setup* task from the table above happens between "Handle global filter in query execution plan"
+and "Optimize query execution plan to account for global filter".
 </AI>`
 
 const annQueryDetailsPromptStr = `<AI>The following table shows additional information about the ANN part of the query.
 Do not treat the filter hit ratio alone as the main bottleneck unless the report provides timing evidence for it.</AI>`
+
+const approximateNnsStatsPromptStr = `<AI>The following table shows aggregated statistics about the performed approximate nearest neighbor searches.</AI>`
+
+const exactNnsStatsPromptStr = `<AI>The following table shows aggregated statistics about the performed exact nearest neighbor searches.</AI>`
+
+const globalFilterDecisionPromptStr = `<AI>The following table shows the parameters from which the decision whether to compute a global filter use in
+nearest neighbor searches is made. The estimated hit ratio is a rough over-approximation of the hit ratio the global filter will have.
+If it is between the lower and upper limit, the global filter is computed and its exact hit ratio is used to decide
+which algorithm to use for the nearest neighbor search.
+If it is less than the lower limit, then the global filter computation is skipped and an exact search is performed.
+If it is higher than the upper limit, then the global filter computation is skipped and an HNSW search with post-filtering is performed.</AI>`
 
 const globalFilterProfilingPromptStr = `<AI>The following table shows profiling information for creating the global filter.
 This is more detailed information about what happens inside the *global filter* task from the table above.
@@ -195,6 +207,24 @@ func protonTimelinePrompt(ctx *Context, out *output) {
 func annQueryDetailsPrompt(ctx *Context, out *output) {
 	if ctx.makePrompt {
 		out.fmt("%s\n", annQueryDetailsPromptStr)
+	}
+}
+
+func approximateNnsStatsPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", approximateNnsStatsPromptStr)
+	}
+}
+
+func exactNnsStatsPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", exactNnsStatsPromptStr)
+	}
+}
+
+func globalFilterDecisionPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", globalFilterDecisionPromptStr)
 	}
 }
 
