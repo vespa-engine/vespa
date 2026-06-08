@@ -201,9 +201,10 @@ MatchToolsFactory::MatchToolsFactory(
         trace.addEvent(5, "Optimize query execution plan");
         bool sort_by_cost =
             SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost());
+        bool   keep_order = KeepBlueprintOrder::check(_queryEnv.getProperties());
         double hitRate = std::min(1.0, double(maxNumHits) / double(searchContext.getDocIdLimit()));
         auto   in_flow = InFlow(is_search, hitRate);
-        _query.optimize(in_flow, sort_by_cost);
+        _query.optimize(in_flow, sort_by_cost, keep_order);
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         {
             FetchPostingsProfilerGuard guard(*_query.peekRoot());
@@ -214,7 +215,7 @@ MatchToolsFactory::MatchToolsFactory(
             _query.handle_global_filter(_requestContext, ann_deadline_config, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
                                         _create_blueprint_params.global_filter_upper_limit, setup_stats, trace,
-                                        sort_by_cost, use_lazy_filter);
+                                        sort_by_cost, keep_order, use_lazy_filter);
         }
         if (setup_profiler) {
             setup_profiler->report(trace.createCursor("setup_profiling"));
