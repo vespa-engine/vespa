@@ -142,9 +142,7 @@ Requires: zstd
 
 %if 0%{?amzn2023}
 %global _java_home /usr/lib/jvm/java-17-amazon-corretto
-%global _use_vespa_re2 1
 %global _use_vespa_xxhash 1
-%global _vespa_re2_excludes |re2
 %global _vespa_xxhash_excludes |xxhash
 
 Requires: vespa-xxhash >= %{_vespa_xxhash_version}
