@@ -443,6 +443,13 @@ writefilter.sampleinterval double default = 60.0
 ## 1.0 means that reserved disk space is fully accounted for.
 writefilter.reserved_disk_space_factor double default = 1.0
 
+## Factor used when adding reserved memory to non-transient memory
+## when reporting memory usage to cluster controller and calculating
+## feed block internally in proton.
+## 0.0 means that reserved memory is not accounted for.
+## 1.0 means that reserved memory is fully accounted for.
+writefilter.reserved_memory_factor double default = 0.0
+
 ## The size of the disk partition (in bytes) on which proton basedir is located.
 ## If set to 0, the disk size is sampled by looking at the filesystem space info.
 ## The disk size is used when determining if feed should be blocked in writefilter.
