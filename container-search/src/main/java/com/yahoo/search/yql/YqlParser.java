@@ -1765,7 +1765,7 @@ public class YqlParser implements Parser {
             uriItem.addStartAnchorItem();
 
         String uriString = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1).get(0).getArgument(0);
-        for (String token : segmenter.segment(uriString, new LinguisticsParameters(linguisticsProfileFor(field), Language.ENGLISH, StemMode.NONE, false, false)))
+        for (String token : tokenizeUri(uriString))
             uriItem.addItem(new WordItem(token, field, true));
 
         if (getAnnotation(ast, END_ANCHOR, Boolean.class, endAnchorDefault,
@@ -1778,6 +1778,34 @@ public class YqlParser implements Parser {
         uriItem.setSourceString(uriString);
 
         return uriItem;
+    }
+
+    /**
+     * Tokenize uri query argument the same way the uri field is tokenized at indexing time
+     * (searchlib URL::IsTokenChar): token characters are ASCII alphanumerics, '-' and '_';
+     * everything else (incl. '.', '/', ':', '?' and any non-ASCII char) is a separator.
+     * Note: Not using {@link com.yahoo.net.UrlTokenizer} because it decodes %xx
+     * escapes before tokenizing, which is not what searchlib URL does.
+     */
+    static List<String> tokenizeUri(String uriString) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+
+        for (int i = 0; i < uriString.length(); i++) {
+            char c = uriString.charAt(i);
+
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
+                current.append(c);
+            } else if (current.length() > 0) {
+                tokens.add(current.toString());
+                current.setLength(0);
+            }
+        }
+
+        if (current.length() > 0)
+            tokens.add(current.toString());
+
+        return tokens;
     }
 
     private Item instantiateWordItem(String field, OperatorNode<ExpressionOperator> ast, Class<?> parent) {
