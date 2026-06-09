@@ -7,7 +7,7 @@
 using namespace vespalib;
 
 TEST(MemoryDataStoreTest, testMemoryDataStore) {
-    MemoryDataStore                         s(alloc::Alloc::alloc(256), nullptr);
+    MemoryDataStore                         s(alloc::Alloc::alloc(256));
     std::vector<MemoryDataStore::Reference> v;
     v.push_back(s.push_back("mumbo", 5));
     for (size_t i(0); i < 50; i++) {
