@@ -10,6 +10,7 @@ This means that the bulk of the functionality lies inside /language-server. The 
 ## Release
 
 To release the language server, start the github action [Vespa Schema LSP - Deploy extension](https://github.com/vespa-engine/vespa/actions/workflows/lspDeploy.yml). Note that the action must be started manually. The action will publish the extension to all the supported marketplaces, including a github release. In addition the action will bump the version and create a PR with the updated version.
+Do not forget to edit the [change notes](./resources/CHANGENOTES.txt) before releasing a new version!
 
 To publish a new release from a branch other than master, use the following command:
 `gh workflow run "Vespa Schema LSP - Deploy extension" --ref <branch> -F version=<major | minor | patch>`
