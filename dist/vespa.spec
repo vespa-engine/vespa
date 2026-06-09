@@ -425,7 +425,7 @@ export JAVA_HOME=%{?_java_home}
 export JAVA_HOME=/usr/lib/jvm/java-%{_vespa_java_version}-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
-LC_CTYPE=C.UTF-8 %{_mvn_cmd} --batch-mode -nsu -T 1C test
+LC_CTYPE=C.UTF-8 %{_mvn_cmd} --batch-mode -nsu -T 1C verify
 make test ARGS="--output-on-failure %{_smp_mflags}"
 %endif
 
