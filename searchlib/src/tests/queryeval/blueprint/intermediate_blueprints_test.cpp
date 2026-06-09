@@ -1095,6 +1095,29 @@ TEST(IntermediateBlueprintsTest, require_that_replaced_blueprints_retain_source_
     EXPECT_EQ(42u, top2_up->getSourceId());
 }
 
+TEST(IntermediateBlueprintsTest, equiv_flow_stats_reach_into_intermediate_term_subtrees) {
+    // Equiv terms are not part of the optimize tree, so EquivBlueprint must
+    // update flow stats on the full subtree of each term — not just the term
+    // itself. Otherwise an IntermediateBlueprint sitting between Equiv and
+    // its real leaves (e.g. a SourceBlender wrapped around a term in proton)
+    // sees zero-initialized child stats, propagates estimate=0/cost=0 up to
+    // Equiv, and zeroes out the planner cost for everything that follows
+    // Equiv in an AND.
+    FieldSpecBaseList fields;
+    fields.add(FieldSpecBase(1, 1));
+    auto equiv = std::make_unique<EquivBlueprint>(fields, EquivBlueprint::allocate_outside_equiv_tag{});
+    for (uint32_t i = 0; i < 3; ++i) {
+        auto wrap = std::make_unique<OrBlueprint>();
+        wrap->addChild(ap(MyLeafSpec(40).addField(1, 2 + i * 2).create()));
+        wrap->addChild(ap(MyLeafSpec(40).addField(1, 3 + i * 2).create()));
+        equiv->addTerm(std::move(wrap), 1.0);
+    }
+    equiv->basic_plan(false, 1000);
+    EXPECT_GT(equiv->estimate(), 0.0);
+    EXPECT_GT(equiv->cost(), 0.0);
+    EXPECT_GT(equiv->strict_cost(), 0.0);
+}
+
 TEST(IntermediateBlueprintsTest, test_Equiv_Blueprint) {
     FieldSpecBaseList            fields;
     search::fef::MatchDataLayout subLayout;
