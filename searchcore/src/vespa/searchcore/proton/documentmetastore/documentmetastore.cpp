@@ -1146,8 +1146,9 @@ uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
     return estimate;
 }
 
-size_t DocumentMetaStore::transient_memory_for_flush() const noexcept {
-    return 0;
+size_t DocumentMetaStore::transient_memory_for_flush(bool slow_disk) const noexcept {
+    size_t flush_buffer_size = slow_disk ? getEstimatedSaveByteSize() : 0;
+    return flush_buffer_size;
 }
 
 uint32_t DocumentMetaStore::getVersion() const {

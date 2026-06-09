@@ -615,23 +615,11 @@ uint64_t AttributeVector::getEstimatedSaveByteSize() const {
     return datFileSize + weightFileSize + idxFileSize + udatFileSize;
 }
 
-size_t AttributeVector::transient_memory_for_flush() const noexcept {
-    uint32_t    committedDocIdLimit = getCommittedDocIdLimit();
-    const auto& cfg = getConfig();
-    size_t      elem_size = 4;
-    if (!cfg.collectionType().isMultiValue() && !hasEnum()) {
-        BasicType::Type basicType(getBasicType());
-        switch (basicType) {
-        case BasicType::Type::PREDICATE:
-        case BasicType::Type::TENSOR:
-        case BasicType::Type::REFERENCE:
-        case BasicType::Type::RAW:
-            break;
-        default:
-            elem_size = cfg.basicType().fixedSize();
-        }
-    }
-    return elem_size * committedDocIdLimit;
+size_t AttributeVector::transient_memory_for_flush(bool slow_disk) const noexcept {
+    uint32_t committedDocIdLimit = getCommittedDocIdLimit();
+    size_t   elem_size = 4;
+    size_t   flush_buffer_size = slow_disk ? getEstimatedSaveByteSize() : 0;
+    return elem_size * committedDocIdLimit + flush_buffer_size;
 }
 
 size_t AttributeVector::getEstimatedShrinkLidSpaceGain() const {

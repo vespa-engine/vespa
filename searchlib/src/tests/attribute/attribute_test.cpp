@@ -139,6 +139,26 @@ bool preciseEstimatedSize(const AttributeVector& a) {
     return true;
 }
 
+bool single_normal_numeric_attribute(const AttributeVector& a) {
+    if (a.getCollectionType() != search::attribute::CollectionType::SINGLE) {
+        return false;
+    }
+    if (a.getConfig().fastSearch()) {
+        return false;
+    }
+    switch (a.getBasicType()) {
+    case BasicType::INT8:
+    case BasicType::INT16:
+    case BasicType::INT32:
+    case BasicType::INT64:
+    case BasicType::DOUBLE:
+    case BasicType::FLOAT:
+        return true;
+    default:
+        return false;
+    }
+}
+
 string baseFileName(const string& attrName) {
     return tmpDir + "/" + attrName;
 }
@@ -472,7 +492,20 @@ template <typename VectorType, typename BufferType> void AttributeTest::testRelo
             exp_transient_memory_for_flush =
                 BitVector::legacy_num_bytes_with_single_guard_bit(a->getCommittedDocIdLimit());
         }
-        EXPECT_EQ(exp_transient_memory_for_flush, a->transient_memory_for_flush());
+        if (a->getBasicType() == BasicType::UINT2 && !multivalue_attr) {
+            exp_transient_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 15) / 16);
+        }
+        if (a->getBasicType() == BasicType::UINT4 && !multivalue_attr) {
+            exp_transient_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 7) / 8);
+        }
+        EXPECT_EQ(exp_transient_memory_for_flush, a->transient_memory_for_flush(false));
+        if (single_normal_numeric_attribute(*a)) {
+            // Buffer handover from attribute saver to attribute memory file writer
+            EXPECT_EQ((size_t)a->getEstimatedSaveByteSize(), a->transient_memory_for_flush(true));
+        } else {
+            EXPECT_EQ((size_t)a->getEstimatedSaveByteSize() + exp_transient_memory_for_flush,
+                      a->transient_memory_for_flush(true));
+        }
         double actSize = statSize(*b);
         EXPECT_LE(actSize, a->size_on_disk());
         EXPECT_EQ(stat_size_on_disk(*b), a->size_on_disk());
