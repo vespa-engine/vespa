@@ -82,6 +82,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private OptionalInt metricsProxyHeapSizeInMib = OptionalInt.empty();
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
+    private double searchNodeReservedMemoryFactor = 0.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -143,6 +144,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> metricsProxyHeapSizeInMib.orElse(0); }
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
+    @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -360,6 +362,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setIgnoreConnectivityChecksAtStartup(boolean value) {
         this.ignoreConnectivityChecksAtStartup = value;
+        return this;
+    }
+
+    public TestProperties setSearchNodeReservedMemoryFactor(double value) {
+        this.searchNodeReservedMemoryFactor = value;
         return this;
     }
 

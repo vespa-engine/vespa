@@ -239,6 +239,16 @@ public class Flags {
             "Takes effect at deployment", 
             TENANT_ID);
 
+    public static final UnboundDoubleFlag SEARCHNODE_RESERVED_MEMORY_FACTOR = defineDoubleFlag(
+        "searchnode-reserved-memory-factor", 0.0,
+        List.of("toregge"), "2026-06-09", "2027-02-10",
+        "How much of the calculated reserved memory should be added to the used memory when " +
+            "reporting memory usage. " +
+            "0.0 means none at all, 1.0 means the all of the reserved memory.",
+        "Takes effect at redeployment.",
+        INSTANCE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
