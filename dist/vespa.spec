@@ -452,6 +452,11 @@ cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{build
 
 ln -s /usr/lib/jvm/jre-%{_vespa_java_version}-openjdk %{buildroot}/%{_prefix}/jdk
 
+# RPM-owned symlink so the launcher (under /opt/vespa/bin) is on PATH. It resolves
+# its JAR via readlink -f, so invocation through the symlink works.
+mkdir -p %{buildroot}/usr/bin
+ln -s %{_prefix}/bin/vespa-crypto-cli-standalone %{buildroot}/usr/bin/vespa-crypto-cli-standalone
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -796,5 +801,6 @@ fi
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
 %{_prefix}/lib/jars/vespaclient-java-fat-with-provided.jar
+%attr(-,root,root) /usr/bin/vespa-crypto-cli-standalone
 
 %changelog
