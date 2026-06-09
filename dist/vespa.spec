@@ -331,6 +331,8 @@ Vespa - The open big data serving engine - devel package
 %package crypto-cli-standalone
 
 Summary: Vespa - standalone crypto CLI
+# Launcher script + pure-Java fat JAR, no native code: build once, not per-arch.
+BuildArch: noarch
 
 # Self-contained: the fat JAR bundles all provided-scope deps, so no Vespa install is required.
 # Mirrors the java requirement conditional in %package base, but pulls the headless runtime
