@@ -538,7 +538,8 @@ TEST_F(ArrayBoolAttributeTest, estimated_save_byte_size) {
     // 4096 + (8+7)/8 + 6*5 = 4096 + 1 + 30 = 4127 (with 1 reserved doc, 5 added = 6 docs)
     uint64_t expected = 4096 + (8 + 7) / 8 + 6 * 5;
     EXPECT_EQ(expected, estimate);
-    EXPECT_EQ(6 * sizeof(vespalib::datastore::EntryRef), _attr->transient_memory_for_flush());
+    EXPECT_EQ(6 * sizeof(vespalib::datastore::EntryRef), _attr->transient_memory_for_flush(false));
+    EXPECT_EQ(6 * sizeof(vespalib::datastore::EntryRef) + estimate, _attr->transient_memory_for_flush(true));
 }
 
 class ArrayBoolExtAttributeTest : public ::testing::Test {

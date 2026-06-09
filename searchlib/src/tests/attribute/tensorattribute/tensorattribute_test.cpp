@@ -1698,18 +1698,24 @@ TEST_F(SparseTensorAttributeTest, size_on_disk_factor_is_calculated_and_used) {
     }
     EXPECT_LT(10, attr.getCommittedDocIdLimit());
     EXPECT_THAT(attr.getEstimatedSaveByteSize(), AllOf(Ge(40_Ki), Le(50_Ki)));
-    EXPECT_EQ(attr.getCommittedDocIdLimit() * sizeof(EntryRef), attr.transient_memory_for_flush());
+    EXPECT_EQ(attr.getCommittedDocIdLimit() * sizeof(EntryRef), attr.transient_memory_for_flush(false));
+    EXPECT_EQ(attr.getCommittedDocIdLimit() * sizeof(EntryRef) + attr.getEstimatedSaveByteSize(),
+              attr.transient_memory_for_flush(true));
     attr.save((_test_dir / "tensor").string());
     auto size_on_disk = attr.size_on_disk();
     EXPECT_LT(60_Ki, size_on_disk);
     EXPECT_THAT(attr.getEstimatedSaveByteSize(), AllOf(Ge(size_on_disk - 4_Ki), Le(size_on_disk + 4_Ki)));
-    EXPECT_EQ(attr.getCommittedDocIdLimit() * sizeof(EntryRef), attr.transient_memory_for_flush());
+    EXPECT_EQ(attr.getCommittedDocIdLimit() * sizeof(EntryRef), attr.transient_memory_for_flush(false));
+    EXPECT_EQ(attr.getCommittedDocIdLimit() * sizeof(EntryRef) + attr.getEstimatedSaveByteSize(),
+              attr.transient_memory_for_flush(true));
     auto real_attr2 = std::make_shared<SerializedFastValueAttribute>((_test_dir / "tensor").string(), cfg);
     AttributeVector& attr2 = *real_attr2;
     ASSERT_TRUE(attr2.load());
     EXPECT_EQ(size_on_disk, attr2.size_on_disk());
     EXPECT_THAT(attr2.getEstimatedSaveByteSize(), AllOf(Ge(size_on_disk - 4_Ki), Le(size_on_disk + 4_Ki)));
-    EXPECT_EQ(attr2.getCommittedDocIdLimit() * sizeof(EntryRef), attr2.transient_memory_for_flush());
+    EXPECT_EQ(attr2.getCommittedDocIdLimit() * sizeof(EntryRef), attr2.transient_memory_for_flush(false));
+    EXPECT_EQ(attr2.getCommittedDocIdLimit() * sizeof(EntryRef) + attr2.getEstimatedSaveByteSize(),
+              attr2.transient_memory_for_flush(true));
     EXPECT_EQ(dynamic_memory_usage, attr2.getStatus().get_used_minus_dead_and_onhold() - initial_memory_usage);
     EXPECT_EQ(attr.getEstimatedSaveByteSize(), attr2.getEstimatedSaveByteSize());
 }

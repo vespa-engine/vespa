@@ -152,8 +152,9 @@ std::unique_ptr<AttributeSaver> PredicateAttribute::onInitSave(std::string_view 
         PredicateAttributeSaver::IntervalRangeVectorSnapshot(interval_range_vector_view), _max_interval_range);
 }
 
-size_t PredicateAttribute::transient_memory_for_flush() const noexcept {
-    return _transient_memory_for_flush_stats.load(std::memory_order_relaxed);
+size_t PredicateAttribute::transient_memory_for_flush(bool slow_disk) const noexcept {
+    size_t flush_buffer_size = slow_disk ? getEstimatedSaveByteSize() : 0;
+    return _transient_memory_for_flush_stats.load(std::memory_order_relaxed) + flush_buffer_size;
 }
 
 void PredicateAttribute::update_transient_memory_for_flush() noexcept {
