@@ -5,6 +5,7 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.IndexingScript;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.QuantizationParams;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.tensor.TensorType;
@@ -348,6 +349,51 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         // TODO Vespa 9: Remove 'innerproduct' as alias for 'prenormalized-angular'.
         assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.INNERPRODUCT, "innerproduct");
         assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.PRENORMALIZED_ANGULAR, "prenormalized-angular");
+    }
+
+    @Test
+    void quantization_can_be_specified_for_document_tensor_fields() throws ParseException {
+        Attribute attr = getAttributeF(
+                """
+                search test {
+                    document test {
+                        field f type tensor<float>(x[128]) {
+                            indexing: attribute
+                            attribute {
+                                quantization {
+                                    bits: 4
+                                }
+                            }
+                        }
+                    }
+                }
+                """);
+        assertEquals(Optional.of(QuantizationParams.ofBits(4)), attr.quantizationParams());
+        // Quantization does not affect the field's configured tensor type
+        assertEquals(Optional.of(TensorType.fromSpec("tensor<float>(x[128])")), attr.tensorType());
+    }
+
+    @Test
+    void quantization_can_be_specified_for_synthetic_tensor_fields() throws ParseException {
+        Attribute attr = getAttributeF(
+                """
+                search test {
+                    document test {
+                        field my_vec type tensor<float>(x[128]) {
+                        }
+                    }
+                    field f type tensor<float>(x[128]) {
+                        indexing: input my_vec | attribute | index
+                        attribute {
+                            quantization {
+                                bits: 2
+                            }
+                        }
+                    }
+                }
+                """);
+        assertEquals(Optional.of(QuantizationParams.ofBits(2)), attr.quantizationParams());
+        assertEquals(Optional.of(TensorType.fromSpec("tensor<float>(x[128])")), attr.tensorType());
     }
 
     private void assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.Enum expDistanceMetric,

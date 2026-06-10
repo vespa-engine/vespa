@@ -74,6 +74,8 @@ public final class Attribute implements Cloneable, Serializable {
 
     private Optional<HnswIndexParams> hnswIndexParams = Optional.empty();
 
+    private Optional<QuantizationParams> quantizationParams = Optional.empty();
+
     private boolean isPosition = false;
     private final Sorting sorting = new Sorting();
 
@@ -199,6 +201,7 @@ public final class Attribute implements Cloneable, Serializable {
     public boolean isPaged()                { return paged; }
     public boolean isPosition()             { return isPosition; }
     public boolean isMutable()              { return mutable; }
+    public boolean isQuantized()            { return quantizationParams.isPresent(); }
 
     public int arity()       { return arity; }
     public long lowerBound() { return lowerBound; }
@@ -212,6 +215,7 @@ public final class Attribute implements Cloneable, Serializable {
         return distanceMetric.orElse(DEFAULT_DISTANCE_METRIC);
     }
     public Optional<HnswIndexParams> hnswIndexParams() { return hnswIndexParams; }
+    public Optional<QuantizationParams> quantizationParams() { return quantizationParams; }
 
     public Sorting getSorting() { return sorting; }
     public Dictionary getDictionary() { return dictionary; }
@@ -253,6 +257,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setHnswIndexParams(HnswIndexParams params)       { this.hnswIndexParams = Optional.of(params); }
     public void setDictionary(Dictionary dictionary)             { this.dictionary = dictionary; }
     public void setCase(Case casing)                             { this.casing = casing; }
+    public void setQuantizationParams(QuantizationParams params) { this.quantizationParams = Optional.of(params); }
 
     public String         getName()                     { return name; }
     public Type           getType()                     { return type; }
@@ -388,7 +393,7 @@ public final class Attribute implements Cloneable, Serializable {
         return Objects.hash(
                 name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero,
                 createIfNonExistent, isPosition, mutable, paged, enableOnlyBitVector,
-                tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
+                tensorType, referenceDocumentType, distanceMetric, hnswIndexParams, quantizationParams);
     }
 
     @Override
@@ -416,6 +421,7 @@ public final class Attribute implements Cloneable, Serializable {
         if (! Objects.equals(referenceDocumentType, other.referenceDocumentType)) return false;
         if (! Objects.equals(distanceMetric, other.distanceMetric)) return false;
         if (! Objects.equals(hnswIndexParams, other.hnswIndexParams)) return false;
+        if (! Objects.equals(quantizationParams, other.quantizationParams)) return false;
 
         return true;
     }
