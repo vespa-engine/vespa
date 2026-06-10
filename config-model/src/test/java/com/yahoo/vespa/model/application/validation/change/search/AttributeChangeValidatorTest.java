@@ -17,6 +17,7 @@ import java.util.List;
 
 import static com.yahoo.test.JunitCompat.assertEquals;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class AttributeChangeValidatorTest {
@@ -51,6 +52,11 @@ public class AttributeChangeValidatorTest {
         @Override
         public List<VespaConfigChangeAction> validate() {
             return validator.validate();
+        }
+
+        void assertValidationAndThrowIfFailed() {
+            assertValidation();
+            execution.throwIfFailed();
         }
 
     }
@@ -324,6 +330,62 @@ public class AttributeChangeValidatorTest {
                          e.getMessage());
         }
     }
+
+    @Test
+    void removing_quantization_in_place_is_disallowed() {
+        var fromSd = """
+                field f1 type tensor(x[10]) {
+                  indexing: attribute
+                  attribute {
+                    quantization {
+                      bits: 3
+                    }
+                  }
+                }
+                """;
+        var toSd = "field f1 type tensor(x[10]) { indexing: attribute }";
+        var f = new Fixture(fromSd, toSd);
+        var e = assertThrows(IllegalArgumentException.class, f::assertValidationAndThrowIfFailed);
+        assertEquals("Quantization cannot be removed in-place on an existing attribute. " +
+                     "First remove the attribute aspect, redeploy, then re-add the attribute " +
+                     "with updated quantization settings.", e.getMessage());
+    }
+
+    @Test
+    void changing_quantization_bit_count_in_place_is_disallowed() {
+        var fromSd = """
+                field f1 type tensor(x[10]) {
+                  indexing: attribute
+                  attribute {
+                    quantization {
+                      bits: 3
+                    }
+                  }
+                }
+                """;
+        var toSd = """
+                field f1 type tensor(x[10]) {
+                  indexing: attribute
+                  attribute {
+                    quantization {
+                      bits: 4
+                    }
+                  }
+                }
+                """;
+        var f = new Fixture(fromSd, toSd);
+        var e = assertThrows(IllegalArgumentException.class, f::assertValidationAndThrowIfFailed);
+        assertEquals("Quantization bit count cannot be changed in-place on an existing attribute. " +
+                     "First remove the attribute aspect, redeploy, then re-add the attribute " +
+                     "with updated quantization settings.", e.getMessage());
+    }
+
+    /*
+     * Quantization validation TODOs
+     *  - adding/removing quantization to/from existing attribute
+     *    - is it OK to _add_ it with a restart?
+     *  - changing distance metric
+     */
 
     private String validationMessage(String validationId, String message) {
         return message +

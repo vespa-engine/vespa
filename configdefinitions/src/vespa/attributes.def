@@ -45,3 +45,6 @@ attribute[].index.hnsw.maxlinkspernode int default=16
 attribute[].index.hnsw.neighborstoexploreatinsert int default=200
 # Whether multi-threaded indexing is enabled for this hnsw index.
 attribute[].index.hnsw.multithreadedindexing bool default=true
+
+# 0 bits implies no quantization is used
+attribute[].quantization.bits int default=0

@@ -316,6 +316,8 @@ TOKEN :
 | < DISTANCE_METRIC: "distance-metric" >
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
+| < QUANTIZATION: "quantization" >
+| < BITS: "bits" >
 | < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH> ("," (" ")* <IDENTIFIER_WITH_DASH>)* ) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
@@ -1102,6 +1104,21 @@ void sortingSetting(ParsedSorting sorting) :
     )
 }
 
+void attributeQuantization(ParsedAttribute attr) :
+{
+    int bits;
+}
+{
+    <QUANTIZATION> ( lbrace()
+                     <BITS> <COLON> bits = integer()
+                     {
+                         attr.setQuantization(ParsedQuantization.ofBits(bits));
+                     }
+                     (<NL>)*
+                     <RBRACE>
+                   )
+}
+
 /**
  * This rule consumes a single attribute setting statement of an attribute element.
  *
@@ -1125,6 +1142,7 @@ void attributeSetting(ParsedAttribute attribute) :
           attribute.addAlias(aliasedName, alias);
       }
       | <DISTANCE_METRIC> <COLON> str = identifierWithDash() { attribute.setDistanceMetric(str); }
+      | attributeQuantization(attribute)
     )
 }
 
@@ -2967,6 +2985,8 @@ String identifierWithDash() :
     | <MIN_HITS_PER_THREAD>
     | <MULTI_THREADED_INDEXING>
     | <NEIGHBORS_TO_EXPLORE_AT_INSERT>
+    | <QUANTIZATION>
+    | <BITS>
     | <NUM_SEARCH_PARTITIONS>
     | <NUM_THREADS_PER_SEARCH>
     | <OMIT_SUMMARY_FEATURES>

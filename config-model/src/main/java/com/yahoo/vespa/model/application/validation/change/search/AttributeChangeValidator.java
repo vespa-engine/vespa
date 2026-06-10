@@ -122,6 +122,7 @@ public class AttributeChangeValidator {
                     validateAttributeHnswIndexSetting(id, current, next, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
                     validateAttributeHnswIndexSetting(id, current, next, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);
                 }
+                validateAttributeQuantizationChanges(current, next);
             }
         }
         return result;
@@ -174,6 +175,18 @@ public class AttributeChangeValidator {
             context.invalid(ValidationId.pagedSettingRemoval,
                               current + "' has setting 'paged' removed. " +
                               "This may cause content nodes to run out of memory as the entire attribute is loaded into memory");
+        }
+    }
+
+    private void validateAttributeQuantizationChanges(Attribute current, Attribute next) {
+        var msgSuffix = "First remove the attribute aspect, redeploy, then re-add the attribute " +
+                        "with updated quantization settings.";
+        if (current.isQuantized() && !next.isQuantized()) {
+            context.illegal("Quantization cannot be removed in-place on an existing attribute. " + msgSuffix);
+        }
+        if (current.isQuantized() && next.isQuantized() &&
+                (current.quantizationParams().get().bits() != next.quantizationParams().get().bits())) {
+            context.illegal("Quantization bit count cannot be changed in-place on an existing attribute. " + msgSuffix);
         }
     }
 

@@ -350,6 +350,33 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.PRENORMALIZED_ANGULAR, "prenormalized-angular");
     }
 
+    @Test
+    void yolo_quant() throws ParseException {
+        Attribute attr = getAttributeF(
+                """
+                search test {
+                    document test {
+                        field my_vec type tensor<float>(x[128]) {
+                        }
+                    }
+                    field f type tensor<float>(x[128]) {
+                        indexing: input my_vec | attribute | index
+                        attribute {
+                            quantization {
+                                bits: 2
+                            }
+                        }
+                    }
+                }
+                """);
+        var qp = attr.quantizationParams();
+        assertTrue(qp.isPresent());
+        assertEquals(2, qp.get().bits());
+        // TODO choose mode based on distance function
+        //   if no distance function provided: MSE
+        //   what to use for Euclidean?
+    }
+
     private void assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.Enum expDistanceMetric,
                                              String schemaDistanceMetric) throws ParseException {
         var attrs = new AttributeFields(getSchemaWithDistanceMetric(schemaDistanceMetric));
