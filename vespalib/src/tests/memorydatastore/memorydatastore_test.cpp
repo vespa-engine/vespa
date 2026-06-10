@@ -21,8 +21,8 @@ TEST(MemoryDataStoreTest, testMemoryDataStore) {
     EXPECT_EQ(52ul, v.size());
     EXPECT_NE(static_cast<const std::byte*>(v[50].data()) + 5, v[51].data());
     for (auto& i : v) {
+        ASSERT_EQ(5, i.size());
         EXPECT_EQ(0, memcmp(mumbo.data(), i.data(), 5));
-        EXPECT_EQ(5, i.size());
     }
 }
 
