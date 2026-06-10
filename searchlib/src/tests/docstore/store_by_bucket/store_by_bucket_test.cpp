@@ -89,8 +89,7 @@ struct Iterator : public StoreByBucket::IndexIterator {
 };
 
 TEST(StoreByBucketTest, require_that_StoreByBucket_gives_bucket_by_bucket_and_ordered_within) {
-    std::mutex                    backing_lock;
-    vespalib::MemoryDataStore     backing(vespalib::alloc::Alloc::alloc(256), &backing_lock);
+    vespalib::MemoryDataStore     backing(vespalib::alloc::Alloc::alloc(256));
     vespalib::ThreadStackExecutor executor(8);
     StoreIndex                    storeIndex;
     StoreByBucket                 sbb(storeIndex, backing, executor, CompressionConfig::LZ4);

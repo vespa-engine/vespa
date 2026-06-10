@@ -86,7 +86,6 @@ private:
     FileId                                 _destinationFileId;
     LogDataStore&                          _ds;
     const IBucketizer&                     _bucketizer;
-    std::mutex                             _lock;
     vespalib::MemoryDataStore              _backingMemory;
     BucketIndexStore                       _bucketIndexStore;
     Partitions                             _tmpStore;
