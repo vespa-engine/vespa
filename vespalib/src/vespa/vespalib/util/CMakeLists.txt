@@ -24,6 +24,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     crc.cpp
     deadline.cpp
     destructor_callbacks.cpp
+    detect_malloc_impl.cpp
     doom.cpp
     dual_merge_director.cpp
     error.cpp
