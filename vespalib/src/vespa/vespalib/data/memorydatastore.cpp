@@ -7,12 +7,15 @@ namespace vespalib {
 
 using alloc::Alloc;
 
-MemoryDataStore::MemoryDataStore(Alloc&& initialAlloc) : _buffers(), _writePos(0), _lock() {
+MemoryDataStore::MemoryDataStore(Alloc&& initialAlloc)
+    : _buffers(), _writePos(0), _lock(), _tracker(), _transient_memory(0) {
     _buffers.reserve(24);
     _buffers.emplace_back(std::move(initialAlloc));
 }
 
-MemoryDataStore::~MemoryDataStore() = default;
+MemoryDataStore::~MemoryDataStore() {
+    clear();
+}
 
 std::span<const std::byte> MemoryDataStore::push_back(std::span<const std::byte> data) {
     std::unique_lock guard(_lock);
@@ -25,6 +28,8 @@ std::span<const std::byte> MemoryDataStore::push_back(std::span<const std::byte>
     Alloc&               buf = _buffers.back();
     std::span<std::byte> ref(static_cast<std::byte*>(buf.get()) + _writePos, data.size());
     _writePos += data.size();
+    _transient_memory += data.size();
+    _tracker.set_transient_memory(_transient_memory, 2_Mi);
     guard.unlock();
     if (data.size() > 0) {
         memcpy(ref.data(), data.data(), data.size());
@@ -33,7 +38,10 @@ std::span<const std::byte> MemoryDataStore::push_back(std::span<const std::byte>
 }
 
 void MemoryDataStore::clear() noexcept {
+    auto lock = _tracker.acquire_lock();
     _buffers.clear();
+    _transient_memory = 0;
+    _tracker.set_transient_memory(std::move(lock), 0);
 }
 
 } // namespace vespalib

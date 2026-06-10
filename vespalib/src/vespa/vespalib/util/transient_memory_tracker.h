@@ -32,6 +32,7 @@ public:
     [[nodiscard]] static Lock acquire_lock() noexcept { return Lock(_mutex); }
     // The following member function should not be called while holding the lock.
     void set_transient_memory(size_t value) noexcept;
+    void set_transient_memory(size_t value, size_t slack) noexcept;
     void set_transient_memory(Lock lock, size_t value) noexcept;
     void swap(TransientMemoryTracker& rhs) noexcept;
     [[nodiscard]] static size_t get_total_transient_memory(Lock lock) noexcept;

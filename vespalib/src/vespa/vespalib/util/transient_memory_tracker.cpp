@@ -38,6 +38,13 @@ void TransientMemoryTracker::set_transient_memory(size_t value) noexcept {
     set_transient_memory(acquire_lock(), value);
 };
 
+void TransientMemoryTracker::set_transient_memory(size_t value, size_t slack) noexcept {
+    if (value <= _transient_memory + slack && value + slack >= _transient_memory) {
+        return;
+    }
+    set_transient_memory(acquire_lock(), value);
+};
+
 void TransientMemoryTracker::set_transient_memory(Lock lock, size_t value) noexcept {
     assert(lock.mutex() == &_mutex);
     assert(lock.owns_lock());

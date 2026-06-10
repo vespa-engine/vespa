@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/transient_memory_tracker.h>
 
 #include <mutex>
 #include <span>
@@ -36,6 +37,8 @@ private:
     std::vector<alloc::Alloc> _buffers;
     size_t                    _writePos;
     std::mutex                _lock;
+    TransientMemoryTracker    _tracker;
+    uint64_t                  _transient_memory;
 };
 
 } // namespace vespalib
