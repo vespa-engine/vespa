@@ -58,8 +58,7 @@ void StoreByBucket::closeChunk(Chunk::UP chunk) {
     vespalib::DataBuffer buffer;
     chunk->pack(1, buffer, _compression);
     buffer.shrink(buffer.getDataLen());
-    ConstBufferRef  bufferRef(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(),
-                              buffer.getDataLen());
+    auto            bufferRef = _backingMemory.push_back(buffer.as_bytes());
     std::lock_guard guard(_lock);
     _chunks[chunk->getId()] = bufferRef;
     if (_numChunksPosted == _chunks.size()) {
@@ -90,7 +89,7 @@ void StoreByBucket::drain(IWrite& drainer, IndexIterator& indexIterator) {
     std::vector<Chunk::UP> chunks;
     chunks.resize(_chunks.size());
     for (const auto& it : _chunks) {
-        ConstBufferRef buf(it.second);
+        auto buf(it.second);
         chunks[it.first] = std::make_unique<Chunk>(it.first, buf.data(), buf.size());
     }
     _chunks.clear();

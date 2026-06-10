@@ -14,20 +14,20 @@ MemoryDataStore::MemoryDataStore(Alloc&& initialAlloc) : _buffers(), _writePos(0
 
 MemoryDataStore::~MemoryDataStore() = default;
 
-MemoryDataStore::Reference MemoryDataStore::push_back(const void* data, const size_t sz) {
+std::span<const std::byte> MemoryDataStore::push_back(std::span<const std::byte> data) {
     std::unique_lock guard(_lock);
     const Alloc&     b = _buffers.back();
-    if ((sz + _writePos) > b.size()) {
-        size_t newSize(std::max(sz, _buffers.back().size() * 2));
+    if ((data.size() + _writePos) > b.size()) {
+        size_t newSize(std::max(data.size(), _buffers.back().size() * 2));
         _buffers.emplace_back(b.create(newSize));
         _writePos = 0;
     }
-    Alloc&    buf = _buffers.back();
-    Reference ref(static_cast<char*>(buf.get()) + _writePos);
-    _writePos += sz;
+    Alloc&               buf = _buffers.back();
+    std::span<std::byte> ref(static_cast<std::byte*>(buf.get()) + _writePos, data.size());
+    _writePos += data.size();
     guard.unlock();
-    if (sz > 0) {
-        memcpy(ref.data(), data, sz);
+    if (data.size() > 0) {
+        memcpy(ref.data(), data.data(), data.size());
     }
     return ref;
 }
