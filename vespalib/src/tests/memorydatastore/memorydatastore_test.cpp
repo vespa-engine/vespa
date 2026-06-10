@@ -40,7 +40,7 @@ TEST(MemoryDataStoreTest, testMemoryDataStore) {
     }
 }
 
-TEST(MemoryDataStoreTest, test_transient_memory_with_slack) {
+TEST(MemoryDataStoreTest, test_transient_memory_with_2mib_slack) {
     MemoryDataStore m(alloc::Alloc::alloc(4_Mi));
     EXPECT_EQ(0, get_total_transient_memory());
     std::vector<char> bytes;
