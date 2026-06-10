@@ -166,6 +166,11 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     }
 
     @Test
+    void test_quantized_tensors() throws IOException, ParseException {
+        assertCorrectDeriving("quantized_tensors");
+    }
+
+    @Test
     void testRankProfileInheritance() throws IOException, ParseException {
         assertCorrectDeriving("rankprofileinheritance", "child", new TestableDeployLogger());
     }
