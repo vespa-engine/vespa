@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -347,6 +348,39 @@ public class SchemaParserTestCase {
         var field = schema.getDocument().getFields().get("bar");
         assertEquals("bar", field.name());
         assertEquals(11, field.matchSettings().getMaxTokenLength().get());
+    }
+
+    private static String quantizedTensorSchemaWithBits(int bits) {
+        return Text.format("""
+              schema foo {
+                document foo {
+                  field bar type tensor(x[128]) {
+                    indexing: attribute
+                    attribute {
+                      quantization {
+                        bits: %d
+                      }
+                    }
+                  }
+                }
+              }""", bits);
+    }
+
+    @Test
+    void out_of_range_quantization_bit_values_are_rejected() {
+        for (int bits : List.of(-1, 0, 5)) {
+            String schema = quantizedTensorSchemaWithBits(bits);
+            var e = assertThrows(IllegalArgumentException.class, () -> parseString(schema));
+            assertEquals(Text.format("quantization bits must be a value in [1, 4], was %d", bits), e.getMessage());
+        }
+    }
+
+    @Test
+    void in_range_quantization_bit_values_are_allowed() {
+        for (int bits : List.of(1, 2, 3, 4)) {
+            String schema = quantizedTensorSchemaWithBits(bits);
+            assertDoesNotThrow(() -> parseString(schema));
+        }
     }
 
     void checkFileParses(String fileName) throws Exception {
