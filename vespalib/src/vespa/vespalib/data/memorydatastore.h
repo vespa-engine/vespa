@@ -38,7 +38,7 @@ private:
     size_t                    _writePos;
     std::mutex                _lock;
     TransientMemoryTracker    _tracker;
-    uint64_t                  _transient_memory;
+    size_t                    _transient_memory;
 };
 
 } // namespace vespalib
