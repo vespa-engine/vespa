@@ -134,7 +134,7 @@ public class HostSystem extends TreeConfigProducer<Host> {
         var builder = new ProvisionContext.Builder();
         builder.setLogger(new ProvisionDeployLogger(deployState.getDeployLogger()));
         var validation = builder.validationOverrides();
-        validation.setWarnOnly(deployState.warnOnlyOnValidationFailure());
+        validation.setLogOnly(deployState.warnOnlyOnValidationFailure());
         validation.setOverrideResourcesReduction(deployState.validationOverrides().allows(ValidationId.resourcesReduction, deployState.now()));
         return builder.build();
     }

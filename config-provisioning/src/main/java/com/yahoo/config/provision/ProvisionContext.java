@@ -49,16 +49,16 @@ public class ProvisionContext {
      */
     public static class ValidationOverrides {
 
-        private final boolean warnOnly;
+        private final boolean logOnly;
         private final boolean overrideResourcesReduction;
 
         public ValidationOverrides(Builder builder) {
-            this.warnOnly = builder.warnOnly;
+            this.logOnly = builder.logOnly;
             this.overrideResourcesReduction = builder.overrideResourcesReduction;
         }
 
-        /** True to warn instead of throwing on validation failures. */
-        public boolean warnOnly() { return warnOnly; }
+        /** True to log instead of throwing on validation failures. */
+        public boolean logOnly() { return logOnly; }
 
         /** True if the resources reduction validation is overridden. */
         public boolean overrideResourcesReduction() {
@@ -67,11 +67,11 @@ public class ProvisionContext {
 
         public static class Builder {
 
-            private boolean warnOnly                   = false;
+            private boolean logOnly = false;
             private boolean overrideResourcesReduction = false;
 
-            public Builder setWarnOnly(boolean warnOnly) {
-                this.warnOnly = warnOnly;
+            public Builder setLogOnly(boolean logOnly) {
+                this.logOnly = logOnly;
                 return this;
             }
 
