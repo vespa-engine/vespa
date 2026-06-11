@@ -15,6 +15,7 @@ type inspectProfileOptions struct {
 	profileFile         string
 	showMedianNode      bool
 	showDispatchedQuery bool
+	showNnsDetails      bool
 	makePrompt          bool
 	showQueryNodes      []int
 }
@@ -44,6 +45,9 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	if opts.showDispatchedQuery {
 		context.ShowDispatchedQuery()
 	}
+	if opts.showNnsDetails {
+		context.ShowNnsDetails()
+	}
 	if opts.makePrompt {
 		context.MakePrompt()
 	}
@@ -69,6 +73,7 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect. Use '-' for stdin.")
 	cmd.Flags().BoolVar(&opts.showMedianNode, "show-median-node", false, "Show median node analysis")
 	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
+	cmd.Flags().BoolVar(&opts.showNnsDetails, "show-nns-details", false, "Show more details related to nearest neighbor search")
 	cmd.Flags().BoolVar(&opts.makePrompt, "make-prompt", false, "Output an LLM prompt instead of human-readable analysis")
 	cmd.Flags().IntSliceVar(&opts.showQueryNodes, "show-query-nodes", nil, "Show detailed information for specific query node IDs")
 	return cmd

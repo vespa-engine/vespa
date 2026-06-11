@@ -123,7 +123,8 @@ TEST_F(PredicateAttributeTest, save_and_load_predicate_attribute) {
     auto                  attr = make_sample_predicate_attribute();
     std::filesystem::path file_name(tmp_dir);
     file_name.append(attr_name);
-    EXPECT_NE(0, attr->transient_memory_for_flush());
+    EXPECT_NE(0, attr->transient_memory_for_flush(false));
+    EXPECT_NE(0, attr->transient_memory_for_flush(true));
     attr->save(file_name.native());
     EXPECT_NE(0, attr->size_on_disk());
     auto attr2 = make_attribute(file_name.native(), attr->getConfig(), false);
@@ -132,7 +133,8 @@ TEST_F(PredicateAttributeTest, save_and_load_predicate_attribute) {
     EXPECT_TRUE(attr2->isLoaded());
     EXPECT_EQ(11, attr2->getCommittedDocIdLimit());
     EXPECT_EQ(attr->size_on_disk(), attr2->size_on_disk());
-    EXPECT_EQ(attr->transient_memory_for_flush(), attr2->transient_memory_for_flush());
+    EXPECT_EQ(attr->transient_memory_for_flush(false), attr2->transient_memory_for_flush(false));
+    EXPECT_EQ(attr->transient_memory_for_flush(true), attr2->transient_memory_for_flush(true));
 }
 
 TEST_F(PredicateAttributeTest, buffer_size_mismatch_is_fatal_during_load) {

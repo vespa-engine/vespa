@@ -21,8 +21,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,6 +39,9 @@ public class Evaluation {
     private ParameterNameSpace parameterNameSpace = null;
 
     private final Query query;
+
+    /** A composite emptied by a replacing rule mapped to its replacement, so the rule's later targets accumulate there. */
+    private final Map<Item, CompositeItem> replacementForEmptied = new IdentityHashMap<>();
 
     /** The current index into the flattened item list */
     private int currentIndex = 0;
@@ -276,6 +281,14 @@ public class Evaluation {
             return;
         }
 
+        // Earlier in this rule a production emptied (and detached) parent; redirect later targets onto its
+        // replacement and fall through, so each keeps its own type (NOT, OR, ...) and none is lost in the orphan.
+        CompositeItem replaced = replacementForEmptied.get(parent);
+        if (replaced != null) {
+            parent = replaced;
+            index = parent.getItemCount();
+        }
+
         if (parent.getItemCount() > 0 && parent instanceof QueryTree && parent.getItem(0) instanceof CompositeItem) {
             // combine with the existing root instead
             parent = (CompositeItem)parent.getItem(0);
@@ -291,10 +304,17 @@ public class Evaluation {
                 addItem(parent, index, item, desiredParentType);
         }
         else if (parent.items().isEmpty()) {
+            // A replacing rule emptied this composite (removed its sole matched child). Replace it with one of
+            // the desired type (at the query root if it had no parent) and remember it for later targets above;
+            // replacing it in place previously NPE'd at the root and threw a ClassCastException when nested.
+            CompositeItem replacement = newParent(desiredParentType);
+            items.forEach(replacement::addItem);
             CompositeItem parentsParent = parent.getParent();
-            CompositeItem newParent = newParent(desiredParentType);
-            items.forEach(item -> newParent.addItem(item));
-            parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
+            if (parentsParent != null)
+                parentsParent.setItem(parentsParent.getItemIndex(parent), replacement);
+            else
+                query.getModel().getQueryTree().setRoot(replacement);
+            replacementForEmptied.put(parent, replacement);
         }
         else if (items.size() == 1 && desiredParentType.hasItemClass(items.get(0).getClass())) {
             addItem(parent, index, items.get(0), desiredParentType);

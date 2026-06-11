@@ -1437,6 +1437,26 @@ public class YqlParserTestCase {
         yql.properties().set("yql", "select * from sources * where urlfield.hostname contains uri(\"google.com\")");
         assertUrlQuery("urlfield.hostname", yql, false, true, true);
     }
+    
+    @Test
+    void testUriTokenization() {
+        //Tokenizer should match searchlib URL::IsTokenChar
+        
+        // '-' or '_' are token characters, not separators
+        assertEquals(List.of("my-subdomain", "example", "com"), YqlParser.tokenizeUri("my-subdomain.example.com"));
+        assertEquals(List.of("foo_bar", "example", "com"), YqlParser.tokenizeUri("foo_bar.example.com"));
+
+        // %xx escapes are not decoded: '%' is a separator and the hex chars are token chars
+        assertEquals(List.of("my", "2dsub", "example", "com"), YqlParser.tokenizeUri("my%2dsub.example.com"));
+
+        // Non-ASCII char stay a separator
+        assertEquals(List.of("a", "b", "example", "com"), YqlParser.tokenizeUri("a\u212Ab.example.com"));
+
+        // Leading/trailing/repeated separators produce no empty tokens.
+        assertEquals(List.of("example", "com"), YqlParser.tokenizeUri("://example..com/"));
+        assertEquals(List.of(), YqlParser.tokenizeUri(""));
+        assertEquals(List.of(), YqlParser.tokenizeUri("..."));
+    }
 
     @Test
     void testUrlHostSearchingNoAnchors() {

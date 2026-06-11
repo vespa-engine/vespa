@@ -71,16 +71,16 @@ private:
     void waitAllProcessed();
     Chunk::UP createChunk();
     void closeChunk(Chunk::UP chunk);
-    uint64_t                                     _chunkSerial;
-    Chunk::UP                                    _current;
-    StoreIndex&                                  _storeIndex;
-    MemoryDataStore&                             _backingMemory;
-    Executor&                                    _executor;
-    mutable std::mutex                           _lock;
-    std::condition_variable                      _cond;
-    size_t                                       _numChunksPosted;
-    vespalib::hash_map<uint64_t, ConstBufferRef> _chunks;
-    CompressionConfig                            _compression;
+    uint64_t                                                 _chunkSerial;
+    Chunk::UP                                                _current;
+    StoreIndex&                                              _storeIndex;
+    MemoryDataStore&                                         _backingMemory;
+    Executor&                                                _executor;
+    mutable std::mutex                                       _lock;
+    std::condition_variable                                  _cond;
+    size_t                                                   _numChunksPosted;
+    vespalib::hash_map<uint64_t, std::span<const std::byte>> _chunks;
+    CompressionConfig                                        _compression;
 };
 
 } // namespace search::docstore

@@ -142,9 +142,7 @@ Requires: zstd
 
 %if 0%{?amzn2023}
 %global _java_home /usr/lib/jvm/java-17-amazon-corretto
-%global _use_vespa_re2 1
 %global _use_vespa_xxhash 1
-%global _vespa_re2_excludes |re2
 %global _vespa_xxhash_excludes |xxhash
 
 Requires: vespa-xxhash >= %{_vespa_xxhash_version}
@@ -333,6 +331,8 @@ Vespa - The open big data serving engine - devel package
 %package crypto-cli-standalone
 
 Summary: Vespa - standalone crypto CLI
+# Launcher script + pure-Java fat JAR, no native code: build once, not per-arch.
+BuildArch: noarch
 
 # Self-contained: the fat JAR bundles all provided-scope deps, so no Vespa install is required.
 # Mirrors the java requirement conditional in %package base, but pulls the headless runtime
@@ -425,7 +425,7 @@ export JAVA_HOME=%{?_java_home}
 export JAVA_HOME=/usr/lib/jvm/java-%{_vespa_java_version}-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
-LC_CTYPE=C.UTF-8 %{_mvn_cmd} --batch-mode -nsu -T 1C test
+LC_CTYPE=C.UTF-8 %{_mvn_cmd} --batch-mode -nsu -T 1C verify
 make test ARGS="--output-on-failure %{_smp_mflags}"
 %endif
 
@@ -451,6 +451,11 @@ cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{build
 %endif
 
 ln -s /usr/lib/jvm/jre-%{_vespa_java_version}-openjdk %{buildroot}/%{_prefix}/jdk
+
+# RPM-owned symlink so the launcher (under /opt/vespa/bin) is on PATH. It resolves
+# its JAR via readlink -f, so invocation through the symlink works.
+mkdir -p %{buildroot}/usr/bin
+ln -s %{_prefix}/bin/vespa-crypto-cli-standalone %{buildroot}/usr/bin/vespa-crypto-cli-standalone
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -796,5 +801,6 @@ fi
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
 %{_prefix}/lib/jars/vespaclient-java-fat-with-provided.jar
+%attr(-,root,root) /usr/bin/vespa-crypto-cli-standalone
 
 %changelog

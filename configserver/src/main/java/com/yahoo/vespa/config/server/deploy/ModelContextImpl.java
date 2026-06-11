@@ -267,6 +267,7 @@ public class ModelContextImpl implements ModelContext {
             return clusterId.map(id -> flag.withClusterId(ClusterSpec.Id.from(id)).value()).orElseGet(flag::value);
         }
         @Override public boolean tokenAuthForDeploy() { return flag(Flags.TOKEN_AUTH_FOR_DEPLOY).value(); }
+        @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

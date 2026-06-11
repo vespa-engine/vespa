@@ -520,6 +520,12 @@ bool SortBlueprintsByCost::check(const Properties& props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 
+const std::string KeepBlueprintOrder::NAME("vespa.matching.keep_blueprint_order");
+const bool        KeepBlueprintOrder::DEFAULT_VALUE(false);
+bool KeepBlueprintOrder::check(const Properties& props) {
+    return lookupBool(props, NAME, DEFAULT_VALUE);
+}
+
 const std::string AnnTimeBudget::NAME("vespa.matching.nns.anntimebudget");
 const uint32_t    AnnTimeBudget::DEFAULT_VALUE(std::numeric_limits<uint32_t>::max());
 

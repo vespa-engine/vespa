@@ -245,8 +245,7 @@ double FlushableAttribute::get_replay_operation_cost() const {
 }
 
 size_t FlushableAttribute::transient_memory_for_flush() const noexcept {
-    size_t flush_buffer_size = _hwInfo.disk().slow() ? _attr->getEstimatedSaveByteSize() : 0;
-    return _attr->transient_memory_for_flush() + flush_buffer_size;
+    return _attr->transient_memory_for_flush(_hwInfo.disk().slow());
 }
 
 std::chrono::steady_clock::duration FlushableAttribute::last_flush_duration() const noexcept {

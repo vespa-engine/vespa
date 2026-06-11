@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/detect_malloc_impl.h>
 
 #include <cassert>
 #include <cstdio>
@@ -16,9 +17,7 @@
 
 extern "C" {
 
-// Weakly resolved symbols that will be nullptr if they fail to resolve. Used to
-// both detect the presence of a particular malloc implementation and to do the
-// info dumping for it.
+// Weakly resolved debug dumping symbols that will be nullptr if they fail to resolve.
 // Vespamalloc:
 void vespamalloc_dump_info(FILE* out_file) __attribute__((weak));
 // MiMalloc:
@@ -35,32 +34,6 @@ using namespace std::string_view_literals;
 namespace {
 
 #ifdef __linux__
-
-enum class MallocImpl { LibcOrUnknown, VespaMalloc, MiMalloc };
-
-[[nodiscard]]
-MallocImpl detect_malloc_impl() noexcept {
-    if (vespamalloc_dump_info != nullptr) {
-        return MallocImpl::VespaMalloc;
-    }
-    if (mi_stats_print_out != nullptr) {
-        return MallocImpl::MiMalloc;
-    }
-    return MallocImpl::LibcOrUnknown;
-}
-
-[[nodiscard]]
-std::string_view to_string(MallocImpl mi) noexcept {
-    switch (mi) {
-    case MallocImpl::VespaMalloc:
-        return "vespamalloc";
-    case MallocImpl::MiMalloc:
-        return "mimalloc";
-    case MallocImpl::LibcOrUnknown:
-        return "libc_or_unknown";
-    }
-    abort();
-}
 
 [[maybe_unused]]
 void fclose_helper(FILE* f) {
@@ -101,6 +74,7 @@ void my_mimalloc_info_callback(const char* msg, void* aux_arg) {
 
 std::string get_mimalloc_info_dump() {
     std::string info;
+    assert(mi_stats_print_out != nullptr);
     // `mi_stats_print_out` forwards a void* of our choice to the callback.
     mi_stats_print_out(my_mimalloc_info_callback, &info);
     return info;
@@ -156,14 +130,16 @@ void MallocInfoExplorer::get_state(const Inserter& inserter, bool full) const {
         return;
     }
 #ifdef __linux__
-    const auto malloc_impl = detect_malloc_impl();
+    const auto malloc_impl = vespalib::detect_malloc_impl();
     object.setString("malloc_impl", to_string(malloc_impl));
+    if (malloc_impl == vespalib::MallocImpl::VespaMalloc) {
 #ifdef __GLIBC__
-    dump_mallinfo(object);
+        // Only dump mallinfo if we know the underlying malloc impl supports it.
+        // We don't know this with `LibcOrUnknown`.
+        dump_mallinfo(object);
 #endif
-    if (malloc_impl == MallocImpl::VespaMalloc) {
         emit_malloc_internal_info_dump(object, get_vespamalloc_info_dump());
-    } else if (malloc_impl == MallocImpl::MiMalloc) {
+    } else if (malloc_impl == vespalib::MallocImpl::MiMalloc) {
         emit_malloc_internal_info_dump(object, get_mimalloc_info_dump());
     }
 #else

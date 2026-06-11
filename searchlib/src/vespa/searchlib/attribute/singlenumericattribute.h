@@ -115,6 +115,7 @@ public:
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
+    [[nodiscard]] size_t transient_memory_for_flush(bool slow_disk) const noexcept override;
 };
 
 } // namespace search

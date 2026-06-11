@@ -511,6 +511,14 @@ func (p protonTrace) setupPerf() *topNPerf {
 	return perf
 }
 
+func (p protonTrace) findValueByTag(tag string) slime.Value {
+	r := slime.Find(p.source, hasTag(tag))
+	if len(r) == 1 {
+		return r[0].Apply(p.source)
+	}
+	return slime.Invalid
+}
+
 func (p protonTrace) findThreadTraces() []threadTrace {
 	var traces []threadTrace
 	slime.Select(p.source, hasTag("query_execution"), func(p *slime.Path, v slime.Value) {
