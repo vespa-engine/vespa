@@ -144,7 +144,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             if ( ! hostInApplication(application, hostAndPortToCheck))
                 return new ServiceResponse(ServiceResponse.Status.hostNotFound, wantedGeneration);
             ServiceGenerationResult result = getServiceGeneration(client, URI.create("http://" + hostAndPortToCheck), timeout).get();
-            if (result.configStatus().isFailed())
+            if (result.configStatus().isFailed() && result.configStatus.generation() >= wantedGeneration)
                 return new ServiceResponse(ServiceResponse.Status.error, wantedGeneration, result.configStatus().message());
             boolean converged = result.generation() >= wantedGeneration;
             return new ServiceResponse(ServiceResponse.Status.ok, wantedGeneration, result.generation(), converged);
@@ -235,8 +235,10 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             if (response.getBody() == null) throw new IOException("Response has no content");
             JsonNode json = Jackson.mapper().readTree(response.getBodyText());
             JsonNode configNode = json.get("config");
-            if ("failed".equals(configNode.path("status").asText())) {
-                return ServiceGenerationResult.configFailed(configNode.path("message").asText("unknown failure"));
+            JsonNode configStatusNode = json.get("config").get("configStatus");
+            if (configStatusNode != null && "failed".equals(configStatusNode.path("status").asText())) {
+                return ServiceGenerationResult.configFailed(configStatusNode.path("generation").asLong(),
+                                                            configStatusNode.path("message").asText("unknown failure"));
             }
             return ServiceGenerationResult.ok(configNode.get("generation").asLong(-1));
         } catch (IOException e) {
@@ -289,9 +291,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     private record ServiceGenerationResult(long generation, ConfigStatus configStatus) {
-        static ServiceGenerationResult ok(long generation) { return new ServiceGenerationResult(generation, ConfigStatus.ok()); }
-        static ServiceGenerationResult configFailed(String message) { return new ServiceGenerationResult(-1L, ConfigStatus.failed(message)); }
-        static ServiceGenerationResult unreachable(String message) { return new ServiceGenerationResult(-1L, ConfigStatus.ok()); }
+        static ServiceGenerationResult ok(long generation) { return new ServiceGenerationResult(generation, ConfigStatus.ok(generation)); }
+        static ServiceGenerationResult configFailed(long generation, String message) { return new ServiceGenerationResult(-1L, ConfigStatus.failed(generation, message)); }
+        static ServiceGenerationResult unreachable(String message) { return new ServiceGenerationResult(-1L, ConfigStatus.failed(-1, message)); }
     }
 
     private static URI createApiUri(URI serviceUrl) {
@@ -338,13 +340,17 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     }
 
-    public record ConfigStatus(Status status, String message) {
+    public record ConfigStatus(long generation, Status status, String message) {
         public enum Status {
             OK, FAILED;
             @Override public String toString() { return name().toLowerCase(); }
         }
-        public static ConfigStatus ok() { return new ConfigStatus(Status.OK, null); }
-        public static ConfigStatus failed(String message) { return new ConfigStatus(Status.FAILED, message); }
+        public static ConfigStatus ok(long generation) {
+            return new ConfigStatus(generation, Status.OK, null);
+        }
+        public static ConfigStatus failed(long generation, String message) {
+            return new ConfigStatus(generation, Status.FAILED, message);
+        }
         public boolean isFailed() { return status == Status.FAILED; }
     }
 
@@ -399,7 +405,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
         public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
             this(services.entrySet().stream()
-                         .map(e -> new Service(e.getKey(), e.getValue(), ConfigStatus.ok()))
+                         .map(e -> new Service(e.getKey(), e.getValue(), ConfigStatus.ok(currentGeneration)))
                          .toList(),
                  wantedGeneration, currentGeneration, currentGeneration >= wantedGeneration);
         }

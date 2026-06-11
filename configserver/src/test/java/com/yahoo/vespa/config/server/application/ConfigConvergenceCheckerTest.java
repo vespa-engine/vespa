@@ -177,7 +177,18 @@ public class ConfigConvergenceCheckerTest {
     @Test
     public void service_convergence_config_failure() {
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson(
-                "{\"config\":{\"generation\":3,\"status\":\"failed\",\"message\":\"Failed to construct component Foo\"}}")));
+                """
+                        {
+                          "config": {
+                            "generation": 2,
+                            "configStatus": {
+                              "generation": 3,
+                              "status": "failed",
+                              "message": "Failed to construct component Foo"
+                            }
+                          }
+                        }
+                """)));
 
         ServiceResponse response = checker.getServiceConfigGeneration(application, hostAndPort(this.service), clientTimeout);
         assertEquals(ServiceResponse.Status.error, response.status);
@@ -188,7 +199,18 @@ public class ConfigConvergenceCheckerTest {
     @Test
     public void service_list_convergence_config_failure() {
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson(
-                "{\"config\":{\"generation\":3,\"status\":\"failed\",\"message\":\"Failed to construct component Foo\"}}")));
+                """
+                       {
+                         "config": {
+                           "generation": 2,
+                           "configStatus": {
+                             "generation": 3,
+                             "status": "failed",
+                             "message": "Failed to construct component Foo"
+                           }
+                         }
+                       }
+               """)));
 
         ServiceListResponse response = checker.checkConvergenceForAllServices(application, clientTimeout);
         assertFalse(response.converged);

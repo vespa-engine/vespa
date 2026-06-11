@@ -164,10 +164,11 @@ public class HandlersConfigurerDi {
     }
 
     private void updateConfigStatus(Container.ComponentGraphResult result) {
+        var newGeneration = result.configGeneration();
         if (result.failed())
-            vespaContainer.setConfigStatus(result.failure().getMessage());
+            vespaContainer.setConfigStatus(newGeneration, result.failure().getMessage());
         else
-            vespaContainer.setConfigStatusOk();
+            vespaContainer.setConfigStatusOk(newGeneration);
     }
 
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {
