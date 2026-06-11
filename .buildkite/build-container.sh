@@ -59,7 +59,7 @@ select_dockerfile() {
 
 target_option=""
 if [ "${PREBUILT_BASE_IMAGE:-}" != "" ]; then
-    VESPA_BASE_IMAGE="${PREBUILT_BASE_IMAGE}:${VESPA_BUILDOS_LABEL}"
+    VESPA_BASE_IMAGE=${PREBUILT_BASE_IMAGE}
     SYSTEM_TEST_BASE_IMAGE=${VESPA_BASE_IMAGE}
     target_option="--target vespa"
 fi
