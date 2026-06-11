@@ -31,6 +31,10 @@ docker push "$VESPA_PREVIEW_CONTAINER_URI"
 
 echo "Signing container image..."
 IMAGE_SHA256=$(crane digest "$VESPA_PREVIEW_CONTAINER_URI")
+if [ "${IMAGE_SHA256}na" = "na" ]; then
+    echo "Failed getting IMAGE_SHA256 from $VESPA_PREVIEW_CONTAINER_URI"
+    exit 1
+fi
 cosign sign -y --oidc-provider=buildkite-agent "${VESPA_PREVIEW_CONTAINER_URI}@${IMAGE_SHA256}"
 
 echo "Setting Buildkite metadata for Vespa container..."
@@ -42,8 +46,7 @@ SYSTEMTEST_PREVIEW_CONTAINER_URI=docker.io/vespaengine/vespa-systemtest-preview-
 echo "Pushing container: ${SYSTEMTEST_PREVIEW_CONTAINER_URI}"
 docker push "$SYSTEMTEST_PREVIEW_CONTAINER_URI"
 IMAGE_SHA256=$(crane digest "$SYSTEMTEST_PREVIEW_CONTAINER_URI")
-
-if [ "${IMAGE_SHA256}" = "" ]; then
+if [ "${IMAGE_SHA256}na" = "na" ]; then
     echo "Failed getting IMAGE_SHA256 from $SYSTEMTEST_PREVIEW_CONTAINER_URI"
     exit 1
 fi
