@@ -39,6 +39,8 @@ func FindVespaUser() string {
 		u, err := user.Current()
 		if err == nil {
 			uName = u.Username
+		} else {
+			uName = strconv.Itoa(os.Getuid())
 		}
 	}
 	if uName != "" {

@@ -108,8 +108,10 @@ FixDataDirectory() {
         echo "Creating data directory '$1'"
         mkdir -p "$1" || exit 1
     fi
-    chown "${VESPA_USER}" "$1"
-    chmod 755 "$1"
+    if [ "$(id -u)" = "0" ]; then
+        chown "${VESPA_USER}" "$1"
+    fi
+    chmod 755 "$1" 2>/dev/null || true
 }
 
 StartCommand() {
@@ -262,10 +264,12 @@ Main() {
         Fail "Service must math the regex '$service_regex'"
     fi
 
-    if ! getent passwd "$user" &> /dev/null; then
-        Fail "Bad user ($user): not found in passwd"
-    elif test "$(id -un)" != "$user"; then
-        Fail "${0##*/} must be started by $user"
+    if getent passwd "$user" &> /dev/null; then
+        if test "$(id -un 2>/dev/null)" != "$user"; then
+            if [ "$(id -u)" != "$(id -u "$user" 2>/dev/null)" ]; then
+                Fail "${0##*/} must be started by $user"
+            fi
+        fi
     fi
 
     case "$command" in
