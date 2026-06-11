@@ -89,13 +89,15 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, CompressionCon
       _destinationFileId(destination),
       _ds(ds),
       _bucketizer(bucketizer),
+      _compress_chunks_tracker(),
       _backingMemory(Alloc::alloc(INITIAL_BACKING_BUFFER_SIZE)),
       _bucketIndexStore(maxSignificantBucketBits, NUM_PARTBITS, NUM_PARTITIONS),
       _tmpStore(),
       _lidGuard(ds.getLidReadGuard()),
       _stat() {
     for (auto& partition : _tmpStore) {
-        partition = std::make_unique<StoreByBucket>(_bucketIndexStore, _backingMemory, executor, compression);
+        partition = std::make_unique<StoreByBucket>(_bucketIndexStore, _compress_chunks_tracker, _backingMemory,
+                                                    executor, compression);
     }
 }
 

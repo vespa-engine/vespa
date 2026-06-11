@@ -52,8 +52,16 @@ public:
         virtual ~StoreIndex() = default;
         virtual void store(const Index& index) = 0;
     };
-    StoreByBucket(StoreIndex& storeIndex, MemoryDataStore& backingMemory, Executor& executor,
-                  CompressionConfig compression) noexcept;
+    struct CompressChunksTracker {
+        std::mutex              _lock;
+        std::condition_variable _cond;
+        size_t                  _inflight_memory; // Memory in chunks being compressed in executor tasks
+
+        CompressChunksTracker();
+        ~CompressChunksTracker();
+    };
+    StoreByBucket(StoreIndex& storeIndex, CompressChunksTracker& compress_chunks_tracker,
+                  MemoryDataStore& backingMemory, Executor& executor, CompressionConfig compression) noexcept;
     // TODO Putting the below move constructor into cpp file fails for some unknown reason. Needs to be resolved.
     StoreByBucket(StoreByBucket&&) noexcept = delete;
     StoreByBucket(const StoreByBucket&) = delete;
@@ -67,17 +75,17 @@ public:
     size_t getChunkCount() const noexcept;
 
 private:
-    void incChunksPosted();
+    void post_compress_chunk(Chunk::UP chunk);
+    void incChunksPosted(size_t chunk_size);
     void waitAllProcessed();
     Chunk::UP createChunk();
-    void closeChunk(Chunk::UP chunk);
+    void closeChunk(Chunk::UP chunk, size_t chunk_size);
     uint64_t                                                 _chunkSerial;
     Chunk::UP                                                _current;
     StoreIndex&                                              _storeIndex;
+    CompressChunksTracker&                                   _compress_chunks_tracker;
     MemoryDataStore&                                         _backingMemory;
     Executor&                                                _executor;
-    mutable std::mutex                                       _lock;
-    std::condition_variable                                  _cond;
     size_t                                                   _numChunksPosted;
     vespalib::hash_map<uint64_t, std::span<const std::byte>> _chunks;
     CompressionConfig                                        _compression;
