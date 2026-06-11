@@ -28,7 +28,7 @@ private:
 
 class BucketIndexStore : public StoreByBucket::StoreIndex {
 public:
-    BucketIndexStore(size_t maxSignificantBucketBits, uint32_t numPartitions) noexcept;
+    BucketIndexStore(size_t maxSignificantBucketBits, uint8_t num_partbits, uint32_t numPartitions) noexcept;
     ~BucketIndexStore() override;
     size_t toPartitionId(document::BucketId bucketId) const noexcept {
         uint64_t sortableBucketId = bucketId.toKey();
@@ -79,7 +79,8 @@ public:
     void close() override;
 
 private:
-    static constexpr size_t NUM_PARTITIONS = 256;
+    static constexpr uint8_t NUM_PARTBITS = 8;
+    static constexpr size_t  NUM_PARTITIONS = (1u << NUM_PARTBITS);
     using Partitions = std::array<std::unique_ptr<StoreByBucket>, NUM_PARTITIONS>;
     FileId getDestinationId(const LockGuard& guard) const;
     FileId                                 _sourceFileId;
