@@ -8,6 +8,8 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
+#include <format>
+
 #include <vespa/log/log.h>
 LOG_SETUP("store_by_bucket_test");
 
@@ -107,9 +109,11 @@ TEST(StoreByBucketTest, require_that_StoreByBucket_gives_bucket_by_bucket_and_or
     sbb.drain(vbo, all);
 }
 
-constexpr uint32_t NUM_PARTS = 3;
+constexpr uint8_t  NUM_PARTBITS = 2u;
+constexpr uint32_t NUM_PARTS = (1u << NUM_PARTBITS);
 
 void verifyIter(BucketIndexStore& store, uint32_t partId, uint32_t expected_count) {
+    SCOPED_TRACE(std::format("Part {}", partId));
     auto     iter = store.createIterator(partId);
     uint32_t count(0);
     while (iter->has_next()) {
@@ -122,18 +126,19 @@ void verifyIter(BucketIndexStore& store, uint32_t partId, uint32_t expected_coun
 
 TEST(StoreByBucketTest, test_that_iterators_cover_the_whole_corpus_and_maps_to_correct_partid) {
 
-    BucketIndexStore bucketIndexStore(32, NUM_PARTS);
+    BucketIndexStore bucketIndexStore(64, NUM_PARTBITS, NUM_PARTS);
     for (size_t i(1); i <= 500u; i++) {
         bucketIndexStore.store(StoreByBucket::Index(createBucketId(i), 1, 2, i));
     }
     bucketIndexStore.prepareForIterate();
     EXPECT_EQ(500u, bucketIndexStore.getLidCount());
     EXPECT_EQ(32u, bucketIndexStore.getBucketCount());
-    constexpr uint32_t COUNT_0 = 175, COUNT_1 = 155, COUNT_2 = 170;
+    constexpr uint32_t COUNT_0 = 125, COUNT_1 = 125, COUNT_2 = 125, COUNT_3 = 125;
     verifyIter(bucketIndexStore, 0, COUNT_0);
     verifyIter(bucketIndexStore, 1, COUNT_1);
     verifyIter(bucketIndexStore, 2, COUNT_2);
-    EXPECT_EQ(500u, COUNT_0 + COUNT_1 + COUNT_2);
+    verifyIter(bucketIndexStore, 3, COUNT_3);
+    EXPECT_EQ(500u, COUNT_0 + COUNT_1 + COUNT_2 + COUNT_3);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
