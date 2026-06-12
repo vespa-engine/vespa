@@ -87,6 +87,7 @@ private:
     FileId                                 _destinationFileId;
     LogDataStore&                          _ds;
     const IBucketizer&                     _bucketizer;
+    StoreByBucket::CompressChunksTracker   _compress_chunks_tracker;
     vespalib::MemoryDataStore              _backingMemory;
     BucketIndexStore                       _bucketIndexStore;
     Partitions                             _tmpStore;
