@@ -98,7 +98,6 @@ void StoreByBucket::post_compress_chunk(Chunk::UP chunk) {
     auto task = makeLambdaTask(
         [this, chunk = std::move(chunk), chunk_size]() mutable { closeChunk(std::move(chunk), chunk_size); });
     _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
-    std::unique_lock guard(_compress_chunks_tracker._lock);
 }
 
 void StoreByBucket::incChunksPosted(size_t chunk_size) {
