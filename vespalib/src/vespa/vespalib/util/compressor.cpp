@@ -158,21 +158,19 @@ std::span<const std::byte> decompress(CompressionConfig::Type type, std::span<co
     case CompressionConfig::LZ4: {
         LZ4Compressor lz4;
         return decompress(lz4, src, dst);
-    } break;
+    }
     case CompressionConfig::ZSTD: {
         ZStdCompressor zstd;
         return decompress(zstd, src, dst);
-    } break;
+    }
     case CompressionConfig::NONE:
     case CompressionConfig::NONE_MULTI:
     case CompressionConfig::UNCOMPRESSABLE:
         assert(src.size() <= dst.size());
         memcpy(dst.data(), src.data(), src.size());
         return {dst.data(), src.size()};
-        break;
     default:
         throw std::runtime_error(make_string("Unable to handle decompression of type '%d'", type));
-        break;
     }
 }
 
