@@ -33,13 +33,14 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.15.0
+%global _vespa_build_depencencies_version 1.16.0
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 6.34.1
 %global _vespa_openblas_version 0.3.27
 %global _vespa_mimalloc_version 3.3.2
 %global _vespa_highway_version 1.4.0
-%global _vespa_llama_version 4.7.9
+%global _vespa_onnxruntime_version 1.26.0
+%global _vespa_jllama_version 4.7.10
 %global _vespa_icu_version 78.3.0
 %global _vespa_re2_version 20251105
 %global _vespa_xxhash_version 0.8.1
@@ -250,8 +251,8 @@ Requires: openssl-libs
 Requires: llvm-libs
 Requires: vespa-protobuf = %{_vespa_protobuf_version}
 %endif
-Requires: vespa-onnxruntime = 1.23.2
-Requires: vespa-jllama = %{_vespa_llama_version}
+Requires: vespa-onnxruntime = %{_vespa_onnxruntime_version}
+Requires: vespa-jllama = %{_vespa_jllama_version}
 Requires: vespa-openblas >= %{_vespa_openblas_version}
 Requires: vespa-mimalloc = %{_vespa_mimalloc_version}
 Requires: vespa-highway = %{_vespa_highway_version}
