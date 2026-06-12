@@ -40,6 +40,7 @@ StoreByBucket::CompressChunksTracker::~CompressChunksTracker() {
 }
 
 bool StoreByBucket::CompressChunksTracker::is_full(size_t chunk_size) noexcept {
+    // Allow chunk of any size when tracker is empty to ensure progress.
     return (_inflight_chunks > 0 &&
             (_inflight_chunks >= _max_inflight_chunks || _inflight_memory + chunk_size > _max_inflight_memory));
 }
