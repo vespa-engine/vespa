@@ -49,9 +49,16 @@ public class DockerImage {
         return tag;
     }
 
-    /** Returns the tag as a {@link Version}, {@link Version#emptyVersion} if tag is not set */
+    /**
+     * Returns the tag as a {@link Version}, {@link Version#emptyVersion} if tag is not set.
+     * Any tag suffix, such as the OS suffix in "8.703.17-alma9", is ignored.
+     */
     public Version tagAsVersion() {
-        return tag.map(Version::new).orElse(Version.emptyVersion);
+        return tag.map(t -> {
+                       int suffixStart = t.indexOf('-');
+                       return new Version(suffixStart < 0 ? t : t.substring(0, suffixStart));
+                   })
+                  .orElse(Version.emptyVersion);
     }
 
     /** Returns a copy of this tagged with the given version */
