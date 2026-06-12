@@ -56,9 +56,13 @@ public:
         std::mutex              _lock;
         std::condition_variable _cond;
         size_t                  _inflight_memory; // Memory in chunks being compressed in executor tasks
+        uint32_t                _inflight_chunks;
+        size_t                  _max_inflight_memory;
+        uint32_t                _max_inflight_chunks;
 
         CompressChunksTracker();
         ~CompressChunksTracker();
+        [[nodiscard]] bool is_full(size_t chunk_size) noexcept;
     };
     StoreByBucket(StoreIndex& storeIndex, CompressChunksTracker& compress_chunks_tracker,
                   MemoryDataStore& backingMemory, Executor& executor, CompressionConfig compression) noexcept;
