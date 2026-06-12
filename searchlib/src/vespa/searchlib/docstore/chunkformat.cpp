@@ -107,7 +107,6 @@ void ChunkFormat::verifyCrc(const vespalib::nbostream& is, uint32_t expectedCrc)
 }
 
 void ChunkFormat::deserializeBody(vespalib::nbostream& is, MemoryDataStore* memory_data_store) {
-    (void)memory_data_store;
     if (includeSerializedSize()) {
         uint32_t serializedSize(0);
         is >> serializedSize;
