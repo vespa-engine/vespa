@@ -867,3 +867,15 @@
    fun:_ZN16PageDict4TestApp9testWordsEv
    ...
 }
+{
+   for new openssl on EL8/arm64 (optimized strlcpy)
+   Memcheck:Cond
+   fun:OPENSSL_strlcpy
+   ...
+}
+{
+   for new openssl on EL8/arm64 (optimized strlat)
+   Memcheck:Cond
+   fun:OPENSSL_strlcat
+   ...
+}
