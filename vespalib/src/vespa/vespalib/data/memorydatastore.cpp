@@ -19,11 +19,13 @@ MemoryDataStore::~MemoryDataStore() {
 
 std::span<std::byte> MemoryDataStore::alloc(size_t size) {
     std::unique_lock guard(_lock);
-    const Alloc&     b = _buffers.back();
-    if (size + _writePos > b.size()) {
-        size_t newSize(std::max(size, _buffers.back().size() * 2));
-        _buffers.emplace_back(b.create(newSize));
-        _writePos = 0;
+    {
+        const auto& b = _buffers.back();
+        if (size + _writePos > b.size()) {
+            size_t newSize(std::max(size, b.size() * 2));
+            _buffers.emplace_back(b.create(newSize));
+            _writePos = 0;
+        }
     }
     Alloc&               buf = _buffers.back();
     std::span<std::byte> ref(static_cast<std::byte*>(buf.get()) + _writePos, size);
