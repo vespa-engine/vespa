@@ -771,7 +771,6 @@ std::string group_name(const std::string& name, const Config& cfg) {
     Record scratch;
     describe(cfg, scratch);
     std::string result = name + "[";
-    bool        first = true;
     int         i = 0;
     for (const auto& [field, value] : scratch.data()) {
         if (i++) {
