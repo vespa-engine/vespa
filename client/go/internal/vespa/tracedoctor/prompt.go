@@ -1,3 +1,5 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package tracedoctor
 
 const introPromptStr = `
@@ -156,6 +158,16 @@ const slowToMedianPromptStr = `<AI>The report for the slowest node is complete.
 The following section reports the median node for comparison.
 Some variance between nodes is expected.</AI>`
 
+const costAnalysisPromptStr = `<AI>The following table compares estimated cost per query-plan node with measured time spent in that node.
+Columns:
+cost %: Percentage of total query-plan cost assigned to this subtree.
+time %: Percentage of total query time spent in this subtree.
+        This includes profiling samples from multiple match threads and query setup.
+        Some samples are filtered out because they are not covered by the cost model.
+ms/cost: Milliseconds per cost unit for this subtree.
+diff: Visual clue for spotting where the query took more (+) or less (-) time than expected.
+More symbols indicate a larger deviation. A blank diff means cost and time are aligned.</AI>`
+
 func promptSetup(ctx *Context, out *output) {
 	if ctx.makePrompt {
 		ctx.showMedianNode = true
@@ -273,5 +285,11 @@ func secondPhaseProfilingPrompt(ctx *Context, out *output) {
 func slowToMedianPrompt(ctx *Context, out *output) {
 	if ctx.makePrompt {
 		out.fmt("%s\n", slowToMedianPromptStr)
+	}
+}
+
+func costAnalysisPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", costAnalysisPromptStr)
 	}
 }
