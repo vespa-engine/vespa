@@ -62,7 +62,7 @@ public:
 
         CompressChunksTracker();
         ~CompressChunksTracker();
-        [[nodiscard]] bool is_full(size_t chunk_size) noexcept;
+        [[nodiscard]] bool is_full(size_t chunk_size) const noexcept;
     };
     StoreByBucket(StoreIndex& storeIndex, CompressChunksTracker& compress_chunks_tracker,
                   MemoryDataStore& backingMemory, Executor& executor, CompressionConfig compression) noexcept;
