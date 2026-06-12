@@ -7,6 +7,10 @@
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/exception.h>
 
+namespace vespalib {
+class MemoryDataStore;
+}
+
 namespace search {
 
 class ChunkException : public vespalib::Exception {
@@ -36,6 +40,8 @@ public:
      * @param len Length of serialized data
      */
     static ChunkFormat::UP deserialize(const void* buffer, size_t len);
+    static ChunkFormat::UP deserialize(std::span<const std::byte> buffer,
+                                       vespalib::MemoryDataStore* memory_data_store);
     /**
      * return the maximum size a packet can have. It allows correct size estimation
      * need for direct io alignment.
@@ -57,8 +63,9 @@ protected:
     /**
      * Will deserialize and uncompress the body.
      * @param the potentially compressed stream.
+     * @param pointer to an optional memory data store for shared backing of uncompressed entries.
      */
-    void deserializeBody(vespalib::nbostream& is);
+    void deserializeBody(vespalib::nbostream& is, vespalib::MemoryDataStore* memory_data_store);
     /**
      * Wille compute and check the crc of the incoming stream.
      * Will start 1 byte earlier and stop 4 bytes ahead of end.

@@ -15,6 +15,7 @@ namespace search::docstore {
 using document::BucketId;
 using vespalib::CpuUsage;
 using vespalib::makeLambdaTask;
+using vespalib::alloc::Alloc;
 
 StoreByBucket::StoreByBucket(StoreIndex& storeIndex, MemoryDataStore& backingMemory, Executor& executor,
                              CompressionConfig compression) noexcept
@@ -88,9 +89,9 @@ void StoreByBucket::close() {
 void StoreByBucket::drain(IWrite& drainer, IndexIterator& indexIterator) {
     std::vector<Chunk::UP> chunks;
     chunks.resize(_chunks.size());
+    MemoryDataStore backing(Alloc::alloc(8_Mi));
     for (const auto& it : _chunks) {
-        auto buf(it.second);
-        chunks[it.first] = std::make_unique<Chunk>(it.first, buf.data(), buf.size());
+        chunks[it.first] = std::make_unique<Chunk>(it.first, it.second, backing);
     }
     _chunks.clear();
     while (indexIterator.has_next()) {
@@ -98,6 +99,7 @@ void StoreByBucket::drain(IWrite& drainer, IndexIterator& indexIterator) {
         vespalib::ConstBufferRef data(chunks[idx._localChunkId]->getLid(idx._lid));
         drainer.write(idx._bucketId, idx._chunkId, idx._lid, data);
     }
+    chunks.clear();
 }
 
 } // namespace search::docstore

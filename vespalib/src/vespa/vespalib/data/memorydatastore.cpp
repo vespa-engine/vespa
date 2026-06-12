@@ -17,24 +17,28 @@ MemoryDataStore::~MemoryDataStore() {
     clear();
 }
 
-std::span<const std::byte> MemoryDataStore::push_back(std::span<const std::byte> data) {
+std::span<std::byte> MemoryDataStore::alloc(size_t size) {
     std::unique_lock guard(_lock);
     const Alloc&     b = _buffers.back();
-    if ((data.size() + _writePos) > b.size()) {
-        size_t newSize(std::max(data.size(), _buffers.back().size() * 2));
+    if (size + _writePos > b.size()) {
+        size_t newSize(std::max(size, _buffers.back().size() * 2));
         _buffers.emplace_back(b.create(newSize));
         _writePos = 0;
     }
     Alloc&               buf = _buffers.back();
-    std::span<std::byte> ref(static_cast<std::byte*>(buf.get()) + _writePos, data.size());
-    _writePos += data.size();
-    _transient_memory += data.size();
+    std::span<std::byte> ref(static_cast<std::byte*>(buf.get()) + _writePos, size);
+    _writePos += size;
+    _transient_memory += size;
     _tracker.set_transient_memory(_transient_memory, 2_Mi);
-    guard.unlock();
-    if (data.size() > 0) {
-        memcpy(ref.data(), data.data(), data.size());
-    }
     return ref;
+}
+
+std::span<const std::byte> MemoryDataStore::push_back(std::span<const std::byte> src) {
+    auto dst = alloc(src.size());
+    if (src.size() > 0) {
+        memcpy(dst.data(), src.data(), src.size());
+    }
+    return dst;
 }
 
 void MemoryDataStore::clear() noexcept {

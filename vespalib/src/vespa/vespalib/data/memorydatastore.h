@@ -25,6 +25,8 @@ public:
     ~MemoryDataStore();
     MemoryDataStore& operator=(const MemoryDataStore&) = delete;
     MemoryDataStore& operator=(MemoryDataStore&&) noexcept = delete;
+
+    [[nodiscard]] std::span<std::byte> alloc(size_t size);
     /**
      * Will allocate space and copy the data in. The returned pointer will be valid
      * for the lifetime of this object.

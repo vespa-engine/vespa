@@ -9,7 +9,7 @@ namespace search {
 class ChunkFormatV1 : public ChunkFormat {
 public:
     enum { VERSION = 0 };
-    ChunkFormatV1(vespalib::nbostream& is, uint32_t expectedCrc);
+    ChunkFormatV1(vespalib::nbostream& is, uint32_t expectedCrc, vespalib::MemoryDataStore* memory_data_store);
     ChunkFormatV1(size_t maxSize);
 
 private:
@@ -23,7 +23,7 @@ private:
 class ChunkFormatV2 : public ChunkFormat {
 public:
     enum { VERSION = 1, MAGIC = 0x5ba32de7 };
-    ChunkFormatV2(vespalib::nbostream& is, uint32_t expectedCrc);
+    ChunkFormatV2(vespalib::nbostream& is, uint32_t expectedCrc, vespalib::MemoryDataStore* memory_data_store);
     ChunkFormatV2(size_t maxSize);
 
 private:

@@ -72,16 +72,14 @@ Chunk::Chunk(uint32_t id, const Config& config)
 
 Chunk::Chunk(uint32_t id, const void* buffer, size_t len)
     : _id(id), _lastSerial(static_cast<uint64_t>(-1l)), _format(ChunkFormat::deserialize(buffer, len)) {
-    vespalib::nbostream& os = getData();
-    while (os.size() > sizeof(_lastSerial)) {
-        uint32_t sz(0);
-        uint32_t lid(0);
-        ssize_t  oldRp(os.rp());
-        os >> lid >> sz;
-        os.adjustReadPos(sz);
-        _lids.emplace_back(lid, sz, oldRp);
-    }
-    os >> _lastSerial;
+    scan_entries();
+}
+
+Chunk::Chunk(uint32_t id, std::span<const std::byte> buffer, vespalib::MemoryDataStore& memory_data_store)
+    : _id(id),
+      _lastSerial(static_cast<uint64_t>(-1l)),
+      _format(ChunkFormat::deserialize(buffer, &memory_data_store)) {
+    scan_entries();
 }
 
 Chunk::~Chunk() = default;
@@ -115,6 +113,19 @@ const vespalib::nbostream& Chunk::getData() const {
 
 vespalib::nbostream& Chunk::getData() {
     return _format->getBuffer();
+}
+
+void Chunk::scan_entries() {
+    vespalib::nbostream& os = getData();
+    while (os.size() > sizeof(_lastSerial)) {
+        uint32_t sz(0);
+        uint32_t lid(0);
+        ssize_t  oldRp(os.rp());
+        os >> lid >> sz;
+        os.adjustReadPos(sz);
+        _lids.emplace_back(lid, sz, oldRp);
+    }
+    os >> _lastSerial;
 }
 
 Chunk::LidList Chunk::getUniqueLids() const {

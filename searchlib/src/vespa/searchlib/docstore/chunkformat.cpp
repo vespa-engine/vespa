@@ -2,8 +2,11 @@
 
 #include "chunkformats.h"
 
+#include <vespa/vespalib/data/memorydatastore.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+using vespalib::MemoryDataStore;
 
 namespace search {
 
@@ -61,8 +64,12 @@ void ChunkFormat::verifyCompression(uint8_t type) {
 }
 
 ChunkFormat::UP ChunkFormat::deserialize(const void* buffer, size_t len) {
+    return deserialize({static_cast<const std::byte*>(buffer), len}, nullptr);
+}
+
+ChunkFormat::UP ChunkFormat::deserialize(std::span<const std::byte> buffer, MemoryDataStore* memory_data_store) {
     uint8_t             version(0);
-    vespalib::nbostream raw(buffer, len);
+    vespalib::nbostream raw(buffer.data(), buffer.size());
     const uint32_t      minimumRequiredSpace(sizeof(uint8_t) * 2 + sizeof(uint32_t) * 2);
     if (raw.size() < minimumRequiredSpace) {
         throw ChunkException(
@@ -76,9 +83,9 @@ ChunkFormat::UP ChunkFormat::deserialize(const void* buffer, size_t len) {
     raw >> crc32;
     raw.rp(currPos);
     if (version == ChunkFormatV1::VERSION) {
-        return std::make_unique<ChunkFormatV1>(raw, crc32);
+        return std::make_unique<ChunkFormatV1>(raw, crc32, memory_data_store);
     } else if (version == ChunkFormatV2::VERSION) {
-        return std::make_unique<ChunkFormatV2>(raw, crc32);
+        return std::make_unique<ChunkFormatV2>(raw, crc32, memory_data_store);
     } else {
         throw ChunkException(make_string("Unknown version %d", version), VESPA_STRLOC);
     }
@@ -99,7 +106,8 @@ void ChunkFormat::verifyCrc(const vespalib::nbostream& is, uint32_t expectedCrc)
     }
 }
 
-void ChunkFormat::deserializeBody(vespalib::nbostream& is) {
+void ChunkFormat::deserializeBody(vespalib::nbostream& is, MemoryDataStore* memory_data_store) {
+    (void)memory_data_store;
     if (includeSerializedSize()) {
         uint32_t serializedSize(0);
         is >> serializedSize;
@@ -115,6 +123,13 @@ void ChunkFormat::deserializeBody(vespalib::nbostream& is) {
     verifyCompression(type);
     uint32_t uncompressedLen(0);
     is >> uncompressedLen;
+    if (memory_data_store != nullptr) {
+        auto src = std::as_bytes(std::span<const char>{is.peek(), is.size() - sizeof(uint32_t)});
+        auto dst = memory_data_store->alloc(uncompressedLen);
+        auto uncompressed = decompress(CompressionConfig::Type(type), src, dst);
+        _dataBuf = vespalib::nbostream(uncompressed.data(), uncompressed.size());
+        return;
+    }
     // This is a dirty trick to fool some odd sanity checking in DataBuffer::swap
     vespalib::DataBuffer     uncompressed(const_cast<char*>(is.peek()), (size_t)0);
     vespalib::ConstBufferRef data(is.peek(), is.size() - sizeof(uint32_t));

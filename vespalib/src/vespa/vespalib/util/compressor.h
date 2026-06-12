@@ -5,6 +5,8 @@
 #include "buffer.h"
 #include "compressionconfig.h"
 
+#include <span>
+
 namespace vespalib {
 class DataBuffer;
 }
@@ -48,6 +50,9 @@ CompressionConfig::Type compress(CompressionConfig compression, const vespalib::
  */
 void decompress(CompressionConfig::Type compression, size_t uncompressedLen, const vespalib::ConstBufferRef& org,
                 vespalib::DataBuffer& dest, bool allowSwap);
+
+std::span<const std::byte> decompress(CompressionConfig::Type type, std::span<const std::byte> src,
+                                      std::span<std::byte> dst);
 
 size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t uncompressedSize);
 
