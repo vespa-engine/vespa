@@ -732,7 +732,7 @@ void describe(const EnnConfig& cfg, Record& r) {
 }
 
 /**
- * A config adapts the "old approach" into this drvier system.
+ * A config adapts the "old approach" into this driver system.
  */
 struct OpConfig {
     FieldConfig   field_cfg;
