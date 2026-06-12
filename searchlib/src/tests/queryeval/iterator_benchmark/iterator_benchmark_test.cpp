@@ -629,7 +629,7 @@ void dump_pond(const DataPond& pond) {
 DataPond global_pond;
 
 //-----------------------------------------------------------------------------
-// Drive an abitrary BenchmarkCase across a lsit of InFlow values.
+// Drive an arbitrary BenchmarkCase across a list of InFlow values.
 //-----------------------------------------------------------------------------
 
 struct BenchmarkOptions {
