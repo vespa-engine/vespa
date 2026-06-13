@@ -82,7 +82,7 @@ public class EmbeddedOnnxEvaluatorTest {
     }
 
     @Test
-    public void testModelWithExternalData() {
+    public void testModelWithExternalData() throws IOException {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
         // Resolve the model and its external data file the same way the embedders do. onnxruntime (>= 1.24)
         // validates that external data paths don't escape the model directory, so the resolver must place the
@@ -99,15 +99,25 @@ public class EmbeddedOnnxEvaluatorTest {
         when(modelPathHelper.getModelPathResolvingIfNecessary(modelRef)).thenReturn(model);
         when(modelPathHelper.getModelPathResolvingIfNecessary(dataRef)).thenReturn(dataFile);
         var resolvedPath = new OnnxExternalDataResolver(modelPathHelper).resolveOnnxModel(modelRef);
+        var tempDir = resolvedPath.getParent();
 
         var runtime = EmbeddedOnnxRuntime.createTestInstance();
-        // Creating the session triggers onnxruntime's external data path validation.
-        OnnxEvaluator evaluator = runtime.evaluatorOf(resolvedPath.toString());
-        Map<String, Tensor> inputs = new HashMap<>();
-        inputs.put("input1", Tensor.from("tensor<float>(d0[1]):[1]"));
-        inputs.put("input2", Tensor.from("tensor<float>(d0[1]):[2]"));
-        // output = input1 + input2 + constant_value (5.0, stored as external data)
-        assertEquals(Tensor.from("tensor<float>(d0[1]):[8]"), evaluator.evaluate(inputs, "output"));
+        try {
+            // Creating the session triggers onnxruntime's external data path validation.
+            try (OnnxEvaluator evaluator = runtime.evaluatorOf(resolvedPath.toString())) {
+                Map<String, Tensor> inputs = new HashMap<>();
+                inputs.put("input1", Tensor.from("tensor<float>(d0[1]):[1]"));
+                inputs.put("input2", Tensor.from("tensor<float>(d0[1]):[2]"));
+                // output = input1 + input2 + constant_value (5.0, stored as external data)
+                assertEquals(Tensor.from("tensor<float>(d0[1]):[8]"), evaluator.evaluate(inputs, "output"));
+            }
+        } finally {
+            try (var paths = Files.walk(tempDir)) {
+                paths.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+                    try { Files.deleteIfExists(p); } catch (IOException e) { throw new java.io.UncheckedIOException(e); }
+                });
+            }
+        }
     }
 
     @Test

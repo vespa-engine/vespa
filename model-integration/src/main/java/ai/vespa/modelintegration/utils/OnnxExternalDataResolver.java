@@ -20,8 +20,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Resolves external data files for an ONNX models.
- * Files are retrieved using {@link ModelPathHelper} and hard-linked into a temporary directory together with the ONNX model file.
+ * Resolves external data files for ONNX models.
+ * Files are retrieved using {@link ModelPathHelper} and hard-linked (or copied, when hard-linking is not possible)
+ * into a temporary directory together with the ONNX model file.
  *
  * @author bjorncs
  */
@@ -45,7 +46,9 @@ public class OnnxExternalDataResolver {
 
     /**
      * Resolves the ONNX model file and its external data files.
-     * @return Path to the ONNX model file, which may be a hard link to the actual file.
+     * @return Path to the ONNX model file. When the model has external data files, this is a path inside a temporary
+     *         directory where the model and its data files are hard-linked (or copied); otherwise it is the resolved
+     *         local path of the model itself.
      */
     public Path resolveOnnxModel(ModelReference ref) {
         var localPath = modelPathHelper.getModelPathResolvingIfNecessary(ref);
@@ -107,10 +110,10 @@ public class OnnxExternalDataResolver {
      * @return path to the newly created directory containing hard links to model and files.
      */
     static Path createDirectoryWithExternalDataFiles(Path model, Map<Path, Path> externalDataFiles) throws IOException {
-        var tempDir = Files.createTempDirectory("onnx-model-");
+        if (!Files.isRegularFile(model))
+            throw new IllegalArgumentException("Model file does not exist or is not a regular file: " + model);
 
-        if (!Files.exists(model, LinkOption.NOFOLLOW_LINKS) && !Files.isRegularFile(model))
-            throw new IllegalArgumentException("Model file does not exist: " + model);
+        var tempDir = Files.createTempDirectory("onnx-model-");
 
         var targetModelPath = tempDir.resolve(model.getFileName());
         log.fine(() -> Text.format("Linking '%s' into '%s'", model, targetModelPath));

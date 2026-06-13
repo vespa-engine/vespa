@@ -7,9 +7,11 @@ import com.yahoo.config.UrlReference;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 
@@ -47,21 +49,24 @@ class OnnxExternalDataResolverTest {
 
         var resolver = new OnnxExternalDataResolver(modelPathHelper);
         var modelPath = resolver.resolveOnnxModel(modelRef);
+        var tempDir = modelPath.getParent();
+        try {
+            // Files are hard-linked (or copied, on a different filesystem) rather than symlinked, so that
+            // onnxruntime's external data path validation sees them inside the model directory.
+            assertTrue(Files.exists(modelPath));
+            assertFalse(Files.isSymbolicLink(modelPath));
+            assertTrue(Files.isRegularFile(modelPath));
+            assertEquals("add_with_external_data.onnx", modelPath.getFileName().toString());
 
-        // Files are hard-linked (or copied, on a different filesystem) rather than symlinked, so that
-        // onnxruntime's external data path validation sees them inside the model directory.
-        assertTrue(Files.exists(modelPath));
-        assertFalse(Files.isSymbolicLink(modelPath));
-        assertTrue(Files.isRegularFile(modelPath));
-        assertEquals("add_with_external_data.onnx", modelPath.getFileName().toString());
+            var linkedDataFile = tempDir.resolve("external_data.bin");
+            assertTrue(Files.exists(linkedDataFile));
+            assertFalse(Files.isSymbolicLink(linkedDataFile));
+            assertTrue(Files.isRegularFile(linkedDataFile));
 
-        var parentDir = modelPath.getParent();
-        var linkedDataFile = parentDir.resolve("external_data.bin");
-        assertTrue(Files.exists(linkedDataFile));
-        assertFalse(Files.isSymbolicLink(linkedDataFile));
-        assertTrue(Files.isRegularFile(linkedDataFile));
-
-        verify(modelPathHelper, times(1)).getModelPathResolvingIfNecessary(externalDataFileRef);
+            verify(modelPathHelper, times(1)).getModelPathResolvingIfNecessary(externalDataFileRef);
+        } finally {
+            deleteRecursively(tempDir);
+        }
     }
 
     @Test
@@ -71,15 +76,31 @@ class OnnxExternalDataResolverTest {
         var externalDataFiles = Map.of(Path.of("external_files/external_data.bin"), externalDataFile);
 
         var tempDir = OnnxExternalDataResolver.createDirectoryWithExternalDataFiles(model, externalDataFiles);
+        try {
+            var linkedModel = tempDir.resolve("add_with_external_data.onnx");
+            assertTrue(Files.exists(linkedModel));
+            assertFalse(Files.isSymbolicLink(linkedModel));
+            assertTrue(Files.isRegularFile(linkedModel));
 
-        var linkedModel = tempDir.resolve("add_with_external_data.onnx");
-        assertTrue(Files.exists(linkedModel));
-        assertFalse(Files.isSymbolicLink(linkedModel));
-        assertTrue(Files.isRegularFile(linkedModel));
+            var linkedDataFile = tempDir.resolve("external_files/external_data.bin");
+            assertTrue(Files.exists(linkedDataFile));
+            assertFalse(Files.isSymbolicLink(linkedDataFile));
+            assertTrue(Files.isRegularFile(linkedDataFile));
+        } finally {
+            deleteRecursively(tempDir);
+        }
+    }
 
-        var linkedDataFile = tempDir.resolve("external_files/external_data.bin");
-        assertTrue(Files.exists(linkedDataFile));
-        assertFalse(Files.isSymbolicLink(linkedDataFile));
-        assertTrue(Files.isRegularFile(linkedDataFile));
+    private static void deleteRecursively(Path dir) throws IOException {
+        if (dir == null || !Files.exists(dir)) return;
+        try (var paths = Files.walk(dir)) {
+            paths.sorted(Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    Files.deleteIfExists(p);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        }
     }
 }
