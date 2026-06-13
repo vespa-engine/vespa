@@ -19,6 +19,18 @@ int main(int argc, char** argv) {
     if (username == nullptr) {
         username = "vespa";
     }
+
+    uid_t oldu = getuid();
+
+    // Non-root cannot switch user/group, so just exec directly.
+    // This also supports OpenShift arbitrary UIDs (restricted-v2 SCC)
+    // where the container user may not exist in /etc/passwd.
+    if (oldu != 0) {
+        execvp(argv[1], &argv[1]);
+        perror("FATAL error: execvp failed");
+        return 1;
+    }
+
     struct passwd* p = getpwnam(username);
     if (p == nullptr) {
         fprintf(stderr, "FATAL error: user '%s' missing in passwd file\n", username);
@@ -45,7 +57,6 @@ int main(int argc, char** argv) {
 #endif
 
     gid_t oldg = getgid();
-    uid_t oldu = getuid();
 
     if (g != oldg && setgid(g) != 0) {
         perror("FATAL error: could not change group id");

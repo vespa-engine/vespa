@@ -5,7 +5,7 @@ After=network.target
 
 [Service]
 Type=forking
-User=vespa
+User=@VESPA_USER@
 PIDFile=@CMAKE_INSTALL_PREFIX@/var/run/sentinel.pid
 ExecStart=@CMAKE_INSTALL_PREFIX@/bin/vespa-start-services
 ExecStop=@CMAKE_INSTALL_PREFIX@/bin/vespa-stop-services
