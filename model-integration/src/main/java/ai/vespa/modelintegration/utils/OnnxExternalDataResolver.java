@@ -12,6 +12,7 @@ import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -114,31 +115,50 @@ public class OnnxExternalDataResolver {
             throw new IllegalArgumentException("Model file does not exist or is not a regular file: " + model);
 
         var tempDir = Files.createTempDirectory("onnx-model-");
+        try {
+            var targetModelPath = tempDir.resolve(model.getFileName());
+            log.fine(() -> Text.format("Linking '%s' into '%s'", model, targetModelPath));
+            linkOrCopy(model, targetModelPath);
 
-        var targetModelPath = tempDir.resolve(model.getFileName());
-        log.fine(() -> Text.format("Linking '%s' into '%s'", model, targetModelPath));
-        linkOrCopy(model, targetModelPath);
+            // Link all external data files next to the model
+            for (var entry : externalDataFiles.entrySet()) {
+                var relativeLocation = entry.getKey();
+                var dataFile = entry.getValue().toAbsolutePath();
 
-        // Link all external data files next to the model
-        for (var entry : externalDataFiles.entrySet()) {
-            var relativeLocation = entry.getKey();
-            var dataFile = entry.getValue().toAbsolutePath();
+                if (!Files.exists(dataFile, LinkOption.NOFOLLOW_LINKS) || !Files.isRegularFile(dataFile))
+                    throw new IllegalArgumentException("External data file does not exist: " + dataFile);
 
-            if (!Files.exists(dataFile, LinkOption.NOFOLLOW_LINKS) || !Files.isRegularFile(dataFile))
-                throw new IllegalArgumentException("External data file does not exist: " + dataFile);
+                // Handle data files in subdirectories
+                var targetPath = tempDir.resolve(relativeLocation);
+                var parentDir = targetPath.getParent();
+                if (parentDir != null && !Files.exists(parentDir, LinkOption.NOFOLLOW_LINKS)) {
+                    log.fine(() -> Text.format("Creating parent directory for external data file: '%s'", parentDir));
+                    Files.createDirectories(parentDir);
+                }
 
-            // Handle data files in subdirectories
-            var targetPath = tempDir.resolve(relativeLocation);
-            var parentDir = targetPath.getParent();
-            if (parentDir != null && !Files.exists(parentDir, LinkOption.NOFOLLOW_LINKS)) {
-                log.fine(() -> Text.format("Creating parent directory for external data file: '%s'", parentDir));
-                Files.createDirectories(parentDir);
+                log.fine(() -> Text.format("Linking external data file '%s' into '%s'", dataFile, targetPath));
+                linkOrCopy(dataFile, targetPath);
             }
-
-            log.fine(() -> Text.format("Linking external data file '%s' into '%s'", dataFile, targetPath));
-            linkOrCopy(dataFile, targetPath);
+            return tempDir;
+        } catch (RuntimeException | IOException e) {
+            // Avoid leaking a partially populated temp directory (which may contain large copied files) on failure.
+            deleteRecursivelyQuietly(tempDir);
+            throw e;
         }
-        return tempDir;
+    }
+
+    private static void deleteRecursivelyQuietly(Path dir) {
+        try (var paths = Files.walk(dir)) {
+            paths.sorted(Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    Files.deleteIfExists(p);
+                } catch (IOException e) {
+                    log.log(Level.FINE, e, () -> Text.format("Failed to delete '%s' during cleanup", p));
+                }
+            });
+        } catch (IOException e) {
+            log.log(Level.FINE, e, () -> Text.format("Failed to clean up temporary directory '%s'", dir));
+        }
     }
 
     /**

@@ -50,6 +50,8 @@ class OnnxExternalDataResolverTest {
         var resolver = new OnnxExternalDataResolver(modelPathHelper);
         var modelPath = resolver.resolveOnnxModel(modelRef);
         var tempDir = modelPath.getParent();
+        // Guard against accidentally deleting the source tree if resolveOnnxModel ever falls back to the local path.
+        assertTrue(tempDir.getFileName().toString().startsWith("onnx-model-"));
         try {
             // Files are hard-linked (or copied, on a different filesystem) rather than symlinked, so that
             // onnxruntime's external data path validation sees them inside the model directory.
@@ -92,7 +94,8 @@ class OnnxExternalDataResolverTest {
     }
 
     private static void deleteRecursively(Path dir) throws IOException {
-        if (dir == null || !Files.exists(dir)) return;
+        // Only ever delete a generated temp directory, never the checked-in source tree.
+        if (dir == null || !dir.getFileName().toString().startsWith("onnx-model-") || !Files.exists(dir)) return;
         try (var paths = Files.walk(dir)) {
             paths.sorted(Comparator.reverseOrder()).forEach(p -> {
                 try {

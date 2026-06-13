@@ -100,6 +100,8 @@ public class EmbeddedOnnxEvaluatorTest {
         when(modelPathHelper.getModelPathResolvingIfNecessary(dataRef)).thenReturn(dataFile);
         var resolvedPath = new OnnxExternalDataResolver(modelPathHelper).resolveOnnxModel(modelRef);
         var tempDir = resolvedPath.getParent();
+        // Guard against accidentally deleting the source tree if resolveOnnxModel ever falls back to the local path.
+        assertTrue(tempDir.getFileName().toString().startsWith("onnx-model-"));
 
         var runtime = EmbeddedOnnxRuntime.createTestInstance();
         try {
