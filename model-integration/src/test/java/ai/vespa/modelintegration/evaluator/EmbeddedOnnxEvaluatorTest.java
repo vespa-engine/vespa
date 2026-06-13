@@ -2,6 +2,10 @@
 
 package ai.vespa.modelintegration.evaluator;
 
+import ai.vespa.modelintegration.utils.ModelPathHelper;
+import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
+import com.yahoo.config.ModelReference;
+import com.yahoo.config.UrlReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
@@ -13,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,6 +27,8 @@ import java.util.logging.LogRecord;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author lesters
@@ -72,6 +79,35 @@ public class EmbeddedOnnxEvaluatorTest {
         Map<String, Tensor> inputs = new HashMap<>();
         inputs.put("input", Tensor.from("tensor<float>(d0[2],d1[3]):[[0.1, 0.2, 0.3],[0.4,0.5,0.6]]"));
         assertEquals(evaluator.evaluate(inputs, "output"), Tensor.from("tensor<float>(d0[2],d1[1]):[0.6393113,0.67574286]"));
+    }
+
+    @Test
+    public void testModelWithExternalData() {
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
+        // Resolve the model and its external data file the same way the embedders do. onnxruntime (>= 1.24)
+        // validates that external data paths don't escape the model directory, so the resolver must place the
+        // model and its data file together as hard links (or copies) rather than symlinks into the download dir.
+        var model = Paths.get("src/test/models/onnx/external_data/add_with_external_data.onnx");
+        var dataFile = Paths.get("src/test/models/onnx/external_data/external_data.bin");
+        var modelRef = ModelReference.unresolved(
+                Optional.empty(), Optional.of(new UrlReference("https://my.website/add_with_external_data.onnx")),
+                Optional.empty(), Optional.empty());
+        var dataRef = ModelReference.unresolved(
+                Optional.empty(), Optional.of(new UrlReference("https://my.website/external_data.bin")),
+                Optional.empty(), Optional.empty());
+        var modelPathHelper = mock(ModelPathHelper.class);
+        when(modelPathHelper.getModelPathResolvingIfNecessary(modelRef)).thenReturn(model);
+        when(modelPathHelper.getModelPathResolvingIfNecessary(dataRef)).thenReturn(dataFile);
+        var resolvedPath = new OnnxExternalDataResolver(modelPathHelper).resolveOnnxModel(modelRef);
+
+        var runtime = EmbeddedOnnxRuntime.createTestInstance();
+        // Creating the session triggers onnxruntime's external data path validation.
+        OnnxEvaluator evaluator = runtime.evaluatorOf(resolvedPath.toString());
+        Map<String, Tensor> inputs = new HashMap<>();
+        inputs.put("input1", Tensor.from("tensor<float>(d0[1]):[1]"));
+        inputs.put("input2", Tensor.from("tensor<float>(d0[1]):[2]"));
+        // output = input1 + input2 + constant_value (5.0, stored as external data)
+        assertEquals(Tensor.from("tensor<float>(d0[1]):[8]"), evaluator.evaluate(inputs, "output"));
     }
 
     @Test

@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -25,7 +26,7 @@ import static org.mockito.Mockito.when;
  */
 class OnnxExternalDataResolverTest {
     @Test
-    void downloads_external_data_files_for_onnx_model_referred_by_url() {
+    void downloads_external_data_files_for_onnx_model_referred_by_url() throws IOException {
         var model = Paths.get("src/test/models/onnx/external_data/add_with_external_data.onnx");
         var externalDataFile = Paths.get("src/test/models/onnx/external_data/external_data.bin");
         var modelRef = ModelReference.unresolved(
@@ -47,13 +48,18 @@ class OnnxExternalDataResolverTest {
         var resolver = new OnnxExternalDataResolver(modelPathHelper);
         var modelPath = resolver.resolveOnnxModel(modelRef);
 
+        // Files are hard-linked (or copied, on a different filesystem) rather than symlinked, so that
+        // onnxruntime's external data path validation sees them inside the model directory.
         assertTrue(Files.exists(modelPath));
-        assertTrue(Files.isSymbolicLink(modelPath));
+        assertFalse(Files.isSymbolicLink(modelPath));
+        assertTrue(Files.isRegularFile(modelPath));
         assertEquals("add_with_external_data.onnx", modelPath.getFileName().toString());
 
         var parentDir = modelPath.getParent();
-        assertTrue(Files.exists(parentDir.resolve("external_data.bin")));
-        assertTrue(Files.isSymbolicLink(parentDir.resolve("external_data.bin")));
+        var linkedDataFile = parentDir.resolve("external_data.bin");
+        assertTrue(Files.exists(linkedDataFile));
+        assertFalse(Files.isSymbolicLink(linkedDataFile));
+        assertTrue(Files.isRegularFile(linkedDataFile));
 
         verify(modelPathHelper, times(1)).getModelPathResolvingIfNecessary(externalDataFileRef);
     }
@@ -66,9 +72,14 @@ class OnnxExternalDataResolverTest {
 
         var tempDir = OnnxExternalDataResolver.createDirectoryWithExternalDataFiles(model, externalDataFiles);
 
-        assertTrue(Files.exists(tempDir.resolve("add_with_external_data.onnx")));
-        assertTrue(Files.isSymbolicLink(tempDir.resolve("add_with_external_data.onnx")));
-        assertTrue(Files.exists(tempDir.resolve("external_files/external_data.bin")));
-        assertTrue(Files.isSymbolicLink(tempDir.resolve("external_files/external_data.bin")));
+        var linkedModel = tempDir.resolve("add_with_external_data.onnx");
+        assertTrue(Files.exists(linkedModel));
+        assertFalse(Files.isSymbolicLink(linkedModel));
+        assertTrue(Files.isRegularFile(linkedModel));
+
+        var linkedDataFile = tempDir.resolve("external_files/external_data.bin");
+        assertTrue(Files.exists(linkedDataFile));
+        assertFalse(Files.isSymbolicLink(linkedDataFile));
+        assertTrue(Files.isRegularFile(linkedDataFile));
     }
 }

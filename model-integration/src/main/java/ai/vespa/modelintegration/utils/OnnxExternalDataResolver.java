@@ -8,6 +8,7 @@ import com.yahoo.config.UrlReference;
 import com.yahoo.text.Text;
 
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
 
 /**
  * Resolves external data files for an ONNX models.
- * Files are retrieved using {@link ModelPathHelper} and symlinked into a temporary directory together with the ONNX model file.
+ * Files are retrieved using {@link ModelPathHelper} and hard-linked into a temporary directory together with the ONNX model file.
  *
  * @author bjorncs
  */
@@ -44,7 +45,7 @@ public class OnnxExternalDataResolver {
 
     /**
      * Resolves the ONNX model file and its external data files.
-     * @return Path to the ONNX model file, which may be a symbolic link to the actual file.
+     * @return Path to the ONNX model file, which may be a hard link to the actual file.
      */
     public Path resolveOnnxModel(ModelReference ref) {
         var localPath = modelPathHelper.getModelPathResolvingIfNecessary(ref);
@@ -99,11 +100,11 @@ public class OnnxExternalDataResolver {
     }
 
     /**
-     * Creates a temporary directory where the ONNX model file and all external data files are symlinked in.
+     * Creates a temporary directory where the ONNX model file and all external data files are hard-linked in.
      *
      * @param model The ONNX model file.
      * @param externalDataFiles Mapping of relative location from model file to the path of the actual for external files.
-     * @return path to the newly created directory containing symlinks to model and files.
+     * @return path to the newly created directory containing hard links to model and files.
      */
     static Path createDirectoryWithExternalDataFiles(Path model, Map<Path, Path> externalDataFiles) throws IOException {
         var tempDir = Files.createTempDirectory("onnx-model-");
@@ -112,10 +113,10 @@ public class OnnxExternalDataResolver {
             throw new IllegalArgumentException("Model file does not exist: " + model);
 
         var targetModelPath = tempDir.resolve(model.getFileName());
-        log.fine(() -> Text.format("Creating symlink for '%s' to '%s'", model, targetModelPath));
-        Files.createSymbolicLink(targetModelPath, model.toAbsolutePath());
+        log.fine(() -> Text.format("Linking '%s' into '%s'", model, targetModelPath));
+        linkOrCopy(model, targetModelPath);
 
-        // Create symlinks for all external data files
+        // Link all external data files next to the model
         for (var entry : externalDataFiles.entrySet()) {
             var relativeLocation = entry.getKey();
             var dataFile = entry.getValue().toAbsolutePath();
@@ -127,14 +128,35 @@ public class OnnxExternalDataResolver {
             var targetPath = tempDir.resolve(relativeLocation);
             var parentDir = targetPath.getParent();
             if (parentDir != null && !Files.exists(parentDir, LinkOption.NOFOLLOW_LINKS)) {
-                log.fine(() -> Text.format("Creating parent directory for symlink: '%s'", parentDir));
+                log.fine(() -> Text.format("Creating parent directory for external data file: '%s'", parentDir));
                 Files.createDirectories(parentDir);
             }
 
-            // Create the symlink to the external data file
-            log.fine(() -> Text.format("Creating symlink for external data file '%s' to '%s'", dataFile, targetPath));
-            Files.createSymbolicLink(targetPath, dataFile);
+            log.fine(() -> Text.format("Linking external data file '%s' into '%s'", dataFile, targetPath));
+            linkOrCopy(dataFile, targetPath);
         }
         return tempDir;
+    }
+
+    /**
+     * Hard-links {@code source} to {@code target}, falling back to a plain copy if hard linking is not possible
+     * (e.g. source and target reside on different filesystems).
+     *
+     * <p>Hard links are used rather than symbolic links because onnxruntime (>= 1.24) validates that external data
+     * paths resolve (via {@code weakly_canonical}, which follows symlinks) to a location contained within the model
+     * directory. Symlinking the downloaded files — which live in separate per-URL download directories — makes the
+     * resolved paths escape the model directory and fail validation. Hard links have no symlink to follow, so they
+     * resolve to their own path inside the temporary model directory.
+     */
+    private static void linkOrCopy(Path source, Path target) throws IOException {
+        // Resolve to the real file so we link/copy the underlying inode, not a symlink in the download directory.
+        var src = source.toRealPath();
+        try {
+            Files.createLink(target, src);
+        } catch (UnsupportedOperationException | FileSystemException e) {
+            log.fine(() -> Text.format(
+                    "Hard link from '%s' to '%s' failed (%s); copying instead", src, target, e.getMessage()));
+            Files.copy(src, target);
+        }
     }
 }
