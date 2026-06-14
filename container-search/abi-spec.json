@@ -2165,7 +2165,9 @@
       "public static final enum com.yahoo.search.Query$Type SELECT",
       "public static final enum com.yahoo.search.Query$Type WEAKAND",
       "public static final enum com.yahoo.search.Query$Type TOKENIZE",
-      "public static final enum com.yahoo.search.Query$Type LINGUISTICS"
+      "public static final enum com.yahoo.search.Query$Type LINGUISTICS",
+      "public static final enum com.yahoo.search.Query$Type NEAR",
+      "public static final enum com.yahoo.search.Query$Type ONEAR"
     ]
   },
   "com.yahoo.search.Query" : {
