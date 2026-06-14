@@ -110,7 +110,11 @@ mv "$WORKDIR/docker-image/rpms" rpms
 dep_versions="${SOURCE_DIR}/dependency-versions/pom.xml"
 
 if [ -f "${dep_versions}" ]; then
-	grep plexus "${dep_versions}" > include/allow-versions.txt
+    : no-op
+    # Disabled. We've run into the denial-of-service protection
+    # since mvn will re-download all the plexus versions
+    # we're trying to remove here:
+    # grep plexus "${dep_versions}" > include/allow-versions.txt
 fi
 
 echo "--- Building system-test container"
