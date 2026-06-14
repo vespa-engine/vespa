@@ -118,7 +118,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
 
             @Override
             protected Iterable<ByteBuffer> responseContent() {
-                return Collections.singleton(buildContent(request.getUri(), input));
+                return Collections.singleton(buildContent(request.getUri()));
             }
         };
         return new MyContentChannel(input, () -> { respDisp.dispatch(handler); });
@@ -134,12 +134,14 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         }
     }
 
-    private ByteBuffer buildContent(URI requestUri, List<ByteBuffer> input) {
+    private ByteBuffer buildContent(URI requestUri) {
         try {
             String suffix = resolvePath(requestUri);
             return switch (suffix) {
                 case "" -> ByteBuffer.wrap(apiLinks(requestUri));
-                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config, vespaContainer.applyOnRestart())));
+                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config,
+                                                                                              vespaContainer.applyOnRestart(),
+                                                                                              vespaContainer.configStatus())));
                 case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
                 case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix, requestUri.getQuery()));
                 case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
@@ -186,14 +188,20 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
 
     /**
      * @param applyOnRestart {@link com.yahoo.container.di.config.Subscriber#applyOnRestart()}
+     * @param configStatus status and a failure message if not ok, the error message is from the most recent failed graph construction
      */
-    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, boolean applyOnRestart) {
-        return jsonMapper.createObjectNode()
-                .set(CONFIG_GENERATION_PATH, jsonMapper.createObjectNode()
-                        .put("generation", config.generation())
-                        .put("applyOnRestart", applyOnRestart)
-                        .set("container", jsonMapper.createObjectNode()
-                                .put("generation", config.generation())));
+    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, boolean applyOnRestart, Container.ConfigStatus configStatus) {
+        ObjectNode configNode = jsonMapper.createObjectNode();
+        configNode.put("generation", config.generation());
+        configNode.put("applyOnRestart", applyOnRestart);
+        configNode.set("container", jsonMapper.createObjectNode().put("generation", config.generation()));
+
+        ObjectNode status = configNode.putObject("configStatus");
+        status.put("generation", configStatus.generation());
+        status.put("status", configStatus.status().toString());
+        if (configStatus.isFailed()) status.put("message", configStatus.message());
+
+        return jsonMapper.createObjectNode().set(CONFIG_GENERATION_PATH, configNode);
     }
 
     private static byte[] buildVersionOutput() throws JsonProcessingException {
