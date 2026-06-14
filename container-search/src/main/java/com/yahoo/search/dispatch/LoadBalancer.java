@@ -34,7 +34,7 @@ public class LoadBalancer {
     private final Map<Integer, GroupStatus> scoreboard;
     private final GroupScheduler scheduler;
 
-    public enum Policy { ROUNDROBIN, LATENCY_AMORTIZED_OVER_REQUESTS, LATENCY_AMORTIZED_OVER_TIME, BEST_OF_RANDOM_2}
+    public enum Policy { ROUNDROBIN, ADAPTIVE, BEST_OF_RANDOM_2, LATENCY_AMORTIZED_OVER_TIME}
 
     public LoadBalancer(Collection<Group> groups, Policy policy) {
         this.scoreboard = new HashMap<>();
@@ -47,7 +47,7 @@ public class LoadBalancer {
         this.scheduler = switch (policy) {
             case ROUNDROBIN: yield new RoundRobinScheduler(scoreboard);
             case BEST_OF_RANDOM_2: yield new BestOfRandom2(new Random(), scoreboard);
-            case LATENCY_AMORTIZED_OVER_REQUESTS: yield new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, new Random(), scoreboard);
+            case ADAPTIVE: yield new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, new Random(), scoreboard);
             case LATENCY_AMORTIZED_OVER_TIME: yield new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(), scoreboard);
         };
     }
@@ -210,6 +210,7 @@ public class LoadBalancer {
     }
 
     static class AdaptiveScheduler implements GroupScheduler {
+
         enum Type {TIME, REQUESTS}
         private final Random random;
         private final Map<Integer, GroupStatus> scoreboard;
@@ -220,43 +221,62 @@ public class LoadBalancer {
         private static Duration fromDouble(double seconds) { return Duration.ofNanos((long)(seconds*1_000_000_000));}
 
         static class DecayByRequests implements GroupStatus.Decayer {
+
             private long queries;
             private double averageSearchTime;
+
             DecayByRequests() {
                 this(0, INITIAL_QUERY_TIME);
             }
+
             DecayByRequests(long initialQueries, Duration initialSearchTime) {
                 queries = initialQueries;
                 averageSearchTime = toDouble(initialSearchTime);
             }
+
+            @Override
             public void decay(RequestDuration duration) {
                 double searchTime = Math.max(toDouble(duration.duration()), MIN_QUERY_TIME);
                 double decayRate = Math.min(queries + MIN_LATENCY_DECAY_RATE, DEFAULT_LATENCY_DECAY_RATE);
                 queries++;
                 averageSearchTime = (searchTime + (decayRate - 1) * averageSearchTime) / decayRate;
             }
+
+            @Override
             public double averageCost() { return averageSearchTime; }
+
             Duration averageSearchTime() { return fromDouble(averageSearchTime);}
+
         }
 
         static class DecayByTime implements GroupStatus.Decayer {
+
             private double averageSearchTime;
+
             private RequestDuration prev;
+
             DecayByTime() {
                 this(INITIAL_QUERY_TIME, RequestDuration.of(Duration.ZERO));
             }
+
             DecayByTime(Duration initialSearchTime, RequestDuration start) {
                 averageSearchTime = toDouble(initialSearchTime);
                 prev = start;
             }
+
+            @Override
             public void decay(RequestDuration duration) {
                 double searchTime = Math.max(toDouble(duration.duration()), MIN_QUERY_TIME);
                 double sampleWeight = toDouble(duration.difference(prev));
                 averageSearchTime = (sampleWeight*searchTime + LATENCY_DECAY_TIME * averageSearchTime) / (LATENCY_DECAY_TIME + sampleWeight);
                 prev = duration;
             }
+
+            @Override
             public double averageCost() { return averageSearchTime; }
+
             Duration averageSearchTime() { return fromDouble(averageSearchTime);}
+
         }
 
         public AdaptiveScheduler(Type type, Random random, Map<Integer, GroupStatus> scoreboard) {
