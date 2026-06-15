@@ -18,11 +18,32 @@ using vespalib::CpuUsage;
 using vespalib::makeLambdaTask;
 using vespalib::alloc::Alloc;
 
-StoreByBucket::CompressChunksTracker::CompressChunksTracker() : _lock(), _cond(), _inflight_memory(0) {
+namespace {
+
+uint32_t calc_max_inflight_chunks() {
+    return std::min(64u, std::thread::hardware_concurrency());
+}
+
+} // namespace
+
+StoreByBucket::CompressChunksTracker::CompressChunksTracker()
+    : _lock(),
+      _cond(),
+      _inflight_memory(0),
+      _inflight_chunks(0),
+      _max_inflight_memory(32_Mi),
+      _max_inflight_chunks(calc_max_inflight_chunks()) {
 }
 
 StoreByBucket::CompressChunksTracker::~CompressChunksTracker() {
     assert(_inflight_memory == 0);
+    assert(_inflight_chunks == 0);
+}
+
+bool StoreByBucket::CompressChunksTracker::is_full(size_t chunk_size) const noexcept {
+    // Allow chunk of any size when tracker is empty to ensure progress.
+    return (_inflight_chunks > 0 &&
+            (_inflight_chunks >= _max_inflight_chunks || _inflight_memory + chunk_size > _max_inflight_memory));
 }
 
 StoreByBucket::StoreByBucket(StoreIndex& storeIndex, CompressChunksTracker& compress_chunks_tracker,
@@ -69,6 +90,7 @@ void StoreByBucket::closeChunk(Chunk::UP chunk, size_t chunk_size) {
     std::lock_guard guard(_compress_chunks_tracker._lock);
     _chunks[chunk->getId()] = bufferRef;
     _compress_chunks_tracker._inflight_memory -= chunk_size;
+    --_compress_chunks_tracker._inflight_chunks;
     _compress_chunks_tracker._cond.notify_all();
 }
 
@@ -81,9 +103,13 @@ void StoreByBucket::post_compress_chunk(Chunk::UP chunk) {
 }
 
 void StoreByBucket::incChunksPosted(size_t chunk_size) {
-    std::lock_guard guard(_compress_chunks_tracker._lock);
+    std::unique_lock guard(_compress_chunks_tracker._lock);
+    while (_compress_chunks_tracker.is_full(chunk_size)) {
+        _compress_chunks_tracker._cond.wait(guard);
+    }
     _numChunksPosted++;
     _compress_chunks_tracker._inflight_memory += chunk_size;
+    ++_compress_chunks_tracker._inflight_chunks;
 }
 
 void StoreByBucket::waitAllProcessed() {
