@@ -82,7 +82,7 @@ private:
     std::vector<std::shared_ptr<GlobalFilter>> _children;
 
 public:
-    AndFilter(Private, std::vector<std::shared_ptr<GlobalFilter>>&& children);
+    AndFilter(Private, std::vector<std::shared_ptr<GlobalFilter>>&& children) noexcept;
     static std::shared_ptr<AndFilter> create(std::vector<std::shared_ptr<GlobalFilter>>&& children);
     bool is_active() const override;
     uint32_t size() const override;

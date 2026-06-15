@@ -16,6 +16,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <cmath>
+#include <concepts>
 #include <format>
 #include <functional>
 #include <iomanip>
@@ -77,19 +78,23 @@ struct {
     F calibration_constant = "calibration_constant";
     F children = "children";
     F class_ = "class";
+    F dim = "dim";
     F error = "error";
     F field_cfg = "field_cfg";
     F filter_hit_ratio = "filter_hit_ratio";
     F force_strict = "force_strict";
+    F gf_ratio = "gf_ratio";
     F group = "group";
     F hits = "hits";
     F iterator_name = "iterator_name";
     F ms_per_cost = "ms_per_cost";
+    F num_docs = "num_docs";
     F op_hit_ratio = "op_hit_ratio";
     F pred_ms = "pred_ms";
     F query_op = "query_op";
     F seeks = "seeks";
     F strict_context = "strict_context";
+    F target_hits = "target_hits";
     F time_error_abs = "time_error_abs";
     F time_ms = "time_ms";
     F unpack = "unpack";
@@ -342,6 +347,8 @@ BenchmarkResult benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t do
 }
 
 //-----------------------------------------------------------------------------
+// Crossover utils.
+//-----------------------------------------------------------------------------
 
 double est_forced_strict_cost(double estimate, double strict_cost, double rate) {
     return (rate - estimate) * 0.2 + strict_cost;
@@ -465,10 +472,8 @@ void analyze_crossover(BenchmarkBlueprintFactory&                               
 }
 
 //-----------------------------------------------------------------------------
-
-std::string to_string(bool val) {
-    return val ? "true" : "false";
-}
+// Print utils.
+//-----------------------------------------------------------------------------
 
 void print_result_header() {
     std::cout << "| in_flow |   chn | o_ratio | a_ratio |   f.est |    f.cost | f.act_cost | f.scost | f.act_scost | "
@@ -513,24 +518,9 @@ void print_result(const BenchmarkCaseResult& result) {
               << std::endl;
 }
 
-struct BenchmarkCase {
-    FieldConfig   field_cfg;
-    QueryOperator query_op;
-    bool          strict_context;
-    bool          force_strict;
-    bool          unpack_iterator;
-    BenchmarkCase(const FieldConfig& field_cfg_in, QueryOperator query_op_in, bool strict_context_in)
-        : field_cfg(field_cfg_in),
-          query_op(query_op_in),
-          strict_context(strict_context_in),
-          force_strict(false),
-          unpack_iterator(false) {}
-    std::string to_string() const {
-        return "op=" + search::queryeval::test::to_string(query_op) + ", cfg=" + field_cfg.to_string() +
-               ", strict_context=" + ::to_string(strict_context) +
-               (force_strict ? (", force_strict=" + ::to_string(force_strict)) : "");
-    }
-};
+//-----------------------------------------------------------------------------
+// Pond postprocess and print utils.
+//-----------------------------------------------------------------------------
 
 /**
  * Calibration constant = sum(time_ms) / sum(actual_cost) over all samples.
@@ -636,116 +626,43 @@ void dump_pond(const DataPond& pond) {
     }
 }
 
-struct BenchmarkCaseSetup {
-    uint32_t              num_docs;
-    BenchmarkCase         bcase;
-    std::vector<double>   op_hit_ratios;
-    std::vector<uint32_t> child_counts;
-    std::vector<double>   filter_hit_ratios;
-    uint32_t              default_values_per_document;
-    bool                  disjunct_children;
-    double                filter_crossover_factor;
-    BenchmarkCaseSetup(uint32_t num_docs_in, const BenchmarkCase& bcase_in,
-                       const std::vector<double>& op_hit_ratios_in, const std::vector<uint32_t>& child_counts_in)
-        : num_docs(num_docs_in),
-          bcase(bcase_in),
-          op_hit_ratios(op_hit_ratios_in),
-          child_counts(child_counts_in),
-          filter_hit_ratios({1.0}),
-          default_values_per_document(0),
-          disjunct_children(false),
-          filter_crossover_factor(0.0) {}
-    ~BenchmarkCaseSetup() {}
-};
-
-struct BenchmarkSetup {
-    uint32_t                   num_docs;
-    std::vector<FieldConfig>   field_cfgs;
-    std::vector<QueryOperator> query_ops;
-    std::vector<bool>          strictness;
-    std::vector<double>        op_hit_ratios;
-    std::vector<uint32_t>      child_counts;
-    std::vector<double>        filter_hit_ratios;
-    bool                       force_strict;
-    bool                       unpack_iterator;
-    uint32_t                   default_values_per_document;
-    bool                       disjunct_children;
-    double                     filter_crossover_factor;
-    BenchmarkSetup(uint32_t num_docs_in, const std::vector<FieldConfig>& field_cfgs_in,
-                   const std::vector<QueryOperator>& query_ops_in, const std::vector<bool>& strictness_in,
-                   const std::vector<double>& op_hit_ratios_in, const std::vector<uint32_t>& child_counts_in)
-        : num_docs(num_docs_in),
-          field_cfgs(field_cfgs_in),
-          query_ops(query_ops_in),
-          strictness(strictness_in),
-          op_hit_ratios(op_hit_ratios_in),
-          child_counts(child_counts_in),
-          filter_hit_ratios({1.0}),
-          force_strict(false),
-          unpack_iterator(false),
-          default_values_per_document(0),
-          disjunct_children(false),
-          filter_crossover_factor(0.0) {}
-    BenchmarkSetup(uint32_t num_docs_in, const std::vector<FieldConfig>& field_cfgs_in,
-                   const std::vector<QueryOperator>& query_ops_in, const std::vector<bool>& strictness_in,
-                   const std::vector<double>& op_hit_ratios_in)
-        : BenchmarkSetup(num_docs_in, field_cfgs_in, query_ops_in, strictness_in, op_hit_ratios_in, {1}) {}
-    BenchmarkCaseSetup make_case_setup(const BenchmarkCase& bcase) const {
-        BenchmarkCaseSetup res(num_docs, bcase, op_hit_ratios, child_counts);
-        res.bcase.force_strict = force_strict;
-        res.bcase.unpack_iterator = unpack_iterator;
-        res.default_values_per_document = default_values_per_document;
-        res.disjunct_children = disjunct_children;
-        if (!bcase.strict_context) {
-            // Simulation of a filter is only relevant in a non-strict context.
-            res.filter_hit_ratios = filter_hit_ratios;
-            res.filter_crossover_factor = filter_crossover_factor;
-        } else {
-            res.filter_hit_ratios = {1.0};
-            res.filter_crossover_factor = 0.0;
-        }
-        return res;
-    }
-    ~BenchmarkSetup();
-};
-
-BenchmarkSetup::~BenchmarkSetup() = default;
-
 DataPond global_pond;
 
 //-----------------------------------------------------------------------------
-// Drive an arbitrary BenchmarkBlueprintFactory across a list of InFlow values
-// and record per-run samples to the pond so postprocess_pond can compute
-// actual_cost / calibration_constant / pred_ms.
+// Drive an arbitrary BenchmarkCase across a list of InFlow values.
 //-----------------------------------------------------------------------------
 
-struct FactoryBenchmarkSetup {
+struct BenchmarkOptions {
+    bool         unpack = false;
+    bool         force_strict = false;
+    PlanningAlgo algo = PlanningAlgo::Cost;
+};
+
+struct BenchmarkCaseSetup {
     std::string                  group;
     FactoryPtr                   factory;
     uint32_t                     docid_limit;
     std::vector<InFlow>          in_flows;
-    bool                         unpack = false;
-    bool                         force_strict = false;
-    PlanningAlgo                 algo = PlanningAlgo::Cost;
+    BenchmarkOptions             options;
     std::function<void(Record&)> decorate;
 
-    ~FactoryBenchmarkSetup();
+    ~BenchmarkCaseSetup();
 };
 
-FactoryBenchmarkSetup::~FactoryBenchmarkSetup() = default;
+BenchmarkCaseSetup::~BenchmarkCaseSetup() = default;
 
-void add_factory_run_to_pond(DataPond& pond, const FactoryBenchmarkSetup& setup, const BenchmarkResult& res,
+void add_factory_run_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, const BenchmarkResult& res,
                              InFlow in_flow) {
     Record record;
     record.set(f.actual_cost, res.actual_cost);
-    record.set(f.algo, to_string(setup.algo));
+    record.set(f.algo, to_string(setup.options.algo));
     record.set(f.blueprint_name, res.blueprint_name);
     record.set(f.children, static_cast<int64_t>(0));
     record.set(f.flow.cost, res.flow.cost);
     record.set(f.flow.estimate, res.flow.estimate);
     record.set(f.field_cfg, std::string{});
     record.set(f.filter_hit_ratio, in_flow.rate());
-    record.set(f.force_strict, setup.force_strict);
+    record.set(f.force_strict, setup.options.force_strict);
     record.set(f.group, setup.group);
     record.set(f.hits, static_cast<int64_t>(res.hits));
     record.set(f.iterator_name, res.iterator_name);
@@ -755,14 +672,14 @@ void add_factory_run_to_pond(DataPond& pond, const FactoryBenchmarkSetup& setup,
     record.set(f.strict_context, in_flow.strict());
     record.set(f.flow.strict_cost, res.flow.strict_cost);
     record.set(f.time_ms, res.time_ms);
-    record.set(f.unpack, setup.unpack);
+    record.set(f.unpack, setup.options.unpack);
     if (setup.decorate) {
         setup.decorate(record);
     }
     pond.add(record);
 }
 
-BenchmarkCaseResult run_benchmark(const FactoryBenchmarkSetup& setup) {
+BenchmarkCaseResult run_benchmark(const BenchmarkCaseSetup& setup) {
     assert(setup.factory);
     assert(setup.docid_limit > 0);
     BenchmarkCaseResult result;
@@ -770,8 +687,8 @@ BenchmarkCaseResult run_benchmark(const FactoryBenchmarkSetup& setup) {
     print_result_header();
     uint32_t num_docs_for_print = setup.docid_limit - 1;
     for (InFlow in_flow : setup.in_flows) {
-        auto res = benchmark_search(*setup.factory, setup.docid_limit, in_flow.strict(), setup.force_strict,
-                                    setup.unpack, in_flow.rate(), setup.algo);
+        auto res = benchmark_search(*setup.factory, setup.docid_limit, in_flow.strict(), setup.options.force_strict,
+                                    setup.options.unpack, in_flow.rate(), setup.options.algo);
         print_result(res, /*children*/ 0, /*op_hit_ratio*/ 0.0, in_flow, num_docs_for_print);
         result.add(res);
         add_factory_run_to_pond(global_pond, setup, res, in_flow);
@@ -780,52 +697,119 @@ BenchmarkCaseResult run_benchmark(const FactoryBenchmarkSetup& setup) {
     return result;
 }
 
-void run_benchmark_case(const BenchmarkCaseSetup& setup) {
-    for (double op_hit_ratio : setup.op_hit_ratios) {
-        for (uint32_t children : setup.child_counts) {
-            auto factory = make_blueprint_factory(setup.bcase.field_cfg, setup.bcase.query_op, setup.num_docs,
-                                                  setup.default_values_per_document, op_hit_ratio, children,
-                                                  setup.disjunct_children);
-            std::vector<InFlow> in_flows;
-            if (setup.bcase.strict_context) {
-                in_flows.emplace_back(true);
-            } else {
-                for (double fhr : setup.filter_hit_ratios) {
-                    if (fhr * setup.filter_crossover_factor <= op_hit_ratio) {
-                        in_flows.emplace_back(false, fhr);
-                    }
-                }
-            }
-            if (in_flows.empty()) {
-                continue;
-            }
-            FactoryBenchmarkSetup fsetup{.group = setup.bcase.to_string(),
-                                         .factory = std::move(factory),
-                                         .docid_limit = setup.num_docs + 1,
-                                         .in_flows = std::move(in_flows),
-                                         .unpack = setup.bcase.unpack_iterator,
-                                         .force_strict = setup.bcase.force_strict,
-                                         .algo = PlanningAlgo::Cost,
-                                         .decorate = [&setup, op_hit_ratio, children](Record& r) {
-                                             r.set(f.field_cfg, setup.bcase.field_cfg.to_string());
-                                             r.set(f.query_op, to_string(setup.bcase.query_op));
-                                             r.set(f.op_hit_ratio, op_hit_ratio);
-                                             r.set(f.children, static_cast<int64_t>(children));
-                                         }};
-            run_benchmark(fsetup);
-        }
+//---------------------------------------------------------------------------------------
+// Drives a set of benchmark cases.
+//---------------------------------------------------------------------------------------
+
+std::vector<InFlow> make_in_flows(const std::vector<double>& rates, bool include_strict) {
+    std::vector<InFlow> result;
+    if (include_strict) {
+        result.emplace_back(true);
+    }
+    for (double rate : rates) {
+        result.emplace_back(false, rate);
+    }
+    return result;
+}
+
+/**
+ * Make blueprint factory from EnnConfig.
+ */
+FactoryPtr make_factory(const EnnConfig& cfg) {
+    return enn(cfg);
+}
+
+/**
+ * Select fields used to describe an EnnConfig.
+ */
+void describe(const EnnConfig& cfg, Record& r) {
+    r.set(f.num_docs, static_cast<int64_t>(cfg.num_docs));
+    r.set(f.dim, static_cast<int64_t>(cfg.dim));
+    r.set(f.target_hits, static_cast<int64_t>(cfg.target_hits));
+    if (cfg.global_filter_hit_ratio.has_value()) {
+        r.set(f.gf_ratio, cfg.global_filter_hit_ratio.value());
     }
 }
 
-void run_benchmarks(const BenchmarkSetup& setup) {
-    for (const auto& field_cfg : setup.field_cfgs) {
-        for (auto query_op : setup.query_ops) {
-            for (bool strict : setup.strictness) {
-                BenchmarkCase bcase(field_cfg, query_op, strict);
-                run_benchmark_case(setup.make_case_setup(bcase));
-            }
+/**
+ * A config adapts the "old approach" into this driver system.
+ */
+struct OpConfig {
+    FieldConfig   field_cfg;
+    QueryOperator query_op;
+    uint32_t      num_docs;
+    double        op_hit_ratio;
+    uint32_t      children = 1;
+    uint32_t      default_values_per_document = 0;
+    bool          disjunct_children = false;
+};
+
+/**
+ * Make blueprint factory for "old approach".
+ */
+FactoryPtr make_factory(const OpConfig& cfg) {
+    return make_blueprint_factory(cfg.field_cfg, cfg.query_op, cfg.num_docs, cfg.default_values_per_document,
+                                  cfg.op_hit_ratio, cfg.children, cfg.disjunct_children);
+}
+
+/**
+ * Select fields used to describe OpConfig.
+ */
+void describe(const OpConfig& cfg, Record& r) {
+    r.set(f.field_cfg, cfg.field_cfg.to_string());
+    r.set(f.query_op, to_string(cfg.query_op));
+    r.set(f.num_docs, static_cast<int64_t>(cfg.num_docs));
+    r.set(f.op_hit_ratio, cfg.op_hit_ratio);
+    r.set(f.children, static_cast<int64_t>(cfg.children));
+}
+
+/**
+ * Use `describe()` function to generate a group name for a config.
+ */
+template <typename Config>
+std::string group_name(const std::string& name, const Config& cfg) {
+    Record scratch;
+    describe(cfg, scratch);
+    std::string result = name + "[";
+    int         i = 0;
+    for (const auto& [field, value] : scratch.data()) {
+        if (i++) {
+            result += ",";
         }
+        result += field + "=" + value.to_string();
     }
+    result += "]";
+    return result;
+}
+
+/**
+ * Run each configuration. Takes make_flows.
+ */
+template <typename Config, typename InFlowsFn>
+    requires std::invocable<InFlowsFn, const Config&>
+void run_benchmarks(const std::string& name, const std::vector<Config>& cases, InFlowsFn&& make_flows,
+                    const BenchmarkOptions& options) {
+    for (const auto& cfg : cases) {
+        std::vector<InFlow> in_flows = make_flows(cfg);
+        if (in_flows.empty()) {
+            continue;
+        }
+        run_benchmark({.group = group_name(name, cfg),
+                       .factory = make_factory(cfg),
+                       .docid_limit = cfg.num_docs + 1,
+                       .in_flows = std::move(in_flows),
+                       .options = options,
+                       .decorate = [&cfg](Record& r) { describe(cfg, r); }});
+    }
+}
+
+/**
+ * Runs each configuration. Takes in_flows as vector.
+ */
+template <typename Config>
+void run_benchmarks(const std::string& name, const std::vector<Config>& cases, const std::vector<InFlow>& in_flows,
+                    const BenchmarkOptions& options) {
+    run_benchmarks(name, cases, [&in_flows](const Config&) { return in_flows; }, options);
 }
 
 //---------------------------------------------------------------------------------------
@@ -973,6 +957,32 @@ std::vector<double> gen_ratios(double middle, double range_multiplier, size_t nu
     return res;
 }
 
+/**
+ * In-flow rates centered on each case's op_hit_ratio,
+ * replacing the old 'filter_hit_ratios = gen_ratios(...)' pattern.
+ */
+auto in_flows_around_op_ratio(double range_multiplier = 10.0, size_t num_samples = 13, bool include_strict = false) {
+    return [=](const auto& cfg) {
+        return make_in_flows(gen_ratios(cfg.op_hit_ratio, range_multiplier, num_samples), include_strict);
+    };
+}
+
+/**
+ * Fixed in-flow rates pruned per case, replacing the old filter_crossover_factor:
+ * a rate is kept when rate * crossover_factor <= op_hit_ratio.
+ */
+auto in_flows_pruned(const std::vector<double>& rates, double crossover_factor, bool include_strict) {
+    return [=](const auto& cfg) {
+        std::vector<double> kept;
+        for (double rate : rates) {
+            if (rate * crossover_factor <= cfg.op_hit_ratio) {
+                kept.push_back(rate);
+            }
+        }
+        return make_in_flows(kept, include_strict);
+    };
+}
+
 FieldConfig make_attr_config(BasicType basic_type, CollectionType col_type, bool fast_search,
                              bool rank_filter = false) {
     Config cfg(basic_type, col_type);
@@ -988,79 +998,125 @@ FieldConfig make_index_config() {
     return FieldConfig(field);
 }
 
-constexpr uint32_t        num_docs = 10'000'000;
-const std::vector<double> base_hit_ratios = {0.0001, 0.001, 0.01, 0.1, 0.5, 1.0};
-const std::vector<double> filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005,
-                                               0.01,    0.05,    0.1,    0.2,    0.5,   1.0};
-const auto                int32 = make_attr_config(BasicType::INT32, CollectionType::SINGLE, false);
-const auto                int32_fs = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true);
-const auto                int32_fs_rf = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true, true);
-const auto                int32_array = make_attr_config(BasicType::INT32, CollectionType::ARRAY, false);
-const auto                int32_array_fs = make_attr_config(BasicType::INT32, CollectionType::ARRAY, true);
-const auto                int32_wset = make_attr_config(BasicType::INT32, CollectionType::WSET, false);
-const auto                int32_wset_fs = make_attr_config(BasicType::INT32, CollectionType::WSET, true);
-const auto                str = make_attr_config(BasicType::STRING, CollectionType::SINGLE, false);
-const auto                str_fs = make_attr_config(BasicType::STRING, CollectionType::SINGLE, true);
-const auto                str_array = make_attr_config(BasicType::STRING, CollectionType::ARRAY, false);
-const auto                str_array_fs = make_attr_config(BasicType::STRING, CollectionType::ARRAY, true);
-const auto                str_wset = make_attr_config(BasicType::STRING, CollectionType::WSET, false);
-const auto                str_index = make_index_config();
+constexpr uint32_t          num_docs = 10'000'000;
+const std::vector<double>   base_hit_ratios = {0.0001, 0.001, 0.01, 0.1, 0.5, 1.0};
+const std::vector<double>   filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005,
+                                                 0.01,    0.05,    0.1,    0.2,    0.5,   1.0};
+const std::vector<double>   mid_hit_ratios = {0.01, 0.1, 0.5};
+const std::vector<uint32_t> in_children_counts = {2, 5, 9, 10, 100, 1000, 10000};
+const std::vector<uint32_t> or_children_counts = {2, 4, 6, 8, 10, 100, 1000};
+const std::vector<double>   enn_in_flow_rates = {0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3,
+                                                 0.4,   0.5,   0.6,  0.7,  0.8, 0.9, 1.0};
+const auto                  int32 = make_attr_config(BasicType::INT32, CollectionType::SINGLE, false);
+const auto                  int32_fs = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true);
+const auto                  int32_fs_rf = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true, true);
+const auto                  int32_array = make_attr_config(BasicType::INT32, CollectionType::ARRAY, false);
+const auto                  int32_array_fs = make_attr_config(BasicType::INT32, CollectionType::ARRAY, true);
+const auto                  int32_wset = make_attr_config(BasicType::INT32, CollectionType::WSET, false);
+const auto                  int32_wset_fs = make_attr_config(BasicType::INT32, CollectionType::WSET, true);
+const auto                  str = make_attr_config(BasicType::STRING, CollectionType::SINGLE, false);
+const auto                  str_fs = make_attr_config(BasicType::STRING, CollectionType::SINGLE, true);
+const auto                  str_array = make_attr_config(BasicType::STRING, CollectionType::ARRAY, false);
+const auto                  str_array_fs = make_attr_config(BasicType::STRING, CollectionType::ARRAY, true);
+const auto                  str_wset = make_attr_config(BasicType::STRING, CollectionType::WSET, false);
+const auto                  str_index = make_index_config();
 
 TEST(IteratorBenchmark, analyze_term_search_in_disk_index) {
-    BenchmarkSetup setup(num_docs, {str_index}, {QueryOperator::Term}, {true, false}, base_hit_ratios);
-    setup.filter_hit_ratios = filter_hit_ratios;
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double ratio : base_hit_ratios) {
+        cases.push_back(
+            {.field_cfg = str_index, .query_op = QueryOperator::Term, .num_docs = num_docs, .op_hit_ratio = ratio});
+    }
+    run_benchmarks("TERM", cases, make_in_flows(filter_hit_ratios, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_non_strict) {
     std::vector<FieldConfig> field_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
-    BenchmarkSetup           setup(num_docs, field_cfgs, {QueryOperator::Term}, {false}, base_hit_ratios);
-    setup.default_values_per_document = 1;
-    setup.filter_hit_ratios = filter_hit_ratios;
-    setup.filter_crossover_factor = 1.0;
-    run_benchmarks(setup);
+    std::vector<OpConfig>    cases;
+    for (const auto& field_cfg : field_cfgs) {
+        for (double ratio : base_hit_ratios) {
+            cases.push_back({.field_cfg = field_cfg,
+                             .query_op = QueryOperator::Term,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = ratio,
+                             .default_values_per_document = 1});
+        }
+    }
+    run_benchmarks("TERM", cases, in_flows_pruned(filter_hit_ratios, 1.0, /*include_strict=*/false), {});
 }
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_strict) {
     std::vector<FieldConfig> field_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
-    // Note: This hit ratio matches the estimate of such attributes (0.5).
-    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true}, {0.5});
-    setup.default_values_per_document = 1;
-    run_benchmarks(setup);
+    std::vector<OpConfig>    cases;
+    for (const auto& field_cfg : field_cfgs) {
+        // Note: This hit ratio matches the estimate of such attributes (0.5).
+        cases.push_back({.field_cfg = field_cfg,
+                         .query_op = QueryOperator::Term,
+                         .num_docs = num_docs,
+                         .op_hit_ratio = 0.5,
+                         .default_values_per_document = 1});
+    }
+    run_benchmarks("TERM", cases, make_in_flows({}, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_term_search_in_fast_search_attributes) {
     std::vector<FieldConfig> field_cfgs = {int32_fs, int32_array_fs, str_fs, str_array_fs};
-    BenchmarkSetup           setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, base_hit_ratios);
-    setup.filter_hit_ratios = filter_hit_ratios;
-    setup.filter_crossover_factor = 1.0;
-    run_benchmarks(setup);
+    std::vector<OpConfig>    cases;
+    for (const auto& field_cfg : field_cfgs) {
+        for (double ratio : base_hit_ratios) {
+            cases.push_back({.field_cfg = field_cfg,
+                             .query_op = QueryOperator::Term,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = ratio});
+        }
+    }
+    run_benchmarks("TERM", cases, in_flows_pruned(filter_hit_ratios, 1.0, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_IN_non_strict) {
-    for (auto in_hit_ratio : {0.01, 0.1, 0.5}) {
-        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::In}, {false}, {in_hit_ratio},
-                             {2, 5, 9, 10, 100, 1000, 10000});
-        setup.filter_hit_ratios = gen_ratios(in_hit_ratio, 10.0, 13);
-        setup.disjunct_children = true;
-        run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double in_hit_ratio : mid_hit_ratios) {
+        for (uint32_t children : in_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::In,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = in_hit_ratio,
+                             .children = children,
+                             .disjunct_children = true});
+        }
     }
+    run_benchmarks("IN", cases, in_flows_around_op_ratio(), {});
 }
 
 TEST(IteratorBenchmark, analyze_IN_strict) {
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
-    BenchmarkSetup            setup(num_docs, {int32_fs}, {QueryOperator::In}, {true}, hit_ratios,
-                                    {2, 5, 9, 10, 100, 1000, 10000});
-    setup.disjunct_children = true;
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double ratio : {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8}) {
+        for (uint32_t children : in_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::In,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = ratio,
+                             .children = children,
+                             .disjunct_children = true});
+        }
+    }
+    run_benchmarks("IN", cases, make_in_flows({}, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_weak_and_operators) {
-    std::vector<FieldConfig>   field_cfgs = {int32_wset_fs};
-    std::vector<QueryOperator> query_ops = {QueryOperator::WeakAnd, QueryOperator::ParallelWeakAnd};
-    BenchmarkSetup setup(num_docs, field_cfgs, query_ops, {true, false}, base_hit_ratios, {1, 2, 10, 100});
-    setup.unpack_iterator = true;
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (auto query_op : {QueryOperator::WeakAnd, QueryOperator::ParallelWeakAnd}) {
+        for (double ratio : base_hit_ratios) {
+            for (uint32_t children : {1, 2, 10, 100}) {
+                cases.push_back({.field_cfg = int32_wset_fs,
+                                 .query_op = query_op,
+                                 .num_docs = num_docs,
+                                 .op_hit_ratio = ratio,
+                                 .children = children});
+            }
+        }
+    }
+    run_benchmarks("WAND", cases, make_in_flows({1.0}, /*include_strict=*/true), {.unpack = true});
 }
 
 TEST(IteratorBenchmark, or_vs_filter_crossover) {
@@ -1128,51 +1184,86 @@ TEST(IteratorBenchmark, analyze_strict_SOURCEBLENDER_memory_and_disk) {
 }
 
 TEST(IteratorBenchmark, analyze_OR_non_strict_fs) {
-    for (auto or_hit_ratio : {0.01, 0.1, 0.5}) {
-        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {false}, {or_hit_ratio},
-                             {2, 4, 6, 8, 10, 100, 1000});
-        // setup.force_strict = true;
-        setup.filter_hit_ratios = gen_ratios(or_hit_ratio, 10.0, 13);
-        run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double or_hit_ratio : mid_hit_ratios) {
+        for (uint32_t children : or_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::Or,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = or_hit_ratio,
+                             .children = children});
+        }
     }
+    // Use {.force_strict = true} to benchmark the forced strict variants.
+    run_benchmarks("OR", cases, in_flows_around_op_ratio(), {});
 }
 
 TEST(IteratorBenchmark, analyze_OR_non_strict_fs_child_est_adjust) {
-    for (auto or_hit_ratio : {0.01, 0.1, 0.5}) {
-        for (uint32_t children : {2, 4, 6, 8, 10, 100, 1000}) {
-            double         child_est = or_hit_ratio / children;
-            BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {false}, {or_hit_ratio}, {children});
-            // setup.force_strict = true;
-            setup.filter_hit_ratios = gen_ratios(child_est, 10.0, 13);
-            run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double or_hit_ratio : mid_hit_ratios) {
+        for (uint32_t children : or_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::Or,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = or_hit_ratio,
+                             .children = children});
         }
     }
+    // In-flow rates centered on the estimate of a single OR child.
+    auto child_est_flows = [](const OpConfig& cfg) {
+        return make_in_flows(gen_ratios(cfg.op_hit_ratio / cfg.children, 10.0, 13), false);
+    };
+    run_benchmarks("OR", cases, child_est_flows, {});
 }
 
 TEST(IteratorBenchmark, analyze_OR_non_strict_non_fs) {
-    BenchmarkSetup setup(num_docs, {int32}, {QueryOperator::Or}, {false}, {0.1}, {2, 4, 6, 8, 10});
-    setup.filter_hit_ratios = gen_ratios(0.1, 10.0, 13);
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (uint32_t children : {2, 4, 6, 8, 10}) {
+        cases.push_back({.field_cfg = int32,
+                         .query_op = QueryOperator::Or,
+                         .num_docs = num_docs,
+                         .op_hit_ratio = 0.1,
+                         .children = children});
+    }
+    run_benchmarks("OR", cases, in_flows_around_op_ratio(), {});
 }
 
 TEST(IteratorBenchmark, analyze_OR_strict) {
-    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {true}, {0.01, 0.1, 0.5},
-                         {2, 4, 6, 8, 10, 100, 1000});
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double or_hit_ratio : mid_hit_ratios) {
+        for (uint32_t children : or_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::Or,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = or_hit_ratio,
+                             .children = children});
+        }
+    }
+    run_benchmarks("OR", cases, make_in_flows({}, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_btree_iterator_non_strict) {
+    std::vector<OpConfig> cases;
     for (auto term_ratio : {0.01, 0.1, 0.5, 1.0}) {
-        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Term}, {false}, {term_ratio}, {1});
-        setup.filter_hit_ratios = gen_ratios(term_ratio, 10.0, 15);
-        run_benchmarks(setup);
+        cases.push_back({.field_cfg = int32_fs,
+                         .query_op = QueryOperator::Term,
+                         .num_docs = num_docs,
+                         .op_hit_ratio = term_ratio});
     }
+    run_benchmarks("TERM", cases, in_flows_around_op_ratio(10.0, 15), {});
 }
 
 TEST(IteratorBenchmark, analyze_btree_vs_bitvector_iterators_strict) {
-    BenchmarkSetup setup(num_docs, {int32_fs, int32_fs_rf}, {QueryOperator::Term}, {true},
-                         {0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0}, {1});
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (const auto& field_cfg : {int32_fs, int32_fs_rf}) {
+        for (double ratio : {0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0}) {
+            cases.push_back({.field_cfg = field_cfg,
+                             .query_op = QueryOperator::Term,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = ratio});
+        }
+    }
+    run_benchmarks("TERM", cases, make_in_flows({}, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
@@ -1195,31 +1286,28 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
 }
 
 TEST(IteratorBenchmark, analyze_ENN) {
-    std::vector<InFlow> in_flows;
-    in_flows.emplace_back(true);
-    for (double rate : {0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}) {
-        in_flows.emplace_back(false, rate);
+    std::vector<EnnConfig> cases;
+    for (double num_docs_scale : {0.01, 0.1, 1.0}) {
+        for (uint32_t target_hits : {10u, 100u, 1000u}) {
+            cases.push_back(
+                {.num_docs = static_cast<uint32_t>(num_docs * num_docs_scale), .target_hits = target_hits});
+        }
     }
-    run_benchmark({.group = "ENN[num_docs=" + std::to_string(num_docs) + ",target_hits=100]",
-                   .factory = enn({.num_docs = num_docs, .target_hits = 100}),
-                   .docid_limit = num_docs + 1,
-                   .in_flows = in_flows,
-                   .unpack = true,
-                   .decorate = {}});
+    run_benchmarks("ENN", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
 }
 
 TEST(IteratorBenchmark, analyze_ENN_with_GF) {
-    std::vector<InFlow> in_flows;
-    in_flows.emplace_back(true);
-    for (double rate : {0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}) {
-        in_flows.emplace_back(false, rate);
+    std::vector<EnnConfig> cases;
+    for (double num_docs_scale : {0.01, 0.1, 1.0}) {
+        // The gf_ratio values overlap enn_in_flow_rates so that strict ENN_GF at ratio r
+        // can be compared directly against non-strict ENN driven at rate r.
+        for (double gf_ratio : {0.9, 0.5, 0.1, 0.05, 0.01}) {
+            cases.push_back({.num_docs = static_cast<uint32_t>(num_docs * num_docs_scale),
+                             .target_hits = 100,
+                             .global_filter_hit_ratio = gf_ratio});
+        }
     }
-    run_benchmark({.group = "ENN_GF[num_docs=" + std::to_string(num_docs) + ",target_hits=100,gf_ratio=0.5]",
-                   .factory = enn({.num_docs = num_docs, .target_hits = 100, .global_filter_hit_ratio = 0.5}),
-                   .docid_limit = num_docs + 1,
-                   .in_flows = in_flows,
-                   .unpack = true,
-                   .decorate = {}});
+    run_benchmarks("ENN_GF", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
 }
 
 static std::string smoke_test_filter = "--gtest_filter="

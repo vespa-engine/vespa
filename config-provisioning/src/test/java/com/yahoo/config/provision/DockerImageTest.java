@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.component.Version;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -35,6 +36,16 @@ public class DockerImageTest {
                                    : expected.registry() + "/" + expected.repository();
             assertEquals(untagged, parsed.untagged());
         });
+    }
+
+    @Test
+    void tag_as_version() {
+        Map<String, Version> tests = Map.of(
+                "registry.example.com/vespa/vespa:8.703.17", new Version(8, 703, 17),
+                "registry.example.com/vespa/vespa:8.703.17-alma9", new Version(8, 703, 17),
+                "registry.example.com/vespa/vespa", Version.emptyVersion
+        );
+        tests.forEach((value, expected) -> assertEquals(expected, DockerImage.fromString(value).tagAsVersion()));
     }
 
     @Test

@@ -57,15 +57,24 @@ select_dockerfile() {
     fi
 }
 
+target_option=""
+if [ "${PREBUILT_BASE_IMAGE:-}" != "" ]; then
+    VESPA_BASE_IMAGE=${PREBUILT_BASE_IMAGE}
+    SYSTEM_TEST_BASE_IMAGE=${VESPA_BASE_IMAGE}
+    target_option="--target vespa"
+fi
+
 echo "--- Building Vespa preview container"
 GHCR_PREVIEW_TAG=ghcr.io/vespa-engine/vespa-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Building container with tag: ${GHCR_PREVIEW_TAG}"
+# shellcheck disable=SC2086
 docker build --progress plain \
              --build-arg SOURCE_GITREF="$SOURCE_GITREF" \
              --build-arg VESPA_VERSION="$VESPA_VERSION" \
              --build-arg VESPA_BASE_IMAGE="$VESPA_BASE_IMAGE" \
              --tag vespaengine/vespa \
              --tag "${GHCR_PREVIEW_TAG}" \
+             ${target_option} \
              --file "$(select_dockerfile)" .
 
 declare -r GITREF="${GITREF_SYSTEM_TEST:-HEAD}"
@@ -101,7 +110,11 @@ mv "$WORKDIR/docker-image/rpms" rpms
 dep_versions="${SOURCE_DIR}/dependency-versions/pom.xml"
 
 if [ -f "${dep_versions}" ]; then
-	grep plexus "${dep_versions}" > include/allow-versions.txt
+    : no-op
+    # Disabled. We've run into the denial-of-service protection
+    # since mvn will re-download all the plexus versions
+    # we're trying to remove here:
+    # grep plexus "${dep_versions}" > include/allow-versions.txt
 fi
 
 echo "--- Building system-test container"

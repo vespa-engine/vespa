@@ -3,6 +3,7 @@
 #include <vespa/searchlib/docstore/chunk.h>
 #include <vespa/searchlib/docstore/chunkformat.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
+#include <vespa/vespalib/data/memorydatastore.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/hexdump.h>
 
@@ -14,6 +15,8 @@
 LOG_SETUP("chunk_test");
 
 using namespace search;
+using vespalib::MemoryDataStore;
+using vespalib::alloc::Alloc;
 using vespalib::compression::CompressionConfig;
 
 TEST(ChunkTest, require_that_Chunk_obey_limits) {
@@ -83,14 +86,21 @@ void verifyChunkCompression(CompressionConfig::Type cfgType, const void* buf, si
     CompressionConfig    cfg(cfgType);
     chunk.pack(7, buffer, cfg);
     EXPECT_EQ(expectedLen, buffer.getDataLen());
-    vespalib::nbostream is(buffer.getData(), buffer.getDataLen());
-    ChunkFormat::UP     deserialized = ChunkFormat::deserialize(buffer.getData(), buffer.getDataLen());
-    uint64_t            magic(0);
-    deserialized->getBuffer() >> magic;
-    EXPECT_EQ(MAGIC_CONTENT, magic);
-    std::vector<char> v(sz);
-    deserialized->getBuffer().read(&v[0], sz);
-    EXPECT_EQ(0, memcmp(buf, &v[0], sz));
+    for (auto use_memory_data_store : {false, true}) {
+        ChunkFormat::UP deserialized;
+        MemoryDataStore memory_data_store(Alloc::alloc(1_Ki));
+        if (use_memory_data_store) {
+            deserialized = ChunkFormat::deserialize(buffer.as_bytes(), &memory_data_store);
+        } else {
+            deserialized = ChunkFormat::deserialize(buffer.getData(), buffer.getDataLen());
+        }
+        uint64_t magic(0);
+        deserialized->getBuffer() >> magic;
+        EXPECT_EQ(MAGIC_CONTENT, magic);
+        std::vector<char> v(sz);
+        deserialized->getBuffer().read(&v[0], sz);
+        EXPECT_EQ(0, memcmp(buf, &v[0], sz));
+    }
 }
 
 TEST(ChunkTest, require_that_V2_can_create_and_handle_lz4_zstd_and_none) {

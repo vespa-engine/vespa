@@ -135,6 +135,7 @@ private:
      */
     uint64_t                _pendingDiskDatFootprint; // protected by _lock, only considers dat file
     uint32_t                _nextChunkId;
+    size_t                  _inflight_memory; // Protected by _lock. Memory in chunks being compressed
     Chunk::UP               _active;
     size_t                  _alignment;
     size_t                  _granularity;
