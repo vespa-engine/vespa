@@ -77,7 +77,7 @@ bool FallbackFilter::check(uint32_t docid) const {
     return _global_filter.check(docid) && _fallback.check(docid);
 }
 
-AndFilter::AndFilter(Private, std::vector<std::shared_ptr<GlobalFilter>>&& children)
+AndFilter::AndFilter(Private, std::vector<std::shared_ptr<GlobalFilter>>&& children) noexcept
     : _children(std::move(children)) {
 }
 
