@@ -16,6 +16,8 @@ __attribute__((noinline)) void my_failing_function(int err);
 __attribute__((noinline)) void my_fake_mi_error_message(int err);
 __attribute__((noinline)) void my_fake_mi_malloc_generic(int err);
 
+void (*my_fake_mi_malloc_generic_fn)(int err) = my_fake_mi_malloc_generic;
+
 // The error handler skips a few frames of the stack top due to assumptions on the internal
 // mimalloc call-path, so to get `my_failing_function` in the stack trace, emulate this here.
 
@@ -30,7 +32,7 @@ void my_fake_mi_malloc_generic(int err) {
 }
 
 void my_failing_function(int err) {
-    my_fake_mi_malloc_generic(err);
+    my_fake_mi_malloc_generic_fn(err);
     ABSL_BLOCK_TAIL_CALL_OPTIMIZATION();
 }
 
