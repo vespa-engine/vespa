@@ -306,7 +306,7 @@ $ vespa config get --global`,
 			if localArg {
 				scope = "local"
 			}
-			log.Printf("Got %s config from %s", scope, filepath.Join(config.homeDir, configFile))
+			cli.printHelpfulInfo(fmt.Sprintf("Got %s config from %s", scope, filepath.Join(config.homeDir, configFile)))
 			if len(args) == 0 { // Print all values
 				for _, option := range config.list(!localArg) {
 					config.printOption(option)

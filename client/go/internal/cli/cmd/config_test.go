@@ -26,48 +26,46 @@ func TestConfig(t *testing.T) {
 	assertConfigCommandErr(t, configHome, "Error: invalid option or value: foo = bar\n", "config", "set", "foo", "bar")
 	assertConfigCommandErr(t, configHome, "Error: invalid option: foo\n", "config", "get", "foo")
 
-	gh := globalConfigHeader(configHome)
-
 	// target
-	assertConfigCommand(t, configHome, gh+"target = local\n", "config", "get", "target") // default value
+	assertConfigCommand(t, configHome, "target = local\n", "config", "get", "target") // default value
 	assertConfigCommand(t, configHome, successSet(configHome, "target", "hosted"), "config", "set", "target", "hosted")
-	assertConfigCommand(t, configHome, gh+"target = hosted\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "target = hosted\n", "config", "get", "target")
 	assertConfigCommand(t, configHome, successSet(configHome, "target", "cloud"), "config", "set", "target", "cloud")
-	assertConfigCommand(t, configHome, gh+"target = cloud\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
 	assertConfigCommand(t, configHome, successSet(configHome, "target", "http://127.0.0.1:8080"), "config", "set", "target", "http://127.0.0.1:8080")
 	assertConfigCommand(t, configHome, successSet(configHome, "target", "https://127.0.0.1"), "config", "set", "target", "https://127.0.0.1")
-	assertConfigCommand(t, configHome, gh+"target = https://127.0.0.1\n", "config", "get", "target")
-	assertConfigCommand(t, configHome, gh+"target = local\n", "config", "get", "-t", "local", "target")
+	assertConfigCommand(t, configHome, "target = https://127.0.0.1\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "target = local\n", "config", "get", "-t", "local", "target")
 	// Internal test system targets
 	assertConfigCommand(t, configHome, successSet(configHome, "target", "cd"), "config", "set", "target", "cd")
-	assertConfigCommand(t, configHome, gh+"target = cd\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "target = cd\n", "config", "get", "target")
 	assertConfigCommand(t, configHome, successSet(configHome, "target", "publiccd"), "config", "set", "target", "publiccd")
-	assertConfigCommand(t, configHome, gh+"target = publiccd\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "target = publiccd\n", "config", "get", "target")
 
 	// application
 	assertConfigCommandErr(t, configHome, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")
-	assertConfigCommand(t, configHome, gh+"application = <unset>\n", "config", "get", "application")
+	assertConfigCommand(t, configHome, "application = <unset>\n", "config", "get", "application")
 	assertConfigCommand(t, configHome, successSet(configHome, "application", "t1.a1.i1"), "config", "set", "application", "t1.a1.i1")
-	assertConfigCommand(t, configHome, gh+"application = t1.a1.i1\n", "config", "get", "application")
+	assertConfigCommand(t, configHome, "application = t1.a1.i1\n", "config", "get", "application")
 	assertConfigCommand(t, configHome, successSet(configHome, "application", "t1.a1"), "config", "set", "application", "t1.a1")
-	assertConfigCommand(t, configHome, gh+"application = t1.a1.default\n", "config", "get", "application")
+	assertConfigCommand(t, configHome, "application = t1.a1.default\n", "config", "get", "application")
 
 	// cluster
-	assertConfigCommand(t, configHome, gh+"cluster = <unset>\n", "config", "get", "cluster")
+	assertConfigCommand(t, configHome, "cluster = <unset>\n", "config", "get", "cluster")
 	assertConfigCommand(t, configHome, successSet(configHome, "cluster", "feed"), "config", "set", "cluster", "feed")
-	assertConfigCommand(t, configHome, gh+"cluster = feed\n", "config", "get", "cluster")
+	assertConfigCommand(t, configHome, "cluster = feed\n", "config", "get", "cluster")
 
 	// instance
-	assertConfigCommand(t, configHome, gh+"instance = <unset>\n", "config", "get", "instance")
+	assertConfigCommand(t, configHome, "instance = <unset>\n", "config", "get", "instance")
 	assertConfigCommand(t, configHome, successSet(configHome, "instance", "i2"), "config", "set", "instance", "i2")
-	assertConfigCommand(t, configHome, gh+"instance = i2\n", "config", "get", "instance")
+	assertConfigCommand(t, configHome, "instance = i2\n", "config", "get", "instance")
 
 	// color
 	assertConfigCommandErr(t, configHome, "Error: invalid option or value: color = foo\n", "config", "set", "color", "foo")
 	assertConfigCommand(t, configHome, successSet(configHome, "color", "never"), "config", "set", "color", "never")
-	assertConfigCommand(t, configHome, gh+"color = never\n", "config", "get", "color")
+	assertConfigCommand(t, configHome, "color = never\n", "config", "get", "color")
 	assertConfigCommand(t, configHome, successUnset(configHome, "color"), "config", "unset", "color")
-	assertConfigCommand(t, configHome, gh+"color = auto\n", "config", "get", "color")
+	assertConfigCommand(t, configHome, "color = auto\n", "config", "get", "color")
 
 	// quiet — setting quiet=true suppresses stdout for subsequent commands
 	assertConfigCommand(t, configHome, successSet(configHome, "quiet", "true"), "config", "set", "quiet", "true")
@@ -75,8 +73,8 @@ func TestConfig(t *testing.T) {
 
 	// zone
 	assertConfigCommand(t, configHome, successSet(configHome, "zone", "dev.us-east-1"), "config", "set", "zone", "dev.us-east-1")
-	assertConfigCommand(t, configHome, gh+"zone = dev.us-east-1\n", "config", "get", "zone")
-	assertConfigCommand(t, configHome, gh+"zone = prod.us-north-1\n", "config", "get", "--zone", "prod.us-north-1", "zone") // flag overrides global config
+	assertConfigCommand(t, configHome, "zone = dev.us-east-1\n", "config", "get", "zone")
+	assertConfigCommand(t, configHome, "zone = prod.us-north-1\n", "config", "get", "--zone", "prod.us-north-1", "zone") // flag overrides global config
 
 	// Write empty value to YAML config, which should be ignored. This is for compatibility with older config formats
 	configFile := filepath.Join(configHome, "config.yaml")
@@ -87,7 +85,7 @@ func TestConfig(t *testing.T) {
 	assert.NotContains(t, yamlConfig, "zone:")
 	config := yamlConfig + "zone: \"\"\n"
 	require.Nil(t, os.WriteFile(configFile, []byte(config), 0o600))
-	assertConfigCommand(t, configHome, gh+"zone = <unset>\n", "config", "get", "zone")
+	assertConfigCommand(t, configHome, "zone = <unset>\n", "config", "get", "zone")
 }
 
 func TestLocalConfig(t *testing.T) {
@@ -102,23 +100,21 @@ func TestLocalConfig(t *testing.T) {
 	require.Nil(t, err)
 	t.Cleanup(func() { os.Chdir(wd) })
 	require.Nil(t, os.Chdir(rootDir))
-	gh := globalConfigHeader(configHome)
-	lh := localConfigHeader(rootDir)
 
 	assertConfigCommandStdErr(t, configHome, "Warning: no local configuration present\n", "config", "get", "--local")
 	assertConfigCommand(t, configHome, successSetLocal(rootDir, "instance", "foo"), "config", "set", "--local", "instance", "foo")
-	assertConfigCommand(t, configHome, gh+"instance = foo\n", "config", "get", "instance")
-	assertConfigCommand(t, configHome, gh+"instance = bar\n", "config", "get", "--instance", "bar", "instance") // flag overrides local config
+	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "instance")
+	assertConfigCommand(t, configHome, "instance = bar\n", "config", "get", "--instance", "bar", "instance") // flag overrides local config
 
 	// get --local prints only options set in local config
-	assertConfigCommand(t, configHome, lh+"instance = foo\n", "config", "get", "--local")
+	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "--local")
 
 	// get reads global option if unset locally
-	assertConfigCommand(t, configHome, gh+"target = cloud\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
 
 	// get merges settings from local and global config
 	assertConfigCommand(t, configHome, successSetLocal(rootDir, "application", "t1.a1"), "config", "set", "--local", "application", "t1.a1")
-	assertConfigCommand(t, configHome, gh+`application = t1.a1.default
+	assertConfigCommand(t, configHome, `application = t1.a1.default
 cluster = <unset>
 color = auto
 debug = false
@@ -138,12 +134,12 @@ zone = <unset>
 	subDir := filepath.Join(rootDir, "a", "b")
 	require.Nil(t, os.MkdirAll(subDir, 0755))
 	require.Nil(t, os.Chdir(subDir))
-	assertConfigCommand(t, configHome, lh+"instance = foo\n", "config", "get", "--local", "instance")
+	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "--local", "instance")
 
 	// Changing back to original directory reads from global config
 	require.Nil(t, os.Chdir(wd))
-	assertConfigCommand(t, configHome, gh+"instance = main\n", "config", "get", "instance")
-	assertConfigCommand(t, configHome, gh+"target = cloud\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "instance = main\n", "config", "get", "instance")
+	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
 }
 
 func TestLocalConfigSearch(t *testing.T) {
@@ -167,7 +163,7 @@ func TestLocalConfigSearch(t *testing.T) {
 
 	// Config should be found by walking up
 	configHome := t.TempDir()
-	assertConfigCommand(t, configHome, localConfigHeader(appDir)+"instance = from-parent\n", "config", "get", "--local", "instance")
+	assertConfigCommand(t, configHome, "instance = from-parent\n", "config", "get", "--local", "instance")
 
 	// Config in sibling directory should not be found
 	siblingDir := filepath.Join(tmpDir, "other")
@@ -181,14 +177,6 @@ func resolveSymlinks(path string) string {
 		return real
 	}
 	return path
-}
-
-func globalConfigHeader(configHome string) string {
-	return "Got global config from " + filepath.Join(configHome, "config.yaml") + "\n"
-}
-
-func localConfigHeader(localDir string) string {
-	return "Got local config from " + filepath.Join(resolveSymlinks(localDir), ".vespa", "config.yaml") + "\n"
 }
 
 func successSet(configHome, option, value string) string {
@@ -238,13 +226,11 @@ func TestDefaultConfigScope(t *testing.T) {
 		"Error: invalid value for default_config_scope: \"bad\"\nHint: valid values are \"local\" and \"global\"\nHint: when unset, defaults to \"global\"; in Vespa 9 the default will change to \"local\"\n",
 		"config", "set", "default_config_scope", "bad")
 
-	gh := globalConfigHeader(configHome)
-
 	// Set and get
 	assertConfigCommand(t, configHome, successSet(configHome, "default_config_scope", "local"), "config", "set", "default_config_scope", "local")
-	assertConfigCommand(t, configHome, gh+"default_config_scope = local\n", "config", "get", "default_config_scope")
+	assertConfigCommand(t, configHome, "default_config_scope = local\n", "config", "get", "default_config_scope")
 	assertConfigCommand(t, configHome, successSet(configHome, "default_config_scope", "global"), "config", "set", "default_config_scope", "global")
-	assertConfigCommand(t, configHome, gh+"default_config_scope = global\n", "config", "get", "default_config_scope")
+	assertConfigCommand(t, configHome, "default_config_scope = global\n", "config", "get", "default_config_scope")
 
 	// Change to an application package dir
 	_, rootDir := mock.ApplicationPackageDir(t, false, false)
@@ -272,13 +258,11 @@ func TestDefaultConfigScope(t *testing.T) {
 	assertConfigCommand(t, configHome, successSetLocal(rootDir, "instance", "foo"), "config", "set", "--local", "instance", "foo")
 
 	// config get defaults to local when default_config_scope=local and inside an app package
-	lh := localConfigHeader(rootDir)
-	assertConfigCommand(t, configHome, lh+"instance = foo\ntarget = cloud\n", "config", "get")
+	assertConfigCommand(t, configHome, "instance = foo\ntarget = cloud\n", "config", "get")
 
 	// config get --global shows global config even when default_config_scope=local
-	gh2 := globalConfigHeader(configHome)
-	assertConfigCommand(t, configHome, lh+"default_config_scope = <unset>\n", "config", "get", "default_config_scope")
-	assertConfigCommand(t, configHome, gh2+"default_config_scope = local\n", "config", "get", "--global", "default_config_scope")
+	assertConfigCommand(t, configHome, "default_config_scope = <unset>\n", "config", "get", "default_config_scope")
+	assertConfigCommand(t, configHome, "default_config_scope = local\n", "config", "get", "--global", "default_config_scope")
 
 	// config get --local and --global together is an error
 	assertConfigCommandErr(t, configHome, "Error: cannot use both --local and --global flags\n", "config", "get", "--local", "--global")
