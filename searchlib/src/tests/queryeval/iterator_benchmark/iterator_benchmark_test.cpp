@@ -1368,7 +1368,7 @@ TEST(IteratorBenchmark, analyze_attr_range) {
 }
 
 /**
- * Handles iteration of arguments. Use flag() when checking only for precence of flag,
+ * Handles iteration of arguments. Use flag() when checking only for presence of flag,
  * use arg_string() or arg_double() when arguments should be provided.
  */
 struct Args {
