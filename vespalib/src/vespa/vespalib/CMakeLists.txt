@@ -62,3 +62,6 @@ vespa_add_library(vespalib
 
 vespa_add_target_package_dependency(vespalib OpenSSL)
 vespa_add_target_package_dependency(vespalib RE2)
+if (APPLE)
+    target_link_options(vespalib PRIVATE "-Wl,-U,_vespamalloc_dump_info,-U,_mi_stats_print_out")
+endif()
