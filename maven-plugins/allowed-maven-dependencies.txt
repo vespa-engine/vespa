@@ -76,6 +76,6 @@ org.ow2.asm:asm-commons:${asm.vespa.version}
 org.ow2.asm:asm-tree:${asm.vespa.version}
 org.ow2.asm:asm:${asm.vespa.version}
 org.slf4j:slf4j-api:${slf4j.vespa.version}
-org.tukaani:xz:1.11
+org.tukaani:xz:1.12
 org.twdata.maven:mojo-executor:${mojo-executor.vespa.version}
 org.vafer:jdependency:${vafer.jdependency.vespa.version}
