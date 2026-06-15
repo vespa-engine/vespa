@@ -37,7 +37,7 @@
     "pretty-quick": "4.2.2",
     "react-router-dom": "7.15.1",
     "use-context-selector": "2.0.0",
-    "vite": "6.4.2",
+    "vite": "6.4.3",
     "vitest": "4.1.0"
   }
 }
