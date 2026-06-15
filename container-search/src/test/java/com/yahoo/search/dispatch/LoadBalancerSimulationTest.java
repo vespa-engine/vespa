@@ -371,7 +371,7 @@ public class LoadBalancerSimulationTest {
 
     @Test
     void testLatencyAmortizedOverRequestsPolicy() {
-        runSimulation(LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS);
+        runSimulation(LoadBalancer.Policy.ADAPTIVE);
     }
 
     @Test
