@@ -247,13 +247,11 @@ public class ModelContextImpl implements ModelContext {
         @Override public double clusterControllerNodeMemory() { return flag(PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY).value(); }
         @Override public boolean useLegacyWandQueryParsing() { return flag(Flags.USE_LEGACY_WAND_QUERY_PARSING).value(); }
         @Override public boolean useSimpleAnnotations() { return flag(Flags.USE_SIMPLE_ANNOTATIONS).value(); }
-        @Override public boolean sendProtobufQuerytree() { return true; }
         @Override public boolean sendOldQueryStack() { return flag(Flags.SEND_OLD_QUERY_STACK).value(); }
         @Override public boolean forwardAllLogLevels() { return flag(PermanentFlags.FORWARD_ALL_LOG_LEVELS).value(); }
         @Override public long zookeeperPreAllocSize() { return flag(PermanentFlags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB).value(); }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(PermanentFlags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
         @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
-        @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
         @Override public OptionalInt metricsProxyHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB).value()); }
         @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB); }
