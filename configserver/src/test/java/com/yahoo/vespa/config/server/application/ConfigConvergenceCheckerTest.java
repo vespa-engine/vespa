@@ -181,11 +181,8 @@ public class ConfigConvergenceCheckerTest {
                         {
                           "config": {
                             "generation": 2,
-                            "configStatus": {
-                              "generation": 3,
-                              "status": "failed",
-                              "message": "Failed to construct component Foo"
-                            }
+                            "wantedGeneration": 3,
+                            "message": "Failed to construct component Foo"
                           }
                         }
                 """)));
@@ -203,11 +200,8 @@ public class ConfigConvergenceCheckerTest {
                        {
                          "config": {
                            "generation": 2,
-                           "configStatus": {
-                             "generation": 3,
-                             "status": "failed",
-                             "message": "Failed to construct component Foo"
-                           }
+                           "wantedGeneration": 3,
+                           "message": "Failed to construct component Foo"
                          }
                        }
                """)));

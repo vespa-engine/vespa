@@ -235,12 +235,13 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             if (response.getBody() == null) throw new IOException("Response has no content");
             JsonNode json = Jackson.mapper().readTree(response.getBodyText());
             JsonNode configNode = json.get("config");
-            JsonNode configStatusNode = json.get("config").get("configStatus");
-            if (configStatusNode != null && "failed".equals(configStatusNode.path("status").asText())) {
-                return ServiceGenerationResult.configFailed(configStatusNode.path("generation").asLong(),
-                                                            configStatusNode.path("message").asText("unknown failure"));
+            long generation = configNode.get("generation").asLong(-1);
+            long wantedGeneration = configNode.path("wantedGeneration").asLong(generation);
+            if (wantedGeneration > generation) {
+                return ServiceGenerationResult.configFailed(wantedGeneration,
+                                                            configNode.path("message").asText("unknown failure"));
             }
-            return ServiceGenerationResult.ok(configNode.get("generation").asLong(-1));
+            return ServiceGenerationResult.ok(generation);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

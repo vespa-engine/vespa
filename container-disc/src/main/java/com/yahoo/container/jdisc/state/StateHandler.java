@@ -196,10 +196,8 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         configNode.put("applyOnRestart", applyOnRestart);
         configNode.set("container", jsonMapper.createObjectNode().put("generation", config.generation()));
 
-        ObjectNode status = configNode.putObject("configStatus");
-        status.put("generation", configStatus.generation());
-        status.put("status", configStatus.status().toString());
-        if (configStatus.isFailed()) status.put("message", configStatus.message());
+        configNode.put("wantedGeneration", configStatus.generation());
+        if (configStatus.isFailed()) configNode.put("message", configStatus.message());
 
         return jsonMapper.createObjectNode().set(CONFIG_GENERATION_PATH, configNode);
     }

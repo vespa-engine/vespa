@@ -202,8 +202,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
     @Test
     void config_status_is_ok_by_default() throws Exception {
         JsonNode config = requestAsJson(V1_URI + "config").get("config");
-        assertEquals("ok", config.get("configStatus").get("status").asText());
-        assertEquals(0, config.get("configStatus").get("generation").asLong());
+        assertEquals(0, config.get("wantedGeneration").asLong());
         assertNull(config.get("message"));
     }
 
@@ -213,9 +212,8 @@ public class StateHandlerTest extends StateHandlerTestBase {
         container.setConfigStatus(META_GENERATION, errorMessage);
 
         JsonNode config = requestAsJson(V1_URI + "config").get("config");
-        assertEquals("failed", config.get("configStatus").get("status").asText());
-        assertEquals(META_GENERATION, config.get("configStatus").get("generation").asLong());
-        assertEquals(errorMessage, config.get("configStatus").get("message").asText());
+        assertEquals(META_GENERATION, config.get("wantedGeneration").asLong());
+        assertEquals(errorMessage, config.get("message").asText());
     }
 
     @Test
