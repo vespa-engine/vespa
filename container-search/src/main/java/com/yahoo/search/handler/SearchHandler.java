@@ -473,7 +473,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private Result validateQuery(Query query) {
-        DefaultProperties.requireNotPresentIn(query.getHttpRequest().propertyMap());
+        DefaultProperties.requireNotPresentIn(query.getRequestMap());
 
         int maxHits = query.properties().getInteger(DefaultProperties.MAX_HITS);
         int maxOffset = query.properties().getInteger(DefaultProperties.MAX_OFFSET);

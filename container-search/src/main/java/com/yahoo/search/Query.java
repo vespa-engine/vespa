@@ -49,6 +49,7 @@ import com.yahoo.yolean.Exceptions;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -155,6 +156,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** The synchronous view of the JDisc request causing this query */
     private final HttpRequest httpRequest;
+
+    /** Request map used to construct this query */
+    private final Map<String, String> requestMap;
 
     /** The context, or null if there is no context */
     private QueryContext context = null;
@@ -333,6 +337,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
+        this.requestMap = Collections.unmodifiableMap(requestMap);
         init(requestMap, queryProfile, Embedder.throwsOnUse.asMap(), ZoneInfo.defaultInfo(), SchemaInfo.empty());
     }
 
@@ -355,6 +360,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                   SchemaInfo schemaInfo) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
+        this.requestMap = Collections.unmodifiableMap(requestMap);
         init(requestMap, queryProfile, embedders, zoneInfo, schemaInfo);
     }
 
@@ -413,6 +419,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         super(query.properties().clone());
         this.startTime = startTime;
         this.httpRequest = query.httpRequest;
+        this.requestMap = query.requestMap;
         query.copyPropertiesTo(this);
     }
 
@@ -968,6 +975,14 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * when running with queries from the network.
      */
     public HttpRequest getHttpRequest() { return httpRequest; }
+
+    /**
+     * Return the request map used to construct this query.
+     * Falls back to the HTTP request parameters if no request map was explicitly specified.
+     */
+    public Map<String, String> getRequestMap() {
+        return this.requestMap != null ? this.requestMap : httpRequest.propertyMap();
+    }
 
     public URI getUri() { return httpRequest != null ? httpRequest.getUri() : null; }
 

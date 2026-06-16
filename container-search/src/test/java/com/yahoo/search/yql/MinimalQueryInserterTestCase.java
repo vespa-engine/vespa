@@ -3,6 +3,7 @@ package com.yahoo.search.yql;
 
 import com.google.common.base.Charsets;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
@@ -22,9 +23,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -397,19 +402,41 @@ public class MinimalQueryInserterTestCase {
 
     @Test
     void globalMaxGroupsCannotBeSetInRequest() {
+        String yql = "select foo from bar where baz contains 'cox' | all(group(a) each(output(count())))";
+        verifyThatQueryWithGlobalMaxGroupsProducesError(makeQueryWithGlobalMaxGroupsFromGetRequest(yql));
+        verifyThatQueryWithGlobalMaxGroupsProducesError(makeQueryWithGlobalMaxGroupsFromPostRequest(yql));
+    }
+
+    void verifyThatQueryWithGlobalMaxGroupsProducesError(Query query) {
         try {
-            URIBuilder builder = new URIBuilder();
-            builder.setPath("search/");
-            builder.setParameter("yql", "select foo from bar where baz contains 'cox' " +
-                    "| all(group(a) each(output(count())))");
-            builder.setParameter("grouping.globalMaxGroups", "-1");
-            Query query = new Query(builder.toString());
             execution.search(query);
             fail();
         }
         catch (IllegalInputException e) {
             assertEquals("grouping.globalMaxGroups must be specified in a query profile.", e.getCause().getMessage());
         }
+    }
+
+    Query makeQueryWithGlobalMaxGroupsFromGetRequest(String yql) {
+        URIBuilder builder = new URIBuilder();
+        builder.setPath("search/");
+        builder.setParameter("yql", yql);
+        builder.setParameter("grouping.globalMaxGroups", "-1");
+        return new Query(builder.toString());
+    }
+
+    Query makeQueryWithGlobalMaxGroupsFromPostRequest(String yql) {
+        String data = "{ \"yql\": \"" + yql + "\", \"grouping.globalMaxGroups\": 42 }";
+        var stream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+        var request = HttpRequest.createTestRequest("/search/", com.yahoo.jdisc.http.HttpRequest.Method.POST, stream);
+
+        // SearchHandler extracts data from HTTP request and puts parameters into requestMap
+        // The point is that "grouping.globalMaxGroups" will not be a parameter of the HTTP request!
+        Map<String, String> requestMap = new HashMap<>(request.propertyMap());
+        requestMap.put("grouping.globalMaxGroups", "42");
+        requestMap.put("yql", yql);
+
+        return new Query(request, requestMap, null);
     }
 
     @Test
