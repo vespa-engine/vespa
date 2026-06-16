@@ -11,6 +11,9 @@ import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
@@ -66,7 +69,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(ConfigConvergenceChecker.class.getName());
 
-    private final static Set<String> serviceTypesToCheck = Set.of(
+    private static final Set<String> serviceTypesToCheck = Set.of(
             CONTAINER.serviceName,
             LOGSERVER_CONTAINER.serviceName,
             CLUSTERCONTROLLER_CONTAINER.serviceName,
@@ -79,9 +82,12 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-convergence-checker-response-handler-"));
+    private final BooleanFlag useStateV1ExtendedInfo;
 
     @Inject
-    public ConfigConvergenceChecker() {}
+    public ConfigConvergenceChecker(FlagSource flagSource) {
+        this.useStateV1ExtendedInfo = Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.bindTo(flagSource);
+    }
 
     /** Fetches the active config generation for all services in the given application. */
     public Map<ServiceInfo, Long> getServiceConfigGenerations(Application application, Duration timeoutPerService) {
@@ -237,7 +243,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             JsonNode configNode = json.get("config");
             long generation = configNode.get("generation").asLong(-1);
             long wantedGeneration = configNode.path("wantedGeneration").asLong(generation);
-            if (wantedGeneration > generation) {
+            if (useStateV1ExtendedInfo.value() && (wantedGeneration > generation)) {
                 return ServiceGenerationResult.configFailed(wantedGeneration,
                                                             configNode.path("message").asText("unknown failure"));
             }

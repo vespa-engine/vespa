@@ -10,6 +10,8 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -63,7 +65,9 @@ public class ConfigConvergenceCheckerTest {
                                       3,
                                       new Version(0, 0, 0),
                                       MetricUpdater.createTestUpdater(), appId);
-        checker = new ConfigConvergenceChecker();
+        InMemoryFlagSource flagSource = new InMemoryFlagSource()
+                .withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), true);
+        checker = new ConfigConvergenceChecker(flagSource);
     }
 
     @Test

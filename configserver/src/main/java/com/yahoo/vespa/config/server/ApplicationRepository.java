@@ -272,7 +272,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private Metric metric = new NullMetric();
         private SecretStoreValidator secretStoreValidator = new SecretStoreValidator();
         private FlagSource flagSource = new InMemoryFlagSource();
-        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
+        private ConfigConvergenceChecker configConvergenceChecker = null;
         private ConfigStateChecker configStateChecker = new ConfigStateChecker();
         private Map<String, List<Token>> activeTokens = Map.of();
         private Optional<DeploymentConfigStore> deploymentConfigStore = Optional.empty();
@@ -352,7 +352,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              tenantRepository.hostProvisionerProvider().getHostProvisioner(),
                                              deploymentConfigStore,
                                              InfraDeployerProvider.empty().getInfraDeployer(),
-                                             configConvergenceChecker,
+                                             configConvergenceChecker == null ? new ConfigConvergenceChecker(flagSource) : configConvergenceChecker,
                                              configStateChecker,
                                              httpProxy,
                                              endpointsChecker,

@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
     }
 
     public MockConfigConvergenceChecker(long wantedGeneration, List<ServiceInfo> servicesThatFailFirstIteration) {
+        super(new InMemoryFlagSource());
         this.wantedGeneration = wantedGeneration;
         this.servicesThatFailFirstIteration = servicesThatFailFirstIteration;
     }
