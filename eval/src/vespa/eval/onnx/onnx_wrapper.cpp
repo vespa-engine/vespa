@@ -167,7 +167,7 @@ template <typename E1, typename E2> bool is_same_type(E1 e1, E2 e2) {
 auto convert_optimize(Onnx::Optimize optimize) {
     switch (optimize) {
     case Onnx::Optimize::ENABLE:
-        return ORT_ENABLE_ALL;
+        return ORT_DISABLE_ALL;
     case Onnx::Optimize::DISABLE:
         return ORT_DISABLE_ALL;
     }

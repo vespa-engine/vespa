@@ -96,7 +96,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
 
     private static OrtSession.SessionOptions createSessionOptions(OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
         var sessionOpts = new OrtSession.SessionOptions();
-        sessionOpts.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
+        sessionOpts.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.NO_OPT);
         var execMode = vespaOpts.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? PARALLEL : SEQUENTIAL;
         sessionOpts.setExecutionMode(execMode);
         sessionOpts.setInterOpNumThreads(execMode == PARALLEL ? vespaOpts.interOpThreads() : 1);
