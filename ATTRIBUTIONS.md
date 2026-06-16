@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-05-31
+Last updated: 2026-06-16
 
 ---
 
@@ -216,11 +216,11 @@ Last updated: 2026-05-31
 
 ---
 
-## com.fasterxml.jackson.core 2.21.3 — Apache 2.0
+## com.fasterxml.jackson.core 2.21.4 — Apache 2.0
 
 - Homepage: <https://github.com/FasterXML/jackson-core>
-- Copyright 2018-2020 Raffaello Giulietti
 - Copyright 2021 The fast_float authors
+- Copyright 2018-2020 Raffaello Giulietti
 -  Switzerland
 - Copyright 2022 Daniel Lemire
 - FasterXML
@@ -228,7 +228,7 @@ Last updated: 2026-05-31
 
 ---
 
-## com.fasterxml.woodstox 7.2.0 — Apache 2.0
+## com.fasterxml.woodstox 7.2.1 — Apache 2.0
 
 - Homepage: <https://github.com/FasterXML/woodstox>
 
@@ -895,9 +895,9 @@ Last updated: 2026-05-31
 
 ---
 
-## org.apache.maven.plugin-tools 3.13.1 — Apache 2.0
+## org.apache.maven.plugin-tools 3.15.2 — Apache 2.0
 
-- Homepage: <https://www.apache.org/>
+- Homepage: <https://maven.apache.org/plugin-tools>
 - The Apache Software Foundation
 
 ---
@@ -909,7 +909,7 @@ Last updated: 2026-05-31
 
 ---
 
-## org.apache.maven.resolver 2.0.17 — Apache 2.0
+## org.apache.maven.resolver 2.0.18 — Apache 2.0
 
 - Homepage: <https://maven.apache.org/resolver/>
 - The Apache Software Foundation
@@ -963,7 +963,7 @@ Last updated: 2026-05-31
 
 ---
 
-## org.codehaus.plexus 4.11.0 — Apache 2.0
+## org.codehaus.plexus 4.12.0 — Apache 2.0
 
 - Homepage: <https://codehaus-plexus.github.io/plexus-archiver/>
 - Codehaus Plexus
@@ -1012,7 +1012,7 @@ Last updated: 2026-05-31
 
 ---
 
-## org.tukaani 1.11 — BSD Zero
+## org.tukaani 1.12 — BSD Zero
 
 - Homepage: <https://tukaani.org/xz/java.html>
 
@@ -1047,12 +1047,12 @@ Last updated: 2026-05-31
 
 ---
 
-## property-information 7.1.0 — MIT
+## property-information 7.2.0 — MIT
 
 - Homepage: <https://github.com/wooorm/property-information#readme>
+- Copyright Facebook, Inc
 - Copyright Titus Wormer
 - Copyright Titus Wormer <mailto:tituswormer@gmail.com>
-- Copyright Facebook, Inc.
 
 ---
 
@@ -1114,14 +1114,14 @@ Last updated: 2026-05-31
 
 ---
 
-## react 19.1.0 — MIT
+## react 19.2.6 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
 
 ---
 
-## react-dom 19.1.0 — MIT
+## react-dom 19.2.6 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
@@ -1192,7 +1192,7 @@ Last updated: 2026-05-31
 
 ---
 
-## scheduler 0.26.0 — MIT
+## scheduler 0.27.0 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
