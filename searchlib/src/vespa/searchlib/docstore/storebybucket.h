@@ -79,7 +79,9 @@ public:
     size_t getChunkCount() const noexcept;
 
 private:
+    static constexpr size_t chunk_max_bytes = 0x10000;
     void post_compress_chunk(Chunk::UP chunk);
+    void post_compress_current_chunk();
     void incChunksPosted(size_t chunk_size);
     void waitAllProcessed();
     Chunk::UP createChunk();
