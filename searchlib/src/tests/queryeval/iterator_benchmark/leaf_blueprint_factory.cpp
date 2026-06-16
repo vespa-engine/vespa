@@ -9,9 +9,11 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/vespalib/util/fast_range.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/stride.h>
 #include <vespa/vespalib/util/xoshiro.h>
 
 #include <format>
@@ -20,7 +22,11 @@
 
 using search::attribute::BasicType;
 using search::attribute::Config;
+using search::query::Range;
+using search::query::SimpleRangeTerm;
+using search::query::Weight;
 using vespalib::map_random_to_range;
+using vespalib::Stride;
 using vespalib::Xoshiro256PlusPlusPrng;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
@@ -91,6 +97,46 @@ std::unique_ptr<Blueprint> EnnBlueprintFactory::make_blueprint() {
 }
 
 std::string EnnBlueprintFactory::get_name(Blueprint& blueprint) const {
+    return get_class_name(blueprint);
+}
+
+// ---------------- AttributeRangeBlueprintFactory --------------------
+
+AttributeRangeBlueprintFactory::AttributeRangeBlueprintFactory(const RangeConfig& cfg)
+    : _range_low(cfg.range_low), _range_high(cfg.range_high()), _range_size(cfg.range_size), _searchable() {
+    REQUIRE(cfg.field_cfg.is_attr());
+    REQUIRE(cfg.target_hits <= cfg.num_docs);
+    REQUIRE(cfg.uncommon_value < _range_low || cfg.uncommon_value > _range_high);
+
+    Xoshiro256PlusPlusPrng  gen(cfg.seed);
+    Stride                  stride(cfg.num_docs, cfg.target_hits);
+    uint32_t                next_docid = 1;
+    uint32_t                hits_generated = 0;
+    AttributeContextBuilder builder;
+    builder.add_numeric(
+        cfg.field_cfg.attr_cfg(), "range_attr", cfg.num_docs, [&](uint32_t docid) noexcept -> int64_t {
+            if (docid == next_docid) {
+                next_docid += stride.next();
+                ++hits_generated;
+                int64_t value = map_random_to_range(gen(), static_cast<uint64_t>(_range_size)) + _range_low;
+                return value;
+            }
+            return cfg.uncommon_value;
+        });
+
+    REQUIRE_EQ(hits_generated, cfg.target_hits);
+
+    _searchable = builder.build();
+}
+
+AttributeRangeBlueprintFactory::~AttributeRangeBlueprintFactory() = default;
+
+std::unique_ptr<Blueprint> AttributeRangeBlueprintFactory::make_blueprint() {
+    SimpleRangeTerm term(query::Range(_range_low, _range_high), "range_attr", 0, Weight(1));
+    return _searchable->create_blueprint(FieldSpec("range_attr", 0, 0), term);
+}
+
+std::string AttributeRangeBlueprintFactory::get_name(Blueprint& blueprint) const {
     return get_class_name(blueprint);
 }
 
