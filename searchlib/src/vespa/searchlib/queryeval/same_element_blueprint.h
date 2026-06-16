@@ -22,6 +22,7 @@ private:
     bool                                      _expose_match_data_for_same_element;
     std::vector<uint32_t>                     _element_filter;
     AnyFlow my_flow(InFlow in_flow) const override;
+    FlowStats self_flow_stats(double est, size_t num_children) const override;
 
 public:
     SameElementBlueprint(const FieldSpec&                                 field,

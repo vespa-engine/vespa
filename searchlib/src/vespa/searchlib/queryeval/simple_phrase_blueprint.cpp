@@ -35,11 +35,12 @@ void SimplePhraseBlueprint::addTerm(Blueprint::UP term) {
     _terms.push_back(std::move(term));
 }
 
-void SimplePhraseBlueprint::sort(InFlow in_flow) {
+double SimplePhraseBlueprint::sort(InFlow in_flow) {
     resolve_strict(in_flow);
     for (auto& term : _terms) {
         term->sort(in_flow);
     }
+    return abs_cost();
 }
 
 FlowStats SimplePhraseBlueprint::calculate_flow_stats(uint32_t docid_limit) const {

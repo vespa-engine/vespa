@@ -275,7 +275,10 @@ public:
 
     bool should_use() const { return _should_use; }
 
-    void sort(queryeval::InFlow in_flow) override { resolve_strict(in_flow); }
+    double sort(queryeval::InFlow in_flow) override {
+        resolve_strict(in_flow);
+        return abs_cost();
+    }
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         using OrFlow = search::queryeval::OrFlow;
         using MyAdapter = attribute::HitEstimateFlowStatsAdapter;
@@ -358,7 +361,10 @@ public:
 
     void set_pre_filter_estimate(const HitEstimate& estimate) { _pre_filter_estimate = estimate; }
 
-    void sort(queryeval::InFlow in_flow) override { resolve_strict(in_flow); }
+    double sort(queryeval::InFlow in_flow) override {
+        resolve_strict(in_flow);
+        return abs_cost();
+    }
 
     queryeval::FlowStats calculate_flow_stats(uint32_t) const override { return default_flow_stats(0); }
 
@@ -480,7 +486,10 @@ public:
     }
     void complete(HitEstimate estimate) { setEstimate(estimate); }
 
-    void sort(queryeval::InFlow in_flow) override { resolve_strict(in_flow); }
+    double sort(queryeval::InFlow in_flow) override {
+        resolve_strict(in_flow);
+        return abs_cost();
+    }
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         using OrFlow = search::queryeval::OrFlow;

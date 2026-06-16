@@ -65,16 +65,17 @@ StoreByBucket::~StoreByBucket() = default;
 
 void StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, ConstBufferRef data) {
     if (!_current->hasRoom(data.size())) {
-        Chunk::UP tmpChunk = createChunk();
-        _current.swap(tmpChunk);
-        post_compress_chunk(std::move(tmpChunk));
+        post_compress_current_chunk();
     }
     _current->append(lid, data);
     _storeIndex.store(Index(bucketId, _current->getId(), chunkId, lid));
+    if (data.size() >= chunk_max_bytes) {
+        post_compress_current_chunk();
+    }
 }
 
 Chunk::UP StoreByBucket::createChunk() {
-    return std::make_unique<Chunk>(_chunkSerial++, Chunk::Config(0x10000));
+    return std::make_unique<Chunk>(_chunkSerial++, Chunk::Config(chunk_max_bytes));
 }
 
 size_t StoreByBucket::getChunkCount() const noexcept {
@@ -102,6 +103,12 @@ void StoreByBucket::post_compress_chunk(Chunk::UP chunk) {
     _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
 }
 
+void StoreByBucket::post_compress_current_chunk() {
+    auto tmpChunk = createChunk();
+    _current.swap(tmpChunk);
+    post_compress_chunk(std::move(tmpChunk));
+}
+
 void StoreByBucket::incChunksPosted(size_t chunk_size) {
     std::unique_lock guard(_compress_chunks_tracker._lock);
     while (_compress_chunks_tracker.is_full(chunk_size)) {
@@ -120,7 +127,11 @@ void StoreByBucket::waitAllProcessed() {
 }
 
 void StoreByBucket::close() {
-    post_compress_chunk(std::move(_current));
+    if (_current->empty()) {
+        _current.reset();
+    } else {
+        post_compress_chunk(std::move(_current));
+    }
     waitAllProcessed();
 }
 

@@ -1627,4 +1627,39 @@ TEST(IntermediateBlueprintsTest, cost_for_WEAKAND) {
                 OrFlow::cost_of(child_stats, true) + flow::heap_cost(est, 3));
 }
 
+// abs_cost is accumulated by the shared sort epilogue from the children
+// abs_cost plus the node's own self cost, with the cost of being forced
+// strict added on the way out. We pin the exact value using keep_order so
+// the children stay in a known order (order selection is tested elsewhere).
+//
+// AND of three leaves (MyLeaf flow stats are {est, cost, cost*est}):
+//   A{0.2, 1.1, 0.22}  B{0.3, 1.2, 0.36}  C{0.5, 1.3, 0.65}
+// in-flow: non-strict, rate 1.0; kept order [A, B, C]; self cost of AND is 0.
+double abs_cost_of_kept_order_and(InFlow in_flow, bool allow_force_strict) {
+    Blueprint::UP bp = make::AND().cost(1.1).leaf(200).cost(1.2).leaf(300).cost(1.3).leaf(500);
+    bp->setDocIdLimit(1000);
+    auto opts = Blueprint::Options().keep_order(true).allow_force_strict(allow_force_strict);
+    bp = Blueprint::optimize_and_sort(std::move(bp), in_flow, opts);
+    return bp->abs_cost();
+}
+
+TEST(IntermediateBlueprintsTest, abs_cost_for_AND_with_kept_order) {
+    // without force-strict: plain non-strict AND flow, cost * flow per child
+    //   A: 1.1 * 1.0          = 1.1     (flow 1.0)
+    //   B: 1.2 * 0.2          = 0.24    (flow 1.0 * 0.2)
+    //   C: 1.3 * (0.2 * 0.3)  = 0.078   (flow 1.0 * 0.2 * 0.3)
+    EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), false), 1.1 * 1.0 + 1.2 * 0.2 + 1.3 * (0.2 * 0.3));
+
+    // with force-strict: the AND is cheaper strict, so it forces itself strict.
+    // children are then evaluated strict, in order:
+    //   A: 0.22                (strict_cost; flow 1.0)
+    //   B: 1.2 * 0.2  = 0.24   (forcing not worth it at flow 0.2)
+    //   C: 1.3 * (0.2 * 0.3)   (forcing not worth it)
+    // plus the cost of forcing strict against a non-strict caller:
+    //   strict_cost_diff(est_AND, rate) = 0.2 * (1.0 - 0.2 * 0.3 * 0.5)
+    double children = 0.22 + 1.2 * 0.2 + 1.3 * (0.2 * 0.3);
+    double force_strict_cost = 0.2 * (1.0 - 0.2 * 0.3 * 0.5);
+    EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), true), children + force_strict_cost);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

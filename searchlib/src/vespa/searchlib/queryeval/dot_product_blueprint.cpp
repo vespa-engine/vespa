@@ -35,12 +35,12 @@ void DotProductBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimat
     _terms.push_back(std::move(term));
 }
 
-void DotProductBlueprint::sort(InFlow in_flow) {
-    in_flow.force_strict();
-    resolve_strict(in_flow);
+double DotProductBlueprint::sort(InFlow in_flow) {
+    resolve_strict(in_flow, true);
     for (auto& term : _terms) {
         term->sort(in_flow);
     }
+    return abs_cost();
 }
 
 FlowStats DotProductBlueprint::calculate_flow_stats(uint32_t docid_limit) const {

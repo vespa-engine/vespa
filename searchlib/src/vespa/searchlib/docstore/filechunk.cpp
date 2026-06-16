@@ -330,7 +330,7 @@ void FileChunk::appendTo(vespalib::Executor& executor, const IGetLid& db, IWrite
     size_t                            limit = std::thread::hardware_concurrency();
     vespalib::ArrayQueue<FutureChunk> queue;
     size_t inflight_bytes = 0;         // Current inflight compressed data, is more when decompressed
-    size_t max_inflight_bytes = 16_Gi; // Max inflight compressed data (excessive value for now).
+    size_t max_inflight_bytes = 32_Mi; // Max inflight compressed data
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
         uint32_t chunk_size = _chunkInfo[chunkId].getSize();
         while (!queue.empty() && (queue.size() >= limit || inflight_bytes + chunk_size > max_inflight_bytes ||

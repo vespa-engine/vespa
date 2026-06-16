@@ -311,8 +311,13 @@ OrBlueprint::~OrBlueprint() = default;
 
 FlowStats OrBlueprint::calculate_flow_stats(uint32_t) const {
     double est = OrFlow::estimate_of(get_children());
-    return {est, OrFlow::cost_of(get_children(), false),
-            OrFlow::cost_of(get_children(), true) + flow::heap_cost(est, get_children().size())};
+    auto   self = self_flow_stats(est, childCnt());
+    return {est, OrFlow::cost_of(get_children(), false) + self.cost,
+            OrFlow::cost_of(get_children(), true) + self.strict_cost};
+}
+
+FlowStats OrBlueprint::self_flow_stats(double est, size_t num_children) const {
+    return {est, 0.0, flow::heap_cost(est, num_children)};
 }
 
 Blueprint::HitEstimate OrBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -410,8 +415,13 @@ FlowStats WeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
     double child_est = OrFlow::estimate_of(get_children());
     double my_est = abs_to_rel_est(_n, docid_limit);
     double est = (child_est + my_est) / 2.0;
-    return {est, OrFlow::cost_of(get_children(), false),
-            OrFlow::cost_of(get_children(), true) + flow::heap_cost(est, get_children().size())};
+    auto   self = self_flow_stats(est, childCnt());
+    return {est, OrFlow::cost_of(get_children(), false) + self.cost,
+            OrFlow::cost_of(get_children(), true) + self.strict_cost};
+}
+
+FlowStats WeakAndBlueprint::self_flow_stats(double est, size_t num_children) const {
+    return {est, 0.0, flow::heap_cost(est, num_children)};
 }
 
 Blueprint::HitEstimate WeakAndBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -528,8 +538,13 @@ FlowStats NearBlueprint::calculate_flow_stats(uint32_t) const {
     size_t num_positive_terms = sat_sub(get_children().size(), _num_negative_terms);
     auto   positive_terms = std::span(get_children().data(), num_positive_terms);
     double est = AndFlow::estimate_of(positive_terms);
-    return {est, AndFlow::cost_of(positive_terms, false) + childCnt() * est,
-            AndFlow::cost_of(positive_terms, true) + childCnt() * est};
+    auto   self = self_flow_stats(est, childCnt());
+    return {est, AndFlow::cost_of(positive_terms, false) + self.cost,
+            AndFlow::cost_of(positive_terms, true) + self.strict_cost};
+}
+
+FlowStats NearBlueprint::self_flow_stats(double est, size_t num_children) const {
+    return {est, num_children * est, num_children * est};
 }
 
 Blueprint::HitEstimate NearBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -581,15 +596,21 @@ void ONearBlueprint::optimize(Blueprint*& self, OptimizePass pass) {
 }
 
 AnyFlow ONearBlueprint::my_flow(InFlow in_flow) const {
-    return AnyFlow::create<AndFlow>(in_flow);
+    size_t num_positive_terms = sat_sub(get_children().size(), _num_negative_terms);
+    return AnyFlow::create<AndFlow>(in_flow, num_positive_terms);
 }
 
 FlowStats ONearBlueprint::calculate_flow_stats(uint32_t) const {
     size_t num_positive_terms = sat_sub(get_children().size(), _num_negative_terms);
     auto   positive_terms = std::span(get_children().data(), num_positive_terms);
     double est = AndFlow::estimate_of(positive_terms);
-    return {est, AndFlow::cost_of(positive_terms, false) + childCnt() * est,
-            AndFlow::cost_of(positive_terms, true) + childCnt() * est};
+    auto   self = self_flow_stats(est, childCnt());
+    return {est, AndFlow::cost_of(positive_terms, false) + self.cost,
+            AndFlow::cost_of(positive_terms, true) + self.strict_cost};
+}
+
+FlowStats ONearBlueprint::self_flow_stats(double est, size_t num_children) const {
+    return {est, num_children * est, num_children * est};
 }
 
 Blueprint::HitEstimate ONearBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -726,7 +747,12 @@ FlowStats SourceBlenderBlueprint::calculate_flow_stats(uint32_t) const {
         my_strict_cost = std::max(my_strict_cost, child->strict_cost());
     }
     double my_est = OrFlow::estimate_of(get_children());
-    return {my_est, my_cost + 1.0, my_strict_cost + my_est};
+    auto   self = self_flow_stats(my_est, childCnt());
+    return {my_est, my_cost + self.cost, my_strict_cost + self.strict_cost};
+}
+
+FlowStats SourceBlenderBlueprint::self_flow_stats(double est, size_t) const {
+    return {est, 1.0, est};
 }
 
 Blueprint::HitEstimate SourceBlenderBlueprint::combine(const std::vector<HitEstimate>& data) const {
