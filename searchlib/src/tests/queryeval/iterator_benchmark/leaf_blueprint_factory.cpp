@@ -103,13 +103,16 @@ std::string EnnBlueprintFactory::get_name(Blueprint& blueprint) const {
 // ---------------- AttributeRangeBlueprintFactory --------------------
 
 AttributeRangeBlueprintFactory::AttributeRangeBlueprintFactory(const RangeConfig& cfg)
-    : _range_low(cfg.range_low), _range_high(cfg.range_high()), _range_size(cfg.range_size), _searchable() {
+    : _range_low(cfg.range_low), _range_high(cfg.range_low), _range_size(cfg.range_size), _searchable() {
     REQUIRE(cfg.field_cfg.is_attr());
+    REQUIRE(cfg.target_hits > 0);
     REQUIRE(cfg.target_hits <= cfg.num_docs);
+    REQUIRE(cfg.range_size > 0);
+    _range_high = cfg.range_high();
     REQUIRE(cfg.uncommon_value < _range_low || cfg.uncommon_value > _range_high);
 
     Xoshiro256PlusPlusPrng  gen(cfg.seed);
-    Stride                  stride(cfg.num_docs, cfg.target_hits);
+    Stride                  stride(cfg.num_docs, static_cast<uint32_t>(cfg.target_hits));
     uint32_t                next_docid = 1;
     uint32_t                hits_generated = 0;
     AttributeContextBuilder builder;
