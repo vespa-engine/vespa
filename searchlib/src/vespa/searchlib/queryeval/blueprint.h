@@ -290,12 +290,22 @@ protected:
         _frozen = true;
     }
 
-    // Call this first inside sort implementations to handle 3 things:
+    // Call this first inside sort implementations. It will:
     //
-    // (1) force in_flow to be strict if allowed and better.
-    // (2) tag blueprint with the strictness of the in_flow.
-    // (3) calculate simple absolute cost estimate.
-    void resolve_strict(InFlow& in_flow) noexcept;
+    // (1) make in_flow strict if the node must always be strict, or if
+    //     allowed and cheaper.
+    // (2) tag the blueprint with the strictness of the in_flow.
+    // (3) set abs_cost to a simple local estimate (the value projected
+    //     during planning); this is the final value for leaf blueprints,
+    //     while intermediate blueprints replace it in sort with a value
+    //     accumulated from their children.
+    //
+    // Returns the extra cost of being strict when the caller did not
+    // expect it (0 otherwise). Intermediate blueprints add this on top
+    // of their children and self cost at the end of sort.
+    double resolve_strict(InFlow& in_flow, bool always_strict = false) noexcept;
+
+    void set_abs_cost(double abs_cost) noexcept { _abs_cost = abs_cost; }
 
 public:
     class IPredicate {
@@ -360,7 +370,9 @@ public:
     void null_plan(InFlow in_flow, uint32_t docid_limit);
 
     static Blueprint::UP optimize(Blueprint::UP bp);
-    virtual void sort(InFlow in_flow) = 0;
+    // Tag strictness (top-down) and return the absolute cost estimate
+    // of evaluating this node (and its subtree) with the given in flow.
+    virtual double sort(InFlow in_flow) = 0;
     static Blueprint::UP optimize_and_sort(Blueprint::UP bp, InFlow in_flow, const Options& opts) {
         auto opts_guard = bind_opts(opts);
         auto result = optimize(std::move(bp));
@@ -425,6 +437,7 @@ public:
     double estimate() const noexcept { return _flow_stats.estimate; }
     double cost() const noexcept { return _flow_stats.cost; }
     double strict_cost() const noexcept { return _flow_stats.strict_cost; }
+    double abs_cost() const noexcept { return _abs_cost; }
     virtual FlowStats calculate_flow_stats(uint32_t docid_limit) const = 0;
     void update_flow_stats(uint32_t docid_limit) { _flow_stats = calculate_flow_stats(docid_limit); }
     static FlowStats default_flow_stats(uint32_t docid_limit, uint32_t abs_est, size_t child_cnt);
@@ -546,6 +559,10 @@ protected:
 
     const Children& get_children() const { return _children; }
 
+    // The node's own flow stats, excluding the flow cost of its
+    // children. 'est' is the node's own estimate.
+    virtual FlowStats self_flow_stats(double est, size_t num_children) const;
+
 public:
     using IndexList = std::vector<size_t>;
     IntermediateBlueprint() noexcept;
@@ -555,7 +572,7 @@ public:
     void each_node_post_order(const std::function<void(Blueprint&)>& f) override;
 
     void optimize(Blueprint*& self, OptimizePass pass) override;
-    void sort(InFlow in_flow) override;
+    double sort(InFlow in_flow) final;
     void set_global_filter(const GlobalFilter& global_filter, double estimated_hit_ratio) override;
     void set_lazy_filter(const GlobalFilter& lazy_filter) override;
 
@@ -635,7 +652,7 @@ struct SimpleLeafBlueprint : LeafBlueprint {
     explicit SimpleLeafBlueprint() noexcept : LeafBlueprint(true) {}
     explicit SimpleLeafBlueprint(FieldSpecBase field) noexcept : LeafBlueprint(field, true) {}
     explicit SimpleLeafBlueprint(FieldSpecBaseList fields) noexcept : LeafBlueprint(std::move(fields), true) {}
-    void sort(InFlow in_flow) override;
+    double sort(InFlow in_flow) override;
 };
 
 // for leaf nodes representing more complex structures like wand/phrase

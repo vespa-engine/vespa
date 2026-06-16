@@ -138,6 +138,12 @@ inline bool should_force_strict(const FlowStats& stats, double rate) {
     return forced_strict_cost(stats, rate) < (stats.cost * rate);
 }
 
+// the absolute cost of evaluating something with the given flow stats
+// under an already-resolved in flow (no strict-forcing decision here)
+inline double cost_of(InFlow in_flow, const FlowStats& stats) {
+    return in_flow.strict() ? stats.strict_cost : stats.cost * in_flow.rate();
+}
+
 // estimate the absolute cost of evaluating a child with a specific in flow
 inline double min_child_cost(InFlow in_flow, const FlowStats& stats, bool allow_force_strict) {
     if (in_flow.strict()) {

@@ -48,13 +48,12 @@ void ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEs
     _terms.push_back(std::move(term));
 }
 
-void ParallelWeakAndBlueprint::sort(InFlow in_flow) {
+double ParallelWeakAndBlueprint::sort(InFlow in_flow) {
     resolve_strict(in_flow);
-    auto flow = OrFlow(in_flow);
     for (auto& term : _terms) {
-        term->sort(InFlow(flow.strict(), flow.flow()));
-        flow.add(term->estimate());
+        term->sort(in_flow);
     }
+    return abs_cost();
 }
 
 FlowStats ParallelWeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const {

@@ -255,8 +255,9 @@ void PredicateBlueprint::fetchPostings(const ExecuteInfo&) {
     }
 }
 
-void PredicateBlueprint::sort(InFlow in_flow) {
+double PredicateBlueprint::sort(InFlow in_flow) {
     resolve_strict(in_flow);
+    return abs_cost();
 }
 
 SearchIterator::UP PredicateBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray& tfmda) const {

@@ -106,7 +106,7 @@ public:
     double get_distance_threshold() const { return _hnsw_params.distance_threshold; }
     const HnswParams& get_hnsw_params() const { return _hnsw_params; }
 
-    void sort(InFlow in_flow) override;
+    double sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
     }
