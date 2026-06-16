@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "create_and_freeze_times.h"
-
 #include <string>
 
 namespace vespalib {
@@ -20,9 +18,6 @@ public:
 
     static void addCreateAndFreezeTime(vespalib::GenericHeader& header);
     static void setFreezeTime(vespalib::GenericHeader& header);
-    static std::chrono::steady_clock::duration get_flush_duration(const vespalib::GenericHeader& header);
-    static std::chrono::steady_clock::duration
-    make_flush_duration(const std::chrono::steady_clock::time_point& create_time);
 };
 
 } // namespace search::common

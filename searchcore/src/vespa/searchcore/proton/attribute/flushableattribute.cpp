@@ -11,6 +11,7 @@
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -27,6 +28,7 @@ LOG_SETUP(".proton.attribute.flushableattribute");
 
 using namespace search;
 using namespace vespalib;
+using search::common::CreateAndFreezeTimes;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using searchcorespi::IFlushTarget;
@@ -89,14 +91,14 @@ bool FlushableAttribute::Flusher::saveAttribute() {
             saveSuccess = _saver->save(saveTarget);
             if (saveSuccess) {
                 _fattr._attr->set_size_on_disk(saveTarget.size_on_disk());
-                _fattr._attr->set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
+                _fattr._attr->set_last_flush_duration(CreateAndFreezeTimes::make_flush_duration(create_time));
             }
             _saver.reset();
         } else {
             saveSuccess = _saveTarget.writeToFile(_fattr._tuneFileAttributes, fileHeaderContext);
             if (saveSuccess) {
                 _fattr._attr->set_size_on_disk(_saveTarget.size_on_disk());
-                _fattr._attr->set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
+                _fattr._attr->set_last_flush_duration(CreateAndFreezeTimes::make_flush_duration(create_time));
             }
         }
     }

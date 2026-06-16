@@ -40,12 +40,4 @@ void FileHeaderContext::setFreezeTime(GenericHeader& header) {
     }
 }
 
-steady_clock::duration FileHeaderContext::get_flush_duration(const vespalib::GenericHeader& header) {
-    return CreateAndFreezeTimes(header).get_flush_duration();
-}
-
-steady_clock::duration FileHeaderContext::make_flush_duration(const steady_clock::time_point& create_time) {
-    return CreateAndFreezeTimes::make_flush_duration(create_time);
-}
-
 } // namespace search::common

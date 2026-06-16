@@ -18,6 +18,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
@@ -39,7 +40,7 @@ using vespalib::getLastErrorString;
 using document::AssignValueUpdate;
 using document::ValueUpdate;
 using search::attribute::SearchContextParams;
-using search::common::FileHeaderContext;
+using search::common::CreateAndFreezeTimes;
 using search::index::DummyFileHeaderContext;
 using search::queryeval::SearchIterator;
 using vespalib::Generation;
@@ -287,7 +288,7 @@ bool AttributeVector::save(IAttributeSaveTarget& saveTarget, std::string_view fi
     auto result = saver->save(saveTarget);
     if (result) {
         set_size_on_disk(saveTarget);
-        set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
+        set_last_flush_duration(CreateAndFreezeTimes::make_flush_duration(create_time));
     }
     return result;
 }
