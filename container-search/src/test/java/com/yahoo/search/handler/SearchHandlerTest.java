@@ -155,6 +155,36 @@ public class SearchHandlerTest {
     }
 
     @Test
+    void testQueryProfileOnlyQueryParam() {
+        try (var tester = new SearchHandlerTester()) {
+            verifyQueryProfileOnlyResponse(sendQueryViaGet(tester.driver, "maxHits"), "maxHits");
+            verifyQueryProfileOnlyResponse(sendQueryViaPost(tester.driver, "maxHits"), "maxHits");
+            verifyQueryProfileOnlyResponse(sendQueryViaGet(tester.driver, "maxOffset"), "maxOffset");
+            verifyQueryProfileOnlyResponse(sendQueryViaPost(tester.driver, "maxOffset"), "maxOffset");
+            verifyQueryProfileOnlyResponse(sendQueryViaGet(tester.driver, "maxQueryItems"), "maxQueryItems");
+            verifyQueryProfileOnlyResponse(sendQueryViaPost(tester.driver, "maxQueryItems"), "maxQueryItems");
+        }
+    }
+
+    private RequestHandlerTestDriver.MockResponseHandler sendQueryViaGet(RequestHandlerTestDriver testDriver, String parameter) {
+        return testDriver.sendRequest("http://localhost/search/?query=status_code%3A0&" + parameter + "=42");
+    }
+
+    private RequestHandlerTestDriver.MockResponseHandler sendQueryViaPost(RequestHandlerTestDriver testDriver, String parameter) {
+        return testDriver.sendRequest("http://localhost/search/",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST,
+                "{ \"query\": \"status_code:0\", \"" + parameter + "\": 42 }",
+                "application/json");
+    }
+
+    private void verifyQueryProfileOnlyResponse(RequestHandlerTestDriver.MockResponseHandler responseHandler, String parameter) {
+        String response = responseHandler.readAll();
+        assertEquals(500, responseHandler.getStatus());
+        assertTrue(response.contains(parameter + " must be specified in a query profile"));
+        assertTrue(response.contains("\"code\":" + com.yahoo.container.protect.Error.UNSPECIFIED.code));
+    }
+
+    @Test
     void testResultStatus() {
         try (var tester = new SearchHandlerTester()) {
             assertEquals(200, tester.httpStatus(result().build()));
