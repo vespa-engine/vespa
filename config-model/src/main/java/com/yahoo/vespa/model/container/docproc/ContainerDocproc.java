@@ -146,19 +146,16 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
     public static class Threadpool extends ContainerThreadpool {
 
-        private final double threads;
-
         public Threadpool(DeployState ds, Element options) {
             super(ds, "docproc-handler", options);
-            threads = ds.featureFlags().docprocHandlerThreadpool();
         }
 
         @Override
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
-                    .relativeMaxThreads(threads)
-                    .relativeMinThreads(threads)
+                    .relativeMaxThreads(1)
+                    .relativeMinThreads(1)
                     .queueSize(Integer.MAX_VALUE);
         }
 
