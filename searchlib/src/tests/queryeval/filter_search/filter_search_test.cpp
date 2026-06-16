@@ -75,9 +75,10 @@ struct LeafProxy : SimpleLeafBlueprint {
     FlowStats calculate_flow_stats(uint32_t my_docid_limit) const override {
         return child->calculate_flow_stats(my_docid_limit);
     }
-    void sort(InFlow in_flow) override {
+    double sort(InFlow in_flow) override {
         resolve_strict(in_flow);
         child->sort(in_flow);
+        return abs_cost();
     }
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray&) const override { abort(); }
     SearchIteratorUP createFilterSearchImpl(Constraint constraint) const override {

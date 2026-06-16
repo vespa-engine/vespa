@@ -163,17 +163,20 @@ std::string Blueprint::profiler_name(std::string_view operation) const {
     return std::format("[{}]{}::{}", id(), getClassName(), operation);
 }
 
-void Blueprint::resolve_strict(InFlow& in_flow) noexcept {
-    // simple local estimation of absolute cost based on in flow and flow stats.
-    // does not account for cost saved by forcing children to be strict.
-    _abs_cost = flow::min_child_cost(in_flow, _flow_stats, opt_allow_force_strict());
-
-    if (!in_flow.strict() && opt_allow_force_strict()) {
-        if (flow::should_force_strict(_flow_stats, in_flow.rate())) {
-            in_flow.force_strict();
-        }
+double Blueprint::resolve_strict(InFlow& in_flow, bool always_strict) noexcept {
+    bool   was_strict = in_flow.strict();
+    double in_rate = in_flow.rate();
+    if (!was_strict &&
+        (always_strict || (opt_allow_force_strict() && flow::should_force_strict(_flow_stats, in_rate))))
+    {
+        in_flow.force_strict();
     }
     _strict = in_flow.strict();
+    // extra cost of being strict when the caller did not expect it
+    double strict_diff = (!was_strict && _strict) ? flow::strict_cost_diff(_flow_stats.estimate, in_rate) : 0.0;
+    // simple local estimate; final for leaves, replaced for intermediates in sort
+    _abs_cost = flow::cost_of(in_flow, _flow_stats) + strict_diff;
+    return strict_diff;
 }
 
 void Blueprint::each_node_post_order(const std::function<void(Blueprint&)>& f) {
@@ -600,16 +603,24 @@ void IntermediateBlueprint::optimize(Blueprint*& self, OptimizePass pass) {
     maybe_eliminate_self(self, get_replacement());
 }
 
-void IntermediateBlueprint::sort(InFlow in_flow) {
-    resolve_strict(in_flow);
+double IntermediateBlueprint::sort(InFlow in_flow) {
+    double strict_diff = resolve_strict(in_flow);
     if (!opt_keep_order()) [[likely]] {
         sort(_children, in_flow);
     }
-    auto flow = my_flow(in_flow);
+    auto   flow = my_flow(in_flow);
+    double children_cost = 0.0;
     for (const auto& child : _children) {
-        child->sort(InFlow(flow.strict(), flow.flow()));
+        flow.update_cost(children_cost, child->sort(InFlow(flow.strict(), flow.flow())));
         flow.add(child->estimate());
     }
+    double self_cost = flow::cost_of(in_flow, self_flow_stats(estimate(), childCnt()));
+    set_abs_cost(children_cost + self_cost + strict_diff);
+    return abs_cost();
+}
+
+FlowStats IntermediateBlueprint::self_flow_stats(double est, size_t) const {
+    return {est, 0.0, 0.0};
 }
 
 void IntermediateBlueprint::set_global_filter(const GlobalFilter& global_filter, double estimated_hit_ratio) {
@@ -797,8 +808,9 @@ void LeafBlueprint::set_tree_size(uint32_t value) {
 
 //-----------------------------------------------------------------------------
 
-void SimpleLeafBlueprint::sort(InFlow in_flow) {
+double SimpleLeafBlueprint::sort(InFlow in_flow) {
     resolve_strict(in_flow);
+    return abs_cost();
 }
 
 } // namespace search::queryeval

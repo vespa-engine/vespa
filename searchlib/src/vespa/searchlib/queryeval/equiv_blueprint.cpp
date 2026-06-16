@@ -47,13 +47,12 @@ EquivBlueprint::EquivBlueprint(FieldSpecBaseList fields, allocate_outside_equiv_
 
 EquivBlueprint::~EquivBlueprint() = default;
 
-void EquivBlueprint::sort(InFlow in_flow) {
+double EquivBlueprint::sort(InFlow in_flow) {
     resolve_strict(in_flow);
-    auto flow = OrFlow(in_flow);
     for (auto& term : _terms) {
-        term->sort(InFlow(flow.strict(), flow.flow()));
-        flow.add(term->estimate());
+        term->sort(in_flow);
     }
+    return abs_cost();
 }
 
 FlowStats EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const {

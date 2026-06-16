@@ -108,8 +108,9 @@ void AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> con
     _contexts.push_back(context.release());
 }
 
-void AttributeWeightedSetBlueprint::sort(queryeval::InFlow in_flow) {
+double AttributeWeightedSetBlueprint::sort(queryeval::InFlow in_flow) {
     resolve_strict(in_flow);
+    return abs_cost();
 }
 
 queryeval::FlowStats AttributeWeightedSetBlueprint::calculate_flow_stats(uint32_t docid_limit) const {

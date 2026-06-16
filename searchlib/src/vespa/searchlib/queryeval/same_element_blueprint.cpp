@@ -43,8 +43,12 @@ AnyFlow SameElementBlueprint::my_flow(InFlow in_flow) const {
 FlowStats SameElementBlueprint::calculate_flow_stats(uint32_t) const {
     auto&  children = get_children();
     double est = AndFlow::estimate_of(children);
-    return {est, AndFlow::cost_of(children, false) + est * children.size(),
-            AndFlow::cost_of(children, true) + est * children.size()};
+    auto   self = self_flow_stats(est, childCnt());
+    return {est, AndFlow::cost_of(children, false) + self.cost, AndFlow::cost_of(children, true) + self.strict_cost};
+}
+
+FlowStats SameElementBlueprint::self_flow_stats(double est, size_t num_children) const {
+    return {est, est * num_children, est * num_children};
 }
 
 bool SameElementBlueprint::always_needs_unpack() const {

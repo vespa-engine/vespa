@@ -86,12 +86,12 @@ void WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEs
     _terms.push_back(std::move(term));
 }
 
-void WeightedSetTermBlueprint::sort(InFlow in_flow) {
-    in_flow.force_strict();
-    resolve_strict(in_flow);
+double WeightedSetTermBlueprint::sort(InFlow in_flow) {
+    resolve_strict(in_flow, true);
     for (auto& term : _terms) {
         term->sort(in_flow);
     }
+    return abs_cost();
 }
 
 FlowStats WeightedSetTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
