@@ -17,8 +17,8 @@ public interface OpenTelemetryConfiguration {
     static OpenTelemetryConfiguration disabled() {
         return new OpenTelemetryConfiguration() {
             @Override public boolean enabled() { return false; }
-            @Override public String endpoint() { return null; }
-            @Override public double samplingRatio() { return 0.0; }
+            @Override public String endpoint() { return ""; }
+            @Override public double samplingRatio() { return 1.0; }
         };
     }
 

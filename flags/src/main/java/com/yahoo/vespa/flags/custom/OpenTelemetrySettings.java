@@ -32,7 +32,7 @@ public class OpenTelemetrySettings implements OpenTelemetryConfiguration {
                                  @JsonProperty("endpoint") String endpoint,
                                  @JsonProperty("samplingRatio") Double samplingRatio) {
         this.enabled = enabled != null && enabled;
-        this.endpoint = endpoint;
+        this.endpoint = endpoint != null ? endpoint : "";
         this.samplingRatio = samplingRatio != null ? samplingRatio : 1.0;
     }
 

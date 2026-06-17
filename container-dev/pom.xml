@@ -187,6 +187,26 @@
       <version>${project.version}</version>
       <type>pom</type>
     </dependency>
+    <!-- OpenTelemetry SDK classes for the in-process container test harness; in production these are
+         supplied by the pre-installed container-opentelemetry bundle (an empty main artifact otherwise). -->
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-sdk</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-exporter-otlp</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>io.opentelemetry</groupId>
+          <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-exporter-sender-jdk</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
