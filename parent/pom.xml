@@ -615,6 +615,11 @@
                 <version>${huggingface.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>classworlds</groupId>
+                <artifactId>classworlds</artifactId>
+                <version>${classworlds-classworlds.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.dev-smart</groupId>
                 <artifactId>ubjson</artifactId>
                 <version>${dev-smart-ubjson.vespa.version}</version>
@@ -1214,6 +1219,11 @@
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-classworlds</artifactId>
                 <version>${plexus-classworlds.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-component-annotations</artifactId>
+                <version>${plexus-component-annotations.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
