@@ -5,7 +5,7 @@ ai.djl:api:${huggingface.vespa.version}
 aopalliance:aopalliance:${aopalliance.vespa.version}
 at.yawk.lz4:lz4-java:${at.yawk.lz4.vespa.version}
 backport-util-concurrent:backport-util-concurrent:3.1
-classworlds:classworlds:1.1-alpha-2
+classworlds:classworlds:${classworlds-classworlds.vespa.version}
 com.dev-smart:ubjson:${dev-smart-ubjson.vespa.version}
 com.ethlo.time:itu:1.14.0
 com.fasterxml.jackson.core:jackson-annotations:${jackson-annotations.vespa.version}
@@ -173,7 +173,7 @@ org.bouncycastle:bcprov-jdk18on:${bouncycastle.vespa.version}
 org.bouncycastle:bcutil-jdk18on:${bouncycastle.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
 org.codehaus.plexus:plexus-classworlds:${plexus-classworlds.vespa.version}
-org.codehaus.plexus:plexus-component-annotations:2.1.0
+org.codehaus.plexus:plexus-component-annotations:${plexus-component-annotations.vespa.version}
 org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${plexus-io.vespa.version}

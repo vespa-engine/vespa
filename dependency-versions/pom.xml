@@ -72,6 +72,7 @@
         <bouncycastle.vespa.version>1.84</bouncycastle.vespa.version>
         <byte-buddy.vespa.version>1.18.10</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
+        <classworlds-classworlds.vespa.version>1.1</classworlds-classworlds.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
         <commons-codec.vespa.version>1.22.0</commons-codec.vespa.version>
         <commons-collections.vespa.version>3.2.2</commons-collections.vespa.version>
@@ -143,6 +144,7 @@
         <at.yawk.lz4.vespa.version>1.11.0</at.yawk.lz4.vespa.version>
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
         <plexus-archiver.vespa.version>4.12.0</plexus-archiver.vespa.version>
+        <plexus-component-annotations.vespa.version>2.2.0</plexus-component-annotations.vespa.version>
         <plexus-interpolation.vespa.version>1.29</plexus-interpolation.vespa.version>
         <plexus-io.vespa.version>3.6.0</plexus-io.vespa.version>
         <plexus-utils.vespa.version>4.0.3</plexus-utils.vespa.version>
