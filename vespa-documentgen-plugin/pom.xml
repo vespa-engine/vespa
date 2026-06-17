@@ -70,6 +70,12 @@
       <artifactId>maven-plugin-annotations</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <scope>provided</scope>
+    </dependency>
+
   </dependencies>
   <build>
     <plugins>

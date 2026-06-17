@@ -58,6 +58,11 @@
       <artifactId>error_prone_annotations</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>${plexus-utils.vespa.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>${project.artifactId}</finalName>

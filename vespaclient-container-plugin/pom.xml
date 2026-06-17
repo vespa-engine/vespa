@@ -71,6 +71,11 @@
       <artifactId>junit-vintage-engine</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>${plexus-utils.vespa.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

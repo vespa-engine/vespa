@@ -38,6 +38,11 @@
                         <artifactId>vespa-enforcer-extensions</artifactId>
                         <version>${project.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-utils</artifactId>
+                        <version>${plexus-utils.vespa.version}</version>
+                    </dependency>
                 </dependencies>
                 <executions>
                     <execution>
