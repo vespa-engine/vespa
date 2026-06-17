@@ -11,6 +11,7 @@
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -24,6 +25,7 @@ LOG_SETUP(".proton.documentmetastore.documentmetastoreflushtarget");
 
 using namespace search;
 using namespace vespalib;
+using search::common::CreateAndFreezeTimes;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using searchcorespi::FlushStats;
@@ -83,7 +85,7 @@ bool DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore() {
             saveSuccess = memorySaveTarget.writeToFile(_dmsft._tuneFileAttributes, fileHeaderContext);
             if (saveSuccess) {
                 _dmsft._dms->set_size_on_disk(memorySaveTarget.size_on_disk());
-                _dmsft._dms->set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
+                _dmsft._dms->set_last_flush_duration(CreateAndFreezeTimes::make_flush_duration(create_time));
             }
         }
     } else {
@@ -91,7 +93,7 @@ bool DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore() {
         saveSuccess = _saver->save(saveTarget);
         if (saveSuccess) {
             _dmsft._dms->set_size_on_disk(saveTarget.size_on_disk());
-            _dmsft._dms->set_last_flush_duration(FileHeaderContext::make_flush_duration(create_time));
+            _dmsft._dms->set_last_flush_duration(CreateAndFreezeTimes::make_flush_duration(create_time));
         }
         _saver.reset();
     }

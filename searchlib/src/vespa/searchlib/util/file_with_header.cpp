@@ -6,7 +6,7 @@
 #include "filesizecalculator.h"
 
 #include <vespa/fastos/file_interface.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -40,7 +40,7 @@ FileWithHeader::FileWithHeader(std::unique_ptr<FastOS_FileInterface> file_in)
             bool close_ok = _file->Close();
             assert(close_ok);
         }
-        _flush_duration = common::FileHeaderContext::get_flush_duration(_header);
+        _flush_duration = common::CreateAndFreezeTimes(_header).get_flush_duration();
     }
 }
 

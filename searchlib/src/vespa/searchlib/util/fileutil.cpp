@@ -7,7 +7,7 @@
 
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/file.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/guard.h>
 
@@ -60,7 +60,7 @@ LoadedMmap::LoadedMmap(const std::string& fileName) : LoadedBuffer(nullptr, 0), 
                             sz = fileSize;
                             _size = sz - headerLen;
                             _buffer = static_cast<char*>(_mapBuffer) + headerLen;
-                            _flush_duration = common::FileHeaderContext::get_flush_duration(*_header);
+                            _flush_duration = common::CreateAndFreezeTimes(*_header).get_flush_duration();
                             badHeader = false;
                         }
                     }
