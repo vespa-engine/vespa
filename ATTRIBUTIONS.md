@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-06-16
+Last updated: 2026-06-17
 
 ---
 
@@ -219,8 +219,8 @@ Last updated: 2026-06-16
 ## com.fasterxml.jackson.core 2.21.4 — Apache 2.0
 
 - Homepage: <https://github.com/FasterXML/jackson-core>
-- Copyright 2021 The fast_float authors
 - Copyright 2018-2020 Raffaello Giulietti
+- Copyright 2021 The fast_float authors
 -  Switzerland
 - Copyright 2022 Daniel Lemire
 - FasterXML
@@ -645,6 +645,13 @@ Last updated: 2026-06-16
 ---
 
 ## javax.annotation 1.3.2 — CDDL 1.1
+
+- Homepage: <http://jcp.org/en/jsr/detail?id=250>
+- Copyright 2017 Oracle and/or its affiliates.
+
+---
+
+## javax.annotation 1.3.2 — GPL 2.0 Classpath
 
 - Homepage: <http://jcp.org/en/jsr/detail?id=250>
 - Copyright 2017 Oracle and/or its affiliates.
