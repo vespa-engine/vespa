@@ -1,0 +1,12 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Configuration for the container OpenTelemetry tracing provider.
+# Disabled by default: when enabled=false the provider hands out a no-op OpenTelemetry that produces nothing.
+package=ai.vespa.telemetry
+
+enabled            bool
+endpoint           string
+samplingRatio      double
+
+# Resource attributes describing the emitting service, filled by the config-model
+# from whatever deployment identity is available (application, tenant, cluster type, cluster id).
+resourceAttribute{} string

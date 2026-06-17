@@ -285,6 +285,29 @@
     <!-- END JETTY embedded jars -->
 
     <!-- PROVIDED scope dependencies -->
+    <!-- OpenTelemetry API/SDK: compiled against here, provided at runtime by container-opentelemetry -->
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-sdk</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-exporter-otlp</artifactId>
+      <scope>provided</scope>
+      <exclusions>
+        <!-- Sender is resolved at runtime from container-opentelemetry (jdk sender); never pull okhttp -->
+        <exclusion>
+          <groupId>io.opentelemetry</groupId>
+          <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>annotations</artifactId>
@@ -492,6 +515,7 @@
                 configdefinitions-jar-with-dependencies.jar,
                 hosted-zone-api-jar-with-dependencies.jar,
                 container-apache-http-client-bundle-jar-with-dependencies.jar,
+                container-opentelemetry-jar-with-dependencies.jar,
                 security-utils.jar,
                 bcprov-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
                 bcpkix-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->

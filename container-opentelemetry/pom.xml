@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>parent</artifactId>
+        <version>8-SNAPSHOT</version>
+        <relativePath>../parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>container-opentelemetry</artifactId>
+    <packaging>jar</packaging>
+    <version>8-SNAPSHOT</version>
+    <name>${project.artifactId}</name>
+    <description>OSGi bundle embedding the OpenTelemetry SDK + API and exporting them to the Vespa container.</description>
+
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip> <!-- No source code in module -->
+    </properties>
+
+    <dependencies>
+        <!-- compile => embedded into the bundle; versions managed by container-dependency-versions (opentelemetry-bom) -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <exclusions>
+                <!-- Use the JDK HttpClient sender instead, to avoid okhttp/okio/kotlin -->
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-sender-jdk</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Bundle-Version>${opentelemetry.vespa.version}</Bundle-Version>
+                        <!-- Export the OTel API + SDK so Vespa components (and the Provider in container-disc) can import them -->
+                        <Export-Package>
+                            io.opentelemetry.api.*;version=${opentelemetry.vespa.version};-noimport:=true,
+                            io.opentelemetry.context.*;version=${opentelemetry.vespa.version};-noimport:=true,
+                            io.opentelemetry.sdk.*;version=${opentelemetry.vespa.version};-noimport:=true,
+                            io.opentelemetry.exporter.otlp.*;version=${opentelemetry.vespa.version};-noimport:=true
+                        </Export-Package>
+                        <!-- compile|runtime: exporter-otlp-common/exporter-common/sdk-common arrive as
+                             runtime transitives; they must be embedded (and thus made private) too. -->
+                        <Embed-Dependency>*;scope=compile|runtime;type=!pom;inline=true</Embed-Dependency>
+                        <Embed-Transitive>true</Embed-Transitive>
+                        <!-- No explicit Import-Package: bnd auto-computes imports and marks the
+                             unavailable optional deps (incubator/autoconfigure/grpc/jspecify/sun.misc)
+                             resolution:=optional. Only com.fasterxml.jackson.core is mandatory, and
+                             that is provided by the Vespa container. -->
+                        <_nouses>true</_nouses>
+                    </instructions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                    <attach>false</attach>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
