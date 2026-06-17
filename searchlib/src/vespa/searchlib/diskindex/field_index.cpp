@@ -47,7 +47,8 @@ FieldIndex::FieldIndex()
       _posting_list_cache(),
       _posting_list_cache_enabled(false),
       _bitvector_cache_enabled(false),
-      _field_id(0) {
+      _field_id(0),
+      _create_and_freeze_times() {
 }
 
 FieldIndex::FieldIndex(uint32_t field_id, std::shared_ptr<IPostingListCache> posting_list_cache) : FieldIndex() {
@@ -88,6 +89,7 @@ bool FieldIndex::open_dictionary(const std::string& field_dir, const TuneFileSea
         return false;
     }
     _dict = std::move(dict);
+    _create_and_freeze_times.merge(_dict->create_and_freeze_times());
     return true;
 }
 
@@ -129,6 +131,8 @@ bool FieldIndex::open(const std::string& field_dir, const TuneFileSearch& tune_f
     _bit_vector_dict = std::move(bDict);
     _file_id = get_next_file_id();
     _size_on_disk = calculate_field_index_size_on_disk(field_dir);
+    _create_and_freeze_times.merge(_posting_file->create_and_freeze_times());
+    _create_and_freeze_times.merge(_bit_vector_dict->create_and_freeze_times());
     return true;
 }
 
@@ -138,6 +142,8 @@ void FieldIndex::reuse_files(const FieldIndex& rhs) {
     _file_id = rhs._file_id;
     _size_on_disk = rhs._size_on_disk;
     _io_stats = rhs._io_stats;
+    _create_and_freeze_times.merge(_posting_file->create_and_freeze_times());
+    _create_and_freeze_times.merge(_bit_vector_dict->create_and_freeze_times());
 }
 
 DictionaryLookupResult FieldIndex::lookup(std::string_view word) const {

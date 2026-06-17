@@ -25,13 +25,13 @@ steady_clock::duration min_flush_duration =
 
 } // namespace
 
-CreateAndFreezeTimes::CreateAndFreezeTimes(const vespalib::GenericHeader& header) : _create_time(0), _freeze_time(0) {
+CreateAndFreezeTimes::CreateAndFreezeTimes(const vespalib::GenericHeader& header) : CreateAndFreezeTimes() {
     if (header.hasTag(CREATE_TIME) && header.hasTag(FREEZE_TIME)) {
         auto create_time = header.getTag(CREATE_TIME).asInteger();
         auto freeze_time = header.getTag(FREEZE_TIME).asInteger();
         if (freeze_time >= create_time) {
-            _create_time = create_time;
-            _freeze_time = freeze_time;
+            _create_time = from_utc_us(create_time);
+            _freeze_time = from_utc_us(freeze_time);
         }
     }
 }
@@ -47,8 +47,8 @@ system_clock::time_point CreateAndFreezeTimes::from_utc_us(uint64_t us) {
 }
 
 void CreateAndFreezeTimes::merge(const CreateAndFreezeTimes& rhs) noexcept {
-    if (rhs._create_time > 0 && rhs._freeze_time > 0) {
-        if (_create_time > 0 && _freeze_time > 0) {
+    if (rhs.valid()) {
+        if (valid()) {
             _create_time = std::min(_create_time, rhs._create_time);
             _freeze_time = std::max(_freeze_time, rhs._freeze_time);
         } else {
@@ -59,9 +59,8 @@ void CreateAndFreezeTimes::merge(const CreateAndFreezeTimes& rhs) noexcept {
 }
 
 steady_clock::duration CreateAndFreezeTimes::get_flush_duration() const {
-    if (_freeze_time >= _create_time) {
-        return std::max(duration_cast<steady_clock::duration>(microseconds(_freeze_time - _create_time)),
-                        min_flush_duration);
+    if (valid() && _freeze_time >= _create_time) {
+        return std::max(duration_cast<steady_clock::duration>(_freeze_time - _create_time), min_flush_duration);
     }
     return steady_clock::duration::zero();
 }

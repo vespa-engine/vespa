@@ -173,6 +173,8 @@ void assert_interleaved_features(DiskIndex& d, const std::string& field, const s
 void validateDiskIndex(DiskIndex& dw, bool f2HasElements, bool f3HasWeights) {
     const Schema& schema(dw.getSchema());
 
+    EXPECT_NE(std::chrono::system_clock::time_point(), dw.create_and_freeze_times().freeze_time());
+    EXPECT_NE(std::chrono::steady_clock::duration::zero(), dw.create_and_freeze_times().get_flush_duration());
     {
         uint32_t                id1(schema.getIndexFieldId("f0"));
         auto&                   field_index = dw.get_field_index(id1);

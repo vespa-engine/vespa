@@ -59,7 +59,8 @@ ZcPosOccRandRead::ZcPosOccRandRead()
       _numWords(0),
       _fileBitSize(0),
       _headerBitSize(0),
-      _fieldsParams() {
+      _fieldsParams(),
+      _create_and_freeze_times() {
 }
 
 ZcPosOccRandRead::~ZcPosOccRandRead() {
@@ -252,6 +253,10 @@ const std::string& ZcPosOccRandRead::getSubIdentifier() {
 
 const FieldLengthInfo& ZcPosOccRandRead::get_field_length_info() const {
     return _fieldsParams.getFieldParams()->get_field_length_info();
+}
+
+const common::CreateAndFreezeTimes& ZcPosOccRandRead::create_and_freeze_times() const noexcept {
+    return _create_and_freeze_times;
 }
 
 Zc4PosOccRandRead::Zc4PosOccRandRead() : ZcPosOccRandRead() {

@@ -14,6 +14,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.bitvectordictionary");
 
+using search::common::CreateAndFreezeTimes;
 using search::index::BitVectorDictionaryLookupResult;
 using search::index::PostingListFileRange;
 
@@ -22,7 +23,13 @@ namespace search::diskindex {
 using namespace tags;
 
 BitVectorDictionary::BitVectorDictionary()
-    : _docIdLimit(0u), _entries(), _vectorSize(0u), _datFile(), _datHeaderLen(0u), _memory_mapped(false) {
+    : _docIdLimit(0u),
+      _entries(),
+      _vectorSize(0u),
+      _datFile(),
+      _datHeaderLen(0u),
+      _memory_mapped(false),
+      _create_and_freeze_times() {
 }
 
 BitVectorDictionary::~BitVectorDictionary() = default;
@@ -55,6 +62,7 @@ bool BitVectorDictionary::open(const std::string& pathPrefix, const TuneFileRand
             BitVector::Index bytes = BitVector::legacy_num_bytes_with_single_guard_bit(_docIdLimit);
             _vectorSize = bytes + (-bytes & (LEGACY_ALIGNMENT - 1));
         }
+        _create_and_freeze_times = CreateAndFreezeTimes(idxHeader);
 
         _entries.resize(numEntries);
         size_t bufSize = sizeof(WordSingleKey) * numEntries;
@@ -84,6 +92,7 @@ bool BitVectorDictionary::open(const std::string& pathPrefix, const TuneFileRand
     _datHeaderLen = datHeader.readFile(*_datFile);
     assert(_datFile->getSize() >= static_cast<int64_t>(_vectorSize * _entries.size() + _datHeaderLen));
     _memory_mapped = (_datFile->MemoryMapPtr(0) != nullptr);
+    _create_and_freeze_times.merge(CreateAndFreezeTimes(datHeader));
     return true;
 }
 
