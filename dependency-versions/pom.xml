@@ -118,7 +118,7 @@
         <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <jllama.vespa.version>4.7.10</jllama.vespa.version>
-        <kotlin.vespa.version>1.9.25</kotlin.vespa.version>
+        <kotlin.vespa.version>2.1.21</kotlin.vespa.version>
         <luben.zstd.vespa.version>1.5.7-9</luben.zstd.vespa.version>
         <lucene.vespa.version>9.12.3</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.6</maven-archiver.vespa.version>
