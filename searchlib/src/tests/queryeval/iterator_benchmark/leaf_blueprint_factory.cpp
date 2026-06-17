@@ -135,7 +135,7 @@ AttributeRangeBlueprintFactory::AttributeRangeBlueprintFactory(const RangeConfig
 AttributeRangeBlueprintFactory::~AttributeRangeBlueprintFactory() = default;
 
 std::unique_ptr<Blueprint> AttributeRangeBlueprintFactory::make_blueprint() {
-    SimpleRangeTerm term(query::Range(_range_low, _range_high), "range_attr", 0, Weight(1));
+    SimpleRangeTerm term(query::Range(_range_low, _range_high), "range_attr", 0, Weight(100));
     return _searchable->create_blueprint(FieldSpec("range_attr", 0, 0), term);
 }
 
