@@ -72,8 +72,7 @@
                              the bundle resolves without unavailable deps it never exercises
                              (grpc/okhttp sender, incubator, autoconfigure, guava, jspecify, sun.misc). -->
                         <Import-Package>
-                            com.fasterxml.jackson.core,
-                            *;resolution:=optional
+                            com.fasterxml.jackson.core
                         </Import-Package>
                         <_nouses>true</_nouses>
                     </instructions>
