@@ -116,7 +116,7 @@ AttributeRangeBlueprintFactory::AttributeRangeBlueprintFactory(const RangeConfig
     uint32_t                next_docid = 1;
     uint32_t                hits_generated = 0;
     AttributeContextBuilder builder;
-    builder.add_numeric(
+    builder.add_integer(
         cfg.field_cfg.attr_cfg(), "range_attr", cfg.num_docs, [&](uint32_t docid) noexcept -> int64_t {
             if (docid == next_docid) {
                 next_docid += stride.next();

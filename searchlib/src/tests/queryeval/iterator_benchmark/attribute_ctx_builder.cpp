@@ -149,7 +149,7 @@ AttributeContextBuilder::add_tensor(const search::attribute::Config& cfg, std::s
     return attr;
 }
 
-AttributeVector::SP AttributeContextBuilder::add_numeric(const search::attribute::Config& cfg,
+AttributeVector::SP AttributeContextBuilder::add_integer(const search::attribute::Config& cfg,
                                                          std::string_view field_name, uint32_t num_docs,
                                                          std::function<int64_t(uint32_t docid)> gen) {
     auto attr = AttributeFactory::createAttribute(field_name, cfg);

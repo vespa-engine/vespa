@@ -30,7 +30,7 @@ public:
     AttributeVector::SP add_tensor(const search::attribute::Config& cfg, std::string_view field_name,
                                    uint32_t num_docs, std::function<vespalib::eval::Value::UP(uint32_t docid)> gen);
 
-    AttributeVector::SP add_numeric(const search::attribute::Config& cfg, std::string_view field_name,
+    AttributeVector::SP add_integer(const search::attribute::Config& cfg, std::string_view field_name,
                                     uint32_t num_docs, std::function<int64_t(uint32_t docid)> gen);
 
     std::unique_ptr<BenchmarkSearchable> build();
