@@ -212,7 +212,7 @@
                                         <include>org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-reflect:${kotlin.vespa.version}:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-stdlib:${kotlin.vespa.version}:test</include>
-                                        <include>org.jetbrains.kotlin:kotlin-stdlib-common:${kotlin.vespa.version}:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib-common:1.9.25:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin.vespa.version}:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin.vespa.version}:test</include>
                                         <include>org.jspecify:jspecify:1.0.0:test</include>
