@@ -86,11 +86,6 @@
                                         <include>org.slf4j:slf4j-api:${slf4j.vespa.version}:provided</include>
                                         <include>org.slf4j:slf4j-jdk14:${slf4j.vespa.version}:provided</include>
 
-                                        <!-- OpenTelemetry API (SDK is internal to the container-opentelemetry bundle) -->
-                                        <include>io.opentelemetry:opentelemetry-api:${opentelemetry.vespa.version}:provided</include>
-                                        <include>io.opentelemetry:opentelemetry-context:${opentelemetry.vespa.version}:provided</include>
-                                        <include>io.opentelemetry:opentelemetry-common:${opentelemetry.vespa.version}:provided</include>
-
                                         <!-- Vespa provided dependencies -->
                                         <include>com.yahoo.vespa:annotations:*:provided</include>
                                         <include>com.yahoo.vespa:component:*:provided</include>
