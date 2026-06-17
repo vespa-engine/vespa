@@ -140,13 +140,6 @@ public class Flags {
             "Takes effect on next autoscaler evaluation",
             INSTANCE_ID, CLUSTER_ID);
 
-    public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
-            "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-09-01",
-            "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
-            "Takes effect at redeployment",
-            APPLICATION);
-
     public static final UnboundBooleanFlag REQUIRE_EXPLICIT_DOCPROC_CLUSTER = defineFeatureFlag(
             "require-explicit-docproc-cluster", true,
             List.of("hmusum"), "2026-05-26", "2026-12-01",
