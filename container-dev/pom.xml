@@ -187,14 +187,6 @@
       <version>${project.version}</version>
       <type>pom</type>
     </dependency>
-    <!-- OpenTelemetry API only: this is what the in-process container test harness needs to instantiate the
-         (disabled, no-op) OpenTelemetryProvider, and all that 3rd-party container projects should compile
-         against. The SDK is loaded lazily by OpenTelemetrySdkBuilder and supplied at runtime by the
-         pre-installed container-opentelemetry bundle. -->
-    <dependency>
-      <groupId>io.opentelemetry</groupId>
-      <artifactId>opentelemetry-api</artifactId>
-    </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>

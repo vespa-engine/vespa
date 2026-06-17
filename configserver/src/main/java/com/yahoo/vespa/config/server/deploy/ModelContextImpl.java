@@ -28,7 +28,6 @@ import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
-import com.yahoo.config.provision.OpenTelemetryConfiguration;
 import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.vespa.flags.Flag;
 import com.yahoo.vespa.flags.FlagSource;
@@ -224,7 +223,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double feedConcurrency() { return flag(PermanentFlags.FEED_CONCURRENCY).value(); }
         @Override public double feedNiceness() { return flag(PermanentFlags.FEED_NICENESS).value(); }
         @Override public int mbusNetworkThreads() { return flag(Flags.MBUS_NUM_NETWORK_THREADS).value(); }
-        @Override public OpenTelemetryConfiguration opentelemetrySdk() { return flag(Flags.OPENTELEMETRY_SDK).value(); }
         @Override public List<String> allowedAthenzProxyIdentities() { return flag(PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES).value(); }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return flag(PermanentFlags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS).value(); }
         @Override public double resourceLimitDisk() { return flag(PermanentFlags.RESOURCE_LIMIT_DISK).value(); }
