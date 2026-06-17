@@ -66,10 +66,15 @@
                              runtime transitives; they must be embedded (and thus made private) too. -->
                         <Embed-Dependency>*;scope=compile|runtime;type=!pom;inline=true</Embed-Dependency>
                         <Embed-Transitive>true</Embed-Transitive>
-                        <!-- No explicit Import-Package: bnd auto-computes imports and marks the
-                             unavailable optional deps (incubator/autoconfigure/grpc/jspecify/sun.misc)
-                             resolution:=optional. Only com.fasterxml.jackson.core is mandatory, and
-                             that is provided by the Vespa container. -->
+                        <!-- bnd does NOT auto-mark these optional. Everything we actually use at runtime is
+                             embedded (private) above. The only mandatory external package is jackson.core,
+                             which the Vespa container provides. Mark every other computed import optional so
+                             the bundle resolves without unavailable deps it never exercises
+                             (grpc/okhttp sender, incubator, autoconfigure, guava, jspecify, sun.misc). -->
+                        <Import-Package>
+                            com.fasterxml.jackson.core,
+                            *;resolution:=optional
+                        </Import-Package>
                         <_nouses>true</_nouses>
                     </instructions>
                 </configuration>
