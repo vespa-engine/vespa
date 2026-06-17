@@ -43,7 +43,7 @@ DiskIndex::DiskIndex(const std::string& indexDir, std::shared_ptr<IPostingListCa
       _posting_list_cache(std::move(posting_list_cache)),
       _create_and_freeze_times() {
     calculate_nonfield_size_on_disk();
-    get_schema_timestamp();
+    calculate_schema_timestamp();
 }
 
 DiskIndex::~DiskIndex() = default;
@@ -142,7 +142,12 @@ void DiskIndex::calculate_nonfield_size_on_disk() {
     _nonfield_size_on_disk = FieldIndex::calculate_size_on_disk(_indexDir + "/", nonfield_file_names);
 }
 
-void DiskIndex::get_schema_timestamp() {
+void DiskIndex::calculate_schema_timestamp() {
+    /*
+     * First reconfig that affects schema causes rename of schema.txt to schema.txt.orig
+     * for existing disk indexes, Use timestamp for schema.txt.orig if it exists.
+     * See IndexWriteUtilities::updateDiskIndexSchema for details.
+     */
     auto schema_mod_time = FileKit::getModificationTime(_indexDir + "/schema.txt.orig");
     if (schema_mod_time == vespalib::system_time()) {
         schema_mod_time = FileKit::getModificationTime(_indexDir + "/schema.txt");

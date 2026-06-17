@@ -26,7 +26,7 @@ class DiskIndex : public queryeval::Searchable {
     common::CreateAndFreezeTimes       _create_and_freeze_times;
 
     void calculate_nonfield_size_on_disk();
-    void get_schema_timestamp();
+    void calculate_schema_timestamp();
     bool loadSchema();
     bool openDictionaries(const TuneFileSearch& tuneFileSearch);
 
