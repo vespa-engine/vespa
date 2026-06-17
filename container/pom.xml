@@ -23,12 +23,6 @@
       <artifactId>container-dev</artifactId>
       <version>${project.version}</version>
       <exclusions>
-        <!-- OpenTelemetry is internal to the platform (used by container-disc, provided at runtime by the
-             container-opentelemetry bundle). Do not expose it on the public 3rd-party container classpath. -->
-        <exclusion>
-          <groupId>io.opentelemetry</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>http-utils</artifactId>
