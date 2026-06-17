@@ -47,6 +47,7 @@ struct DummyDocumentStore : public search::IDocumentStore {
         std::vector<search::DataStoreFileChunkStats> result;
         return result;
     }
+    [[nodiscard]] size_t max_file_size() const noexcept override { return 0; }
 
     void compactLidSpace(uint32_t wantedDocLidLimit) override { (void)wantedDocLidLimit; }
     bool canShrinkLidSpace() const override { return false; }

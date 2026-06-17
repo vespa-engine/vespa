@@ -188,6 +188,7 @@ public:
     DataStoreStorageStats getStorageStats() const override;
     vespalib::MemoryUsage getMemoryUsage() const override;
     std::vector<DataStoreFileChunkStats> getFileChunkStats() const override;
+    [[nodiscard]] size_t max_file_size() const noexcept override;
 
     void compactLidSpace(uint32_t wantedDocLidLimit) override;
     bool canShrinkLidSpace() const override;

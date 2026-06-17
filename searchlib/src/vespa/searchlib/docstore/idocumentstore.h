@@ -210,6 +210,12 @@ public:
      * Return detailed stats about underlying files for data store.
      */
     virtual std::vector<DataStoreFileChunkStats> getFileChunkStats() const = 0;
+
+    /*
+     * Return max file size for backing files. This corresponds to how much
+     * is read and stored in memory during summary compaction.
+     */
+    [[nodiscard]] virtual size_t max_file_size() const noexcept = 0;
 };
 
 } // namespace search
