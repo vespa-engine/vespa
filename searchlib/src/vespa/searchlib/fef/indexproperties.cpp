@@ -544,7 +544,7 @@ bool AnnTimeBudget::is_present(const Properties& props) {
 namespace anntimeout {
 
 const std::string Enabled::NAME("vespa.matching.nns.anntimeout.enable");
-const bool        Enabled::DEFAULT_VALUE(false);
+const bool        Enabled::DEFAULT_VALUE(true);
 
 bool Enabled::lookup(const Properties& props) {
     return lookupBool(props, NAME, DEFAULT_VALUE);
