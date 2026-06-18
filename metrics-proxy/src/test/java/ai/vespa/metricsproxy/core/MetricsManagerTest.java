@@ -28,11 +28,15 @@ import java.util.Map;
 import static ai.vespa.metricsproxy.core.MetricsManager.VESPA_VERSION;
 import static ai.vespa.metricsproxy.core.VespaMetrics.METRIC_TYPE_DIMENSION_ID;
 import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
+import static ai.vespa.metricsproxy.metric.ExternalMetrics.HOST_DIMENSION;
+import static ai.vespa.metricsproxy.metric.ExternalMetrics.OS_VERSION_DIMENSION;
+import static ai.vespa.metricsproxy.metric.ExternalMetrics.PARENT_HOSTNAME_DIMENSION;
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.ROLE_DIMENSION;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -194,6 +198,33 @@ public class MetricsManagerTest {
         assertEquals("standard", packets.get(0).dimensions().get(METRIC_TYPE_DIMENSION_ID));
         assertEquals("standard", packets.get(1).dimensions().get(METRIC_TYPE_DIMENSION_ID));
         assertEquals("from extraMetrics", packets.get(2).dimensions().get(METRIC_TYPE_DIMENSION_ID));
+    }
+
+    @Test
+    public void osVersion_reaches_alive_but_is_stripped_from_carrier_packets() {
+        // Simulate hostadmin pushing a vespa.node packet carrying all three host dims + role + a whitelisted metric.
+        metricsManager.setExtraMetrics(List.of(
+                new MetricsPacket.Builder(toServiceId("vespa.node"))
+                        .putMetrics(List.of(new Metric(WHITELISTED_METRIC_ID, 0)))
+                        .putDimension(HOST_DIMENSION, "h1")
+                        .putDimension(PARENT_HOSTNAME_DIMENSION, "p1")
+                        .putDimension(OS_VERSION_DIMENSION, "8.4.0")
+                        .putDimension(ROLE_DIMENSION, "tenants")));
+
+        // (a) what the host_life/alive packet would receive — osVersion survived the harvest:
+        Map<DimensionId, String> hostLifeDims = metricsManager.getExtraHostDimensions(toServiceId("host_life"));
+        assertEquals("8.4.0", hostLifeDims.get(OS_VERSION_DIMENSION));
+        assertEquals("h1", hostLifeDims.get(HOST_DIMENSION));
+        assertEquals("p1", hostLifeDims.get(PARENT_HOSTNAME_DIMENSION));
+
+        // (b) the carrier packet kept host/parentHostname/role but lost osVersion:
+        MetricsPacket carrier = metricsManager.getMetrics(testServices, Instant.EPOCH).stream()
+                .filter(p -> p.service().equals(toServiceId("vespa.node")))
+                .findFirst().orElseThrow();
+        assertEquals("h1", carrier.dimensions().get(HOST_DIMENSION));
+        assertEquals("p1", carrier.dimensions().get(PARENT_HOSTNAME_DIMENSION));
+        assertEquals("tenants", carrier.dimensions().get(ROLE_DIMENSION));
+        assertFalse(carrier.dimensions().containsKey(OS_VERSION_DIMENSION));
     }
 
     @Test
