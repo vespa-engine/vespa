@@ -4,6 +4,8 @@
 
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <format>
+
 using vespalib::make_string;
 
 namespace proton {
@@ -35,22 +37,19 @@ ResourceUsageMetrics::DetailedResourceMetrics::DetailedResourceMetrics(const std
           "transient", {},
           make_string("The relative amount of transient %s used by this content node (value in the range [0, 1])",
                       resource_type.c_str()),
-          this) {
-}
-
-ResourceUsageMetrics::DetailedResourceMetrics::~DetailedResourceMetrics() = default;
-
-ResourceUsageMetrics::DetailedDiskResourceMetrics::DetailedDiskResourceMetrics(metrics::MetricSet* parent)
-    : DetailedResourceMetrics("disk", parent),
+          this),
       reserved("reserved", {},
-               "The relative amount of reserved disk space on this content node (value in the range [0, 1])", this),
+               std::format("The relative amount of reserved {} on this content node (value in the range [0, 1])",
+                           resource_type),
+               this),
       used_and_reserved("used_and_reserved", {},
-                        "The relative amount of disk used and reserved disk space on this content node"
-                        " (transient usage not included, value in the range [0, 1])",
+                        std::format("The relative amount of used and reserved {} on this content node"
+                                    " (transient usage not included, value in the range [0, 1])",
+                                    resource_type),
                         this) {
 }
 
-ResourceUsageMetrics::DetailedDiskResourceMetrics::~DetailedDiskResourceMetrics() = default;
+ResourceUsageMetrics::DetailedResourceMetrics::~DetailedResourceMetrics() = default;
 
 ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet* parent)
     : MetricSet("resource_usage", {}, "Usage metrics for various resources in this content node", parent),
@@ -62,7 +61,7 @@ ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet* parent)
              "The relative amount of memory used by this content node (transient usage not included, value in the "
              "range [0, 1]). Same value as reported to the cluster controller",
              this),
-      disk_usage(this),
+      disk_usage("disk", this),
       memory_usage("memory", this),
       openFileDescriptors("open_file_descriptors", {}, "The number of open files", this),
       feedingBlocked("feeding_blocked", {},
