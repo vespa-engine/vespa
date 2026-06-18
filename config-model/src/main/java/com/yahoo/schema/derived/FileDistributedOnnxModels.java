@@ -49,6 +49,7 @@ public class FileDistributedOnnxModels {
     private static OnnxModelsConfig.Model.Builder toConfig(OnnxModel model) {
         OnnxModelsConfig.Model.Builder builder = new OnnxModelsConfig.Model.Builder();
         builder.dry_run_on_setup(true);
+        builder.optimize_model(model.getOptimizeModel());
         builder.name(model.getName());
         builder.fileref(model.getFileReference());
         model.getInputMap().forEach((name, source) -> builder.input(new OnnxModelsConfig.Model.Input.Builder().name(name).source(source)));

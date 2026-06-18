@@ -501,6 +501,22 @@ TEST(OnnxModelCacheTest, share_and_evict_onnx_models) {
     EXPECT_EQ(OnnxModelCache::count_refs(), 0);
 }
 
+TEST(OnnxModelCacheTest, optimize_setting_is_part_of_cache_key) {
+    {
+        auto enabled1 = OnnxModelCache::load(simple_model, Onnx::Optimize::ENABLE);
+        auto enabled2 = OnnxModelCache::load(simple_model, Onnx::Optimize::ENABLE);
+        auto disabled = OnnxModelCache::load(simple_model, Onnx::Optimize::DISABLE);
+        // same file + same optimize setting shares the loaded model
+        EXPECT_EQ(&(enabled1->get()), &(enabled2->get()));
+        // same file but different optimize setting is a distinct cache entry
+        EXPECT_NE(&(enabled1->get()), &(disabled->get()));
+        EXPECT_EQ(OnnxModelCache::num_cached(), 2);
+        EXPECT_EQ(OnnxModelCache::count_refs(), 3);
+    }
+    EXPECT_EQ(OnnxModelCache::num_cached(), 0);
+    EXPECT_EQ(OnnxModelCache::count_refs(), 0);
+}
+
 TensorSpec val(const std::string& expr) {
     auto result = TensorSpec::from_expr(expr);
     EXPECT_FALSE(ValueType::from_spec(result.type()).is_error());

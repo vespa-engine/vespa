@@ -37,6 +37,7 @@ void OnnxModels::configure(const ModelConfig& config, Model& model) {
         model.output_name(output.name, output.as);
     }
     model.dry_run_on_setup(config.dryRunOnSetup);
+    model.optimize_model(config.optimizeModel);
 }
 
 } // namespace search::fef
