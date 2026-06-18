@@ -62,6 +62,7 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     bool                                           _bitvector_cache_enabled;
     static std::atomic<uint64_t>                   _file_id_source;
     uint32_t                                       _field_id;
+    common::CreateAndFreezeTimes                   _create_and_freeze_times;
 
     static uint64_t get_next_file_id() noexcept { return _file_id_source.fetch_add(1) + 1; }
 
@@ -105,6 +106,9 @@ public:
     uint64_t get_file_id() const noexcept { return _file_id; }
     uint32_t get_field_id() const noexcept { return _field_id; }
     bool is_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
+    [[nodiscard]] const common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept {
+        return _create_and_freeze_times;
+    }
 };
 
 } // namespace search::diskindex

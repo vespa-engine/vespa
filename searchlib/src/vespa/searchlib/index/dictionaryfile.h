@@ -11,8 +11,9 @@
 class FastOS_FileInterface;
 
 namespace search::common {
+class CreateAndFreezeTimes;
 class FileHeaderContext;
-}
+} // namespace search::common
 
 namespace search::index {
 
@@ -76,6 +77,8 @@ public:
     bool getMemoryMapped() const { return _memoryMapped; }
 
     virtual uint64_t getNumWordIds() const = 0;
+
+    [[nodiscard]] virtual const common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept = 0;
 
 protected:
     void afterOpen(FastOS_FileInterface& file);

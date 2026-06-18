@@ -7,6 +7,7 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 
@@ -21,6 +22,7 @@ protected:
     uint64_t                              _fileBitSize;
     uint64_t                              _headerBitSize;
     bitcompression::PosOccFieldsParams    _fieldsParams;
+    common::CreateAndFreezeTimes          _create_and_freeze_times;
 
     static constexpr size_t decode_prefetch_size = 16;
 
@@ -58,6 +60,7 @@ public:
     static const std::string& getIdentifier();
     static const std::string& getSubIdentifier();
     const index::FieldLengthInfo& get_field_length_info() const override;
+    [[nodiscard]] const common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept override;
 };
 
 class Zc4PosOccRandRead : public ZcPosOccRandRead {
