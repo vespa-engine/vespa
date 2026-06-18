@@ -80,6 +80,30 @@ public class UserInputTestCase {
     }
 
     @Test
+    public void testNearAndONearGrammarTypes() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where ({grammar:'near'}userInput('a b'))");
+        Query near = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where default contains near(\"a\", \"b\")",
+                     near.yqlRepresentation());
+
+        builder.setParameter("yql", "select * from sources * where ({grammar:'near',distance:3}userInput('a b'))");
+        near = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where default contains ({distance: 3}near(\"a\", \"b\"))",
+                     near.yqlRepresentation());
+
+        builder.setParameter("yql", "select * from sources * where ({grammar:'onear'}userInput('a b'))");
+        Query oNear = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where default contains onear(\"a\", \"b\")",
+                     oNear.yqlRepresentation());
+
+        builder.setParameter("yql", "select * from sources * where ({grammar:'onear',distance:4}userInput('a b'))");
+        oNear = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where default contains ({distance: 4}onear(\"a\", \"b\"))",
+                     oNear.yqlRepresentation());
+    }
+
+    @Test
     void testSimpleUserInput() {
         {
             URIBuilder builder = searchUri();
