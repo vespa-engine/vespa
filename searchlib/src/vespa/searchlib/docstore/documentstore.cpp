@@ -360,6 +360,10 @@ std::vector<DataStoreFileChunkStats> DocumentStore::getFileChunkStats() const {
     return _backingStore.getFileChunkStats();
 }
 
+size_t DocumentStore::max_file_size() const noexcept {
+    return _backingStore.max_file_size();
+}
+
 CacheStats DocumentStore::getCacheStats() const {
     CacheStats visitStats = _visitCache->getCacheStats();
     CacheStats singleStats = _cache->get_stats();

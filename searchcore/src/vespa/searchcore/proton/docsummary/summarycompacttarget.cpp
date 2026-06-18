@@ -102,7 +102,7 @@ bool SummaryGCTarget::can_flush(SerialNum) const noexcept {
 }
 
 size_t SummaryGCTarget::transient_memory_for_flush() const noexcept {
-    return 0;
+    return _docStore.max_file_size();
 }
 
 SummaryCompactBloatTarget::SummaryCompactBloatTarget(vespalib::Executor& summaryService, IDocumentStore& docStore)
