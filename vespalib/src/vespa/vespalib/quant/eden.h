@@ -144,6 +144,25 @@ public:
      */
     [[nodiscard]] float pre_rotated_query_dot_product(std::span<const float>   query,
                                                       std::span<const uint8_t> quant_vec) noexcept;
+
+    /*
+     * Computes the dot product between two quantized vectors that were both quantized
+     * using the (logically) same quantizer as `this`. This is more efficient than
+     * explicitly dequantizing the vectors (and then running a float32 dot product) since
+     * it does not involve any rotations.
+     *
+     * Only makes sense if `lhs` and `rhs` were originally both quantized with
+     * `QuantMode::InnerProduct`.
+     *
+     * Preconditions:
+     *  - lhs.size() == quantized_size()
+     *  - rhs.size() == quantized_size()
+     *
+     * TODO with a vectorized "just in time" bit unpacking that doesn't need a temporary
+     *  buffer we could make this const...
+     */
+    [[nodiscard]] float quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
+                                                      std::span<const uint8_t> rhs) noexcept;
 };
 
 } // namespace vespalib::quant

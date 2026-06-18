@@ -3,10 +3,12 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/quant/eden.h>
+#include <vespa/vespalib/util/xoshiro.h>
 
 #include <gmock/gmock.h>
 
 #include <cmath>
+#include <random>
 #include <ranges>
 #include <span>
 #include <vector>
@@ -35,6 +37,16 @@ namespace {
         l2 += c * c;
     }
     return std::sqrtf(l2);
+}
+
+// Simple non-vectorized dot product (sanity check vs. vectorized functions)
+[[nodiscard]] float dot(std::span<const float> a, std::span<const float> b) noexcept {
+    assert(a.size() == b.size());
+    float d = 0;
+    for (size_t i = 0; i < a.size(); ++i) {
+        d += a[i] * b[i];
+    }
+    return d;
 }
 
 void normalize(std::span<float> v) noexcept {
@@ -209,6 +221,7 @@ TEST(EdenQuantizerTest, zero_norm_vector_emits_zero_scale_and_quantization_index
     EXPECT_THAT(v_dq, Each(Eq(0.0f)));
 }
 
+// TODO extend this test to all bit widths
 TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector) {
     EdenQuantizer        q(16, 4, 0xbeefd00d);
     std::vector<uint8_t> v_q(q.quantized_size());
@@ -233,6 +246,69 @@ TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector) {
         c = -c;
     }
     EXPECT_THAT(q.pre_rotated_query_dot_product(q_rot, v_q), FloatEq(-1));
+}
+
+namespace {
+
+template <std::uniform_random_bit_generator Rng>
+void fill_random(std::span<float> v, Rng& rng) noexcept {
+    std::uniform_real_distribution<float> dist(-1.f, 1.f);
+    std::ranges::generate(v, [&]() mutable { return dist(rng); });
+}
+
+void do_test_quantized_vectors_dot_product(const size_t dimensions, const uint8_t bits) {
+    Xoshiro256PlusPlusPrng prng(0x123456789abcdef); // Fixed seed due to floating point testing
+    EdenQuantizer          q(dimensions, bits, prng());
+
+    std::vector<float>   lhs(dimensions), lhs_dq(dimensions);
+    std::vector<float>   rhs(dimensions), rhs_dq(dimensions);
+    std::vector<uint8_t> lhs_q(q.quantized_size());
+    std::vector<uint8_t> rhs_q(q.quantized_size());
+
+    const size_t rounds = 100;
+    for (size_t i = 0; i < rounds; ++i) {
+        fill_random(lhs, prng);
+        fill_random(rhs, prng);
+
+        q.quantize(lhs, lhs_q, QuantMode::InnerProduct);
+        q.quantize(rhs, rhs_q, QuantMode::InnerProduct);
+        q.dequantize(lhs_q, lhs_dq);
+        q.dequantize(rhs_q, rhs_dq);
+
+        // The dot products between the _dequantized_ representations of the vectors and the dot
+        // products between the _quantized_ representations should be very close. There is some
+        // added rounding error due to dequantization requiring a rotation step, as well as any
+        // differences in dot product vectorization. This error is independent of the bit width
+        // used since rotation/dot product happens on values from the centroid codebook, and
+        // these have the same, higher floating point precision.
+        const float real_q_dot = dot(lhs_dq, rhs_dq);
+        const float q_dot = q.quantized_lhs_rhs_dot_product(lhs_q, rhs_q);
+        ASSERT_THAT(q_dot, FloatNear(real_q_dot, 0.00001));
+    }
+}
+
+void do_test_quantized_vectors_dot_product(const uint8_t bits) {
+    for (size_t dims : {1, 2, 3, 15, 16, 17, 64, 127, 128, 129}) {
+        ASSERT_NO_FATAL_FAILURE(do_test_quantized_vectors_dot_product(dims, bits));
+    }
+}
+
+} // namespace
+
+TEST(EdenQuantizerTest, can_compute_dot_product_between_quantized_vectors_1_bit) {
+    do_test_quantized_vectors_dot_product(1);
+}
+
+TEST(EdenQuantizerTest, can_compute_dot_product_between_quantized_vectors_2_bits) {
+    do_test_quantized_vectors_dot_product(2);
+}
+
+TEST(EdenQuantizerTest, can_compute_dot_product_between_quantized_vectors_3_bits) {
+    do_test_quantized_vectors_dot_product(3);
+}
+
+TEST(EdenQuantizerTest, can_compute_dot_product_between_quantized_vectors_4_bits) {
+    do_test_quantized_vectors_dot_product(4);
 }
 
 } // namespace vespalib::quant
