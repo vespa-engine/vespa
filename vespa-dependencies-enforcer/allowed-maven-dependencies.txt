@@ -190,15 +190,10 @@ org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}
 org.jetbrains.kotlin:kotlin-reflect:${kotlin.vespa.version}
-org.jetbrains.kotlin:kotlin-reflect:2.1.21
-org.jetbrains.kotlin:kotlin-stdlib-common:${kotlin.vespa.version}
-org.jetbrains.kotlin:kotlin-stdlib-common:1.8.0
+org.jetbrains.kotlin:kotlin-stdlib-common:${kotlin-stdlib-common.vespa.version}
 org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin.vespa.version}
-org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0
 org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin.vespa.version}
-org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0
 org.jetbrains.kotlin:kotlin-stdlib:${kotlin.vespa.version}
-org.jetbrains.kotlin:kotlin-stdlib:1.8.0
 org.jetbrains:annotations:17.0.0
 org.json:json:${org.json.vespa.version}
 org.jspecify:jspecify:1.0.0
