@@ -105,6 +105,14 @@ size_t SummaryGCTarget::transient_memory_for_flush() const noexcept {
     return _docStore.max_file_size();
 }
 
+std::chrono::steady_clock::duration SummaryGCTarget::last_flush_duration() const noexcept {
+    return 10s; // placeholder value.
+}
+
+std::chrono::steady_clock::duration SummaryGCTarget::estimated_flush_duration() const noexcept {
+    return 10s; // placeholder value.
+}
+
 SummaryCompactBloatTarget::SummaryCompactBloatTarget(vespalib::Executor& summaryService, IDocumentStore& docStore)
     : SummaryGCTarget("summary.compact_bloat", summaryService, docStore) {
 }

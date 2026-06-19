@@ -80,4 +80,8 @@ std::chrono::steady_clock::duration IndexFlushTarget::last_flush_duration() cons
     return 10s; // placeholder value
 }
 
+std::chrono::steady_clock::duration IndexFlushTarget::estimated_flush_duration() const noexcept {
+    return 10s; // placeholder value
+}
+
 } // namespace searchcorespi::index

@@ -196,7 +196,8 @@ public:
      */
     virtual FlushStats getLastFlushStats() const = 0;
 
-    virtual std::chrono::steady_clock::duration last_flush_duration() const noexcept = 0;
+    [[nodiscard]] virtual std::chrono::steady_clock::duration last_flush_duration() const noexcept = 0;
+    [[nodiscard]] virtual std::chrono::steady_clock::duration estimated_flush_duration() const noexcept = 0;
 };
 
 class LeafFlushTarget : public IFlushTarget {
@@ -207,7 +208,6 @@ public:
     Priority getPriority() const override { return Priority::NORMAL; }
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
     double get_replay_operation_cost() const override { return 0.0; }
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 } // namespace searchcorespi
