@@ -174,30 +174,6 @@ TEST(TensorFromLabelsWithOffsetTest, array_integer_attribute_values_are_converte
               f.execute());
 }
 
-// Tests for attribute source — single-value:
-
-TEST(TensorFromLabelsWithOffsetTest, single_value_integer_attribute_produces_single_cell_at_offset_0) {
-    ExecFixture f("tensorFromLabelsWithOffset(attribute(sint),dim,offset)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(dim{},offset{})").add({{"dim", "5"}, {"offset", "0"}}, 1)),
-              f.execute());
-}
-
-TEST(TensorFromLabelsWithOffsetTest, single_value_string_attribute_produces_single_cell_at_offset_0) {
-    ExecFixture f("tensorFromLabelsWithOffset(attribute(sstr),dim,offset)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(dim{},offset{})").add({{"dim", "foo"}, {"offset", "0"}}, 1)),
-              f.execute());
-}
-
-TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_single_value_integer_attribute_is_undefined) {
-    ExecFixture f("tensorFromLabelsWithOffset(attribute(sint),dim,offset)");
-    EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute(2));
-}
-
-TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_single_value_string_attribute_is_undefined) {
-    ExecFixture f("tensorFromLabelsWithOffset(attribute(sstr),dim,offset)");
-    EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute(2));
-}
-
 // Tests for error cases:
 
 TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_does_not_exist) {
@@ -207,6 +183,16 @@ TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_does_n
 
 TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_type_is_weighted_set) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(wsstr),dim,offset)");
+    EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute());
+}
+
+TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_is_single_value_integer) {
+    ExecFixture f("tensorFromLabelsWithOffset(attribute(sint),dim,offset)");
+    EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute());
+}
+
+TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_is_single_value_string) {
+    ExecFixture f("tensorFromLabelsWithOffset(attribute(sstr),dim,offset)");
     EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute());
 }
 

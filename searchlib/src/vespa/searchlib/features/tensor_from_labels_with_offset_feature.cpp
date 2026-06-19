@@ -73,7 +73,6 @@ private:
     std::unique_ptr<vespalib::eval::Value>     _tensor;
     size_t                                     _label_idx;
     size_t                                     _offset_idx;
-    bool                                       _is_single_value;
 
 public:
     TensorFromLabelsWithOffsetAttributeExecutor(const search::attribute::IAttributeVector* attribute,
@@ -85,8 +84,7 @@ public:
           _addr_ref(2),
           _tensor(),
           _label_idx(0),
-          _offset_idx(1),
-          _is_single_value(attribute->getCollectionType() == search::attribute::CollectionType::SINGLE) {
+          _offset_idx(1) {
         _attrBuffer.allocate(_attribute->getMaxValueCount());
         const auto& dims = _type.dimensions();
         for (size_t d = 0; d < dims.size(); ++d) {
@@ -105,8 +103,7 @@ void TensorFromLabelsWithOffsetAttributeExecutor<WeightedBufferType>::execute(ui
     _attrBuffer.fill(*_attribute, docId);
     auto factory = FastValueBuilderFactory::get();
     auto builder = factory.create_value_builder<float>(_type, 2, 1, _attrBuffer.size());
-    bool ignore = _is_single_value && _attribute->isUndefined(docId);
-    for (size_t i = 0; i < _attrBuffer.size() && !ignore; ++i) {
+    for (size_t i = 0; i < _attrBuffer.size(); ++i) {
         std::string label(_attrBuffer[i].value());
         std::string index_str = std::to_string(i);
         _addr_ref[_label_idx] = label;
@@ -123,20 +120,26 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
                                          const std::string& offset_dim, vespalib::Stash& stash) {
     const IAttributeVector* attribute = env.getAttributeContext().getAttribute(attrName);
     if (attribute == nullptr) {
-        Issue::report("tensor_from_labels_with_offset feature: The attribute vector '%s' was not found."
+        Issue::report("tensorFromLabelsWithOffset feature: The attribute vector '%s' was not found."
                       " Returning empty tensor.",
                       attrName.c_str());
         return ConstantTensorExecutor::createEmpty(valueType, stash);
     }
     if (attribute->isFloatingPointType()) {
-        Issue::report("tensor_from_labels_with_offset feature: The attribute vector '%s' must have basic type"
+        Issue::report("tensorFromLabelsWithOffset feature: The attribute vector '%s' must have basic type"
                       " string or integer. Returning empty tensor.",
                       attrName.c_str());
         return ConstantTensorExecutor::createEmpty(valueType, stash);
     }
     if (attribute->getCollectionType() == search::attribute::CollectionType::WSET) {
-        Issue::report("tensor_from_labels_with_offset feature: The attribute vector '%s' is a weighted set - use"
+        Issue::report("tensorFromLabelsWithOffset feature: The attribute vector '%s' is a weighted set - use"
                       " tensorFromWeightedSet instead. Returning empty tensor.",
+                      attrName.c_str());
+        return ConstantTensorExecutor::createEmpty(valueType, stash);
+    }
+    if (attribute->getCollectionType() == search::attribute::CollectionType::SINGLE) {
+        Issue::report("tensorFromLabelsWithOffset feature: The attribute vector '%s' is single-valued - this"
+                      " feature requires an array attribute. Returning empty tensor.",
                       attrName.c_str());
         return ConstantTensorExecutor::createEmpty(valueType, stash);
     }
