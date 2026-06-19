@@ -30,9 +30,9 @@ public class MetricDimensionMapping {
         defaultDimensions = config.defaultDimension().stream()
                 .map(DimensionId::toDimensionId)
                 .collect(toUnmodifiableSet());
-        dimensionsByService = config.mapping().stream().collect(toUnmodifiableMap(
-                mapping -> toServiceId(mapping.service()),
-                mapping -> mapping.dimension().stream().map(DimensionId::toDimensionId).collect(toUnmodifiableSet())));
+        dimensionsByService = config.service().entrySet().stream().collect(toUnmodifiableMap(
+                entry -> toServiceId(entry.getKey()),
+                entry -> entry.getValue().dimension().stream().map(DimensionId::toDimensionId).collect(toUnmodifiableSet())));
         Set<DimensionId> all = new HashSet<>(defaultDimensions);
         dimensionsByService.values().forEach(all::addAll);
         managedDimensions = Set.copyOf(all);

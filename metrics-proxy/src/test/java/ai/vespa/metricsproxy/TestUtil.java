@@ -39,8 +39,7 @@ public class TestUtil {
         return new MetricDimensionMapping(new MetricDimensionMappingConfig.Builder()
                 .defaultDimension("host")
                 .defaultDimension("parentHostname")
-                .mapping(new MetricDimensionMappingConfig.Mapping.Builder()
-                        .service("host_life")
+                .service("host_life", s -> s
                         .dimension("host")
                         .dimension("parentHostname")
                         .dimension("osVersion"))

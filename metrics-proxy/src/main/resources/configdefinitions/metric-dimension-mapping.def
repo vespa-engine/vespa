@@ -4,6 +4,5 @@ package=ai.vespa.metricsproxy.metric.dimensions
 # Host dimensions allowed on metrics whose service is not explicitly listed below.
 defaultDimension[] string
 
-# Per-service overrides: the host dimensions allowed on metrics from this service.
-mapping[].service string
-mapping[].dimension[] string
+# Per-service overrides, keyed by service name: the host dimensions allowed on metrics from that service.
+service{}.dimension[] string

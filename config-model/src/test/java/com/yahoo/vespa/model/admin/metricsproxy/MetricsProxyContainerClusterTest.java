@@ -118,11 +118,9 @@ public class MetricsProxyContainerClusterTest {
 
         assertEquals(List.of(PublicDimensions.HOSTNAME, PublicDimensions.PARENT_HOSTNAME), config.defaultDimension());
 
-        assertEquals(1, config.mapping().size());
-        MetricDimensionMappingConfig.Mapping mapping = config.mapping().get(0);
-        assertEquals("host_life", mapping.service());
+        assertEquals(Set.of("host_life"), config.service().keySet());
         assertEquals(List.of(PublicDimensions.HOSTNAME, PublicDimensions.PARENT_HOSTNAME, PublicDimensions.OS_VERSION),
-                     mapping.dimension());
+                     config.service("host_life").dimension());
     }
 
     @Test
@@ -130,7 +128,7 @@ public class MetricsProxyContainerClusterTest {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
         MetricDimensionMappingConfig config = getMetricDimensionMappingConfig(model);
         assertTrue(config.defaultDimension().isEmpty());
-        assertTrue(config.mapping().isEmpty());
+        assertTrue(config.service().isEmpty());
     }
 
     @Test

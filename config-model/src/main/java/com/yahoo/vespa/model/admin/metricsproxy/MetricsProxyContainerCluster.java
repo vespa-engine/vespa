@@ -203,8 +203,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         if (isHostedVespa()) {
             builder.defaultDimension(PublicDimensions.HOSTNAME);
             builder.defaultDimension(PublicDimensions.PARENT_HOSTNAME);
-            builder.mapping(new MetricDimensionMappingConfig.Mapping.Builder()
-                    .service(HOST_LIFE_SERVICE)
+            builder.service(HOST_LIFE_SERVICE, s -> s
                     .dimension(PublicDimensions.HOSTNAME)
                     .dimension(PublicDimensions.PARENT_HOSTNAME)
                     .dimension(PublicDimensions.OS_VERSION));
