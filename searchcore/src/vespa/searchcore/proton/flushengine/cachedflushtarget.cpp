@@ -17,7 +17,8 @@ CachedFlushTarget::CachedFlushTarget(const IFlushTarget::SP& target)
       _replay_operation_cost(target->get_replay_operation_cost()),
       _needUrgentFlush(target->needUrgentFlush()),
       _priority(target->getPriority()),
-      _last_flush_duration(target->last_flush_duration()) {
+      _last_flush_duration(target->last_flush_duration()),
+      _estimated_flush_duration(target->estimated_flush_duration()) {
 }
 
 CachedFlushTarget::~CachedFlushTarget() = default;
@@ -36,6 +37,10 @@ size_t CachedFlushTarget::transient_memory_for_flush() const noexcept {
 
 std::chrono::steady_clock::duration CachedFlushTarget::last_flush_duration() const noexcept {
     return _last_flush_duration;
+}
+
+std::chrono::steady_clock::duration CachedFlushTarget::estimated_flush_duration() const noexcept {
+    return _estimated_flush_duration;
 }
 
 } // namespace proton

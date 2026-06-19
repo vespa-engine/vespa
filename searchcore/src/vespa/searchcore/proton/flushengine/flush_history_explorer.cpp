@@ -48,8 +48,12 @@ void convert_to_slime(const FlushHistoryEntry& entry, Inserter& inserter) {
             object.setLong("flush_duration_usecs", duration_cast<microseconds>(entry.flush_duration()).count());
         }
     }
-    if (entry.last_flush_duration() != steady_clock::duration()) {
+    if (entry.last_flush_duration() != steady_clock::duration::zero()) {
         object.setLong("last_flush_duration_usecs", duration_cast<microseconds>(entry.last_flush_duration()).count());
+    }
+    if (entry.estimated_flush_duration() != steady_clock::duration::zero()) {
+        object.setLong("estimated_flush_duration_usecs",
+                       duration_cast<microseconds>(entry.estimated_flush_duration()).count());
     }
     object.setLong("id", entry.id());
 }

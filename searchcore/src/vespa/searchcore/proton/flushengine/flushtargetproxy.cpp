@@ -40,4 +40,8 @@ std::chrono::steady_clock::duration FlushTargetProxy::last_flush_duration() cons
     return _target->last_flush_duration();
 }
 
+std::chrono::steady_clock::duration FlushTargetProxy::estimated_flush_duration() const noexcept {
+    return _target->estimated_flush_duration();
+}
+
 } // namespace proton

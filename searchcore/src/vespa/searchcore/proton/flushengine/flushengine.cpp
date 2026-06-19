@@ -439,7 +439,8 @@ void FlushEngine::flushAll(const FlushStrategyResult& flush_strategy_result) {
     LOG(debug, "%ld targets to flush.", lst.size());
     for (const FlushContext::SP& ctx : lst) {
         _flush_history->add_pending_flush(ctx->getHandler()->getName(), ctx->getTarget()->getName(), strategy_info,
-                                          ctx->getTarget()->last_flush_duration());
+                                          ctx->getTarget()->last_flush_duration(),
+                                          ctx->getTarget()->estimated_flush_duration());
     }
     auto strategy_id = flush_strategy_result.strategy_id();
     for (const FlushContext::SP& ctx : lst) {
@@ -592,7 +593,7 @@ uint32_t FlushEngine::initFlush(const IFlushHandler::SP& handler, const IFlushTa
         FlushInfo flush(taskId, handler->getName(), target, strategy_id);
         _flushing[taskId] = flush;
         _flush_history->start_flush(handler->getName(), target->getName(), strategy_info,
-                                    target->last_flush_duration(), taskId);
+                                    target->last_flush_duration(), target->estimated_flush_duration(), taskId);
         mark_active_strategy(strategy_id, guard);
     }
     LOG(debug, "FlushEngine::initFlush(handler='%s', target='%s', strategy_info='%s') => taskId='%d'",
