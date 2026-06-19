@@ -126,6 +126,33 @@ public class SchemaTestCase {
     }
 
     @Test
+    void testOnnxModelOptimizeModel() throws Exception {
+        String schema =
+                """
+                schema test {
+                    document test {
+                        field id type string {
+                            indexing: summary | attribute
+                        }
+                    }
+                    onnx-model default_model {
+                        file: files/default.onnx
+                    }
+                    onnx-model optimized_model {
+                        file: files/optimized.onnx
+                        optimize-model: true
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var models = application.schemas().get("test").onnxModels();
+        assertFalse(models.get("default_model").getOptimizeModel());
+        assertTrue(models.get("optimized_model").getOptimizeModel());
+    }
+
+    @Test
     void testSchemaInheritance() throws ParseException {
         String parentLines = joinLines(
                 "schema parent {" +

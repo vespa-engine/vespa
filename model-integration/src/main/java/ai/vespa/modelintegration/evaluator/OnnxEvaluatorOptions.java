@@ -23,6 +23,7 @@ public record OnnxEvaluatorOptions(
         int intraOpThreads,
         int gpuDeviceNumber,
         boolean gpuDeviceRequired,
+        boolean optimizeModel,
         int batchingMaxSize,
         Optional<Duration> batchingMaxDelay,
         int numModelInstances,
@@ -98,6 +99,7 @@ public record OnnxEvaluatorOptions(
         private int intraOpThreads;
         private int gpuDeviceNumber;
         private boolean gpuDeviceRequired;
+        private boolean optimizeModel;
         private int batchingMaxSize;
         private Optional<Duration> batchingMaxDelay;
         private int numModelInstances;
@@ -117,6 +119,7 @@ public record OnnxEvaluatorOptions(
             intraOpThreads = calculateThreads(-4, availableProcessors);
             gpuDeviceNumber = -1;
             gpuDeviceRequired = false;
+            optimizeModel = false;
             batchingMaxSize = 1;
             batchingMaxDelay = Optional.empty();
             numModelInstances = 1;
@@ -131,6 +134,7 @@ public record OnnxEvaluatorOptions(
             this.intraOpThreads = options.intraOpThreads();
             this.gpuDeviceNumber = options.gpuDeviceNumber();
             this.gpuDeviceRequired = options.gpuDeviceRequired();
+            this.optimizeModel = options.optimizeModel();
             this.batchingMaxSize = options.batchingMaxSize();
             this.batchingMaxDelay = options.batchingMaxDelay;
             this.numModelInstances = options.numModelInstances();
@@ -186,6 +190,11 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
+        public Builder setOptimizeModel(boolean optimizeModel) {
+            this.optimizeModel = optimizeModel;
+            return this;
+        }
+
         public Builder setBatchingMaxSize(int maxSize) {
             this.batchingMaxSize = maxSize;
             return this;
@@ -223,6 +232,7 @@ public record OnnxEvaluatorOptions(
                     intraOpThreads,
                     gpuDeviceNumber,
                     gpuDeviceRequired,
+                    optimizeModel,
                     batchingMaxSize,
                     batchingMaxDelay,
                     numModelInstances,

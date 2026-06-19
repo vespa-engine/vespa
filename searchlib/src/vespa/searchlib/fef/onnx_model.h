@@ -20,6 +20,7 @@ private:
     std::map<std::string, std::string> _input_features;
     std::map<std::string, std::string> _output_names;
     bool                               _dry_run_on_setup;
+    bool                               _optimize_model;
 
 public:
     OnnxModel(const std::string& name_in, const std::string& file_path_in);
@@ -34,9 +35,11 @@ public:
     OnnxModel& input_feature(const std::string& model_input_name, const std::string& input_feature);
     OnnxModel& output_name(const std::string& model_output_name, const std::string& output_name);
     OnnxModel& dry_run_on_setup(bool value);
+    OnnxModel& optimize_model(bool value);
     std::optional<std::string> input_feature(const std::string& model_input_name) const;
     std::optional<std::string> output_name(const std::string& model_output_name) const;
     bool dry_run_on_setup() const { return _dry_run_on_setup; }
+    bool optimize_model() const { return _optimize_model; }
     bool operator==(const OnnxModel& rhs) const;
     const std::map<std::string, std::string>& inspect_input_features() const { return _input_features; }
     const std::map<std::string, std::string>& inspect_output_names() const { return _output_names; }
