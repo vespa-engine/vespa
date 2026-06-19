@@ -41,4 +41,8 @@ FieldLengthInfo DiskIndexWrapper::get_field_length_info(const std::string& field
     return _index.get_field_length_info(field_name);
 }
 
+const search::common::CreateAndFreezeTimes& DiskIndexWrapper::create_and_freeze_times() const noexcept {
+    return _index.create_and_freeze_times();
+}
+
 } // namespace proton

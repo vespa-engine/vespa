@@ -58,6 +58,7 @@ public:
      */
     const std::string& getIndexDir() const override;
     const search::index::Schema& getSchema() const override;
+    [[nodiscard]] const search::common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept override;
 };
 
 } // namespace searchcorespi::index
