@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
@@ -24,7 +23,6 @@ using namespace search::features;
 using search::AttributeFactory;
 using search::IntegerAttribute;
 using search::StringAttribute;
-using vespalib::eval::Function;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -65,10 +63,9 @@ TEST(TensorFromLabelsWithOffsetTest, require_that_setup_succeeds_with_attribute_
                      StringList(), StringList().add("tensor"));
 }
 
-TEST(TensorFromLabelsWithOffsetTest, require_that_setup_succeeds_with_query_source) {
+TEST(TensorFromLabelsWithOffsetTest, require_that_setup_fails_with_query_source) {
     SetupFixture f;
-    FTA::FT_SETUP_OK(f.blueprint, f.indexEnv, StringList().add("query(foo)").add("dim").add("offset"), StringList(),
-                     StringList().add("tensor"));
+    FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("query(foo)").add("dim").add("offset"));
 }
 
 struct ExecFixture {
@@ -77,7 +74,6 @@ struct ExecFixture {
     ExecFixture(const std::string& feature) : factory(), test(factory, feature) {
         setup_search_features(factory);
         setupAttributeVectors();
-        setupQueryEnvironment();
         EXPECT_TRUE(test.setup());
     }
     void setupAttributeVectors() {
@@ -120,7 +116,6 @@ struct ExecFixture {
             attr->commit();
         }
     }
-    void setupQueryEnvironment() { test.getQueryEnv().getProperties().add("astr_query", "[d e f]"); }
     const Value& extractTensor(uint32_t docid) { return test.resolveObjectFeature(docid); }
     const Value& execute(uint32_t docid = 1) { return extractTensor(docid); }
 };
@@ -212,22 +207,6 @@ TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_does_n
 
 TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_type_is_weighted_set) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(wsstr),dim,offset)");
-    EXPECT_EQ(*make_empty("tensor(dim{},offset{})"), f.execute());
-}
-
-// Tests for query source:
-
-TEST(TensorFromLabelsWithOffsetTest, string_array_from_query_produces_2d_tensor_with_indices_as_offsets) {
-    ExecFixture f("tensorFromLabelsWithOffset(query(astr_query),dim,offset)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor(dim{},offset{})")
-                               .add({{"dim", "d"}, {"offset", "0"}}, 1)
-                               .add({{"dim", "e"}, {"offset", "1"}}, 1)
-                               .add({{"dim", "f"}, {"offset", "2"}}, 1)),
-              f.execute());
-}
-
-TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_query_parameter_is_not_found) {
-    ExecFixture f("tensorFromLabelsWithOffset(query(null),dim,offset)");
     EXPECT_EQ(*make_empty("tensor(dim{},offset{})"), f.execute());
 }
 

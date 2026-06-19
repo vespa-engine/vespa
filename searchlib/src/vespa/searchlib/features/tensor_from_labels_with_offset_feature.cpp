@@ -2,7 +2,6 @@
 
 #include "tensor_from_labels_with_offset_feature.h"
 
-#include "array_parser.hpp"
 #include "constant_tensor_executor.h"
 
 #include <vespa/eval/eval/fast_value.h>
@@ -10,7 +9,6 @@
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/fef/feature_type.h>
-#include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
@@ -38,12 +36,15 @@ TensorFromLabelsWithOffsetBlueprint::~TensorFromLabelsWithOffsetBlueprint() = de
 bool TensorFromLabelsWithOffsetBlueprint::setup(const search::fef::IIndexEnvironment& env,
                                                 const search::fef::ParameterList&     params) {
     (void)env;
-    // _params[0] = source ('attribute(name)' OR 'query(param)');
+    // _params[0] = source ('attribute(name)');
     // _params[1] = dimension name for label values;
     // _params[2] = dimension name for array indices (offset);
     bool validSource = extractSource(params[0].getValue());
     if (!validSource) {
         return fail("invalid source: '%s'", params[0].getValue().c_str());
+    }
+    if (_sourceType != ATTRIBUTE_SOURCE) {
+        return fail("invalid source: '%s', only 'attribute(name)' is supported", params[0].getValue().c_str());
     }
     _dimension = params[1].getValue();
     _offset_dimension = params[2].getValue();
@@ -147,47 +148,12 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
                                                                                                label_dim, offset_dim);
 }
 
-FeatureExecutor& createQueryExecutor(const search::fef::IQueryEnvironment& env, const std::string& queryKey,
-                                     const ValueType& valueType, const std::string& label_dim,
-                                     const std::string& offset_dim, vespalib::Stash& stash) {
-    search::fef::Property prop = env.getProperties().lookup(queryKey);
-    if (prop.found() && !prop.get().empty()) {
-        std::vector<std::string> vector;
-        ArrayParser::parse(prop.get(), vector);
-
-        size_t      label_idx = 0, offset_idx = 1;
-        const auto& dims = valueType.dimensions();
-        for (size_t d = 0; d < dims.size(); ++d) {
-            if (dims[d].name == label_dim)
-                label_idx = d;
-            if (dims[d].name == offset_dim)
-                offset_idx = d;
-        }
-
-        auto factory = FastValueBuilderFactory::get();
-        auto builder = factory.create_value_builder<double>(valueType, 2, 1, vector.size());
-
-        std::vector<std::string_view> addr_ref(2);
-        for (size_t i = 0; i < vector.size(); ++i) {
-            std::string index_str = std::to_string(i);
-            addr_ref[label_idx] = vector[i];
-            addr_ref[offset_idx] = index_str;
-            auto cell_array = builder->add_subspace(addr_ref);
-            cell_array[0] = 1.0;
-        }
-        return ConstantTensorExecutor::create(builder->build(std::move(builder)), stash);
-    }
-    return ConstantTensorExecutor::createEmpty(valueType, stash);
-}
-
 } // namespace
 
 FeatureExecutor& TensorFromLabelsWithOffsetBlueprint::createExecutor(const search::fef::IQueryEnvironment& env,
                                                                      vespalib::Stash& stash) const {
     if (_sourceType == ATTRIBUTE_SOURCE) {
         return createAttributeExecutor(env, _sourceParam, _valueType, _dimension, _offset_dimension, stash);
-    } else if (_sourceType == QUERY_SOURCE) {
-        return createQueryExecutor(env, _sourceParam, _valueType, _dimension, _offset_dimension, stash);
     }
     return ConstantTensorExecutor::createEmpty(_valueType, stash);
 }

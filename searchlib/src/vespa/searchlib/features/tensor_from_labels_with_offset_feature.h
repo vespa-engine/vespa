@@ -14,7 +14,7 @@ namespace search::features {
  * array indices ("0", "1", ...) are used as labels in an offset dimension.
  * The tensor cells all get the value 1.0.
  *
- * The array source can be either an attribute vector or query parameter.
+ * The array source is an attribute vector.
  */
 class TensorFromLabelsWithOffsetBlueprint : public TensorFactoryBlueprint {
 private:
