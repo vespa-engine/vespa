@@ -8,6 +8,7 @@
         <models>
           <model name="mul">
             <intraop-threads>2</intraop-threads>
+            <optimize-model>true</optimize-model>
             <gpu-device>0</gpu-device>
           </model>
         </models>
