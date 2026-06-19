@@ -1662,4 +1662,52 @@ TEST(IntermediateBlueprintsTest, abs_cost_for_AND_with_kept_order) {
     EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), true), children + force_strict_cost);
 }
 
+// A leaf that is unconditionally strict regardless of cost, like DotProduct /
+// WeightedSet (they pass always_strict=true to resolve_strict). It pins down
+// how abs_cost treats forced strictness: the leaf is tagged strict for
+// evaluation, but abs_cost reflects only the strictness the planner would pick
+// on cost grounds, never the always_strict forcing.
+struct AlwaysStrictLeaf : MyLeaf {
+    double sort(InFlow in_flow) override {
+        resolve_strict(in_flow, true);
+        return abs_cost();
+    }
+};
+
+// Plan a single always-strict leaf in a non-strict context at rate 1.0, with
+// force-strict enabled. MyLeaf flow stats for cost c and rel_est e are {e, c, c*e}.
+Blueprint::UP planned_always_strict_leaf(double cost, uint32_t est_hits) {
+    auto leaf = std::make_unique<AlwaysStrictLeaf>();
+    leaf->set_cost(cost);
+    leaf->estimate(est_hits);
+    leaf->setDocIdLimit(1000);
+    auto opts = Blueprint::Options().keep_order(true).allow_force_strict(true);
+    return Blueprint::optimize_and_sort(std::move(leaf), InFlow(1.0), opts);
+}
+
+TEST(IntermediateBlueprintsTest, abs_cost_for_always_strict_leaf) {
+    // strict only because it is always strict: stats where strict is more
+    // expensive than non-strict, so the planner would never pick strict here.
+    //   cost 0.1, rel_est 0.5  ->  stats {0.5, 0.1, 0.05}
+    //   non-strict cost = 0.1;  forced-strict cost = 0.05 + 0.2 * (1.0 - 0.5) = 0.15
+    // The leaf is still tagged strict, but abs_cost tracks the cheaper,
+    // model-preferred non-strict cost and never pays the always_strict penalty
+    // -- so the gap to the measured cost stays meaningful.
+    {
+        auto bp = planned_always_strict_leaf(0.1, 500);
+        EXPECT_TRUE(bp->strict());
+        EXPECT_DOUBLE_EQ(bp->abs_cost(), 0.1);
+    }
+
+    // strict because the planner would pick strict anyway (strict is cheaper):
+    // always_strict changes nothing, abs_cost is the forced-strict cost.
+    //   cost 1.3, rel_est 0.5  ->  stats {0.5, 1.3, 0.65}
+    //   forced-strict cost = 0.65 + 0.2 * (1.0 - 0.5) = 0.75 < non-strict 1.3
+    {
+        auto bp = planned_always_strict_leaf(1.3, 500);
+        EXPECT_TRUE(bp->strict());
+        EXPECT_DOUBLE_EQ(bp->abs_cost(), 0.65 + 0.2 * (1.0 - 0.5));
+    }
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
