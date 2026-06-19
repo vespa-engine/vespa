@@ -125,7 +125,7 @@ struct ExecFixture {
 TEST(TensorFromLabelsWithOffsetTest, array_string_attribute_produces_2d_tensor_with_label_and_offset_dims) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(astr),dim,offset)");
     // tensor(dim{},offset{}) — 'dim' < 'offset' alphabetically, so dim is index 0 in the type
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor(dim{},offset{})")
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(dim{},offset{})")
                                .add({{"dim", "a"}, {"offset", "0"}}, 1)
                                .add({{"dim", "b"}, {"offset", "1"}}, 1)
                                .add({{"dim", "c"}, {"offset", "2"}}, 1)),
@@ -136,7 +136,7 @@ TEST(TensorFromLabelsWithOffsetTest, duplicate_labels_are_disambiguated_by_offse
     // It's also possible to have duplicate values in the array: [a a b] keeps the
     // two 'a' entries as distinct cells, whereas tensorFromLabels would collide them.
     ExecFixture f("tensorFromLabelsWithOffset(attribute(adup),dim,offset)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor(dim{},offset{})")
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(dim{},offset{})")
                                .add({{"dim", "a"}, {"offset", "0"}}, 1)
                                .add({{"dim", "a"}, {"offset", "1"}}, 1)
                                .add({{"dim", "b"}, {"offset", "2"}}, 1)),
@@ -146,7 +146,7 @@ TEST(TensorFromLabelsWithOffsetTest, duplicate_labels_are_disambiguated_by_offse
 TEST(TensorFromLabelsWithOffsetTest, dimension_order_in_spec_follows_alphabetical_sort) {
     // 'z' > 'a', so offset dim 'z' sorts after label dim 'a' — address ordering must still be correct
     ExecFixture f("tensorFromLabelsWithOffset(attribute(astr),a,z)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor(a{},z{})")
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(a{},z{})")
                                .add({{"a", "a"}, {"z", "0"}}, 1)
                                .add({{"a", "b"}, {"z", "1"}}, 1)
                                .add({{"a", "c"}, {"z", "2"}}, 1)),
@@ -156,7 +156,7 @@ TEST(TensorFromLabelsWithOffsetTest, dimension_order_in_spec_follows_alphabetica
 TEST(TensorFromLabelsWithOffsetTest, dimension_order_reversed_when_offset_dim_sorts_first) {
     // offset dim 'aoffset' < label dim 'zlabel' — type has offset first
     ExecFixture f("tensorFromLabelsWithOffset(attribute(astr),zlabel,aoffset)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor(aoffset{},zlabel{})")
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(aoffset{},zlabel{})")
                                .add({{"zlabel", "a"}, {"aoffset", "0"}}, 1)
                                .add({{"zlabel", "b"}, {"aoffset", "1"}}, 1)
                                .add({{"zlabel", "c"}, {"aoffset", "2"}}, 1)),
@@ -167,7 +167,7 @@ TEST(TensorFromLabelsWithOffsetTest, dimension_order_reversed_when_offset_dim_so
 
 TEST(TensorFromLabelsWithOffsetTest, array_integer_attribute_values_are_converted_to_string_labels) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(aint),dim,offset)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor(dim{},offset{})")
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(dim{},offset{})")
                                .add({{"dim", "3"}, {"offset", "0"}}, 1)
                                .add({{"dim", "5"}, {"offset", "1"}}, 1)
                                .add({{"dim", "7"}, {"offset", "2"}}, 1)),
@@ -178,36 +178,36 @@ TEST(TensorFromLabelsWithOffsetTest, array_integer_attribute_values_are_converte
 
 TEST(TensorFromLabelsWithOffsetTest, single_value_integer_attribute_produces_single_cell_at_offset_0) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(sint),dim,offset)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor(dim{},offset{})").add({{"dim", "5"}, {"offset", "0"}}, 1)),
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(dim{},offset{})").add({{"dim", "5"}, {"offset", "0"}}, 1)),
               f.execute());
 }
 
 TEST(TensorFromLabelsWithOffsetTest, single_value_string_attribute_produces_single_cell_at_offset_0) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(sstr),dim,offset)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor(dim{},offset{})").add({{"dim", "foo"}, {"offset", "0"}}, 1)),
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(dim{},offset{})").add({{"dim", "foo"}, {"offset", "0"}}, 1)),
               f.execute());
 }
 
 TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_single_value_integer_attribute_is_undefined) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(sint),dim,offset)");
-    EXPECT_EQ(*make_empty("tensor(dim{},offset{})"), f.execute(2));
+    EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute(2));
 }
 
 TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_single_value_string_attribute_is_undefined) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(sstr),dim,offset)");
-    EXPECT_EQ(*make_empty("tensor(dim{},offset{})"), f.execute(2));
+    EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute(2));
 }
 
 // Tests for error cases:
 
 TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_does_not_exist) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(null),dim,offset)");
-    EXPECT_EQ(*make_empty("tensor(dim{},offset{})"), f.execute());
+    EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute());
 }
 
 TEST(TensorFromLabelsWithOffsetTest, empty_tensor_is_created_if_attribute_type_is_weighted_set) {
     ExecFixture f("tensorFromLabelsWithOffset(attribute(wsstr),dim,offset)");
-    EXPECT_EQ(*make_empty("tensor(dim{},offset{})"), f.execute());
+    EXPECT_EQ(*make_empty("tensor<float>(dim{},offset{})"), f.execute());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

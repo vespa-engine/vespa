@@ -48,7 +48,7 @@ bool TensorFromLabelsWithOffsetBlueprint::setup(const search::fef::IIndexEnviron
     }
     _dimension = params[1].getValue();
     _offset_dimension = params[2].getValue();
-    auto vt = ValueType::make_type(CellType::DOUBLE, {{_dimension}, {_offset_dimension}});
+    auto vt = ValueType::make_type(CellType::FLOAT, {{_dimension}, {_offset_dimension}});
     _valueType = ValueType::from_spec(vt.to_spec());
     if (_valueType.is_error()) {
         return fail("invalid dimension names: '%s', '%s'", _dimension.c_str(), _offset_dimension.c_str());
@@ -104,7 +104,7 @@ template <typename WeightedBufferType>
 void TensorFromLabelsWithOffsetAttributeExecutor<WeightedBufferType>::execute(uint32_t docId) {
     _attrBuffer.fill(*_attribute, docId);
     auto factory = FastValueBuilderFactory::get();
-    auto builder = factory.create_value_builder<double>(_type, 2, 1, _attrBuffer.size());
+    auto builder = factory.create_value_builder<float>(_type, 2, 1, _attrBuffer.size());
     bool ignore = _is_single_value && _attribute->isUndefined(docId);
     for (size_t i = 0; i < _attrBuffer.size() && !ignore; ++i) {
         std::string label(_attrBuffer[i].value());
