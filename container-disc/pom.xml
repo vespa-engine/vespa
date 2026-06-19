@@ -433,6 +433,12 @@
 
     <!-- TEST scope dependencies -->
     <dependency>
+      <!-- InMemorySpanExporter for asserting on emitted spans; version managed by opentelemetry-bom -->
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-sdk-testing</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
