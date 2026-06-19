@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.extractConfigserverDimensions;
-import static ai.vespa.metricsproxy.metric.ExternalMetrics.extractHostDimensions;
 import static java.util.logging.Level.FINE;
 
 /**
@@ -177,7 +176,7 @@ public class MetricsManager {
     public void setExtraMetrics(List<MetricsPacket.Builder> packets) {
         externalMetricsUpdateTime = Instant.now();
         extraDimensions = extractConfigserverDimensions(packets);
-        extraHostDimensions = extractHostDimensions(packets);
+        extraHostDimensions = externalMetrics.extractHostDimensions(packets);
         externalMetrics.setExtraMetrics(packets);
     }
 
@@ -189,7 +188,7 @@ public class MetricsManager {
     /** Host-level dimensions (host, parentHostname, osVersion) for the given service, filtered by the metric-to-dimension mapping. */
     public Map<DimensionId, String> getExtraHostDimensions(ServiceId serviceId) {
         purgeStaleMetrics();
-        Set<DimensionId> allowed = ExternalMetrics.allowedHostDimensions(serviceId);
+        Set<DimensionId> allowed = externalMetrics.allowedHostDimensions(serviceId);
         Map<DimensionId, String> result = new LinkedHashMap<>();
         extraHostDimensions.forEach((id, value) -> {
             if (allowed.contains(id)) result.put(id, value);

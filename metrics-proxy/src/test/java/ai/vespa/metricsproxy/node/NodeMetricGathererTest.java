@@ -5,11 +5,11 @@ import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
-import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static org.junit.Assert.assertEquals;
@@ -58,9 +59,9 @@ public class NodeMetricGathererTest {
         // host-admin pushes host-level dimensions on its packets; these get harvested.
         metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("vespa.node"))
-                        .putDimension(ExternalMetrics.HOST_DIMENSION, "host1")
-                        .putDimension(ExternalMetrics.PARENT_HOSTNAME_DIMENSION, "parent1")
-                        .putDimension(ExternalMetrics.OS_VERSION_DIMENSION, "8.4.0")));
+                        .putDimension(toDimensionId(PublicDimensions.HOSTNAME), "host1")
+                        .putDimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME), "parent1")
+                        .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")));
 
         NodeMetricGatherer gatherer = new NodeMetricGatherer(metricsManager, applicationDimensions, nodeDimensions);
 
@@ -68,9 +69,9 @@ public class NodeMetricGathererTest {
                 .filter(p -> p.service().id.equals("host_life"))
                 .findFirst().orElseThrow();
 
-        assertEquals("host1", hostLife.dimensions().get(ExternalMetrics.HOST_DIMENSION));
-        assertEquals("parent1", hostLife.dimensions().get(ExternalMetrics.PARENT_HOSTNAME_DIMENSION));
-        assertEquals("8.4.0", hostLife.dimensions().get(ExternalMetrics.OS_VERSION_DIMENSION));
+        assertEquals("host1", hostLife.dimensions().get(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("parent1", hostLife.dimensions().get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
+        assertEquals("8.4.0", hostLife.dimensions().get(toDimensionId(PublicDimensions.OS_VERSION)));
     }
 
     private JsonNode generateHostLifePacket() {

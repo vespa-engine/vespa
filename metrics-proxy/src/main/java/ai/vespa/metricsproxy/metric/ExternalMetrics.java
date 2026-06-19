@@ -3,7 +3,7 @@ package ai.vespa.metricsproxy.metric;
 
 import ai.vespa.metricsproxy.core.ConfiguredMetric;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
-import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
+import ai.vespa.metricsproxy.metric.dimensions.MetricDimensionMapping;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -38,35 +38,18 @@ public class ExternalMetrics {
     public static final DimensionId ROLE_DIMENSION = toDimensionId("role");
     public static final DimensionId STATE_DIMENSION = toDimensionId("state");
 
-    // Host-level dimensions harvested from host-admin packets, kept separate from the global
-    // {role, state} dimensions above so they can be applied per the metric-to-dimension mapping
-    // rather than globally.
-    public static final DimensionId HOST_DIMENSION = toDimensionId(PublicDimensions.HOSTNAME);
-    public static final DimensionId PARENT_HOSTNAME_DIMENSION = toDimensionId(PublicDimensions.PARENT_HOSTNAME);
-    public static final DimensionId OS_VERSION_DIMENSION = toDimensionId(PublicDimensions.OS_VERSION);
-
-    private static final Set<DimensionId> EXTRA_HOST_DIMENSIONS =
-            Set.of(HOST_DIMENSION, PARENT_HOSTNAME_DIMENSION, OS_VERSION_DIMENSION);
-
-    // Hardcoded metric-to-dimension mapping (chunk E replaces this with config).
-    // Maps a metric packet's serviceId to the host dimensions allowed on it; serviceIds not
-    // listed fall back to DEFAULT_HOST_DIMENSIONS.
-    private static final ServiceId HOST_LIFE_SERVICE_ID = ServiceId.toServiceId("host_life");
-    private static final Map<ServiceId, Set<DimensionId>> HOST_DIMENSIONS_BY_SERVICE =
-            Map.of(HOST_LIFE_SERVICE_ID, EXTRA_HOST_DIMENSIONS);
-    private static final Set<DimensionId> DEFAULT_HOST_DIMENSIONS =
-            Set.of(HOST_DIMENSION, PARENT_HOSTNAME_DIMENSION);
-
-    /** The host dimensions allowed on metrics from the given service (explicit mapping, else default). */
-    public static Set<DimensionId> allowedHostDimensions(ServiceId serviceId) {
-        return HOST_DIMENSIONS_BY_SERVICE.getOrDefault(serviceId, DEFAULT_HOST_DIMENSIONS);
-    }
-
     private volatile List<MetricsPacket.Builder> metrics = new ArrayList<>();
     private final MetricsConsumers consumers;
+    private final MetricDimensionMapping dimensionMapping;
 
-    public ExternalMetrics(MetricsConsumers consumers) {
+    public ExternalMetrics(MetricsConsumers consumers, MetricDimensionMapping dimensionMapping) {
         this.consumers = consumers;
+        this.dimensionMapping = dimensionMapping;
+    }
+
+    /** The host dimensions allowed on metrics from the given service (explicit mapping, else default). */
+    public Set<DimensionId> allowedHostDimensions(ServiceId serviceId) {
+        return dimensionMapping.allowedFor(serviceId);
     }
 
     public List<MetricsPacket.Builder> getMetrics() {
@@ -81,7 +64,7 @@ public class ExternalMetrics {
         externalPackets.forEach(packet -> packet.addConsumers(consumers.getAllConsumers())
                 .retainMetrics(metricsToRetain())
                 .applyOutputNames(outputNamesById()));
-        externalPackets.forEach(ExternalMetrics::stripDisallowedHostDimensions);
+        externalPackets.forEach(this::stripDisallowedHostDimensions);
         metrics = List.copyOf(externalPackets);
     }
 
@@ -125,12 +108,12 @@ public class ExternalMetrics {
      * If the same dimension exists in multiple packets, this implementation gives no guarantees
      * about which value is returned.
      */
-    public static Map<DimensionId, String> extractHostDimensions(Collection<MetricsPacket.Builder> packets) {
+    public Map<DimensionId, String> extractHostDimensions(Collection<MetricsPacket.Builder> packets) {
         Map<DimensionId, String> dimensions = new HashMap<>();
         for (MetricsPacket.Builder packet : packets) {
             dimensions.putAll(packet.build().dimensions());
         }
-        dimensions.keySet().retainAll(EXTRA_HOST_DIMENSIONS);
+        dimensions.keySet().retainAll(dimensionMapping.managedDimensions());
         return dimensions;
     }
 
@@ -139,10 +122,11 @@ public class ExternalMetrics {
      * carrier packets (vespa.node etc.) so it only remains where the mapping allows it (host_life).
      * Non-host dimensions (role, state, ...) are left untouched.
      */
-    private static void stripDisallowedHostDimensions(MetricsPacket.Builder packet) {
+    private void stripDisallowedHostDimensions(MetricsPacket.Builder packet) {
         Set<DimensionId> allowed = allowedHostDimensions(packet.getServiceId());
+        Set<DimensionId> managed = dimensionMapping.managedDimensions();
         Set<DimensionId> retained = packet.getDimensionIds();
-        retained.removeIf(id -> EXTRA_HOST_DIMENSIONS.contains(id) && ! allowed.contains(id));
+        retained.removeIf(id -> managed.contains(id) && ! allowed.contains(id));
         packet.retainDimensions(retained);
     }
 

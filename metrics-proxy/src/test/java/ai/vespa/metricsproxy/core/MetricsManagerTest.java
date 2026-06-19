@@ -10,6 +10,7 @@ import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -28,9 +29,6 @@ import java.util.Map;
 import static ai.vespa.metricsproxy.core.MetricsManager.VESPA_VERSION;
 import static ai.vespa.metricsproxy.core.VespaMetrics.METRIC_TYPE_DIMENSION_ID;
 import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
-import static ai.vespa.metricsproxy.metric.ExternalMetrics.HOST_DIMENSION;
-import static ai.vespa.metricsproxy.metric.ExternalMetrics.OS_VERSION_DIMENSION;
-import static ai.vespa.metricsproxy.metric.ExternalMetrics.PARENT_HOSTNAME_DIMENSION;
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.ROLE_DIMENSION;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
@@ -206,25 +204,25 @@ public class MetricsManagerTest {
         metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("vespa.node"))
                         .putMetrics(List.of(new Metric(WHITELISTED_METRIC_ID, 0)))
-                        .putDimension(HOST_DIMENSION, "h1")
-                        .putDimension(PARENT_HOSTNAME_DIMENSION, "p1")
-                        .putDimension(OS_VERSION_DIMENSION, "8.4.0")
+                        .putDimension(toDimensionId(PublicDimensions.HOSTNAME), "h1")
+                        .putDimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME), "p1")
+                        .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")
                         .putDimension(ROLE_DIMENSION, "tenants")));
 
         // (a) what the host_life/alive packet would receive — osVersion survived the harvest:
         Map<DimensionId, String> hostLifeDims = metricsManager.getExtraHostDimensions(toServiceId("host_life"));
-        assertEquals("8.4.0", hostLifeDims.get(OS_VERSION_DIMENSION));
-        assertEquals("h1", hostLifeDims.get(HOST_DIMENSION));
-        assertEquals("p1", hostLifeDims.get(PARENT_HOSTNAME_DIMENSION));
+        assertEquals("8.4.0", hostLifeDims.get(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertEquals("h1", hostLifeDims.get(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("p1", hostLifeDims.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
 
         // (b) the carrier packet kept host/parentHostname/role but lost osVersion:
         MetricsPacket carrier = metricsManager.getMetrics(testServices, Instant.EPOCH).stream()
                 .filter(p -> p.service().equals(toServiceId("vespa.node")))
                 .findFirst().orElseThrow();
-        assertEquals("h1", carrier.dimensions().get(HOST_DIMENSION));
-        assertEquals("p1", carrier.dimensions().get(PARENT_HOSTNAME_DIMENSION));
+        assertEquals("h1", carrier.dimensions().get(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("p1", carrier.dimensions().get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
         assertEquals("tenants", carrier.dimensions().get(ROLE_DIMENSION));
-        assertFalse(carrier.dimensions().containsKey(OS_VERSION_DIMENSION));
+        assertFalse(carrier.dimensions().containsKey(toDimensionId(PublicDimensions.OS_VERSION)));
     }
 
     @Test

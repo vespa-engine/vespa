@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric;
 
+import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
+import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -30,7 +32,7 @@ public class ExternalMetricsTest {
     @Test
     public void extra_metrics_are_added() {
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
-        ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers);
+        ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers, TestUtil.standardDimensionMapping());
 
         externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("foo"))));
@@ -44,7 +46,7 @@ public class ExternalMetricsTest {
         final ServiceId SERVICE_ID = toServiceId("do-not-replace");
 
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
-        ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers);
+        ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers, TestUtil.standardDimensionMapping());
         externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(SERVICE_ID)));
 
@@ -60,7 +62,7 @@ public class ExternalMetricsTest {
                 .consumer(new ConsumersConfig.Consumer.Builder().name(CUSTOM_CONSUMER_2.id))
                 .build();
         MetricsConsumers consumers = new MetricsConsumers(consumersConfig);
-        ExternalMetrics externalMetrics = new ExternalMetrics(consumers);
+        ExternalMetrics externalMetrics = new ExternalMetrics(consumers, TestUtil.standardDimensionMapping());
 
         externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("foo"))));
@@ -77,19 +79,21 @@ public class ExternalMetricsTest {
     @Test
     public void host_dimensions_are_extracted_and_other_dimensions_dropped() {
         MetricsPacket.Builder packet = new MetricsPacket.Builder(toServiceId("vespa.node"))
-                .putDimension(ExternalMetrics.HOST_DIMENSION, "host1")
-                .putDimension(ExternalMetrics.PARENT_HOSTNAME_DIMENSION, "parent1")
-                .putDimension(ExternalMetrics.OS_VERSION_DIMENSION, "8.4.0")
+                .putDimension(toDimensionId(PublicDimensions.HOSTNAME), "host1")
+                .putDimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME), "parent1")
+                .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")
                 .putDimension(toDimensionId("role"), "tenants")
                 .putDimension(toDimensionId("state"), "active")
                 .putDimension(toDimensionId("zone"), "prod.us-east-1");
 
-        Map<DimensionId, String> hostDimensions = ExternalMetrics.extractHostDimensions(List.of(packet));
+        ExternalMetrics externalMetrics = new ExternalMetrics(
+                new MetricsConsumers(new ConsumersConfig.Builder().build()), TestUtil.standardDimensionMapping());
+        Map<DimensionId, String> hostDimensions = externalMetrics.extractHostDimensions(List.of(packet));
 
         assertEquals(3, hostDimensions.size());
-        assertEquals("host1", hostDimensions.get(ExternalMetrics.HOST_DIMENSION));
-        assertEquals("parent1", hostDimensions.get(ExternalMetrics.PARENT_HOSTNAME_DIMENSION));
-        assertEquals("8.4.0", hostDimensions.get(ExternalMetrics.OS_VERSION_DIMENSION));
+        assertEquals("host1", hostDimensions.get(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("parent1", hostDimensions.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
+        assertEquals("8.4.0", hostDimensions.get(toDimensionId(PublicDimensions.OS_VERSION)));
         assertFalse(hostDimensions.containsKey(toDimensionId("role")));
         assertFalse(hostDimensions.containsKey(toDimensionId("state")));
         assertFalse(hostDimensions.containsKey(toDimensionId("zone")));
@@ -98,35 +102,35 @@ public class ExternalMetricsTest {
     @Test
     public void osVersion_is_stripped_from_carrier_packets_but_host_and_parentHostname_kept() {
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
-        ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers);
+        ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers, TestUtil.standardDimensionMapping());
         externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("vespa.node"))
-                        .putDimension(ExternalMetrics.HOST_DIMENSION, "host1")
-                        .putDimension(ExternalMetrics.PARENT_HOSTNAME_DIMENSION, "parent1")
-                        .putDimension(ExternalMetrics.OS_VERSION_DIMENSION, "8.4.0")
+                        .putDimension(toDimensionId(PublicDimensions.HOSTNAME), "host1")
+                        .putDimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME), "parent1")
+                        .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")
                         .putDimension(toDimensionId("role"), "tenants")));
 
         Map<DimensionId, String> dims = externalMetrics.getMetrics().get(0).build().dimensions();
-        assertEquals("host1", dims.get(ExternalMetrics.HOST_DIMENSION));
-        assertEquals("parent1", dims.get(ExternalMetrics.PARENT_HOSTNAME_DIMENSION));
+        assertEquals("host1", dims.get(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("parent1", dims.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
         assertEquals("tenants", dims.get(toDimensionId("role")));
-        assertFalse(dims.containsKey(ExternalMetrics.OS_VERSION_DIMENSION));
+        assertFalse(dims.containsKey(toDimensionId(PublicDimensions.OS_VERSION)));
     }
 
     @Test
     public void osVersion_is_kept_on_host_life_packets() {
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
-        ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers);
+        ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers, TestUtil.standardDimensionMapping());
         externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("host_life"))
-                        .putDimension(ExternalMetrics.HOST_DIMENSION, "host1")
-                        .putDimension(ExternalMetrics.PARENT_HOSTNAME_DIMENSION, "parent1")
-                        .putDimension(ExternalMetrics.OS_VERSION_DIMENSION, "8.4.0")));
+                        .putDimension(toDimensionId(PublicDimensions.HOSTNAME), "host1")
+                        .putDimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME), "parent1")
+                        .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")));
 
         Map<DimensionId, String> dims = externalMetrics.getMetrics().get(0).build().dimensions();
-        assertEquals("8.4.0", dims.get(ExternalMetrics.OS_VERSION_DIMENSION));
-        assertEquals("host1", dims.get(ExternalMetrics.HOST_DIMENSION));
-        assertEquals("parent1", dims.get(ExternalMetrics.PARENT_HOSTNAME_DIMENSION));
+        assertEquals("8.4.0", dims.get(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertEquals("host1", dims.get(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("parent1", dims.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
     }
 
 }
