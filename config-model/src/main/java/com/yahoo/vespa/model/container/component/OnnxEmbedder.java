@@ -46,6 +46,11 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                 .map(opts::withGpuDevice)
                 .orElse(opts);
 
+        opts = getChildValue(xml, "onnx-optimize-model")
+                .map(Boolean::parseBoolean)
+                .map(opts::withOptimizeModel)
+                .orElse(opts);
+
         var batchingConfig = EmbedderBatchingConfig.parseBatchingElement(xml);
         if (batchingConfig != null) {
             opts = opts.withBatchingMaxSize(batchingConfig.maxSize());
@@ -91,6 +96,7 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                         builder.concurrency.factorType(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.valueOf(value)));
         onnxModelOptions.concurrencyFactor().ifPresent(builder.concurrency::factor);
         builder.modelConfigOverride(onnxModelOptions.modelConfigOverride());
+        onnxModelOptions.optimizeModel().ifPresent(builder::optimizeModel);
     }
 
 
