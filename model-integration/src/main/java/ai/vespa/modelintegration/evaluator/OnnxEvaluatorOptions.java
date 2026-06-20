@@ -59,7 +59,8 @@ public record OnnxEvaluatorOptions(
                 .setThreadsFromFactors(config.interOpThreads(), config.intraOpThreads())
                 .setBatchingMaxSize(config.batching().maxSize())
                 .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
-                .setModelConfigOverride(config.modelConfigOverride());
+                .setModelConfigOverride(config.modelConfigOverride())
+                .setOptimizeModel(config.optimizeModel());
 
         if (config.gpuDevice() >= 0) {
             builder.setGpuDevice(config.gpuDevice());

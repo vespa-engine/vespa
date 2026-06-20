@@ -187,6 +187,7 @@ OnnxModelExecutionParams =
     element onnx-interop-threads { xsd:integer }? &
     element onnx-intraop-threads { xsd:integer }? &
     element onnx-gpu-device { xsd:integer }? &
+    element onnx-optimize-model { xsd:boolean }? &
     EmbedderBatchingParams &
     element concurrency {
         attribute type { "absolute" | "relative" }? &
