@@ -151,7 +151,7 @@ public class Flags {
     public static final UnboundJacksonFlag<OpenTelemetrySettings> OPENTELEMETRY_SDK = defineJacksonFlag(
             "opentelemetry-sdk", OpenTelemetrySettings.createDisabled(), OpenTelemetrySettings.class,
             List.of("onur"), "2026-06-16", "2026-12-31",
-            "Configuration for Vespa's OpenTelemetry SDK (tracing) in the container: enabled, endpoint, samplingRatio. When disabled the provider hands out a no-op OpenTelemetry that produces nothing",
+            "Configuration for Vespa's OpenTelemetry SDK (tracing) in the container: enabled, samplingRatio. When disabled the provider hands out a no-op OpenTelemetry that produces nothing",
             "Takes effect at redeployment",
             __ -> true,
             APPLICATION, INSTANCE_ID);

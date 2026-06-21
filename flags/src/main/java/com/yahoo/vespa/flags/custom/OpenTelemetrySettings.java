@@ -20,24 +20,20 @@ import com.yahoo.config.provision.OpenTelemetryConfiguration;
 public class OpenTelemetrySettings implements OpenTelemetryConfiguration {
 
     private final boolean enabled;
-    private final String endpoint;
     private final double samplingRatio;
 
     public static OpenTelemetrySettings createDisabled() {
-        return new OpenTelemetrySettings(false, null, null);
+        return new OpenTelemetrySettings(false, null);
     }
 
     @JsonCreator
     public OpenTelemetrySettings(@JsonProperty("enabled") Boolean enabled,
-                                 @JsonProperty("endpoint") String endpoint,
                                  @JsonProperty("samplingRatio") Double samplingRatio) {
         this.enabled = enabled != null && enabled;
-        this.endpoint = endpoint != null ? endpoint : "";
         this.samplingRatio = samplingRatio != null ? samplingRatio : 1.0;
     }
 
     @JsonGetter("enabled")       @Override public boolean enabled()      { return enabled; }
-    @JsonGetter("endpoint")      @Override public String endpoint()      { return endpoint; }
     @JsonGetter("samplingRatio") @Override public double samplingRatio() { return samplingRatio; }
 
 }
