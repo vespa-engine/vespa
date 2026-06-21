@@ -58,6 +58,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private static final Logger log = Logger.getLogger(ConfigServerBootstrap.class.getName());
     private static final Sleeper sleeper = Sleeper.DEFAULT;
+    private static final Duration maxSleepTimeWhenRedeployingFails = Duration.ofMinutes(20);
 
     protected enum RedeployingApplicationsFails { EXIT_JVM, CONTINUE }
     protected enum VipStatusMode { VIP_STATUS_FILE, VIP_STATUS_PROGRAMMATICALLY }
@@ -69,7 +70,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final VipStatus vipStatus;
     private final ConfigserverConfig configserverConfig;
     private final Duration maxDurationOfRedeployment;
-    private final Duration sleepTimeWhenRedeployingFails;
+    private final long sleepTimeWhenRedeployingFails; // in seconds
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
     private final ConfigServerMaintenance configServerMaintenance;
@@ -95,7 +96,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.vipStatus = vipStatus;
         this.configserverConfig = applicationRepository.configserverConfig();
         this.maxDurationOfRedeployment = Duration.ofSeconds(configserverConfig.maxDurationOfBootstrap());
-        this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
+        this.sleepTimeWhenRedeployingFails = configserverConfig.sleepTimeWhenRedeployingFails();
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         this.clock = applicationRepository.clock();
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
@@ -194,10 +195,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         long failCount = 0;
         do {
             applicationsToRedeploy = redeployApplications(applicationsToRedeploy);
-            if ( ! applicationsToRedeploy.isEmpty() && ! sleepTimeWhenRedeployingFails.isZero()) {
-                Duration sleepTime = sleepTimeWhenRedeployingFails.multipliedBy(++failCount);
-                if (sleepTime.compareTo(Duration.ofMinutes(10)) > 0)
-                    sleepTime = Duration.ofMinutes(10);
+            if ( ! applicationsToRedeploy.isEmpty() && sleepTimeWhenRedeployingFails > 0) {
+                Duration sleepTime = Duration.ofSeconds((long) Math.pow(sleepTimeWhenRedeployingFails, ++failCount));
+                if (sleepTime.compareTo(maxSleepTimeWhenRedeployingFails) > 0)
+                    sleepTime = maxSleepTimeWhenRedeployingFails;
                 log.log(Level.INFO, "Redeployment of " + applicationsToRedeploy + " not finished, will retry in " + sleepTime);
                 sleeper.sleep(sleepTime.toMillis());
             }
