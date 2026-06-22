@@ -137,10 +137,10 @@ private:
     uint64_t get_max_summary_file_size() const noexcept {
         return _max_summary_file_size.load(std::memory_order_relaxed);
     }
-    [[nodiscard]] uint64_t get_each_max_memory() const noexcept {
+    [[nodiscard]] size_t get_each_max_memory() const noexcept {
         return _each_max_memory.load(std::memory_order_relaxed);
     }
-    [[nodiscard]] uint64_t get_global_max_memory() const noexcept {
+    [[nodiscard]] size_t get_global_max_memory() const noexcept {
         return _global_max_memory.load(std::memory_order_relaxed);
     }
 

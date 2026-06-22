@@ -14,7 +14,7 @@ protected:
     size_t                  _global_max_memory;
     ReservedMemoryCalculatorTest();
     ~ReservedMemoryCalculatorTest() override;
-    [[nodiscard]] uint64_t calc_reserved_memory(size_t concurrent, std::vector<size_t> transient_memory_sizes);
+    [[nodiscard]] size_t calc_reserved_memory(size_t concurrent, std::vector<size_t> transient_memory_sizes);
 };
 
 ReservedMemoryCalculatorTest::ReservedMemoryCalculatorTest()
@@ -27,8 +27,8 @@ ReservedMemoryCalculatorTest::ReservedMemoryCalculatorTest()
 
 ReservedMemoryCalculatorTest::~ReservedMemoryCalculatorTest() = default;
 
-uint64_t ReservedMemoryCalculatorTest::calc_reserved_memory(size_t              concurrent,
-                                                            std::vector<size_t> transient_memory_sizes) {
+size_t ReservedMemoryCalculatorTest::calc_reserved_memory(size_t              concurrent,
+                                                          std::vector<size_t> transient_memory_sizes) {
     ReservedMemoryCalculator calc(concurrent, _each_max_memory, _global_max_memory);
     for (auto transient_memory : transient_memory_sizes) {
         calc.track_transient_memory_for_flush(transient_memory, _type, _component);
@@ -50,6 +50,6 @@ TEST_F(ReservedMemoryCalculatorTest, calc_reserved_memory_for_memory_index) {
     // 2 memory indexes, _each_max_memory reserved for each memory index
     EXPECT_EQ(2000, calc_reserved_memory(1, {0, 0}));
     EXPECT_EQ(2020, calc_reserved_memory(1, {10, 20}));
-    // 6 memory indexes, capped by _global_max_memor
+    // 6 memory indexes, capped by _global_max_memory
     EXPECT_EQ(4000, calc_reserved_memory(6, {0, 0, 0, 0, 0, 0}));
 }

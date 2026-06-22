@@ -19,7 +19,7 @@ ReservedMemoryCalculator::~ReservedMemoryCalculator() = default;
 
 size_t ReservedMemoryCalculator::reserved_memory_for_memory_indexes() const noexcept {
     /*
-     * Calculate the hightest memory usage for memory indexes before the memory flush strategy
+     * Calculate the highest memory usage for memory indexes before the memory flush strategy
      * triggers a flush based on the estimated memory gain.
      */
     return std::min(_global_max_memory, _memory_indexes * _each_max_memory);
