@@ -10,14 +10,12 @@ package com.yahoo.config.provision;
 public interface OpenTelemetryConfiguration {
 
     boolean enabled();
-    String endpoint();
     double samplingRatio();
 
     /** The default, disabled configuration: produces a no-op OpenTelemetry. */
     static OpenTelemetryConfiguration disabled() {
         return new OpenTelemetryConfiguration() {
             @Override public boolean enabled() { return false; }
-            @Override public String endpoint() { return ""; }
             @Override public double samplingRatio() { return 1.0; }
         };
     }

@@ -4,8 +4,11 @@
 package=ai.vespa.telemetry
 
 enabled            bool
-endpoint           string
 samplingRatio      double
+
+# Relative path (under $VESPA_HOME) to the file where host-admin writes the local host's hostname.
+# The container reads it to build the local Alloy OTLP endpoint. Set by the config-model.
+endpointHostnameFile string
 
 # Resource attributes describing the emitting service, filled by the config-model
 # from whatever deployment identity is available (application, tenant, cluster type, cluster id).

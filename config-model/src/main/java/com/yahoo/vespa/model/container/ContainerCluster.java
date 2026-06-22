@@ -37,6 +37,7 @@ import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
@@ -578,8 +579,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     @Override
     public void getConfig(TelemetryConfig.Builder builder) {
         builder.enabled(opentelemetrySdk.enabled())
-               .endpoint(opentelemetrySdk.endpoint())
-               .samplingRatio(opentelemetrySdk.samplingRatio());
+               .samplingRatio(opentelemetrySdk.samplingRatio())
+               .endpointHostnameFile(Defaults.OPENTELEMETRY_HOST_HOSTNAME_FILE);
         builder.resourceAttribute.putAll(telemetryResourceAttributes);
     }
 
