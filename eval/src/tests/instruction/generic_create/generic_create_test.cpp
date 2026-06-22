@@ -52,7 +52,7 @@ struct NumberedCellSpec {
     double              value;
 };
 
-bool operator<(const NumberedCellSpec& a, const NumberedCellSpec& b) {
+bool operator<(const NumberedCellSpec& a, const NumberedCellSpec& b) noexcept {
     return a.num < b.num;
 }
 
