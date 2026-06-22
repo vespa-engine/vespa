@@ -11,6 +11,7 @@
     <component id="bar" class="TestBar" bundle="foobundle" deploy:environment="dev" />
     <component id="bar" class="ProdBar" bundle="foobundle" deploy:environment="prod" />
     <component id="baz" class="ProdBaz" bundle="foobundle" deploy:environment="prod" />
+    <component id="xyzzy" class="ProdXyzzyInAws" bundle="foobundle" deploy:cloud="aws" />
     <nodes>
         <node hostalias='node0' baseport="${qrs.port}"/>
     </nodes>
