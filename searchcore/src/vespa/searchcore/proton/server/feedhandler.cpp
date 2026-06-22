@@ -13,11 +13,9 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/document/util/feed_reject_helper.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
-#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/transactionlog/client_session.h>
@@ -513,21 +511,6 @@ void FeedHandler::tlsPrune(SerialNum oldest_to_keep) {
     }
     _prunedSerialNum = oldest_to_keep;
 }
-
-namespace {
-
-template <typename ResultType>
-void feedOperationRejected(FeedToken& token, const std::string& opType, const std::string& docId,
-                           const DocTypeName& docTypeName, const std::string& rejectMessage) {
-    if (token) {
-        auto message = make_string("%s operation rejected for document '%s' of type '%s': '%s'", opType.c_str(),
-                                   docId.c_str(), docTypeName.toString().c_str(), rejectMessage.c_str());
-        token->setResult(make_unique<ResultType>(Result::ErrorType::RESOURCE_EXHAUSTED, message), false);
-        token->fail();
-    }
-}
-
-} // namespace
 
 bool FeedHandler::considerUpdateOperationForRejection(FeedToken& token, UpdateOperation& op) {
     const auto& update = *op.getUpdate();
