@@ -295,10 +295,17 @@ public class DeploymentSpecXmlReader {
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
                                                .toList();
-            case delayTag:
+            case delayTag: {
+                boolean delaysVersion = trueOrMissing(stepTag.getAttribute("version"));
+                boolean delaysRevision = trueOrMissing(stepTag.getAttribute("revision"));
+                if (validate && ! delaysVersion && ! delaysRevision)
+                    illegal("A <delay> with both version='false' and revision='false' has no effect; " +
+                            "remove it or enable at least one change kind");
                 return List.of(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
                                                             longAttribute("minutes", stepTag) * 60 +
-                                                            longAttribute("seconds", stepTag))));
+                                                            longAttribute("seconds", stepTag)),
+                                         delaysVersion, delaysRevision));
+            }
             case parallelTag: // regions and instances may be nested within
                 return List.of(new ParallelSteps(XML.getChildren(stepTag).stream()
                                                     .flatMap(child -> readSteps(child, prodAttributes, parentTag, defaultBcp).stream())

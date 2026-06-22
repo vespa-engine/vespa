@@ -380,8 +380,11 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.time.Duration, boolean, boolean)",
       "public void <init>(java.time.Duration)",
       "public java.time.Duration delay()",
+      "public boolean delaysVersion()",
+      "public boolean delaysRevision()",
       "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.lang.String toString()"
     ],

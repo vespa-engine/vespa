@@ -490,22 +490,39 @@ public final class DeploymentSpec {
 
     /** A deployment step which is to wait for some time before progressing to the next step */
     public static class Delay extends Step {
-        
+
         private final Duration duration;
-        
-        public Delay(Duration duration) {
+        private final boolean delaysVersion;
+        private final boolean delaysRevision;
+
+        public Delay(Duration duration, boolean delaysVersion, boolean delaysRevision) {
             this.duration = duration;
+            this.delaysVersion = delaysVersion;
+            this.delaysRevision = delaysRevision;
+        }
+
+        /** Creates a delay which applies to both platform version upgrades and application revisions. */
+        public Delay(Duration duration) {
+            this(duration, true, true);
         }
 
         @Override
         public Duration delay() { return duration; }
+
+        /** Whether this delay applies to platform (Vespa version) upgrades. */
+        public boolean delaysVersion() { return delaysVersion; }
+
+        /** Whether this delay applies to application revision changes. */
+        public boolean delaysRevision() { return delaysRevision; }
 
         @Override
         public boolean concerns(Environment environment, Optional<RegionName> region) { return false; }
 
         @Override
         public String toString() {
-            return "delay " + duration;
+            return "delay " + duration
+                   + (delaysVersion && delaysRevision ? ""
+                                                       : " (version=" + delaysVersion + ", revision=" + delaysRevision + ")");
         }
 
     }
