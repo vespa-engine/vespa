@@ -53,13 +53,13 @@ public class RangeQueryOptimizer extends Searcher {
             optimized |= optimize(i.next(), indexFacts);
 
         if (item instanceof AndItem andItem)
-            optimized |= optimizeAnd(andItem, indexFacts);
+            optimized |= optimizeAnd(andItem, false, indexFacts);
         if (item instanceof SameElementItem sameElementItem) // elements are and'ed
-            optimized |= optimizeAnd(sameElementItem, indexFacts);
+            optimized |= optimizeAnd(sameElementItem, true, indexFacts);
         return optimized;
     }
 
-    private boolean optimizeAnd(CompositeItem and, IndexFacts.Session indexFacts) {
+    private boolean optimizeAnd(CompositeItem and, boolean inSameElement, IndexFacts.Session indexFacts) {
         // Find consolidated ranges by collecting a list of compatible ranges
         List<FieldRange> fieldRanges = null;
         for (Iterator<Item> i = and.getItemIterator(); i.hasNext(); ) {
@@ -67,7 +67,7 @@ public class RangeQueryOptimizer extends Searcher {
             if ( ! (item instanceof IntItem intItem)) continue;
             if (intItem.getHitLimit() != 0) continue; // each such op gets a different partial set: Cannot be optimized
             if (intItem.getFromLimit().equals(intItem.getToLimit())) continue; // don't optimize searches for single numbers
-            if (indexFacts.getIndex(intItem.getFieldName()).isMultivalue()) continue; // May match different values in each range
+            if (indexFacts.getIndex(intItem.getFieldName()).isMultivalue() && !inSameElement) continue; // May match different values in each range
 
             if (fieldRanges == null) fieldRanges = new ArrayList<>();
             Optional<FieldRange> compatibleRange = findCompatibleRange(intItem, fieldRanges);
