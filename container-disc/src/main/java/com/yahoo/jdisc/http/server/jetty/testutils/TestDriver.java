@@ -18,6 +18,7 @@ import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.security.SslContextBuilder;
+import io.opentelemetry.api.OpenTelemetry;
 
 import javax.net.ssl.SSLContext;
 import java.nio.file.Paths;
@@ -96,6 +97,7 @@ public class TestDriver implements AutoCloseable {
                         bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                         bind(RequestLog.class).toInstance(new VoidRequestLog());
                         bind(MetricReceiver.class).toInstance(MetricReceiver.nullImplementation);
+                        bind(OpenTelemetry.class).toInstance(OpenTelemetry.noop());
                     }
                 },
                 new ConnectorFactoryRegistryModule(connectorConfig));

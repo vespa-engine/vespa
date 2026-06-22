@@ -97,6 +97,7 @@ io.opentelemetry:opentelemetry-exporter-sender-jdk:${opentelemetry.vespa.version
 io.opentelemetry:opentelemetry-sdk-common:${opentelemetry.vespa.version}
 io.opentelemetry:opentelemetry-sdk-logs:${opentelemetry.vespa.version}
 io.opentelemetry:opentelemetry-sdk-metrics:${opentelemetry.vespa.version}
+io.opentelemetry:opentelemetry-sdk-testing:${opentelemetry.vespa.version}
 io.opentelemetry:opentelemetry-sdk-trace:${opentelemetry.vespa.version}
 io.opentelemetry:opentelemetry-sdk:${opentelemetry.vespa.version}
 io.perfmark:perfmark-api:0.27.0
