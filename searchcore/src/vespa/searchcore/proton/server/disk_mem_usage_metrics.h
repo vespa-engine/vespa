@@ -24,6 +24,7 @@ class DiskMemUsageMetrics {
     double _non_transient_memory_usage;
     double _reserved_memory;
     double _non_transient_memory_usage_and_reserved_memory;
+    double _reported_memory_usage;
 
 public:
     DiskMemUsageMetrics() noexcept;
@@ -46,6 +47,7 @@ public:
     [[nodiscard]] double non_transient_memory_usage_and_reserved_memory() const noexcept {
         return _non_transient_memory_usage_and_reserved_memory;
     }
+    [[nodiscard]] double reported_memory_usage() const noexcept { return _reported_memory_usage; }
 };
 
 } // namespace proton

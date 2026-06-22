@@ -7,6 +7,7 @@ import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.MetricDimensionMappingConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -37,6 +39,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.M
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getApplicationDimensionsConfig;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getMetricDimensionMappingConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getMetricsNodesConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
@@ -106,6 +109,26 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(MY_INSTANCE, config.dimensions(AppDimensionNames.INSTANCE));
         assertEquals(MY_TENANT + "." + MY_APPLICATION + "." + MY_INSTANCE, config.dimensions(PublicDimensions.APPLICATION_ID));
         assertEquals(MY_APPLICATION + "." + MY_INSTANCE, config.dimensions(AppDimensionNames.LEGACY_APPLICATION));
+    }
+
+    @Test
+    void hosted_application_propagates_metric_dimension_mapping() {
+        VespaModel hostedModel = getModel(servicesWithAdminOnly(), hosted);
+        MetricDimensionMappingConfig config = getMetricDimensionMappingConfig(hostedModel);
+
+        assertEquals(List.of(PublicDimensions.HOSTNAME, PublicDimensions.PARENT_HOSTNAME), config.defaultDimension());
+
+        assertEquals(Set.of("host_life"), config.service().keySet());
+        assertEquals(List.of(PublicDimensions.HOSTNAME, PublicDimensions.PARENT_HOSTNAME, PublicDimensions.OS_VERSION),
+                     config.service("host_life").dimension());
+    }
+
+    @Test
+    void self_hosted_application_has_empty_metric_dimension_mapping() {
+        VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
+        MetricDimensionMappingConfig config = getMetricDimensionMappingConfig(model);
+        assertTrue(config.defaultDimension().isEmpty());
+        assertTrue(config.service().isEmpty());
     }
 
     @Test

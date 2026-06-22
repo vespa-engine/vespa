@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,6 +97,8 @@ public class ModelEvaluationTest {
             OnnxModelsConfig.Model c2Model = getOnnxModelsConfig(model.getContainerClusters().get("c2"));
             assertEquals(2, c1Model.stateless_intraop_threads());
             assertEquals(4, c2Model.stateless_intraop_threads());
+            assertTrue(c1Model.optimize_model());
+            assertFalse(c2Model.optimize_model());
             assertEquals(0, c1Model.gpu_device());
             assertEquals(1, c2Model.gpu_device());
         } finally {

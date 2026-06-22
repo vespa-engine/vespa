@@ -72,7 +72,8 @@ public:
     static void initCleanup(const std::string& baseDir);
     uint64_t getApproxBytesToWriteToDisk() const override;
     [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
 } // namespace proton

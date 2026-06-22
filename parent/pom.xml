@@ -615,6 +615,11 @@
                 <version>${huggingface.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>classworlds</groupId>
+                <artifactId>classworlds</artifactId>
+                <version>${classworlds-classworlds.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.dev-smart</groupId>
                 <artifactId>ubjson</artifactId>
                 <version>${dev-smart-ubjson.vespa.version}</version>
@@ -791,6 +796,13 @@
                         <artifactId>LatencyUtils</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.vespa.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>jakarta.inject</groupId>
@@ -1217,6 +1229,11 @@
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-component-annotations</artifactId>
+                <version>${plexus-component-annotations.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-interpolation</artifactId>
                 <version>${plexus-interpolation.vespa.version}</version>
             </dependency>
@@ -1398,7 +1415,7 @@
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-common</artifactId>
-                <version>${kotlin.vespa.version}</version>
+                <version>${kotlin-stdlib-common.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>

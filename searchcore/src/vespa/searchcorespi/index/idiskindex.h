@@ -7,6 +7,10 @@
 
 #include <string>
 
+namespace search::common {
+class CreateAndFreezeTimes;
+}
+
 namespace searchcorespi::index {
 
 /**
@@ -26,6 +30,8 @@ struct IDiskIndex : public IndexSearchable {
      * Note that the schema should be part of the index on disk.
      */
     virtual const search::index::Schema& getSchema() const = 0;
+
+    [[nodiscard]] virtual const search::common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept = 0;
 };
 
 } // namespace searchcorespi::index

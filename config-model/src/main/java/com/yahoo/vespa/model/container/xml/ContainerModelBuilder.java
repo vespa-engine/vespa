@@ -925,6 +925,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             onnxModel.setStatelessExecutionMode(getStringValue(modelElement, "execution-mode", null));
             onnxModel.setStatelessInterOpThreads(getIntValue(modelElement, "interop-threads", -1));
             onnxModel.setStatelessIntraOpThreads(getIntValue(modelElement, "intraop-threads", -1));
+            Element optimizeModelElement = XML.getChild(modelElement, "optimize-model");
+            if (optimizeModelElement != null) {
+                onnxModel.setOptimizeModel(Boolean.parseBoolean(optimizeModelElement.getTextContent()));
+            }
             Element gpuDeviceElement = XML.getChild(modelElement, "gpu-device");
             if (gpuDeviceElement != null) {
                 int gpuDevice = Integer.parseInt(gpuDeviceElement.getTextContent());

@@ -51,7 +51,11 @@ void ResourceUsageExplorer::get_state(const vespalib::slime::Inserter& inserter,
         memory.setDouble("usage", usageState.memoryState().usage());
         memory.setDouble("limit", usageState.memoryState().limit());
         memory.setDouble("utilization", usageState.memoryState().utilization());
+        memory.setDouble("reserved", usageState.reserved_memory());
+        memory.setDouble("reserved-factor", usageState.reserved_memory_factor());
         memory.setDouble("transient", usageState.transient_memory_usage());
+        memory.setDouble("non-transient", usageState.non_transient_memory_usage());
+        memory.setDouble("reported", usageState.reported_memory_usage());
         memory.setLong("physicalMemory", _usage_notifier.getHwInfo().memory().sizeBytes());
         convertMemoryStatsToSlime(_usage_notifier.getMemoryStats(), memory.setObject("stats"));
 

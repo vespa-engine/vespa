@@ -17,6 +17,7 @@ std::string mySSId("PageDict4SS.1");
 
 } // namespace
 
+using search::common::CreateAndFreezeTimes;
 using vespalib::getLastErrorString;
 
 namespace search::diskindex {
@@ -35,7 +36,8 @@ PageDict4RandRead::PageDict4RandRead()
       _ssHeaderLen(0u),
       _spHeaderLen(0u),
       _pHeaderLen(0u),
-      _mmap_file_size_threshold(32_Mi) {
+      _mmap_file_size_threshold(32_Mi),
+      _create_and_freeze_times() {
     _ssd.setReadContext(&_ssReadContext);
 }
 
@@ -70,6 +72,7 @@ void PageDict4RandRead::readSSHeader() {
     assert(headerLen >= minHeaderLen);
     assert(ssd.getReadOffset() == headerLen * 8);
     _ssHeaderLen = headerLen;
+    _create_and_freeze_times = CreateAndFreezeTimes(header);
 }
 
 void PageDict4RandRead::readSPHeader() {
@@ -100,6 +103,7 @@ void PageDict4RandRead::readSPHeader() {
     assert(headerLen >= minHeaderLen);
     assert(d.getReadOffset() == headerLen * 8);
     _spHeaderLen = headerLen;
+    _create_and_freeze_times.merge(CreateAndFreezeTimes(header));
 }
 
 void PageDict4RandRead::readPHeader() {
@@ -130,6 +134,7 @@ void PageDict4RandRead::readPHeader() {
     assert(headerLen >= minHeaderLen);
     assert(d.getReadOffset() == headerLen * 8);
     _pHeaderLen = headerLen;
+    _create_and_freeze_times.merge(CreateAndFreezeTimes(header));
 }
 
 bool PageDict4RandRead::lookup(std::string_view word, uint64_t& wordNum,
@@ -260,6 +265,10 @@ bool PageDict4RandRead::close() {
 
 uint64_t PageDict4RandRead::getNumWordIds() const {
     return _ssd._numWordIds;
+}
+
+const CreateAndFreezeTimes& PageDict4RandRead::create_and_freeze_times() const noexcept {
+    return _create_and_freeze_times;
 }
 
 } // namespace search::diskindex

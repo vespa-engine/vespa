@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.OpenTelemetrySettings;
 import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.time.Instant;
@@ -146,6 +147,14 @@ public class Flags {
             "Whether to require an explicit document-processing cluster to be configured in content clusters when there is more than one container cluster",
             "Takes effect at redeployment",
             APPLICATION, INSTANCE_ID, TENANT_ID);
+
+    public static final UnboundJacksonFlag<OpenTelemetrySettings> OPENTELEMETRY_SDK = defineJacksonFlag(
+            "opentelemetry-sdk", OpenTelemetrySettings.createDisabled(), OpenTelemetrySettings.class,
+            List.of("onur"), "2026-06-16", "2026-12-31",
+            "Configuration for Vespa's OpenTelemetry SDK (tracing) in the container: enabled, endpoint, samplingRatio. When disabled the provider hands out a no-op OpenTelemetry that produces nothing",
+            "Takes effect at redeployment",
+            __ -> true,
+            APPLICATION, INSTANCE_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,

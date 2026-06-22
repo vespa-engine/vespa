@@ -234,4 +234,8 @@ std::chrono::steady_clock::duration DocumentMetaStoreFlushTarget::last_flush_dur
     return _dms->last_flush_duration();
 }
 
+std::chrono::steady_clock::duration DocumentMetaStoreFlushTarget::estimated_flush_duration() const noexcept {
+    return _dms->last_flush_duration();
+}
+
 } // namespace proton

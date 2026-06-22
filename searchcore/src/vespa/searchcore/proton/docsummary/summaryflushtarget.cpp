@@ -78,7 +78,11 @@ size_t SummaryFlushTarget::transient_memory_for_flush() const noexcept {
 }
 
 std::chrono::steady_clock::duration SummaryFlushTarget::last_flush_duration() const noexcept {
-    return 200ms; // placeholder value.
+    return 2s; // placeholder value.
+}
+
+std::chrono::steady_clock::duration SummaryFlushTarget::estimated_flush_duration() const noexcept {
+    return 2s; // placeholder value.
 }
 
 } // namespace proton

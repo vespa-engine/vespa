@@ -36,8 +36,9 @@ using search::index::Schema;
 
 using vespalib::make_string_short::fmt;
 
-const std::string field_name = "myfield";
-double            budget_sec = 1.0;
+const std::string     field_name = "myfield";
+double                budget_sec = 1.0;
+std::optional<double> in_flow_filter = std::nullopt;
 
 double estimate_actual_cost(Blueprint& bp, InFlow in_flow) {
     if (in_flow.strict()) {
@@ -80,6 +81,7 @@ struct {
     F class_ = "class";
     F dim = "dim";
     F error = "error";
+    F fetch_postings_time_ms = "fetch_postings_time_ms";
     F field_cfg = "field_cfg";
     F filter_hit_ratio = "filter_hit_ratio";
     F force_strict = "force_strict";
@@ -92,6 +94,9 @@ struct {
     F op_hit_ratio = "op_hit_ratio";
     F pred_ms = "pred_ms";
     F query_op = "query_op";
+    F range_high = "range_high";
+    F range_low = "range_low";
+    F range_size = "range_size";
     F seeks = "seeks";
     F strict_context = "strict_context";
     F target_hits = "target_hits";
@@ -113,16 +118,19 @@ struct BenchmarkResult {
     double      actual_cost;
     std::string iterator_name;
     std::string blueprint_name;
-    BenchmarkResult() : BenchmarkResult(0, 0, 0, {0, 0, 0}, 0, "", "") {}
+    double      fetch_postings_time_ms;
+    BenchmarkResult() : BenchmarkResult(0, 0, 0, {0, 0, 0}, 0, "", "", 0) {}
     BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, FlowStats flow_in, double actual_cost_in,
-                    const std::string& iterator_name_in, const std::string& blueprint_name_in)
+                    const std::string& iterator_name_in, const std::string& blueprint_name_in,
+                    double fetch_postings_time_ms_in)
         : time_ms(time_ms_in),
           seeks(seeks_in),
           hits(hits_in),
           flow(flow_in),
           actual_cost(actual_cost_in),
           iterator_name(iterator_name_in),
-          blueprint_name(blueprint_name_in) {}
+          blueprint_name(blueprint_name_in),
+          fetch_postings_time_ms(fetch_postings_time_ms_in) {}
     BenchmarkResult(const BenchmarkResult&);
     BenchmarkResult(BenchmarkResult&&) noexcept = default;
     ~BenchmarkResult();
@@ -204,6 +212,9 @@ public:
     Stats ms_per_actual_cost_stats() const {
         return calc_stats([](const auto& res) { return res.ms_per_actual_cost(); });
     }
+    Stats fetch_postings_time_ms_stats() const {
+        return calc_stats([](const auto& res) { return res.fetch_postings_time_ms; });
+    }
 };
 
 struct MatchLoopContext {
@@ -245,11 +256,13 @@ void sort_blueprint(Blueprint& blueprint, InFlow in_flow, uint32_t docid_limit, 
 }
 
 MatchLoopContext make_match_loop_context(BenchmarkBlueprintFactory& factory, InFlow in_flow, uint32_t docid_limit,
-                                         PlanningAlgo algo) {
+                                         PlanningAlgo algo, BenchmarkTimer& fetch_postings_timer) {
     auto blueprint = factory.make_blueprint();
     assert(blueprint);
     sort_blueprint(*blueprint, in_flow, docid_limit, to_sort_options(algo));
-    blueprint->fetchPostings(ExecuteInfo::FULL);
+    fetch_postings_timer.before();
+    blueprint->fetchPostings(ExecuteInfo::create(in_flow.rate(), ExecuteInfo::FULL));
+    fetch_postings_timer.after();
     // Note: All blueprints get the same TermFieldMatchData instance.
     //       This is OK as long as we don't do unpacking and only use 1 thread.
     auto md = MatchData::makeTestInstance(1, 1);
@@ -261,10 +274,11 @@ MatchLoopContext make_match_loop_context(BenchmarkBlueprintFactory& factory, InF
 template <bool do_unpack>
 BenchmarkResult strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, PlanningAlgo algo) {
     BenchmarkTimer   timer(budget_sec);
+    BenchmarkTimer   fetch_postings_timer(0);
     uint32_t         hits = 0;
     MatchLoopContext ctx;
     while (timer.has_budget()) {
-        ctx = make_match_loop_context(factory, true, docid_limit, algo);
+        ctx = make_match_loop_context(factory, true, docid_limit, algo, fetch_postings_timer);
         auto* itr = ctx.iterator.get();
         timer.before();
         hits = 0;
@@ -284,14 +298,21 @@ BenchmarkResult strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
     double    actual_cost = estimate_actual_cost(*ctx.blueprint, InFlow(true));
-    return {timer.min_time() * 1000.0,       hits + 1, hits, flow, actual_cost, get_class_name(*ctx.iterator),
-            factory.get_name(*ctx.blueprint)};
+    return {timer.min_time() * 1000.0,
+            hits + 1,
+            hits,
+            flow,
+            actual_cost,
+            get_class_name(*ctx.iterator),
+            factory.get_name(*ctx.blueprint),
+            fetch_postings_timer.min_time() * 1000.0};
 }
 
 template <bool do_unpack>
 BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, double filter_hit_ratio,
                                   bool force_strict, PlanningAlgo algo) {
     BenchmarkTimer timer(budget_sec);
+    BenchmarkTimer fetch_postings_timer(0);
     uint32_t       seeks = 0;
     uint32_t       hits = 0;
     // The following loop simulates a filter that is evaluated before the iterator.
@@ -303,7 +324,8 @@ BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t d
                               "Probably misconfigured benchmark setup.");
     MatchLoopContext ctx;
     while (timer.has_budget()) {
-        ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit, algo);
+        ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit, algo,
+                                      fetch_postings_timer);
         auto* itr = ctx.iterator.get();
         timer.before();
         seeks = 0;
@@ -324,8 +346,14 @@ BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t d
     assert(seeks == num_matches);
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
     double    actual_cost = estimate_actual_cost(*ctx.blueprint, InFlow(filter_hit_ratio));
-    return {timer.min_time() * 1000.0,       seeks, hits, flow, actual_cost, get_class_name(*ctx.iterator),
-            factory.get_name(*ctx.blueprint)};
+    return {timer.min_time() * 1000.0,
+            seeks,
+            hits,
+            flow,
+            actual_cost,
+            get_class_name(*ctx.iterator),
+            factory.get_name(*ctx.blueprint),
+            fetch_postings_timer.min_time() * 1000.0};
 }
 
 BenchmarkResult benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, bool strict_context,
@@ -477,7 +505,8 @@ void analyze_crossover(BenchmarkBlueprintFactory&                               
 
 void print_result_header() {
     std::cout << "| in_flow |   chn | o_ratio | a_ratio |   f.est |    f.cost | f.act_cost | f.scost | f.act_scost | "
-                 "    hits |    seeks |  time_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | blueprint |"
+                 "    hits |    seeks |  time_ms | fetch_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | "
+                 "blueprint |"
               << std::endl;
 }
 
@@ -504,10 +533,10 @@ void print_result(const BenchmarkResult& res, uint32_t children, double op_hit_r
               << res.flow.strict_cost << " | " << std::setw(11)
               << (in_flow.strict() ? res.flow.strict_cost : flow::forced_strict_cost(res.flow, in_flow.rate()))
               << " | " << std::setw(8) << res.hits << " | " << std::setw(8) << res.seeks << std::setprecision(3)
-              << " | " << std::setw(8) << res.time_ms << std::setprecision(4) << " | " << std::setw(9)
-              << res.actual_cost << std::setprecision(2) << " | " << std::setw(11) << res.ns_per_seek() << " | "
-              << std::setw(15) << res.ms_per_actual_cost() << " | " << res.iterator_name << " | "
-              << res.blueprint_name << " |" << std::endl;
+              << " | " << std::setw(8) << res.time_ms << " | " << std::setw(8) << res.fetch_postings_time_ms
+              << std::setprecision(4) << " | " << std::setw(9) << res.actual_cost << std::setprecision(2) << " | "
+              << std::setw(11) << res.ns_per_seek() << " | " << std::setw(15) << res.ms_per_actual_cost() << " | "
+              << res.iterator_name << " | " << res.blueprint_name << " |" << std::endl;
 }
 
 void print_result(const BenchmarkCaseResult& result) {
@@ -515,6 +544,7 @@ void print_result(const BenchmarkCaseResult& result) {
               << std::endl
               << "         ns_per_seek=" << result.ns_per_seek_stats().to_string() << std::endl
               << "         ms_per_act_cost=" << result.ms_per_actual_cost_stats().to_string() << std::endl
+              << "         fetch_postings_time_ms=" << result.fetch_postings_time_ms_stats().to_string() << std::endl
               << std::endl;
 }
 
@@ -658,10 +688,12 @@ void add_factory_run_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, co
     record.set(f.algo, to_string(setup.options.algo));
     record.set(f.blueprint_name, res.blueprint_name);
     record.set(f.children, static_cast<int64_t>(0));
-    record.set(f.flow.cost, res.flow.cost);
-    record.set(f.flow.estimate, res.flow.estimate);
+    record.set(f.fetch_postings_time_ms, res.fetch_postings_time_ms);
     record.set(f.field_cfg, std::string{});
     record.set(f.filter_hit_ratio, in_flow.rate());
+    record.set(f.flow.cost, res.flow.cost);
+    record.set(f.flow.estimate, res.flow.estimate);
+    record.set(f.flow.strict_cost, res.flow.strict_cost);
     record.set(f.force_strict, setup.options.force_strict);
     record.set(f.group, setup.group);
     record.set(f.hits, static_cast<int64_t>(res.hits));
@@ -670,7 +702,6 @@ void add_factory_run_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, co
     record.set(f.query_op, std::string{});
     record.set(f.seeks, static_cast<int64_t>(res.seeks));
     record.set(f.strict_context, in_flow.strict());
-    record.set(f.flow.strict_cost, res.flow.strict_cost);
     record.set(f.time_ms, res.time_ms);
     record.set(f.unpack, setup.options.unpack);
     if (setup.decorate) {
@@ -729,6 +760,23 @@ void describe(const EnnConfig& cfg, Record& r) {
     if (cfg.global_filter_hit_ratio.has_value()) {
         r.set(f.gf_ratio, cfg.global_filter_hit_ratio.value());
     }
+}
+
+/**
+ * Make blueprint factory from RangeConfig.
+ */
+FactoryPtr make_factory(const RangeConfig& cfg) {
+    return attr_range(cfg);
+}
+
+/**
+ * Select fields used to describe a RangeConfig.
+ */
+void describe(const RangeConfig& cfg, Record& r) {
+    r.set(f.range_low, cfg.range_low);
+    r.set(f.range_high, cfg.range_high());
+    r.set(f.range_size, cfg.range_size);
+    r.set(f.target_hits, cfg.target_hits);
 }
 
 /**
@@ -1287,28 +1335,111 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
 
 TEST(IteratorBenchmark, analyze_ENN) {
     std::vector<EnnConfig> cases;
-    for (double num_docs_scale : {0.01, 0.1, 1.0}) {
-        for (uint32_t target_hits : {10u, 100u, 1000u}) {
-            cases.push_back(
-                {.num_docs = static_cast<uint32_t>(num_docs * num_docs_scale), .target_hits = target_hits});
-        }
+    for (uint32_t target_hits : {10u, 100u, 1000u}) {
+        cases.push_back({.num_docs = num_docs, .target_hits = target_hits});
     }
     run_benchmarks("ENN", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
 }
 
 TEST(IteratorBenchmark, analyze_ENN_with_GF) {
     std::vector<EnnConfig> cases;
-    for (double num_docs_scale : {0.01, 0.1, 1.0}) {
-        // The gf_ratio values overlap enn_in_flow_rates so that strict ENN_GF at ratio r
-        // can be compared directly against non-strict ENN driven at rate r.
-        for (double gf_ratio : {0.9, 0.5, 0.1, 0.05, 0.01}) {
-            cases.push_back({.num_docs = static_cast<uint32_t>(num_docs * num_docs_scale),
-                             .target_hits = 100,
-                             .global_filter_hit_ratio = gf_ratio});
-        }
+    // The gf_ratio values overlap enn_in_flow_rates so that strict ENN_GF at ratio r
+    // can be compared directly against non-strict ENN driven at rate r.
+    for (double gf_ratio : {0.9, 0.5, 0.1, 0.05, 0.01}) {
+        cases.push_back({.num_docs = num_docs, .target_hits = 100, .global_filter_hit_ratio = gf_ratio});
     }
     run_benchmarks("ENN_GF", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
 }
+
+// num_docs_scaled = document count.
+// hit_ratio       = how many documents are hits.
+// distinct_ratio  = how big is the range in terms of the hit ratio.
+TEST(IteratorBenchmark, analyze_attr_range) {
+    std::vector<RangeConfig> cases;
+    for (double hit_ratio : {0.001, 0.01, 0.1, 0.5}) {
+        int64_t target_hits = static_cast<int64_t>(hit_ratio * num_docs);
+        for (double distinct_ratio : {0.01, 0.1, 1.0}) {
+            int64_t range_size = static_cast<int64_t>(distinct_ratio * target_hits);
+            cases.push_back(
+                {.field_cfg = int32_fs, .target_hits = target_hits, .range_size = range_size, .num_docs = num_docs});
+        }
+    }
+    run_benchmarks("ATTR_RANGE", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
+}
+
+/**
+ * Handles iteration of arguments. Use flag() when checking only for presence of flag,
+ * use arg_string() or arg_double() when arguments should be provided.
+ */
+struct Args {
+    int                        argc;
+    char**                     argv;
+    int                        i{};
+    double                     double_value{};
+    std::string                string_value{};
+    std::optional<std::string> error{};
+
+    ~Args();
+
+    bool next() {
+        if (error) {
+            return false;
+        }
+        i++;
+        return i < argc;
+    }
+
+    bool flag(const std::string& name) {
+        assert(i < argc);
+        return name == argv[i];
+    }
+
+    bool expect_arg(const std::string& name) {
+        if (!next()) {
+            error = std::format("Option {} expected an argument, but none were provided.", name);
+            return false;
+        }
+        return true;
+    }
+
+    bool arg_double(const std::string& name) {
+        assert(i < argc);
+        if (!flag(name)) {
+            return false;
+        }
+        if (!expect_arg(name)) {
+            return false;
+        }
+        try {
+            std::string value = argv[i];
+            size_t      pos = 0;
+            double_value = std::stod(value, &pos);
+            // In case stod matches "0.5hello" as 0.5.
+            if (pos != value.size()) {
+                error = std::format("Option {} expected a double, but got '{}'", name, argv[i]);
+                return false;
+            }
+        } catch (const std::exception&) {
+            error = std::format("Option {} expected a double, but got '{}'", name, argv[i]);
+            return false;
+        }
+        return true;
+    }
+
+    bool arg_string(const std::string& name) {
+        assert(i < argc);
+        if (!flag(name)) {
+            return false;
+        }
+        if (!expect_arg(name)) {
+            return false;
+        }
+        string_value = argv[i];
+        return true;
+    }
+};
+
+Args::~Args() = default;
 
 static std::string smoke_test_filter = "--gtest_filter="
                                        "IteratorBenchmark.analyze_ENN";
@@ -1317,35 +1448,28 @@ int main(int argc, char** argv) {
     bool                       opt_dump_pond = false;
     std::optional<std::string> opt_save_pond = std::nullopt;
     std::optional<std::string> opt_load_pond = std::nullopt;
-    for (int i = 0; i < argc; i++) {
-        const std::string& smoke_test{"--smoke-test"};
-        if (smoke_test == argv[i]) {
+
+    Args args = {argc, argv};
+    while (args.next()) {
+        if (args.flag("--smoke-test")) {
             std::println(stderr, "Adding --smoke-test filter");
-            argv[i] = smoke_test_filter.data();
-        }
-        const std::string& dump_pond_flag{"--dump-pond"};
-        if (dump_pond_flag == argv[i]) {
+            argv[args.i] = smoke_test_filter.data();
+        } else if (args.flag("--dump-pond")) {
             opt_dump_pond = true;
-        }
-        const std::string& save_pond_flag{"--save-pond"};
-        if (save_pond_flag == argv[i]) {
-            if (i + 1 >= argc) {
-                std::println(stderr, "Expected --save-pond <FILE>, but got no argument");
-                return 1;
-            }
-            opt_save_pond = std::string(argv[++i]);
-            continue;
-        }
-        const std::string& load_pond_flag{"--load-pond"};
-        if (load_pond_flag == argv[i]) {
-            if (i + 1 >= argc) {
-                std::println(stderr, "Expected --load-pond <FILE>, but got no argument");
-                return 1;
-            }
-            opt_load_pond = std::string(argv[++i]);
-            continue;
+        } else if (args.arg_string("--save-pond")) {
+            opt_save_pond = args.string_value;
+        } else if (args.arg_string("--load-pond")) {
+            opt_load_pond = args.string_value;
+        } else if (args.arg_double("--filter-in-flow")) {
+            in_flow_filter = args.double_value;
         }
     }
+
+    if (args.error) {
+        std::println(stderr, "error: {}", *args.error);
+        return 1;
+    }
+
     if (opt_load_pond) {
         try {
             read_file_into_data_pond(*opt_load_pond, global_pond);

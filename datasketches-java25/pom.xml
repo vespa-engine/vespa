@@ -6,7 +6,7 @@
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
     <version>8-SNAPSHOT</version>
-    <relativePath>../../parent/pom.xml</relativePath>
+    <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <groupId>org.apache.datasketches</groupId>
   <artifactId>datasketches-memory</artifactId>

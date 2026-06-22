@@ -122,6 +122,7 @@ public class EmbedderTestCase {
         assertEquals(2.0, onnxCfg.concurrency().factor(), 0.001);
         assertTrue(onnxCfg.modelConfigOverride().isPresent());
         assertEquals("files/hf_config.pbtxt", onnxCfg.modelConfigOverride().get().toString());
+        assertTrue(onnxCfg.optimizeModel());
     }
 
     @Test

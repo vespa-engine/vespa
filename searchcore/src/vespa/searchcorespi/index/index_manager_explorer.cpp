@@ -8,6 +8,8 @@
 #include <vespa/searchcorespi/index/indexsearchablevisitor.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
+#include <format>
+
 using search::IndexStats;
 using searchcorespi::index::DiskIndexStats;
 using searchcorespi::index::MemoryIndexStats;
@@ -23,6 +25,10 @@ void insertDiskIndex(Cursor& arrayCursor, const DiskIndexStats& diskIndex) {
     const IndexStats& sstats = diskIndex.get_index_stats();
     diskIndexCursor.setLong("serialNum", diskIndex.getSerialNum());
     diskIndexCursor.setString("indexDir", diskIndex.getIndexdir());
+    diskIndexCursor.setString("create_time", std::format("{}", diskIndex.create_and_freeze_times().create_time()));
+    diskIndexCursor.setString("freeze_time", std::format("{}", diskIndex.create_and_freeze_times().freeze_time()));
+    diskIndexCursor.setString("flush_duration",
+                              std::format("{}", diskIndex.create_and_freeze_times().get_flush_duration()));
     diskIndexCursor.setLong("disk_usage", sstats.sizeOnDisk());
     auto& fields = diskIndexCursor.setArray("fields");
     for (auto& field_stats : sstats.get_field_stats()) {

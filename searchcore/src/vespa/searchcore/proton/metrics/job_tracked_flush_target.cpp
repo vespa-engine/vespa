@@ -45,4 +45,8 @@ std::chrono::steady_clock::duration JobTrackedFlushTarget::last_flush_duration()
     return _target->last_flush_duration();
 }
 
+std::chrono::steady_clock::duration JobTrackedFlushTarget::estimated_flush_duration() const noexcept {
+    return _target->estimated_flush_duration();
+}
+
 } // namespace proton

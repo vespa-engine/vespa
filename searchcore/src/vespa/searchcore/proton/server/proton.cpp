@@ -861,10 +861,13 @@ void Proton::updateMetrics(const metrics::MetricLockGuard&) {
         metrics.resourceUsage.disk_usage.used_and_reserved.set(
             dm_metrics.non_transient_disk_usage_and_reserved_disk_space());
 
-        metrics.resourceUsage.memory.set(dm_metrics.non_transient_memory_usage());
+        metrics.resourceUsage.memory.set(dm_metrics.reported_memory_usage());
         metrics.resourceUsage.memory_usage.total.set(dm_metrics.total_memory_usage());
         metrics.resourceUsage.memory_usage.total_util.set(dm_metrics.total_memory_utilization());
         metrics.resourceUsage.memory_usage.transient.set(dm_metrics.transient_memory_usage());
+        metrics.resourceUsage.memory_usage.reserved.set(dm_metrics.reserved_memory());
+        metrics.resourceUsage.memory_usage.used_and_reserved.set(
+            dm_metrics.non_transient_memory_usage_and_reserved_memory());
 
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usage_filter.acceptWriteOperation() ? 0.0 : 1.0));

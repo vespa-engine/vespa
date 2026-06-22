@@ -27,15 +27,16 @@ class FlushHistoryEntry {
     time_point  _finish_time;
     time_point  _prune_time;
     duration    _last_flush_duration;
+    duration    _estimated_flush_duration;
     uint32_t    _id;
 
 public:
     FlushHistoryEntry(std::string name_in, std::string strategy_in, uint32_t strategy_id_in,
                       bool priority_strategy_in, const std::string& strategy_info_in, time_point create_time_in,
-                      duration last_flush_duration_in, uint32_t id_in);
+                      duration last_flush_duration_in, duration estimated_flush_duration_in, uint32_t id_in);
     FlushHistoryEntry(std::string name_in, const FlushStrategyHistoryEntry& strategy_entry,
                       const std::string& strategy_info_in, time_point create_time_in, duration last_flush_duration_in,
-                      uint32_t id_in);
+                      duration estimated_flush_duration_in, uint32_t id_in);
     FlushHistoryEntry(const FlushHistoryEntry&);
     FlushHistoryEntry(FlushHistoryEntry&&) noexcept;
     ~FlushHistoryEntry();
@@ -54,6 +55,7 @@ public:
         return _finish_time != time_point() ? _finish_time - _start_time : duration();
     }
     [[nodiscard]] duration last_flush_duration() const noexcept { return _last_flush_duration; }
+    [[nodiscard]] duration estimated_flush_duration() const noexcept { return _estimated_flush_duration; }
     [[nodiscard]] uint32_t id() const noexcept { return _id; }
     void start_flush(time_point start_time_in, uint32_t id_in) noexcept;
     void flush_done(time_point finish_time_in) noexcept;

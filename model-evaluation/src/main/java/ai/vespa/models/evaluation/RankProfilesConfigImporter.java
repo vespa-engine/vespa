@@ -211,6 +211,7 @@ public class RankProfilesConfigImporter {
                     .setInterOpThreads(onnxModelConfig.stateless_interop_threads())
                     .setIntraOpThreads(onnxModelConfig.stateless_intraop_threads())
                     .setGpuDevice(onnxModelConfig.gpu_device(), onnxModelConfig.gpu_device_required())
+                    .setOptimizeModel(onnxModelConfig.optimize_model())
                     .build();
             var m =  new OnnxModel(name, file, options, onnx);
             for (var spec : onnxModelConfig.input()) {

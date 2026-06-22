@@ -254,4 +254,8 @@ std::chrono::steady_clock::duration FlushableAttribute::last_flush_duration() co
     return _attr->last_flush_duration();
 }
 
+std::chrono::steady_clock::duration FlushableAttribute::estimated_flush_duration() const noexcept {
+    return _attr->last_flush_duration();
+}
+
 } // namespace proton

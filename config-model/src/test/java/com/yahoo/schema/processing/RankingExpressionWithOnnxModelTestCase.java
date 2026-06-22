@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RankingExpressionWithOnnxModelTestCase {
@@ -75,6 +76,7 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals(6, config.model().size());
         for (OnnxModelsConfig.Model model : config.model()) {
             assertTrue(model.dry_run_on_setup());
+            assertFalse(model.optimize_model());
         }
 
         OnnxModelsConfig.Model model = config.model(0);

@@ -40,6 +40,7 @@ struct NullDataStore : IDataStore {
         std::vector<DataStoreFileChunkStats> result;
         return result;
     }
+    [[nodiscard]] size_t max_file_size() const noexcept override { return 0; };
     void compactLidSpace(uint32_t wantedDocLidLimit) override { (void)wantedDocLidLimit; }
     bool canShrinkLidSpace() const override { return false; }
     size_t getEstimatedShrinkLidSpaceGain() const override { return 0; }

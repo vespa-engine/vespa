@@ -22,4 +22,12 @@ size_t DummyFlushTarget::transient_memory_for_flush() const noexcept {
     return 0;
 }
 
+std::chrono::steady_clock::duration DummyFlushTarget::last_flush_duration() const noexcept {
+    return 200ms; // placeholder value.
+}
+
+std::chrono::steady_clock::duration DummyFlushTarget::estimated_flush_duration() const noexcept {
+    return 200ms; // placeholder value.
+}
+
 } // namespace proton::test

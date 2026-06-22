@@ -166,16 +166,18 @@ std::string Blueprint::profiler_name(std::string_view operation) const {
 double Blueprint::resolve_strict(InFlow& in_flow, bool always_strict) noexcept {
     bool   was_strict = in_flow.strict();
     double in_rate = in_flow.rate();
-    if (!was_strict &&
-        (always_strict || (opt_allow_force_strict() && flow::should_force_strict(_flow_stats, in_rate))))
-    {
+    // what the planner would choose on its own: strict only when it lowers the cost
+    bool model_strict = was_strict || (opt_allow_force_strict() && flow::should_force_strict(_flow_stats, in_rate));
+    // extra cost of being strict when the caller did not expect it
+    double strict_diff = (!was_strict && model_strict) ? flow::strict_cost_diff(_flow_stats.estimate, in_rate) : 0.0;
+    // simple local estimate; final for leaves, replaced for intermediates in sort.
+    // reflects forced strictness only when it is cheaper, never the always_strict penalty
+    _abs_cost = flow::cost_of(InFlow(model_strict, in_rate), _flow_stats) + strict_diff;
+    // make the actual flow strict for tagging and child propagation
+    if (model_strict || always_strict) {
         in_flow.force_strict();
     }
     _strict = in_flow.strict();
-    // extra cost of being strict when the caller did not expect it
-    double strict_diff = (!was_strict && _strict) ? flow::strict_cost_diff(_flow_stats.estimate, in_rate) : 0.0;
-    // simple local estimate; final for leaves, replaced for intermediates in sort
-    _abs_cost = flow::cost_of(in_flow, _flow_stats) + strict_diff;
     return strict_diff;
 }
 

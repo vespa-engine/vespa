@@ -426,6 +426,7 @@ TOKEN :
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
 | < EXECUTION_MODE: "execution-mode">
+| < OPTIMIZE_MODEL: "optimize-model">
 | < PARALLEL: "parallel">
 | < SEQUENTIAL: "sequential">
 | < MODEL: "model" >
@@ -2094,6 +2095,7 @@ void onnxModelItem(OnnxModel onnxModel) :
 {
     String path = null;
     int num;
+    boolean enable;
     Node inputNode = null;
 }
 
@@ -2147,6 +2149,14 @@ void onnxModelItem(OnnxModel onnxModel) :
                 }
             }
         )
+        | <OPTIMIZE_MODEL> <COLON> enable = bool()
+            {
+                try {
+                    onnxModel.setOptimizeModel(enable);
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            }
         | onnxModelInput(onnxModel)
         | onnxModelOutput(onnxModel)
     )
@@ -3485,6 +3495,7 @@ String identifierWithDashStr :
     | <ONNX_MODEL>
     | <ON_SECOND_PHASE>
     | <ON_SUMMARY>
+    | <OPTIMIZE_MODEL>
     | <POST_FILTER_THRESHOLD>
     | <PRE_POST_FILTER_TIPPING_POINT>
     | <QUERY_COMMAND>

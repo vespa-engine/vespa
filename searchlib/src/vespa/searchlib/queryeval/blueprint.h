@@ -298,7 +298,9 @@ protected:
     // (3) set abs_cost to a simple local estimate (the value projected
     //     during planning); this is the final value for leaf blueprints,
     //     while intermediate blueprints replace it in sort with a value
-    //     accumulated from their children.
+    //     accumulated from their children. abs_cost reflects strictness
+    //     only when it lowers the cost, never the always_strict forcing,
+    //     so the gap to the measured cost stays meaningful.
     //
     // Returns the extra cost of being strict when the caller did not
     // expect it (0 otherwise). Intermediate blueprints add this on top
