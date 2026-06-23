@@ -56,7 +56,15 @@ void ResourceUsageExplorer::get_state(const vespalib::slime::Inserter& inserter,
         memory.setDouble("transient", usageState.transient_memory_usage());
         memory.setDouble("non-transient", usageState.non_transient_memory_usage());
         memory.setDouble("reported", usageState.reported_memory_usage());
-        memory.setLong("physicalMemory", _usage_notifier.getHwInfo().memory().sizeBytes());
+        auto physical_memory = _usage_notifier.getHwInfo().memory().sizeBytes();
+        memory.setLong("physicalMemory", physical_memory);
+        auto reserved_disk_space_and_memory = _usage_notifier.reserved_disk_space_and_memory();
+        memory.setDouble("reserved-for-flush",
+                         static_cast<double>(reserved_disk_space_and_memory.reserved_memory_for_flush()) /
+                             physical_memory);
+        memory.setDouble("reserved-for-memory-indexes",
+                         static_cast<double>(reserved_disk_space_and_memory.reserved_memory_for_memory_indexes()) /
+                             physical_memory);
         convertMemoryStatsToSlime(_usage_notifier.getMemoryStats(), memory.setObject("stats"));
 
         Cursor& address_space = object.setObject("attribute_address_space");

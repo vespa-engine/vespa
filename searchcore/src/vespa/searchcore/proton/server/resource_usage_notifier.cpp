@@ -18,7 +18,7 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
       _hwInfo(filter.get_hw_info()),
       _memoryStats(),
       _diskUsedSizeBytes(),
-      _reserved_disk_space_and_memory(0, 0),
+      _reserved_disk_space_and_memory(0, 0, 0),
       _resource_usage(),
       _attribute_usage(),
       _config(),
@@ -78,10 +78,10 @@ double ResourceUsageNotifier::get_relative_transient_disk_usage(const Guard&) co
 
 void ResourceUsageNotifier::set_resource_usage(const ResourceUsage&         resource_usage,
                                                vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
-                                               ReservedDiskSpaceAndMemory reserved_disk_space_and_memory) {
+                                               ReservedDiskSpaceAndMemory reserved_disk_space_and_memory_) {
     Guard guard(_lock);
     _resource_usage = resource_usage;
-    _reserved_disk_space_and_memory = reserved_disk_space_and_memory;
+    _reserved_disk_space_and_memory = reserved_disk_space_and_memory_;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
     recalcState(guard, true);
@@ -110,6 +110,11 @@ vespalib::ProcessMemoryStats ResourceUsageNotifier::getMemoryStats() const {
 uint64_t ResourceUsageNotifier::getDiskUsedSize() const {
     Guard guard(_lock);
     return _diskUsedSizeBytes;
+}
+
+ReservedDiskSpaceAndMemory ResourceUsageNotifier::reserved_disk_space_and_memory() const noexcept {
+    Guard guard(_lock);
+    return _reserved_disk_space_and_memory;
 }
 
 ResourceUsage ResourceUsageNotifier::get_resource_usage() const {

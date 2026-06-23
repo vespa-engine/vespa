@@ -33,7 +33,7 @@ size_t ReservedMemoryCalculatorTest::calc_reserved_memory(size_t              co
     for (auto transient_memory : transient_memory_sizes) {
         calc.track_transient_memory_for_flush(transient_memory, _type, _component);
     }
-    return calc.get_reserved_memory();
+    return calc.reserved_memory_for_flush() + calc.reserved_memory_for_memory_indexes();
 }
 
 TEST_F(ReservedMemoryCalculatorTest, calc_reserved_memory_for_flush) {
