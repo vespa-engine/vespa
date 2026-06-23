@@ -104,6 +104,8 @@ private:
     std::shared_ptr<search::FlushToken>                   _gc_flush_token;
     std::shared_ptr<flushengine::FlushHistory>            _flush_history;
     std::atomic<uint64_t>                                 _max_summary_file_size;
+    std::atomic<size_t>                                   _each_max_memory;
+    std::atomic<size_t>                                   _global_max_memory;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
     flushengine::FlushStrategyResult getSortedTargetList();
@@ -134,6 +136,12 @@ private:
     uint32_t set_strategy_helper(std::shared_ptr<IFlushStrategy> strategy);
     uint64_t get_max_summary_file_size() const noexcept {
         return _max_summary_file_size.load(std::memory_order_relaxed);
+    }
+    [[nodiscard]] size_t get_each_max_memory() const noexcept {
+        return _each_max_memory.load(std::memory_order_relaxed);
+    }
+    [[nodiscard]] size_t get_global_max_memory() const noexcept {
+        return _global_max_memory.load(std::memory_order_relaxed);
     }
 
     friend class FlushTask;
@@ -229,7 +237,7 @@ public:
     uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }
     uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
     const std::shared_ptr<flushengine::FlushHistory>& get_flush_history() const noexcept { return _flush_history; }
-    void configure(uint64_t max_summary_file_size);
+    void configure(uint64_t max_summary_file_size, size_t each_max_memory, size_t global_max_memory);
     ReservedDiskSpaceAndMemory get_reserved_disk_space_and_memory() const override;
 };
 

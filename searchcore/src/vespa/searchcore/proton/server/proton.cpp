@@ -498,7 +498,8 @@ void Proton::applyConfig(const BootstrapConfig::SP& configSnapshot) {
 
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()),
                                     *_scheduler);
-    _flushEngine->configure(protonConfig.summary.log.maxfilesize);
+    _flushEngine->configure(protonConfig.summary.log.maxfilesize, protonConfig.flush.memory.each.maxmemory,
+                            protonConfig.flush.memory.maxmemory);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();

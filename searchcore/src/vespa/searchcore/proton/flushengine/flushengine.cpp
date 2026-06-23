@@ -645,13 +645,16 @@ flushengine::SetStrategyResult FlushEngine::poll_strategy(uint32_t wait_strategy
     return SetStrategyResult(wait_strategy_id, std::move(notifier), std::move(flush_history));
 }
 
-void FlushEngine::configure(uint64_t max_summary_file_size) {
+void FlushEngine::configure(uint64_t max_summary_file_size, size_t each_max_memory, size_t global_max_memory) {
     _max_summary_file_size.store(max_summary_file_size, std::memory_order_relaxed);
+    _each_max_memory.store(each_max_memory, std::memory_order_relaxed);
+    _global_max_memory.store(global_max_memory, std::memory_order_relaxed);
 }
 
 ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() const {
     flushengine::ReservedDiskSpaceCalculator calc(maxConcurrentTotal(), get_max_summary_file_size());
-    flushengine::ReservedMemoryCalculator    mcalc(maxConcurrentTotal());
+    flushengine::ReservedMemoryCalculator mcalc(maxConcurrentTotal(), get_each_max_memory(), get_global_max_memory());
+    ;
     {
         std::lock_guard guard(_lock);
         for (const auto& it : _handlers) {
@@ -661,7 +664,8 @@ ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() con
                 if (!isFlushing(guard, FlushContext::createName(handler, *target))) {
                     auto gain = target->getApproxDiskGain();
                     calc.track_disk_gain(gain, target->getType(), target->getComponent());
-                    mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush());
+                    mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush(), target->getType(),
+                                                           target->getComponent());
                 }
             }
         }
@@ -669,7 +673,8 @@ ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() con
             auto& target = entry.second._target;
             auto  gain = target->getApproxDiskGain();
             calc.track_disk_gain(gain, target->getType(), target->getComponent());
-            mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush());
+            mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush(), target->getType(),
+                                                   target->getComponent());
         }
     }
     return ReservedDiskSpaceAndMemory(calc.get_reserved_disk(), mcalc.get_reserved_memory());
