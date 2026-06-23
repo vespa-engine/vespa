@@ -118,6 +118,11 @@ ReservedDiskSpaceAndMemory ResourceUsageNotifier::reserved_disk_space_and_memory
     return _reserved_disk_space_and_memory;
 }
 
+uint64_t ResourceUsageNotifier::disk_capacity_bytes() const {
+    Guard guard(_lock);
+    return _disk_capacity_bytes;
+}
+
 ResourceUsage ResourceUsageNotifier::get_resource_usage() const {
     Guard guard(_lock);
     return _resource_usage;
@@ -163,7 +168,7 @@ void ResourceUsageNotifier::notify_resource_usage(const Guard& guard, ResourceUs
     if (disk_mem_sample) {
         _disk_mem_usage_metrics.merge(state);
     }
-    _filter.notify_resource_usage(_usage_state, _memoryStats, _diskUsedSizeBytes);
+    _filter.notify_resource_usage(_usage_state, _memoryStats, _diskUsedSizeBytes, _disk_capacity_bytes);
     for (const auto& listener : _listeners) {
         listener->notify_resource_usage(_usage_state);
     }

@@ -14,8 +14,8 @@ using storage::spi::AttributeResourceUsage;
 
 namespace proton {
 
-void convertDiskStatsToSlime(const vespalib::HwInfo& hwInfo, uint64_t diskUsedSizeBytes, Cursor& object) {
-    object.setLong("capacity", hwInfo.disk().sizeBytes());
+void convertDiskStatsToSlime(uint64_t disk_capacity_bytes, uint64_t diskUsedSizeBytes, Cursor& object) {
+    object.setLong("capacity", disk_capacity_bytes);
     object.setLong("used", diskUsedSizeBytes);
 }
 
@@ -44,7 +44,7 @@ void ResourceUsageExplorer::get_state(const vespalib::slime::Inserter& inserter,
         disk.setDouble("transient", usageState.transient_disk_usage());
         disk.setDouble("non-transient", usageState.non_transient_disk_usage());
         disk.setDouble("reported", usageState.reported_disk_usage());
-        convertDiskStatsToSlime(_usage_notifier.getHwInfo(), _usage_notifier.getDiskUsedSize(),
+        convertDiskStatsToSlime(_usage_notifier.disk_capacity_bytes(), _usage_notifier.getDiskUsedSize(),
                                 disk.setObject("stats"));
 
         Cursor& memory = object.setObject("memory");

@@ -93,6 +93,7 @@ public:
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
     [[nodiscard]] ReservedDiskSpaceAndMemory reserved_disk_space_and_memory() const noexcept;
+    [[nodiscard]] uint64_t disk_capacity_bytes() const;
     searchcorespi::common::ResourceUsage get_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo& getHwInfo() const noexcept { return _hwInfo; }
