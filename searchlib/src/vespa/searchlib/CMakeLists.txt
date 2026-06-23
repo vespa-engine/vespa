@@ -36,6 +36,7 @@ vespa_add_library(vespa_searchlib
     INSTALL lib64
     DEPENDS
     vespalib
+    vespalib_quant
     ICU::i18n
     ICU::uc
     protobuf::libprotobuf

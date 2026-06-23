@@ -5,7 +5,11 @@
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/mips_distance_transform.h>
+#include <vespa/searchlib/tensor/temporary_vector_store.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/quant/eden.h>
+
+#include <gmock/gmock.h>
 
 #include <numbers>
 #include <vector>
@@ -14,6 +18,7 @@
 LOG_SETUP("distance_function_test");
 
 using namespace search::tensor;
+using namespace testing;
 using search::attribute::DistanceMetric;
 using vespalib::BFloat16;
 using vespalib::eval::CellType;
@@ -74,10 +79,11 @@ double computeEuclideanChecked(TypedCells a, TypedCells b) {
     static EuclideanDistanceFunctionFactory<Int8Float> i8f_dff;
     static EuclideanDistanceFunctionFactory<float>     flt_dff;
     static EuclideanDistanceFunctionFactory<double>    dbl_dff;
-    auto                                               d_n = dbl_dff.for_query_vector(a);
-    auto                                               d_f = flt_dff.for_query_vector(a);
-    auto                                               d_r = dbl_dff.for_query_vector(b);
-    auto                                               d_i = dbl_dff.for_insertion_vector(a);
+
+    auto d_n = dbl_dff.for_query_vector(a);
+    auto d_f = flt_dff.for_query_vector(a);
+    auto d_r = dbl_dff.for_query_vector(b);
+    auto d_i = dbl_dff.for_insertion_vector(a);
     // normal:
     double result = d_n->calc(b);
     // insert is exactly same:
@@ -174,13 +180,50 @@ TEST(DistanceFunctionsTest, euclidean_int8_smoketest) {
     EXPECT_DOUBLE_EQ(14.0, computeEuclideanChecked(t(p5), t(p7)));
 }
 
+TypedCells retype_to_i8f(const std::vector<uint8_t>& v) {
+    static_assert(sizeof(Int8Float) == 1);
+    auto as_i8f = std::span<const Int8Float>(reinterpret_cast<const Int8Float*>(v.data()), v.size());
+    return TypedCells(as_i8f);
+}
+
+void check_quantized_angular(TypedCells a, TypedCells b, const double expected_result) {
+    constexpr uint64_t seed = 0x123456789;
+    // The test vectors have such low dimensionality that anything less than 4-bit
+    // quantization causes hilarious precision loss.
+    constexpr uint8_t bits = 4;
+
+    QuantizedAngularDistanceFunctionFactory q_dff(a.size, bits, seed);
+
+    vespalib::quant::EdenQuantizer quantizer(a.size, bits, seed);
+    std::vector<uint8_t>           a_q(quantizer.quantized_size());
+    std::vector<uint8_t>           b_q(quantizer.quantized_size());
+    // (Ab)use TemporaryVectorStore for auto-conversion to float
+    TemporaryVectorStore<float> tmp_float_store(a.size);
+    quantizer.quantize(tmp_float_store.convertRhs(a), a_q, vespalib::quant::QuantMode::InnerProduct);
+    quantizer.quantize(tmp_float_store.convertRhs(b), b_q, vespalib::quant::QuantMode::InnerProduct);
+
+    // Query vectors are always full precision
+    auto d_n = q_dff.for_query_vector(a);
+    auto d_r = q_dff.for_query_vector(b);
+    // Insertion vectors must always be in quantized form (must compare apples to apples in a HNSW index)
+    auto d_i = q_dff.for_insertion_vector(retype_to_i8f(a_q));
+    // f32 `a` vs quantized `b`;
+    double result = d_n->calc(retype_to_i8f(b_q));
+    EXPECT_THAT(result, DoubleNear(expected_result, 0.1));
+    // quantized vs. quantized; worst-case for precision loss
+    EXPECT_THAT(d_i->calc(retype_to_i8f(b_q)), DoubleNear(expected_result, 0.13));
+    // reverse (f32 `b` vs quantized `a`):
+    EXPECT_THAT(d_r->calc(retype_to_i8f(a_q)), DoubleNear(expected_result, 0.108));
+}
+
 double computeAngularChecked(TypedCells a, TypedCells b) {
     static AngularDistanceFunctionFactory<float>  flt_dff;
     static AngularDistanceFunctionFactory<double> dbl_dff;
-    auto                                          d_n = dbl_dff.for_query_vector(a);
-    auto                                          d_f = flt_dff.for_query_vector(a);
-    auto                                          d_r = dbl_dff.for_query_vector(b);
-    auto                                          d_i = dbl_dff.for_insertion_vector(a);
+
+    auto d_n = dbl_dff.for_query_vector(a);
+    auto d_f = flt_dff.for_query_vector(a);
+    auto d_r = dbl_dff.for_query_vector(b);
+    auto d_i = dbl_dff.for_insertion_vector(a);
     // normal:
     double result = d_n->calc(b);
     // insert is exactly same:
@@ -189,6 +232,7 @@ double computeAngularChecked(TypedCells a, TypedCells b) {
     EXPECT_DOUBLE_EQ(d_r->calc(a), result);
     // float factory:
     EXPECT_FLOAT_EQ(d_f->calc(b), result);
+    check_quantized_angular(a, b, result);
     return result;
 }
 
@@ -293,10 +337,11 @@ TEST(DistanceFunctionsTest, conversion_to_internal_distance_threshold_is_capped)
 double computePrenormalizedAngularChecked(TypedCells a, TypedCells b) {
     static PrenormalizedAngularDistanceFunctionFactory<float>  flt_dff;
     static PrenormalizedAngularDistanceFunctionFactory<double> dbl_dff;
-    auto                                                       d_n = dbl_dff.for_query_vector(a);
-    auto                                                       d_f = flt_dff.for_query_vector(a);
-    auto                                                       d_r = dbl_dff.for_query_vector(b);
-    auto                                                       d_i = dbl_dff.for_insertion_vector(a);
+
+    auto d_n = dbl_dff.for_query_vector(a);
+    auto d_f = flt_dff.for_query_vector(a);
+    auto d_r = dbl_dff.for_query_vector(b);
+    auto d_i = dbl_dff.for_insertion_vector(a);
     // normal:
     double result = d_n->calc(b);
     // insert is exactly same:
