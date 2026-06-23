@@ -20,7 +20,7 @@ class OpenTelemetrySdkBuilderTest {
     void builds_endpoint_from_hostname_file(@TempDir Path dir) throws IOException {
         Path file = dir.resolve("host-hostname");
         Files.writeString(file, "host1.example.com\n");
-        assertEquals("https://host1.example.com:4318", OpenTelemetrySdkBuilder.resolveEndpoint(file));
+        assertEquals("https://host1.example.com:4318/v1/traces", OpenTelemetrySdkBuilder.resolveEndpoint(file));
     }
 
     @Test
