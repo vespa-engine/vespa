@@ -937,6 +937,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 onnxModel.setGpuDevice(gpuDevice, hasGpu);
             }
         }
+        if (context.getDeployState().featureFlags().forceDisableOnnxModelOptimization()) {
+            for (OnnxModel onnxModel : models.asMap().values())
+                onnxModel.setOptimizeModel(false);
+        }
         for (OnnxModel onnxModel : models.asMap().values())
             cluster.onnxModelCostCalculator().registerModel(context.getApplicationPackage().getFile(onnxModel.getFilePath()), onnxModel.onnxModelOptions());
 
