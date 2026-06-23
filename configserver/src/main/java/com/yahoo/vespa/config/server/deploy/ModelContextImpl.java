@@ -267,6 +267,7 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public boolean tokenAuthForDeploy() { return flag(Flags.TOKEN_AUTH_FOR_DEPLOY).value(); }
         @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
+        @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

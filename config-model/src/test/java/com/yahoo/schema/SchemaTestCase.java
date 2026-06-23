@@ -142,14 +142,19 @@ public class SchemaTestCase {
                         file: files/optimized.onnx
                         optimize-model: true
                     }
+                    onnx-model unoptimized_model {
+                        file: files/unoptimized.onnx
+                        optimize-model: false
+                    }
                 }""";
         ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.addSchema(schema);
         var application = builder.build(true);
         var models = application.schemas().get("test").onnxModels();
-        assertFalse(models.get("default_model").getOptimizeModel());
+        assertTrue(models.get("default_model").getOptimizeModel());
         assertTrue(models.get("optimized_model").getOptimizeModel());
+        assertFalse(models.get("unoptimized_model").getOptimizeModel());
     }
 
     @Test

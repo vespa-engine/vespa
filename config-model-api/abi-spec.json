@@ -1452,7 +1452,8 @@
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
-      "public double searchNodeReservedMemoryFactor()"
+      "public double searchNodeReservedMemoryFactor()",
+      "public boolean forceDisableOnnxModelOptimization()"
     ],
     "fields" : [ ]
   },
