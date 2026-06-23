@@ -25,6 +25,7 @@
         <models>
           <model name="mul">
             <intraop-threads>4</intraop-threads>
+            <optimize-model>false</optimize-model>
             <gpu-device>1</gpu-device>
           </model>
         </models>

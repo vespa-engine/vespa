@@ -12,7 +12,7 @@ OnnxModel::OnnxModel(const std::string& name_in, const std::string& file_path_in
       _input_features(),
       _output_names(),
       _dry_run_on_setup(false),
-      _optimize_model(false) {
+      _optimize_model(true) {
 }
 
 OnnxModel::OnnxModel(OnnxModel&&) noexcept = default;

@@ -76,7 +76,7 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals(6, config.model().size());
         for (OnnxModelsConfig.Model model : config.model()) {
             assertTrue(model.dry_run_on_setup());
-            assertFalse(model.optimize_model());
+            assertTrue(model.optimize_model());
         }
 
         OnnxModelsConfig.Model model = config.model(0);

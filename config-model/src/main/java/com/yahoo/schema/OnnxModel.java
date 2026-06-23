@@ -30,7 +30,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
 
     // Runtime options
     private OnnxModelOptions onnxModelOptions = OnnxModelOptions.empty();
-    private boolean optimizeModel = false;
+    private boolean optimizeModel = true;
 
     public OnnxModel(String name) {
         super(name);
