@@ -34,7 +34,7 @@ void ReservedMemoryCalculator::track_transient_memory_for_flush(size_t          
     }
 }
 
-size_t ReservedMemoryCalculator::get_reserved_memory() {
+size_t ReservedMemoryCalculator::reserved_memory_for_flush() {
     if (_concurrent < _candidates.size()) {
         /*
          * Retain the _concurrent biggest candidates. They are later used to calculate reserved
@@ -47,7 +47,6 @@ size_t ReservedMemoryCalculator::get_reserved_memory() {
     for (auto& candidate : _candidates) {
         reserved_memory += candidate.reserved();
     }
-    reserved_memory += reserved_memory_for_memory_indexes();
     return reserved_memory;
 }
 

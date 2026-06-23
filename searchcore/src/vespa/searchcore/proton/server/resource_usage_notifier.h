@@ -87,10 +87,11 @@ public:
 
     void set_resource_usage(const searchcorespi::common::ResourceUsage& resource_usage,
                             vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
-                            ReservedDiskSpaceAndMemory reserved_disk_space_and_memory);
+                            ReservedDiskSpaceAndMemory reserved_disk_space_and_memory_);
     [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
+    [[nodiscard]] ReservedDiskSpaceAndMemory reserved_disk_space_and_memory() const noexcept;
     searchcorespi::common::ResourceUsage get_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo& getHwInfo() const noexcept { return _hwInfo; }
