@@ -72,7 +72,7 @@ uint64_t IndexFlushTarget::getApproxBytesToWriteToDisk() const {
     }
 }
 
-size_t IndexFlushTarget::transient_memory_for_flush() const noexcept {
+size_t IndexFlushTarget::reserved_memory_for_flush() const noexcept {
     return 0;
 }
 

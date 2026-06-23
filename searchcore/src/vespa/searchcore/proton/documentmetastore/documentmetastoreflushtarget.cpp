@@ -226,8 +226,8 @@ uint64_t DocumentMetaStoreFlushTarget::getApproxBytesToWriteToDisk() const {
     return _dms->getEstimatedSaveByteSize();
 }
 
-size_t DocumentMetaStoreFlushTarget::transient_memory_for_flush() const noexcept {
-    return _dms->transient_memory_for_flush(_hwInfo.disk().slow());
+size_t DocumentMetaStoreFlushTarget::reserved_memory_for_flush() const noexcept {
+    return _dms->reserved_memory_for_flush(_hwInfo.disk().slow());
 }
 
 std::chrono::steady_clock::duration DocumentMetaStoreFlushTarget::last_flush_duration() const noexcept {

@@ -91,7 +91,7 @@ PredicateAttribute::PredicateAttribute(const std::string& base_file_name, const 
       _min_feature(config.getGrowStrategy(), getGenerationHolder()),
       _interval_range_vector(config.getGrowStrategy(), getGenerationHolder()),
       _max_interval_range(1),
-      _transient_memory_for_flush_stats(0) {
+      _reserved_memory_for_flush_stats(0) {
 }
 
 PredicateAttribute::~PredicateAttribute() {
@@ -128,7 +128,7 @@ void PredicateAttribute::onUpdateStat(CommitParam::UpdateStats updateStats) {
     combined.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     this->updateStatistics(_min_feature.size(), _min_feature.size(), combined.allocatedBytes(), combined.usedBytes(),
                            combined.deadBytes(), combined.allocatedBytesOnHold());
-    update_transient_memory_for_flush();
+    update_reserved_memory_for_flush();
 }
 
 void PredicateAttribute::reclaim_memory(Generation oldest_used_gen) {
@@ -152,16 +152,16 @@ std::unique_ptr<AttributeSaver> PredicateAttribute::onInitSave(std::string_view 
         PredicateAttributeSaver::IntervalRangeVectorSnapshot(interval_range_vector_view), _max_interval_range);
 }
 
-size_t PredicateAttribute::transient_memory_for_flush(bool slow_disk) const noexcept {
+size_t PredicateAttribute::reserved_memory_for_flush(bool slow_disk) const noexcept {
     size_t flush_buffer_size = slow_disk ? getEstimatedSaveByteSize() : 0;
-    return _transient_memory_for_flush_stats.load(std::memory_order_relaxed) + flush_buffer_size;
+    return _reserved_memory_for_flush_stats.load(std::memory_order_relaxed) + flush_buffer_size;
 }
 
-void PredicateAttribute::update_transient_memory_for_flush() noexcept {
+void PredicateAttribute::update_reserved_memory_for_flush() noexcept {
     size_t transient_memory = _min_feature.size() * sizeof(uint8_t) +
                               _interval_range_vector.size() * sizeof(IntervalRange) +
-                              _index->transient_memory_for_flush();
-    _transient_memory_for_flush_stats.store(transient_memory, std::memory_order_relaxed);
+                              _index->reserved_memory_for_flush();
+    _reserved_memory_for_flush_stats.store(transient_memory, std::memory_order_relaxed);
 }
 
 uint32_t PredicateAttribute::getVersion() const {
@@ -241,7 +241,7 @@ bool PredicateAttribute::onLoad(vespalib::Executor*) {
     set_size_on_disk(loaded_buffer->size_on_disk() + DiskSpaceCalculator::directory_placeholder_size());
     set_last_flush_duration(loaded_buffer->flush_duration());
     _index->onDeserializationCompleted();
-    update_transient_memory_for_flush();
+    update_reserved_memory_for_flush();
     return true;
 }
 

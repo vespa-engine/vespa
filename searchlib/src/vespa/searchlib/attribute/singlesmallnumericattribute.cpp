@@ -180,7 +180,7 @@ uint64_t SingleValueSmallNumericAttribute::getEstimatedSaveByteSize() const {
     return headerSize + sz;
 }
 
-size_t SingleValueSmallNumericAttribute::transient_memory_for_flush(bool slow_disk) const noexcept {
+size_t SingleValueSmallNumericAttribute::reserved_memory_for_flush(bool slow_disk) const noexcept {
     const size_t num_docs(getCommittedDocIdLimit());
     const size_t num_data_words((num_docs + _valueShiftMask) >> _wordShift);
     size_t       flush_buffer_size = slow_disk ? getEstimatedSaveByteSize() : 0;

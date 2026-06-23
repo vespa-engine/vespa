@@ -99,7 +99,7 @@ uint64_t IndexFusionTarget::getApproxBytesToWriteToDisk() const {
     return _fusionStats.diskUsage;
 }
 
-size_t IndexFusionTarget::transient_memory_for_flush() const noexcept {
+size_t IndexFusionTarget::reserved_memory_for_flush() const noexcept {
     return 0;
 }
 

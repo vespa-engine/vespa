@@ -616,7 +616,7 @@ uint64_t AttributeVector::getEstimatedSaveByteSize() const {
     return datFileSize + weightFileSize + idxFileSize + udatFileSize;
 }
 
-size_t AttributeVector::transient_memory_for_flush(bool slow_disk) const noexcept {
+size_t AttributeVector::reserved_memory_for_flush(bool slow_disk) const noexcept {
     uint32_t committedDocIdLimit = getCommittedDocIdLimit();
     size_t   elem_size = 4;
     size_t   flush_buffer_size = slow_disk ? getEstimatedSaveByteSize() : 0;

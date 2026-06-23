@@ -138,7 +138,7 @@ public:
      * a memory buffer (cf. attribute vectors and document meta store), the return value also includes
      * the estimated size of the memory buffer.
      */
-    [[nodiscard]] virtual size_t transient_memory_for_flush() const noexcept = 0;
+    [[nodiscard]] virtual size_t reserved_memory_for_flush() const noexcept = 0;
 
     /**
      * Return cost of replaying a feed operation relative to cost of reading a feed operation from tls.

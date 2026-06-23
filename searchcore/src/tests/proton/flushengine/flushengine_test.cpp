@@ -333,21 +333,21 @@ public:
 
 class ReservedDiskSpaceAndMemoryTarget : public SimpleTarget {
     DiskGain _disk_gain;
-    size_t   _transient_memory_for_flush;
+    size_t   _reserved_memory_for_flush;
 
 public:
     ReservedDiskSpaceAndMemoryTarget(const std::string& name, search::SerialNum flushedSerial, DiskGain disk_gain,
-                                     size_t transient_memory_for_flush_in)
+                                     size_t reserved_memory_for_flush_in)
         : SimpleTarget(name, Type::OTHER, no_task_tag()),
           _disk_gain(disk_gain),
-          _transient_memory_for_flush(transient_memory_for_flush_in) {
+          _reserved_memory_for_flush(reserved_memory_for_flush_in) {
         _flushedSerial = flushedSerial;
         _task = std::make_unique<ReservedDiskSpaceAndMemoryTask>(_taskStart, _taskDone, &_proceed, _flushedSerial,
                                                                  _currentSerial, _disk_gain);
     }
     ~ReservedDiskSpaceAndMemoryTarget() override;
     DiskGain getApproxDiskGain() const override { return _disk_gain; }
-    size_t transient_memory_for_flush() const noexcept override { return _transient_memory_for_flush; }
+    size_t reserved_memory_for_flush() const noexcept override { return _reserved_memory_for_flush; }
 };
 
 ReservedDiskSpaceAndMemoryTarget::~ReservedDiskSpaceAndMemoryTarget() = default;

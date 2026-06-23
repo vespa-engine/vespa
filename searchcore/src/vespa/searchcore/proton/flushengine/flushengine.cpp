@@ -664,8 +664,8 @@ ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() con
                 if (!isFlushing(guard, FlushContext::createName(handler, *target))) {
                     auto gain = target->getApproxDiskGain();
                     calc.track_disk_gain(gain, target->getType(), target->getComponent());
-                    mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush(), target->getType(),
-                                                           target->getComponent());
+                    mcalc.track_reserved_memory_for_flush(target->reserved_memory_for_flush(), target->getType(),
+                                                          target->getComponent());
                 }
             }
         }
@@ -673,8 +673,8 @@ ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() con
             auto& target = entry.second._target;
             auto  gain = target->getApproxDiskGain();
             calc.track_disk_gain(gain, target->getType(), target->getComponent());
-            mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush(), target->getType(),
-                                                   target->getComponent());
+            mcalc.track_reserved_memory_for_flush(target->reserved_memory_for_flush(), target->getType(),
+                                                  target->getComponent());
         }
     }
     return ReservedDiskSpaceAndMemory(calc.get_reserved_disk(), mcalc.reserved_memory_for_flush(),

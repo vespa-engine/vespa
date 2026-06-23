@@ -487,24 +487,24 @@ template <typename VectorType, typename BufferType> void AttributeTest::testRelo
     {
         bool   multivalue_attr = a->getConfig().collectionType().isMultiValue();
         size_t entry_size = (a->hasEnum() || multivalue_attr) ? sizeof(EntryRef) : a->getFixedWidth();
-        size_t exp_transient_memory_for_flush = a->getCommittedDocIdLimit() * entry_size;
+        size_t exp_reserved_memory_for_flush = a->getCommittedDocIdLimit() * entry_size;
         if (a->getBasicType() == BasicType::BOOL && !multivalue_attr) {
-            exp_transient_memory_for_flush =
+            exp_reserved_memory_for_flush =
                 BitVector::legacy_num_bytes_with_single_guard_bit(a->getCommittedDocIdLimit());
         }
         if (a->getBasicType() == BasicType::UINT2 && !multivalue_attr) {
-            exp_transient_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 15) / 16);
+            exp_reserved_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 15) / 16);
         }
         if (a->getBasicType() == BasicType::UINT4 && !multivalue_attr) {
-            exp_transient_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 7) / 8);
+            exp_reserved_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 7) / 8);
         }
-        EXPECT_EQ(exp_transient_memory_for_flush, a->transient_memory_for_flush(false));
+        EXPECT_EQ(exp_reserved_memory_for_flush, a->reserved_memory_for_flush(false));
         if (single_normal_numeric_attribute(*a)) {
             // Buffer handover from attribute saver to attribute memory file writer
-            EXPECT_EQ((size_t)a->getEstimatedSaveByteSize(), a->transient_memory_for_flush(true));
+            EXPECT_EQ((size_t)a->getEstimatedSaveByteSize(), a->reserved_memory_for_flush(true));
         } else {
-            EXPECT_EQ((size_t)a->getEstimatedSaveByteSize() + exp_transient_memory_for_flush,
-                      a->transient_memory_for_flush(true));
+            EXPECT_EQ((size_t)a->getEstimatedSaveByteSize() + exp_reserved_memory_for_flush,
+                      a->reserved_memory_for_flush(true));
         }
         double actSize = statSize(*b);
         EXPECT_LE(actSize, a->size_on_disk());
