@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <vespa/searchcorespi/flush/iflushtarget.h>
-
 #include <cstddef>
 #include <vector>
 
@@ -25,19 +23,12 @@ class ReservedMemoryCalculator {
     };
 
     size_t                 _concurrent;
-    size_t                 _each_max_memory;
-    size_t                 _global_max_memory;
-    uint32_t               _memory_indexes;
     std::vector<Candidate> _candidates; // Used to calculate worst case for concurrent flushes
 
-    [[nodiscard]] size_t reserved_memory_for_memory_indexes() const noexcept;
-
 public:
-    using IFlushTarget = searchcorespi::IFlushTarget;
-    ReservedMemoryCalculator(size_t concurrent, size_t each_max_memory, size_t global_max_memory) noexcept;
+    explicit ReservedMemoryCalculator(size_t concurrent) noexcept;
     ~ReservedMemoryCalculator();
-    void track_transient_memory_for_flush(size_t transient_memory_for_flush, IFlushTarget::Type type,
-                                          IFlushTarget::Component component);
+    void track_transient_memory_for_flush(size_t transient_memory_for_flush);
     [[nodiscard]] size_t get_reserved_memory();
 };
 
