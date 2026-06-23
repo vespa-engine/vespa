@@ -4,6 +4,7 @@ vespa_add_library(vespalib_quant
     codebooks.cpp
     eden.cpp
     rotator.cpp
+    INSTALL lib64
     DEPENDS
     vespa_hwaccelerated
 )
