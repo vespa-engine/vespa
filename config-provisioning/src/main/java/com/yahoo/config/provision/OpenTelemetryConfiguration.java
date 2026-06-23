@@ -10,6 +10,7 @@ package com.yahoo.config.provision;
 public interface OpenTelemetryConfiguration {
 
     boolean enabled();
+    default String endpoint() { return ""; }; // TODO: Remove after 8.711 is oldest version in use
     double samplingRatio();
 
     /** The default, disabled configuration: produces a no-op OpenTelemetry. */
