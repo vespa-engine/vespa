@@ -168,7 +168,7 @@ AttributeContextBuilder::add_integer_values(const Config& cfg, std::string_view 
     attr->addDocs(num_docs);
 
     auto& real = dynamic_cast<IntegerAttribute&>(*attr);
-    bool  is_multivalue = cfg.collectionType() == CollectionType::SINGLE;
+    bool  is_multivalue = cfg.collectionType() != CollectionType::SINGLE;
 
     for (uint32_t docid = 1; docid <= num_docs; ++docid) {
         auto values = gen(docid);
