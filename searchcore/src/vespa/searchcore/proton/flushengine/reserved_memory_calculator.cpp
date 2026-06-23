@@ -25,10 +25,10 @@ size_t ReservedMemoryCalculator::reserved_memory_for_memory_indexes() const noex
     return std::min(_global_max_memory, _memory_indexes * _each_max_memory);
 }
 
-void ReservedMemoryCalculator::track_transient_memory_for_flush(size_t                  transient_memory_for_flush,
-                                                                IFlushTarget::Type      type,
-                                                                IFlushTarget::Component component) {
-    _candidates.emplace_back(transient_memory_for_flush);
+void ReservedMemoryCalculator::track_reserved_memory_for_flush(size_t                  reserved_memory_for_flush,
+                                                               IFlushTarget::Type      type,
+                                                               IFlushTarget::Component component) {
+    _candidates.emplace_back(reserved_memory_for_flush);
     if (type == IFlushTarget::Type::FLUSH && component == IFlushTarget::Component::INDEX) {
         ++_memory_indexes;
     }

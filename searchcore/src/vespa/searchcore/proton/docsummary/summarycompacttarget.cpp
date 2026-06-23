@@ -101,7 +101,7 @@ bool SummaryGCTarget::can_flush(SerialNum) const noexcept {
     return true;
 }
 
-size_t SummaryGCTarget::transient_memory_for_flush() const noexcept {
+size_t SummaryGCTarget::reserved_memory_for_flush() const noexcept {
     return _docStore.max_file_size();
 }
 

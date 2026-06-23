@@ -129,7 +129,7 @@ public:
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
     uint64_t getEstimatedSaveByteSize() const override;
-    [[nodiscard]] size_t transient_memory_for_flush(bool slow_disk) const noexcept override;
+    [[nodiscard]] size_t reserved_memory_for_flush(bool slow_disk) const noexcept override;
 };
 
 class SingleValueSemiNibbleNumericAttribute : public SingleValueSmallNumericAttribute {

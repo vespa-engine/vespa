@@ -14,7 +14,7 @@ protected:
     size_t                  _global_max_memory;
     ReservedMemoryCalculatorTest();
     ~ReservedMemoryCalculatorTest() override;
-    [[nodiscard]] size_t calc_reserved_memory(size_t concurrent, std::vector<size_t> transient_memory_sizes);
+    [[nodiscard]] size_t calc_reserved_memory(size_t concurrent, std::vector<size_t> reserved_memory_sizes);
 };
 
 ReservedMemoryCalculatorTest::ReservedMemoryCalculatorTest()
@@ -28,10 +28,10 @@ ReservedMemoryCalculatorTest::ReservedMemoryCalculatorTest()
 ReservedMemoryCalculatorTest::~ReservedMemoryCalculatorTest() = default;
 
 size_t ReservedMemoryCalculatorTest::calc_reserved_memory(size_t              concurrent,
-                                                          std::vector<size_t> transient_memory_sizes) {
+                                                          std::vector<size_t> reserved_memory_sizes) {
     ReservedMemoryCalculator calc(concurrent, _each_max_memory, _global_max_memory);
-    for (auto transient_memory : transient_memory_sizes) {
-        calc.track_transient_memory_for_flush(transient_memory, _type, _component);
+    for (auto reserved_memory : reserved_memory_sizes) {
+        calc.track_reserved_memory_for_flush(reserved_memory, _type, _component);
     }
     return calc.reserved_memory_for_flush() + calc.reserved_memory_for_memory_indexes();
 }

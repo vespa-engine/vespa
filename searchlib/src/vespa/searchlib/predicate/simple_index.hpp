@@ -299,7 +299,7 @@ SimpleIndex<Posting, Key, DocId>::make_saver(std::unique_ptr<PostingSaver<Postin
 }
 
 template <typename Posting, typename Key, typename DocId>
-size_t SimpleIndex<Posting, Key, DocId>::transient_memory_for_flush() const noexcept {
+size_t SimpleIndex<Posting, Key, DocId>::reserved_memory_for_flush() const noexcept {
     return _dictionary.size() * sizeof(vespalib::datastore::EntryRef);
 }
 

@@ -73,7 +73,7 @@ bool SummaryFlushTarget::can_flush(SerialNum current_serial) const noexcept {
     return current_serial > _docStore.lastSyncToken();
 }
 
-size_t SummaryFlushTarget::transient_memory_for_flush() const noexcept {
+size_t SummaryFlushTarget::reserved_memory_for_flush() const noexcept {
     return 0;
 }
 

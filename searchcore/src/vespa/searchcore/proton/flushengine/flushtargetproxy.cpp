@@ -32,8 +32,8 @@ uint64_t FlushTargetProxy::get_approx_bytes_to_read_from_disk() const noexcept {
     return _target->get_approx_bytes_to_read_from_disk();
 }
 
-size_t FlushTargetProxy::transient_memory_for_flush() const noexcept {
-    return _target->transient_memory_for_flush();
+size_t FlushTargetProxy::reserved_memory_for_flush() const noexcept {
+    return _target->reserved_memory_for_flush();
 }
 
 std::chrono::steady_clock::duration FlushTargetProxy::last_flush_duration() const noexcept {

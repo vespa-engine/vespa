@@ -37,8 +37,8 @@ uint64_t JobTrackedFlushTarget::get_approx_bytes_to_read_from_disk() const noexc
     return _target->get_approx_bytes_to_read_from_disk();
 }
 
-size_t JobTrackedFlushTarget::transient_memory_for_flush() const noexcept {
-    return _target->transient_memory_for_flush();
+size_t JobTrackedFlushTarget::reserved_memory_for_flush() const noexcept {
+    return _target->reserved_memory_for_flush();
 }
 
 std::chrono::steady_clock::duration JobTrackedFlushTarget::last_flush_duration() const noexcept {
