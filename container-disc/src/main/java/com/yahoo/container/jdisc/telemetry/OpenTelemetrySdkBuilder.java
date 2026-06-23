@@ -96,12 +96,16 @@ class OpenTelemetrySdkBuilder {
     /**
      * Builds the local host's Alloy OTLP endpoint from the hostname host-admin wrote into the container,
      * or {@code null} if the file is missing, unreadable or empty.
+     *
+     * <p>The endpoint must be the full OTLP/HTTP traces URL including the {@code /v1/traces} path:
+     * {@code OtlpHttpSpanExporter.setEndpoint} uses it verbatim (it does not append the signal path), so a
+     * bare {@code https://host:4318} would POST to {@code /} and the receiver answers 404.</p>
      */
     static String resolveEndpoint(Path hostnameFile) {
         try {
             String hostname = Files.readString(hostnameFile).trim();
             if (hostname.isEmpty()) return null;
-            return "https://" + hostname + ":" + ALLOY_OTLP_HTTP_PORT;
+            return "https://" + hostname + ":" + ALLOY_OTLP_HTTP_PORT + "/v1/traces";
         } catch (IOException e) {
             return null;
         }
