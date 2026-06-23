@@ -113,10 +113,10 @@ struct QuantizedLhsAndRhs {
 } // namespace
 
 // TODO generalize for other quantized bound distance functions?
-template <typename QuantTraits>
+template <typename QuantParams>
 class BoundQuantizedAngularDistance final : public BoundAngularDistanceBase {
-    using LhsVectorStoreType = typename QuantTraits::VectorStoreType;
-    using LhsFloatType = typename QuantTraits::LhsFloatType;
+    using LhsVectorStoreType = typename QuantParams::VectorStoreType;
+    using LhsFloatType = typename QuantParams::LhsFloatType;
     // A distance function instance shall only be used by one thread at a time,
     // so this can be mutable without violating constness assumptions.
     // FIXME this one is relatively expensive to create and keep around...!
@@ -130,7 +130,7 @@ class BoundQuantizedAngularDistance final : public BoundAngularDistanceBase {
 public:
     BoundQuantizedAngularDistance(TypedCells lhs, size_t dimensions, uint8_t bits, uint64_t seed)
         : _quantizer(dimensions, bits, seed), _tmp_space(lhs.size), _lhs(_tmp_space.storeLhs(lhs)) {
-        if constexpr (!QuantTraits::pre_quantized_lhs) { // full precision format
+        if constexpr (!QuantParams::pre_quantized_lhs) { // full precision format
             assert(lhs.size == _quantizer.dimensions());
             // Quantized vectors are all in rotated space, so pre-rotate the query vector once
             // so that it is in the same frame of reference. This avoids having to rotate the
