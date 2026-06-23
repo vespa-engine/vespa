@@ -133,13 +133,16 @@ void setFS4Compression(const ProtonConfig& proton) {
 }
 
 DiskMemUsageSampler::Config diskMemUsageSamplerConfig(const ProtonConfig& proton, const vespalib::HwInfo& hwInfo) {
+    // If user configures disk size to be 0, let proton resample the disk size periodically.
+    bool should_resample_disk_capacity = (proton.hwinfo.disk.size == 0);
     return {proton.writefilter.memorylimit,
             proton.writefilter.disklimit,
             proton.writefilter.reservedDiskSpaceFactor,
             proton.writefilter.reservedMemoryFactor,
             AttributeUsageFilterConfig(proton.writefilter.attribute.addressSpaceLimit),
             vespalib::from_s(proton.writefilter.sampleinterval),
-            hwInfo};
+            hwInfo,
+            should_resample_disk_capacity};
 }
 
 uint32_t computeRpcTransportThreads(const ProtonConfig& cfg, const vespalib::HwInfo::Cpu& cpuInfo) {
