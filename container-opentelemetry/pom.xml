@@ -113,6 +113,8 @@
                              (grpc/okhttp sender, incubator, autoconfigure, guava, jspecify, sun.misc). -->
                         <Import-Package>
                             com.fasterxml.jackson.core
+                            javax.net.ssl,
+                            *;resolution:=optional
                         </Import-Package>
                         <_nouses>true</_nouses>
                     </instructions>
