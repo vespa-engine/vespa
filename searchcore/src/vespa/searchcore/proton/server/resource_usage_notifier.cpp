@@ -60,7 +60,7 @@ double ResourceUsageNotifier::getDiskUsedRatio(const Guard&) const {
 }
 
 double ResourceUsageNotifier::get_relative_reserved_disk_space(const Guard&) const {
-    return static_cast<double>(_reserved_disk_space_and_memory.reserved_disk_space()) / _hwInfo.disk().sizeBytes();
+    return static_cast<double>(_reserved_disk_space_and_memory.reserved_disk_space()) / _disk_capacity_bytes;
 }
 
 double ResourceUsageNotifier::get_relative_reserved_memory(const Guard&) const {
@@ -72,7 +72,7 @@ double ResourceUsageNotifier::get_relative_transient_memory_usage(const Guard&) 
 }
 
 double ResourceUsageNotifier::get_relative_transient_disk_usage(const Guard&) const {
-    return static_cast<double>(_resource_usage.transient_disk()) / _hwInfo.disk().sizeBytes();
+    return static_cast<double>(_resource_usage.transient_disk()) / _disk_capacity_bytes;
 }
 
 void ResourceUsageNotifier::set_resource_usage(const ResourceUsage&         resource_usage,
