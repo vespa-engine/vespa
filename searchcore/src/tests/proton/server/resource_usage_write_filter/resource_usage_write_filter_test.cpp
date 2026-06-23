@@ -129,7 +129,7 @@ TEST_F(ResourceUsageWriteFilterTest, disk_limit_can_be_reached) {
 
 TEST_F(ResourceUsageWriteFilterTest, disk_usage_ratios_follow_resampled_capacity) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{40, 0}, zero_size_on_disk},
-                                 _notifier.getMemoryStats(), 100, 200, ReservedDiskSpaceAndMemory(20, 0));
+                                 _notifier.getMemoryStats(), 100, 200, ReservedDiskSpaceAndMemory(20, 0, 0));
     EXPECT_DOUBLE_EQ(0.5, _notifier.usageState().diskState().usage());    // 100 / 200
     EXPECT_DOUBLE_EQ(0.2, _notifier.usageState().transient_disk_usage()); // 40 / 200
     EXPECT_DOUBLE_EQ(0.1, _notifier.usageState().reserved_disk_space());  // 20 / 200
@@ -138,7 +138,7 @@ TEST_F(ResourceUsageWriteFilterTest, disk_usage_ratios_follow_resampled_capacity
 TEST_F(ResourceUsageWriteFilterTest, disk_limit_message_reports_resampled_capacity) {
     EXPECT_TRUE(_notifier.setConfig(Config(1.0, 0.8, 0.0, 0.0, AttributeUsageFilterConfig())));
     _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), 180, 200,
-                                 ReservedDiskSpaceAndMemory(0, 0));
+                                 ReservedDiskSpaceAndMemory(0, 0, 0));
     testWrite("diskLimitReached: { "
               "action: \"add more content nodes\", "
               "reason: \"disk used (0.9) > disk limit (0.8)\", "
