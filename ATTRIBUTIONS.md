@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-06-17
+Last updated: 2026-06-24
 
 ---
 
@@ -86,7 +86,7 @@ Last updated: 2026-06-17
 
 ---
 
-## @ungap/structured-clone 1.3.1 — ISC
+## @ungap/structured-clone 1.3.2 — ISC
 
 - Homepage: <https://github.com/ungap/structured-clone#readme>
 - Copyright 2021 Andrea Giammarchi
@@ -294,18 +294,6 @@ Last updated: 2026-06-17
 
 - Homepage: <https://commons.apache.org/proper/commons-io/>
 - The Apache Software Foundation
-
----
-
-## concurrent-ruby 1.3.6 — MIT
-
-- Homepage: <http://www.concurrent-ruby.com>
-
----
-
-## concurrent-ruby 1.3.6 — Ruby
-
-- Homepage: <http://www.concurrent-ruby.com>
 
 ---
 
@@ -1121,14 +1109,14 @@ Last updated: 2026-06-17
 
 ---
 
-## react 19.2.6 — MIT
+## react 19.2.7 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
 
 ---
 
-## react-dom 19.2.6 — MIT
+## react-dom 19.2.7 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
