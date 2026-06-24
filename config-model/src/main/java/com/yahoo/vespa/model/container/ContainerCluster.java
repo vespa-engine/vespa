@@ -592,6 +592,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         var applicationId = deployState.getProperties().applicationId();
 
         Map<String, String> attributes = new LinkedHashMap<>();
+        attributes.put("service.name", applicationId.application().value() + "." + clusterId);
+        attributes.put("service.version", deployState.getWantedNodeVespaVersion().toFullString());
         attributes.put("application", applicationId.application().value());
         attributes.put("tenant", applicationId.tenant().value());
         attributes.put("zone", this.zone.systemLocalValue());
