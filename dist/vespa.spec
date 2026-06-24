@@ -310,7 +310,11 @@ Summary: Vespa - The open big data serving engine - tools for system tests
 
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-base-libs = %{version}-%{release}
+%if 0%{?el8}
+Requires: vespa-valgrind
+%else
 Requires: valgrind
+%endif
 Requires: perf
 
 %description systemtest-tools
