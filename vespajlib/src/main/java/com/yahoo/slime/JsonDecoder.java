@@ -3,6 +3,7 @@ package com.yahoo.slime;
 
 import com.yahoo.text.Text;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -13,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class JsonDecoder {
 
-    private BufferedInput in;
+    private JsonInput in;
     private byte c;
 
     private final SlimeInserter slimeInserter = new SlimeInserter(null);
@@ -38,6 +39,18 @@ public class JsonDecoder {
     }
     public Slime decode(Slime slime, ByteBuffer buf) {
         in = new BufferedInput(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining());
+        next();
+        decodeValue(slimeInserter.adjust(slime));
+        if (in.failed()) {
+            slime.wrap("partial_result");
+            slime.get().setData("offending_input", in.getOffending());
+            slime.get().setString("error_message", in.getErrorMessage());
+        }
+        return slime;
+    }
+
+    public Slime decode(Slime slime, InputStream is) {
+        in = new StreamingInput(is);
         next();
         decodeValue(slimeInserter.adjust(slime));
         if (in.failed()) {

@@ -3,6 +3,7 @@ package com.yahoo.slime;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -99,6 +100,12 @@ public class SlimeUtils {
     }
 
     public static Slime jsonToSlime(byte[] json) {
+        Slime slime = new Slime();
+        new JsonDecoder().decode(slime, json);
+        return slime;
+    }
+
+    public static Slime jsonToSlime(InputStream json) {
         Slime slime = new Slime();
         new JsonDecoder().decode(slime, json);
         return slime;

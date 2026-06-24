@@ -8,9 +8,9 @@ public class JsonParseException extends RuntimeException {
 
     private static final long serialVersionUID = 1586949558L;
 
-    private final BufferedInput input;
+    private final JsonInput input;
 
-    JsonParseException(BufferedInput input) {
+    JsonParseException(JsonInput input) {
         super(input.getErrorMessage());
         this.input = input;
     }

@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
-final class BufferedInput {
+final class BufferedInput implements JsonInput {
 
     private final byte[] source;
     private final int end;
@@ -10,7 +10,7 @@ final class BufferedInput {
     private String failReason;
     private int failPos;
 
-    void fail(String reason) {
+    public void fail(String reason) {
         if (failed()) {
             return;
         }
@@ -29,7 +29,7 @@ final class BufferedInput {
         position = offset;
         this.end = offset + length;
     }
-    byte getByte() {
+    public byte getByte() {
         if (position == end) {
             fail("underflow");
             return 0;
@@ -37,15 +37,15 @@ final class BufferedInput {
         return source[position++];
     }
 
-    boolean failed() {
+    public boolean failed() {
         return failReason != null;
     }
 
-    boolean eof() {
+    public boolean eof() {
         return this.position == this.end;
     }
 
-    String getErrorMessage() {
+    public String getErrorMessage() {
         return failReason;
     }
 
@@ -53,7 +53,7 @@ final class BufferedInput {
         return failed() ? 0 : position - start;
     }
 
-    byte[] getOffending() {
+    public byte[] getOffending() {
         byte[] ret = new byte[failPos-start];
         System.arraycopy(source, start, ret, 0, failPos-start);
         return ret;
