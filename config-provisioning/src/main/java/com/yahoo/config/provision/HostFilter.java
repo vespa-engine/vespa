@@ -112,4 +112,10 @@ public class HostFilter {
         result = 31 * result + clusterIds.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "hostnames: " + hostnames + ", flavors: " + flavors + ", clusterTypes: " + clusterTypes + ", clusterIds: " + clusterIds;
+    }
+
 }
