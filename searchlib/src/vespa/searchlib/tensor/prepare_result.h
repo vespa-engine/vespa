@@ -10,6 +10,10 @@ namespace search::tensor {
 class PrepareResult {
 public:
     virtual ~PrepareResult() = default;
+    // True if this is the result of preparing an in-place partial (per-subspace) update of a multi-vector
+    // document. Such a result is applied via complete_partial_update_remove()/complete_partial_update_add()
+    // around the tensor-store swap, instead of complete_add_document().
+    virtual bool is_partial_update() const noexcept { return false; }
 };
 
 } // namespace search::tensor

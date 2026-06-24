@@ -172,11 +172,15 @@ void TensorAttribute::setTensorRef(DocId docId, EntryRef ref) {
     }
 }
 
-void TensorAttribute::internal_set_tensor(DocId docid, const Value& tensor) {
-    consider_remove_from_index(docid);
+void TensorAttribute::store_tensor_value(DocId docid, const Value& tensor) {
     EntryRef ref = _tensorStore.store_tensor(tensor);
     assert(ref.valid());
     setTensorRef(docid, ref);
+}
+
+void TensorAttribute::internal_set_tensor(DocId docid, const Value& tensor) {
+    consider_remove_from_index(docid);
+    store_tensor_value(docid, tensor);
 }
 
 void TensorAttribute::consider_remove_from_index(DocId docid) {
@@ -297,11 +301,56 @@ std::unique_ptr<AttributeSaver> TensorAttribute::onInitSave(std::string_view fil
         std::move(index_saver));
 }
 
+bool TensorAttribute::use_partial_update(DocId docid) const {
+    // Only meaningful for an existing (committed, present) multi-vector document.
+    return _index && _index->supports_partial_update() && docid < getCommittedDocIdLimit() &&
+           acquire_entry_ref(docid).valid();
+}
+
+void TensorAttribute::compute_partial_diff(DocId docid, VectorBundle new_vectors, std::vector<uint32_t>& keep,
+                                           std::vector<uint32_t>& add) const {
+    VectorBundle old_vectors = get_vectors(docid);
+    uint32_t     old_n = old_vectors.subspaces();
+    uint32_t     new_n = new_vectors.subspaces();
+    uint32_t     common = std::min(old_n, new_n);
+    for (uint32_t i = 0; i < common; ++i) {
+        if (_comp.equals(old_vectors.cells(i), new_vectors.cells(i))) {
+            keep.push_back(i); // unchanged: keep the existing graph node untouched
+        } else {
+            add.push_back(i); // changed value: re-index this subspace
+        }
+    }
+    for (uint32_t i = common; i < new_n; ++i) {
+        add.push_back(i); // added subspace
+    }
+    // Positions in [new_n, old_n) (dropped tail) are not in `keep`; the index removes them when resizing.
+}
+
+void TensorAttribute::set_tensor_partial(DocId docid, const Value& tensor, VectorBundle new_vectors) {
+    // In-place partial update: keep the graph nodes for subspaces whose vectors are unchanged (compared by
+    // position), and only remove/insert the changed/added/removed ones. Worst case (subspaces reordered)
+    // this degrades to re-indexing everything; it is never wrong for search, which only needs (docid, vector).
+    std::vector<uint32_t> keep;
+    std::vector<uint32_t> add;
+    compute_partial_diff(docid, new_vectors, keep, add);
+    // Phase 1 (before the tensor store swap): remove changed/dropped subspaces, keep unchanged ones.
+    _index->partial_update_remove_and_resize(docid, new_vectors.subspaces(), keep);
+    // Swap in the new stored tensor.
+    store_tensor_value(docid, tensor);
+    // Phase 2 (after the swap): insert the changed/added subspaces, reading the new vectors.
+    _index->partial_update_add(docid, add);
+}
+
 void TensorAttribute::setTensor(DocId docId, const Value& tensor) {
     checkTensorType(tensor);
-    internal_set_tensor(docId, tensor);
-    if (_index) {
-        _index->add_document(docId);
+    if (use_partial_update(docId)) {
+        VectorBundle new_vectors(tensor.cells().data, tensor.index().size(), _subspace_type);
+        set_tensor_partial(docId, tensor, new_vectors);
+    } else {
+        internal_set_tensor(docId, tensor);
+        if (_index) {
+            _index->add_document(docId);
+        }
     }
 }
 
@@ -334,6 +383,14 @@ std::unique_ptr<PrepareResult> TensorAttribute::prepare_set_tensor(DocId        
             // inserting the same point.
             return {};
         }
+        if (use_partial_update(docid)) {
+            // Prepare an in-place partial update: do the costly neighbor search (off the write thread) only
+            // for the subspaces that changed or were added. Unchanged subspaces keep their existing nodes.
+            std::vector<uint32_t> keep;
+            std::vector<uint32_t> add;
+            compute_partial_diff(docid, vectors, keep, add);
+            return _index->prepare_partial_update(docid, vectors, keep, add, std::move(guard));
+        }
         return _index->prepare_add_document(docid, vectors, std::move(guard));
     }
     return {};
@@ -341,6 +398,13 @@ std::unique_ptr<PrepareResult> TensorAttribute::prepare_set_tensor(DocId        
 
 void TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor,
                                           std::unique_ptr<PrepareResult> prepare_result) {
+    if (_index && prepare_result && prepare_result->is_partial_update()) {
+        // Apply the prepared in-place partial update around the tensor-store swap.
+        _index->complete_partial_update_remove(docid, *prepare_result); // remove changed/dropped subspaces
+        store_tensor_value(docid, tensor);
+        _index->complete_partial_update_add(docid, std::move(prepare_result)); // insert changed/added subspaces
+        return;
+    }
     if (_index && !prepare_result) {
         VectorBundle vectors(tensor.cells().data, tensor.index().size(), _subspace_type);
         if (tensor_cells_are_unchanged(docid, vectors)) {
@@ -351,6 +415,11 @@ void TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Val
                 assert(ref.valid());
                 setTensorRef(docid, ref);
             }
+            return;
+        }
+        if (use_partial_update(docid)) {
+            // No prepared result (e.g. single-phase path): do the partial update synchronously.
+            set_tensor_partial(docid, tensor, vectors);
             return;
         }
     }

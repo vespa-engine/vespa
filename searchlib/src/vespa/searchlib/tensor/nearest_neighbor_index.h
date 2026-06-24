@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <vector>
 
 class FastOS_FileInterface;
@@ -104,6 +105,44 @@ public:
     virtual void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) = 0;
 
     virtual void remove_document(uint32_t docid) = 0;
+
+    /**
+     * Optimized in-place update of a multi-vector document that only touches the subspaces that changed,
+     * instead of removing and re-adding all of the document's vectors.
+     *
+     * Only supported by multi-vector indexes (supports_partial_update() returns true). The update is split
+     * around the tensor-store swap performed by the enclosing attribute:
+     *  - partial_update_remove_and_resize() is called BEFORE the new tensor is stored. It keeps the graph
+     *    nodes at `keep_positions` (subspaces whose cells are unchanged) untouched, removes all other
+     *    existing nodes of the document, resizes the per-document node bookkeeping to `new_subspaces`, and
+     *    returns the subspace positions (in the new layout) that need to be inserted.
+     *  - partial_update_add() is called AFTER the new tensor is stored, and inserts the returned positions
+     *    (reading the new vectors via the document vector access).
+     *
+     * Both functions are only called by the attribute writer thread.
+     */
+    virtual bool supports_partial_update() const noexcept { return false; }
+    virtual std::vector<uint32_t> partial_update_remove_and_resize(uint32_t /*docid*/, uint32_t /*new_subspaces*/,
+                                                                   std::span<const uint32_t> /*keep_positions*/) {
+        return {};
+    }
+    virtual void partial_update_add(uint32_t /*docid*/, std::span<const uint32_t> /*positions*/) {}
+
+    /**
+     * Two-phase variant of the partial update, mirroring prepare_add_document/complete_add_document.
+     * prepare_partial_update() runs the costly neighbor search for the changed/added subspaces only, off the
+     * write thread; the returned result's is_partial_update() is true. complete_partial_update_remove() and
+     * complete_partial_update_add() are then called by the writer thread around the tensor-store swap.
+     */
+    virtual std::unique_ptr<PrepareResult> prepare_partial_update(uint32_t /*docid*/, VectorBundle /*new_vectors*/,
+                                                                  std::span<const uint32_t> /*keep_positions*/,
+                                                                  std::span<const uint32_t> /*add_positions*/,
+                                                                  vespalib::GenerationGuard /*read_guard*/) const {
+        return {};
+    }
+    virtual void complete_partial_update_remove(uint32_t /*docid*/, PrepareResult& /*prepare_result*/) {}
+    virtual void complete_partial_update_add(uint32_t /*docid*/, std::unique_ptr<PrepareResult> /*prepare_result*/) {}
+
     virtual void assign_generation(vespalib::Generation current_gen) = 0;
     virtual void reclaim_memory(vespalib::Generation first_used_gen) = 0;
     virtual vespalib::GenerationGuard make_generation_read_guard() const = 0;

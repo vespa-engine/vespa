@@ -1056,6 +1056,82 @@ TEST_P(
     f.test_save_load(true);
 }
 
+namespace {
+
+// The current nodeids (one per subspace) of a document in the multi-vector hnsw index.
+std::vector<uint32_t> doc_nodeids(HnswIndex<HnswIndexType::MULTI>& index, uint32_t docid) {
+    auto ids = index.get_id_mapping().get_ids(docid);
+    return {ids.begin(), ids.end()};
+}
+
+std::vector<uint32_t> search_top_k(HnswIndex<HnswIndexType::MULTI>& index, std::vector<double> q, uint32_t k) {
+    std::span<double>           ref(q);
+    vespalib::eval::TypedCells  cells(ref);
+    NearestNeighborIndex::Stats stats;
+    auto                        df = index.distance_function_factory().for_query_vector(cells);
+    vespalib::FakeDeadline      doom;
+    auto r = index.find_top_k(stats, k, *df, 100, 0.0, false, doom.get_deadline(), 1.0e30);
+    std::vector<uint32_t> docids;
+    for (const auto& n : r) {
+        docids.push_back(n.docid);
+    }
+    return docids;
+}
+
+bool contains(const std::vector<uint32_t>& v, uint32_t x) {
+    return std::find(v.begin(), v.end(), x) != v.end();
+}
+
+} // namespace
+
+// A partial (single-phase) update of a multi-vector document must keep the graph nodes for the subspaces
+// whose vectors are unchanged and only re-index the changed ones, while staying correct for data and search.
+TEST(TensorAttributeTest, Partial_update_keeps_unchanged_subspace_nodes_single_phase) {
+    MixedTensorAttributeHnswIndex f(1); // tensor(a{},x[2]) with subspaces a=0,1,2
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {2, 2}, {3, 3}}));
+    f.set_tensor(2, vec_mixed_2d(1, {{50, 50}, {60, 60}}));
+    auto& index = f.hnsw_typed_index<HnswIndexType::MULTI>();
+    auto  before = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, before.size());
+
+    // Update doc 1: change the subspace at position 1 (a=1), keep positions 0 and 2 unchanged.
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {9, 9}, {3, 3}}));
+    auto after = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, after.size());
+    EXPECT_EQ(before[0], after[0]); // unchanged subspace keeps its node
+    EXPECT_NE(before[1], after[1]); // changed subspace is re-indexed (fresh node)
+    EXPECT_EQ(before[2], after[2]); // unchanged subspace keeps its node
+
+    EXPECT_EQ(WrapValue(vec_mixed_2d(1, {{1, 1}, {9, 9}, {3, 3}})), f.get_tensor(1));
+    EXPECT_TRUE(contains(search_top_k(index, {9, 9}, 3), 1u)); // findable by the updated vector
+    EXPECT_TRUE(contains(search_top_k(index, {3, 3}, 3), 1u)); // findable by a kept vector
+}
+
+// Same guarantee through the two-phase prepare/complete path used by the attribute writer.
+TEST(TensorAttributeTest, Partial_update_keeps_unchanged_subspace_nodes_two_phase) {
+    MixedTensorAttributeHnswIndex f(1);
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {2, 2}, {3, 3}}));
+    f.set_tensor(2, vec_mixed_2d(1, {{50, 50}, {60, 60}}));
+    auto& index = f.hnsw_typed_index<HnswIndexType::MULTI>();
+    auto  before = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, before.size());
+
+    auto updated = vec_mixed_2d(1, {{1, 1}, {9, 9}, {3, 3}});
+    auto prepared = f.prepare_set_tensor(1, updated);
+    ASSERT_TRUE(prepared.get() != nullptr);
+    EXPECT_TRUE(prepared->is_partial_update());
+    f.complete_set_tensor(1, updated, std::move(prepared));
+
+    auto after = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, after.size());
+    EXPECT_EQ(before[0], after[0]);
+    EXPECT_NE(before[1], after[1]);
+    EXPECT_EQ(before[2], after[2]);
+    EXPECT_EQ(WrapValue(updated), f.get_tensor(1));
+    EXPECT_TRUE(contains(search_top_k(index, {9, 9}, 3), 1u));
+    EXPECT_TRUE(contains(search_top_k(index, {3, 3}, 3), 1u));
+}
+
 TEST(TensorAttributeTest, Populates_address_space_usage_in_dense_tensor_attribute_with_hnsw_index) {
     DenseTensorAttributeHnswIndex f;
     f.test_address_space_usage();
