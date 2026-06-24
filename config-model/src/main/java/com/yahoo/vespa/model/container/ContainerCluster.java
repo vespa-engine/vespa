@@ -590,9 +590,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      */
     private Map<String, String> telemetryResourceAttributes(DeployState deployState, String clusterId) {
         var applicationId = deployState.getProperties().applicationId();
+        String serviceName = applicationId.application().value() + "." +
+                applicationId.instance().value() + "." + clusterId;
 
         Map<String, String> attributes = new LinkedHashMap<>();
-        attributes.put("service.name", applicationId.application().value() + "." + clusterId);
+        attributes.put("service.name", serviceName);
         attributes.put("service.version", deployState.getWantedNodeVespaVersion().toFullString());
         attributes.put("application", applicationId.application().value());
         attributes.put("tenant", applicationId.tenant().value());

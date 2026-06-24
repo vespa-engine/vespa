@@ -387,7 +387,7 @@ public class ContainerClusterTest {
         cluster.getConfig(builder);
         TelemetryConfig config = builder.build();
 
-        assertEquals("a1.search-cluster", config.resourceAttribute("service.name"));
+        assertEquals("a1.i1.search-cluster", config.resourceAttribute("service.name"));
         assertEquals(state.getWantedNodeVespaVersion().toFullString(), config.resourceAttribute("service.version"));
     }
 
