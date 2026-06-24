@@ -3,8 +3,11 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.application.TestBase;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
@@ -12,7 +15,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Map;
@@ -39,7 +41,9 @@ public class FilesApplicationPackageTest {
         assertTrue(new File(appDir, "hosts.xml").exists());
         FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
 
-        ApplicationPackage processed = app.preprocess(new Zone(Environment.dev, RegionName.defaultName()),
+        Zone zone = new Zone(Cloud.builder().name(CloudName.AWS).build(),
+                             SystemName.Public, Environment.dev, RegionName.defaultName());
+        ApplicationPackage processed = app.preprocess(zone,
                                                       new BaseDeployLogger());
         assertTrue(new File(appDir, ".preprocessed").exists());
         String expectedServices = """
@@ -62,6 +66,7 @@ public class FilesApplicationPackageTest {
                                         <search/>
                                         <component bundle="foobundle" class="MyFoo" id="foo"/>
                                         <component bundle="foobundle" class="TestBar" id="bar"/>
+                                        <component bundle="foobundle" class="ProdXyzzyInAws" id="xyzzy"/>
                                         <nodes>
                                           <node hostalias="node0" baseport="5000"/>
                                         </nodes>
