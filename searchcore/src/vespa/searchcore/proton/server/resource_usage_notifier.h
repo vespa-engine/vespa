@@ -63,6 +63,7 @@ private:
     // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats         _memoryStats;
     uint64_t                             _diskUsedSizeBytes;
+    uint64_t                             _disk_capacity_bytes;
     ReservedDiskSpaceAndMemory           _reserved_disk_space_and_memory;
     searchcorespi::common::ResourceUsage _resource_usage;
     AttributeUsageStats                  _attribute_usage;
@@ -87,11 +88,12 @@ public:
 
     void set_resource_usage(const searchcorespi::common::ResourceUsage& resource_usage,
                             vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
-                            ReservedDiskSpaceAndMemory reserved_disk_space_and_memory_);
+                            uint64_t disk_capacity_bytes, ReservedDiskSpaceAndMemory reserved_disk_space_and_memory_);
     [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
     [[nodiscard]] ReservedDiskSpaceAndMemory reserved_disk_space_and_memory() const noexcept;
+    [[nodiscard]] uint64_t disk_capacity_bytes() const;
     searchcorespi::common::ResourceUsage get_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo& getHwInfo() const noexcept { return _hwInfo; }
