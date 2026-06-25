@@ -915,14 +915,12 @@ template <HnswIndexType type> bool HnswIndex<type>::supports_partial_update() co
 }
 
 template <HnswIndexType type>
-std::vector<uint32_t> HnswIndex<type>::partial_update_remove_and_resize(uint32_t docid, uint32_t new_subspaces,
-                                                                        std::span<const uint32_t> keep_positions) {
-    std::vector<uint32_t> positions_to_add;
+void HnswIndex<type>::partial_update_remove_and_resize(uint32_t docid, uint32_t new_subspaces,
+                                                       std::span<const uint32_t> keep_positions) {
     if constexpr (NodeType::identity_mapping) {
         (void)docid;
         (void)new_subspaces;
         (void)keep_positions;
-        return positions_to_add;
     } else {
         auto              old_ids = _id_mapping.get_ids(docid);
         uint32_t          old_n = old_ids.size();
@@ -941,20 +939,8 @@ std::vector<uint32_t> HnswIndex<type>::partial_update_remove_and_resize(uint32_t
             }
         }
         // Rebuild the per-document nodeid array: retained subspaces keep their nodeid (and their untouched
-        // graph node), the rest get freshly allocated nodeids to be inserted in phase 2.
+        // graph node), the rest get freshly allocated nodeids that the caller inserts in the add phase.
         _id_mapping.rebuild_ids(docid, new_subspaces, keep_positions);
-        std::vector<bool> kept_new(new_subspaces, false);
-        for (uint32_t p : keep_positions) {
-            if (p < new_subspaces) {
-                kept_new[p] = true;
-            }
-        }
-        for (uint32_t i = 0; i < new_subspaces; ++i) {
-            if (!kept_new[i]) {
-                positions_to_add.push_back(i);
-            }
-        }
-        return positions_to_add;
     }
 }
 
@@ -989,6 +975,15 @@ std::unique_ptr<PrepareResult> HnswIndex<type>::prepare_partial_update(uint32_t 
         (void)read_guard;
         return {};
     } else {
+        if (_graph.get_active_nodes() < _cfg.min_size_before_two_phase()) {
+            // Small graph: decline the two-phase path and let the caller fall back to the synchronous
+            // (single-phase) partial update. The two-phase prepared neighbors are searched here against a
+            // snapshot that still contains this document's about-to-be-removed nodes; on a tiny graph those
+            // may be the only candidates and would be filtered out as stale at complete time, leaving a
+            // disconnected node. The synchronous path searches after removal instead. This mirrors the
+            // first-documents guard in prepare_add_document.
+            return {};
+        }
         auto result = std::make_unique<PreparedPartialUpdate>(docid, std::move(read_guard), _graph.make_guard());
         result->new_subspaces = new_vectors.subspaces();
         result->keep_positions.assign(keep_positions.begin(), keep_positions.end());
@@ -1014,6 +1009,7 @@ void HnswIndex<type>::complete_partial_update_remove(uint32_t docid, PrepareResu
         (void)prepare_result;
     } else {
         auto& prepared = dynamic_cast<PreparedPartialUpdate&>(prepare_result);
+        assert(prepared.docid == docid);
         // Reuse the single-phase removal/resize: remove changed and dropped subspaces, keep unchanged ones,
         // and allocate fresh nodeids for the subspaces that will be inserted in the add phase.
         partial_update_remove_and_resize(docid, prepared.new_subspaces, prepared.keep_positions);
@@ -1027,6 +1023,7 @@ void HnswIndex<type>::complete_partial_update_add(uint32_t docid, std::unique_pt
         (void)prepare_result;
     } else {
         auto& prepared = dynamic_cast<PreparedPartialUpdate&>(*prepare_result);
+        assert(prepared.docid == docid);
         auto  ids = _id_mapping.get_ids(docid);
         // Insert each changed/added subspace using the neighbor list prepared off the write thread.
         // internal_complete_add_node validates prepared neighbors, dropping any that became stale between

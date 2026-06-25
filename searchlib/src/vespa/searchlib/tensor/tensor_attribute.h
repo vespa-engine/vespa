@@ -67,7 +67,7 @@ protected:
     void compute_partial_diff(DocId docid, VectorBundle new_vectors, std::vector<uint32_t>& keep,
                               std::vector<uint32_t>& add) const;
     // Single-phase in-place partial update of a multi-vector document's nearest neighbor index entries.
-    void set_tensor_partial(DocId docid, const vespalib::eval::Value& tensor, VectorBundle new_vectors);
+    void set_tensor_partial(DocId docid, const vespalib::eval::Value& tensor);
 
     void prefetch_docid(DocId docid) const noexcept override { _refVector.prefetch_elem_ref(docid); }
     void setup_memory_usage_empty();

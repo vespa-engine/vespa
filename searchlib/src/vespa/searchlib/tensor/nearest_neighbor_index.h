@@ -122,10 +122,8 @@ public:
      * Both functions are only called by the attribute writer thread.
      */
     virtual bool supports_partial_update() const noexcept { return false; }
-    virtual std::vector<uint32_t> partial_update_remove_and_resize(uint32_t /*docid*/, uint32_t /*new_subspaces*/,
-                                                                   std::span<const uint32_t> /*keep_positions*/) {
-        return {};
-    }
+    virtual void partial_update_remove_and_resize(uint32_t /*docid*/, uint32_t /*new_subspaces*/,
+                                                  std::span<const uint32_t> /*keep_positions*/) {}
     virtual void partial_update_add(uint32_t /*docid*/, std::span<const uint32_t> /*positions*/) {}
 
     /**

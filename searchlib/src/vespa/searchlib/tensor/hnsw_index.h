@@ -308,8 +308,8 @@ public:
     void remove_node(uint32_t nodeid);
     void remove_document(uint32_t docid) override;
     bool supports_partial_update() const noexcept override;
-    std::vector<uint32_t> partial_update_remove_and_resize(uint32_t docid, uint32_t new_subspaces,
-                                                           std::span<const uint32_t> keep_positions) override;
+    void partial_update_remove_and_resize(uint32_t docid, uint32_t new_subspaces,
+                                          std::span<const uint32_t> keep_positions) override;
     void partial_update_add(uint32_t docid, std::span<const uint32_t> positions) override;
     std::unique_ptr<PrepareResult> prepare_partial_update(uint32_t docid, VectorBundle new_vectors,
                                                           std::span<const uint32_t> keep_positions,

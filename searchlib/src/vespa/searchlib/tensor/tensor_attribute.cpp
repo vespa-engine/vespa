@@ -14,10 +14,12 @@
 
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/vespalib/util/typify.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/util/file_settings.h>
@@ -51,6 +53,98 @@ Value::UP createEmptyTensor(const ValueType& type) {
 std::string makeWrongTensorTypeMsg(const ValueType& fieldTensorType, const ValueType& tensorType) {
     return vespalib::make_string("Field tensor type is '%s' but other tensor type is '%s'",
                                  fieldTensorType.to_spec().c_str(), tensorType.to_spec().c_str());
+}
+
+// Enumerates a tensor's subspaces, returning for each cell-layout position (subspace index) its mapped
+// address as string_id labels.
+std::vector<std::vector<vespalib::string_id>> subspace_addresses_by_position(const Value& value,
+                                                                             size_t        num_mapped) {
+    std::vector<std::vector<vespalib::string_id>> result;
+    std::vector<vespalib::string_id>              addr(num_mapped);
+    std::vector<vespalib::string_id*>             refs(num_mapped);
+    for (size_t i = 0; i < num_mapped; ++i) {
+        refs[i] = &addr[i];
+    }
+    auto   view = value.index().create_view({});
+    view->lookup({});
+    size_t subspace_index;
+    size_t seen = 0;
+    while (view->next_result(refs, subspace_index)) {
+        if (subspace_index >= result.size()) {
+            result.resize(subspace_index + 1);
+        }
+        result[subspace_index] = addr;
+        ++seen;
+    }
+    // Subspace indices are expected to be contiguous [0, n); a gap would leave an empty address that could
+    // spuriously match. Fail loudly rather than mis-reorder.
+    assert(seen == result.size());
+    return result;
+}
+
+// Rebuilds `incoming` so that each subspace whose mapped address already existed in `old_value` keeps its
+// previous subspace position (when that position still exists), carrying the new cells from `incoming`. The
+// remaining incoming subspaces (newly added ones, plus surviving subspaces whose old position no longer
+// exists because the document shrank) fill the holes left by removed subspaces. Keeping unchanged subspaces
+// at their previous positions lets the per-subspace HNSW update retain their graph nodes even though document
+// tensor updates reorder subspaces (e.g. add prepends). On removal, only the subspaces moved into the holes
+// are re-indexed; the other survivors keep their positions (rather than all shifting down).
+struct ReorderToPreserveOldPositions {
+    template <typename CT>
+    static Value::UP invoke(const Value& old_value, const Value& incoming, const ValueType& type,
+                            const vespalib::eval::ValueBuilderFactory& factory) {
+        size_t num_mapped = type.count_mapped_dimensions();
+        size_t dsss = type.dense_subspace_size();
+        auto   in_cells = incoming.cells().typify<CT>();
+
+        auto   old_addrs = subspace_addresses_by_position(old_value, num_mapped);
+        auto   in_addrs = subspace_addresses_by_position(incoming, num_mapped);
+        size_t old_n = old_addrs.size();
+        size_t new_n = in_addrs.size(); // number of positions in the result
+
+        // position_to_incoming[p] = the incoming subspace placed at result position p.
+        std::vector<int>  position_to_incoming(new_n, -1);
+        std::vector<bool> assigned(new_n, false);
+        // 1. Keep each surviving subspace at its old position when that position still exists.
+        for (size_t j = 0; j < new_n; ++j) {
+            for (size_t p = 0; p < old_n; ++p) {
+                if (in_addrs[j] == old_addrs[p]) {
+                    if (p < new_n && position_to_incoming[p] == -1) {
+                        position_to_incoming[p] = static_cast<int>(j);
+                        assigned[j] = true;
+                    }
+                    break; // addresses are unique within a tensor
+                }
+            }
+        }
+        // 2. Fill the holes (positions freed by removed subspaces) with the remaining incoming subspaces
+        //    (additions and survivors displaced by shrink), in incoming order.
+        size_t next_hole = 0;
+        for (size_t j = 0; j < new_n; ++j) {
+            if (!assigned[j]) {
+                while (position_to_incoming[next_hole] != -1) {
+                    ++next_hole;
+                }
+                position_to_incoming[next_hole] = static_cast<int>(j);
+            }
+        }
+        // 3. Emit in result-position order.
+        auto builder = factory.create_value_builder<CT>(type, num_mapped, dsss, new_n);
+        for (size_t p = 0; p < new_n; ++p) {
+            size_t in_pos = static_cast<size_t>(position_to_incoming[p]);
+            auto   dst = builder->add_subspace(in_addrs[in_pos]).begin();
+            auto   src = in_cells.begin() + dsss * in_pos;
+            for (size_t i = 0; i < dsss; ++i) {
+                dst[i] = src[i];
+            }
+        }
+        return builder->build(std::move(builder));
+    }
+};
+
+std::unique_ptr<Value> reorder_to_preserve_old_positions(const Value& old_value, const Value& incoming) {
+    return vespalib::typify_invoke<1, vespalib::eval::TypifyCellType, ReorderToPreserveOldPositions>(
+        incoming.cells().type, old_value, incoming, incoming.type(), FastValueBuilderFactory::get());
 }
 
 } // namespace
@@ -326,17 +420,24 @@ void TensorAttribute::compute_partial_diff(DocId docid, VectorBundle new_vectors
     // Positions in [new_n, old_n) (dropped tail) are not in `keep`; the index removes them when resizing.
 }
 
-void TensorAttribute::set_tensor_partial(DocId docid, const Value& tensor, VectorBundle new_vectors) {
+void TensorAttribute::set_tensor_partial(DocId docid, const Value& tensor) {
     // In-place partial update: keep the graph nodes for subspaces whose vectors are unchanged (compared by
-    // position), and only remove/insert the changed/added/removed ones. Worst case (subspaces reordered)
-    // this degrades to re-indexing everything; it is never wrong for search, which only needs (docid, vector).
+    // position), and only remove/insert the changed/added/removed ones. The incoming tensor is first
+    // reordered to preserve the stored document's subspace positions, so that document updates that reorder
+    // subspaces (e.g. add, which prepends) still keep the unchanged subspaces' nodes.
+    auto                   old_tensor = getTensor(docid);
+    std::unique_ptr<Value> reordered =
+        old_tensor ? reorder_to_preserve_old_positions(*old_tensor, tensor) : std::unique_ptr<Value>();
+    const Value& to_store = reordered ? *reordered : tensor;
+
+    VectorBundle          new_vectors(to_store.cells().data, to_store.index().size(), _subspace_type);
     std::vector<uint32_t> keep;
     std::vector<uint32_t> add;
     compute_partial_diff(docid, new_vectors, keep, add);
     // Phase 1 (before the tensor store swap): remove changed/dropped subspaces, keep unchanged ones.
     _index->partial_update_remove_and_resize(docid, new_vectors.subspaces(), keep);
-    // Swap in the new stored tensor.
-    store_tensor_value(docid, tensor);
+    // Swap in the new (reordered) stored tensor.
+    store_tensor_value(docid, to_store);
     // Phase 2 (after the swap): insert the changed/added subspaces, reading the new vectors.
     _index->partial_update_add(docid, add);
 }
@@ -344,8 +445,7 @@ void TensorAttribute::set_tensor_partial(DocId docid, const Value& tensor, Vecto
 void TensorAttribute::setTensor(DocId docId, const Value& tensor) {
     checkTensorType(tensor);
     if (use_partial_update(docId)) {
-        VectorBundle new_vectors(tensor.cells().data, tensor.index().size(), _subspace_type);
-        set_tensor_partial(docId, tensor, new_vectors);
+        set_tensor_partial(docId, tensor);
     } else {
         internal_set_tensor(docId, tensor);
         if (_index) {
@@ -384,12 +484,18 @@ std::unique_ptr<PrepareResult> TensorAttribute::prepare_set_tensor(DocId        
             return {};
         }
         if (use_partial_update(docid)) {
-            // Prepare an in-place partial update: do the costly neighbor search (off the write thread) only
+            // Prepare an in-place partial update: reorder the incoming tensor to preserve the stored
+            // document's subspace positions, then do the costly neighbor search (off the write thread) only
             // for the subspaces that changed or were added. Unchanged subspaces keep their existing nodes.
+            auto                   old_tensor = getTensor(docid);
+            std::unique_ptr<Value> reordered =
+                old_tensor ? reorder_to_preserve_old_positions(*old_tensor, tensor) : std::unique_ptr<Value>();
+            const Value& to_index = reordered ? *reordered : tensor;
+            VectorBundle r_vectors(to_index.cells().data, to_index.index().size(), _subspace_type);
             std::vector<uint32_t> keep;
             std::vector<uint32_t> add;
-            compute_partial_diff(docid, vectors, keep, add);
-            return _index->prepare_partial_update(docid, vectors, keep, add, std::move(guard));
+            compute_partial_diff(docid, r_vectors, keep, add);
+            return _index->prepare_partial_update(docid, r_vectors, keep, add, std::move(guard));
         }
         return _index->prepare_add_document(docid, vectors, std::move(guard));
     }
@@ -399,9 +505,14 @@ std::unique_ptr<PrepareResult> TensorAttribute::prepare_set_tensor(DocId        
 void TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor,
                                           std::unique_ptr<PrepareResult> prepare_result) {
     if (_index && prepare_result && prepare_result->is_partial_update()) {
-        // Apply the prepared in-place partial update around the tensor-store swap.
+        // Apply the prepared in-place partial update around the tensor-store swap. The stored value must be
+        // reordered identically to the prepare step (deterministic given the unchanged stored document), so
+        // that the prepared keep/add positions line up with the stored layout.
+        auto                   old_tensor = getTensor(docid);
+        std::unique_ptr<Value> reordered =
+            old_tensor ? reorder_to_preserve_old_positions(*old_tensor, tensor) : std::unique_ptr<Value>();
         _index->complete_partial_update_remove(docid, *prepare_result); // remove changed/dropped subspaces
-        store_tensor_value(docid, tensor);
+        store_tensor_value(docid, reordered ? *reordered : tensor);
         _index->complete_partial_update_add(docid, std::move(prepare_result)); // insert changed/added subspaces
         return;
     }
@@ -419,7 +530,7 @@ void TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Val
         }
         if (use_partial_update(docid)) {
             // No prepared result (e.g. single-phase path): do the partial update synchronously.
-            set_tensor_partial(docid, tensor, vectors);
+            set_tensor_partial(docid, tensor);
             return;
         }
     }
