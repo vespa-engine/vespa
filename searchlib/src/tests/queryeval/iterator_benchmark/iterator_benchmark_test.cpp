@@ -708,7 +708,7 @@ void print_pond_summary(const DataPond& pond, size_t column_padding = 2) {
         bool first = true;
         for (const auto& key : column_keys) {
             if (!first) {
-                std::print("{}", ' ');
+                std::print("{}", separator);
             }
             first = false;
             print_cell(render_cell(key), columns[key].width, key == f.group);
