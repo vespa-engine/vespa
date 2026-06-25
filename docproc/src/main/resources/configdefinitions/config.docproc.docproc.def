@@ -9,6 +9,6 @@ maxqueuetimems int default=-1
 # numthreads no longer has an effect.
 numthreads int default=-1
 
-# Enable lightweight annotation representation for StringFieldValue.
+# Not used - always enabled.
 # When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects.
 simpleAnnotations bool default=true

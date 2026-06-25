@@ -30,7 +30,7 @@ public final class SimpleIndexingAnnotations {
      * Global feature flag to enable/disable simple annotations representation.
      * When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects.
      */
-    private static volatile boolean enabled = false;
+    private static volatile boolean enabled = true;
 
     /**
      * Returns whether simple annotations are enabled.
