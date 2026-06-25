@@ -81,6 +81,7 @@ struct {
     F class_ = "class";
     F dim = "dim";
     F error = "error";
+    F error_label = "error_label";
     F fetch_postings_time_ms = "fetch_postings_time_ms";
     F field_cfg = "field_cfg";
     F filter_hit_ratio = "filter_hit_ratio";
@@ -88,6 +89,7 @@ struct {
     F gf_ratio = "gf_ratio";
     F group = "group";
     F hits = "hits";
+    F in_flow = "in_flow";
     F iterator_name = "iterator_name";
     F ms_per_cost = "ms_per_cost";
     F num_docs = "num_docs";
@@ -622,31 +624,106 @@ void postprocess_calculate_error(DataPond& pond) {
 }
 
 /**
+ * Make in_flow label.
+ */
+void postprocess_make_display_fields(DataPond& pond) {
+    for (auto& record : pond.records()) {
+        if (record.has_field<bool>(f.strict_context) && record.has_field<double>(f.filter_hit_ratio)) {
+            bool   strict = record.get<bool>(f.strict_context);
+            double rate = record.get<double>(f.filter_hit_ratio);
+            record.set(f.in_flow, strict ? std::string("STRICT") : std::format("{:.5f}", rate));
+        }
+
+        if (record.has_field<double>(f.error)) {
+            record.set(f.error_label, std::format("{:.3f}x", record.get<double>(f.error)));
+        }
+    }
+}
+
+/**
  * Preprocess the raw data samples before summary.
  */
 void postprocess_pond(DataPond& pond) {
     postprocess_calculate_calibration_constant(pond);
     postprocess_calculate_pred_ms(pond);
     postprocess_calculate_error(pond);
+    postprocess_make_display_fields(pond);
 }
 
-void print_pond_summary(const DataPond& pond) {
-    auto in_flow_str = [](const Record& r) -> std::string {
-        bool   strict = r.get<bool>(f.strict_context);
-        double rate = r.get<double>(f.filter_hit_ratio);
-        return strict ? std::string("STRICT") : std::format("{:.5f}", rate);
+/**
+ * Render a data pond record's field.
+ */
+std::string render_field(const Record& rec, const std::string& field) {
+    if (rec.has_field<bool>(field)) {
+        return rec.get<bool>(field) ? "true" : "false";
+    } else if (rec.has_field<int64_t>(field)) {
+        return std::format("{}", rec.get<int64_t>(field));
+    } else if (rec.has_field<double>(field)) {
+        return std::format("{:.3f}", rec.get<double>(field));
+    } else if (rec.has_field<std::string>(field)) {
+        return rec.get<std::string>(field);
+    } else {
+        assert(false && "render_field: Unhandled data type.");
+        return "Unhandled data type";
+    }
+}
+
+void print_cell(const std::string& value, size_t width, bool left_align) {
+    if (left_align) {
+        std::print("{:<{}}", value, width);
+    } else {
+        std::print("{:>{}}", value, width);
+    }
+}
+
+struct Column {
+    uint64_t width = 4;
+};
+
+/**
+ * Dynamically renders a data pond with only the column_keys.
+ */
+void print_pond_summary(const DataPond& pond, size_t column_padding = 2) {
+    std::vector<std::string> column_keys = {f.group,   f.in_flow,        f.time_ms,     f.actual_cost, f.ms_per_cost,
+                                            f.pred_ms, f.time_error_abs, f.error_label, f.class_};
+
+    std::map<std::string, Column> columns;
+
+    // column key width
+    for (const auto& key : column_keys) {
+        columns[key].width = std::max(columns[key].width, key.size());
+    }
+
+    // longest column data width
+    for (const auto& record : pond.records()) {
+        for (const auto& key : column_keys) {
+            std::string rendered = render_field(record, key);
+            columns[key].width = std::max(columns[key].width, rendered.size());
+        }
+    }
+
+    // left align group label column. right align the others.
+    std::string separator(column_padding, ' ');
+    auto        print_row = [&](auto render_cell) {
+        bool first = true;
+        for (const auto& key : column_keys) {
+            if (!first) {
+                std::print("{}", separator);
+            }
+            first = false;
+            print_cell(render_cell(key), columns[key].width, key == f.group);
+        }
+        std::println("");
     };
+
+    // calibration score header
     std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
                  pond.records().front().get<double>(f.calibration_constant), pond.records().size());
-    std::println("{:<60} {:>9} {:>12} {:>12} {:>12} {:>12} {:>12} {:>10} {:>10}", "case", "in_flow", "time_ms",
-                 "actual_cost", "ms_per_cost", "pred_ms", "time_error_abs", "error", "class");
+
+    // print the rows
+    print_row([&](const std::string& key) { return key; });
     for (const auto& record : pond.records()) {
-        auto case_id = record.get<std::string>(f.group);
-        std::println("{:<60} {:>9} {:>12.3f} {:>12.3f} {:>12.3f} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id,
-                     in_flow_str(record), record.get<double>(f.time_ms), record.get<double>(f.actual_cost),
-                     record.get<double>(f.ms_per_cost), record.get<double>(f.pred_ms),
-                     record.get<double>(f.time_error_abs), record.get<double>(f.error),
-                     record.get<std::string>(f.class_));
+        print_row([&](const std::string& key) { return render_field(record, key); });
     }
 }
 
