@@ -1527,7 +1527,6 @@
       "public double logserverNodeMemory()",
       "public double clusterControllerNodeMemory()",
       "public boolean useLegacyWandQueryParsing()",
-      "public boolean useSimpleAnnotations()",
       "public boolean sendOldQueryStack()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
