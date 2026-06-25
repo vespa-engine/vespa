@@ -681,7 +681,7 @@ struct Column {
 };
 
 /**
- * Dynamically renders a data pond with the only the column_keys.
+ * Dynamically renders a data pond with only the column_keys.
  */
 void print_pond_summary(const DataPond& pond, size_t column_padding = 2) {
     std::vector<std::string> column_keys = {f.group,   f.in_flow,        f.time_ms,     f.actual_cost, f.ms_per_cost,
@@ -702,7 +702,7 @@ void print_pond_summary(const DataPond& pond, size_t column_padding = 2) {
         }
     }
 
-    // left align group label column. rihgt align the others.
+    // left align group label column. right align the others.
     std::string separator(column_padding, ' ');
     auto        print_row = [&](auto render_cell) {
         bool first = true;
