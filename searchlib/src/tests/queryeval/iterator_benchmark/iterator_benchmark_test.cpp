@@ -777,6 +777,7 @@ void describe(const RangeConfig& cfg, Record& r) {
     r.set(f.range_high, cfg.range_high());
     r.set(f.range_size, cfg.range_size);
     r.set(f.target_hits, cfg.target_hits);
+    r.set(f.field_cfg, cfg.field_cfg.to_string());
 }
 
 /**
@@ -1365,6 +1366,43 @@ TEST(IteratorBenchmark, analyze_attr_range) {
         }
     }
     run_benchmarks("ATTR_RANGE", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
+}
+
+/**
+ * Find the crossover when merging posting lists is better than to perform lookups for
+ * range search on attribute.
+ *
+ * This benchmark can be ran in three modes:
+ *   STRICT,     always merge
+ *   NON-STRICT, always merge
+ *   NON-STRICT, never merge
+ *
+ * STRICT always merges.
+ *
+ * When NON-STRICT, force always or never merge posting lists by returning true or false
+ * in NumericPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_strict
+ * in searchlib/src/vespa/searchlib/attribute/postinglistsearchcontext.h
+ *
+ * Need to recompile vespa to run the benchmark with the changes.
+ */
+TEST(IteratorBenchmark, range_posting_vs_lookup_crossover) {
+    // in flow from 0.001 to 0.5.
+    std::vector<double> in_flows;
+    for (auto filter_hit_ratio : {1, 2, 4, 6, 8, 10, 20, 40, 60, 80, 100, 120, 140, 160, 200, 300, 400, 500}) {
+        in_flows.push_back(filter_hit_ratio / 1000.0);
+    }
+    bool force_strict = false;
+    // range matches 10% and 20% of documents.
+    std::vector<RangeConfig> cases;
+    for (double range_hit_rate : {0.1, 0.2}) {
+        auto target_hits = static_cast<int64_t>(num_docs * range_hit_rate);
+        for (auto field_cfg : {int32_fs, int32}) {
+            cases.push_back(
+                {.field_cfg = field_cfg, .target_hits = target_hits, .range_size = 100, .num_docs = num_docs});
+        }
+    }
+    run_benchmarks("RANGE_XOVER", cases, make_in_flows(in_flows, /*include_strict=*/false),
+                   {.force_strict = force_strict});
 }
 
 /**
