@@ -76,8 +76,8 @@ std::vector<std::vector<vespalib::string_id>> subspace_addresses_by_position(con
         result[subspace_index] = addr;
         ++seen;
     }
-    // Subspace indices are expected to be contiguous [0, n); a gap would leave an empty address that could
-    // spuriously match. Fail loudly rather than mis-reorder.
+    // The index views in use enumerate contiguous subspace indices [0, n); a gap would leave an empty
+    // address that could spuriously match. Assert the invariant to catch a future change.
     assert(seen == result.size());
     return result;
 }

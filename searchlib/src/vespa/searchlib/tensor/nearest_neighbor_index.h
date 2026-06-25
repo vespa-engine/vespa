@@ -114,10 +114,12 @@ public:
      * around the tensor-store swap performed by the enclosing attribute:
      *  - partial_update_remove_and_resize() is called BEFORE the new tensor is stored. It keeps the graph
      *    nodes at `keep_positions` (subspaces whose cells are unchanged) untouched, removes all other
-     *    existing nodes of the document, resizes the per-document node bookkeeping to `new_subspaces`, and
-     *    returns the subspace positions (in the new layout) that need to be inserted.
-     *  - partial_update_add() is called AFTER the new tensor is stored, and inserts the returned positions
-     *    (reading the new vectors via the document vector access).
+     *    existing nodes of the document, and resizes the per-document node bookkeeping to `new_subspaces`
+     *    (allocating fresh nodeids for the subspace positions that will be inserted).
+     *  - partial_update_add() is called AFTER the new tensor is stored, and inserts the subspaces at the
+     *    given `positions` (reading the new vectors via the document vector access).
+     * The enclosing attribute computes both `keep_positions` and the inserted `positions` from the
+     * per-subspace diff and passes them in; neither call returns positions.
      *
      * Both functions are only called by the attribute writer thread.
      */
