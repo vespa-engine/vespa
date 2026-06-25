@@ -448,7 +448,7 @@ public class ApplicationRepositoryTest {
         long sessionId = createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         applicationRepository.prepare(sessionId, prepareParams());
         exceptionRule.expect(RuntimeException.class);
-        exceptionRule.expectMessage("Timeout exceeded when trying to activate 'test1.testapp'");
+        exceptionRule.expectMessage("Timeout exceeded when trying to activate 'test1.testapp.default'");
         activate(applicationId(), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)));
 
         Session activeSession = applicationRepository.getActiveSession(applicationId()).get();
