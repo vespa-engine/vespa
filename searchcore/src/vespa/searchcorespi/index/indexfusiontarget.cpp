@@ -109,7 +109,7 @@ std::chrono::steady_clock::duration IndexFusionTarget::last_flush_duration() con
 }
 
 std::chrono::steady_clock::duration IndexFusionTarget::estimated_flush_duration() const noexcept {
-    return _fusionStats._estimated_flush_duration + 10s;
+    return _fusionStats._estimated_flush_duration;
 }
 
 } // namespace searchcorespi::index
