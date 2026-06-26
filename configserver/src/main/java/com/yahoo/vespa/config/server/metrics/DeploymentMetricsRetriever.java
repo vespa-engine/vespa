@@ -6,10 +6,13 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
+import com.yahoo.yolean.Exceptions;
+
 import java.net.URI;
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 /**
  * Finds all hosts we want to fetch metrics for, generates the appropriate URIs
@@ -18,6 +21,9 @@ import java.util.function.Predicate;
  * @author olaa
  */
 public class DeploymentMetricsRetriever {
+
+    private static final Logger log = Logger.getLogger(DeploymentMetricsRetriever.class.getName());
+
 
     private final ClusterDeploymentMetricsRetriever metricsRetriever;
     private final NodeSuspensionProvider nodeSuspensionProvider;
@@ -40,6 +46,7 @@ public class DeploymentMetricsRetriever {
         var suspendedHostnames = nodeSuspensionProvider.suspendedHosts(application.getId());
         var hosts = getHostsOfApplication(application, suspendedHostnames);
         var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
+        log.fine("Fetched metrics for " + hosts.size() + " hosts in " + clusterMetrics.size() + " clusters for"  + application);
         return new DeploymentMetricsResponse(application.getId(), clusterMetrics);
     }
 

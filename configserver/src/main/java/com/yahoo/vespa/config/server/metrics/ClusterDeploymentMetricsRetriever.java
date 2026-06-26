@@ -158,6 +158,7 @@ public class ClusterDeploymentMetricsRetriever {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {
             byte[] body = EntityUtils.toByteArray(response.getEntity());
+            log.fine("Metrics from " + hostURI.getHost() + " is " + body.length + " bytes");
             return SlimeUtils.jsonToSlime(body);
         } catch (IOException e) {
             log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
