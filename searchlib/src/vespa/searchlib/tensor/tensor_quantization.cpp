@@ -19,7 +19,7 @@ namespace search::tensor {
 namespace {
 
 template <typename T, typename T2>
-[[nodiscard]] constexpr std::span<T> cast_span(const std::span<T2> in) noexcept { // TODO or span_cast...?
+[[nodiscard]] constexpr std::span<T> span_cast(const std::span<T2> in) noexcept {
     static_assert(sizeof(T) == sizeof(T2));
     static_assert(alignof(T) == alignof(T2));
     static_assert(std::is_trivially_copyable_v<T> && std::is_trivially_copyable_v<T2>);
@@ -64,7 +64,7 @@ std::unique_ptr<vespalib::eval::Value> quantize_f32_tensor(const vespalib::eval:
     if (num_mapped == 0) {
         assert(idx.size() == 1);
         auto i8f_array_ref = builder->add_subspace(addr);
-        auto u8_array_ref = cast_span<uint8_t>(i8f_array_ref);
+        auto u8_array_ref = span_cast<uint8_t>(i8f_array_ref);
         quantizer.quantize(input_cells, u8_array_ref, quantization_mode);
     } else {
         auto view = idx.create_view({});
@@ -77,7 +77,7 @@ std::unique_ptr<vespalib::eval::Value> quantize_f32_tensor(const vespalib::eval:
         size_t subspace_idx;
         while (view->next_result(addr_fetch, subspace_idx)) {
             auto i8f_array_ref = builder->add_subspace(addr);
-            auto u8_array_ref = cast_span<uint8_t>(i8f_array_ref);
+            auto u8_array_ref = span_cast<uint8_t>(i8f_array_ref);
             auto input = input_cells.subspan(input_dense_size * subspace_idx, input_dense_size);
             quantizer.quantize(input, u8_array_ref, quantization_mode);
         }
@@ -101,7 +101,7 @@ std::unique_ptr<vespalib::eval::Value> dequantize_tensor(const vespalib::eval::V
     if (num_mapped == 0) {
         assert(idx.size() == 1);
         auto f32_array_ref = builder->add_subspace(addr);
-        auto input_as_u8 = cast_span<const uint8_t>(input_cells);
+        auto input_as_u8 = span_cast<const uint8_t>(input_cells);
         quantizer.dequantize(input_as_u8, f32_array_ref);
     } else {
         auto view = idx.create_view({});
@@ -115,7 +115,7 @@ std::unique_ptr<vespalib::eval::Value> dequantize_tensor(const vespalib::eval::V
         while (view->next_result(addr_fetch, subspace_idx)) {
             auto f32_array_ref = builder->add_subspace(addr);
             auto input = input_cells.subspan(quantized_dense_size * subspace_idx, quantized_dense_size);
-            auto input_as_u8 = cast_span<const uint8_t>(input);
+            auto input_as_u8 = span_cast<const uint8_t>(input);
             quantizer.dequantize(input_as_u8, f32_array_ref);
         }
     }
