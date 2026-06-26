@@ -919,96 +919,115 @@ public class SelectTestCase {
     }
 
     @Test
-    void testGroupingWithIdentifierLabel() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\", \"label\" : \"mylabel\" } } } ]";
-        String expected = "[[]all(group(a) each(output(count())) as(mylabel))]";
+    void testGroupingWithLabelOnAll() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"mylabel\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        String expected = "[[]all(group(a) each(output(count()))) as(mylabel)]";
         assertGrouping(expected, parseGrouping(grouping));
     }
 
     @Test
-    void testGroupingWithLabelContainingSpaces() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\", \"label\" : \"my label\" } } } ]";
-        GroupingOperation root = parseGrouping(grouping).get(0).getOperation();
-        EachOperation each = (EachOperation) root.getChild(0);
-        assertEquals("my label", each.getLabel());
+    void testGroupingWithLabelOnAllCardinalityShape() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"mycard\", \"output\" : \"count()\" } } ]";
+        String expected = "[[]all(group(a) output(count())) as(mycard)]";
+        assertGrouping(expected, parseGrouping(grouping));
     }
 
     @Test
-    void testGroupingWithLabelContainingQuoteAndBackslash() {
+    void testGroupingWithLabelContainingSpacesOnAll() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"my label\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        GroupingOperation root = parseGrouping(grouping).get(0).getOperation(); // AllOperation
+        assertEquals("my label", root.getLabel());
+    }
+
+    @Test
+    void testGroupingWithLabelContainingQuoteAndBackslashOnAll() {
         // Raw JSON: "label" : "a\"b\\c"  -> decoded label should be the 5-char string a"b\c
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\", \"label\" : \"a\\\"b\\\\c\" } } } ]";
-        GroupingOperation root = parseGrouping(grouping).get(0).getOperation();
-        EachOperation each = (EachOperation) root.getChild(0);
-        assertEquals("a\"b\\c", each.getLabel());
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"a\\\"b\\\\c\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        GroupingOperation root = parseGrouping(grouping).get(0).getOperation(); // AllOperation
+        assertEquals("a\"b\\c", root.getLabel());
     }
 
     @Test
-    void testGroupingWithLabelOnInnerEachOnly() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"group\" : \"b\", \"each\" : { \"output\" : \"count()\", \"label\" : \"inner\" } } } } ]";
-        GroupingOperation root = parseGrouping(grouping).get(0).getOperation();
-        EachOperation outer = (EachOperation) root.getChild(0);
-        EachOperation inner = (EachOperation) outer.getChild(0);
-        assertNull(outer.getLabel());
-        assertEquals("inner", inner.getLabel());
-    }
-
-    @Test
-    void testMultipleGroupingsOnlyOneLabeled() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" } } }," +
-                          " { \"all\" : { \"group\" : \"b\", \"each\" : { \"output\" : \"count()\", \"label\" : \"second\" } } } ]";
-        String expected = "[[]all(group(a) each(output(count()))), []all(group(b) each(output(count())) as(second))]";
-        assertGrouping(expected, parseGrouping(grouping));
-    }
-
-    @Test
-    void testGroupingLabelInsideAllIsRejected() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"x\", \"each\" : { \"output\" : \"count()\" } } } ]";
-        var e = assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
-        assertTrue(e.getMessage().contains("'all'"), "Message should name 'all' parent: " + e.getMessage());
+    void testGroupingLabelOrderIsIrrelevantOnAll() {
+        // label before the nested "each"
+        String before = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"lbl\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        // label after the nested "each"
+        String after  = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" }, \"label\" : \"lbl\" } } ]";
+        String expected = "[[]all(group(a) each(output(count()))) as(lbl)]";
+        assertGrouping(expected, parseGrouping(before));
+        assertGrouping(expected, parseGrouping(after));
     }
 
     @Test
     void testGroupingLabelInsideOutputObjectIsRejected() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : { \"label\" : \"x\" } } } } ]";
         var e = assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
-        assertTrue(e.getMessage().contains("'output'"), "Message should name 'output' parent: " + e.getMessage());
+        assertTrue(e.getMessage().contains("'output'"), "Message should name 'output' context: " + e.getMessage());
     }
 
     @Test
     void testGroupingLabelInsideOutputArrayElementIsRejected() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : [ \"count()\", { \"label\" : \"x\" } ] } } } ]";
         var e = assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
-        assertTrue(e.getMessage().contains("'output'"), "Message should name 'output' parent: " + e.getMessage());
+        assertTrue(e.getMessage().contains("'output'"), "Message should name 'output' context: " + e.getMessage());
+    }
+
+    @Test
+    void testGroupingLabelInsideEachIsRejected() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\", \"label\" : \"x\" } } } ]";
+        var e = assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
+        assertTrue(e.getMessage().contains("'each'"), "Message should name 'each' context: " + e.getMessage());
+    }
+
+    @Test
+    void testGroupingLabelInArrayWrappedOperationBodyIsRejected() {
+        // The label is not a direct field of the operation (the "all" value is an array), so it is
+        // rejected rather than silently dropped.
+        String grouping = "[ { \"all\" : [ { \"group\" : \"a\", \"label\" : \"x\", \"each\" : { \"output\" : \"count()\" } } ] } ]";
+        var e = assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
+        assertTrue(e.getMessage().contains("array under 'all'"),
+                "Message should name the array-wrapped 'all' context: " + e.getMessage());
+
+        // The same shape without the label converts to exactly the expected operation (not merely no-throw).
+        String noLabel = "[ { \"all\" : [ { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" } } ] } ]";
+        assertGrouping("[[]all(group(a) each(output(count())))]", parseGrouping(noLabel));
+    }
+
+    @Test
+    void testGroupingLabelInsideGroupValueObjectIsRejected() {
+        String grouping = "[ { \"all\" : { \"group\" : { \"label\" : \"x\" }, \"each\" : { \"output\" : \"count()\" } } } ]";
+        var e = assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
+        assertTrue(e.getMessage().contains("'group'"), "Message should name 'group' context: " + e.getMessage());
     }
 
     @Test
     void testGroupingLabelAtTopLevelIsRejected() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" } }, \"label\" : \"x\" } ]";
         var e = assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
-        assertTrue(e.getMessage().contains("<root>"), "Message should name <root> parent: " + e.getMessage());
+        assertTrue(e.getMessage().contains("top-level"), "Message should name the top-level context: " + e.getMessage());
     }
 
     @Test
     void testGroupingLabelNumberIsRejected() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\", \"label\" : 5 } } } ]";
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : 5, \"each\" : { \"output\" : \"count()\" } } } ]";
         assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
     }
 
     @Test
     void testGroupingLabelNullIsRejected() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\", \"label\" : null } } } ]";
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : null, \"each\" : { \"output\" : \"count()\" } } } ]";
         assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
     }
 
     @Test
     void testGroupingLabelEmptyIsRejected() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\", \"label\" : \"\" } } } ]";
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"\", \"each\" : { \"output\" : \"count()\" } } } ]";
         assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
     }
 
     @Test
     void testGroupingLabelWhitespaceOnlyIsRejected() {
-        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\", \"label\" : \"   \" } } } ]";
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"   \", \"each\" : { \"output\" : \"count()\" } } } ]";
         assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
     }
 

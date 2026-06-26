@@ -255,7 +255,8 @@ class RequestBuilder {
                 throw new IllegalInputException("Can not group list of groups.");
             }
             frame.state.groupBy = converter.toExpressionNode(exp);
-            frame.state.label = exp.toString(); // label for next each()
+            String label = frame.astNode.getLabel();
+            frame.state.label = label != null ? label : exp.toString(); // label for next each()
 
         } else {
             int level = frame.astNode.getLevel();

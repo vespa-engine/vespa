@@ -359,14 +359,18 @@ public class SelectParser implements Parser {
     }
 
     private void toGroupingRequest(Inspector groupingJson, StringBuilder b) {
-        toGroupingRequest(groupingJson, null, b);
+        // entry point: the top level is neither an operation body nor under any key
+        toGroupingRequest(groupingJson, null, false, b);
     }
 
-    private void toGroupingRequest(Inspector groupingJson, String parentKey, StringBuilder b) {
+    private void toGroupingRequest(Inspector groupingJson, String parentKey, boolean isOperationBody, StringBuilder b) {
         switch (groupingJson.type()) {
             case ARRAY:
+                // crossing into an array: elements are NOT a direct operation body, even when
+                // parentKey is "all"/"each" (e.g. "all": [ {...} ]). parentKey is propagated for
+                // emission, but isOperationBody is reset so a stray label inside is rejected.
                 groupingJson.traverse((ArrayTraverser) (index, item) -> {
-                    toGroupingRequest(item, parentKey, b);
+                    toGroupingRequest(item, parentKey, false, b);
                     if (index + 1 < groupingJson.entries())
                         b.append(",");
                 });
@@ -374,18 +378,20 @@ public class SelectParser implements Parser {
             case OBJECT:
                 groupingJson.traverse((ObjectTraverser) (name, object) -> {
                     if ("label".equals(name)) {
-                        if (!"each".equals(parentKey)) {
+                        if (!isOperationBody) {
                             throw new IllegalInputException(
-                                    "'label' is only valid inside an 'each' grouping operation, found inside '"
-                                    + (parentKey == null ? "<root>" : parentKey) + "'");
+                                    "'label' must be a direct field of an 'all' grouping operation, found in "
+                                    + describeContext(parentKey));
                         }
-                        return;
+                        return; // consumed by the enclosing operation emission below
                     }
                     b.append(name);
                     b.append("(");
-                    toGroupingRequest(object, name, b);
+                    // Only an all body may carry a JSON label.
+                    boolean childIsBody = "all".equals(name) && object.type() == OBJECT;
+                    toGroupingRequest(object, name, childIsBody, b);
                     b.append(")");
-                    if ("each".equals(name) && object.type() == OBJECT) {
+                    if (childIsBody) {
                         String label = readLabel(object);
                         if (label != null) {
                             b.append(" as(").append(UnicodeUtilities.quote(label, '"')).append(")");
@@ -403,8 +409,15 @@ public class SelectParser implements Parser {
         }
     }
 
-    private static String readLabel(Inspector eachBody) {
-        Inspector field = eachBody.field("label");
+    /** Describes where a misplaced "label" was found (only reached when isOperationBody is false). */
+    private static String describeContext(String parentKey) {
+        if (parentKey == null) return "the top-level grouping object";
+        if ("all".equals(parentKey)) return "an array under '" + parentKey + "'";
+        return "'" + parentKey + "'";
+    }
+
+    private static String readLabel(Inspector operationBody) {
+        Inspector field = operationBody.field("label");
         if (!field.valid()) return null;
         if (field.type() != STRING) {
             throw new IllegalInputException("'label' in grouping must be a string, got " + field.type());

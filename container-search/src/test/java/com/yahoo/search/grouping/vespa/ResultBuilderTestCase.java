@@ -208,6 +208,9 @@ public class ResultBuilderTestCase {
         assertLayout("all(group(a) each(output(count())) as(bar))",
                 newGrouping(newGroup(2, new CountAggregationResult(69).setTag(3))),
                 "RootGroup{id=group:root}[GroupList{label=bar}[Group{id=group:2, count()=69}[]]]");
+        assertLayout("all(group(a) each(output(count()))) as(foo)",
+                newGrouping(newGroup(2, new CountAggregationResult(69).setTag(3))),
+                "RootGroup{id=group:root}[GroupList{label=foo}[Group{id=group:2, count()=69}[]]]");
     }
 
     @Test
