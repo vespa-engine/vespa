@@ -29,7 +29,6 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
     public final Options options;
     private final Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
-    private final boolean useSimpleAnnotations;
 
     public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains) {
         this(cluster, chains, Options.empty(), null);
@@ -53,7 +52,6 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         super(chains);
         assert (options != null) : "Null Options for " + this + " under cluster " + cluster.getName();
         this.options = options;
-        this.useSimpleAnnotations = deployState == null || deployState.featureFlags().useSimpleAnnotations();
 
         if (addSourceClientProvider) {
             addSource(cluster, "source", SessionConfig.Type.SOURCE);
@@ -86,7 +84,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         if (getMaxQueueTimeMs() != null) {
             builder.maxqueuetimems(getMaxQueueTimeMs());
         }
-        builder.simpleAnnotations(useSimpleAnnotations);
+        builder.simpleAnnotations(true);
     }
 
     @Override
