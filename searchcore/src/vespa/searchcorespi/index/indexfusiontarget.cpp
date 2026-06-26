@@ -46,7 +46,8 @@ IndexFusionTarget::IndexFusionTarget(IndexMaintainer& indexMaintainer)
       _fusionStats(indexMaintainer.getFusionStats()),
       _lastStats() {
     _lastStats.setPathElementsToLog(7);
-    LOG(debug, "New target, Num flushed: %d, Disk usage: %" PRIu64, _fusionStats.numUnfused, _fusionStats.diskUsage);
+    LOG(debug, "New target, Num flushed: %d, Disk usage: %" PRIu64, _fusionStats._num_unfused,
+        _fusionStats._disk_usage);
 }
 
 IndexFusionTarget::~IndexFusionTarget() = default;
@@ -57,9 +58,9 @@ IFlushTarget::MemoryGain IndexFusionTarget::getApproxMemoryGain() const {
 
 IFlushTarget::DiskGain IndexFusionTarget::getApproxDiskGain() const {
     constexpr double max_relative_gain = 2.0;
-    uint64_t         diskUsageBefore = _fusionStats.diskUsage;
+    uint64_t         diskUsageBefore = _fusionStats._disk_usage;
     double           relative_gain =
-        std::clamp<double>(0.1 * (static_cast<int>(_fusionStats.numUnfused) - 1), 0.0, max_relative_gain);
+        std::clamp<double>(0.1 * (static_cast<int>(_fusionStats._num_unfused) - 1), 0.0, max_relative_gain);
     uint64_t diskUsageGain = static_cast<uint64_t>(relative_gain * diskUsageBefore);
     diskUsageGain = std::min(diskUsageGain, diskUsageBefore);
     if (!_fusionStats._canRunFusion) {
@@ -70,9 +71,9 @@ IFlushTarget::DiskGain IndexFusionTarget::getApproxDiskGain() const {
 
 bool IndexFusionTarget::needUrgentFlush() const {
     bool urgent =
-        (_fusionStats.numUnfused > _fusionStats.maxFlushed || _indexMaintainer.urgent_disk_index_fusion()) &&
+        (_fusionStats._num_unfused > _fusionStats._max_flushed || _indexMaintainer.urgent_disk_index_fusion()) &&
         (_fusionStats._canRunFusion);
-    LOG(debug, "Num flushed: %d Urgent: %d", _fusionStats.numUnfused, urgent);
+    LOG(debug, "Num flushed: %d Urgent: %d", _fusionStats._num_unfused, urgent);
     return urgent;
 }
 
@@ -96,7 +97,7 @@ bool IndexFusionTarget::can_flush(SerialNum) const noexcept {
 }
 
 uint64_t IndexFusionTarget::getApproxBytesToWriteToDisk() const {
-    return _fusionStats.diskUsage;
+    return _fusionStats._disk_usage;
 }
 
 size_t IndexFusionTarget::reserved_memory_for_flush() const noexcept {
