@@ -23,12 +23,12 @@ void expect_bad_index_disk_dir(const std::string& dir) {
 
 TEST(IndexDiskLayoutTest, get_index_disk_dir_works) {
     {
-        SCOPED_TRACE("index.fusion.1");
-        expect_index_disk_dir(IndexDiskDir(1, true), "index.fusion.1");
+        SCOPED_TRACE("index.flush.1");
+        expect_index_disk_dir(IndexDiskDir(1, false), "index.flush.1");
     }
     {
-        SCOPED_TRACE("index.flush.2");
-        expect_index_disk_dir(IndexDiskDir(2, false), "index.flush.2");
+        SCOPED_TRACE("index.fusion.2");
+        expect_index_disk_dir(IndexDiskDir(2, true), "index.fusion.2");
     }
     {
         SCOPED_TRACE("index.flush.3");

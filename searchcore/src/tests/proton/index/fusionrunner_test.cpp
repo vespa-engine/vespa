@@ -121,7 +121,7 @@ Schema getSchema() {
 void FusionRunnerTest::SetUp() {
     std::filesystem::remove_all(std::filesystem::path(base_dir));
     _fusion_runner = std::make_unique<FusionRunner>(base_dir, getSchema(), TuneFileAttributes(), _fileHeaderContext);
-    const string selector_base = base_dir + "/index.flush.0/selector";
+    const string selector_base = base_dir + "/index.flush.1/selector";
     _selector = std::make_unique<FixedSourceSelector>(0, selector_base);
     _fusion_spec = FusionSpec();
 }

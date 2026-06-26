@@ -18,6 +18,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/filekit.h>
@@ -206,7 +207,7 @@ std::shared_ptr<IDiskIndex> IndexMaintainer::loadDiskIndex(const string& indexDi
     vespalib::Timer timer;
     auto            index = _operations.loadDiskIndex(indexDir);
     auto            stats = index->get_index_stats(false);
-    _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
+    _disk_indexes->setActive(indexDir, stats.sizeOnDisk(), index->create_and_freeze_times().get_flush_duration());
     auto retval =
         std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index), _layout, _disk_indexes);
     if (LOG_WOULD_LOG(event)) {
@@ -225,7 +226,7 @@ std::shared_ptr<IDiskIndex> IndexMaintainer::reloadDiskIndex(const IDiskIndex& o
     const IDiskIndex& wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCleanup&>(oldIndex)).getWrapped();
     auto              index = _operations.reloadDiskIndex(wrappedDiskIndex);
     auto              stats = index->get_index_stats(false);
-    _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
+    _disk_indexes->setActive(indexDir, stats.sizeOnDisk(), index->create_and_freeze_times().get_flush_duration());
     auto retval =
         std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index), _layout, _disk_indexes);
     if (LOG_WOULD_LOG(event)) {
@@ -977,6 +978,7 @@ IndexMaintainer::FlushStats IndexMaintainer::getFlushStats() const {
         stats.disk_write_bytes = stats.memory_before_bytes + source_selector_bytes - stats.memory_after_bytes;
         stats.cpu_time_required = source_selector_bytes * 3 * (1 + numFrozen) + stats.disk_write_bytes;
     }
+    stats._last_flush_duration = _disk_indexes->last_flush_duration();
     return stats;
 }
 
@@ -990,7 +992,10 @@ IndexMaintainer::FusionStats IndexMaintainer::getFusionStats() const {
         source_list = _source_list;
         stats.maxFlushed = _maxFlushed;
     }
-    stats.diskUsage = _disk_indexes->get_size_on_disk(false) - DiskIndexes::get_size_on_disk_overhead();
+    auto disk_indexes_fusion_stats = _disk_indexes->calc_fusion_stats();
+    stats.diskUsage = disk_indexes_fusion_stats.estimated_size_on_disk();
+    stats._last_flush_duration = disk_indexes_fusion_stats.last_flush_duration();
+    stats._estimated_flush_duration = disk_indexes_fusion_stats.estimated_flush_duration();
     {
         LockGuard guard(_fusion_lock);
         stats.numUnfused = _fusion_spec.flush_ids.size() + ((_fusion_spec.last_fusion_id != 0) ? 1 : 0);

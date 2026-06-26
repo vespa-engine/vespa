@@ -21,29 +21,50 @@ using std::string;
 namespace searchcorespi::index {
 
 DiskIndexes::DiskIndexes()
-    : _active(), _sum_size_on_disk(get_size_on_disk_overhead()), _sum_stale_size_on_disk(0u), _lock() {
+    : _active(),
+      _sum_size_on_disk(get_size_on_disk_overhead()),
+      _sum_stale_size_on_disk(0u),
+      _sum_flush_duration(std::chrono::steady_clock::duration::zero()),
+      _last_fusion_flush_duration(std::chrono::steady_clock::duration::zero()),
+      _last_flush_duration(std::chrono::steady_clock::duration::zero()),
+      _lock() {
 }
 
 DiskIndexes::~DiskIndexes() = default;
 
 void DiskIndexes::remove_from_sum(const IndexDiskDirState& state) {
-    auto size_on_disk = state.get_size_on_disk().value_or(0u);
-    _sum_size_on_disk -= size_on_disk;
+    const auto& size_on_disk = state.get_size_on_disk();
+    const auto& flush_duration = state.flush_duration();
     if (state.is_stale()) {
-        _sum_stale_size_on_disk -= size_on_disk;
+        if (size_on_disk.has_value()) {
+            _sum_stale_size_on_disk -= size_on_disk.value();
+        }
+    } else {
+        if (size_on_disk.has_value()) {
+            _sum_size_on_disk -= size_on_disk.value();
+        }
+        if (flush_duration.has_value()) {
+            _sum_flush_duration -= flush_duration.value();
+        }
     }
 }
 
-void DiskIndexes::setActive(const string& index, uint64_t size_on_disk) {
+void DiskIndexes::setActive(const string& index, uint64_t size_on_disk,
+                            std::chrono::steady_clock::duration flush_duration) {
     auto index_disk_dir = IndexDiskLayout::get_index_disk_dir(index);
     assert(index_disk_dir.valid());
     std::lock_guard lock(_lock);
     auto            insres = _active.insert(std::make_pair(index_disk_dir, IndexDiskDirState()));
     auto&           state = insres.first->second;
-    if (state.activate(size_on_disk)) {
-        _sum_size_on_disk += size_on_disk;
+    if (state.activate(size_on_disk, flush_duration)) {
         if (state.is_stale()) {
             _sum_stale_size_on_disk += size_on_disk;
+        } else {
+            _sum_size_on_disk += size_on_disk;
+            _sum_flush_duration += flush_duration;
+        }
+        if (index_disk_dir.is_fusion_index_or_first_flush_index()) {
+            _last_fusion_flush_duration = flush_duration;
         }
         if (index_disk_dir.is_fusion_index()) {
             /*
@@ -57,12 +78,22 @@ void DiskIndexes::setActive(const string& index, uint64_t size_on_disk) {
                     auto& stale_state = entry.second;
                     if (!stale_state.is_stale()) {
                         stale_state.set_stale();
-                        _sum_stale_size_on_disk += stale_state.get_size_on_disk().value_or(0u);
+                        const auto& stale_size_on_disk = stale_state.get_size_on_disk();
+                        if (stale_size_on_disk.has_value()) {
+                            _sum_size_on_disk -= stale_state.get_size_on_disk().value();
+                            _sum_stale_size_on_disk += stale_state.get_size_on_disk().value();
+                        }
+                        const auto& stale_flush_duration = stale_state.flush_duration();
+                        if (stale_flush_duration.has_value()) {
+                            _sum_flush_duration -= stale_flush_duration.value();
+                        }
                     }
                 } else {
                     break;
                 }
             }
+        } else {
+            _last_flush_duration = flush_duration;
         }
     }
 }
@@ -114,7 +145,7 @@ bool DiskIndexes::remove(IndexDiskDir index_disk_dir) {
 
 ResourceUsage DiskIndexes::get_resource_usage(const IndexDiskLayout& layout) const {
     std::unique_lock          guard(_lock);
-    uint64_t                  size_on_disk = _sum_size_on_disk - _sum_stale_size_on_disk;
+    uint64_t                  size_on_disk = _sum_size_on_disk;
     uint64_t                  transient_size = _sum_stale_size_on_disk;
     std::vector<IndexDiskDir> deferred;
     for (auto& entry : _active) {
@@ -143,10 +174,22 @@ ResourceUsage DiskIndexes::get_resource_usage(const IndexDiskLayout& layout) con
 uint64_t DiskIndexes::get_size_on_disk(bool include_stale) const {
     std::lock_guard guard(_lock);
     uint64_t        size_on_disk = _sum_size_on_disk;
-    if (!include_stale) {
-        size_on_disk -= _sum_stale_size_on_disk;
+    if (include_stale) {
+        size_on_disk += _sum_stale_size_on_disk;
     }
     return size_on_disk;
+}
+
+DiskIndexes::FusionStats DiskIndexes::calc_fusion_stats() const {
+    std::lock_guard       guard(_lock);
+    uint64_t              estimated_size_on_disk = _sum_size_on_disk - get_size_on_disk_overhead();
+    std::chrono::duration estimated_flush_duration = _sum_flush_duration;
+    return FusionStats(estimated_size_on_disk, _last_fusion_flush_duration, estimated_flush_duration);
+}
+
+std::chrono::steady_clock::duration DiskIndexes::last_flush_duration() const {
+    std::lock_guard guard(_lock);
+    return _last_flush_duration;
 }
 
 uint64_t DiskIndexes::get_size_on_disk_overhead() noexcept {

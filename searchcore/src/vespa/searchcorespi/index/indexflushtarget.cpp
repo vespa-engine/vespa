@@ -77,7 +77,7 @@ size_t IndexFlushTarget::reserved_memory_for_flush() const noexcept {
 }
 
 std::chrono::steady_clock::duration IndexFlushTarget::last_flush_duration() const noexcept {
-    return 10s; // placeholder value
+    return _flushStats._last_flush_duration;
 }
 
 std::chrono::steady_clock::duration IndexFlushTarget::estimated_flush_duration() const noexcept {

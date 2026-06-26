@@ -104,11 +104,11 @@ size_t IndexFusionTarget::reserved_memory_for_flush() const noexcept {
 }
 
 std::chrono::steady_clock::duration IndexFusionTarget::last_flush_duration() const noexcept {
-    return 20s; // placeholder value.
+    return _fusionStats._last_flush_duration;
 }
 
 std::chrono::steady_clock::duration IndexFusionTarget::estimated_flush_duration() const noexcept {
-    return 20s; // placeholder value.
+    return _fusionStats._estimated_flush_duration + 10s;
 }
 
 } // namespace searchcorespi::index

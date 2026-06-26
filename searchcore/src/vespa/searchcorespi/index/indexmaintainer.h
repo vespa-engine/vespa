@@ -298,21 +298,34 @@ public:
 
     struct FlushStats {
         explicit FlushStats(uint64_t memory_before = 0)
-            : memory_before_bytes(memory_before), memory_after_bytes(0), disk_write_bytes(0), cpu_time_required(0) {}
+            : memory_before_bytes(memory_before),
+              memory_after_bytes(0),
+              disk_write_bytes(0),
+              cpu_time_required(0),
+              _last_flush_duration(std::chrono::steady_clock::duration::zero()) {}
 
-        uint64_t memory_before_bytes;
-        uint64_t memory_after_bytes;
-        uint64_t disk_write_bytes;
-        uint64_t cpu_time_required;
+        uint64_t                            memory_before_bytes;
+        uint64_t                            memory_after_bytes;
+        uint64_t                            disk_write_bytes;
+        uint64_t                            cpu_time_required;
+        std::chrono::steady_clock::duration _last_flush_duration;
     };
 
     struct FusionStats {
-        FusionStats() : diskUsage(0), maxFlushed(0), numUnfused(0), _canRunFusion(false) {}
+        FusionStats()
+            : diskUsage(0),
+              maxFlushed(0),
+              numUnfused(0),
+              _last_flush_duration(std::chrono::steady_clock::duration::zero()),
+              _estimated_flush_duration(std::chrono::steady_clock::duration::zero()),
+              _canRunFusion(false) {}
 
-        uint64_t diskUsage;
-        uint32_t maxFlushed;
-        uint32_t numUnfused;
-        bool     _canRunFusion;
+        uint64_t                            diskUsage;
+        uint32_t                            maxFlushed;
+        uint32_t                            numUnfused;
+        std::chrono::steady_clock::duration _last_flush_duration;
+        std::chrono::steady_clock::duration _estimated_flush_duration;
+        bool                                _canRunFusion;
     };
 
     /**
