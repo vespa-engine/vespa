@@ -622,7 +622,8 @@ double IntermediateBlueprint::sort(InFlow in_flow) {
 }
 
 FlowStats IntermediateBlueprint::self_flow_stats(double est, size_t) const {
-    return {est, 0.0, 0.0};
+    double c = flow::intermediate_activation_cost();
+    return {est, c, c * est};
 }
 
 void IntermediateBlueprint::set_global_filter(const GlobalFilter& global_filter, double estimated_hit_ratio) {
