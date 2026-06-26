@@ -1,16 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
-final class BufferedInput implements JsonInput {
+import java.io.IOException;
 
-    private final byte[] source;
-    private final int end;
-    private final int start;
+final class BufferedInput {
+
+    private final ByteSource source;
+    private byte[] previous;
+    private byte[] current;
+    private int end;
+    private int start;
     private int position;
     private String failReason;
     private int failPos;
 
-    public void fail(String reason) {
+    void fail(String reason) {
         if (failed()) {
             return;
         }
@@ -24,28 +28,70 @@ final class BufferedInput implements JsonInput {
     }
 
     BufferedInput(byte[] bytes, int offset, int length) {
-        this.source = bytes;
+        this.source = null;
+        this.current = bytes;
         this.start = offset;
         position = offset;
         this.end = offset + length;
     }
-    public byte getByte() {
-        if (position == end) {
+
+    BufferedInput(ByteSource source) {
+        this.source = source;
+        this.current = new byte[0];
+        this.start = 0;
+        this.position = 0;
+        this.end = 0;
+    }
+
+    /** Make the next byte array from the source the current one, keeping the old current as previous. */
+    private boolean fetchNext() {
+        if (source == null) {
+            return false;
+        }
+        byte[] next;
+        try {
+            do {
+                next = source.next();
+            } while (next != null && next.length == 0);
+        } catch (IOException e) {
+            fail(e.getMessage());
+            return false;
+        }
+        if (next == null) {
+            return false;
+        }
+        previous = current;
+        current = next;
+        start = 0;
+        position = 0;
+        end = next.length;
+        return true;
+    }
+
+    private boolean available() {
+        if (failed()) {
+            return false;
+        }
+        return position < end || fetchNext();
+    }
+
+    byte getByte() {
+        if ( ! available()) {
             fail("underflow");
             return 0;
         }
-        return source[position++];
+        return current[position++];
     }
 
-    public boolean failed() {
+    boolean failed() {
         return failReason != null;
     }
 
-    public boolean eof() {
-        return this.position == this.end;
+    boolean eof() {
+        return ! available();
     }
 
-    public String getErrorMessage() {
+    String getErrorMessage() {
         return failReason;
     }
 
@@ -53,13 +99,20 @@ final class BufferedInput implements JsonInput {
         return failed() ? 0 : position - start;
     }
 
-    public byte[] getOffending() {
-        byte[] ret = new byte[failPos-start];
-        System.arraycopy(source, start, ret, 0, failPos-start);
+    byte[] getOffending() {
+        int fromCurrent = failPos - start;
+        if (previous == null) {
+            byte[] ret = new byte[fromCurrent];
+            System.arraycopy(current, start, ret, 0, fromCurrent);
+            return ret;
+        }
+        byte[] ret = new byte[previous.length + fromCurrent];
+        System.arraycopy(previous, 0, ret, 0, previous.length);
+        System.arraycopy(current, start, ret, previous.length, fromCurrent);
         return ret;
     }
 
-    byte[] getBacking() { return source; }
+    byte[] getBacking() { return current; }
     int getPosition() { return position; }
     void skip(int size) {
         if (position + size > end) {
@@ -76,7 +129,7 @@ final class BufferedInput implements JsonInput {
         }
         byte[] ret = new byte[size];
         for (int i = 0; i < size; i++) {
-            ret[i] = source[position++];
+            ret[i] = current[position++];
         }
         return ret;
     }

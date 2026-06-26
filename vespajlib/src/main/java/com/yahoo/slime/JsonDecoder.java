@@ -6,6 +6,7 @@ import com.yahoo.text.Text;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * A port of the C++ json decoder intended to be fast.
@@ -14,7 +15,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class JsonDecoder {
 
-    private JsonInput in;
+    private BufferedInput in;
     private byte c;
 
     private final SlimeInserter slimeInserter = new SlimeInserter(null);
@@ -50,7 +51,11 @@ public class JsonDecoder {
     }
 
     public Slime decode(Slime slime, InputStream is) {
-        in = new StreamingInput(is);
+        byte[] buffer = new byte[8192];
+        in = new BufferedInput(() -> {
+            int read = is.read(buffer);
+            return read < 0 ? null : Arrays.copyOf(buffer, read);
+        });
         next();
         decodeValue(slimeInserter.adjust(slime));
         if (in.failed()) {

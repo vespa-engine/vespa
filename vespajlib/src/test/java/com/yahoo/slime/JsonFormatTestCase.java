@@ -4,11 +4,15 @@ package com.yahoo.slime;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class JsonFormatTestCase {
@@ -228,6 +232,70 @@ public class JsonFormatTestCase {
 
     private void verifyEncoding(Slime slime, String expected) {
         verifyEncoding(slime, expected, true);
+    }
+
+    /** An InputStream that hands out at most maxChunk bytes per read, to force chunk boundaries. */
+    private static class ChunkedInputStream extends InputStream {
+        private final byte[] data;
+        private final int maxChunk;
+        private int pos = 0;
+        ChunkedInputStream(byte[] data, int maxChunk) { this.data = data; this.maxChunk = maxChunk; }
+        @Override public int read() { return pos < data.length ? data[pos++] & 0xff : -1; }
+        @Override public int read(byte[] b, int off, int len) {
+            if (pos >= data.length) return -1;
+            int n = Math.min(Math.min(len, maxChunk), data.length - pos);
+            System.arraycopy(data, pos, b, off, n);
+            pos += n;
+            return n;
+        }
+    }
+
+    private void verifyStreamingDecode(String json, int maxChunk) {
+        byte[] bytes = Utf8.toBytesStd(json);
+        Slime fromBytes = new JsonDecoder().decode(new Slime(), bytes);
+        Slime fromStream = new JsonDecoder().decode(new Slime(), new ChunkedInputStream(bytes, maxChunk));
+        ByteArrayOutputStream a = new ByteArrayOutputStream();
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        try {
+            new JsonFormat(true).encode(a, fromBytes);
+            new JsonFormat(true).encode(b, fromStream);
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+        assertArrayEquals("chunk size " + maxChunk, a.toByteArray(), b.toByteArray());
+    }
+
+    @Test
+    public void testStreamingDecodeAcrossChunkBoundaries() {
+        StringBuilder sb = new StringBuilder("{\"items\":[");
+        for (int i = 0; i < 2000; i++) {
+            if (i > 0) sb.append(',');
+            sb.append("{\"key\":\"value佳").append(i).append("\",\"n\":").append(i).append("}");
+        }
+        sb.append("]}");
+        String json = sb.toString();
+        assertTrue("input must span multiple 8K read buffers", Utf8.toBytesStd(json).length > 8192);
+
+        // tokens, strings and numbers all straddle boundaries at these chunk sizes
+        verifyStreamingDecode(json, 1);
+        verifyStreamingDecode(json, 3);
+        verifyStreamingDecode(json, 8192);
+        verifyStreamingDecode(json, Integer.MAX_VALUE);
+    }
+
+    @Test
+    public void testStreamingDecodeError() {
+        String json = "{\"a\": 1 \"b\": 2}"; // missing comma
+        byte[] bytes = Utf8.toBytesStd(json);
+        Slime fromBytes = new JsonDecoder().decode(new Slime(), bytes);
+        Slime fromStream = new JsonDecoder().decode(new Slime(), new ByteArrayInputStream(bytes));
+
+        // both paths must report the failure the same way
+        assertTrue(fromBytes.get().field("error_message").asString().length() > 0);
+        assertEquals(fromBytes.get().field("error_message").asString(),
+                     fromStream.get().field("error_message").asString());
+        assertArrayEquals(fromBytes.get().field("offending_input").asData(),
+                          fromStream.get().field("offending_input").asData());
     }
 
     @Test
