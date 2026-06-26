@@ -22,7 +22,7 @@ template <typename T, typename T2>
 [[nodiscard]] constexpr std::span<T> cast_span(const std::span<T2> in) noexcept { // TODO or span_cast...?
     static_assert(sizeof(T) == sizeof(T2));
     static_assert(alignof(T) == alignof(T2));
-    static_assert(std::has_unique_object_representations_v<T> && std::has_unique_object_representations_v<T2>);
+    static_assert(std::is_trivially_copyable_v<T> && std::is_trivially_copyable_v<T2>);
     return std::span<T>(reinterpret_cast<T*>(in.data()), in.size());
 }
 
