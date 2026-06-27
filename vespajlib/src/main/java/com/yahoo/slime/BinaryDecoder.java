@@ -132,7 +132,7 @@ final class BinaryDecoder {
         for (int i = 0; i < numSymbols; ++i) {
             int size = input.read_cmpr_int();
             var bytes = input.getBytesView(size);
-            int symbol = names.insert(Utf8Codec.decode(bytes.data(), bytes.start(), size));
+            int symbol = names.insert(Utf8Codec.decode(bytes.data(), bytes.start(), bytes.size()));
             if (symbol != i) {
                 input.fail("duplicate symbols in symbol table");
                 return;

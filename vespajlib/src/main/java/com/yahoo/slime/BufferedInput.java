@@ -110,11 +110,7 @@ final class BufferedInput {
     }
 
     byte[] getOffending() {
-        if (failPos < current.start()) {
-            // this should not happen, but handle it anyway
-            failPos = current.start();
-        }
-        int fromCurr = failPos - current.start();
+        int fromCurr = (failPos < current.start()) ? 0 : (failPos - current.start());
         if (previous == null) {
             byte[] ret = new byte[fromCurr];
             System.arraycopy(current.data(), current.start(), ret, 0, fromCurr);
