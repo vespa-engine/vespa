@@ -129,12 +129,10 @@ final class BinaryDecoder {
 
     static void decodeSymbolTable(BufferedInput input, SymbolTable names) {
         int numSymbols = input.read_cmpr_int();
-        final byte[] backing = input.getBacking();
         for (int i = 0; i < numSymbols; ++i) {
             int size = input.read_cmpr_int();
-            int offset = input.getPosition();
-            input.skip(size);
-            int symbol = names.insert(Utf8Codec.decode(backing, offset, size));
+            var bytes = input.getBytesView(size);
+            int symbol = names.insert(Utf8Codec.decode(bytes.data(), bytes.start(), size));
             if (symbol != i) {
                 input.fail("duplicate symbols in symbol table");
                 return;

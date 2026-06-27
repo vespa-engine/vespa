@@ -33,11 +33,8 @@ public class JsonDecoder {
 
     public JsonDecoder() {}
 
-    public Slime decode(Slime slime, byte[] bytes) {
-        return decode(slime, ByteBuffer.wrap(bytes));
-    }
-    public Slime decode(Slime slime, ByteBuffer buf) {
-        in = new BufferedInput(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining());
+    Slime decode(Slime slime, BufferedInput input) {
+        in = input;
         next();
         decodeValue(slimeInserter.adjust(slime));
         if (in.failed()) {
@@ -46,6 +43,14 @@ public class JsonDecoder {
             slime.get().setString("error_message", in.getErrorMessage());
         }
         return slime;
+    }
+
+    public Slime decode(Slime slime, byte[] bytes) {
+        return decode(slime, new BufferedInput(bytes));
+    }
+
+    public Slime decode(Slime slime, ByteBuffer buf) {
+        return decode(slime, new BufferedInput(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining()));
     }
 
     /** Decode bytes as a UTF-8 JSON into Slime, or throw {@link JsonParseException} on invalid JSON. */
