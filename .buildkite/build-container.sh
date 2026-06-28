@@ -104,10 +104,6 @@ cd docker
 echo "Copying Maven repository and RPMs for system-test container..."
 rm -rf maven-repo
 cp -a "$HOME/.m2/repository" maven-repo
-find maven-repo -type f -name 'maven-metadata-central.xml*' | while read -r fn; do
-    cp -a "$fn" "${fn/maven-metadata-central./maven-metadata.}"
-done
-
 rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
 
