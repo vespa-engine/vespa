@@ -4,11 +4,16 @@ package com.yahoo.slime;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class JsonFormatTestCase {
@@ -228,6 +233,148 @@ public class JsonFormatTestCase {
 
     private void verifyEncoding(Slime slime, String expected) {
         verifyEncoding(slime, expected, true);
+    }
+
+    /** An InputStream that hands out at most maxChunk bytes per read, to force chunk boundaries. */
+    private static class ChunkedInputStream extends InputStream {
+        private final byte[] data;
+        private final int maxChunk;
+        private int pos = 0;
+        ChunkedInputStream(byte[] data, int maxChunk) { this.data = data; this.maxChunk = maxChunk; }
+        @Override public int read() { return pos < data.length ? data[pos++] & 0xff : -1; }
+        @Override public int read(byte[] b, int off, int len) {
+            if (pos >= data.length) return -1;
+            int n = Math.min(Math.min(len, maxChunk), data.length - pos);
+            System.arraycopy(data, pos, b, off, n);
+            pos += n;
+            return n;
+        }
+    }
+
+    /** Delivers a few valid bytes, then fails the read, to exercise the IOException-while-streaming path. */
+    private static class FailingInputStream extends InputStream {
+        private final byte[] prefix;
+        private int pos = 0;
+        FailingInputStream(byte[] prefix) { this.prefix = prefix; }
+        @Override public int read() throws IOException {
+            if (pos < prefix.length) return prefix[pos++] & 0xff;
+            throw new IOException("connection reset");
+        }
+        @Override public int read(byte[] b, int off, int len) throws IOException {
+            if (pos < prefix.length) {
+                int n = Math.min(len, prefix.length - pos);
+                System.arraycopy(prefix, pos, b, off, n);
+                pos += n;
+                return n;
+            }
+            throw new IOException("connection reset");
+        }
+    }
+
+    /**
+     * An IOException while reading the stream does not propagate: it is turned into a failed
+     * decode and surfaces as a partial_result Slime with an error_message, the same shape the
+     * other jsonToSlime overloads produce for invalid JSON.
+     */
+    @Test
+    public void testStreamingDecodeIoErrorBecomesPartialResult() {
+        byte[] validPrefix = Utf8.toBytesStd("{\"a\": 1, ");
+        Slime slime = SlimeUtils.jsonToSlime(new FailingInputStream(validPrefix));
+        String error = slime.get().field("error_message").asString();
+        assertTrue("expected a non-empty error message", error.length() > 0);
+        assertTrue("expected IO error in: " + error, error.contains("IO error reading input"));
+        assertTrue("expected cause in: " + error, error.contains("connection reset"));
+    }
+
+    private void verifyStreamingDecode(String json, int maxChunk) {
+        byte[] bytes = Utf8.toBytesStd(json);
+        Slime fromBytes = SlimeUtils.jsonToSlime(bytes);
+        Slime fromStream = SlimeUtils.jsonToSlime(new ChunkedInputStream(bytes, maxChunk));
+        ByteArrayOutputStream a = new ByteArrayOutputStream();
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        try {
+            new JsonFormat(true).encode(a, fromBytes);
+            new JsonFormat(true).encode(b, fromStream);
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+        assertArrayEquals("chunk size " + maxChunk, a.toByteArray(), b.toByteArray());
+    }
+
+    @Test
+    public void testStreamingDecodeAcrossChunkBoundaries() {
+        StringBuilder sb = new StringBuilder("{\"items\":[");
+        for (int i = 0; i < 2000; i++) {
+            if (i > 0) sb.append(',');
+            sb.append("{\"key\":\"value佳").append(i).append("\",\"n\":").append(i).append("}");
+        }
+        sb.append("]}");
+        String json = sb.toString();
+        assertTrue("input must span multiple 8K read buffers", Utf8.toBytesStd(json).length > 8192);
+
+        // tokens, strings and numbers all straddle boundaries at these chunk sizes
+        verifyStreamingDecode(json, 1);
+        verifyStreamingDecode(json, 3);
+        verifyStreamingDecode(json, 8192);
+        verifyStreamingDecode(json, Integer.MAX_VALUE);
+    }
+
+    @Test
+    public void testStreamingDecodeError() {
+        String json = "{\"a\": 1 \"b\": 2}"; // missing comma
+        byte[] bytes = Utf8.toBytesStd(json);
+        Slime fromBytes = SlimeUtils.jsonToSlime(bytes);
+        Slime fromStream = SlimeUtils.jsonToSlime(new ByteArrayInputStream(bytes));
+
+        // The whole input fits in a single read buffer, so no bytes are dropped and the streaming
+        // path reports the failure identically to the in-memory path.
+        assertTrue(fromBytes.get().field("error_message").asString().length() > 0);
+        assertEquals(fromBytes.get().field("error_message").asString(),
+                     fromStream.get().field("error_message").asString());
+        assertArrayEquals(fromBytes.get().field("offending_input").asData(),
+                          fromStream.get().field("offending_input").asData());
+    }
+
+    @Test
+    public void testStreamingDecodeErrorAcrossChunkBoundaries() {
+        // A long valid prefix forces the failure to occur many chunks into the stream, so the
+        // offending input cannot be reconstructed from a single buffer.
+        StringBuilder sb = new StringBuilder("{");
+        for (int i = 0; i < 500; i++) sb.append("\"k").append(i).append("\":").append(i).append(',');
+        sb.append("\"a\": 1 \"b\": 2}"); // missing comma
+        byte[] bytes = Utf8.toBytesStd(sb.toString());
+
+        Slime fromBytes = SlimeUtils.jsonToSlime(bytes);
+        Slime fromStream = SlimeUtils.jsonToSlime(new ChunkedInputStream(bytes, 3));
+
+        // The error message is parser state, so it must match regardless of chunking.
+        assertTrue(fromBytes.get().field("error_message").asString().length() > 0);
+        assertEquals(fromBytes.get().field("error_message").asString(),
+                     fromStream.get().field("error_message").asString());
+
+        // The full input is not retained when streaming, so the offending input only covers the
+        // last buffers read, prefixed with a "[... N bytes ...]" marker for the dropped prefix.
+        byte[] offendingBytes = fromBytes.get().field("offending_input").asData();
+        byte[] offendingStream = fromStream.get().field("offending_input").asData();
+        String streamStr = new String(offendingStream, StandardCharsets.UTF_8);
+        assertTrue("expected dropped-bytes marker, got: " + streamStr, streamStr.startsWith("[... "));
+
+        int markerEnd = indexOf(offendingStream, (byte) ']') + 1;
+        byte[] retainedTail = Arrays.copyOfRange(offendingStream, markerEnd, offendingStream.length);
+
+        // Whatever was retained is a non-empty suffix of what the in-memory path reports.
+        assertTrue(retainedTail.length > 0);
+        assertTrue("streaming offending input must drop the bulk of the prefix",
+                   retainedTail.length < offendingBytes.length);
+        byte[] tailOfBytes = Arrays.copyOfRange(offendingBytes,
+                                                offendingBytes.length - retainedTail.length,
+                                                offendingBytes.length);
+        assertArrayEquals(tailOfBytes, retainedTail);
+    }
+
+    private static int indexOf(byte[] data, byte b) {
+        for (int i = 0; i < data.length; i++) if (data[i] == b) return i;
+        return -1;
     }
 
     @Test

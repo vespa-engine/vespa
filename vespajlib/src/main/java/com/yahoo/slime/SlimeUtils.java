@@ -3,6 +3,7 @@ package com.yahoo.slime;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -101,6 +102,31 @@ public class SlimeUtils {
     public static Slime jsonToSlime(byte[] json) {
         Slime slime = new Slime();
         new JsonDecoder().decode(slime, json);
+        return slime;
+    }
+
+    /**
+     * Decodes UTF-8 JSON read incrementally from the given stream into Slime, without
+     * buffering the whole input into a single array first. The stream is read in chunks
+     * on demand as the parser consumes bytes.
+     * <p>
+     * Invalid JSON (or an {@link IOException} while reading the stream) does not throw;
+     * it produces a Slime wrapping a {@code partial_result} object with {@code error_message}
+     * and {@code offending_input} fields, the same as the other {@code jsonToSlime} overloads.
+     * Note that when the error occurs after several chunks have been read, the offending
+     * input only covers the most recently buffered bytes (see {@link BufferedInput#getOffending}).
+     * <p>
+     * The caller retains ownership of the stream and is responsible for closing it.
+     */
+    public static Slime jsonToSlime(InputStream json) {
+        var in = new BufferedInput(() -> {
+            byte[] buffer = new byte[8192];
+            int read = json.read(buffer);
+            if (read < 0) return null;
+            return read == buffer.length ? buffer : Arrays.copyOf(buffer, read);
+        });
+        Slime slime = new Slime();
+        new JsonDecoder().decode(slime, in);
         return slime;
     }
 
