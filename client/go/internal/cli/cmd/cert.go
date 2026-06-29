@@ -344,6 +344,11 @@ func doPruneOldCertificates(cli *CLI, force, skipApplicationPackage bool, args [
 		return fmt.Errorf("could not prune certificate file: %w", err)
 	}
 	cli.printSuccess("Pruned certificate file ", color.CyanString("'"+certificateFile.path+"'"))
+	if ioutil.Exists(oldPrivateKeyFile.path) {
+		cli.printInfo("Next step: deploy the application again, then you can safely remove ", color.CyanString("'"+oldPrivateKeyFile.path+"'"))
+	} else {
+		cli.printInfo("Next step: deploy the application again.")
+	}
 	if !skipApplicationPackage {
 		return doCertAdd(cli, force, args)
 	}
