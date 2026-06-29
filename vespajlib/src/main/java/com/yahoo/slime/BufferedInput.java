@@ -13,11 +13,11 @@ final class BufferedInput {
 
     private Bytes current;
     private Bytes previous = null;
-    private ByteSource sources;
+    private ByteSource byteSource;
     private int position;
     private String failReason = null;
     private int failPos = -1;
-    private int lost = 0;
+    private int discarded = 0;
 
     void fail(String reason) {
         if (failed()) {
@@ -26,7 +26,7 @@ final class BufferedInput {
         failReason = reason;
         failPos = position;
         position = current.end();
-        sources = null;
+        byteSource = null;
     }
 
     BufferedInput(byte[] bytes) {
@@ -36,31 +36,28 @@ final class BufferedInput {
     BufferedInput(byte[] bytes, int offset, int length) {
         this.current = new Bytes(bytes, offset, offset + length);
         this.position = offset;
-        this.sources = null;
+        this.byteSource = null;
     }
 
-    BufferedInput(ByteSource sources) {
+    BufferedInput(ByteSource byteSource) {
         // Start empty; the first chunk is fetched lazily
         this.current = new Bytes(new byte[0], 0, 0);
         this.position = 0;
-        this.sources = sources;
+        this.byteSource = byteSource;
     }
 
     private boolean getMore() {
-        if (sources == null) {
+        if (byteSource == null) {
             return false;
         }
         try {
-            byte[] next;
-            do {
-                next = sources.next();
-                if (next == null) {
-                    sources = null;
-                    return false;
-                }
-            } while (next.length == 0); // Skip empty chunks
+            byte[] next = byteSource.next();
+            if (next == null || next.length == 0) {
+                byteSource = null;
+                return false;
+            }
             if (previous != null) {
-                lost += previous.size();
+                discarded += previous.size();
             }
             if (current.size() > 0) {
                 previous = current;
@@ -101,7 +98,7 @@ final class BufferedInput {
         if (failed()) {
             return 0;
         }
-        int consumed = lost;
+        int consumed = discarded;
         if (previous != null) {
             consumed += previous.size();
         }
@@ -116,8 +113,8 @@ final class BufferedInput {
             System.arraycopy(current.data(), current.start(), ret, 0, fromCurr);
             return ret;
         }
-        byte[] prefix = (lost > 0)
-                ? ("[... " + lost + " bytes ...]").getBytes(StandardCharsets.UTF_8)
+        byte[] prefix = (discarded > 0)
+                ? ("[... " + discarded + " bytes ...]").getBytes(StandardCharsets.UTF_8)
                 : new byte[0];
         int fromPrev = previous.size();
         byte[] ret = new byte[prefix.length + fromPrev + fromCurr];
@@ -151,11 +148,7 @@ final class BufferedInput {
             fail("underflow");
             return new byte[0];
         }
-        if (sources == null) {
-            if (size > current.end() - position) {
-                fail("underflow");
-                return new byte[0];
-            }
+        if (size <= current.end() - position) {
             byte[] ret = new byte[size];
             System.arraycopy(current.data(), position, ret, 0, size);
             skip(size);
