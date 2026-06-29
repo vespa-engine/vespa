@@ -1719,5 +1719,3 @@ TEST_F(SparseTensorAttributeTest, size_on_disk_factor_is_calculated_and_used) {
     EXPECT_EQ(dynamic_memory_usage, attr2.getStatus().get_used_minus_dead_and_onhold() - initial_memory_usage);
     EXPECT_EQ(attr.getEstimatedSaveByteSize(), attr2.getEstimatedSaveByteSize());
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

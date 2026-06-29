@@ -47,6 +47,7 @@ vespa_add_library(searchlib_tensor OBJECT
     tensor_buffer_type_mapper.cpp
     tensor_deserialize.cpp
     tensor_ext_attribute.cpp
+    tensor_quantization.cpp
     tensor_store.cpp
     DEPENDS
 )
