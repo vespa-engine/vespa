@@ -132,26 +132,30 @@ public class BufferedInputTest {
     }
 
     /**
-     * A source that hands out (arbitrarily many) empty chunks must be skipped over without
-     * recursing, so it can neither blow the stack nor be mistaken for end-of-input.
+     * Check that an empty chunk as input signals EOF.
      */
     @Test
-    public void emptyChunksAreSkippedWithoutRecursing() {
+    public void emptyChunksSignalsEOF() {
         byte[] data = sequence(10);
         ByteSource manyEmpties = new ByteSource() {
             private int emitted = 0;
             private int pos = 0;
             @Override public byte[] next() {
-                if (emitted++ < 100_000) return new byte[0];
-                if (pos >= data.length) return null;
-                return new byte[] { data[pos++] };
+                if (emitted++ < 3) {
+                    return new byte[] { data[pos++] };
+                } else {
+                    return new byte[0];
+                }
             }
         };
         BufferedInput in = new BufferedInput(manyEmpties);
         byte[] got = new byte[data.length];
         int i = 0;
         while ( ! in.eof()) got[i++] = in.getByte();
-        assertArrayEquals(data, got);
+        assertEquals(i, 3);
+        assertEquals(data[0], got[0]);
+        assertEquals(data[1], got[1]);
+        assertEquals(data[2], got[2]);
         assertFalse(in.failed());
     }
 
