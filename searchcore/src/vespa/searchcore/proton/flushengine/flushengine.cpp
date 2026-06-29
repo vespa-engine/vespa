@@ -662,19 +662,21 @@ ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() con
             auto  lst = handler.getFlushTargets();
             for (const auto& target : lst) {
                 if (!isFlushing(guard, FlushContext::createName(handler, *target))) {
+                    bool high_priority_target = target->getPriority() > IFlushTarget::Priority::NORMAL;
                     auto gain = target->getApproxDiskGain();
-                    calc.track_disk_gain(gain, target->getType(), target->getComponent());
+                    calc.track_disk_gain(gain, target->getType(), target->getComponent(), high_priority_target);
                     mcalc.track_reserved_memory_for_flush(target->reserved_memory_for_flush(), target->getType(),
-                                                          target->getComponent());
+                                                          target->getComponent(), high_priority_target);
                 }
             }
         }
         for (auto& entry : _flushing) {
             auto& target = entry.second._target;
+            bool  high_priority_target = target->getPriority() > IFlushTarget::Priority::NORMAL;
             auto  gain = target->getApproxDiskGain();
-            calc.track_disk_gain(gain, target->getType(), target->getComponent());
+            calc.track_disk_gain(gain, target->getType(), target->getComponent(), high_priority_target);
             mcalc.track_reserved_memory_for_flush(target->reserved_memory_for_flush(), target->getType(),
-                                                  target->getComponent());
+                                                  target->getComponent(), high_priority_target);
         }
     }
     return ReservedDiskSpaceAndMemory(calc.get_reserved_disk(), mcalc.reserved_memory_for_flush(),
