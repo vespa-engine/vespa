@@ -186,8 +186,11 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         boolean notifyIfExpired() {
             if (msg.isExpired()) {
                 Error error = new Error(ErrorCode.TIMEOUT, "Timed out in sendQ");
-                notifyComplete(new Result(error));
+                // Deliver the timeout reply to the reply handler before unblocking the sender.
+                // Otherwise the unblocked sender may race ahead and cause another reply to
+                // be delivered first.
                 replyHandler.handleReply(createSendTimedOutReply(msg, error));
+                notifyComplete(new Result(error));
                 return true;
             }
             return false;
