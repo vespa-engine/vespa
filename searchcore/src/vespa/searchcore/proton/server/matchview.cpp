@@ -6,6 +6,7 @@
 
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
+#include <vespa/searchlib/engine/request.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -53,15 +54,15 @@ std::shared_ptr<Matcher> MatchView::getMatcher(const std::string& rankProfile) c
     return _matchers->lookup(rankProfile);
 }
 
-MatchContext MatchView::createContext() const {
-    auto searchCtx = std::make_unique<SearchContext>(_indexSearchable, _docIdLimit.get());
+MatchContext MatchView::createContext(const search::engine::Request& req) const {
+    auto searchCtx = std::make_unique<SearchContext>(_indexSearchable, _docIdLimit.get(), DocTypeName(req));
     return {_attrMgr->createContext(), std::move(searchCtx)};
 }
 
 std::unique_ptr<SearchReply> MatchView::match(std::shared_ptr<const ISearchHandler> searchHandler,
                                               const SearchRequest& req, vespalib::ThreadBundle& threadBundle) const {
     Matcher::SP                    matcher = getMatcher(req.ranking);
-    SearchSession::OwnershipBundle owned_objects(createContext(), std::move(searchHandler));
+    SearchSession::OwnershipBundle owned_objects(createContext(req), std::move(searchHandler));
     owned_objects.readGuard = _metaStore->getReadGuard();
     ISearchContext&                   search_ctx = owned_objects.context.getSearchContext();
     IAttributeContext&                attribute_ctx = owned_objects.context.getAttributeContext();

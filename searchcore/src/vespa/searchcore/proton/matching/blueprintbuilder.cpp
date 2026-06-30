@@ -133,9 +133,13 @@ private:
             }
             _result = std::move(se);
         } else {
-            // numFields() == 0 can happen if multiple schemas are queried and the current schema does not contain the
-            // searched field. Do not report an issue and silently return an EmptyBlueprint in this case.
-            if (n.numFields() > 1) {
+            // numFields() == 0 happens if multiple schemas are queried and the current schema does not contain the
+            // searched field. Produce a more meaningful error message in this case.
+            if (n.numFields() == 0) {
+                vespalib::Issue::report("SameElement operator does not search in a field: \"%s\" does not resolve to "
+                                        "a field for document type \"%s\"",
+                                        n.getView().c_str(), std::string(_context.get_document_type_name()).c_str());
+            } else if (n.numFields() > 1) {
                 vespalib::Issue::report(
                     "SameElement operator searches in unexpected number of fields. Expected 1 but was %zu",
                     n.numFields());
