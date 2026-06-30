@@ -30,6 +30,7 @@ import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -46,6 +47,7 @@ public class ConfigConvergenceCheckerTest {
     private ConfigConvergenceChecker checker;
     private URI service;
     private URI service2;
+    private InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -65,13 +67,12 @@ public class ConfigConvergenceCheckerTest {
                                       3,
                                       new Version(0, 0, 0),
                                       MetricUpdater.createTestUpdater(), appId);
-        InMemoryFlagSource flagSource = new InMemoryFlagSource()
-                .withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), true);
         checker = new ConfigConvergenceChecker(flagSource);
     }
 
     @Test
     public void service_convergence() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), false);
         { // Known service
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
 
@@ -91,6 +92,7 @@ public class ConfigConvergenceCheckerTest {
 
     @Test
     public void service_list_convergence() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), false);
         {
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
 
@@ -132,6 +134,7 @@ public class ConfigConvergenceCheckerTest {
 
     @Test
     public void service_convergence_timeout() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), false);
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(aResponse()
                                                                                 .withFixedDelay((int) clientTimeout.plus(Duration.ofSeconds(1)).toMillis())
                                                                                 .withBody("response too slow")));
@@ -156,6 +159,21 @@ public class ConfigConvergenceCheckerTest {
 
     @Test
     public void service_convergence_without_status_field() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), false);
+        wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
+
+        ServiceResponse response = checker.getServiceConfigGeneration(application, hostAndPort(this.service), clientTimeout);
+        assertEquals(ServiceResponse.Status.ok, response.status);
+        assertEquals(3, response.wantedGeneration.longValue());
+        assertEquals(3, response.currentGeneration.longValue());
+        assertTrue(response.converged);
+        assertFalse(response.errorMessage.isPresent());
+    }
+
+    @Test
+    public void service_convergence_without_status_field_use_new_api() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), true);
+        checker = new ConfigConvergenceChecker(flagSource);
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
 
         ServiceResponse response = checker.getServiceConfigGeneration(application, hostAndPort(this.service), clientTimeout);
@@ -168,6 +186,7 @@ public class ConfigConvergenceCheckerTest {
 
     @Test
     public void service_list_convergence_without_status_field() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), true);
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
 
         ServiceListResponse response = checker.checkConvergenceForAllServices(application, clientTimeout);
@@ -180,6 +199,27 @@ public class ConfigConvergenceCheckerTest {
 
     @Test
     public void service_convergence_config_failure() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), false);
+        wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson(
+                """
+                        {
+                          "config": {
+                            "generation": 2,
+                            "wantedGeneration": 3,
+                            "message": "Failed to construct component Foo"
+                          }
+                        }
+                """)));
+
+        ServiceResponse response = checker.getServiceConfigGeneration(application, hostAndPort(this.service), clientTimeout);
+        // New fields in response not used, so status will be OK and there is no error message
+        assertEquals(ServiceResponse.Status.ok, response.status);
+        assertFalse(response.errorMessage.isPresent());
+    }
+
+    @Test
+    public void service_convergence_config_failure_new_api() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), true);
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson(
                 """
                         {
@@ -197,8 +237,34 @@ public class ConfigConvergenceCheckerTest {
         assertEquals("Failed to construct component Foo", response.errorMessage.get());
     }
 
+
     @Test
     public void service_list_convergence_config_failure() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), false);
+        wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson(
+                """
+                       {
+                         "config": {
+                           "generation": 2,
+                           "wantedGeneration": 3,
+                           "message": "Failed to construct component Foo"
+                         }
+                       }
+               """)));
+
+        ServiceListResponse response = checker.checkConvergenceForAllServices(application, clientTimeout);
+        assertFalse(response.converged);
+        assertEquals(1, response.services.size());
+        ServiceListResponse.Service service = response.services.get(0);
+        // New fields in response not used, so status will be OK and there is no error message
+        assertEquals(2, service.currentGeneration);
+        assertFalse(service.configStatus.isFailed());
+        assertNull("Failed to construct component Foo", service.configStatus.message());
+    }
+
+    @Test
+    public void service_list_convergence_config_failure_new_api() {
+        flagSource = flagSource.withBooleanFlag(Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.id(), true);
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson(
                 """
                        {

@@ -95,6 +95,7 @@ public class Container {
                 throw t;
             }
             if (isSignal(t)) throw t;
+
             log.warning("Failed to set up component graph - uninstalling latest bundles. Bootstrap generation: " + bootstrapGeneration);
             invalidateGeneration(oldGraph.generation(), t);
             return ComponentGraphResult.failed(t, bootstrapGeneration);
@@ -108,6 +109,7 @@ public class Container {
             // Construction failed: the component class exists, so its config keys are valid and can be
             // reused in recovery mode to detect config-only changes without needing a bootstrap reload.
             failedGraphConfigKeys = newGraph.configKeys();
+
             if (isSignal(e)) throw e;
             log.warning("Failed to construct components for generation '" + newGraph.generation() + "' - scheduling partial graph for deconstruction");
             invalidateGeneration(oldGraph.generation(), e);

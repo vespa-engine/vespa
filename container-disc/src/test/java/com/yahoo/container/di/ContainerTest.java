@@ -276,6 +276,7 @@ public class ContainerTest extends ContainerTestBase {
         result.oldComponentsCleanupTask().run();
         assertTrue(result.failed(), "Expected graph construction to fail");
         assertEquals(exception, result.failure().getClass());
+        assertEquals(2, result.configGeneration());
     }
 
     @Test

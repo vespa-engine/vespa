@@ -243,7 +243,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             JsonNode configNode = json.get("config");
             long generation = configNode.get("generation").asLong(-1);
             long wantedGeneration = configNode.path("wantedGeneration").asLong(generation);
-            if (useStateV1ExtendedInfo.value() && (wantedGeneration > generation)) {
+            if (useStateV1ExtendedInfo.value() && configNode.get("message") != null) {
                 return ServiceGenerationResult.configFailed(wantedGeneration,
                                                             configNode.path("message").asText("unknown failure"));
             }
