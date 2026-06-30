@@ -389,22 +389,12 @@ public class GroupingParserTestCase {
                 "             each() as(baz))",
                 "all(group(a) each(each() as(foo) each() as(bar)) each() as(baz))");
 
-        assertParse("all(group(a) each(output(count()))) as(foo)",
-                "all(group(a) each(output(count()))) as(foo)");
-    }
-
-    @Test
-    void testQuotedLabelOnAllOperation() {
-        // A non-identifier label cannot go through assertParse (toString() does not quote labels,
-        // so its toString -> fromString round-trip fails). Parse directly and inspect getLabel().
-        GroupingOperation op = GroupingOperation.fromString("all(group(a) each(output(count()))) as(\"my label\")");
-        assertEquals("my label", op.getLabel());
-
-        // Same quoted label end-to-end through the YQL grouping path.
-        YqlParser parser = new YqlParser(new ParserEnvironment());
-        parser.parse(new Parsable().setQuery("select foo from bar where baz contains 'baz' | all(group(a) each(output(count()))) as(\"my label\")"));
-        GroupingOperation yqlOp = parser.getGroupingSteps().get(0).getOperation();
-        assertEquals("my label", yqlOp.getLabel());
+        assertIllegalArgument("all() as(foo)",
+                "Encountered \" \"as\" \"as\"\" at line 1, column 7.");
+        assertIllegalArgument("all(all() as(foo))",
+                "Encountered \" \"as\" \"as\"\" at line 1, column 11.");
+        assertIllegalArgument("each(all() as(foo))",
+                "Encountered \" \"as\" \"as\"\" at line 1, column 12.");
     }
 
     @Test

@@ -921,14 +921,31 @@ public class SelectTestCase {
     @Test
     void testGroupingWithLabelOnAll() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"mylabel\", \"each\" : { \"output\" : \"count()\" } } } ]";
-        String expected = "[[]all(group(a) each(output(count()))) as(mylabel)]";
+        String expected = "[[]all(group(a) each(output(count())) as(mylabel))]";
         assertGrouping(expected, parseGrouping(grouping));
     }
 
     @Test
     void testGroupingWithLabelOnAllCardinalityShape() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"mycard\", \"output\" : \"count()\" } } ]";
-        String expected = "[[]all(group(a) output(count())) as(mycard)]";
+        var e = assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
+        assertTrue(e.getMessage().contains("requires an 'each' operation"),
+                "Message should explain that all-level labels require 'each': " + e.getMessage());
+        assertTrue(e.getMessage().contains("count() as(foo)"),
+                "Message should point users to output expression labels: " + e.getMessage());
+    }
+
+    @Test
+    void testGroupingWithOutputExpressionLabelWithoutEach() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"output\" : \"count() as(mycard)\" } } ]";
+        String expected = "[[]all(group(a) output(count() as(mycard)))]";
+        assertGrouping(expected, parseGrouping(grouping));
+    }
+
+    @Test
+    void testGroupingWithLabelOnAllAndDirectOutputLabelsOnlyDirectEach() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"output\" : \"count() as(total)\", \"label\" : \"by_a\", \"each\" : { \"output\" : \"avg(foo)\" } } } ]";
+        String expected = "[[]all(group(a) output(count() as(total)) each(output(avg(foo))) as(by_a))]";
         assertGrouping(expected, parseGrouping(grouping));
     }
 
@@ -936,7 +953,7 @@ public class SelectTestCase {
     void testGroupingWithLabelContainingSpacesOnAll() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"my label\", \"each\" : { \"output\" : \"count()\" } } } ]";
         GroupingOperation root = parseGrouping(grouping).get(0).getOperation(); // AllOperation
-        assertEquals("my label", root.getLabel());
+        assertEquals("my label", root.getChildren().get(0).getLabel());
     }
 
     @Test
@@ -944,7 +961,7 @@ public class SelectTestCase {
         // Raw JSON: "label" : "a\"b\\c"  -> decoded label should be the 5-char string a"b\c
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"a\\\"b\\\\c\", \"each\" : { \"output\" : \"count()\" } } } ]";
         GroupingOperation root = parseGrouping(grouping).get(0).getOperation(); // AllOperation
-        assertEquals("a\"b\\c", root.getLabel());
+        assertEquals("a\"b\\c", root.getChildren().get(0).getLabel());
     }
 
     @Test
@@ -953,9 +970,16 @@ public class SelectTestCase {
         String before = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"lbl\", \"each\" : { \"output\" : \"count()\" } } } ]";
         // label after the nested "each"
         String after  = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" }, \"label\" : \"lbl\" } } ]";
-        String expected = "[[]all(group(a) each(output(count()))) as(lbl)]";
+        String expected = "[[]all(group(a) each(output(count())) as(lbl))]";
         assertGrouping(expected, parseGrouping(before));
         assertGrouping(expected, parseGrouping(after));
+    }
+
+    @Test
+    void testNestedGroupingLabelsUnderAllAttachToDirectEachOperations() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"by_a\", \"each\" : { \"all\" : { \"group\" : \"b\", \"label\" : \"by_b\", \"each\" : { \"output\" : \"count()\" } } } } } ]";
+        String expected = "[[]all(group(a) each(all(group(b) each(output(count())) as(by_b))) as(by_a))]";
+        assertGrouping(expected, parseGrouping(grouping));
     }
 
     @Test
@@ -989,6 +1013,8 @@ public class SelectTestCase {
                 "Message should name the array-wrapped 'all' context: " + e.getMessage());
 
         // The same shape without the label converts to exactly the expected operation (not merely no-throw).
+        // This is to keep pre-label behavior. But we don't want label-bearing shapes to support "all" arrays,
+        // because they don't make sense and were never actually supported - they worked accidentally.
         String noLabel = "[ { \"all\" : [ { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" } } ] } ]";
         assertGrouping("[[]all(group(a) each(output(count())))]", parseGrouping(noLabel));
     }
@@ -1016,6 +1042,24 @@ public class SelectTestCase {
     @Test
     void testGroupingLabelNullIsRejected() {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : null, \"each\" : { \"output\" : \"count()\" } } } ]";
+        assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
+    }
+
+    @Test
+    void testGroupingLabelBooleanIsRejected() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : true, \"each\" : { \"output\" : \"count()\" } } } ]";
+        assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
+    }
+
+    @Test
+    void testGroupingLabelArrayIsRejected() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : [ \"x\" ], \"each\" : { \"output\" : \"count()\" } } } ]";
+        assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
+    }
+
+    @Test
+    void testGroupingLabelObjectIsRejected() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : { \"value\" : \"x\" }, \"each\" : { \"output\" : \"count()\" } } } ]";
         assertThrows(IllegalInputException.class, () -> parseGrouping(grouping));
     }
 

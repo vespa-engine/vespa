@@ -249,13 +249,11 @@ GroupingOperation operation(GroupingOperation parent) :
 
 GroupingOperation allOperation(GroupingOperation parent) :
 {
-    String str;
     GroupingOperation ret;
 }
 {
     ( <ALL> { ret = new AllOperation(); if (parent != null) { parent.addChild(ret); } }
-      lbrace() operationBody(ret) rbrace()
-      [ <AS> lbrace() str = string() rbrace() { ret.setLabel(str); } ] )
+      lbrace() operationBody(ret) rbrace() )
     { return ret; }
 }
 

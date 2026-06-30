@@ -376,6 +376,8 @@ public class SelectParser implements Parser {
                 });
                 break;
             case OBJECT:
+                String label = isOperationBody ? readLabel(groupingJson) : null;
+                boolean[] directEachSeen = {false};
                 groupingJson.traverse((ObjectTraverser) (name, object) -> {
                     if ("label".equals(name)) {
                         if (!isOperationBody) {
@@ -391,14 +393,19 @@ public class SelectParser implements Parser {
                     boolean childIsBody = "all".equals(name) && object.type() == OBJECT;
                     toGroupingRequest(object, name, childIsBody, b);
                     b.append(")");
-                    if (childIsBody) {
-                        String label = readLabel(object);
+                    if (isOperationBody && "each".equals(name)) {
+                        directEachSeen[0] = true;
                         if (label != null) {
                             b.append(" as(").append(UnicodeUtilities.quote(label, '"')).append(")");
                         }
                     }
                     b.append(" ");
                 });
+                if (label != null && !directEachSeen[0]) {
+                    throw new IllegalInputException(
+                            "A grouping label requires an 'each' operation; label output expressions directly, "
+                            + "for example output(count() as(foo)).");
+                }
                 break;
             case STRING:
                 b.append(groupingJson.asString());
