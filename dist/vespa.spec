@@ -310,7 +310,11 @@ Summary: Vespa - The open big data serving engine - tools for system tests
 
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-base-libs = %{version}-%{release}
+%if 0%{?el8}
+Requires: vespa-valgrind
+%else
 Requires: valgrind
+%endif
 Requires: perf
 
 %description systemtest-tools
@@ -723,6 +727,7 @@ fi
 %{_prefix}/lib/jars/container-disc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-llama.jar
 %{_prefix}/lib/jars/container-onnxruntime.jar
+%{_prefix}/lib/jars/container-opentelemetry-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-search-and-docproc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-spifly.jar
 %{_prefix}/lib/jars/docprocs-jar-with-dependencies.jar

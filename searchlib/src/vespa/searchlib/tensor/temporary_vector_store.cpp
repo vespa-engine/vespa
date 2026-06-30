@@ -49,9 +49,20 @@ std::span<const FloatType> TemporaryVectorStore<FloatType>::internal_convert(Typ
     return result;
 }
 
+template <typename FloatType>
+std::span<const FloatType> MutableSingleTemporaryVectorStore<FloatType>::internal_convert(TypedCells cells) noexcept {
+    std::span<FloatType> where(_tmp_space.data(), cells.size);
+    using MyTypify = vespalib::eval::TypifyCellType;
+    using MySelector = ConvertCellsSelector<FloatType>;
+    return vespalib::typify_invoke<1, MyTypify, MySelector>(cells.type, where, cells);
+}
+
 template class TemporaryVectorStore<vespalib::eval::Int8Float>;
 template class TemporaryVectorStore<vespalib::BFloat16>;
 template class TemporaryVectorStore<float>;
 template class TemporaryVectorStore<double>;
+
+template class MutableSingleTemporaryVectorStore<float>;
+template class MutableSingleTemporaryVectorStore<vespalib::eval::Int8Float>;
 
 } // namespace search::tensor

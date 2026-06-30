@@ -90,8 +90,16 @@ uint64_t ShrinkLidSpaceFlushTarget::getApproxBytesToWriteToDisk() const {
     return 0;
 }
 
-size_t ShrinkLidSpaceFlushTarget::transient_memory_for_flush() const noexcept {
+size_t ShrinkLidSpaceFlushTarget::reserved_memory_for_flush() const noexcept {
     return 0;
+}
+
+std::chrono::steady_clock::duration ShrinkLidSpaceFlushTarget::last_flush_duration() const noexcept {
+    return 200ms; // placeholder value.
+}
+
+std::chrono::steady_clock::duration ShrinkLidSpaceFlushTarget::estimated_flush_duration() const noexcept {
+    return 200ms; // placeholder value.
 }
 
 } // namespace proton

@@ -10,7 +10,9 @@ DiskIndexStats::DiskIndexStats() : IndexSearchableStats(), _indexDir() {
 }
 
 DiskIndexStats::DiskIndexStats(const IDiskIndex& index)
-    : IndexSearchableStats(index), _indexDir(index.getIndexDir()) {
+    : IndexSearchableStats(index),
+      _indexDir(index.getIndexDir()),
+      _create_and_freeze_times(index.create_and_freeze_times()) {
 }
 
 DiskIndexStats::~DiskIndexStats() {

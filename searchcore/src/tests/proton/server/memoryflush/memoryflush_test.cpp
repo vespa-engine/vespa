@@ -55,6 +55,12 @@ public:
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override {
         return current_serial > _flushedSerial;
     }
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override {
+        return 100ms; // placeholder value
+    }
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override {
+        return 200ms; // placeholder value
+    }
 };
 
 using StringList = std::vector<std::string>;

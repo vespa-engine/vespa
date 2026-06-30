@@ -90,6 +90,7 @@ public:
     DataStoreStorageStats getStorageStats() const override;
     vespalib::MemoryUsage getMemoryUsage() const override;
     std::vector<DataStoreFileChunkStats> getFileChunkStats() const override;
+    [[nodiscard]] size_t max_file_size() const noexcept override;
     size_t getCacheCapacity() const;
 
     /**

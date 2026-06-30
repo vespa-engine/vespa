@@ -14,12 +14,13 @@ void OnnxModelCache::release(Map::iterator entry) {
     }
 }
 
-OnnxModelCache::Token::UP OnnxModelCache::load(const std::string& model_file) {
+OnnxModelCache::Token::UP OnnxModelCache::load(const std::string& model_file, Onnx::Optimize optimize) {
     std::lock_guard<std::mutex> guard(_lock);
-    auto                        pos = _cached.find(model_file);
+    Key                         key{model_file, optimize};
+    auto                        pos = _cached.find(key);
     if (pos == _cached.end()) {
-        auto model = std::make_unique<Onnx>(model_file, Onnx::Optimize::ENABLE);
-        auto res = _cached.emplace(model_file, std::move(model));
+        auto model = std::make_unique<Onnx>(model_file, optimize);
+        auto res = _cached.emplace(std::move(key), std::move(model));
         assert(res.second);
         pos = res.first;
     }

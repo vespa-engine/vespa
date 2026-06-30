@@ -55,7 +55,9 @@ public:
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     searchcorespi::FlushStats getLastFlushStats() const override;
     uint64_t getApproxBytesToWriteToDisk() const override;
-    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
 } // namespace proton

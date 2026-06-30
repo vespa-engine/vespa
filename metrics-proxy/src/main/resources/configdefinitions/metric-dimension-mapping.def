@@ -1,0 +1,8 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package=ai.vespa.metricsproxy.metric.dimensions
+
+# Host dimensions allowed on metrics whose service is not explicitly listed below.
+defaultDimension[] string
+
+# Per-service overrides, keyed by service name: the host dimensions allowed on metrics from that service.
+service{}.dimension[] string

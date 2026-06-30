@@ -868,13 +868,21 @@
    ...
 }
 {
+   for GCC 15 optimized string scanning in pagedict4 version 2
+   Memcheck:Cond
+   fun:_ZN6search14bitcompression16PageDict4PWriter9addCountsESt17basic_string_viewIcSt11char_traitsIcEERKNS_5index17PostingListCountsE
+   fun:_ZN6search9diskindex11FieldWriter5flushEv
+   fun:_ZN6search9diskindex11FieldWriter7newWordEmSt17basic_string_viewIcSt11char_traitsIcEE
+   ...
+}
+{
    for new openssl on EL8/arm64 (optimized strlcpy)
    Memcheck:Cond
    fun:OPENSSL_strlcpy
    ...
 }
 {
-   for new openssl on EL8/arm64 (optimized strlat)
+   for new openssl on EL8/arm64 (optimized strlcat)
    Memcheck:Cond
    fun:OPENSSL_strlcat
    ...

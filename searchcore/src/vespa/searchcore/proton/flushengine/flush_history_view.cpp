@@ -39,7 +39,7 @@ FlushHistoryView::time_point FlushHistoryView::estimated_flush_complete_time(tim
     vespalib::PriorityQueue<time_point> complete_at; // Note: lowest value at front
     for (auto& active : _active) {
         // Add estimated flush complete_at time for active flush thread
-        complete_at.push(std::max(now, active.start_time() + active.last_flush_duration()));
+        complete_at.push(std::max(now, active.start_time() + active.estimated_flush_duration()));
     }
     while (complete_at.size() < _max_concurrent_normal) {
         // Idle flush threads can start new flushes now
@@ -47,7 +47,7 @@ FlushHistoryView::time_point FlushHistoryView::estimated_flush_complete_time(tim
     }
     // Estimate flush complete_at times as pending flushes are handled
     for (auto& pending : _pending) {
-        complete_at.front() += pending.last_flush_duration();
+        complete_at.front() += pending.estimated_flush_duration();
         complete_at.adjust();
     }
     while (complete_at.size() > 1) {

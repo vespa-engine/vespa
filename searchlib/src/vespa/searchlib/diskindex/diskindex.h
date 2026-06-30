@@ -5,6 +5,7 @@
 #include "field_index.h"
 
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/util/index_stats.h>
 
@@ -22,8 +23,10 @@ class DiskIndex : public queryeval::Searchable {
     uint32_t                           _nonfield_size_on_disk;
     TuneFileSearch                     _tuneFileSearch;
     std::shared_ptr<IPostingListCache> _posting_list_cache;
+    common::CreateAndFreezeTimes       _create_and_freeze_times;
 
     void calculate_nonfield_size_on_disk();
+    void calculate_schema_timestamp();
     bool loadSchema();
     bool openDictionaries(const TuneFileSearch& tuneFileSearch);
 
@@ -73,6 +76,9 @@ public:
     index::FieldLengthInfo get_field_length_info(const std::string& field_name) const;
     const std::shared_ptr<IPostingListCache>& get_posting_list_cache() const noexcept { return _posting_list_cache; }
     const FieldIndex& get_field_index(uint32_t field_id) const noexcept { return _field_indexes[field_id]; }
+    [[nodiscard]] const common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept {
+        return _create_and_freeze_times;
+    }
 };
 
 } // namespace search::diskindex

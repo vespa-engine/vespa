@@ -8,7 +8,7 @@ set -o nounset
 set -o pipefail
 set -o xtrace
 
-
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
 : "${VESPA_BUILDOS_LABEL:?Environment variable VESPA_BUILDOS_LABEL must be set (build OS label)}"
 
 if ! docker ps &> /dev/null; then
@@ -96,7 +96,7 @@ git archive HEAD --format tar | tar x -C docker/vespa-systemtests
 before="\\\$[{]vespa.version[}]"
 after="${VESPA_VERSION}"
 find docker/vespa-systemtests -name pom.xml -print0 | xargs -0 perl -pi -e "s,>${before}<,>${after}<,"
-mvn -Daether.dependencyCollector.impl=bf -Dvespa.version="${VESPA_VERSION}" \
+"${SOURCE_DIR}/mvnw" -Daether.dependencyCollector.impl=bf -Dvespa.version="${VESPA_VERSION}" \
     --threads 1 --batch-mode \
     --file docker/vespa-systemtests/tests/pom.xml \
     dependency:go-offline
@@ -104,6 +104,10 @@ cd docker
 echo "Copying Maven repository and RPMs for system-test container..."
 rm -rf maven-repo
 cp -a "$HOME/.m2/repository" maven-repo
+find maven-repo -type f -name 'maven-metadata-central.xml*' | while read -r fn; do
+    cp -a "$fn" "${fn/maven-metadata-central./maven-metadata.}"
+done
+
 rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
 

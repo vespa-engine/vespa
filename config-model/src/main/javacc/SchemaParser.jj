@@ -201,6 +201,7 @@ TOKEN :
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
 | < EXECUTION_MODE: "execution-mode">
+| < OPTIMIZE_MODEL: "optimize-model">
 | < PARALLEL: "parallel">
 | < SEQUENTIAL: "sequential">
 | < MODEL: "model" >
@@ -1735,6 +1736,7 @@ void onnxModelItem(OnnxModel onnxModel) :
 {
     String path = null;
     int num;
+    boolean enable;
 }
 {
     (
@@ -1745,6 +1747,7 @@ void onnxModelItem(OnnxModel onnxModel) :
         <INTEROP_THREADS> <COLON> num = integer() { onnxModel.setStatelessInterOpThreads(num); } |
         <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
                                   | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
+        <OPTIMIZE_MODEL> <COLON> enable = bool() { onnxModel.setOptimizeModel(enable); } |
         (<ONNX_INPUT_SL>) {
             String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
             if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }

@@ -29,6 +29,13 @@ namespace {
     return scale_bytes + dim_bytes;
 }
 
+// Precondition: buf must be valid for at least sizeof(float) bytes
+[[nodiscard]] float extract_scale_factor(const uint8_t* buf) noexcept {
+    float scale;
+    memcpy(&scale, buf, sizeof(float));
+    return scale;
+}
+
 } // namespace
 
 EdenQuantizer::EdenQuantizer(const size_t dimensions, const uint8_t bits, const uint64_t seed)
@@ -36,7 +43,7 @@ EdenQuantizer::EdenQuantizer(const size_t dimensions, const uint8_t bits, const 
       _quantized_size(compute_quantized_buffer_size(dimensions, bits)),
       _rotator(dimensions, seed),
       _rot_tmp(dimensions),
-      _idx_tmp(dimensions),
+      _idx_tmp(dimensions * 2), // also leave room for rhs bit unpacking storage
       _seed(seed),
       _sqrt_d(std::sqrtf(static_cast<float>(dimensions))),
       _bits(bits) {
@@ -124,8 +131,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
 void EdenQuantizer::dequantize(std::span<const uint8_t> q_x, std::span<float> dq_x) noexcept {
     assert(q_x.size() == _quantized_size);
     assert(dq_x.size() == _dimensions);
-    float scale;
-    memcpy(&scale, q_x.data(), sizeof(float));
+    const float scale = extract_scale_factor(q_x.data());
     with_packer_for_bit_count(_bits, [&](auto bp) {
         const uint8_t* in_bits = q_x.data() + sizeof(float);
         decltype(bp)::unpack(_idx_tmp.data(), in_bits, _dimensions);
@@ -146,8 +152,7 @@ float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   quer
                                                    std::span<const uint8_t> quant_vec) noexcept {
     assert(query.size() == _dimensions);
     assert(quant_vec.size() == _quantized_size);
-    float scale;
-    memcpy(&scale, quant_vec.data(), sizeof(float));
+    const float scale = extract_scale_factor(quant_vec.data());
     with_packer_for_bit_count(_bits, [&](auto bp) {
         const uint8_t* in_bits = quant_vec.data() + sizeof(float);
         decltype(bp)::unpack(_idx_tmp.data(), in_bits, _dimensions);
@@ -161,6 +166,28 @@ float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   quer
         return query[idx] * codebook[_idx_tmp[idx]];
     });
     // clang-format on
+}
+
+float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
+                                                   std::span<const uint8_t> rhs) noexcept {
+    assert(lhs.size() == _quantized_size);
+    assert(rhs.size() == _quantized_size);
+    // We have left room for an additional vector bit unpacking run in _idx_tmp
+    uint8_t* lhs_idx = _idx_tmp.data();
+    uint8_t* rhs_idx = _idx_tmp.data() + _dimensions;
+    with_packer_for_bit_count(_bits, [&](auto bp) {
+        decltype(bp)::unpack(lhs_idx, lhs.data() + sizeof(float), _dimensions);
+        decltype(bp)::unpack(rhs_idx, rhs.data() + sizeof(float), _dimensions);
+    });
+    const auto codebook = my_codebook();
+    // clang-format off: lambda formatting
+    const float dot = sum_indexed_unrolled<8, float>(_dimensions, [&](size_t idx) noexcept {
+        return codebook[lhs_idx[idx]] * codebook[rhs_idx[idx]];
+    });
+    // clang-format on
+    const float lhs_scale = extract_scale_factor(lhs.data());
+    const float rhs_scale = extract_scale_factor(rhs.data());
+    return lhs_scale * rhs_scale * dot;
 }
 
 } // namespace vespalib::quant

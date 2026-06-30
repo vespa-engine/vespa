@@ -7,7 +7,12 @@
 namespace search::fef {
 
 OnnxModel::OnnxModel(const std::string& name_in, const std::string& file_path_in)
-    : _name(name_in), _file_path(file_path_in), _input_features(), _output_names(), _dry_run_on_setup(false) {
+    : _name(name_in),
+      _file_path(file_path_in),
+      _input_features(),
+      _output_names(),
+      _dry_run_on_setup(false),
+      _optimize_model(true) {
 }
 
 OnnxModel::OnnxModel(OnnxModel&&) noexcept = default;
@@ -29,6 +34,11 @@ OnnxModel& OnnxModel::dry_run_on_setup(bool value) {
     return *this;
 }
 
+OnnxModel& OnnxModel::optimize_model(bool value) {
+    _optimize_model = value;
+    return *this;
+}
+
 std::optional<std::string> OnnxModel::input_feature(const std::string& model_input_name) const {
     auto pos = _input_features.find(model_input_name);
     if (pos != _input_features.end()) {
@@ -46,8 +56,9 @@ std::optional<std::string> OnnxModel::output_name(const std::string& model_outpu
 }
 
 bool OnnxModel::operator==(const OnnxModel& rhs) const {
-    return (std::tie(_name, _file_path, _input_features, _output_names, _dry_run_on_setup) ==
-            std::tie(rhs._name, rhs._file_path, rhs._input_features, rhs._output_names, rhs._dry_run_on_setup));
+    return (std::tie(_name, _file_path, _input_features, _output_names, _dry_run_on_setup, _optimize_model) ==
+            std::tie(rhs._name, rhs._file_path, rhs._input_features, rhs._output_names, rhs._dry_run_on_setup,
+                     rhs._optimize_model));
 }
 
 } // namespace search::fef

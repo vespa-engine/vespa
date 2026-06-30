@@ -439,7 +439,8 @@ void FlushEngine::flushAll(const FlushStrategyResult& flush_strategy_result) {
     LOG(debug, "%ld targets to flush.", lst.size());
     for (const FlushContext::SP& ctx : lst) {
         _flush_history->add_pending_flush(ctx->getHandler()->getName(), ctx->getTarget()->getName(), strategy_info,
-                                          ctx->getTarget()->last_flush_duration());
+                                          ctx->getTarget()->last_flush_duration(),
+                                          ctx->getTarget()->estimated_flush_duration());
     }
     auto strategy_id = flush_strategy_result.strategy_id();
     for (const FlushContext::SP& ctx : lst) {
@@ -592,7 +593,7 @@ uint32_t FlushEngine::initFlush(const IFlushHandler::SP& handler, const IFlushTa
         FlushInfo flush(taskId, handler->getName(), target, strategy_id);
         _flushing[taskId] = flush;
         _flush_history->start_flush(handler->getName(), target->getName(), strategy_info,
-                                    target->last_flush_duration(), taskId);
+                                    target->last_flush_duration(), target->estimated_flush_duration(), taskId);
         mark_active_strategy(strategy_id, guard);
     }
     LOG(debug, "FlushEngine::initFlush(handler='%s', target='%s', strategy_info='%s') => taskId='%d'",
@@ -644,13 +645,16 @@ flushengine::SetStrategyResult FlushEngine::poll_strategy(uint32_t wait_strategy
     return SetStrategyResult(wait_strategy_id, std::move(notifier), std::move(flush_history));
 }
 
-void FlushEngine::configure(uint64_t max_summary_file_size) {
+void FlushEngine::configure(uint64_t max_summary_file_size, size_t each_max_memory, size_t global_max_memory) {
     _max_summary_file_size.store(max_summary_file_size, std::memory_order_relaxed);
+    _each_max_memory.store(each_max_memory, std::memory_order_relaxed);
+    _global_max_memory.store(global_max_memory, std::memory_order_relaxed);
 }
 
 ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() const {
     flushengine::ReservedDiskSpaceCalculator calc(maxConcurrentTotal(), get_max_summary_file_size());
-    flushengine::ReservedMemoryCalculator    mcalc(maxConcurrentTotal());
+    flushengine::ReservedMemoryCalculator mcalc(maxConcurrentTotal(), get_each_max_memory(), get_global_max_memory());
+    ;
     {
         std::lock_guard guard(_lock);
         for (const auto& it : _handlers) {
@@ -658,20 +662,25 @@ ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() con
             auto  lst = handler.getFlushTargets();
             for (const auto& target : lst) {
                 if (!isFlushing(guard, FlushContext::createName(handler, *target))) {
+                    bool high_priority_target = target->getPriority() > IFlushTarget::Priority::NORMAL;
                     auto gain = target->getApproxDiskGain();
-                    calc.track_disk_gain(gain, target->getType(), target->getComponent());
-                    mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush());
+                    calc.track_disk_gain(gain, target->getType(), target->getComponent(), high_priority_target);
+                    mcalc.track_reserved_memory_for_flush(target->reserved_memory_for_flush(), target->getType(),
+                                                          target->getComponent(), high_priority_target);
                 }
             }
         }
         for (auto& entry : _flushing) {
             auto& target = entry.second._target;
+            bool  high_priority_target = target->getPriority() > IFlushTarget::Priority::NORMAL;
             auto  gain = target->getApproxDiskGain();
-            calc.track_disk_gain(gain, target->getType(), target->getComponent());
-            mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush());
+            calc.track_disk_gain(gain, target->getType(), target->getComponent(), high_priority_target);
+            mcalc.track_reserved_memory_for_flush(target->reserved_memory_for_flush(), target->getType(),
+                                                  target->getComponent(), high_priority_target);
         }
     }
-    return ReservedDiskSpaceAndMemory(calc.get_reserved_disk(), mcalc.get_reserved_memory());
+    return ReservedDiskSpaceAndMemory(calc.get_reserved_disk(), mcalc.reserved_memory_for_flush(),
+                                      mcalc.reserved_memory_for_memory_indexes());
 }
 
 } // namespace proton

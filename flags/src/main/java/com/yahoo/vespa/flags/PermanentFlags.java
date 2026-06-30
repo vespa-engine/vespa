@@ -321,6 +321,13 @@ public class PermanentFlags {
             "Takes effect immediately",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION = defineFeatureFlag(
+            "force-disable-onnx-model-optimization", false,
+            "If true, force ONNX graph optimization off for ONNX models of all kinds, " +
+            "overriding any optimize-model setting in the application package.",
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     private PermanentFlags() {}
 
     public static UnboundBooleanFlag defineFeatureFlag(

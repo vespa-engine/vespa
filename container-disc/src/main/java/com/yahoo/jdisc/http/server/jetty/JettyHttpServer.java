@@ -15,6 +15,7 @@ import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.text.Text;
+import io.opentelemetry.api.OpenTelemetry;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -63,7 +64,8 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
                            ServerConfig serverConfig,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            RequestLog requestLog,
-                           ConnectionLog connectionLog) {
+                           ConnectionLog connectionLog,
+                           OpenTelemetry openTelemetry) {
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
 
@@ -115,13 +117,16 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         var connectionMetricAggregator = new ConnectionMetricAggregator(serverConfig, metric, statisticsHandler);
 
 
+        Handler topHandler;
         if (!(connectionLog instanceof VoidConnectionLog)) {
             var connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog, connectionMetricAggregator);
             server.addBeanToAllConnectors(connectionLogger);
-            server.setHandler(connectionLogger);
+            topHandler = connectionLogger;
         } else {
-            server.setHandler(connectionMetricAggregator);
+            topHandler = connectionMetricAggregator;
         }
+        // Server span handler is outermost so the span encloses the entire request handling.
+        server.setHandler(new JettyServerSpanHandler(openTelemetry, topHandler));
 
         server.addBeanToAllConnectors(connectionMetricAggregator);
 

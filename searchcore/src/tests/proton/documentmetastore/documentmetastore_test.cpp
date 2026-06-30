@@ -598,8 +598,8 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
     uint64_t expSaveBytesSize =
         DocumentMetaStore::minHeaderLen + (1000 - 4) * DocumentMetaStore::entry_size(true, false);
     EXPECT_EQ(expSaveBytesSize, dms1.getEstimatedSaveByteSize());
-    EXPECT_EQ(0, dms1.transient_memory_for_flush(false));
-    EXPECT_EQ(expSaveBytesSize, dms1.transient_memory_for_flush(true));
+    EXPECT_EQ(0, dms1.reserved_memory_for_flush(false));
+    EXPECT_EQ(expSaveBytesSize, dms1.reserved_memory_for_flush(true));
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);

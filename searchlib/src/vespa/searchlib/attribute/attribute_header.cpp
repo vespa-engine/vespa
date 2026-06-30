@@ -5,7 +5,7 @@
 #include "distance_metric_utils.h"
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/fileheader.h>
 
@@ -152,7 +152,7 @@ void AttributeHeader::internalExtractTags(const vespalib::GenericHeader& header)
     if (header.hasTag(versionTag)) {
         _version = header.getTag(versionTag).asInteger();
     }
-    _flush_duration = common::FileHeaderContext::get_flush_duration(header);
+    _flush_duration = common::CreateAndFreezeTimes(header).get_flush_duration();
 }
 
 AttributeHeader AttributeHeader::extractTags(const vespalib::GenericHeader& header, const std::string& file_name) {

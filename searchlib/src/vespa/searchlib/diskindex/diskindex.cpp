@@ -14,6 +14,7 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
+#include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
 #include <vespa/vespalib/stllike/cache.hpp>
@@ -24,6 +25,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.diskindex");
 
+using search::FileKit;
+using search::common::CreateAndFreezeTimes;
 using namespace search::index;
 using namespace search::query;
 using namespace search::queryeval;
@@ -37,8 +40,10 @@ DiskIndex::DiskIndex(const std::string& indexDir, std::shared_ptr<IPostingListCa
       _field_indexes(),
       _nonfield_size_on_disk(0),
       _tuneFileSearch(),
-      _posting_list_cache(std::move(posting_list_cache)) {
+      _posting_list_cache(std::move(posting_list_cache)),
+      _create_and_freeze_times() {
     calculate_nonfield_size_on_disk();
+    calculate_schema_timestamp();
 }
 
 DiskIndex::~DiskIndex() = default;
@@ -81,6 +86,7 @@ bool DiskIndex::setup(const TuneFileSearch& tuneFileSearch) {
         if (!field_index.open(fieldDir, tuneFileSearch)) {
             return false;
         }
+        _create_and_freeze_times.merge(field_index.create_and_freeze_times());
     }
     _tuneFileSearch = tuneFileSearch;
     return true;
@@ -110,6 +116,7 @@ bool DiskIndex::setup(const TuneFileSearch& tuneFileSearch, const DiskIndex& old
             auto& old_field_index = old._field_indexes[oItr.getIndex()];
             field_index.reuse_files(old_field_index);
         }
+        _create_and_freeze_times.merge(field_index.create_and_freeze_times());
     }
     _tuneFileSearch = tuneFileSearch;
     return true;
@@ -133,6 +140,19 @@ const std::vector<std::string> nonfield_file_names{"docsum.qcnt", "schema.txt", 
 
 void DiskIndex::calculate_nonfield_size_on_disk() {
     _nonfield_size_on_disk = FieldIndex::calculate_size_on_disk(_indexDir + "/", nonfield_file_names);
+}
+
+void DiskIndex::calculate_schema_timestamp() {
+    /*
+     * First reconfig that affects schema causes rename of schema.txt to schema.txt.orig
+     * for existing disk indexes, Use timestamp for schema.txt.orig if it exists.
+     * See IndexWriteUtilities::updateDiskIndexSchema for details.
+     */
+    auto schema_mod_time = FileKit::getModificationTime(_indexDir + "/schema.txt.orig");
+    if (schema_mod_time == vespalib::system_time()) {
+        schema_mod_time = FileKit::getModificationTime(_indexDir + "/schema.txt");
+    }
+    _create_and_freeze_times = CreateAndFreezeTimes(schema_mod_time, schema_mod_time);
 }
 
 namespace {

@@ -2,8 +2,6 @@
 package com.yahoo.vespa.curator;
 
 import com.yahoo.path.Path;
-import com.yahoo.vespa.curator.transaction.CuratorOperations;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -123,11 +121,11 @@ class CuratorCompletionWaiter implements CompletionWaiter {
     }
 
     public static CompletionWaiter createAndInitialize(Curator curator, Path barrierPath, String id, Duration waitForAll) {
-        // Note: Should be done atomically, but unable to that when path may not exist before delete
-        // and create should be able to create any missing parent paths
-        curator.delete(barrierPath);
-        curator.create(barrierPath);
-
+        if (curator.create(barrierPath)) {
+            log.log(Level.FINE, "Created barrier path " + barrierPath);
+        } else {
+            log.log(Level.FINE, "Barrier path " + barrierPath + " already exists");
+        }
         return new CuratorCompletionWaiter(curator, barrierPath, id, Clock.systemUTC(), waitForAll);
     }
 

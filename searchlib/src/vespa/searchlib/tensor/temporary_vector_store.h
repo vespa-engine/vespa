@@ -31,6 +31,26 @@ public:
 };
 
 /**
+ * Helper class for explicitly storing (and exposing a mutable view of) a single vector.
+ * Only useful when the right hand side is always known to not require temporary storage.
+ */
+template <typename FloatTypeT>
+class MutableSingleTemporaryVectorStore {
+public:
+    using FloatType = FloatTypeT;
+
+private:
+    using TypedCells = vespalib::eval::TypedCells;
+    std::vector<FloatType> _tmp_space;
+    std::span<const FloatType> internal_convert(TypedCells cells) noexcept;
+
+public:
+    explicit MutableSingleTemporaryVectorStore(size_t vector_size) noexcept : _tmp_space(vector_size) {}
+    [[nodiscard]] std::span<const FloatType> storeLhs(TypedCells cells) noexcept { return internal_convert(cells); }
+    [[nodiscard]] std::span<FloatType> mutable_lhs_buf() noexcept { return _tmp_space; }
+};
+
+/**
  * Helper class used when TypedCells vector memory is just referenced,
  * and used directly in calculations without any transforms.
  */

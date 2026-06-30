@@ -38,6 +38,12 @@ public final class PublicDimensions {
     // From host-admin, currently (Jan 2020) only included for 'vespa.node' metrics
     public static final String HOSTNAME = "host";
 
+    // From host-admin. The physical host the node runs on.
+    public static final String PARENT_HOSTNAME = "parentHostname";
+
+    // From host-admin. The OS version of the physical host.
+    public static final String OS_VERSION = "osVersion";
+
 
     /**  Metric specific dimensions  **/
     public static final String API = "api";                                 // feed

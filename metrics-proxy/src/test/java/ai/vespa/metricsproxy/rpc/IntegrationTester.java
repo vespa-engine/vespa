@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.rpc;
 
+import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.ConsumersConfig.Consumer;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
@@ -59,7 +60,7 @@ public class IntegrationTester implements  AutoCloseable {
         vespaServices = new VespaServices(servicesConfig(), monitoringConfig(), null);
         MetricsConsumers consumers = new MetricsConsumers(consumersConfig());
         VespaMetrics vespaMetrics = new VespaMetrics(consumers);
-        ExternalMetrics externalMetrics = new ExternalMetrics(consumers);
+        ExternalMetrics externalMetrics = new ExternalMetrics(consumers, TestUtil.standardDimensionMapping());
         ApplicationDimensions appDimensions = new ApplicationDimensions(applicationDimensionsConfig());
         NodeDimensions nodeDimensions = new NodeDimensions(nodeDimensionsConfig());
 

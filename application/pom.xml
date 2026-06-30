@@ -151,7 +151,10 @@
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-cbor</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>testutil</artifactId>

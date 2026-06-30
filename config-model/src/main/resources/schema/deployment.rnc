@@ -167,7 +167,9 @@ AvailabilityZone = element availability-zone {
 Delay = element delay {
    attribute hours { xsd:long }? &
    attribute minutes { xsd:long }? &
-   attribute seconds { xsd:long }?
+   attribute seconds { xsd:long }? &
+   attribute version { xsd:boolean }? &
+   attribute revision { xsd:boolean }?
 }
 
 EndpointRegion = element region {

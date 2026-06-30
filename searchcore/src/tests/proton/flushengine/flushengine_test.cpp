@@ -333,21 +333,21 @@ public:
 
 class ReservedDiskSpaceAndMemoryTarget : public SimpleTarget {
     DiskGain _disk_gain;
-    size_t   _transient_memory_for_flush;
+    size_t   _reserved_memory_for_flush;
 
 public:
     ReservedDiskSpaceAndMemoryTarget(const std::string& name, search::SerialNum flushedSerial, DiskGain disk_gain,
-                                     size_t transient_memory_for_flush_in)
+                                     size_t reserved_memory_for_flush_in)
         : SimpleTarget(name, Type::OTHER, no_task_tag()),
           _disk_gain(disk_gain),
-          _transient_memory_for_flush(transient_memory_for_flush_in) {
+          _reserved_memory_for_flush(reserved_memory_for_flush_in) {
         _flushedSerial = flushedSerial;
         _task = std::make_unique<ReservedDiskSpaceAndMemoryTask>(_taskStart, _taskDone, &_proceed, _flushedSerial,
                                                                  _currentSerial, _disk_gain);
     }
     ~ReservedDiskSpaceAndMemoryTarget() override;
     DiskGain getApproxDiskGain() const override { return _disk_gain; }
-    size_t transient_memory_for_flush() const noexcept override { return _transient_memory_for_flush; }
+    size_t reserved_memory_for_flush() const noexcept override { return _reserved_memory_for_flush; }
 };
 
 ReservedDiskSpaceAndMemoryTarget::~ReservedDiskSpaceAndMemoryTarget() = default;
@@ -930,11 +930,11 @@ TEST(FlushEngineTest, reserved_disk_space_and_memory_is_calculated) {
 
     /*
      * Reserved disk space for flush is limited by 3 total flush threads
-     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for flush:  2000 + 20000
      * Reserved disk space for growth: 10 + 100 + 1000 + 10000
      */
-    EXPECT_EQ(33310, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
-    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
+    EXPECT_EQ(33110, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11000, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     f.engine.start();
 
     EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
@@ -944,51 +944,51 @@ TEST(FlushEngineTest, reserved_disk_space_and_memory_is_calculated) {
     assertThatHandlersInCurrentSet(f.engine, {"handler.target1", "handler.target2"});
     EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
     /*
-     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for flush:  2000 + 20000
      * Reserved disk space for growth: 10 + 100 + 1000 + 10000
      */
-    EXPECT_EQ(33310, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
-    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
+    EXPECT_EQ(33110, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11000, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target1->_proceed.countDown();
     EXPECT_TRUE(target1->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target3"});
     /*
      * Assumes no more growth for target1, cf. ReservedDiskSpaceTask::on_run
-     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for flush:  2000 + 20000
      * Reserved disk space for growth: 100 + 1000 + 10000
      */
-    EXPECT_EQ(33300, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
-    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
+    EXPECT_EQ(33100, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11000, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target3->_proceed.countDown();
     EXPECT_TRUE(target3->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4"});
     /*
      * Assumes no more growth for target1 and target3
-     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for flush:  2000 + 20000
      * Reserved disk space for growth: 100 + 10000
      */
-    EXPECT_EQ(32300, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
-    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
+    EXPECT_EQ(32100, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11000, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target2->_proceed.countDown();
     EXPECT_TRUE(target2->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target4"});
     /*
      * Assumes no more growth for target1, target2 and target3
-     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for flush:  2000 + 20000
      * Reserved disk space for growth: 10000
      */
-    EXPECT_EQ(32200, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
-    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
+    EXPECT_EQ(32000, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11000, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target4->_proceed.countDown();
     EXPECT_TRUE(target4->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {});
     /*
      * Assumes no more growth for target1, target2, target3 and target4
-     * Reserved disk space for flush:  200 + 2000 + 20000
+     * Reserved disk space for flush:  2000 + 20000
      * Reserved disk space for growth: 0
      */
-    EXPECT_EQ(22200, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
-    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
+    EXPECT_EQ(22000, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11000, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

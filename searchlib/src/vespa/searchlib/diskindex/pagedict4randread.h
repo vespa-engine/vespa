@@ -5,6 +5,7 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
 
 namespace search::diskindex {
@@ -29,13 +30,14 @@ class PageDict4RandRead : public index::DictionaryFileRandRead {
     std::unique_ptr<FastOS_FileInterface> _spfile;
     std::unique_ptr<FastOS_FileInterface> _pfile;
 
-    uint64_t _ssFileBitSize;
-    uint64_t _spFileBitSize;
-    uint64_t _pFileBitSize;
-    uint32_t _ssHeaderLen;
-    uint32_t _spHeaderLen;
-    uint32_t _pHeaderLen;
-    uint32_t _mmap_file_size_threshold;
+    uint64_t                     _ssFileBitSize;
+    uint64_t                     _spFileBitSize;
+    uint64_t                     _pFileBitSize;
+    uint32_t                     _ssHeaderLen;
+    uint32_t                     _spHeaderLen;
+    uint32_t                     _pHeaderLen;
+    uint32_t                     _mmap_file_size_threshold;
+    common::CreateAndFreezeTimes _create_and_freeze_times;
 
     void readSSHeader();
     void readSPHeader();
@@ -52,6 +54,7 @@ public:
     bool close() override;
     uint64_t getNumWordIds() const override;
     void set_mmap_file_size_threshold(uint32_t v) { _mmap_file_size_threshold = v; }
+    [[nodiscard]] const common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept override;
 };
 
 } // namespace search::diskindex

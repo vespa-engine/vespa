@@ -284,12 +284,12 @@ public final class BinaryView implements Inspector {
         var input = new BufferedInput(data);
         var names = new SymbolTable();
         BinaryDecoder.decodeSymbolTable(input, names);
-        var index = new DecodeIndex(input.getBacking().length, input.getPosition());
+        var index = new DecodeIndex(data.length, input.getPosition());
         buildIndex(input, index, 0, 0);
         if (input.failed()) {
             throw new IllegalArgumentException("bad input: " + input.getErrorMessage());
         }
-        return new BinaryView(input.getBacking(), names, index.getBacking(), 0);
+        return new BinaryView(data, names, index.getBacking(), 0);
     }
 
     static int peek_cmpr_int_for_testing(byte[] data, int idx) {

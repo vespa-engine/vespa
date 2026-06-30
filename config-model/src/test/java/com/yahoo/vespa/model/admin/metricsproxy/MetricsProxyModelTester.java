@@ -6,6 +6,7 @@ import ai.vespa.metrics.set.Metric;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.MetricDimensionMappingConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
@@ -106,6 +107,10 @@ class MetricsProxyModelTester {
 
     static ApplicationDimensionsConfig getApplicationDimensionsConfig(VespaModel model) {
         return model.getConfig(ApplicationDimensionsConfig.class, CLUSTER_CONFIG_ID);
+    }
+
+    static MetricDimensionMappingConfig getMetricDimensionMappingConfig(VespaModel model) {
+        return model.getConfig(MetricDimensionMappingConfig.class, CLUSTER_CONFIG_ID);
     }
 
     static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model, String configId) {

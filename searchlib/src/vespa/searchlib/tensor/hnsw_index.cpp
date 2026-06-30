@@ -13,7 +13,7 @@
 
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/util/deadline.h>
 #include <vespa/vespalib/util/memory_allocator.h>
@@ -29,7 +29,7 @@ LOG_SETUP(".searchlib.tensor.hnsw_index");
 namespace search::tensor {
 
 using search::AddressSpaceComponents;
-using search::common::FileHeaderContext;
+using search::common::CreateAndFreezeTimes;
 using search::queryeval::GlobalFilter;
 using vespalib::Generation;
 using vespalib::GenerationGuard;
@@ -1026,7 +1026,7 @@ std::unique_ptr<NearestNeighborIndexLoader> HnswIndex<type>::make_loader(FastOS_
                                                                          const vespalib::GenericHeader& header) {
     assert(get_entry_nodeid() == 0); // cannot load after index has data
     load_mips_max_distance(header, distance_function_factory());
-    _graph.set_last_flush_duration(FileHeaderContext::get_flush_duration(header));
+    _graph.set_last_flush_duration(CreateAndFreezeTimes(header).get_flush_duration());
     using ReaderType = FileReader<uint32_t>;
     using LoaderType = HnswIndexLoader<ReaderType, type>;
     return std::make_unique<LoaderType>(_graph, _id_mapping, std::make_unique<ReaderType>(&file));

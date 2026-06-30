@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.OpenTelemetrySettings;
 import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.time.Instant;
@@ -140,19 +141,20 @@ public class Flags {
             "Takes effect on next autoscaler evaluation",
             INSTANCE_ID, CLUSTER_ID);
 
-    public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
-            "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-09-01",
-            "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
-            "Takes effect at redeployment",
-            APPLICATION);
-
     public static final UnboundBooleanFlag REQUIRE_EXPLICIT_DOCPROC_CLUSTER = defineFeatureFlag(
-            "require-explicit-docproc-cluster", false,
+            "require-explicit-docproc-cluster", true,
             List.of("hmusum"), "2026-05-26", "2026-12-01",
             "Whether to require an explicit document-processing cluster to be configured in content clusters when there is more than one container cluster",
             "Takes effect at redeployment",
             APPLICATION, INSTANCE_ID, TENANT_ID);
+
+    public static final UnboundJacksonFlag<OpenTelemetrySettings> OPENTELEMETRY_SDK = defineJacksonFlag(
+            "opentelemetry-sdk", OpenTelemetrySettings.createDisabled(), OpenTelemetrySettings.class,
+            List.of("onur"), "2026-06-16", "2026-12-31",
+            "Configuration for Vespa's OpenTelemetry SDK (tracing) in the container: enabled, samplingRatio. When disabled the provider hands out a no-op OpenTelemetry that produces nothing",
+            "Takes effect at redeployment",
+            __ -> true,
+            APPLICATION, INSTANCE_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,

@@ -1192,6 +1192,10 @@ std::vector<DataStoreFileChunkStats> LogDataStore::getFileChunkStats() const {
     return result;
 }
 
+size_t LogDataStore::max_file_size() const noexcept {
+    return _config.getMaxFileSize();
+}
+
 void LogDataStore::compactLidSpace(uint32_t wantedDocLidLimit) {
     MonitorGuard guard(_updateLock);
     assert(wantedDocLidLimit <= getDocIdLimit());

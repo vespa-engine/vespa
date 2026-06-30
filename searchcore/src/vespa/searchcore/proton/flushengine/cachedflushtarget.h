@@ -21,11 +21,12 @@ private:
     DiskGain                            _diskGain;
     uint64_t                            _approxBytesToWriteToDisk;
     uint64_t                            _approx_bytes_to_read_from_disk;
-    size_t                              _transient_memory_for_flush;
+    size_t                              _reserved_memory_for_flush;
     double                              _replay_operation_cost;
     bool                                _needUrgentFlush;
     Priority                            _priority;
     std::chrono::steady_clock::duration _last_flush_duration;
+    std::chrono::steady_clock::duration _estimated_flush_duration;
 
 public:
     /**
@@ -64,8 +65,9 @@ public:
 
     uint64_t getApproxBytesToWriteToDisk() const override { return _approxBytesToWriteToDisk; }
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
-    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
 } // namespace proton

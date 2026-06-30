@@ -18,14 +18,14 @@ public class AnnTimeoutTestCase {
     @Test
     void testDefaultsInQuery() {
         Query query = new Query("?query=test");
-        assertFalse(query.getRanking().getMatching().getAnnTimeout().getEnable());
+        assertTrue(query.getRanking().getMatching().getAnnTimeout().getEnable());
         assertNull(query.getRanking().getMatching().getAnnTimeout().getFactor());
     }
 
     @Test
     void testQueryOverride() {
         Query query = new Query("?query=test&ranking.matching.anntimeout.factor=0.1");
-        assertFalse(query.getRanking().getMatching().getAnnTimeout().getEnable());
+        assertTrue(query.getRanking().getMatching().getAnnTimeout().getEnable());
         assertEquals(Double.valueOf(0.1), query.getRanking().getMatching().getAnnTimeout().getFactor());
         query.prepare();
         assertNull(query.getRanking().getProperties().get("vespa.matching.nns.anntimeout.enable"));

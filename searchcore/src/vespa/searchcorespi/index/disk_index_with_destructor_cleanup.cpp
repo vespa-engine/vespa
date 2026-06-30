@@ -67,4 +67,8 @@ const search::index::Schema& DiskIndexWithDestructorCleanup::getSchema() const {
     return _index->getSchema();
 }
 
+const search::common::CreateAndFreezeTimes& DiskIndexWithDestructorCleanup::create_and_freeze_times() const noexcept {
+    return _index->create_and_freeze_times();
+}
+
 } // namespace searchcorespi::index

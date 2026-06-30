@@ -124,7 +124,7 @@ public class TenantHandlerTest {
         applicationRepository.prepareAndActivate(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
 
         assertResponse(DELETE, "/application/v2/tenant/a",
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot delete tenant 'a', it has active applications: [a.foo]\"}");
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot delete tenant 'a', it has active applications: [a.foo.default]\"}");
     }
 
     @Test

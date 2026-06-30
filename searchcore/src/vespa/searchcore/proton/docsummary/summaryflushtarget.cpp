@@ -73,12 +73,16 @@ bool SummaryFlushTarget::can_flush(SerialNum current_serial) const noexcept {
     return current_serial > _docStore.lastSyncToken();
 }
 
-size_t SummaryFlushTarget::transient_memory_for_flush() const noexcept {
+size_t SummaryFlushTarget::reserved_memory_for_flush() const noexcept {
     return 0;
 }
 
 std::chrono::steady_clock::duration SummaryFlushTarget::last_flush_duration() const noexcept {
-    return 200ms; // placeholder value.
+    return 2s; // placeholder value.
+}
+
+std::chrono::steady_clock::duration SummaryFlushTarget::estimated_flush_duration() const noexcept {
+    return 2s; // placeholder value.
 }
 
 } // namespace proton

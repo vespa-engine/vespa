@@ -380,8 +380,11 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.time.Duration, boolean, boolean)",
       "public void <init>(java.time.Duration)",
       "public java.time.Duration delay()",
+      "public boolean delaysVersion()",
+      "public boolean delaysRevision()",
       "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.lang.String toString()"
     ],
@@ -1415,6 +1418,7 @@
       "public double feedNiceness()",
       "public int maxUnCommittedMemory()",
       "public boolean containerDumpHeapOnShutdownTimeout()",
+      "public com.yahoo.config.provision.OpenTelemetryConfiguration opentelemetrySdk()",
       "public int heapSizePercentage(java.util.Optional)",
       "public java.util.List allowedAthenzProxyIdentities()",
       "public int maxActivationInhibitedOutOfSyncGroups()",
@@ -1448,7 +1452,8 @@
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
-      "public double searchNodeReservedMemoryFactor()"
+      "public double searchNodeReservedMemoryFactor()",
+      "public boolean forceDisableOnnxModelOptimization()"
     ],
     "fields" : [ ]
   },
@@ -1716,7 +1721,7 @@
     "methods" : [
       "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
       "public com.yahoo.config.model.api.OnnxModelOptions withExecutionMode(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withInterOpThreads(java.lang.Integer)",
@@ -1727,6 +1732,7 @@
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactorType(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactor(java.lang.Double)",
       "public com.yahoo.config.model.api.OnnxModelOptions withModelConfigOverride(com.yahoo.config.FileReference)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withOptimizeModel(java.lang.Boolean)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
@@ -1738,7 +1744,8 @@
       "public java.util.Optional batchingMaxDelay()",
       "public java.util.Optional concurrencyFactorType()",
       "public java.util.Optional concurrencyFactor()",
-      "public java.util.Optional modelConfigOverride()"
+      "public java.util.Optional modelConfigOverride()",
+      "public java.util.Optional optimizeModel()"
     ],
     "fields" : [ ]
   },

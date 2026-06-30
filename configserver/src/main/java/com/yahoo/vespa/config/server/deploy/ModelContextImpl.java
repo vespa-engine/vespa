@@ -28,6 +28,7 @@ import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
+import com.yahoo.config.provision.OpenTelemetryConfiguration;
 import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.vespa.flags.Flag;
 import com.yahoo.vespa.flags.FlagSource;
@@ -223,6 +224,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double feedConcurrency() { return flag(PermanentFlags.FEED_CONCURRENCY).value(); }
         @Override public double feedNiceness() { return flag(PermanentFlags.FEED_NICENESS).value(); }
         @Override public int mbusNetworkThreads() { return flag(Flags.MBUS_NUM_NETWORK_THREADS).value(); }
+        @Override public OpenTelemetryConfiguration opentelemetrySdk() { return flag(Flags.OPENTELEMETRY_SDK).value(); }
         @Override public List<String> allowedAthenzProxyIdentities() { return flag(PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES).value(); }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return flag(PermanentFlags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS).value(); }
         @Override public double resourceLimitDisk() { return flag(PermanentFlags.RESOURCE_LIMIT_DISK).value(); }
@@ -257,7 +259,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB); }
         @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB).value()); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
-        @Override public double docprocHandlerThreadpool() { return flag(Flags.DOCPROC_HANDLER_THREADPOOL).value(); }
         @Override public boolean requireExplicitDocprocCluster() { return flag(Flags.REQUIRE_EXPLICIT_DOCPROC_CLUSTER).value(); }
         @Override public boolean applyOnRestartForApplicationMetadataConfig() { return flag(Flags.APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG).value(); }
         @Override public double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) {
@@ -266,6 +267,7 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public boolean tokenAuthForDeploy() { return flag(Flags.TOKEN_AUTH_FOR_DEPLOY).value(); }
         @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
+        @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

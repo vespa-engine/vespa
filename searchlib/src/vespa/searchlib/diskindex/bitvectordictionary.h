@@ -3,6 +3,7 @@
 
 #include "bitvectorkeyscope.h"
 
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/bitvector_dictionary_lookup_result.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
@@ -37,6 +38,7 @@ private:
     std::unique_ptr<FastOS_FileInterface> _datFile;
     uint32_t                              _datHeaderLen;
     bool                                  _memory_mapped;
+    common::CreateAndFreezeTimes          _create_and_freeze_times;
 
 public:
     using SP = std::shared_ptr<BitVectorDictionary>;
@@ -79,6 +81,9 @@ public:
 
     const std::vector<WordSingleKey>& getEntries() const noexcept { return _entries; }
     bool get_memory_mapped() const noexcept { return _memory_mapped; }
+    [[nodiscard]] const common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept {
+        return _create_and_freeze_times;
+    }
 };
 
 } // namespace search::diskindex

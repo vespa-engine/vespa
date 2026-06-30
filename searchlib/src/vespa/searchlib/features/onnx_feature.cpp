@@ -119,7 +119,8 @@ bool OnnxBlueprint::setup(const IIndexEnvironment& env, const ParameterList& par
             _debug_model = std::make_unique<Onnx>(model_cfg->file_path(), Optimize::DISABLE);
             _model = _debug_model.get();
         } else {
-            _cache_token = OnnxModelCache::load(model_cfg->file_path());
+            auto optimize = model_cfg->optimize_model() ? Optimize::ENABLE : Optimize::DISABLE;
+            _cache_token = OnnxModelCache::load(model_cfg->file_path(), optimize);
             _model = &(_cache_token->get());
         }
     } catch (const Ort::Exception& ex) {
