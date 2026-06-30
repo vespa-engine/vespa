@@ -569,7 +569,7 @@ public class SessionRepository {
                                                                               KeeperException.NodeExistsException.class);
             Class<? extends Throwable> exceptionClass = e.getCause().getClass();
             if (acceptedExceptions.contains(exceptionClass))
-                log.log(Level.FINE, () -> "Not able to notify completion for session (" + completionWaiter + ")," +
+                log.log(Level.INFO, () -> "Not able to notify completion for session (" + completionWaiter + ")," +
                                     " node " + (exceptionClass.equals(KeeperException.NoNodeException.class)
                         ? "has been deleted"
                         : "already exists"));
@@ -748,11 +748,6 @@ public class SessionRepository {
         @Override
         public void close() { lock.ifPresent(Lock::close); }
 
-    }
-
-    private ApplicationLock lockApplication(Optional<ApplicationId> applicationId) {
-        return applicationId.map(id -> new ApplicationLock(Optional.of(tenantApplications.lock(id))))
-                .orElseGet(() -> new ApplicationLock(Optional.empty()));
     }
 
     private ApplicationLock lockApplication(Optional<ApplicationId> applicationId, Duration lockTimeout) {
