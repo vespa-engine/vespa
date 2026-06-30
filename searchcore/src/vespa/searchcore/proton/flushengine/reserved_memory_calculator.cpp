@@ -8,24 +8,13 @@ namespace proton::flushengine {
 
 ReservedMemoryCalculator::ReservedMemoryCalculator(size_t concurrent, size_t each_max_memory,
                                                    size_t global_max_memory) noexcept
-    : _concurrent(concurrent),
-      _each_max_memory(each_max_memory),
+    : _each_max_memory(each_max_memory),
       _global_max_memory(global_max_memory),
       _memory_indexes(0),
-      _candidates(),
-      _high_priority_candidate() {
+      _candidates(concurrent) {
 }
 
 ReservedMemoryCalculator::~ReservedMemoryCalculator() = default;
-
-bool ReservedMemoryCalculator::has_normal_high_priority_candidate() const noexcept {
-    for (auto& candidate : _candidates) {
-        if (candidate.high_priority()) {
-            return true;
-        }
-    }
-    return false;
-}
 
 size_t ReservedMemoryCalculator::reserved_memory_for_memory_indexes() const noexcept {
     /*
@@ -39,42 +28,14 @@ void ReservedMemoryCalculator::track_reserved_memory_for_flush(size_t           
                                                                IFlushTarget::Type      type,
                                                                IFlushTarget::Component component,
                                                                bool                    high_priority) {
-    Candidate candidate(reserved_memory_for_flush, high_priority);
-    if (candidate.high_priority()) {
-        if (!_high_priority_candidate.has_value() || _high_priority_candidate.value() < candidate) {
-            _high_priority_candidate = candidate;
-        }
-    }
-    _candidates.push_back(candidate);
+    _candidates.add_candidate(reserved_memory_for_flush, high_priority);
     if (type == IFlushTarget::Type::FLUSH && component == IFlushTarget::Component::INDEX) {
         ++_memory_indexes;
     }
 }
 
 size_t ReservedMemoryCalculator::reserved_memory_for_flush() {
-    if (_concurrent < _candidates.size()) {
-        /*
-         * Retain the _concurrent biggest candidates. They are later used to calculate reserved
-         * memory for flush.
-         */
-        std::nth_element(_candidates.begin(), _candidates.begin() + _concurrent, _candidates.end());
-        _candidates.resize(_concurrent);
-    }
-    if (_concurrent == _candidates.size() && _concurrent != 0) {
-        if (!has_normal_high_priority_candidate()) {
-            // One of the flush slots can only be used for high priority flush targets
-            std::nth_element(_candidates.begin(), _candidates.begin() + _concurrent - 1, _candidates.end());
-            _candidates.resize(_concurrent - 1);
-            if (_high_priority_candidate.has_value()) {
-                _candidates.push_back(_high_priority_candidate.value());
-            }
-        }
-    }
-    size_t reserved_memory = 0;
-    for (auto& candidate : _candidates) {
-        reserved_memory += candidate.reserved();
-    }
-    return reserved_memory;
+    return _candidates.reserved_resource_for_flush();
 }
 
 } // namespace proton::flushengine

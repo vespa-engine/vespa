@@ -2,40 +2,17 @@
 
 #pragma once
 
-#include <vespa/searchcorespi/flush/iflushtarget.h>
+#include "reserved_resource_candidates.h"
 
-#include <cstddef>
-#include <optional>
-#include <vector>
+#include <vespa/searchcorespi/flush/iflushtarget.h>
 
 namespace proton::flushengine {
 
 class ReservedMemoryCalculator {
-    /*
-     * Candidate for tracking reserved memory for flush, used to calculate worst case need for reserved memory.
-     * The number of total flush threads determines how many candidates to use.
-     */
-    class Candidate {
-        size_t _reserved;
-        bool   _high_priority;
-
-    public:
-        explicit Candidate(size_t reserved_in, bool high_priority_in) noexcept
-            : _reserved(reserved_in), _high_priority(high_priority_in) {}
-        Candidate() noexcept : Candidate(0, false) {}
-        bool operator<(const Candidate& rhs) const noexcept { return _reserved > rhs._reserved; }
-        [[nodiscard]] size_t reserved() const noexcept { return _reserved; }
-        [[nodiscard]] bool high_priority() const noexcept { return _high_priority; }
-    };
-
-    size_t                   _concurrent;
-    size_t                   _each_max_memory;
-    size_t                   _global_max_memory;
-    uint32_t                 _memory_indexes;
-    std::vector<Candidate>   _candidates; // Used to calculate worst case for concurrent flushes
-    std::optional<Candidate> _high_priority_candidate;
-
-    bool has_normal_high_priority_candidate() const noexcept;
+    size_t                             _each_max_memory;
+    size_t                             _global_max_memory;
+    uint32_t                           _memory_indexes;
+    ReservedResourceCandidates<size_t> _candidates;
 
 public:
     using IFlushTarget = searchcorespi::IFlushTarget;
