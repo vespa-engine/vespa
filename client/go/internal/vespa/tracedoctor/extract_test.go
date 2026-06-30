@@ -358,7 +358,7 @@ func simpleProtonTrace() protonTrace {
 			}))
 		}))
 	})
-	return protonTrace{source, nil}
+	return protonTrace{source: source}
 }
 
 func emptyProtonTrace() protonTrace {
@@ -371,7 +371,51 @@ func emptyProtonTrace() protonTrace {
 			}))
 		}))
 	})
-	return protonTrace{source, nil}
+	return protonTrace{source: source}
+}
+
+func protonTraceWithKey(key int64, duration float64) protonTrace {
+	return protonTrace{source: slime.MakeObject(func(obj slime.Value) {
+		obj.Set("distribution-key", slime.Long(key))
+		obj.Set("duration_ms", slime.Double(duration))
+	})}
+}
+
+func TestCollapseFollowUps(t *testing.T) {
+	// duration_ms is unique per trace so we can track individual traces
+	traces := []protonTrace{
+		protonTraceWithKey(1, 10),
+		protonTraceWithKey(2, 20),
+		protonTraceWithKey(1, 30),
+		protonTraceWithKey(1, 40),
+		protonTraceWithKey(2, 50),
+	}
+	res := collapseFollowUps(traces)
+
+	// one entry per distinct distribution key, keeping the first-seen trace in order
+	assert.Equal(t, 2, len(res))
+	assert.Equal(t, int64(1), res[0].distributionKey())
+	assert.Equal(t, 10.0, res[0].durationMs())
+	assert.Equal(t, int64(2), res[1].distributionKey())
+	assert.Equal(t, 20.0, res[1].durationMs())
+
+	// later duplicates become follow-ups, preserving their encounter order
+	assert.Equal(t, []float64{30, 40}, res[0].followUpDurationsMs())
+	assert.Equal(t, []float64{50}, res[1].followUpDurationsMs())
+}
+
+func TestCollapseFollowUpsNoDuplicates(t *testing.T) {
+	res := collapseFollowUps([]protonTrace{
+		protonTraceWithKey(3, 10),
+		protonTraceWithKey(1, 20),
+		protonTraceWithKey(2, 30),
+	})
+	// distinct keys are kept as-is, in original order, with no follow-ups
+	assert.Equal(t, []float64{10, 20, 30}, []float64{res[0].durationMs(), res[1].durationMs(), res[2].durationMs()})
+	assert.Equal(t, []int64{3, 1, 2}, []int64{res[0].distributionKey(), res[1].distributionKey(), res[2].distributionKey()})
+	for _, trace := range res {
+		assert.Nil(t, trace.followUps)
+	}
 }
 
 func TestFindValueWhenFound(t *testing.T) {

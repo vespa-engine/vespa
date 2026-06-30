@@ -17,6 +17,7 @@ type inspectProfileOptions struct {
 	showDispatchedQuery bool
 	showNnsDetails      bool
 	showCostAnalysis    bool
+	showNodeFollowUps   bool
 	makePrompt          bool
 	showQueryNodes      []int
 }
@@ -52,6 +53,9 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	if opts.showCostAnalysis {
 		context.ShowCostAnalysis()
 	}
+	if opts.showNodeFollowUps {
+		context.ShowNodeFollowUps()
+	}
 	if opts.makePrompt {
 		context.MakePrompt()
 	}
@@ -79,6 +83,7 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
 	cmd.Flags().BoolVar(&opts.showNnsDetails, "show-nns-details", false, "Show more details related to nearest neighbor search")
 	cmd.Flags().BoolVar(&opts.showCostAnalysis, "show-cost-analysis", false, "Compare query plan abs_cost against measured time per query node")
+	cmd.Flags().BoolVar(&opts.showNodeFollowUps, "show-node-follow-ups", false, "Analyze follow-up back-end requests per query node")
 	cmd.Flags().BoolVar(&opts.makePrompt, "make-prompt", false, "Output an LLM prompt instead of human-readable analysis")
 	cmd.Flags().IntSliceVar(&opts.showQueryNodes, "show-query-nodes", nil, "Show detailed information for specific query node IDs")
 	return cmd
