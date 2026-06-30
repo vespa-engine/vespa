@@ -80,6 +80,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ConfigStatus;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeAndMessage;
@@ -757,6 +758,115 @@ public class ApplicationHandlerTest {
                            "  \"currentGeneration\": 3,\n" +
                            "  \"wantedGeneration\": 4,\n" +
                            "  \"converged\": false\n" +
+                           "}",
+                           200,
+                           response);
+        }
+    }
+
+    @Test
+    public void service_list_convergence_with_errors() {
+        URI requestUrl = URI.create("https://configserver/serviceconvergence");
+
+        String hostname = "localhost";
+        int port = 1234;
+        String hostAndPort = hostname + ":" + port;
+        URI serviceUrl = URI.create("https://configserver/serviceconvergence/" + hostAndPort);
+
+        String errorMessage = "Failed to construct component Foo";
+        long wantedGeneration = 4;
+        long currentGeneration = 3;
+
+        { // Single service with error response
+            var service = new ServiceListResponse.Service(createServiceInfo(hostname, port, Optional.empty()),
+                                                          currentGeneration,
+                                                          ConfigStatus.failed(currentGeneration, errorMessage));
+            HttpServiceListResponse response =
+                    new HttpServiceListResponse(new ServiceListResponse(List.of(service),
+                                                                        wantedGeneration,
+                                                                        currentGeneration,
+                                                                        false),
+                                                requestUrl);
+            assertResponse("{\n" +
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl + "\",\n" +
+                           "      \"currentGeneration\": " + currentGeneration + ",\n" +
+                           "      \"config\": {\n" +
+                           "        \"status\": \"failed\",\n" +
+                           "        \"message\": \"" + errorMessage + "\"\n" +
+                           "      }\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl + "\",\n" +
+                           "  \"currentGeneration\": " + currentGeneration + ",\n" +
+                           "  \"wantedGeneration\": " + wantedGeneration + ",\n" +
+                           "  \"converged\": false,\n" +
+                           "  \"config\": {\n" +
+                           "    \"status\": \"failed\",\n" +
+                           "    \"host\": \"" + hostname + "\",\n" +
+                           "    \"type\": \"container\",\n" +
+                           "    \"message\": \"" + errorMessage + "\"\n" +
+                           "  }\n" +
+                           "}",
+                           200,
+                           response);
+        }
+
+        { // Two services, one converged and one with an error
+            String hostname2 = "localhost2";
+            int port2 = 5678;
+            String hostAndPort2 = hostname2 + ":" + port2;
+            URI serviceUrl2 = URI.create("https://configserver/serviceconvergence/" + hostAndPort2);
+
+            var convergedService = new ServiceListResponse.Service(createServiceInfo(hostname, port, Optional.empty()),
+                                                                   wantedGeneration,
+                                                                   ConfigStatus.ok(wantedGeneration));
+            var failedService = new ServiceListResponse.Service(createServiceInfo(hostname2, port2, Optional.of("foo")),
+                                                                currentGeneration,
+                                                                ConfigStatus.failed(currentGeneration, errorMessage));
+            HttpServiceListResponse response =
+                    new HttpServiceListResponse(new ServiceListResponse(List.of(convergedService, failedService),
+                                                                        wantedGeneration,
+                                                                        currentGeneration,
+                                                                        false),
+                                                requestUrl);
+            assertResponse("{\n" +
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl + "\",\n" +
+                           "      \"currentGeneration\": " + wantedGeneration + "\n" +
+                           "    },\n" +
+                           "    {\n" +
+                           "      \"clusterName\": \"foo\",\n" +
+                           "      \"host\": \"" + hostname2 + "\",\n" +
+                           "      \"port\": " + port2 + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl2 + "\",\n" +
+                           "      \"currentGeneration\": " + currentGeneration + ",\n" +
+                           "      \"config\": {\n" +
+                           "        \"status\": \"failed\",\n" +
+                           "        \"message\": \"" + errorMessage + "\"\n" +
+                           "      }\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl + "\",\n" +
+                           "  \"currentGeneration\": " + currentGeneration + ",\n" +
+                           "  \"wantedGeneration\": " + wantedGeneration + ",\n" +
+                           "  \"converged\": false,\n" +
+                           "  \"config\": {\n" +
+                           "    \"status\": \"failed\",\n" +
+                           "    \"clusterName\": \"foo\",\n" +
+                           "    \"host\": \"" + hostname2 + "\",\n" +
+                           "    \"type\": \"container\",\n" +
+                           "    \"message\": \"" + errorMessage + "\"\n" +
+                           "  }\n" +
                            "}",
                            200,
                            response);
