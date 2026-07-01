@@ -17,6 +17,8 @@ import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.text.Utf8;
+import io.modelcontextprotocol.json.McpJsonMapper;
+import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 
@@ -40,6 +42,7 @@ import java.util.logging.Logger;
 public class McpSearchSpecProvider extends AbstractComponent implements McpSpecProvider {
     private static final Logger logger = Logger.getLogger(McpSearchSpecProvider.class.getName());
     private static final com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    private static final McpJsonMapper mcpJsonMapper = new JacksonMcpJsonMapper(mapper);
 
     private final ArrayList<McpStatelessServerFeatures.SyncToolSpecification> toolSpecs;
     private final ArrayList<McpStatelessServerFeatures.SyncResourceSpecification> resourceSpecs;
@@ -97,6 +100,12 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
     }
 
     // ---- Helpers ----
+    private static McpSchema.CallToolResult toolResult(String text, boolean isError) {
+        var builder = McpSchema.CallToolResult.builder().addTextContent(text);
+        if (isError) builder.isError(true);
+        return builder.build();
+    }
+
     private String getRequiredString(Map<String, Object> args, String required) {
         Object val = args.get(required);
         if (!(val instanceof String str) || str.isBlank()) {
@@ -202,7 +211,7 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
             .description("""
                 Retrieve schema information from the current Vespa application.
                 Use this to understand data structure, field types, rank profiles, and plan queries.""")
-            .inputSchema(inputSchema)
+            .inputSchema(mcpJsonMapper, inputSchema)
             .build();
 
         return McpStatelessServerFeatures.SyncToolSpecification.builder()
@@ -214,7 +223,7 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
                     if (arguments != null && arguments.containsKey("schemaNames")) {
                         Object obj = arguments.get("schemaNames");
                         if (!(obj instanceof List)) {
-                            return new McpSchema.CallToolResult("{\"error\": \"schemaNames must be an array\"}", true);
+                            return toolResult("{\"error\": \"schemaNames must be an array\"}", true);
                         }
                         @SuppressWarnings("unchecked")
                         List<String> names = (List<String>) obj;
@@ -230,10 +239,10 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
                         Schema schema = schemaMap.get(name);
                         result.put(name, schema != null ? schemaDetails(schema) : "Schema not found");
                     }
-                    return new McpSchema.CallToolResult(toJson(result), false);
+                    return toolResult(toJson(result), false);
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, "Schema retrieval failed", e);
-                    return new McpSchema.CallToolResult("{\"error\": \"" + e.getMessage() + "\"}", true);
+                    return toolResult("{\"error\": \"" + e.getMessage() + "\"}", true);
                 }
             })
             .build();
@@ -262,7 +271,7 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
             .description("""
                 Execute YQL queries against the Vespa application.
                 Inspect schemas with getSchemas first, then use queryExamples resource for syntax guidance.""")
-            .inputSchema(inputSchema)
+            .inputSchema(mcpJsonMapper, inputSchema)
             .build();
 
         return McpStatelessServerFeatures.SyncToolSpecification.builder()
@@ -271,15 +280,15 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
                 try {
                     Map<String, Object> arguments = request.arguments();
                     if (arguments == null) {
-                        return new McpSchema.CallToolResult("{\"error\": \"No arguments provided\"}", true);
+                        return toolResult("{\"error\": \"No arguments provided\"}", true);
                     }
 
                     String yql = (String) arguments.get("yql");
                     if (yql == null || yql.isBlank()) {
-                        return new McpSchema.CallToolResult("{\"error\": \"yql is required\"}", true);
+                        return toolResult("{\"error\": \"yql is required\"}", true);
                     }
                     if (searchChain == null) {
-                        return new McpSchema.CallToolResult("{\"error\": \"No search chain available\"}", true);
+                        return toolResult("{\"error\": \"No search chain available\"}", true);
                     }
 
                     String queryProfileName = (String) arguments.get("queryProfileName");
@@ -312,10 +321,10 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
                     renderer.renderResponse(bs, result, execution, null).join();
                     String renderedResponse = Utf8.toString(bs.toByteArray());
 
-                    return new McpSchema.CallToolResult(renderedResponse, false);
+                    return toolResult(renderedResponse, false);
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, "Query execution failed", e);
-                    return new McpSchema.CallToolResult("{\"error\": \"" + e.getMessage() + "\"}", true);
+                    return toolResult("{\"error\": \"" + e.getMessage() + "\"}", true);
                 }
             })
             .build();
@@ -330,7 +339,7 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
         McpSchema.Tool tool = McpSchema.Tool.builder()
             .name("readQueryExamples")
             .description("Retrieves example YQL queries demonstrating how to use executeQuery.")
-            .inputSchema(inputSchema)
+            .inputSchema(mcpJsonMapper, inputSchema)
             .build();
 
         return McpStatelessServerFeatures.SyncToolSpecification.builder()
@@ -338,12 +347,12 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
             .callHandler((context, request) -> {
                 try (InputStream is = getClass().getClassLoader().getResourceAsStream("queryExamples.md")) {
                     if (is == null) {
-                        return new McpSchema.CallToolResult("{\"error\": \"Query examples not found\"}", true);
+                        return toolResult("{\"error\": \"Query examples not found\"}", true);
                     }
-                    return new McpSchema.CallToolResult(toJson(new String(is.readAllBytes(), StandardCharsets.UTF_8)), false);
+                    return toolResult(toJson(new String(is.readAllBytes(), StandardCharsets.UTF_8)), false);
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, "Failed to read query examples", e);
-                    return new McpSchema.CallToolResult("{\"error\": \"" + e.getMessage() + "\"}", true);
+                    return toolResult("{\"error\": \"" + e.getMessage() + "\"}", true);
                 }
             })
             .build();

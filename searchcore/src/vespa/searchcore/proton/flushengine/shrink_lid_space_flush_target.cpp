@@ -79,7 +79,7 @@ IFlushTarget::Task::UP ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSer
 }
 
 bool ShrinkLidSpaceFlushTarget::can_flush(SerialNum current_serial) const noexcept {
-    return current_serial > _flushedSerialNum;
+    return current_serial >= _flushedSerialNum.load(std::memory_order_relaxed) && _target->canShrinkLidSpace();
 }
 
 FlushStats ShrinkLidSpaceFlushTarget::getLastFlushStats() const {
@@ -88,6 +88,18 @@ FlushStats ShrinkLidSpaceFlushTarget::getLastFlushStats() const {
 
 uint64_t ShrinkLidSpaceFlushTarget::getApproxBytesToWriteToDisk() const {
     return 0;
+}
+
+size_t ShrinkLidSpaceFlushTarget::reserved_memory_for_flush() const noexcept {
+    return 0;
+}
+
+std::chrono::steady_clock::duration ShrinkLidSpaceFlushTarget::last_flush_duration() const noexcept {
+    return 200ms; // placeholder value.
+}
+
+std::chrono::steady_clock::duration ShrinkLidSpaceFlushTarget::estimated_flush_duration() const noexcept {
+    return 200ms; // placeholder value.
 }
 
 } // namespace proton

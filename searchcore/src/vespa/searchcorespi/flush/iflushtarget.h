@@ -133,6 +133,14 @@ public:
     virtual uint64_t get_approx_bytes_to_read_from_disk() const noexcept = 0;
 
     /**
+     * Returns the number of bytes allocated at start of flush to enable further updates
+     * while flushing is still ongoing. If the disk is slow (cf. HwInfo) causing flush to
+     * a memory buffer (cf. attribute vectors and document meta store), the return value also includes
+     * the estimated size of the memory buffer.
+     */
+    [[nodiscard]] virtual size_t reserved_memory_for_flush() const noexcept = 0;
+
+    /**
      * Return cost of replaying a feed operation relative to cost of reading a feed operation from tls.
      */
     virtual double get_replay_operation_cost() const = 0;
@@ -188,7 +196,8 @@ public:
      */
     virtual FlushStats getLastFlushStats() const = 0;
 
-    virtual std::chrono::steady_clock::duration last_flush_duration() const noexcept = 0;
+    [[nodiscard]] virtual std::chrono::steady_clock::duration last_flush_duration() const noexcept = 0;
+    [[nodiscard]] virtual std::chrono::steady_clock::duration estimated_flush_duration() const noexcept = 0;
 };
 
 class LeafFlushTarget : public IFlushTarget {
@@ -199,7 +208,6 @@ public:
     Priority getPriority() const override { return Priority::NORMAL; }
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
     double get_replay_operation_cost() const override { return 0.0; }
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 } // namespace searchcorespi

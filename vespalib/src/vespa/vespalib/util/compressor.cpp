@@ -141,6 +141,39 @@ void decompress(CompressionConfig::Type type, size_t uncompressedLen, const Cons
     }
 }
 
+std::span<const std::byte> decompress(ICompressor& decompressor, std::span<const std::byte> src,
+                                      std::span<std::byte> dst) {
+    size_t realUncompressedLen(dst.size());
+    if (!decompressor.unprocess(src.data(), src.size(), dst.data(), realUncompressedLen)) {
+        throw std::runtime_error(make_string("unprocess failed had %zu, wanted %zu, got %zu", src.size(), dst.size(),
+                                             realUncompressedLen));
+    } else {
+        return {dst.data(), realUncompressedLen};
+    }
+}
+
+std::span<const std::byte> decompress(CompressionConfig::Type type, std::span<const std::byte> src,
+                                      std::span<std::byte> dst) {
+    switch (type) {
+    case CompressionConfig::LZ4: {
+        LZ4Compressor lz4;
+        return decompress(lz4, src, dst);
+    }
+    case CompressionConfig::ZSTD: {
+        ZStdCompressor zstd;
+        return decompress(zstd, src, dst);
+    }
+    case CompressionConfig::NONE:
+    case CompressionConfig::NONE_MULTI:
+    case CompressionConfig::UNCOMPRESSABLE:
+        assert(src.size() <= dst.size());
+        memcpy(dst.data(), src.data(), src.size());
+        return {dst.data(), src.size()};
+    default:
+        throw std::runtime_error(make_string("Unable to handle decompression of type '%d'", type));
+    }
+}
+
 size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t payloadSize) {
     if (type == CompressionConfig::LZ4) {
         LZ4Compressor lz4;

@@ -14,15 +14,27 @@ namespace vespalib::quant {
 // "The Walsh Hadamard Transform - Basics and Applications" (2021)
 // by Sean O'Connor (in public domain).
 
+// Returns a multiplicative scaling factor for post-normalizing a Hadamard
+// transform of a vector of size n.
+// TODO constexpr when all compilers are >= C++26
+template <std::floating_point T>
+[[nodiscard]] T hadamard_normalization_factor(const size_t n) noexcept {
+    // Normalization is just dividing all elements by the square root of the size
+    return T{1} / std::sqrt(n);
+}
+
+template <std::floating_point T>
+void post_hadamard_normalize_precomputed(T* v, const size_t n, const T scale) noexcept {
+    for (size_t i = 0; i < n; ++i) {
+        v[i] *= scale;
+    }
+}
+
 // Normalize a Walsh-Hadamard-transformed vector so that its magnitude is
 // the same as prior to the transformation.
 template <std::floating_point T>
-void post_hadamard_normalize(T* v, const size_t n) {
-    // Normalization is just dividing all elements by the square root of the size
-    const T sqrt_recip = T{1} / std::sqrt(n);
-    for (size_t i = 0; i < n; ++i) {
-        v[i] *= sqrt_recip;
-    }
+void post_hadamard_normalize(T* v, const size_t n) noexcept {
+    post_hadamard_normalize_precomputed(v, n, hadamard_normalization_factor<T>(n));
 }
 
 /**
@@ -41,7 +53,7 @@ void post_hadamard_normalize(T* v, const size_t n) {
  * this function.
  */
 template <typename T>
-[[nodiscard]] T* hadamard(T* v, T* tmp, const size_t n) noexcept {
+[[nodiscard]] T* hadamard(T* __restrict__ v, T* __restrict__ tmp, const size_t n) noexcept {
     if (n == 0) [[unlikely]] {
         return v;
     }
@@ -72,7 +84,7 @@ template <typename T>
     for (size_t i = 0; i < stages; ++i) {
         // Each stage processes elements pairwise, shoveling additions into the lower
         // half (lo + ...) and subtractions into the top half (hi + ...) sequentially.
-        for (size_t j = 0, lo = 0, hi = n/2; j < n; j += 2, ++lo, ++hi) {
+        for (size_t j = 0, lo = 0, hi = n / 2; j < n; j += 2, ++lo, ++hi) {
             T a = in[j];
             T b = in[j + 1];
             out[lo] = a + b;
@@ -89,7 +101,7 @@ template <typename T>
  * See `hadamard(v, tmp, n)` for pre/post-conditions.
  */
 template <typename T>
-[[nodiscard]] T* hadamard_normalized(T* v, T* tmp, const size_t n) noexcept {
+[[nodiscard]] T* hadamard_normalized(T* __restrict__ v, T* __restrict__ tmp, const size_t n) noexcept {
     T* res = hadamard(v, tmp, n);
     post_hadamard_normalize(res, n);
     return res;
@@ -133,7 +145,7 @@ void hadamard(T* v, const size_t n) noexcept {
             while (i < j) {
                 T a = v[i];
                 T b = v[i + h]; // Alike term in _next_ block
-                v[i]     = a + b;
+                v[i] = a + b;
                 v[i + h] = a - b;
                 ++i;
             }

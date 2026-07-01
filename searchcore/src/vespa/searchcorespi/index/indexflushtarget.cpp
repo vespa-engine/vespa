@@ -28,7 +28,7 @@ IndexFlushTarget::IndexFlushTarget(IndexMaintainer& indexMaintainer)
 IndexFlushTarget::~IndexFlushTarget() = default;
 
 IFlushTarget::MemoryGain IndexFlushTarget::getApproxMemoryGain() const {
-    return MemoryGain(_flushStats.memory_before_bytes, _flushStats.memory_after_bytes);
+    return MemoryGain(_flushStats._memory_before_bytes, _flushStats._memory_after_bytes);
 }
 
 IFlushTarget::DiskGain IndexFlushTarget::getApproxDiskGain() const {
@@ -64,7 +64,7 @@ bool IndexFlushTarget::can_flush(SerialNum current_serial) const noexcept {
 }
 
 uint64_t IndexFlushTarget::getApproxBytesToWriteToDisk() const {
-    MemoryGain gain(_flushStats.memory_before_bytes, _flushStats.memory_after_bytes);
+    MemoryGain gain(_flushStats._memory_before_bytes, _flushStats._memory_after_bytes);
     if (gain.getAfter() < gain.getBefore()) {
         return gain.getBefore() - gain.getAfter();
     } else {
@@ -72,7 +72,15 @@ uint64_t IndexFlushTarget::getApproxBytesToWriteToDisk() const {
     }
 }
 
+size_t IndexFlushTarget::reserved_memory_for_flush() const noexcept {
+    return 0;
+}
+
 std::chrono::steady_clock::duration IndexFlushTarget::last_flush_duration() const noexcept {
+    return _flushStats._last_flush_duration;
+}
+
+std::chrono::steady_clock::duration IndexFlushTarget::estimated_flush_duration() const noexcept {
     return 10s; // placeholder value
 }
 

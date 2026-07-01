@@ -2165,7 +2165,9 @@
       "public static final enum com.yahoo.search.Query$Type SELECT",
       "public static final enum com.yahoo.search.Query$Type WEAKAND",
       "public static final enum com.yahoo.search.Query$Type TOKENIZE",
-      "public static final enum com.yahoo.search.Query$Type LINGUISTICS"
+      "public static final enum com.yahoo.search.Query$Type LINGUISTICS",
+      "public static final enum com.yahoo.search.Query$Type NEAR",
+      "public static final enum com.yahoo.search.Query$Type ONEAR"
     ]
   },
   "com.yahoo.search.Query" : {
@@ -2231,6 +2233,7 @@
       "public com.yahoo.search.query.Model getModel()",
       "public com.yahoo.search.query.Trace getTrace()",
       "public com.yahoo.container.jdisc.HttpRequest getHttpRequest()",
+      "public java.util.Map getRequestMap()",
       "public java.net.URI getUri()",
       "public com.yahoo.search.query.SessionId getSessionId()",
       "public com.yahoo.search.query.SessionId getSessionId(java.lang.String)",

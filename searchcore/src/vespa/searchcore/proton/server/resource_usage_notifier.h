@@ -8,6 +8,7 @@
 
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
+#include <vespa/searchcore/proton/common/reserved_disk_space_and_memory.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -35,19 +36,22 @@ public:
         double                     _memoryLimit;
         double                     _diskLimit;
         double                     _reserved_disk_space_factor;
+        double                     _reserved_memory_factor;
         AttributeUsageFilterConfig _attribute_limit;
 
-        Config() : Config(1.0, 1.0, 0.0, AttributeUsageFilterConfig()) {}
+        Config() : Config(1.0, 1.0, 0.0, 0.0, AttributeUsageFilterConfig()) {}
 
         Config(double memoryLimit_in, double diskLimit_in, double reserved_disk_space_factor_in,
-               AttributeUsageFilterConfig attribute_limit_in)
+               double reserved_memory_factor_in, AttributeUsageFilterConfig attribute_limit_in)
             : _memoryLimit(memoryLimit_in),
               _diskLimit(diskLimit_in),
               _reserved_disk_space_factor(reserved_disk_space_factor_in),
+              _reserved_memory_factor(reserved_memory_factor_in),
               _attribute_limit(attribute_limit_in) {}
         bool operator==(const Config& rhs) const noexcept {
             return (_memoryLimit == rhs._memoryLimit) && (_diskLimit == rhs._diskLimit) &&
                    (_reserved_disk_space_factor == rhs._reserved_disk_space_factor) &&
+                   (_reserved_memory_factor == rhs._reserved_memory_factor) &&
                    (_attribute_limit == rhs._attribute_limit);
         }
         bool operator!=(const Config& rhs) const noexcept { return !(*this == rhs); }
@@ -59,7 +63,8 @@ private:
     // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats         _memoryStats;
     uint64_t                             _diskUsedSizeBytes;
-    uint64_t                             _reserved_disk_space;
+    uint64_t                             _disk_capacity_bytes;
+    ReservedDiskSpaceAndMemory           _reserved_disk_space_and_memory;
     searchcorespi::common::ResourceUsage _resource_usage;
     AttributeUsageStats                  _attribute_usage;
     Config                               _config;
@@ -72,6 +77,7 @@ private:
     double getMemoryUsedRatio(const Guard& guard) const;
     double getDiskUsedRatio(const Guard& guard) const;
     double get_relative_reserved_disk_space(const Guard& guard) const;
+    double get_relative_reserved_memory(const Guard& guard) const;
     double get_relative_transient_memory_usage(const Guard& guard) const;
     double get_relative_transient_disk_usage(const Guard& guard) const;
     void notify_resource_usage(const Guard& guard, ResourceUsageState state, bool disk_mem_sample);
@@ -82,10 +88,12 @@ public:
 
     void set_resource_usage(const searchcorespi::common::ResourceUsage& resource_usage,
                             vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
-                            uint64_t reserved_disk_space);
+                            uint64_t disk_capacity_bytes, ReservedDiskSpaceAndMemory reserved_disk_space_and_memory_);
     [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
+    [[nodiscard]] ReservedDiskSpaceAndMemory reserved_disk_space_and_memory() const noexcept;
+    [[nodiscard]] uint64_t disk_capacity_bytes() const;
     searchcorespi::common::ResourceUsage get_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo& getHwInfo() const noexcept { return _hwInfo; }

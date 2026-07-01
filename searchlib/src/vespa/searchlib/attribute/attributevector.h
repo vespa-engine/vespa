@@ -494,6 +494,7 @@ public:
 
     virtual std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName);
     virtual uint64_t getEstimatedSaveByteSize() const;
+    [[nodiscard]] virtual size_t reserved_memory_for_flush(bool slow_disk) const noexcept;
 
     static bool isEnumerated(const vespalib::GenericHeader& header);
 

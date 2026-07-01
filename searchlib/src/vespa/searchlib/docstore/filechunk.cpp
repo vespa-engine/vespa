@@ -278,21 +278,21 @@ struct FixedParams {
     IFileChunkVisitorProgress* visitorProgress;
 };
 
-void appendChunks(FixedParams* args, Chunk::UP chunk) {
+void append_chunk_entries(FixedParams& args, Chunk::UP chunk) {
     const Chunk::LidList ll(chunk->getUniqueLids());
     for (const Chunk::Entry& e : ll) {
-        LidInfo lidInfo(args->fileId, chunk->getId(), e.netSize());
-        if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
-            auto guard(args->db.getLidGuard(e.getLid()));
-            if (args->db.getLid(args->lidReadGuard, e.getLid()) == lidInfo) {
+        LidInfo lidInfo(args.fileId, chunk->getId(), e.netSize());
+        if (args.db.getLid(args.lidReadGuard, e.getLid()) == lidInfo) {
+            auto guard(args.db.getLidGuard(e.getLid()));
+            if (args.db.getLid(args.lidReadGuard, e.getLid()) == lidInfo) {
                 // I am still in use, so I need to be taken care of.
                 vespalib::ConstBufferRef data(chunk->getLid(e.getLid()));
-                args->dest.write(std::move(guard), chunk->getId(), e.getLid(), data);
+                args.dest.write(std::move(guard), chunk->getId(), e.getLid(), data);
             }
         }
     }
-    if (args->visitorProgress != nullptr) {
-        args->visitorProgress->updateProgress();
+    if (args.visitorProgress != nullptr) {
+        args.visitorProgress->updateProgress();
     }
 }
 
@@ -302,9 +302,11 @@ void appendChunks(FixedParams* args, Chunk::UP chunk) {
  */
 class FutureChunk {
     std::future<std::unique_ptr<Chunk>> _future;
+    uint32_t                            _chunk_size;
 
 public:
-    FutureChunk(std::future<std::unique_ptr<Chunk>> future) : _future(std::move(future)) {}
+    FutureChunk(std::future<std::unique_ptr<Chunk>> future, uint32_t chunk_size_in)
+        : _future(std::move(future)), _chunk_size(chunk_size_in) {}
     FutureChunk(const FutureChunk&) = delete;
     FutureChunk(FutureChunk&&) = default;
     ~FutureChunk() {
@@ -312,7 +314,9 @@ public:
             _future.wait();
         }
     }
-    std::unique_ptr<Chunk> get() { return _future.get(); }
+    [[nodiscard]] std::unique_ptr<Chunk> get() { return _future.get(); }
+    [[nodiscard]] uint32_t chunk_size() const noexcept { return _chunk_size; }
+    [[nodiscard]] bool is_ready() const noexcept { return _future.wait_for(0s) == std::future_status::ready; }
 };
 
 } // namespace
@@ -325,9 +329,20 @@ void FileChunk::appendTo(vespalib::Executor& executor, const IGetLid& db, IWrite
     FixedParams                       fixedParams = {db, dest, lidReadGuard, getFileId().getId(), visitorProgress};
     size_t                            limit = std::thread::hardware_concurrency();
     vespalib::ArrayQueue<FutureChunk> queue;
+    size_t inflight_bytes = 0;         // Current inflight compressed data, is more when decompressed
+    size_t max_inflight_bytes = 32_Mi; // Max inflight compressed data
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
+        uint32_t chunk_size = _chunkInfo[chunkId].getSize();
+        while (!queue.empty() && (queue.size() >= limit || inflight_bytes + chunk_size > max_inflight_bytes ||
+                                  queue.front().is_ready()))
+        {
+            append_chunk_entries(fixedParams, queue.front().get());
+            inflight_bytes -= queue.front().chunk_size();
+            queue.pop();
+        }
+
         std::promise<Chunk::UP> promisedChunk;
-        FutureChunk             futureChunk(promisedChunk.get_future());
+        FutureChunk             futureChunk(promisedChunk.get_future(), chunk_size);
         auto task = vespalib::makeLambdaTask([promise = std::move(promisedChunk), chunkId, this]() mutable {
             const ChunkInfo& cInfo(_chunkInfo[chunkId]);
             try {
@@ -342,18 +357,15 @@ void FileChunk::appendTo(vespalib::Executor& executor, const IGetLid& db, IWrite
             }
         });
         executor.execute(CpuUsage::wrap(std::move(task), cpu_category));
-
-        while (queue.size() >= limit) {
-            appendChunks(&fixedParams, queue.front().get());
-            queue.pop();
-        }
-
+        inflight_bytes += futureChunk.chunk_size();
         queue.push(std::move(futureChunk));
     }
     while (!queue.empty()) {
-        appendChunks(&fixedParams, queue.front().get());
+        append_chunk_entries(fixedParams, queue.front().get());
+        inflight_bytes -= queue.front().chunk_size();
         queue.pop();
     }
+    assert(inflight_bytes == 0);
     dest.close();
 }
 

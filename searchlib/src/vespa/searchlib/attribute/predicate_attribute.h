@@ -50,6 +50,7 @@ public:
     predicate::PredicateIndex& getIndex() { return *_index; }
 
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
+    [[nodiscard]] size_t reserved_memory_for_flush(bool slow_disk) const noexcept override;
     bool onLoad(vespalib::Executor* executor) override;
     void onCommit() override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
@@ -91,6 +92,9 @@ private:
 
     IntervalRangeVector _interval_range_vector;
     IntervalRange       _max_interval_range;
+    std::atomic<size_t> _reserved_memory_for_flush_stats;
+
+    void update_reserved_memory_for_flush() noexcept;
 
 public:
     static constexpr uint8_t  MIN_FEATURE_FILL = 255;

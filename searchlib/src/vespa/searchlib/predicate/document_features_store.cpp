@@ -261,4 +261,8 @@ std::unique_ptr<ISaver> DocumentFeaturesStore::make_saver() const {
     return std::make_unique<DocumentFeaturesStoreSaver>(*this);
 }
 
+size_t DocumentFeaturesStore::reserved_memory_for_flush() const noexcept {
+    return _refs.size() * sizeof(Refs);
+}
+
 } // namespace search::predicate

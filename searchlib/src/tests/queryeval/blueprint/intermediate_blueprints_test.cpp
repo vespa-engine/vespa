@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 
 #include <filesystem>
+#include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP("blueprint_test");
@@ -218,6 +219,65 @@ TEST(IntermediateBlueprintsTest, test_Or_propagates_updated_histestimate) {
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(1)).hit_rate);
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(2)).hit_rate);
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(3)).hit_rate);
+}
+
+namespace {
+
+void collect_fetch_postings_counts(std::map<std::string, size_t>& counts, const auto& node) {
+    if (!node.valid()) {
+        return;
+    }
+    collect_fetch_postings_counts(counts, node["roots"]);
+    collect_fetch_postings_counts(counts, node["children"]);
+    for (size_t i = 0; i < node.entries(); ++i) {
+        collect_fetch_postings_counts(counts, node[i]);
+    }
+    const auto& name = node["name"];
+    if (name.valid()) {
+        counts[name.asString().make_string()] += node["count"].asLong();
+    }
+}
+
+} // namespace
+
+TEST(IntermediateBlueprintsTest, test_fetch_postings_can_be_profiled) {
+    auto enum_guard = Blueprint::auto_enum();
+    auto bp = std::make_unique<AndBlueprint>();
+    bp->addChild(ap(MyLeafSpec(20).create()));
+    bp->addChild(ap(MyLeafSpec(200).create()));
+    bp->addChild(ap(MyLeafSpec(2000).create()));
+    bp->setDocIdLimit(5000);
+    optimize(bp, true);
+    vespalib::ExecutionProfiler profiler(64);
+    auto                        profiler_guard = vespalib::ExecutionProfiler::ThreadBinder::bind(&profiler);
+    {
+        FetchPostingsProfilerGuard guard(*bp);
+        bp->fetchPostings(ExecuteInfo::createForTest());
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    std::map<std::string, size_t> counts;
+    collect_fetch_postings_counts(counts, slime.get());
+    EXPECT_EQ(counts.size(), 4u);
+    EXPECT_EQ(counts["[1]search::queryeval::AndBlueprint::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[2]search::queryeval::MyLeaf::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[3]search::queryeval::MyLeaf::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[4]search::queryeval::MyLeaf::fetchPostings"], 1u);
+}
+
+TEST(IntermediateBlueprintsTest, test_fetch_postings_profile_omits_id_when_unset) {
+    auto                        leaf = ap(MyLeafSpec(20).create());
+    vespalib::ExecutionProfiler profiler(64);
+    auto                        profiler_guard = vespalib::ExecutionProfiler::ThreadBinder::bind(&profiler);
+    {
+        FetchPostingsProfilerGuard guard(*leaf);
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    std::map<std::string, size_t> counts;
+    collect_fetch_postings_counts(counts, slime.get());
+    EXPECT_EQ(counts.size(), 1u);
+    EXPECT_EQ(counts["[]search::queryeval::MyLeaf::fetchPostings"], 1u);
 }
 
 TEST(IntermediateBlueprintsTest, test_And_Blueprint) {
@@ -584,6 +644,14 @@ void compare(const Blueprint& bp1, const Blueprint& bp2, bool expect_eq) {
                     return true;
                 }
             }
+            if (field == "abs_cost") {
+                // ignore abs_cost differences between optimized and unoptimized blueprint trees
+                if (a.type().getId() == vespalib::slime::DOUBLE::ID &&
+                    b.type().getId() == vespalib::slime::DOUBLE::ID)
+                {
+                    return true;
+                }
+            }
             if (path.size() >= 2 && std::holds_alternative<std::string_view>(path[path.size() - 2])) {
                 std::string_view parent = std::get<std::string_view>(path[path.size() - 2]);
                 // ignore flow_stats to enable comparing optimized with unoptimized trees
@@ -661,14 +729,17 @@ TEST(IntermediateBlueprintsTest, test_SourceBlender_below_AND_partial_optimizati
     auto expect = std::make_unique<AndBlueprint>();
     addLeafs(*expect, {1, 2, 3});
 
+    // The selector_2 blender (two leaves) now sorts before the selector_1 blender:
+    // the latter wraps AND subtrees whose per-node activation cost makes it the
+    // more expensive child under the new cost model.
+    expect->addChild(
+        addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
+
     auto blender = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
     blender->addChild(addLeafsWithSourceId(3, std::make_unique<AndBlueprint>(), {{30, 3}, {300, 3}}));
     blender->addChild(addLeafsWithSourceId(2, std::make_unique<AndBlueprint>(), {{20, 2}, {200, 2}, {2000, 2}}));
     blender->addChild(addLeafsWithSourceId(1, std::make_unique<AndBlueprint>(), {{10, 1}, {100, 1}, {1000, 1}}));
     expect->addChild(std::move(blender));
-
-    expect->addChild(
-        addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
 
     optimize_and_compare(std::move(top), std::move(expect));
 }
@@ -1027,6 +1098,29 @@ TEST(IntermediateBlueprintsTest, require_that_replaced_blueprints_retain_source_
     EXPECT_EQ(42u, top2_up->getSourceId());
 }
 
+TEST(IntermediateBlueprintsTest, equiv_flow_stats_reach_into_intermediate_term_subtrees) {
+    // Equiv terms are not part of the optimize tree, so EquivBlueprint must
+    // update flow stats on the full subtree of each term — not just the term
+    // itself. Otherwise an IntermediateBlueprint sitting between Equiv and
+    // its real leaves (e.g. a SourceBlender wrapped around a term in proton)
+    // sees zero-initialized child stats, propagates estimate=0/cost=0 up to
+    // Equiv, and zeroes out the planner cost for everything that follows
+    // Equiv in an AND.
+    FieldSpecBaseList fields;
+    fields.add(FieldSpecBase(1, 1));
+    auto equiv = std::make_unique<EquivBlueprint>(fields, EquivBlueprint::allocate_outside_equiv_tag{});
+    for (uint32_t i = 0; i < 3; ++i) {
+        auto wrap = std::make_unique<OrBlueprint>();
+        wrap->addChild(ap(MyLeafSpec(40).addField(1, 2 + i * 2).create()));
+        wrap->addChild(ap(MyLeafSpec(40).addField(1, 3 + i * 2).create()));
+        equiv->addTerm(std::move(wrap), 1.0);
+    }
+    equiv->basic_plan(false, 1000);
+    EXPECT_GT(equiv->estimate(), 0.0);
+    EXPECT_GT(equiv->cost(), 0.0);
+    EXPECT_GT(equiv->strict_cost(), 0.0);
+}
+
 TEST(IntermediateBlueprintsTest, test_Equiv_Blueprint) {
     FieldSpecBaseList            fields;
     search::fef::MatchDataLayout subLayout;
@@ -1144,6 +1238,7 @@ TEST(IntermediateBlueprintsTest, require_that_unpack_of_or_over_multisearch_is_o
                                 ->addChild(ap(MyLeafSpec(20).addField(4, 4).create()))
                                 .addChild(ap(MyLeafSpec(20).addField(5, 5).create()))
                                 .addChild(ap(MyLeafSpec(10).addField(6, 6).create()))));
+
     Blueprint::UP top_up(ap((new OrBlueprint())->addChild(std::move(child1)).addChild(std::move(child2))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(false, 1000);
@@ -1246,16 +1341,17 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     search::fef::TermFieldHandle idxth22 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::MatchDataLayout mdl;
-    Blueprint::UP                top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
-                                               ->addTerm(index.getIndex().createBlueprint(
+
+    Blueprint::UP top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
+                                ->addTerm(index.getIndex().createBlueprint(
                                               requestContext, FieldSpec("f2", 2, idxth22, true), makeTerm("w2"), mdl),
-                                                         1.0)
-                                               .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f1", 1, idxth1),
-                                                                                         makeTerm("w1"), mdl),
-                                                        1.0)
-                                               .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f2", 2, idxth21),
-                                                                                         makeTerm("w2"), mdl),
-                                                        1.0)));
+                                          1.0)
+                                .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f1", 1, idxth1),
+                                                                          makeTerm("w1"), mdl),
+                                         1.0)
+                                .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f2", 2, idxth21),
+                                                                          makeTerm("w2"), mdl),
+                                         1.0)));
     EXPECT_TRUE(mdl.empty());
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(true, 1000);
@@ -1289,13 +1385,14 @@ TEST(IntermediateBlueprintsTest, require_that_unpack_optimization_is_not_overrul
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::TermFieldHandle idxth2 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth3 = subLayout.allocTermField(3);
-    Blueprint::UP                top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
-                                               ->addTerm(ap((new OrBlueprint())
-                                                                ->addChild(ap(MyLeafSpec(20).addField(1, idxth1).create()))
-                                                                .addChild(ap(MyLeafSpec(20).addField(2, idxth2).create()))
-                                                                .addChild(ap(MyLeafSpec(10).addField(3, idxth3).create()))),
-                                                         1.0)));
-    MatchData::UP                md = MatchData::makeTestInstance(100, 10);
+
+    Blueprint::UP top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
+                                ->addTerm(ap((new OrBlueprint())
+                                                 ->addChild(ap(MyLeafSpec(20).addField(1, idxth1).create()))
+                                                 .addChild(ap(MyLeafSpec(20).addField(2, idxth2).create()))
+                                                 .addChild(ap(MyLeafSpec(10).addField(3, idxth3).create()))),
+                                          1.0)));
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(true, 1000);
     top_up->fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = top_up->createSearch(*md);
@@ -1481,56 +1578,168 @@ void verify_cost(make&& mk, double expect, double expect_strict) {
     EXPECT_DOUBLE_EQ(bp->strict_cost(), expect_strict);
 }
 
+// Every intermediate carries a per-node activation cost in addition to the
+// flow cost of its children: c (= intermediate_activation_cost()) per
+// invocation, i.e. +c non-strict and +c*est strict.
 TEST(IntermediateBlueprintsTest, cost_for_OR) {
-    verify_cost(make::OR(), OrFlow::cost_of(child_stats, false),
+    double c = flow::intermediate_activation_cost();
+    // heap_cost already models the strict activation, so it is not added on top there
+    verify_cost(make::OR(), OrFlow::cost_of(child_stats, false) + c,
                 OrFlow::cost_of(child_stats, true) + flow::heap_cost(OrFlow::estimate_of(child_stats), 3));
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_AND) {
-    verify_cost(make::AND(), AndFlow::cost_of(child_stats, false), AndFlow::cost_of(child_stats, true));
+    double c = flow::intermediate_activation_cost();
+    double est = AndFlow::estimate_of(child_stats);
+    verify_cost(make::AND(), AndFlow::cost_of(child_stats, false) + c, AndFlow::cost_of(child_stats, true) + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_RANK) {
-    verify_cost(make::RANK(), 1.1, 0.2 * 1.1); // first
+    double c = flow::intermediate_activation_cost();
+    verify_cost(make::RANK(), 1.1 + c, 0.2 * 1.1 + c * 0.2); // first child + self
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_ANDNOT) {
-    verify_cost(make::ANDNOT(), AndNotFlow::cost_of(child_stats, false), AndNotFlow::cost_of(child_stats, true));
+    double c = flow::intermediate_activation_cost();
+    double est = AndNotFlow::estimate_of(child_stats);
+    verify_cost(make::ANDNOT(), AndNotFlow::cost_of(child_stats, false) + c,
+                AndNotFlow::cost_of(child_stats, true) + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_SB) {
     InvalidSelector sel;
-    verify_cost(make::SB(sel), 1.3 + 1.0, 1.3 + (1.0 - 0.8 * 0.7 * 0.5)); // max, non_strict+1.0, strict+est
+    double          c = flow::intermediate_activation_cost();
+    double          est = 1.0 - 0.8 * 0.7 * 0.5;
+    // max, non_strict + selector lookup(1.0) + activation, strict + selector(est) + activation(c*est)
+    verify_cost(make::SB(sel), 1.3 + 1.0 + c, 1.3 + est + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_NEAR) {
-    verify_cost(make::NEAR(5, 0), AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
-                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
+    double c = flow::intermediate_activation_cost();
+    double est = AndFlow::estimate_of(child_stats);
+    verify_cost(make::NEAR(5, 0), AndFlow::cost_of(child_stats, false) + est * 3 + c,
+                AndFlow::cost_of(child_stats, true) + est * 3 + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_ONEAR) {
-    verify_cost(make::ONEAR(5, 0), AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
-                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
+    double c = flow::intermediate_activation_cost();
+    double est = AndFlow::estimate_of(child_stats);
+    verify_cost(make::ONEAR(5, 0), AndFlow::cost_of(child_stats, false) + est * 3 + c,
+                AndFlow::cost_of(child_stats, true) + est * 3 + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_NEAR_with_negative_children) {
     ASSERT_GT(child_stats.size(), 1);
-    auto positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
-    verify_cost(make::NEAR(5, 1), AndFlow::cost_of(positive_stats, false) + AndFlow::estimate_of(positive_stats) * 3,
-                AndFlow::cost_of(positive_stats, true) + AndFlow::estimate_of(positive_stats) * 3);
+    double c = flow::intermediate_activation_cost();
+    auto   positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
+    double est = AndFlow::estimate_of(positive_stats);
+    verify_cost(make::NEAR(5, 1), AndFlow::cost_of(positive_stats, false) + est * 3 + c,
+                AndFlow::cost_of(positive_stats, true) + est * 3 + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_ONEAR_with_negative_children) {
     ASSERT_GT(child_stats.size(), 1);
-    auto positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
-    verify_cost(make::ONEAR(5, 1), AndFlow::cost_of(positive_stats, false) + AndFlow::estimate_of(positive_stats) * 3,
-                AndFlow::cost_of(positive_stats, true) + AndFlow::estimate_of(positive_stats) * 3);
+    double c = flow::intermediate_activation_cost();
+    auto   positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
+    double est = AndFlow::estimate_of(positive_stats);
+    verify_cost(make::ONEAR(5, 1), AndFlow::cost_of(positive_stats, false) + est * 3 + c,
+                AndFlow::cost_of(positive_stats, true) + est * 3 + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_WEAKAND) {
+    double c = flow::intermediate_activation_cost();
     double est = (Blueprint::abs_to_rel_est(1000, 1000) + OrFlow::estimate_of(child_stats)) / 2.0;
-    verify_cost(make::WEAKAND(1000), OrFlow::cost_of(child_stats, false),
+    // heap_cost already models the strict activation, so it is not added on top there
+    verify_cost(make::WEAKAND(1000), OrFlow::cost_of(child_stats, false) + c,
                 OrFlow::cost_of(child_stats, true) + flow::heap_cost(est, 3));
+}
+
+// abs_cost is accumulated by the shared sort epilogue from the children
+// abs_cost plus the node's own self cost, with the cost of being forced
+// strict added on the way out. We pin the exact value using keep_order so
+// the children stay in a known order (order selection is tested elsewhere).
+//
+// AND of three leaves (MyLeaf flow stats are {est, cost, cost*est}):
+//   A{0.2, 1.1, 0.22}  B{0.3, 1.2, 0.36}  C{0.5, 1.3, 0.65}
+// in-flow: non-strict, rate 1.0; kept order [A, B, C]; self cost of AND is the
+// per-node activation cost c (+c non-strict, +c*est_AND strict).
+double abs_cost_of_kept_order_and(InFlow in_flow, bool allow_force_strict) {
+    Blueprint::UP bp = make::AND().cost(1.1).leaf(200).cost(1.2).leaf(300).cost(1.3).leaf(500);
+    bp->setDocIdLimit(1000);
+    auto opts = Blueprint::Options().keep_order(true).allow_force_strict(allow_force_strict);
+    bp = Blueprint::optimize_and_sort(std::move(bp), in_flow, opts);
+    return bp->abs_cost();
+}
+
+TEST(IntermediateBlueprintsTest, abs_cost_for_AND_with_kept_order) {
+    double c = flow::intermediate_activation_cost();
+    // without force-strict: plain non-strict AND flow, cost * flow per child, plus self cost c at rate 1.0
+    //   A: 1.1 * 1.0          = 1.1     (flow 1.0)
+    //   B: 1.2 * 0.2          = 0.24    (flow 1.0 * 0.2)
+    //   C: 1.3 * (0.2 * 0.3)  = 0.078   (flow 1.0 * 0.2 * 0.3)
+    //   self: c * 1.0
+    EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), false), 1.1 * 1.0 + 1.2 * 0.2 + 1.3 * (0.2 * 0.3) + c);
+
+    // with force-strict: the AND is cheaper strict, so it forces itself strict.
+    // children are then evaluated strict, in order:
+    //   A: 0.22                (strict_cost; flow 1.0)
+    //   B: 1.2 * 0.2  = 0.24   (forcing not worth it at flow 0.2)
+    //   C: 1.3 * (0.2 * 0.3)   (forcing not worth it)
+    //   self: c * est_AND      (strict self cost)
+    // plus the cost of forcing strict against a non-strict caller:
+    //   strict_cost_diff(est_AND, rate) = 0.2 * (1.0 - 0.2 * 0.3 * 0.5)
+    double children = 0.22 + 1.2 * 0.2 + 1.3 * (0.2 * 0.3);
+    double self_strict = c * (0.2 * 0.3 * 0.5);
+    double force_strict_cost = 0.2 * (1.0 - 0.2 * 0.3 * 0.5);
+    EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), true), children + self_strict + force_strict_cost);
+}
+
+// A leaf that is unconditionally strict regardless of cost, like DotProduct /
+// WeightedSet (they pass always_strict=true to resolve_strict). It pins down
+// how abs_cost treats forced strictness: the leaf is tagged strict for
+// evaluation, but abs_cost reflects only the strictness the planner would pick
+// on cost grounds, never the always_strict forcing.
+struct AlwaysStrictLeaf : MyLeaf {
+    double sort(InFlow in_flow) override {
+        resolve_strict(in_flow, true);
+        return abs_cost();
+    }
+};
+
+// Plan a single always-strict leaf in a non-strict context at rate 1.0, with
+// force-strict enabled. MyLeaf flow stats for cost c and rel_est e are {e, c, c*e}.
+Blueprint::UP planned_always_strict_leaf(double cost, uint32_t est_hits) {
+    auto leaf = std::make_unique<AlwaysStrictLeaf>();
+    leaf->set_cost(cost);
+    leaf->estimate(est_hits);
+    leaf->setDocIdLimit(1000);
+    auto opts = Blueprint::Options().keep_order(true).allow_force_strict(true);
+    return Blueprint::optimize_and_sort(std::move(leaf), InFlow(1.0), opts);
+}
+
+TEST(IntermediateBlueprintsTest, abs_cost_for_always_strict_leaf) {
+    // strict only because it is always strict: stats where strict is more
+    // expensive than non-strict, so the planner would never pick strict here.
+    //   cost 0.1, rel_est 0.5  ->  stats {0.5, 0.1, 0.05}
+    //   non-strict cost = 0.1;  forced-strict cost = 0.05 + 0.2 * (1.0 - 0.5) = 0.15
+    // The leaf is still tagged strict, but abs_cost tracks the cheaper,
+    // model-preferred non-strict cost and never pays the always_strict penalty
+    // -- so the gap to the measured cost stays meaningful.
+    {
+        auto bp = planned_always_strict_leaf(0.1, 500);
+        EXPECT_TRUE(bp->strict());
+        EXPECT_DOUBLE_EQ(bp->abs_cost(), 0.1);
+    }
+
+    // strict because the planner would pick strict anyway (strict is cheaper):
+    // always_strict changes nothing, abs_cost is the forced-strict cost.
+    //   cost 1.3, rel_est 0.5  ->  stats {0.5, 1.3, 0.65}
+    //   forced-strict cost = 0.65 + 0.2 * (1.0 - 0.5) = 0.75 < non-strict 1.3
+    {
+        auto bp = planned_always_strict_leaf(1.3, 500);
+        EXPECT_TRUE(bp->strict());
+        EXPECT_DOUBLE_EQ(bp->abs_cost(), 0.65 + 0.2 * (1.0 - 0.5));
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

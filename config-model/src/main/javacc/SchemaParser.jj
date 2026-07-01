@@ -166,7 +166,7 @@ TOKEN :
 | < AS: "as" >
 | < INDEXING: "indexing" >
 | < SUMMARY_TO: "summary-to" >
-| < DOCUMENT_ID: "document-id" >
+| < DOCUMENTID: "documentid" >
 | < DOCUMENT_SUMMARY: "document-summary" >
 | < ELEMENT_GAP: "element-gap" >
 | < INFINITY: "infinity" >
@@ -201,6 +201,7 @@ TOKEN :
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
 | < EXECUTION_MODE: "execution-mode">
+| < OPTIMIZE_MODEL: "optimize-model">
 | < PARALLEL: "parallel">
 | < SEQUENTIAL: "sequential">
 | < MODEL: "model" >
@@ -1533,7 +1534,7 @@ void id(ParsedField field) :
 }
 
 /**
- * Consumes the document-id setting.
+ * Consumes the documentid setting.
  *
  * @param schema the schema object to add setting to
  */
@@ -1542,7 +1543,7 @@ void documentId(ParsedSchema schema) :
     boolean attribute = false;
 }
 {
-    <DOCUMENT_ID>
+    <DOCUMENTID>
     <COLON> ( ( <ATTRIBUTE> { attribute = true; } ) | ( <FROM_DISK> { attribute = false; } ) )
     {
         schema.enableDocumentIdAttribute(attribute);
@@ -1735,6 +1736,7 @@ void onnxModelItem(OnnxModel onnxModel) :
 {
     String path = null;
     int num;
+    boolean enable;
 }
 {
     (
@@ -1745,6 +1747,7 @@ void onnxModelItem(OnnxModel onnxModel) :
         <INTEROP_THREADS> <COLON> num = integer() { onnxModel.setStatelessInterOpThreads(num); } |
         <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
                                   | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
+        <OPTIMIZE_MODEL> <COLON> enable = bool() { onnxModel.setOptimizeModel(enable); } |
         (<ONNX_INPUT_SL>) {
             String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
             if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
@@ -2928,7 +2931,6 @@ String identifierWithDash() :
     | <CUTOFF_STRATEGY>
     | <DENSE_POSTING_LIST_THRESHOLD>
     | <DISTANCE_METRIC>
-    | <DOCUMENT_ID>
     | <DOCUMENT_SUMMARY>
     | <ELEMENT_GAP>
     | <ENABLE_BIT_VECTORS>
@@ -3026,6 +3028,7 @@ String identifier() : { }
       | <DIRECT>
       | <DIVERSITY>
       | <DOCUMENT>
+      | <DOCUMENTID>
       | <DOUBLE_KEYWORD>
       | <FLOAT_KEYWORD>
       | <LONG_KEYWORD>

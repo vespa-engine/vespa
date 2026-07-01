@@ -33,6 +33,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.VaultReference;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
@@ -377,7 +378,10 @@ public class SessionPreparer {
                                   params.cloudResourceTags(),
                                   params.dataplaneTokens(),
                                   ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()),
-                                  telemetryExporterConfiguration());
+                                  telemetryExporterConfiguration().withTenantVaultReferences(
+                                          params.tenantVaults().stream()
+                                                .map(v -> new VaultReference(v.id(), v.name(), v.externalId()))
+                                                .toList()));
             checkTimeout("write state to zookeeper");
         }
 

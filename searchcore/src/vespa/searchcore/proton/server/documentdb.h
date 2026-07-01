@@ -197,6 +197,7 @@ private:
      * is a config change.
      */
     void enterRedoReprocessState() override;
+    void enter_doc_store_validation_state();
     void enterApplyLiveConfigState();
 
     /**

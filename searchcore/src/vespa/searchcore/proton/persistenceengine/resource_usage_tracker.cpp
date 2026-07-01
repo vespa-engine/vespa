@@ -70,7 +70,7 @@ void ResourceUsageTracker::notify_resource_usage(const ResourceUsageState& state
     // This ensures that the transient resource usage is covered by the resource headroom on the content node,
     // instead of leading to feed blocked due to natural fluctuations.
     _resource_usage =
-        ResourceUsage(state.reported_disk_usage(), state.non_transient_memory_usage(),
+        ResourceUsage(state.reported_disk_usage(), state.reported_memory_usage(),
                       AttributeResourceUsage(attribute_usage.max_address_space_usage().getUsage().usage(), name));
     if (_listener != nullptr) {
         _listener->update_resource_usage(_resource_usage);

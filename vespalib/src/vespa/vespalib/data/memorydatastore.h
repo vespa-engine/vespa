@@ -2,8 +2,10 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/transient_memory_tracker.h>
 
 #include <mutex>
+#include <span>
 #include <vector>
 
 namespace vespalib {
@@ -17,32 +19,28 @@ namespace vespalib {
  **/
 class MemoryDataStore {
 public:
-    class Reference {
-    public:
-        explicit Reference(void* data_) noexcept : _data(data_) {}
-        void* data() noexcept { return _data; }
-        const char* c_str() const noexcept { return static_cast<const char*>(_data); }
-
-    private:
-        void* _data;
-    };
-    MemoryDataStore(alloc::Alloc&& initialAlloc, std::mutex* lock);
+    explicit MemoryDataStore(alloc::Alloc&& initialAlloc);
     MemoryDataStore(const MemoryDataStore&) = delete;
-    MemoryDataStore& operator=(const MemoryDataStore&) = delete;
+    MemoryDataStore(MemoryDataStore&&) noexcept = delete;
     ~MemoryDataStore();
+    MemoryDataStore& operator=(const MemoryDataStore&) = delete;
+    MemoryDataStore& operator=(MemoryDataStore&&) noexcept = delete;
+
+    [[nodiscard]] std::span<std::byte> alloc(size_t size);
     /**
      * Will allocate space and copy the data in. The returned pointer will be valid
      * for the lifetime of this object.
      * @return A pointer/reference to the freshly stored object.
      */
-    Reference push_back(const void* data, size_t sz);
-    void swap(MemoryDataStore& rhs) { _buffers.swap(rhs._buffers); }
-    void clear() noexcept { _buffers.clear(); }
+    [[nodiscard]] std::span<const std::byte> push_back(std::span<const std::byte> data);
+    void clear() noexcept;
 
 private:
     std::vector<alloc::Alloc> _buffers;
     size_t                    _writePos;
-    std::mutex*               _lock;
+    std::mutex                _lock;
+    TransientMemoryTracker    _tracker;
+    size_t                    _transient_memory;
 };
 
 } // namespace vespalib

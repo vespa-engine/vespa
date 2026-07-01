@@ -85,6 +85,7 @@ WriteableFileChunk::WriteableFileChunk(vespalib::Executor& executor, FileId file
       _cond(),
       _writeLock(),
       _flushLock(),
+      _flush_cond(),
       _dataFile(_dataFileName.c_str()),
       _chunkMap(),
       _pendingChunks(),
@@ -95,12 +96,14 @@ WriteableFileChunk::WriteableFileChunk(vespalib::Executor& executor, FileId file
       _currentDiskIdxFootprint(0),
       _pendingDiskDatFootprint(0),
       _nextChunkId(1),
+      _inflight_memory(0),
       _active(std::make_unique<Chunk>(0, Chunk::Config(config.getMaxChunkBytes()))),
       _alignment(1),
       _granularity(1),
       _maxChunkSize(0x100000),
       _firstChunkIdToBeWritten(0),
       _writeTaskIsRunning(false),
+      _enable_flush_pending_chunks(false),
       _writeMonitor(),
       _writeCond(),
       _executor(executor),
@@ -496,6 +499,7 @@ void WriteableFileChunk::updateChunkInfo(const ProcessedChunkQ& chunks, const Ch
         }
         const ChunkMeta& cmeta(cmetaV[i]);
         _chunkInfo[active.getId()] = ChunkInfo(cmeta.getOffset(), chunk.getPayLoad(), cmeta.getLastSerial());
+        _inflight_memory -= active.size();
         _chunkMap.erase(_chunkMap.begin());
     }
     _cond.notify_all();
@@ -529,6 +533,7 @@ void WriteableFileChunk::fileWriter(const uint32_t firstChunkId) {
     _writeTaskIsRunning = false;
     if (done) {
         assert(_chunkMap.empty());
+        assert(_inflight_memory == 0);
         for (const ChunkInfo& cm : _chunkInfo) {
             (void)cm;
             assert(cm.valid() && cm.getSize() != 0);
@@ -556,6 +561,7 @@ void WriteableFileChunk::freeze(CpuUsage::Category cpu_category) {
         }
         assert(_writeQ.empty());
         assert(_chunkMap.empty());
+        assert(_inflight_memory == 0);
         {
             std::unique_lock guard(_lock);
             setDiskFootprint(getDiskFootprint(guard));
@@ -632,17 +638,14 @@ vespalib::MemoryUsage WriteableFileChunk::getMemoryUsage() const {
 int32_t WriteableFileChunk::flushLastIfNonEmpty(bool force) {
     int32_t          chunkId(-1);
     std::unique_lock guard(_lock);
-    for (bool ready(false); !ready;) {
-        if (_chunkMap.size() > 1000) {
-            LOG(debug, "Summary write overload at least 1000 outstanding chunks. Suspending.");
-            _cond.wait(guard);
-            LOG(debug, "Summary write overload eased off. Commencing.");
-        } else {
-            ready = true;
-        }
+    while (_chunkMap.size() >= 64 || _inflight_memory >= 32_Mi) {
+        _cond.wait(guard);
     }
     if (force || !_active->empty()) {
         chunkId = _active->getId();
+        // Account for Chunk::pack() appending lastSerial to buffer
+        auto chunk_size = _active->size() + sizeof(uint64_t);
+        _inflight_memory += chunk_size;
         _chunkMap[chunkId] = std::move(_active);
         assert(_nextChunkId < LidInfo::getChunkIdLimit());
         _active = std::make_unique<Chunk>(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes()));
@@ -694,6 +697,7 @@ void WriteableFileChunk::waitForAllChunksFlushedToDisk() const {
     while (!_chunkMap.empty()) {
         _cond.wait(guard);
     }
+    assert(_inflight_memory == 0);
 }
 
 LidInfo WriteableFileChunk::append(uint64_t serialNum, uint32_t lid, vespalib::ConstBufferRef data,
@@ -797,6 +801,12 @@ uint64_t WriteableFileChunk::writeIdxHeader(const FileHeaderContext& fileHeaderC
     return h.writeFile(file);
 }
 
+void WriteableFileChunk::enable_flush_pending_chunks() {
+    std::unique_lock flush_guard(_flushLock);
+    _enable_flush_pending_chunks = true;
+    _flush_cond.notify_all();
+}
+
 bool WriteableFileChunk::needFlushPendingChunks(uint64_t serialNum, uint64_t datFileLen) {
     std::unique_lock guard(_lock);
     return needFlushPendingChunks(guard, serialNum, datFileLen);
@@ -828,8 +838,13 @@ void WriteableFileChunk::updateCurrentDiskFootprint(const std::lock_guard<std::m
  */
 void WriteableFileChunk::flushPendingChunks(uint64_t serialNum) {
     std::unique_lock flushGuard(_flushLock);
-    if (frozen())
+    while (!_enable_flush_pending_chunks) {
+        // Block until previous file chunk has been flushed and frozen.
+        _flush_cond.wait(flushGuard);
+    }
+    if (frozen()) {
         return;
+    }
     uint64_t              datFileLen = _dataFile.getSize();
     vespalib::system_time timeStamp(vespalib::system_clock::now());
     if (needFlushPendingChunks(serialNum, datFileLen)) {

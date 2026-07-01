@@ -190,7 +190,7 @@ public class StorageGroup {
         return nodesSpecification.provision(hostSystem,
                                             ClusterSpec.Type.content,
                                             clusterId,
-                                            context.getDeployLogger(),
+                                            context.getDeployState(),
                                             true,
                                             context.clusterInfo().build());
     }

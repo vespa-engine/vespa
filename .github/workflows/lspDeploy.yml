@@ -51,10 +51,6 @@ jobs:
         run: npm ci
         working-directory: ./integration/schema-language-server/clients/vscode
       
-      - name: Build IntelliJ plugin
-        run: gradle buildPlugin
-        working-directory: ./integration/schema-language-server/clients/intellij
-      
       # Deployment steps below only run on workflow_dispatch
       - name: "Retrieve version"
         id: retrieve_version
@@ -64,9 +60,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 updateVersion.py ${{ github.event.inputs.version }} >> $GITHUB_OUTPUT
 
+      - name: Build IntelliJ plugin
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo ${{ steps.retrieve_version.outputs.VERSION }} > VERSION
+          fi
+          gradle buildPlugin
+        working-directory: ./integration/schema-language-server/clients/intellij
+
       - name: Publish VScode extension
         if: github.event_name == 'workflow_dispatch'
         run: npm run publish
+        continue-on-error: true
         working-directory: ./integration/schema-language-server/clients/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
@@ -74,7 +79,6 @@ jobs:
       - name: Publish IntelliJ plugin
         if: github.event_name == 'workflow_dispatch'
         run: |
-          echo $VERSION > VERSION
           curl -i --header "Authorization: Bearer $INTELLIJ_PLUGIN_PERM" -F pluginId=$PLUGIN_ID -F file=@./build/distributions/vespa-$VERSION.zip https://plugins.jetbrains.com/plugin/uploadPlugin
         working-directory: ./integration/schema-language-server/clients/intellij
         env:

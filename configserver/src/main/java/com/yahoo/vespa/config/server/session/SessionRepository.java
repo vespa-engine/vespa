@@ -700,6 +700,10 @@ public class SessionRepository {
                 try (var ignored = lockApplication(applicationId, Duration.ofSeconds(1))) {
                     Session.Status status = session.getStatus();
                     boolean activeForApplication = sessionIsActiveForApplication.test(session);
+                    if ((status == ACTIVATE && !activeForApplication) || (status != ACTIVATE && activeForApplication)) {
+                        log.log(Level.FINE, "Session " + sessionId + " has status " + status +
+                                ", but activeForApplication is " + activeForApplication);
+                    }
                     if (status == ACTIVATE && activeForApplication) continue;
 
                     boolean hasExpired = hasExpired(session);
@@ -748,11 +752,6 @@ public class SessionRepository {
         @Override
         public void close() { lock.ifPresent(Lock::close); }
 
-    }
-
-    private ApplicationLock lockApplication(Optional<ApplicationId> applicationId) {
-        return applicationId.map(id -> new ApplicationLock(Optional.of(tenantApplications.lock(id))))
-                .orElseGet(() -> new ApplicationLock(Optional.empty()));
     }
 
     private ApplicationLock lockApplication(Optional<ApplicationId> applicationId, Duration lockTimeout) {

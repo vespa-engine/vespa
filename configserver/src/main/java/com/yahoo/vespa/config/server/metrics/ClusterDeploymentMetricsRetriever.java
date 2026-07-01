@@ -14,7 +14,6 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 import com.yahoo.text.Text;
@@ -157,8 +156,7 @@ public class ClusterDeploymentMetricsRetriever {
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {
-            byte[] body = EntityUtils.toByteArray(response.getEntity());
-            return SlimeUtils.jsonToSlime(body);
+            return SlimeUtils.jsonToSlime(response.getEntity().getContent());
         } catch (IOException e) {
             log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
             return new Slime();

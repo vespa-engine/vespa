@@ -219,9 +219,31 @@ public abstract class ControllerHttpClient {
 
     /** Returns the tenants in this system. */
     public Set<TenantName> tenants() {
-        return toTenants(send(request(HttpRequest.newBuilder(tenantsPath())
-                                       .timeout(Duration.ofSeconds(20)),
-                            GET)));
+        return tenants(false, false);
+    }
+
+    /** Returns the tenants in this system that has applications. */
+    public Set<TenantName> tenantsWithApplications() {
+        return tenants(true, false);
+    }
+
+    /** Returns the tenants in this system that have deployed instances. */
+    public Set<TenantName> tenantsWithDeployedInstances() {
+        return tenants(false, true);
+    }
+
+    /**
+     * Returns the tenants in this system.
+     *
+     * @param withApplications if true, only return tenants with applications
+     * @param withDeployedInstances if true, only return tenants with deployed instances
+     */
+    public Set<TenantName> tenants(boolean withApplications, boolean withDeployedInstances) {
+        URI path = withQuery(tenantsPath(), "withApplications", String.valueOf(withApplications));
+        path = withQuery(path, "withDeployedInstances", String.valueOf(withDeployedInstances));
+        return toTenants(send(request(HttpRequest.newBuilder(path)
+                                                 .timeout(Duration.ofSeconds(20)),
+                                      GET)));
     }
 
     /** Returns the applications for the given tenant. */

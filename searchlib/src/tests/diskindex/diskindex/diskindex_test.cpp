@@ -471,6 +471,8 @@ void DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettin
     openIndex(std::string(name.view()), io_settings._use_directio, io_settings._use_mmap,
               io_settings._use_posting_list_cache, empty_settings._empty_field, empty_settings._empty_doc,
               empty_settings._empty_word);
+    EXPECT_NE(std::chrono::system_clock::time_point(), _index->create_and_freeze_times().freeze_time());
+    EXPECT_NE(std::chrono::steady_clock::duration::zero(), _index->create_and_freeze_times().get_flush_duration());
 }
 
 void DiskIndexTest::require_that_get_stats_works() {

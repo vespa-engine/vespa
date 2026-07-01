@@ -22,6 +22,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/lazy_filter.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -62,6 +63,20 @@ using vespalib::Issue;
 namespace proton::matching {
 
 namespace {
+
+void trace_global_filter_decision(uint32_t trace_level, search::engine::Trace* trace, const std::string& decision,
+                                  double estimated_hit_ratio, double lower_limit, double upper_limit) {
+    if (trace && trace_level <= trace->getLevel()) {
+        vespalib::slime::Cursor& cursor = trace->createCursor("global_filter_decision");
+        cursor.setString("decision", decision);
+
+        vespalib::slime::ObjectInserter inserter(cursor, "parameters");
+        vespalib::slime::Cursor&        param_cursor = inserter.insertObject();
+        param_cursor.setDouble("estimated_hit_ratio", estimated_hit_ratio);
+        param_cursor.setDouble("lower_limit", lower_limit);
+        param_cursor.setDouble("upper_limit", upper_limit);
+    }
+}
 
 Node::UP inject(Node::UP query, Node::UP to_inject) {
     if (auto* my_and = dynamic_cast<search::query::And*>(query.get())) {
@@ -230,14 +245,11 @@ void Query::tag_needed_handles(HandleRecorder& handle_recorder, const search::fe
     proton::matching::tag_needed_handles(*_query_tree, handle_recorder, index_env);
 }
 
-void Query::enumerate_blueprint_nodes() noexcept {
-    _blueprint->enumerate(1);
-}
-
-void Query::optimize(InFlow in_flow, bool sort_by_cost) {
+void Query::optimize(InFlow in_flow, bool sort_by_cost, bool keep_order) {
     _in_flow = in_flow;
     bool allow_force_strict = sort_by_cost && in_flow.strict();
-    auto opts = Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(allow_force_strict);
+    auto opts =
+        Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(allow_force_strict).keep_order(keep_order);
     _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), in_flow, opts);
     LOG(debug, "optimized blueprint:\n%s\n", _blueprint->asString().c_str());
 }
@@ -249,26 +261,30 @@ void Query::fetchPostings(const ExecuteInfo& executeInfo) {
 void Query::handle_global_filter(const IRequestContext&          requestContext,
                                  const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                  double global_filter_lower_limit, double global_filter_upper_limit,
-                                 search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter) {
+                                 search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace& trace,
+                                 bool sort_by_cost, bool keep_order, bool use_lazy_filter) {
     if (!handle_global_filter(*_blueprint, requestContext.getDoom(), ann_deadline_config, docid_limit,
                               global_filter_lower_limit, global_filter_upper_limit, requestContext.thread_bundle(),
-                              &trace, use_lazy_filter))
+                              setup_stats, &trace, use_lazy_filter))
     {
         return;
     }
     // optimized order may change after accounting for global filter:
     trace.addEvent(5, "Optimize query execution plan to account for global filter");
-    auto opts = Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(sort_by_cost);
+    auto opts =
+        Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(sort_by_cost).keep_order(keep_order);
     _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), _in_flow, opts);
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
+    search::queryeval::FetchPostingsProfilerGuard guard(*_blueprint);
     fetchPostings(ExecuteInfo::create(_in_flow.rate(), requestContext.getDoom(), requestContext.thread_bundle()));
 }
 
 bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom,
                                  const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                  double global_filter_lower_limit, double global_filter_upper_limit,
-                                 vespalib::ThreadBundle& thread_bundle, search::engine::Trace* trace,
+                                 vespalib::ThreadBundle&             thread_bundle,
+                                 search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace* trace,
                                  bool use_lazy_filter) {
     using search::queryeval::Blueprint;
     using search::queryeval::GlobalFilter;
@@ -286,10 +302,10 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
 
     if (estimated_hit_ratio < effective_lower_limit) {
         if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(
-                5, vespalib::make_string("Skip calculate global filter (estimated_hit_ratio (%f) < lower_limit (%f))",
-                                         estimated_hit_ratio, effective_lower_limit));
+            trace->addEvent(5, "Skip calculate global filter");
         }
+        trace_global_filter_decision(5, trace, "Skip", estimated_hit_ratio, effective_lower_limit,
+                                     effective_upper_limit);
         return false;
     }
 
@@ -304,10 +320,10 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
     std::shared_ptr<GlobalFilter> global_filter;
     if (estimated_hit_ratio <= effective_upper_limit) {
         if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(
-                5, vespalib::make_string("Calculate global filter (estimated_hit_ratio (%f) <= upper_limit (%f))",
-                                         estimated_hit_ratio, effective_upper_limit));
+            trace->addEvent(5, "Calculate global filter");
         }
+        trace_global_filter_decision(5, trace, "Calculate", estimated_hit_ratio, effective_lower_limit,
+                                     effective_upper_limit);
         global_filter = GlobalFilter::create(blueprint, docid_limit, thread_bundle, trace);
         if (!global_filter->is_active()) {
             estimated_hit_ratio = 1.0;
@@ -317,21 +333,16 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
         }
     } else {
         if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(5,
-                            vespalib::make_string(
-                                "Create match everything global filter (estimated_hit_ratio (%f) > upper_limit (%f))",
-                                estimated_hit_ratio, effective_upper_limit));
+            trace->addEvent(5, "Create match everything global filter");
         }
+        trace_global_filter_decision(5, trace, "Match everything", estimated_hit_ratio, effective_lower_limit,
+                                     effective_upper_limit);
         global_filter = GlobalFilter::create();
     }
     if (use_lazy_filter) {
         if (lazy_filter->is_active()) {
             if (trace && trace->shouldTrace(5)) {
-                trace->addEvent(
-                    5, vespalib::make_string("Apply active lazy filter (estimate is %f)",
-                                             lazy_filter->size() > 0
-                                                 ? static_cast<double>(lazy_filter->count()) / lazy_filter->size()
-                                                 : 1.0));
+                trace->addEvent(5, "Apply active lazy filter");
             }
             blueprint.set_lazy_filter(*lazy_filter);
         }
@@ -340,12 +351,13 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
         trace->addEvent(5, "Handle global filter in query execution plan");
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
-    perform_ann_searches(blueprint, doom, ann_deadline_config);
+    perform_ann_searches(blueprint, doom, ann_deadline_config, setup_stats, trace);
     return true;
 }
 
 void Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom,
-                                 const AnnDeadlineConfiguration& ann_deadline_config) {
+                                 const AnnDeadlineConfiguration&     ann_deadline_config,
+                                 search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace* trace) {
     std::queue<search::queryeval::NearestNeighborBlueprint*> ann_blueprints;
     blueprint.each_node_post_order([&ann_blueprints](Blueprint& bp) {
         if (auto nearest_neighbor = bp.asNearestNeighbor()) {
@@ -354,9 +366,12 @@ void Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doo
             }
         }
     });
+    if (trace && !ann_blueprints.empty()) {
+        trace->addEvent(5, "Perform ANN search(es)");
+    }
     while (!ann_blueprints.empty()) {
         const vespalib::Deadline deadline = ann_deadline_config.make_ann_deadline(doom, ann_blueprints.size());
-        ann_blueprints.front()->perform_index_search(deadline);
+        ann_blueprints.front()->perform_index_search(deadline, setup_stats);
         ann_blueprints.pop();
     }
 }

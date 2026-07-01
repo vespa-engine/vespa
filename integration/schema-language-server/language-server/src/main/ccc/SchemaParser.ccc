@@ -391,6 +391,7 @@ TOKEN :
 | < AS: "as" >
 | < INDEXING: "indexing" >
 | < SUMMARY_TO: "summary-to" >
+| < DOCUMENTID: "documentid" >
 | < DOCUMENT_SUMMARY: "document-summary" >
 | < ELEMENT_GAP: "element-gap" >
 | < INFINITY: "infinity" >
@@ -425,6 +426,7 @@ TOKEN :
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
 | < EXECUTION_MODE: "execution-mode">
+| < OPTIMIZE_MODEL: "optimize-model">
 | < PARALLEL: "parallel">
 | < SEQUENTIAL: "sequential">
 | < MODEL: "model" >
@@ -657,6 +659,7 @@ ParsedSchema rootSchema :
 rootSchemaItem(ParsedSchema schema) : {}
     (
         documentElm(schema)
+       | documentIdElm(schema)
        | rawAsBase64(schema)
        | searchStemming(schema)
        | importField(schema)
@@ -1230,16 +1233,15 @@ void indexingElm(ParsedField field) :
  *
  * @param field The field to modify.
  */
-SubLanguageData indexingOperationElm(ParsedField field, boolean multiLine) : { }
-
-    {
-        return newIndexingOperation(multiLine);
-        //IndexingOperation oldOp = newIndexingOperation(multiLine);
-        //if (oldOp != null) {
-        //    //ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
-        //    //field.setIndexingOperation(newOp);
-        //}
-    }
+SubLanguageData indexingOperationElm(ParsedField field, boolean multiLine) : {
+    SubLanguageData result = null;
+}
+    (
+        <EOF>
+        |
+        { result = newIndexingOperation(multiLine); }
+    )
+    { return result; }
 ;
 
 /**
@@ -1843,6 +1845,23 @@ void idElm(ParsedField field) :
 ;
 
 /**
+ * Consumes the documentid setting.
+ *
+ * @param schema the schema object to add setting to
+ */
+void documentIdElm(ParsedSchema schema) :
+{
+    boolean attribute = false;
+}
+
+    <DOCUMENTID>
+    <COLON> ( ( <ATTRIBUTE> { attribute = true; } ) | ( <FROM_DISK> { attribute = false; } ) )
+    {
+        schema.enableDocumentIdAttribute(attribute);
+    }
+;
+
+/**
  * Consumes a document-summary block from within a schema block.
  *
  * @param schema the schema object to add content to
@@ -2076,6 +2095,7 @@ void onnxModelItem(OnnxModel onnxModel) :
 {
     String path = null;
     int num;
+    boolean enable;
     Node inputNode = null;
 }
 
@@ -2129,6 +2149,14 @@ void onnxModelItem(OnnxModel onnxModel) :
                 }
             }
         )
+        | <OPTIMIZE_MODEL> <COLON> enable = bool()
+            {
+                try {
+                    onnxModel.setOptimizeModel(enable);
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            }
         | onnxModelInput(onnxModel)
         | onnxModelOutput(onnxModel)
     )
@@ -2194,9 +2222,15 @@ void uriInOnnxModel(OnnxModel onnxModel) :
 ;
 
 
-String rankingConstantErrorMessage(String name) : {}
-
-    { return "For ranking constant ' " + name + "'"; }
+String rankingConstantErrorMessage(String name) : {
+    String result = null;
+}
+    (
+        <EOF>
+        |
+        { result = "For ranking constant ' " + name + "'"; }
+    )
+    { return result; }
 ;
 
 
@@ -2622,11 +2656,16 @@ InputType valueType(Reference reference) :
  * See details about why this is needed in consumedExpressionElm.
  */
 Node consumedFeatureListElm(boolean multiline) :
-{
-    SubLanguageData featureList = consumeRankingExpression(multiline);
-    thisProduction.setFeatureListData(featureList);
-    return thisProduction;
-}
+{}
+    (
+        <EOF>
+        |
+        {
+            SubLanguageData featureList = consumeRankingExpression(multiline);
+            thisProduction.setFeatureListData(featureList);
+        }
+    )
+    { return thisProduction; }
 ;
 
 /**
@@ -3135,9 +3174,15 @@ void constantTensor(ParsedRankProfile profile, Reference name) :
     }
 ;
 
-String constantTensorErrorMessage(String rankProfileName, Reference name) : {}
-
-    { return "For constant tensor '" + name + "' in rank profile '" + rankProfileName + "'"; }
+String constantTensorErrorMessage(String rankProfileName, Reference name) : {
+    String result = null;
+}
+    (
+        <EOF>
+        |
+        { result = "For constant tensor '" + name + "' in rank profile '" + rankProfileName + "'"; }
+    )
+    { return result; }
 ;
 
 
@@ -3358,11 +3403,16 @@ void importField(ParsedSchema schema) :
  * allowing the manipulated offsets to propagate upwards in the tree.
  */
 Node consumedExpressionElm(boolean multiline) :
-{
-    SubLanguageData expr = consumeRankingExpression(multiline);
-    thisProduction.setRankingExpressionData(expr);
-    return thisProduction;
-}
+{}
+    (
+        <EOF>
+        |
+        {
+            SubLanguageData expr = consumeRankingExpression(multiline);
+            thisProduction.setRankingExpressionData(expr);
+        }
+    )
+    { return thisProduction; }
 ;
 
 /**
@@ -3445,6 +3495,7 @@ String identifierWithDashStr :
     | <ONNX_MODEL>
     | <ON_SECOND_PHASE>
     | <ON_SUMMARY>
+    | <OPTIMIZE_MODEL>
     | <POST_FILTER_THRESHOLD>
     | <PRE_POST_FILTER_TIPPING_POINT>
     | <QUERY_COMMAND>
@@ -3499,6 +3550,7 @@ String identifierStr :
       | <DIRECT>
       | <DIVERSITY>
       | <DOCUMENT>
+      | <DOCUMENTID>
       | <DOUBLE_KEYWORD>
       | <FLOAT_KEYWORD>
       | <LONG_KEYWORD>

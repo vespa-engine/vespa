@@ -23,6 +23,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/memory.h>
+#include <vespa/vespalib/util/transient_memory_tracker.h>
 #include <vespa/vespalib/util/typify.h>
 
 #include <cmath>
@@ -48,6 +49,7 @@ using search::attribute::Config;
 using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
+using vespalib::TransientMemoryTracker;
 using vespalib::typify_invoke;
 using vespalib::TypifyResultType;
 
@@ -77,6 +79,11 @@ public:
         } else {
             _buf->writeBytes(buf_in->getData(), buf_in->getDataLen());
         }
+    }
+
+    void write_buf(Buffer buf_in, TransientMemoryTracker tracker) override {
+        writeBuf(std::move(buf_in));
+        (void)tracker;
     }
 
     const Buffer& buf() const { return _buf; }

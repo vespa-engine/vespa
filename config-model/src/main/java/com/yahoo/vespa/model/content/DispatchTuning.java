@@ -95,6 +95,8 @@ public class DispatchTuning {
                 // TODO: Remove support for 'random' on Vespa 9 (already removed from doc)
                 case "adaptive", "random" -> DispatchPolicy.ADAPTIVE;
                 case "round-robin" -> DispatchPolicy.ROUNDROBIN;
+                // TODO: Remove support for 'latency-amortized-over-requests' on Vespa 9 (already removed from doc)
+                //       This is a synonym of 'adaptive', mapped in Dispatcher when applying the config
                 case "latency-amortized-over-requests" -> DispatchPolicy.LATENCY_AMORTIZED_OVER_REQUESTS;
                 // TODO: Undocumented, probably not in use
                 case "latency-amortized-over-time" -> DispatchPolicy.LATENCY_AMORTIZED_OVER_TIME;

@@ -214,7 +214,7 @@ public class SessionZooKeeperClientTest {
                 new TelemetryExporterConfiguration.Exporter("my-exporter", ExporterType.otlphttp,
                                                             Optional.of("https://otel.example.com/v1"), null,
                                                             Optional.of(Auth.bearerToken("my-vault", "my-token")),
-                                                            List.of("default"), List.of("container_logs"))));
+                                                            List.of("default"), List.of(TelemetryExporterConfiguration.Exporter.LogType.CONTAINER_LOGS))));
 
         zkc.writeTelemetryExportConfig(config);
         TelemetryExporterConfiguration read = zkc.readTelemetryExporterConfiguration();
@@ -230,7 +230,7 @@ public class SessionZooKeeperClientTest {
         assertEquals("my-vault", exporter.auth().get().vault());
         assertEquals("my-token", exporter.auth().get().secretName().get());
         assertEquals(List.of("default"), exporter.metricSets());
-        assertEquals(List.of("container_logs"), exporter.logFileTypes());
+        assertEquals(List.of(TelemetryExporterConfiguration.Exporter.LogType.CONTAINER_LOGS), exporter.logTypes());
     }
 
     @Test

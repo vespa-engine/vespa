@@ -4,6 +4,7 @@ package com.yahoo.config.provision;
 import com.yahoo.component.Vtag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,6 +96,31 @@ public class ClusterMembershipTest {
         ClusterMembership membership = ClusterMembership.from(cluster, 37);
         assertEquals(Optional.of("large-storage"), membership.cluster().profile());
         assertEquals("content/id1//37/stateful", membership.stringValue());
+    }
+
+    @Test
+    void testProfilePropagatedFromDeserializationParameters() {
+        String membershipString = "content/id1//37/stateful";
+        ClusterMembership withProfile = ClusterMembership.from(
+                membershipString,
+                Vtag.currentVersion,
+                Optional.empty(),
+                ZoneEndpoint.defaultEndpoint,
+                List.of(),
+                List.of(),
+                Optional.of("large-storage")
+        );
+        assertEquals(Optional.of("large-storage"), withProfile.cluster().profile());
+        ClusterMembership withoutProfile = ClusterMembership.from(
+                membershipString,
+                Vtag.currentVersion,
+                Optional.empty(),
+                ZoneEndpoint.defaultEndpoint,
+                List.of(),
+                List.of(),
+                Optional.empty()
+        );
+        assertEquals(Optional.empty(), withoutProfile.cluster().profile());
     }
 
     private void assertContainerService(ClusterMembership instance) {

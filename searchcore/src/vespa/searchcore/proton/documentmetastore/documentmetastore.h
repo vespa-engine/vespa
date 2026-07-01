@@ -58,6 +58,15 @@ public:
     using DocumentMetaStoreAttribute::reclaim_unused_memory;
 
 private:
+    class UnitTestAdapter {
+        DocumentMetaStore& _dms;
+
+    public:
+        explicit UnitTestAdapter(DocumentMetaStore& dms) noexcept : _dms(dms) {}
+        void set_track_document_sizes(bool value) noexcept { _dms._trackDocumentSizes = value; }
+        void set_track_32bit_document_sizes(bool value) noexcept { _dms._track_32bit_document_sizes = value; }
+        void set_store_full_document_id(bool value) noexcept { _dms._store_full_document_id = value; }
+    };
     // maps from lid -> metadata
     using MetadataStore = vespalib::RcuVectorBase<RawDocumentMetadata>;
     using KeyComp = documentmetastore::LidGidKeyComparator;
@@ -211,7 +220,7 @@ public:
      * document store).
      */
     void removes_complete(const std::vector<DocId>& lids) override;
-    void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
+    void move(const document::DocumentId& docid, DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
     bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
     bool validLidFast(DocId lid, uint32_t limit) const { return _lidAlloc.validLid(lid, limit); }
@@ -297,9 +306,14 @@ public:
     void onShrinkLidSpace() override;
     size_t getEstimatedShrinkLidSpaceGain() const override;
     uint64_t getEstimatedSaveByteSize() const override;
+    [[nodiscard]] size_t reserved_memory_for_flush(bool slow_disk) const noexcept override;
     uint32_t getVersion() const override;
-    void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
-    void set_track_32bit_document_sizes(bool value) noexcept { _track_32bit_document_sizes = value; }
+
+    /*
+     * Functions only intended for unit testing are exposed via UnitTestAdapter.
+     */
+    UnitTestAdapter unit_test_adapter() noexcept { return UnitTestAdapter(*this); }
+
     void foreach(const search::IGidToLidMapperVisitor& visitor) const override;
     bool is_sortable() const noexcept override;
     std::unique_ptr<search::attribute::ISortBlobWriter>

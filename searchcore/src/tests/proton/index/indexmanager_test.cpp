@@ -438,48 +438,49 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated) {
     search::memoryindex::DocumentInverterContext inverter_context(schema, *invertThreads, *pushThreads, fic);
     search::memoryindex::DocumentInverter        inverter(inverter_context);
 
-    uint64_t fixed_index_size = fic.getMemoryUsage().allocatedBytes();
-    uint64_t index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
+    uint64_t fixed_index_size = fic.getMemoryUsage().usedBytes();
+    uint64_t index_size = fic.getMemoryUsage().usedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     uint64_t selector_size = (1) * sizeof(Source);
-    EXPECT_EQ(index_size, _index_manager->getMaintainer().getFlushStats().memory_before_bytes -
-                              _index_manager->getMaintainer().getFlushStats().memory_after_bytes);
-    EXPECT_EQ(0u, _index_manager->getMaintainer().getFlushStats().disk_write_bytes);
-    EXPECT_EQ(0u, _index_manager->getMaintainer().getFlushStats().cpu_time_required);
+    EXPECT_EQ(index_size, _index_manager->getMaintainer().getFlushStats()._memory_before_bytes -
+                              _index_manager->getMaintainer().getFlushStats()._memory_after_bytes);
+    EXPECT_EQ(0u, _index_manager->getMaintainer().getFlushStats()._disk_write_bytes);
+    EXPECT_EQ(0u, _index_manager->getMaintainer().getFlushStats()._cpu_time_required);
 
     Document::UP doc = addDocument(docid);
     inverter.invertDocument(docid, *doc, {});
     push_documents_and_wait(inverter);
-    index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
+    index_size = fic.getMemoryUsage().usedBytes() - fixed_index_size;
 
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 1) * sizeof(Source);
-    EXPECT_EQ(index_size, _index_manager->getMaintainer().getFlushStats().memory_before_bytes -
-                              _index_manager->getMaintainer().getFlushStats().memory_after_bytes);
-    EXPECT_EQ(selector_size + index_size, _index_manager->getMaintainer().getFlushStats().disk_write_bytes);
+    EXPECT_EQ(index_size, _index_manager->getMaintainer().getFlushStats()._memory_before_bytes -
+                              _index_manager->getMaintainer().getFlushStats()._memory_after_bytes);
+    EXPECT_EQ(selector_size + index_size, _index_manager->getMaintainer().getFlushStats()._disk_write_bytes);
     EXPECT_EQ(selector_size * (3 + 1) + index_size,
-              _index_manager->getMaintainer().getFlushStats().cpu_time_required);
+              _index_manager->getMaintainer().getFlushStats()._cpu_time_required);
 
     doc = addDocument(docid + 10);
     inverter.invertDocument(docid + 10, *doc, {});
+    push_documents_and_wait(inverter);
     auto doc100 = addDocument(docid + 100);
     inverter.invertDocument(docid + 100, *doc100, {});
     push_documents_and_wait(inverter);
-    index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
+    index_size = fic.getMemoryUsage().usedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 100 + 1) * sizeof(Source);
-    EXPECT_EQ(index_size, _index_manager->getMaintainer().getFlushStats().memory_before_bytes -
-                              _index_manager->getMaintainer().getFlushStats().memory_after_bytes);
-    EXPECT_EQ(selector_size + index_size, _index_manager->getMaintainer().getFlushStats().disk_write_bytes);
+    EXPECT_EQ(index_size, _index_manager->getMaintainer().getFlushStats()._memory_before_bytes -
+                              _index_manager->getMaintainer().getFlushStats()._memory_after_bytes);
+    EXPECT_EQ(selector_size + index_size, _index_manager->getMaintainer().getFlushStats()._disk_write_bytes);
     EXPECT_EQ(selector_size * (3 + 1) + index_size,
-              _index_manager->getMaintainer().getFlushStats().cpu_time_required);
+              _index_manager->getMaintainer().getFlushStats()._cpu_time_required);
 }
 
 TEST_F(IndexManagerTest, require_that_fusion_stats_are_calculated) {
     addDocument(docid);
-    EXPECT_EQ(0u, _index_manager->getMaintainer().getFusionStats().diskUsage);
+    EXPECT_EQ(0u, _index_manager->getMaintainer().getFusionStats()._disk_usage);
     flushIndexManager();
-    ASSERT_TRUE(_index_manager->getMaintainer().getFusionStats().diskUsage > 0);
+    ASSERT_TRUE(_index_manager->getMaintainer().getFusionStats()._disk_usage > 0);
 }
 
 TEST_F(IndexManagerTest, require_that_put_document_updates_serial_num) {

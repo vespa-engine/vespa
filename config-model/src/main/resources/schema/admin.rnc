@@ -141,7 +141,7 @@ Telemetry = element telemetry {
         }* &
         element logs {
             element type {
-                attribute id { xsd:Name }
+                attribute id { string "container-logs" | string "access-logs" }
             }+
         }?
     }+

@@ -55,15 +55,9 @@ struct DefaultAdapter {
 
 template <typename T>
 concept DefaultAdaptable = requires(const T& t) {
-    {
-        t->estimate()
-    } -> std::same_as<double>;
-    {
-        t->cost()
-    } -> std::same_as<double>;
-    {
-        t->strict_cost()
-    } -> std::same_as<double>;
+    { t->estimate() } -> std::same_as<double>;
+    { t->cost() } -> std::same_as<double>;
+    { t->strict_cost() } -> std::same_as<double>;
 };
 
 // adapter making it possible to use FlowStats directly for testing
@@ -75,15 +69,9 @@ struct DirectAdapter {
 
 template <typename T>
 concept DirectAdaptable = requires(const T& t) {
-    {
-        t.estimate
-    } -> std::same_as<const double&>;
-    {
-        t.cost
-    } -> std::same_as<const double&>;
-    {
-        t.strict_cost
-    } -> std::same_as<const double&>;
+    { t.estimate } -> std::same_as<const double&>;
+    { t.cost } -> std::same_as<const double&>;
+    { t.strict_cost } -> std::same_as<const double&>;
 };
 
 auto make_adapter(const auto& children) {
@@ -148,6 +136,12 @@ inline double forced_strict_cost(const FlowStats& stats, double rate) {
 // would it be faster to force a non-strict child to be strict
 inline bool should_force_strict(const FlowStats& stats, double rate) {
     return forced_strict_cost(stats, rate) < (stats.cost * rate);
+}
+
+// the absolute cost of evaluating something with the given flow stats
+// under an already-resolved in flow (no strict-forcing decision here)
+inline double cost_of(InFlow in_flow, const FlowStats& stats) {
+    return in_flow.strict() ? stats.strict_cost : stats.cost * in_flow.rate();
 }
 
 // estimate the absolute cost of evaluating a child with a specific in flow

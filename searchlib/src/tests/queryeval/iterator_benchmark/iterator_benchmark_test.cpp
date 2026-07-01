@@ -4,19 +4,24 @@
 #include "blueprint_factory_builder.h"
 #include "common.h"
 #include "data_pond.h"
+#include "data_pond_utils.h"
 #include "intermediate_blueprint_factory.h"
 
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/stride.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <cmath>
+#include <concepts>
 #include <format>
 #include <functional>
 #include <iomanip>
 #include <numeric>
+#include <optional>
 #include <print>
 #include <vector>
 
@@ -31,8 +36,9 @@ using search::index::Schema;
 
 using vespalib::make_string_short::fmt;
 
-const std::string field_name = "myfield";
-double            budget_sec = 1.0;
+const std::string     field_name = "myfield";
+double                budget_sec = 1.0;
+std::optional<double> in_flow_filter = std::nullopt;
 
 double estimate_actual_cost(Blueprint& bp, InFlow in_flow) {
     if (in_flow.strict()) {
@@ -62,6 +68,50 @@ std::string to_string(PlanningAlgo algo) {
     return "unknown";
 }
 
+/**
+ * Predefined field names to use when accessing the global pond.
+ */
+struct {
+    using F = std::string;
+    F actual_cost = "actual_cost";
+    F algo = "algo";
+    F blueprint_name = "blueprint_name";
+    F calibration_constant = "calibration_constant";
+    F children = "children";
+    F class_ = "class";
+    F dim = "dim";
+    F error = "error";
+    F error_label = "error_label";
+    F fetch_postings_time_ms = "fetch_postings_time_ms";
+    F field_cfg = "field_cfg";
+    F filter_hit_ratio = "filter_hit_ratio";
+    F force_strict = "force_strict";
+    F gf_ratio = "gf_ratio";
+    F group = "group";
+    F hits = "hits";
+    F in_flow = "in_flow";
+    F iterator_name = "iterator_name";
+    F ms_per_cost = "ms_per_cost";
+    F num_docs = "num_docs";
+    F op_hit_ratio = "op_hit_ratio";
+    F pred_ms = "pred_ms";
+    F query_op = "query_op";
+    F range_high = "range_high";
+    F range_low = "range_low";
+    F range_size = "range_size";
+    F seeks = "seeks";
+    F strict_context = "strict_context";
+    F target_hits = "target_hits";
+    F time_error_abs = "time_error_abs";
+    F time_ms = "time_ms";
+    F unpack = "unpack";
+    struct {
+        F cost = "flow.cost";
+        F estimate = "flow.estimate";
+        F strict_cost = "flow.strict_cost";
+    } flow;
+} f;
+
 struct BenchmarkResult {
     double      time_ms;
     uint32_t    seeks;
@@ -70,16 +120,19 @@ struct BenchmarkResult {
     double      actual_cost;
     std::string iterator_name;
     std::string blueprint_name;
-    BenchmarkResult() : BenchmarkResult(0, 0, 0, {0, 0, 0}, 0, "", "") {}
+    double      fetch_postings_time_ms;
+    BenchmarkResult() : BenchmarkResult(0, 0, 0, {0, 0, 0}, 0, "", "", 0) {}
     BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, FlowStats flow_in, double actual_cost_in,
-                    const std::string& iterator_name_in, const std::string& blueprint_name_in)
+                    const std::string& iterator_name_in, const std::string& blueprint_name_in,
+                    double fetch_postings_time_ms_in)
         : time_ms(time_ms_in),
           seeks(seeks_in),
           hits(hits_in),
           flow(flow_in),
           actual_cost(actual_cost_in),
           iterator_name(iterator_name_in),
-          blueprint_name(blueprint_name_in) {}
+          blueprint_name(blueprint_name_in),
+          fetch_postings_time_ms(fetch_postings_time_ms_in) {}
     BenchmarkResult(const BenchmarkResult&);
     BenchmarkResult(BenchmarkResult&&) noexcept = default;
     ~BenchmarkResult();
@@ -161,8 +214,8 @@ public:
     Stats ms_per_actual_cost_stats() const {
         return calc_stats([](const auto& res) { return res.ms_per_actual_cost(); });
     }
-    Stats actual_cost_stats() const {
-        return calc_stats([](const auto& res) { return res.actual_cost; });
+    Stats fetch_postings_time_ms_stats() const {
+        return calc_stats([](const auto& res) { return res.fetch_postings_time_ms; });
     }
 };
 
@@ -205,11 +258,13 @@ void sort_blueprint(Blueprint& blueprint, InFlow in_flow, uint32_t docid_limit, 
 }
 
 MatchLoopContext make_match_loop_context(BenchmarkBlueprintFactory& factory, InFlow in_flow, uint32_t docid_limit,
-                                         PlanningAlgo algo) {
+                                         PlanningAlgo algo, BenchmarkTimer& fetch_postings_timer) {
     auto blueprint = factory.make_blueprint();
     assert(blueprint);
     sort_blueprint(*blueprint, in_flow, docid_limit, to_sort_options(algo));
-    blueprint->fetchPostings(ExecuteInfo::FULL);
+    fetch_postings_timer.before();
+    blueprint->fetchPostings(ExecuteInfo::create(in_flow.rate(), ExecuteInfo::FULL));
+    fetch_postings_timer.after();
     // Note: All blueprints get the same TermFieldMatchData instance.
     //       This is OK as long as we don't do unpacking and only use 1 thread.
     auto md = MatchData::makeTestInstance(1, 1);
@@ -221,10 +276,11 @@ MatchLoopContext make_match_loop_context(BenchmarkBlueprintFactory& factory, InF
 template <bool do_unpack>
 BenchmarkResult strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, PlanningAlgo algo) {
     BenchmarkTimer   timer(budget_sec);
+    BenchmarkTimer   fetch_postings_timer(0);
     uint32_t         hits = 0;
     MatchLoopContext ctx;
     while (timer.has_budget()) {
-        ctx = make_match_loop_context(factory, true, docid_limit, algo);
+        ctx = make_match_loop_context(factory, true, docid_limit, algo, fetch_postings_timer);
         auto* itr = ctx.iterator.get();
         timer.before();
         hits = 0;
@@ -244,28 +300,41 @@ BenchmarkResult strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
     double    actual_cost = estimate_actual_cost(*ctx.blueprint, InFlow(true));
-    return {timer.min_time() * 1000.0,       hits + 1, hits, flow, actual_cost, get_class_name(*ctx.iterator),
-            factory.get_name(*ctx.blueprint)};
+    return {timer.min_time() * 1000.0,
+            hits + 1,
+            hits,
+            flow,
+            actual_cost,
+            get_class_name(*ctx.iterator),
+            factory.get_name(*ctx.blueprint),
+            fetch_postings_timer.min_time() * 1000.0};
 }
 
 template <bool do_unpack>
 BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, double filter_hit_ratio,
                                   bool force_strict, PlanningAlgo algo) {
     BenchmarkTimer timer(budget_sec);
+    BenchmarkTimer fetch_postings_timer(0);
     uint32_t       seeks = 0;
     uint32_t       hits = 0;
-    // This simulates a filter that is evaluated before this iterator.
+    // The following loop simulates a filter that is evaluated before the iterator.
     // The filter returns 'filter_hit_ratio' amount of the document corpus.
-    uint32_t         docid_skip = 1.0 / filter_hit_ratio;
+    const int32_t num_docs = docid_limit - 1;
+    assert(num_docs > 0);
+    auto num_matches = static_cast<uint32_t>(num_docs * filter_hit_ratio);
+    assert(num_matches > 0 && "Trying to run non-strict search over 0 matches. "
+                              "Probably misconfigured benchmark setup.");
     MatchLoopContext ctx;
     while (timer.has_budget()) {
-        ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit, algo);
+        ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit, algo,
+                                      fetch_postings_timer);
         auto* itr = ctx.iterator.get();
         timer.before();
         seeks = 0;
         hits = 0;
         itr->initRange(1, docid_limit);
-        for (uint32_t docid = 1; !itr->isAtEnd(docid); docid += docid_skip) {
+        Stride stride(num_docs, num_matches);
+        for (uint32_t docid = 1; !itr->isAtEnd(docid); docid += stride.next()) {
             ++seeks;
             if (itr->seek(docid)) {
                 ++hits;
@@ -276,10 +345,17 @@ BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t d
         }
         timer.after();
     }
+    assert(seeks == num_matches);
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
     double    actual_cost = estimate_actual_cost(*ctx.blueprint, InFlow(filter_hit_ratio));
-    return {timer.min_time() * 1000.0,       seeks, hits, flow, actual_cost, get_class_name(*ctx.iterator),
-            factory.get_name(*ctx.blueprint)};
+    return {timer.min_time() * 1000.0,
+            seeks,
+            hits,
+            flow,
+            actual_cost,
+            get_class_name(*ctx.iterator),
+            factory.get_name(*ctx.blueprint),
+            fetch_postings_timer.min_time() * 1000.0};
 }
 
 BenchmarkResult benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, bool strict_context,
@@ -300,6 +376,8 @@ BenchmarkResult benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t do
     }
 }
 
+//-----------------------------------------------------------------------------
+// Crossover utils.
 //-----------------------------------------------------------------------------
 
 double est_forced_strict_cost(double estimate, double strict_cost, double rate) {
@@ -424,14 +502,13 @@ void analyze_crossover(BenchmarkBlueprintFactory&                               
 }
 
 //-----------------------------------------------------------------------------
-
-std::string to_string(bool val) {
-    return val ? "true" : "false";
-}
+// Print utils.
+//-----------------------------------------------------------------------------
 
 void print_result_header() {
     std::cout << "| in_flow |   chn | o_ratio | a_ratio |   f.est |    f.cost | f.act_cost | f.scost | f.act_scost | "
-                 "    hits |    seeks |  time_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | blueprint |"
+                 "    hits |    seeks |  time_ms | fetch_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | "
+                 "blueprint |"
               << std::endl;
 }
 
@@ -458,10 +535,10 @@ void print_result(const BenchmarkResult& res, uint32_t children, double op_hit_r
               << res.flow.strict_cost << " | " << std::setw(11)
               << (in_flow.strict() ? res.flow.strict_cost : flow::forced_strict_cost(res.flow, in_flow.rate()))
               << " | " << std::setw(8) << res.hits << " | " << std::setw(8) << res.seeks << std::setprecision(3)
-              << " | " << std::setw(8) << res.time_ms << std::setprecision(4) << " | " << std::setw(9)
-              << res.actual_cost << std::setprecision(2) << " | " << std::setw(11) << res.ns_per_seek() << " | "
-              << std::setw(15) << res.ms_per_actual_cost() << " | " << res.iterator_name << " | "
-              << res.blueprint_name << " |" << std::endl;
+              << " | " << std::setw(8) << res.time_ms << " | " << std::setw(8) << res.fetch_postings_time_ms
+              << std::setprecision(4) << " | " << std::setw(9) << res.actual_cost << std::setprecision(2) << " | "
+              << std::setw(11) << res.ns_per_seek() << " | " << std::setw(15) << res.ms_per_actual_cost() << " | "
+              << res.iterator_name << " | " << res.blueprint_name << " |" << std::endl;
 }
 
 void print_result(const BenchmarkCaseResult& result) {
@@ -469,130 +546,184 @@ void print_result(const BenchmarkCaseResult& result) {
               << std::endl
               << "         ns_per_seek=" << result.ns_per_seek_stats().to_string() << std::endl
               << "         ms_per_act_cost=" << result.ms_per_actual_cost_stats().to_string() << std::endl
+              << "         fetch_postings_time_ms=" << result.fetch_postings_time_ms_stats().to_string() << std::endl
               << std::endl;
 }
 
-struct BenchmarkCase {
-    FieldConfig   field_cfg;
-    QueryOperator query_op;
-    bool          strict_context;
-    bool          force_strict;
-    bool          unpack_iterator;
-    BenchmarkCase(const FieldConfig& field_cfg_in, QueryOperator query_op_in, bool strict_context_in)
-        : field_cfg(field_cfg_in),
-          query_op(query_op_in),
-          strict_context(strict_context_in),
-          force_strict(false),
-          unpack_iterator(false) {}
-    std::string to_string() const {
-        return "op=" + search::queryeval::test::to_string(query_op) + ", cfg=" + field_cfg.to_string() +
-               ", strict_context=" + ::to_string(strict_context) +
-               (force_strict ? (", force_strict=" + ::to_string(force_strict)) : "");
-    }
-};
+//-----------------------------------------------------------------------------
+// Pond postprocess and print utils.
+//-----------------------------------------------------------------------------
 
-struct BenchmarkCaseSummary {
-    BenchmarkCase       bcase;
-    BenchmarkCaseResult result;
-    BenchmarkCaseSummary(const BenchmarkCase& bcase_in, const BenchmarkCaseResult& result_in)
-        : bcase(bcase_in), result(result_in) {}
-    BenchmarkCaseSummary(const BenchmarkCaseSummary&);
-    BenchmarkCaseSummary& operator=(const BenchmarkCaseSummary&);
-    ~BenchmarkCaseSummary();
+/**
+ * Calibration constant = sum(time_ms) / sum(actual_cost) over all samples.
+ */
+void postprocess_calculate_calibration_constant(DataPond& pond) {
+    std::vector<RecordRef> records;
+    double                 total_time_ms = 0.0;
+    double                 total_actual_cost = 0.0;
+    for (auto& record : pond.records()) {
+        if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost)) {
+            records.emplace_back(record);
 
-    [[nodiscard]] double average_time_per_average_cost() const {
-        return result.time_ms_stats().average / result.actual_cost_stats().average;
-    }
-
-    [[nodiscard]] double error_ratio(double calibration_constant) const {
-        return average_time_per_average_cost() / calibration_constant;
-    }
-};
-
-BenchmarkCaseSummary::BenchmarkCaseSummary(const BenchmarkCaseSummary&) = default;
-BenchmarkCaseSummary& BenchmarkCaseSummary::operator=(const BenchmarkCaseSummary&) = default;
-BenchmarkCaseSummary::~BenchmarkCaseSummary() = default;
-
-class BenchmarkSummary {
-private:
-    std::vector<BenchmarkCaseSummary> _cases;
-    double                            _calibration_constant;
-
-public:
-    BenchmarkSummary() : _cases(), _calibration_constant(1.0) {}
-    void add(const BenchmarkCase& bcase, const BenchmarkCaseResult& result) { _cases.emplace_back(bcase, result); }
-
-    /**
-     * Calculates the calibration constant and per-case prediction error.
-     *
-     * For each case, the per-case ms-per-cost is computed as the ratio of
-     * average time_ms to average actual_cost across that case's measurements.
-     *
-     * The calibration constant is the median of per-case ms-per-cost across
-     * all cases. Interpreted as the wall-time-per-cost-unit a typical case
-     * spends on this hardware.
-     */
-    void calc_calibration() {
-        std::vector<double> values;
-        for (const auto& c : _cases) {
-            values.push_back(c.average_time_per_average_cost());
+            double time_ms = record.get<double>(f.time_ms);
+            double actual_cost = record.get<double>(f.actual_cost);
+            double ms_per_cost = time_ms / actual_cost;
+            record.set(f.ms_per_cost, ms_per_cost);
+            total_time_ms += time_ms;
+            total_actual_cost += actual_cost;
         }
-        std::sort(values.begin(), values.end());
-        _calibration_constant = calc_median(values);
     }
 
-    const std::vector<BenchmarkCaseSummary>& cases() const { return _cases; }
-    double calibration_constant() const { return _calibration_constant; }
-    bool empty() const { return _cases.empty(); }
-};
+    double global_average = total_time_ms / total_actual_cost;
+    for (auto record : records) {
+        record.get().set(f.calibration_constant, global_average);
+    }
+}
 
-void print_summary(const BenchmarkSummary& summary) {
-    constexpr double ok_band = 1.4;
-    constexpr double under_threshold = ok_band;
-    constexpr double over_threshold = 1.0 / ok_band;
+/**
+ * Calculate pred_ms.
+ */
+void postprocess_calculate_pred_ms(DataPond& pond) {
+    for (auto& record : pond.records()) {
+        if (record.has_field<double>(f.calibration_constant) && record.has_field<double>(f.actual_cost)) {
+            double actual_cost = record.get<double>(f.actual_cost);
+            double calibration_constant = record.get<double>(f.calibration_constant);
+            double pred_ms = actual_cost * calibration_constant;
+            record.set(f.pred_ms, pred_ms);
 
-    auto off_by = [](double error) { return std::max(error, 1.0 / error); };
-    auto classify = [&](double error) -> std::string_view {
-        if (error > under_threshold) {
+            double time_ms = record.get<double>(f.time_ms);
+            double time_difference = std::abs(pred_ms - time_ms);
+            record.set(f.time_error_abs, time_difference);
+        }
+    }
+}
+
+/**
+ * Calculates averages, error and classifies per sample.
+ */
+void postprocess_calculate_error(DataPond& pond) {
+    auto classify = [](double error_ratio) -> std::string {
+        constexpr double ok_band = 1.4;
+        constexpr double under_threshold = ok_band;
+        constexpr double over_threshold = 1.0 / ok_band;
+        if (error_ratio > under_threshold)
             return "UNDER";
-        }
-        if (error < over_threshold) {
+        if (error_ratio < over_threshold)
             return "OVER";
-        }
         return "OK";
     };
 
-    std::vector<const BenchmarkCaseSummary*> sorted;
-    sorted.reserve(summary.cases().size());
-    for (const auto& c : summary.cases()) {
-        sorted.push_back(&c);
-    }
-    double calibration_constant = summary.calibration_constant();
-    std::sort(sorted.begin(), sorted.end(), [&](const auto* lhs, const auto* rhs) {
-        return off_by(lhs->error_ratio(calibration_constant)) > off_by(rhs->error_ratio(calibration_constant));
-    });
+    for (auto& record : pond.records()) {
+        double calibration_constant = record.get<double>(f.calibration_constant);
+        double ms_per_cost = record.get<double>(f.ms_per_cost);
 
-    double sum_off = 0.0;
-    double max_off = 1.0;
-    for (const auto& c : summary.cases()) {
-        double off = off_by(c.error_ratio(calibration_constant));
-        sum_off += off;
-        max_off = std::max(max_off, off);
+        double error = ms_per_cost / calibration_constant;
+        record.set(f.class_, classify(error));
+        record.set(f.error, error);
     }
-    double mean_off = sum_off / summary.cases().size();
+}
 
-    std::println("calibration score: ms_per_cost={:.3f}, max={:.3f}x, mean={:.3f}x ({} cases, ok band [{:.3f}x, "
-                 "{:.3f}x])",
-                 summary.calibration_constant(), max_off, mean_off, summary.cases().size(), over_threshold,
-                 under_threshold);
-    std::println("");
-    std::println("{:<60} {:>12} {:>12} {:>10} {:<7}", "case", "actual_ms", "pred_ms", "error", "class");
-    for (const auto* c : sorted) {
-        double pred_ms = c->result.actual_cost_stats().average * summary.calibration_constant();
-        double actual_ms = c->result.time_ms_stats().average;
-        double error_ratio = c->error_ratio(calibration_constant);
-        std::println("{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:<7}", c->bcase.to_string(), actual_ms, pred_ms,
-                     error_ratio, classify(error_ratio));
+/**
+ * Make in_flow label.
+ */
+void postprocess_make_display_fields(DataPond& pond) {
+    for (auto& record : pond.records()) {
+        if (record.has_field<bool>(f.strict_context) && record.has_field<double>(f.filter_hit_ratio)) {
+            bool   strict = record.get<bool>(f.strict_context);
+            double rate = record.get<double>(f.filter_hit_ratio);
+            record.set(f.in_flow, strict ? std::string("STRICT") : std::format("{:.5f}", rate));
+        }
+
+        if (record.has_field<double>(f.error)) {
+            record.set(f.error_label, std::format("{:.3f}x", record.get<double>(f.error)));
+        }
+    }
+}
+
+/**
+ * Preprocess the raw data samples before summary.
+ */
+void postprocess_pond(DataPond& pond) {
+    postprocess_calculate_calibration_constant(pond);
+    postprocess_calculate_pred_ms(pond);
+    postprocess_calculate_error(pond);
+    postprocess_make_display_fields(pond);
+}
+
+/**
+ * Render a data pond record's field.
+ */
+std::string render_field(const Record& rec, const std::string& field) {
+    if (rec.has_field<bool>(field)) {
+        return rec.get<bool>(field) ? "true" : "false";
+    } else if (rec.has_field<int64_t>(field)) {
+        return std::format("{}", rec.get<int64_t>(field));
+    } else if (rec.has_field<double>(field)) {
+        return std::format("{:.3f}", rec.get<double>(field));
+    } else if (rec.has_field<std::string>(field)) {
+        return rec.get<std::string>(field);
+    } else {
+        assert(false && "render_field: Unhandled data type.");
+        return "Unhandled data type";
+    }
+}
+
+void print_cell(const std::string& value, size_t width, bool left_align) {
+    if (left_align) {
+        std::print("{:<{}}", value, width);
+    } else {
+        std::print("{:>{}}", value, width);
+    }
+}
+
+struct Column {
+    uint64_t width = 4;
+};
+
+/**
+ * Dynamically renders a data pond with only the column_keys.
+ */
+void print_pond_summary(const DataPond& pond, size_t column_padding = 2) {
+    std::vector<std::string> column_keys = {f.group,   f.in_flow,        f.time_ms,     f.actual_cost, f.ms_per_cost,
+                                            f.pred_ms, f.time_error_abs, f.error_label, f.class_};
+
+    std::map<std::string, Column> columns;
+
+    // column key width
+    for (const auto& key : column_keys) {
+        columns[key].width = std::max(columns[key].width, key.size());
+    }
+
+    // longest column data width
+    for (const auto& record : pond.records()) {
+        for (const auto& key : column_keys) {
+            std::string rendered = render_field(record, key);
+            columns[key].width = std::max(columns[key].width, rendered.size());
+        }
+    }
+
+    // left align group label column. right align the others.
+    std::string separator(column_padding, ' ');
+    auto        print_row = [&](auto render_cell) {
+        bool first = true;
+        for (const auto& key : column_keys) {
+            if (!first) {
+                std::print("{}", separator);
+            }
+            first = false;
+            print_cell(render_cell(key), columns[key].width, key == f.group);
+        }
+        std::println("");
+    };
+
+    // calibration score header
+    std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
+                 pond.records().front().get<double>(f.calibration_constant), pond.records().size());
+
+    // print the rows
+    print_row([&](const std::string& key) { return key; });
+    for (const auto& record : pond.records()) {
+        print_row([&](const std::string& key) { return render_field(record, key); });
     }
 }
 
@@ -602,158 +733,209 @@ void dump_pond(const DataPond& pond) {
     }
 }
 
+DataPond global_pond;
+
+//-----------------------------------------------------------------------------
+// Drive an arbitrary BenchmarkCase across a list of InFlow values.
+//-----------------------------------------------------------------------------
+
+struct BenchmarkOptions {
+    bool         unpack = false;
+    bool         force_strict = false;
+    PlanningAlgo algo = PlanningAlgo::Cost;
+};
+
 struct BenchmarkCaseSetup {
-    uint32_t              num_docs;
-    BenchmarkCase         bcase;
-    std::vector<double>   op_hit_ratios;
-    std::vector<uint32_t> child_counts;
-    std::vector<double>   filter_hit_ratios;
-    uint32_t              default_values_per_document;
-    bool                  disjunct_children;
-    double                filter_crossover_factor;
-    BenchmarkCaseSetup(uint32_t num_docs_in, const BenchmarkCase& bcase_in,
-                       const std::vector<double>& op_hit_ratios_in, const std::vector<uint32_t>& child_counts_in)
-        : num_docs(num_docs_in),
-          bcase(bcase_in),
-          op_hit_ratios(op_hit_ratios_in),
-          child_counts(child_counts_in),
-          filter_hit_ratios({1.0}),
-          default_values_per_document(0),
-          disjunct_children(false),
-          filter_crossover_factor(0.0) {}
-    ~BenchmarkCaseSetup() {}
+    std::string                  group;
+    FactoryPtr                   factory;
+    uint32_t                     docid_limit;
+    std::vector<InFlow>          in_flows;
+    BenchmarkOptions             options;
+    std::function<void(Record&)> decorate;
+
+    ~BenchmarkCaseSetup();
 };
 
-struct BenchmarkSetup {
-    uint32_t                   num_docs;
-    std::vector<FieldConfig>   field_cfgs;
-    std::vector<QueryOperator> query_ops;
-    std::vector<bool>          strictness;
-    std::vector<double>        op_hit_ratios;
-    std::vector<uint32_t>      child_counts;
-    std::vector<double>        filter_hit_ratios;
-    bool                       force_strict;
-    bool                       unpack_iterator;
-    uint32_t                   default_values_per_document;
-    bool                       disjunct_children;
-    double                     filter_crossover_factor;
-    BenchmarkSetup(uint32_t num_docs_in, const std::vector<FieldConfig>& field_cfgs_in,
-                   const std::vector<QueryOperator>& query_ops_in, const std::vector<bool>& strictness_in,
-                   const std::vector<double>& op_hit_ratios_in, const std::vector<uint32_t>& child_counts_in)
-        : num_docs(num_docs_in),
-          field_cfgs(field_cfgs_in),
-          query_ops(query_ops_in),
-          strictness(strictness_in),
-          op_hit_ratios(op_hit_ratios_in),
-          child_counts(child_counts_in),
-          filter_hit_ratios({1.0}),
-          force_strict(false),
-          unpack_iterator(false),
-          default_values_per_document(0),
-          disjunct_children(false),
-          filter_crossover_factor(0.0) {}
-    BenchmarkSetup(uint32_t num_docs_in, const std::vector<FieldConfig>& field_cfgs_in,
-                   const std::vector<QueryOperator>& query_ops_in, const std::vector<bool>& strictness_in,
-                   const std::vector<double>& op_hit_ratios_in)
-        : BenchmarkSetup(num_docs_in, field_cfgs_in, query_ops_in, strictness_in, op_hit_ratios_in, {1}) {}
-    BenchmarkCaseSetup make_case_setup(const BenchmarkCase& bcase) const {
-        BenchmarkCaseSetup res(num_docs, bcase, op_hit_ratios, child_counts);
-        res.bcase.force_strict = force_strict;
-        res.bcase.unpack_iterator = unpack_iterator;
-        res.default_values_per_document = default_values_per_document;
-        res.disjunct_children = disjunct_children;
-        if (!bcase.strict_context) {
-            // Simulation of a filter is only relevant in a non-strict context.
-            res.filter_hit_ratios = filter_hit_ratios;
-            res.filter_crossover_factor = filter_crossover_factor;
-        } else {
-            res.filter_hit_ratios = {1.0};
-            res.filter_crossover_factor = 0.0;
-        }
-        return res;
-    }
-    ~BenchmarkSetup();
-};
+BenchmarkCaseSetup::~BenchmarkCaseSetup() = default;
 
-BenchmarkSetup::~BenchmarkSetup() = default;
-
-BenchmarkSummary global_summary;
-DataPond         global_pond;
-
-std::string current_test_name() {
-    if (auto* info = ::testing::UnitTest::GetInstance()->current_test_info()) {
-        return info->name();
-    }
-    return "";
-}
-
-void add_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, const BenchmarkResult& res, double op_hit_ratio,
-                 uint32_t children, double filter_hit_ratio, PlanningAlgo algo) {
+void add_factory_run_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, const BenchmarkResult& res,
+                             InFlow in_flow) {
     Record record;
-    record.set("actual_cost", res.actual_cost);
-    record.set("algo", to_string(algo));
-    record.set("blueprint_name", res.blueprint_name);
-    record.set("children", static_cast<int64_t>(children));
-    record.set("cost", res.flow.cost);
-    record.set("estimate", res.flow.estimate);
-    record.set("field_cfg", setup.bcase.field_cfg.to_string());
-    record.set("filter_hit_ratio", filter_hit_ratio);
-    record.set("force_strict", setup.bcase.force_strict);
-    record.set("group", current_test_name());
-    record.set("hits", static_cast<int64_t>(res.hits));
-    record.set("iterator_name", res.iterator_name);
-    record.set("op_hit_ratio", op_hit_ratio);
-    record.set("query_op", to_string(setup.bcase.query_op));
-    record.set("seeks", static_cast<int64_t>(res.seeks));
-    record.set("strict_context", setup.bcase.strict_context);
-    record.set("strict_cost", res.flow.strict_cost);
-    record.set("time_ms", res.time_ms);
-    record.set("unpack", setup.bcase.unpack_iterator);
+    record.set(f.actual_cost, res.actual_cost);
+    record.set(f.algo, to_string(setup.options.algo));
+    record.set(f.blueprint_name, res.blueprint_name);
+    record.set(f.children, static_cast<int64_t>(0));
+    record.set(f.fetch_postings_time_ms, res.fetch_postings_time_ms);
+    record.set(f.field_cfg, std::string{});
+    record.set(f.filter_hit_ratio, in_flow.rate());
+    record.set(f.flow.cost, res.flow.cost);
+    record.set(f.flow.estimate, res.flow.estimate);
+    record.set(f.flow.strict_cost, res.flow.strict_cost);
+    record.set(f.force_strict, setup.options.force_strict);
+    record.set(f.group, setup.group);
+    record.set(f.hits, static_cast<int64_t>(res.hits));
+    record.set(f.iterator_name, res.iterator_name);
+    record.set(f.op_hit_ratio, 0.0);
+    record.set(f.query_op, std::string{});
+    record.set(f.seeks, static_cast<int64_t>(res.seeks));
+    record.set(f.strict_context, in_flow.strict());
+    record.set(f.time_ms, res.time_ms);
+    record.set(f.unpack, setup.options.unpack);
+    if (setup.decorate) {
+        setup.decorate(record);
+    }
     pond.add(record);
 }
 
-BenchmarkCaseResult run_benchmark_case(const BenchmarkCaseSetup& setup) {
+BenchmarkCaseResult run_benchmark(const BenchmarkCaseSetup& setup) {
+    assert(setup.factory);
+    assert(setup.docid_limit > 0);
     BenchmarkCaseResult result;
-    std::cout << "-------- run_benchmark_case: " << setup.bcase.to_string() << " --------" << std::endl;
+    std::cout << "-------- run_benchmark: " << setup.group << " --------" << std::endl;
     print_result_header();
-    for (double op_hit_ratio : setup.op_hit_ratios) {
-        for (uint32_t children : setup.child_counts) {
-            auto factory = make_blueprint_factory(setup.bcase.field_cfg, setup.bcase.query_op, setup.num_docs,
-                                                  setup.default_values_per_document, op_hit_ratio, children,
-                                                  setup.disjunct_children);
-            for (double filter_hit_ratio : setup.filter_hit_ratios) {
-                if (filter_hit_ratio * setup.filter_crossover_factor <= op_hit_ratio) {
-                    auto res = benchmark_search(*factory, setup.num_docs + 1, setup.bcase.strict_context,
-                                                setup.bcase.force_strict, setup.bcase.unpack_iterator,
-                                                filter_hit_ratio, PlanningAlgo::Cost);
-                    print_result(res, children, op_hit_ratio, InFlow(setup.bcase.strict_context, filter_hit_ratio),
-                                 setup.num_docs);
-                    result.add(res);
-                    add_to_pond(global_pond, setup, res, op_hit_ratio, children, filter_hit_ratio,
-                                PlanningAlgo::Cost);
-                }
-            }
-        }
+    uint32_t num_docs_for_print = setup.docid_limit - 1;
+    for (InFlow in_flow : setup.in_flows) {
+        auto res = benchmark_search(*setup.factory, setup.docid_limit, in_flow.strict(), setup.options.force_strict,
+                                    setup.options.unpack, in_flow.rate(), setup.options.algo);
+        print_result(res, /*children*/ 0, /*op_hit_ratio*/ 0.0, in_flow, num_docs_for_print);
+        result.add(res);
+        add_factory_run_to_pond(global_pond, setup, res, in_flow);
     }
     print_result(result);
     return result;
 }
 
-void run_benchmarks(const BenchmarkSetup& setup, BenchmarkSummary& summary) {
-    for (const auto& field_cfg : setup.field_cfgs) {
-        for (auto query_op : setup.query_ops) {
-            for (bool strict : setup.strictness) {
-                BenchmarkCase bcase(field_cfg, query_op, strict);
-                auto          case_setup = setup.make_case_setup(bcase);
-                auto          results = run_benchmark_case(case_setup);
-                summary.add(bcase, results);
-            }
-        }
+//---------------------------------------------------------------------------------------
+// Drives a set of benchmark cases.
+//---------------------------------------------------------------------------------------
+
+std::vector<InFlow> make_in_flows(const std::vector<double>& rates, bool include_strict) {
+    std::vector<InFlow> result;
+    if (include_strict) {
+        result.emplace_back(true);
+    }
+    for (double rate : rates) {
+        result.emplace_back(false, rate);
+    }
+    return result;
+}
+
+/**
+ * Make blueprint factory from EnnConfig.
+ */
+FactoryPtr make_factory(const EnnConfig& cfg) {
+    return enn(cfg);
+}
+
+/**
+ * Select fields used to describe an EnnConfig.
+ */
+void describe(const EnnConfig& cfg, Record& r) {
+    r.set(f.num_docs, static_cast<int64_t>(cfg.num_docs));
+    r.set(f.dim, static_cast<int64_t>(cfg.dim));
+    r.set(f.target_hits, static_cast<int64_t>(cfg.target_hits));
+    if (cfg.global_filter_hit_ratio.has_value()) {
+        r.set(f.gf_ratio, cfg.global_filter_hit_ratio.value());
     }
 }
 
-void run_benchmarks(const BenchmarkSetup& setup) {
-    run_benchmarks(setup, global_summary);
+/**
+ * Make blueprint factory from RangeConfig.
+ */
+FactoryPtr make_factory(const RangeConfig& cfg) {
+    return attr_range(cfg);
+}
+
+/**
+ * Select fields used to describe a RangeConfig.
+ */
+void describe(const RangeConfig& cfg, Record& r) {
+    r.set(f.range_low, cfg.range_low);
+    r.set(f.range_high, cfg.range_high());
+    r.set(f.range_size, cfg.range_size);
+    r.set(f.target_hits, cfg.target_hits);
+    r.set(f.field_cfg, cfg.field_cfg.to_string());
+}
+
+/**
+ * A config adapts the "old approach" into this driver system.
+ */
+struct OpConfig {
+    FieldConfig   field_cfg;
+    QueryOperator query_op;
+    uint32_t      num_docs;
+    double        op_hit_ratio;
+    uint32_t      children = 1;
+    uint32_t      default_values_per_document = 0;
+    bool          disjunct_children = false;
+};
+
+/**
+ * Make blueprint factory for "old approach".
+ */
+FactoryPtr make_factory(const OpConfig& cfg) {
+    return make_blueprint_factory(cfg.field_cfg, cfg.query_op, cfg.num_docs, cfg.default_values_per_document,
+                                  cfg.op_hit_ratio, cfg.children, cfg.disjunct_children);
+}
+
+/**
+ * Select fields used to describe OpConfig.
+ */
+void describe(const OpConfig& cfg, Record& r) {
+    r.set(f.field_cfg, cfg.field_cfg.to_string());
+    r.set(f.query_op, to_string(cfg.query_op));
+    r.set(f.num_docs, static_cast<int64_t>(cfg.num_docs));
+    r.set(f.op_hit_ratio, cfg.op_hit_ratio);
+    r.set(f.children, static_cast<int64_t>(cfg.children));
+}
+
+/**
+ * Use `describe()` function to generate a group name for a config.
+ */
+template <typename Config>
+std::string group_name(const std::string& name, const Config& cfg) {
+    Record scratch;
+    describe(cfg, scratch);
+    std::string result = name + "[";
+    int         i = 0;
+    for (const auto& [field, value] : scratch.data()) {
+        if (i++) {
+            result += ",";
+        }
+        result += field + "=" + value.to_string();
+    }
+    result += "]";
+    return result;
+}
+
+/**
+ * Run each configuration. Takes make_flows.
+ */
+template <typename Config, typename InFlowsFn>
+    requires std::invocable<InFlowsFn, const Config&>
+void run_benchmarks(const std::string& name, const std::vector<Config>& cases, InFlowsFn&& make_flows,
+                    const BenchmarkOptions& options) {
+    for (const auto& cfg : cases) {
+        std::vector<InFlow> in_flows = make_flows(cfg);
+        if (in_flows.empty()) {
+            continue;
+        }
+        run_benchmark({.group = group_name(name, cfg),
+                       .factory = make_factory(cfg),
+                       .docid_limit = cfg.num_docs + 1,
+                       .in_flows = std::move(in_flows),
+                       .options = options,
+                       .decorate = [&cfg](Record& r) { describe(cfg, r); }});
+    }
+}
+
+/**
+ * Runs each configuration. Takes in_flows as vector.
+ */
+template <typename Config>
+void run_benchmarks(const std::string& name, const std::vector<Config>& cases, const std::vector<InFlow>& in_flows,
+                    const BenchmarkOptions& options) {
+    run_benchmarks(name, cases, [&in_flows](const Config&) { return in_flows; }, options);
 }
 
 //---------------------------------------------------------------------------------------
@@ -901,6 +1083,32 @@ std::vector<double> gen_ratios(double middle, double range_multiplier, size_t nu
     return res;
 }
 
+/**
+ * In-flow rates centered on each case's op_hit_ratio,
+ * replacing the old 'filter_hit_ratios = gen_ratios(...)' pattern.
+ */
+auto in_flows_around_op_ratio(double range_multiplier = 10.0, size_t num_samples = 13, bool include_strict = false) {
+    return [=](const auto& cfg) {
+        return make_in_flows(gen_ratios(cfg.op_hit_ratio, range_multiplier, num_samples), include_strict);
+    };
+}
+
+/**
+ * Fixed in-flow rates pruned per case, replacing the old filter_crossover_factor:
+ * a rate is kept when rate * crossover_factor <= op_hit_ratio.
+ */
+auto in_flows_pruned(const std::vector<double>& rates, double crossover_factor, bool include_strict) {
+    return [=](const auto& cfg) {
+        std::vector<double> kept;
+        for (double rate : rates) {
+            if (rate * crossover_factor <= cfg.op_hit_ratio) {
+                kept.push_back(rate);
+            }
+        }
+        return make_in_flows(kept, include_strict);
+    };
+}
+
 FieldConfig make_attr_config(BasicType basic_type, CollectionType col_type, bool fast_search,
                              bool rank_filter = false) {
     Config cfg(basic_type, col_type);
@@ -916,79 +1124,125 @@ FieldConfig make_index_config() {
     return FieldConfig(field);
 }
 
-constexpr uint32_t        num_docs = 10'000'000;
-const std::vector<double> base_hit_ratios = {0.0001, 0.001, 0.01, 0.1, 0.5, 1.0};
-const std::vector<double> filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005,
-                                               0.01,    0.05,    0.1,    0.2,    0.5,   1.0};
-const auto                int32 = make_attr_config(BasicType::INT32, CollectionType::SINGLE, false);
-const auto                int32_fs = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true);
-const auto                int32_fs_rf = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true, true);
-const auto                int32_array = make_attr_config(BasicType::INT32, CollectionType::ARRAY, false);
-const auto                int32_array_fs = make_attr_config(BasicType::INT32, CollectionType::ARRAY, true);
-const auto                int32_wset = make_attr_config(BasicType::INT32, CollectionType::WSET, false);
-const auto                int32_wset_fs = make_attr_config(BasicType::INT32, CollectionType::WSET, true);
-const auto                str = make_attr_config(BasicType::STRING, CollectionType::SINGLE, false);
-const auto                str_fs = make_attr_config(BasicType::STRING, CollectionType::SINGLE, true);
-const auto                str_array = make_attr_config(BasicType::STRING, CollectionType::ARRAY, false);
-const auto                str_array_fs = make_attr_config(BasicType::STRING, CollectionType::ARRAY, true);
-const auto                str_wset = make_attr_config(BasicType::STRING, CollectionType::WSET, false);
-const auto                str_index = make_index_config();
+constexpr uint32_t          num_docs = 10'000'000;
+const std::vector<double>   base_hit_ratios = {0.0001, 0.001, 0.01, 0.1, 0.5, 1.0};
+const std::vector<double>   filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005,
+                                                 0.01,    0.05,    0.1,    0.2,    0.5,   1.0};
+const std::vector<double>   mid_hit_ratios = {0.01, 0.1, 0.5};
+const std::vector<uint32_t> in_children_counts = {2, 5, 9, 10, 100, 1000, 10000};
+const std::vector<uint32_t> or_children_counts = {2, 4, 6, 8, 10, 100, 1000};
+const std::vector<double>   enn_in_flow_rates = {0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3,
+                                                 0.4,   0.5,   0.6,  0.7,  0.8, 0.9, 1.0};
+const auto                  int32 = make_attr_config(BasicType::INT32, CollectionType::SINGLE, false);
+const auto                  int32_fs = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true);
+const auto                  int32_fs_rf = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true, true);
+const auto                  int32_array = make_attr_config(BasicType::INT32, CollectionType::ARRAY, false);
+const auto                  int32_array_fs = make_attr_config(BasicType::INT32, CollectionType::ARRAY, true);
+const auto                  int32_wset = make_attr_config(BasicType::INT32, CollectionType::WSET, false);
+const auto                  int32_wset_fs = make_attr_config(BasicType::INT32, CollectionType::WSET, true);
+const auto                  str = make_attr_config(BasicType::STRING, CollectionType::SINGLE, false);
+const auto                  str_fs = make_attr_config(BasicType::STRING, CollectionType::SINGLE, true);
+const auto                  str_array = make_attr_config(BasicType::STRING, CollectionType::ARRAY, false);
+const auto                  str_array_fs = make_attr_config(BasicType::STRING, CollectionType::ARRAY, true);
+const auto                  str_wset = make_attr_config(BasicType::STRING, CollectionType::WSET, false);
+const auto                  str_index = make_index_config();
 
 TEST(IteratorBenchmark, analyze_term_search_in_disk_index) {
-    BenchmarkSetup setup(num_docs, {str_index}, {QueryOperator::Term}, {true, false}, base_hit_ratios);
-    setup.filter_hit_ratios = filter_hit_ratios;
-    run_benchmarks(setup, global_summary);
+    std::vector<OpConfig> cases;
+    for (double ratio : base_hit_ratios) {
+        cases.push_back(
+            {.field_cfg = str_index, .query_op = QueryOperator::Term, .num_docs = num_docs, .op_hit_ratio = ratio});
+    }
+    run_benchmarks("TERM", cases, make_in_flows(filter_hit_ratios, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_non_strict) {
     std::vector<FieldConfig> field_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
-    BenchmarkSetup           setup(num_docs, field_cfgs, {QueryOperator::Term}, {false}, base_hit_ratios);
-    setup.default_values_per_document = 1;
-    setup.filter_hit_ratios = filter_hit_ratios;
-    setup.filter_crossover_factor = 1.0;
-    run_benchmarks(setup, global_summary);
+    std::vector<OpConfig>    cases;
+    for (const auto& field_cfg : field_cfgs) {
+        for (double ratio : base_hit_ratios) {
+            cases.push_back({.field_cfg = field_cfg,
+                             .query_op = QueryOperator::Term,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = ratio,
+                             .default_values_per_document = 1});
+        }
+    }
+    run_benchmarks("TERM", cases, in_flows_pruned(filter_hit_ratios, 1.0, /*include_strict=*/false), {});
 }
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_strict) {
     std::vector<FieldConfig> field_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
-    // Note: This hit ratio matches the estimate of such attributes (0.5).
-    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true}, {0.5});
-    setup.default_values_per_document = 1;
-    run_benchmarks(setup, global_summary);
+    std::vector<OpConfig>    cases;
+    for (const auto& field_cfg : field_cfgs) {
+        // Note: This hit ratio matches the estimate of such attributes (0.5).
+        cases.push_back({.field_cfg = field_cfg,
+                         .query_op = QueryOperator::Term,
+                         .num_docs = num_docs,
+                         .op_hit_ratio = 0.5,
+                         .default_values_per_document = 1});
+    }
+    run_benchmarks("TERM", cases, make_in_flows({}, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_term_search_in_fast_search_attributes) {
     std::vector<FieldConfig> field_cfgs = {int32_fs, int32_array_fs, str_fs, str_array_fs};
-    BenchmarkSetup           setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, base_hit_ratios);
-    setup.filter_hit_ratios = filter_hit_ratios;
-    setup.filter_crossover_factor = 1.0;
-    run_benchmarks(setup, global_summary);
+    std::vector<OpConfig>    cases;
+    for (const auto& field_cfg : field_cfgs) {
+        for (double ratio : base_hit_ratios) {
+            cases.push_back({.field_cfg = field_cfg,
+                             .query_op = QueryOperator::Term,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = ratio});
+        }
+    }
+    run_benchmarks("TERM", cases, in_flows_pruned(filter_hit_ratios, 1.0, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_IN_non_strict) {
-    for (auto in_hit_ratio : {0.01, 0.1, 0.5}) {
-        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::In}, {false}, {in_hit_ratio},
-                             {2, 5, 9, 10, 100, 1000, 10000});
-        setup.filter_hit_ratios = gen_ratios(in_hit_ratio, 10.0, 13);
-        setup.disjunct_children = true;
-        run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double in_hit_ratio : mid_hit_ratios) {
+        for (uint32_t children : in_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::In,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = in_hit_ratio,
+                             .children = children,
+                             .disjunct_children = true});
+        }
     }
+    run_benchmarks("IN", cases, in_flows_around_op_ratio(), {});
 }
 
 TEST(IteratorBenchmark, analyze_IN_strict) {
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
-    BenchmarkSetup            setup(num_docs, {int32_fs}, {QueryOperator::In}, {true}, hit_ratios,
-                                    {2, 5, 9, 10, 100, 1000, 10000});
-    setup.disjunct_children = true;
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double ratio : {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8}) {
+        for (uint32_t children : in_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::In,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = ratio,
+                             .children = children,
+                             .disjunct_children = true});
+        }
+    }
+    run_benchmarks("IN", cases, make_in_flows({}, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_weak_and_operators) {
-    std::vector<FieldConfig>   field_cfgs = {int32_wset_fs};
-    std::vector<QueryOperator> query_ops = {QueryOperator::WeakAnd, QueryOperator::ParallelWeakAnd};
-    BenchmarkSetup setup(num_docs, field_cfgs, query_ops, {true, false}, base_hit_ratios, {1, 2, 10, 100});
-    setup.unpack_iterator = true;
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (auto query_op : {QueryOperator::WeakAnd, QueryOperator::ParallelWeakAnd}) {
+        for (double ratio : base_hit_ratios) {
+            for (uint32_t children : {1, 2, 10, 100}) {
+                cases.push_back({.field_cfg = int32_wset_fs,
+                                 .query_op = query_op,
+                                 .num_docs = num_docs,
+                                 .op_hit_ratio = ratio,
+                                 .children = children});
+            }
+        }
+    }
+    run_benchmarks("WAND", cases, make_in_flows({1.0}, /*include_strict=*/true), {.unpack = true});
 }
 
 TEST(IteratorBenchmark, or_vs_filter_crossover) {
@@ -1056,51 +1310,86 @@ TEST(IteratorBenchmark, analyze_strict_SOURCEBLENDER_memory_and_disk) {
 }
 
 TEST(IteratorBenchmark, analyze_OR_non_strict_fs) {
-    for (auto or_hit_ratio : {0.01, 0.1, 0.5}) {
-        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {false}, {or_hit_ratio},
-                             {2, 4, 6, 8, 10, 100, 1000});
-        // setup.force_strict = true;
-        setup.filter_hit_ratios = gen_ratios(or_hit_ratio, 10.0, 13);
-        run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double or_hit_ratio : mid_hit_ratios) {
+        for (uint32_t children : or_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::Or,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = or_hit_ratio,
+                             .children = children});
+        }
     }
+    // Use {.force_strict = true} to benchmark the forced strict variants.
+    run_benchmarks("OR", cases, in_flows_around_op_ratio(), {});
 }
 
 TEST(IteratorBenchmark, analyze_OR_non_strict_fs_child_est_adjust) {
-    for (auto or_hit_ratio : {0.01, 0.1, 0.5}) {
-        for (uint32_t children : {2, 4, 6, 8, 10, 100, 1000}) {
-            double         child_est = or_hit_ratio / children;
-            BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {false}, {or_hit_ratio}, {children});
-            // setup.force_strict = true;
-            setup.filter_hit_ratios = gen_ratios(child_est, 10.0, 13);
-            run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double or_hit_ratio : mid_hit_ratios) {
+        for (uint32_t children : or_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::Or,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = or_hit_ratio,
+                             .children = children});
         }
     }
+    // In-flow rates centered on the estimate of a single OR child.
+    auto child_est_flows = [](const OpConfig& cfg) {
+        return make_in_flows(gen_ratios(cfg.op_hit_ratio / cfg.children, 10.0, 13), false);
+    };
+    run_benchmarks("OR", cases, child_est_flows, {});
 }
 
 TEST(IteratorBenchmark, analyze_OR_non_strict_non_fs) {
-    BenchmarkSetup setup(num_docs, {int32}, {QueryOperator::Or}, {false}, {0.1}, {2, 4, 6, 8, 10});
-    setup.filter_hit_ratios = gen_ratios(0.1, 10.0, 13);
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (uint32_t children : {2, 4, 6, 8, 10}) {
+        cases.push_back({.field_cfg = int32,
+                         .query_op = QueryOperator::Or,
+                         .num_docs = num_docs,
+                         .op_hit_ratio = 0.1,
+                         .children = children});
+    }
+    run_benchmarks("OR", cases, in_flows_around_op_ratio(), {});
 }
 
 TEST(IteratorBenchmark, analyze_OR_strict) {
-    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {true}, {0.01, 0.1, 0.5},
-                         {2, 4, 6, 8, 10, 100, 1000});
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (double or_hit_ratio : mid_hit_ratios) {
+        for (uint32_t children : or_children_counts) {
+            cases.push_back({.field_cfg = int32_fs,
+                             .query_op = QueryOperator::Or,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = or_hit_ratio,
+                             .children = children});
+        }
+    }
+    run_benchmarks("OR", cases, make_in_flows({}, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, analyze_btree_iterator_non_strict) {
+    std::vector<OpConfig> cases;
     for (auto term_ratio : {0.01, 0.1, 0.5, 1.0}) {
-        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Term}, {false}, {term_ratio}, {1});
-        setup.filter_hit_ratios = gen_ratios(term_ratio, 10.0, 15);
-        run_benchmarks(setup);
+        cases.push_back({.field_cfg = int32_fs,
+                         .query_op = QueryOperator::Term,
+                         .num_docs = num_docs,
+                         .op_hit_ratio = term_ratio});
     }
+    run_benchmarks("TERM", cases, in_flows_around_op_ratio(10.0, 15), {});
 }
 
 TEST(IteratorBenchmark, analyze_btree_vs_bitvector_iterators_strict) {
-    BenchmarkSetup setup(num_docs, {int32_fs, int32_fs_rf}, {QueryOperator::Term}, {true},
-                         {0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0}, {1});
-    run_benchmarks(setup);
+    std::vector<OpConfig> cases;
+    for (const auto& field_cfg : {int32_fs, int32_fs_rf}) {
+        for (double ratio : {0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0}) {
+            cases.push_back({.field_cfg = field_cfg,
+                             .query_op = QueryOperator::Term,
+                             .num_docs = num_docs,
+                             .op_hit_ratio = ratio});
+        }
+    }
+    run_benchmarks("TERM", cases, make_in_flows({}, /*include_strict=*/true), {});
 }
 
 TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
@@ -1122,84 +1411,207 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
     }
 }
 
-TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
-    auto enn_factory = enn({.num_docs = num_docs, .target_hits = 100});
-    auto term_hit_ratios = gen_ratios(0.01, 10.0, 7);
-
-    auto run_plan = [&](const std::string& tag, FactoryPtr root, double term_hit_ratio) {
-        auto res = benchmark_search(*root, num_docs + 1, /*strict*/ true, /*force_strict*/ false,
-                                    /*unpack_iterator*/ false, /*filter_hit_ratio*/ 1.0, PlanningAlgo::Order);
-        std::println("  {:>16} | term_hr={:>8.5f} | hits={:>8} | time_ms={:>8.3f} | plan={}", tag, term_hit_ratio,
-                     res.hits, res.time_ms, res.blueprint_name);
-        return res.time_ms;
-    };
-
-    std::println("Plan variants for AND(term{{int32_fs}}, ENN{{num_docs={},target_hits=100,dim=2}})", num_docs);
-    std::println("term-alone, enn-alone are baselines. AND rows force build order via PlanningAlgo::Order.");
-
-    double max_penalty = 0.0;
-    for (double hr : term_hit_ratios) {
-        auto term_factory = term(int32_fs, num_docs, 0, hr);
-
-        std::println("----- term_hit_ratio={} -----", hr);
-        run_plan("term-alone", term_factory, hr);
-        run_plan("enn-alone", enn_factory, hr);
-        double t_term_first = run_plan("AND[term,enn]", and_(term_factory, enn_factory), hr);
-        double t_enn_first = run_plan("AND[enn,term]", and_(enn_factory, term_factory), hr);
-
-        double best = std::min(t_term_first, t_enn_first);
-        double worst = std::max(t_term_first, t_enn_first);
-        double penalty = (best > 0) ? (worst / best) : 0.0;
-        max_penalty = std::max(max_penalty, penalty);
-        std::println("  worst/best ratio={:.4f}", penalty);
+TEST(IteratorBenchmark, analyze_ENN) {
+    std::vector<EnnConfig> cases;
+    for (uint32_t target_hits : {10u, 100u, 1000u}) {
+        cases.push_back({.num_docs = num_docs, .target_hits = target_hits});
     }
-    std::println("max worst-plan penalty={:.4f}", max_penalty);
+    run_benchmarks("ENN", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
 }
 
-TEST(IteratorBenchmark, data_pond_test) {
-    DataPond pond;
-    Record   record;
-    record.set("my_int", 10);
-    record.set("my_bool", true);
-    record.set("my_string", "string");
-    record.set("my_float", 3.14);
+TEST(IteratorBenchmark, analyze_ENN_with_GF) {
+    std::vector<EnnConfig> cases;
+    // The gf_ratio values overlap enn_in_flow_rates so that strict ENN_GF at ratio r
+    // can be compared directly against non-strict ENN driven at rate r.
+    for (double gf_ratio : {0.9, 0.5, 0.1, 0.05, 0.01}) {
+        cases.push_back({.num_docs = num_docs, .target_hits = 100, .global_filter_hit_ratio = gf_ratio});
+    }
+    run_benchmarks("ENN_GF", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
+}
 
-    pond.add(record);
-
-    Filter filter = Filter().lt("my_float", 2.0).eq("my_string", "str");
-    for (const auto& rec : pond.records()) {
-        if (filter.check(rec)) {
+// num_docs_scaled = document count.
+// hit_ratio       = how many documents are hits.
+// distinct_ratio  = how big is the range in terms of the hit ratio.
+TEST(IteratorBenchmark, analyze_attr_range) {
+    std::vector<RangeConfig> cases;
+    for (double hit_ratio : {0.001, 0.01, 0.1, 0.5}) {
+        int64_t target_hits = static_cast<int64_t>(hit_ratio * num_docs);
+        for (double distinct_ratio : {0.01, 0.1, 1.0}) {
+            int64_t range_size = static_cast<int64_t>(distinct_ratio * target_hits);
+            cases.push_back(
+                {.field_cfg = int32_fs, .target_hits = target_hits, .range_size = range_size, .num_docs = num_docs});
         }
-        std::println("{}", rec.to_string());
     }
+    run_benchmarks("ATTR_RANGE", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
 }
+
+/**
+ * Find the crossover when merging posting lists is better than to perform lookups for
+ * range search on attribute.
+ *
+ * This benchmark can be ran in three modes:
+ *   STRICT,     always merge
+ *   NON-STRICT, always merge
+ *   NON-STRICT, never merge
+ *
+ * STRICT always merges.
+ *
+ * When NON-STRICT, force always or never merge posting lists by returning true or false
+ * in NumericPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_strict
+ * in searchlib/src/vespa/searchlib/attribute/postinglistsearchcontext.h
+ *
+ * Need to recompile vespa to run the benchmark with the changes.
+ */
+TEST(IteratorBenchmark, range_posting_vs_lookup_crossover) {
+    // in flow from 0.001 to 0.5.
+    std::vector<double> in_flows;
+    for (auto filter_hit_ratio : {1, 2, 4, 6, 8, 10, 20, 40, 60, 80, 100, 120, 140, 160, 200, 300, 400, 500}) {
+        in_flows.push_back(filter_hit_ratio / 1000.0);
+    }
+    bool force_strict = false;
+    // range matches 10% and 20% of documents.
+    std::vector<RangeConfig> cases;
+    for (double range_hit_rate : {0.1, 0.2}) {
+        auto target_hits = static_cast<int64_t>(num_docs * range_hit_rate);
+        for (auto field_cfg : {int32_fs, int32}) {
+            cases.push_back(
+                {.field_cfg = field_cfg, .target_hits = target_hits, .range_size = 100, .num_docs = num_docs});
+        }
+    }
+    run_benchmarks("RANGE_XOVER", cases, make_in_flows(in_flows, /*include_strict=*/false),
+                   {.force_strict = force_strict});
+}
+
+/**
+ * Handles iteration of arguments. Use flag() when checking only for presence of flag,
+ * use arg_string() or arg_double() when arguments should be provided.
+ */
+struct Args {
+    int                        argc;
+    char**                     argv;
+    int                        i{};
+    double                     double_value{};
+    std::string                string_value{};
+    std::optional<std::string> error{};
+
+    ~Args();
+
+    bool next() {
+        if (error) {
+            return false;
+        }
+        i++;
+        return i < argc;
+    }
+
+    bool flag(const std::string& name) {
+        assert(i < argc);
+        return name == argv[i];
+    }
+
+    bool expect_arg(const std::string& name) {
+        if (!next()) {
+            error = std::format("Option {} expected an argument, but none were provided.", name);
+            return false;
+        }
+        return true;
+    }
+
+    bool arg_double(const std::string& name) {
+        assert(i < argc);
+        if (!flag(name)) {
+            return false;
+        }
+        if (!expect_arg(name)) {
+            return false;
+        }
+        try {
+            std::string value = argv[i];
+            size_t      pos = 0;
+            double_value = std::stod(value, &pos);
+            // In case stod matches "0.5hello" as 0.5.
+            if (pos != value.size()) {
+                error = std::format("Option {} expected a double, but got '{}'", name, argv[i]);
+                return false;
+            }
+        } catch (const std::exception&) {
+            error = std::format("Option {} expected a double, but got '{}'", name, argv[i]);
+            return false;
+        }
+        return true;
+    }
+
+    bool arg_string(const std::string& name) {
+        assert(i < argc);
+        if (!flag(name)) {
+            return false;
+        }
+        if (!expect_arg(name)) {
+            return false;
+        }
+        string_value = argv[i];
+        return true;
+    }
+};
+
+Args::~Args() = default;
 
 static std::string smoke_test_filter = "--gtest_filter="
-                                       "IteratorBenchmark.analyze_term_search_in_attributes_strict"
-                                       ":IteratorBenchmark.analyze_OR_strict"
-                                       ":IteratorBenchmark.analyze_AND_plan_variants_ENN";
+                                       "IteratorBenchmark.analyze_ENN";
 
 int main(int argc, char** argv) {
-    bool opt_dump_pond = false;
-    for (int i = 0; i < argc; i++) {
-        std::string_view smoke_test{"--smoke-test"};
-        if (smoke_test == argv[i]) {
+    bool                       opt_dump_pond = false;
+    std::optional<std::string> opt_save_pond = std::nullopt;
+    std::optional<std::string> opt_load_pond = std::nullopt;
+
+    Args args = {argc, argv};
+    while (args.next()) {
+        if (args.flag("--smoke-test")) {
             std::println(stderr, "Adding --smoke-test filter");
-            argv[i] = smoke_test_filter.data();
-        }
-        std::string_view dump_pond_flag{"--dump-pond"};
-        if (dump_pond_flag == argv[i]) {
+            argv[args.i] = smoke_test_filter.data();
+        } else if (args.flag("--dump-pond")) {
             opt_dump_pond = true;
+        } else if (args.arg_string("--save-pond")) {
+            opt_save_pond = args.string_value;
+        } else if (args.arg_string("--load-pond")) {
+            opt_load_pond = args.string_value;
+        } else if (args.arg_double("--filter-in-flow")) {
+            in_flow_filter = args.double_value;
         }
     }
-    ::testing::InitGoogleTest(&argc, argv);
-    int res = RUN_ALL_TESTS();
-    if (!global_summary.empty()) {
-        global_summary.calc_calibration();
-        print_summary(global_summary);
+
+    if (args.error) {
+        std::println(stderr, "error: {}", *args.error);
+        return 1;
+    }
+
+    if (opt_load_pond) {
+        try {
+            read_file_into_data_pond(*opt_load_pond, global_pond);
+        } catch (const vespalib::Exception& e) {
+            std::println(stderr, "error: failed to load pond from '{}': {}", *opt_load_pond, e.getMessage());
+            return 1;
+        }
+    } else {
+        ::testing::InitGoogleTest(&argc, argv);
+        int res = RUN_ALL_TESTS();
+        if (res != 0) {
+            return res;
+        }
+        if (opt_save_pond) {
+            try {
+                write_data_pond_to_file(*opt_save_pond, global_pond);
+            } catch (const vespalib::Exception& e) {
+                std::println(stderr, "error: failed to save pond to '{}': {}", *opt_save_pond, e.getMessage());
+                return 1;
+            }
+        }
+    }
+    if (!global_pond.records().empty()) {
+        postprocess_pond(global_pond);
+        print_pond_summary(global_pond);
     }
     if (opt_dump_pond) {
         dump_pond(global_pond);
     }
-    return res;
 }

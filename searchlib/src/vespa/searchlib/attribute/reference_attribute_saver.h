@@ -32,15 +32,15 @@ private:
     using GlobalId = document::GlobalId;
     using Store = ReferenceAttribute::ReferenceStore;
     using Enumerator = Store::Enumerator;
-    EntryRefVector _indices;
-    const Store&   _store;
-    Enumerator     _enumerator;
+    EntryRefVectorSnapshot _indices_snapshot;
+    const Store&           _store;
+    Enumerator             _enumerator;
 
     bool onSave(IAttributeSaveTarget& saveTarget) override;
 
 public:
     ReferenceAttributeSaver(vespalib::GenerationGuard&& guard, const AttributeHeader& header,
-                            EntryRefVector&& indices, Store& store);
+                            EntryRefVectorSnapshot&& indices_snapshot, Store& store);
 
     ~ReferenceAttributeSaver() override;
 };

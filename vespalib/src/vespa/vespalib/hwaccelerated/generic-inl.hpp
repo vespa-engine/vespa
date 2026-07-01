@@ -7,6 +7,7 @@
 #error "VESPA_HWACCEL_INCLUDE_DEFINITIONS not set"
 #endif
 
+#include "autovec_unrolled.h"
 #include "fn_table.h"
 #include "private_helpers.hpp"
 
@@ -123,6 +124,9 @@ double my_squared_euclidean_distance_f32(const float* a, const float* b, size_t 
 }
 double my_squared_euclidean_distance_f64(const double* a, const double* b, size_t sz) noexcept {
     return squaredEuclideanDistanceT<double, double, 16>(a, b, sz);
+}
+float my_squared_euclidean_length_f32(const float* v, size_t sz) noexcept {
+    return sum_indexed_unrolled<16, float>(sz, [&](size_t idx) noexcept { return v[idx] * v[idx]; });
 }
 size_t my_binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) noexcept {
     return helper::autovec_binary_hamming_distance(lhs, rhs, sz);

@@ -32,6 +32,7 @@ using search::common::sortspec::MissingPolicy;
 using vespalib::Base64;
 using vespalib::IllegalArgumentException;
 using vespalib::Issue;
+using vespalib::datastore::EntryRef;
 
 using namespace std::literals;
 
@@ -231,6 +232,8 @@ TEST_F(RawAttributeTest, save_and_load) {
     EXPECT_EQ(0, _attr->size_on_disk());
     EXPECT_EQ(zero_flush_duration, _attr->last_flush_duration());
     auto estimated_write_bytes = _attr->getEstimatedSaveByteSize();
+    EXPECT_EQ(11 * sizeof(EntryRef), _attr->reserved_memory_for_flush(false));
+    EXPECT_EQ(11 * sizeof(EntryRef) + estimated_write_bytes, _attr->reserved_memory_for_flush(true));
     _attr->save();
     EXPECT_EQ(std::filesystem::file_size(attr_path), estimated_write_bytes);
     auto saved_size_on_disk = _attr->size_on_disk();

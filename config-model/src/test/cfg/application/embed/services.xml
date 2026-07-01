@@ -20,6 +20,7 @@
       <onnx-intraop-threads>10</onnx-intraop-threads>
       <onnx-interop-threads>8</onnx-interop-threads>
       <onnx-gpu-device>1</onnx-gpu-device>
+      <onnx-optimize-model>true</onnx-optimize-model>
       <pooling-strategy>mean</pooling-strategy>
       <batching max-size="16" max-delay="100ms"/>
       <concurrency type="relative">2.0</concurrency>
@@ -84,6 +85,7 @@
       <transformer-input-ids>my_input_ids</transformer-input-ids>
       <transformer-attention-mask>my_attention_mask</transformer-attention-mask>
       <transformer-output>my_output</transformer-output>
+      <attend-to-expansion-tokens>false</attend-to-expansion-tokens>
       <onnx-execution-mode>parallel</onnx-execution-mode>
       <onnx-intraop-threads>10</onnx-intraop-threads>
       <onnx-interop-threads>8</onnx-interop-threads>

@@ -56,10 +56,19 @@ public class RangeQueryOptimizerTestCase {
         assertOptimized("AND FALSE", "s:>2 AND s:<2");
         assertOptimized("AND s:2", "s:[;2] AND s:[2;]");
         assertOptimized("AND s:2", "s:[2;] AND s:[;2]");
+    }
+
+    @Test
+    void testSameElementOptimizing() {
         assertOptimizedYql("myStruct:{f1:[17;18]}",
                            "select * from sources * where myStruct contains sameElement(f1>=17, f1<=18)");
         assertOptimizedYql("myStruct:{f1:[17;] f2:[;18]}",
                            "select * from sources * where myStruct contains sameElement(f1>=17, f2<=18)");
+
+        assertOptimizedYql("myStructArray:{f1Array:[17;18]}",
+                           "select * from sources * where myStructArray contains sameElement(f1Array>=17, f1Array<=18)");
+        assertOptimizedYql("myStructArray:{f1Array:[17;] f2Array:[;18]}",
+                           "select * from sources * where myStructArray contains sameElement(f1Array>=17, f2Array<=18)");
     }
 
     @Test
@@ -230,12 +239,23 @@ public class RangeQueryOptimizerTestCase {
         Index myStruct = new Index("myStruct");
         Index f1 = new Index("myStruct.f1");
         Index f2 = new Index("myStruct.f2");
+
+        Index myStructArray = new Index("myStructArray");
+        myStructArray.setMultivalue(true);
+        Index f1Array = new Index("myStructArray.f1Array");
+        f1Array.setMultivalue(true);
+        Index f2Array = new Index("myStructArray.f2Array");
+        f2Array.setMultivalue(true);
+
         sd.addIndex(singleValue1);
         sd.addIndex(singleValue2);
         sd.addIndex(multiValue);
         sd.addIndex(myStruct);
         sd.addIndex(f1);
         sd.addIndex(f2);
+        sd.addIndex(myStructArray);
+        sd.addIndex(f1Array);
+        sd.addIndex(f2Array);
         return new IndexFacts(new IndexModel(sd));
     }
 

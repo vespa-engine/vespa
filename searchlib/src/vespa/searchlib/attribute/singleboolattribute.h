@@ -32,6 +32,7 @@ public:
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
     uint64_t getEstimatedSaveByteSize() const override;
+    [[nodiscard]] size_t reserved_memory_for_flush(bool slow_disk) const noexcept override;
 
     std::unique_ptr<attribute::SearchContext> getSearch(std::unique_ptr<QueryTermSimple>      term,
                                                         const attribute::SearchContextParams& params) const override;

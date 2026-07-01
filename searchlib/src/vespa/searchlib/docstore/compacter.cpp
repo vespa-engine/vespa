@@ -27,12 +27,15 @@ void Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, ConstBuff
     _ds.write(std::move(guard), fileId, lid, data);
 }
 
-BucketIndexStore::BucketIndexStore(size_t maxSignificantBucketBits, uint32_t numPartitions) noexcept
-    : _inSignificantBucketBits((maxSignificantBucketBits > 8) ? (maxSignificantBucketBits - 8) : 0),
+BucketIndexStore::BucketIndexStore(size_t maxSignificantBucketBits, uint8_t num_partbits,
+                                   uint32_t numPartitions) noexcept
+    : _inSignificantBucketBits((maxSignificantBucketBits > num_partbits) ? (maxSignificantBucketBits - num_partbits)
+                                                                         : 0),
       _where(),
       _numPartitions(numPartitions),
       _readyForIterate(true) {
 }
+
 BucketIndexStore::~BucketIndexStore() = default;
 
 void BucketIndexStore::prepareForIterate() {
@@ -86,14 +89,15 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, CompressionCon
       _destinationFileId(destination),
       _ds(ds),
       _bucketizer(bucketizer),
-      _lock(),
-      _backingMemory(Alloc::alloc(INITIAL_BACKING_BUFFER_SIZE), &_lock),
-      _bucketIndexStore(maxSignificantBucketBits, NUM_PARTITIONS),
+      _compress_chunks_tracker(),
+      _backingMemory(Alloc::alloc(INITIAL_BACKING_BUFFER_SIZE)),
+      _bucketIndexStore(maxSignificantBucketBits, NUM_PARTBITS, NUM_PARTITIONS),
       _tmpStore(),
       _lidGuard(ds.getLidReadGuard()),
       _stat() {
     for (auto& partition : _tmpStore) {
-        partition = std::make_unique<StoreByBucket>(_bucketIndexStore, _backingMemory, executor, compression);
+        partition = std::make_unique<StoreByBucket>(_bucketIndexStore, _compress_chunks_tracker, _backingMemory,
+                                                    executor, compression);
     }
 }
 

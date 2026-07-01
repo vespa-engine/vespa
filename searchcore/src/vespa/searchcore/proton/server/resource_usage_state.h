@@ -21,6 +21,8 @@ class ResourceUsageState {
     double                 _non_transient_memory_usage;
     double                 _reserved_disk_space;
     double                 _reserved_disk_space_factor;
+    double                 _reserved_memory;
+    double                 _reserved_memory_factor;
     double                 _transient_disk_usage;
     double                 _transient_memory_usage;
     ResourceUsageWithLimit _max_attribute_address_space_state;
@@ -31,12 +33,12 @@ public:
     ResourceUsageState(const ResourceUsageWithLimit& diskState_, const ResourceUsageWithLimit& memoryState_);
     ResourceUsageState(const ResourceUsageWithLimit& diskState_, const ResourceUsageWithLimit& memoryState_,
                        double non_transient_disk_usage_, double non_transient_memory_usage_,
-                       double reserved_disk_space_, double reserved_disk_space_factor_, double transient_disk_usage_,
-                       double transient_memory_usage_);
+                       double reserved_disk_space_, double reserved_disk_space_factor_, double reserved_memory_,
+                       double reserved_memory_factor, double transient_disk_usage_, double transient_memory_usage_);
     ResourceUsageState(const ResourceUsageWithLimit& diskState_, const ResourceUsageWithLimit& memoryState_,
                        double non_transient_disk_usage_, double non_transient_memory_usage_,
-                       double reserved_disk_space_, double reserved_disk_space_factor_, double transient_disk_usage_,
-                       double                        transient_memory_usage_,
+                       double reserved_disk_space_, double reserved_disk_space_factor_, double reserved_memory_,
+                       double reserved_memory_factor_, double transient_disk_usage_, double transient_memory_usage_,
                        const ResourceUsageWithLimit& max_attribute_address_space_state,
                        const AttributeUsageStats&    attribute_usage);
     ~ResourceUsageState();
@@ -46,6 +48,8 @@ public:
     const ResourceUsageWithLimit& memoryState() const noexcept { return _memoryState; }
     double reserved_disk_space() const noexcept { return _reserved_disk_space; }
     double reserved_disk_space_factor() const noexcept { return _reserved_disk_space_factor; }
+    [[nodiscard]] double reserved_memory() const noexcept { return _reserved_memory; }
+    [[nodiscard]] double reserved_memory_factor() const noexcept { return _reserved_memory_factor; }
     double transient_disk_usage() const noexcept { return _transient_disk_usage; }
     double transient_memory_usage() const noexcept { return _transient_memory_usage; }
     double non_transient_disk_usage() const noexcept { return _non_transient_disk_usage; }
@@ -59,6 +63,9 @@ public:
     // Disk usage reported to cluster controller and exported as metric.
     double reported_disk_usage() const noexcept {
         return _non_transient_disk_usage + _reserved_disk_space * _reserved_disk_space_factor;
+    }
+    [[nodiscard]] double reported_memory_usage() const noexcept {
+        return _non_transient_memory_usage + _reserved_memory * _reserved_memory_factor;
     }
 };
 

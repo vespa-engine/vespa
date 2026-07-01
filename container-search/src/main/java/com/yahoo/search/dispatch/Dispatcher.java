@@ -240,7 +240,7 @@ public class Dispatcher extends AbstractComponent {
         return switch (policy) {
             case ROUNDROBIN -> LoadBalancer.Policy.ROUNDROBIN;
             case BEST_OF_RANDOM_2 -> LoadBalancer.Policy.BEST_OF_RANDOM_2;
-            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS -> LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
+            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS -> LoadBalancer.Policy.ADAPTIVE;
             case LATENCY_AMORTIZED_OVER_TIME -> LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
         };
     }

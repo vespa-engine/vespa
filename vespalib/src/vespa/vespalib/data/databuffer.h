@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <span>
 
 namespace vespalib {
 
@@ -571,6 +572,10 @@ public:
     void swap(DataBuffer& other);
 
     Alloc stealBuffer() &&;
+
+    [[nodiscard]] std::span<const std::byte> as_bytes() const noexcept {
+        return std::as_bytes(std::span<const char>{_datapt, getDataLen()});
+    }
 };
 
 } // namespace vespalib

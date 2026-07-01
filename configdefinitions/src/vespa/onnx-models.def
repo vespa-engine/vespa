@@ -11,6 +11,7 @@ model[].input[].source              string
 model[].output[].name               string
 model[].output[].as                 string
 model[].dry_run_on_setup            bool default=false
+model[].optimize_model              bool default=true
 model[].stateless_execution_mode    string default=""
 model[].stateless_interop_threads   int default=-1
 model[].stateless_intraop_threads   int default=-1

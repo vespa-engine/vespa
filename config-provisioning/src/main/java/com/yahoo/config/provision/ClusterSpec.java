@@ -107,6 +107,11 @@ public final class ClusterSpec {
                                stateful, sidecars, availabilityZones, profile);
     }
 
+    public ClusterSpec withAvailabilityZones(List<AzName> availabilityZones) {
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+                               stateful, sidecars, availabilityZones, profile);
+    }
+
     /** Creates a ClusterSpec builder for when requesting a cluster having all the values of this */
     public Builder asRequest() {
         Builder b = new Builder(type, id);

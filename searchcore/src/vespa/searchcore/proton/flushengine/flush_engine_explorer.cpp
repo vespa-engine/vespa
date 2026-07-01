@@ -47,6 +47,9 @@ void convertToSlime(const FlushContext::List& allTargets, const vespalib::system
         object.setBool("needUrgentFlush", target->needUrgentFlush());
         object.setLong("last_flush_duration",
                        duration_cast<std::chrono::microseconds>(target->last_flush_duration()).count());
+        object.setLong("estimated_flush_duration",
+                       duration_cast<std::chrono::microseconds>(target->estimated_flush_duration()).count());
+        object.setLong("reserved-memory-for-flush", target->reserved_memory_for_flush());
     }
 }
 

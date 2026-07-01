@@ -111,8 +111,9 @@ bool smallerThanSizeLimit(uint32_t minCount, uint32_t minSize, const spi::Bucket
         return false;
     spi::BucketInfo info = provider.getBucketInfo(b).getBucketInfo();
     if ((minCount != 0 && info.getDocumentCount() < minCount) &&
-        (minSize != 0 && (info.getDocumentCount() == 1 || info.getDocumentSize() < minSize)))
-    { // (A bucket with a single document is never too large size wise
+        (minSize != 0 &&
+         (info.getDocumentCount() == 1 ||
+          info.getDocumentSize() < minSize))) { // (A bucket with a single document is never too large size wise
         return true;
     }
     return false;

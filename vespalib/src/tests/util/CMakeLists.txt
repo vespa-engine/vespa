@@ -38,8 +38,10 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     size_literals_test.cpp
     small_vector_test.cpp
     static_string_test.cpp
+    stride_test.cpp
     string_escape_test.cpp
     time_test.cpp
+    transient_memory_tracker_test.cpp
     typed_data_layout_test.cpp
     typify_test.cpp
     unordered_u32_set_test.cpp

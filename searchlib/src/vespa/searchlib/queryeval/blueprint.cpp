@@ -18,10 +18,14 @@
 #include <vespa/vespalib/objects/object2slime.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/tls_linkage.h>
 
 #include <vespa/vespalib/objects/visit.hpp>
 
+#include <format>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -52,6 +56,31 @@ void maybe_eliminate_self(Blueprint*& self, Blueprint::UP replacement) {
         self->setDocIdLimit(discard->get_docid_limit());
         discard->setParent(nullptr);
     }
+}
+
+//-----------------------------------------------------------------------------
+
+namespace {
+
+thread_local uint32_t tls_next_enum TLS_LINKAGE = 0;
+
+uint32_t make_enum_value() {
+    if (tls_next_enum == 0) {
+        return 0;
+    }
+    return tls_next_enum++;
+}
+
+} // namespace
+
+Blueprint::AutoEnumGuard::AutoEnumGuard(uint32_t first_id) noexcept {
+    // enable auto enum
+    tls_next_enum = first_id;
+}
+
+Blueprint::AutoEnumGuard::~AutoEnumGuard() {
+    // disable auto enum
+    tls_next_enum = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -117,28 +146,39 @@ Blueprint::State::~State() = default;
 Blueprint::Blueprint() noexcept
     : _parent(nullptr),
       _flow_stats(0.0, 0.0, 0.0),
+      _abs_cost(0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
-      _id(0),
+      _id(make_enum_value()),
       _strict(false),
       _frozen(false) {
 }
 
 Blueprint::~Blueprint() = default;
 
-void Blueprint::resolve_strict(InFlow& in_flow) noexcept {
-    if (!in_flow.strict() && opt_allow_force_strict()) {
-        auto stats = FlowStats::from(flow::DefaultAdapter(), this);
-        if (flow::should_force_strict(stats, in_flow.rate())) {
-            in_flow.force_strict();
-        }
+std::string Blueprint::profiler_name(std::string_view operation) const {
+    if (id() == 0) {
+        return std::format("[]{}::{}", getClassName(), operation);
     }
-    _strict = in_flow.strict();
+    return std::format("[{}]{}::{}", id(), getClassName(), operation);
 }
 
-uint32_t Blueprint::enumerate(uint32_t next_id) noexcept {
-    set_id(next_id++);
-    return next_id;
+double Blueprint::resolve_strict(InFlow& in_flow, bool always_strict) noexcept {
+    bool   was_strict = in_flow.strict();
+    double in_rate = in_flow.rate();
+    // what the planner would choose on its own: strict only when it lowers the cost
+    bool model_strict = was_strict || (opt_allow_force_strict() && flow::should_force_strict(_flow_stats, in_rate));
+    // extra cost of being strict when the caller did not expect it
+    double strict_diff = (!was_strict && model_strict) ? flow::strict_cost_diff(_flow_stats.estimate, in_rate) : 0.0;
+    // simple local estimate; final for leaves, replaced for intermediates in sort.
+    // reflects forced strictness only when it is cheaper, never the always_strict penalty
+    _abs_cost = flow::cost_of(InFlow(model_strict, in_rate), _flow_stats) + strict_diff;
+    // make the actual flow strict for tagging and child propagation
+    if (model_strict || always_strict) {
+        in_flow.force_strict();
+    }
+    _strict = in_flow.strict();
+    return strict_diff;
 }
 
 void Blueprint::each_node_post_order(const std::function<void(Blueprint&)>& f) {
@@ -387,6 +427,7 @@ void Blueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
         visitor.visitFloat("strict_cost", strict_cost());
     }
     visitor.closeStruct();
+    visitor.visitFloat("abs_cost", _abs_cost);
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
     visitor.visitInt("id", _id);
@@ -422,14 +463,6 @@ void IntermediateBlueprint::setDocIdLimit(uint32_t limit) noexcept {
     for (Blueprint::UP& child : _children) {
         child->setDocIdLimit(limit);
     }
-}
-
-uint32_t IntermediateBlueprint::enumerate(uint32_t next_id) noexcept {
-    set_id(next_id++);
-    for (Blueprint::UP& child : _children) {
-        next_id = child->enumerate(next_id);
-    }
-    return next_id;
 }
 
 void IntermediateBlueprint::each_node_post_order(const std::function<void(Blueprint&)>& f) {
@@ -572,16 +605,25 @@ void IntermediateBlueprint::optimize(Blueprint*& self, OptimizePass pass) {
     maybe_eliminate_self(self, get_replacement());
 }
 
-void IntermediateBlueprint::sort(InFlow in_flow) {
-    resolve_strict(in_flow);
+double IntermediateBlueprint::sort(InFlow in_flow) {
+    double strict_diff = resolve_strict(in_flow);
     if (!opt_keep_order()) [[likely]] {
         sort(_children, in_flow);
     }
-    auto flow = my_flow(in_flow);
+    auto   flow = my_flow(in_flow);
+    double children_cost = 0.0;
     for (const auto& child : _children) {
-        child->sort(InFlow(flow.strict(), flow.flow()));
+        flow.update_cost(children_cost, child->sort(InFlow(flow.strict(), flow.flow())));
         flow.add(child->estimate());
     }
+    double self_cost = flow::cost_of(in_flow, self_flow_stats(estimate(), childCnt()));
+    set_abs_cost(children_cost + self_cost + strict_diff);
+    return abs_cost();
+}
+
+FlowStats IntermediateBlueprint::self_flow_stats(double est, size_t) const {
+    double c = flow::intermediate_activation_cost();
+    return {est, c, c * est};
 }
 
 void IntermediateBlueprint::set_global_filter(const GlobalFilter& global_filter, double estimated_hit_ratio) {
@@ -642,8 +684,10 @@ void IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
 void IntermediateBlueprint::fetchPostings(const ExecuteInfo& execInfo) {
     auto flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
     for (const auto& child : _children) {
-        double nextHitRate = flow.flow();
-        child->fetchPostings(ExecuteInfo::create(nextHitRate, execInfo));
+        double                     nextHitRate = flow.flow();
+        auto                       childInfo = ExecuteInfo::create(nextHitRate, execInfo);
+        FetchPostingsProfilerGuard guard(*child);
+        child->fetchPostings(childInfo);
         flow.add(child->estimate());
     }
 }
@@ -767,8 +811,9 @@ void LeafBlueprint::set_tree_size(uint32_t value) {
 
 //-----------------------------------------------------------------------------
 
-void SimpleLeafBlueprint::sort(InFlow in_flow) {
+double SimpleLeafBlueprint::sort(InFlow in_flow) {
     resolve_strict(in_flow);
+    return abs_cost();
 }
 
 } // namespace search::queryeval

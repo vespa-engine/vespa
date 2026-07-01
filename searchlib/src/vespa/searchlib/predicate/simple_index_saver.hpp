@@ -10,13 +10,18 @@ SimpleIndexSaver<Posting, Key, DocId>::SimpleIndexSaver(Dictionary dictionary, c
                                                         std::unique_ptr<PostingSaver<Posting>> subsaver)
     : _dictionary(std::move(dictionary)),
       _frozen_roots(),
+      _frozen_roots_tracker(),
       _btree_posting_lists(btree_posting_lists),
       _subsaver(std::move(subsaver)) {
     make_frozen_roots();
 }
 
 template <typename Posting, typename Key, typename DocId>
-SimpleIndexSaver<Posting, Key, DocId>::~SimpleIndexSaver() = default;
+SimpleIndexSaver<Posting, Key, DocId>::~SimpleIndexSaver() {
+    auto lock = _frozen_roots_tracker.acquire_lock();
+    FrozenRoots().swap(_frozen_roots);
+    _frozen_roots_tracker.set_transient_memory(std::move(lock), 0);
+}
 
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndexSaver<Posting, Key, DocId>::save(BufferWriter& writer) const {
@@ -53,6 +58,7 @@ void SimpleIndexSaver<Posting, Key, DocId>::make_frozen_roots() {
      * vespalib::btree::BTreeStore.  Traverse frozen dictionary in writer
      * thread and make a copy of frozen btree roots.
      */
+    auto lock = _frozen_roots_tracker.acquire_lock();
     _frozen_roots.reserve(_dictionary.size());
     for (auto it = _dictionary.begin(); it.valid(); ++it) {
         auto ref = it.getData();
@@ -63,6 +69,7 @@ void SimpleIndexSaver<Posting, Key, DocId>::make_frozen_roots() {
             _frozen_roots.emplace_back();
         }
     }
+    _frozen_roots_tracker.set_transient_memory(std::move(lock), sizeof(EntryRef) * _frozen_roots.size());
 }
 
 } // namespace search::predicate

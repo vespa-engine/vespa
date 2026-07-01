@@ -17,15 +17,15 @@ class RawBufferStore;
  * Class for saving a single raw attribute.
  */
 class SingleRawAttributeSaver : public AttributeSaver {
-    EntryRefVector        _ref_vector;
-    const RawBufferStore& _raw_store;
+    EntryRefVectorSnapshot _ref_vector_snapshot;
+    const RawBufferStore&  _raw_store;
 
     void save_raw_store(BufferWriter& writer) const;
     bool onSave(IAttributeSaveTarget& saveTarget) override;
 
 public:
     SingleRawAttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header,
-                            EntryRefVector&& ref_vector, const RawBufferStore& raw_store);
+                            EntryRefVectorSnapshot&& ref_vector_snapshot, const RawBufferStore& raw_store);
     ~SingleRawAttributeSaver();
 };
 

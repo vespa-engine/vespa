@@ -8,11 +8,13 @@
 
 #include <memory>
 #include <mutex>
+#include <span>
 #include <vector>
 
 namespace vespalib {
 class nbostream;
 class DataBuffer;
+class MemoryDataStore;
 } // namespace vespalib
 namespace vespalib::alloc {
 class Alloc;
@@ -87,6 +89,7 @@ public:
     using LidList = std::vector<Entry>;
     Chunk(uint32_t id, const Config& config);
     Chunk(uint32_t id, const void* buffer, size_t len);
+    Chunk(uint32_t id, std::span<const std::byte> buffer, vespalib::MemoryDataStore& memory_data_store);
     ~Chunk();
     LidMeta append(uint32_t lid, ConstBufferRef data);
     ssize_t read(uint32_t lid, vespalib::DataBuffer& buffer) const;
@@ -107,6 +110,7 @@ public:
 
 private:
     vespalib::nbostream& getData();
+    void scan_entries();
 
     uint32_t                     _id;
     uint64_t                     _lastSerial;

@@ -5,6 +5,8 @@
 #include "attributesaver.h"
 #include "iattributefilewriter.h"
 
+#include <vespa/vespalib/util/transient_memory_tracker.h>
+
 namespace search {
 
 /*
@@ -16,7 +18,8 @@ public:
     using Buffer = IAttributeFileWriter::Buffer;
 
 private:
-    Buffer _buf;
+    Buffer                           _buf;
+    vespalib::TransientMemoryTracker _tracker;
     using BufferBuf = IAttributeFileWriter::BufferBuf;
 
     bool onSave(IAttributeSaveTarget& saveTarget) override;

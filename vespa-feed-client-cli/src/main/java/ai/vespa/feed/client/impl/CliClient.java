@@ -130,6 +130,7 @@ public class CliClient {
 
                 printBenchmarkResult(System.nanoTime() - startNanos, successes.get(), failures.get(), feedClient.stats(), cliArgs.benchmarkModeEnabled() ? systemOut : systemError);
                 if (fatal.get() != null) throw fatal.get();
+                if (cliArgs.exitOnFeedErrorsEnabled() && failures.get() > 0) return 1;
             }
             return 0;
         }

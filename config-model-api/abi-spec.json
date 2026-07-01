@@ -380,8 +380,11 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.time.Duration, boolean, boolean)",
       "public void <init>(java.time.Duration)",
       "public java.time.Duration delay()",
+      "public boolean delaysVersion()",
+      "public boolean delaysRevision()",
       "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.lang.String toString()"
     ],
@@ -1322,7 +1325,8 @@
     ],
     "methods" : [
       "public com.yahoo.config.provision.HostSpec allocateHost(java.lang.String)",
-      "public abstract java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionLogger)"
+      "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionLogger)",
+      "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionContext)"
     ],
     "fields" : [ ]
   },
@@ -1414,6 +1418,7 @@
       "public double feedNiceness()",
       "public int maxUnCommittedMemory()",
       "public boolean containerDumpHeapOnShutdownTimeout()",
+      "public com.yahoo.config.provision.OpenTelemetryConfiguration opentelemetrySdk()",
       "public int heapSizePercentage(java.util.Optional)",
       "public java.util.List allowedAthenzProxyIdentities()",
       "public int maxActivationInhibitedOutOfSyncGroups()",
@@ -1422,34 +1427,33 @@
       "public double resourceLimitAddressSpace()",
       "public boolean forwardIssuesAsErrors()",
       "public java.util.List ignoredHttpUserAgents()",
-      "public int contentLayerMetadataFeatureLevel()",
       "public java.lang.String unknownConfigDefinition()",
       "public boolean sortBlueprintsByCost()",
       "public boolean logserverOtelCol()",
+      "public boolean tokenAuthForDeploy()",
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public double logserverNodeMemory()",
       "public double clusterControllerNodeMemory()",
       "public boolean useLegacyWandQueryParsing()",
       "public boolean useSimpleAnnotations()",
-      "public boolean sendProtobufQuerytree()",
       "public boolean sendOldQueryStack()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",
-      "public int maxDocumentOperationRequestSizeMib()",
       "public java.lang.Object sidecarsForTest()",
-      "public boolean useTriton()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag useTritonFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()",
+      "public boolean requireExplicitDocprocCluster()",
       "public boolean applyOnRestartForApplicationMetadataConfig()",
-      "public boolean scaleMetricsproxyHeapByNodeCount()",
       "public java.util.OptionalInt metricsProxyHeapSizeInMib()",
+      "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
-      "public double searchNodeReservedDiskSpaceFactor()"
+      "public double searchNodeReservedMemoryFactor()",
+      "public boolean forceDisableOnnxModelOptimization()"
     ],
     "fields" : [ ]
   },
@@ -1717,7 +1721,7 @@
     "methods" : [
       "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
       "public com.yahoo.config.model.api.OnnxModelOptions withExecutionMode(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withInterOpThreads(java.lang.Integer)",
@@ -1728,6 +1732,7 @@
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactorType(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactor(java.lang.Double)",
       "public com.yahoo.config.model.api.OnnxModelOptions withModelConfigOverride(com.yahoo.config.FileReference)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withOptimizeModel(java.lang.Boolean)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
@@ -1739,7 +1744,8 @@
       "public java.util.Optional batchingMaxDelay()",
       "public java.util.Optional concurrencyFactorType()",
       "public java.util.Optional concurrencyFactor()",
-      "public java.util.Optional modelConfigOverride()"
+      "public java.util.Optional modelConfigOverride()",
+      "public java.util.Optional optimizeModel()"
     ],
     "fields" : [ ]
   },

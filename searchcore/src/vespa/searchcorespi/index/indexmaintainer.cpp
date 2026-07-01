@@ -18,6 +18,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/filekit.h>
@@ -86,6 +87,10 @@ public:
 };
 
 ReconfigRunnableTask::~ReconfigRunnableTask() = default;
+
+uint64_t transient_memory_usage(uint64_t memory_used, uint64_t static_memory_footprint) {
+    return memory_used >= static_memory_footprint ? memory_used - static_memory_footprint : 0;
+}
 
 SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
 
@@ -202,7 +207,7 @@ std::shared_ptr<IDiskIndex> IndexMaintainer::loadDiskIndex(const string& indexDi
     vespalib::Timer timer;
     auto            index = _operations.loadDiskIndex(indexDir);
     auto            stats = index->get_index_stats(false);
-    _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
+    _disk_indexes->setActive(indexDir, stats.sizeOnDisk(), index->create_and_freeze_times().get_flush_duration());
     auto retval =
         std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index), _layout, _disk_indexes);
     if (LOG_WOULD_LOG(event)) {
@@ -221,7 +226,7 @@ std::shared_ptr<IDiskIndex> IndexMaintainer::reloadDiskIndex(const IDiskIndex& o
     const IDiskIndex& wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCleanup&>(oldIndex)).getWrapped();
     auto              index = _operations.reloadDiskIndex(wrappedDiskIndex);
     auto              stats = index->get_index_stats(false);
-    _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
+    _disk_indexes->setActive(indexDir, stats.sizeOnDisk(), index->create_and_freeze_times().get_flush_duration());
     auto retval =
         std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index), _layout, _disk_indexes);
     if (LOG_WOULD_LOG(event)) {
@@ -956,23 +961,24 @@ IndexMaintainer::FlushStats IndexMaintainer::getFlushStats() const {
     {
         LockGuard lock(_index_update_lock);
         source_selector_bytes = _selector->getDocIdLimit() * sizeof(Source);
-        stats.memory_before_bytes += _current_index->getMemoryUsage().allocatedBytes() + source_selector_bytes;
-        stats.memory_after_bytes += _current_index->getStaticMemoryFootprint() + source_selector_bytes;
+        stats._memory_before_bytes += _current_index->getMemoryUsage().usedBytes() + source_selector_bytes;
+        stats._memory_after_bytes += _current_index->getStaticMemoryFootprint() + source_selector_bytes;
         numFrozen = _frozenMemoryIndexes.size();
         for (const FrozenMemoryIndexRef& frozen : _frozenMemoryIndexes) {
-            stats.memory_before_bytes += frozen._index->getMemoryUsage().allocatedBytes() + source_selector_bytes;
+            stats._memory_before_bytes += frozen._index->getMemoryUsage().usedBytes() + source_selector_bytes;
         }
         source_selector_changes = _source_selector_changes;
     }
 
-    if (!source_selector_changes && stats.memory_after_bytes >= stats.memory_before_bytes) {
+    if (!source_selector_changes && stats._memory_after_bytes >= stats._memory_before_bytes) {
         // Nothing is written if the index is empty.
-        stats.disk_write_bytes = 0;
-        stats.cpu_time_required = 0;
+        stats._disk_write_bytes = 0;
+        stats._cpu_time_required = 0;
     } else {
-        stats.disk_write_bytes = stats.memory_before_bytes + source_selector_bytes - stats.memory_after_bytes;
-        stats.cpu_time_required = source_selector_bytes * 3 * (1 + numFrozen) + stats.disk_write_bytes;
+        stats._disk_write_bytes = stats._memory_before_bytes + source_selector_bytes - stats._memory_after_bytes;
+        stats._cpu_time_required = source_selector_bytes * 3 * (1 + numFrozen) + stats._disk_write_bytes;
     }
+    stats._last_flush_duration = _disk_indexes->last_flush_duration();
     return stats;
 }
 
@@ -984,15 +990,18 @@ IndexMaintainer::FusionStats IndexMaintainer::getFusionStats() const {
     {
         LockGuard lock(_new_search_lock);
         source_list = _source_list;
-        stats.maxFlushed = _maxFlushed;
+        stats._max_flushed = _maxFlushed;
     }
-    stats.diskUsage = _disk_indexes->get_size_on_disk(false) - DiskIndexes::get_size_on_disk_overhead();
+    auto disk_indexes_fusion_stats = _disk_indexes->calc_fusion_stats();
+    stats._disk_usage = disk_indexes_fusion_stats.estimated_size_on_disk();
+    stats._last_flush_duration = disk_indexes_fusion_stats.last_flush_duration();
+    stats._estimated_flush_duration = disk_indexes_fusion_stats.estimated_flush_duration();
     {
         LockGuard guard(_fusion_lock);
-        stats.numUnfused = _fusion_spec.flush_ids.size() + ((_fusion_spec.last_fusion_id != 0) ? 1 : 0);
+        stats._num_unfused = _fusion_spec.flush_ids.size() + ((_fusion_spec.last_fusion_id != 0) ? 1 : 0);
         stats._canRunFusion = canRunFusion(_fusion_spec);
     }
-    LOG(debug, "Get fusion stats. Disk usage: %" PRIu64 ", maxflushed: %d", stats.diskUsage, stats.maxFlushed);
+    LOG(debug, "Get fusion stats. Disk usage: %" PRIu64 ", maxflushed: %d", stats._disk_usage, stats._max_flushed);
     return stats;
 }
 
@@ -1189,8 +1198,10 @@ search::IndexStats IndexMaintainer::get_index_stats(bool clear_disk_io_stats) co
 ResourceUsage IndexMaintainer::get_resource_usage() const {
     auto disk_indexes_resource_usage = _disk_indexes->get_resource_usage(*_layout);
     auto stats = get_index_stats(false);
+    auto memory_index_transient_memory_usage =
+        transient_memory_usage(stats.memoryUsage().usedBytes(), _current_index->getStaticMemoryFootprint());
     return ResourceUsage{
-        TransientResourceUsage{disk_indexes_resource_usage.transient().disk(), stats.memoryUsage().allocatedBytes()},
+        TransientResourceUsage{disk_indexes_resource_usage.transient().disk(), memory_index_transient_memory_usage},
         disk_indexes_resource_usage.disk()};
 }
 

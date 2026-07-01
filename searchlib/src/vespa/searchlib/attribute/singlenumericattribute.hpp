@@ -190,4 +190,10 @@ std::unique_ptr<AttributeSaver> SingleValueNumericAttribute<B>::onInitSave(std::
                                                               numDocs * sizeof(T));
 }
 
+template <typename B>
+size_t SingleValueNumericAttribute<B>::reserved_memory_for_flush(bool slow_disk) const noexcept {
+    uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
+    return slow_disk ? this->getEstimatedSaveByteSize() : committedDocIdLimit * sizeof(T);
+}
+
 } // namespace search

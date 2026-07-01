@@ -233,6 +233,68 @@ public class DeploymentSpecTest {
         assertEquals("tests for prod.us-east-1", instanceSteps.get(6).toString());
     }
 
+    @Test
+    public void selectiveDelay() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" +
+                "      <prod>" +
+                "         <region>us-east-1</region>" +
+                "         <delay hours='1' version='true' revision='false'/>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        DeploymentSpec.Delay delay = (DeploymentSpec.Delay) spec.steps().get(0).steps().get(1);
+        assertTrue(delay.delaysVersion());
+        assertFalse(delay.delaysRevision());
+        assertEquals("delay PT1H (version=true, revision=false)", delay.toString());
+    }
+
+    @Test
+    public void delayDefaultsToBothChangeKinds() {
+        DeploymentSpec spec = DeploymentSpec.fromXml(
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" +
+                "      <prod>" +
+                "         <region>us-east-1</region>" +
+                "         <delay hours='1'/>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec.Delay delay = (DeploymentSpec.Delay) spec.steps().get(0).steps().get(1);
+        assertTrue(delay.delaysVersion());
+        assertTrue(delay.delaysRevision());
+        assertEquals("delay PT1H", delay.toString());
+    }
+
+    @Test
+    public void delayWithBothChangeKindsDisabledIsRejected() {
+        try {
+            DeploymentSpec.fromXml(
+                    "<deployment version='1.0'>" +
+                    "   <instance id='default'>" +
+                    "      <prod>" +
+                    "         <region>us-east-1</region>" +
+                    "         <delay hours='1' version='false' revision='false'/>" +
+                    "         <region>us-west-1</region>" +
+                    "      </prod>" +
+                    "   </instance>" +
+                    "</deployment>"
+            );
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("A <delay> with both version='false' and revision='false' has no effect; " +
+                         "remove it or enable at least one change kind", e.getMessage());
+        }
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void duplicateProductionTest() {
         StringReader r = new StringReader(

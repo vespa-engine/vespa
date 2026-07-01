@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeV
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForLocalLLMValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForSidecarValidator;
@@ -138,7 +137,6 @@ public class Validation {
         new StartupCommandChangeValidator().validate(execution);
         new ContentTypeRemovalValidator().validate(execution);
         new ContentClusterRemovalValidator().validate(execution);
-        new ResourcesReductionValidator().validate(execution);
         new ContainerRestartValidator().validate(execution);
         new NodeResourceChangeValidator().validate(execution);
         new CertificateRemovalChangeValidator().validate(execution);
@@ -190,7 +188,7 @@ public class Validation {
 
         public void throwIfFailed() {
             Optional<ValidationException> invalidException = deployState.validationOverrides().invalidException(failures, deployState.now());
-            if (invalidException.isPresent() && deployState.isHosted() && deployState.zone().environment().isManuallyDeployed()) {
+            if (invalidException.isPresent() && deployState.warnOnlyOnValidationFailure()) {
                 deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
                                                                     "Auto-overriding validation which would be disallowed in production: " +
                                                                     Exceptions.toMessageString(invalidException.get()));

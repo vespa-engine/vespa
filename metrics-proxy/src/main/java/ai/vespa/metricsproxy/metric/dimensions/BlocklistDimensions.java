@@ -36,7 +36,6 @@ public enum BlocklistDimensions {
     ROLE("role"),
     STATE("state"),
     SYSTEM("system"),
-    VESPA_VERSION("vespaVersion"),
 
     /**  Metric specific dimensions  **/
     ARCHITECTURE("arch"),

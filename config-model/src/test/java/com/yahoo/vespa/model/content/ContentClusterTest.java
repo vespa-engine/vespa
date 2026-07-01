@@ -230,14 +230,14 @@ public class ContentClusterTest extends ContentBaseTest {
         String schema_fromdisk =
                 """
                 schema type1 {
-                    document-id: from-disk
+                    documentid: from-disk
                     document type1 {
                     }
                 }""";
         String schema_attribute =
                 """
                 schema type2 {
-                    document-id: attribute
+                    documentid: attribute
                     document type2 {
                     }
                 }""";
@@ -1396,6 +1396,21 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(2_000_000_000, resolveMaxTLSSize(Optional.of(flavor)));
     }
 
+    private double resolveSearchNodeReservedMemoryFactor(double searchNodeReservedMemoryFactor) {
+        var model = createEnd2EndOneNode(new TestProperties().setSearchNodeReservedMemoryFactor(searchNodeReservedMemoryFactor));
+        var cc = model.getContentClusters().get("storage");
+        var protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        var protonConfig = new ProtonConfig(protonBuilder);
+        return protonConfig.writefilter().reserved_memory_factor();
+    }
+
+    @Test
+    public void defaultSearchNodeReservedMemoryFactorIsControlledByProperties() {
+        assertEquals(0.0, resolveSearchNodeReservedMemoryFactor(0.0), 0.0);
+        assertEquals(0.3, resolveSearchNodeReservedMemoryFactor(0.3), 0.0);
+    }
+
     void assertZookeeperServerImplementation(String expectedClassName,
                                              ClusterControllerContainerCluster clusterControllerCluster) {
         for (ClusterControllerContainer c : clusterControllerCluster.getContainers()) {
@@ -1748,26 +1763,6 @@ public class ContentClusterTest extends ContentBaseTest {
     @Test
     void search_node_transaction_log_replay_memory_limit_is_configurable_via_feature_flag() {
         assertEquals(-3L, txnLogReplayMemoryLimitFromFlag());
-    }
-
-
-    private int inferSearchCoreMaxOutstandingMoveOps(Integer flagValueOrNull) {
-        var props = new TestProperties();
-        if (flagValueOrNull != null) {
-            props.setSearchCoreMaxOutstandingMoveOps(flagValueOrNull);
-        }
-        VespaModel model = createEnd2EndOneNode(props);
-        ContentCluster cc = model.getContentClusters().get("storage");
-        var builder = new ProtonConfig.Builder();
-        cc.getSearch().getConfig(builder);
-        var cfg = new ProtonConfig(builder);
-        return cfg.maintenancejobs().maxoutstandingmoveops();
-    }
-
-    @Test
-    void search_core_max_outstanding_move_ops_is_configurable_via_feature_flag() {
-        assertEquals(100, inferSearchCoreMaxOutstandingMoveOps(null)); // Default is 100
-        assertEquals(8, inferSearchCoreMaxOutstandingMoveOps(8));
     }
 
     private int inferSearchNodeInitializerThreadsFromFlag(Integer flagValueOrNull) {

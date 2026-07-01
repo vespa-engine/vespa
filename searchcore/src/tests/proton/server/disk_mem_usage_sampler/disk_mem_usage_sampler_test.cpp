@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
+#include <vespa/searchcore/proton/common/i_reserved_disk_space_and_memory_provider.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_sampler.h>
 #include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
@@ -44,34 +44,37 @@ public:
     }
 };
 
-class MyReservedDiskSpaceProvider : public IReservedDiskSpaceProvider {
+class MyReservedDiskSpaceAndMemoryProvider : public IReservedDiskSpaceAndMemoryProvider {
 public:
-    MyReservedDiskSpaceProvider() noexcept : IReservedDiskSpaceProvider() {}
-    ~MyReservedDiskSpaceProvider() override;
-    uint64_t get_reserved_disk_space() const override { return 42; }
+    MyReservedDiskSpaceAndMemoryProvider() noexcept : IReservedDiskSpaceAndMemoryProvider() {}
+    ~MyReservedDiskSpaceAndMemoryProvider() override;
+    ReservedDiskSpaceAndMemory get_reserved_disk_space_and_memory() const override {
+        return ReservedDiskSpaceAndMemory(42, 0, 0, 0);
+    }
 };
 
-MyReservedDiskSpaceProvider::~MyReservedDiskSpaceProvider() = default;
+MyReservedDiskSpaceAndMemoryProvider::~MyReservedDiskSpaceAndMemoryProvider() = default;
 
 } // namespace
 
 struct DiskMemUsageSamplerTest : public ::testing::Test {
-    Transport                                   transport;
-    ScheduledExecutor                           executor;
-    std::unique_ptr<ResourceUsageWriteFilter>   write_filter;
-    std::shared_ptr<ResourceUsageNotifier>      notifier;
-    std::unique_ptr<IReservedDiskSpaceProvider> reserved_disk_space_provider;
-    std::unique_ptr<DiskMemUsageSampler>        sampler;
+    Transport                                            transport;
+    ScheduledExecutor                                    executor;
+    std::unique_ptr<ResourceUsageWriteFilter>            write_filter;
+    std::shared_ptr<ResourceUsageNotifier>               notifier;
+    std::unique_ptr<IReservedDiskSpaceAndMemoryProvider> reserved_disk_space_and_memory_provider;
+    std::unique_ptr<DiskMemUsageSampler>                 sampler;
     DiskMemUsageSamplerTest()
         : transport(),
           executor(transport.transport()),
           write_filter(std::make_unique<ResourceUsageWriteFilter>(make_hw_info())),
           notifier(std::make_shared<ResourceUsageNotifier>(*write_filter)),
-          reserved_disk_space_provider(std::make_unique<MyReservedDiskSpaceProvider>()),
-          sampler(
-              std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier, *reserved_disk_space_provider)) {
-        sampler->setConfig(
-            DiskMemUsageSampler::Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(), 50ms, make_hw_info()), executor);
+          reserved_disk_space_and_memory_provider(std::make_unique<MyReservedDiskSpaceAndMemoryProvider>()),
+          sampler(std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier,
+                                                        *reserved_disk_space_and_memory_provider)) {
+        sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, 0.0, 0.0, AttributeUsageFilterConfig(), 50ms,
+                                                       make_hw_info(), false),
+                           executor);
         sampler->add_resource_usage_provider(std::make_shared<MyProvider>(50, 200));
         sampler->add_resource_usage_provider(std::make_shared<MyProvider>(100, 150));
     }

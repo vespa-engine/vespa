@@ -4,6 +4,8 @@ package com.yahoo.config.provision.serialization;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.LogType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.VaultReference;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -34,7 +36,10 @@ public class TelemetryExporterConfigurationSerializer {
     private static final String usernameSecretNameKey = "usernameSecretName";
     private static final String passwordSecretNameKey = "passwordSecretName";
     private static final String metricSetsKey = "metricSets";
-    private static final String logFileTypesKey = "logFileTypes";
+    private static final String logTypesKey = "logTypes";
+    private static final String vaultReferencesKey = "vaultReferences";
+    private static final String nameKey = "name";
+    private static final String externalIdKey = "externalId";
 
     public static byte[] toJson(TelemetryExporterConfiguration config) {
         Slime slime = new Slime();
@@ -71,9 +76,18 @@ public class TelemetryExporterConfigurationSerializer {
             for (String metricSet : exporter.metricSets()) {
                 metricSetsArray.addString(metricSet);
             }
-            Cursor logFileTypesArray = exporterObject.setArray(logFileTypesKey);
-            for (String logFileType : exporter.logFileTypes()) {
-                logFileTypesArray.addString(logFileType);
+            Cursor logTypesArray = exporterObject.setArray(logTypesKey);
+            for (LogType logType : exporter.logTypes()) {
+                logTypesArray.addString(logType.stringValue());
+            }
+        }
+        if ( ! config.vaultReferences().isEmpty()) {
+            Cursor vaultRefsArray = root.setArray(vaultReferencesKey);
+            for (var ref : config.vaultReferences()) {
+                Cursor refObject = vaultRefsArray.addObject();
+                refObject.setString(idKey, ref.id());
+                refObject.setString(nameKey, ref.name());
+                refObject.setString(externalIdKey, ref.externalId());
             }
         }
     }
@@ -101,14 +115,22 @@ public class TelemetryExporterConfigurationSerializer {
             List<String> metricSets = new ArrayList<>();
             exporterInspector.field(metricSetsKey).traverse((ArrayTraverser) (j, entry) -> metricSets.add(entry.asString()));
 
-            List<String> logFileTypes = new ArrayList<>();
-            exporterInspector.field(logFileTypesKey).traverse((ArrayTraverser) (j, entry) -> logFileTypes.add(entry.asString()));
+            List<LogType> logTypes = new ArrayList<>();
+            exporterInspector.field(logTypesKey).traverse((ArrayTraverser) (j, entry) -> logTypes.add(LogType.from(entry.asString())));
 
             exporters.add(new TelemetryExporterConfiguration.Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
-                                                          Optional.ofNullable(auth), metricSets, logFileTypes));
+                                                          Optional.ofNullable(auth), metricSets, logTypes));
         });
         if (exporters.isEmpty()) return TelemetryExporterConfiguration.empty();
-        return new TelemetryExporterConfiguration(exporters);
+
+        List<VaultReference> vaultReferences = new ArrayList<>();
+        root.field(vaultReferencesKey).traverse((ArrayTraverser) (i, refInspector) ->
+                vaultReferences.add(new VaultReference(
+                        refInspector.field(idKey).asString(),
+                        refInspector.field(nameKey).asString(),
+                        refInspector.field(externalIdKey).asString())));
+
+        return new TelemetryExporterConfiguration(exporters, vaultReferences);
     }
 
     private static String optionalString(Inspector inspector) {

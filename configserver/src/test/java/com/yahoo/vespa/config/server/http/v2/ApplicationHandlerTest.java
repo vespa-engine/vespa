@@ -254,7 +254,7 @@ public class ApplicationHandlerTest {
     @Test
     public void testReindex() throws Exception {
         ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
-        reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Application 'default.default' not found\"}", 404);
+        reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Application 'default.default.default' not found\"}", 404);
 
         applicationRepository.prepareAndActivate(testAppMultipleClusters, prepareParams(applicationId));
         ApplicationReindexing expected = ApplicationReindexing.empty();
@@ -262,7 +262,7 @@ public class ApplicationHandlerTest {
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        reindex(applicationId, "", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default.default\"}");
         expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
                            .withReady("foo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
                            .withReady("foo", "baz", clock.instant(), 1, "reindexing for an unknown reason")
@@ -271,7 +271,7 @@ public class ApplicationHandlerTest {
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?indexedOnly=true&cause=test%20reindexing", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
+        reindex(applicationId, "?indexedOnly=true&cause=test%20reindexing", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default.default\"}");
         expected = expected.withReady("foo", "bar", clock.instant(), 1, "test reindexing");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
@@ -281,19 +281,19 @@ public class ApplicationHandlerTest {
                            .withReady("foo", "bar", clock.instant(), 1, "reindexing")
                            .withReady("foo", "baz", clock.instant(), 1, "reindexing")
                            .withReady("foo", "bax", clock.instant(), 1, "reindexing");
-        reindex(applicationId, "?clusterId=&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        reindex(applicationId, "?clusterId=&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
                            .withReady("foo", "bar", clock.instant(), 1, "reindexing");
-        reindex(applicationId, "?documentType=bar&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
+        reindex(applicationId, "?documentType=bar&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        reindex(applicationId, "?clusterId=foo,boo&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default.default\"}");
         expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
                            .withReady("foo", "bar", clock.instant(), 1, "reindexing")
                            .withReady("foo", "baz", clock.instant(), 1, "reindexing")
@@ -302,7 +302,7 @@ public class ApplicationHandlerTest {
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo&documentType=bar,baz&speed=0.1&cause=reindexing", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
+        reindex(applicationId, "?clusterId=foo&documentType=bar,baz&speed=0.1&cause=reindexing", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default.default\"}");
         expected = expected.withReady("foo", "bar", clock.instant(), 0.1, "reindexing")
                            .withReady("foo", "baz", clock.instant(), 0.1, "reindexing");
         assertEquals(expected,
@@ -310,7 +310,7 @@ public class ApplicationHandlerTest {
 
         clock.advance(Duration.ofSeconds(1));
         var activeSession = applicationRepository.getActiveSession(applicationId);
-        reindex(applicationId, PUT, "?documentType=bar&speed=0", "{\"message\":\"Set reindexing speed to '0' for document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
+        reindex(applicationId, PUT, "?documentType=bar&speed=0", "{\"message\":\"Set reindexing speed to '0' for document types [bar] in 'boo', [bar] in 'foo' of application default.default.default\"}");
         expected = expected.withSpeed("boo", "bar", 0)
                            .withSpeed("foo", "bar", 0);
         // Assert that a new session is activated at when reindexing speed is set to 0 (or any other changes to reindexing)
@@ -437,7 +437,7 @@ public class ApplicationHandlerTest {
         ApplicationId unknown = new ApplicationId.Builder().applicationName("unknown").tenant("default").build();
         HttpResponse responseForUnknown = fileDistributionStatus(unknown, zone);
         assertEquals(404, responseForUnknown.getStatus());
-        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"Unknown application id 'default.unknown'\"}",
+        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"Unknown application id 'default.unknown.default'\"}",
                      getRenderedString(responseForUnknown));
     }
 

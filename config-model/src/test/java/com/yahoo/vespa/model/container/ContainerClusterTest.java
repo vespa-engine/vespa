@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import ai.vespa.telemetry.TelemetryConfig;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
@@ -372,6 +373,22 @@ public class ContainerClusterTest {
                            new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4),
                            new ContainerEndpoint("search-cluster", zone, List.of("search-cluster.a1.t1.endpoint.suffix"), OptionalInt.empty(), sharedLayer4)),
                 List.of("search-cluster.a1.t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
+    }
+
+    @Test
+    void telemetryResourceAttributesIncludeServiceIdentity() {
+        DeployState state = new DeployState.Builder()
+                .properties(new TestProperties().setApplicationId(ApplicationId.from("t1", "a1", "i1")))
+                .build();
+        MockRoot root = new MockRoot("foo", state);
+        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
+
+        TelemetryConfig.Builder builder = new TelemetryConfig.Builder();
+        cluster.getConfig(builder);
+        TelemetryConfig config = builder.build();
+
+        assertEquals("a1.i1.search-cluster", config.resourceAttribute("service.name"));
+        assertEquals(state.getWantedNodeVespaVersion().toFullString(), config.resourceAttribute("service.version"));
     }
 
     private void assertNames(SystemName systemName, ApplicationId appId, Set<ContainerEndpoint> globalEndpoints, List<String> expectedSharedL4Names) {

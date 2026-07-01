@@ -83,6 +83,7 @@ public:
 
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
+    FlowStats self_flow_stats(double est, size_t num_children) const override;
     uint8_t calculate_cost_tier() const override;
 };
 
@@ -97,6 +98,7 @@ private:
     MatchingPhase                         _matching_phase;
 
     AnyFlow my_flow(InFlow in_flow) const override;
+    FlowStats self_flow_stats(double est, size_t num_children) const override;
 
 public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
@@ -132,6 +134,7 @@ private:
     const IElementGapInspector& _element_gap_inspector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
+    FlowStats self_flow_stats(double est, size_t num_children) const override;
 
 public:
     ~NearBlueprint() override;
@@ -160,6 +163,7 @@ private:
     const IElementGapInspector& _element_gap_inspector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
+    FlowStats self_flow_stats(double est, size_t num_children) const override;
 
 public:
     ~ONearBlueprint() override;
@@ -207,6 +211,7 @@ private:
     const ISourceSelector& _selector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
+    FlowStats self_flow_stats(double est, size_t num_children) const override;
 
 public:
     explicit SourceBlenderBlueprint(const ISourceSelector& selector) noexcept;

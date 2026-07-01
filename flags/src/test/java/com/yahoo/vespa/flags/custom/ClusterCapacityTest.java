@@ -9,20 +9,23 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ClusterCapacityTest {
 
     @Test
     void serialization() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64", "content", null, null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(false, 7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64", "content", null, null);
         var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
-                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"diskSpeed":"fast","storageType":"local","architecture":"x86_64","clusterType":"content"}""",
+                             {"hosts":false,"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"diskSpeed":"fast","storageType":"local","architecture":"x86_64","clusterType":"content"}""",
                      json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
+        assertFalse(deserialized.hosts());
         assertEquals(7, deserialized.count());
         assertEquals(1.2, deserialized.vcpu(), 0.0001);
         assertEquals(3.4, deserialized.memoryGb(), 0.0001);
@@ -36,14 +39,15 @@ public class ClusterCapacityTest {
 
     @Test
     void serialization2() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "content", null, null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(false, 7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "content", null, null);
         var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
-                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"content"}""",
+                             {"hosts":false,"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"content"}""",
                      json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
+        assertFalse(deserialized.hosts());
         assertEquals(7, deserialized.count());
         assertEquals(1.2, deserialized.vcpu(), 0.0001);
         assertEquals(3.4, deserialized.memoryGb(), 0.0001);
@@ -57,14 +61,15 @@ public class ClusterCapacityTest {
 
     @Test
     void serialization3() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", null, null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(true, 7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", null, null);
         var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
-                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin"}""",
+                             {"hosts":true,"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin"}""",
                      json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
+        assertTrue(deserialized.hosts());
         assertEquals(7, deserialized.count());
         assertEquals(1.2, deserialized.vcpu(), 0.0001);
         assertEquals(3.4, deserialized.memoryGb(), 0.0001);
@@ -78,14 +83,15 @@ public class ClusterCapacityTest {
 
     @Test
     void serialization4() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", "aws:123", "mytenant");
+        ClusterCapacity clusterCapacity = new ClusterCapacity(false, 7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", "aws:123", "mytenant");
         var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("""
-                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin","cloudAccount":"aws:123","tenant":"mytenant"}""",
+                             {"hosts":false,"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin","cloudAccount":"aws:123","tenant":"mytenant"}""",
                      json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
+        assertFalse(deserialized.hosts());
         assertEquals(7, deserialized.count());
         assertEquals(1.2, deserialized.vcpu(), 0.0001);
         assertEquals(3.4, deserialized.memoryGb(), 0.0001);
@@ -101,23 +107,23 @@ public class ClusterCapacityTest {
 
     @Test
     void cluster_type_must_be_specified() {
-        assertThrows(NullPointerException.class, () -> new ClusterCapacity(7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64", null, null, null));
+        assertThrows(NullPointerException.class, () -> new ClusterCapacity(false, 7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64", null, null, null));
         var mapper = Jackson.mapper();
         assertThrows(JsonMappingException.class, () -> mapper.readValue("{\"count\":7}", ClusterCapacity.class));
     }
 
     @Test
     void both_cloud_account_and_tenant_must_be_specified() {
-        assertThrows(IllegalArgumentException.class, () -> new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", "aws:123", null));
-        assertThrows(IllegalArgumentException.class, () -> new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", null, "mytenant"));
+        assertThrows(IllegalArgumentException.class, () -> new ClusterCapacity(false, 7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", "aws:123", null));
+        assertThrows(IllegalArgumentException.class, () -> new ClusterCapacity(false, 7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin", null, "mytenant"));
     }
 
     @Test
     void serializationWithNoNodeResources() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, null, null, null, null, null, null, null, "content", null, null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(false, 7, null, null, null, null, null, null, null, "content", null, null);
         var mapper = Jackson.mapper();
         String json = mapper.writeValueAsString(clusterCapacity);
-        assertEquals("{\"count\":7,\"diskSpeed\":\"fast\",\"storageType\":\"any\",\"architecture\":\"x86_64\",\"clusterType\":\"content\"}", json);
+        assertEquals("{\"hosts\":false,\"count\":7,\"diskSpeed\":\"fast\",\"storageType\":\"any\",\"architecture\":\"x86_64\",\"clusterType\":\"content\"}", json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
         assertEquals(7, deserialized.count());

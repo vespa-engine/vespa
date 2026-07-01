@@ -51,7 +51,8 @@ public class NodeMetricGatherer {
                 .map(metricPacketBuilder ->
                     metricPacketBuilder.putDimensionsIfAbsent(applicationDimensions.getDimensions())
                     .putDimensionsIfAbsent(nodeDimensions.getDimensions())
-                    .putDimensionsIfAbsent(metricsManager.getExtraDimensions()).build()
+                    .putDimensionsIfAbsent(metricsManager.getExtraDimensions())
+                    .putDimensionsIfAbsent(metricsManager.getExtraHostDimensions(metricPacketBuilder.getServiceId())).build()
         ).toList();
     }
 

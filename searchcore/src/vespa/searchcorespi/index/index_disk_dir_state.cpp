@@ -6,10 +6,12 @@
 
 namespace searchcorespi::index {
 
-bool IndexDiskDirState::activate(uint64_t size_on_disk) noexcept {
+bool IndexDiskDirState::activate(uint64_t                            size_on_disk,
+                                 std::chrono::steady_clock::duration flush_duration_) noexcept {
     ++_active_count;
     if (!_size_on_disk.has_value()) {
         _size_on_disk.emplace(size_on_disk);
+        _flush_duration.emplace(flush_duration_);
         return true;
     }
     return false;

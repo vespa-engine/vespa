@@ -21,9 +21,11 @@ import static com.yahoo.text.XML.getChildValue;
  */
 abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfig.Producer {
     final protected OnnxModelOptions onnxModelOptions;
+    private final boolean forceDisableOptimization;
 
     protected OnnxEmbedder(String className, String bundle, Element xml, DeployState state) {
         super(className, bundle, xml);
+        this.forceDisableOptimization = state.featureFlags().forceDisableOnnxModelOptimization();
         var opts = OnnxModelOptions.empty();
 
         opts = getChildValue(xml, "onnx-execution-mode")
@@ -44,6 +46,11 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                 .map(Integer::parseInt)
                 .map(OnnxModelOptions.GpuDevice::new)
                 .map(opts::withGpuDevice)
+                .orElse(opts);
+
+        opts = getChildValue(xml, "onnx-optimize-model")
+                .map(Boolean::parseBoolean)
+                .map(opts::withOptimizeModel)
                 .orElse(opts);
 
         var batchingConfig = EmbedderBatchingConfig.parseBatchingElement(xml);
@@ -91,6 +98,10 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                         builder.concurrency.factorType(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.valueOf(value)));
         onnxModelOptions.concurrencyFactor().ifPresent(builder.concurrency::factor);
         builder.modelConfigOverride(onnxModelOptions.modelConfigOverride());
+        if (forceDisableOptimization)
+            builder.optimizeModel(false);
+        else
+            onnxModelOptions.optimizeModel().ifPresent(builder::optimizeModel);
     }
 
 

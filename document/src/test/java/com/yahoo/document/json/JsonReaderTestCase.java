@@ -233,7 +233,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void readSingleDocumentsPutStreaming() throws IOException {
+    public void readSingleDocumentsPutStreaming() {
         String json = """
                       {
                         "remove": "id:unittest:smoke::ignored",
@@ -257,7 +257,44 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void readSingleDocumentsUpdateStreaming() throws IOException {
+    public void tensor_multiple_update() {
+        String json = """
+        {
+            "pathId": "/document/v1/ranking-index/content/docid/xxxx",
+            "id": "id:ranking-index:content::xxxx",
+            "fields": {
+                "tensor1": {
+                    "modify": {
+                        "operation": "multiply",
+                        "cells": {"0": 0.95}
+                    }
+                },
+                "tensor1": {
+                    "modify": {
+                        "operation": "add",
+                        "create": true,
+                        "cells": {"1": 400}
+                    }
+                }
+            }
+        }
+        """;
+        ParsedDocumentOperation operation = createReader(json).readSingleDocumentStreaming(DocumentOperationType.UPDATE,"id:unittest:smoke::doc1");
+        DocumentUpdate update = ((DocumentUpdate) operation.operation());
+        assertFalse(update.getCreateIfNonExistent());
+        var fieldUpdates = update.fieldUpdates().iterator();
+        var fieldUpdate = fieldUpdates.next();
+        assertFalse(fieldUpdates.hasNext());
+        assertEquals("tensor1", fieldUpdate.getField().getName());
+        assertEquals(2, fieldUpdate.getValueUpdates().size());
+        var valueUpdate0 = fieldUpdate.getValueUpdate(0);
+        var valueUpdate1 = fieldUpdate.getValueUpdate(1);
+        assertEquals("tensormodify multiply tensor(x{}):{0:0.95} false", valueUpdate0.toString());
+        assertEquals("tensormodify add tensor(x{}):{1:400.0} true", valueUpdate1.toString());
+    }
+
+    @Test
+    public void readSingleDocumentsUpdateStreaming() {
         String json = """
                       {
                         "remove": "id:unittest:smoke::ignored",
@@ -1925,6 +1962,13 @@ public class JsonReaderTestCase {
                 "The 'values' array does not contain any values");
         assertCreatePutFails(inputJson("{ 'values': '' }"), "dense_tensor",
                 "The 'values' string does not contain any values");
+    }
+
+    @Test
+    public void testDisallowedDenseTensorWithWrongNumberOfValues() {
+        // dense_tensor is tensor(x[2],y[3]) = 6 values
+        assertCreatePutFails(inputJson("{ 'values': [1.0, 2.0] }"), "dense_tensor",
+                "Expected 6 values, but got 2");
     }
 
     @Test

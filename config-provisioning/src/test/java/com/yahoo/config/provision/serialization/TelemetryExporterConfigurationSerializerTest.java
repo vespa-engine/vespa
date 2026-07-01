@@ -5,6 +5,8 @@ import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.LogType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.VaultReference;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -14,6 +16,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TelemetryExporterConfigurationSerializerTest {
@@ -22,7 +25,7 @@ public class TelemetryExporterConfigurationSerializerTest {
     void testRoundTripWithBearerToken() {
         var auth = Auth.bearerToken("my-vault", "my-token");
         var exporter = new Exporter("exp1", ExporterType.otlphttp, Optional.of("https://otel.example.com/v1"), Optional.empty(),
-                Optional.of(auth), List.of("default", "vespa"), List.of("access", "container"));
+                Optional.of(auth), List.of("default", "vespa"), List.of(LogType.ACCESS_LOGS, LogType.CONTAINER_LOGS));
         var config = new TelemetryExporterConfiguration(List.of(exporter));
 
         var deserialized = TelemetryExporterConfigurationSerializer.fromJson(TelemetryExporterConfigurationSerializer.toJson(config));
@@ -74,7 +77,7 @@ public class TelemetryExporterConfigurationSerializerTest {
     @Test
     void testRoundTripMultipleExporters() {
         var exporter1 = new Exporter("first", ExporterType.otlphttp, Optional.of("https://first.example.com/v1"), Optional.empty(),
-                Optional.empty(), List.of("default"), List.of("access"));
+                Optional.empty(), List.of("default"), List.of(LogType.ACCESS_LOGS));
         var exporter2 = new Exporter("second", ExporterType.otlp, Optional.of("https://second.example.com:4317"), Optional.empty(),
                 Optional.of(Auth.bearerToken("vault2", "token2")), List.of("vespa"), List.of());
         var config = new TelemetryExporterConfiguration(List.of(exporter1, exporter2));
@@ -113,7 +116,7 @@ public class TelemetryExporterConfigurationSerializerTest {
                         "secretName": "my-token"
                       },
                       "metricSets": ["default", "vespa"],
-                      "logFileTypes": ["access"]
+                      "logTypes": ["access-logs"]
                     }
                   ]
                 }
@@ -130,7 +133,7 @@ public class TelemetryExporterConfigurationSerializerTest {
         assertEquals("my-vault", exporter.auth().get().vault());
         assertEquals("my-token", exporter.auth().get().secretName().get());
         assertEquals(List.of("default", "vespa"), exporter.metricSets());
-        assertEquals(List.of("access"), exporter.logFileTypes());
+        assertEquals(List.of(LogType.ACCESS_LOGS), exporter.logTypes());
     }
 
     @Test
@@ -155,7 +158,7 @@ public class TelemetryExporterConfigurationSerializerTest {
     @Test
     void testRoundTripWithEndpointAndProject() {
         var exporter = new Exporter("exp1", ExporterType.otlphttp, Optional.of("https://otel.example.com/v1"), Optional.of("my-project"),
-                Optional.empty(), List.of("default"), List.of("access"));
+                Optional.empty(), List.of("default"), List.of(LogType.ACCESS_LOGS));
         var config = new TelemetryExporterConfiguration(List.of(exporter));
 
         var deserialized = TelemetryExporterConfigurationSerializer.fromJson(TelemetryExporterConfigurationSerializer.toJson(config));
@@ -167,9 +170,9 @@ public class TelemetryExporterConfigurationSerializerTest {
         var bearerExporter = new Exporter("bearer-exp", ExporterType.otlphttp, Optional.of("https://first.example.com/v1"), Optional.empty(),
                 Optional.of(Auth.bearerToken("vault1", "token1")), List.of("default"), List.of());
         var apiKeyExporter = new Exporter("apikey-exp", ExporterType.otlp, Optional.of("https://second.example.com:4317"), Optional.empty(),
-                Optional.of(Auth.apiKey("vault2", "key2", "X-API-Key")), List.of(), List.of("access"));
+                Optional.of(Auth.apiKey("vault2", "key2", "X-API-Key")), List.of(), List.of(LogType.ACCESS_LOGS));
         var basicAuthExporter = new Exporter("basic-exp", ExporterType.otlphttp, Optional.of("https://third.example.com/v1"), Optional.empty(),
-                Optional.of(Auth.basicAuth("vault3", "user-secret", "pass-secret")), List.of("vespa"), List.of("container"));
+                Optional.of(Auth.basicAuth("vault3", "user-secret", "pass-secret")), List.of("vespa"), List.of(LogType.CONTAINER_LOGS));
         var config = new TelemetryExporterConfiguration(List.of(bearerExporter, apiKeyExporter, basicAuthExporter));
 
         var deserialized = TelemetryExporterConfigurationSerializer.fromJson(TelemetryExporterConfigurationSerializer.toJson(config));
@@ -179,8 +182,8 @@ public class TelemetryExporterConfigurationSerializerTest {
     @Test
     void testExporterEquality() {
         var auth = Auth.bearerToken("vault", "secret");
-        var a = new Exporter("id", ExporterType.otlp, Optional.of("https://ep"), Optional.empty(), Optional.of(auth), List.of("m1"), List.of("l1"));
-        var b = new Exporter("id", ExporterType.otlp, Optional.of("https://ep"), Optional.empty(), Optional.of(auth), List.of("m1"), List.of("l1"));
+        var a = new Exporter("id", ExporterType.otlp, Optional.of("https://ep"), Optional.empty(), Optional.of(auth), List.of("m1"), List.of(LogType.CONTAINER_LOGS));
+        var b = new Exporter("id", ExporterType.otlp, Optional.of("https://ep"), Optional.empty(), Optional.of(auth), List.of("m1"), List.of(LogType.CONTAINER_LOGS));
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
     }
@@ -224,6 +227,76 @@ public class TelemetryExporterConfigurationSerializerTest {
         var b = new TelemetryExporterConfiguration(List.of(exporter));
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
+    }
+
+    @Test
+    void testRoundTripWithVaultReferences() {
+        var auth = Auth.bearerToken("my-vault", "my-token");
+        var exporter = new Exporter("exp1", ExporterType.otlphttp, Optional.of("https://otel.example.com/v1"), Optional.empty(),
+                Optional.of(auth), List.of("default"), List.of());
+        var vaultRef = new VaultReference("vault-id-1", "my-vault", "ext-id-1");
+        var config = new TelemetryExporterConfiguration(List.of(exporter), List.of(vaultRef));
+
+        var deserialized = TelemetryExporterConfigurationSerializer.fromJson(TelemetryExporterConfigurationSerializer.toJson(config));
+        assertEquals(config, deserialized);
+        assertEquals(1, deserialized.vaultReferences().size());
+        assertEquals("vault-id-1", deserialized.vaultReferences().get(0).id());
+        assertEquals("my-vault", deserialized.vaultReferences().get(0).name());
+        assertEquals("ext-id-1", deserialized.vaultReferences().get(0).externalId());
+    }
+
+    @Test
+    void testRoundTripWithoutVaultReferences() {
+        var exporter = new Exporter("exp1", ExporterType.otlp, Optional.of("https://ep"), Optional.empty(),
+                Optional.empty(), List.of(), List.of());
+        var config = new TelemetryExporterConfiguration(List.of(exporter));
+
+        var deserialized = TelemetryExporterConfigurationSerializer.fromJson(TelemetryExporterConfigurationSerializer.toJson(config));
+        assertEquals(config, deserialized);
+        assertTrue(deserialized.vaultReferences().isEmpty());
+    }
+
+    @Test
+    void testWithResolvedVaults() {
+        var exporter1 = new Exporter("exp1", ExporterType.otlphttp, Optional.of("https://ep1"), Optional.empty(),
+                Optional.of(Auth.bearerToken("vault-a", "token-a")), List.of(), List.of());
+        var exporter2 = new Exporter("exp2", ExporterType.otlp, Optional.of("https://ep2"), Optional.empty(),
+                Optional.of(Auth.apiKey("vault-b", "key-b", "X-Key")), List.of(), List.of());
+        var exporter3 = new Exporter("exp3", ExporterType.otlp, Optional.of("https://ep3"), Optional.empty(),
+                Optional.empty(), List.of(), List.of());
+        var config = new TelemetryExporterConfiguration(List.of(exporter1, exporter2, exporter3));
+
+        var available = List.of(
+                new VaultReference("id-a", "vault-a", "ext-a"),
+                new VaultReference("id-b", "vault-b", "ext-b"));
+
+        var resolved = config.withTenantVaultReferences(available);
+        assertEquals(2, resolved.vaultReferences().size());
+        assertEquals("vault-a", resolved.vaultReferences().get(0).name());
+        assertEquals("vault-b", resolved.vaultReferences().get(1).name());
+        assertEquals(3, resolved.exporters().size());
+    }
+
+    @Test
+    void testWithResolvedVaultsDeduplicate() {
+        var exporter1 = new Exporter("exp1", ExporterType.otlphttp, Optional.of("https://ep1"), Optional.empty(),
+                Optional.of(Auth.bearerToken("same-vault", "token-1")), List.of(), List.of());
+        var exporter2 = new Exporter("exp2", ExporterType.otlphttp, Optional.of("https://ep2"), Optional.empty(),
+                Optional.of(Auth.bearerToken("same-vault", "token-2")), List.of(), List.of());
+        var config = new TelemetryExporterConfiguration(List.of(exporter1, exporter2));
+
+        var resolved = config.withTenantVaultReferences(List.of(new VaultReference("id-1", "same-vault", "ext-1")));
+        assertEquals(1, resolved.vaultReferences().size());
+    }
+
+    @Test
+    void testWithResolvedVaultsThrowsOnMissing() {
+        var exporter = new Exporter("exp1", ExporterType.otlphttp, Optional.of("https://ep"), Optional.empty(),
+                Optional.of(Auth.bearerToken("missing-vault", "token")), List.of(), List.of());
+        var config = new TelemetryExporterConfiguration(List.of(exporter));
+
+        var e = assertThrows(IllegalArgumentException.class, () -> config.withTenantVaultReferences(List.of()));
+        assertTrue(e.getMessage().contains("missing-vault"));
     }
 
 }

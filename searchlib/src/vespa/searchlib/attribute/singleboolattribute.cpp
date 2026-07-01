@@ -241,6 +241,11 @@ uint64_t SingleBoolAttribute::getEstimatedSaveByteSize() const {
     return headerSize + BitVector::legacy_num_bytes_with_single_guard_bit(getCommittedDocIdLimit());
 }
 
+size_t SingleBoolAttribute::reserved_memory_for_flush(bool slow_disk) const noexcept {
+    size_t flush_buffer_size = slow_disk ? getEstimatedSaveByteSize() : 0;
+    return BitVector::legacy_num_bytes_with_single_guard_bit(getCommittedDocIdLimit()) + flush_buffer_size;
+}
+
 void SingleBoolAttribute::reclaim_memory(Generation oldest_used_gen) {
     getGenerationHolder().reclaim(oldest_used_gen);
 }

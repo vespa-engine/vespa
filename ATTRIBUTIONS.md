@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-05-07
+Last updated: 2026-07-01
 
 ---
 
@@ -86,11 +86,11 @@ Last updated: 2026-05-07
 
 ---
 
-## @ungap/structured-clone 1.3.1 — ISC
+## @ungap/structured-clone 1.3.2 — ISC
 
 - Homepage: <https://github.com/ungap/structured-clone#readme>
 - Copyright 2021 Andrea Giammarchi
-- @WebReflection
+-  @WebReflection
 
 ---
 
@@ -109,7 +109,14 @@ Last updated: 2026-05-07
 
 ---
 
-## Ascii85 1.1.0 — MIT
+## Ascii85 1.1.1 — Adobe Postscript AFM
+
+- Homepage: <https://github.com/DataWraith/ascii85gem/>
+- Copyright 2009 Johannes Holzfuß
+
+---
+
+## Ascii85 1.1.1 — MIT
 
 - Homepage: <https://github.com/DataWraith/ascii85gem/>
 - Copyright 2009 Johannes Holzfuß
@@ -124,11 +131,13 @@ Last updated: 2026-05-07
 
 ---
 
-## async 2.6.5 — MIT
+## async 2.39.0 — MIT
 
 - Homepage: <https://github.com/socketry/async>
-- Copyright, 2017-2023, by Samuel Williams.
-- Copyright, 2020-2022, by Bruno Sutic.
+-  by Kent Gruber
+- Copyright 2024
+- Copyright 2017
+-  by Patrik Wenger
 
 ---
 
@@ -213,29 +222,23 @@ Last updated: 2026-05-07
 
 ---
 
-## concurrent-ruby 1.2.2 — MIT
+## concurrent-ruby 1.3.7 — MIT
 
 - Homepage: <http://www.concurrent-ruby.com>
-- Copyright extensions on your users
-- It is Copyright © 2014
-- Copyright Jerry D'Antonio -- released under the MIT license
 
 ---
 
-## concurrent-ruby 1.2.2 — Ruby
+## concurrent-ruby 1.3.7 — Ruby
 
 - Homepage: <http://www.concurrent-ruby.com>
-- Copyright extensions on your users
-- It is Copyright © 2014
-- Copyright Jerry D'Antonio -- released under the MIT license
 
 ---
 
-## console 1.23.7 — MIT
+## console 1.35.1 — MIT
 
-- Homepage: <https://socketry.github.io/console/>
-- Copyright, 2019-2021, by Bryan Powell.
-- Copyright, 2019-2024, by Samuel Williams.
+- Homepage: <https://socketry.github.io/console>
+-  by Samuel Williams
+- Copyright 2022
 
 ---
 
@@ -278,7 +281,7 @@ Last updated: 2026-05-07
 
 ---
 
-## ethon 0.16.0 — MIT
+## ethon 0.18.0 — MIT
 
 - Homepage: <https://github.com/typhoeus/ethon>
 - Copyright 2012-2016 Hans Hasselberg
@@ -299,12 +302,12 @@ Last updated: 2026-05-07
 
 ---
 
-## ffi 1.15.5 — BSD 3
+## ffi 1.17.4 — BSD 3
 
 - Homepage: <https://github.com/ffi/ffi/wiki>
-- Copyright 2008-2012 Ruby
 - Copyright 1996-2011 Anthony Green
 - Copyright 2008-2016 Ruby FFI project contributors
+- Copyright 2008-2012 Ruby-FFI contributors
 - Copyright 2008-2013 Ruby FFI project contributors
 
 ---
@@ -316,9 +319,17 @@ Last updated: 2026-05-07
 
 ---
 
-## fiber-local 1.0.0 — MIT
+## fiber-local 1.1.0 — MIT
 
 - Homepage: <https://github.com/socketry/fiber-local>
+- Copyright, 2020-2024, by Samuel Williams.
+
+---
+
+## fiber-storage 0.1.2 — MIT
+
+- Homepage: <https://github.com/socketry/fiber-storage>
+- Copyright, 2022-2023, by Samuel Williams.
 
 ---
 
@@ -357,17 +368,17 @@ Last updated: 2026-05-07
 
 ---
 
-## github.com/fxamacker/cbor/v2 v2.9.1 — MIT
+## github.com/fxamacker/cbor/v2 v2.9.2 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.1>
+- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.2>
 - Copyright 2019-2024 Faye Amacker
 - Copyright 2019 Faye Amacker
 
 ---
 
-## github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433 — BSD 3
+## github.com/go-json-experiment/json v0.0.0-20260520185125-572e7c383686 — BSD 3
 
-- Homepage: <https://pkg.go.dev/github.com/go-json-experiment/json@v0.0.0-20260214004413-d219187c3433>
+- Homepage: <https://pkg.go.dev/github.com/go-json-experiment/json@v0.0.0-20260520185125-572e7c383686>
 - Copyright 2020 The Go Authors
 
 ---
@@ -376,21 +387,28 @@ Last updated: 2026-05-07
 
 - Homepage: <https://pkg.go.dev/github.com/godbus/dbus/v5@v5.2.2>
 - Copyright 2013 Georg Reinke <guelfey at gmail dot com>
-- Google
+-  Google
 
 ---
 
-## github.com/Mattn/Go-colorable v0.1.14 — MIT
+## github.com/mattn/go-colorable v0.1.15 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/Mattn/Go-colorable@v0.1.14>
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-colorable@v0.1.15>
 - Copyright 2016 Yasuhiro Matsumoto
 
 ---
 
-## github.com/mattn/go-isatty v0.0.21 — MIT
+## github.com/mattn/go-isatty v0.0.22 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/mattn/go-isatty@v0.0.21>
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-isatty@v0.0.22>
 - Copyright Yasuhiro MATSUMOTO <mattn.jp@gmail.com>
+
+---
+
+## github.com/mattn/go-runewidth v0.0.24 — MIT
+
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-runewidth@v0.0.24>
+- Copyright 2016 Yasuhiro Matsumoto
 
 ---
 
@@ -449,21 +467,14 @@ Last updated: 2026-05-07
 
 ---
 
-## golang.org/x/sys v0.43.0 — Golang BSD + Patents
+## golang.org/x/text v0.37.0 — Golang BSD + Patents
 
-- Homepage: <https://pkg.go.dev/golang.org/x/sys@v0.43.0>
+- Homepage: <https://pkg.go.dev/golang.org/x/text@v0.37.0>
 - Copyright 2009 The Go Authors
 
 ---
 
-## golang.org/x/term v0.42.0 — Golang BSD + Patents
-
-- Homepage: <https://pkg.go.dev/golang.org/x/term@v0.42.0>
-- Copyright 2009 The Go Authors
-
----
-
-## google-protobuf 3.25.8 — BSD 3
+## google-protobuf 4.35.0 — BSD 3
 
 - Homepage: <https://developers.google.com/protocol-buffers>
 
@@ -488,18 +499,6 @@ Last updated: 2026-05-07
 - Copyright files of libyaml, and thus
 - Copyright 2006-2010 Kirill Simonov
 - Copyright 2006-2011 Kirill Simonov
-
----
-
-## gpt-4o generic — Proprietary
-
-- Homepage: <https://www.openai.com>
-
----
-
-## gpt-4o-mini generic — Proprietary
-
-- Homepage: <https://www.openai.com>
 
 ---
 
@@ -533,6 +532,13 @@ Last updated: 2026-05-07
 
 ---
 
+## html-proofer 5.2.1 — MIT
+
+- Homepage: <https://github.com/gjtorikian/html-proofer>
+- Copyright 2013 Garen Torikian
+
+---
+
 ## html-void-elements 3.0.0 — MIT
 
 - Homepage: <https://github.com/wooorm/html-void-elements#readme>
@@ -540,25 +546,26 @@ Last updated: 2026-05-07
 
 ---
 
-## http_parser.rb 0.8.0 — MIT
+## http_parser.rb 0.8.1 — MIT
 
 - Homepage: <https://github.com/tmm1/http_parser.rb>
-- Copyright 2010-2011 Aman Gupta <aman@tmm
-- Copyright 2009-2010 Marc
+- Copyright 2010-2011 Aman Gupta <aman@tmm1.net>
+- Copyright 2009-2010 Marc-Andr
 
 ---
 
-## i18n 1.14.1 — MIT
+## i18n 1.14.8 — MIT
 
 - Homepage: <https://github.com/ruby-i18n/i18n>
 - Copyright 2008 The Ruby I18n team
 
 ---
 
-## io-event 1.3.3 — MIT
+## io-event 1.16.1 — MIT
 
 - Homepage: <https://github.com/socketry/io-event>
-- Copyright, 2021-2023, by Samuel Williams.
+-  by Wander Hillen
+- Copyright 2021
 
 ---
 
@@ -569,7 +576,14 @@ Last updated: 2026-05-07
 
 ---
 
-## jekyll 4.3.3 — MIT
+## javax.annotation 1.3.2 — GPL 2.0 Classpath
+
+- Homepage: <http://jcp.org/en/jsr/detail?id=250>
+- Copyright 2017 Oracle and/or its affiliates.
+
+---
+
+## jekyll 4.4.1 — MIT
 
 - Homepage: <https://jekyllrb.com>
 - Copyright 2008 Tom Preston-Werner and Jekyll contributors
@@ -590,7 +604,7 @@ Last updated: 2026-05-07
 
 ---
 
-## jekyll-sass-converter 3.0.0 — MIT
+## jekyll-sass-converter 3.1.0 — MIT
 
 - Homepage: <https://github.com/jekyll/jekyll-sass-converter>
 
@@ -610,13 +624,21 @@ Last updated: 2026-05-07
 
 ---
 
-## json 2.7.2 — Ruby
+## json 2.19.5 — BSD 2
 
-- Homepage: <https://flori.github.io/json>
+- Homepage: <https://github.com/ruby/json>
+- Copyright 1993-2013 Yukihiro Matsumoto
 
 ---
 
-## kramdown 2.4.0 — GPL
+## json 2.19.5 — Ruby
+
+- Homepage: <https://github.com/ruby/json>
+- Copyright 1993-2013 Yukihiro Matsumoto
+
+---
+
+## kramdown 2.5.2 — GPL
 
 - Homepage: <http://kramdown.gettalong.org>
 - Copyright 2007 Michel Fortin
@@ -624,7 +646,7 @@ Last updated: 2026-05-07
 
 ---
 
-## kramdown 2.4.0 — MIT
+## kramdown 2.5.2 — MIT
 
 - Homepage: <http://kramdown.gettalong.org>
 - Copyright 2007 Michel Fortin
@@ -646,7 +668,7 @@ Last updated: 2026-05-07
 
 ---
 
-## listen 3.8.0 — MIT
+## listen 3.10.0 — MIT
 
 - Homepage: <https://github.com/guard/listen>
 - Copyright 2013 Thibaud Guillaume-Gentil
@@ -672,6 +694,13 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/jekyll/mercenary>
 - Copyright 2013 Parker Moore and the mercenary contributors
+
+---
+
+## metrics 0.15.0 — MIT
+
+- Homepage: <https://github.com/socketry/metrics>
+- Copyright, 2021-2025, by Samuel Williams.
 
 ---
 
@@ -716,7 +745,7 @@ Last updated: 2026-05-07
 
 ---
 
-## minima 2.5.1 — MIT
+## minima 2.5.2 — MIT
 
 - Homepage: <https://github.com/jekyll/minima>
 - Copyright 2016 Parker Moore and the minima contributors
@@ -729,11 +758,7 @@ Last updated: 2026-05-07
 
 ---
 
-## mistral-embed 23.12 — Proprietary
-
----
-
-## nokogiri 1.19.1 — MIT
+## nokogiri 1.19.3 — MIT
 
 - Homepage: <https://nokogiri.org>
 - Copyright 2008-2023 Mike Dalessio
@@ -767,17 +792,16 @@ Last updated: 2026-05-07
 
 ---
 
-## org.eclipse.lsp4j 0.23.1 — Eclipse 2.0
+## org.eclipse.lsp4j 0.24.0 — Eclipse 2.0
 
 - Homepage: <https://github.com/eclipse-lsp4j/lsp4j>
-- Copyright 2007 Eclipse Foundation, Inc. and its licensors
 
 ---
 
-## org.jsoup 1.17.2 — MIT
+## org.jsoup 1.22.2 — MIT
 
-- Homepage: <https://jhy.io/>
-- Copyright 2009-2023 Jonathan Hedley <https
+- Homepage: <https://jsoup.org/>
+- Copyright 2009-2026 a href
 - Jonathan Hedley
 
 ---
@@ -789,7 +813,7 @@ Last updated: 2026-05-07
 
 ---
 
-## pdf-reader 2.11.0 — MIT
+## pdf-reader 2.15.1 — MIT
 
 - Homepage: <https://github.com/yob/pdf-reader>
 - Copyright 2009 Peter Jones
@@ -797,12 +821,12 @@ Last updated: 2026-05-07
 
 ---
 
-## property-information 7.1.0 — MIT
+## property-information 7.2.0 — MIT
 
 - Homepage: <https://github.com/wooorm/property-information#readme>
+- Copyright Facebook, Inc
 - Copyright Titus Wormer
 - Copyright Titus Wormer <mailto:tituswormer@gmail.com>
-- Copyright Facebook, Inc.
 
 ---
 
@@ -843,7 +867,7 @@ Last updated: 2026-05-07
 
 ---
 
-## rake 13.2.1 — MIT
+## rake 13.4.2 — MIT
 
 - Homepage: <https://github.com/ruby/rake>
 - Copyright Jim Weirich
@@ -857,21 +881,21 @@ Last updated: 2026-05-07
 
 ---
 
-## rb-inotify 0.10.1 — MIT
+## rb-inotify 0.11.1 — MIT
 
 - Homepage: <https://github.com/guard/rb-inotify>
 - Copyright 2009, by "Natalie Weizenbaum" (https://github.com/nex3)
 
 ---
 
-## react 19.1.0 — MIT
+## react 19.2.7 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
 
 ---
 
-## react-dom 19.1.0 — MIT
+## react-dom 19.2.7 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
@@ -899,26 +923,26 @@ Last updated: 2026-05-07
 
 ---
 
-## rexml 3.4.2 — BSD 2
+## rexml 3.4.4 — BSD 2
 
 - Homepage: <https://github.com/ruby/rexml>
 - Copyright 1993-2013 Yukihiro Matsumoto
 
 ---
 
-## rouge 4.1.3 — BSD 2
+## rouge 4.7.0 — BSD 2
 
 - Homepage: <http://rouge.jneen.net/>
+- Copyright 2006-2012 the respective authors
 - Copyright 2012 Jeanine Adkisson
-- Copyright 2006-2012 by the respective authors
 
 ---
 
-## rouge 4.1.3 — MIT
+## rouge 4.7.0 — MIT
 
 - Homepage: <http://rouge.jneen.net/>
+- Copyright 2006-2012 the respective authors
 - Copyright 2012 Jeanine Adkisson
-- Copyright 2006-2012 by the respective authors
 
 ---
 
@@ -936,14 +960,13 @@ Last updated: 2026-05-07
 
 ---
 
-## sass-embedded 1.67.0 — MIT
+## sass-embedded 1.100.0 — MIT
 
-- Homepage: <https://github.com/ntkme/sass-embedded-host-ruby>
-- Copyright (c) 2022, なつき
+- Homepage: <https://github.com/sass-contrib/sass-embedded-host-ruby>
 
 ---
 
-## scheduler 0.26.0 — MIT
+## scheduler 0.27.0 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
@@ -987,20 +1010,10 @@ Last updated: 2026-05-07
 
 ---
 
-## text-embedding-ada-002 002 — Proprietary
+## traces 0.18.2 — MIT
 
-- Homepage: <https://www.openai.com>
-
----
-
-## timers 4.3.5 — MIT
-
-- Homepage: <https://github.com/socketry/timers>
-- Copyright, 2014-2022, by Samuel Williams.
-- Copyright, 2017-2020, by Olle Jonsson.
-- Copyright, 2015-2016, by Donovan Keme.
-- Copyright, 2012-2017, by Tony Arcieri.
-- Copyright, 2013-2015, by Utenmiki.
+- Homepage: <https://github.com/socketry/traces>
+- Copyright, 2021-2025, by Samuel Williams.
 
 ---
 
@@ -1023,7 +1036,7 @@ Last updated: 2026-05-07
 
 ---
 
-## typhoeus 1.4.1 — MIT
+## typhoeus 1.6.0 — MIT
 
 - Homepage: <https://github.com/typhoeus/typhoeus>
 - Copyright 2011-2012 David Balatero
@@ -1033,12 +1046,12 @@ Last updated: 2026-05-07
 
 ---
 
-## unicode-display_width 2.4.2 — MIT
+## unicode-display_width 2.6.0 — MIT
 
 - Homepage: <https://github.com/janlelis/unicode-display_width>
-- Copyright 2011-2023 Jan Lelis
-- Copyright 2009 Run Paint Run Run
 - Copyright & Info
+- Copyright 2011-2024 Jan Lelis
+- Copyright 2009 Run Paint Run Run
 
 ---
 
@@ -1138,7 +1151,7 @@ Last updated: 2026-05-07
 
 ---
 
-## webrick 1.8.2 — BSD 2
+## webrick 1.9.2 — BSD 2
 
 - Homepage: <https://github.com/ruby/webrick>
 - Copyright 1993-2013 Yukihiro Matsumoto
@@ -1153,7 +1166,7 @@ Last updated: 2026-05-07
 
 ---
 
-## zeitwerk 2.6.13 — MIT
+## zeitwerk 2.8.2 — MIT
 
 - Homepage: <https://github.com/fxn/zeitwerk>
 - Copyright 2019 Xavier Noria
@@ -1164,3 +1177,4 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/wooorm/zwitch#readme>
 - Copyright 2016 Titus Wormer <tituswormer@gmail.com>
+

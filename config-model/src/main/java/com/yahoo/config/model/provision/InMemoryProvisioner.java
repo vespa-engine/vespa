@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.ArrayList;
@@ -158,7 +159,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionContext context) {
         provisioned.add(cluster, requested);
         clusters.add(cluster);
         if (environment == Environment.dev && ! requested.isRequired()) {

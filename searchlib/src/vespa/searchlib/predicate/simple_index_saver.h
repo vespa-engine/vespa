@@ -6,6 +6,7 @@
 #include "simple_index.h"
 
 #include <vespa/vespalib/stllike/allocator.h>
+#include <vespa/vespalib/util/transient_memory_tracker.h>
 
 namespace search::predicate {
 
@@ -23,6 +24,7 @@ class SimpleIndexSaver : public ISaver {
 
     const Dictionary                       _dictionary;
     FrozenRoots                            _frozen_roots;
+    vespalib::TransientMemoryTracker       _frozen_roots_tracker;
     const BTreeStore&                      _btree_posting_lists;
     std::unique_ptr<PostingSaver<Posting>> _subsaver;
 

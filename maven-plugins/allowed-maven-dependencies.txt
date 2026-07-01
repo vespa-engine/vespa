@@ -6,6 +6,7 @@ com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}
 com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
 com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
+com.google.code.gson:gson:${gson.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
 com.google.guava:failureaccess:${failureaccess.vespa.version}
 com.google.guava:guava:${guava.vespa.version}
@@ -75,6 +76,6 @@ org.ow2.asm:asm-commons:${asm.vespa.version}
 org.ow2.asm:asm-tree:${asm.vespa.version}
 org.ow2.asm:asm:${asm.vespa.version}
 org.slf4j:slf4j-api:${slf4j.vespa.version}
-org.tukaani:xz:1.11
+org.tukaani:xz:1.12
 org.twdata.maven:mojo-executor:${mojo-executor.vespa.version}
 org.vafer:jdependency:${vafer.jdependency.vespa.version}

@@ -398,7 +398,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
                                                                 ClusterSpec.Type.admin,
                                                                 ClusterSpec.Id.from(clusterName),
-                                                                context.getDeployLogger(),
+                                                                context.getDeployState(),
                                                                 true,
                                                                 context.clusterInfo().build())
                                                      .keySet();

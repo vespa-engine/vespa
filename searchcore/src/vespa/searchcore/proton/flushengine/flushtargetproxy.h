@@ -54,7 +54,9 @@ public:
     double get_replay_operation_cost() const override { return _target->get_replay_operation_cost(); }
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
 } // namespace proton

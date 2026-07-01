@@ -41,6 +41,8 @@ class AttributeFileWriter : public IAttributeFileWriter {
 
     void writeHeader();
 
+    void write_buf_helper(const BufferBuf& buf);
+
 public:
     AttributeFileWriter(const TuneFileAttributes&                tuneFileAttributes,
                         const search::common::FileHeaderContext& fileHeaderContext,
@@ -48,6 +50,7 @@ public:
     ~AttributeFileWriter();
     Buffer allocBuf(size_t size) override;
     void writeBuf(Buffer buf) override;
+    void write_buf(Buffer buf, vespalib::TransientMemoryTracker tracker) override;
     std::unique_ptr<BufferWriter> allocBufferWriter() override;
     bool open(const std::string& fileName);
     void close() override;

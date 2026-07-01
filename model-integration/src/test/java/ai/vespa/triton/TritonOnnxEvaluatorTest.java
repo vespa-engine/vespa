@@ -2,6 +2,8 @@
 package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
+import com.yahoo.jdisc.ResourceReference;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -10,11 +12,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
-import com.yahoo.jdisc.ResourceReference;
-import static org.mockito.Mockito.mock;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author glebashnik
@@ -70,6 +73,23 @@ class TritonOnnxEvaluatorTest {
                             + " -0.48628148, 0.10357287, 0.8698752, -0.39116782, 1.006429, 0.5442105, 0.29821596,"
                             + " 1.142777, -0.58772075, -1.0151181, 0.9173087]]]");
             assertEquals(output, expectedOutput);
+        }
+    }
+
+    @Test
+    void evaluate_throws_timeout_exception_when_deadline_fires() {
+        try (var tritonClient = createTritonClient()) {
+            tritonClient.loadModel(MODEL_NAME);
+            var modelReference = mock(ResourceReference.class);
+            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, false);
+
+            var inputs = Map.of(
+                    "input_ids",      Tensor.from("tensor<float>(d0[1],d1[5]):[1.0, 2.0, 3.0, 4.0, 5.0]"),
+                    "attention_mask", Tensor.from("tensor<float>(d0[1],d1[5]):[1.0, 1.0, 1.0, 1.0, 1.0]"),
+                    "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[5]):[0.0, 0.0, 0.0, 0.0, 0.0]"));
+
+            assertThrows(TimeoutException.class,
+                    () -> evaluator.evaluate(inputs, "output_0", Duration.ofMillis(1)));
         }
     }
 

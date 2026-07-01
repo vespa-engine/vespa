@@ -36,7 +36,7 @@ public:
     void addTerm(Blueprint::UP term, int32_t weight, HitEstimate& estimate);
     void complete(HitEstimate estimate) { setEstimate(estimate); }
 
-    void sort(InFlow in_flow) override;
+    double sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
 
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray& tfmda) const override;

@@ -58,20 +58,18 @@ class ShrinkSummaryLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget {
 
 public:
     ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type, Component component,
-                                     SerialNum flushedSerialNum, vespalib::system_time lastFlushTime,
-                                     vespalib::Executor&                   summaryService,
+                                     SerialNum flushedSerialNum, vespalib::Executor& summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget() override;
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
-    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
 };
 
 ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type,
                                                                    Component component, SerialNum flushedSerialNum,
-                                                                   vespalib::system_time lastFlushTime,
-                                                                   vespalib::Executor&   summaryService,
+                                                                   vespalib::Executor& summaryService,
                                                                    std::shared_ptr<ICompactableLidSpace> target)
-    : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, lastFlushTime, std::move(target)),
+    : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, vespalib::system_clock::now(),
+                                std::move(target)),
       _summaryService(summaryService) {
 }
 
@@ -84,10 +82,6 @@ IFlushTarget::Task::UP ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum    
     _summaryService.execute(makeLambdaTask(
         [&]() { promise.set_value(ShrinkLidSpaceFlushTarget::initFlush(currentSerial, flush_token)); }));
     return future.get();
-}
-
-bool ShrinkSummaryLidSpaceFlushTarget::can_flush(SerialNum) const noexcept {
-    return true;
 }
 
 } // namespace
@@ -175,8 +169,8 @@ namespace {
 
 IFlushTarget::SP createShrinkLidSpaceFlushTarget(vespalib::Executor& summaryService, IDocumentStore::SP docStore) {
     return std::make_shared<ShrinkSummaryLidSpaceFlushTarget>(
-        "summary.shrink", IFlushTarget::Type::GC, IFlushTarget::Component::DOCUMENT_STORE, docStore->lastSyncToken(),
-        docStore->getLastFlushTime(), summaryService, std::move(docStore));
+        "summary.shrink", IFlushTarget::Type::GC, IFlushTarget::Component::DOCUMENT_STORE,
+        docStore->tentativeLastSyncToken(), summaryService, std::move(docStore));
 }
 
 } // namespace

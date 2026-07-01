@@ -38,11 +38,10 @@ public class AnnTimeout implements Cloneable {
         this.enabled = enable;
     }
 
-    /** Returns whether anntimeout is enabled. Default is false.
-     * TODO: Make true the default once everything is in place.
+    /** Returns whether anntimeout is enabled. Default is true.
      * */
     public Boolean getEnable() {
-        if (enabled == null) return Boolean.FALSE;
+        if (enabled == null) return Boolean.TRUE;
         return enabled;
     }
 

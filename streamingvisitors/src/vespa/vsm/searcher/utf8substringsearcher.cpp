@@ -32,7 +32,7 @@ size_t UTF8SubStringFieldSearcher::matchTerms(const FieldRef& f, const size_t mi
             termsize_t       tsz = qt->term(term);
 
             const cmptype_t *tt = term, *et = term + tsz, *fnt = fn;
-            for (; (tt < et) && (*tt == *fnt); tt++, fnt++)
+            for (; (tt < et) && (fnt < fe) && (*tt == *fnt); tt++, fnt++)
                 ;
             if (tt == et) {
                 addHit(*qt, words);

@@ -13,10 +13,12 @@ CachedFlushTarget::CachedFlushTarget(const IFlushTarget::SP& target)
       _diskGain(target->getApproxDiskGain()),
       _approxBytesToWriteToDisk(target->getApproxBytesToWriteToDisk()),
       _approx_bytes_to_read_from_disk(target->get_approx_bytes_to_read_from_disk()),
+      _reserved_memory_for_flush(target->reserved_memory_for_flush()),
       _replay_operation_cost(target->get_replay_operation_cost()),
       _needUrgentFlush(target->needUrgentFlush()),
       _priority(target->getPriority()),
-      _last_flush_duration(target->last_flush_duration()) {
+      _last_flush_duration(target->last_flush_duration()),
+      _estimated_flush_duration(target->estimated_flush_duration()) {
 }
 
 CachedFlushTarget::~CachedFlushTarget() = default;
@@ -29,8 +31,16 @@ uint64_t CachedFlushTarget::get_approx_bytes_to_read_from_disk() const noexcept 
     return _approx_bytes_to_read_from_disk;
 }
 
+size_t CachedFlushTarget::reserved_memory_for_flush() const noexcept {
+    return _reserved_memory_for_flush;
+}
+
 std::chrono::steady_clock::duration CachedFlushTarget::last_flush_duration() const noexcept {
     return _last_flush_duration;
+}
+
+std::chrono::steady_clock::duration CachedFlushTarget::estimated_flush_duration() const noexcept {
+    return _estimated_flush_duration;
 }
 
 } // namespace proton

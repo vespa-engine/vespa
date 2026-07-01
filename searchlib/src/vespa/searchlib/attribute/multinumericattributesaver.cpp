@@ -49,8 +49,9 @@ bool MultiValueNumericAttributeSaver<MultiValueT>::onSave(IAttributeSaveTarget& 
     WeightWriter<multivalue::is_WeightedValue_v<MultiValueType>> weightWriter(saveTarget);
     DatWriter                                                    datWriter(saveTarget);
 
-    for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
-        vespalib::datastore::EntryRef   idx = _frozenIndices[docId];
+    auto indices_span = _indices_snapshot.span();
+    for (uint32_t docId = 0; docId < indices_span.size(); ++docId) {
+        vespalib::datastore::EntryRef   idx = indices_span[docId];
         std::span<const MultiValueType> values(_mvMapping.getDataForIdx(idx));
         countWriter.writeCount(values.size());
         weightWriter.writeWeights(values);

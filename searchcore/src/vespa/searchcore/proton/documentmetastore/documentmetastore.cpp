@@ -706,7 +706,8 @@ void DocumentMetaStore::removes_complete(const std::vector<DocId>& lids) {
     incGeneration();
 }
 
-void DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) {
+void DocumentMetaStore::move(const document::DocumentId& docid, DocId fromLid, DocId toLid,
+                             uint64_t prepare_serial_num) {
     assert(fromLid != 0);
     assert(toLid != 0);
     assert(fromLid > toLid);
@@ -717,6 +718,13 @@ void DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial
     _metadataStore[toLid] = _metadataStore[fromLid];
     if (_store_full_document_id) {
         _metadataStore[fromLid].set_docid_ref(EntryRef());
+        auto& metadata = _metadataStore[toLid];
+        // No document id for this document
+        // Gone missing during saving?
+        if (!metadata.get_relaxed_docid_ref().valid()) {
+            const auto ref = add_docid_string(docid.getScheme().toString());
+            metadata.set_docid_ref(ref);
+        }
     }
     const GlobalId& gid = getRawGid(fromLid);
     KeyComp         comp(gid, get_unbound_metadata_view());
@@ -1136,6 +1144,11 @@ uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
         estimate += minHeaderLen + numDocs * sizeof(uint32_t) + get_docid_bytes_stats();
     }
     return estimate;
+}
+
+size_t DocumentMetaStore::reserved_memory_for_flush(bool slow_disk) const noexcept {
+    size_t flush_buffer_size = slow_disk ? getEstimatedSaveByteSize() : 0;
+    return flush_buffer_size;
 }
 
 uint32_t DocumentMetaStore::getVersion() const {

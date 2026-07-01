@@ -463,16 +463,24 @@ public class NodeResources {
     }
 
     /**
-     * Returns true if all the resources of this are the same as or compatible with the requested resources:
-     * - Equal numbers only where request implies it (i.e not for disk if storage is any/remote, and not for bandwidth
+     * Returns true if all the resources of this are compatible and numerically equal the requested resources.
+     * - Equal numbers only where request implies it (i.e. not for disk if storage is any/remote, and not for bandwidth
      *   where we don't enforce constraints),
      * - Compatible non-numbers.
      */
     public boolean compatibleWith(NodeResources requested) {
-        if ( ! equal(this.vcpu, requested.vcpu)) return false;
-        if ( ! equal(this.memoryGiB, requested.memoryGiB)) return false;
+        return compatibleWith(requested, 0.00000001);
+    }
+
+    /**
+     * Returns whether this is {@link #compatibleWith} the given resources within a given tolerance factor:
+     * For each numeric resource: abs(1 - this resource / requested resource) <= tolerance.
+     */
+    public boolean compatibleWith(NodeResources requested, double tolerance) {
+        if ( ! equal(this.vcpu, requested.vcpu, tolerance)) return false;
+        if ( ! equal(this.memoryGiB, requested.memoryGiB, tolerance)) return false;
         if (this.storageType == StorageType.local || requested.storageType == StorageType.local) {
-            if ( ! equal(this.diskGb, requested.diskGb)) return false;
+            if ( ! equal(this.diskGb, requested.diskGb, tolerance)) return false;
         }
         else {
             if (this.diskGb < requested.diskGb) return false;
@@ -528,8 +536,14 @@ public class NodeResources {
         return this.isUnspecified() ? Optional.empty() : Optional.of(this);
     }
 
+
     private static boolean equal(double a, double b) {
-        return Math.abs(a - b) < 0.00000001;
+        return equal(a, b, 0.00000001);
+    }
+
+    private static boolean equal(double a, double b, double tolerance) {
+        if (b == 0) return a == 0;
+        return Math.abs(1.0 - a/b) < tolerance;
     }
 
     private static double validate(double value, String valueName) {

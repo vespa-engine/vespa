@@ -539,13 +539,27 @@ public class YqlParser implements Parser {
         return nonTaggableLeafStyleSettings(ast, item);
     }
 
-    private ParsedDegree degreesFromArg(OperatorNode<ExpressionOperator> ast, boolean first) {
-        Object arg = switch (ast.getOperator()) {
+    private String derefVar(OperatorNode<ExpressionOperator> ast) {
+        Preconditions.checkState(ast.getOperator() == ExpressionOperator.VARREF, "derefVar() only accepts VARREF");
+        Preconditions.checkState(userQuery != null, "Query properties are not available");
+        String propName = ast.getArgument(0, String.class);
+        String prop = userQuery.properties().getString(propName);
+        Preconditions.checkState(prop != null, "Error, missing query property: " + propName);
+        return prop;
+    }
+
+    private Object fetchLiteralOrRef(OperatorNode<ExpressionOperator> ast) {
+        return switch (ast.getOperator()) {
             case LITERAL -> ast.getArgument(0);
-            case READ_FIELD -> ast.getArgument(1);
+            case READ_FIELD -> ast.getArgument(1); // TODO: Should probably remove this option
+            case VARREF -> derefVar(ast);
             default -> throw newUnexpectedArgumentException(ast.getOperator(),
-                    ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+                    ExpressionOperator.LITERAL, ExpressionOperator.READ_FIELD, ExpressionOperator.VARREF);
         };
+    }
+
+    private ParsedDegree degreesFromArg(OperatorNode<ExpressionOperator> ast, boolean first) {
+        Object arg = fetchLiteralOrRef(ast);
         if (arg instanceof Number n) {
             return new ParsedDegree(n.doubleValue(), first, !first);
         }
@@ -573,7 +587,7 @@ public class YqlParser implements Parser {
         String field = fetchFieldName(args.get(0));
         var coord_1 = degreesFromArg(args.get(1), true);
         var coord_2 = degreesFromArg(args.get(2), false);
-        double radius = DistanceParser.parse(fetchLiteral(args.get(3)));
+        double radius = DistanceParser.parse(fetchLiteralOrRef(args.get(3)).toString());
         Location.Point center;
         if (coord_1.isLatitude && coord_2.isLongitude) {
             center = new Location.Point(coord_1.degrees, coord_2.degrees);
@@ -1751,7 +1765,7 @@ public class YqlParser implements Parser {
             uriItem.addStartAnchorItem();
 
         String uriString = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1).get(0).getArgument(0);
-        for (String token : segmenter.segment(uriString, new LinguisticsParameters(linguisticsProfileFor(field), Language.ENGLISH, StemMode.NONE, false, false)))
+        for (String token : tokenizeUri(uriString))
             uriItem.addItem(new WordItem(token, field, true));
 
         if (getAnnotation(ast, END_ANCHOR, Boolean.class, endAnchorDefault,
@@ -1764,6 +1778,34 @@ public class YqlParser implements Parser {
         uriItem.setSourceString(uriString);
 
         return uriItem;
+    }
+
+    /**
+     * Tokenize uri query argument the same way the uri field is tokenized at indexing time
+     * (searchlib URL::IsTokenChar): token characters are ASCII alphanumerics, '-' and '_';
+     * everything else (incl. '.', '/', ':', '?' and any non-ASCII char) is a separator.
+     * Note: Not using {@link com.yahoo.net.UrlTokenizer} because it decodes %xx
+     * escapes before tokenizing, which is not what searchlib URL does.
+     */
+    static List<String> tokenizeUri(String uriString) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+
+        for (int i = 0; i < uriString.length(); i++) {
+            char c = uriString.charAt(i);
+
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
+                current.append(c);
+            } else if (current.length() > 0) {
+                tokens.add(current.toString());
+                current.setLength(0);
+            }
+        }
+
+        if (current.length() > 0)
+            tokens.add(current.toString());
+
+        return tokens;
     }
 
     private Item instantiateWordItem(String field, OperatorNode<ExpressionOperator> ast, Class<?> parent) {

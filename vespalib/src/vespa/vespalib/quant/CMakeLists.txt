@@ -1,6 +1,10 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(vespalib_vespalib_quant OBJECT
+vespa_add_library(vespalib_quant
     SOURCES
     codebooks.cpp
+    eden.cpp
+    rotator.cpp
+    INSTALL lib64
     DEPENDS
+    vespa_hwaccelerated
 )

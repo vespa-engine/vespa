@@ -54,6 +54,9 @@ ConfigSnapshot ConfigRetriever::getConfigs(const ConfigKeySet& keySet, vespalib:
         }
         _subscriptionList.clear();
         for (const auto& key : keySet) {
+            std::lock_guard guard(_lock);
+            if (isClosed())
+                return ConfigSnapshot();
             _subscriptionList.push_back(_configSubscriber->subscribe(key, _subscribeTimeout));
         }
     }

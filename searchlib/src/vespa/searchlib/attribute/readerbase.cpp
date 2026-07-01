@@ -6,7 +6,7 @@
 #include "load_utils.h"
 
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/filesizecalculator.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -70,7 +70,7 @@ ReaderBase::ReaderBase(AttributeVector& attr)
         _enumerated = true;
     }
     _hasLoadData = hasData() && (!attr.needs_idx_file() || hasIdx()) && (!attr.hasWeightedSetType() || hasWeight());
-    _flush_duration = common::FileHeaderContext::get_flush_duration(_datFile.header());
+    _flush_duration = common::CreateAndFreezeTimes(_datFile.header()).get_flush_duration();
 }
 
 ReaderBase::~ReaderBase() = default;

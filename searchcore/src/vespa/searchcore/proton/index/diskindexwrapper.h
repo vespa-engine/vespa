@@ -39,6 +39,7 @@ public:
     search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
     const std::string& getIndexDir() const override { return _index.getIndexDir(); }
     const search::index::Schema& getSchema() const override { return _index.getSchema(); }
+    [[nodiscard]] const search::common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept override;
 };
 
 } // namespace proton

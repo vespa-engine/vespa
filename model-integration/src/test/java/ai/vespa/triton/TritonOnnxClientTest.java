@@ -2,6 +2,7 @@
 package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.Tensor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,6 +86,38 @@ class TritonOnnxClientTest {
                             + " -0.48628148, 0.10357287, 0.8698752, -0.39116782, 1.006429, 0.5442105, 0.29821596,"
                             + " 1.142777, -0.58772075, -1.0151181, 0.9173087]]]");
             assertEquals(output, expectedOutput);
+        }
+    }
+
+    @Test
+    void evaluate_throws_timeout_exception_for_pre_expired_deadline() {
+        try (var tritonClient = createTritonClient()) {
+            tritonClient.loadModel(MODEL_NAME);
+            var metadata = tritonClient.getModelMetadata(MODEL_NAME);
+            var inputs = Map.of(
+                    "input_ids",      Tensor.from("tensor<float>(d0[1],d1[1]):[1.0]"),
+                    "attention_mask", Tensor.from("tensor<float>(d0[1],d1[1]):[1.0]"),
+                    "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[1]):[0.0]"));
+
+            var ex = assertThrows(TimeoutException.class,
+                    () -> tritonClient.evaluate(MODEL_NAME, metadata, inputs, "output_0", Duration.ZERO));
+            assertTrue(ex.getMessage().contains("deadline exceeded") || ex.getMessage().contains("Request deadline"),
+                    "unexpected message: " + ex.getMessage());
+        }
+    }
+
+    @Test
+    void evaluate_throws_timeout_exception_when_deadline_fires_during_rpc() {
+        try (var tritonClient = createTritonClient()) {
+            tritonClient.loadModel(MODEL_NAME);
+            var metadata = tritonClient.getModelMetadata(MODEL_NAME);
+            var inputs = Map.of(
+                    "input_ids",      Tensor.from("tensor<float>(d0[1],d1[5]):[1.0, 2.0, 3.0, 4.0, 5.0]"),
+                    "attention_mask", Tensor.from("tensor<float>(d0[1],d1[5]):[1.0, 1.0, 1.0, 1.0, 1.0]"),
+                    "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[5]):[0.0, 0.0, 0.0, 0.0, 0.0]"));
+
+            assertThrows(TimeoutException.class,
+                    () -> tritonClient.evaluate(MODEL_NAME, metadata, inputs, "output_0", Duration.ofMillis(1)));
         }
     }
 

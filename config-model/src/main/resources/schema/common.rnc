@@ -150,6 +150,7 @@ ColBertEmbedder =
    element query-token-id { xsd:integer }? &
    element document-token-id { xsd:integer }? &
    element transformer-output { xsd:string }? &
+   element attend-to-expansion-tokens { xsd:boolean }? &
    OnnxModelExecutionParams &
    StartOfSequence &
    EndOfSequence
@@ -186,6 +187,7 @@ OnnxModelExecutionParams =
     element onnx-interop-threads { xsd:integer }? &
     element onnx-intraop-threads { xsd:integer }? &
     element onnx-gpu-device { xsd:integer }? &
+    element onnx-optimize-model { xsd:boolean }? &
     EmbedderBatchingParams &
     element concurrency {
         attribute type { "absolute" | "relative" }? &

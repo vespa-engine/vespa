@@ -131,19 +131,45 @@ func TestPerfSample(t *testing.T) {
 		assert.Equal(t, total, p.totalTimeMs())
 		assert.Equal(t, self, p.selfTimeMs())
 	}
-	checkSampleFlags := func(p perfSample, legacy bool, enum bool, seek bool) {
-		assert.Equal(t, enum, p.isEnumSample())
-		assert.Equal(t, legacy, p.isLegacySample())
-		assert.Equal(t, seek, p.isSeekSample())
-	}
 	checkSample(f.flatSample("my_name", 10, 5), "my_name", 10, 0, 5)
 	checkSample(f.treeSample("my_name", 10, 20, 5), "my_name", 10, 20, 5)
 	checkSample(f.leafSample("my_name", 10, 5), "my_name", 10, 5, 5)
-	checkSampleFlags(f.dummySample("/1/2/And/seek"), true, false, true)
-	checkSampleFlags(f.dummySample("/1/2/And/unpack"), true, false, false)
-	checkSampleFlags(f.dummySample("[3]And::doSeek"), false, true, true)
-	checkSampleFlags(f.dummySample("[3]And::doUnpack"), false, true, false)
-	checkSampleFlags(f.dummySample("bogus"), false, false, false)
+	type sampleFlags struct {
+		legacy, enum, seek, unpack, termwise, mbv bool
+	}
+	flagCases := []struct {
+		name string
+		want sampleFlags
+	}{
+		{"/1/2/And/seek", sampleFlags{legacy: true, seek: true}},
+		{"/1/2/And/unpack", sampleFlags{legacy: true, unpack: true}},
+		{"/1/2/And/termwise", sampleFlags{legacy: true, termwise: true}},
+		{"[3]And::doSeek", sampleFlags{enum: true, seek: true}},
+		{"[3]And::doUnpack", sampleFlags{enum: true, unpack: true}},
+		{"[3]And::get_hits", sampleFlags{enum: true, termwise: true}},
+		{"[3]And::and_hits_into", sampleFlags{enum: true, termwise: true}},
+		{"[3]And::or_hits_into", sampleFlags{enum: true, termwise: true}},
+		{"[3]MultiBitVectorIterator::doSeek", sampleFlags{enum: true, seek: true, mbv: true}},
+		{"bogus", sampleFlags{}},
+	}
+	for _, c := range flagCases {
+		p := f.dummySample(c.name)
+		got := sampleFlags{
+			legacy:   p.isLegacySample(),
+			enum:     p.isEnumSample(),
+			seek:     p.isSeekSample(),
+			unpack:   p.isUnpackSample(),
+			termwise: p.isTermwiseSample(),
+			mbv:      p.isMultiBitVectorSample(),
+		}
+		assert.Equal(t, c.want, got, c.name)
+	}
+}
+
+func TestQuerySetupPerfSample(t *testing.T) {
+	f := testFactory{}
+	assert.False(t, f.dummySample("[3]And::create").isFetchPostingsSample())
+	assert.True(t, f.dummySample("[3]And::fetchPostings").isFetchPostingsSample())
 }
 
 func TestParseNumList(t *testing.T) {
@@ -158,20 +184,20 @@ func TestParseNumList(t *testing.T) {
 func TestApplyLegacySample(t *testing.T) {
 	f := testFactory{}
 	query := newQueryTree(f.simpleQuery())
-	query.applySample(f.treeSample("/X/seek", 3, 11, 3))
-	query.applySample(f.treeSample("/X/unpack", 7, 9, 7))
-	query.applySample(f.leafSample("/0/X/init", 10, 12))
-	query.applySample(f.leafSample("/0/X/termwise", 20, 18))
-	query.applySample(f.flatSample("/1/1/X/seek", 5, 10))
-	query.applySample(f.flatSample("/1/1/X/seek", 10, 5))
-	query.applySample(f.treeSample("/100/X/seek", 10, 20, 10)) // out of bounds
-	var seeks []int64
+	assert.True(t, query.applySample(f.treeSample("/X/seek", 3, 11, 3)))
+	assert.True(t, query.applySample(f.treeSample("/X/unpack", 7, 9, 7)))
+	assert.True(t, query.applySample(f.leafSample("/0/X/init", 10, 12)))
+	assert.True(t, query.applySample(f.leafSample("/0/X/termwise", 20, 18)))
+	assert.True(t, query.applySample(f.flatSample("/1/1/X/seek", 5, 10)))
+	assert.True(t, query.applySample(f.flatSample("/1/1/X/seek", 10, 5)))
+	assert.False(t, query.applySample(f.treeSample("/100/X/seek", 10, 20, 10))) // out of bounds
+	var counts []int64
 	var totals []float64
 	var selfs []float64
-	query.root.each(func(q *queryNode) { seeks = append(seeks, q.seeks) })
+	query.root.each(func(q *queryNode) { counts = append(counts, q.count) })
 	query.root.each(func(q *queryNode) { totals = append(totals, q.totalTimeMs) })
 	query.root.each(func(q *queryNode) { selfs = append(selfs, q.selfTimeMs) })
-	assert.Equal(t, []int64{3, 0, 0, 0, 15}, seeks)
+	assert.Equal(t, []int64{10, 30, 0, 0, 15}, counts)
 	assert.Equal(t, []float64{20, 30, 0, 0, 0}, totals)
 	assert.Equal(t, []float64{10, 30, 0, 0, 15}, selfs)
 }
@@ -179,40 +205,72 @@ func TestApplyLegacySample(t *testing.T) {
 func TestApplySample(t *testing.T) {
 	f := testFactory{}
 	query := newQueryTree(f.simpleQuery())
-	query.applySample(f.treeSample("[5]X::doSeek", 3, 11, 3))
-	query.applySample(f.treeSample("[5]X::doUnpack", 7, 9, 7))
-	query.applySample(f.leafSample("[4]X::initRange", 10, 12))
-	query.applySample(f.leafSample("[4]X::or_hits_into", 20, 18))
-	query.applySample(f.flatSample("[1]X::doSeek", 5, 10))
-	query.applySample(f.flatSample("[1]X::doSeek", 10, 5))
-	query.applySample(f.treeSample("[100]X::doSeek", 10, 20, 10)) // not found
-	query.applySample(f.treeSample("[]X::doSeek", 10, 20, 10))    // empty enum list
-	var seeks []int64
+	assert.True(t, query.applySample(f.treeSample("[5]X::doSeek", 3, 11, 3)))
+	assert.True(t, query.applySample(f.treeSample("[5]X::doUnpack", 7, 9, 7)))
+	assert.True(t, query.applySample(f.leafSample("[4]X::initRange", 10, 12)))
+	assert.True(t, query.applySample(f.leafSample("[4]X::or_hits_into", 20, 18)))
+	assert.True(t, query.applySample(f.flatSample("[1]X::doSeek", 5, 10)))
+	assert.True(t, query.applySample(f.flatSample("[1]X::doSeek", 10, 5)))
+	assert.False(t, query.applySample(f.treeSample("[100]X::doSeek", 10, 20, 10))) // not found
+	assert.False(t, query.applySample(f.treeSample("[]X::doSeek", 10, 20, 10)))    // empty enum list
+	var counts []int64
 	var totals []float64
 	var selfs []float64
-	query.root.each(func(q *queryNode) { seeks = append(seeks, q.seeks) })
+	query.root.each(func(q *queryNode) { counts = append(counts, q.count) })
 	query.root.each(func(q *queryNode) { totals = append(totals, q.totalTimeMs) })
 	query.root.each(func(q *queryNode) { selfs = append(selfs, q.selfTimeMs) })
-	assert.Equal(t, []int64{3, 0, 0, 0, 15}, seeks)
+	assert.Equal(t, []int64{10, 30, 0, 0, 15}, counts)
 	assert.Equal(t, []float64{20, 30, 0, 0, 0}, totals)
 	assert.Equal(t, []float64{10, 30, 0, 0, 15}, selfs)
+}
+
+func TestApplySampleFlags(t *testing.T) {
+	f := testFactory{}
+	query := newQueryTree(f.simpleQuery())
+	assert.True(t, query.applySample(f.flatSample("[4]X::or_hits_into", 1, 0)))
+	assert.True(t, query.applySample(f.flatSample("[2]MultiBitVectorIterator::doSeek", 1, 0)))
+	assert.True(t, query.index[4].termwise)
+	assert.False(t, query.index[4].multiBitVector)
+	assert.True(t, query.index[2].multiBitVector)
+	assert.False(t, query.index[2].termwise)
+	assert.False(t, query.index[5].termwise)
+	assert.False(t, query.index[5].multiBitVector)
+}
+
+func TestEvalMode(t *testing.T) {
+	cases := []struct {
+		strict, mbv, taat bool
+		want              string
+	}{
+		{false, false, false, "lazy"},
+		{true, false, false, "eager"},
+		{true, true, false, "eager mbv"},
+		{true, false, true, "eager taat"},
+		{true, true, true, "eager mbv taat"},
+		{false, true, true, "lazy mbv taat"},
+	}
+	for _, c := range cases {
+		n := &queryNode{strict: c.strict, multiBitVector: c.mbv, termwise: c.taat}
+		assert.Equal(t, c.want, n.evalMode())
+	}
 }
 
 func TestApplyMultiSample(t *testing.T) {
 	f := testFactory{}
 	query := newQueryTree(f.simpleQuery())
-	query.applySample(f.treeSample("[1,2]X::doSeek", 3, 10, 2))
-	query.applySample(f.treeSample("[2,3]X::doSeek", 5, 20, 4))
-	query.applySample(f.treeSample("[2,3]X::doUnpack", 7, 30, 6))
-	var seeks []int64
+	assert.True(t, query.applySample(f.treeSample("[1,2]X::doSeek", 3, 10, 2)))
+	assert.True(t, query.applySample(f.treeSample("[2,3]X::doSeek", 5, 20, 4)))
+	assert.True(t, query.applySample(f.treeSample("[2,3]X::doUnpack", 7, 30, 6)))
+	assert.True(t, query.applySample(f.treeSample("[5,100]X::doSeek", 10, 10, 10))) // partial
+	var counts []int64
 	var totals []float64
 	var selfs []float64
-	query.root.each(func(q *queryNode) { seeks = append(seeks, q.seeks) })
+	query.root.each(func(q *queryNode) { counts = append(counts, q.count) })
 	query.root.each(func(q *queryNode) { totals = append(totals, q.totalTimeMs) })
 	query.root.each(func(q *queryNode) { selfs = append(selfs, q.selfTimeMs) })
-	assert.Equal(t, []int64{0, 0, 5, 8, 3}, seeks)
-	assert.Equal(t, []float64{0, 0, 25, 30, 5}, totals)
-	assert.Equal(t, []float64{0, 0, 5, 6, 1}, selfs)
+	assert.Equal(t, []int64{10, 0, 12, 15, 3}, counts)
+	assert.Equal(t, []float64{5, 0, 25, 30, 5}, totals)
+	assert.Equal(t, []float64{5, 0, 5, 6, 1}, selfs)
 }
 
 func TestStripNameSpacesKeepSuffix(t *testing.T) {
@@ -270,4 +328,105 @@ func TestStripTemplateParams(t *testing.T) {
 	for _, tt := range tests {
 		assert.Equal(t, tt.expected, stripTemplateParams(tt.input))
 	}
+}
+
+func simpleProtonTrace() protonTrace {
+	var source = slime.MakeObject(func(obj slime.Value) {
+		obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_setup"))
+				obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+					arr.Add(slime.MakeObject(func(obj slime.Value) {
+						obj.Set("tag", slime.String("global_filter_decision"))
+						obj.Set("parameters", slime.MakeObject(func(obj slime.Value) {
+							obj.Set("estimated_hit_ratio", slime.Double(0.5))
+						}))
+					}))
+				}))
+			}))
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_setup_stats"))
+				obj.Set("stats", slime.MakeObject(func(obj slime.Value) {
+					obj.Set("approximate_nns_distances_computed", slime.Long(123))
+				}))
+			}))
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_execution_stats"))
+				obj.Set("stats", slime.MakeObject(func(obj slime.Value) {
+					obj.Set("exact_nns_distances_computed", slime.Long(456))
+				}))
+			}))
+		}))
+	})
+	return protonTrace{source: source}
+}
+
+func emptyProtonTrace() protonTrace {
+	var source = slime.MakeObject(func(obj slime.Value) {
+		obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_setup"))
+				obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+				}))
+			}))
+		}))
+	})
+	return protonTrace{source: source}
+}
+
+func protonTraceWithKey(key int64, duration float64) protonTrace {
+	return protonTrace{source: slime.MakeObject(func(obj slime.Value) {
+		obj.Set("distribution-key", slime.Long(key))
+		obj.Set("duration_ms", slime.Double(duration))
+	})}
+}
+
+func TestCollapseFollowUps(t *testing.T) {
+	// duration_ms is unique per trace so we can track individual traces
+	traces := []protonTrace{
+		protonTraceWithKey(1, 10),
+		protonTraceWithKey(2, 20),
+		protonTraceWithKey(1, 30),
+		protonTraceWithKey(1, 40),
+		protonTraceWithKey(2, 50),
+	}
+	res := collapseFollowUps(traces)
+
+	// one entry per distinct distribution key, keeping the first-seen trace in order
+	assert.Equal(t, 2, len(res))
+	assert.Equal(t, int64(1), res[0].distributionKey())
+	assert.Equal(t, 10.0, res[0].durationMs())
+	assert.Equal(t, int64(2), res[1].distributionKey())
+	assert.Equal(t, 20.0, res[1].durationMs())
+
+	// later duplicates become follow-ups, preserving their encounter order
+	assert.Equal(t, []float64{30, 40}, res[0].followUpDurationsMs())
+	assert.Equal(t, []float64{50}, res[1].followUpDurationsMs())
+}
+
+func TestCollapseFollowUpsNoDuplicates(t *testing.T) {
+	res := collapseFollowUps([]protonTrace{
+		protonTraceWithKey(3, 10),
+		protonTraceWithKey(1, 20),
+		protonTraceWithKey(2, 30),
+	})
+	// distinct keys are kept as-is, in original order, with no follow-ups
+	assert.Equal(t, []float64{10, 20, 30}, []float64{res[0].durationMs(), res[1].durationMs(), res[2].durationMs()})
+	assert.Equal(t, []int64{3, 1, 2}, []int64{res[0].distributionKey(), res[1].distributionKey(), res[2].distributionKey()})
+	for _, trace := range res {
+		assert.Nil(t, trace.followUps)
+	}
+}
+
+func TestFindValueWhenFound(t *testing.T) {
+	var value = simpleProtonTrace().findValueByTag("query_setup_stats")
+	assert.NotNil(t, value)
+	assert.True(t, value.Valid())
+	assert.True(t, value.Field("stats").Field("approximate_nns_distances_computed").Valid())
+}
+
+func TestFindValueWhenNotFound(t *testing.T) {
+	var value = emptyProtonTrace().findValueByTag("query_setup_stats")
+	assert.NotNil(t, value)
+	assert.False(t, value.Valid())
 }

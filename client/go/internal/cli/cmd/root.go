@@ -413,6 +413,12 @@ func (c *CLI) printInfo(msg ...interface{}) {
 	fmt.Fprintln(c.Stderr, fmt.Sprint(msg...))
 }
 
+func (c *CLI) printHelpfulInfo(msg string) {
+	if c.isTerminal() {
+		fmt.Fprintln(c.Stderr, msg)
+	}
+}
+
 func (c *CLI) printDebug(msg ...interface{}) {
 	if debugMode, _ := c.config.get(debugModeFlag); debugMode == "true" {
 		fmt.Fprintln(c.Stderr, color.CyanString("Debug:"), fmt.Sprint(msg...))

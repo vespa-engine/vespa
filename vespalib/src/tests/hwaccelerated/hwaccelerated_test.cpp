@@ -47,6 +47,25 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accels, size_t tes
     }
 }
 
+template <std::floating_point T>
+void verify_euclidean_length(std::span<const IAccelerated*> accels, size_t test_length, double approx_factor) {
+    Xoshiro256PlusPlusPrng prng(1234567);
+    std::vector<T>         v = create_and_fill_float<T>(prng, test_length);
+    for (size_t j = 0; j < 32; j++) {
+        float sum = 0;
+        for (size_t i = j; i < test_length; i++) {
+            sum += v[i] * v[i];
+        }
+        for (const auto* accel : accels) {
+            LOG(spam, "verify_euclidean_length(accel=%s, len=%zu, offset=%zu)",
+                accel->target_info().to_string().c_str(), test_length, j);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            float                 computed = squared_euclidean_length(&v[j], test_length - j);
+            ASSERT_NEAR(sum, computed, sum * approx_factor) << accel->target_info().to_string();
+        }
+    }
+}
+
 template <typename T>
 void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_length, double approx_factor) {
     auto [a, b] = create_and_fill_lhs_rhs<T>(test_length);
@@ -94,6 +113,10 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accelerators, size
     verify_euclidean_distance<double>(accelerators, testLength, 0.0);
 }
 
+void verify_euclidean_length(std::span<const IAccelerated*> accelerators, size_t testLength) {
+    verify_euclidean_length<float>(accelerators, testLength, 0.0001);
+}
+
 // Max number of elements that can be covered in one computed_chunked_sum() call
 // for our current chunked use cases (dot product + Euclidean distance).
 constexpr uint32_t euclidean_max_chunk_i32_boundary = INT32_MAX / (-255 * -255);
@@ -131,6 +154,13 @@ TEST_F(HwAcceleratedTest, euclidean_distance_impls_match_source_of_truth) {
     for (size_t test_length : test_lengths()) {
         ASSERT_NO_FATAL_FAILURE(verify_euclidean_distance(accelerators, test_length))
             << "with length " << test_length;
+    }
+}
+
+TEST_F(HwAcceleratedTest, euclidean_length_impls_match_source_of_truth) {
+    auto accelerators = all_accelerators_to_test();
+    for (size_t test_length : test_lengths()) {
+        ASSERT_NO_FATAL_FAILURE(verify_euclidean_length(accelerators, test_length)) << "with length " << test_length;
     }
 }
 

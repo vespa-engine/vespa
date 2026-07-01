@@ -17,6 +17,7 @@
 #include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -116,12 +117,11 @@ public:
      * Create the low-level tools needed to perform matching. This
      * function is exposed for testing purposes.
      **/
-    std::unique_ptr<MatchToolsFactory>
-    create_match_tools_factory(const search::engine::Request& request, ISearchContext& searchContext,
-                               IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
-                               const Properties& feature_overrides, vespalib::ThreadBundle& thread_bundle,
-                               const IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard, uint32_t maxHits,
-                               bool is_search) const;
+    std::unique_ptr<MatchToolsFactory> create_match_tools_factory(
+        const search::engine::Request& request, ISearchContext& searchContext, IAttributeContext& attrContext,
+        const search::IDocumentMetaStore& metaStore, const Properties& feature_overrides,
+        vespalib::ThreadBundle& thread_bundle, const IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard,
+        search::queryeval::QuerySetupStats& setup_stats, uint32_t maxHits, bool is_search) const;
 
     /**
      * Perform a search against this matcher.

@@ -15,6 +15,7 @@ namespace vespalib {
  */
 class splitmix64 {
     uint64_t _x;
+
 public:
     constexpr explicit splitmix64(const uint64_t x) noexcept : _x(x) {}
 
@@ -45,6 +46,7 @@ public:
  */
 class Xoshiro256PlusPlusPrng {
     uint64_t _s[4];
+
 public:
     using result_type = uint64_t;
 
@@ -63,8 +65,8 @@ public:
 
     // Explicitly 256-bit seeded PRNG. The seed parts should ideally have high
     // entropy and be statistically uncorrelated, such as from a CSPRNG source.
-    constexpr Xoshiro256PlusPlusPrng(const uint64_t s0, const uint64_t s1,
-                                     const uint64_t s2, const uint64_t s3) noexcept {
+    constexpr Xoshiro256PlusPlusPrng(const uint64_t s0, const uint64_t s1, const uint64_t s2,
+                                     const uint64_t s3) noexcept {
         _s[0] = s0;
         _s[1] = s1;
         _s[2] = s2;
@@ -73,9 +75,7 @@ public:
 
     // Explicitly 64-bit seeded PRNG. The seed is internally expanded to 256 bits
     // in a way that statistically decorrelates the individual state components.
-    constexpr explicit Xoshiro256PlusPlusPrng(const uint64_t s) noexcept {
-        seed(s);
-    }
+    constexpr explicit Xoshiro256PlusPlusPrng(const uint64_t s) noexcept { seed(s); }
 
     constexpr void seed(const uint64_t seed) noexcept {
         // Expand single u64 seed into 256 bits of pseudo-randomness

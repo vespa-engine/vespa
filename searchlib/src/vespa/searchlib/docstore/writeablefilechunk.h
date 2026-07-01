@@ -72,6 +72,7 @@ public:
 
     static uint64_t writeIdxHeader(const common::FileHeaderContext& fileHeaderContext, uint32_t docIdLimit,
                                    FastOS_FileInterface& file);
+    void enable_flush_pending_chunks();
 
 private:
     using ProcessedChunkUP = std::unique_ptr<ProcessedChunk>;
@@ -117,6 +118,7 @@ private:
     mutable std::condition_variable _cond;
     std::mutex                      _writeLock;
     std::mutex                      _flushLock;
+    std::condition_variable         _flush_cond;
     FastOS_File                     _dataFile;
     using ChunkMap = std::map<uint32_t, Chunk::UP>;
     ChunkMap _chunkMap;
@@ -133,12 +135,14 @@ private:
      */
     uint64_t                _pendingDiskDatFootprint; // protected by _lock, only considers dat file
     uint32_t                _nextChunkId;
+    size_t                  _inflight_memory; // Protected by _lock. Memory in chunks being compressed
     Chunk::UP               _active;
     size_t                  _alignment;
     size_t                  _granularity;
     size_t                  _maxChunkSize;
     uint32_t                _firstChunkIdToBeWritten;
     bool                    _writeTaskIsRunning;
+    bool                    _enable_flush_pending_chunks;
     std::mutex              _writeMonitor;
     std::condition_variable _writeCond;
     ProcessedChunkQ         _writeQ;

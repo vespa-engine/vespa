@@ -22,6 +22,7 @@
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/searchrequest.h>
+#include <vespa/searchlib/fef/element_gap.h>
 #include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -189,10 +190,10 @@ std::string make_same_element_stack_dump(const std::string& a1_term, const std::
 
 std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
     QueryBuilder<ProtonNodeTypes> builder;
-    constexpr int child_count = 2;
-    constexpr size_t distance = 10;
-    constexpr size_t num_negative_children = 0;
-    constexpr size_t exclusion_distance = 0;
+    constexpr int                 child_count = 2;
+    constexpr size_t              distance = 10;
+    constexpr size_t              num_negative_children = 0;
+    constexpr size_t              exclusion_distance = 0;
     if (ordered) {
         builder.addONear(child_count, distance, num_negative_children, exclusion_distance);
     } else {
@@ -376,7 +377,15 @@ struct MyWorld {
 
     void add_near_result() {
         auto f3_field = get_field_info("f3")->id();
-        auto docs = FakeIndex().field(f3_field).doc(10).elem(1, ".ABC").elem(2, "AC").elem(3, "BA");
+        auto docs = FakeIndex()
+                        .field(f3_field)
+                        .doc(10)
+                        .elem(1, ".ABC")
+                        .elem(2, "AC")
+                        .elem(3, "BAC")
+                        .elem(4, "CA")
+                        .elem(5, "BCB")
+                        .elem(6, "AC");
         searchContext.idx(0).getFake().addResult("f3", "A", docs.lookup('A', f3_field));
         searchContext.idx(0).getFake().addResult("f3", "B", docs.lookup('B', f3_field));
     }
@@ -422,21 +431,24 @@ struct MyWorld {
     };
 
     void verify_diversity_filter(const SearchRequest& req, bool expectDiverse) {
-        Matcher::SP             matcher = createMatcher();
-        search::fef::Properties overrides;
-        auto mtf = matcher->create_match_tools_factory(req, searchContext, attributeContext, metaStore, overrides,
-                                                       ttb(), nullptr, searchContext.getDocIdLimit(), true);
+        Matcher::SP                        matcher = createMatcher();
+        search::fef::Properties            overrides;
+        search::queryeval::QuerySetupStats setup_stats;
+        auto                               mtf =
+            matcher->create_match_tools_factory(req, searchContext, attributeContext, metaStore, overrides, ttb(),
+                                                nullptr, setup_stats, searchContext.getDocIdLimit(), true);
         auto diversity = mtf->createDiversifier(HeapSize::lookup(config));
         EXPECT_EQ(expectDiverse, static_cast<bool>(diversity));
     }
 
     double get_first_phase_termwise_limit() {
-        Matcher::SP             matcher = createMatcher();
-        SearchRequest::SP       request = createSimpleRequest("f1", "spread");
-        search::fef::Properties overrides;
-        auto                    mtf =
+        Matcher::SP                        matcher = createMatcher();
+        SearchRequest::SP                  request = createSimpleRequest("f1", "spread");
+        search::fef::Properties            overrides;
+        search::queryeval::QuerySetupStats setup_stats;
+        auto                               mtf =
             matcher->create_match_tools_factory(*request, searchContext, attributeContext, metaStore, overrides,
-                                                ttb(), nullptr, searchContext.getDocIdLimit(), true);
+                                                ttb(), nullptr, setup_stats, searchContext.getDocIdLimit(), true);
         MatchTools::UP match_tools = mtf->createMatchTools();
         match_tools->setup_first_phase(nullptr);
         return match_tools->match_data().get_termwise_limit();
@@ -547,7 +559,8 @@ protected:
     static void SetUpTestSuite();
     static void TearDownTestSuite();
     static MatchingTestSharedState& shared_state();
-    void assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements);
+    void assert_near_elements(bool ordered, search::fef::ElementGap element_gap,
+                              std::vector<uint32_t> expected_elements);
 };
 
 MatchingTest::MatchingTest() = default;
@@ -566,10 +579,16 @@ MatchingTestSharedState& MatchingTest::shared_state() {
     return *_shared_state;
 }
 
-void MatchingTest::assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements) {
+void MatchingTest::assert_near_elements(bool ordered, search::fef::ElementGap element_gap,
+                                        std::vector<uint32_t> expected_elements) {
+    (void)element_gap;
     MyWorld world(shared_state());
     world.basicSetup();
     world.add_near_result();
+    if (element_gap.has_value()) {
+        using ElementGapSetter = search::fef::indexproperties::matching::ElementGap;
+        ElementGapSetter::set_for_field(world.config, "f3", std::to_string(element_gap.value()));
+    }
     MatchingElementsFields fields;
     fields.add_field("f3");
     auto        request = MyWorld::create_docsum_request(make_near_stack_dump(ordered, "A", "B"), {10});
@@ -1248,11 +1267,19 @@ TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_f
 }
 
 TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_near_operator) {
-    assert_near_elements(false, {1, 3});
+    assert_near_elements(false, std::nullopt, {1, 3});
 }
 
 TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_onear_operator) {
-    assert_near_elements(true, {1});
+    assert_near_elements(true, std::nullopt, {1});
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_near_operator_with_element_gap) {
+    assert_near_elements(false, 9, {1, 3, 4, 5, 6});
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_onear_operator_with_element_gap) {
+    assert_near_elements(true, 9, {1, 4, 5});
 }
 
 using FMA = vespalib::FuzzyMatchingAlgorithm;

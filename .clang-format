@@ -16,6 +16,7 @@ AlignConsecutiveDeclarations:
 AlignEscapedNewlines: LeftWithLastLine
 AllowShortFunctionsOnASingleLine: InlineOnly
 PackConstructorInitializers: NextLine
+BreakTemplateDeclarations: Leave
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterCaseLabel:  false

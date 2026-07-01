@@ -62,7 +62,7 @@ public class GroupingQueryParser extends Searcher {
     }
 
     public static void validate(Query query) {
-        if (query.getHttpRequest().getProperty(GROUPING_GLOBAL_MAX_GROUPS.toString()) != null)
+        if (query.getRequestMap().get(GROUPING_GLOBAL_MAX_GROUPS.toString()) != null)
             throw new IllegalInputException(GROUPING_GLOBAL_MAX_GROUPS + " must be specified in a query profile.");
     }
 

@@ -9,20 +9,10 @@ using namespace vespalib::literals;
 TEST(StaticStringViewTest, simple_usage) {
     auto        value = "foo bar"_ssv;
     std::string expect("foo bar");
-    std::string expect_std("foo bar");
     static_assert(std::same_as<decltype(value), StaticStringView>);
-    auto a_ref = value.ref();
-    auto a_view = value.view();
-    static_assert(std::same_as<decltype(a_ref), std::string_view>);
-    static_assert(std::same_as<decltype(a_view), std::string_view>);
-    std::string_view ref = value;
-    std::string_view view = value;
-    EXPECT_EQ(a_ref, expect);
-    EXPECT_EQ(a_view, expect_std);
-    EXPECT_EQ(ref, expect);
-    EXPECT_EQ(view, expect_std);
-    EXPECT_EQ(value.ref(), expect);
-    EXPECT_EQ(value.view(), expect_std);
+    auto view = value.view();
+    static_assert(std::same_as<decltype(view), std::string_view>);
+    EXPECT_EQ(view, expect);
 }
 
 TEST(StaticStringViewTest, with_null_byte) {

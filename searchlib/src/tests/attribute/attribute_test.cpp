@@ -15,6 +15,7 @@
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
@@ -42,6 +43,7 @@ using search::index::DummyFileHeaderContext;
 using std::shared_ptr;
 using std::string;
 using vespalib::Generation;
+using vespalib::datastore::EntryRef;
 namespace fs = std::filesystem;
 
 namespace {
@@ -135,6 +137,26 @@ bool preciseEstimatedSize(const AttributeVector& a) {
         return false; // Using average of string lengths, can be somewhat off
     }
     return true;
+}
+
+bool single_normal_numeric_attribute(const AttributeVector& a) {
+    if (a.getCollectionType() != search::attribute::CollectionType::SINGLE) {
+        return false;
+    }
+    if (a.getConfig().fastSearch()) {
+        return false;
+    }
+    switch (a.getBasicType()) {
+    case BasicType::INT8:
+    case BasicType::INT16:
+    case BasicType::INT32:
+    case BasicType::INT64:
+    case BasicType::DOUBLE:
+    case BasicType::FLOAT:
+        return true;
+    default:
+        return false;
+    }
 }
 
 string baseFileName(const string& attrName) {
@@ -463,6 +485,27 @@ template <typename VectorType, typename BufferType> void AttributeTest::testRelo
     EXPECT_NE(zero_flush_duration, a->last_flush_duration());
     a->commit(CommitParam::UpdateStats::FORCE);
     {
+        bool   multivalue_attr = a->getConfig().collectionType().isMultiValue();
+        size_t entry_size = (a->hasEnum() || multivalue_attr) ? sizeof(EntryRef) : a->getFixedWidth();
+        size_t exp_reserved_memory_for_flush = a->getCommittedDocIdLimit() * entry_size;
+        if (a->getBasicType() == BasicType::BOOL && !multivalue_attr) {
+            exp_reserved_memory_for_flush =
+                BitVector::legacy_num_bytes_with_single_guard_bit(a->getCommittedDocIdLimit());
+        }
+        if (a->getBasicType() == BasicType::UINT2 && !multivalue_attr) {
+            exp_reserved_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 15) / 16);
+        }
+        if (a->getBasicType() == BasicType::UINT4 && !multivalue_attr) {
+            exp_reserved_memory_for_flush = 4 * ((a->getCommittedDocIdLimit() + 7) / 8);
+        }
+        EXPECT_EQ(exp_reserved_memory_for_flush, a->reserved_memory_for_flush(false));
+        if (single_normal_numeric_attribute(*a)) {
+            // Buffer handover from attribute saver to attribute memory file writer
+            EXPECT_EQ((size_t)a->getEstimatedSaveByteSize(), a->reserved_memory_for_flush(true));
+        } else {
+            EXPECT_EQ((size_t)a->getEstimatedSaveByteSize() + exp_reserved_memory_for_flush,
+                      a->reserved_memory_for_flush(true));
+        }
         double actSize = statSize(*b);
         EXPECT_LE(actSize, a->size_on_disk());
         EXPECT_EQ(stat_size_on_disk(*b), a->size_on_disk());

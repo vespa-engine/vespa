@@ -74,7 +74,10 @@ public:
     }
     void complete(HitEstimate estimate) { setEstimate(estimate); }
 
-    void sort(queryeval::InFlow in_flow) override { resolve_strict(in_flow); }
+    double sort(queryeval::InFlow in_flow) override {
+        resolve_strict(in_flow);
+        return abs_cost();
+    }
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
 

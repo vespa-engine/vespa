@@ -48,9 +48,7 @@ template <typename T>
 concept FilterFactory =
     requires(const T& a, T& ma, InFlow in_flow, uint32_t my_docid_limit, bool strict, Constraint constraint) {
         ma.basic_plan(in_flow, my_docid_limit);
-        {
-            a.createFilterSearch(constraint)
-        } -> std::same_as<std::unique_ptr<SearchIterator>>;
+        { a.createFilterSearch(constraint) } -> std::same_as<std::unique_ptr<SearchIterator>>;
     };
 
 template <typename T>
@@ -77,9 +75,10 @@ struct LeafProxy : SimpleLeafBlueprint {
     FlowStats calculate_flow_stats(uint32_t my_docid_limit) const override {
         return child->calculate_flow_stats(my_docid_limit);
     }
-    void sort(InFlow in_flow) override {
+    double sort(InFlow in_flow) override {
         resolve_strict(in_flow);
         child->sort(in_flow);
+        return abs_cost();
     }
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray&) const override { abort(); }
     SearchIteratorUP createFilterSearchImpl(Constraint constraint) const override {

@@ -3,6 +3,7 @@ package com.yahoo.config.application;
 
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -326,7 +327,39 @@ public class XmlPreprocessorTest {
     }
 
     @Test
-    public void testIncludeWithDeployEnvironment() throws Exception {
+    public void testCloud() throws Exception {
+        String input =
+                """
+                <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
+                  <config name='a'>
+                     <port deploy:cloud='aws'>4080</port>
+                     <port deploy:cloud='gcp'>8080</port>
+                  </config>
+                </services>""";
+
+        String expected =
+                """
+                <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
+                  <config name='a'>
+                     <port>8080</port>
+                  </config>
+                </services>""";
+        Document doc = new XmlPreProcessor(appDir,
+                                               new StringReader(input),
+                                               ApplicationName.defaultName(),
+                                               InstanceName.defaultName(),
+                                               Environment.prod,
+                                               RegionName.defaultName(),
+                                               CloudName.GCP,
+                                               Tags.empty())
+                .run();
+        TestBase.assertDocument(expected, doc);
+    }
+
+    @Test
+    public void testIncludeWithDeployEnvironment() {
         var appDir = new File("src/test/resources/multienv-with-include");
         var services = new File(appDir, "services.xml");
 

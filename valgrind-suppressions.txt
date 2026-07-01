@@ -746,10 +746,9 @@
    ...
 }
 {
-   for LLVM 19 (almalinux 9) 3
+   for LLVM 19, LLVM 20 or LLVM 21 (almalinux 9) 3
    Memcheck:Cond
    ...
-   fun:_ZN4llvm10MCStreamer6finishENS_5SMLocE
    fun:_ZN4llvm10AsmPrinter14doFinalizationERNS_6ModuleE
    fun:_ZN4llvm13FPPassManager14doFinalizationERNS_6ModuleE
    ...
@@ -866,5 +865,25 @@
    ...
    fun:_Z9testWordsRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERN8vespalib6Rand48ESt8optionalIjEmjjjjjbbb
    fun:_ZN16PageDict4TestApp9testWordsEv
+   ...
+}
+{
+   for GCC 15 optimized string scanning in pagedict4 version 2
+   Memcheck:Cond
+   fun:_ZN6search14bitcompression16PageDict4PWriter9addCountsESt17basic_string_viewIcSt11char_traitsIcEERKNS_5index17PostingListCountsE
+   fun:_ZN6search9diskindex11FieldWriter5flushEv
+   fun:_ZN6search9diskindex11FieldWriter7newWordEmSt17basic_string_viewIcSt11char_traitsIcEE
+   ...
+}
+{
+   for new openssl on EL8/arm64 (optimized strlcpy)
+   Memcheck:Cond
+   fun:OPENSSL_strlcpy
+   ...
+}
+{
+   for new openssl on EL8/arm64 (optimized strlcat)
+   Memcheck:Cond
+   fun:OPENSSL_strlcat
    ...
 }

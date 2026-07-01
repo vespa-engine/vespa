@@ -8,7 +8,7 @@ set -o nounset
 set -o pipefail
 set -o xtrace
 
-
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
 : "${VESPA_BUILDOS_LABEL:?Environment variable VESPA_BUILDOS_LABEL must be set (build OS label)}"
 
 if ! docker ps &> /dev/null; then
@@ -57,15 +57,24 @@ select_dockerfile() {
     fi
 }
 
+target_option=""
+if [ "${PREBUILT_BASE_IMAGE:-}" != "" ]; then
+    VESPA_BASE_IMAGE=${PREBUILT_BASE_IMAGE}
+    SYSTEM_TEST_BASE_IMAGE=${VESPA_BASE_IMAGE}
+    target_option="--target vespa"
+fi
+
 echo "--- Building Vespa preview container"
 GHCR_PREVIEW_TAG=ghcr.io/vespa-engine/vespa-preview-${ARCH}:${VESPA_VERSION}${VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX}
 echo "Building container with tag: ${GHCR_PREVIEW_TAG}"
+# shellcheck disable=SC2086
 docker build --progress plain \
              --build-arg SOURCE_GITREF="$SOURCE_GITREF" \
              --build-arg VESPA_VERSION="$VESPA_VERSION" \
              --build-arg VESPA_BASE_IMAGE="$VESPA_BASE_IMAGE" \
              --tag vespaengine/vespa \
              --tag "${GHCR_PREVIEW_TAG}" \
+             ${target_option} \
              --file "$(select_dockerfile)" .
 
 declare -r GITREF="${GITREF_SYSTEM_TEST:-HEAD}"
@@ -87,17 +96,29 @@ git archive HEAD --format tar | tar x -C docker/vespa-systemtests
 before="\\\$[{]vespa.version[}]"
 after="${VESPA_VERSION}"
 find docker/vespa-systemtests -name pom.xml -print0 | xargs -0 perl -pi -e "s,>${before}<,>${after}<,"
+"${SOURCE_DIR}/mvnw" -Daether.dependencyCollector.impl=bf -Dvespa.version="${VESPA_VERSION}" \
+    --threads 1 --batch-mode \
+    --file docker/vespa-systemtests/tests/pom.xml \
+    dependency:go-offline
 cd docker
 echo "Copying Maven repository and RPMs for system-test container..."
 rm -rf maven-repo
 cp -a "$HOME/.m2/repository" maven-repo
+find maven-repo -type f -name 'maven-metadata-central.xml*' | while read -r fn; do
+    cp -a "$fn" "${fn/maven-metadata-central./maven-metadata.}"
+done
+
 rm -rf rpms
 mv "$WORKDIR/docker-image/rpms" rpms
 
 dep_versions="${SOURCE_DIR}/dependency-versions/pom.xml"
 
 if [ -f "${dep_versions}" ]; then
-	grep plexus "${dep_versions}" > include/allow-versions.txt
+    : no-op
+    # Disabled. We've run into the denial-of-service protection
+    # since mvn will re-download all the plexus versions
+    # we're trying to remove here:
+    # grep plexus "${dep_versions}" > include/allow-versions.txt
 fi
 
 echo "--- Building system-test container"

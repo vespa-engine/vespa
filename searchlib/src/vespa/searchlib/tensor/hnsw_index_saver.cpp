@@ -4,13 +4,13 @@
 
 #include "hnsw_graph.h"
 
-#include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
 #include <cassert>
 #include <limits>
 
-using search::common::FileHeaderContext;
+using search::common::CreateAndFreezeTimes;
 using vespalib::GenerationGuard;
 
 namespace search::tensor {
@@ -39,7 +39,7 @@ template <HnswIndexType type> HnswIndexSaver<type>::Metadata::~Metadata() = defa
 
 template <HnswIndexType type> HnswIndexSaver<type>::~HnswIndexSaver() {
     _guard = GenerationGuard();
-    _graph.set_last_flush_duration(FileHeaderContext::make_flush_duration(_index_flush_start_time));
+    _graph.set_last_flush_duration(CreateAndFreezeTimes::make_flush_duration(_index_flush_start_time));
 }
 
 template <HnswIndexType type>

@@ -57,6 +57,7 @@
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/detect_malloc_impl.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
@@ -132,12 +133,16 @@ void setFS4Compression(const ProtonConfig& proton) {
 }
 
 DiskMemUsageSampler::Config diskMemUsageSamplerConfig(const ProtonConfig& proton, const vespalib::HwInfo& hwInfo) {
+    // If user configures disk size to be 0, let proton resample the disk size periodically.
+    bool should_resample_disk_capacity = (proton.hwinfo.disk.size == 0);
     return {proton.writefilter.memorylimit,
             proton.writefilter.disklimit,
             proton.writefilter.reservedDiskSpaceFactor,
+            proton.writefilter.reservedMemoryFactor,
             AttributeUsageFilterConfig(proton.writefilter.attribute.addressSpaceLimit),
             vespalib::from_s(proton.writefilter.sampleinterval),
-            hwInfo};
+            hwInfo,
+            should_resample_disk_capacity};
 }
 
 uint32_t computeRpcTransportThreads(const ProtonConfig& cfg, const vespalib::HwInfo::Cpu& cpuInfo) {
@@ -496,7 +501,8 @@ void Proton::applyConfig(const BootstrapConfig::SP& configSnapshot) {
 
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()),
                                     *_scheduler);
-    _flushEngine->configure(protonConfig.summary.log.maxfilesize);
+    _flushEngine->configure(protonConfig.summary.log.maxfilesize, protonConfig.flush.memory.each.maxmemory,
+                            protonConfig.flush.memory.maxmemory);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();
@@ -859,23 +865,37 @@ void Proton::updateMetrics(const metrics::MetricLockGuard&) {
         metrics.resourceUsage.disk_usage.used_and_reserved.set(
             dm_metrics.non_transient_disk_usage_and_reserved_disk_space());
 
-        metrics.resourceUsage.memory.set(dm_metrics.non_transient_memory_usage());
+        metrics.resourceUsage.memory.set(dm_metrics.reported_memory_usage());
         metrics.resourceUsage.memory_usage.total.set(dm_metrics.total_memory_usage());
         metrics.resourceUsage.memory_usage.total_util.set(dm_metrics.total_memory_utilization());
         metrics.resourceUsage.memory_usage.transient.set(dm_metrics.transient_memory_usage());
+        metrics.resourceUsage.memory_usage.reserved.set(dm_metrics.reserved_memory());
+        metrics.resourceUsage.memory_usage.used_and_reserved.set(
+            dm_metrics.non_transient_memory_usage_and_reserved_memory());
 
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usage_filter.acceptWriteOperation() ? 0.0 : 1.0));
 #ifdef __linux__
+        static const auto malloc_impl = vespalib::detect_malloc_impl();
+        // Only dump mallinfo if we _know_ that the underlying malloc implementation
+        // supports it. We can't tell this for sure with LibcOrUnknown because of the
+        // "unknown" aspect of it. It _could_ be Bob's Artisan Home-Brewed Malloc(tm).
+        // Using a custom (non-glibc) malloc implementation that does _not_ have mallinfo()
+        // and then calling it may trigger internal glibc malloc heap/arena init code, as
+        // glibc erroneously believes malloc is being bootstrapped by the main thread.
+        if (malloc_impl == vespalib::MallocImpl::VespaMalloc) {
 #if __GLIBC_PREREQ(2, 33)
-        struct mallinfo2 mallocInfo = mallinfo2();
-        metrics.resourceUsage.mallocArena.set(mallocInfo.arena);
+            struct mallinfo2 mallocInfo = mallinfo2();
+            metrics.resourceUsage.mallocArena.set(mallocInfo.arena);
 #else
-        struct mallinfo mallocInfo = mallinfo();
-        // Vespamalloc reports arena in 1M blocks as an 'int' is too small.
-        // If we use something else than vespamalloc this must be changed.
-        metrics.resourceUsage.mallocArena.set(uint64_t(mallocInfo.arena) * 1_Mi);
+            struct mallinfo mallocInfo = mallinfo();
+            // Vespamalloc reports arena in 1M blocks as an 'int' is too small.
+            // If we use something else than vespamalloc this must be changed.
+            metrics.resourceUsage.mallocArena.set(uint64_t(mallocInfo.arena) * 1_Mi);
 #endif
+        } else {
+            metrics.resourceUsage.mallocArena.set(UINT64_C(0));
+        }
 #else
         metrics.resourceUsage.mallocArena.set(UINT64_C(0));
 #endif

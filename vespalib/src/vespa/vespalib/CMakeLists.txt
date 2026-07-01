@@ -44,7 +44,6 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_objects>
     $<TARGET_OBJECTS:vespalib_vespalib_portal>
     $<TARGET_OBJECTS:vespalib_vespalib_process>
-    $<TARGET_OBJECTS:vespalib_vespalib_quant>
     $<TARGET_OBJECTS:vespalib_vespalib_regex>
     $<TARGET_OBJECTS:vespalib_vespalib_stllike>
     $<TARGET_OBJECTS:vespalib_vespalib_test>
@@ -63,3 +62,6 @@ vespa_add_library(vespalib
 
 vespa_add_target_package_dependency(vespalib OpenSSL)
 vespa_add_target_package_dependency(vespalib RE2)
+if (APPLE)
+    target_link_options(vespalib PRIVATE "-Wl,-U,_vespamalloc_dump_info,-U,_mi_stats_print_out")
+endif()

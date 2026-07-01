@@ -11,9 +11,14 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/vespalib/util/require.h>
 
 using namespace search::attribute;
 using namespace search::attribute::test;
+
+using search::fef::MatchDataLayout;
+using search::query::Node;
+using search::tensor::TensorAttribute;
 
 namespace search::queryeval::test {
 
@@ -109,12 +114,11 @@ private:
 
 public:
     AttributeSearchable(std::unique_ptr<MockAttributeContext> attr_ctx) : _attr_ctx(std::move(attr_ctx)) {}
-    std::unique_ptr<Blueprint> create_blueprint(const FieldSpec&           field_spec,
-                                                const search::query::Node& term) override {
-        AttributeBlueprintFactory    factory;
-        FakeRequestContext           req_ctx(_attr_ctx.get());
-        search::fef::MatchDataLayout mdl;
-        auto                         bp = factory.createBlueprint(req_ctx, field_spec, term, mdl);
+    std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field_spec, const Node& term) override {
+        AttributeBlueprintFactory factory;
+        FakeRequestContext        req_ctx(_attr_ctx.get());
+        MatchDataLayout           mdl;
+        auto                      bp = factory.createBlueprint(req_ctx, field_spec, term, mdl);
         assert(mdl.empty());
         return bp;
     }
@@ -125,23 +129,56 @@ public:
 AttributeContextBuilder::AttributeContextBuilder() : _ctx(std::make_unique<MockAttributeContext>()) {
 }
 
-void AttributeContextBuilder::add(const search::attribute::Config& cfg, std::string_view field_name,
-                                  uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms) {
+void AttributeContextBuilder::add(const Config& cfg, std::string_view field_name, uint32_t num_docs,
+                                  const HitSpecs& hit_specs, bool disjunct_terms) {
     auto attr = make_attribute(cfg, field_name, num_docs, hit_specs, disjunct_terms);
     _ctx->add(std::move(attr));
 }
 
-AttributeVector::SP
-AttributeContextBuilder::add_tensor(const search::attribute::Config& cfg, std::string_view field_name,
-                                    uint32_t num_docs, std::function<vespalib::eval::Value::UP(uint32_t docid)> gen) {
+AttributeVector::SP AttributeContextBuilder::add_tensor(const Config& cfg, std::string_view field_name,
+                                                        uint32_t                                 num_docs,
+                                                        std::function<Value::UP(uint32_t docid)> gen) {
     auto attr = AttributeFactory::createAttribute(field_name, cfg);
     attr->addReservedDoc();
     attr->addDocs(num_docs);
-    auto& real = dynamic_cast<search::tensor::TensorAttribute&>(*attr);
+    auto& real = dynamic_cast<TensorAttribute&>(*attr);
     for (uint32_t docid = 1; docid <= num_docs; ++docid) {
         auto v = gen(docid);
         if (v) {
             real.setTensor(docid, *v);
+        }
+    }
+    attr->commit(CommitParam::UpdateStats::FORCE);
+    _ctx->add(attr);
+    return attr;
+}
+
+AttributeVector::SP AttributeContextBuilder::add_integer(const Config& cfg, std::string_view field_name,
+                                                         uint32_t                               num_docs,
+                                                         std::function<int64_t(uint32_t docid)> gen) {
+    return add_integer_values(cfg, field_name, num_docs,
+                              [gen = std::move(gen)](uint32_t docid) { return std::vector{gen(docid)}; });
+}
+
+AttributeVector::SP
+AttributeContextBuilder::add_integer_values(const Config& cfg, std::string_view field_name, uint32_t num_docs,
+                                            std::function<std::vector<int64_t>(uint32_t docid)> gen) {
+    auto attr = AttributeFactory::createAttribute(field_name, cfg);
+    attr->addReservedDoc();
+    attr->addDocs(num_docs);
+
+    auto& real = dynamic_cast<IntegerAttribute&>(*attr);
+    bool  is_multivalue = cfg.collectionType() != CollectionType::SINGLE;
+
+    for (uint32_t docid = 1; docid <= num_docs; ++docid) {
+        auto values = gen(docid);
+        if (is_multivalue) {
+            for (const auto& value : values) {
+                real.append(docid, value, /*weight*/ 1);
+            }
+        } else {
+            REQUIRE_EQ(values.size(), 1u);
+            real.update(docid, values[0]);
         }
     }
     attr->commit(CommitParam::UpdateStats::FORCE);

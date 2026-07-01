@@ -58,7 +58,7 @@ struct RawDocumentMetadata {
         _docid_ref = rhs._docid_ref;
         _doc_size.store(rhs._doc_size.load(std::memory_order_relaxed), std::memory_order_relaxed);
         _bucket_used_bits_and_padding.store(rhs._bucket_used_bits_and_padding.load(std::memory_order_relaxed),
-                                             std::memory_order_relaxed);
+                                            std::memory_order_relaxed);
         _timestamp.store(rhs._timestamp.load(std::memory_order_relaxed), std::memory_order_relaxed);
         return *this;
     }

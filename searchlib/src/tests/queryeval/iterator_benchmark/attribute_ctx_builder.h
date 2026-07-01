@@ -19,16 +19,26 @@ namespace search::queryeval::test {
  * Class used to build attribute(s), used for benchmarking.
  */
 class AttributeContextBuilder {
+public:
+    using Config = search::attribute::Config;
+    using Value = vespalib::eval::Value;
+
 private:
     std::unique_ptr<search::attribute::test::MockAttributeContext> _ctx;
 
 public:
     AttributeContextBuilder();
-    void add(const search::attribute::Config& cfg, std::string_view field_name, uint32_t num_docs,
-             const HitSpecs& hit_specs, bool disjunct_terms);
+    void add(const Config& cfg, std::string_view field_name, uint32_t num_docs, const HitSpecs& hit_specs,
+             bool disjunct_terms);
 
-    AttributeVector::SP add_tensor(const search::attribute::Config& cfg, std::string_view field_name,
-                                   uint32_t num_docs, std::function<vespalib::eval::Value::UP(uint32_t docid)> gen);
+    AttributeVector::SP add_tensor(const Config& cfg, std::string_view field_name, uint32_t num_docs,
+                                   std::function<Value::UP(uint32_t docid)> gen);
+
+    AttributeVector::SP add_integer(const Config& cfg, std::string_view field_name, uint32_t num_docs,
+                                    std::function<int64_t(uint32_t docid)> gen);
+
+    AttributeVector::SP add_integer_values(const Config& cfg, std::string_view field_name, uint32_t num_docs,
+                                           std::function<std::vector<int64_t>(uint32_t docid)> gen);
 
     std::unique_ptr<BenchmarkSearchable> build();
 };

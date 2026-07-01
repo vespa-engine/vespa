@@ -61,6 +61,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final boolean forwardIssuesToQrs;
     private final int searchCoreMaxOutstandingMoveOps;
     private final int searchNodeInitializerThreads;
+    private final double searchNodeReservedMemoryFactor;
 
     public ContentSearchCluster(TreeConfigProducer<?> parent,
                                 String clusterName,
@@ -83,6 +84,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.searchCoreMaxOutstandingMoveOps = featureFlags.searchCoreMaxOutstandingMoveOps();
         this.searchNodeInitializerThreads = searchNodeInitializeThreads;
+        this.searchNodeReservedMemoryFactor = featureFlags.searchNodeReservedMemoryFactor();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -257,8 +259,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         builder.flush.memory.each.diskbloatfactor(DEFAULT_DISK_BLOAT);
         builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
-        builder.maintenancejobs.maxoutstandingmoveops(searchCoreMaxOutstandingMoveOps);
         builder.forward_issues(forwardIssuesToQrs);
+        builder.writefilter.reserved_memory_factor(searchNodeReservedMemoryFactor);
 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(
