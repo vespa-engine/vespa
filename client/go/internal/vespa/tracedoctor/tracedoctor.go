@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
 )
@@ -63,6 +64,7 @@ type Context struct {
 	showDispatchedQuery bool
 	showNnsDetails      bool
 	showCostAnalysis    bool
+	showNodeFollowUps   bool
 	makePrompt          bool
 	showQueryNodes      []int
 }
@@ -81,6 +83,10 @@ func (ctx *Context) ShowNnsDetails() {
 
 func (ctx *Context) ShowCostAnalysis() {
 	ctx.showCostAnalysis = true
+}
+
+func (ctx *Context) ShowNodeFollowUps() {
+	ctx.showNodeFollowUps = true
 }
 
 func (ctx *Context) MakePrompt() {
@@ -188,6 +194,20 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 		if stats := newExactNnsStats(trace); stats.useful() {
 			exactNnsStatsPrompt(ctx, out)
 			stats.render(out)
+		}
+	}
+	if durations := trace.followUpDurationsMs(); len(durations) > 0 {
+		parts := make([]string, len(durations))
+		for i, ms := range durations {
+			parts[i] = fmt.Sprintf("%.3f ms", ms)
+		}
+		out.fmt("node %s had %d follow-up back-end request%s: %s\n",
+			trace.desc(), len(durations), suffix(len(durations), "s"), strings.Join(parts, ", "))
+		if ctx.showNodeFollowUps {
+			for i, followUp := range trace.followUps {
+				out.fmt("looking into node %s follow-up #%d\n", trace.desc(), i+1)
+				ctx.analyzeProtonTrace(followUp, nil, out)
+			}
 		}
 	}
 }
