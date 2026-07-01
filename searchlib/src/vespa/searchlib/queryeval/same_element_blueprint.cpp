@@ -48,7 +48,8 @@ FlowStats SameElementBlueprint::calculate_flow_stats(uint32_t) const {
 }
 
 FlowStats SameElementBlueprint::self_flow_stats(double est, size_t num_children) const {
-    return {est, est * num_children, est * num_children};
+    auto self = IntermediateBlueprint::self_flow_stats(est, num_children);
+    return {est, self.cost + est * num_children, self.strict_cost + est * num_children};
 }
 
 bool SameElementBlueprint::always_needs_unpack() const {

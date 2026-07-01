@@ -46,6 +46,12 @@ inline double heap_cost(double my_est, size_t num_children) {
     return my_est * std::log2(std::max(size_t(1), num_children));
 }
 
+// The activation cost of an intermediate blueprint: the per-node cost of
+// invoking its own iterator, excluding the flow cost of its children.
+inline double intermediate_activation_cost() {
+    return 0.5;
+}
+
 /**
  * Returns the number of memory indirections needed when doing lookups
  * in an attribute with the given type.

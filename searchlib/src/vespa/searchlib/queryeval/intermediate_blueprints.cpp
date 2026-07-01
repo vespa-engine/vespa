@@ -86,8 +86,10 @@ AndNotBlueprint::AndNotBlueprint(bool elementwise) : IntermediateBlueprint(), _e
 AndNotBlueprint::~AndNotBlueprint() = default;
 
 FlowStats AndNotBlueprint::calculate_flow_stats(uint32_t) const {
-    return {AndNotFlow::estimate_of(get_children()), AndNotFlow::cost_of(get_children(), false),
-            AndNotFlow::cost_of(get_children(), true)};
+    double est = AndNotFlow::estimate_of(get_children());
+    auto   self = self_flow_stats(est, childCnt());
+    return {est, AndNotFlow::cost_of(get_children(), false) + self.cost,
+            AndNotFlow::cost_of(get_children(), true) + self.strict_cost};
 }
 
 Blueprint::HitEstimate AndNotBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -206,8 +208,10 @@ AnyFlow AndNotBlueprint::my_flow(InFlow in_flow) const {
 AndBlueprint::~AndBlueprint() = default;
 
 FlowStats AndBlueprint::calculate_flow_stats(uint32_t) const {
-    return {AndFlow::estimate_of(get_children()), AndFlow::cost_of(get_children(), false),
-            AndFlow::cost_of(get_children(), true)};
+    double est = AndFlow::estimate_of(get_children());
+    auto   self = self_flow_stats(est, childCnt());
+    return {est, AndFlow::cost_of(get_children(), false) + self.cost,
+            AndFlow::cost_of(get_children(), true) + self.strict_cost};
 }
 
 Blueprint::HitEstimate AndBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -317,7 +321,9 @@ FlowStats OrBlueprint::calculate_flow_stats(uint32_t) const {
 }
 
 FlowStats OrBlueprint::self_flow_stats(double est, size_t num_children) const {
-    return {est, 0.0, flow::heap_cost(est, num_children)};
+    auto self = IntermediateBlueprint::self_flow_stats(est, num_children);
+    // heap_cost already models the strict activation (its est factor is the strict baseline)
+    return {est, self.cost, flow::heap_cost(est, num_children)};
 }
 
 Blueprint::HitEstimate OrBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -421,7 +427,9 @@ FlowStats WeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
 }
 
 FlowStats WeakAndBlueprint::self_flow_stats(double est, size_t num_children) const {
-    return {est, 0.0, flow::heap_cost(est, num_children)};
+    auto self = IntermediateBlueprint::self_flow_stats(est, num_children);
+    // heap_cost already models the strict activation (its est factor is the strict baseline)
+    return {est, self.cost, flow::heap_cost(est, num_children)};
 }
 
 Blueprint::HitEstimate WeakAndBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -544,7 +552,8 @@ FlowStats NearBlueprint::calculate_flow_stats(uint32_t) const {
 }
 
 FlowStats NearBlueprint::self_flow_stats(double est, size_t num_children) const {
-    return {est, num_children * est, num_children * est};
+    auto self = IntermediateBlueprint::self_flow_stats(est, num_children);
+    return {est, self.cost + num_children * est, self.strict_cost + num_children * est};
 }
 
 Blueprint::HitEstimate NearBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -610,7 +619,8 @@ FlowStats ONearBlueprint::calculate_flow_stats(uint32_t) const {
 }
 
 FlowStats ONearBlueprint::self_flow_stats(double est, size_t num_children) const {
-    return {est, num_children * est, num_children * est};
+    auto self = IntermediateBlueprint::self_flow_stats(est, num_children);
+    return {est, self.cost + num_children * est, self.strict_cost + num_children * est};
 }
 
 Blueprint::HitEstimate ONearBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -659,7 +669,9 @@ FlowStats RankBlueprint::calculate_flow_stats(uint32_t) const {
     if (childCnt() == 0) {
         return {0.0, 0.0, 0.0};
     }
-    return {getChild(0).estimate(), getChild(0).cost(), getChild(0).strict_cost()};
+    double est = getChild(0).estimate();
+    auto   self = self_flow_stats(est, childCnt());
+    return {est, getChild(0).cost() + self.cost, getChild(0).strict_cost() + self.strict_cost};
 }
 
 Blueprint::HitEstimate RankBlueprint::combine(const std::vector<HitEstimate>& data) const {
@@ -751,8 +763,10 @@ FlowStats SourceBlenderBlueprint::calculate_flow_stats(uint32_t) const {
     return {my_est, my_cost + self.cost, my_strict_cost + self.strict_cost};
 }
 
-FlowStats SourceBlenderBlueprint::self_flow_stats(double est, size_t) const {
-    return {est, 1.0, est};
+FlowStats SourceBlenderBlueprint::self_flow_stats(double est, size_t num_children) const {
+    auto self = IntermediateBlueprint::self_flow_stats(est, num_children);
+    // source selector lookup: one per seek (non-strict), one per produced hit (strict)
+    return {est, self.cost + 1.0, self.strict_cost + est};
 }
 
 Blueprint::HitEstimate SourceBlenderBlueprint::combine(const std::vector<HitEstimate>& data) const {
