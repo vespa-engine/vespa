@@ -36,6 +36,7 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.content.ClusterControllerConfig;
+import com.yahoo.vespa.model.content.CoveragePolicy;
 import com.yahoo.vespa.model.content.ClusterResourceLimits;
 import com.yahoo.vespa.model.content.ContentSearch;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
@@ -219,6 +220,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
             index.getTuning().dispatch = DomTuningDispatchBuilder.build(element, logger);
+            index.setCoveragePolicy(CoveragePolicy.from(element.childAsString("coverage-policy")).policy());
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
