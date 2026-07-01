@@ -8,8 +8,11 @@
 #include "imported_attributes_repo.h"
 
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/base/fieldpath.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -192,10 +195,53 @@ void applyRemoveToAttribute(SerialNum serialNum, DocumentIdT lid, AttributeVecto
     attr.clearDoc(lid);
 }
 
+namespace {
+
+/**
+ * Field path parser. This will be used to determine the name of the attribute vector.
+ */
+struct ParsedFieldPath {
+    std::string field_name;
+    uint32_t    element_index;
+    bool        is_simple_array_access;
+
+    static ParsedFieldPath parse(const std::string& original_path, const DocumentType& doc_type) {
+        // Use existing FieldPath parsing infrastructure
+        FieldPath field_path;
+        try {
+            doc_type.buildFieldPath(field_path, original_path);
+        } catch (...) { // TODO(johsol): this should not catch all? What is the reason behind this?
+            return {.field_name = "", .element_index = 0, .is_simple_array_access = false};
+        }
+
+        // Check if it's a simple case: field[index]
+        // Pattern: [STRUCT_FIELD, ARRAY_INDEX]
+        if (field_path.size() == 2 && field_path[0].getType() == FieldPathEntry::Type::STRUCT_FIELD &&
+            field_path[1].getType() == FieldPathEntry::Type::ARRAY_INDEX)
+        {
+
+            return {.field_name = std::string(field_path[0].getFieldRef().getName()),
+                    .element_index = field_path[1].getIndex(),
+                    .is_simple_array_access = true};
+        }
+
+        return {.field_name = "", .element_index = 0, .is_simple_array_access = false};
+    }
+};
+
+} // namespace
+
 void applyUpdateToAttribute(SerialNum serialNum, const FieldUpdate& fieldUpd, DocumentIdT lid,
                             AttributeVector& attr) {
     ensureLidSpace(serialNum, lid, attr);
     AttributeUpdater::handleUpdate(attr, lid, fieldUpd);
+    attr.commitIfChangeVectorTooLarge();
+}
+
+void apply_field_path_update_to_attribute(SerialNum serial_num, uint32_t index, const FieldValue& value,
+                                          DocumentIdT lid, AttributeVector& attr) {
+    ensureLidSpace(serial_num, lid, attr);
+    AttributeUpdater::handle_assign_element(attr, lid, index, value);
     attr.commitIfChangeVectorTooLarge();
 }
 
@@ -238,7 +284,16 @@ void applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, Attribut
     }
 }
 
+namespace {
+
+struct FieldPathUpdatePayload {
+    AttributeVector*  attr;
+    uint32_t          index;
+    const FieldValue* value;
+};
+
 using AttrUpdates = std::vector<std::pair<AttributeVector*, const FieldUpdate*>>;
+using FieldPathAttrUpdates = std::vector<FieldPathUpdatePayload>;
 
 struct BatchUpdateTask : public vespalib::Executor::Task {
 
@@ -250,15 +305,21 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
         for (const auto& update : _updates) {
             applyUpdateToAttribute(_serialNum, *update.second, _lid, *update.first);
         }
+        for (const auto& update : _field_path_updates) {
+            apply_field_path_update_to_attribute(_serialNum, update.index, *update.value, _lid, *update.attr);
+        }
     }
 
     SerialNum                         _serialNum;
     DocumentIdT                       _lid;
     AttrUpdates                       _updates;
+    FieldPathAttrUpdates              _field_path_updates;
     vespalib::IDestructorCallback::SP _onWriteDone;
 };
 
 BatchUpdateTask::~BatchUpdateTask() = default;
+
+} // namespace
 
 class FieldContext {
     std::string      _name;
@@ -677,10 +738,64 @@ void AttributeWriter::update(SerialNum serialNum, const DocumentUpdate& upd, Doc
             LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attrp->getName().c_str());
         }
     }
+
+    // Handle field-path updates for attributes the naive way using ELEMENT_ASSIGN.
+    for (const auto& fpupd : upd.getFieldPathUpdates()) {
+        // Only handle AssignFieldPathUpdate for now
+        if (fpupd->type() != FieldPathUpdate::Assign) {
+            continue;
+        }
+
+        auto parsed = ParsedFieldPath::parse(fpupd->getOriginalFieldPath(), upd.getType());
+        if (!parsed.is_simple_array_access) {
+            LOG(debug, "Skipping unsupported field path: %s", fpupd->getOriginalFieldPath().c_str());
+            continue;
+        }
+
+        LOG(debug, "Retrieving guard for attribute vector '%s'.", fpupd->getOriginalFieldPath().c_str());
+        auto found = _attrMap.find(parsed.field_name);
+        if (found == _attrMap.end()) {
+            // Not an attribute field.
+            continue;
+        }
+
+        const AttributeWithInfo& attr_info = found->second;
+        AttributeVector*         attr = attr_info.attribute;
+        if (attr == nullptr) {
+            LOG(warning, "Attribute pointer is null for field '%s'", parsed.field_name.c_str());
+            continue;
+        }
+
+        // Don't reapply on replay.
+        if (attr->getStatus().getLastSyncToken() >= serialNum) {
+            continue;
+        }
+
+        // Only support multi-value attributes (arrays)
+        if (!attr->hasMultiValue() || !attr->hasArrayType()) {
+            LOG(warning,
+                "Field path updates only supported for array attributes, got: %s (hasMultiValue=%s, hasArrayType=%s)",
+                attr->getName().c_str(), attr->hasMultiValue() ? "true" : "false",
+                attr->hasArrayType() ? "true" : "false");
+            continue;
+        }
+
+        // Queue ASSIGN_ELEMENT operation
+        const auto& assign_update = static_cast<const AssignFieldPathUpdate&>(*fpupd);
+        if (!assign_update.hasValue()) {
+            continue;
+        }
+
+        args[attr_info.executor_id.getId()]->_field_path_updates.emplace_back(attr, parsed.element_index,
+                                                                              &assign_update.getValue());
+        LOG(debug, "About to apply field path update for docId %u in attribute vector '%s'.", lid,
+            attr->getName().c_str());
+    }
+
     // NOTE: The lifetime of the field update will be ensured by keeping the document update alive
     // in a operation done context object.
-    for (uint32_t id(0); id < args.size(); id++) {
-        if (!args[id]->_updates.empty()) {
+    for (uint32_t id = 0; id < args.size(); id++) {
+        if (!args[id]->_updates.empty() || !args[id]->_field_path_updates.empty()) {
             args[id]->_onWriteDone = onWriteDone;
             _attributeFieldWriter.executeTask(ExecutorId(id), std::move(args[id]));
         }

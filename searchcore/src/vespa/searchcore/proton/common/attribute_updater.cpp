@@ -468,6 +468,38 @@ void AttributeUpdater::updateValue(StringAttribute& vec, uint32_t lid, const Fie
     }
 }
 
+void AttributeUpdater::handle_assign_element(AttributeVector& vec, uint32_t lid, uint32_t index,
+                                             const FieldValue& val) {
+    LOG(spam, "handle_assign_element(%s, %u, %u): %s", vec.getName().c_str(), lid, index, toString(val).c_str());
+    if (vec.isIntegerType()) {
+        // why
+        if (vec.getBasicType() == attribute::BasicType::BOOL && vec.hasMultiValue()) {
+            LOG(warning, "Field path element assign is not supported for bool array attribute '%s'",
+                vec.getName().c_str());
+            return;
+        }
+        if (!static_cast<IntegerAttribute&>(vec).assign_element(lid, index, val.getAsLong())) {
+            throw UpdateException(
+                make_string("attribute assign_element failed: %s[%u][%u]", vec.getName().c_str(), lid, index));
+        }
+    } else if (vec.isFloatingPointType()) {
+        if (!static_cast<FloatingPointAttribute&>(vec).assign_element(lid, index, val.getAsDouble())) {
+            throw UpdateException(
+                make_string("attribute assign_element failed: %s[%u][%u]", vec.getName().c_str(), lid, index));
+        }
+    } else if (vec.isStringType()) {
+        auto&              str_attr = static_cast<StringAttribute&>(vec);
+        const std::string& s = getString(str_attr, lid, val);
+        if (!str_attr.assign_element(lid, index, s)) {
+            throw UpdateException(
+                make_string("attribute assign_element failed: %s[%u][%u]", vec.getName().c_str(), lid, index));
+        }
+    } else {
+        LOG(warning, "Field path element assign is not supported for attribute '%s' (classname=%s)",
+            vec.getName().c_str(), getClassName(vec).c_str());
+    }
+}
+
 namespace {
 
 void validate_field_value_type(FieldValue::Type expectedType, const FieldValue& val, const std::string& attr_type,

@@ -34,6 +34,7 @@ class AttributeUpdater {
 public:
     static void handleUpdate(AttributeVector& vec, uint32_t lid, const FieldUpdate& upd);
     static void handleValue(AttributeVector& vec, uint32_t lid, const FieldValue& val);
+    static void handle_assign_element(AttributeVector& vec, uint32_t lid, uint32_t index, const FieldValue& val);
 
     static std::unique_ptr<tensor::PrepareResult> prepare_set_value(AttributeVector& attr, uint32_t docid,
                                                                     const FieldValue& val);
