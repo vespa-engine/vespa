@@ -49,7 +49,7 @@ public:
     MyReservedDiskSpaceAndMemoryProvider() noexcept : IReservedDiskSpaceAndMemoryProvider() {}
     ~MyReservedDiskSpaceAndMemoryProvider() override;
     ReservedDiskSpaceAndMemory get_reserved_disk_space_and_memory() const override {
-        return ReservedDiskSpaceAndMemory(42, 0, 0);
+        return ReservedDiskSpaceAndMemory(42, 0, 0, 0);
     }
 };
 

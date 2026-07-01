@@ -19,7 +19,7 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
       _memoryStats(),
       _diskUsedSizeBytes(),
       _disk_capacity_bytes(_hwInfo.disk().sizeBytes()),
-      _reserved_disk_space_and_memory(0, 0, 0),
+      _reserved_disk_space_and_memory(),
       _resource_usage(),
       _attribute_usage(),
       _config(),

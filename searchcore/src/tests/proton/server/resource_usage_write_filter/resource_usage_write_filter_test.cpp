@@ -62,7 +62,7 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test {
     ResourceUsageWriteFilterTest()
         : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0))), _notifier(_filter) {
         _notifier.set_resource_usage(ResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 300), 20, 100,
-                                     ReservedDiskSpaceAndMemory(0, 0, 0));
+                                     ReservedDiskSpaceAndMemory());
     }
 
     void testWrite(const std::string& exp) {
@@ -81,12 +81,12 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test {
 
     void triggerDiskLimit() {
         _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), 90, 100,
-                                     ReservedDiskSpaceAndMemory(0, 0, 0));
+                                     ReservedDiskSpaceAndMemory());
     }
 
     void triggerMemoryLimit() {
         _notifier.set_resource_usage(ResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 900),
-                                     _notifier.getDiskUsedSize(), 100, ReservedDiskSpaceAndMemory(0, 0, 0));
+                                     _notifier.getDiskUsedSize(), 100, ReservedDiskSpaceAndMemory());
     }
 
     void notify_attribute_usage(const AttributeUsageStats& usage) { _notifier.notify_attribute_usage(usage); }
@@ -129,7 +129,7 @@ TEST_F(ResourceUsageWriteFilterTest, disk_limit_can_be_reached) {
 
 TEST_F(ResourceUsageWriteFilterTest, disk_usage_ratios_follow_resampled_capacity) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{40, 0}, zero_size_on_disk},
-                                 _notifier.getMemoryStats(), 100, 200, ReservedDiskSpaceAndMemory(20, 0, 0));
+                                 _notifier.getMemoryStats(), 100, 200, ReservedDiskSpaceAndMemory(20, 0, 0, 0));
     EXPECT_DOUBLE_EQ(0.5, _notifier.usageState().diskState().usage());    // 100 / 200
     EXPECT_DOUBLE_EQ(0.2, _notifier.usageState().transient_disk_usage()); // 40 / 200
     EXPECT_DOUBLE_EQ(0.1, _notifier.usageState().reserved_disk_space());  // 20 / 200
@@ -138,7 +138,7 @@ TEST_F(ResourceUsageWriteFilterTest, disk_usage_ratios_follow_resampled_capacity
 TEST_F(ResourceUsageWriteFilterTest, disk_limit_message_reports_resampled_capacity) {
     EXPECT_TRUE(_notifier.setConfig(Config(1.0, 0.8, 0.0, 0.0, AttributeUsageFilterConfig())));
     _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), 180, 200,
-                                 ReservedDiskSpaceAndMemory(0, 0, 0));
+                                 ReservedDiskSpaceAndMemory());
     testWrite("diskLimitReached: { "
               "action: \"add more content nodes\", "
               "reason: \"disk used (0.9) > disk limit (0.8)\", "
@@ -181,7 +181,7 @@ TEST_F(ResourceUsageWriteFilterTest, both_disk_limit_and_memory_limit_can_be_rea
 TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{15, 0}, zero_size_on_disk},
                                  _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 100,
-                                 ReservedDiskSpaceAndMemory(0, 0, 0));
+                                 ReservedDiskSpaceAndMemory());
     EXPECT_DOUBLE_EQ(0.15, _notifier.usageState().transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.15, _notifier.get_metrics().transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.05, _notifier.usageState().non_transient_disk_usage());
@@ -191,7 +191,7 @@ TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_trac
 TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{0, 100}, zero_size_on_disk},
                                  _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 100,
-                                 ReservedDiskSpaceAndMemory(0, 0, 0));
+                                 ReservedDiskSpaceAndMemory());
     EXPECT_DOUBLE_EQ(0.1, _notifier.usageState().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.1, _notifier.get_metrics().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.2, _notifier.usageState().non_transient_memory_usage());

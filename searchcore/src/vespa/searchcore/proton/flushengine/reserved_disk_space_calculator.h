@@ -20,7 +20,8 @@ public:
     ~ReservedDiskSpaceCalculator();
     void track_disk_gain(const IFlushTarget::DiskGain& gain, IFlushTarget::Type type,
                          IFlushTarget::Component component, bool high_priority);
-    uint64_t get_reserved_disk();
+    [[nodiscard]] uint64_t reserved_disk_space_for_flush() { return _candidates.reserved_resource_for_flush(); }
+    [[nodiscard]] uint64_t reserved_disk_space_for_growth() const noexcept { return _reserved_grow; };
 };
 
 } // namespace proton::flushengine
