@@ -15,6 +15,7 @@ import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -148,6 +149,37 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
         assertInstanceOf(AndItem.class, root, "Root should be AndItem when combined with existing query");
     }
 
+    @Test
+    void testRestrictIsPropagatedToSourceFetch() {
+        var searcher = new RelatedDocumentsByNearestNeighborSearcher();
+        var query = new Query("?relatedTo.id=doc1&relatedTo.embeddingField=embedding&relatedTo.queryTensorName=q&relatedTo.restrict=typeA,typeB");
+
+        var sourceHit = new Hit("source");
+        sourceHit.setField("embedding", TEST_EMBEDDING);
+
+        var fetchQuery = new Query[1];
+        var result = executeCapturingFetchQuery(searcher, query, sourceHit, fetchQuery);
+
+        assertNull(result.hits().getError());
+        assertNotNull(fetchQuery[0]);
+        assertEquals(Set.of("typeA", "typeB"), fetchQuery[0].getModel().getRestrict());
+    }
+
+    @Test
+    void testSourceFetchIsNotRestrictedByDefault() {
+        var searcher = new RelatedDocumentsByNearestNeighborSearcher();
+        var query = new Query("?relatedTo.id=doc1&relatedTo.embeddingField=embedding&relatedTo.queryTensorName=q");
+
+        var sourceHit = new Hit("source");
+        sourceHit.setField("embedding", TEST_EMBEDDING);
+
+        var fetchQuery = new Query[1];
+        executeCapturingFetchQuery(searcher, query, sourceHit, fetchQuery);
+
+        assertNotNull(fetchQuery[0]);
+        assertTrue(fetchQuery[0].getModel().getRestrict().isEmpty());
+    }
+
     private NearestNeighborItem findNearestNeighborItem(com.yahoo.prelude.query.Item item) {
         if (item instanceof NearestNeighborItem nn) {
             return nn;
@@ -159,6 +191,33 @@ public class RelatedDocumentsByNearestNeighborSearcherTestCase {
             }
         }
         return null;
+    }
+
+    private Result executeCapturingFetchQuery(Searcher searcher, Query query, Hit sourceHit, Query[] fetchQuery) {
+        Searcher mockBackend = new Searcher() {
+            private boolean firstCall = true;
+            @Override
+            public Result search(Query q, Execution execution) {
+                if (firstCall) {
+                    firstCall = false;
+                    fetchQuery[0] = q;
+                    Result r = new Result(q);
+                    r.hits().add(sourceHit);
+                    return r;
+                } else {
+                    return new Result(q);
+                }
+            }
+            @Override
+            public void fill(Result result, String summaryClass, Execution execution) {
+            }
+        };
+
+        var chain = new com.yahoo.search.searchchain.SearchChain(
+                new com.yahoo.component.ComponentId("test"),
+                List.of(searcher, mockBackend));
+
+        return new Execution(chain, Execution.Context.createContextStub()).search(query);
     }
 
     private Result execute(Searcher searcher, Query query) {
