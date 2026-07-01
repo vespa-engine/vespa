@@ -263,6 +263,9 @@ void Matcher::find_matching_elements(NearQueryNode& near_query_node, uint32_t do
         if (_elements.empty() || match_span.first().element_id() > _elements.back()) {
             _elements.emplace_back(match_span.first().element_id());
         }
+        while (_elements.back() < match_span.last().element_id()) {
+            _elements.emplace_back(_elements.back() + 1);
+        }
     }
     if (!_elements.empty()) {
         auto field = matching_elements_field(field_id);
