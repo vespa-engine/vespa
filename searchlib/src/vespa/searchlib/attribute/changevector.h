@@ -19,6 +19,7 @@ struct ChangeBase {
         UPDATE,
         APPEND,
         REMOVE,
+        ASSIGN_ELEMENT,
         INCREASEWEIGHT,
         MULWEIGHT,
         DIVWEIGHT,

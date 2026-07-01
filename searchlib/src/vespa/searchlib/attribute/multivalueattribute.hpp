@@ -107,6 +107,17 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
                     new_values.emplace_back(
                         multivalue::ValueBuilder<MultiValueType>::build(ValueType(data), current->_weight));
                 }
+            } else if (current->_type == ChangeBase::ASSIGN_ELEMENT) {
+                // Element-wise assignment: arr[index] = value.
+                // The index is stored in the _weight.
+                uint32_t index = current->_weight;
+                if (index < new_values.size()) {
+                    if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
+                        new_values[index] = multivalue::ValueBuilder<MultiValueType>::build(data, 1);
+                    } else {
+                        new_values[index] = multivalue::ValueBuilder<MultiValueType>::build(ValueType(data), 1);
+                    }
+                }
             } else if (current->_type == ChangeBase::REMOVE) {
                 // Defer all removals to the very end by tracking when, during value vector build time,
                 // a removal was encountered for a particular value. All values < this index will be ignored.
