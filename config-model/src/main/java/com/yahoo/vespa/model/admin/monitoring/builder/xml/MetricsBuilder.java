@@ -90,6 +90,9 @@ public class MetricsBuilder {
         if (consumerId.equalsIgnoreCase(MetricsConsumer.autoscaling.id()))
             throw new IllegalArgumentException("'" + MetricsConsumer.autoscaling.id() + " is not allowed as metrics consumer id (case is ignored.)");
 
+        if (consumerId.equalsIgnoreCase(MetricsConsumer.clusterDeployment.id()))
+            throw new IllegalArgumentException("'" + MetricsConsumer.clusterDeployment.id() + " is not allowed as metrics consumer id (case is ignored.)");
+
         if (consumerId.equalsIgnoreCase(MetricsConsumer.vespaCloud.id()))
             throw new IllegalArgumentException("'" + MetricsConsumer.vespaCloud.id() + " is not allowed as metrics consumer id (case is ignored.)");
 
