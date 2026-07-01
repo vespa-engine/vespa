@@ -63,6 +63,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
@@ -482,6 +483,7 @@ public class ApplicationHandler extends HttpHandler {
         public HttpServiceListResponse(ConfigConvergenceChecker.ServiceListResponse response, URI uri) {
             super(200);
             Cursor serviceArray = object.setArray("services");
+            AtomicReference<ServiceListResponse.Service> serviceWithFailedConfig = new AtomicReference<>();
             response.services().forEach((service) -> {
                 ServiceInfo serviceInfo = service.serviceInfo;
                 Cursor serviceObject = serviceArray.addObject();
@@ -493,11 +495,28 @@ public class ApplicationHandler extends HttpHandler {
                 serviceObject.setString("type", serviceInfo.getServiceType());
                 serviceObject.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
                 serviceObject.setLong("currentGeneration", service.currentGeneration);
+                if (service.configStatus.isFailed()) {
+                    Cursor cfObject = serviceObject.setObject("config");
+                    cfObject.setString("status", service.configStatus.status().toString());
+                    var message = service.configStatus.message();
+                    if (message != null)
+                        cfObject.setString("message", message);
+                    serviceWithFailedConfig.set(service);
+                }
             });
             object.setString("url", uri.toString());
             object.setLong("currentGeneration", response.currentGeneration);
             object.setLong("wantedGeneration", response.wantedGeneration);
             object.setBool("converged", response.converged);
+            var failed = serviceWithFailedConfig.get();
+            if (failed != null) {
+                Cursor cfObject = object.setObject("config");
+                cfObject.setString("status", failed.configStatus.status().toString());
+                failed.serviceInfo.getProperty("clustername").ifPresent(clusterName -> cfObject.setString("clusterName", clusterName));
+                cfObject.setString("host", failed.serviceInfo.getHostName());
+                cfObject.setString("type", failed.serviceInfo.getServiceType());
+                cfObject.setString("message", failed.configStatus.message());
+            }
         }
     }
 

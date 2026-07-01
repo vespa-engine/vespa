@@ -10,6 +10,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.container.Container;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
+import com.yahoo.container.di.Container.ComponentGraphResult;
 import com.yahoo.container.di.CloudSubscriberFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
@@ -119,8 +120,9 @@ public class HandlersConfigurerTestWrapper {
 
     public void reloadConfig() {
         configurer.reloadConfig(++lastGeneration);
-        Runnable cleanupTask = configurer.waitForNextGraphGeneration(guiceInjector(), false);
-        cleanupTask.run();
+        ComponentGraphResult result = configurer.waitForNextGraphGeneration(guiceInjector(), false);
+        if (result.failed()) throw new RuntimeException("Unexpected failure in reloadConfig", result.failure());
+        result.oldComponentsCleanupTask().run();
     }
 
     public void shutdown() {
