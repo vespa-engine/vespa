@@ -34,7 +34,7 @@ uint64_t ReservedDiskSpaceCalculatorTest::calc_reserved_disk_space(
     for (auto& gain_and_priority : gain_and_priority_vec) {
         calc.track_disk_gain(gain_and_priority.first, _type, _component, gain_and_priority.second);
     }
-    return calc.get_reserved_disk();
+    return calc.reserved_disk_space_for_flush() + calc.reserved_disk_space_for_growth();
 }
 
 TEST_F(ReservedDiskSpaceCalculatorTest, calc_reserved_disk_space) {

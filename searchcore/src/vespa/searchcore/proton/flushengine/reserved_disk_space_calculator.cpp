@@ -27,8 +27,4 @@ void ReservedDiskSpaceCalculator::track_disk_gain(const IFlushTarget::DiskGain& 
     _candidates.add_candidate(reserved_flush, high_priority);
 }
 
-uint64_t ReservedDiskSpaceCalculator::get_reserved_disk() {
-    return _reserved_grow + _candidates.reserved_resource_for_flush();
-}
-
 } // namespace proton::flushengine
