@@ -700,6 +700,10 @@ public class SessionRepository {
                 try (var ignored = lockApplication(applicationId, Duration.ofSeconds(1))) {
                     Session.Status status = session.getStatus();
                     boolean activeForApplication = sessionIsActiveForApplication.test(session);
+                    if ((status == ACTIVATE && !activeForApplication) || (status != ACTIVATE && activeForApplication)) {
+                        log.log(Level.INFO, "Session " + sessionId + " has status " + status +
+                                ", but activeForApplication is " + activeForApplication);
+                    }
                     if (status == ACTIVATE && activeForApplication) continue;
 
                     boolean hasExpired = hasExpired(session);
