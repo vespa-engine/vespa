@@ -18,6 +18,7 @@
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/searchvisitor/hitcollector.h>
 #include <vespa/searchvisitor/matching_elements_filler.h>
 #include <vespa/vdslib/container/searchresult.h>
@@ -48,6 +49,8 @@ using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::query::StackDumpCreator;
 using search::query::Weight;
+using search::queryeval::IElementGapInspector;
+using search::queryeval::test::MockElementGapInspector;
 using search::streaming::Query;
 using search::streaming::QueryConnector;
 using search::streaming::QueryNode;
@@ -91,11 +94,15 @@ struct BoundTerm {
 
 BoundTerm::~BoundTerm() = default;
 
-Query make_query(std::unique_ptr<search::query::Node> root) {
+Query make_query(std::unique_ptr<search::query::Node> root, const IElementGapInspector* element_gap_inspector) {
     auto                 serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*root);
-    QueryTermDataFactory factory(nullptr, nullptr);
+    QueryTermDataFactory factory(nullptr, element_gap_inspector);
     Query                query(factory, *serializedQueryTree);
     return query;
+}
+
+Query make_query(std::unique_ptr<search::query::Node> root) {
+    return make_query(std::move(root), nullptr);
 }
 
 struct MyQueryBuilder : public search::query::QueryBuilder<search::query::SimpleQueryNodeTypes> {
@@ -241,7 +248,7 @@ std::unique_ptr<document::Document> MyDocType::make_test_doc() const {
         *make_str_int_map({{"@foo", 10}, {"@bar", 20}, {"@baz", 30}, {"@foo@", 40}, {"@zap", 20}, {"@zap@", 20}}));
     doc->setValue("apples", make_str_array({"one", "two", "three"}));
     doc->setValue("oranges", *make_str_array({"three", "two", "one"}));
-    doc->setValue("string_array", make_str_array({"", "a b c", "a c", "b a"}));
+    doc->setValue("string_array", make_str_array({"", "a b c", "a c", "b a c", "c a", "b c b", "a c"}));
     return doc;
 }
 
@@ -349,7 +356,8 @@ public:
                              const ElementVector& exp_elements);
     void assert_same_element_single(const std::string& field, const std::string& term,
                                     const ElementVector& exp_elements);
-    void assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements);
+    void assert_near_elements(bool ordered, const IElementGapInspector* element_gap_inspector,
+                              std::vector<uint32_t> expected_elements);
 };
 
 MatchingElementsFillerTest::MatchingElementsFillerTest()
@@ -423,7 +431,8 @@ void MatchingElementsFillerTest::assert_same_element_single(const std::string& f
     assert_elements(1, field, exp_elements);
 }
 
-void MatchingElementsFillerTest::assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements) {
+void MatchingElementsFillerTest::assert_near_elements(bool ordered, const IElementGapInspector* element_gap_inspector,
+                                                      std::vector<uint32_t> expected_elements) {
     MyQueryBuilder   builder;
     constexpr int    child_count = 2;
     constexpr size_t distance = 10;
@@ -436,7 +445,7 @@ void MatchingElementsFillerTest::assert_near_elements(bool ordered, std::vector<
     }
     builder.add_term("string_array:a", 1);
     builder.add_term("string_array:b", 2);
-    fill_matching_elements(make_query(builder.build()));
+    fill_matching_elements(make_query(builder.build(), element_gap_inspector));
     assert_elements(1, "string_array", expected_elements);
 }
 
@@ -506,11 +515,21 @@ TEST_F(MatchingElementsFillerTest, separate_collection_for_each_field) {
 }
 
 TEST_F(MatchingElementsFillerTest, near_search) {
-    assert_near_elements(false, {1, 3});
+    assert_near_elements(false, nullptr, {1, 3});
 }
 
 TEST_F(MatchingElementsFillerTest, onear_search) {
-    assert_near_elements(true, {1});
+    assert_near_elements(true, nullptr, {1});
+}
+
+TEST_F(MatchingElementsFillerTest, near_search_with_element_gap) {
+    MockElementGapInspector element_gap_inspector(9);
+    assert_near_elements(false, &element_gap_inspector, {1, 3, 4, 5, 6});
+}
+
+TEST_F(MatchingElementsFillerTest, onear_search_with_element_gap) {
+    MockElementGapInspector element_gap_inspector(9);
+    assert_near_elements(true, &element_gap_inspector, {1, 4, 5});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
