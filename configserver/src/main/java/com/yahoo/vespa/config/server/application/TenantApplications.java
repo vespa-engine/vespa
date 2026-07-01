@@ -226,7 +226,8 @@ public class TenantApplications implements RequestHandler, HostValidator {
                     break;
                 // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
                 case CHILD_REMOVED:
-                    removeApplication(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
+                    removeApplication(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()),
+                                      parseSessionId(event.getData().getData()));
                     break;
                 case CHILD_UPDATED:
                     // do nothing, application just got redeployed
@@ -235,6 +236,18 @@ public class TenantApplications implements RequestHandler, HostValidator {
                     break;
             }
         });
+    }
+
+    private OptionalLong parseSessionId(byte[] data) {
+        if (data == null || data.length == 0) return OptionalLong.empty();
+        try {
+            return ApplicationData.fromBytes(data).activeSession()
+                                  .map(OptionalLong::of)
+                                  .orElse(OptionalLong.empty());
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Could not parse application data when removing application", e);
+            return OptionalLong.empty();
+        }
     }
 
     /**
@@ -267,7 +280,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
     // Note: Assumes that caller already holds the application lock
     // (when getting event from zookeeper to remove application,
     // the lock should be held by the thread that causes the event to happen)
-    public void removeApplication(ApplicationId applicationId) {
+    public void removeApplication(ApplicationId applicationId, OptionalLong sessionId) {
         log.log(Level.FINE, () -> "Removing application " + applicationId);
         if (exists(applicationId)) {
             log.log(Level.INFO, "Tried removing application " + applicationId + ", but it seems to have been deployed again");
@@ -279,7 +292,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
             configActivationListenersOnRemove(applicationId);
             tenantMetricUpdater.setApplications(applicationMapper.numApplications());
             metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
-            getRemoveApplicationWaiter(applicationId).notifyCompletion();
+            sessionId.ifPresent(id -> getRemoveApplicationWaiter(id).notifyCompletion());
             log.log(Level.INFO, "Application removed: " + applicationId);
         }
     }
@@ -292,7 +305,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
         for (ApplicationId activeApplication : applicationMapper.listApplicationIds()) {
             if ( ! applications.contains(activeApplication)) {
                 try (@SuppressWarnings("unused") var applicationLock = lock(activeApplication)){
-                    removeApplication(activeApplication);
+                    removeApplication(activeApplication, OptionalLong.empty());
                 }
             }
         }
@@ -428,18 +441,20 @@ public class TenantApplications implements RequestHandler, HostValidator {
 
     public TenantFileSystemDirs getTenantFileSystemDirs() { return tenantFileSystemDirs; }
 
-    public CompletionWaiter createRemoveApplicationWaiter(ApplicationId applicationId) {
-        return curator.createCompletionWaiter(barrierPath(applicationId), serverId, waitForAll);
+    public CompletionWaiter createRemoveApplicationWaiter(long sessionId) {
+        Path path = deleteApplicationBarrierPath(sessionId);
+        curator.create(path);
+        return curator.getCompletionWaiter(path, serverId, waitForAll);
     }
 
-    public CompletionWaiter getRemoveApplicationWaiter(ApplicationId applicationId) {
-        return curator.getCompletionWaiter(barrierPath(applicationId), serverId, waitForAll);
+    public CompletionWaiter getRemoveApplicationWaiter(long sessionId) {
+        return curator.getCompletionWaiter(deleteApplicationBarrierPath(sessionId), serverId, waitForAll);
     }
 
-    private static Path barrierPath(ApplicationId applicationId) {
-        return TenantRepository.getBarriersPath().append(applicationId.tenant().value())
-                .append("delete-application")
-                .append(applicationId.serializedForm());
+    private Path deleteApplicationBarrierPath(long sessionId) {
+        return TenantRepository.getBarriersPath().append(tenant.value())
+                .append("delete-session")
+                .append(String.valueOf(sessionId));
     }
 
 }
