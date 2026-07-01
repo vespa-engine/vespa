@@ -569,7 +569,7 @@ public class SessionRepository {
                                                                               KeeperException.NodeExistsException.class);
             Class<? extends Throwable> exceptionClass = e.getCause().getClass();
             if (acceptedExceptions.contains(exceptionClass))
-                log.log(Level.INFO, () -> "Not able to notify completion for session (" + completionWaiter + ")," +
+                log.log(Level.FINE, () -> "Not able to notify completion for session (" + completionWaiter + ")," +
                                     " node " + (exceptionClass.equals(KeeperException.NoNodeException.class)
                         ? "has been deleted"
                         : "already exists"));
@@ -701,7 +701,7 @@ public class SessionRepository {
                     Session.Status status = session.getStatus();
                     boolean activeForApplication = sessionIsActiveForApplication.test(session);
                     if ((status == ACTIVATE && !activeForApplication) || (status != ACTIVATE && activeForApplication)) {
-                        log.log(Level.INFO, "Session " + sessionId + " has status " + status +
+                        log.log(Level.FINE, "Session " + sessionId + " has status " + status +
                                 ", but activeForApplication is " + activeForApplication);
                     }
                     if (status == ACTIVATE && activeForApplication) continue;
