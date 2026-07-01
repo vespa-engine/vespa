@@ -52,6 +52,17 @@ public:
     std::span<const uint32_t> get_ids(uint32_t docid) const;
     void free_ids(uint32_t docid);
 
+    /*
+     * Partial-update support: rebuild the docid -> nodeids array to `new_subspaces` entries, retaining the
+     * existing nodeid at each position listed in `keep_positions` (a position has the same index in the old
+     * and new layout) and allocating fresh nodeids for all other positions. Nodeids that are not retained are
+     * put on the hold list. Returns the new array; positions that received a fresh nodeid are the ones the
+     * caller must insert into the graph. The caller must already have removed the graph nodes for the
+     * non-retained nodeids.
+     */
+    std::span<const uint32_t> rebuild_ids(uint32_t docid, uint32_t new_subspaces,
+                                          std::span<const uint32_t> keep_positions);
+
     void assign_generation(vespalib::Generation current_gen);
     void reclaim_memory(vespalib::Generation oldest_used_gen);
     void on_load(std::span<const HnswNode> nodes);

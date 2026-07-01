@@ -100,6 +100,46 @@ void HnswNodeidMapping::free_ids(uint32_t docid) {
     _refs[docid] = EntryRef();
 }
 
+std::span<const uint32_t> HnswNodeidMapping::rebuild_ids(uint32_t docid, uint32_t new_subspaces,
+                                                        std::span<const uint32_t> keep_positions) {
+    ensure_refs_size(docid);
+    EntryRef                  old_ref = _refs[docid];
+    std::span<const uint32_t> old_ids = old_ref.valid() ? _nodeids.get(old_ref) : std::span<const uint32_t>();
+    uint32_t                  old_n = old_ids.size();
+    uint32_t                  mask_size = std::max(old_n, new_subspaces);
+    std::vector<bool>         kept(mask_size, false);
+    for (uint32_t p : keep_positions) {
+        if (p < mask_size) {
+            kept[p] = true;
+        }
+    }
+    EntryRef            new_ref;
+    std::span<uint32_t> new_ids;
+    if (new_subspaces > 0) {
+        new_ref = _nodeids.allocate(new_subspaces);
+        new_ids = _nodeids.get_writable(new_ref);
+        for (uint32_t i = 0; i < new_subspaces; ++i) {
+            if (i < old_n && kept[i]) {
+                new_ids[i] = old_ids[i]; // retained: keep existing nodeid and its graph node
+            } else {
+                new_ids[i] = allocate_id();
+            }
+        }
+    }
+    // Hold the nodeids that were not retained (their graph nodes must already have been removed).
+    for (uint32_t i = 0; i < old_n; ++i) {
+        bool retained = (i < new_subspaces) && kept[i];
+        if (!retained) {
+            _hold_list.insert(old_ids[i]);
+        }
+    }
+    if (old_ref.valid()) {
+        _nodeids.remove(old_ref);
+    }
+    _refs[docid] = new_ref;
+    return new_ids;
+}
+
 void HnswNodeidMapping::assign_generation(Generation current_gen) {
     _nodeids.assign_generation(current_gen);
     _hold_list.assign_generation(current_gen);

@@ -126,6 +126,21 @@ PreparedAddDoc::~PreparedAddDoc() = default;
 
 PreparedAddDoc::PreparedAddDoc(PreparedAddDoc&& other) noexcept = default;
 
+PreparedPartialUpdate::PreparedPartialUpdate(uint32_t docid_in, ReadGuard read_guard_in,
+                                             ReadGuard hnsw_graph_read_guard_in) noexcept
+    : docid(docid_in),
+      read_guard(std::move(read_guard_in)),
+      hnsw_graph_read_guard(std::move(hnsw_graph_read_guard_in)),
+      new_subspaces(0),
+      keep_positions(),
+      add_positions(),
+      add_nodes() {
+}
+
+PreparedPartialUpdate::~PreparedPartialUpdate() = default;
+
+PreparedPartialUpdate::PreparedPartialUpdate(PreparedPartialUpdate&& other) noexcept = default;
+
 } // namespace internal
 
 SelectResult::SelectResult() noexcept = default;
@@ -670,6 +685,7 @@ template <HnswIndexType type> HnswIndex<type>::~HnswIndex() = default;
 using internal::PreparedAddDoc;
 using internal::PreparedAddNode;
 using internal::PreparedFirstAddDoc;
+using internal::PreparedPartialUpdate;
 
 template <HnswIndexType type> void HnswIndex<type>::add_document(uint32_t docid) {
     GenerationGuard no_guard_needed;
@@ -891,6 +907,132 @@ template <HnswIndexType type> void HnswIndex<type>::remove_document(uint32_t doc
         remove_node(nodeid);
     }
     _id_mapping.free_ids(docid);
+}
+
+template <HnswIndexType type> bool HnswIndex<type>::supports_partial_update() const noexcept {
+    // Only multi-vector indexes benefit: a single-vector document always re-indexes its single vector.
+    return !NodeType::identity_mapping;
+}
+
+template <HnswIndexType type>
+void HnswIndex<type>::partial_update_remove_and_resize(uint32_t docid, uint32_t new_subspaces,
+                                                       std::span<const uint32_t> keep_positions) {
+    if constexpr (NodeType::identity_mapping) {
+        (void)docid;
+        (void)new_subspaces;
+        (void)keep_positions;
+    } else {
+        auto              old_ids = _id_mapping.get_ids(docid);
+        uint32_t          old_n = old_ids.size();
+        std::vector<bool> keep(old_n, false);
+        for (uint32_t p : keep_positions) {
+            if (p < old_n) {
+                keep[p] = true;
+            }
+        }
+        // Remove the graph nodes for every subspace that is not retained (changed values and dropped tail).
+        // This happens before the attribute swaps the stored tensor, so no live node ever reads the new
+        // tensor at a stale subspace.
+        for (uint32_t i = 0; i < old_n; ++i) {
+            if (!keep[i]) {
+                remove_node(old_ids[i]);
+            }
+        }
+        // Rebuild the per-document nodeid array: retained subspaces keep their nodeid (and their untouched
+        // graph node), the rest get freshly allocated nodeids that the caller inserts in the add phase.
+        _id_mapping.rebuild_ids(docid, new_subspaces, keep_positions);
+    }
+}
+
+template <HnswIndexType type>
+void HnswIndex<type>::partial_update_add(uint32_t docid, std::span<const uint32_t> positions) {
+    if constexpr (NodeType::identity_mapping) {
+        (void)docid;
+        (void)positions;
+    } else {
+        auto ids = _id_mapping.get_ids(docid);
+        for (uint32_t pos : positions) {
+            GenerationGuard no_guard_needed;
+            GenerationGuard no_hnsw_graph_guard_needed;
+            PreparedAddDoc  op(docid, std::move(no_guard_needed), std::move(no_hnsw_graph_guard_needed));
+            auto            entry = _graph.get_entry_node();
+            internal_prepare_add_node(op, get_vector(docid, pos), entry);
+            internal_complete_add_node(ids[pos], docid, pos, op.nodes.back());
+        }
+    }
+}
+
+template <HnswIndexType type>
+std::unique_ptr<PrepareResult> HnswIndex<type>::prepare_partial_update(uint32_t docid, VectorBundle new_vectors,
+                                                                       std::span<const uint32_t> keep_positions,
+                                                                       std::span<const uint32_t> add_positions,
+                                                                       vespalib::GenerationGuard read_guard) const {
+    if constexpr (NodeType::identity_mapping) {
+        (void)docid;
+        (void)new_vectors;
+        (void)keep_positions;
+        (void)add_positions;
+        (void)read_guard;
+        return {};
+    } else {
+        if (_graph.get_active_nodes() < _cfg.min_size_before_two_phase()) {
+            // Small graph: decline the two-phase path and let the caller fall back to the synchronous
+            // (single-phase) partial update. The two-phase prepared neighbors are searched here against a
+            // snapshot that still contains this document's about-to-be-removed nodes; on a tiny graph those
+            // may be the only candidates and would be filtered out as stale at complete time, leaving a
+            // disconnected node. The synchronous path searches after removal instead. This mirrors the
+            // first-documents guard in prepare_add_document.
+            return {};
+        }
+        auto result = std::make_unique<PreparedPartialUpdate>(docid, std::move(read_guard), _graph.make_guard());
+        result->new_subspaces = new_vectors.subspaces();
+        result->keep_positions.assign(keep_positions.begin(), keep_positions.end());
+        result->add_positions.assign(add_positions.begin(), add_positions.end());
+        // Run the (costly) neighbor search for each subspace that must be (re-)inserted, reading the new
+        // vectors. This is the read-thread part; no graph modification happens here.
+        auto entry = _graph.get_entry_node();
+        result->add_nodes.reserve(add_positions.size());
+        PreparedAddDoc op(docid, vespalib::GenerationGuard(), vespalib::GenerationGuard());
+        for (uint32_t pos : add_positions) {
+            internal_prepare_add_node(op, new_vectors.cells(pos), entry);
+            result->add_nodes.push_back(std::move(op.nodes.back()));
+            op.nodes.clear();
+        }
+        return result;
+    }
+}
+
+template <HnswIndexType type>
+void HnswIndex<type>::complete_partial_update_remove(uint32_t docid, PrepareResult& prepare_result) {
+    if constexpr (NodeType::identity_mapping) {
+        (void)docid;
+        (void)prepare_result;
+    } else {
+        auto& prepared = dynamic_cast<PreparedPartialUpdate&>(prepare_result);
+        assert(prepared.docid == docid);
+        // Reuse the single-phase removal/resize: remove changed and dropped subspaces, keep unchanged ones,
+        // and allocate fresh nodeids for the subspaces that will be inserted in the add phase.
+        partial_update_remove_and_resize(docid, prepared.new_subspaces, prepared.keep_positions);
+    }
+}
+
+template <HnswIndexType type>
+void HnswIndex<type>::complete_partial_update_add(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) {
+    if constexpr (NodeType::identity_mapping) {
+        (void)docid;
+        (void)prepare_result;
+    } else {
+        auto& prepared = dynamic_cast<PreparedPartialUpdate&>(*prepare_result);
+        assert(prepared.docid == docid);
+        auto  ids = _id_mapping.get_ids(docid);
+        // Insert each changed/added subspace using the neighbor list prepared off the write thread.
+        // internal_complete_add_node validates prepared neighbors, dropping any that became stale between
+        // prepare and complete.
+        for (size_t j = 0; j < prepared.add_positions.size(); ++j) {
+            uint32_t pos = prepared.add_positions[j];
+            internal_complete_add_node(ids[pos], docid, pos, prepared.add_nodes[j]);
+        }
+    }
 }
 
 template <HnswIndexType type> void HnswIndex<type>::assign_generation(Generation current_gen) {

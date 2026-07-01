@@ -48,6 +48,8 @@ protected:
     void checkTensorType(const vespalib::eval::Value& tensor) const;
     void setTensorRef(DocId docId, EntryRef ref);
     void internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor);
+    // Stores the tensor value for a document (data store + ref) without touching the nearest neighbor index.
+    void store_tensor_value(DocId docid, const vespalib::eval::Value& tensor);
     void consider_remove_from_index(DocId docid);
     virtual vespalib::MemoryUsage update_stat();
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
@@ -57,6 +59,15 @@ protected:
     bool onLoad(vespalib::Executor* executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     bool tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) const;
+    // True if an existing multi-vector document can be updated in place per subspace instead of fully
+    // removed and re-added in the nearest neighbor index.
+    bool use_partial_update(DocId docid) const;
+    // Compares the new vectors against the currently stored ones by position, filling `keep` with the
+    // positions whose cells are unchanged and `add` with the positions that must be (re-)inserted.
+    void compute_partial_diff(DocId docid, VectorBundle new_vectors, std::vector<uint32_t>& keep,
+                              std::vector<uint32_t>& add) const;
+    // Single-phase in-place partial update of a multi-vector document's nearest neighbor index entries.
+    void set_tensor_partial(DocId docid, const vespalib::eval::Value& tensor);
 
     void prefetch_docid(DocId docid) const noexcept override { _refVector.prefetch_elem_ref(docid); }
     void setup_memory_usage_empty();
