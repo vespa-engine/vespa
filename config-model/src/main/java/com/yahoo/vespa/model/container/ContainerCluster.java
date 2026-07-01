@@ -171,7 +171,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String jvmGCOptions = null;
 
     private volatile boolean deferChangesUntilRestart = false;
-    private final boolean applyOnRestartForApplicationMetadataConfigEnabled;
     private final OpenTelemetryConfiguration opentelemetrySdk;
     private final Map<String, String> telemetryResourceAttributes;
     private boolean clientsLegacyMode;
@@ -184,7 +183,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
         this.compressionType = "zstd";
-        applyOnRestartForApplicationMetadataConfigEnabled = deployState.featureFlags().applyOnRestartForApplicationMetadataConfig();
         opentelemetrySdk = deployState.featureFlags().opentelemetrySdk();
         telemetryResourceAttributes = telemetryResourceAttributes(deployState, clusterId);
 
@@ -505,13 +503,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(ApplicationMetadataConfig.Builder builder) {
-        // Setting this for the ComponentsConfig only is not sufficient due to a workaround in ConfigRetriever for an unknown bug.
-        // It's assumed that this config is always used by container clusters (StateHandler)
-        // Enabled by feature flag for testing.
-        if (applyOnRestartForApplicationMetadataConfigEnabled) {
-            builder.setApplyOnRestart(getDeferChangesUntilRestart());
-        }
-        
         if (applicationMetaData != null)
             builder.name(applicationMetaData.getApplicationId().application().value()).
                     timestamp(applicationMetaData.getDeployTimestamp()).
