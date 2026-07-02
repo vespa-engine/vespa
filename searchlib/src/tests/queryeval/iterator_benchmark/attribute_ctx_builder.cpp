@@ -16,6 +16,7 @@
 using namespace search::attribute;
 using namespace search::attribute::test;
 
+using search::attribute::IAttributeVector;
 using search::fef::MatchDataLayout;
 using search::query::Node;
 using search::tensor::TensorAttribute;
@@ -132,6 +133,10 @@ AttributeContextBuilder::AttributeContextBuilder() : _ctx(std::make_unique<MockA
 void AttributeContextBuilder::add(const Config& cfg, std::string_view field_name, uint32_t num_docs,
                                   const HitSpecs& hit_specs, bool disjunct_terms) {
     auto attr = make_attribute(cfg, field_name, num_docs, hit_specs, disjunct_terms);
+    _ctx->add(std::move(attr));
+}
+
+void AttributeContextBuilder::add(std::shared_ptr<const IAttributeVector> attr) {
     _ctx->add(std::move(attr));
 }
 

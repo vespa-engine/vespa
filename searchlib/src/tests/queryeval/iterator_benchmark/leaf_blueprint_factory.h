@@ -10,7 +10,12 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 
+#include <memory>
 #include <optional>
+
+namespace search::attribute {
+class ImportedAttributeVector;
+}
 
 namespace search::queryeval::test {
 
@@ -34,7 +39,7 @@ public:
 
 private:
     AttributeVector::SP           _attr;
-    vespalib::eval::Value::UP     _query;
+    Value::UP                     _query;
     uint32_t                      _target_hits;
     std::shared_ptr<GlobalFilter> _global_filter;
     double                        _global_filter_hit_ratio;
@@ -74,6 +79,45 @@ class AttributeRangeBlueprintFactory : public BenchmarkBlueprintFactory {
 public:
     explicit AttributeRangeBlueprintFactory(const RangeConfig& cfg);
     ~AttributeRangeBlueprintFactory() override;
+    std::unique_ptr<Blueprint> make_blueprint() override;
+    std::string get_name(Blueprint& blueprint) const override;
+};
+
+/**
+ * Configure a term search in an imported attribute (parent-child).
+ */
+struct ImportedConfig {
+    // Config for parent relation.
+    FieldConfig field_cfg;
+
+    // Config for child.
+    uint32_t num_docs = 10'000;
+    uint32_t num_target_docs = 1'000;
+    double   target_hit_ratio = 0.1;
+    int64_t  match_value = 100;
+    int64_t  non_match_value = 2;
+    uint32_t seed = 42;
+
+    [[nodiscard]] uint32_t target_hits() const noexcept {
+        return static_cast<uint32_t>(target_hit_ratio * num_target_docs);
+    }
+};
+
+/**
+ * Factory that creates a term search blueprint over an imported attribute.
+ */
+class ImportedAttributeBlueprintFactory : public BenchmarkBlueprintFactory {
+public:
+    using ImportedAttributeVector = search::attribute::ImportedAttributeVector;
+
+private:
+    int64_t                                  _match_value;
+    std::shared_ptr<ImportedAttributeVector> _imported_attr;
+    std::unique_ptr<BenchmarkSearchable>     _searchable;
+
+public:
+    explicit ImportedAttributeBlueprintFactory(const ImportedConfig& cfg);
+    ~ImportedAttributeBlueprintFactory() override;
     std::unique_ptr<Blueprint> make_blueprint() override;
     std::string get_name(Blueprint& blueprint) const override;
 };

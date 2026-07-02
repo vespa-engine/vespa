@@ -14,6 +14,10 @@ FactoryPtr attr_range(const RangeConfig& cfg) {
     return std::make_unique<AttributeRangeBlueprintFactory>(cfg);
 }
 
+FactoryPtr imported_term(const ImportedConfig& cfg) {
+    return std::make_unique<ImportedAttributeBlueprintFactory>(cfg);
+}
+
 FactoryPtr term(FieldConfig field, uint32_t num_docs, uint32_t default_values_per_document, double hit_ratio) {
     return make_blueprint_factory(field, QueryOperator::Term, num_docs, default_values_per_document, hit_ratio, 1,
                                   false);

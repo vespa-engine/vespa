@@ -23,6 +23,8 @@ FactoryPtr enn(const EnnConfig& cfg = {});
 
 FactoryPtr attr_range(const RangeConfig& cfg);
 
+FactoryPtr imported_term(const ImportedConfig& cfg);
+
 FactoryPtr term(FieldConfig field, uint32_t num_docs, uint32_t default_values_per_document, double hit_ratio);
 
 template <class... Cs> FactoryPtr and_(Cs&&... cs) {

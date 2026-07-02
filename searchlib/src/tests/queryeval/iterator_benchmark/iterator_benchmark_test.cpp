@@ -93,6 +93,7 @@ struct {
     F iterator_name = "iterator_name";
     F ms_per_cost = "ms_per_cost";
     F num_docs = "num_docs";
+    F num_target_docs = "num_target_docs";
     F op_hit_ratio = "op_hit_ratio";
     F pred_ms = "pred_ms";
     F query_op = "query_op";
@@ -101,6 +102,7 @@ struct {
     F range_size = "range_size";
     F seeks = "seeks";
     F strict_context = "strict_context";
+    F target_hit_ratio = "target_hit_ratio";
     F target_hits = "target_hits";
     F time_error_abs = "time_error_abs";
     F time_ms = "time_ms";
@@ -858,6 +860,24 @@ void describe(const RangeConfig& cfg, Record& r) {
 }
 
 /**
+ * Make blueprint factory from ImportedConfig.
+ */
+FactoryPtr make_factory(const ImportedConfig& cfg) {
+    return imported_term(cfg);
+}
+
+/**
+ * Select fields used to describe an ImportedConfig.
+ */
+void describe(const ImportedConfig& cfg, Record& r) {
+    r.set(f.field_cfg, cfg.field_cfg.to_string());
+    r.set(f.num_docs, static_cast<int64_t>(cfg.num_docs));
+    r.set(f.num_target_docs, static_cast<int64_t>(cfg.num_target_docs));
+    r.set(f.target_hit_ratio, cfg.target_hit_ratio);
+    r.set(f.target_hits, static_cast<int64_t>(cfg.target_hits()));
+}
+
+/**
  * A config adapts the "old approach" into this driver system.
  */
 struct OpConfig {
@@ -1443,6 +1463,25 @@ TEST(IteratorBenchmark, analyze_attr_range) {
         }
     }
     run_benchmarks("ATTR_RANGE", cases, make_in_flows(enn_in_flow_rates, /*include_strict=*/true), {.unpack = true});
+}
+
+// num_target_docs  = number of referenced (parent) documents; num_docs children refer to them,
+//                    giving an average fan-out of num_docs / num_target_docs.
+// target_hit_ratio = ratio of parent documents matching the term, which is also the expected
+//                    hit ratio in the child docid space.
+TEST(IteratorBenchmark, analyze_imported_term) {
+    std::vector<ImportedConfig> cases;
+    for (uint32_t num_target_docs : {num_docs / 100, num_docs / 10}) {
+        for (double target_hit_ratio : {0.001, 0.01, 0.1}) {
+            for (const auto& field_cfg : {int32_fs, int32}) {
+                cases.push_back({.field_cfg = field_cfg,
+                                 .num_docs = num_docs,
+                                 .num_target_docs = num_target_docs,
+                                 .target_hit_ratio = target_hit_ratio});
+            }
+        }
+    }
+    run_benchmarks("IMPORTED", cases, make_in_flows(filter_hit_ratios, /*include_strict=*/true), {});
 }
 
 /**

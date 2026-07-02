@@ -21,6 +21,7 @@ namespace search::queryeval::test {
 class AttributeContextBuilder {
 public:
     using Config = search::attribute::Config;
+    using IAttributeVector = search::attribute::IAttributeVector;
     using Value = vespalib::eval::Value;
 
 private:
@@ -30,6 +31,8 @@ public:
     AttributeContextBuilder();
     void add(const Config& cfg, std::string_view field_name, uint32_t num_docs, const HitSpecs& hit_specs,
              bool disjunct_terms);
+
+    void add(std::shared_ptr<const IAttributeVector> attr);
 
     AttributeVector::SP add_tensor(const Config& cfg, std::string_view field_name, uint32_t num_docs,
                                    std::function<Value::UP(uint32_t docid)> gen);
