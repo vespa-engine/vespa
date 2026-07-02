@@ -33,7 +33,6 @@ private:
     // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
-    uint64_t                     _disk_capacity_bytes;
     State                        _state;
     ResourceUsageState           _usage_state;
 
@@ -46,7 +45,7 @@ public:
     State getAcceptState() const override;
     const vespalib::HwInfo& get_hw_info() const noexcept { return _hwInfo; }
     void notify_resource_usage(const ResourceUsageState& state, const vespalib::ProcessMemoryStats& memoryStats,
-                               uint64_t diskUsedSizeBytes, uint64_t disk_capacity_bytes);
+                               uint64_t diskUsedSizeBytes);
 };
 
 } // namespace proton

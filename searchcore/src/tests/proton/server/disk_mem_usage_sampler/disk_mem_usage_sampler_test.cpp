@@ -72,9 +72,9 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
           reserved_disk_space_and_memory_provider(std::make_unique<MyReservedDiskSpaceAndMemoryProvider>()),
           sampler(std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier,
                                                         *reserved_disk_space_and_memory_provider)) {
-        sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, 0.0, 0.0, AttributeUsageFilterConfig(), 50ms,
-                                                       make_hw_info(), false),
-                           executor);
+        sampler->setConfig(
+            DiskMemUsageSampler::Config(0.8, 0.8, 0.0, 0.0, AttributeUsageFilterConfig(), 50ms, make_hw_info()),
+            executor);
         sampler->add_resource_usage_provider(std::make_shared<MyProvider>(50, 200));
         sampler->add_resource_usage_provider(std::make_shared<MyProvider>(100, 150));
     }
