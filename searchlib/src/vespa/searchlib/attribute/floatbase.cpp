@@ -99,5 +99,7 @@ template bool AttributeVector::append(FloatingPointAttribute::ChangeVector& chan
                                       const NumericChangeData<double>& v, int32_t w, bool doCount);
 template bool AttributeVector::remove(FloatingPointAttribute::ChangeVector& changes, DocId doc,
                                       const NumericChangeData<double>& v, int32_t w);
+template bool AttributeVector::assign_element(FloatingPointAttribute::ChangeVector& changes, DocId doc,
+                                              uint32_t index, const NumericChangeData<double>& v);
 
 } // namespace search

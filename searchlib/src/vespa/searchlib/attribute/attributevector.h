@@ -209,6 +209,9 @@ protected:
     template <typename T> bool remove(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T& v, int32_t w);
 
     template <typename T>
+    bool assign_element(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, uint32_t index, const T& v);
+
+    template <typename T>
     bool adjustWeight(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T& v,
                       const ArithmeticValueUpdate& wd);
 
