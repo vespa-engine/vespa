@@ -79,7 +79,7 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 			return doCert(cli, overwriteCertificate, skipApplicationPackage, newPrivateKeyAndCertificate, args)
 		},
 	}
-	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
+	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force changes without prompting (overwrite when creating, prune when pruning)")
 	cmd.Flags().BoolVar(&newPrivateKeyAndCertificate, "new-key", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
 	cmd.Flags().BoolVar(&pruneOldCertificates, "prune-old", false, "Remove all but the newest certificate from the certificate file. Useful after completing credential rotation")
 	cmd.MarkFlagsMutuallyExclusive("new-key", "prune-old")
