@@ -18,7 +18,6 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
       _hwInfo(filter.get_hw_info()),
       _memoryStats(),
       _diskUsedSizeBytes(),
-      _disk_capacity_bytes(_hwInfo.disk().sizeBytes()),
       _reserved_disk_space_and_memory(),
       _resource_usage(),
       _attribute_usage(),
@@ -56,11 +55,13 @@ double ResourceUsageNotifier::getMemoryUsedRatio(const Guard&) const {
 }
 
 double ResourceUsageNotifier::getDiskUsedRatio(const Guard&) const {
-    return static_cast<double>(_diskUsedSizeBytes) / static_cast<double>(_disk_capacity_bytes);
+    double usedDiskSpaceRatio =
+        static_cast<double>(_diskUsedSizeBytes) / static_cast<double>(_hwInfo.disk().sizeBytes());
+    return usedDiskSpaceRatio;
 }
 
 double ResourceUsageNotifier::get_relative_reserved_disk_space(const Guard&) const {
-    return static_cast<double>(_reserved_disk_space_and_memory.reserved_disk_space()) / _disk_capacity_bytes;
+    return static_cast<double>(_reserved_disk_space_and_memory.reserved_disk_space()) / _hwInfo.disk().sizeBytes();
 }
 
 double ResourceUsageNotifier::get_relative_reserved_memory(const Guard&) const {
@@ -72,19 +73,17 @@ double ResourceUsageNotifier::get_relative_transient_memory_usage(const Guard&) 
 }
 
 double ResourceUsageNotifier::get_relative_transient_disk_usage(const Guard&) const {
-    return static_cast<double>(_resource_usage.transient_disk()) / _disk_capacity_bytes;
+    return static_cast<double>(_resource_usage.transient_disk()) / _hwInfo.disk().sizeBytes();
 }
 
 void ResourceUsageNotifier::set_resource_usage(const ResourceUsage&         resource_usage,
                                                vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
-                                               uint64_t                   disk_capacity_bytes,
                                                ReservedDiskSpaceAndMemory reserved_disk_space_and_memory_) {
     Guard guard(_lock);
     _resource_usage = resource_usage;
     _reserved_disk_space_and_memory = reserved_disk_space_and_memory_;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
-    _disk_capacity_bytes = disk_capacity_bytes;
     recalcState(guard, true);
 }
 
@@ -116,11 +115,6 @@ uint64_t ResourceUsageNotifier::getDiskUsedSize() const {
 ReservedDiskSpaceAndMemory ResourceUsageNotifier::reserved_disk_space_and_memory() const noexcept {
     Guard guard(_lock);
     return _reserved_disk_space_and_memory;
-}
-
-uint64_t ResourceUsageNotifier::disk_capacity_bytes() const {
-    Guard guard(_lock);
-    return _disk_capacity_bytes;
 }
 
 ResourceUsage ResourceUsageNotifier::get_resource_usage() const {
@@ -168,7 +162,7 @@ void ResourceUsageNotifier::notify_resource_usage(const Guard& guard, ResourceUs
     if (disk_mem_sample) {
         _disk_mem_usage_metrics.merge(state);
     }
-    _filter.notify_resource_usage(_usage_state, _memoryStats, _diskUsedSizeBytes, _disk_capacity_bytes);
+    _filter.notify_resource_usage(_usage_state, _memoryStats, _diskUsedSizeBytes);
     for (const auto& listener : _listeners) {
         listener->notify_resource_usage(_usage_state);
     }

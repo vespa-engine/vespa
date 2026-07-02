@@ -28,7 +28,6 @@ DiskMemUsageSampler::DiskMemUsageSampler(
       _notifier(resource_usage_notifier),
       _reserved_disk_space_and_memory_provider(reserved_disk_space_and_memory_provider),
       _path(path_in),
-      _should_resample_disk_capacity(false),
       _sampleInterval(60s),
       _lastSampleTime(),
       _lock(),
@@ -47,7 +46,6 @@ bool DiskMemUsageSampler::timeToSampleAgain() const noexcept {
 }
 
 void DiskMemUsageSampler::setConfig(const Config& config, IScheduledExecutor& executor) {
-    _should_resample_disk_capacity = config.should_resample_disk_capacity;
     bool wasChanged = _notifier.setConfig(config.filterConfig);
     if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged) {
         return;
@@ -79,11 +77,10 @@ void DiskMemUsageSampler::sampleAndReportUsage() {
      * and a short period of allowed feed. The latter will be very rare as you are rarely feed blocked anyway.
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
-    DiskUsage                    diskUsage = sampleDiskUsage(resource_usage);
+    uint64_t                     diskUsage = sampleDiskUsage(resource_usage);
     auto                         reserved_disk_space_and_memory =
         _reserved_disk_space_and_memory_provider.get_reserved_disk_space_and_memory();
-    _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage.used_bytes(), diskUsage.capacity_bytes(),
-                                 reserved_disk_space_and_memory);
+    _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space_and_memory);
     _lastSampleTime = vespalib::steady_clock::now();
 }
 
@@ -91,23 +88,21 @@ namespace {
 
 namespace fs = std::filesystem;
 
-DiskUsage sampleDiskUsageOnFileSystem(const fs::path& path, const vespalib::HwInfo::Disk& disk,
-                                      bool should_resample_disk_capacity) {
+uint64_t sampleDiskUsageOnFileSystem(const fs::path& path, const vespalib::HwInfo::Disk& disk) {
     auto     space_info = fs::space(path);
-    uint64_t capacity = should_resample_disk_capacity ? space_info.capacity : disk.sizeBytes();
-    uint64_t used = (space_info.capacity - space_info.available);
-    if (used > capacity) {
-        used = capacity;
+    uint64_t result = (space_info.capacity - space_info.available);
+    if (result > disk.sizeBytes()) {
+        return disk.sizeBytes();
     }
-    return {used, capacity};
+    return result;
 }
 
 } // namespace
 
-DiskUsage DiskMemUsageSampler::sampleDiskUsage(const ResourceUsage& resource_usage) {
+uint64_t DiskMemUsageSampler::sampleDiskUsage(const ResourceUsage& resource_usage) {
     const auto& disk = _notifier.getHwInfo().disk();
-    return disk.shared() ? DiskUsage(resource_usage.disk() + resource_usage.transient().disk(), disk.sizeBytes())
-                         : sampleDiskUsageOnFileSystem(_path, disk, _should_resample_disk_capacity);
+    return disk.shared() ? (resource_usage.disk() + resource_usage.transient().disk())
+                         : sampleDiskUsageOnFileSystem(_path, disk);
 }
 
 vespalib::ProcessMemoryStats DiskMemUsageSampler::sampleMemoryUsage() {

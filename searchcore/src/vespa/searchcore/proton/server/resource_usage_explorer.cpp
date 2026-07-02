@@ -14,8 +14,8 @@ using storage::spi::AttributeResourceUsage;
 
 namespace proton {
 
-void convertDiskStatsToSlime(uint64_t disk_capacity_bytes, uint64_t diskUsedSizeBytes, Cursor& object) {
-    object.setLong("capacity", disk_capacity_bytes);
+void convertDiskStatsToSlime(const vespalib::HwInfo& hwInfo, uint64_t diskUsedSizeBytes, Cursor& object) {
+    object.setLong("capacity", hwInfo.disk().sizeBytes());
     object.setLong("used", diskUsedSizeBytes);
 }
 
@@ -45,14 +45,15 @@ void ResourceUsageExplorer::get_state(const vespalib::slime::Inserter& inserter,
         disk.setDouble("non-transient", usageState.non_transient_disk_usage());
         disk.setDouble("reported", usageState.reported_disk_usage());
         auto reserved_disk_space_and_memory = _usage_notifier.reserved_disk_space_and_memory();
-        auto disk_capacity_bytes = _usage_notifier.disk_capacity_bytes();
+        auto disk_capacity_bytes = _usage_notifier.getHwInfo().disk().sizeBytes();
         disk.setDouble("reserved-for-flush",
                        static_cast<double>(reserved_disk_space_and_memory.reserved_disk_space_for_flush()) /
                            disk_capacity_bytes);
         disk.setDouble("reserved-for-growth",
                        static_cast<double>(reserved_disk_space_and_memory.reserved_disk_space_for_growth()) /
                            disk_capacity_bytes);
-        convertDiskStatsToSlime(disk_capacity_bytes, _usage_notifier.getDiskUsedSize(), disk.setObject("stats"));
+        convertDiskStatsToSlime(_usage_notifier.getHwInfo(), _usage_notifier.getDiskUsedSize(),
+                                disk.setObject("stats"));
 
         Cursor& memory = object.setObject("memory");
         memory.setDouble("usage", usageState.memoryState().usage());
