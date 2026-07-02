@@ -1453,7 +1453,8 @@
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
       "public double searchNodeReservedMemoryFactor()",
-      "public boolean forceDisableOnnxModelOptimization()"
+      "public boolean forceDisableOnnxModelOptimization()",
+      "public boolean failWhenConfiguringIndexedMapOfArray()"
     ],
     "fields" : [ ]
   },

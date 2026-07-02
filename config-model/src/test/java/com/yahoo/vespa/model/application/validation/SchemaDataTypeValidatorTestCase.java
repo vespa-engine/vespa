@@ -45,7 +45,7 @@ public class SchemaDataTypeValidatorTestCase {
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Field type 'Map<string,string>' cannot be indexed for search clusters (field 'baz' in definition " +
-                    "'simple' for cluster 'content').", e.getMessage());
+                                 "'simple' for cluster 'content').", e.getMessage());
         }
     }
 
