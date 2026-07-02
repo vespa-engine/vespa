@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -14,6 +15,8 @@ import (
 
 type inspectProfileOptions struct {
 	profileFile         string
+	format              string
+	outputFile          string
 	showMedianNode      bool
 	showDispatchedQuery bool
 	showNnsDetails      bool
@@ -63,7 +66,33 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	if len(opts.showQueryNodes) > 0 {
 		context.ShowQueryNodes(opts.showQueryNodes)
 	}
-	return context.Analyze(cli.Stdout)
+
+	switch opts.format {
+	case "human", "json":
+	default:
+		return fmt.Errorf("invalid format: %s", opts.format)
+	}
+
+	out := cli.Stdout
+	var f *os.File
+	if opts.outputFile != "" {
+		var err error
+		f, err = os.Create(opts.outputFile)
+		if err != nil {
+			return fmt.Errorf("failed to create output file '%s': %w", opts.outputFile, err)
+		}
+		defer f.Close()
+		out = f
+	}
+	switch opts.format {
+	case "human":
+		return context.Analyze(out)
+	case "json":
+		encoder := json.NewEncoder(out)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(context.Summary())
+	}
+	return nil
 }
 
 func newInspectProfileCmd(cli *CLI) *cobra.Command {
@@ -80,6 +109,8 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect. Use '-' for stdin.")
+	cmd.Flags().StringVar(&opts.format, "format", "human", "Output format. Must be 'human' or 'json'")
+	cmd.Flags().StringVarP(&opts.outputFile, "output", "o", "", "Write output to a file instead of stdout")
 	cmd.Flags().BoolVar(&opts.showMedianNode, "show-median-node", false, "Show median node analysis")
 	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
 	cmd.Flags().BoolVar(&opts.showNnsDetails, "show-nns-details", false, "Show more details related to nearest neighbor search")
