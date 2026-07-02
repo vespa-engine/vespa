@@ -203,7 +203,9 @@ void FieldSearchSpecMap::addFieldsFromIndex(std::string_view rawIndex, StringFie
                 }
             }
         } else {
-            Issue::report("No valid indexes registered for index %s", std::string(rawIndex).c_str());
+            std::string raw_index_string(rawIndex);
+            Issue::report("No valid indexes registered for index '%s'. Is '%s' a field of document type '%s'?",
+                          raw_index_string.c_str(), raw_index_string.c_str(), dtm.first.c_str());
         }
     }
 }

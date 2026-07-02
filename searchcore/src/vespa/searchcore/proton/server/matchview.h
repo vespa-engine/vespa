@@ -13,6 +13,10 @@ namespace searchcorespi {
 class IndexSearchable;
 }
 
+namespace search::engine {
+class Request;
+}
+
 namespace proton::matching {
 class MatchContext;
 class Matcher;
@@ -59,7 +63,7 @@ public:
         return _matchers->getStats(rankProfile);
     }
 
-    matching::MatchContext createContext() const;
+    matching::MatchContext createContext(const search::engine::Request& req) const;
 
     std::unique_ptr<search::engine::SearchReply> match(std::shared_ptr<const ISearchHandler> searchHandler,
                                                        const search::engine::SearchRequest&  req,
