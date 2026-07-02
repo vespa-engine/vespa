@@ -847,7 +847,7 @@ void AttributeTest::testSingle(const AttributePtr& ptr, const std::vector<Buffer
     }
     EXPECT_TRUE(!v.remove(ptr->getNumDocs(), values[0], 1));
 
-    // test assign_element() (not supported for single value attributes)
+    // test assign_element()
     for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
         EXPECT_TRUE(!v.assign_element(doc, 0, values[0]));
     }
