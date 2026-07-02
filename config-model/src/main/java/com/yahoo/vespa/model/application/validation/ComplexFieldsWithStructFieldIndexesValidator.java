@@ -12,6 +12,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.util.logging.Level.WARNING;
+
 /**
  * Validates that complex fields (of type struct or map) do not have any struct fields with 'indexing: index'.
  * This is not supported and will confuse the user if not validated.
@@ -27,24 +29,35 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
         for (var cluster : context.model().getSearchClusters()) {
             for (var spec : cluster.schemas().values()) {
                 if (spec.getIndexMode() == SchemaInfo.IndexMode.INDEX) {
-                    validateComplexFields(cluster.getClusterName(), spec.fullSchema());
+                    validateComplexFields(cluster.getClusterName(), spec.fullSchema(), context);
                 }
             }
         }
     }
 
-    private static void validateComplexFields(String clusterName, Schema schema) {
+    private static void validateComplexFields(String clusterName, Schema schema, Context context) {
         String unsupportedFields = schema.allFields()
-                .filter(field -> hasStructFieldsWithIndex(field))
+                .filter(ComplexFieldsWithStructFieldIndexesValidator::hasStructFieldsWithIndex)
                 .map(ComplexFieldsWithStructFieldIndexesValidator::toString)
                 .collect(Collectors.joining(", "));
 
         if (unsupportedFields.isEmpty()) return;
 
-        throw new IllegalArgumentException(Text.format(
+        if (context.deployState().featureFlags().failWhenConfiguringIndexedMapOfArray()) {
+            throw new IllegalArgumentException(Text.format(
                     "For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' " +
-                    "which is not supported: %s. Remove setting or change to 'indexing: attribute' if needed for matching.",
+                            "which is not supported: %s. Remove setting or change to 'indexing: attribute' if needed for matching.",
                     clusterName, schema.getName(), unsupportedFields));
+
+        } else {
+            context.deployState().getDeployLogger().logApplicationPackage(
+                    WARNING,
+                    Text.format("For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: %s. " +
+                                        "Remove setting or change to 'indexing: attribute' if needed for matching.",
+                                clusterName, schema.getName(), unsupportedFields));
+        }
+
+
     }
 
     private static boolean hasStructFieldsWithIndex(ImmutableSDField field) {
