@@ -847,6 +847,12 @@ void AttributeTest::testSingle(const AttributePtr& ptr, const std::vector<Buffer
     }
     EXPECT_TRUE(!v.remove(ptr->getNumDocs(), values[0], 1));
 
+    // test assign_element() (not supported for single value attributes)
+    for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
+        EXPECT_TRUE(!v.assign_element(doc, 0, values[0]));
+    }
+    EXPECT_TRUE(!v.assign_element(ptr->getNumDocs(), 0, values[0]));
+
     bool smallUInt = isUnsignedSmallIntAttribute(*ptr);
     // test clearDoc()
     for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
@@ -1058,6 +1064,43 @@ void AttributeTest::testArray(const AttributePtr& ptr, const std::vector<BufferT
         EXPECT_TRUE(checkCount(ptr, doc, valueCount, valueCount, values[1]));
     }
     EXPECT_TRUE(!v.clearDoc(ptr->getNumDocs()));
+
+    // test assign_element()
+    for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
+        ptr->clearDoc(doc);
+
+        // start from a known array: [values[0], values[1], values[2]]
+        for (uint32_t i = 0; i < 3; ++i) {
+            EXPECT_TRUE(v.append(doc, values[i], 1));
+        }
+        ptr->commit();
+        EXPECT_TRUE(checkContent(ptr, doc, 3, 3, values));
+
+        // in-range assign overwrites only the addressed element, size is unchanged
+        EXPECT_TRUE(v.assign_element(doc, 1, values[3]));
+        ptr->commit();
+        {
+            std::vector<BufferType> buffer(3);
+            EXPECT_EQ(3u, ptr->getValueCount(doc));
+            EXPECT_EQ(3u, ptr->get(doc, buffer.data(), buffer.size()));
+            EXPECT_EQ(values[0], buffer[0]);
+            EXPECT_EQ(values[3], buffer[1]);
+            EXPECT_EQ(values[2], buffer[2]);
+        }
+
+        // out-of-range assign is a no-op: the array is neither grown nor modified
+        EXPECT_TRUE(v.assign_element(doc, 3, values[4]));
+        ptr->commit();
+        {
+            std::vector<BufferType> buffer(3);
+            EXPECT_EQ(3u, ptr->getValueCount(doc));
+            EXPECT_EQ(3u, ptr->get(doc, buffer.data(), buffer.size()));
+            EXPECT_EQ(values[0], buffer[0]);
+            EXPECT_EQ(values[3], buffer[1]);
+            EXPECT_EQ(values[2], buffer[2]);
+        }
+    }
+    EXPECT_TRUE(!v.assign_element(ptr->getNumDocs(), 0, values[0]));
 }
 
 void AttributeTest::testArray() {
