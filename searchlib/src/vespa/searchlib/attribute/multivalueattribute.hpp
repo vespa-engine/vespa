@@ -108,9 +108,7 @@ void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues&
                         multivalue::ValueBuilder<MultiValueType>::build(ValueType(data), current->_weight));
                 }
             } else if (current->_type == ChangeBase::ASSIGN_ELEMENT) {
-                // Element-wise assignment: arr[index] = value.
-                // The index is stored in the _weight.
-                uint32_t index = current->_weight;
+                uint32_t index = current->element_index();
                 if (index < new_values.size()) {
                     if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
                         new_values[index] = multivalue::ValueBuilder<MultiValueType>::build(data, 1);

@@ -175,8 +175,8 @@ bool AttributeVector::assign_element(ChangeVectorT<ChangeTemplate<T>>& changes, 
                                      const T& v) {
     bool retval = hasMultiValue() && hasArrayType() && (doc < getNumDocs());
     if (retval) {
-        // Use _weight field to store array index
-        changes.push_back(ChangeTemplate<T>(ChangeBase::ASSIGN_ELEMENT, doc, v, index));
+        changes.push_back(ChangeTemplate<T>(ChangeBase::ASSIGN_ELEMENT, doc, v));
+        changes.back().set_element_index(index);
         _status.incUpdates();
         updateUncommittedDocIdLimit(doc);
         _status.incNonIdempotentUpdates();
