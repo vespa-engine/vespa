@@ -49,7 +49,7 @@ public:
     MyReservedDiskSpaceAndMemoryProvider() noexcept : IReservedDiskSpaceAndMemoryProvider() {}
     ~MyReservedDiskSpaceAndMemoryProvider() override;
     ReservedDiskSpaceAndMemory get_reserved_disk_space_and_memory() const override {
-        return ReservedDiskSpaceAndMemory(42, 0, 0, 0);
+        return ReservedDiskSpaceAndMemory(420, 0, 210, 0);
     }
 };
 
@@ -100,10 +100,11 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled) {
     EXPECT_GT(notifier->getMemoryStats().getAnonymousRss(), 0);
     EXPECT_GT(notifier->getDiskUsedSize(), 0);
     EXPECT_EQ(150, notifier->get_resource_usage().transient_memory());
+    EXPECT_EQ(210.0 / memory_size_bytes, notifier->usageState().reserved_memory());
     EXPECT_EQ(150.0 / memory_size_bytes, notifier->usageState().transient_memory_usage());
     EXPECT_EQ(350, notifier->get_resource_usage().transient_disk());
     EXPECT_EQ(350.0 / disk_size_bytes, notifier->usageState().transient_disk_usage());
-    EXPECT_EQ(42.0 / disk_size_bytes, notifier->usageState().reserved_disk_space());
+    EXPECT_EQ(420.0 / disk_size_bytes, notifier->usageState().reserved_disk_space());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
