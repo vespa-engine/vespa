@@ -135,14 +135,15 @@ private:
         } else {
             // numFields() == 0 happens if multiple schemas are queried and the current schema does not contain the
             // searched field. Produce a more meaningful error message in this case.
+            std::string document_type_name(_context.get_document_type_name());
             if (n.numFields() == 0) {
                 vespalib::Issue::report(
                     "SameElement operator does not search in a field. Is '%s' a field of document type '%s'?",
-                    n.getView().c_str(), std::string(_context.get_document_type_name()).c_str());
+                    n.getView().c_str(), document_type_name.c_str());
             } else if (n.numFields() > 1) {
-                vespalib::Issue::report(
-                    "SameElement operator searches in unexpected number of fields. Expected 1 but was %zu",
-                    n.numFields());
+                vespalib::Issue::report("SameElement operator searches in more than one field: '%s' maps to "
+                                        "%zu fields of document type '%s'.",
+                                        n.getView().c_str(), n.numFields(), document_type_name.c_str());
             }
             _result = std::make_unique<EmptyBlueprint>();
         }
