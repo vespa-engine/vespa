@@ -32,10 +32,10 @@ struct ChangeBase {
     };
     enum { UNSET_ENTRY_REF = 0 };
 
-    ChangeBase() : _type(NOOP), _doc(0), _weight(1), _cached_entry_ref(UNSET_ENTRY_REF) {}
+    ChangeBase() : _type(NOOP), _doc(0), _weight(1), _element_index(0), _cached_entry_ref(UNSET_ENTRY_REF) {}
 
     ChangeBase(Type type, uint32_t d, int32_t w = 1)
-        : _type(type), _doc(d), _weight(w), _cached_entry_ref(UNSET_ENTRY_REF) {}
+        : _type(type), _doc(d), _weight(w), _element_index(0), _cached_entry_ref(UNSET_ENTRY_REF) {}
 
     int cmp(const ChangeBase& b) const {
         int diff(_doc - b._doc);
