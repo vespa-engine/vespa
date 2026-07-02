@@ -76,11 +76,17 @@ func ParseCertificates(data []byte) ([]*x509.Certificate, error) {
 		if block == nil {
 			break
 		}
+		if block.Type != "CERTIFICATE" {
+			return nil, fmt.Errorf("unexpected PEM block type %q; expected CERTIFICATE", block.Type)
+		}
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
 			return nil, err
 		}
 		certs = append(certs, cert)
+	}
+	if len(certs) == 0 {
+		return nil, fmt.Errorf("no certificates found in PEM data")
 	}
 	return certs, nil
 }
