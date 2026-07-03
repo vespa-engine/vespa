@@ -251,6 +251,14 @@ public class Flags {
         INSTANCE_ID
     );
 
+    public static final UnboundBooleanFlag FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY = defineFeatureFlag(
+            "fail-when-configuring-indexed-map-of-array", false,
+            List.of("hmusum"), "2026-07-01", "2026-10-13",
+            "Whether to fail a deployment when an indexed map of array is used in a schema",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     public static final UnboundBooleanFlag USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK = defineFeatureFlag(
             "use-wanted-generation.in-convergence-check", false,
             List.of("hmusum"), "2026-06-16", "2026-09-01",
