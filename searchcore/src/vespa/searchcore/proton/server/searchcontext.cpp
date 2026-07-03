@@ -19,8 +19,13 @@ uint32_t SearchContext::getDocIdLimit() {
     return _docIdLimit;
 }
 
-SearchContext::SearchContext(const std::shared_ptr<IndexSearchable>& indexSearchable, uint32_t docIdLimit)
-    : _indexSearchable(indexSearchable), _attributeBlueprintFactory(), _docIdLimit(docIdLimit) {
+const std::string_view SearchContext::get_document_type_name() {
+    return _doc_type_name.getName();
+}
+
+SearchContext::SearchContext(const std::shared_ptr<IndexSearchable>& indexSearchable, uint32_t docIdLimit,
+                             const search::engine::Request& req)
+    : _indexSearchable(indexSearchable), _attributeBlueprintFactory(), _docIdLimit(docIdLimit), _doc_type_name(req) {
 }
 
 SearchContext::~SearchContext() = default;
