@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di;
 
+import com.google.inject.Guice;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.di.IntConfig;
@@ -26,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -272,12 +272,11 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     private void assertNewComponentGraphFails(Container container, ComponentGraph currentGraph, Class<? extends RuntimeException> exception) {
-        try {
-            getNewComponentGraph(container, currentGraph);
-            fail("Expected exception");
-        } catch (Exception e) {
-            assertEquals(exception, e.getClass());
-        }
+        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(currentGraph, Guice.createInjector(), true);
+        result.oldComponentsCleanupTask().run();
+        assertTrue(result.failed(), "Expected graph construction to fail");
+        assertEquals(exception, result.failure().getClass());
+        assertEquals(2, result.configGeneration());
     }
 
     @Test
