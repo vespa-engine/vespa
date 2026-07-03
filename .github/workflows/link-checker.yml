@@ -78,7 +78,7 @@ jobs:
         with:
           app-id: ${{ secrets.LINK_CHECKER_APP_ID }}
           private-key: ${{ secrets.LINK_CHECKER_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
+          owner: vespaai
 
       - name: check links github.com only
         env:
