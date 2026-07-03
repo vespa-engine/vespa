@@ -37,15 +37,11 @@ struct ChangeBase {
     ChangeBase(Type type, uint32_t d, int32_t w = 1)
         : _type(type), _doc(d), _weight(w), _element_index(0), _cached_entry_ref(UNSET_ENTRY_REF) {}
 
-    int cmp(const ChangeBase& b) const {
-        int diff(_doc - b._doc);
-        return diff;
-    }
-    bool operator<(const ChangeBase& b) const { return cmp(b) < 0; }
-    uint32_t get_entry_ref() const { return _cached_entry_ref; }
-    void set_entry_ref(uint32_t entry_ref) const { _cached_entry_ref = entry_ref; }
-    bool has_entry_ref() const { return _cached_entry_ref != UNSET_ENTRY_REF; }
-    void clear_entry_ref() const { _cached_entry_ref = UNSET_ENTRY_REF; }
+    [[nodiscard]] bool operator<(const ChangeBase& b) const noexcept { return _doc < b._doc; }
+    [[nodiscard]] uint32_t get_entry_ref() const noexcept { return _cached_entry_ref; }
+    void set_entry_ref(uint32_t entry_ref) const noexcept { _cached_entry_ref = entry_ref; }
+    [[nodiscard]] bool has_entry_ref() const noexcept { return _cached_entry_ref != UNSET_ENTRY_REF; }
+    void clear_entry_ref() const noexcept { _cached_entry_ref = UNSET_ENTRY_REF; }
     [[nodiscard]] uint32_t element_index() const noexcept { return _element_index; }
     void set_element_index(uint32_t index) noexcept { _element_index = index; }
 
