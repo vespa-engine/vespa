@@ -20,7 +20,7 @@ public:
 
     const TransientResourceUsage& transient() const noexcept { return _transient; }
     uint64_t transient_disk() const noexcept { return _transient.disk(); }
-    size_t transient_memory() const noexcept { return _transient.memory(); }
+    size_t transient_memory_for_memory_indexes() const noexcept { return _transient.memory(); }
     uint64_t disk() const noexcept { return _disk; }
     void merge(const ResourceUsage& rhs) noexcept {
         _transient.merge(rhs._transient);

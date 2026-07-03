@@ -90,7 +90,7 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled) {
     // Poll for up to 20 seconds to get a sample.
     size_t i = 0;
     for (; i < static_cast<size_t>(20s / 50ms); ++i) {
-        if (notifier->get_resource_usage().transient_memory() > 0) {
+        if (notifier->get_resource_usage().transient_memory_for_memory_indexes() > 0) {
             break;
         }
         std::this_thread::sleep_for(50ms);
@@ -99,7 +99,7 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled) {
     // Anonymous resident memory used by current process is sampled.
     EXPECT_GT(notifier->getMemoryStats().getAnonymousRss(), 0);
     EXPECT_GT(notifier->disk_usage().used_bytes(), 0);
-    EXPECT_EQ(150, notifier->get_resource_usage().transient_memory());
+    EXPECT_EQ(150, notifier->get_resource_usage().transient_memory_for_memory_indexes());
     EXPECT_EQ(210.0 / memory_size_bytes, notifier->usageState().reserved_memory());
     EXPECT_EQ(150.0 / memory_size_bytes, notifier->usageState().transient_memory_usage());
     EXPECT_EQ(350, notifier->get_resource_usage().transient_disk());

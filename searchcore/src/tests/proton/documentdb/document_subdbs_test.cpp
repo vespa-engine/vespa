@@ -743,7 +743,7 @@ TEST(DocumentSubDBsTest, transient_resource_usage_is_zero_in_steady_state) {
     SearchableFixture f;
     auto              usage = f._subDb.get_resource_usage();
     EXPECT_EQ(0u, usage.transient_disk());
-    EXPECT_EQ(0u, usage.transient_memory());
+    EXPECT_EQ(0u, usage.transient_memory_for_memory_indexes());
 }
 
 TEST(DocumentSubDBsTest, require_that_only_fast_access_attributes_are_instantiated_in_fast_access_document_subdb) {
