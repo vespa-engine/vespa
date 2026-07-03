@@ -31,19 +31,22 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
 ResourceUsageNotifier::~ResourceUsageNotifier() = default;
 
 void ResourceUsageNotifier::recalcState(const Guard& guard, bool disk_mem_sample) {
-    double             memoryUsed = getMemoryUsedRatio(guard);
-    double             diskUsed = getDiskUsedRatio(guard);
-    double             attribute_address_space_used = _attribute_usage.max_address_space_usage().getUsage().usage();
-    double             transient_disk_usage = std::min(get_relative_transient_disk_usage(guard), diskUsed);
-    double             non_transient_disk_usage = diskUsed - transient_disk_usage;
-    double             transient_memory_usage = std::min(get_relative_transient_memory_usage(guard), memoryUsed);
+    double memoryUsed = getMemoryUsedRatio(guard);
+    double diskUsed = getDiskUsedRatio(guard);
+    double attribute_address_space_used = _attribute_usage.max_address_space_usage().getUsage().usage();
+    double reserved_disk_space = get_relative_reserved_disk_space(guard);
+    double transient_disk_usage =
+        std::min(std::min(get_relative_transient_disk_usage(guard), diskUsed), reserved_disk_space);
+    double non_transient_disk_usage = diskUsed - transient_disk_usage;
+    double reserved_memory = get_relative_reserved_memory(guard);
+    double transient_memory_usage =
+        std::min(std::min(get_relative_transient_memory_usage(guard), memoryUsed), reserved_memory);
     double             non_transient_memory_usage = memoryUsed - transient_memory_usage;
     ResourceUsageState usage(
         ResourceUsageWithLimit(diskUsed, _config._diskLimit),
         ResourceUsageWithLimit(memoryUsed, _config._memoryLimit), non_transient_disk_usage,
-        non_transient_memory_usage, get_relative_reserved_disk_space(guard), _config._reserved_disk_space_factor,
-        get_relative_reserved_memory(guard), _config._reserved_memory_factor, transient_disk_usage,
-        transient_memory_usage,
+        non_transient_memory_usage, reserved_disk_space, _config._reserved_disk_space_factor, reserved_memory,
+        _config._reserved_memory_factor, transient_disk_usage, transient_memory_usage,
         ResourceUsageWithLimit(attribute_address_space_used, _config._attribute_limit._address_space_limit),
         _attribute_usage);
     notify_resource_usage(guard, usage, disk_mem_sample);
