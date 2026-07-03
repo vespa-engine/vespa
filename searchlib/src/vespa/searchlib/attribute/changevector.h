@@ -19,6 +19,7 @@ struct ChangeBase {
         UPDATE,
         APPEND,
         REMOVE,
+        ASSIGN_ELEMENT,
         INCREASEWEIGHT,
         MULWEIGHT,
         DIVWEIGHT,
@@ -31,10 +32,10 @@ struct ChangeBase {
     };
     enum { UNSET_ENTRY_REF = 0 };
 
-    ChangeBase() : _type(NOOP), _doc(0), _weight(1), _cached_entry_ref(UNSET_ENTRY_REF) {}
+    ChangeBase() : _type(NOOP), _doc(0), _weight(1), _element_index(0), _cached_entry_ref(UNSET_ENTRY_REF) {}
 
     ChangeBase(Type type, uint32_t d, int32_t w = 1)
-        : _type(type), _doc(d), _weight(w), _cached_entry_ref(UNSET_ENTRY_REF) {}
+        : _type(type), _doc(d), _weight(w), _element_index(0), _cached_entry_ref(UNSET_ENTRY_REF) {}
 
     int cmp(const ChangeBase& b) const {
         int diff(_doc - b._doc);
@@ -45,10 +46,13 @@ struct ChangeBase {
     void set_entry_ref(uint32_t entry_ref) const { _cached_entry_ref = entry_ref; }
     bool has_entry_ref() const { return _cached_entry_ref != UNSET_ENTRY_REF; }
     void clear_entry_ref() const { _cached_entry_ref = UNSET_ENTRY_REF; }
+    [[nodiscard]] uint32_t element_index() const noexcept { return _element_index; }
+    void set_element_index(uint32_t index) noexcept { _element_index = index; }
 
     Type             _type;
     uint32_t         _doc;
     int32_t          _weight;
+    uint32_t         _element_index;
     mutable uint32_t _cached_entry_ref;
 };
 

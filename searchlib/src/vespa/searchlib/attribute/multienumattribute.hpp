@@ -35,7 +35,7 @@ bool MultiValueEnumAttribute<B, M>::extractChangeData(const Change& c, EnumIndex
 
 template <typename B, typename M>
 void MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change& c, EnumStoreBatchUpdater& inserter) {
-    if (c._type == ChangeBase::APPEND ||
+    if (c._type == ChangeBase::APPEND || c._type == ChangeBase::ASSIGN_ELEMENT ||
         (this->getInternalCollectionType().createIfNonExistant() &&
          (c._type >= ChangeBase::INCREASEWEIGHT && c._type <= ChangeBase::SETWEIGHT)))
     {

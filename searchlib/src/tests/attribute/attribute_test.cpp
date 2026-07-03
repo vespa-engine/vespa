@@ -847,6 +847,12 @@ void AttributeTest::testSingle(const AttributePtr& ptr, const std::vector<Buffer
     }
     EXPECT_TRUE(!v.remove(ptr->getNumDocs(), values[0], 1));
 
+    // test assign_element()
+    for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
+        EXPECT_TRUE(!v.assign_element(doc, 0, values[0]));
+    }
+    EXPECT_TRUE(!v.assign_element(ptr->getNumDocs(), 0, values[0]));
+
     bool smallUInt = isUnsignedSmallIntAttribute(*ptr);
     // test clearDoc()
     for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
@@ -884,7 +890,7 @@ void AttributeTest::testSingle() {
         {
             AttributePtr ptr = createAttribute("sv-int32", Config(BasicType::INT32, CollectionType::SINGLE));
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
-            EXPECT_EQ(4224u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(4336u, ptr->getStatus().getAllocated());
             EXPECT_EQ(0u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
@@ -899,7 +905,7 @@ void AttributeTest::testSingle() {
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-int32", cfg);
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
-            EXPECT_EQ(338972u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(339084u, ptr->getStatus().getAllocated());
             EXPECT_EQ(101512u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
@@ -911,7 +917,7 @@ void AttributeTest::testSingle() {
         {
             AttributePtr ptr = createAttribute("sv-float", Config(BasicType::FLOAT, CollectionType::SINGLE));
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
-            EXPECT_EQ(4224u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(4336u, ptr->getStatus().getAllocated());
             EXPECT_EQ(0u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<FloatingPointAttribute, double, float>(ptr, values);
@@ -921,7 +927,7 @@ void AttributeTest::testSingle() {
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-float", cfg);
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
-            EXPECT_EQ(338972u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(339084u, ptr->getStatus().getAllocated());
             EXPECT_EQ(101512u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<FloatingPointAttribute, double, float>(ptr, values);
@@ -1058,6 +1064,43 @@ void AttributeTest::testArray(const AttributePtr& ptr, const std::vector<BufferT
         EXPECT_TRUE(checkCount(ptr, doc, valueCount, valueCount, values[1]));
     }
     EXPECT_TRUE(!v.clearDoc(ptr->getNumDocs()));
+
+    // test assign_element()
+    for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
+        ptr->clearDoc(doc);
+
+        // start from a known array: [values[0], values[1], values[2]]
+        for (uint32_t i = 0; i < 3; ++i) {
+            EXPECT_TRUE(v.append(doc, values[i], 1));
+        }
+        ptr->commit();
+        EXPECT_TRUE(checkContent(ptr, doc, 3, 3, values));
+
+        // in-range assign overwrites only the addressed element, size is unchanged
+        EXPECT_TRUE(v.assign_element(doc, 1, values[3]));
+        ptr->commit();
+        {
+            std::vector<BufferType> buffer(3);
+            EXPECT_EQ(3u, ptr->getValueCount(doc));
+            EXPECT_EQ(3u, ptr->get(doc, buffer.data(), buffer.size()));
+            EXPECT_EQ(values[0], buffer[0]);
+            EXPECT_EQ(values[3], buffer[1]);
+            EXPECT_EQ(values[2], buffer[2]);
+        }
+
+        // out-of-range assign is a no-op: the array is neither grown nor modified
+        EXPECT_TRUE(v.assign_element(doc, 3, values[4]));
+        ptr->commit();
+        {
+            std::vector<BufferType> buffer(3);
+            EXPECT_EQ(3u, ptr->getValueCount(doc));
+            EXPECT_EQ(3u, ptr->get(doc, buffer.data(), buffer.size()));
+            EXPECT_EQ(values[0], buffer[0]);
+            EXPECT_EQ(values[3], buffer[1]);
+            EXPECT_EQ(values[2], buffer[2]);
+        }
+    }
+    EXPECT_TRUE(!v.assign_element(ptr->getNumDocs(), 0, values[0]));
 }
 
 void AttributeTest::testArray() {
@@ -1069,7 +1112,7 @@ void AttributeTest::testArray() {
         {
             AttributePtr ptr = createAttribute("a-int32", Config(BasicType::INT32, CollectionType::ARRAY));
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
-            EXPECT_EQ(293856u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(293968u, ptr->getStatus().getAllocated());
             EXPECT_EQ(253668u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
@@ -1079,7 +1122,7 @@ void AttributeTest::testArray() {
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("flags", cfg);
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
-            EXPECT_EQ(293856u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(293968u, ptr->getStatus().getAllocated());
             EXPECT_EQ(253668u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
@@ -1089,7 +1132,7 @@ void AttributeTest::testArray() {
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-int32", cfg);
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
-            EXPECT_EQ(650492u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(650604u, ptr->getStatus().getAllocated());
             EXPECT_EQ(355200u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
@@ -1108,7 +1151,7 @@ void AttributeTest::testArray() {
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-float", cfg);
             ptr->updateStat(CommitParam::UpdateStats::FORCE);
-            EXPECT_EQ(650492u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(650604u, ptr->getStatus().getAllocated());
             EXPECT_EQ(355200u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<FloatingPointAttribute, double>(ptr, values);
@@ -2235,27 +2278,27 @@ void AttributeTest::testPendingCompaction() {
 void AttributeTest::testConditionalCommit() {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     cfg.setFastSearch(true);
-    cfg.setMaxUnCommittedMemory(70000);
+    cfg.setMaxUnCommittedMemory(90000);
     AttributePtr v = createAttribute("sfsint32_cc", cfg);
     addClearedDocs(v, 1000);
     auto& iv = static_cast<IntegerAttribute&>(*v.get());
-    EXPECT_EQ(0x8000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQ(61440u, iv.getChangeVectorMemoryUsage().allocatedBytes());
     EXPECT_EQ(0u, iv.getChangeVectorMemoryUsage().usedBytes());
     AttributeGuard guard1(v);
     populateSimpleUncommitted(iv, 1, 3);
-    EXPECT_EQ(0x8000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
-    EXPECT_EQ(128u, iv.getChangeVectorMemoryUsage().usedBytes());
+    EXPECT_EQ(61440u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQ(160u, iv.getChangeVectorMemoryUsage().usedBytes());
     populateSimpleUncommitted(iv, 1, 1000);
-    EXPECT_EQ(0x10000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
-    EXPECT_EQ(64064u, iv.getChangeVectorMemoryUsage().usedBytes());
+    EXPECT_EQ(122880u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQ(80080u, iv.getChangeVectorMemoryUsage().usedBytes());
     EXPECT_FALSE(v->commitIfChangeVectorTooLarge());
-    EXPECT_EQ(0x10000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
-    EXPECT_EQ(64064u, iv.getChangeVectorMemoryUsage().usedBytes());
+    EXPECT_EQ(122880u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQ(80080u, iv.getChangeVectorMemoryUsage().usedBytes());
     populateSimpleUncommitted(iv, 1, 200);
-    EXPECT_EQ(0x20000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
-    EXPECT_EQ(76800u, iv.getChangeVectorMemoryUsage().usedBytes());
+    EXPECT_EQ(122880u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQ(96000u, iv.getChangeVectorMemoryUsage().usedBytes());
     EXPECT_TRUE(v->commitIfChangeVectorTooLarge());
-    EXPECT_EQ(0x2000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQ(8160u, iv.getChangeVectorMemoryUsage().allocatedBytes());
     EXPECT_EQ(0u, iv.getChangeVectorMemoryUsage().usedBytes());
 }
 
