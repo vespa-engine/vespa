@@ -260,7 +260,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK = defineFeatureFlag(
-            "use-wanted-generation.in-convergence-check", false,
+            "use-wanted-generation-in-convergence-check", false,
             List.of("hmusum"), "2026-06-16", "2026-09-01",
             "Whether to use extended info (wantedGeneration) from /state/v1/config API to " +
                     "decide if config convergence is achieved during deploy",
