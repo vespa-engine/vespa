@@ -38,13 +38,17 @@ void ResourceUsageNotifier::recalcState(const Guard& guard, bool disk_mem_sample
     double transient_disk_usage =
         std::min(std::min(get_relative_transient_disk_usage(guard), diskUsed), reserved_disk_space);
     double non_transient_disk_usage = diskUsed - transient_disk_usage;
+    double reported_disk =
+        std::max(diskUsed, non_transient_disk_usage + _config._reserved_disk_space_factor * reserved_disk_space);
     double reserved_memory = get_relative_reserved_memory(guard);
     double transient_memory_usage =
         std::min(std::min(get_relative_transient_memory_usage(guard), memoryUsed), reserved_memory);
-    double             non_transient_memory_usage = memoryUsed - transient_memory_usage;
+    double non_transient_memory_usage = memoryUsed - transient_memory_usage;
+    double reported_memory =
+        std::max(memoryUsed, non_transient_memory_usage + _config._reserved_memory_factor * reserved_memory);
     ResourceUsageState usage(
-        ResourceUsageWithLimit(diskUsed, _config._diskLimit),
-        ResourceUsageWithLimit(memoryUsed, _config._memoryLimit), non_transient_disk_usage,
+        ResourceUsageWithLimit(reported_disk, _config._diskLimit),
+        ResourceUsageWithLimit(reported_memory, _config._memoryLimit), non_transient_disk_usage,
         non_transient_memory_usage, reserved_disk_space, _config._reserved_disk_space_factor, reserved_memory,
         _config._reserved_memory_factor, transient_disk_usage, transient_memory_usage,
         ResourceUsageWithLimit(attribute_address_space_used, _config._attribute_limit._address_space_limit),
