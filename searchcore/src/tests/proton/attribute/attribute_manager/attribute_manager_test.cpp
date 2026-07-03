@@ -872,7 +872,7 @@ TEST_F(AttributeManagerTest, transient_resource_usage_is_zero_in_steady_state) {
     f.addAttribute("a2");
     auto usage = f._m.get_resource_usage();
     EXPECT_EQ(0u, usage.transient_disk());
-    EXPECT_EQ(0u, usage.transient_memory());
+    EXPECT_EQ(0u, usage.transient_memory_for_memory_indexes());
 }
 
 TEST_F(AttributeManagerTest, late_create_serial_number_is_set_on_new_attributes) {
