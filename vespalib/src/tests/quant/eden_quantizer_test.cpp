@@ -49,6 +49,17 @@ namespace {
     return d;
 }
 
+// Simple non-vectorized squared Euclidean distance
+[[nodiscard]] float squared_euclidean_distance(std::span<const float> a, std::span<const float> b) noexcept {
+    assert(a.size() == b.size());
+    float d = 0;
+    for (size_t i = 0; i < a.size(); ++i) {
+        const float delta = a[i] - b[i];
+        d += delta * delta;
+    }
+    return d;
+}
+
 void normalize(std::span<float> v) noexcept {
     const float norm_recip = 1.f / l2_norm(v);
     for (auto& c : v) {
@@ -309,6 +320,76 @@ TEST(EdenQuantizerTest, can_compute_dot_product_between_quantized_vectors_3_bits
 
 TEST(EdenQuantizerTest, can_compute_dot_product_between_quantized_vectors_4_bits) {
     do_test_quantized_vectors_dot_product(4);
+}
+
+TEST(EdenQuantizerTest, can_compute_squared_euclidean_distance_with_pre_rotated_vector) {
+    EdenQuantizer        q(16, 4, 0xbeefd00d);
+    std::vector<uint8_t> v_q(q.quantized_size());
+
+    const std::vector v = my_16d_test_vector();
+    q.quantize(v, v_q, QuantMode::MSE);
+
+    const std::vector<float> query = {2, 2, 3, -5, 4, 1, 3, -4, 2, -1, 3, 2, -5, 1, 3, 2};
+
+    std::vector query_rot = query;
+    q.rotate_vector_inplace(query_rot);
+
+    const float real_dist = squared_euclidean_distance(query, v);
+    const float quant_dist = q.pre_rotated_query_squared_euclidean_distance(query_rot, v_q);
+    EXPECT_THAT(quant_dist / real_dist, FloatNear(1.0, 0.021)); // ~2% error
+}
+
+namespace {
+
+void do_test_quantized_vectors_squared_euclidean_distance(const size_t dimensions, const uint8_t bits) {
+    Xoshiro256PlusPlusPrng prng(0x123456789abcdef); // Fixed seed due to floating point testing
+    EdenQuantizer          q(dimensions, bits, prng());
+
+    std::vector<float>   lhs(dimensions), lhs_dq(dimensions);
+    std::vector<float>   rhs(dimensions), rhs_dq(dimensions);
+    std::vector<uint8_t> lhs_q(q.quantized_size());
+    std::vector<uint8_t> rhs_q(q.quantized_size());
+
+    const size_t rounds = 100;
+    for (size_t i = 0; i < rounds; ++i) {
+        fill_random(lhs, prng);
+        fill_random(rhs, prng);
+
+        q.quantize(lhs, lhs_q, QuantMode::MSE);
+        q.quantize(rhs, rhs_q, QuantMode::MSE);
+        q.dequantize(lhs_q, lhs_dq);
+        q.dequantize(rhs_q, rhs_dq);
+
+        const float real_q_eqd = squared_euclidean_distance(lhs_dq, rhs_dq);
+        ASSERT_NE(real_q_eqd, 0.0); // it could theoretically happen...
+        const float q_eqd = q.quantized_lhs_rhs_squared_euclidean_distance(lhs_q, rhs_q);
+        // Normalize for magnitude by computing relative error
+        ASSERT_THAT(q_eqd / real_q_eqd, FloatNear(1.0, 0.00005f));
+    }
+}
+
+void do_test_quantized_vectors_squared_euclidean_distance(const uint8_t bits) {
+    for (size_t dims : {1, 2, 3, 15, 16, 17, 64, 127, 128, 129, 1024}) {
+        ASSERT_NO_FATAL_FAILURE(do_test_quantized_vectors_squared_euclidean_distance(dims, bits));
+    }
+}
+
+} // namespace
+
+TEST(EdenQuantizerTest, can_compute_squared_euclidean_distance_between_quantized_vectors_1_bit) {
+    do_test_quantized_vectors_squared_euclidean_distance(1);
+}
+
+TEST(EdenQuantizerTest, can_compute_squared_euclidean_distance_between_quantized_vectors_2_bits) {
+    do_test_quantized_vectors_squared_euclidean_distance(2);
+}
+
+TEST(EdenQuantizerTest, can_compute_squared_euclidean_distance_between_quantized_vectors_3_bits) {
+    do_test_quantized_vectors_squared_euclidean_distance(3);
+}
+
+TEST(EdenQuantizerTest, can_compute_squared_euclidean_distance_between_quantized_vectors_4_bits) {
+    do_test_quantized_vectors_squared_euclidean_distance(4);
 }
 
 } // namespace vespalib::quant

@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace vespalib::quant {
@@ -71,6 +72,18 @@ class EdenQuantizer {
 
     // Returns the shared, fixed N(0, 1) codebook for the configured quantizer bit count
     [[nodiscard]] std::span<const float> my_codebook() const noexcept;
+
+    struct ScaleAndCentroidsPtr {
+        float          scale;
+        const uint8_t* centroid_idx;
+    };
+    // Precondition: `bits.size() == quantized_size()`
+    // Returns [scale factor, unpacked centroid index ptr]
+    [[nodiscard]] ScaleAndCentroidsPtr unary_unpack_bits_to_scratch_space(std::span<const uint8_t> bits) noexcept;
+    // Precondition: `lhs.size() == rhs.size() == quantized_size()`
+    // Returns [[lhs scale, lhs unpacked index ptr], [rhs scale, rhs unpacked index ptr]]
+    [[nodiscard]] std::pair<ScaleAndCentroidsPtr, ScaleAndCentroidsPtr>
+    binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs, std::span<const uint8_t> rhs) noexcept;
 
 public:
     EdenQuantizer(size_t dimensions, uint8_t bits, uint64_t seed);
@@ -163,6 +176,37 @@ public:
      */
     [[nodiscard]] float quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
                                                       std::span<const uint8_t> rhs) noexcept;
+
+    /*
+     * Computes the squared Euclidean distance between a quantized vector and a
+     * _pre-rotated_ query vector. This is much more efficient than doing dequantize()
+     * followed by an explicit float32 squared Euclidean distance computation, as we
+     * don't have to perform any expensive rotations.
+     *
+     * `query` must have had a spin in the `rotate_vector_inplace` function prior to use,
+     * i.e. it must be rotated into the same frame of reference as `quant_vec`.
+     *
+     * TODO determine the best quantization mode for Euclidean distance.
+     *
+     * Preconditions:
+     *  - query.size() == dimensions()
+     *  - quant_vec.size() == quantized_size()
+     */
+    [[nodiscard]] float pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
+                                                                     std::span<const uint8_t> quant_vec) noexcept;
+
+    /*
+     * Computes the squared Euclidean distance between two quantized vectors that were both
+     * quantized using the (logically) same quantizer as `this`. This is more efficient than
+     * explicitly dequantizing the vectors (and then running a float32 squared Euclidean
+     * distance) since it does not involve any rotations.
+     *
+     * Preconditions:
+     *  - lhs.size() == quantized_size()
+     *  - rhs.size() == quantized_size()
+     */
+    [[nodiscard]] float quantized_lhs_rhs_squared_euclidean_distance(std::span<const uint8_t> lhs,
+                                                                     std::span<const uint8_t> rhs) noexcept;
 };
 
 } // namespace vespalib::quant
