@@ -68,7 +68,6 @@ public:
     [[nodiscard]] T raw() const noexcept { return _v; }
     operator T() const noexcept { return _v; }
     operator T&() noexcept { return _v; }
-    [[nodiscard]] bool operator<(const NumericChangeData<T>& rhs) const noexcept { return _v < rhs._v; }
 };
 
 class StringChangeData {
@@ -83,7 +82,6 @@ public:
     [[nodiscard]] const char* raw() const noexcept { return _s.c_str(); }
     operator const DataType&() const noexcept { return _s; }
     operator DataType&() noexcept { return _s; }
-    [[nodiscard]] bool operator<(const StringChangeData& rhs) const noexcept { return _s < rhs._s; }
 
 private:
     DataType _s;
@@ -101,17 +99,6 @@ template <typename T> struct ChangeTemplate : public ChangeBase {
 template <>
 inline NumericChangeData<double>::NumericChangeData(double v)
     : _v(attribute::isUndefined<double>(v) ? attribute::getUndefined<double>() : v) {
-}
-
-template <> [[nodiscard]] inline bool
-NumericChangeData<double>::operator<(const NumericChangeData<double>& rhs) const noexcept {
-    if (std::isnan(_v)) {
-        return !std::isnan(rhs._v);
-    }
-    if (std::isnan(rhs._v)) {
-        return false;
-    }
-    return _v < rhs._v;
 }
 
 /**
