@@ -77,12 +77,16 @@ ProcessMemoryStats ProcessMemoryStats::parseStatm(asciistream& statm) {
     return ret;
 }
 
-ProcessMemoryStats::ProcessMemoryStats() noexcept
-    : _virt(0), _mapped_rss(0), _anonymous_rss(0), _transient_memory(0) {
+ProcessMemoryStats::ProcessMemoryStats() noexcept : ProcessMemoryStats(0, 0, 0, 0) {
 }
 
 ProcessMemoryStats::ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss) noexcept
-    : _virt(virt), _mapped_rss(mapped_rss), _anonymous_rss(anonymous_rss), _transient_memory(0) {
+    : ProcessMemoryStats(virt, mapped_rss, anonymous_rss, 0) {
+}
+
+ProcessMemoryStats::ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss,
+                                       size_t transient_memory) noexcept
+    : _virt(virt), _mapped_rss(mapped_rss), _anonymous_rss(anonymous_rss), _transient_memory(transient_memory) {
 }
 
 namespace {
