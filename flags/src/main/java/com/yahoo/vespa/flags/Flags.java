@@ -203,15 +203,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
-            "apply-on-restart-for-application-metadata-config", false,
-            List.of("glebashnik"), "2026-02-13", "2026-08-13",
-            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " +
-                    "This might fix deferring config changes until container restart.",
-            "Takes effect at redeployment",
-            INSTANCE_ID
-    );
-
     public static final UnboundIntFlag METRICS_PROXY_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-heap-size-in-mib", 0,
             List.of("hmusum"), "2026-04-29", "2026-09-01",
