@@ -252,7 +252,7 @@
       "final"
     ],
     "methods" : [
-      "public void <init>(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Tags, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.provision.CloudResourceTags, com.yahoo.config.application.api.Notifications, java.util.List, java.util.Map, com.yahoo.config.application.api.Bcp, java.util.Optional, java.time.Instant)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Tags, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.provision.CloudResourceTags, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.util.Map, com.yahoo.config.application.api.Bcp, java.util.Optional, java.time.Instant)",
       "public com.yahoo.config.provision.InstanceName name()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionTarget revisionTarget()",
@@ -269,6 +269,7 @@
       "public java.util.Map cloudAccounts(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags()",
       "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
+      "public java.util.Optional heapDumpRedaction()",
       "public java.util.Optional hostTTL(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public com.yahoo.config.application.api.Notifications notifications()",
       "public java.util.List endpoints()",
@@ -554,7 +555,7 @@
       "final"
     ],
     "methods" : [
-      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.provision.CloudResourceTags, java.util.List, java.lang.String, java.util.List, com.yahoo.config.application.api.DeploymentSpec$DevSpec)",
+      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.provision.CloudResourceTags, java.util.Optional, java.util.List, java.lang.String, java.util.List, com.yahoo.config.application.api.DeploymentSpec$DevSpec)",
       "public boolean isEmpty()",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
@@ -566,6 +567,8 @@
       "public java.util.Map cloudAccounts()",
       "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags()",
       "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId)",
+      "public java.util.Optional heapDumpRedaction()",
+      "public com.yahoo.config.provision.HeapDumpRedaction heapDumpRedaction(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.provision.Tags tags(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment)",
       "public java.util.Optional hostTTL(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone, com.yahoo.config.provision.ClusterSpec$Id, boolean)",

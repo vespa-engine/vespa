@@ -11,6 +11,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HeapDumpRedaction;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
@@ -57,6 +58,7 @@ public final class DeploymentSpec {
                                                                   Map.of(),
                                                                   Optional.empty(),
                                                                   CloudResourceTags.empty(),
+                                                                  Optional.empty(),
                                                                   List.of(),
                                                                   "<deployment version='1.0'/>",
                                                                   List.of(),
@@ -71,6 +73,7 @@ public final class DeploymentSpec {
     private final Map<CloudName, CloudAccount> cloudAccounts;
     private final Optional<Duration> hostTTL;
     private final CloudResourceTags cloudResourceTags;
+    private final Optional<HeapDumpRedaction> heapDumpRedaction;
     private final List<Endpoint> endpoints;
     private final List<DeprecatedElement> deprecatedElements;
     private final DevSpec devSpec;
@@ -84,6 +87,7 @@ public final class DeploymentSpec {
                           Map<CloudName, CloudAccount> cloudAccounts,
                           Optional<Duration> hostTTL,
                           CloudResourceTags cloudResourceTags,
+                          Optional<HeapDumpRedaction> heapDumpRedaction,
                           List<Endpoint> endpoints,
                           String xmlForm,
                           List<DeprecatedElement> deprecatedElements,
@@ -95,6 +99,7 @@ public final class DeploymentSpec {
         this.cloudAccounts = Map.copyOf(cloudAccounts);
         this.hostTTL = Objects.requireNonNull(hostTTL);
         this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
+        this.heapDumpRedaction = Objects.requireNonNull(heapDumpRedaction);
         this.xmlForm = Objects.requireNonNull(xmlForm);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         this.deprecatedElements = List.copyOf(Objects.requireNonNull(deprecatedElements));
@@ -238,6 +243,16 @@ public final class DeploymentSpec {
                 : instance(instance).map(spec -> spec.cloudResourceTags(zone.environment(), zone.region()))
                                     .orElse(CloudResourceTags.empty());
         return cloudResourceTags.mergedWith(specificTags);
+    }
+
+    /** Returns the heap dump redaction level set on the root tag, if any. */
+    public Optional<HeapDumpRedaction> heapDumpRedaction() { return heapDumpRedaction; }
+
+    /** The most specific heap dump redaction level for the given instance. Instance level takes precedence over root. */
+    public HeapDumpRedaction heapDumpRedaction(InstanceName instance) {
+        return instance(instance).flatMap(DeploymentInstanceSpec::heapDumpRedaction)
+                                 .or(this::heapDumpRedaction)
+                                 .orElse(HeapDumpRedaction.none);
     }
 
     public Tags tags(InstanceName instance, Environment environment) {

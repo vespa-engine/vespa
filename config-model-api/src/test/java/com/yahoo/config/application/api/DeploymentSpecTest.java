@@ -11,6 +11,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HeapDumpRedaction;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
@@ -2404,6 +2405,113 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("${environment}", spec.cloudResourceTags().asMap().get("env"));
         assertEquals("prefix-${region}", spec.cloudResourceTags().asMap().get("location"));
+    }
+
+    @Test
+    public void memoryDumpAtRootLevel() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <memory-dump heap-dump-redaction='basic'/>
+                    <instance id='default'>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(Optional.of(HeapDumpRedaction.basic), spec.heapDumpRedaction());
+        assertEquals(HeapDumpRedaction.basic, spec.heapDumpRedaction(InstanceName.from("default")));
+        // The root level also applies to instances not declared in the spec (e.g. manually deployed instances)
+        assertEquals(HeapDumpRedaction.basic, spec.heapDumpRedaction(InstanceName.from("unknown")));
+    }
+
+    @Test
+    public void memoryDumpAtInstanceLevelOverridesRoot() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <memory-dump heap-dump-redaction='basic'/>
+                    <instance id='alpha'>
+                        <memory-dump heap-dump-redaction='full'/>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                    <instance id='beta'>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                    <instance id='gamma'>
+                        <memory-dump heap-dump-redaction='none'/>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(HeapDumpRedaction.full, spec.heapDumpRedaction(InstanceName.from("alpha")));
+        assertEquals(HeapDumpRedaction.basic, spec.heapDumpRedaction(InstanceName.from("beta")));
+        // Explicit none at instance level opts out of a root-level default
+        assertEquals(HeapDumpRedaction.none, spec.heapDumpRedaction(InstanceName.from("gamma")));
+    }
+
+    @Test
+    public void memoryDumpInImplicitInstance() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <memory-dump heap-dump-redaction='full'/>
+                    <prod>
+                        <region>us-east-1</region>
+                    </prod>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(HeapDumpRedaction.full, spec.heapDumpRedaction(InstanceName.from("default")));
+    }
+
+    @Test
+    public void memoryDumpDefaultsToNone() {
+        String r = "<deployment version='1.0'><instance id='default'><prod><region>us-east-1</region></prod></instance></deployment>";
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(Optional.empty(), spec.heapDumpRedaction());
+        assertEquals(HeapDumpRedaction.none, spec.heapDumpRedaction(InstanceName.from("default")));
+    }
+
+    @Test
+    public void memoryDumpWithUnknownRedactionLevelRejected() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <memory-dump heap-dump-redaction='everything'/>
+                    <instance id='default'>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
+        assertInvalid(r, "Illegal heap-dump-redaction 'everything'");
+    }
+
+    @Test
+    public void memoryDumpWithMissingRedactionAttributeRejected() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <memory-dump/>
+                    <instance id='default'>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
+        assertInvalid(r, "Missing required attribute 'heap-dump-redaction'");
     }
 
     private void assertCloudResourceTags(Map<String, String> expected, DeploymentSpec spec,
