@@ -744,7 +744,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
-                .sorted(Comparator.comparing(a -> lastModified(new File(fileReferencesPath, a))))
+                .sorted(Comparator.comparing(a -> {
+                    try {
+                        return lastModified(new File(fileReferencesPath, a));
+                    } catch (UncheckedIOException e) {
+                        log.log(Level.FINE, "Unable to get last modified time for file reference " + a + ", probably deleted");
+                        return Instant.EPOCH;
+                    }
+                }))
                 // Do max 20 at a time
                 .limit(20)
                 .toList();
