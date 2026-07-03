@@ -8,7 +8,7 @@ LOG_SETUP(".searchlib.attribute.changevector");
 
 namespace search {
 
-StringChangeData::StringChangeData(std::string s) noexcept : _s(std::move(s)) {
+StringChangeData::StringChangeData(std::string s) : _s(std::move(s)) {
     if (StringAttribute::countZero(_s.data(), _s.size()) > 0) {
         LOG(warning, "StringChangeData(): "
                      "Input string contains <null> byte(s); "
