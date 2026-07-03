@@ -40,22 +40,22 @@ public class ClusterDeploymentMetricsRetrieverTest {
                 .map(item -> URI.create("http://localhost:" + wireMock.port() + "/" + item))
                 .toList();
 
-        stubFor(get(urlEqualTo("/1?consumer=cluster-deployment-metrics"))
+        stubFor(get(urlEqualTo("/1"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody(contentMetrics())));
 
-        stubFor(get(urlEqualTo("/2?consumer=cluster-deployment-metrics"))
+        stubFor(get(urlEqualTo("/2"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody(contentMetrics())));
 
-        stubFor(get(urlEqualTo("/3?consumer=cluster-deployment-metrics"))
+        stubFor(get(urlEqualTo("/3"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody(containerMetrics())));
 
-        stubFor(get(urlEqualTo("/4?consumer=cluster-deployment-metrics"))
+        stubFor(get(urlEqualTo("/4"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody(clustercontrollerMetrics())));
@@ -94,12 +94,12 @@ public class ClusterDeploymentMetricsRetrieverTest {
                 .map(item -> URI.create("http://localhost:" + wireMock.port() + "/" + item))
                 .toList();
 
-        stubFor(get(urlEqualTo("/1?consumer=cluster-deployment-metrics"))
+        stubFor(get(urlEqualTo("/1"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody(contentMetrics())));
 
-        stubFor(get(urlEqualTo("/2?consumer=cluster-deployment-metrics"))
+        stubFor(get(urlEqualTo("/2"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody(clustercontrollerMetricsWithFeedBlocked())));
