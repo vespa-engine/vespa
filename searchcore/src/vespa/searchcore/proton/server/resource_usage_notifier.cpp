@@ -74,7 +74,8 @@ double ResourceUsageNotifier::get_relative_reserved_memory(const Guard&) const {
 }
 
 double ResourceUsageNotifier::get_relative_transient_memory_usage(const Guard&) const {
-    return static_cast<double>(_resource_usage.transient_memory()) / _hwInfo.memory().sizeBytes();
+    return static_cast<double>(_resource_usage.transient_memory() + _memoryStats.transient_memory()) /
+           _hwInfo.memory().sizeBytes();
 }
 
 double ResourceUsageNotifier::get_relative_transient_disk_usage(const Guard&) const {

@@ -40,7 +40,8 @@ public:
     bool operator<(const ProcessMemoryStats& rhs) const noexcept { return _anonymous_rss < rhs._anonymous_rss; }
 
     /** for unit tests only */
-    ProcessMemoryStats(uint64_t, uint64_t, uint64_t) noexcept;
+    ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss) noexcept;
+    ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss, size_t transient_memory) noexcept;
     [[nodiscard]] static ProcessMemoryStats parseStatm(asciistream& statm);
 };
 
