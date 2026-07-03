@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "disk_usage.h"
 #include "resource_usage_notifier.h"
 
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
@@ -39,7 +40,7 @@ class DiskMemUsageSampler {
     std::unique_ptr<vespalib::IDestructorCallback>                                    _periodicHandle;
 
     void sampleAndReportUsage();
-    uint64_t sampleDiskUsage(const searchcorespi::common::ResourceUsage& resource_usage);
+    [[nodiscard]] DiskUsage sampleDiskUsage(const searchcorespi::common::ResourceUsage& resource_usage);
     vespalib::ProcessMemoryStats sampleMemoryUsage();
     searchcorespi::common::ResourceUsage sample_resource_usage();
     [[nodiscard]] bool timeToSampleAgain() const noexcept;

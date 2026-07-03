@@ -98,7 +98,7 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled) {
     LOG(info, "Polled %zu times (%zu ms) to get a sample", i, i * 50);
     // Anonymous resident memory used by current process is sampled.
     EXPECT_GT(notifier->getMemoryStats().getAnonymousRss(), 0);
-    EXPECT_GT(notifier->getDiskUsedSize(), 0);
+    EXPECT_GT(notifier->disk_usage().used_bytes(), 0);
     EXPECT_EQ(150, notifier->get_resource_usage().transient_memory());
     EXPECT_EQ(210.0 / memory_size_bytes, notifier->usageState().reserved_memory());
     EXPECT_EQ(150.0 / memory_size_bytes, notifier->usageState().transient_memory_usage());
