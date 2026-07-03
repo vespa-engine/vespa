@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static ai.vespa.metrics.set.AutoscalingMetrics.autoscalingMetricSet;
-import static ai.vespa.metrics.set.ClusterDeploymentSet.clusterDeploymentMetricSet;
 import static ai.vespa.metrics.set.DefaultMetrics.defaultMetricSet;
 import static ai.vespa.metrics.set.NetworkMetrics.networkMetricSet;
 import static ai.vespa.metrics.set.SystemMetrics.systemMetricSet;
@@ -38,9 +37,6 @@ public class MetricsConsumer {
     // Referenced from com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsFetcher
     public static final MetricsConsumer autoscaling =
             consumer("autoscaling", autoscalingMetricSet);
-
-    public static final MetricsConsumer clusterDeployment =
-            consumer("cluster-deployment-metrics", clusterDeploymentMetricSet);
 
     public static final MetricsConsumer vespaCloud =
             consumer("vespa-cloud", vespaMetricSet, systemMetricSet, networkMetricSet);

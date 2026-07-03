@@ -33,7 +33,6 @@ class ConsumersConfigGenerator {
         allConsumers.put(MetricsConsumer.vespa.id(),
                          combineConsumers(defaultConsumer, allConsumers.get(MetricsConsumer.vespa.id())));
         allConsumers.put(MetricsConsumer.autoscaling.id(), MetricsConsumer.autoscaling);
-        allConsumers.put(MetricsConsumer.clusterDeployment.id(), MetricsConsumer.clusterDeployment);
 
         if (systemName.isPublicCloudLike())
             allConsumers.put(MetricsConsumer.vespaCloud.id(), MetricsConsumer.vespaCloud);

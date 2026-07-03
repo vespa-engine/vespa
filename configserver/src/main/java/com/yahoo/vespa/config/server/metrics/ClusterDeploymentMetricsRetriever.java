@@ -152,19 +152,9 @@ public class ClusterDeploymentMetricsRetriever {
         return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
     }
 
-    private static URI withParam(URI uri) {
-        try {
-            String extra = "consumer=cluster-deployment-metrics";
-            String query = uri.getQuery() == null ? extra : uri.getQuery() + "&" + extra;
-            return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), query, uri.getFragment());
-        } catch(java.net.URISyntaxException ex) {
-            return uri;
-        }
-    }
-
     @SuppressWarnings("deprecation")
     private static Slime doMetricsRequest(URI hostURI) {
-        HttpGet get = new HttpGet(withParam(hostURI));
+        HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {
             return SlimeUtils.jsonToSlime(response.getEntity().getContent());
         } catch (IOException e) {
