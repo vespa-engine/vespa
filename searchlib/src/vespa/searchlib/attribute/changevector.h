@@ -75,7 +75,7 @@ public:
     using DataType = std::string;
 
     StringChangeData(std::string_view s) : StringChangeData(DataType(s)) {}
-    StringChangeData(DataType s);
+    StringChangeData(DataType s) noexcept;
     StringChangeData() noexcept : _s() {}
 
     [[nodiscard]] const DataType& get() const noexcept { return _s; }
