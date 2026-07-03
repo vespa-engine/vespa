@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
@@ -82,7 +83,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-convergence-checker-response-handler-"));
-    private final BooleanFlag useStateV1ExtendedInfo;
+    private BooleanFlag useStateV1ExtendedInfo;
 
     @Inject
     public ConfigConvergenceChecker(FlagSource flagSource) {
@@ -103,6 +104,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                                                HostsToCheck hostsToCheck) {
         List<ServiceInfo> servicesToCheck = collectServicesToCheck(application, hostsToCheck);
         log.log(FINE, () -> "Services to check for config convergence: " + servicesToCheck);
+        useStateV1ExtendedInfo = useStateV1ExtendedInfo.with(Dimension.INSTANCE_ID, application.getId().serializedForm());
         return getServiceGenerations(servicesToCheck, timeoutPerService).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().generation(),
                                           (a, b) -> a, LinkedHashMap::new));
