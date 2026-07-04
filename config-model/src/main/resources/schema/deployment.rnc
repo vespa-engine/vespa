@@ -12,6 +12,7 @@ start = element deployment {
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
    CloudResourceTags? &
+   MemoryDump? &
    Step &
    Dev?
 }
@@ -45,6 +46,7 @@ Instance = element instance {
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
    CloudResourceTags? &
+   MemoryDump? &
    StepExceptInstance
 }
 
@@ -222,6 +224,10 @@ MemberRegion = element region {
 
 CloudResourceTags = element resource-tags {
     CloudResourceTag*
+}
+
+MemoryDump = element memory-dump {
+    attribute heap-dump-redaction { xsd:string }
 }
 
 CloudResourceTag = element tag {

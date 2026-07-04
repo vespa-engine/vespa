@@ -31,6 +31,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HeapDumpRedaction;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
@@ -101,6 +102,8 @@ public class DeploymentSpecXmlReader {
     private static final String cloudAccountAttribute = "cloud-account";
     private static final String hostTTLAttribute = "empty-host-ttl";
     private static final String cloudResourceTagsTag = "resource-tags";
+    private static final String memoryDumpTag = "memory-dump";
+    private static final String heapDumpRedactionAttribute = "heap-dump-redaction";
     private static final String availabilityZoneTag = "availability-zone";
     private static final String skipAttribute = "skip"; // Undocumented on purpose
 
@@ -177,6 +180,7 @@ public class DeploymentSpecXmlReader {
                                   readCloudAccounts(root),
                                   readHostTTL(root),
                                   readCloudResourceTags(root),
+                                  readHeapDumpRedaction(root),
                                   applicationEndpoints,
                                   xmlForm,
                                   deprecatedElements,
@@ -220,6 +224,7 @@ public class DeploymentSpecXmlReader {
         Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(instanceElement);
         Optional<Duration> hostTTL = readHostTTL(instanceElement);
         CloudResourceTags cloudResourceTags = readCloudResourceTags(instanceElement);
+        Optional<HeapDumpRedaction> heapDumpRedaction = readHeapDumpRedaction(instanceElement);
         Notifications notifications = readNotifications(instanceElement, parentTag);
 
         // Values where there is no default
@@ -250,6 +255,7 @@ public class DeploymentSpecXmlReader {
                                                              cloudAccounts,
                                                              hostTTL,
                                                              cloudResourceTags,
+                                                             heapDumpRedaction,
                                                              notifications,
                                                              endpoints,
                                                              zoneEndpoints,
@@ -781,6 +787,20 @@ public class DeploymentSpecXmlReader {
                     return CloudResourceTags.from(tags);
                 })
                 .orElse(CloudResourceTags.empty());
+    }
+
+    private Optional<HeapDumpRedaction> readHeapDumpRedaction(Element parent) {
+        Element memoryDumpElement = XML.getChild(parent, memoryDumpTag);
+        if (memoryDumpElement == null) return Optional.empty();
+
+        String value = requireStringAttribute(heapDumpRedactionAttribute, memoryDumpElement);
+        return Optional.of(switch (value) {
+            case "none" -> HeapDumpRedaction.none;
+            case "basic" -> HeapDumpRedaction.basic;
+            case "full" -> HeapDumpRedaction.full;
+            default -> throw new IllegalArgumentException("Illegal " + heapDumpRedactionAttribute + " '" + value +
+                                                          "': Must be one of 'none', 'basic', 'full'");
+        });
     }
 
     private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element parent, Element globalBlockersParent) {
