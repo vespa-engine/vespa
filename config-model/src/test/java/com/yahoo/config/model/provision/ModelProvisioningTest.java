@@ -2716,7 +2716,7 @@ public class ModelProvisioningTest {
 
         var clusterSpec = model.hostSystem().getHosts().stream().filter(
                 host -> host.spec().membership().isPresent()).filter(
-                host -> "container1".equals(host.spec().membership().get().cluster().id().value())).findFirst().map(
+                host -> "container1".equals(host.spec().membership().get().id().value())).findFirst().map(
                 host -> host.spec().membership().get().cluster());
 
         assertTrue(clusterSpec.isPresent());
