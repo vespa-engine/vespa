@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CapacityPolicies;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Exclusivity;
@@ -59,7 +60,7 @@ public class QuotaValidator implements Validator {
         }
 
         var actualSpend = context.model().allocatedHosts().getHosts().stream()
-                         .filter(hostSpec -> hostSpec.membership().get().cluster().type() != ClusterSpec.Type.admin)
+                         .filter(hostSpec -> hostSpec.membership().get().type() != ClusterSpec.Type.admin)
                          .mapToDouble(hostSpec -> hostSpec.advertisedResources().cost())
                          .sum();
 
@@ -76,10 +77,10 @@ public class QuotaValidator implements Validator {
 
     private Set<ClusterSpec.Id> adminClusterIds(VespaModel model) {
         return model.allocatedHosts().getHosts().stream()
-                .map(hostSpec -> hostSpec.membership().orElseThrow().cluster())
+                .map(hostSpec -> hostSpec.membership().orElseThrow())
                 .filter(cluster -> cluster.type() == ClusterSpec.Type.admin)
-                .map(ClusterSpec::id)
-                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                .map(ClusterMembership::id)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */

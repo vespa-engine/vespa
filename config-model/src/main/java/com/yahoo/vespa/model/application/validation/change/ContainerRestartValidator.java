@@ -39,7 +39,7 @@ public class ContainerRestartValidator implements ChangeValidator {
     private Set<HostSpec> contentHostsOf(VespaModel model) {
         return model.allocatedHosts().getHosts().stream()
                     .filter(spec -> spec.membership()
-                                        .map(membership -> membership.cluster().type().isContent())
+                                        .map(membership -> membership.type().isContent())
                                         .orElse(false))
                     .collect(toUnmodifiableSet());
     }

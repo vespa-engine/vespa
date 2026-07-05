@@ -272,8 +272,8 @@ public class ModelProvisioningTest {
         HostResource host = model.hostSystem().getHosts().iterator().next();
 
         assertTrue(host.spec().membership().isPresent());
-        assertEquals("container", host.spec().membership().get().cluster().type().name());
-        assertEquals("container1", host.spec().membership().get().cluster().id().value());
+        assertEquals("container", host.spec().membership().get().type().name());
+        assertEquals("container1", host.spec().membership().get().id().value());
     }
 
     @Test
@@ -817,7 +817,7 @@ public class ModelProvisioningTest {
         assertEquals("cluster-controllers", clusterControllers.getName());
         clusterControllers.getContainers().stream().map(ClusterControllerContainer::getHost).forEach(host -> {
             assertTrue(host.spec().membership().get().cluster().isStateful());
-            assertEquals(ClusterSpec.Type.admin, host.spec().membership().get().cluster().type());
+            assertEquals(ClusterSpec.Type.admin, host.spec().membership().get().type());
         });
     }
 
@@ -2195,7 +2195,7 @@ public class ModelProvisioningTest {
                                             "zk", true,
                                             "content", true);
         Map<String, List<HostResource>> hostsByCluster = model.hostSystem().getHosts().stream()
-                                                              .collect(Collectors.groupingBy(h -> h.spec().membership().get().cluster().id().value()));
+                                                              .collect(Collectors.groupingBy(h -> h.spec().membership().get().id().value()));
         tests.forEach((clusterId, stateful) -> {
             List<HostResource> hosts = hostsByCluster.getOrDefault(clusterId, List.of());
             assertFalse(hosts.isEmpty(), "Hosts are provisioned for '" + clusterId + "'");
@@ -2610,7 +2610,7 @@ public class ModelProvisioningTest {
     private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
         assertEquals(nodeCount,
                      model.hostSystem().getHosts().stream()
-                          .map(h -> h.spec().membership().get().cluster())
+                          .map(h -> h.spec().membership().get())
                           .filter(spec -> spec.id().equals(id) && spec.type().equals(type))
                           .count(),
                      "Nodes in cluster " + id + " with type " + type);
@@ -2772,7 +2772,7 @@ public class ModelProvisioningTest {
                 .stream()
                 .flatMap(h -> h.spec().membership().stream()).toList();
         return memberships.stream()
-                .filter(m -> m.cluster().type() == type)
+                .filter(m -> m.type() == type)
                 .map(m -> m.cluster().profile())
                 .flatMap(Optional::stream)
                 .toList();

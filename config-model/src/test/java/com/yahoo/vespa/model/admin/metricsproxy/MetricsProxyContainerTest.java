@@ -208,7 +208,7 @@ public class MetricsProxyContainerTest {
         boolean foundAdminNode = false;
         for (var host : model.hostSystem().getHosts()) {
             if (host.spec().membership().isPresent() &&
-                host.spec().membership().get().cluster().type() == ClusterSpec.Type.admin) {
+                host.spec().membership().get().type() == ClusterSpec.Type.admin) {
                 QrStartConfig config = model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID + "/" + host.getHostname());
                 assertEquals(256, config.jvm().heapsize());
                 assertEquals(256, config.jvm().minHeapsize());

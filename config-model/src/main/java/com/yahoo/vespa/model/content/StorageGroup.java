@@ -353,14 +353,14 @@ public class StorageGroup {
                                        context) :
                         Map.of();
 
-                Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
+                Map<Integer, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
                 if (hostGroups.size() > 1) {
                     if (parent.isPresent())
                         throw new IllegalArgumentException("Cannot specify groups using the groups attribute in nested content groups");
 
                     // create subgroups as returned from allocation
-                    for (Map.Entry<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
-                        String groupIndex = String.valueOf(hostGroup.getKey().get().index());
+                    for (Map.Entry<Integer, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
+                        String groupIndex = String.valueOf(hostGroup.getKey());
                         StorageGroup subgroup = new StorageGroup(true, groupIndex, groupIndex);
                         for (Map.Entry<HostResource, ClusterMembership> host : hostGroup.getValue().entrySet()) {
                             subgroup.nodes.add(createStorageNode(deployState, owner, host.getKey(), subgroup, host.getValue()));
@@ -380,10 +380,10 @@ public class StorageGroup {
             }
 
             /** Collect hosts per group */
-            private Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> collectAllocatedSubgroups(Map<HostResource, ClusterMembership> hostMapping) {
-                Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostsPerGroup = new LinkedHashMap<>();
+            private Map<Integer, Map<HostResource, ClusterMembership>> collectAllocatedSubgroups(Map<HostResource, ClusterMembership> hostMapping) {
+                Map<Integer, Map<HostResource, ClusterMembership>> hostsPerGroup = new LinkedHashMap<>();
                 for (Map.Entry<HostResource, ClusterMembership> entry : hostMapping.entrySet()) {
-                    Optional<ClusterSpec.Group> group = entry.getValue().cluster().group();
+                    Integer group = entry.getValue().group();
                     Map<HostResource, ClusterMembership> hostsInGroup = hostsPerGroup.computeIfAbsent(group, k -> new LinkedHashMap<>());
                     hostsInGroup.put(entry.getKey(), entry.getValue());
                 }

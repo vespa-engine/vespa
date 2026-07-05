@@ -40,9 +40,7 @@ public class HostResourceTest {
     }
 
     private void assertClusterMembership(HostResource host, ClusterSpec.Type type, String id) {
-        ClusterSpec membership = host.spec().membership().map(ClusterMembership::cluster)
-                .orElseThrow(() -> new RuntimeException("No cluster membership!"));
-
+        var membership = host.spec().membership().orElseThrow(() -> new RuntimeException("No cluster membership!"));
         assertEquals(type, membership.type());
         assertEquals(id, membership.id().value());
     }
