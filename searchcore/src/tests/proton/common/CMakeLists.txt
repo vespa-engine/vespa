@@ -18,6 +18,7 @@ vespa_add_executable(searchcore_proton_common_gtest_test_app TEST
     selectpruner_test.cpp
     state_reporter_utils_test.cpp
     statusreport_test.cpp
+    field_path_target_test.cpp
     DEPENDS
     searchcore_feedoperation
     searchcore_pcommon
