@@ -1457,7 +1457,9 @@
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
       "public double searchNodeReservedMemoryFactor()",
       "public boolean forceDisableOnnxModelOptimization()",
-      "public boolean failWhenConfiguringIndexedMapOfArray()"
+      "public boolean failWhenConfiguringIndexedMapOfArray()",
+      "public boolean protonLogWarningOnDiskCapacityChange()",
+      "public boolean protonResampleDiskCapacity()"
     ],
     "fields" : [ ]
   },
