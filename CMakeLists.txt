@@ -15,6 +15,10 @@ vespa_detect_build_platform()
 message("-- Vespa build platform is ${VESPA_OS_DISTRO} ${VESPA_OS_DISTRO_VERSION}")
 vespa_use_default_cxx_compiler()
 
+# Emit compile_commands.json so editors/LSP servers (e.g. clangd) can find
+# per-file compile flags and include paths.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 project(vespa CXX C)
 vespa_use_default_vespa_unprivileged()
 vespa_use_default_cmake_install_prefix()
