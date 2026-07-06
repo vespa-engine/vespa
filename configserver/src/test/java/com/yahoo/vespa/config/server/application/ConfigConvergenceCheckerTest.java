@@ -26,6 +26,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ConfigStatus;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static org.junit.Assert.assertEquals;
@@ -283,6 +284,30 @@ public class ConfigConvergenceCheckerTest {
         assertEquals(-1, service.currentGeneration);
         assertTrue(service.configStatus.isFailed());
         assertEquals("Failed to construct component Foo", service.configStatus.message());
+    }
+
+    @Test
+    public void config_status_unknown_is_not_failed() {
+        ConfigStatus status = ConfigStatus.unknown(-1, "service unreachable");
+        assertEquals(ConfigStatus.Status.UNKNOWN, status.status());
+        assertFalse(status.isFailed());
+        assertEquals("unknown", status.status().toString());
+        assertEquals("service unreachable", status.message());
+    }
+
+    @Test
+    public void service_list_convergence_unreachable_service_has_unknown_status() {
+        wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(aResponse()
+                .withFixedDelay((int) clientTimeout.plus(Duration.ofSeconds(1)).toMillis())
+                .withBody("response too slow")));
+
+        ServiceListResponse response = checker.checkConvergenceForAllServices(application, Duration.ofMillis(1));
+        assertFalse(response.converged);
+        assertEquals(1, response.services.size());
+        ServiceListResponse.Service service = response.services.get(0);
+        assertEquals(-1, service.currentGeneration);
+        assertFalse(service.configStatus.isFailed());
+        assertEquals(ConfigStatus.Status.UNKNOWN, service.configStatus.status());
     }
 
     private void assertService(URI uri, ServiceListResponse.Service service1, long expectedGeneration) {

@@ -302,7 +302,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     private record ServiceGenerationResult(long generation, ConfigStatus configStatus) {
         static ServiceGenerationResult ok(long generation) { return new ServiceGenerationResult(generation, ConfigStatus.ok(generation)); }
         static ServiceGenerationResult configFailed(long generation, String message) { return new ServiceGenerationResult(-1L, ConfigStatus.failed(generation, message)); }
-        static ServiceGenerationResult unreachable(String message) { return new ServiceGenerationResult(-1L, ConfigStatus.failed(-1, message)); }
+        static ServiceGenerationResult unreachable(String message) { return new ServiceGenerationResult(-1L, ConfigStatus.unknown(-1, message)); }
     }
 
     private static URI createApiUri(URI serviceUrl) {
@@ -351,7 +351,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     public record ConfigStatus(long generation, Status status, String message) {
         public enum Status {
-            OK, FAILED;
+            OK, FAILED, UNKNOWN;
             @Override public String toString() { return name().toLowerCase(); }
         }
         public static ConfigStatus ok(long generation) {
@@ -359,6 +359,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
         public static ConfigStatus failed(long generation, String message) {
             return new ConfigStatus(generation, Status.FAILED, message);
+        }
+        public static ConfigStatus unknown(long generation, String message) {
+            return new ConfigStatus(generation, Status.UNKNOWN, message);
         }
         public boolean isFailed() { return status == Status.FAILED; }
     }
