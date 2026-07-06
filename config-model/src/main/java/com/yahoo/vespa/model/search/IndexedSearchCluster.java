@@ -92,7 +92,7 @@ public class IndexedSearchCluster extends SearchCluster {
                     .count();
             int nodesPerGroup = (int) (searchNodes.size() / numGroups);
             if (nodesPerGroup > 1) {
-                // Note: For clusters with small number of docs the " - 0.001" might still make
+                // Note: For clusters with small number of docs the " - 0.01" might still make
                 // this limit is too high, but we don't know the document count here
                 // Apps with several groups is not likely to have that few docs in practice
                 builder.minActivedocsPercentage((1.0 - 1.0 / nodesPerGroup) * 100.0 - 0.01);
