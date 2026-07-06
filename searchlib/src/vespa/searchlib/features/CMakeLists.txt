@@ -54,6 +54,7 @@ vespa_add_library(searchlib_features OBJECT
     nativeproximityfeature.cpp
     nativerankfeature.cpp
     nowfeature.cpp
+    num_docs_indexed_feature.cpp
     onnx_feature.cpp
     proximityfeature.cpp
     querycompletenessfeature.cpp

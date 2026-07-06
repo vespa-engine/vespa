@@ -69,4 +69,9 @@ QueryEnvironmentBuilder& QueryEnvironmentBuilder::set_avg_field_length(const std
     return *this;
 }
 
+QueryEnvironmentBuilder& QueryEnvironmentBuilder::set_num_docs(uint32_t num_docs) {
+    _queryEnv.set_num_docs(num_docs);
+    return *this;
+}
+
 } // namespace search::fef::test

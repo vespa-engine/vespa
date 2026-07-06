@@ -12,13 +12,15 @@ namespace proton::matching {
 
 QueryEnvironment::QueryEnvironment(const IIndexEnvironment& indexEnv, const IAttributeContext& attrContext,
                                    const Properties&                           properties,
-                                   const search::index::IFieldLengthInspector& field_length_inspector)
+                                   const search::index::IFieldLengthInspector& field_length_inspector,
+                                   uint32_t                                    num_docs)
     : _indexEnv(indexEnv),
       _attrContext(attrContext),
       _properties(properties),
       _locations(),
       _terms(),
-      _field_length_inspector(field_length_inspector) {
+      _field_length_inspector(field_length_inspector),
+      _num_docs(num_docs) {
 }
 
 const search::fef::Properties& QueryEnvironment::getProperties() const {

@@ -247,6 +247,12 @@ public class BuiltInFunctions {
 
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
+        put("averageFieldLength", new GenericFunction("averageFieldLength",
+            new FunctionSignature(new FieldArgument("field"), Set.of(
+                "",
+                "out"
+            ))
+        ));
 
         put("elementwise", new GenericFunction("elementwise", List.of(
             new FunctionSignature(List.of(
@@ -302,6 +308,10 @@ public class BuiltInFunctions {
         // ==== Global features ====
         put("globalSequence", new GenericFunction("globalSequence"));
         put("now", new GenericFunction("now"));
+        put("num_docs_indexed", new GenericFunction("num_docs_indexed", new FunctionSignature(List.of(), Set.of(
+            "",
+            "out"
+        ))));
         // put("random", new GenericFunction());
 
         // put("random.match", new GenericFunction()); // This is buggy

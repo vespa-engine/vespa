@@ -28,6 +28,7 @@
 #include <vespa/searchlib/features/matchesfeature.h>
 #include <vespa/searchlib/features/matchfeature.h>
 #include <vespa/searchlib/features/nowfeature.h>
+#include <vespa/searchlib/features/num_docs_indexed_feature.h>
 #include <vespa/searchlib/features/queryfeature.h>
 #include <vespa/searchlib/features/querytermcountfeature.h>
 #include <vespa/searchlib/features/random_normal_feature.h>
@@ -584,6 +585,30 @@ TEST_F(ProdFeaturesTest, test_average_field_length) {
         ASSERT_TRUE(ft.setup());
         ASSERT_TRUE(ft.execute(
             RankResult().addScore("averageFieldLength(foo)", 42.0).addScore("averageFieldLength(foo).out", 42.0)));
+    }
+}
+
+TEST_F(ProdFeaturesTest, test_num_docs_indexed) {
+    NumDocsIndexedBlueprint pt;
+    { // Test blueprint.
+        EXPECT_TRUE(assertCreateInstance(pt, "num_docs_indexed"));
+
+        StringList params, in, out;
+        FT_SETUP_OK(pt, params, in, out.add("out"));
+        FT_SETUP_FAIL(pt, params.add("foo"));
+
+        FT_DUMP_EMPTY(_factory, "num_docs_indexed");
+    }
+    { // Test executor.
+        StringList features;
+        features.add("num_docs_indexed");
+        features.add("num_docs_indexed.out");
+        FtFeatureTest ft(_factory, features);
+        ft.getQueryEnv().getBuilder().set_num_docs(123);
+        ASSERT_TRUE(ft.setup());
+        auto expected = RankResult().addScore("num_docs_indexed", 123).addScore("num_docs_indexed.out", 123);
+        ASSERT_TRUE(ft.execute(expected, 1));
+        ASSERT_TRUE(ft.execute(expected, 987));
     }
 }
 

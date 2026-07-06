@@ -86,6 +86,16 @@ public:
     virtual index::FieldLengthInfo get_field_length_info(const std::string& field_name) const = 0;
 
     /**
+     * Returns the local document count for this query evaluation.
+     *
+     * On indexed content nodes this mirrors the fallback total document count used by BM25 when no
+     * per-term document-frequency override is present.
+     *
+     * @return local document count
+     **/
+    virtual uint32_t get_num_docs() const = 0;
+
+    /**
      * Returns a const view of the index environment.
      *
      * @return index environment

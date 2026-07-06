@@ -544,12 +544,12 @@ schema rankexpression {
       }
   }
 
-  rank-profile with_avg_field_length {
+  rank-profile with_corpus_features {
       first-phase {
         expression: bm25(textchunks)
       }
-      rank-features { averageFieldLength(textchunks) }
-      match-features { averageFieldLength(textchunks) }
-      summary-features { averageFieldLength(textchunks) }
+      rank-features { averageFieldLength(textchunks) num_docs_indexed }
+      match-features { averageFieldLength(textchunks) num_docs_indexed }
+      summary-features { averageFieldLength(textchunks) num_docs_indexed }
   }
 }

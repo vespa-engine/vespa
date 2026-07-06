@@ -47,6 +47,8 @@ public:
     search::index::FieldLengthInfo get_field_length_info(const std::string&) const override {
         return search::index::FieldLengthInfo(100.0, 100.0, 1);
     }
+    // Mirrors ITermFieldData's default total_doc_count; streaming never sets corpus-level document frequency.
+    uint32_t get_num_docs() const override { return 1; }
     const search::fef::IIndexEnvironment& getIndexEnvironment() const override { return _indexEnv; }
     void addTerm(const search::fef::ITermData* term) { _queryTerms.push_back(term); }
 
