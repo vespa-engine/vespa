@@ -308,7 +308,7 @@ public class BuiltInFunctions {
         // ==== Global features ====
         put("globalSequence", new GenericFunction("globalSequence"));
         put("now", new GenericFunction("now"));
-        put("numDocs", new GenericFunction("numDocs", new FunctionSignature(List.of(), Set.of(
+        put("num_docs_indexed", new GenericFunction("num_docs_indexed", new FunctionSignature(List.of(), Set.of(
             "",
             "out"
         ))));

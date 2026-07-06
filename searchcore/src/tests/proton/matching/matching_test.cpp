@@ -284,8 +284,8 @@ struct MyWorld {
         config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"tensor(x[3])(x)\")");
     }
 
-    void setup_num_docs_match_feature() {
-        config.add(indexproperties::match::Feature::NAME, "numDocs");
+    void setup_num_docs_indexed_match_feature() {
+        config.add(indexproperties::match::Feature::NAME, "num_docs_indexed");
     }
 
     void setup_feature_renames() {
@@ -343,10 +343,10 @@ struct MyWorld {
         }
     }
 
-    static void verify_num_docs_match_feature(SearchReply& reply) {
+    static void verify_num_docs_indexed_match_feature(SearchReply& reply) {
         ASSERT_GT(reply.hits.size(), 0u);
         ASSERT_EQ(reply.match_features.names.size(), 1u);
-        EXPECT_EQ(reply.match_features.names[0], "numDocs");
+        EXPECT_EQ(reply.match_features.names[0], "num_docs_indexed");
         ASSERT_EQ(reply.match_features.values.size(), reply.hits.size());
         for (const auto& value : reply.match_features.values) {
             EXPECT_EQ(value.as_double(), NUM_DOCS - 1);
@@ -671,14 +671,14 @@ TEST_F(MatchingTest, require_that_match_features_can_be_renamed) {
     MyWorld::verify_match_feature_renames(*reply, "f1");
 }
 
-TEST_F(MatchingTest, require_that_num_docs_match_feature_uses_bm25_docid_limit_count) {
+TEST_F(MatchingTest, require_that_num_docs_indexed_match_feature_uses_bm25_docid_limit_count) {
     MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
-    world.setup_num_docs_match_feature();
+    world.setup_num_docs_indexed_match_feature();
     SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
     SearchReply::UP   reply = world.performSearch(*request, 1);
-    MyWorld::verify_num_docs_match_feature(*reply);
+    MyWorld::verify_num_docs_indexed_match_feature(*reply);
 }
 
 TEST_F(MatchingTest, require_that_no_hits_gives_no_match_feature_names) {

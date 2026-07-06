@@ -548,8 +548,8 @@ schema rankexpression {
       first-phase {
         expression: bm25(textchunks)
       }
-      rank-features { averageFieldLength(textchunks) numDocs }
-      match-features { averageFieldLength(textchunks) numDocs }
-      summary-features { averageFieldLength(textchunks) numDocs }
+      rank-features { averageFieldLength(textchunks) num_docs_indexed }
+      match-features { averageFieldLength(textchunks) num_docs_indexed }
+      summary-features { averageFieldLength(textchunks) num_docs_indexed }
   }
 }

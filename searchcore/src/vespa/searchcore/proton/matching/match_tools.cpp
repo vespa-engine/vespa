@@ -161,7 +161,7 @@ MatchToolsFactory::MatchToolsFactory(
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes(),
-                bm25_total_doc_count(searchContext.getDocIdLimit())),
+                doc_count_from_docid_limit(searchContext.getDocIdLimit())),
       _requestContext(doom, thread_bundle, attributeContext, _queryEnv, _queryEnv.getObjectStore(),
                       _create_blueprint_params, metaStoreReadGuard),
       _mdl(),

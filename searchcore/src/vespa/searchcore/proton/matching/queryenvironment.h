@@ -11,6 +11,10 @@ class IFieldLengthInspector;
 
 namespace proton::matching {
 
+inline uint32_t doc_count_from_docid_limit(uint32_t docid_limit) noexcept {
+    return (docid_limit > 1) ? (docid_limit - 1) : 1;
+}
+
 /**
  * Query environment implementation for the proton matching pipeline.
  **/

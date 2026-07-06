@@ -9,9 +9,9 @@ namespace search::features {
 /**
  * Blueprint for the local document count used as BM25's fallback total document count.
  */
-class NumDocsBlueprint : public fef::Blueprint {
+class NumDocsIndexedBlueprint : public fef::Blueprint {
 public:
-    NumDocsBlueprint();
+    NumDocsIndexedBlueprint();
 
     void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;

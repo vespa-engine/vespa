@@ -3,6 +3,7 @@
 #include "querynodes.h"
 
 #include "handlerecorder.h"
+#include "queryenvironment.h"
 #include "termdatafromnode.h"
 #include "viewresolver.h"
 
@@ -86,7 +87,7 @@ void ProtonTermData::allocateTerms(MatchDataLayout& mdl) {
 
 void ProtonTermData::setDocumentFrequency(uint32_t estHits, uint32_t docIdLimit) {
     if (docIdLimit > 1) {
-        uint32_t total_doc_count = bm25_total_doc_count(docIdLimit);
+        uint32_t total_doc_count = doc_count_from_docid_limit(docIdLimit);
         propagate_document_frequency(std::min(estHits, total_doc_count), total_doc_count);
     } else {
         propagate_document_frequency(0, 1);
