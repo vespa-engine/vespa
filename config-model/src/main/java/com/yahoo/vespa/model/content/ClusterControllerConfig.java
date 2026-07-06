@@ -105,9 +105,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
     public ClusterControllerTuning tuning() { return tuning; }
 
     private static CoveragePolicy.Policy coveragePolicy(ModelElement content) {
-        var policy = Optional.ofNullable(content.childAsString("coverage-policy"));
-        return policy.map(s -> new CoveragePolicy(CoveragePolicy.Policy.valueOf(s.toUpperCase(java.util.Locale.ROOT))))
-                     .orElseGet(CoveragePolicy::group).policy();
+        return CoveragePolicy.from(content.childAsString("coverage-policy")).policy();
     }
 
     private static Optional<Integer> maxGroupsAllowedDown(ModelElement tuning,
