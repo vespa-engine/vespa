@@ -98,6 +98,28 @@ void BM_pre_rotated_dot_product(benchmark::State& state, Args&&... args) {
     }
 }
 
+// Pre-rotated full precision vector vs. quantized vector squared Euclidean distance with args <bits, dimensions>
+template <typename... Args>
+void BM_pre_rotated_squared_euclidean_distance(benchmark::State& state, Args&&... args) {
+    const auto    my_args = std::make_tuple(std::move(args)...);
+    const uint8_t bits = std::get<0>(my_args);
+    const size_t  dims = state.range();
+
+    Xoshiro256PlusPlusPrng prng(gen_true_random());
+    EdenQuantizer          quant(dims, bits, prng());
+    std::vector<float>     v(dims);
+    std::vector<uint8_t>   q_v(quant.quantized_size());
+    fill_random(v, prng);
+
+    quant.quantize(v, q_v, QuantMode::MSE);
+    quant.rotate_vector_inplace(v);
+
+    for (auto _ : state) {
+        float dist = quant.pre_rotated_query_squared_euclidean_distance(v, q_v);
+        benchmark::DoNotOptimize(dist);
+    }
+}
+
 // TODO benchmark non-power of 2 sizes
 
 BENCHMARK_CAPTURE(BM_quantize, 1_bit_mse, 1, QuantMode::MSE)->Range(8, 8192);
@@ -119,6 +141,11 @@ BENCHMARK_CAPTURE(BM_pre_rotated_dot_product, 1_bit, 1)->Range(8, 8192);
 BENCHMARK_CAPTURE(BM_pre_rotated_dot_product, 2_bits, 2)->Range(8, 8192);
 BENCHMARK_CAPTURE(BM_pre_rotated_dot_product, 3_bits, 3)->Range(8, 8192);
 BENCHMARK_CAPTURE(BM_pre_rotated_dot_product, 4_bits, 4)->Range(8, 8192);
+
+BENCHMARK_CAPTURE(BM_pre_rotated_squared_euclidean_distance, 1_bit, 1)->Range(8, 8192);
+BENCHMARK_CAPTURE(BM_pre_rotated_squared_euclidean_distance, 2_bits, 2)->Range(8, 8192);
+BENCHMARK_CAPTURE(BM_pre_rotated_squared_euclidean_distance, 3_bits, 3)->Range(8, 8192);
+BENCHMARK_CAPTURE(BM_pre_rotated_squared_euclidean_distance, 4_bits, 4)->Range(8, 8192);
 
 } // namespace vespalib::quant
 
