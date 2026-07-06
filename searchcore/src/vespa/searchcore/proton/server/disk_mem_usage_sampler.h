@@ -36,6 +36,8 @@ class DiskMemUsageSampler {
     vespalib::duration                         _sampleInterval;
     vespalib::steady_time                      _lastSampleTime;
     std::mutex                                 _lock;
+    bool                                       _should_resample_disk_capacity;
+    bool                                       _resample_disk_capacity_feature_flag;
     std::vector<std::shared_ptr<const searchcorespi::common::IResourceUsageProvider>> _resource_usage_providers;
     std::unique_ptr<vespalib::IDestructorCallback>                                    _periodicHandle;
 
@@ -51,17 +53,27 @@ public:
         ResourceUsageNotifier::Config filterConfig;
         vespalib::duration            sampleInterval;
         vespalib::HwInfo              hwInfo;
+        bool                          should_resample_disk_capacity;
+        bool                          resample_disk_capacity;
 
-        Config() : filterConfig(), sampleInterval(60s), hwInfo() {}
+        Config()
+            : filterConfig(),
+              sampleInterval(60s),
+              hwInfo(),
+              should_resample_disk_capacity(false),
+              resample_disk_capacity(false) {}
 
         Config(double memoryLimit_in, double diskLimit_in, double reserved_disk_space_factor_in,
                double reserved_memory_factor_in, AttributeUsageFilterConfig attribute_limit_in,
                bool log_warning_on_disk_capacity_change_in, vespalib::duration sampleInterval_in,
-               const vespalib::HwInfo& hwInfo_in)
+               const vespalib::HwInfo& hwInfo_in, bool should_resample_disk_capacity_in = false,
+               bool resample_disk_capacity_in = false)
             : filterConfig(memoryLimit_in, diskLimit_in, reserved_disk_space_factor_in, reserved_memory_factor_in,
                            attribute_limit_in, log_warning_on_disk_capacity_change_in),
               sampleInterval(sampleInterval_in),
-              hwInfo(hwInfo_in) {}
+              hwInfo(hwInfo_in),
+              should_resample_disk_capacity(should_resample_disk_capacity_in),
+              resample_disk_capacity(resample_disk_capacity_in) {}
     };
 
     DiskMemUsageSampler(const std::string& path_in, ResourceUsageWriteFilter& filter,
