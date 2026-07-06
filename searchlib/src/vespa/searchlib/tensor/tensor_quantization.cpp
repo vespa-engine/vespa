@@ -65,7 +65,7 @@ std::unique_ptr<vespalib::eval::Value> quantize_f32_tensor(const vespalib::eval:
         assert(idx.size() == 1);
         auto i8f_array_ref = builder->add_subspace(addr);
         auto u8_array_ref = span_cast<uint8_t>(i8f_array_ref);
-        quantizer.quantize(input_cells, u8_array_ref, quantization_mode);
+        quantizer.quantize(input_cells, vespalib::quant::MutableQuantizedVector(u8_array_ref), quantization_mode);
     } else {
         auto view = idx.create_view({});
         view->lookup({});
@@ -79,7 +79,7 @@ std::unique_ptr<vespalib::eval::Value> quantize_f32_tensor(const vespalib::eval:
             auto i8f_array_ref = builder->add_subspace(addr);
             auto u8_array_ref = span_cast<uint8_t>(i8f_array_ref);
             auto input = input_cells.subspan(input_dense_size * subspace_idx, input_dense_size);
-            quantizer.quantize(input, u8_array_ref, quantization_mode);
+            quantizer.quantize(input, vespalib::quant::MutableQuantizedVector(u8_array_ref), quantization_mode);
         }
     }
     return builder->build(std::move(builder));
@@ -102,7 +102,7 @@ std::unique_ptr<vespalib::eval::Value> dequantize_tensor(const vespalib::eval::V
         assert(idx.size() == 1);
         auto f32_array_ref = builder->add_subspace(addr);
         auto input_as_u8 = span_cast<const uint8_t>(input_cells);
-        quantizer.dequantize(input_as_u8, f32_array_ref);
+        quantizer.dequantize(vespalib::quant::QuantizedVector(input_as_u8), f32_array_ref);
     } else {
         auto view = idx.create_view({});
         view->lookup({});
@@ -116,7 +116,7 @@ std::unique_ptr<vespalib::eval::Value> dequantize_tensor(const vespalib::eval::V
             auto f32_array_ref = builder->add_subspace(addr);
             auto input = input_cells.subspan(quantized_dense_size * subspace_idx, quantized_dense_size);
             auto input_as_u8 = span_cast<const uint8_t>(input);
-            quantizer.dequantize(input_as_u8, f32_array_ref);
+            quantizer.dequantize(vespalib::quant::QuantizedVector(input_as_u8), f32_array_ref);
         }
     }
     return builder->build(std::move(builder));

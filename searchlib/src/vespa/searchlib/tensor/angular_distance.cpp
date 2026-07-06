@@ -165,13 +165,14 @@ private:
     [[nodiscard]] float dot(const int8_t* lhs, const int8_t* rhs) const noexcept {
         auto lhs_u8 = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(lhs), _quantizer.quantized_size());
         auto rhs_u8 = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(rhs), _quantizer.quantized_size());
-        return _quantizer.quantized_lhs_rhs_dot_product(lhs_u8, rhs_u8);
+        return _quantizer.quantized_lhs_rhs_dot_product(vespalib::quant::QuantizedVector(lhs_u8),
+                                                        vespalib::quant::QuantizedVector(rhs_u8));
     }
 
     [[nodiscard]] float dot(const float* lhs, const int8_t* rhs) const noexcept {
         auto lhs_f32 = std::span<const float>(lhs, _quantizer.dimensions());
         auto rhs_u8 = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(rhs), _quantizer.quantized_size());
-        return _quantizer.pre_rotated_query_dot_product(lhs_f32, rhs_u8);
+        return _quantizer.pre_rotated_query_dot_product(lhs_f32, vespalib::quant::QuantizedVector(rhs_u8));
     }
 
     [[nodiscard]] float dot(const float* lhs, const float* rhs) const noexcept {

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "quantized_vector.h"
 #include "rotator.h"
 
 #include <cstddef>
@@ -83,14 +84,13 @@ class EdenQuantizer {
         float          scale;
         const uint8_t* centroid_idx;
     };
-    // Precondition: `bits.size() == quantized_size()`
+    // Precondition: `q_x.size() == quantized_size()`
     // Returns [scale factor, unpacked centroid index ptr]
-    [[nodiscard]] ScaleAndCentroidIndexesPtr
-    unary_unpack_bits_to_scratch_space(std::span<const uint8_t> bits) noexcept;
+    [[nodiscard]] ScaleAndCentroidIndexesPtr unary_unpack_bits_to_scratch_space(QuantizedVector q_x) noexcept;
     // Precondition: `lhs.size() == rhs.size() == quantized_size()`
     // Returns [[lhs scale, lhs unpacked index ptr], [rhs scale, rhs unpacked index ptr]]
     [[nodiscard]] std::pair<ScaleAndCentroidIndexesPtr, ScaleAndCentroidIndexesPtr>
-    binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs, std::span<const uint8_t> rhs) noexcept;
+    binary_unpack_bits_to_scratch_space(QuantizedVector lhs, QuantizedVector rhs) noexcept;
 
 public:
     EdenQuantizer(size_t dimensions, uint8_t bits, uint64_t seed);
@@ -114,7 +114,7 @@ public:
      *  - x.size() == dimensions()
      *  - q_x.size() == quantized_size()
      */
-    void quantize(std::span<const float> x, std::span<uint8_t> q_x, QuantMode quant_mode) noexcept;
+    void quantize(std::span<const float> x, MutableQuantizedVector q_x, QuantMode quant_mode) noexcept;
     /*
      * Takes in the quantized vector buffer `q_x` that is the result of a prior call to
      * `quantize(x, q_x)` and dequantizes an approximation of `x` into `dq_x`.
@@ -127,7 +127,7 @@ public:
      *  - q_x.size() == quantized_size()
      *  - dq_x.size() == dimensions()
      */
-    void dequantize(std::span<const uint8_t> q_x, std::span<float> dq_x) noexcept;
+    void dequantize(QuantizedVector q_x, std::span<float> dq_x) noexcept;
 
     /*
      * In-place rotates `vec` so that it is in the same frame of reference as the vectors
@@ -162,8 +162,8 @@ public:
      * TODO with a vectorized "just in time" bit unpacking that doesn't need a temporary
      *  buffer we could make this const...
      */
-    [[nodiscard]] float pre_rotated_query_dot_product(std::span<const float>   query,
-                                                      std::span<const uint8_t> quant_vec) noexcept;
+    [[nodiscard]] float pre_rotated_query_dot_product(std::span<const float> query,
+                                                      QuantizedVector        quant_vec) noexcept;
 
     /*
      * Computes the dot product between two quantized vectors that were both quantized
@@ -181,8 +181,7 @@ public:
      * TODO with a vectorized "just in time" bit unpacking that doesn't need a temporary
      *  buffer we could make this const...
      */
-    [[nodiscard]] float quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
-                                                      std::span<const uint8_t> rhs) noexcept;
+    [[nodiscard]] float quantized_lhs_rhs_dot_product(QuantizedVector lhs, QuantizedVector rhs) noexcept;
 
     /*
      * Computes the squared Euclidean distance between a quantized vector and a
@@ -199,8 +198,8 @@ public:
      *  - query.size() == dimensions()
      *  - quant_vec.size() == quantized_size()
      */
-    [[nodiscard]] float pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
-                                                                     std::span<const uint8_t> quant_vec) noexcept;
+    [[nodiscard]] float pre_rotated_query_squared_euclidean_distance(std::span<const float> query,
+                                                                     QuantizedVector        quant_vec) noexcept;
 
     /*
      * Computes the squared Euclidean distance between two quantized vectors that were both
@@ -212,8 +211,8 @@ public:
      *  - lhs.size() == quantized_size()
      *  - rhs.size() == quantized_size()
      */
-    [[nodiscard]] float quantized_lhs_rhs_squared_euclidean_distance(std::span<const uint8_t> lhs,
-                                                                     std::span<const uint8_t> rhs) noexcept;
+    [[nodiscard]] float quantized_lhs_rhs_squared_euclidean_distance(QuantizedVector lhs,
+                                                                     QuantizedVector rhs) noexcept;
 };
 
 } // namespace vespalib::quant

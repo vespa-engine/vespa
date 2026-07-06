@@ -199,8 +199,10 @@ void check_quantized_angular(TypedCells a, TypedCells b, const double expected_r
     std::vector<uint8_t>           b_q(quantizer.quantized_size());
     // (Ab)use TemporaryVectorStore for auto-conversion to float
     TemporaryVectorStore<float> tmp_float_store(a.size);
-    quantizer.quantize(tmp_float_store.convertRhs(a), a_q, vespalib::quant::QuantMode::InnerProduct);
-    quantizer.quantize(tmp_float_store.convertRhs(b), b_q, vespalib::quant::QuantMode::InnerProduct);
+    quantizer.quantize(tmp_float_store.convertRhs(a), vespalib::quant::MutableQuantizedVector(a_q),
+                       vespalib::quant::QuantMode::InnerProduct);
+    quantizer.quantize(tmp_float_store.convertRhs(b), vespalib::quant::MutableQuantizedVector(b_q),
+                       vespalib::quant::QuantMode::InnerProduct);
 
     // Query vectors are always full precision
     auto d_n = q_dff.for_query_vector(a);

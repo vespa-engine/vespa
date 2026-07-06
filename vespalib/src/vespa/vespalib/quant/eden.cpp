@@ -24,27 +24,11 @@ namespace {
 [[nodiscard]] size_t compute_quantized_buffer_size(const size_t dimensions, const uint8_t bits) noexcept {
     (void)bits;
     constexpr size_t scale_bytes = sizeof(float); // TODO configurable scale factor precision (f16 vs f32)?
-    const size_t     dim_bytes =
-        with_packer_for_bit_count(bits, [dimensions](auto bp) { return decltype(bp)::packed_bytes(dimensions); });
+    const size_t     dim_bytes = with_packer_for_bit_count(bits, [dimensions](auto bp) {
+        // type of bp will be MultiBitPacker<N>
+        return decltype(bp)::packed_bytes(dimensions);
+    });
     return scale_bytes + dim_bytes;
-}
-
-// Precondition: buf must be valid for at least sizeof(float) bytes
-[[nodiscard]] float extract_scale_factor(const uint8_t* buf) noexcept {
-    float scale;
-    memcpy(&scale, buf, sizeof(float));
-    return scale;
-}
-
-// Given an input ptr `buf` that is at the start of the "raw" quantized buffer, returns
-// an adjusted ptr that points to the first byte of the sequence of quantized bits.
-// Precondition: buf must be valid for at least sizeof(float) bytes
-[[nodiscard]] const uint8_t* packed_bits_buf(const uint8_t* buf) noexcept {
-    return buf + sizeof(float); // Just skip past the scale factor
-}
-
-[[nodiscard]] uint8_t* packed_bits_buf(uint8_t* buf) noexcept {
-    return buf + sizeof(float);
 }
 
 } // namespace
@@ -68,30 +52,30 @@ std::span<const float> EdenQuantizer::my_codebook() const noexcept {
 }
 
 EdenQuantizer::ScaleAndCentroidIndexesPtr
-EdenQuantizer::unary_unpack_bits_to_scratch_space(std::span<const uint8_t> buf) noexcept {
-    assert(buf.size() == _quantized_size);
-    const float scale = extract_scale_factor(buf.data());
+EdenQuantizer::unary_unpack_bits_to_scratch_space(QuantizedVector q_x) noexcept {
+    assert(q_x.size() == _quantized_size);
+    const float      scale = q_x.scale();
+    const PackedBits in_bits = q_x.packed_bits();
     with_packer_for_bit_count(_bits, [&](auto bp) {
-        const uint8_t* in_bits = packed_bits_buf(buf.data());
-        decltype(bp)::unpack(lhs_scratch_idx_space(), in_bits, _dimensions);
+        // type of bp will be MultiBitPacker<N>
+        decltype(bp)::unpack(lhs_scratch_idx_space(), in_bits.data(), _dimensions);
     });
     return {scale, lhs_scratch_idx_space()};
 }
 
 std::pair<EdenQuantizer::ScaleAndCentroidIndexesPtr, EdenQuantizer::ScaleAndCentroidIndexesPtr>
-EdenQuantizer::binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs,
-                                                   std::span<const uint8_t> rhs) noexcept {
+EdenQuantizer::binary_unpack_bits_to_scratch_space(QuantizedVector lhs, QuantizedVector rhs) noexcept {
     assert(lhs.size() == _quantized_size);
     assert(rhs.size() == _quantized_size);
     // We have left room for an additional vector bit unpacking run in _idx_tmp
     uint8_t* lhs_idx = lhs_scratch_idx_space();
     uint8_t* rhs_idx = rhs_scratch_idx_space();
     with_packer_for_bit_count(_bits, [&](auto bp) {
-        decltype(bp)::unpack(lhs_idx, packed_bits_buf(lhs.data()), _dimensions);
-        decltype(bp)::unpack(rhs_idx, packed_bits_buf(rhs.data()), _dimensions);
+        decltype(bp)::unpack(lhs_idx, lhs.packed_bits().data(), _dimensions);
+        decltype(bp)::unpack(rhs_idx, rhs.packed_bits().data(), _dimensions);
     });
-    const float lhs_scale = extract_scale_factor(lhs.data());
-    const float rhs_scale = extract_scale_factor(rhs.data());
+    const float lhs_scale = lhs.scale();
+    const float rhs_scale = rhs.scale();
     return {{lhs_scale, lhs_idx}, {rhs_scale, rhs_idx}};
 }
 
@@ -99,7 +83,8 @@ EdenQuantizer::binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs,
 // follow the pseudocode outlined in [1], with some additional normalization factor
 // details from [0].
 
-void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, const QuantMode quant_mode) noexcept {
+void EdenQuantizer::quantize(std::span<const float> x, MutableQuantizedVector q_x,
+                             const QuantMode quant_mode) noexcept {
     assert(x.size() == _dimensions);
     assert(q_x.size() == _quantized_size);
     const size_t d = _dimensions;
@@ -116,7 +101,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
         // also set all centroid indexes to zero, although this technically doesn't
         // matter since they are nullified by the scale.
         memset(q_x.data(), 0, q_x.size());
-        return;
+        return; // scale factor is (part of) the zeroed prefix
     }
     std::copy(x.begin(), x.end(), _rot_tmp.begin());
     _rotator.rotate_forward(_rot_tmp);
@@ -162,13 +147,13 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
         scale = yq_dot / q_norm2;
     }
     with_packer_for_bit_count(_bits, [&](auto bp) {
-        uint8_t* out_bits = packed_bits_buf(q_x.data());
+        uint8_t* out_bits = q_x.packed_bits().data();
         decltype(bp)::pack(out_bits, idx_buf, _dimensions);
     });
-    memcpy(q_x.data(), &scale, sizeof(float));
+    q_x.set_scale(scale);
 }
 
-void EdenQuantizer::dequantize(std::span<const uint8_t> q_x, std::span<float> dq_x) noexcept {
+void EdenQuantizer::dequantize(QuantizedVector q_x, std::span<float> dq_x) noexcept {
     assert(dq_x.size() == _dimensions);
     const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(q_x);
     const auto codebook = my_codebook();
@@ -183,8 +168,7 @@ void EdenQuantizer::rotate_vector_inplace(std::span<float> vec) const noexcept {
     _rotator.rotate_forward(vec);
 }
 
-float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   query,
-                                                   std::span<const uint8_t> quant_vec) noexcept {
+float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float> query, QuantizedVector quant_vec) noexcept {
     assert(query.size() == _dimensions);
     const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(quant_vec);
     const auto codebook = my_codebook();
@@ -198,8 +182,7 @@ float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   quer
     // clang-format on
 }
 
-float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
-                                                   std::span<const uint8_t> rhs) noexcept {
+float EdenQuantizer::quantized_lhs_rhs_dot_product(QuantizedVector lhs, QuantizedVector rhs) noexcept {
     const auto [lhs_unp, rhs_unp] = binary_unpack_bits_to_scratch_space(lhs, rhs);
     const auto codebook = my_codebook();
     // clang-format off: lambda formatting
@@ -210,8 +193,8 @@ float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
     return lhs_unp.scale * rhs_unp.scale * dot;
 }
 
-float EdenQuantizer::pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
-                                                                  std::span<const uint8_t> quant_vec) noexcept {
+float EdenQuantizer::pre_rotated_query_squared_euclidean_distance(std::span<const float> query,
+                                                                  QuantizedVector        quant_vec) noexcept {
     assert(query.size() == _dimensions);
     const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(quant_vec);
     const auto codebook = my_codebook();
@@ -221,8 +204,7 @@ float EdenQuantizer::pre_rotated_query_squared_euclidean_distance(std::span<cons
     });
 }
 
-float EdenQuantizer::quantized_lhs_rhs_squared_euclidean_distance(std::span<const uint8_t> lhs,
-                                                                  std::span<const uint8_t> rhs) noexcept {
+float EdenQuantizer::quantized_lhs_rhs_squared_euclidean_distance(QuantizedVector lhs, QuantizedVector rhs) noexcept {
     const auto [lhs_unp, rhs_unp] = binary_unpack_bits_to_scratch_space(lhs, rhs);
     const auto codebook = my_codebook();
     return sum_indexed_unrolled<8, float>(_dimensions, [&](const size_t i) noexcept {
