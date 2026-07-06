@@ -8,6 +8,10 @@
 #include <vespa/vespalib/util/hw_info.h>
 
 #include <algorithm>
+#include <cinttypes>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.resource_usage_notifier");
 
 using searchcorespi::common::ResourceUsage;
 
@@ -90,8 +94,21 @@ void ResourceUsageNotifier::set_resource_usage(const ResourceUsage&         reso
     _resource_usage = resource_usage;
     _reserved_disk_space_and_memory = reserved_disk_space_and_memory_;
     _memoryStats = memoryStats;
+    warn_on_disk_capacity_changed(disk_usage);
     _disk_usage = disk_usage;
     recalcState(guard, true);
+}
+
+void ResourceUsageNotifier::warn_on_disk_capacity_changed(const DiskUsage& disk_usage) const noexcept {
+    if (!_config._log_warning_on_disk_capacity_change) {
+        return;
+    }
+
+    const DiskUsage& previous = _disk_usage;
+    if (previous.capacity_bytes() != disk_usage.capacity_bytes()) {
+        LOG(info, "Disk capacity changed from %" PRIu64 " bytes to %" PRIu64 " bytes.", previous.capacity_bytes(),
+            disk_usage.capacity_bytes());
+    }
 }
 
 void ResourceUsageNotifier::notify_attribute_usage(const AttributeUsageStats& attribute_usage) {
