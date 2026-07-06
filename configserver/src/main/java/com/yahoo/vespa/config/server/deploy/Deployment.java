@@ -230,7 +230,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         // Heap dump redaction applies in all environments, and falls back to the root level
         // when the instance is not declared in the spec (e.g. manually deployed environments).
-        //deploymentConfigStore.get().storeHeapDumpRedaction(applicationId, spec.heapDumpRedaction(applicationId.instance()));
+        // The store must tolerate applications without an application record in the node repository,
+        // e.g. infrastructure applications; this is called for every activation, including bootstrap.
+        deploymentConfigStore.get().storeHeapDumpRedaction(applicationId, spec.heapDumpRedaction(applicationId.instance()));
 
         if ( ! Environment.from(applicationRepository.configserverConfig().environment()).isProduction()) return;
 
