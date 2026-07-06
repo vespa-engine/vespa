@@ -24,6 +24,9 @@ using vespalib::BFloat16;
 using vespalib::eval::CellType;
 using vespalib::eval::Int8Float;
 using vespalib::eval::TypedCells;
+using vespalib::quant::EdenQuantizer;
+using vespalib::quant::MutableQuantizedVector;
+using vespalib::quant::QuantMode;
 
 template <typename T> TypedCells t(const std::vector<T>& v) {
     return TypedCells(v);
@@ -194,15 +197,13 @@ void check_quantized_angular(TypedCells a, TypedCells b, const double expected_r
 
     QuantizedAngularDistanceFunctionFactory q_dff(a.size, bits, seed);
 
-    vespalib::quant::EdenQuantizer quantizer(a.size, bits, seed);
-    std::vector<uint8_t>           a_q(quantizer.quantized_size());
-    std::vector<uint8_t>           b_q(quantizer.quantized_size());
+    EdenQuantizer        quantizer(a.size, bits, seed);
+    std::vector<uint8_t> a_q(quantizer.quantized_size());
+    std::vector<uint8_t> b_q(quantizer.quantized_size());
     // (Ab)use TemporaryVectorStore for auto-conversion to float
     TemporaryVectorStore<float> tmp_float_store(a.size);
-    quantizer.quantize(tmp_float_store.convertRhs(a), vespalib::quant::MutableQuantizedVector(a_q),
-                       vespalib::quant::QuantMode::InnerProduct);
-    quantizer.quantize(tmp_float_store.convertRhs(b), vespalib::quant::MutableQuantizedVector(b_q),
-                       vespalib::quant::QuantMode::InnerProduct);
+    quantizer.quantize(tmp_float_store.convertRhs(a), MutableQuantizedVector(a_q), QuantMode::InnerProduct);
+    quantizer.quantize(tmp_float_store.convertRhs(b), MutableQuantizedVector(b_q), QuantMode::InnerProduct);
 
     // Query vectors are always full precision
     auto d_n = q_dff.for_query_vector(a);

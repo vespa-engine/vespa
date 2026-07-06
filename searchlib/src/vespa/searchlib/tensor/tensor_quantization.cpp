@@ -13,6 +13,10 @@ using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::Int8Float;
 using vespalib::eval::ValueType;
+using vespalib::quant::EdenQuantizer;
+using vespalib::quant::MutableQuantizedVector;
+using vespalib::quant::QuantizedVector;
+using vespalib::quant::QuantMode;
 
 namespace search::tensor {
 
@@ -31,8 +35,7 @@ template <typename T, typename T2>
 // TODO consider if we should just pass the number of bits rather than a full quantizer...
 //  - could make size computation a static public function in EdenQuantizer
 
-ValueType to_quantized_tensor_type(const ValueType&                      f32_tensor_type,
-                                   const vespalib::quant::EdenQuantizer& quantizer) {
+ValueType to_quantized_tensor_type(const ValueType& f32_tensor_type, const EdenQuantizer& quantizer) {
     std::vector<ValueType::Dimension> q_dims = f32_tensor_type.mapped_dimensions();
     assert(!f32_tensor_type.is_sparse()); // Must have at least 1 indexed dimension
     assert(f32_tensor_type.dense_subspace_size() == quantizer.dimensions());
@@ -47,8 +50,8 @@ ValueType to_quantized_tensor_type(const ValueType&                      f32_ten
 
 std::unique_ptr<vespalib::eval::Value> quantize_f32_tensor(const vespalib::eval::Value&     f32_in_tensor,
                                                            const vespalib::eval::ValueType& quantized_type,
-                                                           vespalib::quant::EdenQuantizer&  quantizer,
-                                                           const vespalib::quant::QuantMode quantization_mode) {
+                                                           EdenQuantizer&                   quantizer,
+                                                           const QuantMode                  quantization_mode) {
     // We expect that the number of mapped dimensions is the same for both tensor types
     const size_t num_mapped = quantized_type.count_mapped_dimensions();
     const size_t input_dense_size = f32_in_tensor.type().dense_subspace_size();
@@ -65,7 +68,7 @@ std::unique_ptr<vespalib::eval::Value> quantize_f32_tensor(const vespalib::eval:
         assert(idx.size() == 1);
         auto i8f_array_ref = builder->add_subspace(addr);
         auto u8_array_ref = span_cast<uint8_t>(i8f_array_ref);
-        quantizer.quantize(input_cells, vespalib::quant::MutableQuantizedVector(u8_array_ref), quantization_mode);
+        quantizer.quantize(input_cells, MutableQuantizedVector(u8_array_ref), quantization_mode);
     } else {
         auto view = idx.create_view({});
         view->lookup({});
@@ -79,7 +82,7 @@ std::unique_ptr<vespalib::eval::Value> quantize_f32_tensor(const vespalib::eval:
             auto i8f_array_ref = builder->add_subspace(addr);
             auto u8_array_ref = span_cast<uint8_t>(i8f_array_ref);
             auto input = input_cells.subspan(input_dense_size * subspace_idx, input_dense_size);
-            quantizer.quantize(input, vespalib::quant::MutableQuantizedVector(u8_array_ref), quantization_mode);
+            quantizer.quantize(input, MutableQuantizedVector(u8_array_ref), quantization_mode);
         }
     }
     return builder->build(std::move(builder));
@@ -87,7 +90,7 @@ std::unique_ptr<vespalib::eval::Value> quantize_f32_tensor(const vespalib::eval:
 
 std::unique_ptr<vespalib::eval::Value> dequantize_tensor(const vespalib::eval::Value&     quantized_in_tensor,
                                                          const vespalib::eval::ValueType& out_f32_tensor_type,
-                                                         vespalib::quant::EdenQuantizer&  quantizer) {
+                                                         EdenQuantizer&                   quantizer) {
     // We expect that the number of mapped dimensions is the same for both tensor types
     const size_t num_mapped = out_f32_tensor_type.count_mapped_dimensions();
     const size_t quantized_dense_size = quantizer.quantized_size();
@@ -102,7 +105,7 @@ std::unique_ptr<vespalib::eval::Value> dequantize_tensor(const vespalib::eval::V
         assert(idx.size() == 1);
         auto f32_array_ref = builder->add_subspace(addr);
         auto input_as_u8 = span_cast<const uint8_t>(input_cells);
-        quantizer.dequantize(vespalib::quant::QuantizedVector(input_as_u8), f32_array_ref);
+        quantizer.dequantize(QuantizedVector(input_as_u8), f32_array_ref);
     } else {
         auto view = idx.create_view({});
         view->lookup({});
@@ -116,7 +119,7 @@ std::unique_ptr<vespalib::eval::Value> dequantize_tensor(const vespalib::eval::V
             auto f32_array_ref = builder->add_subspace(addr);
             auto input = input_cells.subspan(quantized_dense_size * subspace_idx, quantized_dense_size);
             auto input_as_u8 = span_cast<const uint8_t>(input);
-            quantizer.dequantize(vespalib::quant::QuantizedVector(input_as_u8), f32_array_ref);
+            quantizer.dequantize(QuantizedVector(input_as_u8), f32_array_ref);
         }
     }
     return builder->build(std::move(builder));
