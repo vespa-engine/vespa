@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/hw_info.h>
 
 #include <algorithm>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.resource_usage_notifier");
@@ -105,7 +106,7 @@ void ResourceUsageNotifier::warn_on_disk_capacity_changed(const DiskUsage& disk_
 
     const DiskUsage& previous = _disk_usage;
     if (previous.capacity_bytes() != disk_usage.capacity_bytes()) {
-        LOG(warning, "Disk capacity changed from %zu bytes to %zu bytes.", previous.capacity_bytes(),
+        LOG(warning, "Disk capacity changed from %" PRIu64 " bytes to %" PRIu64 " bytes.", previous.capacity_bytes(),
             disk_usage.capacity_bytes());
     }
 }
