@@ -100,11 +100,8 @@ namespace fs = std::filesystem;
 DiskUsage sampleDiskUsageOnFileSystem(const fs::path& path, const vespalib::HwInfo::Disk& disk,
                                       bool resample_disk_capacity) {
     auto     space_info = fs::space(path);
-    uint64_t capacity = disk.sizeBytes();
+    uint64_t capacity = resample_disk_capacity ? space_info.capacity : disk.sizeBytes();
     uint64_t used = (space_info.capacity - space_info.available);
-    if (resample_disk_capacity) {
-        capacity = space_info.capacity;
-    }
     if (used > capacity) {
         used = capacity;
     }
