@@ -3,7 +3,7 @@
 #pragma once
 
 #include "block_multi_bit_packer.h"
-#include "quantized_vector.h"
+#include "packed_bits.h"
 
 #include <cassert>
 #include <cstddef>

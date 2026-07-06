@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "packed_bits.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -9,26 +11,6 @@
 #include <type_traits>
 
 namespace vespalib::quant {
-
-/*
- * Strong view type over a bit-packed sequence of centroid indexes, as produced by
- * MultiBitPacker. Distinguishes "the packed bits sub-region" of a quantized vector
- * from an arbitrary byte buffer at the type level, so the two can't be crossed by
- * accident. Templated on the (possibly const-qualified) byte type; use the
- * `PackedBits`/`MutablePackedBits` aliases rather than naming this directly.
- */
-template <typename Byte>
-class basic_packed_bits {
-    std::span<Byte> _bits;
-
-public:
-    explicit constexpr basic_packed_bits(std::span<Byte> bits) noexcept : _bits(bits) {}
-    [[nodiscard]] constexpr Byte* data() const noexcept { return _bits.data(); }
-    [[nodiscard]] constexpr size_t size() const noexcept { return _bits.size(); }
-    [[nodiscard]] constexpr std::span<Byte> span() const noexcept { return _bits; }
-};
-using PackedBits = basic_packed_bits<const uint8_t>;
-using MutablePackedBits = basic_packed_bits<uint8_t>;
 
 /*
  * Strong view type over a full quantized vector buffer, which uses the layout
