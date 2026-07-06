@@ -73,16 +73,23 @@ class EdenQuantizer {
     // Returns the shared, fixed N(0, 1) codebook for the configured quantizer bit count
     [[nodiscard]] std::span<const float> my_codebook() const noexcept;
 
-    struct ScaleAndCentroidsPtr {
+    // We allocate space for 2 vectors worth of centroid index runs. The first run is used for
+    // quantized left hand side arguments, or when there's only a single vector. The second
+    // run is for when we need to unpack a right hand side argument as well.
+    [[nodiscard]] uint8_t* lhs_scratch_idx_space() noexcept { return _idx_tmp.data(); }
+    [[nodiscard]] uint8_t* rhs_scratch_idx_space() noexcept { return _idx_tmp.data() + _dimensions; }
+
+    struct ScaleAndCentroidIndexesPtr {
         float          scale;
         const uint8_t* centroid_idx;
     };
     // Precondition: `bits.size() == quantized_size()`
     // Returns [scale factor, unpacked centroid index ptr]
-    [[nodiscard]] ScaleAndCentroidsPtr unary_unpack_bits_to_scratch_space(std::span<const uint8_t> bits) noexcept;
+    [[nodiscard]] ScaleAndCentroidIndexesPtr
+    unary_unpack_bits_to_scratch_space(std::span<const uint8_t> bits) noexcept;
     // Precondition: `lhs.size() == rhs.size() == quantized_size()`
     // Returns [[lhs scale, lhs unpacked index ptr], [rhs scale, rhs unpacked index ptr]]
-    [[nodiscard]] std::pair<ScaleAndCentroidsPtr, ScaleAndCentroidsPtr>
+    [[nodiscard]] std::pair<ScaleAndCentroidIndexesPtr, ScaleAndCentroidIndexesPtr>
     binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs, std::span<const uint8_t> rhs) noexcept;
 
 public:
