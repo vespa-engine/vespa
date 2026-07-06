@@ -75,6 +75,43 @@ template <typename T> void verifyInvalidQueryVector(DistanceFunctionFactory& dff
                     dff.for_query_vector(t(origo))->calc(e<vespalib::BFloat16>(origo.size()).cells));
 }
 
+TypedCells retype_to_i8f(const std::vector<uint8_t>& v) {
+    static_assert(sizeof(Int8Float) == 1);
+    auto as_i8f = std::span<const Int8Float>(reinterpret_cast<const Int8Float*>(v.data()), v.size());
+    return TypedCells(as_i8f);
+}
+
+constexpr static uint64_t quant_seed = 0x123456789;
+// The test vectors have such low dimensionality that anything less than 4-bit
+// quantization causes hilarious precision loss.
+constexpr static uint8_t quant_bits = 4;
+
+void check_quantized_distance_function(const DistanceFunctionFactory& dff, TypedCells a, TypedCells b,
+                                       const double expected_result, const double max_result_delta,
+                                       const vespalib::quant::QuantMode quant_mode) {
+    vespalib::quant::EdenQuantizer quantizer(a.size, quant_bits, quant_seed);
+    std::vector<uint8_t>           a_q(quantizer.quantized_size());
+    std::vector<uint8_t>           b_q(quantizer.quantized_size());
+    // (Ab)use TemporaryVectorStore for auto-conversion to float
+    TemporaryVectorStore<float> tmp_float_store(a.size);
+    quantizer.quantize(tmp_float_store.convertRhs(a), a_q, quant_mode);
+    quantizer.quantize(tmp_float_store.convertRhs(b), b_q, quant_mode);
+
+    // Query vectors are always full precision
+    auto d_n = dff.for_query_vector(a);
+    auto d_r = dff.for_query_vector(b);
+    // Insertion vectors must always be in quantized form (must compare apples to apples in a HNSW index)
+    auto d_i = dff.for_insertion_vector(retype_to_i8f(a_q));
+    // f32 `a` vs quantized `b`;
+    double result = d_n->calc(retype_to_i8f(b_q));
+    // TODO magnitude-relative max delta
+    EXPECT_THAT(result, DoubleNear(expected_result, max_result_delta));
+    // quantized vs. quantized; worst-case for precision loss
+    EXPECT_THAT(d_i->calc(retype_to_i8f(b_q)), DoubleNear(expected_result, max_result_delta));
+    // reverse (f32 `b` vs quantized `a`):
+    EXPECT_THAT(d_r->calc(retype_to_i8f(a_q)), DoubleNear(expected_result, max_result_delta));
+}
+
 double computeEuclideanChecked(TypedCells a, TypedCells b) {
     static EuclideanDistanceFunctionFactory<Int8Float> i8f_dff;
     static EuclideanDistanceFunctionFactory<float>     flt_dff;
@@ -96,6 +133,9 @@ double computeEuclideanChecked(TypedCells a, TypedCells b) {
         auto d_8 = i8f_dff.for_query_vector(a);
         EXPECT_DOUBLE_EQ(d_8->calc(b), result);
     }
+    QuantizedEuclideanDistanceFunctionFactory q_dff(a.size, quant_bits, quant_seed);
+    check_quantized_distance_function(q_dff, a, b, result, 0.65, vespalib::quant::QuantMode::MSE);
+
     return result;
 }
 
@@ -180,42 +220,6 @@ TEST(DistanceFunctionsTest, euclidean_int8_smoketest) {
     EXPECT_DOUBLE_EQ(14.0, computeEuclideanChecked(t(p5), t(p7)));
 }
 
-TypedCells retype_to_i8f(const std::vector<uint8_t>& v) {
-    static_assert(sizeof(Int8Float) == 1);
-    auto as_i8f = std::span<const Int8Float>(reinterpret_cast<const Int8Float*>(v.data()), v.size());
-    return TypedCells(as_i8f);
-}
-
-void check_quantized_angular(TypedCells a, TypedCells b, const double expected_result) {
-    constexpr uint64_t seed = 0x123456789;
-    // The test vectors have such low dimensionality that anything less than 4-bit
-    // quantization causes hilarious precision loss.
-    constexpr uint8_t bits = 4;
-
-    QuantizedAngularDistanceFunctionFactory q_dff(a.size, bits, seed);
-
-    vespalib::quant::EdenQuantizer quantizer(a.size, bits, seed);
-    std::vector<uint8_t>           a_q(quantizer.quantized_size());
-    std::vector<uint8_t>           b_q(quantizer.quantized_size());
-    // (Ab)use TemporaryVectorStore for auto-conversion to float
-    TemporaryVectorStore<float> tmp_float_store(a.size);
-    quantizer.quantize(tmp_float_store.convertRhs(a), a_q, vespalib::quant::QuantMode::InnerProduct);
-    quantizer.quantize(tmp_float_store.convertRhs(b), b_q, vespalib::quant::QuantMode::InnerProduct);
-
-    // Query vectors are always full precision
-    auto d_n = q_dff.for_query_vector(a);
-    auto d_r = q_dff.for_query_vector(b);
-    // Insertion vectors must always be in quantized form (must compare apples to apples in a HNSW index)
-    auto d_i = q_dff.for_insertion_vector(retype_to_i8f(a_q));
-    // f32 `a` vs quantized `b`;
-    double result = d_n->calc(retype_to_i8f(b_q));
-    EXPECT_THAT(result, DoubleNear(expected_result, 0.1));
-    // quantized vs. quantized; worst-case for precision loss
-    EXPECT_THAT(d_i->calc(retype_to_i8f(b_q)), DoubleNear(expected_result, 0.13));
-    // reverse (f32 `b` vs quantized `a`):
-    EXPECT_THAT(d_r->calc(retype_to_i8f(a_q)), DoubleNear(expected_result, 0.108));
-}
-
 double computeAngularChecked(TypedCells a, TypedCells b) {
     static AngularDistanceFunctionFactory<float>  flt_dff;
     static AngularDistanceFunctionFactory<double> dbl_dff;
@@ -232,7 +236,10 @@ double computeAngularChecked(TypedCells a, TypedCells b) {
     EXPECT_DOUBLE_EQ(d_r->calc(a), result);
     // float factory:
     EXPECT_FLOAT_EQ(d_f->calc(b), result);
-    check_quantized_angular(a, b, result);
+
+    QuantizedAngularDistanceFunctionFactory q_dff(a.size, quant_bits, quant_seed);
+    check_quantized_distance_function(q_dff, a, b, result, 0.13, vespalib::quant::QuantMode::InnerProduct);
+
     return result;
 }
 
@@ -360,6 +367,10 @@ double computePrenormalizedAngularChecked(TypedCells a, TypedCells b) {
     EXPECT_DOUBLE_EQ(closeness_n, closeness_i);
     EXPECT_GT(closeness_n, 0.0);
     EXPECT_LE(closeness_n, 1.0);
+
+    QuantizedPrenormalizedAngularDistanceFunctionFactory q_dff(a.size, quant_bits, quant_seed);
+    check_quantized_distance_function(q_dff, a, b, result, 0.65, vespalib::quant::QuantMode::InnerProduct);
+
     return result;
 }
 
