@@ -99,6 +99,10 @@ void ResourceUsageNotifier::set_resource_usage(const ResourceUsage&         reso
 }
 
 void ResourceUsageNotifier::warn_on_disk_capacity_changed(const DiskUsage& disk_usage) const noexcept {
+    if (!_config._log_warning_on_disk_capacity_change) {
+        return;
+    }
+
     const DiskUsage& previous = _disk_usage;
     if (previous.capacity_bytes() != disk_usage.capacity_bytes()) {
         LOG(warning, "Disk capacity changed from %zu bytes to %zu bytes.", previous.capacity_bytes(),

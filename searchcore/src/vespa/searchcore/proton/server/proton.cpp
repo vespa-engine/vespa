@@ -138,6 +138,7 @@ DiskMemUsageSampler::Config diskMemUsageSamplerConfig(const ProtonConfig& proton
             proton.writefilter.reservedDiskSpaceFactor,
             proton.writefilter.reservedMemoryFactor,
             AttributeUsageFilterConfig(proton.writefilter.attribute.addressSpaceLimit),
+            proton.logWarningOnDiskCapacityChange,
             vespalib::from_s(proton.writefilter.sampleinterval),
             hwInfo};
 }

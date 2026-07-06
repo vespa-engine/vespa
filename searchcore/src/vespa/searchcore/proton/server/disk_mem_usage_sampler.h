@@ -56,9 +56,10 @@ public:
 
         Config(double memoryLimit_in, double diskLimit_in, double reserved_disk_space_factor_in,
                double reserved_memory_factor_in, AttributeUsageFilterConfig attribute_limit_in,
-               vespalib::duration sampleInterval_in, const vespalib::HwInfo& hwInfo_in)
+               bool log_warning_on_disk_capacity_change_in, vespalib::duration sampleInterval_in,
+               const vespalib::HwInfo& hwInfo_in)
             : filterConfig(memoryLimit_in, diskLimit_in, reserved_disk_space_factor_in, reserved_memory_factor_in,
-                           attribute_limit_in),
+                           attribute_limit_in, log_warning_on_disk_capacity_change_in),
               sampleInterval(sampleInterval_in),
               hwInfo(hwInfo_in) {}
     };

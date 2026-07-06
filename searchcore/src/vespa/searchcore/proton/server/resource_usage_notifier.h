@@ -39,21 +39,25 @@ public:
         double                     _reserved_disk_space_factor;
         double                     _reserved_memory_factor;
         AttributeUsageFilterConfig _attribute_limit;
+        bool                       _log_warning_on_disk_capacity_change;
 
-        Config() : Config(1.0, 1.0, 0.0, 0.0, AttributeUsageFilterConfig()) {}
+        Config() : Config(1.0, 1.0, 0.0, 0.0, AttributeUsageFilterConfig(), false) {}
 
         Config(double memoryLimit_in, double diskLimit_in, double reserved_disk_space_factor_in,
-               double reserved_memory_factor_in, AttributeUsageFilterConfig attribute_limit_in)
+               double reserved_memory_factor_in, AttributeUsageFilterConfig attribute_limit_in,
+               bool log_warning_on_disk_capacity_change_in = false)
             : _memoryLimit(memoryLimit_in),
               _diskLimit(diskLimit_in),
               _reserved_disk_space_factor(reserved_disk_space_factor_in),
               _reserved_memory_factor(reserved_memory_factor_in),
-              _attribute_limit(attribute_limit_in) {}
+              _attribute_limit(attribute_limit_in),
+              _log_warning_on_disk_capacity_change(log_warning_on_disk_capacity_change_in) {}
         bool operator==(const Config& rhs) const noexcept {
             return (_memoryLimit == rhs._memoryLimit) && (_diskLimit == rhs._diskLimit) &&
                    (_reserved_disk_space_factor == rhs._reserved_disk_space_factor) &&
                    (_reserved_memory_factor == rhs._reserved_memory_factor) &&
-                   (_attribute_limit == rhs._attribute_limit);
+                   (_attribute_limit == rhs._attribute_limit) &&
+                   (_log_warning_on_disk_capacity_change == rhs._log_warning_on_disk_capacity_change);
         }
         bool operator!=(const Config& rhs) const noexcept { return !(*this == rhs); }
     };
