@@ -3,10 +3,13 @@
 #pragma once
 
 #include "block_multi_bit_packer.h"
+#include "quantized_vector.h"
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <span>
 
 namespace vespalib::quant {
 
@@ -30,9 +33,11 @@ struct MultiBitPacker {
     static_assert(Bits >= 1 && Bits <= 4, "bit count outside valid range [1, 4]");
 
     /*
-     * Pack `n` u8 values from `src` into `packed_bytes(n)` bytes in `dst`, representing
-     * each value using exactly `Bits` number of bits. Source values that are greater than
-     * or equal to 2**Bits are _truncated_; there is no implicit _saturation_ of values.
+     * Pack the `src` u8 values into `dst`, representing each value using exactly `Bits`
+     * number of bits. The number of values to pack is taken from `src.size()`; it cannot
+     * be recovered from the packed representation alone since the last byte may be padded.
+     * Source values that are greater than or equal to 2**Bits are _truncated_; there is no
+     * implicit _saturation_ of values.
      *
      * `dst` does not have to be zeroed out prior to calling this function.
      *
@@ -40,9 +45,12 @@ struct MultiBitPacker {
      * byte will be padded with 0-bits.
      *
      * Preconditions:
-     *   - `dst` and `src` arrays must not alias.
+     *   - `dst.size() >= packed_bytes(src.size())`
+     *   - `dst` and `src` must not alias.
      */
-    static void pack(uint8_t* __restrict__ dst, const uint8_t* __restrict__ src, const size_t n) noexcept {
+    static void pack(MutablePackedBits dst, std::span<const uint8_t> src) noexcept {
+        const size_t n = src.size();
+        assert(dst.size() >= packed_bytes(n));
         // We process elements in blocks of 8 since this allows us to write (for
         // packing) or read (for unpacking) 1, 2, 3 or 4 bytes at a time for
         // 1, 2, 3 and 4 bits, respectively. So the number of bits conveniently
@@ -51,36 +59,43 @@ struct MultiBitPacker {
         const size_t     blocks = n / 8;
         const size_t     rem = n % 8;
 
+        uint8_t* __restrict__ dst_p = dst.data();
+        const uint8_t* __restrict__ src_p = src.data();
         for (size_t b = 0; b < blocks; ++b) {
-            BlockMultiBitPacker<Bits>::pack8(dst, src);
-            src += 8;
-            dst += out_bytes_per_block;
+            BlockMultiBitPacker<Bits>::pack8(dst_p, src_p);
+            src_p += 8;
+            dst_p += out_bytes_per_block;
         }
         if (rem != 0) {
-            BlockMultiBitPacker<Bits>::pack1_to_7(dst, src, rem);
+            BlockMultiBitPacker<Bits>::pack1_to_7(dst_p, src_p, rem);
         }
     }
 
     /*
-     * Unpack `n` u8 values from `packed_bytes(n)` bytes in `src` into `dst`. I.e. each
-     * packed value is unpacked and written as its own u8. Exactly `n` bytes are written
-     * to `dst`.
+     * Unpack values from the packed `src` into `dst`. I.e. each packed value is unpacked
+     * and written as its own u8. The number of values to unpack is taken from `dst.size()`;
+     * exactly that many bytes are written to `dst`.
      *
      * Preconditions:
-     *   - `dst` and `src` arrays must not alias.
+     *   - `src.size() >= packed_bytes(dst.size())`
+     *   - `dst` and `src` must not alias.
      */
-    static void unpack(uint8_t* __restrict__ dst, const uint8_t* __restrict__ src, const size_t n) noexcept {
+    static void unpack(std::span<uint8_t> dst, PackedBits src) noexcept {
+        const size_t n = dst.size();
+        assert(src.size() >= packed_bytes(n));
         constexpr size_t in_bytes_per_block = Bits;
         const size_t     blocks = n / 8;
         const size_t     rem = n % 8;
 
+        uint8_t* __restrict__ dst_p = dst.data();
+        const uint8_t* __restrict__ src_p = src.data();
         for (size_t b = 0; b < blocks; ++b) {
-            BlockMultiBitPacker<Bits>::unpack8(dst, src);
-            src += in_bytes_per_block;
-            dst += 8;
+            BlockMultiBitPacker<Bits>::unpack8(dst_p, src_p);
+            src_p += in_bytes_per_block;
+            dst_p += 8;
         }
         if (rem != 0) {
-            BlockMultiBitPacker<Bits>::unpack1_to_7(dst, src, rem);
+            BlockMultiBitPacker<Bits>::unpack1_to_7(dst_p, src_p, rem);
         }
     }
 

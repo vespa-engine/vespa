@@ -58,7 +58,7 @@ EdenQuantizer::unary_unpack_bits_to_scratch_space(QuantizedVector q_x) noexcept 
     const PackedBits in_bits = q_x.packed_bits();
     with_packer_for_bit_count(_bits, [&](auto bp) {
         // type of bp will be MultiBitPacker<N>
-        decltype(bp)::unpack(lhs_scratch_idx_space(), in_bits.data(), _dimensions);
+        decltype(bp)::unpack(std::span(lhs_scratch_idx_space(), _dimensions), in_bits);
     });
     return {scale, lhs_scratch_idx_space()};
 }
@@ -71,8 +71,8 @@ EdenQuantizer::binary_unpack_bits_to_scratch_space(QuantizedVector lhs, Quantize
     uint8_t* lhs_idx = lhs_scratch_idx_space();
     uint8_t* rhs_idx = rhs_scratch_idx_space();
     with_packer_for_bit_count(_bits, [&](auto bp) {
-        decltype(bp)::unpack(lhs_idx, lhs.packed_bits().data(), _dimensions);
-        decltype(bp)::unpack(rhs_idx, rhs.packed_bits().data(), _dimensions);
+        decltype(bp)::unpack(std::span(lhs_idx, _dimensions), lhs.packed_bits());
+        decltype(bp)::unpack(std::span(rhs_idx, _dimensions), rhs.packed_bits());
     });
     const float lhs_scale = lhs.scale();
     const float rhs_scale = rhs.scale();
@@ -146,10 +146,7 @@ void EdenQuantizer::quantize(std::span<const float> x, MutableQuantizedVector q_
         }
         scale = yq_dot / q_norm2;
     }
-    with_packer_for_bit_count(_bits, [&](auto bp) {
-        uint8_t* out_bits = q_x.packed_bits().data();
-        decltype(bp)::pack(out_bits, idx_buf, _dimensions);
-    });
+    with_packer_for_bit_count(_bits, [&](auto bp) { decltype(bp)::pack(q_x.packed_bits(), std::span(idx_buf, d)); });
     q_x.set_scale(scale);
 }
 
