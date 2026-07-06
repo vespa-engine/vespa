@@ -42,6 +42,7 @@
 #include "nativeproximityfeature.h"
 #include "nativerankfeature.h"
 #include "nowfeature.h"
+#include "num_docs_feature.h"
 #include "onnx_feature.h"
 #include "proximityfeature.h"
 #include "querycompletenessfeature.h"
@@ -113,6 +114,7 @@ void setup_search_features(fef::IBlueprintRegistry& registry) {
     registry.addPrototype(std::make_shared<NativeProximityBlueprint>());
     registry.addPrototype(std::make_shared<NativeRankBlueprint>());
     registry.addPrototype(std::make_shared<NowBlueprint>());
+    registry.addPrototype(std::make_shared<NumDocsBlueprint>());
     registry.addPrototype(std::make_shared<QueryBlueprint>());
     registry.addPrototype(std::make_shared<QueryTermCountBlueprint>());
     registry.addPrototype(std::make_shared<RandomBlueprint>());

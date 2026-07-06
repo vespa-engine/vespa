@@ -22,6 +22,7 @@ private:
     GeoLocationSpecPtrs                         _locations;
     std::vector<const search::fef::ITermData*>  _terms;
     const search::index::IFieldLengthInspector& _field_length_inspector;
+    uint32_t                                    _num_docs;
 
     QueryEnvironment(const QueryEnvironment&);
     QueryEnvironment& operator=(const QueryEnvironment&);
@@ -37,7 +38,8 @@ public:
     QueryEnvironment(const search::fef::IIndexEnvironment&       indexEnv,
                      const search::attribute::IAttributeContext& attrContext,
                      const search::fef::Properties&              properties,
-                     const search::index::IFieldLengthInspector& field_length_inspector);
+                     const search::index::IFieldLengthInspector& field_length_inspector,
+                     uint32_t                                    num_docs);
 
     /**
      * Used to edit the list of terms by the one setting up this query
@@ -74,6 +76,8 @@ public:
     const search::attribute::IAttributeContext& getAttributeContext() const override;
 
     search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
+
+    uint32_t get_num_docs() const override { return _num_docs; }
 
     // inherited from search::fef::IQueryEnvironment
     const search::fef::IIndexEnvironment& getIndexEnvironment() const override;

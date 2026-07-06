@@ -65,6 +65,8 @@ public:
 
     QueryEnvironmentBuilder& set_avg_field_length(const std::string& field_name, double avg_field_length);
 
+    QueryEnvironmentBuilder& set_num_docs(uint32_t num_docs);
+
 private:
     QueryEnvironmentBuilder(const QueryEnvironmentBuilder&);            // hide
     QueryEnvironmentBuilder& operator=(const QueryEnvironmentBuilder&); // hide

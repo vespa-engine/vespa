@@ -28,6 +28,7 @@ private:
     std::vector<GeoLocationSpec>                            _locations;
     search::attribute::IAttributeContext::UP                _attrCtx;
     std::unordered_map<std::string, index::FieldLengthInfo> _field_length_info;
+    uint32_t                                                _num_docs;
 
 public:
     /**
@@ -56,6 +57,7 @@ public:
         }
         return index::FieldLengthInfo(1.0, 1.0, 1);
     }
+    uint32_t get_num_docs() const override { return _num_docs; }
     const IIndexEnvironment& getIndexEnvironment() const override {
         assert(_indexEnv != nullptr);
         return *_indexEnv;
@@ -98,6 +100,11 @@ public:
 
     std::unordered_map<std::string, index::FieldLengthInfo>& get_field_length_info_map() {
         return _field_length_info;
+    }
+
+    QueryEnvironment& set_num_docs(uint32_t num_docs) {
+        _num_docs = num_docs;
+        return *this;
     }
 };
 

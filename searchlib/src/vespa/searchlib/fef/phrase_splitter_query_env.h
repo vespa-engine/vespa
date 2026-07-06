@@ -81,6 +81,7 @@ public:
     index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         return _queryEnv.get_field_length_info(field_name);
     }
+    uint32_t get_num_docs() const override { return _queryEnv.get_num_docs(); }
     const IIndexEnvironment& getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
 
     // Accessor methods used by PhraseSplitter

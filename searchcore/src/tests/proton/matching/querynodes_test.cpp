@@ -495,6 +495,13 @@ TEST(QueryNodesTest, requireThatSimpleIntermediatesGetProperBlending) {
     checkProperBlendingWithParent<Rank>("Rank");
 }
 
+TEST(QueryNodesTest, bm25_total_doc_count_clamps_empty_lid_space) {
+    EXPECT_EQ(1u, bm25_total_doc_count(0));
+    EXPECT_EQ(1u, bm25_total_doc_count(1));
+    EXPECT_EQ(1u, bm25_total_doc_count(2));
+    EXPECT_EQ(999u, bm25_total_doc_count(1000));
+}
+
 TEST(QueryNodesTest, control_query_nodes_size) {
     EXPECT_EQ(72u + sizeof(std::string), sizeof(ProtonTermData));
     EXPECT_EQ(32u + 2 * sizeof(std::string), sizeof(search::query::NumberTerm));

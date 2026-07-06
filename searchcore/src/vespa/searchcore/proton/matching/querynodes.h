@@ -19,6 +19,10 @@ namespace proton::matching {
 
 class ViewResolver;
 
+inline uint32_t bm25_total_doc_count(uint32_t docid_limit) noexcept {
+    return (docid_limit > 1) ? (docid_limit - 1) : 1;
+}
+
 class ProtonTermData : public search::fef::ITermData {
 public:
     using FieldSpec = search::queryeval::FieldSpec;

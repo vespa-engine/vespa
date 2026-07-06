@@ -56,6 +56,7 @@ public class ReservedFunctionNames extends Processor {
         temp.add("firstphase");
         temp.add("globalphase");
         temp.add("normalize_linear");
+        temp.add("numDocs");
         temp.add("onnx");
         temp.add("onnx_vespa");
         temp.add("query");
