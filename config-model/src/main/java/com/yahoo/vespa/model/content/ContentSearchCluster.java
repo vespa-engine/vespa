@@ -59,7 +59,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
-    private final int searchCoreMaxOutstandingMoveOps;
     private final int searchNodeInitializerThreads;
     private final double searchNodeReservedMemoryFactor;
     private final boolean logWarningOnDiskCapacityChange;
@@ -84,7 +83,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
-        this.searchCoreMaxOutstandingMoveOps = featureFlags.searchCoreMaxOutstandingMoveOps();
         this.searchNodeInitializerThreads = searchNodeInitializeThreads;
         this.searchNodeReservedMemoryFactor = featureFlags.searchNodeReservedMemoryFactor();
         this.logWarningOnDiskCapacityChange = featureFlags.protonLogWarningOnDiskCapacityChange();
