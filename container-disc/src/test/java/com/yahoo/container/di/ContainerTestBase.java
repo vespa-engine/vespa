@@ -52,11 +52,19 @@ public class ContainerTestBase {
     ComponentGraph getNewComponentGraph(Container container, ComponentGraph oldGraph) {
         Container.ComponentGraphResult result = container.waitForNextGraphGeneration(oldGraph, Guice.createInjector(), true);
         result.oldComponentsCleanupTask().run();
+        if (result.failed()) rethrow(result.failure());
         return result.newGraph();
     }
 
     ComponentGraph getNewComponentGraph(Container container) {
-        return container.waitForNextGraphGeneration(new ComponentGraph(), Guice.createInjector(), true).newGraph();
+        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(new ComponentGraph(), Guice.createInjector(), true);
+        if (result.failed()) rethrow(result.failure());
+        return result.newGraph();
+    }
+
+    static void rethrow(Throwable t) {
+        if (t instanceof RuntimeException re) throw re;
+        throw new RuntimeException(t);
     }
 
 

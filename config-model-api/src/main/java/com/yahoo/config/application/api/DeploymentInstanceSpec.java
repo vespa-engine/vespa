@@ -7,6 +7,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HeapDumpRedaction;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
@@ -62,6 +63,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final Map<CloudName, CloudAccount> cloudAccounts;
     private final Optional<Duration> hostTTL;
     private final CloudResourceTags cloudResourceTags;
+    private final Optional<HeapDumpRedaction> heapDumpRedaction;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
     private final Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints;
@@ -81,6 +83,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Map<CloudName, CloudAccount> cloudAccounts,
                                   Optional<Duration> hostTTL,
                                   CloudResourceTags cloudResourceTags,
+                                  Optional<HeapDumpRedaction> heapDumpRedaction,
                                   Notifications notifications,
                                   List<Endpoint> endpoints,
                                   Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints,
@@ -106,6 +109,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.cloudAccounts = Map.copyOf(cloudAccounts);
         this.hostTTL = Objects.requireNonNull(hostTTL);
         this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
+        this.heapDumpRedaction = Objects.requireNonNull(heapDumpRedaction);
         this.notifications = Objects.requireNonNull(notifications);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpointsCopy =  new HashMap<>();
@@ -290,6 +294,9 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                             .orElse(CloudResourceTags.empty());
         return cloudResourceTags.mergedWith(zoneTags);
     }
+
+    /** Returns the heap dump redaction level set on this instance, if any. */
+    public Optional<HeapDumpRedaction> heapDumpRedaction() { return heapDumpRedaction; }
 
     /** Returns the host TTL to use for given environment and region, if any */
     public Optional<Duration> hostTTL(Environment environment, Optional<RegionName> region) {

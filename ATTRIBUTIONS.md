@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-06-24
+Last updated: 2026-07-06
 
 ---
 
@@ -209,22 +209,17 @@ Last updated: 2026-06-24
 
 ---
 
-## com.fasterxml.jackson.core 2.21 — Apache 2.0
+## com.fasterxml.jackson.core 2.22 — Apache 2.0
 
 - Homepage: <https://github.com/FasterXML/jackson>
 - FasterXML
 
 ---
 
-## com.fasterxml.jackson.core 2.21.4 — Apache 2.0
+## com.fasterxml.jackson.core 2.22.0 — Apache 2.0
 
-- Homepage: <https://github.com/FasterXML/jackson-core>
-- Copyright 2018-2020 Raffaello Giulietti
-- Copyright 2021 The fast_float authors
--  Switzerland
-- Copyright 2022 Daniel Lemire
+- Homepage: <https://github.com/FasterXML/jackson>
 - FasterXML
-- Copyright 2024 Werner Randelshofer
 
 ---
 
@@ -294,6 +289,18 @@ Last updated: 2026-06-24
 
 - Homepage: <https://commons.apache.org/proper/commons-io/>
 - The Apache Software Foundation
+
+---
+
+## concurrent-ruby 1.3.7 — MIT
+
+- Homepage: <http://www.concurrent-ruby.com>
+
+---
+
+## concurrent-ruby 1.3.7 — Ruby
+
+- Homepage: <http://www.concurrent-ruby.com>
 
 ---
 

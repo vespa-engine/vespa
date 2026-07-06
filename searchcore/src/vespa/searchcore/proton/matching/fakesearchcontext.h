@@ -60,6 +60,7 @@ public:
     search::queryeval::Searchable& getAttributes() override { return _attrSearchable; }
 
     uint32_t getDocIdLimit() override { return _docIdLimit; }
+    const std::string_view get_document_type_name() override { return {}; }
     virtual const vespalib::Doom& getDoom() const { return _doom; }
 };
 

@@ -16,6 +16,7 @@ using search::queryeval::ISourceSelector;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;
 using vespalib::HwInfo;
+using vespalib::ProcessMemoryStats;
 
 namespace fs = std::filesystem;
 
@@ -61,8 +62,8 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test {
 
     ResourceUsageWriteFilterTest()
         : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0))), _notifier(_filter) {
-        _notifier.set_resource_usage(ResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 300), 20, 100,
-                                     ReservedDiskSpaceAndMemory(0, 0, 0));
+        _notifier.set_resource_usage(ResourceUsage(), ProcessMemoryStats(297, 298, 300), DiskUsage(20, 100),
+                                     ReservedDiskSpaceAndMemory());
     }
 
     void testWrite(const std::string& exp) {
@@ -80,13 +81,13 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test {
     }
 
     void triggerDiskLimit() {
-        _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), 90, 100,
-                                     ReservedDiskSpaceAndMemory(0, 0, 0));
+        _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), DiskUsage(90, 100),
+                                     ReservedDiskSpaceAndMemory());
     }
 
     void triggerMemoryLimit() {
-        _notifier.set_resource_usage(ResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 900),
-                                     _notifier.getDiskUsedSize(), 100, ReservedDiskSpaceAndMemory(0, 0, 0));
+        _notifier.set_resource_usage(ResourceUsage(), ProcessMemoryStats(897, 898, 900), _notifier.disk_usage(),
+                                     ReservedDiskSpaceAndMemory());
     }
 
     void notify_attribute_usage(const AttributeUsageStats& usage) { _notifier.notify_attribute_usage(usage); }
@@ -127,18 +128,19 @@ TEST_F(ResourceUsageWriteFilterTest, disk_limit_can_be_reached) {
     assertResourceUsage(0.9, 0.8, 1.125, _notifier.usageState().diskState());
 }
 
-TEST_F(ResourceUsageWriteFilterTest, disk_usage_ratios_follow_resampled_capacity) {
+TEST_F(ResourceUsageWriteFilterTest, disk_usage_ratios_follow_sampled_capacity) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{40, 0}, zero_size_on_disk},
-                                 _notifier.getMemoryStats(), 100, 200, ReservedDiskSpaceAndMemory(20, 0, 0));
+                                 _notifier.getMemoryStats(), DiskUsage(100, 200),
+                                 ReservedDiskSpaceAndMemory(60, 0, 0, 0));
     EXPECT_DOUBLE_EQ(0.5, _notifier.usageState().diskState().usage());    // 100 / 200
     EXPECT_DOUBLE_EQ(0.2, _notifier.usageState().transient_disk_usage()); // 40 / 200
-    EXPECT_DOUBLE_EQ(0.1, _notifier.usageState().reserved_disk_space());  // 20 / 200
+    EXPECT_DOUBLE_EQ(0.3, _notifier.usageState().reserved_disk_space());  // 60 / 200
 }
 
-TEST_F(ResourceUsageWriteFilterTest, disk_limit_message_reports_resampled_capacity) {
+TEST_F(ResourceUsageWriteFilterTest, disk_limit_message_reports_sampled_capacity) {
     EXPECT_TRUE(_notifier.setConfig(Config(1.0, 0.8, 0.0, 0.0, AttributeUsageFilterConfig())));
-    _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), 180, 200,
-                                 ReservedDiskSpaceAndMemory(0, 0, 0));
+    _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), DiskUsage(180, 200),
+                                 ReservedDiskSpaceAndMemory());
     testWrite("diskLimitReached: { "
               "action: \"add more content nodes\", "
               "reason: \"disk used (0.9) > disk limit (0.8)\", "
@@ -158,6 +160,22 @@ TEST_F(ResourceUsageWriteFilterTest, memory_limit_can_be_reached) {
               "rss: { mapped: 898, anonymous: 900}, "
               "physicalMemory: 1000, memoryUsed: 0.9, memoryLimit: 0.8}}");
     assertResourceUsage(0.9, 0.8, 1.125, _notifier.usageState().memoryState());
+}
+
+TEST_F(ResourceUsageWriteFilterTest, transient_memory_is_subtracted_from_reported_memory) {
+    _notifier.set_resource_usage(ResourceUsage({0, 5}, 0), ProcessMemoryStats(897, 898, 900, 50),
+                                 _notifier.disk_usage(), ReservedDiskSpaceAndMemory(0, 0, 50, 5));
+    assertResourceUsage(0.9, 1.0, 0.9, _notifier.usageState().memoryState());
+    EXPECT_DOUBLE_EQ(0.845, _notifier.usageState().reported_memory_usage());
+    EXPECT_DOUBLE_EQ(0.055, _notifier.usageState().transient_memory_usage());
+    EXPECT_DOUBLE_EQ(0.055, _notifier.usageState().reserved_memory());
+    // Lower reserved memory => transient memory is capped
+    _notifier.set_resource_usage(ResourceUsage({0, 5}, 0), ProcessMemoryStats(897, 898, 900, 50),
+                                 _notifier.disk_usage(), ReservedDiskSpaceAndMemory(0, 0, 40, 5));
+    assertResourceUsage(0.9, 1.0, 0.9, _notifier.usageState().memoryState());
+    EXPECT_DOUBLE_EQ(0.855, _notifier.usageState().reported_memory_usage());
+    EXPECT_DOUBLE_EQ(0.045, _notifier.usageState().transient_memory_usage());
+    EXPECT_DOUBLE_EQ(0.045, _notifier.usageState().reserved_memory());
 }
 
 TEST_F(ResourceUsageWriteFilterTest, both_disk_limit_and_memory_limit_can_be_reached) {
@@ -180,22 +198,32 @@ TEST_F(ResourceUsageWriteFilterTest, both_disk_limit_and_memory_limit_can_be_rea
 
 TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{15, 0}, zero_size_on_disk},
-                                 _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 100,
-                                 ReservedDiskSpaceAndMemory(0, 0, 0));
+                                 _notifier.getMemoryStats(), _notifier.disk_usage(),
+                                 ReservedDiskSpaceAndMemory(100, 0, 0, 0));
     EXPECT_DOUBLE_EQ(0.15, _notifier.usageState().transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.15, _notifier.get_metrics().transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.05, _notifier.usageState().non_transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.05, _notifier.get_metrics().non_transient_disk_usage());
+    _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{15, 0}, zero_size_on_disk},
+                                 _notifier.getMemoryStats(), _notifier.disk_usage(),
+                                 ReservedDiskSpaceAndMemory(10, 0, 0, 0));
+    EXPECT_DOUBLE_EQ(0.10, _notifier.usageState().transient_disk_usage());
+    EXPECT_DOUBLE_EQ(0.10, _notifier.usageState().non_transient_disk_usage());
 }
 
 TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{0, 100}, zero_size_on_disk},
-                                 _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 100,
-                                 ReservedDiskSpaceAndMemory(0, 0, 0));
+                                 _notifier.getMemoryStats(), _notifier.disk_usage(),
+                                 ReservedDiskSpaceAndMemory(100, 0, 0, 100));
     EXPECT_DOUBLE_EQ(0.1, _notifier.usageState().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.1, _notifier.get_metrics().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.2, _notifier.usageState().non_transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.2, _notifier.get_metrics().non_transient_memory_usage());
+    _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{0, 100}, zero_size_on_disk},
+                                 _notifier.getMemoryStats(), _notifier.disk_usage(),
+                                 ReservedDiskSpaceAndMemory(100, 0, 0, 50));
+    EXPECT_DOUBLE_EQ(0.05, _notifier.usageState().transient_memory_usage());
+    EXPECT_DOUBLE_EQ(0.25, _notifier.usageState().non_transient_memory_usage());
 }
 
 TEST_F(ResourceUsageWriteFilterTest, check_that_enum_store_limit_can_be_reached) {

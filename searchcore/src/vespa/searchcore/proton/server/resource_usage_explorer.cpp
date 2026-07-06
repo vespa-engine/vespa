@@ -14,9 +14,9 @@ using storage::spi::AttributeResourceUsage;
 
 namespace proton {
 
-void convertDiskStatsToSlime(uint64_t disk_capacity_bytes, uint64_t diskUsedSizeBytes, Cursor& object) {
-    object.setLong("capacity", disk_capacity_bytes);
-    object.setLong("used", diskUsedSizeBytes);
+void convertDiskStatsToSlime(const DiskUsage& disk_usage, Cursor& object) {
+    object.setLong("capacity", disk_usage.capacity_bytes());
+    object.setLong("used", disk_usage.used_bytes());
 }
 
 void convertMemoryStatsToSlime(const vespalib::ProcessMemoryStats& stats, Cursor& object) {
@@ -44,8 +44,15 @@ void ResourceUsageExplorer::get_state(const vespalib::slime::Inserter& inserter,
         disk.setDouble("transient", usageState.transient_disk_usage());
         disk.setDouble("non-transient", usageState.non_transient_disk_usage());
         disk.setDouble("reported", usageState.reported_disk_usage());
-        convertDiskStatsToSlime(_usage_notifier.disk_capacity_bytes(), _usage_notifier.getDiskUsedSize(),
-                                disk.setObject("stats"));
+        auto reserved_disk_space_and_memory = _usage_notifier.reserved_disk_space_and_memory();
+        auto disk_usage = _usage_notifier.disk_usage();
+        disk.setDouble("reserved-for-flush",
+                       static_cast<double>(reserved_disk_space_and_memory.reserved_disk_space_for_flush()) /
+                           disk_usage.capacity_bytes());
+        disk.setDouble("reserved-for-growth",
+                       static_cast<double>(reserved_disk_space_and_memory.reserved_disk_space_for_growth()) /
+                           disk_usage.capacity_bytes());
+        convertDiskStatsToSlime(disk_usage, disk.setObject("stats"));
 
         Cursor& memory = object.setObject("memory");
         memory.setDouble("usage", usageState.memoryState().usage());
@@ -58,7 +65,6 @@ void ResourceUsageExplorer::get_state(const vespalib::slime::Inserter& inserter,
         memory.setDouble("reported", usageState.reported_memory_usage());
         auto physical_memory = _usage_notifier.getHwInfo().memory().sizeBytes();
         memory.setLong("physicalMemory", physical_memory);
-        auto reserved_disk_space_and_memory = _usage_notifier.reserved_disk_space_and_memory();
         memory.setDouble("reserved-for-flush",
                          static_cast<double>(reserved_disk_space_and_memory.reserved_memory_for_flush()) /
                              physical_memory);

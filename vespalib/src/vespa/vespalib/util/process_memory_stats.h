@@ -15,7 +15,7 @@ class ProcessMemoryStats {
     uint64_t _virt;          // virtual size
     uint64_t _mapped_rss;    // resident size
     uint64_t _anonymous_rss; // resident size
-    size_t   _transient_memory;
+    size_t   _transient_memory_for_flush;
 
     [[nodiscard]] static ProcessMemoryStats createStatsFromStatm();
     [[nodiscard]] static ProcessMemoryStats create_stats_from_statm(uint64_t& transient_memory_generation);
@@ -34,13 +34,15 @@ public:
     [[nodiscard]] uint64_t getVirt() const noexcept { return _virt; }
     [[nodiscard]] uint64_t getMappedRss() const noexcept { return _mapped_rss; }
     [[nodiscard]] uint64_t getAnonymousRss() const noexcept { return _anonymous_rss; }
-    [[nodiscard]] size_t transient_memory() const noexcept { return _transient_memory; }
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept { return _transient_memory_for_flush; }
     [[nodiscard]] bool similarTo(const ProcessMemoryStats& rhs, double epsilon) const noexcept;
     [[nodiscard]] std::string toString() const;
     bool operator<(const ProcessMemoryStats& rhs) const noexcept { return _anonymous_rss < rhs._anonymous_rss; }
 
     /** for unit tests only */
-    ProcessMemoryStats(uint64_t, uint64_t, uint64_t) noexcept;
+    ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss) noexcept;
+    ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss,
+                       size_t transient_memory_for_flush_) noexcept;
     [[nodiscard]] static ProcessMemoryStats parseStatm(asciistream& statm);
 };
 

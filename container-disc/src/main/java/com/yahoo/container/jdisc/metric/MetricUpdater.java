@@ -154,6 +154,22 @@ public class MetricUpdater extends AbstractComponent {
 
         @Override
         public void run() {
+            try {
+                updateMetrics();
+            } catch (NoClassDefFoundError e) {
+                // During container shutdown the OSGi bundle wiring may be invalidated, so loading
+                // classes such as TlsMetrics fails with a NoClassDefFoundError (note: not an
+                // Exception). Tolerate the first such failure quietly, but rethrow if it persists.
+                if (gotException) {
+                    throw e;
+                }
+                gotException = true;
+            }
+        }
+
+        private boolean gotException = false;
+
+        private void updateMetrics() {
             long freeMemory = runtime.freeMemory();
             long totalMemory = runtime.totalMemory();
             long usedMemory = totalMemory - freeMemory;
@@ -201,4 +217,3 @@ public class MetricUpdater extends AbstractComponent {
     }
 
 }
-

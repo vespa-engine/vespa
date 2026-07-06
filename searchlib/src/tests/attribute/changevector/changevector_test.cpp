@@ -90,10 +90,10 @@ TEST(ChangeVectorTest, require_that_inserting_empty_vector_does_not_affect_the_v
 TEST(ChangeVectorTest, require_that_we_have_control_over_buffer_construction_size) {
     CV a;
     EXPECT_EQ(0u, a.size());
-    EXPECT_EQ(4u, a.capacity());
+    EXPECT_EQ(6u, a.capacity());
     a.clear();
     EXPECT_EQ(0u, a.size());
-    EXPECT_EQ(4u, a.capacity());
+    EXPECT_EQ(6u, a.capacity());
 }
 
 TEST(ChangeVectorTest, require_that_buffer_can_grow_some) {
@@ -102,27 +102,27 @@ TEST(ChangeVectorTest, require_that_buffer_can_grow_some) {
         a.push_back(Change(Change::NOOP, i, i));
     }
     EXPECT_EQ(1024u, a.size());
-    EXPECT_EQ(1024u, a.capacity());
+    EXPECT_EQ(1536u, a.capacity());
     a.clear();
     EXPECT_EQ(0u, a.size());
-    EXPECT_EQ(1024u, a.capacity());
+    EXPECT_EQ(1536u, a.capacity());
 }
 
 TEST(ChangeVectorTest, require_that_buffer_can_grow_some_but_not_unbound) {
     CV a;
-    for (size_t i(0); i < 1025; i++) {
+    for (size_t i(0); i < 1537; i++) {
         a.push_back(Change(Change::NOOP, i, i));
     }
-    EXPECT_EQ(1025u, a.size());
-    EXPECT_EQ(2048u, a.capacity());
+    EXPECT_EQ(1537u, a.size());
+    EXPECT_EQ(3072u, a.capacity());
     a.clear();
     EXPECT_EQ(0u, a.size());
-    EXPECT_EQ(256u, a.capacity());
+    EXPECT_EQ(204u, a.capacity());
 }
 
 TEST(ChangeVectorTest, Control_Change_size) {
-    EXPECT_EQ(32u, sizeof(ChangeTemplate<NumericChangeData<long>>));
-    EXPECT_EQ(16u + sizeof(std::string), sizeof(ChangeTemplate<StringChangeData>));
+    EXPECT_EQ(40u, sizeof(ChangeTemplate<NumericChangeData<long>>));
+    EXPECT_EQ(24u + sizeof(std::string), sizeof(ChangeTemplate<StringChangeData>));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

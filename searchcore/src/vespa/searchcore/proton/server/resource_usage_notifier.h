@@ -3,6 +3,7 @@
 #pragma once
 
 #include "disk_mem_usage_metrics.h"
+#include "disk_usage.h"
 #include "i_resource_usage_notifier.h"
 #include "resource_usage_state.h"
 
@@ -62,8 +63,7 @@ private:
     vespalib::HwInfo _hwInfo;
     // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats         _memoryStats;
-    uint64_t                             _diskUsedSizeBytes;
-    uint64_t                             _disk_capacity_bytes;
+    DiskUsage                            _disk_usage;
     ReservedDiskSpaceAndMemory           _reserved_disk_space_and_memory;
     searchcorespi::common::ResourceUsage _resource_usage;
     AttributeUsageStats                  _attribute_usage;
@@ -87,13 +87,12 @@ public:
     ~ResourceUsageNotifier() override;
 
     void set_resource_usage(const searchcorespi::common::ResourceUsage& resource_usage,
-                            vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
-                            uint64_t disk_capacity_bytes, ReservedDiskSpaceAndMemory reserved_disk_space_and_memory_);
+                            vespalib::ProcessMemoryStats memoryStats, const DiskUsage& disk_usage,
+                            ReservedDiskSpaceAndMemory reserved_disk_space_and_memory_);
     [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
-    uint64_t getDiskUsedSize() const;
+    [[nodiscard]] DiskUsage disk_usage() const;
     [[nodiscard]] ReservedDiskSpaceAndMemory reserved_disk_space_and_memory() const noexcept;
-    [[nodiscard]] uint64_t disk_capacity_bytes() const;
     searchcorespi::common::ResourceUsage get_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo& getHwInfo() const noexcept { return _hwInfo; }

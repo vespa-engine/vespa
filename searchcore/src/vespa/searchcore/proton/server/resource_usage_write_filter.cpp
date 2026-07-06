@@ -40,21 +40,19 @@ void makeMemoryLimitMessage(std::ostream& os, double memoryUsed, double memoryLi
     os << "}";
 }
 
-void makeDiskStatsMessage(std::ostream& os, double diskUsed, double diskLimit, uint64_t disk_capacity_bytes,
-                          uint64_t usedDiskSizeBytes) {
+void makeDiskStatsMessage(std::ostream& os, double diskUsed, double diskLimit, const DiskUsage& disk_usage) {
     os << "stats: { ";
-    os << "capacity: " << disk_capacity_bytes << ", ";
-    os << "used: " << usedDiskSizeBytes << ", ";
+    os << "capacity: " << disk_usage.capacity_bytes() << ", ";
+    os << "used: " << disk_usage.used_bytes() << ", ";
     os << "diskUsed: " << diskUsed << ", ";
     os << "diskLimit: " << diskLimit << "}";
 }
 
-void makeDiskLimitMessage(std::ostream& os, double diskUsed, double diskLimit, uint64_t disk_capacity_bytes,
-                          uint64_t usedDiskSizeBytes) {
+void makeDiskLimitMessage(std::ostream& os, double diskUsed, double diskLimit, const DiskUsage& disk_usage) {
     os << "diskLimitReached: { ";
     os << "action: \"add more content nodes\", ";
     os << "reason: \"disk used (" << diskUsed << ") > disk limit (" << diskLimit << ")\", ";
-    makeDiskStatsMessage(os, diskUsed, diskLimit, disk_capacity_bytes, usedDiskSizeBytes);
+    makeDiskStatsMessage(os, diskUsed, diskLimit, disk_usage);
     os << "}";
 }
 
@@ -91,13 +89,13 @@ void make_attribute_address_space_error_message(std::ostream& os, double used, d
 
 std::string makeUnblockingMessage(double memoryUsed, double memoryLimit, const ProcessMemoryStats& memoryStats,
                                   const HwInfo& hwInfo, double diskUsed, double diskLimit,
-                                  uint64_t disk_capacity_bytes, uint64_t usedDiskSizeBytes) {
+                                  const DiskUsage& disk_usage) {
     std::ostringstream os;
     os << "memoryLimitOK: { ";
     makeMemoryStatsMessage(os, memoryUsed, memoryLimit, memoryStats, hwInfo.memory().sizeBytes());
     os << "}, ";
     os << "diskLimitOK: { ";
-    makeDiskStatsMessage(os, diskUsed, diskLimit, disk_capacity_bytes, usedDiskSizeBytes);
+    makeDiskStatsMessage(os, diskUsed, diskLimit, disk_usage);
     os << "}";
     return os.str();
 }
@@ -110,8 +108,7 @@ ResourceUsageWriteFilter::ResourceUsageWriteFilter(const HwInfo& hwInfo)
       _hwInfo(hwInfo),
       _acceptWrite(true),
       _memoryStats(),
-      _diskUsedSizeBytes(0),
-      _disk_capacity_bytes(_hwInfo.disk().sizeBytes()),
+      _disk_usage(0, _hwInfo.disk().sizeBytes()),
       _state(),
       _usage_state() {
 }
@@ -133,7 +130,7 @@ void ResourceUsageWriteFilter::recalc_state(const Guard& guard) {
         }
         hasMessage = true;
         makeDiskLimitMessage(message, _usage_state.diskState().usage(), _usage_state.diskState().limit(),
-                             _disk_capacity_bytes, _diskUsedSizeBytes);
+                             _disk_usage);
     }
     {
         const auto& max_attribute_address_space_state = _usage_state.max_attribute_address_space_state();
@@ -155,10 +152,9 @@ void ResourceUsageWriteFilter::recalc_state(const Guard& guard) {
         _acceptWrite = false;
     } else {
         if (!_acceptWrite) {
-            std::string unblockMsg =
-                makeUnblockingMessage(_usage_state.memoryState().usage(), _usage_state.memoryState().limit(),
-                                      _memoryStats, _hwInfo, _usage_state.diskState().usage(),
-                                      _usage_state.diskState().limit(), _disk_capacity_bytes, _diskUsedSizeBytes);
+            std::string unblockMsg = makeUnblockingMessage(
+                _usage_state.memoryState().usage(), _usage_state.memoryState().limit(), _memoryStats, _hwInfo,
+                _usage_state.diskState().usage(), _usage_state.diskState().limit(), _disk_usage);
             LOG(info, "Write operations are now un-blocked: '%s'", unblockMsg.c_str());
         }
         _state = State();
@@ -177,12 +173,11 @@ ResourceUsageWriteFilter::State ResourceUsageWriteFilter::getAcceptState() const
 
 void ResourceUsageWriteFilter::notify_resource_usage(const ResourceUsageState&           state,
                                                      const vespalib::ProcessMemoryStats& memoryStats,
-                                                     uint64_t diskUsedSizeBytes, uint64_t disk_capacity_bytes) {
+                                                     const DiskUsage&                    disk_usage) {
     std::lock_guard guard(_lock);
     _usage_state = state;
     _memoryStats = memoryStats;
-    _diskUsedSizeBytes = diskUsedSizeBytes;
-    _disk_capacity_bytes = disk_capacity_bytes;
+    _disk_usage = disk_usage;
     recalc_state(guard);
 }
 

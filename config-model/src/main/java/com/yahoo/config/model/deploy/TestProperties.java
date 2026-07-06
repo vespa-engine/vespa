@@ -83,6 +83,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
     private double searchNodeReservedMemoryFactor = 0.0;
+    private boolean failWhenConfiguringIndexedMapOfArray = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -144,6 +145,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
+    @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
+
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -366,6 +369,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setSearchNodeReservedMemoryFactor(double value) {
         this.searchNodeReservedMemoryFactor = value;
+        return this;
+    }
+
+    public TestProperties failWhenConfiguringIndexedMapOfArray(boolean value) {
+        this.failWhenConfiguringIndexedMapOfArray = value;
         return this;
     }
 

@@ -389,9 +389,12 @@ public class GroupingParserTestCase {
                 "             each() as(baz))",
                 "all(group(a) each(each() as(foo) each() as(bar)) each() as(baz))");
 
-        assertIllegalArgument("all() as(foo)", "Encountered \" \"as\" \"as\"\" at line 1, column 7.");
-        assertIllegalArgument("all(all() as(foo))", "Encountered \" \"as\" \"as\"\" at line 1, column 11.");
-        assertIllegalArgument("each(all() as(foo))", "Encountered \" \"as\" \"as\"\" at line 1, column 12.");
+        assertIllegalArgument("all() as(foo)",
+                "Encountered \" \"as\" \"as\"\" at line 1, column 7.");
+        assertIllegalArgument("all(all() as(foo))",
+                "Encountered \" \"as\" \"as\"\" at line 1, column 11.");
+        assertIllegalArgument("each(all() as(foo))",
+                "Encountered \" \"as\" \"as\"\" at line 1, column 12.");
     }
 
     @Test

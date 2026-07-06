@@ -18,4 +18,7 @@ public interface DeploymentConfigStore {
                List<BlockWindow> blockWindows,
                TelemetryExporterConfiguration telemetryExportConfig);
 
+    /** Stores the heap dump redaction level for the given application, replacing any previously stored level. */
+    default void storeHeapDumpRedaction(ApplicationId applicationId, HeapDumpRedaction heapDumpRedaction) { }
+
 }

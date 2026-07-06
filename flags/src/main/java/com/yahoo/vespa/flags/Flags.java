@@ -203,15 +203,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
-            "apply-on-restart-for-application-metadata-config", false,
-            List.of("glebashnik"), "2026-02-13", "2026-08-13",
-            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " +
-                    "This might fix deferring config changes until container restart.",
-            "Takes effect at redeployment",
-            INSTANCE_ID
-    );
-
     public static final UnboundIntFlag METRICS_PROXY_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-heap-size-in-mib", 0,
             List.of("hmusum"), "2026-04-29", "2026-09-01",
@@ -251,11 +242,32 @@ public class Flags {
         INSTANCE_ID
     );
 
+    public static final UnboundBooleanFlag FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY = defineFeatureFlag(
+            "fail-when-configuring-indexed-map-of-array", false,
+            List.of("hmusum"), "2026-07-01", "2026-10-13",
+            "Whether to fail a deployment when an indexed map of array is used in a schema",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     public static final UnboundBooleanFlag USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK = defineFeatureFlag(
-            "use-wanted-generation.in-convergence-check", false,
+            "use-wanted-generation-in-convergence-check", false,
             List.of("hmusum"), "2026-06-16", "2026-09-01",
             "Whether to use extended info (wantedGeneration) from /state/v1/config API to " +
                     "decide if config convergence is achieved during deploy",
+            "Takes effect at deployment");
+
+    public static final UnboundBooleanFlag PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE = defineFeatureFlag(
+            "proton-log-warning-on-disk-capacity-change", false,
+            List.of("johsol"), "2026-07-06", "2026-09-01",
+            "Log a warning when sampled disk capacity changes. Escape hatch in case of log spam " +
+            "while working towards adding back resampling of disk capacity.",
+            "Takes effect at deployment");
+
+    public static final UnboundBooleanFlag PROTON_RESAMPLE_DISK_CAPACITY = defineFeatureFlag(
+            "proton-resample-disk-capacity", false,
+            List.of("johsol"), "2026-07-06", "2026-09-01",
+            "Resample disk capacity in proton.",
             "Takes effect at deployment");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

@@ -8,6 +8,7 @@
     <block-change revision='true' version='false' days="mon,tue" hours="14,15"/>
 
     <instance id="one,two">
+      <memory-dump heap-dump-redaction='full'/>
       <block-change days="mon,tue" hours="14,15" time-zone="CET"/>
       <prod athenz-service='other-service'>
           <region>us-west-1</region>

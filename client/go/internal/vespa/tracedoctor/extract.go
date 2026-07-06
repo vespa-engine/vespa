@@ -546,8 +546,9 @@ func selectSlowestThread(threads []threadTrace) (*threadTrace, *threadTrace) {
 }
 
 type protonTrace struct {
-	source slime.Value
-	path   *slime.Path
+	source    slime.Value
+	path      *slime.Path
+	followUps []protonTrace
 }
 
 func (p protonTrace) globalFilterPerf() *topNPerf {
@@ -657,6 +658,14 @@ func (p protonTrace) desc() string {
 	return fmt.Sprintf("%s[%d]", p.documentType(), p.distributionKey())
 }
 
+func (p protonTrace) followUpDurationsMs() []float64 {
+	var res []float64
+	for _, f := range p.followUps {
+		res = append(res, f.durationMs())
+	}
+	return res
+}
+
 type protonSummary struct {
 	name          string
 	filterMs      float64
@@ -740,29 +749,42 @@ func (p protonTraceGroup) extractDispatchedQuery(root slime.Value) string {
 			}
 		})
 	}
-	if len(list) == 1 {
+	if len(list) >= 1 {
 		return list[0]
 	}
 	return ""
 }
 
-func groupProtonTraces(traces []protonTrace) []protonTraceGroup {
-	groupMap := make(map[string]*protonTraceGroup)
+func collapseFollowUps(traces []protonTrace) []protonTrace {
+	nodeMap := make(map[int64]int)
+	var res []protonTrace
 	for _, trace := range traces {
-		tag := trace.path.Clone().Trim(3).Field(trace.documentType()).String()
-		if group, exists := groupMap[tag]; exists {
-			group.traces = append(group.traces, trace)
+		if idx, found := nodeMap[trace.distributionKey()]; found {
+			res[idx].followUps = append(res[idx].followUps, trace)
 		} else {
-			groupMap[tag] = &protonTraceGroup{traces: []protonTrace{trace}, id: len(groupMap)}
+			nodeMap[trace.distributionKey()] = len(res)
+			res = append(res, trace)
 		}
 	}
-	res := make([]protonTraceGroup, 0, len(groupMap))
-	for _, group := range groupMap {
-		res = append(res, *group)
+	return res
+}
+
+func groupProtonTraces(traces []protonTrace) []protonTraceGroup {
+	groupMap := make(map[string]int)
+	var res []protonTraceGroup
+	for _, trace := range traces {
+		tag := trace.path.Clone().Trim(3).Field(trace.documentType()).String()
+		if idx, exists := groupMap[tag]; exists {
+			res[idx].traces = append(res[idx].traces, trace)
+		} else {
+			myId := len(res)
+			groupMap[tag] = myId
+			res = append(res, protonTraceGroup{traces: []protonTrace{trace}, id: myId})
+		}
 	}
-	sort.Slice(res, func(i, j int) bool {
-		return res[i].id < res[j].id
-	})
+	for i := range res {
+		res[i].traces = collapseFollowUps(res[i].traces)
+	}
 	return res
 }
 

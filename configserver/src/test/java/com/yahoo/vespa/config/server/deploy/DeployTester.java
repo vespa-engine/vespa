@@ -282,8 +282,8 @@ public class DeployTester {
         private SecretStore secretStore = new MockSecretStore();
         private Metrics metrics;
         private List<ModelFactory> modelFactories;
-        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
         private FlagSource flagSource = new InMemoryFlagSource();
+        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker(flagSource);
         private DeploymentConfigStore deploymentConfigStore;
 
         public Builder(TemporaryFolder temporaryFolder) {

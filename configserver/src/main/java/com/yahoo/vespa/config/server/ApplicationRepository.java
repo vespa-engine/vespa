@@ -272,7 +272,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private Metric metric = new NullMetric();
         private SecretStoreValidator secretStoreValidator = new SecretStoreValidator();
         private FlagSource flagSource = new InMemoryFlagSource();
-        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
+        private ConfigConvergenceChecker configConvergenceChecker = null;
         private ConfigStateChecker configStateChecker = new ConfigStateChecker();
         private Map<String, List<Token>> activeTokens = Map.of();
         private Optional<DeploymentConfigStore> deploymentConfigStore = Optional.empty();
@@ -352,7 +352,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              tenantRepository.hostProvisionerProvider().getHostProvisioner(),
                                              deploymentConfigStore,
                                              InfraDeployerProvider.empty().getInfraDeployer(),
-                                             configConvergenceChecker,
+                                             configConvergenceChecker == null ? new ConfigConvergenceChecker(flagSource) : configConvergenceChecker,
                                              configStateChecker,
                                              httpProxy,
                                              endpointsChecker,
@@ -744,7 +744,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
-                .sorted(Comparator.comparing(a -> lastModified(new File(fileReferencesPath, a))))
+                .sorted(Comparator.comparing(a -> {
+                    try {
+                        return lastModified(new File(fileReferencesPath, a));
+                    } catch (UncheckedIOException e) {
+                        log.log(Level.FINE, "Unable to get last modified time for file reference " + a + ", probably deleted");
+                        return Instant.EPOCH;
+                    }
+                }))
                 // Do max 20 at a time
                 .limit(20)
                 .toList();

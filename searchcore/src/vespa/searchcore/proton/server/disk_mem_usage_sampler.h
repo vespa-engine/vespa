@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "disk_usage.h"
 #include "resource_usage_notifier.h"
 
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
@@ -24,20 +25,6 @@ namespace proton {
 
 class IReservedDiskSpaceAndMemoryProvider;
 
-/**
- * Disk usage sample.
- */
-class DiskUsage {
-    uint64_t _used_bytes;
-    uint64_t _capacity_bytes;
-
-public:
-    DiskUsage(uint64_t used_bytes, uint64_t capacity_bytes) noexcept
-        : _used_bytes(used_bytes), _capacity_bytes(capacity_bytes) {}
-    [[nodiscard]] uint64_t used_bytes() const noexcept { return _used_bytes; }
-    [[nodiscard]] uint64_t capacity_bytes() const noexcept { return _capacity_bytes; }
-};
-
 /*
  * Class to sample disk and memory usage used for filtering write operations.
  */
@@ -46,7 +33,6 @@ class DiskMemUsageSampler {
     ResourceUsageNotifier&                     _notifier;
     const IReservedDiskSpaceAndMemoryProvider& _reserved_disk_space_and_memory_provider;
     std::filesystem::path                      _path;
-    bool                                       _should_resample_disk_capacity;
     vespalib::duration                         _sampleInterval;
     vespalib::steady_time                      _lastSampleTime;
     std::mutex                                 _lock;
@@ -65,19 +51,16 @@ public:
         ResourceUsageNotifier::Config filterConfig;
         vespalib::duration            sampleInterval;
         vespalib::HwInfo              hwInfo;
-        bool                          should_resample_disk_capacity;
 
-        Config() : filterConfig(), sampleInterval(60s), hwInfo(), should_resample_disk_capacity(false) {}
+        Config() : filterConfig(), sampleInterval(60s), hwInfo() {}
 
         Config(double memoryLimit_in, double diskLimit_in, double reserved_disk_space_factor_in,
                double reserved_memory_factor_in, AttributeUsageFilterConfig attribute_limit_in,
-               vespalib::duration sampleInterval_in, const vespalib::HwInfo& hwInfo_in,
-               bool should_resample_disk_capacity_in)
+               vespalib::duration sampleInterval_in, const vespalib::HwInfo& hwInfo_in)
             : filterConfig(memoryLimit_in, diskLimit_in, reserved_disk_space_factor_in, reserved_memory_factor_in,
                            attribute_limit_in),
               sampleInterval(sampleInterval_in),
-              hwInfo(hwInfo_in),
-              should_resample_disk_capacity(should_resample_disk_capacity_in) {}
+              hwInfo(hwInfo_in) {}
     };
 
     DiskMemUsageSampler(const std::string& path_in, ResourceUsageWriteFilter& filter,

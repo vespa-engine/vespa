@@ -155,6 +155,9 @@ void extract_matching_elements(uint32_t doc, std::span<const MatchSpan> match_sp
         if (matching_elements.empty() || match_span.first().element_id() > matching_elements.back()) {
             matching_elements.emplace_back(match_span.first().element_id());
         }
+        while (matching_elements.back() < match_span.last().element_id()) {
+            matching_elements.emplace_back(matching_elements.back() + 1);
+        }
     }
     if (!matching_elements.empty()) {
         auto& field_name = id_to_name.lookup(field_id);

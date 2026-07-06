@@ -679,8 +679,8 @@ ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() con
                                                   target->getComponent(), high_priority_target);
         }
     }
-    return ReservedDiskSpaceAndMemory(calc.get_reserved_disk(), mcalc.reserved_memory_for_flush(),
-                                      mcalc.reserved_memory_for_memory_indexes());
+    return ReservedDiskSpaceAndMemory(calc.reserved_disk_space_for_flush(), calc.reserved_disk_space_for_growth(),
+                                      mcalc.reserved_memory_for_flush(), mcalc.reserved_memory_for_memory_indexes());
 }
 
 } // namespace proton

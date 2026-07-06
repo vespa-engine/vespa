@@ -729,14 +729,17 @@ TEST(IntermediateBlueprintsTest, test_SourceBlender_below_AND_partial_optimizati
     auto expect = std::make_unique<AndBlueprint>();
     addLeafs(*expect, {1, 2, 3});
 
+    // The selector_2 blender (two leaves) now sorts before the selector_1 blender:
+    // the latter wraps AND subtrees whose per-node activation cost makes it the
+    // more expensive child under the new cost model.
+    expect->addChild(
+        addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
+
     auto blender = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
     blender->addChild(addLeafsWithSourceId(3, std::make_unique<AndBlueprint>(), {{30, 3}, {300, 3}}));
     blender->addChild(addLeafsWithSourceId(2, std::make_unique<AndBlueprint>(), {{20, 2}, {200, 2}, {2000, 2}}));
     blender->addChild(addLeafsWithSourceId(1, std::make_unique<AndBlueprint>(), {{10, 1}, {100, 1}, {1000, 1}}));
     expect->addChild(std::move(blender));
-
-    expect->addChild(
-        addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
 
     optimize_and_compare(std::move(top), std::move(expect));
 }
@@ -1575,55 +1578,79 @@ void verify_cost(make&& mk, double expect, double expect_strict) {
     EXPECT_DOUBLE_EQ(bp->strict_cost(), expect_strict);
 }
 
+// Every intermediate carries a per-node activation cost in addition to the
+// flow cost of its children: c (= intermediate_activation_cost()) per
+// invocation, i.e. +c non-strict and +c*est strict.
 TEST(IntermediateBlueprintsTest, cost_for_OR) {
-    verify_cost(make::OR(), OrFlow::cost_of(child_stats, false),
+    double c = flow::intermediate_activation_cost();
+    // heap_cost already models the strict activation, so it is not added on top there
+    verify_cost(make::OR(), OrFlow::cost_of(child_stats, false) + c,
                 OrFlow::cost_of(child_stats, true) + flow::heap_cost(OrFlow::estimate_of(child_stats), 3));
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_AND) {
-    verify_cost(make::AND(), AndFlow::cost_of(child_stats, false), AndFlow::cost_of(child_stats, true));
+    double c = flow::intermediate_activation_cost();
+    double est = AndFlow::estimate_of(child_stats);
+    verify_cost(make::AND(), AndFlow::cost_of(child_stats, false) + c, AndFlow::cost_of(child_stats, true) + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_RANK) {
-    verify_cost(make::RANK(), 1.1, 0.2 * 1.1); // first
+    double c = flow::intermediate_activation_cost();
+    verify_cost(make::RANK(), 1.1 + c, 0.2 * 1.1 + c * 0.2); // first child + self
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_ANDNOT) {
-    verify_cost(make::ANDNOT(), AndNotFlow::cost_of(child_stats, false), AndNotFlow::cost_of(child_stats, true));
+    double c = flow::intermediate_activation_cost();
+    double est = AndNotFlow::estimate_of(child_stats);
+    verify_cost(make::ANDNOT(), AndNotFlow::cost_of(child_stats, false) + c,
+                AndNotFlow::cost_of(child_stats, true) + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_SB) {
     InvalidSelector sel;
-    verify_cost(make::SB(sel), 1.3 + 1.0, 1.3 + (1.0 - 0.8 * 0.7 * 0.5)); // max, non_strict+1.0, strict+est
+    double          c = flow::intermediate_activation_cost();
+    double          est = 1.0 - 0.8 * 0.7 * 0.5;
+    // max, non_strict + selector lookup(1.0) + activation, strict + selector(est) + activation(c*est)
+    verify_cost(make::SB(sel), 1.3 + 1.0 + c, 1.3 + est + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_NEAR) {
-    verify_cost(make::NEAR(5, 0), AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
-                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
+    double c = flow::intermediate_activation_cost();
+    double est = AndFlow::estimate_of(child_stats);
+    verify_cost(make::NEAR(5, 0), AndFlow::cost_of(child_stats, false) + est * 3 + c,
+                AndFlow::cost_of(child_stats, true) + est * 3 + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_ONEAR) {
-    verify_cost(make::ONEAR(5, 0), AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
-                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
+    double c = flow::intermediate_activation_cost();
+    double est = AndFlow::estimate_of(child_stats);
+    verify_cost(make::ONEAR(5, 0), AndFlow::cost_of(child_stats, false) + est * 3 + c,
+                AndFlow::cost_of(child_stats, true) + est * 3 + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_NEAR_with_negative_children) {
     ASSERT_GT(child_stats.size(), 1);
-    auto positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
-    verify_cost(make::NEAR(5, 1), AndFlow::cost_of(positive_stats, false) + AndFlow::estimate_of(positive_stats) * 3,
-                AndFlow::cost_of(positive_stats, true) + AndFlow::estimate_of(positive_stats) * 3);
+    double c = flow::intermediate_activation_cost();
+    auto   positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
+    double est = AndFlow::estimate_of(positive_stats);
+    verify_cost(make::NEAR(5, 1), AndFlow::cost_of(positive_stats, false) + est * 3 + c,
+                AndFlow::cost_of(positive_stats, true) + est * 3 + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_ONEAR_with_negative_children) {
     ASSERT_GT(child_stats.size(), 1);
-    auto positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
-    verify_cost(make::ONEAR(5, 1), AndFlow::cost_of(positive_stats, false) + AndFlow::estimate_of(positive_stats) * 3,
-                AndFlow::cost_of(positive_stats, true) + AndFlow::estimate_of(positive_stats) * 3);
+    double c = flow::intermediate_activation_cost();
+    auto   positive_stats = std::span(child_stats.data(), child_stats.size() - 1);
+    double est = AndFlow::estimate_of(positive_stats);
+    verify_cost(make::ONEAR(5, 1), AndFlow::cost_of(positive_stats, false) + est * 3 + c,
+                AndFlow::cost_of(positive_stats, true) + est * 3 + c * est);
 }
 
 TEST(IntermediateBlueprintsTest, cost_for_WEAKAND) {
+    double c = flow::intermediate_activation_cost();
     double est = (Blueprint::abs_to_rel_est(1000, 1000) + OrFlow::estimate_of(child_stats)) / 2.0;
-    verify_cost(make::WEAKAND(1000), OrFlow::cost_of(child_stats, false),
+    // heap_cost already models the strict activation, so it is not added on top there
+    verify_cost(make::WEAKAND(1000), OrFlow::cost_of(child_stats, false) + c,
                 OrFlow::cost_of(child_stats, true) + flow::heap_cost(est, 3));
 }
 
@@ -1634,7 +1661,8 @@ TEST(IntermediateBlueprintsTest, cost_for_WEAKAND) {
 //
 // AND of three leaves (MyLeaf flow stats are {est, cost, cost*est}):
 //   A{0.2, 1.1, 0.22}  B{0.3, 1.2, 0.36}  C{0.5, 1.3, 0.65}
-// in-flow: non-strict, rate 1.0; kept order [A, B, C]; self cost of AND is 0.
+// in-flow: non-strict, rate 1.0; kept order [A, B, C]; self cost of AND is the
+// per-node activation cost c (+c non-strict, +c*est_AND strict).
 double abs_cost_of_kept_order_and(InFlow in_flow, bool allow_force_strict) {
     Blueprint::UP bp = make::AND().cost(1.1).leaf(200).cost(1.2).leaf(300).cost(1.3).leaf(500);
     bp->setDocIdLimit(1000);
@@ -1644,22 +1672,26 @@ double abs_cost_of_kept_order_and(InFlow in_flow, bool allow_force_strict) {
 }
 
 TEST(IntermediateBlueprintsTest, abs_cost_for_AND_with_kept_order) {
-    // without force-strict: plain non-strict AND flow, cost * flow per child
+    double c = flow::intermediate_activation_cost();
+    // without force-strict: plain non-strict AND flow, cost * flow per child, plus self cost c at rate 1.0
     //   A: 1.1 * 1.0          = 1.1     (flow 1.0)
     //   B: 1.2 * 0.2          = 0.24    (flow 1.0 * 0.2)
     //   C: 1.3 * (0.2 * 0.3)  = 0.078   (flow 1.0 * 0.2 * 0.3)
-    EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), false), 1.1 * 1.0 + 1.2 * 0.2 + 1.3 * (0.2 * 0.3));
+    //   self: c * 1.0
+    EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), false), 1.1 * 1.0 + 1.2 * 0.2 + 1.3 * (0.2 * 0.3) + c);
 
     // with force-strict: the AND is cheaper strict, so it forces itself strict.
     // children are then evaluated strict, in order:
     //   A: 0.22                (strict_cost; flow 1.0)
     //   B: 1.2 * 0.2  = 0.24   (forcing not worth it at flow 0.2)
     //   C: 1.3 * (0.2 * 0.3)   (forcing not worth it)
+    //   self: c * est_AND      (strict self cost)
     // plus the cost of forcing strict against a non-strict caller:
     //   strict_cost_diff(est_AND, rate) = 0.2 * (1.0 - 0.2 * 0.3 * 0.5)
     double children = 0.22 + 1.2 * 0.2 + 1.3 * (0.2 * 0.3);
+    double self_strict = c * (0.2 * 0.3 * 0.5);
     double force_strict_cost = 0.2 * (1.0 - 0.2 * 0.3 * 0.5);
-    EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), true), children + force_strict_cost);
+    EXPECT_DOUBLE_EQ(abs_cost_of_kept_order_and(InFlow(1.0), true), children + self_strict + force_strict_cost);
 }
 
 // A leaf that is unconditionally strict regardless of cost, like DotProduct /

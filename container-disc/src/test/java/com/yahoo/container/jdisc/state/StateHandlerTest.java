@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -23,11 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class StateHandlerTest extends StateHandlerTestBase {
 
     private static final String V1_URI = URI_BASE + "/state/v1/";
-    private static StateHandler stateHandler;
+    private Container container;
 
     @BeforeEach
     public void setupHandler() {
-        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, new Container());
+        container = new Container();
+        var stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, container);
         testDriver = new RequestHandlerTestDriver(stateHandler);
     }
 
@@ -195,6 +197,23 @@ public class StateHandlerTest extends StateHandlerTestBase {
         JsonNode config = root.get("config");
         JsonNode container = config.get("container");
         assertEquals(META_GENERATION, container.get("generation").asLong());
+    }
+
+    @Test
+    void config_status_is_ok_by_default() throws Exception {
+        JsonNode config = requestAsJson(V1_URI + "config").get("config");
+        assertEquals(0, config.get("wantedGeneration").asLong());
+        assertNull(config.get("message"));
+    }
+
+    @Test
+    void config_status_error() throws Exception {
+        String errorMessage = "Some error message";
+        container.setConfigStatus(META_GENERATION, errorMessage);
+
+        JsonNode config = requestAsJson(V1_URI + "config").get("config");
+        assertEquals(META_GENERATION, config.get("wantedGeneration").asLong());
+        assertEquals(errorMessage, config.get("message").asText());
     }
 
     @Test

@@ -55,11 +55,11 @@ void MemoryFlushConfigUpdater::considerUseRelaxedDiskMode(const LockGuard&, Memo
     double utilization = _currState.diskState().utilization();
     double bloatMargin = _currConfig.conservative.lowwatermarkfactor - utilization;
     if (bloatMargin > 0.0) {
-        // Node retired and disk utiliation is below low mater mark factor.
+        // Node retired and disk utilization is below low mater mark factor.
         // Compute how much of disk is occupied by live data, give that bloat is maxed,
         // which is normally the case in a system that has been running for a while.
         double spaceUtilization = utilization * (1 - _currConfig.diskbloatfactor);
-        // Then compute how much bloat can allowed given the current space usage and still stay below low watermark
+        // Then compute how much bloat is allowed given the current space usage and still stay below low watermark
         double targetBloat = (_currConfig.conservative.lowwatermarkfactor - spaceUtilization) /
                              _currConfig.conservative.lowwatermarkfactor;
         newConfig.diskBloatFactor = 1.0;

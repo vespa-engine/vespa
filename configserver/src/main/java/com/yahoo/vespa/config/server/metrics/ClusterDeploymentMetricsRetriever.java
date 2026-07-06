@@ -138,13 +138,19 @@ public class ClusterDeploymentMetricsRetriever {
                         aggregator.get().addReadLatency(rlSum, values.field("vds.distributor.gets.latency.count").asDouble()));
             }
 
-            case VESPA_CONTAINER_CLUSTERCONTROLLER ->
-                    optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())).ifPresent(memoryUtil ->
-                            aggregator.get()
-                                    .addMemoryUsage(memoryUtil, values.field(ClusterControllerMetrics.RESOURCE_USAGE_MEMORY_LIMIT.last()).asDouble())
-                                    .addDiskUsage(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()).asDouble(),
-                                            values.field(ClusterControllerMetrics.RESOURCE_USAGE_DISK_LIMIT.last()).asDouble())
-                                    .setFeedBlockedNodes((int) values.field(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.last()).asLong()));
+            case VESPA_CONTAINER_CLUSTERCONTROLLER -> {
+                var memUtil = optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max()));
+                var memLimit = optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MEMORY_LIMIT.last()));
+                var diskUtil = optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()));
+                var diskLimit = optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_DISK_LIMIT.last()));
+                memUtil.ifPresent(util -> memLimit.ifPresent(limit -> aggregator.get().addMemoryUsage(util, limit)));
+                diskUtil.ifPresent(util -> diskLimit.ifPresent(limit -> aggregator.get().addDiskUsage(util, limit)));
+                var fbnField = values.field(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.last());
+                if (fbnField.valid()) {
+                    long feedBlockedNodes = fbnField.asLong();
+                    aggregator.get().setFeedBlockedNodes((int) feedBlockedNodes);
+                }
+            }
         }
     }
 

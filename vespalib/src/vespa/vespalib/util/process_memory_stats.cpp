@@ -48,7 +48,7 @@ ProcessMemoryStats ProcessMemoryStats::createStatsFromStatm() {
         ret._anonymous_rss = vm_info.phys_footprint;
     }
 #endif
-    ret._transient_memory = TransientMemoryTracker::get_total_transient_memory(std::move(lock));
+    ret._transient_memory_for_flush = TransientMemoryTracker::get_total_transient_memory(std::move(lock));
     return ret;
 }
 
@@ -77,12 +77,19 @@ ProcessMemoryStats ProcessMemoryStats::parseStatm(asciistream& statm) {
     return ret;
 }
 
-ProcessMemoryStats::ProcessMemoryStats() noexcept
-    : _virt(0), _mapped_rss(0), _anonymous_rss(0), _transient_memory(0) {
+ProcessMemoryStats::ProcessMemoryStats() noexcept : ProcessMemoryStats(0, 0, 0, 0) {
 }
 
 ProcessMemoryStats::ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss) noexcept
-    : _virt(virt), _mapped_rss(mapped_rss), _anonymous_rss(anonymous_rss), _transient_memory(0) {
+    : ProcessMemoryStats(virt, mapped_rss, anonymous_rss, 0) {
+}
+
+ProcessMemoryStats::ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss,
+                                       size_t transient_memory_for_flush_) noexcept
+    : _virt(virt),
+      _mapped_rss(mapped_rss),
+      _anonymous_rss(anonymous_rss),
+      _transient_memory_for_flush(transient_memory_for_flush_) {
 }
 
 namespace {
@@ -102,7 +109,7 @@ bool ProcessMemoryStats::similarTo(const ProcessMemoryStats& rhs, double epsilon
 std::string ProcessMemoryStats::toString() const {
     vespalib::asciistream stream;
     stream << "_virt=" << _virt << ", _mapped_rss=" << _mapped_rss << ", _anonymous_rss=" << _anonymous_rss
-           << ", transient_memory=" << _transient_memory;
+           << ", transient_memory_for_flush=" << _transient_memory_for_flush;
     return stream.str();
 }
 

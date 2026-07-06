@@ -27,7 +27,7 @@ protected:
         std::ostringstream os;
         os << "Virtual(" << stats.getVirt() << "), Rss(" << stats.getMappedRss() + stats.getAnonymousRss()
            << "), MappedRss(" << stats.getMappedRss() << "), AnonymousRss(" << stats.getAnonymousRss()
-           << ") Transient(" << stats.transient_memory() << ")";
+           << ") Transient(" << stats.transient_memory_for_flush() << ")";
         return os.str();
     }
 };
@@ -38,14 +38,14 @@ TEST_F(ProcessMemoryStatsTest, simple_stats) {
     EXPECT_LT(0u, stats.getVirt());
     EXPECT_LT(0u, stats.getMappedRss());
     EXPECT_LT(0u, stats.getAnonymousRss());
-    EXPECT_EQ(0, stats.transient_memory());
+    EXPECT_EQ(0, stats.transient_memory_for_flush());
 }
 
 TEST_F(ProcessMemoryStatsTest, simple_stats_with_transient_memory) {
     TransientMemoryTracker tracker;
     tracker.set_transient_memory(42);
     ProcessMemoryStats stats(ProcessMemoryStats::create(SIZE_EPSILON));
-    EXPECT_EQ(42, stats.transient_memory()) << toString(stats);
+    EXPECT_EQ(42, stats.transient_memory_for_flush()) << toString(stats);
 }
 
 TEST_F(ProcessMemoryStatsTest, grow_anonymous_memory) {
