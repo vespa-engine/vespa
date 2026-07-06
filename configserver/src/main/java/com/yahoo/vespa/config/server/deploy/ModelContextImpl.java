@@ -268,6 +268,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
         @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
+        @Override public boolean protonLogWarningOnDiskCapacityChange() { return flag(Flags.PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE).value(); }
+        @Override public boolean protonResampleDiskCapacity() { return flag(Flags.PROTON_RESAMPLE_DISK_CAPACITY).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();
