@@ -124,9 +124,9 @@ public class ClusterMembershipTest {
     }
 
     private void assertContainerService(ClusterMembership instance) {
-        assertEquals(ClusterSpec.Type.container, instance.cluster().type());
-        assertEquals("id1", instance.cluster().id().value());
-        assertFalse(instance.cluster().group().isPresent());
+        assertEquals(ClusterSpec.Type.container, instance.type());
+        assertEquals("id1", instance.id().value());
+        assertEquals(0, instance.group());
         assertEquals(3, instance.index());
         assertEquals("container/id1//3", instance.stringValue());
         // Legacy form:
@@ -134,18 +134,18 @@ public class ClusterMembershipTest {
     }
 
     private void assertContentService(ClusterMembership instance) {
-        assertEquals(ClusterSpec.Type.content, instance.cluster().type());
-        assertEquals("id1", instance.cluster().id().value());
-        assertFalse(instance.cluster().group().isPresent());
+        assertEquals(ClusterSpec.Type.content, instance.type());
+        assertEquals("id1", instance.id().value());
+        assertEquals(0, instance.group());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
         assertEquals("content/id1//37/stateful", instance.stringValue());
     }
 
     private void assertContentServiceWithGroup(ClusterMembership instance) {
-        assertEquals(ClusterSpec.Type.content, instance.cluster().type());
-        assertEquals("id1", instance.cluster().id().value());
-        assertEquals(4, instance.cluster().group().get().index());
+        assertEquals(ClusterSpec.Type.content, instance.type());
+        assertEquals("id1", instance.id().value());
+        assertEquals(4, instance.group());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
         assertEquals("content/id1/4/37/stateful", instance.stringValue());
@@ -153,8 +153,8 @@ public class ClusterMembershipTest {
 
     /** Serializing a spec without a group assigned works, but not deserialization */
     private void assertContentServiceWithRetire(ClusterMembership instance) {
-        assertEquals(ClusterSpec.Type.content, instance.cluster().type());
-        assertEquals("id1", instance.cluster().id().value());
+        assertEquals(ClusterSpec.Type.content, instance.type());
+        assertEquals("id1", instance.id().value());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
         assertEquals("content/id1//37/retired/stateful", instance.stringValue());
@@ -163,9 +163,9 @@ public class ClusterMembershipTest {
     }
 
     private void assertContentServiceWithGroupAndRetire(ClusterMembership instance) {
-        assertEquals(ClusterSpec.Type.content, instance.cluster().type());
-        assertEquals("id1", instance.cluster().id().value());
-        assertEquals(4, instance.cluster().group().get().index());
+        assertEquals(ClusterSpec.Type.content, instance.type());
+        assertEquals("id1", instance.id().value());
+        assertEquals(4, instance.group());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
         assertEquals("content/id1/4/37/retired/stateful", instance.stringValue());

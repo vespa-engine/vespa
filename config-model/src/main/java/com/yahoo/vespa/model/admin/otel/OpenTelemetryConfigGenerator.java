@@ -366,14 +366,14 @@ public class OpenTelemetryConfigGenerator {
         return zone.cloud().name().value();
     }
 
-    private String getDeploymentCluster(ClusterSpec cluster) {
+    private String getDeploymentCluster(ClusterMembership membership) {
         if (applicationId == null) return null;
         if (zone == null) return null;
         String appString = applicationId.toFullString();
         return String.join(".", appString,
                            zone.environment().value(),
                            zone.region().value(),
-                           cluster.id().value());
+                           membership.id().value());
     }
 
     private Map<String, String> serviceAttributes(Service svc) {
@@ -393,13 +393,13 @@ public class OpenTelemetryConfigGenerator {
         }
         var hostResource = svc.getHost();
         if (hostResource != null) {
-            hostResource.spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
-                    dimvals.put(PublicDimensions.DEPLOYMENT_CLUSTER, getDeploymentCluster(cluster));
+            hostResource.spec().membership().ifPresent(membership -> {
+                    dimvals.put(PublicDimensions.DEPLOYMENT_CLUSTER, getDeploymentCluster(membership));
                     // overrides value above
-                    dimvals.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, cluster.type().name());
+                    dimvals.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, membership.type().name());
                     // alternative to above
-                    dimvals.put(PublicDimensions.INTERNAL_CLUSTER_ID, cluster.id().value());
-                    cluster.group().ifPresent(group -> dimvals.put(PublicDimensions.GROUP_ID, group.toString()));
+                    dimvals.put(PublicDimensions.INTERNAL_CLUSTER_ID, membership.id().value());
+                    dimvals.put(PublicDimensions.GROUP_ID, String.valueOf(membership.group()));
                 });
         }
         return dimvals;

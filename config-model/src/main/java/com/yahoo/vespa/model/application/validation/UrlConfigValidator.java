@@ -26,7 +26,7 @@ public class UrlConfigValidator implements Validator {
         return model.hostSystem().getHosts()
                 .stream()
                 .flatMap(hostResource -> hostResource.spec().membership().stream())
-                .filter(membership -> membership.cluster().id().equals(cluster.id()))
+                .filter(membership -> membership.id().equals(cluster.id()))
                 .anyMatch(membership -> membership.cluster().isExclusive());
     }
 

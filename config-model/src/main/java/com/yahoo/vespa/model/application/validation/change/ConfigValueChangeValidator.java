@@ -56,7 +56,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
         }
         String description = createDescriptionOfConfigChanges(changes.stream());
         ClusterSpec.Id id = service.getHost().spec().membership().isPresent() ?
-                            service.getHost().spec().membership().get().cluster().id() :
+                            service.getHost().spec().membership().get().id() :
                             ClusterSpec.Id.from(service.getConfigId());
         return Optional.of(new VespaRestartAction(id, description, service.getServiceInfo()));
     }

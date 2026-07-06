@@ -274,7 +274,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
             boolean actuallyAdd = true;
             var membership = host.spec().membership();
             if (membership.isPresent()) {
-                var clustertype = membership.get().cluster().type();
+                var clustertype = membership.get().type();
                 // XXX should skip only if this.isHostedVespa is true?
                 if (clustertype == ClusterSpec.Type.admin) {
                     actuallyAdd = logForwarderIncludeAdmin;

@@ -36,8 +36,8 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
                 .map(HostSpec::membership)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .filter(membership -> membership.cluster().type() == content)
-                .map(membership -> membership.cluster().id().value())
+                .filter(membership -> membership.type() == content)
+                .map(membership -> membership.id().value())
                 .collect(Collectors.toSet());
 
         for (var cluster : context.model().getSearchClusters()) {

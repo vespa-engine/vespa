@@ -30,9 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The hosts allocated to an application.
- * This can be serialized to/from JSON.
- * This is immutable.
+ * Serialization of the hosts allocated to an application.
  *
  * @author Ulf Lilleengen
  * @author bratseth

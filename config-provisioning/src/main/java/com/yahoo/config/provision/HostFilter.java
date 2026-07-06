@@ -36,8 +36,8 @@ public class HostFilter {
     public boolean matches(String hostname, String flavor, Optional<ClusterMembership> membership) {
         if ( ! hostnames.isEmpty() && ! hostnames.contains(hostname)) return false;
         if ( ! flavors.isEmpty() && ! flavors.contains(flavor)) return false;
-        if ( ! clusterTypes.isEmpty() && ! (membership.isPresent() && clusterTypes.contains(membership.get().cluster().type()))) return false;
-        if ( ! clusterIds.isEmpty() && ! (membership.isPresent() && clusterIds.contains(membership.get().cluster().id()))) return false;
+        if ( ! clusterTypes.isEmpty() && ! (membership.isPresent() && clusterTypes.contains(membership.get().type()))) return false;
+        if ( ! clusterIds.isEmpty() && ! (membership.isPresent() && clusterIds.contains(membership.get().id()))) return false;
         return true;
     }
 

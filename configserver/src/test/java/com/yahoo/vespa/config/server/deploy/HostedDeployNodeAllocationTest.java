@@ -93,7 +93,7 @@ public class HostedDeployNodeAllocationTest {
     }
 
     private Set<HostSpec> containers(Set<HostSpec> hosts) {
-        return hosts.stream().filter(host -> host.membership().get().cluster().type() == ClusterSpec.Type.container).collect(Collectors.toSet());
+        return hosts.stream().filter(host -> host.membership().get().type() == ClusterSpec.Type.container).collect(Collectors.toSet());
     }
 
     private static NodeResources resources(double vcpu) {

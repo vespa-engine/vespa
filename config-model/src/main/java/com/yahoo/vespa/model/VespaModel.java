@@ -646,7 +646,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     /** If provisioning through the node repo, returns the provision requests issued during build of this */
     public Provisioned provisioned() { return provisioned; }
 
-    /** Returns the spedc of all clusters in this */
+    /** Returns the spec of all clusters in this */
     public Set<ClusterSpec> allClusters() {
         return hostSystem().getHosts().stream()
                                       .map(HostResource::spec)
