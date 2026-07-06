@@ -544,7 +544,7 @@ schema rankexpression {
       }
   }
 
-  rank-profile with_avg_field_length {
+  rank-profile with_corpus_features {
       first-phase {
         expression: bm25(textchunks)
       }
