@@ -81,6 +81,7 @@ private:
     double get_relative_transient_memory_usage(const Guard& guard) const;
     double get_relative_transient_disk_usage(const Guard& guard) const;
     void notify_resource_usage(const Guard& guard, ResourceUsageState state, bool disk_mem_sample);
+    void warn_on_disk_capacity_changed(const DiskUsage& disk_usage) const noexcept;
 
 public:
     ResourceUsageNotifier(ResourceUsageWriteFilter& filter);
