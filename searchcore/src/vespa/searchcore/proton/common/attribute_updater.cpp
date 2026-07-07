@@ -20,6 +20,7 @@
 #include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/searchcore/proton/common/field_path_target.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
@@ -31,12 +32,14 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
 
+#include <format>
 #include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.common.attribute_updater");
 
 using namespace document;
+using proton::FieldPathTarget;
 using search::attribute::ArrayBoolAttribute;
 using search::attribute::ReferenceAttribute;
 using search::attribute::SingleRawAttribute;
@@ -63,6 +66,17 @@ std::string toString(const FieldValue& value) {
     value.print(ss, true, "");
     return ss.str();
 }
+
+std::string toString(const FieldPathTarget& target) {
+    switch (target.kind()) {
+    case FieldPathTarget::Kind::UNSUPPORTED:
+        return "unsupported";
+    case FieldPathTarget::Kind::ARRAY_INDEX:
+        return std::format("{}[{}]", target.attribute_name(), target.index());
+    }
+    return std::format("unknown({})", static_cast<int>(target.kind()));
+}
+
 } // namespace
 
 namespace search {
@@ -361,6 +375,21 @@ void AttributeUpdater::handleValue(AttributeVector& vec, uint32_t lid, const Fie
     }
 }
 
+void AttributeUpdater::handle_field_path_update(AttributeVector& vec, uint32_t lid, const FieldPathTarget& target,
+                                                const FieldValue& val) {
+    LOG(spam, "handle_field_path_update(%s, %u, %s): %s", vec.getName().c_str(), lid, toString(target).c_str(),
+        toString(val).c_str());
+    switch (target.kind()) {
+    case FieldPathTarget::Kind::ARRAY_INDEX:
+        assign_element(vec, lid, target.index(), val);
+        break;
+    case FieldPathTarget::Kind::UNSUPPORTED:
+        // Expect this to be filtered in AttributeWriter.
+        LOG(warning, "Skipping unsupported field path update to attribute '%s'", vec.getName().c_str());
+        break;
+    }
+}
+
 template <typename V, typename Accessor>
 void AttributeUpdater::handleValueT(V& vec, Accessor, uint32_t lid, const FieldValue& val) {
     if (vec.hasMultiValue()) {
@@ -465,6 +494,36 @@ void AttributeUpdater::updateValue(StringAttribute& vec, uint32_t lid, const Fie
     if (!vec.update(lid, v)) {
         throw UpdateException(
             make_string("attribute update failed: %s[%u] = %s", vec.getName().c_str(), lid, v.c_str()));
+    }
+}
+
+void AttributeUpdater::assign_element(AttributeVector& vec, uint32_t lid, uint32_t index, const FieldValue& val) {
+    LOG(spam, "assign_element(%s, %u, %u): %s", vec.getName().c_str(), lid, index, toString(val).c_str());
+    if (vec.isIntegerType()) {
+        if (vec.getBasicType() == attribute::BasicType::BOOL && vec.hasMultiValue()) {
+            LOG(warning, "Field path element assign is not supported for bool array attribute '%s'",
+                vec.getName().c_str());
+            return;
+        }
+        if (!static_cast<IntegerAttribute&>(vec).assign_element(lid, index, val.getAsLong())) {
+            throw UpdateException(
+                std::format("attribute assign_element failed: {}[{}][{}]", vec.getName(), lid, index));
+        }
+    } else if (vec.isFloatingPointType()) {
+        if (!static_cast<FloatingPointAttribute&>(vec).assign_element(lid, index, val.getAsDouble())) {
+            throw UpdateException(
+                std::format("attribute assign_element failed: {}[{}][{}]", vec.getName(), lid, index));
+        }
+    } else if (vec.isStringType()) {
+        auto&              str_attr = static_cast<StringAttribute&>(vec);
+        const std::string& s = getString(str_attr, lid, val);
+        if (!str_attr.assign_element(lid, index, s)) {
+            throw UpdateException(
+                std::format("attribute assign_element failed: {}[{}][{}]", vec.getName(), lid, index));
+        }
+    } else {
+        LOG(warning, "Field path element assign is not supported for attribute '%s' (classname=%s)",
+            vec.getName().c_str(), getClassName(vec).c_str());
     }
 }
 

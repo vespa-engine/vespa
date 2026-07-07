@@ -6,6 +6,10 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/vespalib/util/exception.h>
 
+namespace proton {
+class FieldPathTarget;
+} // namespace proton
+
 namespace search {
 
 class PredicateAttribute;
@@ -27,6 +31,7 @@ VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
  */
 class AttributeUpdater {
     using Field = document::Field;
+    using FieldPathTarget = proton::FieldPathTarget;
     using FieldUpdate = document::FieldUpdate;
     using FieldValue = document::FieldValue;
     using ValueUpdate = document::ValueUpdate;
@@ -34,6 +39,8 @@ class AttributeUpdater {
 public:
     static void handleUpdate(AttributeVector& vec, uint32_t lid, const FieldUpdate& upd);
     static void handleValue(AttributeVector& vec, uint32_t lid, const FieldValue& val);
+    static void handle_field_path_update(AttributeVector& vec, uint32_t lid, const FieldPathTarget& target,
+                                         const FieldValue& val);
 
     static std::unique_ptr<tensor::PrepareResult> prepare_set_value(AttributeVector& attr, uint32_t docid,
                                                                     const FieldValue& val);
@@ -62,6 +69,7 @@ private:
     static void updateValue(attribute::SingleRawAttribute& vec, uint32_t lid, const FieldValue& val);
     static void updateValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
     static void appendValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void assign_element(AttributeVector& vec, uint32_t lid, uint32_t index, const FieldValue& val);
 };
 
 } // namespace search
