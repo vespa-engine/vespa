@@ -505,6 +505,9 @@ public:
 
     virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const;
     bool commitIfChangeVectorTooLarge();
+    // Element-addressed changes must observe committed array shape: pending removes are
+    // deferred to the end of the change vector apply and would reorder past element indices.
+    bool commit_if_change_vector_nonempty();
 
     void drain_hold(uint64_t hold_limit);
 

@@ -15,8 +15,11 @@
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/removefieldpathupdate.h>
+#include <vespa/document/update/removevalueupdate.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
@@ -61,6 +64,10 @@
 
 #include <vespa/vespalib/btree/btreeroot.hpp>
 
+#include <concepts>
+#include <string_view>
+#include <utility>
+
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");
 
@@ -81,13 +88,11 @@ using proton::ImportedAttributesRepo;
 using proton::test::AttributeUtils;
 using proton::test::MockAttributeManager;
 using search::TuneFileAttributes;
-using search::attribute::BitVectorSearchCache;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVector;
 using search::attribute::ImportedAttributeVectorFactory;
-using search::attribute::ReferenceAttribute;
 using search::index::DummyFileHeaderContext;
 using search::predicate::PredicateHash;
 using search::predicate::PredicateIndex;
@@ -506,6 +511,210 @@ TEST_F(AttributeWriterTest, handles_predicate_update) {
     update(2, upd, 1, onUpdate);
     EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
     EXPECT_TRUE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
+}
+
+namespace {
+
+// Doc type with two array attribute fields and one array field without an attribute.
+DocBuilder make_field_path_doc_builder() {
+    return DocBuilder([](auto& builder, auto& header) {
+        auto int_array = header.createArray(builder.intTypeRef()).ref();
+        auto str_array = header.createArray(builder.stringTypeRef()).ref();
+        header.addField("a1", int_array).addField("a2", str_array).addField("extra", int_array);
+    });
+}
+
+void assert_int_array(AttributeVector& attr, uint32_t lid, const std::vector<int32_t>& exp) {
+    attribute::IntegerContent buf;
+    buf.fill(attr, lid);
+    ASSERT_EQ(exp.size(), buf.size());
+    for (size_t i = 0; i < exp.size(); ++i) {
+        EXPECT_EQ(exp[i], buf[i]) << "element " << i;
+    }
+}
+
+void assert_str_array(AttributeVector& attr, uint32_t lid, const std::vector<const char*>& exp) {
+    attribute::ConstCharContent buf;
+    buf.fill(attr, lid);
+    ASSERT_EQ(exp.size(), buf.size());
+    for (size_t i = 0; i < exp.size(); ++i) {
+        EXPECT_EQ(std::string_view{exp[i]}, std::string_view{buf[i]}) << "element " << i;
+    }
+}
+
+template <typename T>
+concept FpValue = std::convertible_to<T, int> || std::convertible_to<T, std::string_view>;
+
+auto fpupd(const DocumentUpdate& upd, const std::string& field_path, FpValue auto&& value) {
+    using T = std::decay_t<decltype(value)>;
+    std::unique_ptr<FieldValue> fv;
+    if constexpr (std::convertible_to<T, int>) {
+        fv = IntFieldValue::make(value);
+    } else if constexpr (std::convertible_to<T, std::string_view>) {
+        fv = StringFieldValue::make(value);
+    } else {
+        std::unreachable();
+    }
+    return std::make_unique<AssignFieldPathUpdate>(upd.getType(), field_path, "", std::move(fv));
+}
+
+/** Regular field update */
+FieldUpdate remove_fupd(const DocumentUpdate& upd, const std::string& field, const std::string& value) {
+    auto        remove_value = std::make_unique<RemoveValueUpdate>(StringFieldValue::make(value));
+    FieldUpdate field_update(upd.getType().getField(field));
+    field_update.addUpdate(std::move(remove_value));
+    return field_update;
+}
+
+} // namespace
+
+class AttributeWriterFieldPathTest : public AttributeWriterTest {
+public:
+    static constexpr DocumentIdT LID1 = 1;
+
+    DocBuilder          _db;
+    AttributeVector::SP _a1;
+    AttributeVector::SP _a2;
+
+    AttributeWriterFieldPathTest() : _db(make_field_path_doc_builder()), _a1(), _a2() {
+        _a1 = addAttribute({"a1", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
+        _a2 = addAttribute({"a2", AVConfig(AVBasicType::STRING, AVCollectionType::ARRAY)});
+        allocAttributeWriter();
+
+        auto doc = _db.make_document("id:ns:searchdocument::1");
+
+        auto int_array = _db.make_array("a1");
+        int_array.add(IntFieldValue(10));
+        int_array.add(IntFieldValue(20));
+        int_array.add(IntFieldValue(30));
+        doc->setValue("a1", int_array);
+
+        auto str_array = _db.make_array("a2");
+        str_array.add(StringFieldValue("foo"));
+        str_array.add(StringFieldValue("bar"));
+        doc->setValue("a2", str_array);
+
+        put(1, *doc, LID1);
+    }
+    ~AttributeWriterFieldPathTest() override;
+
+    DocumentUpdate make_update() {
+        return DocumentUpdate(_db.get_repo(), _db.get_document_type(), DocumentId("id:ns:searchdocument::1"));
+    }
+    void apply(SerialNum serial_num, DocumentUpdate& upd) {
+        DummyFieldUpdateCallback on_update;
+        update(serial_num, upd, LID1, on_update);
+    }
+};
+
+AttributeWriterFieldPathTest::~AttributeWriterFieldPathTest() = default;
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_updates_array_attributes) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(fpupd(upd, "a1[1]", 99));
+    upd.addFieldPathUpdate(fpupd(upd, "a2[0]", "baz"));
+    apply(2, upd);
+    assert_int_array(*_a1, LID1, {10, 99, 30});
+    assert_str_array(*_a2, LID1, {"baz", "bar"});
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_out_of_bounds_is_ignored) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(fpupd(upd, "a1[5]", 77));
+    apply(2, upd);
+    assert_int_array(*_a1, LID1, {10, 20, 30});
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_is_not_reapplied_on_replay) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(fpupd(upd, "a1[0]", 42));
+    apply(2, upd);
+    assert_int_array(*_a1, LID1, {42, 20, 30});
+
+    auto replay = make_update();
+    replay.addFieldPathUpdate(fpupd(replay, "a1[0]", 77));
+    apply(2, replay); // same sync token as previous => ignored
+    assert_int_array(*_a1, LID1, {42, 20, 30});
+    apply(3, replay); // newer sync token => applied
+    assert_int_array(*_a1, LID1, {77, 20, 30});
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_to_non_attribute_field_is_ignored) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(fpupd(upd, "extra[0]", 5));
+    upd.addFieldPathUpdate(fpupd(upd, "a1[0]", 42));
+    apply(2, upd);
+    assert_int_array(*_a1, LID1, {42, 20, 30});
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_in_same_update) {
+    auto upd = make_update();
+    upd.addUpdate(remove_fupd(upd, "a2", "foo"));
+    upd.addFieldPathUpdate(fpupd(upd, "a2[1]", "x"));
+    apply(2, upd);
+    // In the document model, regular field updates are applied before field path updates.
+    // So, removing "foo" shifts "bar" over to position 0 and the field path update is
+    // ignored since it tries to write to index 1 which is out of bounds.
+    assert_str_array(*_a2, LID1, {"bar"});
+}
+
+namespace {
+
+/**
+ * Callback used for testing. It stores field names and if they are an attribute or not.
+ */
+struct RecordingFieldUpdateCallback : IFieldUpdateCallback {
+    using List = std::vector<std::pair<std::string, bool>>;
+    List _reported;
+
+    void onUpdateField(const document::Field& field, const search::AttributeVector* attr) override {
+        _reported.emplace_back(field.getName(), attr != nullptr);
+    }
+};
+
+} // namespace
+
+TEST_F(AttributeWriterFieldPathTest, field_path_updates_report_fields_to_update_callback) {
+    auto upd = make_update();
+    // attribute: reported and applied.
+    upd.addFieldPathUpdate(fpupd(upd, "a1[0]", 42));
+    // not an attribute: reported without attribute.
+    upd.addFieldPathUpdate(fpupd(upd, "extra[0]", 5));
+    // attribute, but an unsupported assign kind (expression based): reported, but not applied.
+    upd.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("a1[1]", "", "5"));
+    // field does not exist: not reported.
+    upd.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("nosuchfield[0]", "", "5"));
+
+    RecordingFieldUpdateCallback on_update;
+    update(2, upd, LID1, on_update);
+
+    // The callback should report every existing field, and whether it is an attribute field.
+    //  "nosuchfield" does not exist, so it is not in the list.
+    //  "extra" is not an attribute.
+    //  "a1" is reported twice, also for the unsupported update, which leaves a1[1] unchanged.
+    RecordingFieldUpdateCallback::List exp = {{"a1", true}, {"extra", false}, {"a1", true}};
+    EXPECT_EQ(exp, on_update._reported);
+    assert_int_array(*_a1, LID1, {42, 20, 30});
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_from_earlier_uncommitted_update) {
+    DummyFieldUpdateCallback on_update;
+    auto                     remove_upd = make_update();
+    remove_upd.addUpdate(remove_fupd(remove_upd, "a2", "foo"));
+    _aw->update(2, remove_upd, LID1, emptyCallback, on_update);
+
+    auto assign_upd = make_update();
+    assign_upd.addFieldPathUpdate(fpupd(assign_upd, "a2[1]", "x"));
+    _aw->update(3, assign_upd, LID1, emptyCallback, on_update);
+    commit(3);
+
+    // Removes must be applied before field path updates, also when the remove comes from an earlier
+    // update that is not yet committed. Removes are deferred until the end of the attribute commit.
+    // If the field path update did not commit pending changes first, it would have set a2[1] to "x",
+    // and on commit the remove would have removed "foo", leaving ["x"]. This is not consistent with
+    // the document model. Instead, field path updates commit pending changes before applying their
+    // change, and we get ["bar"].
+    assert_str_array(*_a2, LID1, {"bar"});
 }
 
 class AttributeCollectionSpecTest : public ::testing::Test {
