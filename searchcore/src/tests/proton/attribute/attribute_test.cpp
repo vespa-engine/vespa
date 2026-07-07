@@ -14,8 +14,10 @@
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/removefieldpathupdate.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
@@ -503,6 +505,112 @@ TEST_F(AttributeWriterTest, handles_predicate_update) {
     update(2, upd, 1, onUpdate);
     EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
     EXPECT_TRUE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
+}
+
+namespace {
+
+// Doc type with two array attribute fields and one array field without an attribute.
+DocBuilder make_field_path_doc_builder() {
+    return DocBuilder([](auto& builder, auto& header) {
+        auto int_array = header.createArray(builder.intTypeRef()).ref();
+        auto str_array = header.createArray(builder.stringTypeRef()).ref();
+        header.addField("a1", int_array).addField("a2", str_array).addField("extra", int_array);
+    });
+}
+
+void assert_int_array(AttributeVector& attr, uint32_t lid, const std::vector<int32_t>& exp) {
+    attribute::IntegerContent buf;
+    buf.fill(attr, lid);
+    ASSERT_EQ(exp.size(), buf.size());
+    for (size_t i = 0; i < exp.size(); ++i) {
+        EXPECT_EQ(exp[i], buf[i]) << "element " << i;
+    }
+}
+
+} // namespace
+
+class AttributeWriterFieldPathTest : public AttributeWriterTest {
+public:
+    DocBuilder          _db;
+    AttributeVector::SP _a1;
+    AttributeVector::SP _a2;
+
+    AttributeWriterFieldPathTest() : _db(make_field_path_doc_builder()), _a1(), _a2() {
+        _a1 = addAttribute({"a1", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
+        _a2 = addAttribute({"a2", AVConfig(AVBasicType::STRING, AVCollectionType::ARRAY)});
+        allocAttributeWriter();
+        // one document with fields a1: [10, 20, 30], a2: ["foo", "bar"].
+        auto doc = _db.make_document("id:ns:searchdocument::1");
+        auto int_array = _db.make_array("a1");
+        int_array.add(IntFieldValue(10));
+        int_array.add(IntFieldValue(20));
+        int_array.add(IntFieldValue(30));
+        doc->setValue("a1", int_array);
+        auto str_array = _db.make_array("a2");
+        str_array.add(StringFieldValue("foo"));
+        str_array.add(StringFieldValue("bar"));
+        doc->setValue("a2", str_array);
+        put(1, *doc, 1);
+    }
+    ~AttributeWriterFieldPathTest() override;
+
+    DocumentUpdate make_update() {
+        return DocumentUpdate(_db.get_repo(), _db.get_document_type(), DocumentId("id:ns:searchdocument::1"));
+    }
+    void apply(SerialNum serial_num, DocumentUpdate& upd) {
+        DummyFieldUpdateCallback on_update;
+        update(serial_num, upd, 1, on_update);
+    }
+};
+
+AttributeWriterFieldPathTest::~AttributeWriterFieldPathTest() = default;
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_updates_array_attributes) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "a1[1]", "", IntFieldValue::make(99)));
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "a2[0]", "", StringFieldValue::make("baz")));
+    apply(2, upd);
+    assert_int_array(*_a1, 1, {10, 99, 30});
+    attribute::ConstCharContent sbuf;
+    sbuf.fill(*_a2, 1);
+    ASSERT_EQ(2u, sbuf.size());
+    EXPECT_EQ(0, strcmp("baz", sbuf[0]));
+    EXPECT_EQ(0, strcmp("bar", sbuf[1]));
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_out_of_bounds_is_ignored) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "a1[5]", "", IntFieldValue::make(77)));
+    apply(2, upd);
+    assert_int_array(*_a1, 1, {10, 20, 30});
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_is_not_reapplied_on_replay) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "a1[0]", "", IntFieldValue::make(42)));
+    apply(2, upd);
+    assert_int_array(*_a1, 1, {42, 20, 30});
+    auto replay = make_update();
+    replay.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(replay.getType(), "a1[0]", "", IntFieldValue::make(77)));
+    apply(2, replay); // same sync token as previous => ignored
+    assert_int_array(*_a1, 1, {42, 20, 30});
+    apply(3, replay); // newer sync token => applied
+    assert_int_array(*_a1, 1, {77, 20, 30});
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_to_non_attribute_field_is_ignored) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "extra[0]", "", IntFieldValue::make(5)));
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "a1[0]", "", IntFieldValue::make(42)));
+    apply(2, upd);
+    assert_int_array(*_a1, 1, {42, 20, 30});
 }
 
 class AttributeCollectionSpecTest : public ::testing::Test {
