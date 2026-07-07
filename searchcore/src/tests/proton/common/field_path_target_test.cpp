@@ -47,7 +47,8 @@ TEST(FieldPathTargetTest, parse_array_index) {
 TEST(FieldPathTargetTest, parse_unsupported) {
     const auto& doc_type = *repo->getDocumentType("testdoc");
 
-    std::vector<std::string> unsupported_field_paths = {"abc", "bogus[0]", "wsint{5}", "aint[$x]", "aint[0].foo"};
+    std::vector<std::string> unsupported_field_paths = {"abc",      "bogus[0]",    "wsint{5}",
+                                                        "aint[$x]", "aint[0].foo", "wsint[5]"};
     for (const auto& field_path : unsupported_field_paths) {
         auto target = FieldPathTarget::parse(field_path, doc_type);
         EXPECT_TRUE(target.is_unsupported());
