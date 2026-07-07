@@ -35,6 +35,8 @@ import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.maintenance.PendingRestartsMaintainer;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
@@ -492,11 +494,16 @@ public class HostedDeployTest {
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
         List<ServiceInfo> mutableServices = new ArrayList<>(services);
-        DeployTester tester = createTester(hosts,
-                                           modelFactories,
-                                           prodZone,
-                                           Clock.systemUTC(),
-                                           new MockConfigConvergenceChecker(2L, mutableServices));
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .modelFactories(modelFactories)
+                .clock(clock)
+                .zone(prodZone)
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
+                .configConvergenceChecker(new MockConfigConvergenceChecker(2L, mutableServices))
+                .hostedConfigserverConfig(prodZone)
+                // Set flag so we still use PendingRestartsMaintainer
+                .flagSource(new InMemoryFlagSource().withBooleanFlag(Flags.RESTART_ON_DEPLOY_MAINTAINER.id(), false))
+                .build();
         var result = tester.deployApp("src/test/apps/hosted/", "6.2.0");
         DeployHandlerLogger deployLogger = result.prepareResult().deployLogger();
 
