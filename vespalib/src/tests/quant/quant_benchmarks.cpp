@@ -44,7 +44,7 @@ void BM_quantize(benchmark::State& state, Args&&... args) {
     for (auto _ : state) {
         // We assume that the compiler is not clever enough to understand that this
         // computes the same result every time...
-        quant.quantize(v, q_v, mode);
+        quant.quantize(v, MutableQuantizedVector(q_v), mode);
         benchmark::ClobberMemory();
         auto* clobber_data = q_v.data();
         benchmark::DoNotOptimize(clobber_data);
@@ -65,11 +65,11 @@ void BM_dequantize(benchmark::State& state, Args&&... args) {
     fill_random(v, prng);
 
     // The quantization mode doesn't matter for dequantization performance, so just use MSE
-    quant.quantize(v, q_v, QuantMode::MSE);
+    quant.quantize(v, MutableQuantizedVector(q_v), QuantMode::MSE);
     std::vector<float> dq_v(dims);
 
     for (auto _ : state) {
-        quant.dequantize(q_v, dq_v);
+        quant.dequantize(QuantizedVector(q_v), dq_v);
         benchmark::ClobberMemory();
         auto* clobber_data = dq_v.data();
         benchmark::DoNotOptimize(clobber_data);
@@ -89,11 +89,11 @@ void BM_pre_rotated_dot_product(benchmark::State& state, Args&&... args) {
     std::vector<uint8_t>   q_v(quant.quantized_size());
     fill_random(v, prng);
 
-    quant.quantize(v, q_v, QuantMode::InnerProduct);
+    quant.quantize(v, MutableQuantizedVector(q_v), QuantMode::InnerProduct);
     quant.rotate_vector_inplace(v);
 
     for (auto _ : state) {
-        float dot = quant.pre_rotated_query_dot_product(v, q_v);
+        float dot = quant.pre_rotated_query_dot_product(v, QuantizedVector(q_v));
         benchmark::DoNotOptimize(dot);
     }
 }
@@ -111,11 +111,11 @@ void BM_pre_rotated_squared_euclidean_distance(benchmark::State& state, Args&&..
     std::vector<uint8_t>   q_v(quant.quantized_size());
     fill_random(v, prng);
 
-    quant.quantize(v, q_v, QuantMode::MSE);
+    quant.quantize(v, MutableQuantizedVector(q_v), QuantMode::MSE);
     quant.rotate_vector_inplace(v);
 
     for (auto _ : state) {
-        float dist = quant.pre_rotated_query_squared_euclidean_distance(v, q_v);
+        float dist = quant.pre_rotated_query_squared_euclidean_distance(v, QuantizedVector(q_v));
         benchmark::DoNotOptimize(dist);
     }
 }

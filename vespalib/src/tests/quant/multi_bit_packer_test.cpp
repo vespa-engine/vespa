@@ -38,10 +38,10 @@ void do_test_bit_packing_of_all_representable_values() {
                         b |= (0xff << Bits);
                     }
                     std::vector<uint8_t> packed(BP::packed_bytes(n), packed_init_value);
-                    BP::pack(packed.data(), tainted_in.data(), n);
+                    BP::pack(MutablePackedBits(packed), tainted_in);
 
                     std::vector<uint8_t> unpacked(n, unpacked_init_value);
-                    BP::unpack(unpacked.data(), packed.data(), n);
+                    BP::unpack(unpacked, PackedBits(packed));
 
                     ASSERT_THAT(unpacked, ElementsAreArray(in))
                         << "n=" << n << ", v=" << int(v) << "packed_init_value=" << int(packed_init_value)
@@ -71,8 +71,8 @@ void do_test_bit_packing_of_randomized_values() {
 
         for (size_t i = 0; i < 1'000; ++i) {
             std::ranges::generate(in, gen_rand_value);
-            BP::pack(packed.data(), in.data(), n);
-            BP::unpack(unpacked.data(), packed.data(), n);
+            BP::pack(MutablePackedBits(packed), in);
+            BP::unpack(unpacked, PackedBits(packed));
             ASSERT_THAT(unpacked, ElementsAreArray(in)) << "n=" << n << ", seed=" << std::hex << seed;
         }
     }
@@ -85,7 +85,7 @@ void do_test_remainder_bits_are_zeroed() {
     static_assert(BP::packed_bytes(1) == 1);
     std::array<uint8_t, 1> dst{};
     std::array<uint8_t, 1> src = {(1u << Bits) - 1};
-    BP::pack(dst.data(), src.data(), 1);
+    BP::pack(MutablePackedBits(dst), src);
     // Every 1-element packing fits within a byte and should live in its LSBs.
     // The MSBs should then consequently be zero. This is not an exhaustive test.
     constexpr uint8_t msb_mask = static_cast<uint8_t>(0xff << Bits);
