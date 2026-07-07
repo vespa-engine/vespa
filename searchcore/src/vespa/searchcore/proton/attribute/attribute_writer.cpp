@@ -8,12 +8,16 @@
 #include "imported_attributes_repo.h"
 
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/base/fieldpath.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchcore/proton/common/field_path_target.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/tensor/prepare_result.h>
 #include <vespa/vespalib/util/cpu_usage.h>
@@ -199,6 +203,13 @@ void applyUpdateToAttribute(SerialNum serialNum, const FieldUpdate& fieldUpd, Do
     attr.commitIfChangeVectorTooLarge();
 }
 
+void apply_field_path_update_to_attribute(SerialNum serial_num, const FieldPathTarget& target,
+                                          const FieldValue& value, DocumentIdT lid, AttributeVector& attr) {
+    ensureLidSpace(serial_num, lid, attr);
+    AttributeUpdater::handle_field_path_update(attr, lid, target, value);
+    attr.commitIfChangeVectorTooLarge();
+}
+
 void applyReplayDone(uint32_t docIdLimit, AttributeVector& attr) {
     AttributeManager::padAttribute(attr, docIdLimit);
     attr.compactLidSpace(docIdLimit);
@@ -238,7 +249,16 @@ void applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, Attribut
     }
 }
 
+namespace {
+
+struct FieldPathUpdatePayload {
+    AttributeVector*  attr;
+    FieldPathTarget   target;
+    const FieldValue* value;
+};
+
 using AttrUpdates = std::vector<std::pair<AttributeVector*, const FieldUpdate*>>;
+using FieldPathAttrUpdates = std::vector<FieldPathUpdatePayload>;
 
 struct BatchUpdateTask : public vespalib::Executor::Task {
 
@@ -250,15 +270,21 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
         for (const auto& update : _updates) {
             applyUpdateToAttribute(_serialNum, *update.second, _lid, *update.first);
         }
+        for (const auto& update : _field_path_updates) {
+            apply_field_path_update_to_attribute(_serialNum, update.target, *update.value, _lid, *update.attr);
+        }
     }
 
     SerialNum                         _serialNum;
     DocumentIdT                       _lid;
     AttrUpdates                       _updates;
+    FieldPathAttrUpdates              _field_path_updates;
     vespalib::IDestructorCallback::SP _onWriteDone;
 };
 
 BatchUpdateTask::~BatchUpdateTask() = default;
+
+} // namespace
 
 class FieldContext {
     std::string      _name;
@@ -677,10 +703,54 @@ void AttributeWriter::update(SerialNum serialNum, const DocumentUpdate& upd, Doc
             LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attrp->getName().c_str());
         }
     }
+
+    for (const auto& fpupd : upd.getFieldPathUpdates()) {
+        // Only handle AssignFieldPathUpdate for now
+        if (fpupd->type() != FieldPathUpdate::Assign) {
+            continue;
+        }
+
+        auto target = FieldPathTarget::parse(fpupd->getOriginalFieldPath(), upd.getType());
+        if (target.is_unsupported()) {
+            LOG(debug, "Skipping unsupported field path: %s", fpupd->getOriginalFieldPath().c_str());
+            continue;
+        }
+
+        LOG(debug, "Retrieving guard for attribute vector '%s'.", fpupd->getOriginalFieldPath().c_str());
+        auto found = _attrMap.find(target.attribute_name());
+        if (found == _attrMap.end()) {
+            // Not an attribute field.
+            continue;
+        }
+
+        const AttributeWithInfo& attr_info = found->second;
+        AttributeVector*         attr = attr_info.attribute;
+        if (attr == nullptr) {
+            std::string attr_name(target.attribute_name());
+            LOG(warning, "Attribute pointer is null for field '%s'", attr_name.c_str());
+            continue;
+        }
+
+        // Don't reapply on replay.
+        if (attr->getStatus().getLastSyncToken() >= serialNum) {
+            continue;
+        }
+
+        const auto& assign_update = static_cast<const AssignFieldPathUpdate&>(*fpupd);
+        if (!assign_update.hasValue()) {
+            continue;
+        }
+
+        args[attr_info.executor_id.getId()]->_field_path_updates.emplace_back(attr, target,
+                                                                              &assign_update.getValue());
+        LOG(debug, "About to apply field path update for docId %u in attribute vector '%s'.", lid,
+            attr->getName().c_str());
+    }
+
     // NOTE: The lifetime of the field update will be ensured by keeping the document update alive
     // in a operation done context object.
-    for (uint32_t id(0); id < args.size(); id++) {
-        if (!args[id]->_updates.empty()) {
+    for (uint32_t id = 0; id < args.size(); id++) {
+        if (!args[id]->_updates.empty() || !args[id]->_field_path_updates.empty()) {
             args[id]->_onWriteDone = onWriteDone;
             _attributeFieldWriter.executeTask(ExecutorId(id), std::move(args[id]));
         }
