@@ -8,6 +8,8 @@
 
 namespace proton::initializer {
 
+class LoadMemoryUsage;
+
 /*
  * Class representign an initializer task, used to load a data
  * structure from disk during proton startup.
@@ -31,7 +33,7 @@ public:
     void setDone() { _state = State::DONE; }
     void addDependency(SP dependency);
     virtual void run() = 0;
-    virtual size_t get_transient_memory_usage() const;
+    virtual LoadMemoryUsage get_load_memory_usage() const;
     virtual void accept_visitor(InitializerTaskVisitor& visitor);
 };
 
