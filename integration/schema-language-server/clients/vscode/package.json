@@ -100,5 +100,10 @@
   "dependencies": {
     "hasbin": "^1.2.3",
     "vscode-languageclient": "^9.0.1"
+  },
+  "overrides": {
+    "vscode-languageclient": {
+      "brace-expansion": "2.1.1"
+    }
   }
 }
