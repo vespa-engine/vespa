@@ -2,6 +2,7 @@
 
 #include "angular_distance.h"
 
+#include "quant_helpers.h"
 #include "temporary_vector_store.h"
 
 #include <vespa/vespalib/hwaccelerated/functions.h>
@@ -141,21 +142,27 @@ public:
             static_assert(std::is_same_v<LhsFloatType, Int8Float>);
             assert(lhs.size == _quantizer.quantized_size());
         }
-        const auto* a = _lhs.data();
-        _lhs_norm_sq = dot(cast(a), cast(a)); // TODO dedicated L2 norm function
+        auto a = adapt_lhs();
+        _lhs_norm_sq = dot(a, a); // TODO dedicated L2 norm function
     }
     ~BoundQuantizedAngularDistance() override;
 
+    auto adapt_lhs() const noexcept {
+        if constexpr (QuantParams::pre_quantized_lhs) {
+            return as_quantized(_lhs);
+        } else {
+            return _lhs.data();
+        }
+    }
+
     // rhs is always a quantized vector representation
     double calc(TypedCells rhs) const noexcept override {
-        assert(rhs.type == CellType::INT8);
         assert(rhs.size == _quantizer.quantized_size());
-        auto   rhs_vector = rhs.unsafe_typify<Int8Float>();
-        auto*  a = _lhs.data(); // f32 (raw query vector) or i8 (quantized insertion vector)
-        auto*  b = rhs_vector.data();
-        double b_norm_sq = dot(cast(b), cast(b)); // TODO dedicated L2 norm function (avoids 2x codebook lookups)
+        auto   a = adapt_lhs(); // f32 (raw query vector) or i8 (quantized insertion vector)
+        auto   b = as_quantized(rhs);
+        double b_norm_sq = dot(b, b); // TODO dedicated L2 norm function (avoids 2x codebook lookups)
         double squared_norms = _lhs_norm_sq * b_norm_sq;
-        double dot_product = dot(cast(a), cast(b));
+        double dot_product = dot(a, b);
         double div = (squared_norms > 0) ? sqrt(squared_norms) : 1.0;
         double cosine_similarity = dot_product / div;
         double distance = 1.0 - cosine_similarity; // in range [0,2]
@@ -163,16 +170,13 @@ public:
     }
 
 private:
-    [[nodiscard]] float dot(const int8_t* lhs, const int8_t* rhs) const noexcept {
-        auto lhs_u8 = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(lhs), _quantizer.quantized_size());
-        auto rhs_u8 = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(rhs), _quantizer.quantized_size());
-        return _quantizer.quantized_lhs_rhs_dot_product(QuantizedVector(lhs_u8), QuantizedVector(rhs_u8));
+    [[nodiscard]] float dot(QuantizedVector lhs, QuantizedVector rhs) const noexcept {
+        return _quantizer.quantized_lhs_rhs_dot_product(lhs, rhs);
     }
 
-    [[nodiscard]] float dot(const float* lhs, const int8_t* rhs) const noexcept {
+    [[nodiscard]] float dot(const float* lhs, QuantizedVector rhs) const noexcept {
         auto lhs_f32 = std::span<const float>(lhs, _quantizer.dimensions());
-        auto rhs_u8 = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(rhs), _quantizer.quantized_size());
-        return _quantizer.pre_rotated_query_dot_product(lhs_f32, QuantizedVector(rhs_u8));
+        return _quantizer.pre_rotated_query_dot_product(lhs_f32, rhs);
     }
 
     [[nodiscard]] float dot(const float* lhs, const float* rhs) const noexcept {
