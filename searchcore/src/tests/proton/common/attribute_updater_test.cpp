@@ -16,6 +16,7 @@
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
@@ -30,6 +31,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchcore/proton/common/field_path_target.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
@@ -45,6 +47,7 @@
 #include <optional>
 
 using namespace document;
+using proton::FieldPathTarget;
 using search::AttributeFactory;
 using search::AttributeVector;
 using search::attribute::ArrayBoolAttribute;
@@ -151,6 +154,15 @@ struct Fixture {
 
     void applyValue(AttributeVector& vec, uint32_t docid, std::unique_ptr<FieldValue> value) {
         search::AttributeUpdater::handleValue(vec, docid, *value);
+    }
+
+    void apply_assign_element(AttributeVector& vec, uint32_t docId, uint32_t index,
+                              std::unique_ptr<FieldValue> value) {
+        std::string           path = std::format("{}[{}]", vec.getName(), index);
+        AssignFieldPathUpdate upd(*docType, path, "", std::move(value));
+        auto                  target = FieldPathTarget::assign_element(docType->getField(vec.getName()), index);
+        search::AttributeUpdater::handle_field_path_update(vec, docId, target, upd);
+        vec.commit();
     }
 };
 
@@ -445,6 +457,64 @@ TEST(AttributeUpdaterTest, require_that_weighted_set_attributes_are_updated) {
         EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{}));
         EXPECT_TRUE(check(vec, 5, std::vector<WeightedString>{WeightedString("first", 110)}));
     }
+}
+
+TEST(AttributeUpdaterTest, require_that_assign_element_updates_array_attributes) {
+    Fixture        f;
+    CollectionType ct(CollectionType::ARRAY);
+    {
+        using IL = AttributeBuilder::IntList;
+        auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, ct)).fill_array({IL{10, 20, 30}}).get();
+        f.apply_assign_element(*vec, 1, 1, std::make_unique<IntFieldValue>(42));
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(42), WeightedInt(30)}));
+    }
+    {
+        using DL = AttributeBuilder::DoubleList;
+        auto vec =
+            AttributeBuilder("in1/afloat", Config(BasicType::FLOAT, ct)).fill_array({DL{10.5, 20.5, 30.5}}).get();
+        f.apply_assign_element(*vec, 1, 1, std::make_unique<FloatFieldValue>(42.5f));
+        EXPECT_TRUE(
+            check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(10.5), WeightedFloat(42.5), WeightedFloat(30.5)}));
+    }
+    {
+        using SL = AttributeBuilder::StringList;
+        auto vec = AttributeBuilder("in1/astring", Config(BasicType::STRING, ct))
+                       .fill_array({SL{"one", "two", "three"}})
+                       .get();
+        f.apply_assign_element(*vec, 1, 1, StringFieldValue::make("new"));
+        EXPECT_TRUE(check(
+            vec, 1,
+            std::vector<WeightedString>{WeightedString("one"), WeightedString("new"), WeightedString("three")}));
+    }
+}
+
+TEST(AttributeUpdaterTest, require_that_last_assign_element_to_same_index_wins) {
+    Fixture f;
+    using IL = AttributeBuilder::IntList;
+    auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, CollectionType::ARRAY))
+                   .fill_array({IL{10, 20, 30}})
+                   .get();
+    // Two assigns to the same element within one commit, exercising change vector ordering.
+    AssignFieldPathUpdate first(*f.docType, "aint[1]", "", std::make_unique<IntFieldValue>(41));
+    AssignFieldPathUpdate second(*f.docType, "aint[1]", "", std::make_unique<IntFieldValue>(42));
+    auto                  target = FieldPathTarget::assign_element(f.docType->getField("aint"), 1);
+    search::AttributeUpdater::handle_field_path_update(*vec, 1, target, first);
+    search::AttributeUpdater::handle_field_path_update(*vec, 1, target, second);
+    vec->commit();
+    EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(42), WeightedInt(30)}));
+}
+
+TEST(AttributeUpdaterTest, require_that_assign_element_out_of_bounds_is_a_no_op) {
+    Fixture f;
+    using IL = AttributeBuilder::IntList;
+    auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, CollectionType::ARRAY))
+                   .fill_array({IL{10, 20}, IL{}})
+                   .get();
+    f.apply_assign_element(*vec, 1, 2, std::make_unique<IntFieldValue>(99));
+    f.apply_assign_element(*vec, 1, 1000, std::make_unique<IntFieldValue>(99));
+    f.apply_assign_element(*vec, 2, 0, std::make_unique<IntFieldValue>(99));
+    EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(20)}));
+    EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{}));
 }
 
 template <typename TensorAttributeType>
