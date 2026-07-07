@@ -45,6 +45,7 @@
 #include "num_docs_indexed_feature.h"
 #include "onnx_feature.h"
 #include "proximityfeature.h"
+#include "query_term_document_frequency_feature.h"
 #include "querycompletenessfeature.h"
 #include "queryfeature.h"
 #include "querytermcountfeature.h"
@@ -117,6 +118,7 @@ void setup_search_features(fef::IBlueprintRegistry& registry) {
     registry.addPrototype(std::make_shared<NumDocsIndexedBlueprint>());
     registry.addPrototype(std::make_shared<QueryBlueprint>());
     registry.addPrototype(std::make_shared<QueryTermCountBlueprint>());
+    registry.addPrototype(std::make_shared<QueryTermDocumentFrequencyBlueprint>());
     registry.addPrototype(std::make_shared<RandomBlueprint>());
     registry.addPrototype(std::make_shared<RandomNormalBlueprint>());
     registry.addPrototype(std::make_shared<RandomNormalStableBlueprint>());

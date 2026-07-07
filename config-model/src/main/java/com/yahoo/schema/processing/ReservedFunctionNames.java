@@ -60,6 +60,7 @@ public class ReservedFunctionNames extends Processor {
         temp.add("onnx");
         temp.add("onnx_vespa");
         temp.add("query");
+        temp.add("queryTermDocumentFrequency");
         temp.add("reciprocal_rank");
         temp.add("reciprocal_rank_fusion");
         temp.add("secondphase");

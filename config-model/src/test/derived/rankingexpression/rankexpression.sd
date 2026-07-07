@@ -548,6 +548,9 @@ schema rankexpression {
       first-phase {
         expression: bm25(textchunks)
       }
+      second-phase {
+        expression: reduce(queryTermDocumentFrequency(textchunks), sum, term) + queryTermDocumentFrequency(textchunks){term:"0"}
+      }
       rank-features { averageFieldLength(textchunks) num_docs_indexed }
       match-features { averageFieldLength(textchunks) num_docs_indexed }
       summary-features { averageFieldLength(textchunks) num_docs_indexed }

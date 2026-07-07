@@ -57,6 +57,7 @@ vespa_add_library(searchlib_features OBJECT
     num_docs_indexed_feature.cpp
     onnx_feature.cpp
     proximityfeature.cpp
+    query_term_document_frequency_feature.cpp
     querycompletenessfeature.cpp
     queryfeature.cpp
     queryterm.cpp
