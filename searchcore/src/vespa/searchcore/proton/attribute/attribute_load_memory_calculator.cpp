@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_transient_memory_calculator.h"
+#include "attribute_load_memory_calculator.h"
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/loadedenumvalue.h>
 #include <vespa/searchlib/attribute/loadedvalue.h>
 
+using proton::initializer::LoadMemoryUsage;
 using search::attribute::BasicType;
 
 namespace proton {
@@ -41,16 +42,20 @@ size_t get_transient_memory_usage(bool old_enumerated, const search::attribute::
 }
 
 } // namespace
-size_t AttributeTransientMemoryCalculator::operator()(const search::AttributeVector&   attribute_vector,
-                                                      const search::attribute::Config& new_config) const {
+LoadMemoryUsage AttributeLoadMemoryCalculator::operator()(const search::AttributeVector&   attribute_vector,
+                                                          const search::attribute::Config& new_config) const {
     uint64_t total_value_count = attribute_vector.getStatus().getNumValues();
     bool     old_enumerated = attribute_vector.getEnumeratedSave();
-    return get_transient_memory_usage(old_enumerated, new_config, total_value_count);
+    size_t   memory_usage = attribute_vector.getStatus().get_used_minus_dead_and_onhold();
+    return LoadMemoryUsage(get_transient_memory_usage(old_enumerated, new_config, total_value_count), memory_usage);
 }
 
-size_t AttributeTransientMemoryCalculator::operator()(const search::attribute::AttributeHeader& old_header,
-                                                      const search::attribute::Config&          new_config) const {
-    return get_transient_memory_usage(old_header.getEnumerated(), new_config, old_header.get_total_value_count());
+LoadMemoryUsage AttributeLoadMemoryCalculator::operator()(const search::attribute::AttributeHeader& old_header,
+                                                          const search::attribute::Config& new_config) const {
+    size_t memory_usage = old_header.get_memory_usage();
+    return LoadMemoryUsage(
+        get_transient_memory_usage(old_header.getEnumerated(), new_config, old_header.get_total_value_count()),
+        memory_usage);
 };
 
 } // namespace proton

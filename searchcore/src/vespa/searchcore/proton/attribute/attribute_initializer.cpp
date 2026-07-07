@@ -3,7 +3,7 @@
 #include "attribute_initializer.h"
 
 #include "attribute_directory.h"
-#include "attribute_transient_memory_calculator.h"
+#include "attribute_load_memory_calculator.h"
 #include "attributedisklayout.h"
 #include "i_attribute_factory.h"
 
@@ -253,8 +253,8 @@ AttributeInitializerResult AttributeInitializer::init() const {
 
 size_t AttributeInitializer::get_transient_memory_usage() const {
     if (_header_ok) {
-        AttributeTransientMemoryCalculator get_transient_memory_usage;
-        return get_transient_memory_usage(*_header, _spec.getConfig());
+        AttributeLoadMemoryCalculator get_load_memory_usage;
+        return get_load_memory_usage(*_header, _spec.getConfig()).transient();
     }
     return 0u;
 }

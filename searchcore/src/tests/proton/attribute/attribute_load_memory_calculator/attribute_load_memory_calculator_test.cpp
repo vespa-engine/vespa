@@ -2,7 +2,7 @@
 
 #include <vespa/config-attributes.h>
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
-#include <vespa/searchcore/proton/attribute/attribute_transient_memory_calculator.h>
+#include <vespa/searchcore/proton/attribute/attribute_load_memory_calculator.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -57,28 +57,28 @@ std::shared_ptr<AttributeVector> build_attribute_vector(const std::string&      
 
 } // namespace
 
-size_t sample_usage(bool old_fast_search, bool new_fast_search) {
+size_t sample_transient_usage(bool old_fast_search, bool new_fast_search) {
     auto old_config = build_config(old_fast_search);
     auto old_inspector = std::make_shared<AttributeConfigInspector>(old_config);
     auto av1 = build_attribute_vector("a1", *old_inspector, 1);
     EXPECT_EQ(av1->getEnumeratedSave(), old_fast_search);
-    auto                               new_config = build_config(new_fast_search);
-    auto                               new_inspector = std::make_shared<AttributeConfigInspector>(new_config);
-    AttributeTransientMemoryCalculator calc;
-    return calc(*av1, *new_inspector->get_config("a1"));
+    auto                          new_config = build_config(new_fast_search);
+    auto                          new_inspector = std::make_shared<AttributeConfigInspector>(new_config);
+    AttributeLoadMemoryCalculator calc;
+    return calc(*av1, *new_inspector->get_config("a1")).transient();
 }
 
-TEST(AttributeTransientMemoryCalculator, plain_attribute_vector_requires_no_transient_memory_for_load) {
-    EXPECT_EQ(0, sample_usage(false, false));
+TEST(AttributeLoadMemoryCalculator, plain_attribute_vector_requires_no_transient_memory_for_load) {
+    EXPECT_EQ(0, sample_transient_usage(false, false));
 }
 
-TEST(AttributeTransientMemoryCalculator, fast_search_attribute_vector_requires_transient_memory_for_load) {
-    EXPECT_EQ(24u, sample_usage(true, true));
+TEST(AttributeLoadMemoryCalculator, fast_search_attribute_vector_requires_transient_memory_for_load) {
+    EXPECT_EQ(24u, sample_transient_usage(true, true));
 }
 
-TEST(AttributeTransientMemoryCalculator,
+TEST(AttributeLoadMemoryCalculator,
      fast_search_attribute_vector_requires_more_transient_memory_for_load_from_unenumerated) {
-    EXPECT_EQ(40u, sample_usage(false, true));
+    EXPECT_EQ(40u, sample_transient_usage(false, true));
 }
 
 } // namespace proton
