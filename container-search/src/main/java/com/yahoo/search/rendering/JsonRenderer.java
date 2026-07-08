@@ -64,6 +64,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
@@ -98,6 +99,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String COVERAGE_DEGRADE_MATCHPHASE = "match-phase";
     private static final String COVERAGE_DEGRADE_TIMEOUT = "timeout";
     private static final String COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT = "adaptive-timeout";
+    private static final String COVERAGE_DEGRADE_ANN_TIMEOUT = "anntimeout";
     private static final String COVERAGE_DEGRADED_NON_IDEAL_STATE = "non-ideal-state";
     private static final String COVERAGE_FULL = "full";
     private static final String COVERAGE_NODES = "nodes";
@@ -110,6 +112,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String ERROR_STACK_TRACE = "stackTrace";
     private static final String ERROR_SUMMARY = "summary";
     private static final String FIELDS = "fields";
+    private static final String SEARCH_GROUP = "searchGroup";
     private static final String ID = "id";
     private static final String LABEL = "label";
     private static final String RELEVANCE = "relevance";
@@ -386,6 +389,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeBooleanField(COVERAGE_DEGRADE_MATCHPHASE, c.isDegradedByMatchPhase());
             generator.writeBooleanField(COVERAGE_DEGRADE_TIMEOUT, c.isDegradedByTimeout());
             generator.writeBooleanField(COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT, c.isDegradedByAdapativeTimeout());
+            generator.writeBooleanField(COVERAGE_DEGRADE_ANN_TIMEOUT, c.isDegradedByAnnTimeout());
             generator.writeBooleanField(COVERAGE_DEGRADED_NON_IDEAL_STATE, c.isDegradedByNonIdealState());
             generator.writeEndObject();
         }
@@ -492,13 +496,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
     }
 
+    /** Render top level fields like totalCount, if we are at the top level, do nothing otherwise. */
     protected void renderTotalHitCount(Hit hit) throws IOException {
         if ( ! (getRecursionLevel() == 1 && hit instanceof HitGroup)) return;
 
         fieldConsumer.ensureFieldsField();
         generator.writeNumberField(TOTAL_COUNT, getResult().getTotalHitCount());
-        // alternative for the above two lines:
-        // fieldConsumer.accept(TOTAL_COUNT, getResult().getTotalHitCount());
+        OptionalInt group = getResult().hits().getSearchGroup();
+        if (group.isPresent())
+            generator.writeNumberField(SEARCH_GROUP, group.getAsInt());
     }
 
     @Override

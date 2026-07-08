@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_db_explorer.h"
+
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -12,29 +13,23 @@ namespace proton {
 
 namespace {
 
-std::string
-bucketIdToString(const BucketId &bucketId)
-{
+std::string bucketIdToString(const BucketId& bucketId) {
     vespalib::asciistream stream;
-    stream << "0x" << vespalib::hex << vespalib::setw(sizeof(BucketId::Type)*2)
-           << vespalib::setfill('0') << bucketId.getId();
+    stream << "0x" << vespalib::hex << vespalib::setw(sizeof(BucketId::Type) * 2) << vespalib::setfill('0')
+           << bucketId.getId();
     return stream.str();
 }
 
-std::string
-checksumToString(storage::spi::BucketChecksum checksum)
-{
+std::string checksumToString(storage::spi::BucketChecksum checksum) {
     vespalib::asciistream stream;
     stream << "0x" << vespalib::hex << checksum;
     return stream.str();
 }
 
-void
-convertBucketsToSlime(const BucketDB &bucketDb, Cursor &array)
-{
+void convertBucketsToSlime(const BucketDB& bucketDb, Cursor& array) {
     BucketId::List buckets = bucketDb.getBuckets();
     for (BucketId bucketId : buckets) {
-        Cursor &object = array.addObject();
+        Cursor& object = array.addObject();
         object.setString("id", bucketIdToString(bucketId));
         bucketdb::BucketState state = bucketDb.get(bucketId);
         object.setString("checksum", checksumToString(state.getChecksum()));
@@ -48,19 +43,15 @@ convertBucketsToSlime(const BucketDB &bucketDb, Cursor &array)
     }
 }
 
-}
+} // namespace
 
-BucketDBExplorer::BucketDBExplorer(bucketdb::Guard bucketDb)
-    : _bucketDb(std::move(bucketDb))
-{
+BucketDBExplorer::BucketDBExplorer(bucketdb::Guard bucketDb) : _bucketDb(std::move(bucketDb)) {
 }
 
 BucketDBExplorer::~BucketDBExplorer() = default;
 
-void
-BucketDBExplorer::get_state(const Inserter &inserter, bool full) const
-{
-    Cursor &object = inserter.insertObject();
+void BucketDBExplorer::get_state(const Inserter& inserter, bool full) const {
+    Cursor& object = inserter.insertObject();
     if (full) {
         object.setLong("numBuckets", _bucketDb->size());
         convertBucketsToSlime(*_bucketDb, object.setArray("buckets"));

@@ -5,8 +5,12 @@
 #include <cstdint>
 #include <memory>
 
-namespace search::queryeval { class Searchable; }
-namespace searchcorespi { class IndexSearchable; }
+namespace search::queryeval {
+class Searchable;
+}
+namespace searchcorespi {
+class IndexSearchable;
+}
 
 namespace proton::matching {
 
@@ -20,13 +24,13 @@ namespace proton::matching {
  * assigned separate source ids. A source selector is used to
  * determine which source should be used for each document.
  **/
-class ISearchContext
-{
+class ISearchContext {
 protected:
     ISearchContext() = default;
+
 public:
-    ISearchContext(const ISearchContext &) = delete;
-    ISearchContext & operator = (const ISearchContext &) = delete;
+    ISearchContext(const ISearchContext&) = delete;
+    ISearchContext& operator=(const ISearchContext&) = delete;
 
     using Searchable = search::queryeval::Searchable;
     using IndexSearchable = searchcorespi::IndexSearchable;
@@ -36,14 +40,14 @@ public:
      *
      * @return index fields searchable.
      **/
-    virtual IndexSearchable &getIndexes() = 0;
+    virtual IndexSearchable& getIndexes() = 0;
 
     /**
      * Obtain the attribute fields searchable.
      *
      * @return attribute fields searchable.
      **/
-    virtual Searchable &getAttributes() = 0;
+    virtual Searchable& getAttributes() = 0;
 
     /**
      * Obtain the limit value for local document ids. This value is
@@ -56,10 +60,17 @@ public:
     virtual uint32_t getDocIdLimit() = 0;
 
     /**
+     * Obtain the name of the document type.
+     *
+     * @return name of the document type
+     **/
+    virtual const std::string_view get_document_type_name() = 0;
+
+    /**
      * Deleting the context will trigger cleanup in the
      * implementation.
      **/
     virtual ~ISearchContext() = default;
 };
 
-}
+} // namespace proton::matching

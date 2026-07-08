@@ -2,22 +2,22 @@
 #pragma once
 
 #include <vespa/document/bucket/bucket.h>
-#include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/persistence/batched_message.h>
 #include <vespa/storage/persistence/shared_operation_throttler.h>
+#include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/util/small_vector.h>
 
 namespace storage {
 namespace api {
-    class ReturnCode;
-    class StorageMessage;
-    class StorageCommand;
-    class StorageReply;
-}
+class ReturnCode;
+class StorageMessage;
+class StorageCommand;
+class StorageReply;
+} // namespace api
 namespace framework {
-    class HttpUrlPath;
+class HttpUrlPath;
 }
 
 class ActiveOperationsStats;
@@ -32,12 +32,9 @@ class FileStorHandler : public MessageSender {
 public:
     struct RemapInfo {
         document::Bucket bucket;
-        bool foundInQueue;
+        bool             foundInQueue;
 
-        RemapInfo(const document::Bucket &bucket_)
-            : bucket(bucket_),
-              foundInQueue(false)
-        {}
+        RemapInfo(const document::Bucket& bucket_) : bucket(bucket_), foundInQueue(false) {}
     };
 
     // Interface that is used for "early ACKing" a potentially longer-running async
@@ -61,7 +58,7 @@ public:
     public:
         using SP = std::shared_ptr<BucketLockInterface>;
 
-        [[nodiscard]] virtual const document::Bucket &getBucket() const = 0;
+        [[nodiscard]] virtual const document::Bucket& getBucket() const = 0;
         [[nodiscard]] virtual api::LockingRequirements lockingRequirements() const noexcept = 0;
     };
 
@@ -71,13 +68,9 @@ public:
         ThrottleToken                        throttle_token;
 
         constexpr LockedMessage() noexcept = default;
-        LockedMessage(std::shared_ptr<BucketLockInterface> lock_,
-                      std::shared_ptr<api::StorageMessage> msg_,
+        LockedMessage(std::shared_ptr<BucketLockInterface> lock_, std::shared_ptr<api::StorageMessage> msg_,
                       ThrottleToken token) noexcept
-                : lock(std::move(lock_)),
-                  msg(std::move(msg_)),
-                  throttle_token(std::move(token))
-        {}
+            : lock(std::move(lock_)), msg(std::move(msg_)), throttle_token(std::move(token)) {}
         LockedMessage(LockedMessage&&) noexcept = default;
         ~LockedMessage();
     };
@@ -96,42 +89,27 @@ public:
         // Precondition: messages.size() == 1
         [[nodiscard]] LockedMessage release_as_single_msg() noexcept;
         // Precondition: !messages.empty()
-        [[nodiscard]] uint8_t min_priority() const noexcept {
-            return messages[0].first->getPriority();
-        }
+        [[nodiscard]] uint8_t min_priority() const noexcept { return messages[0].first->getPriority(); }
     };
 
     class ScheduleAsyncResult {
         bool          _was_scheduled;
         LockedMessage _async_message;
+
     public:
         constexpr ScheduleAsyncResult() noexcept : _was_scheduled(false), _async_message() {}
         explicit ScheduleAsyncResult(LockedMessage&& async_message_in) noexcept
-            : _was_scheduled(true),
-              _async_message(std::move(async_message_in))
-        {}
-        [[nodiscard]] bool was_scheduled() const noexcept {
-            return _was_scheduled;
-        }
-        [[nodiscard]] bool has_async_message() const noexcept {
-            return static_cast<bool>(_async_message.lock);
-        }
-        [[nodiscard]] const LockedMessage& async_message() const noexcept {
-            return _async_message;
-        }
-        [[nodiscard]] LockedMessage&& release_async_message() noexcept {
-            return std::move(_async_message);
-        }
+            : _was_scheduled(true), _async_message(std::move(async_message_in)) {}
+        [[nodiscard]] bool was_scheduled() const noexcept { return _was_scheduled; }
+        [[nodiscard]] bool has_async_message() const noexcept { return static_cast<bool>(_async_message.lock); }
+        [[nodiscard]] const LockedMessage& async_message() const noexcept { return _async_message; }
+        [[nodiscard]] LockedMessage&& release_async_message() noexcept { return std::move(_async_message); }
     };
 
-    enum DiskState {
-        AVAILABLE,
-        CLOSED
-    };
+    enum DiskState { AVAILABLE, CLOSED };
 
-    FileStorHandler() : _getNextMessageTimout(100ms) { }
+    FileStorHandler() : _getNextMessageTimout(100ms) {}
     ~FileStorHandler() override = default;
-
 
     /**
      * Waits for the filestor queues to be empty. Providing no new load is
@@ -165,7 +143,8 @@ public:
     /**
      * Schedule the given message to be processed and return the next async message to process (if any).
      */
-    virtual ScheduleAsyncResult schedule_and_get_next_async_message(const std::shared_ptr<api::StorageMessage>& msg) = 0;
+    virtual ScheduleAsyncResult
+    schedule_and_get_next_async_message(const std::shared_ptr<api::StorageMessage>& msg) = 0;
 
     /**
      * Used by file stor threads to get their next message to process.
@@ -174,7 +153,8 @@ public:
      */
     [[nodiscard]] virtual LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time deadline) = 0;
 
-    [[nodiscard]] virtual LockedMessageBatch next_message_batch(uint32_t stripe, vespalib::steady_time now, vespalib::steady_time deadline) = 0;
+    [[nodiscard]] virtual LockedMessageBatch next_message_batch(uint32_t stripe, vespalib::steady_time now,
+                                                                vespalib::steady_time deadline) = 0;
 
     /** Only used for testing, should be removed */
     LockedMessage getNextMessage(uint32_t stripeId) {
@@ -230,9 +210,7 @@ public:
      * requeststatus/deletebucket - Ignore
      * readbucketinfo/internalbucketjoin - Fail and log errors
      */
-    virtual void remapQueueAfterSplit(const RemapInfo& source,
-                                      RemapInfo& target1,
-                                      RemapInfo& target2) = 0;
+    virtual void remapQueueAfterSplit(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2) = 0;
 
     /**
      * Fail all operations towards a single bucket currently queued to the
@@ -284,8 +262,10 @@ public:
     [[nodiscard]] virtual vespalib::SharedOperationThrottler& operation_throttler() const noexcept = 0;
     [[nodiscard]] virtual vespalib::SharedOperationThrottler& maintenance_throttler() const noexcept = 0;
 
-    virtual void reconfigure_dynamic_operation_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) = 0;
-    virtual void reconfigure_dynamic_maintenance_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) = 0;
+    virtual void reconfigure_dynamic_operation_throttler(
+        const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) = 0;
+    virtual void reconfigure_dynamic_maintenance_throttler(
+        const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) = 0;
 
     virtual void use_dynamic_operation_throttling(bool use_dynamic) noexcept = 0;
     virtual void use_dynamic_maintenance_throttling(bool use_dynamic) noexcept = 0;
@@ -293,9 +273,9 @@ public:
     virtual void set_throttle_apply_bucket_diff_ops(bool throttle_apply_bucket_diff) noexcept = 0;
 
     virtual void set_max_feed_op_batch_size(uint32_t max_batch) noexcept = 0;
+
 private:
     vespalib::duration _getNextMessageTimout;
 };
 
-} // storage
-
+} // namespace storage

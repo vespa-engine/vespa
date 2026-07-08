@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.proxy;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -26,7 +27,7 @@ class Mode {
     }
 
     Mode(String modeString) {
-        switch (modeString.toLowerCase()) {
+        switch (modeString.toLowerCase(Locale.ROOT)) {
             case "default" :
                 mode = ModeName.DEFAULT;
                 break;
@@ -53,17 +54,17 @@ class Mode {
     static Set<String> modes() {
         Set<String> modes = new HashSet<>();
         for (ModeName mode : ModeName.values()) {
-            modes.add(mode.name().toLowerCase());
+            modes.add(mode.name().toLowerCase(Locale.ROOT));
         }
         return modes;
     }
 
     String name() {
-        return mode.name().toLowerCase();
+        return mode.name().toLowerCase(Locale.ROOT);
     }
 
     @Override
     public String toString() {
-        return mode.name().toLowerCase();
+        return mode.name().toLowerCase(Locale.ROOT);
     }
 }

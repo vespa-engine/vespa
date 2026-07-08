@@ -3,13 +3,15 @@
 #pragma once
 
 #include "attribute_initializer.h"
+
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 
 namespace proton {
 
 /**
- * Visitor that allows you to get all AttributeInitializationStatus objects created by the InitializerTask and its dependencies.
+ * Visitor that allows you to get all AttributeInitializationStatus objects created by the InitializerTask and its
+ * dependencies.
  *
  * It visits all AttributeInitializers in an InitializerTask and its dependencies.
  * For every AttributeInitializer, it collects a pointer to its AttributeInitializationStatus
@@ -21,9 +23,9 @@ private:
     std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>>& _initialization_statuses;
 
 public:
-    AttributeInitializationStatusCollector(std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>>& initialization_statuses);
+    AttributeInitializationStatusCollector(
+        std::vector<std::shared_ptr<search::attribute::AttributeInitializationStatus>>& initialization_statuses);
     void visit_attribute_initializer(AttributeInitializer& attribute_initializer) override;
 };
 
-} // proton
-
+} // namespace proton

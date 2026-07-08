@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <unordered_set>
 #include <string>
+#include <unordered_set>
 
 /**
  * Simple host filter which in its default empty state implicitly includes all
@@ -12,8 +12,10 @@
 class HostFilter {
 public:
     using HostSet = std::unordered_set<std::string>;
+
 private:
     HostSet _hosts;
+
 public:
     /**
      * Empty host filter; all hosts are implicitly included.
@@ -24,15 +26,9 @@ public:
      * Explicitly given host set; only the hosts whose name exactly match
      * one of the provided names will pass the includes(name) check.
      */
-    explicit HostFilter(const std::unordered_set<std::string>& hosts)
-        : _hosts(hosts)
-    {
-    }
+    explicit HostFilter(const std::unordered_set<std::string>& hosts) : _hosts(hosts) {}
 
-    explicit HostFilter(std::unordered_set<std::string>&& hosts)
-        : _hosts(std::move(hosts))
-    {
-    }
+    explicit HostFilter(std::unordered_set<std::string>&& hosts) : _hosts(std::move(hosts)) {}
 
     HostFilter(HostFilter&&) = default;
     HostFilter& operator=(HostFilter&&) = default;

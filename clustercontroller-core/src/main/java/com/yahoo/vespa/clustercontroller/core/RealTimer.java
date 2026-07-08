@@ -37,7 +37,7 @@ public class RealTimer implements Timer {
     }
 
     public static String printDateNoMilliSeconds(long time, TimeZone tz) {
-        Calendar cal = Calendar.getInstance(tz);
+        Calendar cal = Calendar.getInstance(tz, Locale.ROOT);
         cal.setTimeInMillis(time);
         return String.format(Locale.ENGLISH, "%04d-%02d-%02d %02d:%02d:%02d",
                 cal.get(Calendar.YEAR),
@@ -49,7 +49,7 @@ public class RealTimer implements Timer {
     }
 
     public static String printDate(long time, TimeZone tz) {
-        Calendar cal = Calendar.getInstance(tz);
+        Calendar cal = Calendar.getInstance(tz, Locale.ROOT);
         cal.setTimeInMillis(time);
         return String.format(Locale.ENGLISH, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
                              cal.get(Calendar.YEAR),

@@ -15,4 +15,4 @@ public:
     string toString() const override { return "DocumentIgnoredReply"; }
 };
 
-}
+} // namespace documentapi

@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributorconfiguration.h"
-#include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/config/config-stor-visitordispatcher.h>
+
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/traversingvisitor.h>
 #include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -48,8 +50,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(true),
       _enable_operation_cancellation(false),
       _symmetric_put_and_activate_replica_selection(false),
-      _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
-{
+      _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED) {
 }
 
 DistributorConfiguration::~DistributorConfiguration() = default;
@@ -62,16 +63,12 @@ public:
 
     TimeVisitor() : hasCurrentTime(false) {}
 
-    void visitCurrentTimeValueNode(const document::select::CurrentTimeValueNode&) override {
-        hasCurrentTime = true;
-    }
+    void visitCurrentTimeValueNode(const document::select::CurrentTimeValueNode&) override { hasCurrentTime = true; }
 };
 
-}
+} // namespace
 
-bool
-DistributorConfiguration::containsTimeStatement(const std::string& documentSelection) const
-{
+bool DistributorConfiguration::containsTimeStatement(const std::string& documentSelection) const {
     TimeVisitor visitor;
     try {
         document::select::Parser parser(*_component.getTypeRepo()->documentTypeRepo, _component.getBucketIdFactory());
@@ -83,8 +80,7 @@ DistributorConfiguration::containsTimeStatement(const std::string& documentSelec
             "Caught exception during config-time processing of GC "
             "selection '%s', terminating process to force full "
             "reconfiguration: %s",
-            documentSelection.c_str(),
-            e.what());
+            documentSelection.c_str(), e.what());
         std::terminate();
     }
     return visitor.hasCurrentTime;
@@ -95,28 +91,26 @@ namespace {
 ReplicaCountingMode
 deriveReplicaCountingMode(DistributorConfiguration::DistributorManagerConfig::MinimumReplicaCountingMode mode) {
     switch (mode) {
-        case vespa::config::content::core::internal::InternalStorDistributormanagerType::MinimumReplicaCountingMode::TRUSTED:
-            return ReplicaCountingMode::TRUSTED;
-        default:
-            return ReplicaCountingMode::ANY;
+    case vespa::config::content::core::internal::InternalStorDistributormanagerType::MinimumReplicaCountingMode::
+        TRUSTED:
+        return ReplicaCountingMode::TRUSTED;
+    default:
+        return ReplicaCountingMode::ANY;
     }
 }
 
-}
-void 
-DistributorConfiguration::configure(const DistributorManagerConfig & config)
-{
-    if ((config.splitsize != 0 && config.joinsize > config.splitsize)
-        || (config.splitcount != 0 && config.joincount > config.splitcount))
+} // namespace
+void DistributorConfiguration::configure(const DistributorManagerConfig& config) {
+    if ((config.splitsize != 0 && config.joinsize > config.splitsize) ||
+        (config.splitcount != 0 && config.joincount > config.splitcount))
     {
         std::ostringstream ost;
         ost << "Split limits must be higher than join limits (both count and "
-            << "size). Values gotten are size(join(" << config.joinsize
-            << ")/split(" << config.splitsize << ")) count(join("
-            << config.joincount << ")/split(" << config.splitcount << "))";
+            << "size). Values gotten are size(join(" << config.joinsize << ")/split(" << config.splitsize
+            << ")) count(join(" << config.joincount << ")/split(" << config.splitcount << "))";
         throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
-    
+
     _byteCountSplitLimit = config.splitsize;
     _docCountSplitLimit = config.splitcount;
     _byteCountJoinLimit = config.joinsize;
@@ -138,7 +132,7 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
 
     // Don't garbage collect with empty selection.
     if (_garbageCollectionSelection.empty()) {
-      _garbageCollectionInterval = vespalib::duration::zero();
+        _garbageCollectionInterval = vespalib::duration::zero();
     }
 
     _doInlineSplit = config.inlinebucketsplitting;
@@ -163,7 +157,8 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
         _maxClusterClockSkew = std::chrono::seconds(config.maxClusterClockSkewSec);
     }
     if (config.inhibitMergeSendingOnBusyNodeDurationSec >= 0) {
-        _inhibitMergeSendingOnBusyNodeDuration = std::chrono::seconds(config.inhibitMergeSendingOnBusyNodeDurationSec);
+        _inhibitMergeSendingOnBusyNodeDuration =
+            std::chrono::seconds(config.inhibitMergeSendingOnBusyNodeDurationSec);
     }
     _simulated_db_pruning_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbPruningLatencyMsec));
     _simulated_db_merging_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbMergingLatencyMsec));
@@ -176,21 +171,14 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
         "Distributor now using new configuration parameters. Split limits: %d docs/%d bytes. "
         "Join limits: %d docs/%d bytes. Minimal bucket split %d. "
         "Documents to garbage collect: %s (check every %d seconds). ",
-        (int)_docCountSplitLimit,
-        (int)_byteCountSplitLimit,
-        (int)_docCountJoinLimit,
-        (int)_byteCountJoinLimit,
-        (int)_minimalBucketSplit,
-        _garbageCollectionSelection.c_str(),
+        (int)_docCountSplitLimit, (int)_byteCountSplitLimit, (int)_docCountJoinLimit, (int)_byteCountJoinLimit,
+        (int)_minimalBucketSplit, _garbageCollectionSelection.c_str(),
         (int)vespalib::to_s(_garbageCollectionInterval));
 }
 
-void 
-DistributorConfiguration::configure(const VisitorDispatcherConfig & config)
-{
+void DistributorConfiguration::configure(const VisitorDispatcherConfig& config) {
     _minBucketsPerVisitor = config.minbucketspervisitor;
     _maxVisitorsPerNodePerClientVisitor = config.maxvisitorspernodeperclientvisitor;
 }
 
-} // storage
-
+} // namespace storage

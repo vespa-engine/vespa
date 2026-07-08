@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.apache.zookeeper.server;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.zookeeper.Configurator;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
@@ -26,12 +28,12 @@ public class VespaNettyServerCnxnFactory extends NettyServerCnxnFactory {
         super();
         this.isSecure = Configurator.VespaNettyServerCnxnFactory_isSecure;
         boolean portUnificationEnabled = Boolean.getBoolean(NettyServerCnxnFactory.PORT_UNIFICATION_KEY);
-        log.info(String.format("For %h: isSecure=%b, portUnification=%b", this, isSecure, portUnificationEnabled));
+        log.info(Text.format("For %h: isSecure=%b, portUnification=%b", this, isSecure, portUnificationEnabled));
     }
 
     @Override
     public void configure(InetSocketAddress addr, int maxClientCnxns, int backlog, boolean secure) throws IOException {
-        log.info(String.format("For %h: configured() invoked with parameter 'secure'=%b, overridden to %b", this, secure, isSecure));
+        log.info(Text.format("For %h: configured() invoked with parameter 'secure'=%b, overridden to %b", this, secure, isSecure));
         super.configure(addr, maxClientCnxns, backlog, isSecure);
     }
 }

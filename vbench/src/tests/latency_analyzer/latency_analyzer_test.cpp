@@ -1,19 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <vbench/test/all.h>
 
 using namespace vbench;
 
-void post(double latency, Handler<Request> &handler,
-          double startTime = 0.0, Request::Status status = Request::STATUS_OK)
-{
+void post(double latency, Handler<Request>& handler, double startTime = 0.0,
+          Request::Status status = Request::STATUS_OK) {
     Request::UP req(new Request());
     req->status(status).startTime(startTime).endTime(startTime + latency);
     handler.handle(std::move(req));
 }
 
 TEST(LatencyAnalyzerTest, require_that_only_OK_requests_are_counted) {
-    RequestSink f1;
+    RequestSink     f1;
     LatencyAnalyzer f2(f1);
     post(1.0, f2);
     post(2.0, f2, 3.0);
@@ -25,7 +25,7 @@ TEST(LatencyAnalyzerTest, require_that_only_OK_requests_are_counted) {
 }
 
 TEST(LatencyAnalyzerTest, verify_percentiles) {
-    RequestSink f1;
+    RequestSink     f1;
     LatencyAnalyzer f2(f1);
     for (size_t i = 0; i <= 10000; ++i) {
         post(0.001 * i, f2);

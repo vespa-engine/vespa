@@ -7,11 +7,7 @@
 
 namespace search {
 
-enum class Normalizing : uint8_t {
-    NONE,
-    LOWERCASE,
-    LOWERCASE_AND_FOLD
-};
+enum class Normalizing : uint8_t { NONE, LOWERCASE, LOWERCASE_AND_FOLD };
 
 enum class TermType : uint8_t {
     WORD = 0,
@@ -25,7 +21,7 @@ enum class TermType : uint8_t {
     NEAREST_NEIGHBOR = 8
 };
 
-std::ostream &operator<<(std::ostream &, Normalizing);
+std::ostream& operator<<(std::ostream&, Normalizing);
 
 /**
  * Resolves what kind of normalization that is needed for the query terms in context
@@ -40,4 +36,4 @@ public:
     static std::string optional_fold(std::string_view s, TermType type, Normalizing normalizing);
 };
 
-}
+} // namespace search

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "storagecommand.h"
+
 #include <vespa/document/bucket/bucket.h>
 
 namespace storage::api {
@@ -18,7 +19,7 @@ class BucketCommand : public StorageCommand {
     document::BucketId _originalBucket;
 
 protected:
-    BucketCommand(const MessageType& type, const document::Bucket &bucket) noexcept;
+    BucketCommand(const MessageType& type, const document::Bucket& bucket) noexcept;
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketCommand);
@@ -30,4 +31,4 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-}
+} // namespace storage::api

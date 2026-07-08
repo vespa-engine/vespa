@@ -2,12 +2,18 @@
 
 #pragma once
 
-#include "result_processor.h"
 #include "matching_stats.h"
+#include "result_processor.h"
 
-namespace vespalib { struct ThreadBundle; }
-namespace search { class FeatureSet; }
-namespace search::engine { class Trace; }
+namespace vespalib {
+struct ThreadBundle;
+}
+namespace search {
+class FeatureSet;
+}
+namespace search::engine {
+class Trace;
+}
 
 namespace proton::matching {
 
@@ -17,22 +23,18 @@ struct MatchParams;
 /**
  * Handles overall matching and keeps track of match threads.
  **/
-class MatchMaster
-{
+class MatchMaster {
 private:
     MatchingStats _stats;
 
 public:
-    const MatchingStats & getStats() const { return _stats; }
-    ResultProcessor::Result::UP match(search::engine::Trace & trace,
-                                      const MatchParams &params,
-                                      vespalib::ThreadBundle &threadBundle,
-                                      const MatchToolsFactory &mtf,
-                                      ResultProcessor &resultProcessor,
-                                      uint32_t distributionKey,
+    const MatchingStats& getStats() const { return _stats; }
+    ResultProcessor::Result::UP match(search::engine::Trace& trace, const MatchParams& params,
+                                      vespalib::ThreadBundle& threadBundle, const MatchToolsFactory& mtf,
+                                      ResultProcessor& resultProcessor, uint32_t distributionKey,
                                       uint32_t numSearchPartitions);
 
-    static MatchingStats getStats(MatchMaster && rhs) { return std::move(rhs._stats); }
+    static MatchingStats getStats(MatchMaster&& rhs) { return std::move(rhs._stats); }
 };
 
-}
+} // namespace proton::matching

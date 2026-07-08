@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "executor_explorer_utils.h"
+
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/adaptive_sequenced_executor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
@@ -21,39 +22,29 @@ namespace proton::explorer {
 
 namespace {
 
-void
-convert_syncable_executor_to_slime(const ThreadExecutor& executor, const std::string& type, Cursor& object)
-{
+void convert_syncable_executor_to_slime(const ThreadExecutor& executor, const std::string& type, Cursor& object) {
     object.setString("type", type);
     object.setLong("num_threads", executor.getNumThreads());
     object.setLong("task_limit", executor.getTaskLimit());
 }
 
-void
-convert_single_executor_to_slime(const SingleExecutor& executor, Cursor& object)
-{
+void convert_single_executor_to_slime(const SingleExecutor& executor, Cursor& object) {
     convert_syncable_executor_to_slime(executor, "SingleExecutor", object);
     object.setLong("watermark", executor.get_watermark());
     object.setDouble("reaction_time_sec", vespalib::to_s(executor.get_reaction_time()));
 }
 
-void
-set_type(Cursor& object, const std::string& type)
-{
+void set_type(Cursor& object, const std::string& type) {
     object.setString("type", type);
 }
 
-void
-convert_sequenced_executor_to_slime(const SequencedTaskExecutor& executor, Cursor& object)
-{
+void convert_sequenced_executor_to_slime(const SequencedTaskExecutor& executor, Cursor& object) {
     set_type(object, "SequencedTaskExecutor");
     object.setLong("num_executors", executor.getNumExecutors());
     convert_executor_to_slime(executor.first_executor(), object.setObject("executor"));
 }
 
-void
-convert_adaptive_executor_to_slime(const AdaptiveSequencedExecutor& executor, Cursor& object)
-{
+void convert_adaptive_executor_to_slime(const AdaptiveSequencedExecutor& executor, Cursor& object) {
     set_type(object, "AdaptiveSequencedExecutor");
     object.setLong("num_strands", executor.getNumExecutors());
     auto cfg = executor.get_config();
@@ -63,11 +54,9 @@ convert_adaptive_executor_to_slime(const AdaptiveSequencedExecutor& executor, Cu
     object.setLong("wakeup_limit", cfg.wakeup_limit);
 }
 
-}
+} // namespace
 
-void
-convert_executor_to_slime(const ThreadExecutor* executor, Cursor& object)
-{
+void convert_executor_to_slime(const ThreadExecutor* executor, Cursor& object) {
     if (executor == nullptr) {
         return;
     }
@@ -82,9 +71,7 @@ convert_executor_to_slime(const ThreadExecutor* executor, Cursor& object)
     }
 }
 
-void
-convert_executor_to_slime(const ISequencedTaskExecutor* executor, Cursor& object)
-{
+void convert_executor_to_slime(const ISequencedTaskExecutor* executor, Cursor& object) {
     if (executor == nullptr) {
         return;
     }
@@ -98,5 +85,4 @@ convert_executor_to_slime(const ISequencedTaskExecutor* executor, Cursor& object
     }
 }
 
-}
-
+} // namespace proton::explorer

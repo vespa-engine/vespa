@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
@@ -60,7 +61,7 @@ public interface TlsContext extends AutoCloseable {
                 .collect(toSet());
         if (enabledCiphers.isEmpty()) {
             throw new IllegalArgumentException(
-                    String.format("Non of the allowed ciphers are supported (allowed=%s, supported=%s)",
+                    String.format(Locale.ROOT, "Non of the allowed ciphers are supported (allowed=%s, supported=%s)",
                                   ALLOWED_CIPHER_SUITES, Arrays.toString(supportedCiphers)));
 
         }
@@ -79,7 +80,7 @@ public interface TlsContext extends AutoCloseable {
                 .collect(toSet());
         if (enabledProtocols.isEmpty()) {
             throw new IllegalArgumentException(
-                    String.format("Non of the allowed protocols are supported (allowed=%s, supported=%s)",
+                    String.format(Locale.ROOT, "Non of the allowed protocols are supported (allowed=%s, supported=%s)",
                                   ALLOWED_PROTOCOLS, Arrays.toString(supportedProtocols)));
         }
         return enabledProtocols;

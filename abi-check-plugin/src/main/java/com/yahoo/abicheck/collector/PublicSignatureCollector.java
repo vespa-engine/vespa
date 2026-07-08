@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,7 +37,7 @@ public class PublicSignatureCollector extends ClassVisitor {
 
   private static String describeMethod(String name, int access, String returnType,
       List<String> argumentTypes) {
-    return String.format("%s %s %s(%s)", describeAccess(access, Util.methodFlags), returnType, name,
+    return String.format(Locale.ROOT, "%s %s %s(%s)", describeAccess(access, Util.methodFlags), returnType, name,
         String.join(", ", argumentTypes));
   }
 
@@ -45,7 +46,7 @@ public class PublicSignatureCollector extends ClassVisitor {
   }
 
   private static String describeField(String name, int access, String type) {
-    return String.format("%s %s %s", describeAccess(access, Util.fieldFlags), type, name);
+    return String.format(Locale.ROOT, "%s %s %s", describeAccess(access, Util.fieldFlags), type, name);
   }
 
   private static String internalNameToClassName(String superName) {

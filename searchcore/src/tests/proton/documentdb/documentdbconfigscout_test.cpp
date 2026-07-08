@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/server/documentdbconfigscout.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <ostream>
 
 using namespace document;
@@ -13,8 +14,8 @@ using namespace proton;
 using namespace search;
 using namespace search::index;
 using namespace vespa::config::search;
-using std::shared_ptr;
 using std::make_shared;
+using std::shared_ptr;
 
 using DDBCSP = shared_ptr<DocumentDBConfig>;
 
@@ -35,24 +36,20 @@ std::ostream& operator<<(std::ostream& os, const AttributesConfig::Attribute::Di
     return os;
 }
 
-}
+} // namespace vespa::config::search::internal
 
 namespace {
 
 DDBCSP
-getConfig(int64_t generation, std::shared_ptr<const Schema> schema,
-          const shared_ptr<const DocumentTypeRepo> & repo,
-          const AttributesConfig &attributes)
-{
-    return test::DocumentDBConfigBuilder(generation, std::move(schema), "client", "test").
-            repo(repo).attributes(make_shared<AttributesConfig>(attributes)).build();
+getConfig(int64_t generation, std::shared_ptr<const Schema> schema, const shared_ptr<const DocumentTypeRepo>& repo,
+          const AttributesConfig& attributes) {
+    return test::DocumentDBConfigBuilder(generation, std::move(schema), "client", "test")
+        .repo(repo)
+        .attributes(make_shared<AttributesConfig>(attributes))
+        .build();
 }
 
-
-bool
-assertDefaultAttribute(const AttributesConfig::Attribute &attribute,
-                       const std::string &name)
-{
+bool assertDefaultAttribute(const AttributesConfig::Attribute& attribute, const std::string& name) {
     SCOPED_TRACE(name);
     bool failed = false;
     EXPECT_EQ(name, attribute.name) << (failed = true, "");
@@ -71,11 +68,9 @@ assertDefaultAttribute(const AttributesConfig::Attribute &attribute,
     return !failed;
 }
 
-bool
-assert_string_attribute(const AttributesConfig::Attribute& attribute,
-                        const std::string& name,
-                        std::optional<bool> uncased, std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type)
-{
+bool assert_string_attribute(const AttributesConfig::Attribute& attribute, const std::string& name,
+                             std::optional<bool>                                          uncased,
+                             std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type) {
     SCOPED_TRACE(name);
     using Attribute = AttributesConfig::Attribute;
     using Dictionary = Attribute::Dictionary;
@@ -118,10 +113,7 @@ assert_string_attribute(const AttributesConfig::Attribute& attribute,
     return true;
 }
 
-bool
-assertFastSearchAttribute(const AttributesConfig::Attribute &attribute,
-                          const std::string &name)
-{
+bool assertFastSearchAttribute(const AttributesConfig::Attribute& attribute, const std::string& name) {
     SCOPED_TRACE(name);
     bool failed = false;
     EXPECT_EQ(name, attribute.name) << (failed = true, "");
@@ -140,11 +132,7 @@ assertFastSearchAttribute(const AttributesConfig::Attribute &attribute,
     return !failed;
 }
 
-
-bool
-assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute &attribute,
-                                 const std::string &name)
-{
+bool assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute& attribute, const std::string& name) {
     SCOPED_TRACE(name);
     bool failed = false;
     EXPECT_EQ(name, attribute.name) << (failed = true, "");
@@ -163,10 +151,8 @@ assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute &attribute,
     return !failed;
 }
 
-bool
-assertTensorAttribute(const AttributesConfig::Attribute &attribute,
-                      const std::string &name, const std::string &spec, int max_links_per_node)
-{
+bool assertTensorAttribute(const AttributesConfig::Attribute& attribute, const std::string& name,
+                           const std::string& spec, int max_links_per_node) {
     SCOPED_TRACE(name);
     bool failed = false;
     EXPECT_EQ(attribute.name, name) << (failed = true, "");
@@ -189,9 +175,7 @@ assertTensorAttribute(const AttributesConfig::Attribute &attribute,
     return !failed;
 }
 
-bool
-assertAttributes(const AttributesConfig::AttributeVector &attributes)
-{
+bool assertAttributes(const AttributesConfig::AttributeVector& attributes) {
     bool failed = false;
     EXPECT_EQ(8u, attributes.size()) << (failed = true, "");
     if (failed) {
@@ -211,11 +195,13 @@ assertAttributes(const AttributesConfig::AttributeVector &attributes)
     }
     if (!assertTensorAttribute(attributes[4], "tensor1", "tensor(x[100])", 16)) {
         return false;
-    }                                                                         
+    }
     if (!assertTensorAttribute(attributes[5], "tensor2", "tensor(x[100])", 16)) {
         return false;
     }
-    if (!assert_string_attribute(attributes[6], "string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::BTREE)) {
+    if (!assert_string_attribute(attributes[6], "string1", std::nullopt,
+                                 AttributesConfig::Attribute::Dictionary::Type::BTREE))
+    {
         return false;
     }
     if (!assert_string_attribute(attributes[7], "string2", true, std::nullopt)) {
@@ -224,10 +210,7 @@ assertAttributes(const AttributesConfig::AttributeVector &attributes)
     return true;
 }
 
-
-bool
-assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
-{
+bool assertLiveAttributes(const AttributesConfig::AttributeVector& attributes) {
     bool failed = false;
     EXPECT_EQ(9u, attributes.size()) << (failed = true, "");
     if (failed) {
@@ -250,11 +233,13 @@ assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
     }
     if (!assertTensorAttribute(attributes[5], "tensor1", "tensor(x[100])", 32)) {
         return false;
-    }                                                                         
+    }
     if (!assertTensorAttribute(attributes[6], "tensor2", "tensor(x[200])", 32)) {
         return false;
-    }                                                                         
-    if (!assert_string_attribute(attributes[7], "string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::HASH)) {
+    }
+    if (!assert_string_attribute(attributes[7], "string1", std::nullopt,
+                                 AttributesConfig::Attribute::Dictionary::Type::HASH))
+    {
         return false;
     }
     if (!assert_string_attribute(attributes[8], "string2", false, std::nullopt)) {
@@ -263,10 +248,7 @@ assertLiveAttributes(const AttributesConfig::AttributeVector &attributes)
     return true;
 }
 
-
-bool
-assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
-{
+bool assertScoutedAttributes(const AttributesConfig::AttributeVector& attributes) {
     bool failed = false;
     EXPECT_EQ(8u, attributes.size()) << (failed = true, "");
     if (failed) {
@@ -286,11 +268,13 @@ assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
     }
     if (!assertTensorAttribute(attributes[4], "tensor1", "tensor(x[100])", 32)) {
         return false;
-    }                                                                         
+    }
     if (!assertTensorAttribute(attributes[5], "tensor2", "tensor(x[100])", 16)) {
         return false;
-    }                                                                         
-    if (!assert_string_attribute(attributes[6], "string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::HASH)) {
+    }
+    if (!assert_string_attribute(attributes[6], "string1", std::nullopt,
+                                 AttributesConfig::Attribute::Dictionary::Type::HASH))
+    {
         return false;
     }
     if (!assert_string_attribute(attributes[7], "string2", false, std::nullopt)) {
@@ -299,18 +283,15 @@ assertScoutedAttributes(const AttributesConfig::AttributeVector &attributes)
     return true;
 }
 
-
-AttributesConfig::Attribute
-setupDefaultAttribute(const std::string & name)
-{
+AttributesConfig::Attribute setupDefaultAttribute(const std::string& name) {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
     return attribute;
 }
 
 AttributesConfig::Attribute
-setup_string_attribute(const std::string& name, std::optional<bool> uncased, std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type)
-{
+setup_string_attribute(const std::string& name, std::optional<bool> uncased,
+                       std::optional<AttributesConfig::Attribute::Dictionary::Type> dictionary_type) {
     using Attribute = AttributesConfig::Attribute;
     using Datatype = Attribute::Datatype;
     using Dictionary = Attribute::Dictionary;
@@ -333,19 +314,14 @@ setup_string_attribute(const std::string& name, std::optional<bool> uncased, std
     return attribute;
 }
 
-AttributesConfig::Attribute
-setupFastSearchAttribute(const std::string & name)
-{
+AttributesConfig::Attribute setupFastSearchAttribute(const std::string& name) {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
     attribute.fastsearch = true;
     return attribute;
 }
 
-
-AttributesConfig::Attribute
-setupFastSearchAndMoreAttribute(const std::string & name)
-{
+AttributesConfig::Attribute setupFastSearchAndMoreAttribute(const std::string& name) {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
     attribute.fastsearch = true;
@@ -354,9 +330,8 @@ setupFastSearchAndMoreAttribute(const std::string & name)
     return attribute;
 }
 
-AttributesConfig::Attribute
-setupTensorAttribute(const std::string &name, const std::string &spec, int max_links_per_node)
-{
+AttributesConfig::Attribute setupTensorAttribute(const std::string& name, const std::string& spec,
+                                                 int max_links_per_node) {
     AttributesConfig::Attribute attribute;
     attribute.name = name;
     attribute.datatype = AttributesConfig::Attribute::Datatype::TENSOR;
@@ -366,23 +341,19 @@ setupTensorAttribute(const std::string &name, const std::string &spec, int max_l
     return attribute;
 }
 
-void
-setupDefaultAttributes(AttributesConfigBuilder::AttributeVector &attributes)
-{
+void setupDefaultAttributes(AttributesConfigBuilder::AttributeVector& attributes) {
     attributes.push_back(setupDefaultAttribute("a1"));
     attributes.push_back(setupDefaultAttribute("a2"));
     attributes.push_back(setupDefaultAttribute("a3"));
     attributes.push_back(setupDefaultAttribute("a4"));
     attributes.push_back(setupTensorAttribute("tensor1", "tensor(x[100])", 16));
     attributes.push_back(setupTensorAttribute("tensor2", "tensor(x[100])", 16));
-    attributes.push_back(setup_string_attribute("string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::BTREE));
+    attributes.push_back(
+        setup_string_attribute("string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::BTREE));
     attributes.push_back(setup_string_attribute("string2", true, std::nullopt));
 }
 
-
-void
-setupLiveAttributes(AttributesConfigBuilder::AttributeVector &attributes)
-{
+void setupLiveAttributes(AttributesConfigBuilder::AttributeVector& attributes) {
     attributes.push_back(setupFastSearchAttribute("a0"));
     attributes.push_back(setupFastSearchAndMoreAttribute("a1"));
     attributes.push_back(setupFastSearchAttribute("a2"));
@@ -393,31 +364,30 @@ setupLiveAttributes(AttributesConfigBuilder::AttributeVector &attributes)
     attributes.back().createifnonexistent = true;
     attributes.push_back(setupTensorAttribute("tensor1", "tensor(x[100])", 32));
     attributes.push_back(setupTensorAttribute("tensor2", "tensor(x[200])", 32));
-    attributes.push_back(setup_string_attribute("string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::HASH));
+    attributes.push_back(
+        setup_string_attribute("string1", std::nullopt, AttributesConfig::Attribute::Dictionary::Type::HASH));
     attributes.push_back(setup_string_attribute("string2", false, std::nullopt));
 }
 
-}
+} // namespace
 
-TEST(DocumentDBConfigScoutTest, Test_that_DocumentDBConfigScout_scout_looks_ahead)
-{
+TEST(DocumentDBConfigScoutTest, Test_that_DocumentDBConfigScout_scout_looks_ahead) {
     AttributesConfigBuilder attributes;
     setupDefaultAttributes(attributes.attribute);
-    
+
     AttributesConfigBuilder liveAttributes;
     setupLiveAttributes(liveAttributes.attribute);
 
     shared_ptr<const DocumentTypeRepo> repo(make_shared<DocumentTypeRepo>());
-    std::shared_ptr<const Schema> schema(make_shared<Schema>());
-    DDBCSP cfg = getConfig(4, schema, repo, attributes);
-    DDBCSP liveCfg = getConfig(4, schema, repo, liveAttributes);
+    std::shared_ptr<const Schema>      schema(make_shared<Schema>());
+    DDBCSP                             cfg = getConfig(4, schema, repo, attributes);
+    DDBCSP                             liveCfg = getConfig(4, schema, repo, liveAttributes);
     EXPECT_FALSE(*cfg == *liveCfg);
     DDBCSP scoutedCfg = DocumentDBConfigScout::scout(cfg, *liveCfg);
     EXPECT_FALSE(*cfg == *scoutedCfg);
     EXPECT_FALSE(*liveCfg == *scoutedCfg);
-    
+
     EXPECT_TRUE(assertAttributes(cfg->getAttributesConfig().attribute));
     EXPECT_TRUE(assertLiveAttributes(liveCfg->getAttributesConfig().attribute));
-    EXPECT_TRUE(assertScoutedAttributes(scoutedCfg->getAttributesConfig().
-                                        attribute));
+    EXPECT_TRUE(assertScoutedAttributes(scoutedCfg->getAttributesConfig().attribute));
 }

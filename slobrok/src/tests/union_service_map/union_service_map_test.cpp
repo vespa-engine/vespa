@@ -10,11 +10,11 @@ using namespace slobrok;
 using vespalib::make_string_short::fmt;
 
 TEST(UnionServiceMapTest, forwards_simple_requests) {
-    ProxyMapSource source;
+    ProxyMapSource  source;
     UnionServiceMap unionizer;
     MockMapListener observer;
-    auto subscription1 = MapSubscription::subscribe(unionizer, observer);
-    auto subscription2 = MapSubscription::subscribe(source, unionizer);
+    auto            subscription1 = MapSubscription::subscribe(unionizer, observer);
+    auto            subscription2 = MapSubscription::subscribe(source, unionizer);
 
     EXPECT_EQ(observer.last_event, MockEvent::NONE);
 
@@ -40,15 +40,15 @@ TEST(UnionServiceMapTest, forwards_simple_requests) {
 }
 
 TEST(UnionServiceMapTest, handles_refcount) {
-    ProxyMapSource source1;
-    ProxyMapSource source2;
-    ProxyMapSource source3;
+    ProxyMapSource  source1;
+    ProxyMapSource  source2;
+    ProxyMapSource  source3;
     UnionServiceMap unionizer;
     MockMapListener observer;
-    auto subscription1 = MapSubscription::subscribe(unionizer, observer);
-    auto subscription2 = MapSubscription::subscribe(source1, unionizer);
-    auto subscription3 = MapSubscription::subscribe(source2, unionizer);
-    auto subscription4 = MapSubscription::subscribe(source3, unionizer);
+    auto            subscription1 = MapSubscription::subscribe(unionizer, observer);
+    auto            subscription2 = MapSubscription::subscribe(source1, unionizer);
+    auto            subscription3 = MapSubscription::subscribe(source2, unionizer);
+    auto            subscription4 = MapSubscription::subscribe(source3, unionizer);
 
     EXPECT_EQ(observer.last_event, MockEvent::NONE);
     ServiceMapping one{"foo/1", "bar/1"};
@@ -89,15 +89,15 @@ TEST(UnionServiceMapTest, handles_refcount) {
 }
 
 TEST(UnionServiceMapTest, handles_conflicts) {
-    ProxyMapSource source1;
-    ProxyMapSource source2;
-    ProxyMapSource source3;
+    ProxyMapSource  source1;
+    ProxyMapSource  source2;
+    ProxyMapSource  source3;
     UnionServiceMap unionizer;
     MockMapListener observer;
-    auto subscription1 = MapSubscription::subscribe(unionizer, observer);
-    auto subscription2 = MapSubscription::subscribe(source1, unionizer);
-    auto subscription3 = MapSubscription::subscribe(source2, unionizer);
-    auto subscription4 = MapSubscription::subscribe(source3, unionizer);
+    auto            subscription1 = MapSubscription::subscribe(unionizer, observer);
+    auto            subscription2 = MapSubscription::subscribe(source1, unionizer);
+    auto            subscription3 = MapSubscription::subscribe(source2, unionizer);
+    auto            subscription4 = MapSubscription::subscribe(source3, unionizer);
 
     EXPECT_EQ(observer.last_event, MockEvent::NONE);
     ServiceMapping one{"foo/1", "bar/1"};
@@ -138,6 +138,4 @@ TEST(UnionServiceMapTest, handles_conflicts) {
     EXPECT_EQ(observer.last_add, two_q);
 }
 
-
 GTEST_MAIN_RUN_ALL_TESTS()
-

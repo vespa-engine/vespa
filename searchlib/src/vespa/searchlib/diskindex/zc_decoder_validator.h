@@ -3,6 +3,7 @@
 #pragma once
 
 #include "zc_decoder.h"
+
 #include <span>
 
 namespace search::diskindex {
@@ -13,22 +14,15 @@ namespace search::diskindex {
  */
 class ZcDecoderValidator : public ZcDecoder {
     std::span<const uint8_t> _buffer;
-public:
-    ZcDecoderValidator() noexcept
-        : ZcDecoder(),
-          _buffer()
-    {
-    }
 
-    ZcDecoderValidator(std::span<const uint8_t> buffer) noexcept
-        : ZcDecoder(buffer.data()),
-          _buffer(buffer)
-    {
-    }
+public:
+    ZcDecoderValidator() noexcept : ZcDecoder(), _buffer() {}
+
+    ZcDecoderValidator(std::span<const uint8_t> buffer) noexcept : ZcDecoder(buffer.data()), _buffer(buffer) {}
 
     size_t pos() const noexcept { return _cur - _buffer.data(); }
     bool at_end() const noexcept { return pos() == _buffer.size(); }
     bool before_end() const noexcept { return pos() < _buffer.size(); }
 };
 
-}
+} // namespace search::diskindex

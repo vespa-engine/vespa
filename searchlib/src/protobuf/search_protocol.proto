@@ -66,6 +66,7 @@ message SearchReply {
     bytes slime_trace = 9;
     repeated Error errors = 10;
     repeated string match_feature_names = 11;
+    bool degraded_by_ann_timeout = 12;
 }
 
 message Error {
@@ -314,6 +315,7 @@ message ItemPhrase {
 message ItemSameElement {
     TermItemProperties properties = 1;
     repeated QueryTreeItem children = 2;
+    repeated uint32 element_filter = 3;
 }
 
 // special-purpose leaf nodes:

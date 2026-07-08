@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -58,7 +60,7 @@ public class DistributionDiff {
 
     private static void addIfDiffers(IntegerDiff diff, String name, List<String> diffs) {
         if (diff.differs()) {
-            diffs.add("%s: %d -> %d".formatted(name, diff.before, diff.after));
+            diffs.add(Text.format("%s: %d -> %d", name, diff.before, diff.after));
         }
     }
 

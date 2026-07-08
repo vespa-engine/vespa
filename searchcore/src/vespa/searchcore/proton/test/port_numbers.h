@@ -19,4 +19,4 @@ constexpr int persistenceconformance_tls_port_max_bias = 9;
 
 constexpr int proton_disk_layout_tls_port = 9018;
 
-}
+} // namespace proton::test::port_numbers

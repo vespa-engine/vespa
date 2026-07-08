@@ -14,4 +14,4 @@ struct FileSettings {
     static constexpr size_t DIRECTIO_ALIGNMENT = 4_Ki;
 };
 
-}
+} // namespace search

@@ -9,8 +9,7 @@ namespace vespalib {
  * This is a concrete object visitor that will build up a structured
  * human-readable string representation of an object.
  **/
-class ObjectDumper : public ObjectVisitor
-{
+class ObjectDumper : public ObjectVisitor {
 private:
     std::string _str;
     int         _indent;
@@ -29,7 +28,7 @@ private:
      *
      * @param line the line we want to add
      **/
-    void addLine(const std::string &line);
+    void addLine(const std::string& line);
 
     /**
      * Open a subscope by increasing the current indent level
@@ -58,7 +57,7 @@ public:
      *
      * @return object string representation
      **/
-    const std::string & toString() const { return _str; }
+    const std::string& toString() const { return _str; }
 
     void openStruct(std::string_view name, std::string_view type) override;
     void closeStruct() override;

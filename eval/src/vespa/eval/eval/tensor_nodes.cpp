@@ -1,26 +1,52 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_nodes.h"
+
 #include "node_visitor.h"
 
 namespace vespalib::eval::nodes {
 
-void TensorMap            ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorMapSubspaces   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorFilterSubspaces::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorJoin           ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorMerge          ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorReduce         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorRename         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorConcat         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorCellCast       ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorCellOrder      ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorCreate         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorLambda         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorPeek           ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorMap ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorMapSubspaces ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorFilterSubspaces::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorJoin ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorMerge ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorReduce ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorRename ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorConcat ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorCellCast ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorCellOrder ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorCreate ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorLambda ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
+void TensorPeek ::accept(NodeVisitor& visitor) const {
+    visitor.visit(*this);
+}
 
-std::string
-TensorMap::dump(DumpContext &ctx) const {
+std::string TensorMap::dump(DumpContext& ctx) const {
     std::string str;
     str += "map(";
     str += _child->dump(ctx);
@@ -30,8 +56,7 @@ TensorMap::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorMapSubspaces::dump(DumpContext &ctx) const {
+std::string TensorMapSubspaces::dump(DumpContext& ctx) const {
     std::string str;
     str += "map_subspaces(";
     str += _child->dump(ctx);
@@ -41,8 +66,7 @@ TensorMapSubspaces::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorFilterSubspaces::dump(DumpContext &ctx) const {
+std::string TensorFilterSubspaces::dump(DumpContext& ctx) const {
     std::string str;
     str += "filter_subspaces(";
     str += _child->dump(ctx);
@@ -52,8 +76,7 @@ TensorFilterSubspaces::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorJoin::dump(DumpContext &ctx) const {
+std::string TensorJoin::dump(DumpContext& ctx) const {
     std::string str;
     str += "join(";
     str += _lhs->dump(ctx);
@@ -65,8 +88,7 @@ TensorJoin::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorMerge::dump(DumpContext &ctx) const {
+std::string TensorMerge::dump(DumpContext& ctx) const {
     std::string str;
     str += "join(";
     str += _lhs->dump(ctx);
@@ -78,14 +100,13 @@ TensorMerge::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorReduce::dump(DumpContext &ctx) const {
+std::string TensorReduce::dump(DumpContext& ctx) const {
     std::string str;
     str += "reduce(";
     str += _child->dump(ctx);
     str += ",";
     str += *AggrNames::name_of(_aggr);
-    for (const auto &dimension: _dimensions) {
+    for (const auto& dimension : _dimensions) {
         str += ",";
         str += dimension;
     }
@@ -93,8 +114,7 @@ TensorReduce::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorRename::dump(DumpContext &ctx) const  {
+std::string TensorRename::dump(DumpContext& ctx) const {
     std::string str;
     str += "rename(";
     str += _child->dump(ctx);
@@ -106,8 +126,7 @@ TensorRename::dump(DumpContext &ctx) const  {
     return str;
 }
 
-std::string
-TensorRename::flatten(const std::vector<std::string> &list) {
+std::string TensorRename::flatten(const std::vector<std::string>& list) {
     if (list.size() == 1) {
         return list[0];
     }
@@ -122,8 +141,7 @@ TensorRename::flatten(const std::vector<std::string> &list) {
     return str;
 }
 
-std::string
-TensorConcat::dump(DumpContext &ctx) const {
+std::string TensorConcat::dump(DumpContext& ctx) const {
     std::string str;
     str += "concat(";
     str += _lhs->dump(ctx);
@@ -135,8 +153,7 @@ TensorConcat::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorCellCast::dump(DumpContext &ctx) const {
+std::string TensorCellCast::dump(DumpContext& ctx) const {
     std::string str;
     str += "cell_cast(";
     str += _child->dump(ctx);
@@ -146,8 +163,7 @@ TensorCellCast::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorCellOrder::dump(DumpContext &ctx) const {
+std::string TensorCellOrder::dump(DumpContext& ctx) const {
     std::string str;
     str += "cell_order(";
     str += _child->dump(ctx);
@@ -157,12 +173,11 @@ TensorCellOrder::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorCreate::dump(DumpContext &ctx) const {
+std::string TensorCreate::dump(DumpContext& ctx) const {
     std::string str = _type.to_spec();
     str += ":{";
     CommaTracker child_list;
-    for (const Child &child: _cells) {
+    for (const Child& child : _cells) {
         child_list.maybe_add_comma(str);
         str += as_string(child.first);
         str += ":";
@@ -172,8 +187,7 @@ TensorCreate::dump(DumpContext &ctx) const {
     return str;
 }
 
-std::string
-TensorLambda::dump(DumpContext &) const {
+std::string TensorLambda::dump(DumpContext&) const {
     std::string str = _type.to_spec();
     std::string expr = _lambda->dump();
     if (expr.starts_with("(")) {
@@ -186,12 +200,11 @@ TensorLambda::dump(DumpContext &) const {
     return str;
 }
 
-std::string
-TensorPeek::dump(DumpContext &ctx) const {
+std::string TensorPeek::dump(DumpContext& ctx) const {
     std::string str = _param->dump(ctx);
     str += "{";
     CommaTracker dim_list;
-    for (const auto &dim : _dim_list) {
+    for (const auto& dim : _dim_list) {
         dim_list.maybe_add_comma(str);
         str += dim.first;
         str += ":";
@@ -212,4 +225,4 @@ TensorPeek::dump(DumpContext &ctx) const {
     return str;
 }
 
-}
+} // namespace vespalib::eval::nodes

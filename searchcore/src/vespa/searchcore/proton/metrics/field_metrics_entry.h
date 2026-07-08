@@ -10,10 +10,10 @@ namespace proton {
  * Class containing metrics for an aspect (attribute or index) of a field.
  */
 struct FieldMetricsEntry : public metrics::MetricSet {
-    MemoryUsageMetrics        memoryUsage;
-    metrics::LongValueMetric  disk_usage;
+    MemoryUsageMetrics       memoryUsage;
+    metrics::LongValueMetric disk_usage;
     FieldMetricsEntry(const std::string& name, const std::string& field_name, const std::string& description);
     ~FieldMetricsEntry() override;
 };
 
-}
+} // namespace proton

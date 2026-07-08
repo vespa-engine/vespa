@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+#include <vespa/storageframework/generic/clock/time.h>
+
 #include <gtest/gtest.h>
 
 namespace storage::framework::defaultimplementation {
 
-TEST(TimeTest, testBasics)
-{
-    MicroSecTime timeMicros(1000*1000);
+TEST(TimeTest, testBasics) {
+    MicroSecTime timeMicros(1000 * 1000);
 
     MicroSecTime timeMicros2 = timeMicros;
     EXPECT_EQ(timeMicros2, timeMicros);
@@ -20,8 +20,7 @@ TEST(TimeTest, testBasics)
     EXPECT_GT(timeMicros, timeMicros2);
 }
 
-TEST(TimeTest, testCreatedFromClock)
-{
+TEST(TimeTest, testCreatedFromClock) {
     defaultimplementation::FakeClock clock;
     clock.setAbsoluteTimeInSeconds(600);
 
@@ -29,8 +28,7 @@ TEST(TimeTest, testCreatedFromClock)
     EXPECT_EQ(vespalib::steady_time(600s), clock.getMonotonicTime());
 }
 
-TEST(TimeTest, canAssignMicrosecondResolutionTimeToFakeClock)
-{
+TEST(TimeTest, canAssignMicrosecondResolutionTimeToFakeClock) {
     defaultimplementation::FakeClock clock;
     clock.setAbsoluteTimeInMicroSeconds(1234567); // 1.234567 seconds
 
@@ -39,4 +37,4 @@ TEST(TimeTest, canAssignMicrosecondResolutionTimeToFakeClock)
     // All non-microsec time points must necessarily be truncated.
 }
 
-}
+} // namespace storage::framework::defaultimplementation

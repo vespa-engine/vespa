@@ -12,13 +12,13 @@
 #pragma once
 
 #include "valueupdate.h"
+
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace document {
 
 class MapValueUpdate final : public ValueUpdate {
 public:
-
     /**
      * The default constructor requires a value for this object's value and
      * update member.
@@ -27,10 +27,10 @@ public:
      * @param update The update to map to apply to the field value of this.
      */
     MapValueUpdate(std::unique_ptr<FieldValue> key, std::unique_ptr<ValueUpdate> update);
-    MapValueUpdate(const MapValueUpdate &) = delete;
-    MapValueUpdate & operator = (const MapValueUpdate &) = delete;
-    MapValueUpdate(MapValueUpdate &&) = default;
-    MapValueUpdate & operator = (MapValueUpdate &&) = default;
+    MapValueUpdate(const MapValueUpdate&) = delete;
+    MapValueUpdate& operator=(const MapValueUpdate&) = delete;
+    MapValueUpdate(MapValueUpdate&&) = default;
+    MapValueUpdate& operator=(MapValueUpdate&&) = default;
 
     ~MapValueUpdate() override;
 
@@ -60,8 +60,8 @@ public:
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
 
 private:
-    std::unique_ptr<FieldValue> _key; // The field value this update is mapping to.
-    std::unique_ptr<ValueUpdate> _update; //The update to apply to the value member of this.
+    std::unique_ptr<FieldValue>  _key;    // The field value this update is mapping to.
+    std::unique_ptr<ValueUpdate> _update; // The update to apply to the value member of this.
 
     // Used by ValueUpdate's static factory function
     // Private because it generates an invalid object.
@@ -71,5 +71,4 @@ private:
     ACCEPT_UPDATE_VISITOR;
 };
 
-}
-
+} // namespace document

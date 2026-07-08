@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "splunk-stopper.h"
+
 #include "child-handler.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".splunk-stopper");
 
-SplunkStopper::SplunkStopper(const char *configId) {
+SplunkStopper::SplunkStopper(const char* configId) {
     start(configId);
 }
 

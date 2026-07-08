@@ -3,7 +3,9 @@
 #pragma once
 
 #include "onnx_model.h"
+
 #include <vespa/config-onnx-models.h>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -27,15 +29,15 @@ private:
 public:
     OnnxModels();
     OnnxModels(Vector models);
-    OnnxModels(OnnxModels &&) noexcept;
-    OnnxModels & operator=(OnnxModels &&) = delete;
-    OnnxModels(const OnnxModels &) = delete;
-    OnnxModels & operator =(const OnnxModels &) = delete;
+    OnnxModels(OnnxModels&&) noexcept;
+    OnnxModels& operator=(OnnxModels&&) = delete;
+    OnnxModels(const OnnxModels&) = delete;
+    OnnxModels& operator=(const OnnxModels&) = delete;
     ~OnnxModels();
-    bool operator==(const OnnxModels &rhs) const;
-    [[nodiscard]] const Model *getModel(const std::string &name) const;
+    bool operator==(const OnnxModels& rhs) const;
+    [[nodiscard]] const Model* getModel(const std::string& name) const;
     [[nodiscard]] size_t size() const { return _models.size(); }
-    static void configure(const ModelConfig &config, Model &model);
+    static void configure(const ModelConfig& config, Model& model);
 };
 
-}
+} // namespace search::fef

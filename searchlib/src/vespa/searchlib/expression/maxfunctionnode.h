@@ -6,17 +6,16 @@
 namespace search {
 namespace expression {
 
-class MaxFunctionNode : public NumericFunctionNode
-{
+class MaxFunctionNode : public NumericFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(MaxFunctionNode);
-    MaxFunctionNode() { }
+    MaxFunctionNode() {}
+
 private:
-    void onArgument(const ResultNode & arg, ResultNode & result) const override;
-    ResultNode & flatten(const ResultNodeVector & v, ResultNode & result) const override { return v.flattenMax(result); }
+    void onArgument(const ResultNode& arg, ResultNode& result) const override;
+    ResultNode& flatten(const ResultNodeVector& v, ResultNode& result) const override { return v.flattenMax(result); }
     ResultNode::CP getInitialValue() const override;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

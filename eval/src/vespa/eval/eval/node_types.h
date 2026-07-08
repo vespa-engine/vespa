@@ -3,11 +3,14 @@
 #pragma once
 
 #include "value_type.h"
+
 #include <map>
 
 namespace vespalib::eval {
 
-namespace nodes { struct Node; }
+namespace nodes {
+struct Node;
+}
 class Function;
 
 /**
@@ -17,36 +20,32 @@ class Function;
  * function parameters. The default constructor creates an empty type
  * repo where all lookups will result in error types.
  **/
-class NodeTypes
-{
+class NodeTypes {
 private:
-    ValueType _not_found;
-    std::map<const nodes::Node*,ValueType> _type_map;
-    std::vector<std::string> _errors;
+    ValueType                               _not_found;
+    std::map<const nodes::Node*, ValueType> _type_map;
+    std::vector<std::string>                _errors;
+
 public:
     NodeTypes();
-    NodeTypes(NodeTypes &&rhs) = default;
-    NodeTypes &operator=(NodeTypes &&rhs) = default;
-    NodeTypes(const nodes::Node &const_node);
-    NodeTypes(const Function &function, const std::vector<ValueType> &input_types);
+    NodeTypes(NodeTypes&& rhs) = default;
+    NodeTypes& operator=(NodeTypes&& rhs) = default;
+    NodeTypes(const nodes::Node& const_node);
+    NodeTypes(const Function& function, const std::vector<ValueType>& input_types);
     ~NodeTypes();
-    const std::vector<std::string> &errors() const { return _errors; }
-    NodeTypes export_types(const nodes::Node &root) const;
-    const ValueType &get_type(const nodes::Node &node) const;
-    template <typename F>
-    void each(F &&f) const {
-        for (const auto &entry: _type_map) {
+    const std::vector<std::string>& errors() const { return _errors; }
+    NodeTypes export_types(const nodes::Node& root) const;
+    const ValueType& get_type(const nodes::Node& node) const;
+    template <typename F> void each(F&& f) const {
+        for (const auto& entry : _type_map) {
             f(*entry.first, entry.second);
         }
     }
     bool all_types_are_double() const {
         bool all_double = true;
-        each([&all_double](const nodes::Node &, const ValueType &type)
-             {
-                 all_double &= type.is_double();
-             });
+        each([&all_double](const nodes::Node&, const ValueType& type) { all_double &= type.is_double(); });
         return (all_double && (_type_map.size() > 0));
     }
 };
 
-}
+} // namespace vespalib::eval

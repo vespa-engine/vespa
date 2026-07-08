@@ -12,32 +12,45 @@ namespace search::attribute {
  * Class handling storage of raw values in an array store. A stored entry
  * starts with 4 bytes that contains the size of the raw value.
  */
-class RawBufferStore
-{
+class RawBufferStore {
     using EntryRef = vespalib::datastore::EntryRef;
     using RefType = vespalib::datastore::EntryRefT<19>;
     using TypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<char>;
     using ArrayStoreType = vespalib::datastore::ArrayStore<char, RefType, TypeMapper>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
 
-    ArrayStoreType                      _array_store;
+    ArrayStoreType _array_store;
+    uint64_t       _raw_bytes;
+
 public:
-    static constexpr double array_store_grow_factor = 1.03;
+    static constexpr double   array_store_grow_factor = 1.03;
     static constexpr uint32_t array_store_max_type_id = 400;
-    static constexpr size_t max_buffer_size = vespalib::datastore::ArrayStoreConfig::default_max_buffer_size;
+    static constexpr size_t   max_buffer_size = vespalib::datastore::ArrayStoreConfig::default_max_buffer_size;
 
-    RawBufferStore(std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_type_id, double grow_factor);
+    RawBufferStore(std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_type_id,
+                   double grow_factor);
     ~RawBufferStore();
-    EntryRef set(std::span<const char> raw) { return _array_store.add(raw); };
+    EntryRef set(std::span<const char> raw) {
+        _raw_bytes += raw.size();
+        return _array_store.add(raw);
+    };
     std::span<const char> get(EntryRef ref) const { return _array_store.get(ref); }
-    void remove(EntryRef ref) { _array_store.remove(ref); }
-    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) { return _array_store.update_stat(compaction_strategy); }
+    void remove(EntryRef ref) {
+        _raw_bytes -= _array_store.get(ref).size();
+        _array_store.remove(ref);
+    }
+    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) {
+        return _array_store.update_stat(compaction_strategy);
+    }
     vespalib::AddressSpace get_address_space_usage() const { return _array_store.addressSpaceUsage(); }
     bool consider_compact() const noexcept { return _array_store.consider_compact(); }
-    std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) { return _array_store.compact_worst(compaction_strategy); }
-    void reclaim_memory(generation_t oldest_used_gen) { _array_store.reclaim_memory(oldest_used_gen); }
-    void assign_generation(generation_t current_gen) { _array_store.assign_generation(current_gen); }
+    std::unique_ptr<vespalib::datastore::ICompactionContext>
+    start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) {
+        return _array_store.compact_worst(compaction_strategy);
+    }
+    void reclaim_memory(vespalib::Generation oldest_used_gen) { _array_store.reclaim_memory(oldest_used_gen); }
+    void assign_generation(vespalib::Generation current_gen) { _array_store.assign_generation(current_gen); }
     void set_initializing(bool initializing) { _array_store.setInitializing(initializing); }
+    uint64_t get_raw_bytes() const noexcept { return _raw_bytes; }
 };
 
-}
+} // namespace search::attribute

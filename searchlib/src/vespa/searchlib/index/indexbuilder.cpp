@@ -4,11 +4,9 @@
 
 namespace search::index {
 
-IndexBuilder::IndexBuilder(const Schema &schema)
-    : _schema(schema)
-{
+IndexBuilder::IndexBuilder(const Schema& schema) : _schema(schema) {
 }
 
 IndexBuilder::~IndexBuilder() = default;
 
-}
+} // namespace search::index

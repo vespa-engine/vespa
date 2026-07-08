@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.provision.CertificateNotReadyException;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 
 public class EndpointCertificateSecretsValidator implements Validator {
@@ -10,8 +11,7 @@ public class EndpointCertificateSecretsValidator implements Validator {
     @Override
     public void validate(Context context) {
         if (context.deployState().endpointCertificateSecrets().isPresent() && context.deployState().endpointCertificateSecrets().get().isMissing()) {
-            throw new CertificateNotReadyException("TLS enabled, but could not yet retrieve certificate version %s for application %s"
-                    .formatted(context.deployState().endpointCertificateSecrets().get().version(), context.deployState().getProperties().applicationId().serializedForm()));
+            throw new CertificateNotReadyException(Text.format("TLS enabled, but could not yet retrieve certificate version %s for application %s", context.deployState().endpointCertificateSecrets().get().version(), context.deployState().getProperties().applicationId().serializedForm()));
         }
     }
 }

@@ -140,6 +140,11 @@ http2.streamIdleTimeout double default=600
 
 http2.maxConcurrentStreams int default=512
 
+# Maximum number of HTTP/2 rate-controlled events per second (e.g. WINDOW_UPDATE, RST_STREAM).
+# Jetty's default of 128 is too low given Vespa's default of 512 max concurrent streams.
+# Set to 0 to use Jetty's built-in default. A value of -1 disables rate control entirely.
+http2.maxRateControlEvents int default=50000
+
 # Override the default server name when authority is missing from request.
 serverName.fallback string default=""
 

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
@@ -12,6 +13,7 @@ import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static org.mockito.Mockito.mock;
@@ -136,7 +138,7 @@ public class ClusterFixture {
 
     public ClusterFixture assignDummyRpcAddresses() {
         cluster.getNodeInfos().forEach(ni -> {
-            ni.setRpcAddress(String.format("tcp/%s.%d.local:0",
+            ni.setRpcAddress(Text.format("tcp/%s.%d.local:0",
                     ni.isStorage() ? "storage" : "distributor",
                     ni.getNodeIndex()));
         });

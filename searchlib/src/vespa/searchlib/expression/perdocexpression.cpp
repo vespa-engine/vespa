@@ -6,26 +6,23 @@ namespace expression {
 
 using namespace vespalib;
 
-IMPLEMENT_EXPRESSIONNODE(RelevanceNode,        ExpressionNode);
+IMPLEMENT_EXPRESSIONNODE(RelevanceNode, ExpressionNode);
 
-void
-RelevanceNode::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void RelevanceNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visit(visitor, "Value", _relevance);
 }
 
-Serializer & RelevanceNode::onSerialize(Serializer & os) const
-{
+Serializer& RelevanceNode::onSerialize(Serializer& os) const {
     return _relevance.serialize(os);
 }
 
-Deserializer & RelevanceNode::onDeserialize(Deserializer & is)
-{
+Deserializer& RelevanceNode::onDeserialize(Deserializer& is) {
     return _relevance.deserialize(is);
 }
 
-}
-}
+} // namespace expression
+} // namespace search
 
 // this function was added by ../../forcelink.sh
-void forcelink_file_searchlib_expression_perdocexpression() {}
+void forcelink_file_searchlib_expression_perdocexpression() {
+}

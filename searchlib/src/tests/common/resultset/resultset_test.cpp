@@ -14,7 +14,7 @@ using vespalib::arraysize;
 
 namespace {
 
-void addHit(ResultSet &set, unsigned int doc_id, double rank) {
+void addHit(ResultSet& set, unsigned int doc_id, double rank) {
     set.push_back(RankedHit(doc_id, rank));
 }
 
@@ -34,6 +34,6 @@ TEST(ResultSetTest, require_that_mergeWithOverflow_works) {
     EXPECT_EQ(3u, set1.getNumHits());
 }
 
-}  // namespace
+} // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()

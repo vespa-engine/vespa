@@ -7,49 +7,24 @@ using searchcorespi::IFlushTarget;
 namespace proton::flushengine {
 
 ReservedDiskSpaceCalculator::ReservedDiskSpaceCalculator(size_t concurrent, uint64_t max_summary_file_size) noexcept
-    : _concurrent(concurrent),
-      _max_summary_file_size(max_summary_file_size),
-      _candidates(),
-      _reserved_grow(0)
-{
+    : _max_summary_file_size(max_summary_file_size), _reserved_grow(0), _candidates(concurrent) {
 }
 
 ReservedDiskSpaceCalculator::~ReservedDiskSpaceCalculator() = default;
 
-void
-ReservedDiskSpaceCalculator::track_disk_gain(const IFlushTarget::DiskGain& gain, IFlushTarget::Type type,
-                                             IFlushTarget::Component component)
-{
-    (void) component;
-    (void) type;
+void ReservedDiskSpaceCalculator::track_disk_gain(const IFlushTarget::DiskGain& gain, IFlushTarget::Type type,
+                                                  IFlushTarget::Component component, bool high_priority) {
     if (gain.getAfter() > gain.getBefore()) {
         _reserved_grow += gain.getAfter() - gain.getBefore();
     }
     uint64_t reserved_flush = gain.getAfter();
     if (type == IFlushTarget::Type::GC && component == IFlushTarget::Component::DOCUMENT_STORE &&
-        reserved_flush > _max_summary_file_size) {
+        reserved_flush > _max_summary_file_size)
+    {
         // Flush targets for document store compaction only compacts a single file at a time.
         reserved_flush = _max_summary_file_size;
     }
-    _candidates.emplace_back(reserved_flush);
+    _candidates.add_candidate(reserved_flush, high_priority);
 }
 
-uint64_t
-ReservedDiskSpaceCalculator::get_reserved_disk()
-{
-    if (_concurrent < _candidates.size()) {
-        /*
-         * Retain the _concurrent biggest candidates. They are later used to calculate reserved
-         * disk space for flush.
-         */
-        std::nth_element(_candidates.begin(), _candidates.begin() + _concurrent, _candidates.end());
-        _candidates.resize(_concurrent);
-    }
-    uint64_t reserved_flush = 0;
-    for (auto &candidate : _candidates) {
-        reserved_flush += candidate.reserved();
-    }
-    return _reserved_grow + reserved_flush;
-}
-
-}
+} // namespace proton::flushengine

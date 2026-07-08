@@ -10,14 +10,11 @@ namespace search::docsummary {
  * Explicit values used when JuniperDFWQueryItem doesn't have a query
  * stack dump iterator.
  */
-struct JuniperDFWExplicitItemData
-{
+struct JuniperDFWExplicitItemData {
     std::string_view _index;
-    int32_t _weight;
+    int32_t          _weight;
 
-    JuniperDFWExplicitItemData()
-        : _index(), _weight(0)
-    {}
+    JuniperDFWExplicitItemData() : _index(), _weight(0) {}
 };
 
-}
+} // namespace search::docsummary

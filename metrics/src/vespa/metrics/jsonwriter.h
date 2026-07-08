@@ -15,7 +15,7 @@ class JsonWriter : public MetricVisitor, public vespalib::JsonStreamTypes {
     using DimensionSet = Metric::Tags;
 
     std::vector<DimensionSet> _dimensionStack;
-    uint64_t _period;
+    uint64_t                  _period;
 
 public:
     explicit JsonWriter(vespalib::JsonStream&);
@@ -39,5 +39,4 @@ private:
     static bool isLeafMetric(const Metric& m) { return !m.isMetricSet(); }
 };
 
-}
-
+} // namespace metrics

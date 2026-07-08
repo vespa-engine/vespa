@@ -3,14 +3,19 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/config.h>
+
 #include <memory>
 #include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
-namespace search { class AttributeVector; }
-namespace search::attribute { class Config; }
+namespace search {
+class AttributeVector;
+}
+namespace search::attribute {
+class Config;
+}
 
 namespace search::attribute::test {
 
@@ -20,7 +25,7 @@ namespace search::attribute::test {
 class AttributeBuilder {
 private:
     std::shared_ptr<AttributeVector> _attr_ptr;
-    AttributeVector& _attr;
+    AttributeVector&                 _attr;
 
 public:
     using WeightedInt = std::pair<int32_t, int32_t>;
@@ -70,4 +75,4 @@ public:
     std::shared_ptr<AttributeVector> get() const { return _attr_ptr; }
 };
 
-}
+} // namespace search::attribute::test

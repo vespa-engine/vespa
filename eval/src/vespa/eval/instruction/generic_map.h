@@ -2,11 +2,13 @@
 
 #pragma once
 
-#include <vespa/eval/eval/value_type.h>
-#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/value_type.h>
 
-namespace vespalib::eval { struct ValueBuilderFactory; }
+namespace vespalib::eval {
+struct ValueBuilderFactory;
+}
 
 namespace vespalib::eval::instruction {
 
@@ -14,10 +16,7 @@ using map_fun_t = operation::op1_t;
 
 struct GenericMap {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &result_type,
-                     const ValueType &input_type,
-                     map_fun_t function,
-                     Stash &stash);
+    make_instruction(const ValueType& result_type, const ValueType& input_type, map_fun_t function, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval::instruction

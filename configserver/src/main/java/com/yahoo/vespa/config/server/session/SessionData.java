@@ -9,11 +9,15 @@ import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.serialization.TelemetryExporterConfigurationSerializer;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.config.server.tenant.CloudResourceTagsSerializer;
 import com.yahoo.vespa.config.server.tenant.DataplaneTokenSerializer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
@@ -45,8 +49,10 @@ public record SessionData(ApplicationId applicationId,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount,
+                          CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens,
-                          ActivationTriggers activationTriggers) {
+                          ActivationTriggers activationTriggers,
+                          TelemetryExporterConfiguration telemetryExporterConfiguration) {
 
     // NOTE: Any state added here MUST also be done in SessionPreparer.writeStateToZooKeeper
     // and SessionSerializer.read()/write()
@@ -62,9 +68,11 @@ public record SessionData(ApplicationId applicationId,
     static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
     static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
     static final String CLOUD_ACCOUNT_PATH = "cloudAccount";
+    static final String CLOUD_RESOURCE_TAGS_PATH = "cloudResourceTags";
     static final String DATAPLANE_TOKENS_PATH = "dataplaneTokens";
     static final String SESSION_DATA_PATH = "sessionData";
     static final String ACTIVATION_TRIGGERS_PATH = "activationTriggers";
+    static final String TELEMETRY_EXPORT_CONFIG_PATH = "telemetryExportConfig";
 
     public byte[] toJson() {
         try {
@@ -98,10 +106,16 @@ public record SessionData(ApplicationId applicationId,
 
         cloudAccount.ifPresent(account -> object.setString(CLOUD_ACCOUNT_PATH, account.value()));
 
+        if ( ! cloudResourceTags.isEmpty())
+            CloudResourceTagsSerializer.toSlime(cloudResourceTags, object.setObject(CLOUD_RESOURCE_TAGS_PATH));
+
         Cursor dataplaneTokensArray = object.setArray(DATAPLANE_TOKENS_PATH);
         DataplaneTokenSerializer.toSlime(dataplaneTokens, dataplaneTokensArray);
 
         ActivationTriggersSerializer.toSlime(activationTriggers, object.setObject(ACTIVATION_TRIGGERS_PATH));
+
+        if ( ! telemetryExporterConfiguration.isEmpty())
+            TelemetryExporterConfigurationSerializer.toSlime(telemetryExporterConfiguration, object.setObject(TELEMETRY_EXPORT_CONFIG_PATH));
     }
 
     static SessionData fromSlime(Slime slime) {
@@ -122,8 +136,10 @@ public record SessionData(ApplicationId applicationId,
                                TenantSecretStoreSerializer.listFromSlime(cursor.field(TENANT_SECRET_STORES_PATH)),
                                OperatorCertificateSerializer.fromSlime(cursor.field(OPERATOR_CERTIFICATES_PATH)),
                                optionalString(cursor.field(CLOUD_ACCOUNT_PATH)).map(CloudAccount::from),
+                               CloudResourceTagsSerializer.fromSlime(cursor.field(CLOUD_RESOURCE_TAGS_PATH)),
                                DataplaneTokenSerializer.fromSlime(cursor.field(DATAPLANE_TOKENS_PATH)),
-                               ActivationTriggersSerializer.fromSlime(cursor.field(ACTIVATION_TRIGGERS_PATH)));
+                               ActivationTriggersSerializer.fromSlime(cursor.field(ACTIVATION_TRIGGERS_PATH)),
+                               TelemetryExporterConfigurationSerializer.fromSlime(cursor.field(TELEMETRY_EXPORT_CONFIG_PATH)));
     }
 
 }

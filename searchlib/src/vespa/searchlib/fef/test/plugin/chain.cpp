@@ -1,40 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "chain.h"
+
 #include <vespa/vespalib/util/stash.h>
+
 #include <sstream>
 
 namespace search::fef::test {
 
-ChainExecutor::ChainExecutor() :
-    FeatureExecutor()
-{
+ChainExecutor::ChainExecutor() : FeatureExecutor() {
 }
 
-void
-ChainExecutor::execute(uint32_t)
-{
+void ChainExecutor::execute(uint32_t) {
     outputs().set_number(0, inputs().get_number(0));
 }
 
-
-ChainBlueprint::ChainBlueprint() :
-    Blueprint("chain")
-{
+ChainBlueprint::ChainBlueprint() : Blueprint("chain") {
 }
 
-bool
-ChainBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & params)
-{
-    (void) indexEnv;
+bool ChainBlueprint::setup(const IIndexEnvironment& indexEnv, const StringVector& params) {
+    (void)indexEnv;
     if (params.size() != 3) { // [type, children, value]
         return false;
     }
-    const std::string & type = params[0];
-    const std::string & children = params[1];
-    const std::string & value = params[2];
+    const std::string& type = params[0];
+    const std::string& children = params[1];
+    const std::string& value = params[2];
 
-    uint32_t numChildren;
+    uint32_t           numChildren;
     std::istringstream iss(children);
     iss >> std::dec >> numChildren;
     std::ostringstream oss;
@@ -59,11 +52,9 @@ ChainBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & p
     return true;
 }
 
-FeatureExecutor &
-ChainBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
-{
-    (void) queryEnv;
+FeatureExecutor& ChainBlueprint::createExecutor(const IQueryEnvironment& queryEnv, vespalib::Stash& stash) const {
+    (void)queryEnv;
     return stash.create<ChainExecutor>();
 }
 
-}
+} // namespace search::fef::test

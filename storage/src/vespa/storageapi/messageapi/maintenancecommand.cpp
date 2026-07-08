@@ -4,6 +4,7 @@
 
 namespace storage::api {
 
-MaintenanceCommand::~MaintenanceCommand() {}
-
+MaintenanceCommand::~MaintenanceCommand() {
 }
+
+} // namespace storage::api

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
+import com.yahoo.document.PositionDataType;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.request.AddFunction;
 import com.yahoo.search.grouping.request.AggregatorNode;
@@ -25,11 +26,13 @@ import com.yahoo.search.grouping.request.DocIdNsSpecificValue;
 import com.yahoo.search.grouping.request.DoubleValue;
 import com.yahoo.search.grouping.request.FilterExpression;
 import com.yahoo.search.grouping.request.FixedWidthFunction;
+import com.yahoo.search.grouping.request.GeoDistanceFunction;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.request.HourOfDayFunction;
 import com.yahoo.search.grouping.request.InfiniteValue;
 import com.yahoo.search.grouping.request.InterpolatedLookup;
+import com.yahoo.search.grouping.request.IsTruePredicate;
 import com.yahoo.search.grouping.request.LongValue;
 import com.yahoo.search.grouping.request.MathACosFunction;
 import com.yahoo.search.grouping.request.MathACosHFunction;
@@ -124,11 +127,13 @@ import com.yahoo.searchlib.expression.FixedWidthBucketFunctionNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNodeVector;
 import com.yahoo.searchlib.expression.FloatResultNode;
+import com.yahoo.searchlib.expression.GeoDistanceFunctionNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.InterpolatedLookupNode;
+import com.yahoo.searchlib.expression.IsTruePredicateNode;
 import com.yahoo.searchlib.expression.MD5BitFunctionNode;
 import com.yahoo.searchlib.expression.MathFunctionNode;
 import com.yahoo.searchlib.expression.MaxFunctionNode;
@@ -166,6 +171,7 @@ import com.yahoo.searchlib.expression.UcaFunctionNode;
 import com.yahoo.searchlib.expression.XorBitFunctionNode;
 import com.yahoo.searchlib.expression.XorFunctionNode;
 import com.yahoo.searchlib.expression.ZCurveFunctionNode;
+import com.yahoo.text.Text;
 
 /**
  * This is a helper class for {@link RequestBuilder} that offloads the code to convert {@link GroupingExpression} type
@@ -271,6 +277,8 @@ class ExpressionConverter {
             return new RegexPredicateNode(rp.getPattern(), toExpressionNode(rp.getExpression()));
         } else if (expression instanceof RangePredicate rp) {
             return new RangePredicateNode(rp.getLower(), rp.getUpper(), toExpressionNode(rp.getExpression()), rp.getLowerInclusive(), rp.getUpperInclusive());
+        } else if (expression instanceof IsTruePredicate rp) {
+            return new IsTruePredicateNode(toExpressionNode(rp.getExpression()));
         } else if (expression instanceof NotPredicate np) {
             return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else if (expression instanceof OrPredicate op) {
@@ -281,7 +289,7 @@ class ExpressionConverter {
             return new AndPredicateNode(args);
         } else {
             throw new IllegalInputException(
-                    "Can not convert '%s' to a filter expression.".formatted(expression.getClass().getSimpleName()));
+                    Text.format("Can not convert \'%s\' to a filter expression.", expression.getClass().getSimpleName()));
         }
     }
 
@@ -339,6 +347,17 @@ class ExpressionConverter {
             return new FixedWidthBucketFunctionNode(
                     w instanceof Double ? new FloatResultNode(w.doubleValue()) : new IntegerResultNode(w.longValue()),
                     toExpressionNode(fixedWidthFunction.getArg(0)));
+        }
+        if (exp instanceof GeoDistanceFunction gdf) {
+            AttributeFunction pos = (AttributeFunction) gdf.getArg(0);
+            String zcurveName = PositionDataType.getZCurveFieldName(pos.getAttributeName());
+            GeoDistanceFunctionNode.Unit unit = gdf.getUnit().equals("km")
+                    ? GeoDistanceFunctionNode.Unit.KM
+                    : GeoDistanceFunctionNode.Unit.MILES;
+            return new GeoDistanceFunctionNode(new AttributeNode(zcurveName),
+                                               toExpressionNode(gdf.getArg(1)),
+                                               toExpressionNode(gdf.getArg(2)),
+                                               unit);
         }
         if (exp instanceof LongValue value) {
             return new ConstantNode(new IntegerResultNode(value.getValue()));

@@ -3,39 +3,40 @@
 #pragma once
 
 #include "utils.h"
+
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/fef/blueprint.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-namespace search::fef { class Property; }
-namespace vespalib { class nbostream; }
+namespace search::fef {
+class Property;
+}
+namespace vespalib {
+class nbostream;
+}
 
 namespace search::features {
 
 namespace dotproduct {
 
 struct ConstCharComparator {
-    bool operator()(const char * lhs, const char * rhs) const {
-        return strcmp(lhs, rhs) == 0;
-    }
+    bool operator()(const char* lhs, const char* rhs) const { return strcmp(lhs, rhs) == 0; }
 };
 
-template <typename Src, typename Dst>
-struct Converter {
-    Dst convert(const Src & value) const { return value; }
+template <typename Src, typename Dst> struct Converter {
+    Dst convert(const Src& value) const { return value; }
 };
 
-template <>
-struct Converter<std::string, const char *> {
-    const char * convert(const std::string & value) const { return value.c_str(); }
+template <> struct Converter<std::string, const char*> {
+    const char* convert(const std::string& value) const { return value.c_str(); }
 };
 
-template <typename T>
-struct ArrayParam : public fef::Anything {
-    ArrayParam(const fef::Property & prop);
-    ArrayParam(vespalib::nbostream & stream);
+template <typename T> struct ArrayParam : public fef::Anything {
+    ArrayParam(const fef::Property& prop);
+    ArrayParam(vespalib::nbostream& stream);
     ArrayParam(std::vector<T> v) : values(std::move(v)) {}
     ~ArrayParam() override;
     std::vector<T>        values;
@@ -44,34 +45,35 @@ struct ArrayParam : public fef::Anything {
 
 namespace wset {
 
-template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator = std::equal_to<DimensionHType> >
+template <typename DimensionVType, typename DimensionHType, typename ComponentType,
+          typename HashMapComparator = std::equal_to<DimensionHType>>
 class VectorBase : public fef::Anything {
 public:
     using Element = std::pair<DimensionVType, ComponentType>; // <dimension, component>
     using Vector = std::vector<Element>;
-    using HashMap = vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>, HashMapComparator, vespalib::hashtable_base::and_modulator>;
+    using HashMap = vespalib::hash_map<DimensionHType, ComponentType, vespalib::hash<DimensionHType>,
+                                       HashMapComparator, vespalib::hashtable_base::and_modulator>;
+
 protected:
     VectorBase();
-    Vector _vector;
+    Vector  _vector;
     HashMap _dimMap; // dimension -> component
 public:
-    VectorBase(VectorBase && rhs) = default;
-    VectorBase & operator = (VectorBase && rhs) = default;
+    VectorBase(VectorBase&& rhs) = default;
+    VectorBase& operator=(VectorBase&& rhs) = default;
     ~VectorBase();
-    const Vector & getVector() const { return _vector; }
-    VectorBase & syncMap();
-    const HashMap & getDimMap() const { return _dimMap; }
+    const Vector& getVector() const { return _vector; }
+    VectorBase& syncMap();
+    const HashMap& getDimMap() const { return _dimMap; }
     bool empty() const { return _vector.empty(); }
 };
 
-template <typename T>
-using NumericVectorBaseT = VectorBase<T, T, feature_t>;
+template <typename T> using NumericVectorBaseT = VectorBase<T, T, feature_t>;
 
 /**
  * Represents a vector where the dimensions are integers.
  **/
-template<typename T>
-class IntegerVectorT : public NumericVectorBaseT<T> {
+template <typename T> class IntegerVectorT : public NumericVectorBaseT<T> {
 public:
     void insert(std::string_view label, std::string_view value) {
         this->_vector.emplace_back(util::strToNum<T>(label), util::strToNum<feature_t>(value));
@@ -92,8 +94,8 @@ using StringVectorBase = VectorBase<std::string, const char*, feature_t, ConstCh
 class StringVector : public StringVectorBase {
 public:
     StringVector();
-    StringVector(StringVector &&) = default;
-    StringVector & operator = (StringVector &&) = default;
+    StringVector(StringVector&&) = default;
+    StringVector& operator=(StringVector&&) = default;
     ~StringVector();
     void insert(std::string_view label, std::string_view value) {
         _vector.emplace_back(label, util::strToNum<feature_t>(value));
@@ -105,9 +107,10 @@ public:
  **/
 class EnumVector : public VectorBase<attribute::EnumHandle, attribute::EnumHandle, feature_t> {
 private:
-    const attribute::IAttributeVector * _attribute;
+    const attribute::IAttributeVector* _attribute;
+
 public:
-    EnumVector(const attribute::IAttributeVector * attribute) : _attribute(attribute) {}
+    EnumVector(const attribute::IAttributeVector* attribute) : _attribute(attribute) {}
     void insert(std::string_view label, std::string_view value) {
         attribute::EnumHandle e;
         if (_attribute->findEnum(label.data(), e)) {
@@ -121,17 +124,19 @@ public:
  * Only cares about the underlying value type, not the concrete type of the
  * attribute vector itself.
  */
-template <typename BaseType>
-class DotProductExecutorBase : public fef::FeatureExecutor {
+template <typename BaseType> class DotProductExecutorBase : public fef::FeatureExecutor {
 public:
     using AT = multivalue::WeightedValue<BaseType>;
-    using V  = std::conditional_t<std::is_same_v<BaseType,const char*>,StringVectorBase,NumericVectorBaseT<BaseType>>;
+    using V =
+        std::conditional_t<std::is_same_v<BaseType, const char*>, StringVectorBase, NumericVectorBaseT<BaseType>>;
+
 private:
-    const V                                    & _queryVector;
-    const typename V::HashMap::const_iterator    _end;
+    const V&                                  _queryVector;
+    const typename V::HashMap::const_iterator _end;
     virtual std::span<const AT> getAttributeValues(uint32_t docid) = 0;
+
 public:
-    DotProductExecutorBase(const V & queryVector);
+    DotProductExecutorBase(const V& queryVector);
     ~DotProductExecutorBase() override;
     void execute(uint32_t docId) override;
 };
@@ -141,19 +146,23 @@ class DotProductByWeightedSetReadViewExecutor final : public DotProductExecutorB
 public:
     using WeightedSetReadView = attribute::IWeightedSetReadView<BaseType>;
     using AT = typename DotProductExecutorBase<BaseType>::AT;
-    using V  = typename DotProductExecutorBase<BaseType>::V;
+    using V = typename DotProductExecutorBase<BaseType>::V;
+
 protected:
-    const WeightedSetReadView * _weighted_set_read_view;
+    const WeightedSetReadView* _weighted_set_read_view;
+
 private:
     std::unique_ptr<V> _backing;
     std::span<const AT> getAttributeValues(uint32_t docid) override;
+
 public:
-    DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view, const V & queryVector);
-    DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView * weighted_set_read_view, std::unique_ptr<V> queryVector);
+    DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view, const V& queryVector);
+    DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view,
+                                            std::unique_ptr<V>         queryVector);
     ~DotProductByWeightedSetReadViewExecutor();
 };
 
-}
+} // namespace wset
 
 namespace array {
 
@@ -162,15 +171,16 @@ namespace array {
  * Only cares about the underlying value type, not the concrete type of the
  * attribute vector itself.
  */
-template <typename BaseType>
-class DotProductExecutorBase : public fef::FeatureExecutor {
+template <typename BaseType> class DotProductExecutorBase : public fef::FeatureExecutor {
 public:
-    using V  = std::vector<BaseType>;
+    using V = std::vector<BaseType>;
+
 private:
     V _queryVector;
     virtual std::span<const BaseType> getAttributeValues(uint32_t docid) = 0;
+
 public:
-    DotProductExecutorBase(const V & queryVector);
+    DotProductExecutorBase(const V& queryVector);
     ~DotProductExecutorBase() override;
     void execute(uint32_t docId) final override;
 };
@@ -178,43 +188,46 @@ public:
 /**
  * Implements the executor for the dotproduct feature using array read view.
  */
-template <typename BaseType>
-class DotProductByArrayReadViewExecutor : public DotProductExecutorBase<BaseType> {
+template <typename BaseType> class DotProductByArrayReadViewExecutor : public DotProductExecutorBase<BaseType> {
 public:
-    using V  = typename DotProductExecutorBase<BaseType>::V;
+    using V = typename DotProductExecutorBase<BaseType>::V;
     using ArrayReadView = attribute::IArrayReadView<BaseType>;
+
 protected:
     const ArrayReadView* _array_read_view;
+
 private:
     std::span<const BaseType> getAttributeValues(uint32_t docid) override;
+
 public:
-    DotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector);
+    DotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V& queryVector);
     ~DotProductByArrayReadViewExecutor();
 };
 
 /**
  * Implements the executor for the dotproduct feature.
  */
-template <typename A>
-class DotProductExecutor : public DotProductExecutorBase<typename A::BaseType> {
+template <typename A> class DotProductExecutor : public DotProductExecutorBase<typename A::BaseType> {
 public:
-    using V  = typename DotProductExecutorBase<typename A::BaseType>::V;
+    using V = typename DotProductExecutorBase<typename A::BaseType>::V;
+
 protected:
-    const A * _attribute;
+    const A* _attribute;
+
 public:
-    DotProductExecutor(const A * attribute, const V & queryVector);
+    DotProductExecutor(const A* attribute, const V& queryVector);
     ~DotProductExecutor();
 };
 
-template <typename BaseType>
-class SparseDotProductExecutorBase : public DotProductExecutorBase<BaseType> {
+template <typename BaseType> class SparseDotProductExecutorBase : public DotProductExecutorBase<BaseType> {
 public:
     using IV = std::vector<uint32_t>;
     using V = typename DotProductExecutorBase<BaseType>::V;
-    SparseDotProductExecutorBase(const V & queryVector, const IV & queryIndexes);
+    SparseDotProductExecutorBase(const V& queryVector, const IV& queryIndexes);
     ~SparseDotProductExecutorBase();
+
 protected:
-    IV              _queryIndexes;
+    IV                    _queryIndexes;
     std::vector<BaseType> _scratch;
 };
 
@@ -226,16 +239,18 @@ public:
     using IV = std::vector<uint32_t>;
     using V = typename SparseDotProductExecutorBase<BaseType>::V;
     using ArrayReadView = attribute::IArrayReadView<BaseType>;
-    SparseDotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector, const IV & queryIndexes);
+    SparseDotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V& queryVector,
+                                            const IV& queryIndexes);
     ~SparseDotProductByArrayReadViewExecutor();
+
 private:
     std::span<const BaseType> getAttributeValues(uint32_t docid) override;
     const ArrayReadView* _array_read_view;
 };
 
-}
+} // namespace array
 
-}
+} // namespace dotproduct
 
 /**
  * Implements the blueprint for the foreach executor.
@@ -249,20 +264,21 @@ private:
     std::string _attrKey;
     std::string _queryVectorKey;
 
-    const std::string & getAttribute(const fef::IQueryEnvironment & env) const;
-    const IAttributeVector * upgradeIfNecessary(const IAttributeVector * attribute, const fef::IQueryEnvironment & env) const;
+    const std::string& getAttribute(const fef::IQueryEnvironment& env) const;
+    const IAttributeVector* upgradeIfNecessary(const IAttributeVector*       attribute,
+                                               const fef::IQueryEnvironment& env) const;
 
 public:
     DotProductBlueprint();
     ~DotProductBlueprint() override;
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
 
     fef::ParameterDescriptions getDescriptions() const override;
 
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    void prepareSharedState(const fef::IQueryEnvironment& queryEnv, fef::IObjectStore& objectStore) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

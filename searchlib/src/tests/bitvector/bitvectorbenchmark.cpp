@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/bitvector.h>
+
 #include <benchmark/benchmark.h>
+
 #include <cassert>
 #include <memory>
 #include <random>
@@ -15,15 +17,15 @@ namespace search {
 
 struct BitVectorBenchmark : benchmark::Fixture {
     std::vector<std::unique_ptr<BitVector>> _bv;
-    std::vector<unsigned int> _bvc;
+    std::vector<unsigned int>               _bvc;
 
     BitVectorBenchmark();
     ~BitVectorBenchmark() override;
 
     void SetUp(const benchmark::State& state) override {
-        const size_t n = state.range();
-        auto a = BitVector::create(n);
-        auto b = BitVector::create(n);
+        const size_t     n = state.range();
+        auto             a = BitVector::create(n);
+        auto             b = BitVector::create(n);
         std::minstd_rand prng;
         prng.seed(1);
         std::uniform_int_distribution<size_t> dist10(0, 9); // closed interval
@@ -67,8 +69,7 @@ BENCHMARK_DEFINE_F(BitVectorBenchmark, count_speed)(benchmark::State& state) {
     state.SetItemsProcessed(state.range() * state.iterations());
 }
 
-template <typename BitFn>
-void do_benchmark_fn_in_state_bit_range(benchmark::State& state, BitFn bit_fn) {
+template <typename BitFn> void do_benchmark_fn_in_state_bit_range(benchmark::State& state, BitFn bit_fn) {
     std::minstd_rand prng;
     prng.seed(1);
     assert(state.range() > 0);
@@ -81,15 +82,11 @@ void do_benchmark_fn_in_state_bit_range(benchmark::State& state, BitFn bit_fn) {
 }
 
 BENCHMARK_DEFINE_F(BitVectorBenchmark, get_next_true_bit_with_random_bits_set)(benchmark::State& state) {
-    do_benchmark_fn_in_state_bit_range(state, [&](size_t bit_idx) {
-        return _bv[0]->getNextTrueBit(bit_idx);
-    });
+    do_benchmark_fn_in_state_bit_range(state, [&](size_t bit_idx) { return _bv[0]->getNextTrueBit(bit_idx); });
 }
 
 BENCHMARK_DEFINE_F(BitVectorBenchmark, get_next_false_bit_with_random_bits_set)(benchmark::State& state) {
-    do_benchmark_fn_in_state_bit_range(state, [&](size_t bit_idx) {
-        return _bv[0]->getNextFalseBit(bit_idx);
-    });
+    do_benchmark_fn_in_state_bit_range(state, [&](size_t bit_idx) { return _bv[0]->getNextFalseBit(bit_idx); });
 }
 
 namespace {
@@ -98,13 +95,13 @@ size_t scan(BitVector& bv) __attribute__((noinline));
 
 size_t scan(BitVector& bv) {
     size_t count(0);
-    for (BitVector::Index i(bv.getFirstTrueBit()), m(bv.size()); i < m; i = bv.getNextTrueBit(i+1)) {
+    for (BitVector::Index i(bv.getFirstTrueBit()), m(bv.size()); i < m; i = bv.getNextTrueBit(i + 1)) {
         count++;
     }
     return count;
 }
 
-}
+} // namespace
 
 BENCHMARK_DEFINE_F(BitVectorBenchmark, get_next_true_bit_scan_with_random_bits_set)(benchmark::State& state) {
     for (auto _ : state) {
@@ -124,16 +121,23 @@ BENCHMARK_DEFINE_F(BitVectorBenchmark, get_next_true_bit_scan_with_all_bits_set)
     state.SetItemsProcessed(state.range() * state.iterations());
 }
 
-
-BENCHMARK_REGISTER_F(BitVectorBenchmark, or_speed)->RangeMultiplier(4)->Range(1024, 8<<22);
-BENCHMARK_REGISTER_F(BitVectorBenchmark, count_speed)->RangeMultiplier(4)->Range(1024, 8<<22);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, or_speed)->RangeMultiplier(4)->Range(1024, 8 << 22);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, count_speed)->RangeMultiplier(4)->Range(1024, 8 << 22);
 // Test with large bit vectors to determine effect of last level cache misses
-BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_with_random_bits_set)->RangeMultiplier(8)->Range(1024, 8<<25);
-BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_false_bit_with_random_bits_set)->RangeMultiplier(8)->Range(1024, 8<<25);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_with_random_bits_set)
+    ->RangeMultiplier(8)
+    ->Range(1024, 8 << 25);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_false_bit_with_random_bits_set)
+    ->RangeMultiplier(8)
+    ->Range(1024, 8 << 25);
 
-BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_scan_with_random_bits_set)->RangeMultiplier(8)->Range(1024, 8<<22);
-BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_scan_with_all_bits_set)->RangeMultiplier(8)->Range(1024, 8<<22);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_scan_with_random_bits_set)
+    ->RangeMultiplier(8)
+    ->Range(1024, 8 << 22);
+BENCHMARK_REGISTER_F(BitVectorBenchmark, get_next_true_bit_scan_with_all_bits_set)
+    ->RangeMultiplier(8)
+    ->Range(1024, 8 << 22);
 
-} // search
+} // namespace search
 
 BENCHMARK_MAIN();

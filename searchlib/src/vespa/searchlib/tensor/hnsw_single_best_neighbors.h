@@ -14,11 +14,9 @@ namespace search::tensor {
 class HnswSingleBestNeighbors {
     using EntryRef = vespalib::datastore::EntryRef;
     FurthestPriQ _candidates;
+
 public:
-    HnswSingleBestNeighbors()
-        : _candidates()
-    {
-    }
+    HnswSingleBestNeighbors() : _candidates() {}
     ~HnswSingleBestNeighbors() = default;
 
     std::vector<NearestNeighborIndex::Neighbor> get_neighbors(uint32_t k, double distance_threshold);
@@ -28,7 +26,9 @@ public:
     bool empty() const { return _candidates.empty(); }
     const HnswCandidate& top() const { return _candidates.top(); }
     size_t size() const { return _candidates.size(); }
-    void emplace(uint32_t nodeid, uint32_t docid, EntryRef ref, double distance) { _candidates.emplace(nodeid, docid, ref, distance); }
+    void emplace(uint32_t nodeid, uint32_t docid, EntryRef ref, double distance) {
+        _candidates.emplace(nodeid, docid, ref, distance);
+    }
 };
 
-}
+} // namespace search::tensor

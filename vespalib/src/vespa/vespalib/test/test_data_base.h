@@ -4,7 +4,9 @@
 
 #include <string_view>
 
-namespace vespalib { class nbostream; }
+namespace vespalib {
+class nbostream;
+}
 
 namespace vespalib::test {
 
@@ -17,4 +19,4 @@ public:
     static void write_buffer_to_file(std::string_view buf, const std::string& path);
 };
 
-}
+} // namespace vespalib::test

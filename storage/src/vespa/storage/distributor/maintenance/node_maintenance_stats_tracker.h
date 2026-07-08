@@ -2,67 +2,54 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketspace.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage::distributor {
 
-struct NodeMaintenanceStats
-{
+struct NodeMaintenanceStats {
     uint64_t movingOut;
     uint64_t syncing;
     uint64_t copyingIn;
     uint64_t copyingOut;
     uint64_t total;
 
-    constexpr NodeMaintenanceStats() noexcept
-        : movingOut(0), syncing(0), copyingIn(0), copyingOut(0), total(0)
-    {}
+    constexpr NodeMaintenanceStats() noexcept : movingOut(0), syncing(0), copyingIn(0), copyingOut(0), total(0) {}
 
-    constexpr NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_,
-                                   uint64_t copyingOut_, uint64_t total_) noexcept
-        : movingOut(movingOut_), syncing(syncing_),
-          copyingIn(copyingIn_), copyingOut(copyingOut_),
-          total(total_)
-    {}
+    constexpr NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_, uint64_t copyingOut_,
+                                   uint64_t total_) noexcept
+        : movingOut(movingOut_), syncing(syncing_), copyingIn(copyingIn_), copyingOut(copyingOut_), total(total_) {}
 
     bool operator==(const NodeMaintenanceStats& other) const noexcept {
-        return (movingOut == other.movingOut
-                && syncing == other.syncing
-                && copyingIn == other.copyingIn
-                && copyingOut == other.copyingOut
-                && total == other.total);
+        return (movingOut == other.movingOut && syncing == other.syncing && copyingIn == other.copyingIn &&
+                copyingOut == other.copyingOut && total == other.total);
     }
-    bool operator!=(const NodeMaintenanceStats& other) const noexcept {
-        return !(*this == other);
-    }
+    bool operator!=(const NodeMaintenanceStats& other) const noexcept { return !(*this == other); }
 
     void merge(const NodeMaintenanceStats& rhs) noexcept {
-        movingOut  += rhs.movingOut;
-        syncing    += rhs.syncing;
-        copyingIn  += rhs.copyingIn;
+        movingOut += rhs.movingOut;
+        syncing += rhs.syncing;
+        copyingIn += rhs.copyingIn;
         copyingOut += rhs.copyingOut;
-        total      += rhs.total;
+        total += rhs.total;
     }
 };
 
 std::ostream& operator<<(std::ostream&, const NodeMaintenanceStats&);
 
-class NodeMaintenanceStatsTracker
-{
+class NodeMaintenanceStatsTracker {
 public:
     class BucketSpaceAndNode {
     public:
         BucketSpaceAndNode(uint16_t node_in, document::BucketSpace bucketSpace_in) noexcept
-            : _bucketSpace(bucketSpace_in),
-              _node(node_in)
-        {}
+            : _bucketSpace(bucketSpace_in), _node(node_in) {}
         uint32_t hash() const noexcept { return (uint32_t(_node) << 2) | (_bucketSpace.getId() & 0x3); }
-        bool operator == (const BucketSpaceAndNode & b) const noexcept {
+        bool operator==(const BucketSpaceAndNode& b) const noexcept {
             return (_bucketSpace == b._bucketSpace) && (_node == b._node);
         }
         document::BucketSpace bucketSpace() const noexcept { return _bucketSpace; }
         uint16_t node() const noexcept { return _node; }
+
     private:
         document::BucketSpace _bucketSpace;
         uint16_t              _node;
@@ -76,13 +63,14 @@ private:
 
     static const NodeMaintenanceStats _emptyNodeMaintenanceStats;
 
-    NodeMaintenanceStats & stats(uint16_t node, document::BucketSpace bucketSpace);
-    const NodeMaintenanceStats & stats(uint16_t node, document::BucketSpace bucketSpace) const noexcept;
+    NodeMaintenanceStats& stats(uint16_t node, document::BucketSpace bucketSpace);
+    const NodeMaintenanceStats& stats(uint16_t node, document::BucketSpace bucketSpace) const noexcept;
+
 public:
     NodeMaintenanceStatsTracker() noexcept;
-    NodeMaintenanceStatsTracker(NodeMaintenanceStatsTracker &&) noexcept;
-    NodeMaintenanceStatsTracker & operator =(NodeMaintenanceStatsTracker &&) noexcept;
-    NodeMaintenanceStatsTracker(const NodeMaintenanceStatsTracker &);
+    NodeMaintenanceStatsTracker(NodeMaintenanceStatsTracker&&) noexcept;
+    NodeMaintenanceStatsTracker& operator=(NodeMaintenanceStatsTracker&&) noexcept;
+    NodeMaintenanceStatsTracker(const NodeMaintenanceStatsTracker&);
     ~NodeMaintenanceStatsTracker();
     void reset(size_t nodes);
     size_t numNodes() const { return _node_stats.size(); }
@@ -122,23 +110,17 @@ public:
      */
     const NodeMaintenanceStats& forNode(uint16_t node, document::BucketSpace bucketSpace) const noexcept;
 
-    const PerNodeStats& perNodeStats() const noexcept {
-        return _node_stats;
-    }
+    const PerNodeStats& perNodeStats() const noexcept { return _node_stats; }
 
     // Note: the total statistics are across all replicas across all buckets across all bucket spaces.
     // That means it's possible for a single bucket to count more than once, up to once per replica.
     // So this should not be treated as a bucket-level statistic.
-    const NodeMaintenanceStats& total_replica_stats() const noexcept {
-        return _total_stats;
-    }
+    const NodeMaintenanceStats& total_replica_stats() const noexcept { return _total_stats; }
 
-    vespalib::duration max_observed_time_since_last_gc() const noexcept {
-        return _max_observed_time_since_last_gc;
-    }
+    vespalib::duration max_observed_time_since_last_gc() const noexcept { return _max_observed_time_since_last_gc; }
 
     bool operator==(const NodeMaintenanceStatsTracker& rhs) const noexcept;
     void merge(const NodeMaintenanceStatsTracker& rhs);
 };
 
-} // storage::distributor
+} // namespace storage::distributor

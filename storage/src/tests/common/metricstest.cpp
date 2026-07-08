@@ -1,20 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/storage_config_set.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+#include <vespa/config/common/exceptions.h>
+#include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/visiting/visitormetrics.h>
-#include <vespa/metrics/metricmanager.h>
-#include <vespa/config/common/exceptions.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <gmock/gmock.h>
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+
 #include <filesystem>
 #include <thread>
 
@@ -27,15 +29,15 @@ namespace storage {
 
 struct MetricsTest : public Test {
     framework::defaultimplementation::FakeClock* _clock;
-    std::unique_ptr<StorageConfigSet> _config;
-    std::unique_ptr<TestServiceLayerApp> _node;
-    std::unique_ptr<DummyStorageLink> _top;
-    std::unique_ptr<StatusMetricConsumer> _metricsConsumer;
-    std::unique_ptr<metrics::MetricSet> _topSet;
-    std::unique_ptr<metrics::MetricManager> _metricManager;
-    std::shared_ptr<FileStorMetrics> _filestorMetrics;
-    std::shared_ptr<BucketManagerMetrics> _bucketManagerMetrics;
-    std::shared_ptr<VisitorMetrics> _visitorMetrics;
+    std::unique_ptr<StorageConfigSet>            _config;
+    std::unique_ptr<TestServiceLayerApp>         _node;
+    std::unique_ptr<DummyStorageLink>            _top;
+    std::unique_ptr<StatusMetricConsumer>        _metricsConsumer;
+    std::unique_ptr<metrics::MetricSet>          _topSet;
+    std::unique_ptr<metrics::MetricManager>      _metricManager;
+    std::shared_ptr<FileStorMetrics>             _filestorMetrics;
+    std::shared_ptr<BucketManagerMetrics>        _bucketManagerMetrics;
+    std::shared_ptr<VisitorMetrics>              _visitorMetrics;
 
     void createSnapshotForPeriod(std::chrono::seconds secs) const;
     void assertMetricLastValue(const std::string& name, int interval, uint64_t expected) const;
@@ -49,19 +51,14 @@ struct MetricsTest : public Test {
 };
 
 namespace {
-    struct MetricClock : public metrics::MetricManager::Timer
-    {
-        framework::Clock& _clock;
-        explicit MetricClock(framework::Clock& c) : _clock(c) {}
-        [[nodiscard]] metrics::time_point getTime() const override { return _clock.getSystemTime(); }
-    };
-}
+struct MetricClock : public metrics::MetricManager::Timer {
+    framework::Clock& _clock;
+    explicit MetricClock(framework::Clock& c) : _clock(c) {}
+    [[nodiscard]] metrics::time_point getTime() const override { return _clock.getSystemTime(); }
+};
+} // namespace
 
-MetricsTest::MetricsTest()
-    : _clock(nullptr),
-      _top(),
-      _metricsConsumer()
-{
+MetricsTest::MetricsTest() : _clock(nullptr), _top(), _metricsConsumer() {
 }
 
 MetricsTest::~MetricsTest() = default;
@@ -81,13 +78,15 @@ void MetricsTest::SetUp() {
         _metricManager->registerMetric(guard, *_topSet);
     }
 
-    _metricsConsumer = std::make_unique<StatusMetricConsumer>(_node->getComponentRegister(), *_metricManager, "status");
+    _metricsConsumer =
+        std::make_unique<StatusMetricConsumer>(_node->getComponentRegister(), *_metricManager, "status");
 
     _filestorMetrics = std::make_shared<FileStorMetrics>();
     _filestorMetrics->initDiskMetrics(1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
-    _bucketManagerMetrics = std::make_shared<BucketManagerMetrics>(_node->getComponentRegister().getBucketSpaceRepo());
+    _bucketManagerMetrics =
+        std::make_shared<BucketManagerMetrics>(_node->getComponentRegister().getBucketSpaceRepo());
     _topSet->registerMetric(*_bucketManagerMetrics);
 
     _visitorMetrics = std::make_shared<VisitorMetrics>();
@@ -109,8 +108,7 @@ void MetricsTest::TearDown() {
     _visitorMetrics.reset();
 }
 
-void MetricsTest::createFakeLoad()
-{
+void MetricsTest::createFakeLoad() {
     _clock->addSecondsToTime(1);
     _metricManager->timeChangedNotification();
     uint32_t n = 5;
@@ -124,7 +122,7 @@ void MetricsTest::createFakeLoad()
         disk.queueSize.addValue(4 * n);
         disk.averageQueueWaitingTime.addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
-        for (const auto & metric : disk.threads) {
+        for (const auto& metric : disk.threads) {
             FileStorThreadMetrics& thread(*metric);
             thread.operations.inc(120 * n);
             thread.failedOperations.inc(2 * n);
@@ -159,7 +157,7 @@ void MetricsTest::createFakeLoad()
             thread.merge_handler_metrics.mergeAverageDataReceivedNeeded.addValue(0.8);
         }
     }
-    for (const auto & metric : _visitorMetrics->threads) {
+    for (const auto& metric : _visitorMetrics->threads) {
         VisitorThreadMetrics& thread(*metric);
         thread.queueSize.addValue(2);
         thread.averageQueueWaitingTime.addValue(10);
@@ -179,9 +177,9 @@ void MetricsTest::createFakeLoad()
 
 TEST_F(MetricsTest, filestor_metrics) {
     createFakeLoad();
-    std::ostringstream ost;
+    std::ostringstream     ost;
     framework::HttpUrlPath path("metrics?interval=-1&format=text");
-    bool retVal = _metricsConsumer->reportStatus(ost, path);
+    bool                   retVal = _metricsConsumer->reportStatus(ost, path);
     ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed";
     std::string s = ost.str();
     EXPECT_THAT(s, HasSubstr("vds.filestor.allthreads.get.count count=60"));
@@ -190,24 +188,24 @@ TEST_F(MetricsTest, filestor_metrics) {
     EXPECT_THAT(s, HasSubstr("vds.filestor.allthreads.remove.not_found count=5"));
 }
 
-#define ASSERT_METRIC(interval, metric, count) \
-{ \
-    std::ostringstream pathost; \
-    pathost << "metrics?interval=" << interval << "&format=text"; \
-    std::ostringstream ost;\
-    framework::HttpUrlPath path(pathost.str()); \
-    bool retVal = _metricsConsumer->reportStatus(ost, path); \
-    ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed"; \
-    std::string s = ost.str(); \
-    if (count == -1) { \
-        ASSERT_TRUE(s.find(metric) == std::string::npos) << std::string("Metric ") + metric + " was set"; \
-    } else { \
-        std::ostringstream valueost; \
-        valueost << metric << " count=" << count; \
-        ASSERT_TRUE(s.find(valueost.view()) != std::string::npos) \
-                << "Did not find value " + valueost.str() + " in metric dump " + s; \
-    } \
-}
+#define ASSERT_METRIC(interval, metric, count)                                                                \
+    {                                                                                                         \
+        std::ostringstream pathost;                                                                           \
+        pathost << "metrics?interval=" << interval << "&format=text";                                         \
+        std::ostringstream     ost;                                                                           \
+        framework::HttpUrlPath path(pathost.str());                                                           \
+        bool                   retVal = _metricsConsumer->reportStatus(ost, path);                            \
+        ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed";                                       \
+        std::string s = ost.str();                                                                            \
+        if (count == -1) {                                                                                    \
+            ASSERT_TRUE(s.find(metric) == std::string::npos) << std::string("Metric ") + metric + " was set"; \
+        } else {                                                                                              \
+            std::ostringstream valueost;                                                                      \
+            valueost << metric << " count=" << count;                                                         \
+            ASSERT_TRUE(s.find(valueost.view()) != std::string::npos)                                         \
+                << "Did not find value " + valueost.str() + " in metric dump " + s;                           \
+        }                                                                                                     \
+    }
 
 TEST_F(MetricsTest, snapshot_presenting) {
     FileStorThreadMetrics& thread0(*_filestorMetrics->threads[0]);
@@ -218,7 +216,7 @@ TEST_F(MetricsTest, snapshot_presenting) {
 
     LOG(debug, "Waiting for 5 minute snapshot to be taken");
     // Wait until active metrics have been added to 5 min snapshot and reset
-    for (uint32_t i=0; i<6; ++i) {
+    for (uint32_t i = 0; i < 6; ++i) {
         _clock->addSecondsToTime(60);
         _metricManager->timeChangedNotification();
         while (_metricManager->getLastProcessedTime() < _clock->getSystemTime()) {
@@ -251,34 +249,28 @@ TEST_F(MetricsTest, html_metrics_report) {
     _clock->addSecondsToTime(6 * 60);
     _metricManager->timeChangedNotification();
     createFakeLoad();
-    std::ostringstream ost;
+    std::ostringstream     ost;
     framework::HttpUrlPath path("metrics?interval=300&format=html");
-    bool retVal = _metricsConsumer->reportStatus(ost, path);
+    bool                   retVal = _metricsConsumer->reportStatus(ost, path);
     ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed";
 }
 
-void
-MetricsTest::assertMetricLastValue(const std::string& name, int interval, uint64_t expected) const
-{
+void MetricsTest::assertMetricLastValue(const std::string& name, int interval, uint64_t expected) const {
     std::ostringstream path;
-    path << "metrics?interval=" << interval
-         << "&format=text&pattern=" << name
-         << "&verbosity=2";
-    std::ostringstream report;
+    path << "metrics?interval=" << interval << "&format=text&pattern=" << name << "&verbosity=2";
+    std::ostringstream     report;
     framework::HttpUrlPath uri(path.str());
     ASSERT_TRUE(_metricsConsumer->reportStatus(report, uri));
     std::ostringstream expectedSubstr;
     expectedSubstr << " last=" << expected;
     auto str = report.str();
     ASSERT_TRUE(str.find(expectedSubstr.str()) != std::string::npos)
-            << "Did not find value " + expectedSubstr.str() + " in metric dump " + str;
+        << "Did not find value " + expectedSubstr.str() + " in metric dump " + str;
 }
 
 using namespace std::chrono_literals;
 
-void
-MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs) const
-{
+void MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs) const {
     _clock->addSecondsToTime(secs.count());
     _metricManager->timeChangedNotification();
     while (_metricManager->getLastProcessedTime() < _clock->getSystemTime()) {
@@ -309,4 +301,4 @@ TEST_F(MetricsTest, verbose_report_includes_non_set_metrics_even_after_snapshot)
     assertMetricLastValue("vds.datastored.alldisks.bytes", -1, 0);
 }
 
-} // storage
+} // namespace storage

@@ -8,23 +8,24 @@
 #pragma once
 
 #include <vespa/storageframework/generic/clock/clock.h>
+
 #include <mutex>
 
 namespace storage::framework::defaultimplementation {
 
 struct FakeClock : public framework::Clock {
     enum Mode {
-        FAKE_ABSOLUTE, // Time is always equal to supplied absolute time
+        FAKE_ABSOLUTE,      // Time is always equal to supplied absolute time
         FAKE_ABSOLUTE_CYCLE // Time is equal to absolute time + counter that
                             // increases for each request so you never get same
                             // timestamp twice.
     };
 
 private:
-    Mode _mode;
-    vespalib::duration      _absoluteTime;
-    mutable time_t          _cycleCount;
-    mutable std::mutex      _lock;
+    Mode               _mode;
+    vespalib::duration _absoluteTime;
+    mutable time_t     _cycleCount;
+    mutable std::mutex _lock;
 
 public:
     explicit FakeClock(Mode m = FAKE_ABSOLUTE, vespalib::duration startTime = 1us);
@@ -71,5 +72,4 @@ public:
     }
 };
 
-}
-
+} // namespace storage::framework::defaultimplementation

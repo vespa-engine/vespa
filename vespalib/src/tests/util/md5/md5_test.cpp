@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/md5.h>
+
 #include <string>
 
 namespace vespalib {
@@ -21,7 +22,7 @@ std::string md5_hash_of(std::string_view buffer) {
 TEST(MD5Test, md5_output_matches_NIST_test_vectors) {
     EXPECT_EQ("900150983cd24fb0d6963f7d28e17f72", md5_hash_of("abc"));
     EXPECT_EQ("8215ef0796a20bcaaae116d3876c664a",
-                 md5_hash_of("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"));
+              md5_hash_of("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"));
     EXPECT_EQ("7707d6ae4e027c70eea2a935c2296f21", md5_hash_of(std::string(1'000'000, 'a')));
 }
 
@@ -32,7 +33,6 @@ TEST(MD5Test, md5_output_matches_Wikipedia_test_vectors) {
     EXPECT_EQ("e4d909c290d0fb1ca068ffaddf22cbd0", md5_hash_of("The quick brown fox jumps over the lazy dog."));
 }
 
-}
+} // namespace vespalib
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

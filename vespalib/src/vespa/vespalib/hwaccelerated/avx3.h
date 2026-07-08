@@ -17,4 +17,4 @@ public:
     const dispatch::FnTable& fn_table() const override;
 };
 
-}
+} // namespace vespalib::hwaccelerated

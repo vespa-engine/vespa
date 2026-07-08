@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "predicate_posting_list.h"
 #include "common.h"
+#include "predicate_posting_list.h"
 
 namespace search::predicate {
 
@@ -22,4 +22,4 @@ public:
     VESPA_DLL_LOCAL uint32_t getInterval() const override { return 0x00010001; }
 };
 
-}
+} // namespace search::predicate

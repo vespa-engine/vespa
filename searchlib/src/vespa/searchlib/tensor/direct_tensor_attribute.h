@@ -2,27 +2,28 @@
 
 #pragma once
 
-#include "tensor_attribute.h"
 #include "default_nearest_neighbor_index_factory.h"
 #include "direct_tensor_store.h"
+#include "tensor_attribute.h"
 
-namespace vespalib::eval { struct Value; }
+namespace vespalib::eval {
+struct Value;
+}
 
 namespace search::tensor {
 
-class DirectTensorAttribute final : public TensorAttribute
-{
+class DirectTensorAttribute final : public TensorAttribute {
     DirectTensorStore _direct_store;
 
     void set_tensor(DocId docId, std::unique_ptr<vespalib::eval::Value> tensor);
+
 public:
-    DirectTensorAttribute(std::string_view baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
+    DirectTensorAttribute(std::string_view baseFileName, const Config& cfg,
+                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~DirectTensorAttribute() override;
-    void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
-    void update_tensor(DocId docId,
-                       const document::TensorUpdate &update,
-                       bool create_empty_if_non_existing) override;
-    const vespalib::eval::Value &get_tensor_ref(DocId docId) const override;
+    void setTensor(DocId docId, const vespalib::eval::Value& tensor) override;
+    void update_tensor(DocId docId, const document::TensorUpdate& update, bool create_empty_if_non_existing) override;
+    const vespalib::eval::Value& get_tensor_ref(DocId docId) const override;
     bool supports_get_tensor_ref() const override { return true; }
 
     // Implements DocVectorAccess
@@ -30,4 +31,4 @@ public:
     VectorBundle get_vectors(uint32_t docid) const noexcept override;
 };
 
-}  // namespace search::tensor
+} // namespace search::tensor

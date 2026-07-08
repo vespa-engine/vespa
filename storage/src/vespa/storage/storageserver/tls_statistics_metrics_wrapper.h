@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/metrics/metricset.h>
 #include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 
 #include <chrono>
@@ -21,8 +21,8 @@ class TlsStatisticsMetricsWrapper : public metrics::MetricSet {
         metrics::LongCountMetric insecure_connections_established;
     };
 
-    EndpointMetrics client;
-    EndpointMetrics server;
+    EndpointMetrics          client;
+    EndpointMetrics          server;
     metrics::LongCountMetric tls_handshakes_failed;
     metrics::LongCountMetric peer_authorization_failures;
     metrics::LongCountMetric tls_connections_broken;
@@ -44,4 +44,4 @@ public:
     void update_metrics_with_snapshot_delta();
 };
 
-}
+} // namespace storage

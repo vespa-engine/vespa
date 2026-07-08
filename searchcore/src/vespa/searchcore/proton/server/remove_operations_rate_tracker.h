@@ -18,8 +18,7 @@ private:
     OperationRateTracker _remove_tracker;
 
 public:
-    RemoveOperationsRateTracker(double remove_batch_rate_threshold,
-                                double remove_rate_threshold);
+    RemoveOperationsRateTracker(double remove_batch_rate_threshold, double remove_rate_threshold);
 
     void notify_remove_batch() override;
     void notify_remove() override;
@@ -32,4 +31,4 @@ public:
     OperationRateTracker& get_remove_tracker() { return _remove_tracker; }
 };
 
-}
+} // namespace proton

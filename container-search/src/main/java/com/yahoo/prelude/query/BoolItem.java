@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
+import java.util.Locale;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.processing.IllegalInputException;
@@ -34,8 +35,8 @@ public class BoolItem extends TermItem {
     public String getName() { return "BOOL"; }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer); // takes care of index bytes
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context); // takes care of index bytes
         putString(stringValue(), buffer);
     }
 
@@ -61,7 +62,7 @@ public class BoolItem extends TermItem {
     }
 
     private boolean toBoolean(String stringValue) {
-        return switch (stringValue.toLowerCase()) {
+        return switch (stringValue.toLowerCase(Locale.ROOT)) {
             case "true" -> true;
             case "false" -> false;
             default -> throw new IllegalInputException("Expected 'true' or 'false', got '" + stringValue + "'");
@@ -105,7 +106,7 @@ public class BoolItem extends TermItem {
     public boolean isWords() { return false; }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         // BoolItem is serialized as a word term
         var builder = SearchProtocol.ItemWordTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));

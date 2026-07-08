@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -11,6 +12,7 @@ import com.yahoo.vdslib.state.State;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -128,7 +130,7 @@ public class EventDiffCalculator {
                 // distributionConfigTo must be non-null
                 events.add(createClusterEvent(
                         "Cluster controller is now the authoritative source for distribution config. " +
-                        "Active config: %s".formatted(params.distributionConfigTo.highLevelDescription()), params));
+                        Text.format("Active config: %s", params.distributionConfigTo.highLevelDescription()), params));
             } else if (params.distributionConfigTo == null) {
                 events.add(createClusterEvent(
                         "Cluster controller is no longer the authoritative source for distribution config", params));
@@ -136,7 +138,7 @@ public class EventDiffCalculator {
                 // Distribution config was present in both old and new; emit a human-readable diff.
                 String configDiff = DistributionDiffCalculator.computeDiff(params.distributionConfigFrom, params.distributionConfigTo).toString();
                 if (!configDiff.isEmpty()) {
-                    events.add(createClusterEvent("Distribution config changed: %s".formatted(configDiff), params));
+                    events.add(createClusterEvent(Text.format("Distribution config changed: %s", configDiff), params));
                 }
             }
         }
@@ -146,7 +148,7 @@ public class EventDiffCalculator {
         // TODO should we emit any events when description changes?
         if (feedBlockStateHasChanged(params)) {
             if (params.feedBlockTo != null) {
-                events.add(createClusterEvent(String.format("Cluster feed blocked due to resource exhaustion: %s",
+                events.add(createClusterEvent(Text.format("Cluster feed blocked due to resource exhaustion: %s",
                         params.feedBlockTo.getDescription()), params));
             } else {
                 events.add(createClusterEvent("Cluster feed no longer blocked", params));
@@ -220,11 +222,11 @@ public class EventDiffCalculator {
 
         for (var ex : setSubtraction(fromBlockSet, toBlockSet)) {
             var info = cluster.getNodeInfo(ex.node);
-            events.add(createNodeEvent(info, String.format("Removed resource exhaustion: %s", ex.toExhaustionRemovedDescription()), params));
+            events.add(createNodeEvent(info, Text.format("Removed resource exhaustion: %s", ex.toExhaustionRemovedDescription()), params));
         }
         for (var ex : setSubtraction(toBlockSet, fromBlockSet)) {
             var info = cluster.getNodeInfo(ex.node);
-            events.add(createNodeEvent(info, String.format("Added resource exhaustion: %s", ex.toExhaustionAddedDescription()), params));
+            events.add(createNodeEvent(info, Text.format("Added resource exhaustion: %s", ex.toExhaustionAddedDescription()), params));
         }
     }
 
@@ -246,10 +248,10 @@ public class EventDiffCalculator {
             } else if (isMayHaveMergesPendingDownEdge(prevReason, currReason)) {
                 events.add(createNodeEvent(info, "Node no longer has merges pending", params));
             } else if (isMaintenanceGracePeriodExceededDownEdge(prevReason, currReason, nodeFrom, nodeTo)) {
-                events.add(createNodeEvent(info, String.format("Exceeded implicit maintenance mode grace period of " +
+                events.add(createNodeEvent(info, Text.format("Exceeded implicit maintenance mode grace period of " +
                         "%d milliseconds. Marking node down.", params.maxMaintenanceGracePeriodTimeMs), params));
             }
-            events.add(createNodeEvent(info, String.format("Altered node state in cluster state from '%s' to '%s'",
+            events.add(createNodeEvent(info, Text.format("Altered node state in cluster state from '%s' to '%s'",
                     nodeFrom.toString(true), nodeTo.toString(true)), params));
         }
     }

@@ -7,6 +7,9 @@ intraOpThreads int default=-4
 # GPU device id, -1 for CPU
 gpuDevice int default=0
 
+# Controls ONNX graph optimization. Default is on.
+optimizeModel bool default=true
+
 # Controls dynamic batching that combines up to `maxSize` requests within `maxDelayMillis` into a single inference call.
 # This increases throughput at the cost of latency.
 # This is especially effective for generating embeddings during feeding on GPU.

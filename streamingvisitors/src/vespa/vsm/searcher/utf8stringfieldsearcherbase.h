@@ -14,26 +14,24 @@ namespace vsm {
  * Reuse of this buffer ensures better cache hit ratio because this is just a
  * scratchpad for tokenizing. It will grow till the max size and stay there.
  **/
-class UTF8StringFieldSearcherBase : public StrChrFieldSearcher
-{
+class UTF8StringFieldSearcherBase : public StrChrFieldSearcher {
 public:
     /**
      * Template class that wraps an ucs4 buffer.
      * Used when invoking skipSeparators() during substring matching.
      **/
-    class BufferWrapper
-    {
+    class BufferWrapper {
     protected:
-        ucs4_t * _bbuf;
-        ucs4_t * _cbuf;
+        ucs4_t* _bbuf;
+        ucs4_t* _cbuf;
 
     public:
-        explicit BufferWrapper(ucs4_t * buf) noexcept : _bbuf(buf), _cbuf(buf) { }
-        BufferWrapper(ucs4_t * buf, size_t *) noexcept : _bbuf(buf), _cbuf(buf) { }
+        explicit BufferWrapper(ucs4_t* buf) noexcept : _bbuf(buf), _cbuf(buf) {}
+        BufferWrapper(ucs4_t* buf, size_t*) noexcept : _bbuf(buf), _cbuf(buf) {}
         void onCharacter(ucs4_t ch, size_t) { *_cbuf++ = ch; }
-        void onOffset(size_t) { }
+        void onOffset(size_t) {}
         void incBuf(size_t inc) { _cbuf += inc; }
-        ucs4_t * getBuf() { return _cbuf; }
+        ucs4_t* getBuf() { return _cbuf; }
         bool valid() const noexcept { return true; }
         size_t size() const noexcept { return (_cbuf - _bbuf); }
         bool hasOffsets() const noexcept { return false; }
@@ -43,15 +41,18 @@ public:
      * Template class that wraps an offset buffer in addition to an ucs4 buffer.
      * The offset buffer contains offsets into the original utf8 buffer.
      **/
-    class OffsetWrapper : public BufferWrapper
-    {
+    class OffsetWrapper : public BufferWrapper {
     private:
-        size_t * _boff;
-        size_t * _coff;
+        size_t* _boff;
+        size_t* _coff;
 
     public:
-        explicit OffsetWrapper(ucs4_t * buf, size_t * offsets) noexcept : BufferWrapper(buf), _boff(offsets), _coff(offsets) {}
-        void onCharacter(ucs4_t ch, size_t of) { *_cbuf++ = ch; *_coff++ = of; }
+        explicit OffsetWrapper(ucs4_t* buf, size_t* offsets) noexcept
+            : BufferWrapper(buf), _boff(offsets), _coff(offsets) {}
+        void onCharacter(ucs4_t ch, size_t of) {
+            *_cbuf++ = ch;
+            *_coff++ = of;
+        }
         void onOffset(size_t of) { *_coff++ = of; }
         bool valid() const noexcept { return (size() == (size_t)(_coff - _boff)); }
         bool hasOffsets() const noexcept { return true; }
@@ -68,7 +69,7 @@ protected:
      * @param qt the query term trying to match.
      * @return   the number of words in the field ref.
      **/
-    size_t matchTermRegular(const FieldRef & f, search::streaming::QueryTerm & qt);
+    size_t matchTermRegular(const FieldRef& f, search::streaming::QueryTerm& qt);
 
     /**
      * Matches the given query term against the characters in the given field reference
@@ -78,7 +79,7 @@ protected:
      * @param qt the query term trying to match.
      * @return   the number of words in the field ref.
      **/
-    size_t matchTermSubstring(const FieldRef & f, search::streaming::QueryTerm & qt);
+    size_t matchTermSubstring(const FieldRef& f, search::streaming::QueryTerm& qt);
 
     /**
      * Matches the given query term against the words in the given field reference
@@ -88,7 +89,7 @@ protected:
      * @param qt the query term trying to match.
      * @return   the number of words in the field ref.
      **/
-    size_t matchTermSuffix(const FieldRef & f, search::streaming::QueryTerm & qt);
+    size_t matchTermSuffix(const FieldRef& f, search::streaming::QueryTerm& qt);
 
     /**
      * Matches the given query term against the words in the given field reference
@@ -98,15 +99,13 @@ protected:
      * @param qt the query term trying to match.
      * @return   the number of words in the field ref.
      **/
-    size_t matchTermExact(const FieldRef & f, search::streaming::QueryTerm & qt);
+    size_t matchTermExact(const FieldRef& f, search::streaming::QueryTerm& qt);
 
 public:
     explicit UTF8StringFieldSearcherBase(FieldIdT fId);
     ~UTF8StringFieldSearcherBase() override;
-    void prepare(search::streaming::QueryTermList& qtl,
-                 const SharedSearcherBuf& buf,
-                 const vsm::FieldPathMapT& field_paths,
-                 search::fef::IQueryEnvironment& query_env) override;
+    void prepare(search::streaming::QueryTermList& qtl, const SharedSearcherBuf& buf,
+                 const vsm::FieldPathMapT& field_paths, search::fef::IQueryEnvironment& query_env) override;
     /**
      * Matches the given query term against the given word using suffix match strategy.
      *
@@ -116,8 +115,7 @@ public:
      * @param wordlen the length of the word.
      * @return true if the term matches the word.
      **/
-    static bool matchTermSuffix(const cmptype_t * term, size_t termlen,
-                                const cmptype_t * word, size_t wordlen);
+    static bool matchTermSuffix(const cmptype_t* term, size_t termlen, const cmptype_t* word, size_t wordlen);
 
     /**
      * Checks whether the given character is a separator character.
@@ -128,10 +126,7 @@ public:
      * Transforms the given utf8 array into an array of ucs4 characters.
      * Folding is performed. Separator characters are skipped.
      **/
-    template <typename T>
-    size_t skipSeparators(const search::byte * p, size_t sz, T & dstbuf);
-
+    template <typename T> size_t skipSeparators(const search::byte* p, size_t sz, T& dstbuf);
 };
 
-}
-
+} // namespace vsm

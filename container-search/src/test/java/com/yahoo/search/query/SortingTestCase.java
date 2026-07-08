@@ -17,7 +17,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author baldersheim
@@ -83,8 +90,8 @@ public class SortingTestCase {
 
     private void requireThatChineseHasCorrectRules(Collator col) {
         final int[] reorderCodes = {UScript.HAN};
-        assertEquals("15.1.0.0", col.getUCAVersion().toString());
-        assertEquals("153.121.45.0", col.getVersion().toString());
+        assertEquals("17.0.0.0", col.getUCAVersion().toString());
+        assertEquals("153.136.48.0", col.getVersion().toString());
         assertEquals(Arrays.toString(reorderCodes), Arrays.toString(col.getReorderCodes()));
 
         assertNotEquals("", ((RuleBasedCollator) col).getRules());

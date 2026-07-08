@@ -2,23 +2,23 @@
 
 #include "elementwise_utils.h"
 
-#include <memory>
 #include <vespa/eval/eval/value_type_spec.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <memory>
+
 namespace search::features {
 
 using fef::FeatureNameBuilder;
+using vespalib::make_string;
 using vespalib::eval::CellType;
 using vespalib::eval::ValueType;
-using vespalib::make_string;
 
 std::string ElementwiseUtils::_elementwise_feature_base_name = "elementwise";
 
-std::string
-ElementwiseUtils::feature_name(const std::string& nested_feature_base_name, const fef::ParameterList& params)
-{
+std::string ElementwiseUtils::feature_name(const std::string&        nested_feature_base_name,
+                                           const fef::ParameterList& params) {
     FeatureNameBuilder builder;
     builder.baseName(_elementwise_feature_base_name);
     builder.parameter(nested_feature_name(nested_feature_base_name, params));
@@ -30,9 +30,8 @@ ElementwiseUtils::feature_name(const std::string& nested_feature_base_name, cons
     return builder.buildName();
 }
 
-std::string
-ElementwiseUtils::nested_feature_name(const std::string& nested_feature_base_name, const fef::ParameterList& params)
-{
+std::string ElementwiseUtils::nested_feature_name(const std::string&        nested_feature_base_name,
+                                                  const fef::ParameterList& params) {
     FeatureNameBuilder builder;
     builder.baseName(nested_feature_base_name);
     size_t num_params = params.size();
@@ -42,10 +41,9 @@ ElementwiseUtils::nested_feature_name(const std::string& nested_feature_base_nam
     return builder.buildName();
 }
 
-std::optional<std::string>
-ElementwiseUtils::build_output_tensor_type(ValueType& output_tensor_type, const std::string& dimension_name,
-                                           const std::string& cell_type_name)
-{
+std::optional<std::string> ElementwiseUtils::build_output_tensor_type(ValueType&         output_tensor_type,
+                                                                      const std::string& dimension_name,
+                                                                      const std::string& cell_type_name) {
     auto cell_type = vespalib::eval::value_type::cell_type_from_name(cell_type_name);
     if (!cell_type.has_value()) {
         return make_string("'%s' is not a valid tensor cell type", cell_type_name.c_str());
@@ -54,4 +52,4 @@ ElementwiseUtils::build_output_tensor_type(ValueType& output_tensor_type, const 
     return std::nullopt;
 }
 
-}
+} // namespace search::features

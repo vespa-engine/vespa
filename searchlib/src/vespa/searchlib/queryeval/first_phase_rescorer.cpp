@@ -4,10 +4,7 @@
 
 namespace search::queryeval {
 
-FirstPhaseRescorer::FirstPhaseRescorer(const std::pair<Scores,Scores>& ranges)
-    : _scale(1.0),
-      _adjust(0.0)
-{
+FirstPhaseRescorer::FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges) : _scale(1.0), _adjust(0.0) {
     if (need_rescore(ranges)) {
         auto& first_phase_scores = ranges.first;
         auto& second_phase_scores = ranges.second;
@@ -27,12 +24,10 @@ FirstPhaseRescorer::FirstPhaseRescorer(const std::pair<Scores,Scores>& ranges)
     }
 }
 
-bool
-FirstPhaseRescorer::need_rescore(const std::pair<Scores,Scores>& ranges)
-{
+bool FirstPhaseRescorer::need_rescore(const std::pair<Scores, Scores>& ranges) {
     auto& first_phase_scores = ranges.first;
     auto& second_phase_scores = ranges.second;
     return (first_phase_scores.low > second_phase_scores.low);
 }
 
-}
+} // namespace search::queryeval

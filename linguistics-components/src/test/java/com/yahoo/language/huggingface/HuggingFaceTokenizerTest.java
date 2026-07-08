@@ -3,6 +3,7 @@
 package com.yahoo.language.huggingface;
 
 import com.yahoo.language.tools.EmbedderTester;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -129,7 +130,7 @@ class HuggingFaceTokenizerTest {
     }
 
     private static Path decompressModelFile(Path tmp, String model) throws IOException {
-        var source = Paths.get("src/test/models/huggingface/%s.json.gz".formatted(model));
+        var source = Paths.get(Text.format("src/test/models/huggingface/%s.json.gz", model));
         Path destination = tmp.resolve(source.getFileName().toString().replace(".gz", ""));
         try (InputStream in = new GZIPInputStream(Files.newInputStream(source));
              OutputStream out = Files.newOutputStream(destination, StandardOpenOption.CREATE)) {

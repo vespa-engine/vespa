@@ -1,18 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <atomic>
 #include <vespa/vespalib/util/time.h>
+
+#include <atomic>
 
 class FNET_Transport;
 
-namespace storage::spi { struct BucketExecutor; }
+namespace storage::spi {
+struct BucketExecutor;
+}
 
 namespace vespalib {
 class ISequencedTaskExecutor;
 class ThreadExecutor;
 class InvokeService;
-}
+} // namespace vespalib
 
 namespace proton {
 
@@ -42,13 +45,12 @@ public:
     /**
      * Returns an InvokeService intended for regular wakeup calls.
      */
-    virtual vespalib::InvokeService & invokeService() = 0;
+    virtual vespalib::InvokeService& invokeService() = 0;
 
     /**
      * Returns a shared transport object that can be utilized by multiple services.
      */
-    virtual FNET_Transport & transport() = 0;
-
+    virtual FNET_Transport& transport() = 0;
 
     /**
      * Returns the executor for running a BucketTask in the persistence layer above the SPI.
@@ -58,8 +60,7 @@ public:
     /**
      * Return a very cheap clock.
      */
-    virtual const std::atomic<vespalib::steady_time> & nowRef() const = 0;
+    virtual const std::atomic<vespalib::steady_time>& nowRef() const = 0;
 };
 
-}
-
+} // namespace proton

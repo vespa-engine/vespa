@@ -133,6 +133,7 @@ public class VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_LATENCY, EnumSet.of(max, sum, count, ninety_five_percentile, ninety_nine_percentile));
 
         addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS, EnumSet.of(max, last, average)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS, EnumSet.of(max, last, average)); // TODO: Vespa 9: Remove last
@@ -241,6 +242,11 @@ public class VespaMetricSet {
         // Embedders
         addMetric(metrics, ContainerMetrics.EMBEDDER_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_SEQUENCE_LENGTH, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_REQUEST_COUNT, EnumSet.of(count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_REQUEST_FAILURE_COUNT, EnumSet.of(count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_QUEUE_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_COUNT, EnumSet.of(count));
 
         // Deprecated metrics. TODO: Remove on Vespa 9.
         addMetric(metrics, ContainerMetrics.SERVER_REJECTED_REQUESTS, EnumSet.of(rate, count));
@@ -537,18 +543,22 @@ public class VespaMetricSet {
 
         // matching
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_APPROXIMATE_NNS_TIMED_OUT_QUERIES.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_SOFT_DOOMED_QUERIES.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_SETUP_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_APPROXIMATE_NNS_TIME, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_DOCS_MATCHED, EnumSet.of(rate, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_EXACT_NNS_DISTANCES_COMPUTED, EnumSet.of(rate));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_APPROXIMATE_NNS_DISTANCES_COMPUTED, EnumSet.of(rate));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_APPROXIMATE_NNS_NODES_VISITED, EnumSet.of(rate));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERIES.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_APPROXIMATE_NNS_TIMED_OUT_QUERIES.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_SOFT_DOOMED_QUERIES.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_SOFT_DOOM_FACTOR, EnumSet.of(min, max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_SETUP_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_APPROXIMATE_NNS_TIME, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_GROUPING_TIME, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_DOCS_MATCHED, EnumSet.of(rate, count));

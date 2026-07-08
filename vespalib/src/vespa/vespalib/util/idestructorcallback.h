@@ -12,11 +12,10 @@ namespace vespalib {
  * larger task before dropping the shared pointer, triggering the
  * callback when all worker threads have completed.
  */
-class IDestructorCallback
-{
+class IDestructorCallback {
 public:
     using SP = std::shared_ptr<IDestructorCallback>;
     virtual ~IDestructorCallback() = default;
 };
 
-} // namespace search
+} // namespace vespalib

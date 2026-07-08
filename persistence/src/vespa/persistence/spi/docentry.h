@@ -13,15 +13,12 @@
 
 #pragma once
 
-#include <vespa/persistence/spi/types.h>
 #include <vespa/document/base/globalid.h>
+#include <vespa/persistence/spi/types.h>
 
 namespace storage::spi {
 
-enum class DocumentMetaEnum {
-    NONE             = 0x0,
-    REMOVE_ENTRY     = 0x1
-};
+enum class DocumentMetaEnum { NONE = 0x0, REMOVE_ENTRY = 0x1 };
 
 class DocEntry {
 public:
@@ -29,10 +26,10 @@ public:
     using UP = std::unique_ptr<DocEntry>;
     using SP = std::shared_ptr<DocEntry>;
 
-    DocEntry(const DocEntry &) = delete;
-    DocEntry & operator=(const DocEntry &) = delete;
-    DocEntry(DocEntry &&) = delete;
-    DocEntry & operator=(DocEntry &&) = delete;
+    DocEntry(const DocEntry&) = delete;
+    DocEntry& operator=(const DocEntry&) = delete;
+    DocEntry(DocEntry&&) = delete;
+    DocEntry& operator=(DocEntry&&) = delete;
     virtual ~DocEntry();
     bool isRemove() const { return (_metaEnum == DocumentMetaEnum::REMOVE_ENTRY); }
     Timestamp getTimestamp() const { return _timestamp; }
@@ -52,23 +49,22 @@ public:
     virtual GlobalId getGid() const { return GlobalId(); }
     virtual DocumentUP releaseDocument();
     static UP create(Timestamp t, DocumentMetaEnum metaEnum);
-    static UP create(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId);
+    static UP create(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId& docId);
     static UP create(Timestamp t, DocumentMetaEnum metaEnum, std::string_view docType, GlobalId gid);
     static UP create(Timestamp t, DocumentUP doc);
     static UP create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize);
+
 protected:
     DocEntry(Timestamp t, DocumentMetaEnum metaEnum, SizeType size)
-        : _timestamp(t),
-          _metaEnum(metaEnum),
-          _size(size)
-    {}
+        : _timestamp(t), _metaEnum(metaEnum), _size(size) {}
+
 private:
-    DocEntry(Timestamp t, DocumentMetaEnum metaEnum) : DocEntry(t, metaEnum, sizeof(DocEntry)) { }
-    Timestamp         _timestamp;
-    DocumentMetaEnum  _metaEnum;
-    SizeType          _size;
+    DocEntry(Timestamp t, DocumentMetaEnum metaEnum) : DocEntry(t, metaEnum, sizeof(DocEntry)) {}
+    Timestamp        _timestamp;
+    DocumentMetaEnum _metaEnum;
+    SizeType         _size;
 };
 
-std::ostream & operator << (std::ostream & os, const DocEntry & r);
+std::ostream& operator<<(std::ostream& os, const DocEntry& r);
 
-}
+} // namespace storage::spi

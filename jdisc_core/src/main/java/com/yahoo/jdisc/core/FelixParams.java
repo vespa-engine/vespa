@@ -54,7 +54,7 @@ public class FelixParams {
         Map<String, String> ret = new HashMap<>();
         ret.put(BundleCache.CACHE_ROOTDIR_PROP, cachePath);
         ret.put(Constants.FRAMEWORK_SYSTEMPACKAGES, exportPackages.toString());
-        ret.put(Constants.FRAMEWORK_BOOTDELEGATION, "com.yourkit.runtime,com.yourkit.probes,com.yourkit.probes.builtin,com.singularity.*");
+        ret.put(Constants.FRAMEWORK_BOOTDELEGATION, "jdk.net,com.yourkit.runtime,com.yourkit.probes,com.yourkit.probes.builtin,com.singularity.*");
         ret.put(Constants.FRAMEWORK_BSNVERSION, Constants.FRAMEWORK_BSNVERSION_MANAGED);
         return ret;
     }

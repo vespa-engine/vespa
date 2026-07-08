@@ -2,21 +2,20 @@
 
 #include "indexmaintainercontext.h"
 
-using search::common::FileHeaderContext;
 using search::TuneFileAttributes;
+using search::common::FileHeaderContext;
 using searchcorespi::IIndexManager;
 
 namespace searchcorespi::index {
 
-IndexMaintainerContext::IndexMaintainerContext(IThreadingService &threadingService,
-                                               IIndexManager::Reconfigurer &reconfigurer,
-                                               const FileHeaderContext &fileHeaderContext,
-                                               vespalib::Executor & warmupExecutor)
+IndexMaintainerContext::IndexMaintainerContext(IThreadingService&           threadingService,
+                                               IIndexManager::Reconfigurer& reconfigurer,
+                                               const FileHeaderContext&     fileHeaderContext,
+                                               vespalib::Executor&          warmupExecutor)
     : _threadingService(threadingService),
       _reconfigurer(reconfigurer),
       _fileHeaderContext(fileHeaderContext),
-      _warmupExecutor(warmupExecutor)
-{
+      _warmupExecutor(warmupExecutor) {
 }
 
-}
+} // namespace searchcorespi::index

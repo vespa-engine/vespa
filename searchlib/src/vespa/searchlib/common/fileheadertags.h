@@ -14,4 +14,4 @@ extern std::string DESC;
 extern std::string ENTRY_SIZE;
 extern std::string NUM_KEYS;
 
-}
+} // namespace search::tags

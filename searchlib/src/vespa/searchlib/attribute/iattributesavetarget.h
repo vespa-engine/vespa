@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "iattributefilewriter.h"
 #include "attribute_header.h"
+#include "iattributefilewriter.h"
 
 namespace search {
 
@@ -13,12 +13,14 @@ namespace search {
 class IAttributeSaveTarget {
 public:
     using Buffer = IAttributeFileWriter::Buffer;
+
 protected:
     attribute::AttributeHeader _header;
+
 public:
     IAttributeSaveTarget() : _header() {}
-    void setHeader(const attribute::AttributeHeader & header) { _header = header; }
-    const attribute::AttributeHeader & getHeader() const { return _header; }
+    void setHeader(const attribute::AttributeHeader& header) { _header = header; }
+    const attribute::AttributeHeader& getHeader() const { return _header; }
 
     bool getEnumerated() const { return _header.getEnumerated(); }
 
@@ -32,17 +34,16 @@ public:
      **/
     virtual void close() = 0;
 
-    virtual IAttributeFileWriter &datWriter() = 0;
-    virtual IAttributeFileWriter &idxWriter() = 0;
-    virtual IAttributeFileWriter &weightWriter() = 0;
-    virtual IAttributeFileWriter &udatWriter() = 0;
+    virtual IAttributeFileWriter& datWriter() = 0;
+    virtual IAttributeFileWriter& idxWriter() = 0;
+    virtual IAttributeFileWriter& weightWriter() = 0;
+    virtual IAttributeFileWriter& udatWriter() = 0;
 
     /**
      * Setups a custom file writer with the given file suffix and description in the file header.
      * Returns false if the file writer cannot be setup or if it already exists, true otherwise.
      */
-    virtual bool setup_writer(const std::string& file_suffix,
-                              const std::string& desc) = 0;
+    virtual bool setup_writer(const std::string& file_suffix, const std::string& desc) = 0;
 
     /**
      * Returns the file writer with the given file suffix.
@@ -56,4 +57,3 @@ public:
 };
 
 } // namespace search
-

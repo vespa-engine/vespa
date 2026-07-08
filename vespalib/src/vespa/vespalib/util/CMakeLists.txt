@@ -22,7 +22,9 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     count_down_latch.cpp
     cpu_usage.cpp
     crc.cpp
+    deadline.cpp
     destructor_callbacks.cpp
+    detect_malloc_impl.cpp
     doom.cpp
     dual_merge_director.cpp
     error.cpp
@@ -30,12 +32,16 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     exceptions.cpp
     execution_profiler.cpp
     executor_idle_tracking.cpp
+    fake_deadline.cpp
     fake_doom.cpp
     featureset.cpp
     file_area_freelist.cpp
     foregroundtaskexecutor.cpp
     gate.cpp
     gencnt.cpp
+    generation.cpp
+    generation_guard.cpp
+    generation_hold.cpp
     generationhandler.cpp
     generationholder.cpp
     growablebytebuffer.cpp
@@ -100,6 +106,10 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     threadstackexecutor.cpp
     threadstackexecutorbase.cpp
     time.cpp
+    transient_memory_tracker.cpp
+    transient_vector_snapshot.cpp
+    unordered_u32_set.cpp
+    typed_data_layout.cpp
     unwind_message.cpp
     valgrind.cpp
     xmlserializable.cpp

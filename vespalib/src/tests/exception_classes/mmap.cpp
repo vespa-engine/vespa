@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/util/alloc.h>
-#include <vector>
-#include <cassert>
-#include <cstring>
-#include <cstdlib>
+
 #include <sys/resource.h>
+
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
 
 using namespace vespalib::alloc;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     if (argc != 4) {
         return 77;
     }

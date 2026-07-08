@@ -3,8 +3,9 @@
 #pragma once
 
 #include "feedtoken.h"
-#include <vespa/vespalib/util/shared_operation_throttler.h>
+
 #include <vespa/searchcore/proton/feedoperation/feedoperation.h>
+#include <vespa/vespalib/util/shared_operation_throttler.h>
 
 namespace proton::feedtoken {
 
@@ -20,13 +21,14 @@ class ReplayState : public IState {
     ThrottlerToken      _throttler_token;
     FeedOperation::Type _type;
     SerialNum           _serial_num;
+
 public:
     ~ReplayState() override;
     ReplayState(ThrottlerToken throttler_token, const FeedOperation& op);
     bool is_replay() const noexcept override;
     void fail() override;
     void setResult(ResultUP result, bool documentWasFound) override;
-    const storage::spi::Result &getResult() override;
+    const storage::spi::Result& getResult() override;
 };
 
-}
+} // namespace proton::feedtoken

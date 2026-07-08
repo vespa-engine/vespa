@@ -5,14 +5,10 @@
 
 namespace vespalib::net::tls {
 
-enum class AuthorizationMode {
-    Disable,
-    LogOnly,
-    Enforce
-};
+enum class AuthorizationMode { Disable, LogOnly, Enforce };
 
 const char* enum_name(AuthorizationMode) noexcept;
 
 std::ostream& operator<<(std::ostream&, AuthorizationMode);
 
-}
+} // namespace vespalib::net::tls

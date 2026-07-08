@@ -13,6 +13,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.TestDriver;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -53,7 +54,7 @@ public class ThroughputTestCase {
         out.append("\n");
         out.append("      | ");
         for (int i = MIN_THREADS; i <= MAX_THREADS; i *= 2) {
-            out.append(String.format("%10d", i));
+            out.append(Text.format("%10d", i));
         }
         out.append("\n");
         out.append("------+-");
@@ -62,10 +63,10 @@ public class ThroughputTestCase {
         }
         out.append("\n");
         for (int i = MIN_LOOPS; i <= MAX_LOOPS; i = Math.max(1, i * 2)) {
-            out.append(String.format("%5d | ", i));
+            out.append(Text.format("%5d | ", i));
             RequestHandler handler = new UnthreadedHandler(i);
             for (Long val : runMeasurements(driver, handler)) {
-                out.append(String.format("%10d", val));
+                out.append(Text.format("%10d", val));
             }
             out.append("\n");
         }
@@ -81,7 +82,7 @@ public class ThroughputTestCase {
 
         Iterator<Long> it = runMeasurements(driver, new ThreadedHandler()).iterator();
         for (int numThreads = MIN_THREADS; numThreads <= MAX_THREADS; numThreads *= 2) {
-            System.err.println(String.format("%2d threads: %10d", numThreads, it.next()));
+            System.err.println(Text.format("%2d threads: %10d", numThreads, it.next()));
         }
         assertTrue(driver.close());
     }

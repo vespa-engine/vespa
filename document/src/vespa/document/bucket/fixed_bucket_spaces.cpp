@@ -15,7 +15,7 @@ namespace {
 std::string DEFAULT = "default";
 std::string GLOBAL = "global";
 
-}
+} // namespace
 
 BucketSpace FixedBucketSpaces::from_string(std::string_view name) {
     if (name == DEFAULT) {
@@ -27,8 +27,7 @@ BucketSpace FixedBucketSpaces::from_string(std::string_view name) {
     }
 }
 
-const std::string &
-FixedBucketSpaces::to_string(BucketSpace space) {
+const std::string& FixedBucketSpaces::to_string(BucketSpace space) {
     if (space == default_space()) {
         return DEFAULT;
     } else if (space == global_space()) {
@@ -38,4 +37,4 @@ FixedBucketSpaces::to_string(BucketSpace space) {
     }
 }
 
-}
+} // namespace document

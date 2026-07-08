@@ -3,12 +3,13 @@
 #pragma once
 
 #include <vespa/persistence/spi/bucket_limits.h>
+
 #include <cstdint>
 #include <cstdlib>
 
 namespace storage {
 
-constexpr static uint8_t MaxStripeBits = spi::BucketLimits::MinUsedBits;
+constexpr static uint8_t  MaxStripeBits = spi::BucketLimits::MinUsedBits;
 constexpr static uint32_t MaxStripes = (1ULL << MaxStripeBits);
 
 /**
@@ -36,5 +37,4 @@ uint8_t calc_num_stripe_bits(uint32_t n_stripes) noexcept;
  */
 uint32_t tune_num_stripes_based_on_cpu_cores(uint32_t cpu_cores) noexcept;
 
-}
-
+} // namespace storage

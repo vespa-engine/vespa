@@ -3,6 +3,7 @@ package com.yahoo.security;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 
 import static com.yahoo.security.ArrayUtils.hex;
@@ -30,8 +31,7 @@ public record SealedSharedKey(int version, KeyId keyId, byte[] enc, byte[] ciphe
 
     public SealedSharedKey {
         if (enc.length > MAX_ENC_CONTEXT_LENGTH) {
-            throw new IllegalArgumentException("Encryption context is too large to be encoded (max is %d, got %d)"
-                                               .formatted(MAX_ENC_CONTEXT_LENGTH, enc.length));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Encryption context is too large to be encoded (max is %d, got %d)", MAX_ENC_CONTEXT_LENGTH, enc.length));
         }
     }
 
@@ -78,8 +78,7 @@ public record SealedSharedKey(int version, KeyId keyId, byte[] enc, byte[] ciphe
         // u8 token version || u8 length(key id) || key id || u8 length(enc) || enc || ciphertext
         int version = Byte.toUnsignedInt(decoded.get());
         if (version < 1 || version > CURRENT_TOKEN_VERSION) {
-            throw new IllegalArgumentException("Token had unexpected version. Expected value in [1, %d], was %d"
-                                               .formatted(CURRENT_TOKEN_VERSION, version));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Token had unexpected version. Expected value in [1, %d], was %d", CURRENT_TOKEN_VERSION, version));
         }
         int keyIdLen = Byte.toUnsignedInt(decoded.get());
         byte[] keyIdBytes = new byte[keyIdLen];

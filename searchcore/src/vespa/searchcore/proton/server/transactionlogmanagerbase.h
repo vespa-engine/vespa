@@ -4,17 +4,18 @@
 
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/time.h>
-#include <mutex>
+
 #include <condition_variable>
+#include <mutex>
 
 class FNET_Transport;
 
 namespace search::transactionlog::client {
-    class TransLogClient;
-    class Session;
-    class Visitor;
-    class Callback;
-}
+class TransLogClient;
+class Session;
+class Visitor;
+class Callback;
+} // namespace search::transactionlog::client
 namespace proton {
 
 /**
@@ -26,10 +27,11 @@ protected:
     using Session = search::transactionlog::client::Session;
     using Visitor = search::transactionlog::client::Visitor;
     using Callback = search::transactionlog::client::Callback;
+
 private:
     std::unique_ptr<TransLogClient> _tlc;
     std::unique_ptr<Session>        _tlcSession;
-    std::string                _domainName;
+    std::string                     _domainName;
     mutable std::mutex              _replayLock;
     mutable std::condition_variable _replayCond;
     volatile bool                   _replayDone;
@@ -49,35 +51,33 @@ protected:
     StatusResult init();
 
     void internalStartReplay();
-    virtual void doLogReplayComplete(const std::string &domainName, vespalib::duration elapsedTime) const = 0;
+    virtual void doLogReplayComplete(const std::string& domainName, vespalib::duration elapsedTime) const = 0;
 
 public:
-    TransactionLogManagerBase(const TransactionLogManagerBase &) = delete;
-    TransactionLogManagerBase & operator = (const TransactionLogManagerBase &) = delete;
+    TransactionLogManagerBase(const TransactionLogManagerBase&) = delete;
+    TransactionLogManagerBase& operator=(const TransactionLogManagerBase&) = delete;
     /**
      * Create a new manager.
      *
      * @param tlsSpec the spec of the transaction log server.
      * @param domainName the name of the domain this manager should handle.
      **/
-    TransactionLogManagerBase(FNET_Transport & transport,
-                              const std::string &tlsSpec,
-                              const std::string &domainName);
+    TransactionLogManagerBase(FNET_Transport& transport, const std::string& tlsSpec, const std::string& domainName);
     virtual ~TransactionLogManagerBase();
 
     void changeReplayDone();
     void close();
-    std::unique_ptr<Visitor> createTlcVisitor(Callback &callback);
+    std::unique_ptr<Visitor> createTlcVisitor(Callback& callback);
 
     void waitForReplayDone() const;
 
-    TransLogClient &getClient() { return *_tlc; }
-    Session *getSession() { return _tlcSession.get(); }
-    const std::string &getDomainName() const { return _domainName; }
+    TransLogClient& getClient() { return *_tlc; }
+    Session* getSession() { return _tlcSession.get(); }
+    const std::string& getDomainName() const { return _domainName; }
     bool getReplayDone() const;
     bool isDoingReplay() const;
     void logReplayComplete() const;
-    const std::string &getRpcTarget() const;
+    const std::string& getRpcTarget() const;
 };
 
 } // namespace proton

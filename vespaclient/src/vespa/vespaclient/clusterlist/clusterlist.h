@@ -12,21 +12,21 @@ VESPA_DEFINE_EXCEPTION(VCClusterNotFoundException, vespalib::IllegalArgumentExce
    Contains a list of all the different clusters in the
    vespa application. Currently supports only content clusters.
 */
-class ClusterList
-{
+class ClusterList {
 public:
     using ClusterNotFoundException = VCClusterNotFoundException;
     class Cluster {
     public:
         Cluster(const std::string& name, const std::string& configId);
-        Cluster(const Cluster &);
-        Cluster & operator = (const Cluster &);
-        Cluster(Cluster &&) = default;
-        Cluster & operator = (Cluster &&) = default;
+        Cluster(const Cluster&);
+        Cluster& operator=(const Cluster&);
+        Cluster(Cluster&&) = default;
+        Cluster& operator=(Cluster&&) = default;
         ~Cluster();
 
         const std::string& getName() const { return _name; }
         const std::string& getConfigId() const { return _configId; }
+
     private:
         std::string _name;
         std::string _configId;
@@ -36,7 +36,6 @@ public:
     ~ClusterList();
 
     const std::vector<Cluster>& getContentClusters() const { return _contentClusters; }
-
 
     /**
        If the given cluster exists, or if it is empty and there exists only one content cluster,
@@ -51,4 +50,4 @@ private:
     std::vector<Cluster> _contentClusters;
 };
 
-}
+} // namespace vespaclient

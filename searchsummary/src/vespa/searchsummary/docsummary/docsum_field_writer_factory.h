@@ -12,14 +12,15 @@ class IQueryTermFilterFactory;
 /*
  * Factory class for creating docsum field writers.
  */
-class DocsumFieldWriterFactory : public IDocsumFieldWriterFactory
-{
-    const IDocsumEnvironment& _env;
+class DocsumFieldWriterFactory : public IDocsumFieldWriterFactory {
+    const IDocsumEnvironment&      _env;
     const IQueryTermFilterFactory& _query_term_filter_factory;
+
 protected:
     static void throw_missing_source(const std::string& command);
     const IDocsumEnvironment& getEnvironment() const noexcept { return _env; }
     bool has_attribute_manager() const noexcept;
+
 public:
     DocsumFieldWriterFactory(const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory);
     ~DocsumFieldWriterFactory() override;
@@ -28,4 +29,4 @@ public:
                                                                   const std::string& source) override;
 };
 
-}
+} // namespace search::docsummary

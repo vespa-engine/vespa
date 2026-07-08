@@ -13,4 +13,4 @@ public:
     virtual float getProgress() const = 0;
 };
 
-}
+} // namespace proton

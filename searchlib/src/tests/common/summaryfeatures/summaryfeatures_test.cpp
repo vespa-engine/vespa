@@ -39,8 +39,8 @@ TEST(SummaryFeaturesTest, summaryfeatures_test) {
         EXPECT_EQ(sf.addDocId(40), 3u);
         EXPECT_EQ(sf.addDocId(50), 4u);
         EXPECT_EQ(sf.numDocs(), 5u);
-        FeatureSet::Value *f;
-        const FeatureSet::Value *cf;
+        FeatureSet::Value*       f;
+        const FeatureSet::Value* cf;
         f = sf.getFeaturesByIndex(0);
         ASSERT_TRUE(f != nullptr);
         f[0].set_double(11.0);

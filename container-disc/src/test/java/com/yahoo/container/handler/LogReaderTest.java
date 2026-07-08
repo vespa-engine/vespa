@@ -115,13 +115,13 @@ public class LogReaderTest {
     private byte[] compress1(String input) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream zip = new GZIPOutputStream(baos);
-        zip.write(input.getBytes());
+        zip.write(input.getBytes(UTF_8));
         zip.close();
         return baos.toByteArray();
     }
 
     private byte[] compress2(String input) {
-        byte[] data = input.getBytes();
+        byte[] data = input.getBytes(UTF_8);
         return new ZstdCompressor().compress(data, 0, data.length);
     }
 

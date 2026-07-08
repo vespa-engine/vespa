@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ichunk.h"
+
 #include <vespa/vespalib/util/compressionconfig.h>
 
 namespace search::transactionlog {
@@ -10,16 +11,18 @@ namespace search::transactionlog {
 /// Current default chunk serialisation format
 class XXH64NoneChunk : public IChunk {
 protected:
-    Encoding onEncode(nbostream &os) const override;
-    void onDecode(nbostream &is) override;
+    Encoding onEncode(nbostream& os) const override;
+    void onDecode(nbostream& is) override;
+
 public:
 };
 
 /// TODO Legacy chunk serialisation format to be removed soon.
 class CCITTCRC32NoneChunk : public IChunk {
 protected:
-    Encoding onEncode(nbostream &os) const override;
-    void onDecode(nbostream &is) override;
+    Encoding onEncode(nbostream& os) const override;
+    void onDecode(nbostream& is) override;
+
 public:
 };
 
@@ -29,15 +32,17 @@ public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     XXH64CompressedChunk(CompressionConfig::Type, uint8_t level);
     ~XXH64CompressedChunk() override;
+
 protected:
-    void decompress(nbostream & os, uint32_t uncompressedLen);
-    Encoding compress(nbostream & os, Encoding::Crc crc) const;
-    Encoding onEncode(nbostream &os) const override;
-    void onDecode(nbostream &is) override;
+    void decompress(nbostream& os, uint32_t uncompressedLen);
+    Encoding compress(nbostream& os, Encoding::Crc crc) const;
+    Encoding onEncode(nbostream& os) const override;
+    void onDecode(nbostream& is) override;
+
 private:
     CompressionConfig::Type _type;
     uint8_t                 _level;
     vespalib::alloc::Alloc  _backing;
 };
 
-}
+} // namespace search::transactionlog

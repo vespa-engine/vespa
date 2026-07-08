@@ -10,7 +10,9 @@
 
 #include "node.h"
 #include "nodestate.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <array>
 
 namespace storage::lib {
@@ -38,7 +40,7 @@ public:
     ~ClusterState() override;
 
     std::string getTextualDifference(const ClusterState& other) const;
-    void serialize(vespalib::asciistream & out) const;
+    void serialize(vespalib::asciistream& out) const;
 
     bool operator==(const ClusterState& other) const noexcept;
     bool operator!=(const ClusterState& other) const noexcept;
@@ -64,22 +66,24 @@ public:
 
 private:
     // Preconditions: `key` and `value` MUST point into null-terminated strings.
-    bool parse(std::string_view key, std::string_view value, NodeData & nodeData);
+    bool parse(std::string_view key, std::string_view value, NodeData& nodeData);
     // Preconditions: `key` and `value` MUST point into null-terminated strings.
-    bool parseSorD(std::string_view key, std::string_view value, NodeData & nodeData);
+    bool parseSorD(std::string_view key, std::string_view value, NodeData& nodeData);
     void removeExtraElements();
     void removeExtraElements(const NodeType& type);
-    void printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, bool rootGroup) const;
+    void printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent,
+                             bool rootGroup) const;
     void getTextualDifference(std::ostringstream& builder, const NodeType& type, const ClusterState& other) const;
-    size_t printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, const NodeType& type) const;
-    void serialize_nodes(vespalib::asciistream & out, SeparatorPrinter & sep, const NodeType & nodeType,
-                         const std::vector<NodeStatePair> & nodeStates) const;
-    uint32_t           _version;
-    NodeCounts         _nodeCount;
-    const State*       _clusterState;
-    NodeMap            _nodeStates;
-    std::string   _description;
-    uint16_t           _distributionBits;
+    size_t printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent,
+                               const NodeType& type) const;
+    void serialize_nodes(vespalib::asciistream& out, SeparatorPrinter& sep, const NodeType& nodeType,
+                         const std::vector<NodeStatePair>& nodeStates) const;
+    uint32_t     _version;
+    NodeCounts   _nodeCount;
+    const State* _clusterState;
+    NodeMap      _nodeStates;
+    std::string  _description;
+    uint16_t     _distributionBits;
 };
 
-}
+} // namespace storage::lib

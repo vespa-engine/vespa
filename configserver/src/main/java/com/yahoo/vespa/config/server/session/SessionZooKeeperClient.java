@@ -14,10 +14,14 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.serialization.TelemetryExporterConfigurationSerializer;
 import com.yahoo.path.Path;
+import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
@@ -27,6 +31,7 @@ import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
 import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
 import com.yahoo.vespa.config.server.session.Session.Status;
 import com.yahoo.vespa.config.server.tenant.CloudAccountSerializer;
+import com.yahoo.vespa.config.server.tenant.CloudResourceTagsSerializer;
 import com.yahoo.vespa.config.server.tenant.DataplaneTokenSerializer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -47,10 +52,12 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 import static com.yahoo.vespa.config.server.session.SessionData.ACTIVATION_TRIGGERS_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.TELEMETRY_EXPORT_CONFIG_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_ID_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_PACKAGE_REFERENCE_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.ATHENZ_DOMAIN;
 import static com.yahoo.vespa.config.server.session.SessionData.CLOUD_ACCOUNT_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.CLOUD_RESOURCE_TAGS_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.CREATE_TIME_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.DATAPLANE_TOKENS_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.DOCKER_IMAGE_REPOSITORY_PATH;
@@ -224,6 +231,10 @@ public class SessionZooKeeperClient {
         return sessionPath.append(CLOUD_ACCOUNT_PATH);
     }
 
+    private Path cloudResourceTagsPath() {
+        return sessionPath.append(CLOUD_RESOURCE_TAGS_PATH);
+    }
+
     private Path dataplaneTokensPath() {
         return sessionPath.append(DATAPLANE_TOKENS_PATH);
     }
@@ -388,6 +399,22 @@ public class SessionZooKeeperClient {
         return curator.getData(cloudAccountPath()).map(SlimeUtils::jsonToSlime).map(slime -> CloudAccountSerializer.fromSlime(slime.get()));
     }
 
+    public void writeCloudResourceTags(CloudResourceTags cloudResourceTags) {
+        if ( ! cloudResourceTags.isEmpty()) {
+            Slime slime = new Slime();
+            CloudResourceTagsSerializer.toSlime(cloudResourceTags, slime.setObject());
+            byte[] data = uncheck(() -> SlimeUtils.toJsonBytes(slime));
+            curator.set(cloudResourceTagsPath(), data);
+        }
+    }
+
+    public CloudResourceTags readCloudResourceTags() {
+        return curator.getData(cloudResourceTagsPath())
+                      .map(SlimeUtils::jsonToSlime)
+                      .map(slime -> CloudResourceTagsSerializer.fromSlime(slime.get()))
+                      .orElse(CloudResourceTags.empty());
+    }
+
     public void writeDataplaneTokens(List<DataplaneToken> dataplaneTokens) {
         byte[] data = uncheck(() -> SlimeUtils.toJsonBytes(DataplaneTokenSerializer.toSlime(dataplaneTokens)));
         curator.set(dataplaneTokensPath(), data);
@@ -411,6 +438,16 @@ public class SessionZooKeeperClient {
                           log.log(Level.WARNING, "No activation triggers found for session at " + sessionPath.append(ACTIVATION_TRIGGERS_PATH).getAbsolute() + ", returning empty");
                           return ActivationTriggers.empty();
                       });
+    }
+
+    public void writeTelemetryExportConfig(TelemetryExporterConfiguration config) {
+        curator.set(sessionPath.append(TELEMETRY_EXPORT_CONFIG_PATH), TelemetryExporterConfigurationSerializer.toJson(config));
+    }
+
+    public TelemetryExporterConfiguration readTelemetryExporterConfiguration() {
+        return curator.getData(sessionPath.append(TELEMETRY_EXPORT_CONFIG_PATH))
+                      .map(TelemetryExporterConfigurationSerializer::fromJson)
+                      .orElse(TelemetryExporterConfiguration.empty());
     }
 
     /**

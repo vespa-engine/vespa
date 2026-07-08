@@ -3,13 +3,15 @@
 #pragma once
 
 #include "rise_wand.h"
+
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
+
 #include <cmath>
 
 namespace rise {
 
 template <typename Scorer, typename Cmp>
-RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n, Scorer scorer)
+RiseWand<Scorer, Cmp>::RiseWand(const Terms& terms, uint32_t n, Scorer scorer)
     : _numStreams(0),
       _streams(),
       _lastPivotIdx(0),
@@ -22,8 +24,7 @@ RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n, Scorer scorer)
       _limit(1),
       _streamScores(new score_t[terms.size()]),
       _scores(),
-      _terms(terms)
-{
+      _terms(terms) {
     for (size_t i = 0; i < terms.size(); ++i) {
         _terms[i].maxScore = _scorer.calculateMaxScore(terms[i]);
         _streamScores[i] = _terms[i].maxScore;
@@ -33,31 +34,26 @@ RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n, Scorer scorer)
     if (_numStreams == 0) {
         setAtEnd();
     }
-    for (uint32_t i=0; i<_numStreams; ++i) {
+    for (uint32_t i = 0; i < _numStreams; ++i) {
         _streamIndices[i] = i;
     }
-    for (uint32_t i=0; i<_numStreams; ++i) {
+    for (uint32_t i = 0; i < _numStreams; ++i) {
         _streamDocIds[i] = _streams[i]->getDocId();
     }
-    std::sort(_streamIndices, _streamIndices+_numStreams, _streamComparator);
+    std::sort(_streamIndices, _streamIndices + _numStreams, _streamComparator);
 }
 
-template <typename Scorer, typename Cmp>
-RiseWand<Scorer, Cmp>::~RiseWand()
-{
-    for (auto * stream : _streams) {
+template <typename Scorer, typename Cmp> RiseWand<Scorer, Cmp>::~RiseWand() {
+    for (auto* stream : _streams) {
         delete stream;
     }
-    delete [] _streamScores;
-    delete [] _streamIndicesAux;
-    delete [] _streamIndices;
-    delete [] _streamDocIds;
+    delete[] _streamScores;
+    delete[] _streamIndicesAux;
+    delete[] _streamIndices;
+    delete[] _streamDocIds;
 }
 
-template <typename Scorer, typename Cmp>
-void
-RiseWand<Scorer, Cmp>::next()
-{
+template <typename Scorer, typename Cmp> void RiseWand<Scorer, Cmp>::next() {
 
     // We do not check whether the stream is already at the end
     // here based on the assumption that application won't call
@@ -65,8 +61,8 @@ RiseWand<Scorer, Cmp>::next()
     // won't do this frequently.
 
     uint32_t pivotIdx;
-    docid_t pivotDocId = search::endDocId;
-    score_t threshold = _limit;
+    docid_t  pivotDocId = search::endDocId;
+    score_t  threshold = _limit;
 
     while (true) {
 
@@ -84,7 +80,7 @@ RiseWand<Scorer, Cmp>::next()
             setDocId(pivotDocId);
 
             // Advance pivotIdx sufficiently so that all instances of pivotDocId are included
-            while (pivotIdx < _numStreams-1 && _streamDocIds[_streamIndices[pivotIdx+1]] == pivotDocId) {
+            while (pivotIdx < _numStreams - 1 && _streamDocIds[_streamIndices[pivotIdx + 1]] == pivotDocId) {
                 ++pivotIdx;
             }
 
@@ -94,29 +90,25 @@ RiseWand<Scorer, Cmp>::next()
         } else { // not all cursors upto the pivot are aligned at the same doc yet
 
             // decreases pivotIdx to the first stream pointing at the pivotDocId
-            while (pivotIdx && _streamDocIds[_streamIndices[pivotIdx-1]] == pivotDocId) {
+            while (pivotIdx && _streamDocIds[_streamIndices[pivotIdx - 1]] == pivotDocId) {
                 --pivotIdx;
             }
 
             _moveStreamsToDocAndSort(pivotIdx, pivotDocId);
         }
 
-    }  /* while (true) */
+    } /* while (true) */
 }
 
 template <typename Scorer, typename Cmp>
-bool
-RiseWand<Scorer, Cmp>::_findPivotFeatureIdx(const score_t threshold, uint32_t &pivotIdx)
-{
+bool RiseWand<Scorer, Cmp>::_findPivotFeatureIdx(const score_t threshold, uint32_t& pivotIdx) {
     uint32_t idx;
-    score_t accumUB = 0;
-    for (idx=0;
-         !Cmp()(accumUB, threshold) && idx < _numStreams;
-         ++idx) {
+    score_t  accumUB = 0;
+    for (idx = 0; !Cmp()(accumUB, threshold) && idx < _numStreams; ++idx) {
         accumUB += _streamScores[_streamIndices[idx]];
     }
 
-    if( Cmp()(accumUB, threshold) ) {
+    if (Cmp()(accumUB, threshold)) {
         pivotIdx = idx - 1;
         return true;
     }
@@ -124,10 +116,8 @@ RiseWand<Scorer, Cmp>::_findPivotFeatureIdx(const score_t threshold, uint32_t &p
 }
 
 template <typename Scorer, typename Cmp>
-void
-RiseWand<Scorer, Cmp>::_moveStreamsAndSort(const uint32_t numStreamsToMove)
-{
-    for (uint32_t i=0; i<numStreamsToMove; ++i) {
+void RiseWand<Scorer, Cmp>::_moveStreamsAndSort(const uint32_t numStreamsToMove) {
+    for (uint32_t i = 0; i < numStreamsToMove; ++i) {
         _streams[_streamIndices[i]]->seek(_streams[_streamIndices[i]]->getDocId() + 1);
         _streamDocIds[_streamIndices[i]] = _streams[_streamIndices[i]]->getDocId();
     }
@@ -135,30 +125,25 @@ RiseWand<Scorer, Cmp>::_moveStreamsAndSort(const uint32_t numStreamsToMove)
 }
 
 template <typename Scorer, typename Cmp>
-void
-RiseWand<Scorer, Cmp>::_moveStreamsToDocAndSort(const uint32_t numStreamsToMove, const docid_t desiredDocId)
-{
-    for (uint32_t i=0; i<numStreamsToMove; ++i) {
+void RiseWand<Scorer, Cmp>::_moveStreamsToDocAndSort(const uint32_t numStreamsToMove, const docid_t desiredDocId) {
+    for (uint32_t i = 0; i < numStreamsToMove; ++i) {
         _streams[_streamIndices[i]]->seek(desiredDocId);
         _streamDocIds[_streamIndices[i]] = _streams[_streamIndices[i]]->getDocId();
     }
     _sortMerge(numStreamsToMove);
 }
 
-template <typename Scorer, typename Cmp>
-void RiseWand<Scorer, Cmp>::_sortMerge(const uint32_t numStreamsToMove)
-{
-    for (uint32_t i=0; i<numStreamsToMove; ++i) {
+template <typename Scorer, typename Cmp> void RiseWand<Scorer, Cmp>::_sortMerge(const uint32_t numStreamsToMove) {
+    for (uint32_t i = 0; i < numStreamsToMove; ++i) {
         _streamIndicesAux[i] = _streamIndices[i];
     }
-    std::sort(_streamIndicesAux, _streamIndicesAux+numStreamsToMove, _streamComparator);
+    std::sort(_streamIndicesAux, _streamIndicesAux + numStreamsToMove, _streamComparator);
 
-    uint16_t j=numStreamsToMove, k=0, i=0;
+    uint16_t j = numStreamsToMove, k = 0, i = 0;
     while (i < numStreamsToMove && j < _numStreams) {
         if (_streamComparator(_streamIndicesAux[i], _streamIndices[j])) {
             _streamIndices[k++] = _streamIndicesAux[i++];
-        }
-        else {
+        } else {
             _streamIndices[k++] = _streamIndices[j++];
         }
     }
@@ -169,16 +154,12 @@ void RiseWand<Scorer, Cmp>::_sortMerge(const uint32_t numStreamsToMove)
         }
     }
 
-    while (_numStreams &&
-            _streamDocIds[_streamIndices[_numStreams-1]] == search::endDocId) {
+    while (_numStreams && _streamDocIds[_streamIndices[_numStreams - 1]] == search::endDocId) {
         --_numStreams;
     }
 }
 
-template <typename Scorer, typename Cmp>
-void
-RiseWand<Scorer, Cmp>::doSeek(uint32_t docid)
-{
+template <typename Scorer, typename Cmp> void RiseWand<Scorer, Cmp>::doSeek(uint32_t docid) {
     if (getDocId() != beginId() && (docid - 1) == getDocId()) {
         _moveStreamsAndSort(_lastPivotIdx + 1);
     } else {
@@ -187,10 +168,7 @@ RiseWand<Scorer, Cmp>::doSeek(uint32_t docid)
     next();
 }
 
-template <typename Scorer, typename Cmp>
-void
-RiseWand<Scorer, Cmp>::doUnpack(uint32_t docid)
-{
+template <typename Scorer, typename Cmp> void RiseWand<Scorer, Cmp>::doUnpack(uint32_t docid) {
     score_t score = 0;
     for (size_t i = 0; i <= _lastPivotIdx; ++i) {
         score += _scorer.calculateScore(_terms[_streamIndices[i]], docid);
@@ -207,4 +185,3 @@ RiseWand<Scorer, Cmp>::doUnpack(uint32_t docid)
 }
 
 } // namespace rise
-

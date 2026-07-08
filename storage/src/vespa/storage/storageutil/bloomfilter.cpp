@@ -1,15 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bloomfilter.h"
+
 #include <cstdlib>
 #include <cstring>
 
-BloomFilter::BloomFilter(int size, int hashes, uint32_t *buf)
-    : _size(size),
-      _hashes(hashes),
-      _buf(buf),
-      _mine(false)
-{
+BloomFilter::BloomFilter(int size, int hashes, uint32_t* buf)
+    : _size(size), _hashes(hashes), _buf(buf), _mine(false) {
     if (!_buf) {
         _buf = new uint32_t[(_size / 32) + 1];
         memset(_buf, 0, ((_size / 32) + 1) * sizeof(uint32_t));
@@ -17,10 +14,9 @@ BloomFilter::BloomFilter(int size, int hashes, uint32_t *buf)
     }
 }
 
-BloomFilter::~BloomFilter()
-{
+BloomFilter::~BloomFilter() {
     if (_mine) {
-        delete [] _buf;
+        delete[] _buf;
     }
 }
 

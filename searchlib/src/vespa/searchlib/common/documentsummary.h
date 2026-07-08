@@ -7,12 +7,10 @@
 
 namespace search::docsummary {
 
-class DocumentSummary
-{
+class DocumentSummary {
 public:
-    static bool readDocIdLimit(const std::string &dir, uint32_t &docIdLimit);
-    static bool writeDocIdLimit(const std::string &dir, uint32_t docIdLimit);
+    static bool readDocIdLimit(const std::string& dir, uint32_t& docIdLimit);
+    static bool writeDocIdLimit(const std::string& dir, uint32_t docIdLimit);
 };
 
-}
-
+} // namespace search::docsummary

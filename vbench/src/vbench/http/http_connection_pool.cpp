@@ -4,27 +4,21 @@
 
 namespace vbench {
 
-HttpConnectionPool::HttpConnectionPool(CryptoEngine::SP crypto, Timer &timer)
-    : _lock(),
-      _map(),
-      _store(),
-      _crypto(std::move(crypto)),
-      _timer(timer)
-{
+HttpConnectionPool::HttpConnectionPool(CryptoEngine::SP crypto, Timer& timer)
+    : _lock(), _map(), _store(), _crypto(std::move(crypto)), _timer(timer) {
 }
 
-HttpConnectionPool::~HttpConnectionPool() {}
+HttpConnectionPool::~HttpConnectionPool() {
+}
 
-HttpConnection::UP
-HttpConnectionPool::getConnection(const ServerSpec &server)
-{
-    double now = _timer.sample();
+HttpConnection::UP HttpConnectionPool::getConnection(const ServerSpec& server) {
+    double          now = _timer.sample();
     std::lock_guard guard(_lock);
-    auto res = _map.insert(std::make_pair(server, _store.size()));
+    auto            res = _map.insert(std::make_pair(server, _store.size()));
     if (res.second) {
         _store.emplace_back();
     }
-    Queue &queue = _store[res.first->second];
+    Queue& queue = _store[res.first->second];
     while (!queue.empty() && !queue.front()->mayReuse(now)) {
         queue.pop();
     }
@@ -36,10 +30,8 @@ HttpConnectionPool::getConnection(const ServerSpec &server)
     return HttpConnection::UP(new HttpConnection(*_crypto, server));
 }
 
-void
-HttpConnectionPool::putConnection(HttpConnection::UP conn)
-{
-    double now = _timer.sample();
+void HttpConnectionPool::putConnection(HttpConnection::UP conn) {
+    double          now = _timer.sample();
     std::lock_guard guard(_lock);
     conn->touch(now);
     size_t idx = _map[conn->server()];

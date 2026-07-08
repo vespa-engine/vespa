@@ -24,7 +24,7 @@ ready_copies int default=0
 ## of buckets per leaf hierarchical group. This is a simple implementation for
 ## search to be able to setup top level dispatcher to only send search to all
 ## nodes in one group as they have a static cost per node used. If used,
-## hierarchical grouping can not be used for other purposes. Using this option
+## hierarchical grouping cannot be used for other purposes. Using this option
 ## implies that:
 ##   - ready_copies == redundancy
 ##   - Only one level of hierarchical grouping defined.
@@ -50,3 +50,10 @@ group[].nodes[].index int
 # The system will migrate all data away from retired nodes such that they can
 # eventually be removed without partial data loss
 group[].nodes[].retired bool default=false
+
+# Iff true, the ideal state node algorithm uses the relative configured
+# node index within the group instead of the node's distribution key when
+# calculating node scores for a given bucket. This means that bucket-to-node
+# mappings will be the same across groups that have the same number of nodes
+# in an available state.
+relative_node_order_scoring bool default=false

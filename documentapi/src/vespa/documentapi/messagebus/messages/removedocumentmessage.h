@@ -2,6 +2,7 @@
 #pragma once
 
 #include "testandsetmessage.h"
+
 #include <vespa/document/base/documentid.h>
 
 namespace documentapi {
@@ -66,5 +67,4 @@ public:
     string toString() const override { return "removedocumentmessage"; }
 };
 
-}
-
+} // namespace documentapi

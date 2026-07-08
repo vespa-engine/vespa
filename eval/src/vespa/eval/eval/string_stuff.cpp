@@ -1,16 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "string_stuff.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cctype>
 #include <cstdlib>
 
 namespace vespalib::eval {
 
-std::string as_quoted_string(const std::string &str) {
+std::string as_quoted_string(const std::string& str) {
     std::string res;
     res.push_back('"');
-    for (char c: str) {
+    for (char c : str) {
         switch (c) {
         case '\\':
             res.append("\\\\");
@@ -31,12 +33,10 @@ std::string as_quoted_string(const std::string &str) {
             res.append("\\f");
             break;
         default:
-            if (static_cast<unsigned char>(c) >= 32 &&
-                static_cast<unsigned char>(c) <= 126)
-            {
+            if (static_cast<unsigned char>(c) >= 32 && static_cast<unsigned char>(c) <= 126) {
                 res.push_back(c);
             } else {
-                const char *lookup = "0123456789abcdef";
+                const char* lookup = "0123456789abcdef";
                 res.append("\\x");
                 res.push_back(lookup[(c >> 4) & 0xf]);
                 res.push_back(lookup[c & 0xf]);
@@ -47,7 +47,7 @@ std::string as_quoted_string(const std::string &str) {
     return res;
 }
 
-bool is_number(const std::string &str) {
+bool is_number(const std::string& str) {
     for (char c : str) {
         if (!std::isdigit(static_cast<unsigned char>(c))) {
             return false;
@@ -56,14 +56,14 @@ bool is_number(const std::string &str) {
     return true;
 }
 
-size_t as_number(const std::string &str) {
+size_t as_number(const std::string& str) {
     return atoi(str.c_str());
 }
 
-std::string as_string(const TensorSpec::Address &address) {
+std::string as_string(const TensorSpec::Address& address) {
     CommaTracker label_list;
-    std::string str = "{";
-    for (const auto &label: address) {
+    std::string  str = "{";
+    for (const auto& label : address) {
         label_list.maybe_add_comma(str);
         if (label.second.is_mapped()) {
             str += make_string("%s:%s", label.first.c_str(), as_quoted_string(label.second.name).c_str());
@@ -75,4 +75,4 @@ std::string as_string(const TensorSpec::Address &address) {
     return str;
 }
 
-}
+} // namespace vespalib::eval

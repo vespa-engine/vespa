@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-# pragma once
+#pragma once
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 
@@ -13,17 +13,11 @@ class InterleavedFeatures {
 protected:
     uint16_t _num_occs;
     uint16_t _field_length;
+
 public:
-    InterleavedFeatures()
-        : _num_occs(0),
-          _field_length(1)
-    {
-    }
+    InterleavedFeatures() : _num_occs(0), _field_length(1) {}
     InterleavedFeatures(uint16_t num_occs, uint16_t field_length)
-        : _num_occs(num_occs),
-          _field_length(field_length)
-    {
-    }
+        : _num_occs(num_occs), _field_length(field_length) {}
     uint16_t get_num_occs() const { return _num_occs; }
     uint16_t get_field_length() const { return _field_length; }
 };
@@ -35,8 +29,8 @@ class NoInterleavedFeatures {
 public:
     NoInterleavedFeatures() {}
     NoInterleavedFeatures(uint16_t num_occs, uint16_t field_length) {
-        (void) num_occs;
-        (void) field_length;
+        (void)num_occs;
+        (void)field_length;
     }
     uint16_t get_num_occs() const { return 0; }
     uint16_t get_field_length() const { return 1; }
@@ -52,16 +46,9 @@ class PostingListEntry : public std::conditional_t<interleaved_features, Interle
 
 public:
     explicit PostingListEntry(vespalib::datastore::EntryRef features, uint16_t num_occs, uint16_t field_length)
-        : ParentType(num_occs, field_length),
-          _features(features)
-    {
-    }
+        : ParentType(num_occs, field_length), _features(features) {}
 
-    PostingListEntry()
-        : ParentType(),
-          _features()
-    {
-    }
+    PostingListEntry() : ParentType(), _features() {}
 
     vespalib::datastore::EntryRef get_features() const noexcept { return _features.load_acquire(); }
     vespalib::datastore::EntryRef get_features_relaxed() const noexcept { return _features.load_relaxed(); }
@@ -77,4 +64,4 @@ public:
 template class PostingListEntry<false>;
 template class PostingListEntry<true>;
 
-}
+} // namespace search::memoryindex

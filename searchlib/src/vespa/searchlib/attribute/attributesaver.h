@@ -3,7 +3,8 @@
 #pragma once
 
 #include "attribute_header.h"
-#include <vespa/vespalib/util/generationhandler.h>
+
+#include <vespa/vespalib/util/generation_guard.h>
 
 namespace search {
 
@@ -15,27 +16,26 @@ class IAttributeSaveTarget;
  * snapshot property, and guards to protect frozen views on structures
  * with snapshot properties.
  */
-class AttributeSaver
-{
+class AttributeSaver {
 private:
-    vespalib::GenerationHandler::Guard _guard;
+    vespalib::GenerationGuard  _guard;
     attribute::AttributeHeader _header;
 
 protected:
-    AttributeSaver(vespalib::GenerationHandler::Guard &&guard,
-                   const attribute::AttributeHeader &header);
+    AttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header);
 
-    virtual bool onSave(IAttributeSaveTarget &saveTarget) = 0;
+    virtual bool onSave(IAttributeSaveTarget& saveTarget) = 0;
 
     uint32_t get_header_version() const { return _header.getVersion(); }
+
 public:
     virtual ~AttributeSaver();
 
-    bool save(IAttributeSaveTarget &saveTarget);
+    bool save(IAttributeSaveTarget& saveTarget);
 
     bool hasGenerationGuard() const;
 
-    const std::string &get_file_name() const { return _header.getFileName(); }
+    const std::string& get_file_name() const { return _header.getFileName(); }
 };
 
 } // namespace search

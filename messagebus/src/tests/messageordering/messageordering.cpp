@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/messagebus/testlib/testserver.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -15,52 +15,36 @@ LOG_SETUP("messageordering_test");
 using namespace mbus;
 using namespace std::chrono_literals;
 
-RoutingSpec
-getRouting()
-{
-    return RoutingSpec()
-        .addTable(RoutingTableSpec("Simple")
-                  .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(RouteSpec("test").addHop("dst")));
+RoutingSpec getRouting() {
+    return RoutingSpec().addTable(RoutingTableSpec("Simple")
+                                      .addHop(HopSpec("dst", "test/dst/session"))
+                                      .addRoute(RouteSpec("test").addHop("dst")));
 }
 
-class MultiReceptor : public IMessageHandler
-{
+class MultiReceptor : public IMessageHandler {
 private:
-    std::mutex _mon;
+    std::mutex          _mon;
     DestinationSession* _destinationSession;
-    int _messageCounter;
+    int                 _messageCounter;
 
 public:
-    MultiReceptor()
-        : _mon(),
-          _destinationSession(nullptr),
-          _messageCounter(0)
-    {}
-    void handleMessage(Message::UP msg) override
-     {
-        auto & simpleMsg(dynamic_cast<SimpleMessage&>(*msg));
-        LOG(spam, "Attempting to acquire lock for %s",
-            simpleMsg.getValue().c_str());
+    MultiReceptor() : _mon(), _destinationSession(nullptr), _messageCounter(0) {}
+    void handleMessage(Message::UP msg) override {
+        auto& simpleMsg(dynamic_cast<SimpleMessage&>(*msg));
+        LOG(spam, "Attempting to acquire lock for %s", simpleMsg.getValue().c_str());
 
         std::lock_guard guard(_mon);
 
         std::string expected(vespalib::make_string("%d", _messageCounter));
-        LOG(debug, "Got message %p with %s, expecting %s",
-            msg.get(),
-            simpleMsg.getValue().c_str(),
-            expected.c_str());
+        LOG(debug, "Got message %p with %s, expecting %s", msg.get(), simpleMsg.getValue().c_str(), expected.c_str());
 
-        auto sr =std::make_unique<SimpleReply>("test reply");
+        auto sr = std::make_unique<SimpleReply>("test reply");
         msg->swapState(*sr);
 
         if (simpleMsg.getValue() != expected) {
             std::stringstream ss;
-            ss << "Received out-of-sequence message! Expected "
-               << expected
-               << ", but got "
-               << simpleMsg.getValue();
-            //LOG(warning, "%s", ss.str().c_str());
+            ss << "Received out-of-sequence message! Expected " << expected << ", but got " << simpleMsg.getValue();
+            // LOG(warning, "%s", ss.str().c_str());
             sr->addError(Error(ErrorCode::FATAL_ERROR, ss.str()));
         }
         sr->setValue(simpleMsg.getValue());
@@ -68,17 +52,15 @@ public:
         ++_messageCounter;
         _destinationSession->reply(Reply::UP(sr.release()));
     }
-    void setDestinationSession(DestinationSession& sess) {
-        _destinationSession = &sess;
-    }
+    void setDestinationSession(DestinationSession& sess) { _destinationSession = &sess; }
 };
 
-class VerifyReplyReceptor : public IReplyHandler
-{
+class VerifyReplyReceptor : public IReplyHandler {
     mutable std::mutex              _mon;
     mutable std::condition_variable _cond;
-    std::string _failure;
-    int _replyCount;
+    std::string                     _failure;
+    int                             _replyCount;
+
 public:
     ~VerifyReplyReceptor() override;
     VerifyReplyReceptor();
@@ -88,36 +70,24 @@ public:
 };
 
 VerifyReplyReceptor::~VerifyReplyReceptor() = default;
-VerifyReplyReceptor::VerifyReplyReceptor()
-    : _mon(),
-      _cond(),
-      _failure(),
-      _replyCount(0)
-{}
+VerifyReplyReceptor::VerifyReplyReceptor() : _mon(), _cond(), _failure(), _replyCount(0) {
+}
 
-void
-VerifyReplyReceptor::handleReply(Reply::UP reply)
-{
+void VerifyReplyReceptor::handleReply(Reply::UP reply) {
     std::lock_guard lock(_mon);
     if (reply->hasErrors()) {
         std::ostringstream ss;
-        ss << "Reply failed with "
-           << reply->getError(0).getMessage()
-           << "\n"
-           << reply->getTrace().toString();
+        ss << "Reply failed with " << reply->getError(0).getMessage() << "\n" << reply->getTrace().toString();
         if (_failure.empty()) {
             _failure = ss.str();
         }
         LOG(warning, "%s", ss.str().c_str());
     } else {
         std::string expected(vespalib::make_string("%d", _replyCount));
-        auto & simpleReply(dynamic_cast<SimpleReply&>(*reply));
+        auto&       simpleReply(dynamic_cast<SimpleReply&>(*reply));
         if (simpleReply.getValue() != expected) {
             std::stringstream ss;
-            ss << "Received out-of-sequence reply! Expected "
-               << expected
-               << ", but got "
-               << simpleReply.getValue();
+            ss << "Received out-of-sequence reply! Expected " << expected << ", but got " << simpleReply.getValue();
             LOG(warning, "%s", ss.str().c_str());
             if (_failure.empty()) {
                 _failure = ss.str();
@@ -127,9 +97,7 @@ VerifyReplyReceptor::handleReply(Reply::UP reply)
     ++_replyCount;
     _cond.notify_all();
 }
-void
-VerifyReplyReceptor::waitUntilDone(int waitForCount) const
-{
+void VerifyReplyReceptor::waitUntilDone(int waitForCount) const {
     std::unique_lock guard(_mon);
     while (_replyCount < waitForCount) {
         _cond.wait_for(guard, 1s);
@@ -138,12 +106,12 @@ VerifyReplyReceptor::waitUntilDone(int waitForCount) const
 
 TEST(MessageOrderingTest, messageordering_test) {
 
-    Slobrok     slobrok;
-    TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
-    TestServer  dstNet(Identity("test/dst"), getRouting(), slobrok);
+    Slobrok    slobrok;
+    TestServer srcNet(Identity("test/src"), getRouting(), slobrok);
+    TestServer dstNet(Identity("test/dst"), getRouting(), slobrok);
 
     VerifyReplyReceptor src;
-    MultiReceptor dst;
+    MultiReceptor       dst;
 
     SourceSessionParams ssp;
     ssp.setThrottlePolicy(IThrottlePolicy::SP());
@@ -163,12 +131,11 @@ TEST(MessageOrderingTest, messageordering_test) {
     const int messageCount = 5000;
     for (int i = 0; i < messageCount; ++i) {
         std::string str(vespalib::make_string("%d", i));
-        //std::this_thread::sleep_for(1ms);
+        // std::this_thread::sleep_for(1ms);
         auto msg = std::make_unique<SimpleMessage>(str, true, commonMessageId);
         msg->getTrace().setLevel(9);
-        //LOG(debug, "Sending message %p for %d", msg.get(), i);
-        ASSERT_EQ(uint32_t(ErrorCode::NONE),
-                     ss->send(std::move(msg), "test").getError().getCode());
+        // LOG(debug, "Sending message %p for %d", msg.get(), i);
+        ASSERT_EQ(uint32_t(ErrorCode::NONE), ss->send(std::move(msg), "test").getError().getCode());
     }
     src.waitUntilDone(messageCount);
 

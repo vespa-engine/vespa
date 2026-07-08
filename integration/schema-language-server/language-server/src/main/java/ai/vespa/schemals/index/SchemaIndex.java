@@ -29,6 +29,7 @@ import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
+import com.yahoo.text.Text;
 
 public class SchemaIndex {
     public static final HashMap<Class<?>, SymbolType> IDENTIFIER_TYPE_MAP = new HashMap<>() {{
@@ -69,7 +70,7 @@ public class SchemaIndex {
 
     // This is an inheritance graph, even though it doesn't model *inheritance* per se.
     private InheritanceGraph<Symbol> documentReferenceGraph;
-    
+
     public SchemaIndex(ClientLogger logger) {
         this.logger = logger;
         this.documentInheritanceGraph        = new InheritanceGraph<>();
@@ -221,7 +222,7 @@ public class SchemaIndex {
         // Special case for schema and document because a schema can sometimes refer to a document and vice versa
         if (type == SymbolType.SCHEMA || type == SymbolType.DOCUMENT) {
             SymbolType firstCheck = (type == SymbolType.SCHEMA ? SymbolType.SCHEMA : SymbolType.DOCUMENT);
-            List<Symbol> schemaDefinitions = 
+            List<Symbol> schemaDefinitions =
                 symbolDefinitions.get(firstCheck)
                                .stream()
                                .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
@@ -249,7 +250,7 @@ public class SchemaIndex {
     }
 
     /*
-     * Given a scope, type and short identifier, find definitions defined inside the actual scope. 
+     * Given a scope, type and short identifier, find definitions defined inside the actual scope.
      * Will not search inheritance graphs.
      */
     private Optional<Symbol> findSymbolInConcreteScope(Symbol scope, SymbolType type, String shortIdentifier) {
@@ -309,7 +310,7 @@ public class SchemaIndex {
     public boolean isInScope(Symbol symbol, Symbol scope) {
         if (scope == null) return true; // lets say every symbol is in the empty scope
         if (scope.getType() == SymbolType.RANK_PROFILE) {
-            return !rankProfileInheritanceGraph.findFirstMatches(scope, 
+            return !rankProfileInheritanceGraph.findFirstMatches(scope,
                     rankProfileDefinitionSymbol -> {
                         if (rankProfileDefinitionSymbol.equals(symbol.getScope())) {
                             return Boolean.valueOf(true);
@@ -317,16 +318,16 @@ public class SchemaIndex {
                         return null;
             }).isEmpty();
         } else if (scope.getType() == SymbolType.STRUCT) {
-            return !structInheritanceGraph.findFirstMatches(scope, 
+            return !structInheritanceGraph.findFirstMatches(scope,
                     structDefinitionSymbol -> {
                         if (structDefinitionSymbol.equals(symbol.getScope())) {
                             return Boolean.valueOf(true);
                         }
                         return null;
             }).isEmpty();
-        } else if ((symbol.getScope() == null || symbol.getScope().getType() == SymbolType.SCHEMA || symbol.getScope().getType() == SymbolType.DOCUMENT) && 
+        } else if ((symbol.getScope() == null || symbol.getScope().getType() == SymbolType.SCHEMA || symbol.getScope().getType() == SymbolType.DOCUMENT) &&
                 (scope.getType() == SymbolType.SCHEMA || scope.getType() == SymbolType.DOCUMENT)) {
-            return !documentInheritanceGraph.findFirstMatches(scope.getFileURI(), 
+            return !documentInheritanceGraph.findFirstMatches(scope.getFileURI(),
                 ancestorURI -> {
                     if (symbol.getFileURI().equals(ancestorURI)) {
                         return Boolean.valueOf(true);
@@ -341,8 +342,8 @@ public class SchemaIndex {
 
     /**
      * Retrieves the definition of a symbol from a map.
-     * We have three versions of this, because definitions can reference other definitions. 
-     * For example, struct-field is both a definition (you want to jump there if you go-to-definition on field.structfield somewhere else), 
+     * We have three versions of this, because definitions can reference other definitions.
+     * For example, struct-field is both a definition (you want to jump there if you go-to-definition on field.structfield somewhere else),
      * and a reference (to the field inside the struct).
      *  {@link getSymbolDefinition} returns identity if you supply a definition.
      *  {@link getNextSymbolDefinition} always tries to interpret the argument as a reference (jumping one step even if argument is a definition).
@@ -592,7 +593,7 @@ public class SchemaIndex {
 
         logger.info("\n === REFERENCES TO DEFINITIONS ===");
         for (var entry : definitionOfReference.entrySet()) {
-            String toPrint = String.format("%-50s -> %s", entry.getKey(), entry.getValue());
+            String toPrint = Text.format("%-50s -> %s", entry.getKey(), entry.getValue());
             logger.info(toPrint);
         }
 

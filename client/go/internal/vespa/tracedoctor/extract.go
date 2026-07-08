@@ -17,15 +17,18 @@ type queryTree struct {
 }
 
 type queryNode struct {
-	source      slime.Value
-	class       string
-	fieldName   string
-	queryTerm   string
-	strict      string
-	seeks       int64
-	selfTimeMs  float64
-	totalTimeMs float64
-	children    []*queryNode
+	source         slime.Value
+	class          string
+	fieldName      string
+	queryTerm      string
+	strict         bool
+	termwise       bool
+	multiBitVector bool
+	count          int64
+	selfTimeMs     float64
+	totalTimeMs    float64
+	absCost        float64
+	children       []*queryNode
 }
 
 func (q *queryNode) each(f func(q *queryNode)) {
@@ -51,27 +54,44 @@ func (q *queryNode) desc() string {
 
 var treePad = [][]string{{"", ""}, {"├── ", "│   "}, {"└── ", "    "}}
 
-func (q *queryNode) makeTable(tab *table, prefix string, pad int) {
-	tab.str(fmt.Sprintf("%d", q.seeks))
-	tab.str(fmt.Sprintf("%.3f", q.totalTimeMs))
-	tab.str(fmt.Sprintf("%.3f", q.selfTimeMs))
-	tab.str(q.strict)
+type queryColumn struct {
+	name    string
+	extract func(*queryNode) string
+}
+
+func (q *queryNode) makeRows(tab *table, columns []queryColumn, prefix string, pad int) {
+	for _, col := range columns {
+		tab.str(col.extract(q))
+	}
 	tab.str(fmt.Sprintf(" %s%s%s ", prefix, treePad[pad][0], q.desc()))
 	tab.commit()
 	childPrefix := prefix + treePad[pad][1]
 	for i, child := range q.children {
 		if i+1 < len(q.children) {
-			child.makeTable(tab, childPrefix, 1)
+			child.makeRows(tab, columns, childPrefix, 1)
 		} else {
-			child.makeTable(tab, childPrefix, 2)
+			child.makeRows(tab, columns, childPrefix, 2)
 		}
 	}
 }
 
+func (q *queryTree) makeTable(columns []queryColumn) *table {
+	tab := newTable()
+	for _, col := range columns {
+		tab.str(col.name)
+	}
+	tab.str("query tree").commit().line()
+	q.root.makeRows(tab, columns, "", 0)
+	return tab
+}
+
 func (q *queryTree) render(output *output) {
-	tab := newTable().str("seeks").str("total_ms").str("self_ms").str("step").str("query tree").commit().line()
-	q.root.makeTable(tab, "", 0)
-	tab.render(output)
+	q.makeTable([]queryColumn{
+		{"count", func(n *queryNode) string { return fmt.Sprintf("%d", n.count) }},
+		{"total_ms", func(n *queryNode) string { return fmt.Sprintf("%.3f", n.totalTimeMs) }},
+		{"self_ms", func(n *queryNode) string { return fmt.Sprintf("%.3f", n.selfTimeMs) }},
+		{"eval", func(n *queryNode) string { return n.evalMode() }},
+	}).render(output)
 }
 
 func (q *queryNode) asTable() *table {
@@ -126,11 +146,7 @@ func newQueryNode(obj slime.Value, t *queryTree) *queryNode {
 	if id := int(obj.Field("id").AsLong()); id > 0 {
 		t.index[id] = res
 	}
-	if obj.Field("strict").AsBool() {
-		res.strict = "S"
-	} else {
-		res.strict = "N"
-	}
+	res.strict = obj.Field("strict").AsBool()
 	if class := obj.Field("[type]"); class.Valid() {
 		res.class = stripClassName(class.AsString())
 	} else {
@@ -152,6 +168,7 @@ func newQueryNode(obj slime.Value, t *queryTree) *queryNode {
 			res.fieldName = obj.Field("field_name").AsString()
 		}
 	}
+	res.absCost = obj.Field("abs_cost").AsDouble()
 	res.class = strings.TrimSuffix(res.class, "Blueprint")
 	eachObjectArrayElem(obj.Field("children"), func(child slime.Value) {
 		res.children = append(res.children, newQueryNode(child, t))
@@ -163,6 +180,22 @@ func newQueryTree(query slime.Value) *queryTree {
 	res := &queryTree{index: make(map[int]*queryNode)}
 	res.root = newQueryNode(query, res)
 	return res
+}
+
+func (q *queryNode) evalMode() string {
+	var mode string
+	if q.strict {
+		mode = "eager"
+	} else {
+		mode = "lazy"
+	}
+	if q.multiBitVector {
+		mode += " mbv"
+	}
+	if q.termwise {
+		mode += " taat"
+	}
+	return mode
 }
 
 func stripClassName(name string) string {
@@ -217,6 +250,32 @@ func stripNameSpacesKeepSuffix(input string) string {
 	return stripped + suffix
 }
 
+// stripTemplateParams abbreviates template parameters with <...>
+// 'MultiTermHashFilter<IntegerHashFilterWrapper<true> >::doSeek' -> 'MultiTermHashFilter<...>::doSeek'
+func stripTemplateParams(input string) string {
+	var result strings.Builder
+	depth := 0
+
+	for i := 0; i < len(input); i++ {
+		c := input[i]
+		switch c {
+		case '<':
+			depth++
+		case '>':
+			depth--
+			if depth == 0 {
+				result.WriteString("<...>")
+			}
+		default:
+			if depth == 0 {
+				result.WriteByte(c)
+			}
+		}
+	}
+
+	return result.String()
+}
+
 type perfSample struct {
 	source slime.Value
 }
@@ -226,22 +285,39 @@ func (p perfSample) name() string {
 }
 
 func (p perfSample) isLegacySample() bool {
-	return strings.HasPrefix(p.source.Field("name").AsString(), "/")
+	return strings.HasPrefix(p.name(), "/")
 }
 
 func (p perfSample) isEnumSample() bool {
-	return strings.HasPrefix(p.source.Field("name").AsString(), "[")
+	return strings.HasPrefix(p.name(), "[")
 }
 
 func (p perfSample) isSeekSample() bool {
-	name := p.source.Field("name").AsString()
-	if strings.HasPrefix(name, "/") {
-		return strings.HasSuffix(name, "/seek")
-	}
-	if strings.HasPrefix(name, "[") {
-		return strings.HasSuffix(name, "::doSeek")
-	}
-	return false
+	name := p.name()
+	return strings.HasSuffix(name, "/seek") ||
+		strings.HasSuffix(name, "::doSeek")
+}
+
+func (p perfSample) isUnpackSample() bool {
+	name := p.name()
+	return strings.HasSuffix(name, "/unpack") ||
+		strings.HasSuffix(name, "::doUnpack")
+}
+
+func (p perfSample) isTermwiseSample() bool {
+	name := p.name()
+	return strings.HasSuffix(name, "/termwise") ||
+		strings.HasSuffix(name, "::get_hits") ||
+		strings.HasSuffix(name, "::and_hits_into") ||
+		strings.HasSuffix(name, "::or_hits_into")
+}
+
+func (p perfSample) isMultiBitVectorSample() bool {
+	return strings.Contains(p.name(), "MultiBitVector")
+}
+
+func (p perfSample) isFetchPostingsSample() bool {
+	return strings.HasSuffix(p.name(), "::fetchPostings")
 }
 
 func (p perfSample) count() int64 {
@@ -260,40 +336,49 @@ func (p perfSample) selfTimeMs() float64 {
 }
 
 func (q *queryNode) applySampleStats(sample perfSample, factor float64) {
-	if sample.isSeekSample() {
-		q.seeks += sample.count()
+	if sample.isTermwiseSample() {
+		q.termwise = true
 	}
+	if sample.isMultiBitVectorSample() {
+		q.multiBitVector = true
+	}
+	q.count += sample.count()
 	q.totalTimeMs += sample.totalTimeMs() * factor
 	q.selfTimeMs += sample.selfTimeMs() * factor
 }
 
-func (q *queryTree) applyLegacySample(sample perfSample) {
+func (q *queryTree) applyLegacySample(sample perfSample) bool {
 	node := q.root
 	path := parseNumList(sample.name(), 1, '/')
 	for _, child := range path {
 		if child < len(node.children) {
 			node = node.children[child]
 		} else {
-			return
+			return false
 		}
 	}
 	node.applySampleStats(sample, 1.0)
+	return true
 }
 
-func (q *queryTree) applySample(sample perfSample) {
+func (q *queryTree) applySample(sample perfSample) bool {
 	if sample.isEnumSample() {
+		applied := 0
 		list := parseNumList(sample.name(), 1, ',')
 		if len(list) > 0 {
 			factor := 1.0 / float64(len(list))
 			for _, id := range list {
 				if node, ok := q.index[id]; ok {
 					node.applySampleStats(sample, factor)
+					applied++
 				}
 			}
 		}
+		return applied > 0
 	} else if sample.isLegacySample() {
-		q.applyLegacySample(sample)
+		return q.applyLegacySample(sample)
 	}
+	return false
 }
 
 func hasTag(tag string) func(p *slime.Path, v slime.Value) bool {
@@ -317,6 +402,19 @@ func eachSampleList(list slime.Value, f func(sample perfSample)) {
 
 func eachSample(prof slime.Value, f func(sample perfSample)) {
 	eachSampleList(prof.Field("roots"), f)
+}
+
+func walkSampleList(list slime.Value, inSeek bool, f func(sample perfSample, inSeek bool) bool) {
+	list.EachEntry(func(_ int, v slime.Value) {
+		sample := perfSample{source: v}
+		if f(sample, inSeek) {
+			walkSampleList(v.Field("children"), inSeek || sample.isSeekSample(), f)
+		}
+	})
+}
+
+func walkSamples(prof slime.Value, f func(sample perfSample, inSeek bool) bool) {
+	walkSampleList(prof.Field("roots"), false, f)
 }
 
 func (q *queryTree) importMatchPerf(t threadTrace) {
@@ -448,8 +546,9 @@ func selectSlowestThread(threads []threadTrace) (*threadTrace, *threadTrace) {
 }
 
 type protonTrace struct {
-	source slime.Value
-	path   *slime.Path
+	source    slime.Value
+	path      *slime.Path
+	followUps []protonTrace
 }
 
 func (p protonTrace) globalFilterPerf() *topNPerf {
@@ -466,10 +565,31 @@ func (p protonTrace) globalFilterPerf() *topNPerf {
 		name := sample.name()
 		if sample.isEnumSample() {
 			name = stripNameSpacesKeepSuffix(name)
+			if len(name) > 80 {
+				name = stripTemplateParams(name)
+			}
 		}
 		perf.addSample(name, sample.count(), sample.selfTimeMs())
 	})
 	return perf
+}
+
+func (p protonTrace) setupPerf() *topNPerf {
+	perf := newTopNPerf()
+	slime.Select(p.source, hasTag("setup_profiling"), func(p *slime.Path, v slime.Value) {
+		eachSample(v, func(sample perfSample) {
+			perf.addSample(sample.name(), sample.count(), sample.selfTimeMs())
+		})
+	})
+	return perf
+}
+
+func (p protonTrace) findValueByTag(tag string) slime.Value {
+	r := slime.Find(p.source, hasTag(tag))
+	if len(r) == 1 {
+		return r[0].Apply(p.source)
+	}
+	return slime.Invalid
 }
 
 func (p protonTrace) findThreadTraces() []threadTrace {
@@ -538,6 +658,14 @@ func (p protonTrace) desc() string {
 	return fmt.Sprintf("%s[%d]", p.documentType(), p.distributionKey())
 }
 
+func (p protonTrace) followUpDurationsMs() []float64 {
+	var res []float64
+	for _, f := range p.followUps {
+		res = append(res, f.durationMs())
+	}
+	return res
+}
+
 type protonSummary struct {
 	name          string
 	filterMs      float64
@@ -572,7 +700,9 @@ func (p protonTrace) extractSummary() *protonSummary {
 	res := &protonSummary{name: p.desc()}
 	timeline := p.timeline()
 	res.filterMs = timeline.durationOf("Calculate global filter")
-	res.annMs = timeline.durationOf("Handle global filter in query execution plan")
+	res.annMs = timeline.durationBetween(
+		"Handle global filter in query execution plan",
+		"Optimize query execution plan to account for global filter")
 	if thread, _ := selectSlowestThread(p.findThreadTraces()); thread != nil {
 		res.matchMs = thread.matchTimeMs()
 		res.firstPhaseMs = thread.firstPhaseTimeMs()
@@ -619,29 +749,42 @@ func (p protonTraceGroup) extractDispatchedQuery(root slime.Value) string {
 			}
 		})
 	}
-	if len(list) == 1 {
+	if len(list) >= 1 {
 		return list[0]
 	}
 	return ""
 }
 
-func groupProtonTraces(traces []protonTrace) []protonTraceGroup {
-	groupMap := make(map[string]*protonTraceGroup)
+func collapseFollowUps(traces []protonTrace) []protonTrace {
+	nodeMap := make(map[int64]int)
+	var res []protonTrace
 	for _, trace := range traces {
-		tag := trace.path.Clone().Trim(3).Field(trace.documentType()).String()
-		if group, exists := groupMap[tag]; exists {
-			group.traces = append(group.traces, trace)
+		if idx, found := nodeMap[trace.distributionKey()]; found {
+			res[idx].followUps = append(res[idx].followUps, trace)
 		} else {
-			groupMap[tag] = &protonTraceGroup{traces: []protonTrace{trace}, id: len(groupMap)}
+			nodeMap[trace.distributionKey()] = len(res)
+			res = append(res, trace)
 		}
 	}
-	res := make([]protonTraceGroup, 0, len(groupMap))
-	for _, group := range groupMap {
-		res = append(res, *group)
+	return res
+}
+
+func groupProtonTraces(traces []protonTrace) []protonTraceGroup {
+	groupMap := make(map[string]int)
+	var res []protonTraceGroup
+	for _, trace := range traces {
+		tag := trace.path.Clone().Trim(3).Field(trace.documentType()).String()
+		if idx, exists := groupMap[tag]; exists {
+			res[idx].traces = append(res[idx].traces, trace)
+		} else {
+			myId := len(res)
+			groupMap[tag] = myId
+			res = append(res, protonTraceGroup{traces: []protonTrace{trace}, id: myId})
+		}
 	}
-	sort.Slice(res, func(i, j int) bool {
-		return res[i].id < res[j].id
-	})
+	for i := range res {
+		res[i].traces = collapseFollowUps(res[i].traces)
+	}
 	return res
 }
 

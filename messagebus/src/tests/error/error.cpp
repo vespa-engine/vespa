@@ -16,23 +16,22 @@
 using namespace mbus;
 
 RoutingSpec getRouting() {
-    return RoutingSpec()
-        .addTable(RoutingTableSpec("Simple")
-                  .addHop(HopSpec("pxy", "test/pxy/session"))
-                  .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
+    return RoutingSpec().addTable(RoutingTableSpec("Simple")
+                                      .addHop(HopSpec("pxy", "test/pxy/session"))
+                                      .addHop(HopSpec("dst", "test/dst/session"))
+                                      .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
 TEST(ErrorTest, error_test) {
 
-    Slobrok     slobrok;
-    TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
-    TestServer  pxyNet(Identity("test/pxy"), getRouting(), slobrok);
-    TestServer  dstNet(Identity("test/dst"), getRouting(), slobrok);
+    Slobrok    slobrok;
+    TestServer srcNet(Identity("test/src"), getRouting(), slobrok);
+    TestServer pxyNet(Identity("test/pxy"), getRouting(), slobrok);
+    TestServer dstNet(Identity("test/dst"), getRouting(), slobrok);
 
-    Receptor    src;
-    Receptor    pxy;
-    Receptor    dst;
+    Receptor src;
+    Receptor pxy;
+    Receptor dst;
 
     SourceSession::UP       ss = srcNet.mb.createSourceSession(src, SourceSessionParams());
     IntermediateSession::UP is = pxyNet.mb.createIntermediateSession("session", true, pxy, pxy);

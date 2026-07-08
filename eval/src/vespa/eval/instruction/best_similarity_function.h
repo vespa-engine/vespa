@@ -18,21 +18,18 @@ namespace vespalib::eval {
  * to find the best similarity measure must be the remaining dimension
  * of one of the inputs.
  **/
-class BestSimilarityFunction : public tensor_function::Op2
-{
+class BestSimilarityFunction : public tensor_function::Op2 {
 private:
     InterpretedFunction::op_function _my_fun;
-    size_t _inner_size;
-    uint64_t make_param(Stash &stash) const;
+    size_t                           _inner_size;
+    uint64_t make_param(Stash& stash) const;
+
 public:
-    BestSimilarityFunction(const ValueType &res_type_in,
-                           const TensorFunction &pri,
-                           const TensorFunction &sec,
-                           InterpretedFunction::op_function my_fun,
-                           size_t inner_size);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    BestSimilarityFunction(const ValueType& res_type_in, const TensorFunction& pri, const TensorFunction& sec,
+                           InterpretedFunction::op_function my_fun, size_t inner_size);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     bool result_is_mutable() const override { return true; }
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval

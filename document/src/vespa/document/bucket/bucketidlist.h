@@ -3,7 +3,9 @@
 #pragma once
 
 #include "bucketid.h"
+
 #include <vespa/vespalib/stllike/allocator.h>
+
 #include <vector>
 
 namespace document::bucket {
@@ -13,11 +15,11 @@ using BucketIdListT = std::vector<BucketId, vespalib::allocator_large<BucketId>>
 class BucketIdList : public BucketIdListT {
 public:
     using BucketIdListT::BucketIdListT;
-    BucketIdList(BucketIdList && rhs) noexcept = default;
-    BucketIdList & operator = (BucketIdList &&) noexcept = default;
-    BucketIdList(const BucketIdList & rhs);
-    BucketIdList & operator = (const BucketIdList &);
+    BucketIdList(BucketIdList&& rhs) noexcept = default;
+    BucketIdList& operator=(BucketIdList&&) noexcept = default;
+    BucketIdList(const BucketIdList& rhs);
+    BucketIdList& operator=(const BucketIdList&);
     ~BucketIdList();
 };
 
-}
+} // namespace document::bucket

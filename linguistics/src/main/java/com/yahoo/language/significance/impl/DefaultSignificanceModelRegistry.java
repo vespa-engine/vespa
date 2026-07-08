@@ -7,6 +7,7 @@ import com.yahoo.language.Language;
 import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.search.significance.config.SignificanceConfig;
+import com.yahoo.text.Text;
 import io.airlift.compress.zstd.ZstdInputStream;
 
 import java.io.IOException;
@@ -61,12 +62,12 @@ public final class DefaultSignificanceModelRegistry implements SignificanceModel
             for (var pair : file.languages().entrySet()) {
 
                 var languagesStr = pair.getKey();
-                log.fine(() -> "Found model for languages '%s'".formatted(languagesStr));
+                log.fine(() -> Text.format("Found model for languages '%s'", languagesStr));
                 String[] languageTags = languagesStr.split(",");
 
                 for (var languageTag : languageTags) {
                     var language = Language.fromLanguageTag(languageTag);
-                    log.fine(() -> "Adding model for language %s with id %s".formatted(language, file.id()));
+                    log.fine(() -> Text.format("Adding model for language %s with id %s", language, file.id()));
                     this.models.put(language, new DefaultSignificanceModel(pair.getValue(), file.id()));
                 }
             }

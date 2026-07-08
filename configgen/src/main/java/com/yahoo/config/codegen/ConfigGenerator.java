@@ -16,6 +16,7 @@ import com.yahoo.config.codegen.LeafCNode.ModelLeaf;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.codegen.BuilderGenerator.getBuilder;
@@ -71,13 +72,13 @@ public class ConfigGenerator {
     private static String getFieldDefinition(CNode node) {
         String fieldDef;
         if (node instanceof LeafCNode && node.isArray) {
-            fieldDef = String.format("LeafNodeVector<%s, %s> %s;", boxedDataType(node), nodeClass(node), node.getName());
+            fieldDef = String.format(Locale.ROOT, "LeafNodeVector<%s, %s> %s;", boxedDataType(node), nodeClass(node), node.getName());
         } else if (node instanceof InnerCNode && node.isArray) {
-            fieldDef = String.format("InnerNodeVector<%s> %s;", nodeClass(node), node.getName());
+            fieldDef = String.format(Locale.ROOT, "InnerNodeVector<%s> %s;", nodeClass(node), node.getName());
         } else if (node.isMap) {
-            fieldDef = String.format("Map<String, %s> %s;", nodeClass(node), node.getName());
+            fieldDef = String.format(Locale.ROOT, "Map<String, %s> %s;", nodeClass(node), node.getName());
         } else {
-            fieldDef = String.format("%s %s;", nodeClass(node), node.getName());
+            fieldDef = String.format(Locale.ROOT, "%s %s;", nodeClass(node), node.getName());
         }
         return node.getCommentBlock("//") + "private final " + fieldDef;
     }
@@ -94,7 +95,7 @@ public class ConfigGenerator {
 
     private static String getContainsFieldsFlaggedWithRestart(CNode node, boolean isOuter) {
         if (isOuter) {
-            return String.format("private static boolean containsFieldsFlaggedWithRestart() {\n" +//
+            return String.format(Locale.ROOT, "private static boolean containsFieldsFlaggedWithRestart() {\n" +//
                     "  return %b;\n" +//
                     "}\n\n", node.needRestart());
         } else {
@@ -323,7 +324,7 @@ public class ConfigGenerator {
 
     private static String getStaticMethodsForInnerArray(InnerCNode inner) {
         final String nc = nodeClass(inner);
-        return String.format("private static InnerNodeVector<%s> createVector(List<Builder> builders) {\n" +//
+        return String.format(Locale.ROOT, "private static InnerNodeVector<%s> createVector(List<Builder> builders) {\n" +//
                 "    List<%s> elems = new ArrayList<>();\n" +//
                 "    for (Builder b : builders) {\n" +//
                 "        elems.add(new %s(b));\n" +//
@@ -334,7 +335,7 @@ public class ConfigGenerator {
 
     private static String getStaticMethodsForInnerMap(InnerCNode inner) {
         final String nc = nodeClass(inner);
-        return String.format(
+        return String.format(Locale.ROOT,
                 "private static Map<String, %s> createMap(Map<String, Builder> builders) {\n" +//
                         "  Map<String, %s> ret = new LinkedHashMap<>();\n" +//
                         "  for(String key : builders.keySet()) {\n" +//
@@ -345,9 +346,9 @@ public class ConfigGenerator {
     }
 
     private static String getEnumCode(EnumLeaf en) {
-        String enumValues = stream(en.getLegalValues()).map(e -> String.format("  public final static Enum %s = Enum.%s;", e, e)).collect(Collectors.joining("\n"));
+        String enumValues = stream(en.getLegalValues()).map(e -> String.format(Locale.ROOT, "  public final static Enum %s = Enum.%s;", e, e)).collect(Collectors.joining("\n"));
 
-        String code = String.format("%s\n" +//
+        String code = String.format(Locale.ROOT, "%s\n" +//
                         "public final static class %s extends EnumNode<%s> {\n" +//
                         "\n" +//
                         "  public %s(){\n" +//
@@ -476,7 +477,7 @@ public class ConfigGenerator {
 
         if ("int".equals(rawType)) {
             return "Integer";
-        } else if (rawType.toLowerCase().equals(rawType)) {
+        } else if (rawType.toLowerCase(Locale.ROOT).equals(rawType)) {
             return ConfiggenUtil.capitalize(rawType);
         } else if (rawType.startsWith("Optional<")) {
             return "Optional";

@@ -1,93 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generationhandler.h"
+
 #include <cassert>
 
 namespace vespalib {
 
-GenerationHandler::GenerationHold::GenerationHold() noexcept
-    : _refCount(1),
-      _generation(0),
-      _next(nullptr)
-{ }
-
-GenerationHandler::GenerationHold::~GenerationHold() {
-    assert(getRefCount() == 0);
-}
-
-void
-GenerationHandler::GenerationHold::setValid() noexcept {
-    auto old = _refCount.fetch_sub(1, std::memory_order_release);
-    assert(!valid(old));
-}
-
-bool
-GenerationHandler::GenerationHold::setInvalid() noexcept {
-    uint32_t refs = 0;
-    if (_refCount.compare_exchange_strong(refs, 1,
-                                          std::memory_order_acq_rel,
-                                          std::memory_order_relaxed))
-    {
-        return true;
-    } else {
-        assert(valid(refs));
-        return false;
-    }
-}
-
-GenerationHandler::GenerationHold *
-GenerationHandler::GenerationHold::acquire() noexcept {
-    if (valid(_refCount.fetch_add(2, std::memory_order_acq_rel))) {
-        return this;
-    } else {
-        release();
-        return nullptr;
-    }
-}
-
-GenerationHandler::GenerationHold *
-GenerationHandler::GenerationHold::copy(GenerationHold *self) noexcept {
-    if (self == nullptr) {
-        return nullptr;
-    } else {
-        uint32_t oldRefCount = self->_refCount.fetch_add(2, std::memory_order_relaxed);
-        (void) oldRefCount;
-        assert(valid(oldRefCount));
-        return self;
-    }
-}
-
-GenerationHandler::Guard &
-GenerationHandler::Guard::operator=(const Guard & rhs) noexcept
-{
-    if (&rhs != this) {
-        cleanup();
-        _hold = GenerationHold::copy(rhs._hold);
-    }
-    return *this;
-}
-
-GenerationHandler::Guard &
-GenerationHandler::Guard::operator=(Guard &&rhs) noexcept
-{
-    if (&rhs != this) {
-        cleanup();
-        _hold = rhs._hold;
-        rhs._hold = nullptr;
-    }
-    return *this;
-}
-
-void
-GenerationHandler::update_oldest_used_generation()
-{
+void GenerationHandler::update_oldest_used_generation() {
     for (;;) {
         if (_first == _last.load(std::memory_order_relaxed))
-            break;			// No elements can be freed
+            break; // No elements can be freed
         if (!_first->setInvalid()) {
-            break;			// First element still in use
+            break; // First element still in use
         }
-        GenerationHold *toFree = _first;
+        GenerationHold* toFree = _first;
         assert(toFree->_next != nullptr);
         _first = toFree->_next;
         toFree->_next = _free;
@@ -97,25 +23,23 @@ GenerationHandler::update_oldest_used_generation()
 }
 
 GenerationHandler::GenerationHandler()
-    : _generation(0),
-      _oldest_used_generation(0),
+    : _generation(Generation(0)),
+      _oldest_used_generation(Generation(0)),
       _last(nullptr),
       _first(nullptr),
       _free(nullptr),
-      _numHolds(0u)
-{
+      _numHolds(0u) {
     _last = _first = new GenerationHold;
     ++_numHolds;
     _first->_generation.store(getCurrentGeneration(), std::memory_order_relaxed);
     _first->setValid();
 }
 
-GenerationHandler::~GenerationHandler()
-{
+GenerationHandler::~GenerationHandler() {
     update_oldest_used_generation();
     assert(_first == _last.load(std::memory_order_relaxed));
     while (_free != nullptr) {
-        GenerationHold *toFree = _free;
+        GenerationHold* toFree = _free;
         _free = toFree->_next;
         --_numHolds;
         delete toFree;
@@ -124,28 +48,24 @@ GenerationHandler::~GenerationHandler()
     delete _first;
 }
 
-GenerationHandler::Guard
-GenerationHandler::takeGuard() const
-{
-    Guard guard(_last.load(std::memory_order_acquire));
+GenerationGuard GenerationHandler::takeGuard() const {
+    GenerationGuard guard(_last.load(std::memory_order_acquire));
     for (;;) {
         // Must check valid() after increasing refcount
         if (guard.valid())
-            break;		// Might still be marked invalid, that's OK
+            break; // Might still be marked invalid, that's OK
         /*
          * Clashed with writer freeing entry.  Must abandon current
          * guard and try again.
          */
-        guard = Guard(_last.load(std::memory_order_acquire));
+        guard = GenerationGuard(_last.load(std::memory_order_acquire));
     }
     // Guard has been valid after bumping refCount
     return guard;
 }
 
-void
-GenerationHandler::incGeneration()
-{
-    generation_t ngen = getNextGeneration();
+void GenerationHandler::incGeneration() {
+    Generation ngen = getNextGeneration();
 
     auto last = _last.load(std::memory_order_relaxed);
     if (last->getRefCountAcqRel() == 0) {
@@ -156,7 +76,7 @@ GenerationHandler::incGeneration()
         update_oldest_used_generation();
         return;
     }
-    GenerationHold *nhold = nullptr;
+    GenerationHold* nhold = nullptr;
     if (_free == nullptr) {
         nhold = new GenerationHold;
         ++_numHolds;
@@ -173,28 +93,23 @@ GenerationHandler::incGeneration()
     update_oldest_used_generation();
 }
 
-uint32_t
-GenerationHandler::getGenerationRefCount(generation_t gen) const
-{
-    if (static_cast<sgeneration_t>(gen - getCurrentGeneration()) > 0)
+uint32_t GenerationHandler::getGenerationRefCount(Generation gen) const {
+    if (gen > getCurrentGeneration() || get_oldest_used_generation() > gen) {
         return 0u;
-    if (static_cast<sgeneration_t>(get_oldest_used_generation() - gen) > 0)
-        return 0u;
-    for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {
+    }
+    for (GenerationHold* hold = _first; hold != nullptr; hold = hold->_next) {
         if (hold->_generation.load(std::memory_order_relaxed) == gen)
             return hold->getRefCount();
     }
     return 0u;
 }
 
-uint64_t
-GenerationHandler::getGenerationRefCount() const
-{
+uint64_t GenerationHandler::getGenerationRefCount() const {
     uint64_t ret = 0;
-    for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {
+    for (GenerationHold* hold = _first; hold != nullptr; hold = hold->_next) {
         ret += hold->getRefCount();
     }
     return ret;
 }
 
-}
+} // namespace vespalib

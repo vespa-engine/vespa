@@ -1,68 +1,60 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/messagebus.h>
-#include <vespa/messagebus/sourcesession.h>
-#include <vespa/messagebus/intermediatesession.h>
 #include <vespa/messagebus/destinationsession.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/intermediatesession.h>
+#include <vespa/messagebus/messagebus.h>
+#include <vespa/messagebus/routing/routingspec.h>
+#include <vespa/messagebus/sourcesession.h>
+#include <vespa/messagebus/sourcesessionparams.h>
+#include <vespa/messagebus/testlib/receptor.h>
+#include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/routing/routingspec.h>
-#include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/messagebus/sourcesessionparams.h>
-#include <vespa/messagebus/testlib/simplemessage.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
 //-----------------------------------------------------------------------------
 
-class Proxy : public IMessageHandler,
-              public IReplyHandler
-{
+class Proxy : public IMessageHandler, public IReplyHandler {
 private:
     IntermediateSession::UP _session;
+
 public:
-    Proxy(MessageBus &bus);
+    Proxy(MessageBus& bus);
     void handleMessage(Message::UP msg) override;
     void handleReply(Reply::UP reply) override;
 };
 
-Proxy::Proxy(MessageBus &bus)
-    : _session(bus.createIntermediateSession("session", true, *this, *this))
-{
+Proxy::Proxy(MessageBus& bus) : _session(bus.createIntermediateSession("session", true, *this, *this)) {
 }
 
-void
-Proxy::handleMessage(Message::UP msg) {
+void Proxy::handleMessage(Message::UP msg) {
     msg->getTrace().trace(1, "Proxy message", false);
     _session->forward(std::move(msg));
 }
 
-void
-Proxy::handleReply(Reply::UP reply) {
+void Proxy::handleReply(Reply::UP reply) {
     reply->getTrace().trace(1, "Proxy reply", false);
     _session->forward(std::move(reply));
 }
 
 //-----------------------------------------------------------------------------
 
-class Server : public IMessageHandler
-{
+class Server : public IMessageHandler {
 private:
     DestinationSession::UP _session;
+
 public:
-    Server(MessageBus &bus);
+    Server(MessageBus& bus);
     void handleMessage(Message::UP msg) override;
 };
 
-Server::Server(MessageBus &bus)
-    : _session(bus.createDestinationSession("session", true, *this))
-{
+Server::Server(MessageBus& bus) : _session(bus.createDestinationSession("session", true, *this)) {
 }
 
-void
-Server::handleMessage(Message::UP msg) {
+void Server::handleMessage(Message::UP msg) {
     msg->getTrace().trace(1, "Server message", false);
     Reply::UP reply(new EmptyReply());
     msg->swapState(*reply);
@@ -73,23 +65,22 @@ Server::handleMessage(Message::UP msg) {
 //-----------------------------------------------------------------------------
 
 RoutingSpec getRouting() {
-    return RoutingSpec()
-        .addTable(RoutingTableSpec("Simple")
-                  .addHop(HopSpec("pxy", "test/pxy/session"))
-                  .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
+    return RoutingSpec().addTable(RoutingTableSpec("Simple")
+                                      .addHop(HopSpec("pxy", "test/pxy/session"))
+                                      .addHop(HopSpec("dst", "test/dst/session"))
+                                      .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
 TEST(TraceRoundtripTest, simple_roundtrip_test) {
 
-    Slobrok     slobrok;
-    TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
-    TestServer  pxyNet(Identity("test/pxy"), getRouting(), slobrok);
-    TestServer  dstNet(Identity("test/dst"), getRouting(), slobrok);
+    Slobrok    slobrok;
+    TestServer srcNet(Identity("test/src"), getRouting(), slobrok);
+    TestServer pxyNet(Identity("test/pxy"), getRouting(), slobrok);
+    TestServer dstNet(Identity("test/dst"), getRouting(), slobrok);
 
-    Receptor    src;
-    Proxy       pxy(pxyNet.mb);
-    Server      dst(dstNet.mb);
+    Receptor src;
+    Proxy    pxy(pxyNet.mb);
+    Server   dst(dstNet.mb);
 
     SourceSession::UP ss = srcNet.mb.createSourceSession(src, SourceSessionParams());
 
@@ -107,12 +98,12 @@ TEST(TraceRoundtripTest, simple_roundtrip_test) {
     EXPECT_TRUE(reply->getNumErrors() == 0);
 
     TraceNode t = TraceNode()
-                  .addChild("Client message")
-                  .addChild("Proxy message")
-                  .addChild("Server message")
-                  .addChild("Server reply")
-                  .addChild("Proxy reply")
-                  .addChild("Client reply");
+                      .addChild("Client message")
+                      .addChild("Proxy message")
+                      .addChild("Server message")
+                      .addChild("Server reply")
+                      .addChild("Proxy reply")
+                      .addChild("Client reply");
     EXPECT_TRUE(reply->getTrace().encode() == t.encode());
 }
 

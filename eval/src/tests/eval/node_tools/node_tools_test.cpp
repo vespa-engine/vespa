@@ -6,7 +6,7 @@
 
 using namespace vespalib::eval;
 
-auto make_copy(const Function &fun) {
+auto make_copy(const Function& fun) {
     std::vector<std::string> params;
     for (size_t i = 0; i < fun.num_params(); ++i) {
         params.push_back(fun.param_name(i));
@@ -14,27 +14,28 @@ auto make_copy(const Function &fun) {
     return Function::create(NodeTools::copy(fun.root()), params);
 }
 
-void verify_copy(const std::string &expr, const std::string &expect) {
+void verify_copy(const std::string& expr, const std::string& expect) {
     SCOPED_TRACE(expr);
     auto fun = Function::parse(expr);
     auto fun_copy = make_copy(*fun);
     EXPECT_EQ(fun_copy->dump(), expect);
 }
-void verify_copy(const std::string &expr) { verify_copy(expr, expr); }
+void verify_copy(const std::string& expr) {
+    verify_copy(expr, expr);
+}
 
-TEST(NodeToolsTest, require_that_required_parameter_count_can_be_detected)
-{
-    auto function = Function::parse({"a","b","c"}, "(c+a)+(b+1)");
-    const auto &root = function->root();
+TEST(NodeToolsTest, require_that_required_parameter_count_can_be_detected) {
+    auto        function = Function::parse({"a", "b", "c"}, "(c+a)+(b+1)");
+    const auto& root = function->root();
     ASSERT_EQ(root.num_children(), 2u);
-    const auto &n_c_a = root.get_child(0);
-    const auto &n_b_1 = root.get_child(1);
+    const auto& n_c_a = root.get_child(0);
+    const auto& n_b_1 = root.get_child(1);
     ASSERT_EQ(n_c_a.num_children(), 2u);
-    const auto &n_c = n_c_a.get_child(0);
-    const auto &n_a = n_c_a.get_child(1);
+    const auto& n_c = n_c_a.get_child(0);
+    const auto& n_a = n_c_a.get_child(1);
     ASSERT_EQ(n_b_1.num_children(), 2u);
-    const auto &n_b = n_b_1.get_child(0);
-    const auto &n_1 = n_b_1.get_child(1);
+    const auto& n_b = n_b_1.get_child(0);
+    const auto& n_1 = n_b_1.get_child(1);
     EXPECT_EQ(NodeTools::min_num_params(root), 3u);
     EXPECT_EQ(NodeTools::min_num_params(n_c_a), 3u);
     EXPECT_EQ(NodeTools::min_num_params(n_b_1), 2u);
@@ -44,8 +45,7 @@ TEST(NodeToolsTest, require_that_required_parameter_count_can_be_detected)
     EXPECT_EQ(NodeTools::min_num_params(n_1), 0u);
 }
 
-TEST(NodeToolsTest, require_that_basic_node_types_can_be_copied)
-{
+TEST(NodeToolsTest, require_that_basic_node_types_can_be_copied) {
     verify_copy("123");
     verify_copy("foo");
     verify_copy("\"string value\"");
@@ -57,8 +57,7 @@ TEST(NodeToolsTest, require_that_basic_node_types_can_be_copied)
     verify_copy("#", "[]...[missing value]...[#]");
 }
 
-TEST(NodeToolsTest, require_that_operator_node_types_can_be_copied)
-{
+TEST(NodeToolsTest, require_that_operator_node_types_can_be_copied) {
     verify_copy("(a+b)");
     verify_copy("(a-b)");
     verify_copy("(a*b)");
@@ -76,8 +75,7 @@ TEST(NodeToolsTest, require_that_operator_node_types_can_be_copied)
     verify_copy("(a||b)");
 }
 
-TEST(NodeToolsTest, require_that_call_node_types_can_be_copied)
-{
+TEST(NodeToolsTest, require_that_call_node_types_can_be_copied) {
     verify_copy("cos(a)");
     verify_copy("sin(a)");
     verify_copy("tan(a)");
@@ -109,8 +107,7 @@ TEST(NodeToolsTest, require_that_call_node_types_can_be_copied)
     verify_copy("hamming(a,b)");
 }
 
-TEST(NodeToolsTest, require_that_tensor_node_types_can_NOT_be_copied_yet)
-{
+TEST(NodeToolsTest, require_that_tensor_node_types_can_NOT_be_copied_yet) {
     verify_copy("map(a,f(x)(x))", "not implemented");
     verify_copy("join(a,b,f(x,y)(x*y))", "not implemented");
     verify_copy("merge(a,b,f(x,y)(y))", "not implemented");
@@ -122,8 +119,7 @@ TEST(NodeToolsTest, require_that_tensor_node_types_can_NOT_be_copied_yet)
     verify_copy("a{x:0}", "not implemented");
 }
 
-TEST(NodeToolsTest, require_that_nested_expressions_can_be_copied)
-{
+TEST(NodeToolsTest, require_that_nested_expressions_can_be_copied) {
     verify_copy("min(a,if(((b+3)==7),(!c),(d+7)))");
 }
 

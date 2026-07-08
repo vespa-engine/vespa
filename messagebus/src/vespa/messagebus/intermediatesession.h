@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "reply.h"
 #include "imessagehandler.h"
 #include "intermediatesessionparams.h"
+#include "reply.h"
 #include "replygate.h"
 
 namespace mbus {
@@ -15,18 +15,16 @@ class Message;
  * An IntermediateSession is used to process Message and Reply objects
  * on the way along a route.
  **/
-class IntermediateSession : public IMessageHandler,
-                            public IReplyHandler
-{
+class IntermediateSession : public IMessageHandler, public IReplyHandler {
 private:
     friend class MessageBus;
     using MessageUP = std::unique_ptr<Message>;
     template <typename T> using ref_counted = vespalib::ref_counted<T>;
 
-    MessageBus            &_mbus;
+    MessageBus&            _mbus;
     string                 _name;
-    IMessageHandler       &_msgHandler;
-    IReplyHandler         &_replyHandler;
+    IMessageHandler&       _msgHandler;
+    IReplyHandler&         _replyHandler;
     ref_counted<ReplyGate> _gate;
 
     /**
@@ -35,7 +33,7 @@ private:
      * @param mbus   The message bus that created this instance.
      * @param params The parameter object for this session.
      */
-    IntermediateSession(MessageBus &mbus, const IntermediateSessionParams &params);
+    IntermediateSession(MessageBus& mbus, const IntermediateSessionParams& params);
 
 public:
     /**
@@ -93,4 +91,3 @@ public:
 };
 
 } // namespace mbus
-

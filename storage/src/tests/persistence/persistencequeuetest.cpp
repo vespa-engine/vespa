@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/storage/persistence/filestorage/filestormetrics.h>
+
 #include <tests/persistence/common/filestortestfixture.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
-#include <vespa/storage/persistence/filestorage/filestormetrics.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/fieldset/fieldsets.h>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".persistencequeuetest");
@@ -23,13 +25,13 @@ public:
     void SetUp() override;
 
     struct Fixture {
-        FileStorTestFixture& parent;
-        DummyStorageLink top;
+        FileStorTestFixture&              parent;
+        DummyStorageLink                  top;
         std::unique_ptr<DummyStorageLink> dummyManager;
-        ForwardingMessageSender messageSender;
-        FileStorMetrics metrics;
-        std::unique_ptr<FileStorHandler> filestorHandler;
-        uint32_t stripeId;
+        ForwardingMessageSender           messageSender;
+        FileStorMetrics                   metrics;
+        std::unique_ptr<FileStorHandler>  filestorHandler;
+        uint32_t                          stripeId;
 
         explicit Fixture(FileStorTestFixture& parent);
         ~Fixture();
@@ -42,15 +44,14 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
       dummyManager(std::make_unique<DummyStorageLink>()),
       messageSender(*dummyManager),
       metrics(),
-      stripeId(0)
-{
+      stripeId(0) {
     top.push_back(std::move(dummyManager));
     top.open();
 
     metrics.initDiskMetrics(1, 1);
 
-    filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics,
-                                                            parent._node->getComponentRegister());
+    filestorHandler =
+        std::make_unique<FileStorHandlerImpl>(messageSender, metrics, parent._node->getComponentRegister());
     // getNextMessage will time out if no unlocked buckets are present. Choose a timeout
     // that is large enough to fail tests with high probability if this is not the case,
     // and small enough to not slow down testing too much.
@@ -66,7 +67,7 @@ void PersistenceQueueTest::SetUp() {
 
 std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createPut(uint64_t bucket, uint64_t docIdx) {
     std::shared_ptr<document::Document> doc = _node->getTestDocMan().createDocument(
-            "foobar", vespalib::make_string("id:foo:testdoctype1:n=%" PRIu64 ":%" PRIu64, bucket, docIdx));
+        "foobar", vespalib::make_string("id:foo:testdoctype1:n=%" PRIu64 ":%" PRIu64, bucket, docIdx));
     auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(16, bucket)), doc, 1234);
     cmd->setAddress(makeSelfAddress());
     return cmd;
@@ -74,8 +75,9 @@ std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createPut(uint64_t bu
 
 std::shared_ptr<api::StorageMessage> PersistenceQueueTest::createGet(uint64_t bucket) const {
     auto cmd = std::make_shared<api::GetCommand>(
-            makeDocumentBucket(document::BucketId(16, bucket)),
-            document::DocumentId(vespalib::make_string("id:foo:testdoctype1:n=%" PRIu64 ":0", bucket)), document::AllFields::NAME);
+        makeDocumentBucket(document::BucketId(16, bucket)),
+        document::DocumentId(vespalib::make_string("id:foo:testdoctype1:n=%" PRIu64 ":0", bucket)),
+        document::AllFields::NAME);
     cmd->setAddress(makeSelfAddress());
     return cmd;
 }
@@ -92,13 +94,11 @@ TEST_F(PersistenceQueueTest, fetch_next_unlocked_message_if_bucket_locked) {
 
     auto lock0 = f.filestorHandler->getNextMessage(f.stripeId);
     ASSERT_TRUE(lock0.lock.get());
-    EXPECT_EQ(document::BucketId(16, 1234),
-              dynamic_cast<api::PutCommand&>(*lock0.msg).getBucketId());
+    EXPECT_EQ(document::BucketId(16, 1234), dynamic_cast<api::PutCommand&>(*lock0.msg).getBucketId());
 
     auto lock1 = f.filestorHandler->getNextMessage(f.stripeId);
     ASSERT_TRUE(lock1.lock.get());
-    EXPECT_EQ(document::BucketId(16, 5432),
-              dynamic_cast<api::PutCommand&>(*lock1.msg).getBucketId());
+    EXPECT_EQ(document::BucketId(16, 5432), dynamic_cast<api::PutCommand&>(*lock1.msg).getBucketId());
 }
 
 TEST_F(PersistenceQueueTest, shared_locked_operations_allow_concurrent_bucket_access) {

@@ -13,6 +13,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
@@ -22,6 +23,7 @@ import java.util.Scanner;
  *
  * @author bjorncs
  */
+@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build() and HelpFormatter
 public class CommandLineOptions {
 
     public static final String HELP_OPTION = "help";
@@ -188,7 +190,7 @@ public class CommandLineOptions {
             }
 
             if (printIdsOnly && !fieldSet.isEmpty()) {
-                throw new IllegalArgumentException("Field set option can not be used in combination with print ids option.");
+                throw new IllegalArgumentException("Field set option cannot be used in combination with print ids option.");
             }
 
             if (printIdsOnly) {
@@ -243,7 +245,7 @@ public class CommandLineOptions {
         // WARNING: CommandLine.getArgs may return a single empty string as the only element
         if (documentIds.isEmpty() ||
                 documentIds.size() == 1 && documentIds.get(0).isEmpty()) {
-            return new Scanner(stdIn);
+            return new Scanner(stdIn, StandardCharsets.UTF_8);
         } else {
             return documentIds.iterator();
         }

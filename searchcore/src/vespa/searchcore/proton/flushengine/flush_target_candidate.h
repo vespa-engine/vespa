@@ -3,8 +3,10 @@
 #pragma once
 
 #include "prepare_restart_flush_strategy.h"
-#include <memory>
+
 #include <vespa/searchlib/common/serialnum.h>
+
+#include <memory>
 
 namespace proton {
 
@@ -13,8 +15,7 @@ class FlushContext;
 /**
  * Class describing a flush target candidate for the prepare restart flush strategy.
  */
-class FlushTargetCandidate
-{
+class FlushTargetCandidate {
     std::shared_ptr<FlushContext> _flush_context;
     double                        _replay_operation_cost;
     search::SerialNum             _flushed_serial;
@@ -27,14 +28,16 @@ class FlushTargetCandidate
     bool                          _always_flush;
 
     using Config = PrepareRestartFlushStrategy::Config;
+
 public:
-    FlushTargetCandidate(std::shared_ptr<FlushContext> flush_context, search::SerialNum current_serial, const Config &cfg);
+    FlushTargetCandidate(std::shared_ptr<FlushContext> flush_context, search::SerialNum current_serial,
+                         const Config& cfg);
     ~FlushTargetCandidate();
-    const std::shared_ptr<FlushContext> &get_flush_context() const { return _flush_context; }
-    search::SerialNum  get_flushed_serial() const { return _flushed_serial; }
+    const std::shared_ptr<FlushContext>& get_flush_context() const { return _flush_context; }
+    search::SerialNum get_flushed_serial() const { return _flushed_serial; }
     double get_write_cost() const { return _write_cost; }
     double get_read_cost() const noexcept { return _read_cost; }
     bool get_always_flush() const { return _always_flush; }
 };
 
-}
+} // namespace proton

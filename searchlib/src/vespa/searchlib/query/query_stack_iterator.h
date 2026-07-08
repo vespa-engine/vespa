@@ -3,15 +3,17 @@
 #pragma once
 
 #include <vespa/searchlib/parsequery/parse.h>
+
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace search::query {
 
 class PredicateQueryTerm;
 class TermVector;
 
-}
+} // namespace search::query
 
 namespace search {
 
@@ -26,38 +28,40 @@ public:
     struct Data {
         ParseItem::ItemType itemType = ParseItem::ItemType::ITEM_UNDEF;
 
-        unsigned int  noRankFlag:1 = false;
-        unsigned int  noPositionDataFlag:1 = false;
-        unsigned int  creaFilterFlag:1 = false;
-        unsigned int  isSpecialTokenFlag:1 = false;
-        unsigned int  allowApproximateFlag:1 = false;
-        unsigned int  prefix_match_semantics_flag:1 = false;
+        unsigned int noRankFlag : 1 = false;
+        unsigned int noPositionDataFlag : 1 = false;
+        unsigned int creaFilterFlag : 1 = false;
+        unsigned int isSpecialTokenFlag : 1 = false;
+        unsigned int allowApproximateFlag : 1 = false;
+        unsigned int prefix_match_semantics_flag : 1 = false;
 
         query::Weight weight = query::Weight(0);
 
         std::unique_ptr<query::PredicateQueryTerm> predicateQueryTerm;
-        std::unique_ptr<query::TermVector> termVector;
+        std::unique_ptr<query::TermVector>         termVector;
 
         std::string_view index_view;
         std::string_view term_view;
-        int64_t integerTerm = 0;
+        int64_t          integerTerm = 0;
 
         double distanceThreshold = 0;
         double scoreThreshold = 0;
         double thresholdBoostFactor = 0;
 
-        uint32_t uniqueId = 0;
-        uint32_t arity = 0;
-        uint32_t nearDistance = 0;
-        uint32_t negativeTerms = 0;
-        uint32_t exclusionDistance = 0;
-        uint32_t targetHits = 0;
-        uint32_t exploreAdditionalHits = 0;
-        uint32_t fuzzy_max_edit_distance = 0;
-        uint32_t fuzzy_prefix_lock_length = 0;
+        uint32_t              uniqueId = 0;
+        uint32_t              arity = 0;
+        uint32_t              nearDistance = 0;
+        uint32_t              negativeTerms = 0;
+        uint32_t              exclusionDistance = 0;
+        uint32_t              targetHits = 0;
+        uint32_t              exploreAdditionalHits = 0;
+        uint32_t              fuzzy_max_edit_distance = 0;
+        uint32_t              fuzzy_prefix_lock_length = 0;
+        std::vector<uint32_t> _element_filter;
 
         void clear();
     };
+
 protected:
     Data _d;
 
@@ -90,6 +94,8 @@ public:
     // fuzzy match arguments (see also: has_prefix_match_semantics() for fuzzy prefix matching)
     [[nodiscard]] uint32_t fuzzy_max_edit_distance() const noexcept { return _d.fuzzy_max_edit_distance; }
     [[nodiscard]] uint32_t fuzzy_prefix_lock_length() const noexcept { return _d.fuzzy_prefix_lock_length; }
+    // elementFilter annotation for sameElement
+    [[nodiscard]] const std::vector<uint32_t>& get_element_filter() const noexcept { return _d._element_filter; }
 
     // Get the flags of the current item.
     [[nodiscard]] bool hasNoRankFlag() const noexcept { return _d.noRankFlag; }
@@ -118,4 +124,4 @@ public:
     static std::unique_ptr<QueryStackIterator> dummy();
 };
 
-} // namespace
+} // namespace search

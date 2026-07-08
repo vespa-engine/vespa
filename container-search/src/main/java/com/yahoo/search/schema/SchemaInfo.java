@@ -44,14 +44,6 @@ public class SchemaInfo {
 
     private final ParserSettings parserSettings;
 
-    private static ParserSettings extractLQP(QrSearchersConfig qrSearchersConfig) {
-        var cfg = qrSearchersConfig.parserSettings();
-        return new ParserSettings(cfg.keepImplicitAnds(),
-                                  cfg.markSegmentAnds(),
-                                  cfg.keepSegmentAnds(),
-                                  cfg.keepIdeographicPunctuation());
-    }
-
     @Inject
     public SchemaInfo(SchemaInfoConfig schemaInfoConfig,
                       QrSearchersConfig qrSearchersConfig) {
@@ -62,11 +54,6 @@ public class SchemaInfo {
 
     public SchemaInfo(List<Schema> schemas, List<Cluster> clusters) {
         this(schemas, clusters, new ParserSettings());
-    }
-
-    /** only for unit tests */
-    public static SchemaInfo createStub(ParserSettings lqp) {
-        return new SchemaInfo(List.of(), List.of(), lqp);
     }
 
     private SchemaInfo(List<Schema> schemas, List<Cluster> clusters, ParserSettings lqp) {
@@ -107,6 +94,19 @@ public class SchemaInfo {
     @Override
     public int hashCode() { return Objects.hash(schemas, clusters); }
 
+    private static ParserSettings extractLQP(QrSearchersConfig qrSearchersConfig) {
+        var cfg = qrSearchersConfig.parserSettings();
+        return new ParserSettings(cfg.keepImplicitAnds(),
+                                  cfg.markSegmentAnds(),
+                                  cfg.keepSegmentAnds(),
+                                  cfg.keepIdeographicPunctuation());
+    }
+
+    /** only for unit tests */
+    public static SchemaInfo createStub(ParserSettings lqp) {
+        return new SchemaInfo(List.of(), List.of(), lqp);
+    }
+
     /** The schema information resolved to be relevant to this session. */
     public static class Session {
 
@@ -125,6 +125,10 @@ public class SchemaInfo {
         public boolean isStreaming() { return isStreaming; }
 
         public Collection<Schema> schemas() { return schemas; }
+
+        public Optional<Schema> schema(String name) {
+            return schemas.stream().filter(schema -> schema.name().equals(name)).findAny();
+        }
 
         /**
          * Looks up a field or field set by the given name or alias

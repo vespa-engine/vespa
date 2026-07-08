@@ -14,13 +14,10 @@ struct DocumentFrequency {
     uint64_t count;     // total number of documents
 
     DocumentFrequency(uint64_t document_frequency_in, uint64_t document_count_in)
-            : frequency(document_frequency_in),
-              count(document_count_in)
-    {
-    }
+        : frequency(document_frequency_in), count(document_count_in) {}
     bool operator==(const DocumentFrequency& rhs) const noexcept {
         return frequency == rhs.frequency && count == rhs.count;
     }
 };
 
-}
+} // namespace search::fef

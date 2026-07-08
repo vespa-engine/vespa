@@ -12,4 +12,4 @@ public:
     virtual ~PrepareResult() = default;
 };
 
-}
+} // namespace search::tensor

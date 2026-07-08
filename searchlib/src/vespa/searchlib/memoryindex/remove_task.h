@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
+
 #include <cstdint>
 #include <vector>
 
@@ -16,16 +17,18 @@ class UrlFieldInverter;
  * Task to remove a document from a set of field inverters and uri
  * field inverters.
  */
-class RemoveTask : public vespalib::Executor::Task
-{
+class RemoveTask : public vespalib::Executor::Task {
     const InvertContext&                                  _context;
     const std::vector<std::unique_ptr<FieldInverter>>&    _inverters;
     const std::vector<std::unique_ptr<UrlFieldInverter>>& _uri_inverters;
     std::vector<uint32_t>                                 _lids;
+
 public:
-    RemoveTask(const InvertContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters,  const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters, const std::vector<uint32_t>& lids);
+    RemoveTask(const InvertContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters,
+               const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters,
+               const std::vector<uint32_t>&                          lids);
     ~RemoveTask() override;
     void run() override;
 };
 
-}
+} // namespace search::memoryindex

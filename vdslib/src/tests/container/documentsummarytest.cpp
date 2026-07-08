@@ -6,8 +6,7 @@
 
 namespace vdslib {
 
-TEST(DocumentSummaryTest, test_simple)
-{
+TEST(DocumentSummaryTest, test_simple) {
     DocumentSummary a;
     EXPECT_EQ(0, a.getSummaryCount());
     a.addSummary("doc1", "summary1", 8);
@@ -15,9 +14,9 @@ TEST(DocumentSummaryTest, test_simple)
     a.addSummary("aoc12", "summary17", 9);
     ASSERT_EQ(2, a.getSummaryCount());
 
-    size_t r;
-    const char * docId;
-    const void * buf(nullptr);
+    size_t      r;
+    const char* docId;
+    const void* buf(nullptr);
     a.getSummary(0, docId, buf, r);
     EXPECT_EQ(8, r);
     EXPECT_EQ("doc1", std::string(docId));
@@ -38,4 +37,4 @@ TEST(DocumentSummaryTest, test_simple)
     EXPECT_TRUE(memcmp(buf, "summary1", r) == 0);
 }
 
-}
+} // namespace vdslib

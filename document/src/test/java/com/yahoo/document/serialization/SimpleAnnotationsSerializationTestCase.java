@@ -20,7 +20,10 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests that serialization of SimpleIndexingAnnotations produces the same

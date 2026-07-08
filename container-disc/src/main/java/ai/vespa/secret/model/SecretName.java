@@ -20,4 +20,8 @@ public class SecretName extends PatternedStringWrapper<SecretName> {
         return new SecretName(name);
     }
 
+    public static boolean isValid(String name) {
+        return namePattern.matcher(name).matches();
+    }
+
 }

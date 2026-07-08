@@ -6,8 +6,8 @@
 
 namespace proton::test {
 
-using Int32Attribute = search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int32_t> >;
+using Int32Attribute = search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int32_t>>;
 
-std::unique_ptr<Int32Attribute> createInt32Attribute(const std::string &name);
+std::unique_ptr<Int32Attribute> createInt32Attribute(const std::string& name);
 
-}
+} // namespace proton::test

@@ -1,17 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "intermediate_message_sender.h"
+
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 
 namespace storage::distributor {
 
-IntermediateMessageSender::IntermediateMessageSender(SentMessageMap& mm,
-                                                     std::shared_ptr<Operation> cb,
+IntermediateMessageSender::IntermediateMessageSender(SentMessageMap& mm, std::shared_ptr<Operation> cb,
                                                      DistributorStripeMessageSender& fwd) noexcept
-    : msgMap(mm),
-      callback(std::move(cb)),
-      forward(fwd)
-{
+    : msgMap(mm), callback(std::move(cb)), forward(fwd) {
 }
 
 IntermediateMessageSender::~IntermediateMessageSender() = default;
@@ -49,4 +46,4 @@ OperationSequencer& IntermediateMessageSender::operation_sequencer() noexcept {
     return forward.operation_sequencer();
 }
 
-}
+} // namespace storage::distributor

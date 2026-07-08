@@ -4,6 +4,7 @@ package com.yahoo.jrt;
 import com.yahoo.security.tls.ConnectionAuthContext;
 import com.yahoo.security.tls.PeerAuthorizationFailedException;
 import com.yahoo.security.tls.TransportSecurityUtils;
+import com.yahoo.text.Text;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -71,7 +72,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     @Override
     public HandshakeResult handshake() throws IOException {
         HandshakeState newHandshakeState = processHandshakeState(this.handshakeState);
-        log.fine(() -> String.format("Handshake state '%s -> %s'", this.handshakeState, newHandshakeState));
+        log.fine(() -> Text.format("Handshake state '%s -> %s'", this.handshakeState, newHandshakeState));
         this.handshakeState = newHandshakeState;
         return toHandshakeResult(newHandshakeState);
     }
@@ -118,7 +119,7 @@ public class TlsCryptoSocket implements CryptoSocket {
                         if (!authContext.authorized()) {
                             metrics.incrementPeerAuthorizationFailures();
                         }
-                        log.fine(() -> String.format("Handshake complete: protocol=%s, cipherSuite=%s", session.getProtocol(), session.getCipherSuite()));
+                        log.fine(() -> Text.format("Handshake complete: protocol=%s, cipherSuite=%s", session.getProtocol(), session.getCipherSuite()));
                         if (sslEngine.getUseClientMode()) {
                             metrics.incrementClientTlsConnectionsEstablished();
                         } else {

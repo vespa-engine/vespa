@@ -1,17 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/vsm/common/storagedocument.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vsm/common/storagedocument.h>
 
 using namespace document;
 
 namespace vsm {
 
-TEST(DocumentTest, storage_document)
-{
+TEST(DocumentTest, storage_document) {
     DocumentType dt("testdoc", 0);
 
     Field fa("a", 0, *DataType::STRING);
@@ -25,7 +24,7 @@ TEST(DocumentTest, storage_document)
 
     SharedFieldPathMap fpmap(new FieldPathMapT());
     fpmap->emplace_back();
-    dt.buildFieldPath(fpmap->back(),"a");
+    dt.buildFieldPath(fpmap->back(), "a");
     fpmap->emplace_back();
     dt.buildFieldPath(fpmap->back(), "b");
     fpmap->emplace_back();
@@ -61,12 +60,11 @@ TEST(DocumentTest, storage_document)
     EXPECT_TRUE(!sdoc.setField(3, FieldValue::UP(new StringFieldValue("thud"))));
 
     SharedFieldPathMap fim;
-    StorageDocument s2(std::make_unique<document::Document>(), fim, 0);
+    StorageDocument    s2(std::make_unique<document::Document>(), fim, 0);
     EXPECT_EQ(IdString().toString(), s2.docDoc().getId().toString());
 }
 
-TEST(DocumentTest, string_field_id_t_map)
-{
+TEST(DocumentTest, string_field_id_t_map) {
     StringFieldIdTMap m;
     EXPECT_EQ(0u, m.highestFieldNo());
     EXPECT_TRUE(StringFieldIdTMap::npos == m.fieldNo("unknown"));
@@ -93,15 +91,14 @@ TEST(DocumentTest, string_field_id_t_map)
     EXPECT_EQ(14u, m.highestFieldNo());
     {
         vespalib::asciistream os;
-        StringFieldIdTMap t;
+        StringFieldIdTMap     t;
         t.add("b");
         t.add("a");
         os << t;
         EXPECT_EQ(std::string("a = 1\nb = 0\n"), os.view());
     }
-    
 }
 
-}
+} // namespace vsm
 
 GTEST_MAIN_RUN_ALL_TESTS()

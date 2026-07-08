@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "distributor_host_info_reporter.h"
+
 #include "bucket_spaces_stats_provider.h"
 #include "content_node_stats_provider.h"
-#include "distributor_host_info_reporter.h"
 #include "min_replica_provider.h"
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <chrono>
 #include <set>
 
@@ -23,41 +26,35 @@ namespace {
 // to be much real value in having this configurable.
 constexpr std::chrono::duration content_node_stats_sample_window = 60s;
 
-}
+} // namespace
 
-DistributorHostInfoReporter::DistributorHostInfoReporter(
-        MinReplicaProvider& minReplicaProvider,
-        BucketSpacesStatsProvider& bucketSpacesStatsProvider,
-        ContentNodeStatsProvider& content_node_stats_provider)
+DistributorHostInfoReporter::DistributorHostInfoReporter(MinReplicaProvider&        minReplicaProvider,
+                                                         BucketSpacesStatsProvider& bucketSpacesStatsProvider,
+                                                         ContentNodeStatsProvider&  content_node_stats_provider)
     : _minReplicaProvider(minReplicaProvider),
       _bucketSpacesStatsProvider(bucketSpacesStatsProvider),
       _content_node_stats_provider(content_node_stats_provider),
       _prev_node_stats_full(),
       _node_stats_delta(),
       _last_stat_sample_time(),
-      _stat_mutex()
-{
+      _stat_mutex() {
 }
 
 namespace {
 
-void
-writeBucketSpacesStats(vespalib::JsonStream& stream,
-                       const BucketSpacesStats& stats)
-{
+void writeBucketSpacesStats(vespalib::JsonStream& stream, const BucketSpacesStats& stats) {
     for (const auto& elem : stats) {
         stream << Object() << "name" << elem.first;
         if (elem.second.valid()) {
-            stream << "buckets" << Object()
-                    << "total" << elem.second.bucketsTotal()
-                    << "pending" << elem.second.bucketsPending()
-                    << End();
+            stream << "buckets" << Object() << "total" << elem.second.bucketsTotal() << "pending"
+                   << elem.second.bucketsPending() << End();
         }
         stream << End();
     }
 }
 
-void write_single_error_stat_if_nonzero(vespalib::JsonStream& stream, std::string_view err_name, uint64_t err_counter) {
+void write_single_error_stat_if_nonzero(vespalib::JsonStream& stream, std::string_view err_name,
+                                        uint64_t err_counter) {
     if (err_counter == 0) {
         return;
     }
@@ -67,11 +64,11 @@ void write_single_error_stat_if_nonzero(vespalib::JsonStream& stream, std::strin
 void write_content_node_stats(vespalib::JsonStream& stream, const ContentNodeMessageStats& stats) {
     stream << "response-stats" << Object();
     constexpr double delta_s = std::chrono::duration<double>(content_node_stats_sample_window).count();
-    stream << "sample-window-sec" << delta_s // allows rate to be computed. TODO don't include?
-           << "total-count"       << stats.sum_received(); // allows ratio to be computed per error category
+    stream << "sample-window-sec" << delta_s         // allows rate to be computed. TODO don't include?
+           << "total-count" << stats.sum_received(); // allows ratio to be computed per error category
     stream << "errors" << Object();
-    write_single_error_stat_if_nonzero(stream, "network",       stats.recv_network_error);
-    write_single_error_stat_if_nonzero(stream, "clock-skew",    stats.recv_clock_skew_error);
+    write_single_error_stat_if_nonzero(stream, "network", stats.recv_network_error);
+    write_single_error_stat_if_nonzero(stream, "clock-skew", stats.recv_clock_skew_error);
     // TODO consider if it gives value to include this field, since it's not directly actionable.
     write_single_error_stat_if_nonzero(stream, "uncategorized", stats.recv_other_error);
     stream << End() << End();
@@ -85,12 +82,9 @@ void write_content_node_stats(vespalib::JsonStream& stream, const ContentNodeMes
     return stats.recv_network_error > 0;
 }
 
-void
-outputStorageNodes(vespalib::JsonStream &output,
-                   const MinReplicaMap& minReplica,
-                   const PerNodeBucketSpacesStats& bucketSpacesStats,
-                   const ContentNodeMessageStatsTracker::NodeStats& node_stats)
-{
+void outputStorageNodes(vespalib::JsonStream& output, const MinReplicaMap& minReplica,
+                        const PerNodeBucketSpacesStats&                  bucketSpacesStats,
+                        const ContentNodeMessageStatsTracker::NodeStats& node_stats) {
     std::set<uint16_t> nodes;
     for (const auto& element : minReplica) {
         nodes.insert(element.first);
@@ -103,7 +97,7 @@ outputStorageNodes(vespalib::JsonStream &output,
             nodes.insert(element.first);
         }
     }
-    
+
     for (uint16_t node : nodes) {
         output << Object();
         {
@@ -111,8 +105,7 @@ outputStorageNodes(vespalib::JsonStream &output,
 
             auto minReplicaIt = minReplica.find(node);
             if (minReplicaIt != minReplica.end()) {
-                output << "min-current-replication-factor"
-                       << minReplicaIt->second;
+                output << "min-current-replication-factor" << minReplicaIt->second;
             }
 
             auto stats_it = node_stats.per_node.find(node);
@@ -131,11 +124,9 @@ outputStorageNodes(vespalib::JsonStream &output,
     }
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
-void
-DistributorHostInfoReporter::report(vespalib::JsonStream& output)
-{
+void DistributorHostInfoReporter::report(vespalib::JsonStream& output) {
     auto minReplica = _minReplicaProvider.getMinReplica();
     auto bucketSpacesStats = _bucketSpacesStatsProvider.per_node_bucket_spaces_stats();
     auto global_stats = _bucketSpacesStatsProvider.distributor_global_stats();
@@ -143,10 +134,8 @@ DistributorHostInfoReporter::report(vespalib::JsonStream& output)
 
     output << "distributor" << Object();
     if (global_stats.valid()) {
-        output << "global-stats" << Object()
-               << "stored-document-count" << global_stats.documents_total()
-               << "stored-document-bytes" << global_stats.bytes_total()
-               << End();
+        output << "global-stats" << Object() << "stored-document-count" << global_stats.documents_total()
+               << "stored-document-bytes" << global_stats.bytes_total() << End();
     }
     {
         output << "storage-nodes" << Array();
@@ -156,16 +145,12 @@ DistributorHostInfoReporter::report(vespalib::JsonStream& output)
     output << End();
 }
 
-ContentNodeMessageStatsTracker::NodeStats
-DistributorHostInfoReporter::thread_safe_node_stats_delta() const
-{
+ContentNodeMessageStatsTracker::NodeStats DistributorHostInfoReporter::thread_safe_node_stats_delta() const {
     std::lock_guard lock(_stat_mutex);
     return _node_stats_delta;
 }
 
-void
-DistributorHostInfoReporter::on_periodic_callback(std::chrono::steady_clock::time_point steady_now)
-{
+void DistributorHostInfoReporter::on_periodic_callback(std::chrono::steady_clock::time_point steady_now) {
     std::lock_guard lock(_stat_mutex);
     if (steady_now - _last_stat_sample_time >= content_node_stats_sample_window) {
         auto stats_now = _content_node_stats_provider.content_node_stats();
@@ -175,5 +160,4 @@ DistributorHostInfoReporter::on_periodic_callback(std::chrono::steady_clock::tim
     }
 }
 
-}
-
+} // namespace storage::distributor

@@ -14,6 +14,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -87,11 +88,11 @@ public class AutoReloadingX509KeyManager extends X509ExtendedKeyManager implemen
         @Override
         public void run() {
             try {
-                log.log(Level.FINE, () -> String.format("Reloading key and certificate chain (private-key='%s', certificates='%s')", privateKeyFile, certificatesFile));
+                log.log(Level.FINE, () -> String.format(Locale.ROOT, "Reloading key and certificate chain (private-key='%s', certificates='%s')", privateKeyFile, certificatesFile));
                 mutableX509KeyManager.updateKeystore(createKeystore(privateKeyFile, certificatesFile), new char[0]);
             } catch (Throwable t) {
                 log.log(Level.SEVERE,
-                        String.format("Failed to load X509 key manager (private-key='%s', certificates='%s'): %s",
+                        String.format(Locale.ROOT, "Failed to load X509 key manager (private-key='%s', certificates='%s'): %s",
                                       privateKeyFile, certificatesFile, t.getMessage()),
                         t);
             }

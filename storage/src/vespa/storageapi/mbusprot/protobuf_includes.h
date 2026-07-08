@@ -4,5 +4,5 @@
 
 #include <vespa/storageapi/mbusprot/feed.pb.h>
 #include <vespa/storageapi/mbusprot/inspect.pb.h>
-#include <vespa/storageapi/mbusprot/visiting.pb.h>
 #include <vespa/storageapi/mbusprot/maintenance.pb.h>
+#include <vespa/storageapi/mbusprot/visiting.pb.h>

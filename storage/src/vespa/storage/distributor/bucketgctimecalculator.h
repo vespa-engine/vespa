@@ -18,36 +18,28 @@ namespace storage::distributor {
  * If the check period is zero, this is considered to mean GC is disabled.
  */
 
-class BucketGcTimeCalculator
-{
+class BucketGcTimeCalculator {
 public:
     class BucketIdHasher {
         virtual size_t doHash(const document::BucketId&) const noexcept = 0;
+
     public:
         virtual ~BucketIdHasher() = default;
         size_t hash(const document::BucketId& b) const noexcept { return doHash(b); }
     };
 
     class BucketIdIdentityHasher : public BucketIdHasher {
-        size_t doHash(const document::BucketId& b) const noexcept override {
-            return b.getId();
-        }
+        size_t doHash(const document::BucketId& b) const noexcept override { return b.getId(); }
     };
 
-    BucketGcTimeCalculator(const BucketIdHasher& hasher,
-                           vespalib::duration checkInterval)
-        : _hasher(hasher),
-          _checkInterval(checkInterval)
-    {
-    }
+    BucketGcTimeCalculator(const BucketIdHasher& hasher, vespalib::duration checkInterval)
+        : _hasher(hasher), _checkInterval(checkInterval) {}
 
-    bool shouldGc(const document::BucketId&,
-                  vespalib::duration currentTime,
-                  vespalib::duration lastRunAt) const;
+    bool shouldGc(const document::BucketId&, vespalib::duration currentTime, vespalib::duration lastRunAt) const;
 
 private:
     const BucketIdHasher& _hasher;
-    vespalib::duration _checkInterval;
+    vespalib::duration    _checkInterval;
 };
 
-}
+} // namespace storage::distributor

@@ -2,6 +2,4 @@
 
 #include "convenience.h"
 
-namespace vespalib::slime {
-
-} // namespace vespalib::slime
+namespace vespalib::slime {} // namespace vespalib::slime

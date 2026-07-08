@@ -9,18 +9,17 @@ namespace proton {
 
 class DocumentDB;
 
-class SearchHandlerProxy : public ISearchHandler
-{
+class SearchHandlerProxy : public ISearchHandler {
 private:
     std::shared_ptr<DocumentDB> _documentDB;
     vespalib::RetainGuard       _retainGuard;
+
 public:
     explicit SearchHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
     ~SearchHandlerProxy() override;
 
-    std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & request) override;
-    std::unique_ptr<SearchReply> match(const SearchRequest &req, ThreadBundle &threadBundle) const override;
+    std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest& request) override;
+    std::unique_ptr<SearchReply> match(const SearchRequest& req, ThreadBundle& threadBundle) const override;
 };
 
 } // namespace proton
-

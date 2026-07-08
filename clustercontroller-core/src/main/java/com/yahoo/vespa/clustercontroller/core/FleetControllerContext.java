@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
+import java.util.Locale;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,7 +24,7 @@ public interface FleetControllerContext {
             var args = new Object[1 + rest.length];
             args[0] = first;
             System.arraycopy(rest, 0, args, 1, rest.length);
-            return String.format(format, args);
+            return Text.format(format, args);
         });
     }
 }

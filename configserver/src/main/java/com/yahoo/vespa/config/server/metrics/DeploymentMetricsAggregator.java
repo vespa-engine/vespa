@@ -97,10 +97,12 @@ public class DeploymentMetricsAggregator {
     }
 
     private static LatencyMetrics combineLatency(LatencyMetrics metricsOrNull, double sum, double count) {
+        if (count == 0) return metricsOrNull;
         return Optional.ofNullable(metricsOrNull).orElseGet(LatencyMetrics::new).combine(sum, count);
     }
 
     private static ResourceUsage combineResourceUtil(ResourceUsage resourceUsageOrNull, double util, double limit) {
+        if (limit <= 0.0) return resourceUsageOrNull;
         return Optional.ofNullable(resourceUsageOrNull).orElseGet(ResourceUsage::new).combine(util, limit);
     }
 

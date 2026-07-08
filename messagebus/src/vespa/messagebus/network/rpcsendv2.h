@@ -8,17 +8,18 @@ namespace mbus {
 class RPCSendV2 : public RPCSend {
 public:
     static bool isCompatible(std::string_view method, std::string_view request, std::string_view response);
-private:
-    void build(FRT_ReflectionBuilder & builder, CapabilitySet required_capabilities) override;
-    const char * getReturnSpec() const override;
-    std::unique_ptr<Params> toParams(const FRT_Values &param) const override;
-    void encodeRequest(FRT_RPCRequest &req, const vespalib::Version &version, const Route & route,
-                       const RPCServiceAddress & address, const Message & msg, uint32_t traceLevel,
-                       const PayLoadFiller &filler, duration timeRemaining) const override;
 
-    std::unique_ptr<Reply> createReply(const FRT_Values & response, const string & serviceName,
-                                       Error & error, vespalib::Trace & trace) const override;
-    void createResponse(FRT_Values & ret, const string & version, Reply & reply, Blob payload) const override;
+private:
+    void build(FRT_ReflectionBuilder& builder, CapabilitySet required_capabilities) override;
+    const char* getReturnSpec() const override;
+    std::unique_ptr<Params> toParams(const FRT_Values& param) const override;
+    void encodeRequest(FRT_RPCRequest& req, const vespalib::Version& version, const Route& route,
+                       const RPCServiceAddress& address, const Message& msg, uint32_t traceLevel,
+                       const PayLoadFiller& filler, duration timeRemaining) const override;
+
+    std::unique_ptr<Reply> createReply(const FRT_Values& response, const string& serviceName, Error& error,
+                                       vespalib::Trace& trace) const override;
+    void createResponse(FRT_Values& ret, const string& version, Reply& reply, Blob payload) const override;
 };
 
 } // namespace mbus

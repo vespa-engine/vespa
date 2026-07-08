@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 namespace document::select::util {
 
@@ -14,4 +14,4 @@ bool parse_hex_i64(const char* str, size_t len, int64_t& out);
 bool parse_i64(const char* str, size_t len, int64_t& out);
 bool parse_double(const char* str, size_t len, double& out);
 
-}
+} // namespace document::select::util

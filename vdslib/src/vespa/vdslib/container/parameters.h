@@ -14,28 +14,32 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/xmlserializable.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/xmlserializable.h>
 
-namespace vespalib { class GrowableByteBuffer; }
-namespace document { class ByteBuffer; }
+namespace vespalib {
+class GrowableByteBuffer;
+}
+namespace document {
+class ByteBuffer;
+}
 
 namespace vdslib {
 
 class Parameters : public vespalib::xml::XmlSerializable {
 public:
     using KeyT = std::string_view;
-    class Value : public std::string
-    {
+    class Value : public std::string {
     public:
-      Value() = default;
-      explicit Value(std::string_view s) noexcept : std::string(s) { }
-      explicit Value(const std::string & s) noexcept : std::string(s) { }
-      Value(const void *v, size_t sz) noexcept : std::string(static_cast<const char *>(v), sz) { }
-      size_t length() const noexcept { return size() - 1; }
+        Value() = default;
+        explicit Value(std::string_view s) noexcept : std::string(s) {}
+        explicit Value(const std::string& s) noexcept : std::string(s) {}
+        Value(const void* v, size_t sz) noexcept : std::string(static_cast<const char*>(v), sz) {}
+        size_t length() const noexcept { return size() - 1; }
     };
     using ValueRef = std::string_view;
     using ParametersMap = vespalib::hash_map<std::string, Value>;
+
 private:
     ParametersMap _parameters;
 
@@ -51,16 +55,14 @@ public:
     Parameters(Parameters&&) noexcept;
     Parameters& operator=(Parameters&&) noexcept;
 
-    bool operator==(const Parameters &other) const;
+    bool operator==(const Parameters& other) const;
 
     size_t getSerializedSize() const;
 
-    bool hasValue(KeyT id)                 const { return (_parameters.find(id) != _parameters.end()); }
-    unsigned int size()                    const { return _parameters.size(); }
-    bool lookup(KeyT id, ValueRef & v) const;
-    void set(KeyT id, const void * v, size_t sz) {
-        _parameters[std::string(id)] = Value(v, sz);
-    }
+    bool hasValue(KeyT id) const { return (_parameters.find(id) != _parameters.end()); }
+    unsigned int size() const { return _parameters.size(); }
+    bool lookup(KeyT id, ValueRef& v) const;
+    void set(KeyT id, const void* v, size_t sz) { _parameters[std::string(id)] = Value(v, sz); }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
     void serialize(vespalib::GrowableByteBuffer& buffer) const;
@@ -70,15 +72,12 @@ public:
     ParametersMap::const_iterator begin() const { return _parameters.begin(); }
     ParametersMap::const_iterator end() const { return _parameters.end(); }
     /// Convenience from earlier use.
-    void set(KeyT id, std::string_view value) {
-        _parameters[std::string(id)] = Value(value.data(), value.size());
-    }
+    void set(KeyT id, std::string_view value) { _parameters[std::string(id)] = Value(value.data(), value.size()); }
     void set(KeyT id, int32_t value);
     void set(KeyT id, int64_t value);
     void set(KeyT id, uint64_t value);
     void set(KeyT id, double value);
     std::string_view get(KeyT id, std::string_view def = "") const;
-
 
     /**
      * Get the value identified by the id given, as the same type as the default
@@ -89,11 +88,9 @@ public:
      * @return The value represented as the same type as the default given, or
      *         the default itself if value did not exist.
      */
-    template<typename T>
-    T get(KeyT id, T def) const;
+    template <typename T> T get(KeyT id, T def) const;
 
     std::string toString() const;
 };
 
-} // vdslib
-
+} // namespace vdslib

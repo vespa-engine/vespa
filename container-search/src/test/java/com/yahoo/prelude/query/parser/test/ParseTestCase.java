@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query.parser.test;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -30,7 +31,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests query parsing.
@@ -217,6 +223,54 @@ public class ParseTestCase {
                 Query.Type.PHRASE);
         assertTrue(root instanceof PhraseItem);
         assertFalse(((PhraseItem) root).isExplicit());
+    }
+
+    @Test
+    void testPhraseItemGetsDefaultIndex() {
+        // Create a custom QueryType with linguistics tokenization and phrase composite
+        // This will use LinguisticsParser.newComposite() to create a PhraseItem
+        var queryType = new com.yahoo.search.query.QueryType(
+            Query.Type.LINGUISTICS,
+            com.yahoo.search.query.QueryType.Composite.phrase,
+            com.yahoo.search.query.QueryType.Tokenization.linguistics,
+            com.yahoo.search.query.QueryType.Syntax.none
+        );
+
+        // Create parser environment with a specific default index
+        var indexFacts = ParsingTester.createIndexFacts();
+        indexFacts.freeze();
+        var environment = new com.yahoo.search.query.parser.ParserEnvironment()
+            .setIndexFacts(indexFacts)
+            .setLinguistics(new SimpleLinguistics())
+            .setSpecialTokens(ParsingTester.createSpecialTokens());
+        environment.setType(queryType);
+
+        // Create LinguisticsParser and parse directly, bypassing assignDefaultIndex
+        var parser = new com.yahoo.prelude.query.parser.LinguisticsParser(environment);
+        var parsable = new com.yahoo.search.query.parser.Parsable()
+            .setQuery("word1 word2 word3")
+            .setLanguage(Language.ENGLISH)
+            .setDefaultIndexName("mydefaultindex");
+
+        // Call parse to get the result - this goes through the full flow including assignDefaultIndex
+        var result = parser.parse(parsable);
+        Item root = result.getRoot();
+
+        // Verify the root is a PhraseItem (created by newComposite)
+        assertTrue(root instanceof PhraseItem, "Expected PhraseItem but got " + root.getClass().getName());
+        PhraseItem phrase = (PhraseItem) root;
+
+        // Verify the phrase has the default index name
+        // This validates that newComposite() passed defaultIndex to PhraseItem constructor
+        assertEquals("mydefaultindex", phrase.getIndexName(),
+                    "PhraseItem should have inherited the default index name");
+
+        // Verify child items also have the default index name
+        // Children get the index from LinguisticsParser.toItem() which sets it explicitly
+        assertEquals(3, phrase.getItemCount());
+        assertEquals("mydefaultindex", ((WordItem) phrase.getItem(0)).getIndexName());
+        assertEquals("mydefaultindex", ((WordItem) phrase.getItem(1)).getIndexName());
+        assertEquals("mydefaultindex", ((WordItem) phrase.getItem(2)).getIndexName());
     }
 
     @Test
@@ -2496,12 +2550,17 @@ public class ParseTestCase {
 
     @Test
     void testSimpleWandAdvanced() {
-        tester.assertParsed("WEAKAND(100) foo bar baz", "foo wand bar wand baz", Query.Type.ADVANCED);
+        tester.assertParsed("WEAKAND foo bar baz", "foo wand bar wand baz", Query.Type.ADVANCED);
     }
 
     @Test
     void testSimpleWandAdvancedWithNonDefaultN() {
         tester.assertParsed("WEAKAND(32) foo bar baz", "foo weakand(32) bar weakand(32) baz", Query.Type.ADVANCED);
+    }
+
+    @Test
+    void testSimpleWandAdvancedWithDefaultN() {
+        tester.assertParsed("WEAKAND foo bar baz", "foo weakand bar weakand baz", Query.Type.ADVANCED);
     }
 
     @Test
@@ -2576,22 +2635,22 @@ public class ParseTestCase {
 
     @Test
     void testNoGrammar1() {
-        tester.assertParsed("WEAKAND(100) foobar", "foobar", Query.Type.TOKENIZE);
+        tester.assertParsed("WEAKAND foobar", "foobar", Query.Type.TOKENIZE);
     }
 
     @Test
     void testNoGrammar2() {
-        tester.assertParsed("WEAKAND(100) foobar", "-foobar", Query.Type.TOKENIZE);
+        tester.assertParsed("WEAKAND foobar", "-foobar", Query.Type.TOKENIZE);
     }
 
     @Test
     void testNoGrammar3() {
-        tester.assertParsed("WEAKAND(100) foo bar", "foo -bar", Query.Type.TOKENIZE);
+        tester.assertParsed("WEAKAND foo bar", "foo -bar", Query.Type.TOKENIZE);
     }
 
     @Test
     void testNoGrammar4() {
-        tester.assertParsed("WEAKAND(100) foo bar baz one two 37", "foo -(bar baz \"one two\" 37)", Query.Type.TOKENIZE);
+        tester.assertParsed("WEAKAND foo bar baz one two 37", "foo -(bar baz \"one two\" 37)", Query.Type.TOKENIZE);
     }
 
     @Test
@@ -2633,12 +2692,12 @@ public class ParseTestCase {
     @Test
     void testLongQuery() {
         var tester = new ParsingTester("index");
-        tester.assertParsed("WEAKAND(100) index:search index:terms", "{search terms}", Query.Type.WEAKAND);
+        tester.assertParsed("WEAKAND index:search index:terms", "{search terms}", Query.Type.WEAKAND);
     }
 
     @Test
     void testParenthesisAndNegative() {
-        tester.assertParsed("WEAKAND(100) (+(OR (AND requirements txt) from line 11) -r)", "(from -r requirements.txt (line 11)) ", Query.Type.WEAKAND);
+        tester.assertParsed("WEAKAND (+(OR (AND requirements txt) from line 11) -r)", "(from -r requirements.txt (line 11)) ", Query.Type.WEAKAND);
     }
 
 }

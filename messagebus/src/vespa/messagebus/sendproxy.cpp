@@ -6,19 +6,12 @@ LOG_SETUP(".sendproxy");
 
 namespace mbus {
 
-SendProxy::SendProxy(MessageBus &mbus, INetwork &net, Resender *resender) :
-    _mbus(mbus),
-    _net(net),
-    _resender(resender),
-    _msg(),
-    _logTrace(false),
-    _root()
-{ }
+SendProxy::SendProxy(MessageBus& mbus, INetwork& net, Resender* resender)
+    : _mbus(mbus), _net(net), _resender(resender), _msg(), _logTrace(false), _root() {
+}
 
-void
-SendProxy::handleMessage(Message::UP msg)
-{
-    Trace &trace = msg->getTrace();
+void SendProxy::handleMessage(Message::UP msg) {
+    Trace& trace = msg->getTrace();
     if (trace.getLevel() == 0) {
         if (LOG_WOULD_LOG(spam)) {
             trace.setLevel(9);
@@ -33,17 +26,13 @@ SendProxy::handleMessage(Message::UP msg)
     _root->send();
 }
 
-void
-SendProxy::handleDiscard(Context)
-{
+void SendProxy::handleDiscard(Context) {
     _msg->discard();
     delete this;
 }
 
-void
-SendProxy::handleReply(Reply::UP reply)
-{
-    Trace &trace = _msg->getTrace();
+void SendProxy::handleReply(Reply::UP reply) {
+    Trace& trace = _msg->getTrace();
     if (_logTrace) {
         if (reply->hasErrors()) {
             LOG(debug, "Trace for reply with error(s):\n%s", reply->getTrace().toString().c_str());
@@ -58,7 +47,7 @@ SendProxy::handleReply(Reply::UP reply)
     reply->swapState(*_msg);
     reply->setMessage(std::move(_msg));
 
-    IReplyHandler &handler = reply->getCallStack().pop(*reply);
+    IReplyHandler& handler = reply->getCallStack().pop(*reply);
     handler.handleReply(std::move(reply));
 
     delete this;

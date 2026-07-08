@@ -6,16 +6,13 @@ namespace storage {
 
 FnetMetricsWrapper::FnetMetricsWrapper(metrics::MetricSet* owner)
     : metrics::MetricSet("fnet", {}, "transport layer metrics", owner),
-      _num_connections("num-connections", {}, "total number of connection objects", this)
-{
+      _num_connections("num-connections", {}, "total number of connection objects", this) {
 }
 
 FnetMetricsWrapper::~FnetMetricsWrapper() = default;
 
-void
-FnetMetricsWrapper::update_metrics()
-{
+void FnetMetricsWrapper::update_metrics() {
     _num_connections.set(FNET_Connection::get_num_connections());
 }
 
-}
+} // namespace storage

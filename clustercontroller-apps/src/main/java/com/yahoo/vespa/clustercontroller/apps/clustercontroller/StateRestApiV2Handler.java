@@ -11,6 +11,7 @@ import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRe
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.RestApiHandler;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -63,7 +64,7 @@ public class StateRestApiV2Handler extends JDiscHttpRequestHandler implements Ca
 
     private static Set<String> parseTags(String tags) {
         Set<String> set = new HashSet<>();
-        for(String s : tags.toLowerCase().split(" ")) {
+        for(String s : tags.toLowerCase(Locale.ROOT).split(" ")) {
             set.add(s.trim());
         }
         return set;

@@ -217,10 +217,10 @@ class JettyRequestContentReader {
             long written = bytesWritten.addAndGet(buf.remaining());
             if (contentLengthHeader != -1 && contentLengthHeader > maxContentSize) {
                 handler.failed(new RequestException(
-                        HttpStatus.PAYLOAD_TOO_LARGE_413, messageTemplate.formatted(contentLengthHeader, maxContentSize)));
+                        HttpStatus.PAYLOAD_TOO_LARGE_413, Text.format(messageTemplate, contentLengthHeader, maxContentSize)));
             } else if (written > maxContentSize) {
                 handler.failed(new RequestException(
-                        HttpStatus.PAYLOAD_TOO_LARGE_413, messageTemplate.formatted(written, maxContentSize)));
+                        HttpStatus.PAYLOAD_TOO_LARGE_413, Text.format(messageTemplate, written, maxContentSize)));
             } else {
                 delegate.write(buf, handler);
             }

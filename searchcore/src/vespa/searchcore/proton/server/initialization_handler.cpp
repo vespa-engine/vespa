@@ -2,10 +2,11 @@
 
 #include "initialization_handler.h"
 
+#include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/net/tls/capability.h>
 #include <vespa/vespalib/util/jsonwriter.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/simple_buffer.h>
+
 #include <functional>
 
 using vespalib::InitializationStatusProducer;
@@ -17,18 +18,16 @@ namespace proton {
 
 namespace {
 
-JsonGetHandler::Response cap_checked(const vespalib::net::ConnectionAuthContext &auth_ctx,
-                                               CapabilitySet required_caps,
-                                               std::function<std::string()> fn)
-{
+JsonGetHandler::Response cap_checked(const vespalib::net::ConnectionAuthContext& auth_ctx,
+                                     CapabilitySet required_caps, std::function<std::string()> fn) {
     if (!auth_ctx.capabilities().contains_all(required_caps)) {
         return JsonGetHandler::Response::make_failure(403, "Forbidden");
     }
     return JsonGetHandler::Response::make_ok_with_json(fn());
 }
 
-std::string respond_initialization(const InitializationStatusProducer &initialization_status_producer) {
-    vespalib::Slime slime;
+std::string respond_initialization(const InitializationStatusProducer& initialization_status_producer) {
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     initialization_status_producer.report_initialization_status(inserter);
 
@@ -37,23 +36,18 @@ std::string respond_initialization(const InitializationStatusProducer &initializ
     return buf.get().make_string();
 }
 
-} // namespace proton::unnamed
+} // namespace
 
-InitializationHandler::InitializationHandler(InitializationStatusProducer &initialization_status_producer)
-    : _initialization_status_producer(initialization_status_producer)
-{
+InitializationHandler::InitializationHandler(InitializationStatusProducer& initialization_status_producer)
+    : _initialization_status_producer(initialization_status_producer) {
 }
 
-JsonGetHandler::Response
-InitializationHandler::get(const std::string &/*host*/,
-              const std::string &path,
-              const std::map<std::string,std::string> &/*params*/,
-              const vespalib::net::ConnectionAuthContext &auth_ctx) const
-{
+JsonGetHandler::Response InitializationHandler::get(const std::string& /*host*/, const std::string& path,
+                                                    const std::map<std::string, std::string>& /*params*/,
+                                                    const vespalib::net::ConnectionAuthContext& auth_ctx) const {
     if (path == "/state/v1/initialization") {
-        return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] {
-            return respond_initialization(_initialization_status_producer);
-        });
+        return cap_checked(auth_ctx, CapabilitySet::make_empty(),
+                           [&] { return respond_initialization(_initialization_status_producer); });
     } else {
         // TODO Return different error (?)
         return Response::make_failure(403, "Forbidden");

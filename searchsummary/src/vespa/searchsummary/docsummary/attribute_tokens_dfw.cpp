@@ -1,17 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_tokens_dfw.h"
+
 #include "docsumstate.h"
 #include "empty_docsum_field_writer_state.h"
-#include <vespa/searchcommon/attribute/iattributevector.h>
+
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stash.h>
 
-using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
+using search::attribute::IAttributeVector;
 using search::attribute::IMultiValueAttribute;
 using search::attribute::IMultiValueReadView;
 using search::common::ElementIds;
@@ -26,9 +28,7 @@ namespace search::docsummary {
 
 namespace {
 
-const IMultiValueReadView<const char*>*
-make_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
-{
+const IMultiValueReadView<const char*>* make_read_view(const IAttributeVector& attribute, vespalib::Stash& stash) {
     auto multi_value_attribute = attribute.as_multi_value_attribute();
     if (multi_value_attribute != nullptr) {
         return multi_value_attribute->make_read_view(IMultiValueAttribute::MultiValueTag<const char*>(), stash);
@@ -36,10 +36,8 @@ make_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
     return nullptr;
 }
 
-void
-insert_value(std::string_view value, Inserter& inserter, std::string& scratch, bool lowercase)
-{
-    Cursor& arr = inserter.insertArray(1);
+void insert_value(std::string_view value, Inserter& inserter, std::string& scratch, bool lowercase) {
+    Cursor&       arr = inserter.insertArray(1);
     ArrayInserter ai(arr);
     if (lowercase) {
         scratch.clear();
@@ -54,13 +52,13 @@ insert_value(std::string_view value, Inserter& inserter, std::string& scratch, b
     }
 }
 
-}
+} // namespace
 
-class MultiAttributeTokensDFWState : public DocsumFieldWriterState
-{
+class MultiAttributeTokensDFWState : public DocsumFieldWriterState {
     const IMultiValueReadView<const char*>* _read_view;
-    std::string                        _lowercase_scratch;
+    std::string                             _lowercase_scratch;
     bool                                    _lowercase;
+
 public:
     MultiAttributeTokensDFWState(const IAttributeVector& attr, vespalib::Stash& stash);
     ~MultiAttributeTokensDFWState() override;
@@ -71,16 +69,13 @@ MultiAttributeTokensDFWState::MultiAttributeTokensDFWState(const IAttributeVecto
     : DocsumFieldWriterState(),
       _read_view(make_read_view(attr, stash)),
       _lowercase_scratch(),
-      _lowercase(attr.has_uncased_matching())
-{
+      _lowercase(attr.has_uncased_matching()) {
 }
 
 MultiAttributeTokensDFWState::~MultiAttributeTokensDFWState() = default;
 
-void
-MultiAttributeTokensDFWState::insertField(uint32_t docid, ElementIds selected_elements, Inserter& target)
-{
-    (void) selected_elements;
+void MultiAttributeTokensDFWState::insertField(uint32_t docid, ElementIds selected_elements, Inserter& target) {
+    (void)selected_elements;
     if (!_read_view) {
         return;
     }
@@ -88,18 +83,18 @@ MultiAttributeTokensDFWState::insertField(uint32_t docid, ElementIds selected_el
     if (elements.empty()) {
         return;
     }
-    Cursor &arr = target.insertArray(elements.size());
+    Cursor&       arr = target.insertArray(elements.size());
     ArrayInserter ai(arr);
-    for (const auto & element : elements) {
+    for (const auto& element : elements) {
         insert_value(element, ai, _lowercase_scratch, _lowercase);
     }
 }
 
-class SingleAttributeTokensDFWState : public DocsumFieldWriterState
-{
+class SingleAttributeTokensDFWState : public DocsumFieldWriterState {
     const IAttributeVector& _attr;
-    std::string        _lowercase_scratch;
+    std::string             _lowercase_scratch;
     bool                    _lowercase;
+
 public:
     SingleAttributeTokensDFWState(const IAttributeVector& attr);
     ~SingleAttributeTokensDFWState() override;
@@ -107,25 +102,17 @@ public:
 };
 
 SingleAttributeTokensDFWState::SingleAttributeTokensDFWState(const IAttributeVector& attr)
-    : DocsumFieldWriterState(),
-      _attr(attr),
-      _lowercase_scratch(),
-      _lowercase(attr.has_uncased_matching())
-{
+    : DocsumFieldWriterState(), _attr(attr), _lowercase_scratch(), _lowercase(attr.has_uncased_matching()) {
 }
 
 SingleAttributeTokensDFWState::~SingleAttributeTokensDFWState() = default;
 
-void
-SingleAttributeTokensDFWState::insertField(uint32_t docid, ElementIds, Inserter& target)
-{
+void SingleAttributeTokensDFWState::insertField(uint32_t docid, ElementIds, Inserter& target) {
     auto s = _attr.get_raw(docid);
     insert_value(std::string_view(s.data(), s.size()), target, _lowercase_scratch, _lowercase);
 }
 
-DocsumFieldWriterState*
-make_field_writer_state(const IAttributeVector& attr, vespalib::Stash& stash)
-{
+DocsumFieldWriterState* make_field_writer_state(const IAttributeVector& attr, vespalib::Stash& stash) {
     auto type = attr.getBasicType();
     switch (type) {
     case BasicType::Type::STRING:
@@ -134,44 +121,32 @@ make_field_writer_state(const IAttributeVector& attr, vespalib::Stash& stash)
         } else {
             return &stash.create<SingleAttributeTokensDFWState>(attr);
         }
-    default:
-        ;
+    default:;
     }
     return &stash.create<EmptyDocsumFieldWriterState>();
 }
 
 AttributeTokensDFW::AttributeTokensDFW(const std::string& input_field_name)
-    : DocsumFieldWriter(),
-      _input_field_name(input_field_name)
-{
+    : DocsumFieldWriter(), _input_field_name(input_field_name) {
 }
 
 AttributeTokensDFW::~AttributeTokensDFW() = default;
 
-const std::string&
-AttributeTokensDFW::getAttributeName() const
-{
+const std::string& AttributeTokensDFW::getAttributeName() const {
     return _input_field_name;
 }
 
-bool
-AttributeTokensDFW::isGenerated() const
-{
+bool AttributeTokensDFW::isGenerated() const {
     return true;
 }
 
-bool
-AttributeTokensDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
-{
+bool AttributeTokensDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) {
     _state_index = fieldWriterStateIndex;
     return true;
 }
 
-void
-AttributeTokensDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state,
-                                 ElementIds selected_elements,
-                                 vespalib::slime::Inserter& target) const
-{
+void AttributeTokensDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state,
+                                      ElementIds selected_elements, vespalib::slime::Inserter& target) const {
     auto& field_writer_state = state._fieldWriterStates[_state_index];
     if (!field_writer_state) {
         const auto attr = state.getAttribute(getIndex());
@@ -184,4 +159,4 @@ AttributeTokensDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, Ge
     field_writer_state->insertField(docid, selected_elements, target);
 }
 
-}
+} // namespace search::docsummary

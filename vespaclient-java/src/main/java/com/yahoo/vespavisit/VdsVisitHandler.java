@@ -10,12 +10,14 @@ import java.io.IOException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.util.Date;
-import java.util.TimeZone;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -130,7 +132,7 @@ public abstract class VdsVisitHandler {
             }
             if (showProgress) {
                 synchronized (printLock) {
-                    DecimalFormat df = new DecimalFormat("#.#");
+                    DecimalFormat df = new DecimalFormat("#.#", DecimalFormatSymbols.getInstance(Locale.US));
                     String percentage = df.format(token.percentFinished());
                     if (!percentage.equals(lastPercentage)) {
                         if (lastLineIsProgress) {
@@ -153,7 +155,7 @@ public abstract class VdsVisitHandler {
         }
 
         private String getDateTime() {
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz");
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz", Locale.US);
             dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = new Date();
             return dateFormat.format(date);

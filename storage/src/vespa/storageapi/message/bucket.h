@@ -7,19 +7,23 @@
 
 #pragma once
 
-#include <vespa/storageapi/messageapi/bucketcommand.h>
-#include <vespa/storageapi/messageapi/bucketreply.h>
-#include <vespa/storageapi/messageapi/bucketinfocommand.h>
-#include <vespa/storageapi/messageapi/bucketinforeply.h>
-#include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/util/printable.h>
-#include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/storageapi/defs.h>
+#include <vespa/storageapi/messageapi/bucketcommand.h>
+#include <vespa/storageapi/messageapi/bucketinfocommand.h>
+#include <vespa/storageapi/messageapi/bucketinforeply.h>
+#include <vespa/storageapi/messageapi/bucketreply.h>
+#include <vespa/storageapi/messageapi/maintenancecommand.h>
+#include <vespa/vespalib/stllike/allocator.h>
 
-namespace document { class DocumentTypeRepo; }
+namespace document {
+class DocumentTypeRepo;
+}
 
-namespace storage::lib { class ClusterState; }
+namespace storage::lib {
+class ClusterState;
+}
 
 namespace storage::api {
 
@@ -33,7 +37,7 @@ class CreateBucketCommand : public MaintenanceCommand {
     bool _active;
 
 public:
-    explicit CreateBucketCommand(const document::Bucket &bucket);
+    explicit CreateBucketCommand(const document::Bucket& bucket);
     void setActive(bool active) { _active = active; }
     bool getActive() const { return _active; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -61,8 +65,9 @@ public:
  */
 class DeleteBucketCommand : public MaintenanceCommand {
     BucketInfo _info;
+
 public:
-    explicit DeleteBucketCommand(const document::Bucket &bucket);
+    explicit DeleteBucketCommand(const document::Bucket& bucket);
 
     const BucketInfo& getBucketInfo() const { return _info; }
     void setBucketInfo(const BucketInfo& info) { _info = info; }
@@ -82,7 +87,6 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(DeleteBucketReply, onDeleteBucketReply)
 };
-
 
 /**
  * @class MergeBucketCommand
@@ -104,29 +108,25 @@ class MergeBucketCommand : public MaintenanceCommand {
 public:
     struct Node {
         uint16_t index;
-        bool sourceOnly;
+        bool     sourceOnly;
 
-        Node(uint16_t index_) noexcept : Node(index_, false) { }
-        Node(uint16_t index_, bool sourceOnly_) noexcept
-            : index(index_), sourceOnly(sourceOnly_) {}
+        Node(uint16_t index_) noexcept : Node(index_, false) {}
+        Node(uint16_t index_, bool sourceOnly_) noexcept : index(index_), sourceOnly(sourceOnly_) {}
 
-        bool operator==(const Node& n) const noexcept
-            { return (index == n.index && sourceOnly == n.sourceOnly); }
+        bool operator==(const Node& n) const noexcept { return (index == n.index && sourceOnly == n.sourceOnly); }
     };
 
 private:
-    std::vector<Node> _nodes;
-    Timestamp _maxTimestamp;
-    uint32_t _clusterStateVersion;
-    uint32_t _estimated_memory_footprint;
+    std::vector<Node>     _nodes;
+    Timestamp             _maxTimestamp;
+    uint32_t              _clusterStateVersion;
+    uint32_t              _estimated_memory_footprint;
     std::vector<uint16_t> _chain;
-    bool _use_unordered_forwarding;
+    bool                  _use_unordered_forwarding;
 
 public:
-    MergeBucketCommand(const document::Bucket &bucket,
-                       const std::vector<Node>&,
-                       Timestamp maxTimestamp,
-                       uint32_t clusterStateVersion = 0,
+    MergeBucketCommand(const document::Bucket& bucket, const std::vector<Node>&, Timestamp maxTimestamp,
+                       uint32_t                     clusterStateVersion = 0,
                        const std::vector<uint16_t>& chain = std::vector<uint16_t>());
     ~MergeBucketCommand() override;
 
@@ -144,15 +144,12 @@ public:
     void set_estimated_memory_footprint(uint32_t footprint_bytes) noexcept {
         _estimated_memory_footprint = footprint_bytes;
     }
-    [[nodiscard]] uint32_t estimated_memory_footprint() const noexcept {
-        return _estimated_memory_footprint;
-    }
+    [[nodiscard]] uint32_t estimated_memory_footprint() const noexcept { return _estimated_memory_footprint; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(MergeBucketCommand, onMergeBucket)
 };
 
-std::ostream&
-operator<<(std::ostream& out, const MergeBucketCommand::Node& n);
+std::ostream& operator<<(std::ostream& out, const MergeBucketCommand::Node& n);
 
 /**
  * @class MergeBucketReply
@@ -165,9 +162,9 @@ public:
     using Node = MergeBucketCommand::Node;
 
 private:
-    std::vector<Node> _nodes;
-    Timestamp _maxTimestamp;
-    uint32_t _clusterStateVersion;
+    std::vector<Node>     _nodes;
+    Timestamp             _maxTimestamp;
+    uint32_t              _clusterStateVersion;
     std::vector<uint16_t> _chain;
 
 public:
@@ -193,28 +190,26 @@ public:
     using Node = MergeBucketCommand::Node;
 
     struct Entry : public document::Printable {
-        Timestamp _timestamp;
+        Timestamp          _timestamp;
         document::GlobalId _gid;
-        uint32_t _headerSize;
-        uint32_t _bodySize;
-        uint16_t _flags;
-        uint16_t _hasMask;
+        uint32_t           _headerSize;
+        uint32_t           _bodySize;
+        uint16_t           _flags;
+        uint16_t           _hasMask;
 
         Entry();
         void print(std::ostream& out, bool verbose, const std::string& indent) const override;
         bool operator==(const Entry&) const;
-        bool operator<(const Entry& e) const
-            { return (_timestamp < e._timestamp); }
+        bool operator<(const Entry& e) const { return (_timestamp < e._timestamp); }
     };
+
 private:
-    std::vector<Node> _nodes;
-    Timestamp _maxTimestamp;
+    std::vector<Node>  _nodes;
+    Timestamp          _maxTimestamp;
     std::vector<Entry> _diff;
 
 public:
-    GetBucketDiffCommand(const document::Bucket &bucket,
-                         const std::vector<Node>&,
-                         Timestamp maxTimestamp);
+    GetBucketDiffCommand(const document::Bucket& bucket, const std::vector<Node>&, Timestamp maxTimestamp);
     ~GetBucketDiffCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
@@ -239,8 +234,8 @@ public:
     using Entry = GetBucketDiffCommand::Entry;
 
 private:
-    std::vector<Node> _nodes;
-    Timestamp _maxTimestamp;
+    std::vector<Node>  _nodes;
+    Timestamp          _maxTimestamp;
     std::vector<Entry> _diff;
 
 public:
@@ -268,32 +263,32 @@ public:
     using Node = MergeBucketCommand::Node;
     struct Entry : public document::Printable {
         GetBucketDiffCommand::Entry _entry;
-        std::string _docName;
-        std::vector<char> _headerBlob;
+        std::string                 _docName;
+        std::vector<char>           _headerBlob;
         // TODO: In theory the body blob could be removed now as all is in one blob
         // That will enable simplification of code in document.
-        std::vector<char> _bodyBlob;
-        const document::DocumentTypeRepo *_repo;
+        std::vector<char>                 _bodyBlob;
+        const document::DocumentTypeRepo* _repo;
 
         Entry();
         explicit Entry(const GetBucketDiffCommand::Entry&);
-        Entry(const Entry &);
-        Entry & operator = (const Entry &);
-        Entry(Entry &&) = default;
-        Entry & operator = (Entry &&) = default;
+        Entry(const Entry&);
+        Entry& operator=(const Entry&);
+        Entry(Entry&&) = default;
+        Entry& operator=(Entry&&) = default;
         ~Entry() override;
 
         [[nodiscard]] bool filled() const;
         void print(std::ostream& out, bool verbose, const std::string& indent) const override;
         bool operator==(const Entry&) const;
     };
+
 private:
-    std::vector<Node> _nodes;
+    std::vector<Node>  _nodes;
     std::vector<Entry> _diff;
 
 public:
-    ApplyBucketDiffCommand(const document::Bucket &bucket,
-                           const std::vector<Node>& nodes);
+    ApplyBucketDiffCommand(const document::Bucket& bucket, const std::vector<Node>& nodes);
     ~ApplyBucketDiffCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
@@ -316,7 +311,7 @@ public:
     using Entry = ApplyBucketDiffCommand::Entry;
 
 private:
-    std::vector<Node> _nodes;
+    std::vector<Node>  _nodes;
     std::vector<Entry> _diff;
 
 public:
@@ -345,23 +340,18 @@ public:
  * the buckets that belong to the given distributor should be returned.
  */
 class RequestBucketInfoCommand : public StorageCommand {
-    document::BucketSpace _bucketSpace;
-    std::vector<document::BucketId> _buckets;
+    document::BucketSpace              _bucketSpace;
+    std::vector<document::BucketId>    _buckets;
     std::unique_ptr<lib::ClusterState> _state;
-    uint16_t _distributor;
-    std::string _distributionHash;
+    uint16_t                           _distributor;
+    std::string                        _distributionHash;
 
 public:
-    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
-                             const std::vector<document::BucketId>& buckets);
-    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
-                             uint16_t distributor,
-                             const lib::ClusterState& state,
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace, const std::vector<document::BucketId>& buckets);
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace, uint16_t distributor, const lib::ClusterState& state,
                              std::string_view _distributionHash);
 
-    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
-                             uint16_t distributor,
-                             const lib::ClusterState& state);
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace, uint16_t distributor, const lib::ClusterState& state);
     ~RequestBucketInfoCommand() override;
 
     const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
@@ -380,7 +370,6 @@ public:
     DECLARE_STORAGECOMMAND(RequestBucketInfoCommand, onRequestBucketInfo)
 };
 
-
 /**
  * @class RequestBucketInfoReply
  * @ingroup message
@@ -391,23 +380,23 @@ class RequestBucketInfoReply : public StorageReply {
 public:
     struct Entry {
         document::BucketId _bucketId;
-        BucketInfo _info;
+        BucketInfo         _info;
 
         bool operator==(const Entry& e) const { return (_bucketId == e._bucketId && _info == e._info); }
         bool operator!=(const Entry& e) const { return !(*this == e); }
         Entry() noexcept : _bucketId(), _info() {}
-        Entry(const document::BucketId& id, const BucketInfo& info) noexcept
-            : _bucketId(id), _info(info) {}
+        Entry(const document::BucketId& id, const BucketInfo& info) noexcept : _bucketId(id), _info(info) {}
         friend std::ostream& operator<<(std::ostream& os, const Entry&);
     };
     struct SupportedNodeFeatures {
-        bool unordered_merge_chaining               = false;
-        bool two_phase_remove_location              = false;
+        bool unordered_merge_chaining = false;
+        bool two_phase_remove_location = false;
         bool no_implicit_indexing_of_active_buckets = false;
-        bool document_condition_probe               = false;
-        bool timestamps_in_tas_conditions           = false;
+        bool document_condition_probe = false;
+        bool timestamps_in_tas_conditions = false;
     };
     using EntryVector = std::vector<Entry, vespalib::allocator_large<Entry>>;
+
 private:
     EntryVector           _buckets;
     bool                  _full_bucket_fetch;
@@ -415,19 +404,16 @@ private:
     SupportedNodeFeatures _supported_node_features;
 
 public:
-
     explicit RequestBucketInfoReply(const RequestBucketInfoCommand& cmd);
     ~RequestBucketInfoReply() override;
-    const EntryVector & getBucketInfo() const { return _buckets; }
-    EntryVector & getBucketInfo() { return _buckets; }
+    const EntryVector& getBucketInfo() const { return _buckets; }
+    EntryVector& getBucketInfo() { return _buckets; }
     [[nodiscard]] bool full_bucket_fetch() const noexcept { return _full_bucket_fetch; }
     // Only contains useful information if full_bucket_fetch() == true
     [[nodiscard]] const SupportedNodeFeatures& supported_node_features() const noexcept {
         return _supported_node_features;
     }
-    [[nodiscard]] SupportedNodeFeatures& supported_node_features() noexcept {
-        return _supported_node_features;
-    }
+    [[nodiscard]] SupportedNodeFeatures& supported_node_features() noexcept { return _supported_node_features; }
     const document::BucketId& super_bucket_id() const { return _super_bucket_id; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(RequestBucketInfoReply, onRequestBucketInfoReply)
@@ -446,14 +432,13 @@ public:
  */
 class NotifyBucketChangeCommand : public BucketCommand {
     BucketInfo _info;
+
 public:
-    NotifyBucketChangeCommand(const document::Bucket &bucket,
-                              const BucketInfo& bucketInfo);
+    NotifyBucketChangeCommand(const document::Bucket& bucket, const BucketInfo& bucketInfo);
     const BucketInfo& getBucketInfo() const { return _info; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(NotifyBucketChangeCommand, onNotifyBucketChange)
 };
-
 
 /**
  * @class NotifyBucketChangeReply
@@ -477,15 +462,15 @@ public:
  *
  * @brief Sent by distributor to set the ready/active state of a bucket.
  */
-class SetBucketStateCommand : public MaintenanceCommand
-{
+class SetBucketStateCommand : public MaintenanceCommand {
 public:
     enum BUCKET_STATE { INACTIVE, ACTIVE };
-    SetBucketStateCommand(const document::Bucket &bucket, BUCKET_STATE state);
+    SetBucketStateCommand(const document::Bucket& bucket, BUCKET_STATE state);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     BUCKET_STATE getState() const { return _state; }
     static BUCKET_STATE toState(bool active) noexcept { return active ? ACTIVE : INACTIVE; }
     DECLARE_STORAGECOMMAND(SetBucketStateCommand, onSetBucketState);
+
 private:
     std::string getSummary() const override;
     BUCKET_STATE _state;
@@ -497,12 +482,11 @@ private:
  *
  * @brief Answer to SetBucketStateCommand.
  */
-class SetBucketStateReply : public BucketInfoReply
-{
+class SetBucketStateReply : public BucketInfoReply {
 public:
     explicit SetBucketStateReply(const SetBucketStateCommand&);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(SetBucketStateReply, onSetBucketStateReply)
 };
 
-}
+} // namespace storage::api

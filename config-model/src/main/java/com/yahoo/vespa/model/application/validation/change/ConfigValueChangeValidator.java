@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
@@ -55,7 +56,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
         }
         String description = createDescriptionOfConfigChanges(changes.stream());
         ClusterSpec.Id id = service.getHost().spec().membership().isPresent() ?
-                            service.getHost().spec().membership().get().cluster().id() :
+                            service.getHost().spec().membership().get().id() :
                             ClusterSpec.Id.from(service.getConfigId());
         return Optional.of(new VespaRestartAction(id, description, service.getServiceInfo()));
     }
@@ -96,7 +97,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
                 .map(clazz -> {
                     RestartConfigs annotation = clazz.getDeclaredAnnotation(RestartConfigs.class);
                     if (annotation.value().length == 0) {
-                        throw new IllegalStateException(String.format(
+                        throw new IllegalStateException(String.format(java.util.Locale.ROOT,
                                 "%s has a %s annotation with no ConfigInstances given as argument.",
                                 clazz.getSimpleName(), RestartConfigs.class.getSimpleName()));
                     }
@@ -114,7 +115,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
                                                                                    DeployLogger logger) {
 
         if (!hasConfigFieldsFlaggedWithRestart(configClass, service.getClass())) {
-            logger.logApplicationPackage(Level.FINE, String.format("%s is listed in the annotation for %s, " +
+            logger.logApplicationPackage(Level.FINE, Text.format("%s is listed in the annotation for %s, " +
                             "but does not have any restart flags in its config definition.",
                     configClass.getSimpleName(), service.getClass().getSimpleName()));
             return Optional.empty();
@@ -122,7 +123,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
 
         Optional<ConfigInstance> nextConfig = getConfigFromModel(nextModel, configClass, service.getConfigId());
         if (!nextConfig.isPresent()) {
-            logger.logApplicationPackage(Level.FINE, String.format(
+            logger.logApplicationPackage(Level.FINE, String.format(java.util.Locale.ROOT,
                     "%s is listed as restart config for %s, but the config does not exist in the new model.",
                     configClass.getSimpleName(), service.getClass().getSimpleName()));
             return Optional.empty();
@@ -138,7 +139,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
     private static boolean hasConfigFieldsFlaggedWithRestart(Class<? extends ConfigInstance> configClass,
                                                              Class<? extends Service> serviceClass) {
         if (!ReflectionUtil.hasRestartMethods(configClass)) {
-            throw new IllegalStateException(String.format(
+            throw new IllegalStateException(String.format(java.util.Locale.ROOT,
                     "%s is listed as restart config for %s but does not contain any restart inspection methods.",
                     configClass.getSimpleName(), serviceClass.getSimpleName()));
         }

@@ -34,6 +34,7 @@ public class Trace implements Cloneable {
     private static final QueryProfileType argumentType;
 
     public static final String TRACE = "trace";
+    public static final String PROFILE = "profile";
     public static final String LEVEL = "level";
     public static final String EXPLAIN_LEVEL = "explainLevel";
     public static final String PROFILE_DEPTH = "profileDepth";
@@ -45,6 +46,7 @@ public class Trace implements Cloneable {
         argumentType = new QueryProfileType(TRACE);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
+        argumentType.addField(new FieldDescription(PROFILE, "boolean", "profile"));
         argumentType.addField(new FieldDescription(LEVEL, "integer", "tracelevel traceLevel"));
         argumentType.addField(new FieldDescription(EXPLAIN_LEVEL, "integer", "explainlevel explainLevel"));
         argumentType.addField(new FieldDescription(PROFILE_DEPTH, "integer"));
@@ -58,25 +60,33 @@ public class Trace implements Cloneable {
 
     private Query parent;
 
+    private boolean profile = false;
     private int level = 0;
     private int explainLevel = 0;
     private int profileDepth = 0;
     private boolean timestamps = false;
     private boolean query = true;
-    private Profiling profiling = new Profiling();
+    private final Profiling profiling = new Profiling();
 
     public Trace(Query parent) {
         this.parent = Objects.requireNonNull(parent);
     }
 
+    /**
+     * Returns whether we should produce trace with profiling info for structured analysis.
+     * When this is set a number of query properties are forced to the values that produces a performance profile.
+     */
+    public boolean getProfile() { return profile; }
+    public void setProfile(boolean profile) { this.profile = profile; }
+
     /** Returns the level of detail we'll be tracing at in this query. The default level is 0; no tracing. */
-    public int getLevel() { return level; }
+    public int getLevel() { return profile ? 1 : level; }
     public void setLevel(int level) { this.level = level; }
     public boolean isTraceable(int level) { return level <= this.level; }
 
     /** Sets the explain level of this query, 0 means no tracing. Higher numbers means increasingly more explaining. */
     public void setExplainLevel(int explainLevel) { this.explainLevel = explainLevel; }
-    public int getExplainLevel() { return explainLevel; }
+    public int getExplainLevel() { return profile ? 1 : explainLevel; }
 
     /** Sets the profiling depth. Profiling enabled if non-zero. Higher numbers means increasingly more detail. */
     public void setProfileDepth(int profileDepth) {
@@ -85,10 +95,10 @@ public class Trace implements Cloneable {
         profiling.getFirstPhaseRanking().setDepth(profileDepth);
         profiling.getSecondPhaseRanking().setDepth(profileDepth);
     }
-    public int getProfileDepth() { return profileDepth; }
+    public int getProfileDepth() { return profile ? 100 : profileDepth; }
 
     /** Returns whether trace entries should have a timestamp. Default is false. */
-    public boolean getTimestamps() { return timestamps; }
+    public boolean getTimestamps() { return profile || timestamps; }
     public void setTimestamps(boolean timestamps) { this.timestamps = timestamps; }
 
     /** Returns whether any trace entries should include the query. Default is true. */

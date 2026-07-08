@@ -81,6 +81,7 @@ export MALLOC_ARENA_MAX=1 #Does not need fast allocation
 exec java \
 -Djava.library.path=${VESPA_HOME}/libexec64/native:${VESPA_HOME}/lib64 \
 -Djava.awt.headless=true \
+-Djava.io.tmpdir=${VESPA_HOME}/var/tmp \
 -Xms128m -Xmx2048m $(getJavaOptionsIPV46) \
 -Djava.util.logging.config.file=${VESPA_HOME}/conf/vespa-feed-client/logging.properties \
 -cp ${VESPA_HOME}/lib/jars/vespa-feed-client-cli-jar-with-dependencies.jar ai.vespa.feed.client.impl.CliClient "$@"

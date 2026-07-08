@@ -54,10 +54,9 @@ struct HtmlStatusReporter : public StatusReporter {
  * the HTML headers and footers when needed.
  */
 struct PartlyHtmlStatusReporter : public HtmlStatusReporter {
-    PartlyHtmlStatusReporter(const StatusReporter& main)
-        : HtmlStatusReporter(main.getId(), main.getName()) {}
+    PartlyHtmlStatusReporter(const StatusReporter& main) : HtmlStatusReporter(main.getId(), main.getName()) {}
 
     void reportHtmlStatus(std::ostream&, const HttpUrlPath&) const override {}
 };
 
-}
+} // namespace storage::framework

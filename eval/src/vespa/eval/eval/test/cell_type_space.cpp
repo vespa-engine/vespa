@@ -4,9 +4,8 @@
 
 namespace vespalib::eval::test {
 
-void
-CellTypeSpace::step_state() {
-    for (size_t idx = _state.size(); idx-- > 0; ) {
+void CellTypeSpace::step_state() {
+    for (size_t idx = _state.size(); idx-- > 0;) {
         if ((++_state[idx]) < _types.size()) {
             return;
         } else {
@@ -16,14 +15,13 @@ CellTypeSpace::step_state() {
     _done = true;
 }
 
-bool
-CellTypeSpace::should_skip() {
+bool CellTypeSpace::should_skip() {
     if (_done) {
         return false;
     }
     bool same = true;
     auto type = _state[0];
-    for (auto t: _state) {
+    for (auto t : _state) {
         if (t != type) {
             same = false;
         }
@@ -33,4 +31,4 @@ CellTypeSpace::should_skip() {
 
 CellTypeSpace::~CellTypeSpace() = default;
 
-} // namespace
+} // namespace vespalib::eval::test

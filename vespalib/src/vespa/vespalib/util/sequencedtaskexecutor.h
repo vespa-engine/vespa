@@ -2,8 +2,10 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
-#include <vespa/vespalib/util/time.h>
+
 #include <vespa/vespalib/util/runnable.h>
+#include <vespa/vespalib/util/time.h>
+
 #include <optional>
 
 namespace vespalib {
@@ -15,8 +17,7 @@ class SyncableThreadExecutor;
  * Class to run multiple tasks in parallel, but tasks with same
  * id has to be run in sequence.
  */
-class SequencedTaskExecutor final : public ISequencedTaskExecutor
-{
+class SequencedTaskExecutor final : public ISequencedTaskExecutor {
 public:
     using ISequencedTaskExecutor::getExecutorId;
     using OptimizeFor = vespalib::Executor::OptimizeFor;
@@ -38,15 +39,15 @@ public:
      */
     std::vector<ExecutorStats> get_raw_stats();
 
-    static std::unique_ptr<ISequencedTaskExecutor>
-    create(Runnable::init_fun_t func, uint32_t threads);
-    static std::unique_ptr<ISequencedTaskExecutor>
-    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit);
-    static std::unique_ptr<ISequencedTaskExecutor>
-    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit, bool is_task_limit_hard, OptimizeFor optimize);
-    static std::unique_ptr<ISequencedTaskExecutor>
-    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit,
-           bool is_task_limit_hard, OptimizeFor optimize, uint32_t kindOfWatermark);
+    static std::unique_ptr<ISequencedTaskExecutor> create(Runnable::init_fun_t func, uint32_t threads);
+    static std::unique_ptr<ISequencedTaskExecutor> create(Runnable::init_fun_t func, uint32_t threads,
+                                                          uint32_t taskLimit);
+    static std::unique_ptr<ISequencedTaskExecutor> create(Runnable::init_fun_t func, uint32_t threads,
+                                                          uint32_t taskLimit, bool is_task_limit_hard,
+                                                          OptimizeFor optimize);
+    static std::unique_ptr<ISequencedTaskExecutor> create(Runnable::init_fun_t func, uint32_t threads,
+                                                          uint32_t taskLimit, bool is_task_limit_hard,
+                                                          OptimizeFor optimize, uint32_t kindOfWatermark);
     /**
      * For testing only
      */
@@ -66,7 +67,6 @@ private:
     mutable std::vector<uint8_t>           _component2IdImperfect;
     mutable std::mutex                     _mutex;
     mutable uint32_t                       _nextId;
-
 };
 
-} // namespace search
+} // namespace vespalib

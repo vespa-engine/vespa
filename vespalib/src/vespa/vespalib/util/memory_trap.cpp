@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memory_trap.h"
-#include <string_view>
+
+#include <sys/mman.h>
+#include <unistd.h>
+
 #include <cassert>
 #include <cerrno>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <unistd.h>
-#include <sys/mman.h>
+#include <string_view>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.util.memory_trap");
@@ -30,14 +32,10 @@ namespace {
     abort();
 }
 
-} // anon ns
+} // namespace
 
 MemoryRangeTrapper::MemoryRangeTrapper(char* trap_buf, size_t buf_len) noexcept
-    : _trap_buf(trap_buf),
-      _buf_len(buf_len),
-      _trap_offset(0),
-      _trap_len(0)
-{
+    : _trap_buf(trap_buf), _buf_len(buf_len), _trap_offset(0), _trap_len(0) {
     if (_buf_len > 0) {
         memset(trap_buf, 0, _buf_len);
     }
@@ -59,8 +57,8 @@ void MemoryRangeTrapper::verify_buffer_is_all_zeros() {
     for (size_t i = 0; i < _buf_len; ++i) {
         if (_trap_buf[i] != 0) {
             const bool in_protected_area = ((i >= _trap_offset) && (i < _trap_offset + _trap_len));
-            LOG(error, "Memory corruption detected! Offset %zu into buffer %p: 0x%.2x != 0x00%s",
-                i, _trap_buf, static_cast<unsigned int>(_trap_buf[i]),
+            LOG(error, "Memory corruption detected! Offset %zu into buffer %p: 0x%.2x != 0x00%s", i, _trap_buf,
+                static_cast<unsigned int>(_trap_buf[i]),
                 in_protected_area ? ". CORRUPTION IN R/W PROTECTED MEMORY!" : "");
             if (in_protected_area) {
                 abort_due_to_PROTECTED_guard_bits_tampered_with();
@@ -101,23 +99,24 @@ bool mprotect_trapping_is_enabled() noexcept {
     return enabled;
 }
 
-} // anon ns
+} // namespace
 
 void MemoryRangeTrapper::rw_protect_buffer_if_possible() {
     static_assert(std::is_same_v<size_t, uintptr_t>);
     const auto aligned_start = align_up_4k(reinterpret_cast<uintptr_t>(_trap_buf));
-    const auto aligned_end   = align_down_4k(reinterpret_cast<uintptr_t>(_trap_buf + _buf_len));
+    const auto aligned_end = align_down_4k(reinterpret_cast<uintptr_t>(_trap_buf + _buf_len));
     if ((aligned_end > aligned_start) && mprotect_trapping_is_enabled()) {
         _trap_offset = aligned_start - reinterpret_cast<uintptr_t>(_trap_buf);
-        _trap_len    = aligned_end   - aligned_start;
+        _trap_len = aligned_end - aligned_start;
         assert(is_4k_aligned(_trap_len));
 
-        LOG(info, "attempting mprotect(%p + %zu = %p, %zu, PROT_NONE)",
-            _trap_buf, _trap_offset, _trap_buf + _trap_offset, _trap_len);
+        LOG(info, "attempting mprotect(%p + %zu = %p, %zu, PROT_NONE)", _trap_buf, _trap_offset,
+            _trap_buf + _trap_offset, _trap_len);
         int ret = mprotect(_trap_buf + _trap_offset, _trap_len, PROT_NONE);
         if (ret != 0) {
-            LOG(warning, "Failed to mprotect(%p + %zu, %zu, PROT_NONE). errno = %d. "
-                         "Falling back to unprotected mode.",
+            LOG(warning,
+                "Failed to mprotect(%p + %zu, %zu, PROT_NONE). errno = %d. "
+                "Falling back to unprotected mode.",
                 _trap_buf, _trap_offset, _trap_len, errno);
             _trap_offset = _trap_len = 0;
         }
@@ -144,17 +143,21 @@ void MemoryRangeTrapper::unprotect_buffer_to_read_and_write() {
 
 #else // Not on Linux, fall back to no-ops
 
-void MemoryRangeTrapper::rw_protect_buffer_if_possible() { /* no-op */ }
-bool MemoryRangeTrapper::hw_trapping_enabled() noexcept { return false; }
-void MemoryRangeTrapper::unprotect_buffer_to_read_only() { /* no-op */ }
-void MemoryRangeTrapper::unprotect_buffer_to_read_and_write() { /* no-op */ }
+void MemoryRangeTrapper::rw_protect_buffer_if_possible() { /* no-op */
+}
+bool MemoryRangeTrapper::hw_trapping_enabled() noexcept {
+    return false;
+}
+void MemoryRangeTrapper::unprotect_buffer_to_read_only() { /* no-op */
+}
+void MemoryRangeTrapper::unprotect_buffer_to_read_and_write() { /* no-op */
+}
 
 #endif
 
 HeapMemoryTrap::HeapMemoryTrap(size_t trap_4k_pages)
     : _trap_buf(static_cast<char*>(aligned_alloc(4096, trap_4k_pages * 4096))),
-      _trapper(_trap_buf, _trap_buf ? trap_4k_pages * 4096 : 0)
-{
+      _trapper(_trap_buf, _trap_buf ? trap_4k_pages * 4096 : 0) {
 }
 
 HeapMemoryTrap::~HeapMemoryTrap() {
@@ -162,4 +165,4 @@ HeapMemoryTrap::~HeapMemoryTrap() {
     free(_trap_buf);
 }
 
-}
+} // namespace vespalib

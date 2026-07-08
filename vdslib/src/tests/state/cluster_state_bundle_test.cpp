@@ -12,14 +12,13 @@ namespace storage::lib {
 using ClusterStatePtr = std::shared_ptr<const ClusterState>;
 
 struct Fixture {
-    ClusterState baselineState;
-    ClusterStatePtr derivedState;
+    ClusterState       baselineState;
+    ClusterStatePtr    derivedState;
     ClusterStateBundle bundle;
     Fixture()
         : baselineState("storage:2"),
           derivedState(std::make_shared<const ClusterState>("storage:2 .1.s:m")),
-          bundle(baselineState, {{BucketSpace(1), derivedState}})
-    {}
+          bundle(baselineState, {{BucketSpace(1), derivedState}}) {}
     ~Fixture();
 };
 
@@ -35,24 +34,21 @@ TEST(ClusterStateBundleTest, baseline_state_is_returned_if_bucket_space_is_not_f
     EXPECT_EQ(f.baselineState, *f.bundle.getDerivedClusterState(BucketSpace(2)));
 }
 
-ClusterStateBundle
-makeBundle(const std::string &baselineState, const std::map<BucketSpace, std::string> &derivedStates,
-           bool deferred_activation = false)
-{
+ClusterStateBundle makeBundle(const std::string&                        baselineState,
+                              const std::map<BucketSpace, std::string>& derivedStates,
+                              bool                                      deferred_activation = false) {
     ClusterStateBundle::BucketSpaceStateMapping derivedBucketSpaceStates;
-    for (const auto &entry : derivedStates) {
+    for (const auto& entry : derivedStates) {
         derivedBucketSpaceStates[entry.first] = std::make_shared<const ClusterState>(entry.second);
     }
     return {ClusterState(baselineState), std::move(derivedBucketSpaceStates), deferred_activation};
 }
 
-ClusterStateBundle
-bundle_with_feed_block(const ClusterStateBundle::FeedBlock& feed_block) {
+ClusterStateBundle bundle_with_feed_block(const ClusterStateBundle::FeedBlock& feed_block) {
     return {ClusterState("storage:2"), {}, feed_block, false};
 }
 
-ClusterStateBundle
-bundle_with_distribution(Distribution::ConfigWrapper dist_cfg_wrapper) {
+ClusterStateBundle bundle_with_distribution(Distribution::ConfigWrapper dist_cfg_wrapper) {
     auto distr_bundle = DistributionConfigBundle::of(std::move(dist_cfg_wrapper));
     return {std::make_shared<ClusterState>("storage:2"), {}, std::nullopt, std::move(distr_bundle), false};
 }
@@ -82,19 +78,19 @@ TEST(ClusterStateBundleTest, feed_block_state_is_available) {
 }
 
 TEST(ClusterStateBundleTest, equality_operator_considers_feed_block) {
-    EXPECT_NE(bundle_with_feed_block({true, "foo"}),  bundle_with_feed_block({false, "foo"}));
-    EXPECT_NE(bundle_with_feed_block({true, "foo"}),  bundle_with_feed_block({true, "bar"}));
-    EXPECT_NE(makeBundle("storage:2", {}),            bundle_with_feed_block({false, "bar"}));
+    EXPECT_NE(bundle_with_feed_block({true, "foo"}), bundle_with_feed_block({false, "foo"}));
+    EXPECT_NE(bundle_with_feed_block({true, "foo"}), bundle_with_feed_block({true, "bar"}));
+    EXPECT_NE(makeBundle("storage:2", {}), bundle_with_feed_block({false, "bar"}));
 
-    EXPECT_EQ(bundle_with_feed_block({true, "foo"}),  bundle_with_feed_block({true, "foo"}));
+    EXPECT_EQ(bundle_with_feed_block({true, "foo"}), bundle_with_feed_block({true, "foo"}));
     EXPECT_EQ(bundle_with_feed_block({false, "foo"}), bundle_with_feed_block({false, "foo"}));
 }
 
 TEST(ClusterStateBundleTest, equality_operator_considers_distribution_config) {
-    auto b1   = bundle_with_distribution(Distribution::getDefaultDistributionConfig(2, 5));
+    auto b1 = bundle_with_distribution(Distribution::getDefaultDistributionConfig(2, 5));
     auto b1_2 = bundle_with_distribution(Distribution::getDefaultDistributionConfig(2, 5));
-    auto b2   = bundle_with_distribution(Distribution::getDefaultDistributionConfig(3, 5));
-    auto b3   = bundle_with_distribution(Distribution::getDefaultDistributionConfig(2, 6));
+    auto b2 = bundle_with_distribution(Distribution::getDefaultDistributionConfig(3, 5));
+    auto b3 = bundle_with_distribution(Distribution::getDefaultDistributionConfig(2, 6));
     EXPECT_EQ(b1, b1_2);
     EXPECT_EQ(b1_2, b1);
     EXPECT_NE(b1, b2);
@@ -112,9 +108,9 @@ TEST(ClusterStateBundleTest, toString_with_feed_block_includes_description) {
 }
 
 TEST(ClusterStateBundleTest, to_string_with_distribution_includes_high_level_summary) {
-    EXPECT_EQ("ClusterStateBundle('storage:2', distribution config: 1 group(s); 5 node(s); redundancy 2; searchable-copies 0)",
+    EXPECT_EQ("ClusterStateBundle('storage:2', distribution config: 1 group(s); 5 node(s); redundancy 2; "
+              "searchable-copies 0)",
               bundle_with_distribution(Distribution::getDefaultDistributionConfig(2, 5)).toString());
 }
 
-}
-
+} // namespace storage::lib

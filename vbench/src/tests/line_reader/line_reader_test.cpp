@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <vbench/test/all.h>
 
 using namespace vbench;
@@ -20,7 +21,7 @@ TEST(LineReaderTest, line_reader) {
     }
     {
         LineReader src(buffer);
-        string str;
+        string     str;
         EXPECT_TRUE(src.readLine(str));
         EXPECT_EQ("foo", str);
         EXPECT_TRUE(src.readLine(str));

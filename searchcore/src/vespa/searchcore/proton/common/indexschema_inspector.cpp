@@ -1,24 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexschema_inspector.h"
-#include <vespa/config-indexschema.h>
+
 #include "config_hash.hpp"
+
+#include <vespa/config-indexschema.h>
 
 namespace proton {
 
-IndexschemaInspector::IndexschemaInspector(const IndexschemaConfig &config)
-    : IIndexschemaInspector(),
-      _hash(config.indexfield)
-{
+IndexschemaInspector::IndexschemaInspector(const IndexschemaConfig& config)
+    : IIndexschemaInspector(), _hash(config.indexfield) {
 }
 
-IndexschemaInspector::~IndexschemaInspector()
-{
+IndexschemaInspector::~IndexschemaInspector() {
 }
 
-bool
-IndexschemaInspector::isStringIndex(const std::string &name) const
-{
+bool IndexschemaInspector::isStringIndex(const std::string& name) const {
     auto index = _hash.lookup(name);
     if (index != nullptr) {
         if (index->datatype == IndexschemaConfig::Indexfield::Datatype::STRING) {

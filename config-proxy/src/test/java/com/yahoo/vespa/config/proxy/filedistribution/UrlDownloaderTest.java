@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -23,7 +24,7 @@ public class UrlDownloaderTest {
 
         assertFalse(downloader.alreadyDownloaded(temporaryFolder));
 
-        Files.write(temporaryFolder.toPath().resolve("foo"), "bar".getBytes());
+        Files.write(temporaryFolder.toPath().resolve("foo"), "bar".getBytes(StandardCharsets.UTF_8));
         assertTrue(downloader.alreadyDownloaded(temporaryFolder));
     }
 }

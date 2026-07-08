@@ -4,6 +4,7 @@ package com.yahoo.logserver.filter;
 import com.yahoo.log.LogLevel;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -50,7 +51,7 @@ public class LogFilterManager {
             throw new NullPointerException("name cannot be null");
         }
 
-        String n = name.toLowerCase();
+        String n = name.toLowerCase(Locale.ROOT);
 
         if (n.startsWith("system.")) {
             throw new IllegalArgumentException("'system' namespace is reserved");

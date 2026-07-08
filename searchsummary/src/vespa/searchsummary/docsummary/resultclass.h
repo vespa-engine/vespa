@@ -3,11 +3,15 @@
 #pragma once
 
 #include "res_config_entry.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+
 #include <string>
 
-namespace search { class MatchingElementsFields; }
+namespace search {
+class MatchingElementsFields;
+}
 
 namespace search::docsummary {
 
@@ -17,18 +21,12 @@ namespace search::docsummary {
  * entries). It also contains methods for mapping both
  * field name and field name enum value into field index.
  **/
-class ResultClass
-{
+class ResultClass {
 public:
-    struct DynamicInfo
-    {
+    struct DynamicInfo {
         uint32_t _overrideCnt; // # fields overridden
         uint32_t _generateCnt; // # fields generated
-        DynamicInfo() noexcept
-            : _overrideCnt(0),
-              _generateCnt(0)
-        {
-        }
+        DynamicInfo() noexcept : _overrideCnt(0), _generateCnt(0) {}
         void update_override_counts(bool generated) noexcept {
             ++_overrideCnt;
             if (generated) {
@@ -41,14 +39,14 @@ private:
     using NameIdMap = vespalib::hash_map<std::string, int>;
     using Configs = std::vector<ResConfigEntry>;
 
-    std::string           _name;        // name of this class
-    Configs                    _entries;     // config entries for this result class
-    NameIdMap                  _nameMap;     // fieldname -> entry index
-    DynamicInfo                _dynInfo;     // fields overridden and generated
+    std::string _name;    // name of this class
+    Configs     _entries; // config entries for this result class
+    NameIdMap   _nameMap; // fieldname -> entry index
+    DynamicInfo _dynInfo; // fields overridden and generated
     // Whether or not summary features should be omitted when filling this summary class.
     // As default, summary features are always included.
-    bool                       _omit_summary_features;
-    size_t                     _num_field_writer_states;
+    bool                                    _omit_summary_features;
+    size_t                                  _num_field_writer_states;
     std::shared_ptr<MatchingElementsFields> _matching_elements_fields;
 
 public:
@@ -61,8 +59,8 @@ public:
      * @param name the name of this result class.
      **/
     explicit ResultClass(const std::string& name);
-    ResultClass(const ResultClass &) = delete;
-    ResultClass& operator=(const ResultClass &) = delete;
+    ResultClass(const ResultClass&) = delete;
+    ResultClass& operator=(const ResultClass&) = delete;
 
     /**
      * Destructor. Delete internal structures.
@@ -77,7 +75,6 @@ public:
      **/
     uint32_t getNumEntries() const { return _entries.size(); }
 
-
     /**
      * Add a config entry to this result class. Each config entry
      * contains the name and type of a field present in the docsum blobs
@@ -89,8 +86,7 @@ public:
      * @param name the name of the field to add.
      * @param docsum_field_writer field writer for writing field
      **/
-    bool addConfigEntry(const std::string& name,
-                        const SummaryElementsSelector& summary_elements_selector,
+    bool addConfigEntry(const std::string& name, const SummaryElementsSelector& summary_elements_selector,
                         std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
     bool addConfigEntry(const std::string& name);
 
@@ -114,7 +110,7 @@ public:
      *
      * @return config entry or NULL if not found.
      **/
-    const ResConfigEntry *getEntry(uint32_t offset) const {
+    const ResConfigEntry* getEntry(uint32_t offset) const {
         return (offset < _entries.size()) ? &_entries[offset] : nullptr;
     }
 
@@ -125,16 +121,14 @@ public:
      */
     bool all_fields_generated(const vespalib::hash_set<std::string>& fields) const;
 
-    void set_omit_summary_features(bool value) {
-        _omit_summary_features = value;
-    }
+    void set_omit_summary_features(bool value) { _omit_summary_features = value; }
 
-    bool omit_summary_features() const {
-        return _omit_summary_features;
-    }
+    bool omit_summary_features() const { return _omit_summary_features; }
 
     size_t get_num_field_writer_states() const noexcept { return _num_field_writer_states; }
-    const std::shared_ptr<MatchingElementsFields>& get_matching_elements_fields() const noexcept { return _matching_elements_fields; }
+    const std::shared_ptr<MatchingElementsFields>& get_matching_elements_fields() const noexcept {
+        return _matching_elements_fields;
+    }
 };
 
-}
+} // namespace search::docsummary

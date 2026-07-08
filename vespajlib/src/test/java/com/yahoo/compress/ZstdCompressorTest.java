@@ -13,7 +13,7 @@ class ZstdCompressorTest {
 
     @Test
     void compresses_and_decompresses_input() {
-        byte[] inputData = "The quick brown fox jumps over the lazy dog".getBytes();
+        byte[] inputData = "The quick brown fox jumps over the lazy dog".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         ZstdCompressor compressor = new ZstdCompressor();
         byte[] compressedData = compressor.compress(inputData, 0, inputData.length);
         byte[] decompressedData = compressor.decompress(compressedData, 0, compressedData.length);
@@ -26,7 +26,7 @@ class ZstdCompressorTest {
         for (int i = 0; i < 100; i++) {
             builder.append("The quick brown fox jumps over the lazy dog").append('\n');
         }
-        byte[] inputData = builder.toString().getBytes();
+        byte[] inputData = builder.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         ZstdCompressor compressor = new ZstdCompressor();
         byte[] compressedData = compressor.compress(inputData, 0, inputData.length);
         assertTrue(

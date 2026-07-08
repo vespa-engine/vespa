@@ -2,28 +2,28 @@
 
 #include "child-handler.h"
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
+
 #include <cstdio>
 #include <cstdlib>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".child-handler");
 
-ChildHandler::ChildHandler() : _childRunning(false) {}
+ChildHandler::ChildHandler() : _childRunning(false) {
+}
 
 namespace {
 
-void
-runSplunk(const std::string &prefix, std::vector<const char *> args)
-{
+void runSplunk(const std::string& prefix, std::vector<const char*> args) {
     std::string path = prefix + "/bin/splunk";
     args.insert(args.begin(), path.c_str());
     std::string dbg = "";
-    for (const char *arg : args) {
+    for (const char* arg : args) {
         dbg.append(" '");
         dbg.append(arg);
         dbg.append("'");
@@ -38,10 +38,10 @@ runSplunk(const std::string &prefix, std::vector<const char *> args)
     }
     if (child == 0) {
         std::string env = "SPLUNK_HOME=" + prefix;
-        char *cenv = const_cast<char *>(env.c_str()); // safe cast
+        char*       cenv = const_cast<char*>(env.c_str()); // safe cast
         putenv(cenv);
         LOG(debug, "added to environment: '%s'", cenv);
-        char **cargv = const_cast<char **>(args.data()); // safe cast
+        char** cargv = const_cast<char**>(args.data()); // safe cast
         execv(cargv[0], cargv);
         // if execv fails:
         perror(cargv[0]);
@@ -59,23 +59,17 @@ runSplunk(const std::string &prefix, std::vector<const char *> args)
         return;
     }
     if (WIFEXITED(waitStatus)) {
-        LOG(warning, "failed triggering splunk (exit status %d)",
-            WEXITSTATUS(waitStatus));
+        LOG(warning, "failed triggering splunk (exit status %d)", WEXITSTATUS(waitStatus));
     } else if (WIFSIGNALED(waitStatus)) {
-        LOG(warning, "failed triggering splunk (exit on signal %d)",
-            WTERMSIG(waitStatus));
+        LOG(warning, "failed triggering splunk (exit on signal %d)", WTERMSIG(waitStatus));
     } else {
-        LOG(warning, "failed triggering splunk (abnormal exit status %d)",
-            waitStatus);
+        LOG(warning, "failed triggering splunk (abnormal exit status %d)", waitStatus);
     }
 }
 
-} // namespace <unnamed>
+} // namespace
 
-
-void
-ChildHandler::startChild(const std::string &prefix)
-{
+void ChildHandler::startChild(const std::string& prefix) {
     LOG(debug, "startChild '%s'", prefix.c_str());
     if (_childRunning && prefix == _runningPrefix) {
         runSplunk(prefix, {"restart"});
@@ -102,8 +96,7 @@ void ChildHandler::stopChild() {
     _childRunning = false;
 }
 
-void
-ChildHandler::stopChild(const std::string &prefix) {
+void ChildHandler::stopChild(const std::string& prefix) {
     stopChild();
     _runningPrefix = prefix;
     stopChild();

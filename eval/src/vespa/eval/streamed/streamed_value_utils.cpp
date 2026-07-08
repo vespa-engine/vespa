@@ -8,4 +8,4 @@ LabelBlockStream::LabelBlockStream(LabelBlockStream&&) noexcept = default;
 
 LabelBlockStream::~LabelBlockStream() = default;
 
-} // namespace
+} // namespace vespalib::eval

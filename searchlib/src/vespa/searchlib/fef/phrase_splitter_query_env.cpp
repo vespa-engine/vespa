@@ -4,9 +4,7 @@
 
 namespace search::fef {
 
-void
-PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData &term, uint32_t fieldId)
-{
+void PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData& term, uint32_t fieldId) {
     using FRA = search::fef::ITermFieldRangeAdapter;
 
     for (FRA iter(term); iter.valid(); iter.next()) {
@@ -31,37 +29,36 @@ PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData &term, ui
     _termIdxMap.push_back(TermIdx(termIdx, false));
 }
 
-PhraseSplitterQueryEnv::PhraseSplitterQueryEnv(const IQueryEnvironment & queryEnv, uint32_t fieldId)
+PhraseSplitterQueryEnv::PhraseSplitterQueryEnv(const IQueryEnvironment& queryEnv, uint32_t fieldId)
     : _queryEnv(queryEnv),
       _terms(),
       _termIdxMap(),
       _maxHandle(0),
       _skipHandles(0),
       _field_id(fieldId),
-      _phrase_terms()
-{
+      _phrase_terms() {
     TermFieldHandle numHandles = 0; // how many handles existed in underlying data
     for (uint32_t i = 0; i < queryEnv.getNumTerms(); ++i) {
-        const ITermData *td = queryEnv.getTerm(i);
+        const ITermData* td = queryEnv.getTerm(i);
         considerTerm(i, *td, fieldId);
         numHandles += td->numFields();
     }
 
     _skipHandles = _maxHandle + 1 + numHandles;
     TermFieldHandle term_handle = _skipHandles;
-    for (auto & term : _terms) {
+    for (auto& term : _terms) {
         // start at _skipHandles + 0
         term.field(0).setHandle(term_handle);
         ++term_handle;
     }
 
     for (uint32_t i = 0; i < _phrase_terms.size(); ++i) {
-        const PhraseTerm &pterm = _phrase_terms[i];
+        const PhraseTerm& pterm = _phrase_terms[i];
 
         for (uint32_t j = 0; j < pterm.term.getPhraseLength(); ++j) {
-            const ITermData &splitp_td = _terms[pterm.idx + j];
+            const ITermData&      splitp_td = _terms[pterm.idx + j];
             const ITermFieldData& splitp_tfd = splitp_td.field(0);
-            HowToCopy meta;
+            HowToCopy             meta;
             meta.orig_handle = pterm.orig_handle;
             meta.split_handle = splitp_tfd.getHandle();
             meta.offsetInPhrase = j;
@@ -72,4 +69,4 @@ PhraseSplitterQueryEnv::PhraseSplitterQueryEnv(const IQueryEnvironment & queryEn
 
 PhraseSplitterQueryEnv::~PhraseSplitterQueryEnv() = default;
 
-}
+} // namespace search::fef

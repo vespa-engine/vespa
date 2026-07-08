@@ -3,7 +3,9 @@
 
 #include <string>
 
-namespace document::select { class FieldValueNode; }
+namespace document::select {
+class FieldValueNode;
+}
 
 namespace proton {
 
@@ -15,8 +17,7 @@ struct SelectUtils {
     /**
      * Extracts the field name of the FieldValueNode and signals whether it is complex or not.
      */
-    static std::string extractFieldName(const document::select::FieldValueNode &expr, bool &isComplex);
-
+    static std::string extractFieldName(const document::select::FieldValueNode& expr, bool& isComplex);
 };
 
-}
+} // namespace proton

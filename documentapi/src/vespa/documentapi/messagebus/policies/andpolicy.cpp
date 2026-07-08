@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "andpolicy.h"
-#include <vespa/messagebus/routing/routingcontext.h>
+
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/messagebus/routing/routingcontext.h>
 
 namespace documentapi {
 
-ANDPolicy::ANDPolicy(const string &param)
-{
+ANDPolicy::ANDPolicy(const string& param) {
     if (!param.empty()) {
         mbus::Route route = mbus::Route::parse(param);
         for (uint32_t i = 0; i < route.getNumHops(); ++i) {
@@ -17,13 +17,11 @@ ANDPolicy::ANDPolicy(const string &param)
 
 ANDPolicy::~ANDPolicy() = default;
 
-void
-ANDPolicy::select(mbus::RoutingContext &context)
-{
+void ANDPolicy::select(mbus::RoutingContext& context) {
     if (_hops.empty()) {
         context.addChildren(context.getAllRecipients());
     } else {
-        for (auto & hop : _hops) {
+        for (auto& hop : _hops) {
             mbus::Route route = context.getRoute();
             route.setHop(0, hop);
             context.addChild(route);
@@ -33,10 +31,8 @@ ANDPolicy::select(mbus::RoutingContext &context)
     context.addConsumableError(DocumentProtocol::ERROR_MESSAGE_IGNORED);
 }
 
-void
-ANDPolicy::merge(mbus::RoutingContext &context)
-{
+void ANDPolicy::merge(mbus::RoutingContext& context) {
     DocumentProtocol::merge(context);
 }
 
-}
+} // namespace documentapi

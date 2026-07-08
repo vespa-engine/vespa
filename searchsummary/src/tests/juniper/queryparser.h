@@ -4,7 +4,9 @@
 /* Simple prefix syntax advanced query parser for Juniper debug/testing */
 
 #include "latintokenizer.h"
+
 #include <vespa/juniper/query.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -13,7 +15,8 @@ namespace juniper {
 
 struct IsPunctuation {
     bool operator()(char c) {
-        if (c == '*' || c == '?') return false;
+        if (c == '*' || c == '?')
+            return false;
 
         return ispunct(static_cast<unsigned char>(c)) != 0;
     }
@@ -38,14 +41,14 @@ public:
     int ParseError() { return _parse_errno; }
 
 private:
-    std::unique_ptr<QueryItem>            ParseExpr();
+    std::unique_ptr<QueryItem> ParseExpr();
     std::unique_ptr<QueryParserQueryItem> ParseKeyword();
-    std::unique_ptr<QueryItem>            ParseIndexTerm();
+    std::unique_ptr<QueryItem> ParseIndexTerm();
     std::unique_ptr<QueryParserQueryItem> CheckPrefix(std::string& kw);
-    void                                  next();
-    void                                  trav(QueryItem*) const;
-    inline void                           setvisitor(IQueryVisitor* v) { _v = v; }
-    bool                                  match(const char* s, bool required = false);
+    void next();
+    void trav(QueryItem*) const;
+    inline void setvisitor(IQueryVisitor* v) { _v = v; }
+    bool match(const char* s, bool required = false);
 
     using Tokenizer = WildcardTokenizer;
     Tokenizer                  _tokenizer;

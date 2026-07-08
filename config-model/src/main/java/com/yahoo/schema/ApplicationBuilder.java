@@ -144,7 +144,7 @@ public class ApplicationBuilder {
      * Adds a schema to this application.
      *
      * @param fileName the name of the file to import
-     * @throws IOException    thrown if the file can not be read for some reason
+     * @throws IOException    thrown if the file cannot be read for some reason
      * @throws ParseException thrown if the file does not contain a valid search definition
      */
     public void addSchemaFile(String fileName) throws IOException, ParseException {

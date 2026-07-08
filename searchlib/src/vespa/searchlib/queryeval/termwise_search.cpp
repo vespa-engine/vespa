@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "termwise_search.h"
-#include <vespa/vespalib/objects/visit.h>
+
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/objects/visit.h>
 
 namespace search::queryeval {
 
-template <bool IS_STRICT>
-struct TermwiseSearch : public SearchIterator {
+template <bool IS_STRICT> struct TermwiseSearch : public SearchIterator {
 
     SearchIterator::UP search;
     BitVector::UP      result;
@@ -19,8 +19,7 @@ struct TermwiseSearch : public SearchIterator {
     }
 
     TermwiseSearch(SearchIterator::UP search_in)
-        : search(std::move(search_in)), result(), my_beginid(0), my_first_hit(0)
-    {
+        : search(std::move(search_in)), result(), my_beginid(0), my_first_hit(0) {
         set_id(search->id());
     }
     ~TermwiseSearch() override;
@@ -51,22 +50,18 @@ struct TermwiseSearch : public SearchIterator {
         }
     }
     void doUnpack(uint32_t) override {}
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override {
         visit(visitor, "search", *search);
         visit(visitor, "strict", IS_STRICT);
     }
-    void transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f) override
-    {
+    void transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f) override {
         search = f(std::move(search));
     }
 };
 
-template <bool IS_STRICT>
-TermwiseSearch<IS_STRICT>::~TermwiseSearch() = default;
+template <bool IS_STRICT> TermwiseSearch<IS_STRICT>::~TermwiseSearch() = default;
 
-SearchIterator::UP
-make_termwise(SearchIterator::UP search, bool strict)
-{
+SearchIterator::UP make_termwise(SearchIterator::UP search, bool strict) {
     if (strict) {
         return std::make_unique<TermwiseSearch<true>>(std::move(search));
     } else {
@@ -74,4 +69,4 @@ make_termwise(SearchIterator::UP search, bool strict)
     }
 }
 
-}
+} // namespace search::queryeval

@@ -2,10 +2,11 @@
 #pragma once
 
 #include "ireplyhandler.h"
+#include "replygate.h"
 #include "result.h"
 #include "sequencer.h"
 #include "sourcesessionparams.h"
-#include "replygate.h"
+
 #include <atomic>
 #include <condition_variable>
 
@@ -25,10 +26,10 @@ private:
 
     std::mutex              _lock;
     std::condition_variable _cond;
-    MessageBus             &_mbus;
+    MessageBus&             _mbus;
     ref_counted<ReplyGate>  _gate;
     Sequencer               _sequencer;
-    IReplyHandler          &_replyHandler;
+    IReplyHandler&          _replyHandler;
     IThrottlePolicy::SP     _throttlePolicy;
     duration                _timeout;
     std::atomic<uint32_t>   _pendingCount;
@@ -43,7 +44,7 @@ private:
      * @param mbus   The message bus that created this instance.
      * @param params A parameter object that holds configuration parameters.
      */
-    SourceSession(MessageBus &mbus, const SourceSessionParams &params);
+    SourceSession(MessageBus& mbus, const SourceSessionParams& params);
 
 public:
     /**
@@ -69,7 +70,7 @@ public:
      * @param parseIfNotFound Whether or not to parse routeName as a route if it could not be found.
      * @return The immediate result of the attempt to send this message.
      */
-    Result send(Message::UP msg, const string &routeName, bool parseIfNotFound = false);
+    Result send(Message::UP msg, const string& routeName, bool parseIfNotFound = false);
 
     /**
      * This is a convenience function to assign a given route to the given message, and then pass it to the
@@ -79,7 +80,7 @@ public:
      * @param route The route to assign to the message.
      * @return The immediate result of the attempt to send this message.
      */
-    Result send(Message::UP msg, const Route &route);
+    Result send(Message::UP msg, const Route& route);
 
     /**
      * Send a Message along a route that has already been specified in the message object.
@@ -108,16 +109,14 @@ public:
      *
      * @return The reply handler.
      */
-    IReplyHandler &getReplyHandler() { return _replyHandler; }
+    IReplyHandler& getReplyHandler() { return _replyHandler; }
 
     /**
      * Returns the number of messages sent that have not been replied to yet.
      *
      * @return The pending count.
      */
-    [[nodiscard]] uint32_t getPendingCount() const noexcept {
-        return _pendingCount.load(std::memory_order_relaxed);
-    }
+    [[nodiscard]] uint32_t getPendingCount() const noexcept { return _pendingCount.load(std::memory_order_relaxed); }
 
     /**
      * Sets the number of seconds a message can be attempted sent until it times out.
@@ -125,8 +124,7 @@ public:
      * @param timeout The numer of seconds allowed.
      * @return This, to allow chaining.
      */
-    SourceSession &setTimeout(duration timeout);
+    SourceSession& setTimeout(duration timeout);
 };
 
 } // namespace mbus
-

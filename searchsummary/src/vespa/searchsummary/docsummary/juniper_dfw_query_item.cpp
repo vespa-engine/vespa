@@ -1,27 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "juniper_dfw_query_item.h"
+
 #include "juniper_dfw_explicit_item_data.h"
+
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 
 namespace search::docsummary {
 
-std::string_view
-JuniperDFWQueryItem::get_index() const
-{
+std::string_view JuniperDFWQueryItem::get_index() const {
     return _si != nullptr ? _si->index_as_view() : _data->_index;
 }
 
-int
-JuniperDFWQueryItem::get_weight() const
-{
+int JuniperDFWQueryItem::get_weight() const {
     return _si != nullptr ? _si->GetWeight().percent() : _data->_weight;
 }
 
-juniper::ItemCreator
-JuniperDFWQueryItem::get_creator() const
-{
+juniper::ItemCreator JuniperDFWQueryItem::get_creator() const {
     return _si != nullptr ? _si->getCreator() : juniper::ItemCreator::CREA_ORIG;
 }
 
-}
+} // namespace search::docsummary

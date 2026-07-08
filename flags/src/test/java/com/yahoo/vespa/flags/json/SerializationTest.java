@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -168,7 +169,7 @@ public class SerializationTest {
         try (var cleanup = Flags.clearFlagsForTesting()) {
             String id = "id1";
             UnboundFlag<Double, ?, ?> doubleFlag = Flags.defineDoubleFlag(id, 1.2, List.of(), "1970-01-01", "2100-01-01", "description", "modification effect");
-            String json = """
+            String json = String.format(Locale.ROOT, """
                           {
                               "id": "%s",
                               "rules": [
@@ -177,7 +178,7 @@ public class SerializationTest {
                                   }
                               ]
                           }
-                          """.formatted(id, jsonValue);
+                          """, id, jsonValue);
             FlagData data = FlagData.deserialize(json);
             FlagSource flagSource = new SimpleFlagSource(data);
             return doubleFlag.bindTo(flagSource).boxedValue();
@@ -189,5 +190,8 @@ public class SerializationTest {
         public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
             return flagData.id().equals(id) ? flagData.resolve(vector) : Optional.empty();
         }
+
+        @Override
+        public FlagSource snapshot() { return this; }
     }
 }

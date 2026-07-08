@@ -30,6 +30,7 @@ import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
@@ -39,6 +40,7 @@ import com.yahoo.yolean.Exceptions;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -83,11 +85,6 @@ public class StreamingBackend extends VespaBackend {
         this.searchClusterName = searchClusterName;
         this.storageClusterRouteSpec = storageClusterRouteSpec;
         this.route = Route.parse(storageClusterRouteSpec);
-    }
-
-    private boolean sendProtobufQuerytree() {
-        var config = clusterParams.getQrSearchersConfig();
-        return config != null && config.sendProtobufQuerytree();
     }
 
     public StreamingBackend(ClusterParams clusterParams, String searchClusterName, VespaDocumentAccess access, String storageClusterRouteSpec) {
@@ -137,21 +134,24 @@ public class StreamingBackend extends VespaBackend {
                 : query.getTrace().getLevel();
     }
 
+    private boolean sendOldQueryStack() {
+        var config = clusterParams.getQrSearchersConfig();
+        return config != null && config.sendOldQueryStack();
+    }
+
     @Override
     public Result doSearch2(String schema, Query query) {
         if (query.getTimeLeft() <= 0)
-            return new Result(query, ErrorMessage.createTimeout(String.format("No time left for searching (timeout=%d)", query.getTimeout())));
+            return new Result(query, ErrorMessage.createTimeout(Text.format("No time left for searching (timeout=%d)", query.getTimeout())));
 
         initializeMissingQueryFields(query);
         if (documentSelectionQueryParameterCount(query) != 1) {
             return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
                                                                      "streaming.groupname or streaming.selection"));
         }
-        try {
-            ensureLegalSummaryClass(query, PartialSummaryHandler.PRESENTATION);
-        } catch (IllegalInputException e) {
-            return new Result(query, ErrorMessage.createIllegalQuery(Exceptions.toMessageString(e)));
-        }
+        Optional<String> summaryError = validateSummaryClass(PartialSummaryHandler.PRESENTATION, query);
+        if (summaryError.isPresent())
+            return new Result(query, ErrorMessage.createIllegalQuery(summaryError.get()));
 
         if (query.getTrace().isTraceable(4))
             query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + schema, 4);
@@ -165,7 +165,8 @@ public class StreamingBackend extends VespaBackend {
             partialSummaryHandler = new PartialSummaryHandler(db);
             partialSummaryHandler.wantToFill(query);
         }
-        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel, partialSummaryHandler, sendProtobufQuerytree());
+        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel,
+                                                 sendOldQueryStack(), partialSummaryHandler);
         Visitor visitor = visitorFactory.createVisitor(query, route, visitorContext);
         try {
             visitor.doSearch();
@@ -179,7 +180,7 @@ public class StreamingBackend extends VespaBackend {
             double elapsedMillis = durationInMillisFromNanoTime(timeStartedNanos);
             if ((effectiveTraceLevel > 0) && timeoutBadEnoughToBeReported(query, elapsedMillis)) {
                 tracingOptions.getTraceExporter().maybeExport(() -> new TraceDescription(visitor.getTrace(),
-                                                                                         String.format("Trace of %s which timed out after %.3g seconds",
+                                                                                         Text.format("Trace of %s which timed out after %.3g seconds",
                                                                                                        query, elapsedMillis / 1000.0)));
             }
             return new Result(query, ErrorMessage.createTimeout(e.getMessage()));

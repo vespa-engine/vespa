@@ -3,6 +3,7 @@
 
 #include "hopblueprint.h"
 #include "route.h"
+
 #include <map>
 #include <string>
 
@@ -15,8 +16,9 @@ class IReplyHandler;
 class Message;
 
 /**
- * At any time there may only ever be zero or one routing table registered in message bus for each protocol. This class
- * contains a list of named hops and routes that may be used to substitute references to these during route resolving.
+ * At any time there may only ever be zero or one routing table registered in message bus for each protocol. This
+ * class contains a list of named hops and routes that may be used to substitute references to these during route
+ * resolving.
  *
  * @author Simon Thoresen Hult
  * @version $Id$
@@ -36,12 +38,12 @@ public:
         std::map<string, HopBlueprint>::const_iterator _pos, _end;
 
     public:
-        HopIterator(const std::map<string, HopBlueprint> &hops);
+        HopIterator(const std::map<string, HopBlueprint>& hops);
 
-        bool isValid()               { return _pos != _end; }
-        void next()                  { ++_pos; }
-        const string &getName() { return _pos->first; }
-        const HopBlueprint &getHop() { return _pos->second; }
+        bool isValid() { return _pos != _end; }
+        void next() { ++_pos; }
+        const string& getName() { return _pos->first; }
+        const HopBlueprint& getHop() { return _pos->second; }
     };
 
     /**
@@ -52,27 +54,27 @@ public:
         std::map<string, Route>::const_iterator _pos, _end;
 
     public:
-        RouteIterator(const std::map<string, Route> &hops);
+        RouteIterator(const std::map<string, Route>& hops);
 
-        bool isValid()               { return _pos != _end; }
-        void next()                  { ++_pos; }
-        const string &getName() { return _pos->first; }
-        const Route &getRoute()      { return _pos->second; }
+        bool isValid() { return _pos != _end; }
+        void next() { ++_pos; }
+        const string& getName() { return _pos->first; }
+        const Route& getRoute() { return _pos->second; }
     };
 
     /**
      * Convenience typedef for a shared pointer to a RoutingTable object.
      */
     using SP = std::shared_ptr<RoutingTable>;
-    RoutingTable(const RoutingTable &) = delete;
-    RoutingTable & operator = (const RoutingTable &) = delete;
+    RoutingTable(const RoutingTable&) = delete;
+    RoutingTable& operator=(const RoutingTable&) = delete;
 
     /**
      * Creates a new routing table based on a given specification. This also verifies the integrity of the table.
      *
      * @param spec The specification to use.
      */
-    RoutingTable(const RoutingTableSpec &spec);
+    RoutingTable(const RoutingTableSpec& spec);
 
     /**
      * Returns whether or not there are any hops in this routing table.
@@ -94,7 +96,7 @@ public:
      * @param name The name of the hop to look for.
      * @return True if the named hop exists.
      */
-    bool hasHop(const string &name) const;
+    bool hasHop(const string& name) const;
 
     /**
      * Returns the named hop, may be null.
@@ -102,7 +104,7 @@ public:
      * @param name The name of the hop to return.
      * @return The hop implementation object.
      */
-    const HopBlueprint *getHop(const string &name) const;
+    const HopBlueprint* getHop(const string& name) const;
 
     /**
      * Returns an iterator for the hops of this.
@@ -131,7 +133,7 @@ public:
      * @param name The name of the route to look for.
      * @return True if the named route exists.
      */
-    bool hasRoute(const string &name) const;
+    bool hasRoute(const string& name) const;
 
     /**
      * Returns the named route, may be null.
@@ -139,7 +141,7 @@ public:
      * @param name The name of the route to return.
      * @return The route implementation object.
      */
-    const Route *getRoute(const string &name) const;
+    const Route* getRoute(const string& name) const;
 
     /**
      * Returns an iterator for the routes of this.
@@ -150,4 +152,3 @@ public:
 };
 
 } // namespace mbus
-

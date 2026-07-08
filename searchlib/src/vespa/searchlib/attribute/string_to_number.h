@@ -10,7 +10,6 @@ namespace search {
  * Converts a string to a number of type T.
  * Throws vespalib::IllegalArgumentException if the conversion fails.
  */
-template <typename T>
-T string_to_number(std::string_view str);
+template <typename T> T string_to_number(std::string_view str);
 
-}
+} // namespace search

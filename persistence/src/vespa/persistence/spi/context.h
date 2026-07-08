@@ -30,6 +30,7 @@
 #pragma once
 
 #include "read_consistency.h"
+
 #include <vespa/vespalib/trace/trace.h>
 
 namespace storage::spi {
@@ -42,12 +43,13 @@ struct Trace {
 };
 
 class Context {
-    Priority _priority;
+    Priority        _priority;
     vespalib::Trace _trace;
     ReadConsistency _readConsistency;
+
 public:
-    Context(Context &&) noexcept = default;
-    Context & operator = (Context &&) noexcept = default;
+    Context(Context&&) noexcept = default;
+    Context& operator=(Context&&) noexcept = default;
     Context(Priority pri, uint32_t maxTraceLevel) noexcept;
     ~Context();
 
@@ -62,14 +64,10 @@ public:
      * and it might only support this on a subset of read operations, so this
      * should only be considered a hint.
      */
-    void setReadConsistency(ReadConsistency consistency) noexcept {
-        _readConsistency = consistency;
-    }
-    [[nodiscard]] ReadConsistency getReadConsistency() const noexcept {
-        return _readConsistency;
-    }
+    void setReadConsistency(ReadConsistency consistency) noexcept { _readConsistency = consistency; }
+    [[nodiscard]] ReadConsistency getReadConsistency() const noexcept { return _readConsistency; }
 
-    [[nodiscard]] vespalib::Trace && steal_trace() noexcept { return std::move(_trace); }
+    [[nodiscard]] vespalib::Trace&& steal_trace() noexcept { return std::move(_trace); }
     [[nodiscard]] vespalib::Trace& getTrace() noexcept { return _trace; }
     [[nodiscard]] const vespalib::Trace& getTrace() const noexcept { return _trace; }
 
@@ -77,4 +75,4 @@ public:
     void trace(uint32_t level, std::string_view msg, bool addTime = true);
 };
 
-}
+} // namespace storage::spi

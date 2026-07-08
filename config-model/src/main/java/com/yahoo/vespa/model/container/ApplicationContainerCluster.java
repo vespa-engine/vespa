@@ -29,6 +29,7 @@ import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.document.restapi.DocumentOperationExecutorConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
@@ -103,13 +104,13 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
-    private final int maxDocumentOperationRequestSizeMib;
+    private int maxDocumentOperationRequestSizeMib = new DocumentOperationExecutorConfig.Builder().build().maxDocumentOperationRequestSizeMib();
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
 
     private Integer memoryPercentage = null;
-    
+
     // When set, overrides estimated ONNX model memory cost
     private Optional<Long> inferenceMemoryBytes = Optional.empty();
 
@@ -155,7 +156,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         onnxModelCostCalculator = deployState.onnxModelCost().newCalculator(
                 deployState.getApplicationPackage(), deployState.getProperties().applicationId(), ClusterSpec.Id.from(clusterId));
         logger = deployState.getDeployLogger();
-        maxDocumentOperationRequestSizeMib = deployState.featureFlags().maxDocumentOperationRequestSizeMib();
     }
 
     public UserConfiguredUrls userConfiguredUrls() { return userConfiguredUrls; }
@@ -219,7 +219,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
-    
+
+    /** Overrides the feature-flag-derived default for the document API max request size. */
+    public void setMaxDocumentOperationRequestSizeMib(int mib) { this.maxDocumentOperationRequestSizeMib = mib; }
+
+    public int getMaxDocumentOperationRequestSizeMib() { return maxDocumentOperationRequestSizeMib; }
+
     public void setInferenceMemory(long bytes) { this.inferenceMemoryBytes = Optional.of(bytes); }
 
     public Optional<Long> getInferenceMemory() { return inferenceMemoryBytes; }
@@ -240,9 +245,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             double availableMemoryGb = Math.max(0, totalMemoryMinusOverhead - onnxModelCostGb);
             int memoryPercentageOfAvailable = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryMinusOverhead);
             int memoryPercentageOfTotal = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryGb);
-            logger.log(FINE, () -> ("%s: memoryPercentageOfAvailable=%d, memoryPercentageOfTotal=%d, " +
-                                    "availableMemoryGb=%f, totalMemoryGb=%f, heapSizePercentageOfAvailable=%d, onnxModelCostGb=%f")
-                    .formatted(id(), memoryPercentageOfAvailable, memoryPercentageOfTotal,
+            logger.log(FINE, () -> Text.format(("%s: memoryPercentageOfAvailable=%d, memoryPercentageOfTotal=%d, " +
+                                    "availableMemoryGb=%f, totalMemoryGb=%f, heapSizePercentageOfAvailable=%d, onnxModelCostGb=%f"), id(), memoryPercentageOfAvailable, memoryPercentageOfTotal,
                                availableMemoryGb, totalMemoryGb, heapSizePercentageOfAvailable, onnxModelCostGb));
             return Optional.of(JvmMemoryPercentage.of(memoryPercentageOfAvailable, memoryPercentageOfTotal,
                                                       availableMemoryGb * heapSizePercentageOfAvailable * 1e-2));

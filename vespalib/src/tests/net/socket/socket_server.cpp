@@ -1,19 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/socket.h>
-#include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/util/host_name.h>
-#include <thread>
-#include <functional>
+#include <vespa/vespalib/util/signalhandler.h>
+
 #include <chrono>
+#include <functional>
+#include <thread>
 
 using namespace vespalib;
 
-std::string read_msg(SocketHandle &socket) {
+std::string read_msg(SocketHandle& socket) {
     std::string msg;
     for (;;) {
-        char c;
+        char    c;
         ssize_t ret = socket.read(&c, 1);
         if (ret != 1) {
             fprintf(stderr, "error during read message\n");
@@ -26,8 +27,8 @@ std::string read_msg(SocketHandle &socket) {
     }
 }
 
-void write_msg(SocketHandle &socket, const std::string &msg) {
-    for (const char & c : msg) {
+void write_msg(SocketHandle& socket, const std::string& msg) {
+    for (const char& c : msg) {
         ssize_t ret = socket.write(&c, 1);
         if (ret != 1) {
             fprintf(stderr, "error during write message\n");
@@ -40,11 +41,11 @@ void kill_func() {
     while (!SignalHandler::INT.check()) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    fprintf(stderr, "exiting...\n");    
+    fprintf(stderr, "exiting...\n");
     kill(getpid(), SIGTERM);
 }
 
-int main(int, char **) {
+int main(int, char**) {
     ServerSocket server(0);
     if (!server.valid()) {
         fprintf(stderr, "listen failed, exiting\n");
@@ -54,13 +55,13 @@ int main(int, char **) {
     auto list = SocketAddress::resolve(0);
     if (!list.empty()) {
         fprintf(stderr, "all local addresses:\n");
-        for (const auto &addr: list) {
+        for (const auto& addr : list) {
             fprintf(stderr, "  %s\n", addr.spec().c_str());
         }
     }
     fprintf(stderr, "listening to %s\n", server.address().spec().c_str());
-    fprintf(stderr, "client command: ./vespalib_socket_client_app %s %d\n",
-            HostName::get().c_str(), server.address().port());
+    fprintf(stderr, "client command: ./vespalib_socket_client_app %s %d\n", HostName::get().c_str(),
+            server.address().port());
     fprintf(stderr, "use ^C (SIGINT) to exit\n");
     SignalHandler::INT.hook();
     std::thread kill_thread(kill_func);

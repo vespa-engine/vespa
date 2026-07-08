@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/server/iclusterstatechangednotifier.h>
 #include <vespa/searchcore/proton/server/iclusterstatechangedhandler.h>
+#include <vespa/searchcore/proton/server/iclusterstatechangednotifier.h>
+
 #include <set>
 
 namespace proton::test {
@@ -12,17 +13,16 @@ namespace proton::test {
  * Test cluster state handler that forwards cluster state change
  * notifications as appropriate.
  */
-class ClusterStateHandler : public IClusterStateChangedNotifier
-{
-    std::set<IClusterStateChangedHandler *> _handlers;
+class ClusterStateHandler : public IClusterStateChangedNotifier {
+    std::set<IClusterStateChangedHandler*> _handlers;
+
 public:
     ClusterStateHandler();
     ~ClusterStateHandler() override;
 
-    void addClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
-    void removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) override;
-    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc);
+    void addClusterStateChangedHandler(IClusterStateChangedHandler* handler) override;
+    void removeClusterStateChangedHandler(IClusterStateChangedHandler* handler) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator>& newCalc);
 };
 
-
-}
+} // namespace proton::test

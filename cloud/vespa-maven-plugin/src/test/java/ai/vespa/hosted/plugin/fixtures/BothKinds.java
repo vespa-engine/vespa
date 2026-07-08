@@ -1,0 +1,9 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package ai.vespa.hosted.plugin.fixtures;
+
+import ai.vespa.hosted.cd.StagingTest;
+import ai.vespa.hosted.cd.SystemTest;
+
+@SystemTest
+@StagingTest
+public class BothKinds { }

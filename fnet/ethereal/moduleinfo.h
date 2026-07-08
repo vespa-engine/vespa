@@ -8,11 +8,9 @@
 /* Name of package */
 #define PACKAGE "fnetrpc"
 
-
 #ifdef VERSION
 #undef VERSION
 #endif
 
 /* Version number of package */
 #define VERSION "0.0.1"
-

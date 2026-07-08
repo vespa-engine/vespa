@@ -108,7 +108,7 @@ public class ConfigRetrieverTest {
         Set<ConfigKey<? extends ConfigInstance>> keys = new HashSet<>();
         keys.add(new ConfigKey<>(Bootstrap1Config.class, configId));
         keys.add(new ConfigKey<>(Bootstrap2Config.class, configId));
-        return new ConfigRetriever(keys, subscriberFactory);
+        return new ConfigRetriever(keys, subscriberFactory, com.yahoo.container.Container.get());
     }
 
     private void writeConfig(String name, String contents) {

@@ -5,7 +5,9 @@
 #include "element_gap.h"
 #include "fieldtype.h"
 #include "filter_threshold.h"
+
 #include <vespa/searchcommon/common/datatype.h>
+
 #include <cstdint>
 #include <string>
 
@@ -17,12 +19,12 @@ const uint32_t IllegalFieldId = 0xffffffff;
  * Information about a single field. This class is used by the @ref
  * IIndexEnvironment to expose information.
  **/
-class FieldInfo
-{
+class FieldInfo {
 public:
     using CollectionType = search::index::schema::CollectionType;
     using DataType = search::index::schema::DataType;
     using string = std::string;
+
 private:
     FieldType       _type;
     DataType        _data_type;
@@ -40,8 +42,7 @@ public:
      * environment and as an enumeration of fields. Multiple fields
      * owned by the same index environment may not have the same name.
      **/
-    FieldInfo(FieldType type_in, CollectionType collection_in,
-              const string &name_in, uint32_t id_in);
+    FieldInfo(FieldType type_in, CollectionType collection_in, const string& name_in, uint32_t id_in);
 
     /**
      * Check if an attribute vector is available for this
@@ -84,7 +85,7 @@ public:
      *
      * @return the name of this field
      **/
-    const string & name() const { return _name; }
+    const string& name() const { return _name; }
 
     /**
      * Obtain the id of this field
@@ -115,4 +116,4 @@ public:
     ElementGap get_element_gap() const noexcept { return _element_gap; }
 };
 
-}
+} // namespace search::fef

@@ -3,55 +3,46 @@
 
 #include "wand_parts.h"
 #include "weak_and_heap.h"
-#include <vespa/searchlib/queryeval/searchiterator.h>
+
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace search::queryeval {
 
 /**
  * WAND search iterator that uses a shared heap between match threads.
  */
-struct ParallelWeakAndSearch : public SearchIterator
-{
+struct ParallelWeakAndSearch : public SearchIterator {
     using score_t = wand::score_t;
     using docid_t = wand::docid_t;
 
     /**
      * Params used to tweak the behavior of the WAND algorithm.
      */
-    struct MatchParams
-    {
-        WeakAndHeap   &scores;
+    struct MatchParams {
+        WeakAndHeap&   scores;
         score_t        scoreThreshold;
         const uint32_t scoresAdjustFrequency;
         const double   thresholdBoostFactor;
         const docid_t  docIdLimit;
-        MatchParams(WeakAndHeap &scores_in,
-                    score_t scoreThreshold_in,
-                    double thresholdBoostFactor_in,
-                    uint32_t scoresAdjustFrequency_in,
-                    uint32_t docIdLimit_in) noexcept
+        MatchParams(WeakAndHeap& scores_in, score_t scoreThreshold_in, double thresholdBoostFactor_in,
+                    uint32_t scoresAdjustFrequency_in, uint32_t docIdLimit_in) noexcept
             : scores(scores_in),
               scoreThreshold(scoreThreshold_in),
               scoresAdjustFrequency(scoresAdjustFrequency_in),
               thresholdBoostFactor(thresholdBoostFactor_in),
-              docIdLimit(docIdLimit_in)
-        {}
+              docIdLimit(docIdLimit_in) {}
     };
 
     /**
      * Params used for rank calculation.
      */
-    struct RankParams
-    {
-        fef::TermFieldMatchData &rootMatchData;
+    struct RankParams {
+        fef::TermFieldMatchData& rootMatchData;
         fef::MatchData::UP       childrenMatchData;
-        RankParams(fef::TermFieldMatchData &rootMatchData_,
-                   fef::MatchData::UP &&childrenMatchData_) noexcept
-            : rootMatchData(rootMatchData_),
-              childrenMatchData(std::move(childrenMatchData_))
-        {}
+        RankParams(fef::TermFieldMatchData& rootMatchData_, fef::MatchData::UP&& childrenMatchData_) noexcept
+            : rootMatchData(rootMatchData_), childrenMatchData(std::move(childrenMatchData_)) {}
     };
 
     using Terms = wand::Terms;
@@ -59,17 +50,20 @@ struct ParallelWeakAndSearch : public SearchIterator
     virtual size_t get_num_terms() const = 0;
     virtual int32_t get_term_weight(size_t idx) const = 0;
     virtual score_t get_max_score(size_t idx) const = 0;
-    virtual const MatchParams &getMatchParams() const = 0;
+    virtual const MatchParams& getMatchParams() const = 0;
 
-    static SearchIterator::UP createArrayWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict, bool readonly_scores_heap);
-    static SearchIterator::UP createHeapWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict, bool readonly_scores_heap);
-    static SearchIterator::UP create(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict, bool readonly_scores_heap);
+    static SearchIterator::UP createArrayWand(const Terms& terms, const MatchParams& matchParams,
+                                              RankParams&& rankParams, bool strict, bool readonly_scores_heap);
+    static SearchIterator::UP createHeapWand(const Terms& terms, const MatchParams& matchParams,
+                                             RankParams&& rankParams, bool strict, bool readonly_scores_heap);
+    static SearchIterator::UP create(const Terms& terms, const MatchParams& matchParams, RankParams&& rankParams,
+                                     bool strict, bool readonly_scores_heap);
 
-    static SearchIterator::UP create(fef::TermFieldMatchData &tmd, const MatchParams &matchParams,
-                                     const std::vector<int32_t> &weights,
-                                     const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
-                                     const IDocidWithWeightPostingStore &attr, bool strict,
+    static SearchIterator::UP create(fef::TermFieldMatchData& tmd, const MatchParams& matchParams,
+                                     const std::vector<int32_t>&                           weights,
+                                     const std::vector<IDirectPostingStore::LookupResult>& dict_entries,
+                                     const IDocidWithWeightPostingStore& attr, bool strict,
                                      bool readonly_scores_heap);
 };
 
-}
+} // namespace search::queryeval

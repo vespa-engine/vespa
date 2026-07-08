@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
+#include <vespa/searchlib/docstore/idocumentstore.h>
 
 namespace proton {
 
@@ -12,15 +12,14 @@ namespace proton {
 class SummaryFlushTarget : public searchcorespi::LeafFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
-    search::IDocumentStore & _docStore;
-    vespalib::Executor     & _summaryService;
-    FlushStats               _lastStats;
+    search::IDocumentStore& _docStore;
+    vespalib::Executor&     _summaryService;
+    FlushStats              _lastStats;
 
     Task::UP internalInitFlush(SerialNum currentSerial);
 
 public:
-    SummaryFlushTarget(search::IDocumentStore & docStore,
-                       vespalib::Executor & summaryService);
+    SummaryFlushTarget(search::IDocumentStore& docStore, vespalib::Executor& summaryService);
 
     MemoryGain getApproxMemoryGain() const override;
     DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }
@@ -28,11 +27,13 @@ public:
     Time getLastFlushTime() const override;
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
 
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
 } // namespace proton
-

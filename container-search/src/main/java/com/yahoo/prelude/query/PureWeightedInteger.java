@@ -29,8 +29,8 @@ public class PureWeightedInteger extends PureWeightedItem  {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         buffer.putLong(value);
     }
 

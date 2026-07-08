@@ -2,6 +2,7 @@
 #pragma once
 
 #include "configsetsource.h"
+
 #include <vespa/config/common/sourcefactory.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -14,19 +15,18 @@ class ConfigKey;
 /**
  * Factory creating config payload from a single config instance
  */
-class ConfigInstanceSourceFactory : public SourceFactory
-{
+class ConfigInstanceSourceFactory : public SourceFactory {
 public:
-    ConfigInstanceSourceFactory(const ConfigKey & key, vespalib::asciistream buffer);
+    ConfigInstanceSourceFactory(const ConfigKey& key, vespalib::asciistream buffer);
 
     /**
      * Create source handling config described by key.
      */
-    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey& key) const override;
+
 private:
-    const ConfigKey _key;
+    const ConfigKey       _key;
     vespalib::asciistream _buffer;
 };
 
 } // namespace config
-

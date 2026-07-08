@@ -17,7 +17,6 @@ private:
     string _name;
 
 public:
-
     /**
      * Constructs a new directive to insert a route.
      *
@@ -31,13 +30,12 @@ public:
      *
      * @return The name name.
      */
-    [[nodiscard]] const string &getName() const { return _name; }
+    [[nodiscard]] const string& getName() const { return _name; }
 
     [[nodiscard]] Type getType() const override { return TYPE_ROUTE; }
-    [[nodiscard]] bool matches(const IHopDirective &dir) const override;
+    [[nodiscard]] bool matches(const IHopDirective& dir) const override;
     [[nodiscard]] string toString() const override;
     [[nodiscard]] string toDebugString() const override;
 };
 
-} // mbus
-
+} // namespace mbus

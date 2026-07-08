@@ -5,8 +5,10 @@
 namespace vespalib {
 class ISequencedTaskExecutor;
 class ThreadExecutor;
+} // namespace vespalib
+namespace vespalib::slime {
+struct Cursor;
 }
-namespace vespalib::slime { struct Cursor; }
 
 namespace proton::explorer {
 
@@ -20,5 +22,4 @@ void convert_executor_to_slime(const vespalib::ThreadExecutor* executor, vespali
  */
 void convert_executor_to_slime(const vespalib::ISequencedTaskExecutor* executor, vespalib::slime::Cursor& object);
 
-}
-
+} // namespace proton::explorer

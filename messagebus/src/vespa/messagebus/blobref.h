@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <stdint.h>
 #include "blob.h"
+
+#include <stdint.h>
 
 namespace mbus {
 
@@ -13,10 +14,9 @@ namespace mbus {
  * anything. This means that parameters of this class will typically
  * only be valid during the invocation of the current method.
  **/
-class BlobRef
-{
+class BlobRef {
 private:
-    const char *_data; // default copy is ok
+    const char* _data; // default copy is ok
     uint32_t    _size;
 
 public:
@@ -26,7 +26,7 @@ public:
      * @param d the actual data
      * @param s the size of the data in bytes
      **/
-    BlobRef(const char *d, uint32_t s) : _data(d), _size(s) { }
+    BlobRef(const char* d, uint32_t s) : _data(d), _size(s) {}
 
     /**
      * Create a new BlobRef referring the memory owned by the given
@@ -34,14 +34,14 @@ public:
      *
      * @param b blob owning the data we want a reference to
      **/
-    BlobRef(const Blob &b) :  _data(b.data()), _size(b.size()) { }
+    BlobRef(const Blob& b) : _data(b.data()), _size(b.size()) {}
 
     /**
      * Obtain a pointer to the raw data referenced by this object.
      *
      * @return raw data pointer
      **/
-    const char *data() const { return _data; }
+    const char* data() const { return _data; }
 
     /**
      * Obtain the size of the data referenced by this object
@@ -52,4 +52,3 @@ public:
 };
 
 } // namespace mbus
-

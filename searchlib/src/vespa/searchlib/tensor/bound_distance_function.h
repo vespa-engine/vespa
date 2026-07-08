@@ -3,7 +3,9 @@
 #pragma once
 
 #include "distance_function.h"
+
 #include <vespa/eval/eval/typed_cells.h>
+
 #include <memory>
 
 namespace search::tensor {
@@ -31,11 +33,12 @@ public:
 
     // calculate internal distance, early return allowed if > limit
     virtual double calc_with_limit(TypedCells rhs, double limit) const noexcept = 0;
+
 protected:
-    static const double *cast(const double * p) { return p; }
-    static const float *cast(const float * p) { return p; }
-    static const int8_t *cast(const Int8Float * p) { return reinterpret_cast<const int8_t *>(p); }
-    static const BFloat16 *cast(const BFloat16* p) { return p; }
+    static const double* cast(const double* p) { return p; }
+    static const float* cast(const float* p) { return p; }
+    static const int8_t* cast(const Int8Float* p) { return reinterpret_cast<const int8_t*>(p); }
+    static const BFloat16* cast(const BFloat16* p) { return p; }
 };
 
-}
+} // namespace search::tensor

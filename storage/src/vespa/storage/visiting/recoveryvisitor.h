@@ -10,9 +10,12 @@
 #pragma once
 
 #include "visitor.h"
+
 #include <vespa/storageapi/message/datagram.h>
 
-namespace documentapi { class DocumentListMessage; }
+namespace documentapi {
+class DocumentListMessage;
+}
 
 namespace storage {
 
@@ -21,9 +24,7 @@ public:
     RecoveryVisitor(StorageComponent&, const vdslib::Parameters& params);
 
 private:
-    void handleDocuments(const document::BucketId& bucketId,
-                         DocEntryList & entries,
-                         HitCounter& hitCounter) override;
+    void handleDocuments(const document::BucketId& bucketId, DocEntryList& entries, HitCounter& hitCounter) override;
 
     void completedBucket(const document::BucketId&, HitCounter&) override;
 
@@ -38,20 +39,13 @@ private:
 
 struct RecoveryVisitorFactory : public VisitorFactory {
 
-    std::shared_ptr<VisitorEnvironment>
-    makeVisitorEnvironment(StorageComponent&) override {
+    std::shared_ptr<VisitorEnvironment> makeVisitorEnvironment(StorageComponent&) override {
         return std::make_shared<VisitorEnvironment>();
     };
 
-    Visitor*
-    makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters& params) override
-    {
+    Visitor* makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters& params) override {
         return new RecoveryVisitor(c, params);
     }
-
 };
 
-}
-
-
-
+} // namespace storage

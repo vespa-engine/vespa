@@ -2,42 +2,45 @@
 
 #include <vespa/vdslib/state/state.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <ostream>
 #include <string>
 
 namespace storage::lib {
 
-const State&
-State::get(std::string_view serialized)
-{
-    if (serialized.size() == 1) switch(serialized[0]) {
-        case '-': return UNKNOWN;
-        case 'm': return MAINTENANCE;
-        case 'd': return DOWN;
-        case 's': return STOPPING;
-        case 'i': return INITIALIZING;
-        case 'r': return RETIRED;
-        case 'u': return UP;
-        default: break;
-    }
-    throw vespalib::IllegalArgumentException(
-            "Unknown state " + std::string(serialized) + " given.", VESPA_STRLOC);
+const State& State::get(std::string_view serialized) {
+    if (serialized.size() == 1)
+        switch (serialized[0]) {
+        case '-':
+            return UNKNOWN;
+        case 'm':
+            return MAINTENANCE;
+        case 'd':
+            return DOWN;
+        case 's':
+            return STOPPING;
+        case 'i':
+            return INITIALIZING;
+        case 'r':
+            return RETIRED;
+        case 'u':
+            return UP;
+        default:
+            break;
+        }
+    throw vespalib::IllegalArgumentException("Unknown state " + std::string(serialized) + " given.", VESPA_STRLOC);
 }
 
-State::State(std::string_view name, std::string_view serialized,
-             uint8_t rank,
-             bool validDistributorReported, bool validStorageReported,
-             bool validDistributorWanted, bool validStorageWanted,
-             bool validCluster)
+State::State(std::string_view name, std::string_view serialized, uint8_t rank, bool validDistributorReported,
+             bool validStorageReported, bool validDistributorWanted, bool validStorageWanted, bool validCluster)
     : _name(name),
       _serialized(serialized),
       _rankValue(rank),
       _validReportedNodeState(2),
       _validWantedNodeState(2),
-      _validClusterState(validCluster)
-{
-        // Since this is static initialization and NodeType is not necessarily
-        // created yet, use these enum values.
+      _validClusterState(validCluster) {
+    // Since this is static initialization and NodeType is not necessarily
+    // created yet, use these enum values.
     uint32_t storage = 0;
     uint32_t distributor = 1;
     _validReportedNodeState[storage] = validStorageReported;
@@ -48,11 +51,9 @@ State::State(std::string_view name, std::string_view serialized,
 
 State::~State() = default;
 
-void
-State::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
-    (void) indent;
+void State::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    (void)indent;
     out << (verbose ? _name : _serialized);
 }
 
-}
+} // namespace storage::lib

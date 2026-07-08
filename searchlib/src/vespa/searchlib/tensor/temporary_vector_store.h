@@ -9,19 +9,18 @@ namespace search::tensor {
 /**
  * Helper class containing temporary memory storage for possibly converted vector cells.
  */
-template <typename FloatTypeT>
-class TemporaryVectorStore {
+template <typename FloatTypeT> class TemporaryVectorStore {
 public:
     using FloatType = FloatTypeT;
+
 private:
     using TypedCells = vespalib::eval::TypedCells;
     std::vector<FloatType> _tmpSpace;
     std::span<const FloatType> internal_convert(TypedCells cells, size_t offset) noexcept;
+
 public:
     explicit TemporaryVectorStore(size_t vectorSize) noexcept : _tmpSpace(vectorSize * 2) {}
-    std::span<const FloatType> storeLhs(TypedCells cells) noexcept {
-        return internal_convert(cells, 0);
-    }
+    std::span<const FloatType> storeLhs(TypedCells cells) noexcept { return internal_convert(cells, 0); }
     std::span<const FloatType> convertRhs(TypedCells cells) {
         if (vespalib::eval::get_cell_type<FloatType>() == cells.type) [[likely]] {
             return cells.unsafe_typify<FloatType>();
@@ -32,23 +31,40 @@ public:
 };
 
 /**
+ * Helper class for explicitly storing (and exposing a mutable view of) a single vector.
+ * Only useful when the right hand side is always known to not require temporary storage.
+ */
+template <typename FloatTypeT>
+class MutableSingleTemporaryVectorStore {
+public:
+    using FloatType = FloatTypeT;
+
+private:
+    using TypedCells = vespalib::eval::TypedCells;
+    std::vector<FloatType> _tmp_space;
+    std::span<const FloatType> internal_convert(TypedCells cells) noexcept;
+
+public:
+    explicit MutableSingleTemporaryVectorStore(size_t vector_size) noexcept : _tmp_space(vector_size) {}
+    [[nodiscard]] std::span<const FloatType> storeLhs(TypedCells cells) noexcept { return internal_convert(cells); }
+    [[nodiscard]] std::span<FloatType> mutable_lhs_buf() noexcept { return _tmp_space; }
+};
+
+/**
  * Helper class used when TypedCells vector memory is just referenced,
  * and used directly in calculations without any transforms.
  */
-template <typename FloatTypeT>
-class ReferenceVectorStore {
+template <typename FloatTypeT> class ReferenceVectorStore {
 public:
     using FloatType = FloatTypeT;
+
 private:
     using TypedCells = vespalib::eval::TypedCells;
+
 public:
-    explicit ReferenceVectorStore(size_t vector_size) noexcept { (void) vector_size; }
-    std::span<const FloatType> storeLhs(TypedCells cells) noexcept {
-        return cells.unsafe_typify<FloatType>();
-    }
-    std::span<const FloatType> convertRhs(TypedCells cells) noexcept {
-        return cells.unsafe_typify<FloatType>();
-    }
+    explicit ReferenceVectorStore(size_t vector_size) noexcept { (void)vector_size; }
+    std::span<const FloatType> storeLhs(TypedCells cells) noexcept { return cells.unsafe_typify<FloatType>(); }
+    std::span<const FloatType> convertRhs(TypedCells cells) noexcept { return cells.unsafe_typify<FloatType>(); }
 };
 
-}
+} // namespace search::tensor

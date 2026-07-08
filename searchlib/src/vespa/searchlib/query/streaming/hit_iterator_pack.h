@@ -4,6 +4,7 @@
 
 #include "hit_iterator.h"
 #include "queryterm.h"
+
 #include <span>
 
 namespace search::streaming {
@@ -12,13 +13,13 @@ namespace search::streaming {
  * Iterator pack used over hit list for a term to support near, onear,
  * phrase and same element query nodes.
  */
-class HitIteratorPack
-{
+class HitIteratorPack {
     using iterator = typename std::vector<HitIterator>::iterator;
     using FieldElement = HitIterator::FieldElement;
     std::vector<HitIterator> _iterators;
-    std::vector<HitList> _hit_lists;
-    FieldElement _field_element;
+    std::vector<HitList>     _hit_lists;
+    FieldElement             _field_element;
+
 public:
     explicit HitIteratorPack(std::span<const std::unique_ptr<QueryNode>> children);
     explicit HitIteratorPack(std::span<const std::unique_ptr<QueryTerm>> children);
@@ -33,4 +34,4 @@ public:
     bool seek_to_matching_field_element() noexcept;
 };
 
-}
+} // namespace search::streaming

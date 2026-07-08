@@ -14,13 +14,15 @@
 #pragma once
 
 #include <vespa/storageapi/defs.h>
+
 #include <string>
 
-namespace vespalib::xml { class XmlOutputStream; }
+namespace vespalib::xml {
+class XmlOutputStream;
+}
 namespace storage::api {
 
-class BucketInfo
-{
+class BucketInfo {
     Timestamp _lastModified;
     uint32_t  _checksum;
     uint32_t  _docCount;
@@ -33,13 +35,11 @@ class BucketInfo
 public:
     BucketInfo() noexcept;
     BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize) noexcept;
-    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
-               uint32_t metaCount, uint32_t usedFileSize) noexcept;
-    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
-               uint32_t metaCount, uint32_t usedFileSize,
+    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize, uint32_t metaCount,
+               uint32_t usedFileSize) noexcept;
+    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize, uint32_t metaCount, uint32_t usedFileSize,
                bool ready, bool active) noexcept;
-    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
-               uint32_t metaCount, uint32_t usedFileSize,
+    BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize, uint32_t metaCount, uint32_t usedFileSize,
                bool ready, bool active, Timestamp lastModified) noexcept;
 
     Timestamp getLastModified() const noexcept { return _lastModified; }
@@ -65,20 +65,16 @@ public:
      * size, not meta count or used file size.
      */
     bool equalDocumentInfo(const BucketInfo& other) const noexcept {
-        return (_checksum == other._checksum
-                && _docCount == other._docCount
-                && _totDocSize == other._totDocSize);
+        return (_checksum == other._checksum && _docCount == other._docCount && _totDocSize == other._totDocSize);
     }
 
     bool operator==(const BucketInfo& info) const noexcept;
     bool valid() const noexcept { return (_docCount > 0 || _totDocSize == 0); }
-    bool empty() const noexcept {
-        return _metaCount == 0 && _usedFileSize == 0 && _checksum == 0;
-    }
+    bool empty() const noexcept { return _metaCount == 0 && _usedFileSize == 0 && _checksum == 0; }
     std::string toString() const;
     void printXml(vespalib::xml::XmlOutputStream&) const;
 };
 
-std::ostream & operator << (std::ostream & os, const BucketInfo & bucketInfo);
+std::ostream& operator<<(std::ostream& os, const BucketInfo& bucketInfo);
 
-}
+} // namespace storage::api

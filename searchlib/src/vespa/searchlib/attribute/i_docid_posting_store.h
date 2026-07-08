@@ -19,4 +19,4 @@ public:
     virtual DocidIterator create(vespalib::datastore::EntryRef idx) const = 0;
 };
 
-}
+} // namespace search

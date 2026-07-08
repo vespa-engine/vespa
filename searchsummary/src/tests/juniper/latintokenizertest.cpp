@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "latintokenizer.h"
+
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -40,7 +41,9 @@ Maple_Punctuation::Maple_Punctuation() {
 
         _lookup = new bool[256];
 
-        for (unsigned int i = 0; i < 256; ++i) { _lookup[i] = false; }
+        for (unsigned int i = 0; i < 256; ++i) {
+            _lookup[i] = false;
+        }
 
         _lookup[static_cast<unsigned char>('.')] = true;
         _lookup[static_cast<unsigned char>(',')] = true;
@@ -73,7 +76,9 @@ Maple_Space::Maple_Space() {
 
         _lookup = new bool[256];
 
-        for (unsigned int i = 0; i < 256; ++i) { _lookup[i] = false; }
+        for (unsigned int i = 0; i < 256; ++i) {
+            _lookup[i] = false;
+        }
 
         _lookup[static_cast<unsigned char>(' ')] = true;
         _lookup[static_cast<unsigned char>('\n')] = true;
@@ -103,7 +108,6 @@ void TestWord(Fast_LatinTokenizer<IsSeparator, IsPunctuation>* lt, const char* c
         EXPECT_TRUE(word == correct);
 
         EXPECT_TRUE(token._punctuation == punct);
-
     }
 }
 

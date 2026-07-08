@@ -4,12 +4,30 @@
 
 namespace proton::test {
 
-DummyFlushTarget::DummyFlushTarget(const std::string &name) noexcept
-    : searchcorespi::LeafFlushTarget(name, Type::OTHER, Component::OTHER)
-{}
-DummyFlushTarget::DummyFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept
-    : searchcorespi::LeafFlushTarget(name, type, component)
-{}
+DummyFlushTarget::DummyFlushTarget(const std::string& name) noexcept
+    : searchcorespi::LeafFlushTarget(name, Type::OTHER, Component::OTHER) {
+}
+
+DummyFlushTarget::DummyFlushTarget(const std::string& name, const Type& type, const Component& component) noexcept
+    : searchcorespi::LeafFlushTarget(name, type, component) {
+}
+
 DummyFlushTarget::~DummyFlushTarget() = default;
 
+bool DummyFlushTarget::can_flush(SerialNum) const noexcept {
+    return true;
 }
+
+size_t DummyFlushTarget::reserved_memory_for_flush() const noexcept {
+    return 0;
+}
+
+std::chrono::steady_clock::duration DummyFlushTarget::last_flush_duration() const noexcept {
+    return 200ms; // placeholder value.
+}
+
+std::chrono::steady_clock::duration DummyFlushTarget::estimated_flush_duration() const noexcept {
+    return 200ms; // placeholder value.
+}
+
+} // namespace proton::test

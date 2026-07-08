@@ -20,4 +20,4 @@ struct StorageBucketInfo {
 
 std::ostream& operator<<(std::ostream& out, const StorageBucketInfo& info);
 
-}
+} // namespace storage::bucketdb

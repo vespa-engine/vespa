@@ -3,6 +3,7 @@ package com.yahoo.schema;
 
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.document.Stemming;
@@ -122,6 +123,38 @@ public class SchemaTestCase {
         var input = application.schemas().get("msmarco").onnxModels().get("ltr_tensorflow").getInputMap().get("input:0");
         assertNotNull(input);
         assertEquals("vespa_input", input);
+    }
+
+    @Test
+    void testOnnxModelOptimizeModel() throws Exception {
+        String schema =
+                """
+                schema test {
+                    document test {
+                        field id type string {
+                            indexing: summary | attribute
+                        }
+                    }
+                    onnx-model default_model {
+                        file: files/default.onnx
+                    }
+                    onnx-model optimized_model {
+                        file: files/optimized.onnx
+                        optimize-model: true
+                    }
+                    onnx-model unoptimized_model {
+                        file: files/unoptimized.onnx
+                        optimize-model: false
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var models = application.schemas().get("test").onnxModels();
+        assertTrue(models.get("default_model").getOptimizeModel());
+        assertTrue(models.get("optimized_model").getOptimizeModel());
+        assertFalse(models.get("unoptimized_model").getOptimizeModel());
     }
 
     @Test
@@ -356,6 +389,7 @@ public class SchemaTestCase {
                         "    summary pf1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as parent_imported {}" +
+                        "  documentid: attribute" +
                         "  raw-as-base64-in-summary" +
                         "}");
         String childLines = joinLines(
@@ -885,6 +919,134 @@ public class SchemaTestCase {
         }
     }
 
+    @Test
+    void testInnerProfilesWithDuplicateNamesAreAllowed() throws ParseException {
+        String schema =
+                """
+                schema doc {
+                    document doc {}
+                    rank-profile ranking_a {
+                        rank-profile debug inherits ranking_a {}
+                    }
+                    rank-profile ranking_b {
+                        rank-profile debug inherits ranking_b {}
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+    }
+
+    @Test
+    void testRankSettingsToSchemaInfo() throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                        field test type int {
+                            indexing: attribute
+                            attribute: fast-search
+                        }
+                    }
+                    rank-profile test {
+                        match-phase {
+                            attribute: test
+                            max-hits: 456
+                        }
+                        first-phase {
+                            keep-rank-count: 1234
+                        }
+                        second-phase {
+                            rerank-count: 43
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+        var schemaInfoConfigBuilder = new SchemaInfoConfig.Builder();
+        derived.getSchemaInfo().getConfig(schemaInfoConfigBuilder);
+        var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
+        assertTrue(schemaInfoConfig.contains("rerankCount 43"));
+        assertTrue(schemaInfoConfig.contains("keepRankCount 1234"));
+        assertTrue(schemaInfoConfig.contains("matchPhaseMaxHits 456"));
+    }
+
+    @Test
+    void testTotalRankSettingsToSchemaInfo() throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                        field test type int {
+                            indexing: attribute
+                            attribute: fast-search
+                        }
+                    }
+                    rank-profile test {
+                        match-phase {
+                            attribute: test
+                            total-max-hits: 4567
+                        }
+                        first-phase {
+                            total-keep-rank-count: 2345
+                        }
+                        second-phase {
+                            total-rerank-count: 213
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+        var schemaInfoConfigBuilder = new SchemaInfoConfig.Builder();
+        derived.getSchemaInfo().getConfig(schemaInfoConfigBuilder);
+        var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
+        assertTrue(schemaInfoConfig.contains("totalRerankCount 213"));
+        assertTrue(schemaInfoConfig.contains("totalKeepRankCount 2345"));
+        assertTrue(schemaInfoConfig.contains("totalMatchPhaseMaxHits 4567"));
+    }
+
+    @Test
+    void testDocumentIdAttributeToSchema() throws Exception {
+        String schema_default =
+                """
+                schema doc {
+                    document doc {
+                    }
+                }""";
+        assertFalse(documentIdAttributeEnabled(schema_default));
+
+        String schema_fromdisk =
+                """
+                schema doc {
+                    documentid: from-disk
+                    document doc {
+                    }
+                }""";
+        assertFalse(documentIdAttributeEnabled(schema_fromdisk));
+
+        String schema_attribute =
+                """
+                schema doc {
+                    documentid: attribute
+                    document doc {
+                    }
+                }""";
+        assertTrue(documentIdAttributeEnabled(schema_attribute));
+    }
+
+    private boolean documentIdAttributeEnabled(String schema_string) throws Exception {
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema_string);
+        var application = builder.build(true);
+        var schema = application.schemas().get("doc");
+        return schema.documentIdAttributeEnabled();
+    }
+
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {
         assertEquals("pf1", schema.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
         assertEquals(Stemming.NONE, schema.getStemming());
@@ -902,6 +1064,7 @@ public class SchemaTestCase {
         assertNotNull(schema.getExplicitSummaryField("pf1"));
         assertNotNull(schema.getUniqueNamedSummaryFields().get("pf1"));
         assertNotNull(schema.temporaryImportedFields().get().fields().get("parent_imported"));
+        assertTrue(schema.documentIdAttributeEnabled());
         assertTrue(schema.isRawAsBase64());
     }
 

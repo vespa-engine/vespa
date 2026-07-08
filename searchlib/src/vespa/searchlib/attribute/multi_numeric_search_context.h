@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "numeric_search_context.h"
 #include "multi_value_mapping_read_view.h"
 #include "numeric_range_matcher.h"
+#include "numeric_search_context.h"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search::attribute {
@@ -14,8 +15,7 @@ namespace search::attribute {
  * a query term on a multi value numeric attribute vector.
  */
 template <typename T, typename M>
-class MultiNumericSearchContext : public NumericSearchContext<NumericRangeMatcher<T>>
-{
+class MultiNumericSearchContext : public NumericSearchContext<NumericRangeMatcher<T>> {
 private:
     using DocId = ISearchContext::DocId;
     MultiValueMappingReadView<M> _mv_mapping_read_view;
@@ -24,14 +24,13 @@ private:
         return find(docId, elemId, weight);
     }
 
-    int32_t onFind(DocId docId, int32_t elemId) const override final {
-        return find(docId, elemId);
-    }
+    int32_t onFind(DocId docId, int32_t elemId) const override final { return find(docId, elemId); }
 
 public:
-    MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view);
+    MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched,
+                              MultiValueMappingReadView<M> mv_mapping_read_view);
     ~MultiNumericSearchContext() override;
-    int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
+    int32_t find(DocId doc, int32_t elemId, int32_t& weight) const {
         auto values(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < values.size(); i++) {
             if (this->match(multivalue::get_value(values[i]))) {
@@ -53,9 +52,9 @@ public:
         return -1;
     }
 
-    std::unique_ptr<queryeval::SearchIterator>
-    createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
+    std::unique_ptr<queryeval::SearchIterator> createFilterIterator(fef::TermFieldMatchData* matchData,
+                                                                    bool                     strict) override;
     uint32_t get_committed_docid_limit() const noexcept override;
 };
 
-}
+} // namespace search::attribute

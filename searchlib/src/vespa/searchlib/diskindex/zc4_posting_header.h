@@ -4,7 +4,9 @@
 
 #include <cstdint>
 
-namespace search::bitcompression { class DecodeContext64Base; }
+namespace search::bitcompression {
+class DecodeContext64Base;
+}
 
 namespace search::diskindex {
 
@@ -28,8 +30,7 @@ struct Zc4PostingHeader {
 
     Zc4PostingHeader();
 
-    void
-    read(bitcompression::DecodeContext64Base &decode_context, const Zc4PostingParams &params);
+    void read(bitcompression::DecodeContext64Base& decode_context, const Zc4PostingParams& params);
 };
 
-}
+} // namespace search::diskindex

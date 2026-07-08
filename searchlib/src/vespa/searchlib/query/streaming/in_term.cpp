@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "in_term.h"
+
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
@@ -13,26 +14,21 @@ using search::query::TermVector;
 
 namespace search::streaming {
 
-InTerm::InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & index,
+InTerm::InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string& index,
                std::unique_ptr<TermVector> terms, Normalizing normalize_mode)
-    : MultiTerm(std::move(result_base), index, std::move(terms), normalize_mode)
-{
+    : MultiTerm(std::move(result_base), index, std::move(terms), normalize_mode) {
 }
 
 InTerm::~InTerm() = default;
 
-void
-InTerm::get_element_ids(std::vector<uint32_t>&)
-{
+void InTerm::get_element_ids(std::vector<uint32_t>&) {
 }
 
-void
-InTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&,
-                          ElementIds)
-{
+void InTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data,
+                               const fef::IIndexEnvironment&, ElementIds) {
     vespalib::hash_set<uint32_t> matching_field_ids;
-    HitList hl_store;
-    std::optional<uint32_t> prev_field_id;
+    HitList                      hl_store;
+    std::optional<uint32_t>      prev_field_id;
     for (const auto& term : _terms) {
         auto& hl = term->evaluateHits(hl_store);
         for (auto& hit : hl) {
@@ -45,7 +41,7 @@ InTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_
     auto num_fields = td.numFields();
     for (uint32_t field_idx = 0; field_idx < num_fields; ++field_idx) {
         auto& tfd = td.field(field_idx);
-        auto field_id = tfd.getFieldId();
+        auto  field_id = tfd.getFieldId();
         if (matching_field_ids.contains(field_id)) {
             auto handle = tfd.getHandle();
             if (handle != fef::IllegalHandle) {
@@ -57,4 +53,4 @@ InTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_
     }
 }
 
-}
+} // namespace search::streaming

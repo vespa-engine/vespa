@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/messagebus/result.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/result.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -10,43 +10,34 @@ using namespace mbus;
 
 namespace {
 
-struct MyMessage : public SimpleMessage
-{
+struct MyMessage : public SimpleMessage {
     static int ctorCnt;
     static int dtorCnt;
-    MyMessage(const string &str) : SimpleMessage(str) {
-        ++ctorCnt;
-    }
+    MyMessage(const string& str) : SimpleMessage(str) { ++ctorCnt; }
     ~MyMessage() override;
 };
 int MyMessage::ctorCnt = 0;
 int MyMessage::dtorCnt = 0;
 
-MyMessage::~MyMessage()
-{
+MyMessage::~MyMessage() {
     ++dtorCnt;
 }
 
-Result
-sendOk(Message::UP msg)
-{
-    (void) msg;
+Result sendOk(Message::UP msg) {
+    (void)msg;
     return Result();
 }
 
-Result
-sendFail(Message::UP msg)
-{
+Result sendFail(Message::UP msg) {
     return Result(Error(ErrorCode::FATAL_ERROR, "error"), std::move(msg));
 }
 
-}
+} // namespace
 
-TEST(ResultTest, test_result)
-{
+TEST(ResultTest, test_result) {
     { // test accepted
         Message::UP msg(new MyMessage("test"));
-        Result res = sendOk(std::move(msg));
+        Result      res = sendOk(std::move(msg));
         EXPECT_TRUE(msg.get() == nullptr);
         EXPECT_TRUE(res.isAccepted());
         EXPECT_TRUE(res.getError().getCode() == ErrorCode::NONE);
@@ -56,7 +47,7 @@ TEST(ResultTest, test_result)
     }
     { // test failed
         Message::UP msg(new MyMessage("test"));
-        Message *raw = msg.get();
+        Message*    raw = msg.get();
         EXPECT_TRUE(raw != nullptr);
         Result res = sendFail(std::move(msg));
         EXPECT_TRUE(msg.get() == nullptr);

@@ -5,23 +5,18 @@
 
 namespace storage::distributor {
 
-struct DelegatedStatusRequest
-{
+struct DelegatedStatusRequest {
     const framework::StatusReporter& reporter;
-    const framework::HttpUrlPath& path;
-    std::ostream& outputStream;
+    const framework::HttpUrlPath&    path;
+    std::ostream&                    outputStream;
 
-    DelegatedStatusRequest(const framework::StatusReporter& _reporter,
-                     const framework::HttpUrlPath& _path,
-                     std::ostream& _outputStream)
-      : reporter(_reporter),
-        path(_path),
-        outputStream(_outputStream)
-    {}
+    DelegatedStatusRequest(const framework::StatusReporter& _reporter, const framework::HttpUrlPath& _path,
+                           std::ostream& _outputStream)
+        : reporter(_reporter), path(_path), outputStream(_outputStream) {}
 
 private:
     DelegatedStatusRequest(const DelegatedStatusRequest&);
     DelegatedStatusRequest& operator=(const DelegatedStatusRequest&);
 };
 
-}
+} // namespace storage::distributor

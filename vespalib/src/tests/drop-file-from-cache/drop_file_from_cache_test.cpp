@@ -15,7 +15,8 @@ TEST(DropFileFromCacheTest, file_does_not_exist) {
 }
 
 TEST(DropFileFromCacheTest, all_is_well) {
-    Process drop("../../apps/vespa-drop-file-from-cache/vespa-drop-file-from-cache vespalib_drop_file_from_cache_test_app");
+    Process drop(
+        "../../apps/vespa-drop-file-from-cache/vespa-drop-file-from-cache vespalib_drop_file_from_cache_test_app");
     EXPECT_EQ(0, drop.join());
 }
 

@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 
@@ -38,14 +39,14 @@ public class ProvisionerAdapter implements HostProvisioner {
         // Illegal argument because we end here by following a path not suitable for the environment steered
         // by the content of the nodes tag in services
         throw new IllegalArgumentException("Clusters in hosted environments must have a <nodes count='N'> tag " +
-                                                "matching all zones, and having no <node> subtags, " +
-                                                "see https://docs.vespa.ai/en/reference/applications/services/services.html");
+                                           "matching all zones, and having no <node> subtags, " +
+                                           "see https://docs.vespa.ai/en/reference/applications/services/services.html");
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
         provisioned.add(cluster, capacity);
-        return provisioner.prepare(applicationId, cluster, capacity, logger);
+        return provisioner.prepare(applicationId, cluster, capacity, context);
     }
 
 }

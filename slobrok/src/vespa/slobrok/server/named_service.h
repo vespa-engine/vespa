@@ -15,24 +15,22 @@ namespace slobrok {
  * IRpcSrvCollection interface.
  **/
 
-class NamedService
-{
+class NamedService {
 protected:
-    std::string           _name;
-    std::string           _spec;
+    std::string _name;
+    std::string _spec;
 
 public:
-    NamedService(const NamedService &) = delete;
-    NamedService &operator=(const NamedService &) = delete;
+    NamedService(const NamedService&) = delete;
+    NamedService& operator=(const NamedService&) = delete;
 
-    NamedService(const std::string & name, const std::string & spec);
+    NamedService(const std::string& name, const std::string& spec);
     virtual ~NamedService();
 
-    const std::string & getName() const { return _name; }
-    const std::string & getSpec() const { return _spec; }
+    const std::string& getName() const { return _name; }
+    const std::string& getSpec() const { return _spec; }
 };
 
 //-----------------------------------------------------------------------------
 
 } // namespace slobrok
-

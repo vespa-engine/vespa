@@ -3,6 +3,7 @@
 #include <vespa/searchcore/proton/flushengine/flush_history.h>
 #include <vespa/searchcore/proton/flushengine/flush_history_view.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <ios>
 
 using proton::flushengine::FlushHistory;
@@ -21,10 +22,9 @@ const std::string NORMAL_STRATEGY("normal");
 const std::string ALL_STRATEGY("all");
 const std::string HANDLER1("handler1");
 const std::string HANDLER2("handler2");
+const std::string strategy_info("info");
 
-template <typename Entry>
-std::vector<std::string>
-make_names(const std::vector<Entry>& entries) {
+template <typename Entry> std::vector<std::string> make_names(const std::vector<Entry>& entries) {
     std::vector<std::string> result;
     result.reserve(entries.size());
     for (auto& entry : entries) {
@@ -33,8 +33,7 @@ make_names(const std::vector<Entry>& entries) {
     return result;
 }
 
-std::vector<FlushCounts>
-make_flush_counts(const std::vector<FlushStrategyHistoryEntry>& entries) {
+std::vector<FlushCounts> make_flush_counts(const std::vector<FlushStrategyHistoryEntry>& entries) {
     std::vector<FlushCounts> result;
     result.reserve(entries.size());
     for (auto& entry : entries) {
@@ -43,22 +42,16 @@ make_flush_counts(const std::vector<FlushStrategyHistoryEntry>& entries) {
     return result;
 }
 
-std::vector<FlushCounts>
-make_finished_flush_counts(const FlushHistoryView& view)
-{
+std::vector<FlushCounts> make_finished_flush_counts(const FlushHistoryView& view) {
     return make_flush_counts(view.finished_strategies());
 }
 
-std::vector<FlushCounts>
-make_draining_flush_counts(const FlushHistoryView& view)
-{
+std::vector<FlushCounts> make_draining_flush_counts(const FlushHistoryView& view) {
     return make_flush_counts(view.draining_strategies());
 }
 
-FlushCounts
-make_active_flush_counts(const FlushHistoryView& view)
-{
-    return view.active_strategy().flush_counts();;
+FlushCounts make_active_flush_counts(const FlushHistoryView& view) {
+    return view.active_strategy().flush_counts();
 }
 
 /*
@@ -71,33 +64,23 @@ struct TimeStampsSet {
     constexpr TimeStampsSet(bool switch_time_set_in, bool finish_time_set_in, bool last_flush_time_set_in) noexcept
         : switch_time_set(switch_time_set_in),
           finish_time_set(finish_time_set_in),
-          last_flush_time_set(last_flush_time_set_in)
-    {
-
-    }
+          last_flush_time_set(last_flush_time_set_in) {}
     bool operator==(const TimeStampsSet&) const noexcept = default;
 };
 
 using TSS = TimeStampsSet;
 
-void PrintTo(const TimeStampsSet& tss, std::ostream* os)
-{
+void PrintTo(const TimeStampsSet& tss, std::ostream* os) {
     *os << "{ switched=" << std::boolalpha << tss.switch_time_set << ", finished=" << tss.finish_time_set
-    << ", flushed=" << tss.last_flush_time_set << " }";
+        << ", flushed=" << tss.last_flush_time_set << " }";
 }
 
-
-TSS
-make_tss(const FlushStrategyHistoryEntry& entry)
-{
-    return TSS(entry.switch_time() != steady_clock::time_point(),
-               entry.finish_time() != steady_clock::time_point(),
+TSS make_tss(const FlushStrategyHistoryEntry& entry) {
+    return TSS(entry.switch_time() != steady_clock::time_point(), entry.finish_time() != steady_clock::time_point(),
                entry.last_flush_finish_time() != steady_clock::time_point());
 }
 
-std::vector<TSS>
-make_tss(const std::vector<FlushStrategyHistoryEntry>& entries)
-{
+std::vector<TSS> make_tss(const std::vector<FlushStrategyHistoryEntry>& entries) {
     std::vector<TSS> result;
     result.reserve(entries.size());
     for (auto& entry : entries) {
@@ -106,40 +89,31 @@ make_tss(const std::vector<FlushStrategyHistoryEntry>& entries)
     return result;
 }
 
-std::vector<TSS>
-make_finished_tss(const FlushHistoryView& view)
-{
+std::vector<TSS> make_finished_tss(const FlushHistoryView& view) {
     return make_tss(view.finished_strategies());
 }
 
-std::vector<TSS>
-make_draining_tss(const FlushHistoryView& view)
-{
+std::vector<TSS> make_draining_tss(const FlushHistoryView& view) {
     return make_tss(view.draining_strategies());
 }
 
-TSS
-make_active_tss(const FlushHistoryView& view)
-{
+TSS make_active_tss(const FlushHistoryView& view) {
     return make_tss(view.active_strategy());
 }
 
-}
+} // namespace
 
 namespace proton::flushengine {
 
-void PrintTo(const FlushCounts& counts, std::ostream* os)
-{
-    *os << "FlushCounts(" << counts._started << "," << counts._finished << "," <<
-    counts._inherited << "," << counts._inherited_finished << ")";
+void PrintTo(const FlushCounts& counts, std::ostream* os) {
+    *os << "FlushCounts(" << counts._started << "," << counts._finished << "," << counts._inherited << ","
+        << counts._inherited_finished << ")";
 }
 
-}
+} // namespace proton::flushengine
 
-class FlushHistoryTest : public ::testing::Test
-{
+class FlushHistoryTest : public ::testing::Test {
 protected:
-
     using SV = std::vector<std::string>;
 
     FlushHistory _flush_history;
@@ -148,17 +122,13 @@ protected:
     ~FlushHistoryTest() override;
 };
 
-FlushHistoryTest::FlushHistoryTest()
-    : ::testing::Test(),
-      _flush_history(NORMAL_STRATEGY, 42, 3)
-{
+FlushHistoryTest::FlushHistoryTest() : ::testing::Test(), _flush_history(NORMAL_STRATEGY, 42, 3) {
 }
 
 FlushHistoryTest::~FlushHistoryTest() = default;
 
-TEST_F(FlushHistoryTest, empty_history)
-{
-    auto view = _flush_history.make_view();
+TEST_F(FlushHistoryTest, empty_history) {
+    auto  view = _flush_history.make_view();
     auto& active_strategy = view->active_strategy();
     EXPECT_EQ(NORMAL_STRATEGY, active_strategy.name());
     EXPECT_EQ(42, active_strategy.id());
@@ -178,11 +148,10 @@ TEST_F(FlushHistoryTest, empty_history)
     EXPECT_EQ(TSS(false, false, false), make_active_tss(*view));
 }
 
-TEST_F(FlushHistoryTest, track_flushes)
-{
-    _flush_history.start_flush(HANDLER1, "a1", 3s, 5);
-    _flush_history.start_flush(HANDLER2, "a2", 1s, 6);
-    _flush_history.start_flush(HANDLER1, "a3", 4s, 7);
+TEST_F(FlushHistoryTest, track_flushes) {
+    _flush_history.start_flush(HANDLER1, "a1", strategy_info, 3s, 3s, 5);
+    _flush_history.start_flush(HANDLER2, "a2", strategy_info, 1s, 1s, 6);
+    _flush_history.start_flush(HANDLER1, "a3", strategy_info, 4s, 4s, 7);
     _flush_history.flush_done(6);
     _flush_history.flush_done(5);
     _flush_history.prune_done(6);
@@ -196,14 +165,13 @@ TEST_F(FlushHistoryTest, track_flushes)
     EXPECT_EQ(TSS(false, false, true), make_active_tss(*view));
 }
 
-TEST_F(FlushHistoryTest, tracks_pending_flushes)
-{
-    _flush_history.add_pending_flush(HANDLER1, "a1", 3s);
-    _flush_history.add_pending_flush(HANDLER2, "a2", 1s);
-    _flush_history.add_pending_flush(HANDLER2, "a3", 4s);
-    _flush_history.add_pending_flush(HANDLER1, "a4", 7s);
-    _flush_history.start_flush(HANDLER1, "a1", 3s, 5);
-    _flush_history.start_flush(HANDLER2, "a2", 1s, 6);
+TEST_F(FlushHistoryTest, tracks_pending_flushes) {
+    _flush_history.add_pending_flush(HANDLER1, "a1", strategy_info, 3s, 3s);
+    _flush_history.add_pending_flush(HANDLER2, "a2", strategy_info, 1s, 1s);
+    _flush_history.add_pending_flush(HANDLER2, "a3", strategy_info, 4s, 4s);
+    _flush_history.add_pending_flush(HANDLER1, "a4", strategy_info, 7s, 7s);
+    _flush_history.start_flush(HANDLER1, "a1", strategy_info, 3s, 3s, 5);
+    _flush_history.start_flush(HANDLER2, "a2", strategy_info, 1s, 1s, 6);
     _flush_history.flush_done(6);
     _flush_history.prune_done(6);
     auto view = _flush_history.make_view();
@@ -216,19 +184,17 @@ TEST_F(FlushHistoryTest, tracks_pending_flushes)
     EXPECT_EQ(TSS(false, false, true), make_active_tss(*view));
 }
 
-TEST_F(FlushHistoryTest, pending_flushes_can_be_cleared)
-{
-    _flush_history.add_pending_flush(HANDLER1, "a1", 3s);
+TEST_F(FlushHistoryTest, pending_flushes_can_be_cleared) {
+    _flush_history.add_pending_flush(HANDLER1, "a1", strategy_info, 3s, 3s);
     _flush_history.clear_pending_flushes();
     auto view = _flush_history.make_view();
     EXPECT_TRUE(view->pending().empty());
     EXPECT_EQ(TSS(false, false, false), make_active_tss(*view));
 }
 
-TEST_F(FlushHistoryTest, active_priority_flush_strategy_can_be_detected)
-{
+TEST_F(FlushHistoryTest, active_priority_flush_strategy_can_be_detected) {
     _flush_history.set_strategy(ALL_STRATEGY, 43, true);
-    auto view = _flush_history.make_view();
+    auto  view = _flush_history.make_view();
     auto& active_strategy = view->active_strategy();
     EXPECT_EQ(ALL_STRATEGY, active_strategy.name());
     EXPECT_EQ(43, active_strategy.id());
@@ -238,20 +204,19 @@ TEST_F(FlushHistoryTest, active_priority_flush_strategy_can_be_detected)
     EXPECT_EQ(TSS(false, false, false), make_active_tss(*view));
 }
 
-TEST_F(FlushHistoryTest, flush_strategy_can_be_changed)
-{
+TEST_F(FlushHistoryTest, flush_strategy_can_be_changed) {
     /*
      * 3 flush strategies:
      * { "normal", id = 42, priority_strategy = false } started 1 flush: handler1.a1.
      * { "all",    id = 43, priority_strategy = true  } started 2 flushes: handler2.a2 and handler1.a3
      * { "normal", id = 44, priority_strategy = false } started no flushes
      */
-    _flush_history.start_flush(HANDLER1, "a1", 3s, 5);
+    _flush_history.start_flush(HANDLER1, "a1", strategy_info, 3s, 3s, 5);
     _flush_history.set_strategy(ALL_STRATEGY, 43, true);
-    _flush_history.add_pending_flush(HANDLER2, "a2", 1s);
-    _flush_history.add_pending_flush(HANDLER1, "a3", 4s);
-    _flush_history.start_flush(HANDLER2, "a2", 1s, 6);
-    _flush_history.start_flush(HANDLER1, "a3", 4s, 7);
+    _flush_history.add_pending_flush(HANDLER2, "a2", strategy_info, 1s, 1s);
+    _flush_history.add_pending_flush(HANDLER1, "a3", strategy_info, 4s, 4s);
+    _flush_history.start_flush(HANDLER2, "a2", strategy_info, 1s, 1s, 6);
+    _flush_history.start_flush(HANDLER1, "a3", strategy_info, 4s, 4s, 7);
     _flush_history.set_strategy(NORMAL_STRATEGY, 44, false);
 
     /*
@@ -280,7 +245,7 @@ TEST_F(FlushHistoryTest, flush_strategy_can_be_changed)
     EXPECT_EQ((SV{ALL_STRATEGY, NORMAL_STRATEGY}), make_names(view->last_strategies()));
     EXPECT_EQ((std::vector<TSS>{}), make_finished_tss(*view));
     EXPECT_EQ((std::vector<TSS>{{true, false, false}, {true, false, false}}), make_draining_tss(*view));
-    EXPECT_EQ(TSS(false, false, false),make_active_tss(*view));
+    EXPECT_EQ(TSS(false, false, false), make_active_tss(*view));
 
     /*
      * Complete flush "handler2.a2". The flush "handler1.a1" is not yet completed, thus no flush strategies
@@ -315,7 +280,6 @@ TEST_F(FlushHistoryTest, flush_strategy_can_be_changed)
     EXPECT_EQ((std::vector<TSS>{{true, true, true}}), make_finished_tss(*view));
     EXPECT_EQ((std::vector<TSS>{{true, false, true}}), make_draining_tss(*view));
     EXPECT_EQ(TSS(false, false, true), make_active_tss(*view));
-
 
     /*
      * Complete flush "handler1.a3". Flush strategy history entry for { "all", 43, true } moves from

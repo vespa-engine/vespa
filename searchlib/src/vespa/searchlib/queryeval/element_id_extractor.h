@@ -5,7 +5,9 @@
 #include <cstdint>
 #include <vector>
 
-namespace search::fef { class TermFieldMatchData; }
+namespace search::fef {
+class TermFieldMatchData;
+}
 
 namespace search::queryeval {
 
@@ -21,4 +23,4 @@ public:
                                      std::vector<uint32_t>& elementIds);
 };
 
-}
+} // namespace search::queryeval

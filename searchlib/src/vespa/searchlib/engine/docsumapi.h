@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "docsumrequest.h"
 #include "docsumreply.h"
+#include "docsumrequest.h"
 
 namespace search::engine {
 
@@ -11,8 +11,7 @@ namespace search::engine {
  * A docsum client is the object being notified of the completion of
  * an asynchronous docsum operation.
  **/
-class DocsumClient
-{
+class DocsumClient {
 public:
     /**
      * Invoked by the docsum server to indicate the completion of an
@@ -32,8 +31,7 @@ public:
  * A docsum server is an object capable of performing a docsum
  * operation.
  **/
-class DocsumServer
-{
+class DocsumServer {
 public:
     /**
      * Initiate a docsum operation that can be completed either
@@ -54,7 +52,7 @@ public:
      * @param client the client to be notified of async completion
      **/
 
-    virtual DocsumReply::UP getDocsums(DocsumRequest::Source request, DocsumClient &client) = 0;
+    virtual DocsumReply::UP getDocsums(DocsumRequest::Source request, DocsumClient& client) = 0;
     /**
      * As above but synchronous.
      * @param request object containing request parameters.
@@ -68,4 +66,4 @@ public:
     virtual ~DocsumServer() = default;
 };
 
-}
+} // namespace search::engine

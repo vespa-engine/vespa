@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/datastore/aligner.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/datastore/datastore.h>
 
 namespace search::memoryindex {
@@ -19,7 +19,6 @@ public:
     using RefType = DataStoreType::RefType;
     using EncodeContext = bitcompression::EG2PosOccEncodeContext<true>;
     using DecodeContextCooked = bitcompression::EG2PosOccDecodeContextCooked<true>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
     static constexpr uint32_t buffer_array_size = 4u; // Must be a power of 2
     using Aligner = vespalib::datastore::Aligner<buffer_array_size>;
 
@@ -45,10 +44,10 @@ private:
     // from schema.
     std::vector<PosOccFieldsParams> _fieldsParams;
 
-    const Schema &_schema;
+    const Schema& _schema;
 
     vespalib::datastore::BufferType<uint8_t> _type;
-    const uint32_t      _typeId;
+    const uint32_t                           _typeId;
 
     /**
      * Writes the given features to the underlying encode context.
@@ -57,7 +56,7 @@ private:
      * @param features the features to be encoded
      * @return the encode offset before writing
      */
-    uint64_t writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
+    uint64_t writeFeatures(uint32_t packedIndex, const DocIdAndFeatures& features);
 
     /**
      * Adds the features from the given buffer to the data store.
@@ -66,7 +65,7 @@ private:
      * @param byteLen the byte length of the buffer
      * @return the entry ref for the added features
      */
-    vespalib::datastore::EntryRef addFeatures(const uint8_t * src, uint64_t byteLen);
+    vespalib::datastore::EntryRef addFeatures(const uint8_t* src, uint64_t byteLen);
 
     /**
      * Adds the features currently in the underlying encode context to the data store.
@@ -87,7 +86,6 @@ private:
     vespalib::datastore::EntryRef moveFeatures(vespalib::datastore::EntryRef ref, uint64_t bitLen);
 
 public:
-
     /**
      * Constructor for feature store.
      *
@@ -95,7 +93,7 @@ public:
      *               collections available, used to derive
      *               coding parameters.
      */
-    FeatureStore(const Schema &schema);
+    FeatureStore(const Schema& schema);
 
     ~FeatureStore();
 
@@ -107,7 +105,8 @@ public:
      * @return            pair with reference to stored features and
      *                    size of encoded features in bits
      */
-    std::pair<vespalib::datastore::EntryRef, uint64_t> addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
+    std::pair<vespalib::datastore::EntryRef, uint64_t> addFeatures(uint32_t                packedIndex,
+                                                                   const DocIdAndFeatures& features);
 
     /*
      * Decoding of bitwise compressed data can read up to DECODE_SAFETY
@@ -133,8 +132,7 @@ public:
      * @param ref         Reference to stored features
      * @param features    The features to be decoded
      */
-    void getFeatures(uint32_t packedIndex, vespalib::datastore::EntryRef ref, DocIdAndFeatures &features);
-
+    void getFeatures(uint32_t packedIndex, vespalib::datastore::EntryRef ref, DocIdAndFeatures& features);
 
     /**
      * Setup the given decoder to be used for the given field or field collection.
@@ -142,7 +140,7 @@ public:
      * @param packedIndex The field or field collection owning features
      * @param decoder     The feature decoder
      */
-    void setupForField(uint32_t packedIndex, DecodeContextCooked &decoder) const {
+    void setupForField(uint32_t packedIndex, DecodeContextCooked& decoder) const {
         decoder._fieldsParams = &_fieldsParams[packedIndex];
     }
 
@@ -152,8 +150,8 @@ public:
      * @param ref      Reference to stored features
      * @param decoder  The feature decoder
      */
-    void setupForReadFeatures(vespalib::datastore::EntryRef ref, DecodeContextCooked &decoder) const {
-        const uint8_t * bits = getBits(ref);
+    void setupForReadFeatures(vespalib::datastore::EntryRef ref, DecodeContextCooked& decoder) const {
+        const uint8_t* bits = getBits(ref);
         decoder.setByteCompr(bits);
         constexpr uint32_t maxOffset = RefType::offsetSize() * buffer_array_size;
         decoder.setEnd(maxOffset, false);
@@ -165,7 +163,7 @@ public:
      * @param ref      Reference to stored features
      * @param decoder  The feature decoder
      */
-    void setupForUnpackFeatures(vespalib::datastore::EntryRef ref, DecodeContextCooked &decoder) const {
+    void setupForUnpackFeatures(vespalib::datastore::EntryRef ref, DecodeContextCooked& decoder) const {
         decoder.setByteCompr(getBits(ref));
     }
 
@@ -186,7 +184,7 @@ public:
      * @param ref Reference to stored features
      * @return    byte address of stored features
      */
-    const uint8_t *getBits(vespalib::datastore::EntryRef ref) const {
+    const uint8_t* getBits(vespalib::datastore::EntryRef ref) const {
         RefType iRef(ref);
         return _store.getEntryArray<uint8_t>(iRef, buffer_array_size);
     }
@@ -200,14 +198,14 @@ public:
      */
     vespalib::datastore::EntryRef moveFeatures(uint32_t packedIndex, vespalib::datastore::EntryRef ref);
 
-    const std::vector<PosOccFieldsParams> &getFieldsParams() const { return _fieldsParams; }
+    const std::vector<PosOccFieldsParams>& getFieldsParams() const { return _fieldsParams; }
 
-    void reclaim_memory(generation_t oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
-    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
-    void reclaim_all_memory() { _store.reclaim_all_memory();}
+    void reclaim_memory(vespalib::Generation oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
+    void assign_generation(vespalib::Generation current_gen) { _store.assign_generation(current_gen); }
+    void reclaim_all_memory() { _store.reclaim_all_memory(); }
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     vespalib::datastore::MemoryStats getMemStats() const { return _store.getMemStats(); }
 };
 
-}
+} // namespace search::memoryindex

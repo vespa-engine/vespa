@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -87,6 +88,24 @@ public class HostRegistryTest {
         assertEquals(3, hosts.size());
         reg.update(foo, List.of("foo.com"));
         assertEquals(3, hosts.size());
+    }
+
+    @Test
+    public void application_ids_are_returned() {
+        HostRegistry reg = new HostRegistry();
+        assertTrue(reg.getApplicationIds().isEmpty());
+
+        reg.update(foo, List.of("foo.com", "bar.com"));
+        assertEquals(Set.of(foo), reg.getApplicationIds());
+
+        reg.update(bar, List.of("baz.com"));
+        assertEquals(Set.of(foo, bar), reg.getApplicationIds());
+
+        reg.removeHosts(foo);
+        assertEquals(Set.of(bar), reg.getApplicationIds());
+
+        reg.removeHosts(bar);
+        assertTrue(reg.getApplicationIds().isEmpty());
     }
 
     private void assertGetKey(HostRegistry reg, String host, ApplicationId expectedKey) {

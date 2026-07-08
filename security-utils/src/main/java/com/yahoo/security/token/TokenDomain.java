@@ -2,6 +2,7 @@
 package com.yahoo.security.token;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import static com.yahoo.security.ArrayUtils.fromUtf8Bytes;
 import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
@@ -30,7 +31,7 @@ public record TokenDomain(byte[] checkHashContext) {
 
     public TokenDomain {
         if (Arrays.equals(checkHashContext, TokenFingerprint.FINGERPRINT_CONTEXT)) {
-            throw new IllegalArgumentException("Fingerprint and check hash contexts can not be equal");
+            throw new IllegalArgumentException("Fingerprint and check hash contexts cannot be equal");
         }
     }
 
@@ -49,7 +50,7 @@ public record TokenDomain(byte[] checkHashContext) {
 
     @Override
     public String toString() {
-        return "'%s'".formatted(fromUtf8Bytes(checkHashContext));
+        return String.format(Locale.ROOT, "'%s'", fromUtf8Bytes(checkHashContext));
     }
 
     public static TokenDomain of(String checkHashContext) {

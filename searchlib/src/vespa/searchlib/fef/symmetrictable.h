@@ -3,6 +3,7 @@
 #pragma once
 
 #include "table.h"
+
 #include <vector>
 
 namespace search::fef {
@@ -12,12 +13,11 @@ namespace search::fef {
  * The content of a table is typically a pre-computed function that is used by a feature executor.
  * Values in the negative index range are negated values of corresponding positive value.
  **/
-class SymmetricTable
-{
+class SymmetricTable {
 private:
     std::vector<double> _backingTable;
     int                 _size;
-    double *            _table;
+    double*             _table;
     double              _max;
 
 public:
@@ -27,12 +27,12 @@ public:
     /**
      * Creates a symmetric table based on the real one.
      **/
-    SymmetricTable(const Table & table);
-    SymmetricTable(const SymmetricTable & table);
+    SymmetricTable(const Table& table);
+    SymmetricTable(const SymmetricTable& table);
     ~SymmetricTable();
 
-    SymmetricTable & operator =(const SymmetricTable & table);
-    void swap(SymmetricTable & rhs) {
+    SymmetricTable& operator=(const SymmetricTable& table);
+    void swap(SymmetricTable& rhs) {
         _backingTable.swap(rhs._backingTable);
         std::swap(_size, rhs._size);
         std::swap(_table, rhs._table);
@@ -46,10 +46,8 @@ public:
     /**
      * Retrives the element at the given position or the last element if i is outside the range.
      **/
-    double get(int i) const {
-        return (i<-_size) ? _table[-_size] : ((i>_size) ? _table[_size] : _table[i]);
-    };
+    double get(int i) const { return (i < -_size) ? _table[-_size] : ((i > _size) ? _table[_size] : _table[i]); };
     double max() const { return _max; }
 };
 
-}
+} // namespace search::fef

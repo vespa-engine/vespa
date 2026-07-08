@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -85,7 +86,7 @@ class ExportTest {
 
         var baosOut = new ByteArrayOutputStream();
         var prevOut = System.out;
-        System.setOut(new PrintStream(baosOut));
+        System.setOut(new PrintStream(baosOut, false, StandardCharsets.UTF_8));
         try {
             int code = new Export(params, locator, wf, dumpFn, dcpf).run();
             assertEquals(0, code);

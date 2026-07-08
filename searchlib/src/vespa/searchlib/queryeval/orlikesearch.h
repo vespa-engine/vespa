@@ -3,6 +3,7 @@
 #pragma once
 
 #include "orsearch.h"
+
 #include <vespa/vespalib/objects/visit.h>
 
 namespace search::queryeval {
@@ -10,12 +11,10 @@ namespace search::queryeval {
 /**
  * A simple implementation of the Or search operation.
  **/
-template <bool strict, typename Unpack>
-class OrLikeSearch : public OrSearch
-{
+template <bool strict, typename Unpack> class OrLikeSearch : public OrSearch {
 protected:
     void doSeek(uint32_t docid) override {
-        const Children & children(getChildren());
+        const Children& children(getChildren());
         for (uint32_t i = 0; i < children.size(); ++i) {
             if (children[i]->seek(docid)) {
                 setDocId(docid);
@@ -33,7 +32,7 @@ protected:
         }
     }
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False; }
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override {
         MultiSearch::visitMembers(visitor);
         visit(visitor, "strict", strict);
     }
@@ -46,38 +45,25 @@ public:
      *
      * @param children the search objects we are or'ing
      **/
-    OrLikeSearch(Children children, const Unpack & unpacker)
-      : OrSearch(std::move(children)),
-        _unpacker(unpacker)
-    { }
+    OrLikeSearch(Children children, const Unpack& unpacker) : OrSearch(std::move(children)), _unpacker(unpacker) {}
     ~OrLikeSearch() override;
+
 private:
-    void onRemove(size_t index) override {
-        _unpacker.onRemove(index);
-    }
-    void onInsert(size_t index) override {
-        _unpacker.onInsert(index);
-    }
-    void doUnpack(uint32_t docid) override {
-        _unpacker.unpack(docid, *this);
-    }
-    bool needUnpack(size_t index) const override {
-        return _unpacker.needUnpack(index);
-    }
+    void onRemove(size_t index) override { _unpacker.onRemove(index); }
+    void onInsert(size_t index) override { _unpacker.onInsert(index); }
+    void doUnpack(uint32_t docid) override { _unpacker.unpack(docid, *this); }
+    bool needUnpack(size_t index) const override { return _unpacker.needUnpack(index); }
     Unpack _unpacker;
 };
 
-template <bool strict, typename Unpack>
-OrLikeSearch<strict,Unpack>::~OrLikeSearch() = default;
+template <bool strict, typename Unpack> OrLikeSearch<strict, Unpack>::~OrLikeSearch() = default;
 
-template <typename Unpack, typename HEAP, typename ref_t>
-class StrictHeapOrSearch : public OrSearch
-{
+template <typename Unpack, typename HEAP, typename ref_t> class StrictHeapOrSearch : public OrSearch {
 private:
     struct Less {
-        const uint32_t *child_docid;
-        constexpr explicit Less(const std::vector<uint32_t> &cd) noexcept : child_docid(cd.data()) {}
-        constexpr bool operator()(const ref_t &a, const ref_t &b) const noexcept {
+        const uint32_t* child_docid;
+        constexpr explicit Less(const std::vector<uint32_t>& cd) noexcept : child_docid(cd.data()) {}
+        constexpr bool operator()(const ref_t& a, const ref_t& b) const noexcept {
             return (child_docid[a] < child_docid[b]);
         }
     };
@@ -106,17 +92,13 @@ private:
         getChildren()[child]->doSeek(docid);
         _child_docid[child] = getChildren()[child]->getDocId();
     }
-    ref_t *data_begin() noexcept { return _data.data(); }
-    ref_t *data_pos(size_t offset) noexcept { return _data.data() + offset; }
-    ref_t *data_end() noexcept { return _data.data() + _data.size(); }
+    ref_t* data_begin() noexcept { return _data.data(); }
+    ref_t* data_pos(size_t offset) noexcept { return _data.data() + offset; }
+    ref_t* data_end() noexcept { return _data.data() + _data.size(); }
 
 public:
-    StrictHeapOrSearch(Children children, const Unpack &unpacker)
-      : OrSearch(std::move(children)),
-        _data(),
-        _child_docid(getChildren().size()),
-        _unpacker(unpacker)
-    {
+    StrictHeapOrSearch(Children children, const Unpack& unpacker)
+        : OrSearch(std::move(children)), _data(), _child_docid(getChildren().size()), _unpacker(unpacker) {
         HEAP::require_left_heap();
         init_data();
     }
@@ -138,19 +120,19 @@ public:
         setDocId(_child_docid[HEAP::front(data_begin(), data_end())]);
     }
     void doUnpack(uint32_t docid) override { // <- not final
-        _unpacker.each([&](ref_t child) {
-                           if (__builtin_expect(_child_docid[child] == docid, false)) {
-                               getChildren()[child]->doUnpack(docid);
-                           }
-                       }, getChildren().size());
+        _unpacker.each(
+            [&](ref_t child) {
+                if (__builtin_expect(_child_docid[child] == docid, false)) {
+                    getChildren()[child]->doUnpack(docid);
+                }
+            },
+            getChildren().size());
     }
-    bool needUnpack(size_t index) const final {
-        return _unpacker.needUnpack(index);
-    }
+    bool needUnpack(size_t index) const final { return _unpacker.needUnpack(index); }
     Trinary is_strict() const final { return Trinary::True; }
 };
 
 template <typename Unpack, typename HEAP, typename ref_t>
 StrictHeapOrSearch<Unpack, HEAP, ref_t>::~StrictHeapOrSearch() = default;
 
-}
+} // namespace search::queryeval

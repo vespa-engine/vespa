@@ -8,19 +8,21 @@
 #pragma once
 
 #include "valueupdate.h"
+
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace document {
 
 class AddValueUpdate final : public ValueUpdate {
-    std::unique_ptr<FieldValue> _value; // The field value to add by this update.
-    int _weight; // The weight to assign to the contained value.
+    std::unique_ptr<FieldValue> _value;  // The field value to add by this update.
+    int                         _weight; // The weight to assign to the contained value.
 
     // Used by ValueUpdate's static factory function
     // Private because it generates an invalid object.
     friend class ValueUpdate;
     AddValueUpdate() : ValueUpdate(Add), _value(), _weight(1) {}
     ACCEPT_UPDATE_VISITOR;
+
 public:
     /**
      * The default constructor requires initial values for all member variables.
@@ -29,8 +31,8 @@ public:
      * @param weight The weight for the field value.
      */
     AddValueUpdate(std::unique_ptr<FieldValue> value, int weight = 1);
-    AddValueUpdate(const AddValueUpdate &) = delete;
-    AddValueUpdate & operator =(const AddValueUpdate &) = delete;
+    AddValueUpdate(const AddValueUpdate&) = delete;
+    AddValueUpdate& operator=(const AddValueUpdate&) = delete;
     ~AddValueUpdate();
 
     bool operator==(const ValueUpdate& other) const override;
@@ -55,7 +57,7 @@ public:
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
 };
 
-} // document
+} // namespace document

@@ -17,6 +17,7 @@ import com.yahoo.container.di.componentgraph.core.Node;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.di.config.SubscriberFactory;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.UncheckedInterruptedException;
 import org.osgi.framework.Bundle;
@@ -36,7 +37,8 @@ import static java.util.logging.Level.FINE;
 /**
  * @author gjoranv
  * @author Tony Vaagenes
- * @author ollivir
+ * @author Olli Virtanen
+ * @author glebashnik
  */
 public class Container {
 
@@ -50,10 +52,15 @@ public class Container {
     private final Osgi osgi;
 
     private final ConfigRetriever retriever;
-    private final com.yahoo.container.Container vespaContainer;
     private List<String> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
+
+    // Config keys from the most recently failed graph construction.
+    // Set to the failed graph's keys when constructComponents fails (component class exists, keys are valid);
+    // set to empty when graph creation itself fails (keys may be stale/missing after bootstrap change).
+    // Used in recovery mode to subscribe to the right set of configs.
+    private Set<ConfigKey<? extends ConfigInstance>> failedGraphConfigKeys = Set.of();
 
     public Container(SubscriberFactory subscriberFactory,
                      com.yahoo.container.Container vespaContainer,
@@ -61,7 +68,6 @@ public class Container {
                      ComponentDeconstructor destructor,
                      Osgi osgi) {
         this.subscriberFactory = subscriberFactory;
-        this.vespaContainer = vespaContainer;
         this.destructor = destructor;
         this.osgi = osgi;
 
@@ -69,41 +75,58 @@ public class Container {
         platformBundlesConfigKey = new ConfigKey<>(PlatformBundlesConfig.class, configId);
         componentsConfigKey = new ConfigKey<>(ComponentsConfig.class, configId);
         var bootstrapKeys = Set.of(applicationBundlesConfigKey, platformBundlesConfigKey, componentsConfigKey);
-        this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory);
+        this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory, vespaContainer);
     }
 
-    // TODO: try to simplify by returning the result even when the graph failed, instead of throwing here.
     public ComponentGraphResult waitForNextGraphGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
+        ComponentGraph newGraph;
         try {
-            ComponentGraph newGraph;
-            try {
-                newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing);
-                newGraph.reuseNodes(oldGraph);
-            } catch (Throwable t) {
-                if (t instanceof SubscriberClosedException)  {
-                    log.fine("Closing down waitForNextGraphGeneration()");
-                } else {
-                    log.warning("Failed to set up component graph - uninstalling latest bundles. Bootstrap generation: " + getBootstrapGeneration());
-                }
-                Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
-                deconstructComponentsAndBundles(getBootstrapGeneration(), newBundlesFromFailedGen, List.of());
+            newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing);
+            newGraph.reuseNodes(oldGraph);
+        } catch (Throwable t) {
+            Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
+            long bootstrapGeneration = getBootstrapGeneration();
+            deconstructComponentsAndBundles(bootstrapGeneration, newBundlesFromFailedGen, List.of());
+            // Graph creation failed: config keys may be stale (bootstrap changed, component class missing).
+            // Use empty keys to force bootstrap-first retrieval on next attempt.
+            failedGraphConfigKeys = Set.of();
+            if (t instanceof SubscriberClosedException) {
+                log.fine("Closing down waitForNextGraphGeneration()");
                 throw t;
             }
-            try {
-                constructComponents(newGraph);
-            } catch (Throwable e) {
-                log.warning("Failed to construct components for generation '" + newGraph.generation() + "' - scheduling partial graph for deconstruction");
-                Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
-                deconstructFailedGraph(oldGraph, newGraph, newBundlesFromFailedGen);
-                throw e;
-            }
-            Collection<Bundle> unusedBundlesFromPreviousGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.SUCCESS);
-            Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, unusedBundlesFromPreviousGen);
-            return new ComponentGraphResult(newGraph, cleanupTask);
-        } catch (Throwable t) {
+            if (isSignal(t)) throw t;
+
+            log.warning("Failed to set up component graph - uninstalling latest bundles. Bootstrap generation: " + bootstrapGeneration);
             invalidateGeneration(oldGraph.generation(), t);
-            throw t;
+            return ComponentGraphResult.failed(t, bootstrapGeneration);
         }
+
+        try {
+            constructComponents(newGraph);
+        } catch (Throwable e) {
+            Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
+            deconstructFailedGraph(oldGraph, newGraph, newBundlesFromFailedGen);
+            // Construction failed: the component class exists, so its config keys are valid and can be
+            // reused in recovery mode to detect config-only changes without needing a bootstrap reload.
+            failedGraphConfigKeys = newGraph.configKeys();
+
+            if (isSignal(e)) throw e;
+            log.warning("Failed to construct components for generation '" + newGraph.generation() + "' - scheduling partial graph for deconstruction");
+            invalidateGeneration(oldGraph.generation(), e);
+            return ComponentGraphResult.failed(e, getBootstrapGeneration());
+        }
+
+        failedGraphConfigKeys = Set.of();
+        Collection<Bundle> unusedBundlesFromPreviousGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.SUCCESS);
+        Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, unusedBundlesFromPreviousGen);
+        return new ComponentGraphResult(newGraph, cleanupTask);
+    }
+
+    private static boolean isSignal(Throwable t) {
+        return t instanceof UncheckedInterruptedException
+            || t instanceof InterruptedException
+            || t instanceof ConfigInterruptedException
+            || t instanceof SubscriberClosedException;
     }
 
     private void constructComponents(ComponentGraph graph) {
@@ -119,16 +142,23 @@ public class Container {
     {
         ConfigSnapshot snapshot;
         while (true) {
-            snapshot = retriever.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
-            updateApplyOnRestart();
+            // In recovery mode (leastGeneration > graph.generation()), use the config keys from the
+            // most recently failed graph rather than the old graph's keys. If construction failed,
+            // failedGraphConfigKeys has the failed graph's keys (valid: component class exists).
+            // If graph creation failed, failedGraphConfigKeys is empty (forces bootstrap-first retrieval
+            // to avoid subscribing to stale keys that no longer exist after a bootstrap change).
+            var configKeys = leastGeneration > graph.generation()
+                    ? failedGraphConfigKeys
+                    : graph.configKeys();
+            snapshot = retriever.getConfigs(configKeys, leastGeneration, isInitializing);
 
             if (log.isLoggable(FINE))
-                log.log(FINE, String.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
-                                            graph.configKeys(), graph.generation(), snapshot));
+                log.log(FINE, Text.format("getConfigAndCreateGraph:\n" + "configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
+                                            configKeys, graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
                 if (getBootstrapGeneration() <= previousConfigGeneration) {
-                    throw new IllegalStateException(String.format(
+                    throw new IllegalStateException(Text.format(
                             "Got bootstrap configs out of sequence for old config generation %d.\n" + "Previous config generation is %d",
                             getBootstrapGeneration(), previousConfigGeneration));
                 }
@@ -147,6 +177,14 @@ public class Container {
                 // Continues loop
 
             } else if (snapshot instanceof ComponentsConfigs) {
+                if (leastGeneration > graph.generation() && failedGraphConfigKeys.isEmpty()) {
+                    // Recovery with empty config keys: snapshot contains only bootstrap configs.
+                    // Rebuild graph to discover actual component config keys for next iteration.
+                    throwIfPlatformBundlesChanged(snapshot);
+                    installApplicationBundles(snapshot.configs());
+                    graph = createComponentGraph(snapshot.configs(), getComponentsGeneration(), fallbackInjector);
+                    continue;
+                }
                 break;
             }
         }
@@ -163,7 +201,7 @@ public class Container {
     }
 
     private String configGenerationsString() {
-        return String.format("bootstrap generation = %d\n" + "components generation: %d\n" + "previous generation: %d",
+        return Text.format("bootstrap generation = %d\n" + "components generation: %d\n" + "previous generation: %d",
                              getBootstrapGeneration(), getComponentsGeneration(), previousConfigGeneration);
     }
 
@@ -309,14 +347,7 @@ public class Container {
 
         return key.getConfigClass().cast(inst);
     }
-
-    /**
-     * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
-     */
-    public void updateApplyOnRestart() {
-        vespaContainer.setApplyOnRestart(retriever.applyOnRestart());
-    }
-
+    
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.fromStrings(config.id(), config.classId(), config.bundle());
     }
@@ -324,14 +355,32 @@ public class Container {
     public static class ComponentGraphResult {
         private final ComponentGraph newGraph;
         private final Runnable oldComponentsCleanupTask;
+        private final Throwable failure;
+        private final long configGeneration;
 
         public ComponentGraphResult(ComponentGraph newGraph, Runnable oldComponentsCleanupTask) {
             this.newGraph = newGraph;
             this.oldComponentsCleanupTask = oldComponentsCleanupTask;
+            this.failure = null;
+            this.configGeneration = newGraph.generation();
+        }
+
+        private ComponentGraphResult(Throwable failure, long configGeneration) {
+            this.newGraph = null;
+            this.oldComponentsCleanupTask = () -> {};
+            this.failure = failure;
+            this.configGeneration = configGeneration;
+        }
+
+        public static ComponentGraphResult failed(Throwable failure, long configGeneration) {
+            return new ComponentGraphResult(failure, configGeneration);
         }
 
         public ComponentGraph newGraph() { return newGraph; }
         public Runnable oldComponentsCleanupTask() { return oldComponentsCleanupTask; }
+        public boolean failed() { return failure != null; }
+        public Throwable failure() { return failure; }
+        public long configGeneration() { return configGeneration; }
     }
 
 }

@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postingchange.h"
+
 #include "multi_value_mapping.h"
 #include "postinglistattribute.h"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/common/growablebitvector.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/array.hpp>
 
@@ -14,17 +17,13 @@ namespace search {
 
 namespace {
 
-template <typename WeightedIndex>
-struct CompareValue {
-    bool operator()(const WeightedIndex& lhs, const WeightedIndex& rhs) const
-    {
+template <typename WeightedIndex> struct CompareValue {
+    bool operator()(const WeightedIndex& lhs, const WeightedIndex& rhs) const {
         return multivalue::get_value_ref(lhs).load_relaxed() < multivalue::get_value_ref(rhs).load_relaxed();
     };
 };
 
-void
-removeDupAdditions(PostingChange<AttributePosting>::A &additions)
-{
+void removeDupAdditions(PostingChange<AttributePosting>::A& additions) {
     if (additions.empty())
         return;
     if (additions.size() == 1)
@@ -38,7 +37,7 @@ removeDupAdditions(PostingChange<AttributePosting>::A &additions)
             break;
     }
     if (i == ie)
-        return;     // no dups found
+        return; // no dups found
     for (++i; i != ie; ++i) {
         if (d->_key != i->_key) {
             ++d;
@@ -48,10 +47,7 @@ removeDupAdditions(PostingChange<AttributePosting>::A &additions)
     additions.resize(d - additions.begin() + 1);
 }
 
-
-void
-removeDupAdditions(PostingChange<AttributeWeightPosting>::A &additions)
-{
+void removeDupAdditions(PostingChange<AttributeWeightPosting>::A& additions) {
     if (additions.empty())
         return;
     if (additions.size() == 1u)
@@ -65,7 +61,7 @@ removeDupAdditions(PostingChange<AttributeWeightPosting>::A &additions)
             break;
     }
     if (i == ie)
-        return;     // no dups found
+        return; // no dups found
     // sum weights together
     d->setData(d->getData() + i->getData());
     for (++i; i != ie; ++i) {
@@ -80,9 +76,7 @@ removeDupAdditions(PostingChange<AttributeWeightPosting>::A &additions)
     additions.resize(d - additions.begin() + 1);
 }
 
-void
-removeDupRemovals(std::vector<uint32_t> &removals)
-{
+void removeDupRemovals(std::vector<uint32_t>& removals) {
     if (removals.empty())
         return;
     if (removals.size() == 1u)
@@ -96,7 +90,7 @@ removeDupRemovals(std::vector<uint32_t> &removals)
             break;
     }
     if (i == ie)
-        return;     // no dups found
+        return; // no dups found
     for (++i; i != ie; ++i) {
         if (*d != *i) {
             ++d;
@@ -106,59 +100,46 @@ removeDupRemovals(std::vector<uint32_t> &removals)
     removals.resize(d - removals.begin() + 1);
 }
 
-}
+} // namespace
 
-IEnumStore::Index
-EnumIndexMapper::map(IEnumStore::Index original) const
-{
+IEnumStore::Index EnumIndexMapper::map(IEnumStore::Index original) const {
     return original;
 }
 
-template <>
-void
-PostingChange<AttributePosting>::removeDups()
-{
+template <> void PostingChange<AttributePosting>::removeDups() {
     removeDupAdditions(_additions);
     removeDupRemovals(_removals);
 }
 
-
-template <>
-void
-PostingChange<AttributeWeightPosting>::removeDups()
-{
+template <> void PostingChange<AttributeWeightPosting>::removeDups() {
     removeDupAdditions(_additions);
     removeDupRemovals(_removals);
 }
 
-template <typename P>
-PostingChange<P>::PostingChange() = default;
-template <typename P>
-PostingChange<P>::~PostingChange() = default;
+template <typename P> PostingChange<P>::PostingChange() = default;
+template <typename P> PostingChange<P>::~PostingChange() = default;
 
-template <typename WeightedIndex>
-class ActualChangeComputer {
+template <typename WeightedIndex> class ActualChangeComputer {
 public:
     using EnumIndex = IEnumStore::Index;
     using AlwaysWeightedIndexVector = std::vector<multivalue::WeightedValue<AtomicEntryRef>>;
     using WeightedIndexVector = std::vector<WeightedIndex>;
-    void compute(const WeightedIndex * entriesNew, size_t szNew,
-                 const WeightedIndex * entriesOld, size_t szOld,
-                 AlwaysWeightedIndexVector & added, AlwaysWeightedIndexVector & changed, AlwaysWeightedIndexVector & removed);
+    void compute(const WeightedIndex* entriesNew, size_t szNew, const WeightedIndex* entriesOld, size_t szOld,
+                 AlwaysWeightedIndexVector& added, AlwaysWeightedIndexVector& changed,
+                 AlwaysWeightedIndexVector& removed);
 
     ActualChangeComputer(const vespalib::datastore::EntryComparator& compare, const EnumIndexMapper& mapper);
     ~ActualChangeComputer();
 
 private:
-    WeightedIndexVector _oldEntries;
-    WeightedIndexVector _newEntries;
-    vespalib::hash_map<uint32_t, uint32_t> _cachedMapping;
-    const vespalib::datastore::EntryComparator &_compare;
-    const EnumIndexMapper &_mapper;
-    const bool _hasFold;
+    WeightedIndexVector                         _oldEntries;
+    WeightedIndexVector                         _newEntries;
+    vespalib::hash_map<uint32_t, uint32_t>      _cachedMapping;
+    const vespalib::datastore::EntryComparator& _compare;
+    const EnumIndexMapper&                      _mapper;
+    const bool                                  _hasFold;
 
-    static void copyFast(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
-    {
+    static void copyFast(WeightedIndexVector& dst, const WeightedIndex* src, size_t sz) {
         dst.insert(dst.begin(), src, src + sz);
     }
 
@@ -170,17 +151,16 @@ private:
         return EnumIndex(vespalib::datastore::EntryRef(itr.first->second));
     }
 
-
-    void copyMapped(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
-    {
-        const WeightedIndex *srce = src + sz;
-        for (const WeightedIndex *i = src; i < srce; ++i) {
-            dst.emplace_back(multivalue::ValueBuilder<WeightedIndex>::build(AtomicEntryRef(mapEnumIndex(multivalue::get_value_ref(*i).load_relaxed())), multivalue::get_weight(*i)));
+    void copyMapped(WeightedIndexVector& dst, const WeightedIndex* src, size_t sz) {
+        const WeightedIndex* srce = src + sz;
+        for (const WeightedIndex* i = src; i < srce; ++i) {
+            dst.emplace_back(multivalue::ValueBuilder<WeightedIndex>::build(
+                AtomicEntryRef(mapEnumIndex(multivalue::get_value_ref(*i).load_relaxed())),
+                multivalue::get_weight(*i)));
         }
     }
 
-    void copyEntries(WeightedIndexVector &dst, const WeightedIndex *src, size_t sz)
-    {
+    void copyEntries(WeightedIndexVector& dst, const WeightedIndex* src, size_t sz) {
         dst.reserve(sz);
         dst.clear();
         if (_hasFold) {
@@ -192,18 +172,17 @@ private:
     }
 };
 
-template <typename WeightedIndex>
-class MergeDupIterator {
+template <typename WeightedIndex> class MergeDupIterator {
     using InnerIter = typename std::vector<WeightedIndex>::const_iterator;
     using EnumIndex = IEnumStore::Index;
     using Entry = multivalue::WeightedValue<AtomicEntryRef>;
     InnerIter _cur;
     InnerIter _end;
-    Entry _entry;
-    bool _valid;
+    Entry     _entry;
+    bool      _valid;
     void merge() {
         EnumIndex idx = multivalue::get_value_ref(*_cur).load_relaxed();
-        int32_t weight = multivalue::get_weight(*_cur);
+        int32_t   weight = multivalue::get_weight(*_cur);
         ++_cur;
         while (_cur != _end && multivalue::get_value_ref(*_cur).load_relaxed() == idx) {
             // sum weights together. Overflow is not handled.
@@ -212,20 +191,17 @@ class MergeDupIterator {
         }
         _entry = Entry(AtomicEntryRef(idx), weight);
     }
+
 public:
-    MergeDupIterator(const std::vector<WeightedIndex> &vec)
-        : _cur(vec.begin()),
-          _end(vec.end()),
-          _entry(),
-          _valid(_cur != _end)
-    {
+    MergeDupIterator(const std::vector<WeightedIndex>& vec)
+        : _cur(vec.begin()), _end(vec.end()), _entry(), _valid(_cur != _end) {
         if (_valid) {
             merge();
         }
     }
 
     bool valid() const { return _valid; }
-    const Entry &entry() const { return _entry; }
+    const Entry& entry() const { return _entry; }
     EnumIndex value() const { return _entry.value_ref().load_relaxed(); }
     int32_t weight() const { return _entry.weight(); }
     void next() {
@@ -238,27 +214,19 @@ public:
 };
 
 template <typename WeightedIndex>
-ActualChangeComputer<WeightedIndex>::ActualChangeComputer(const vespalib::datastore::EntryComparator &compare,
-                                                          const EnumIndexMapper &mapper)
-    : _oldEntries(),
-      _newEntries(),
-      _cachedMapping(),
-      _compare(compare),
-      _mapper(mapper),
-      _hasFold(mapper.hasFold())
-{ }
+ActualChangeComputer<WeightedIndex>::ActualChangeComputer(const vespalib::datastore::EntryComparator& compare,
+                                                          const EnumIndexMapper&                      mapper)
+    : _oldEntries(), _newEntries(), _cachedMapping(), _compare(compare), _mapper(mapper), _hasFold(mapper.hasFold()) {
+}
+
+template <typename WeightedIndex> ActualChangeComputer<WeightedIndex>::~ActualChangeComputer() = default;
 
 template <typename WeightedIndex>
-ActualChangeComputer<WeightedIndex>::~ActualChangeComputer() = default;
-
-template <typename WeightedIndex>
-void
-ActualChangeComputer<WeightedIndex>::compute(const WeightedIndex * entriesNew, size_t szNew,
-                                             const WeightedIndex * entriesOld, size_t szOld,
-                                             AlwaysWeightedIndexVector & added,
-                                             AlwaysWeightedIndexVector & changed,
-                                             AlwaysWeightedIndexVector & removed)
-{
+void ActualChangeComputer<WeightedIndex>::compute(const WeightedIndex* entriesNew, size_t szNew,
+                                                  const WeightedIndex* entriesOld, size_t szOld,
+                                                  AlwaysWeightedIndexVector& added,
+                                                  AlwaysWeightedIndexVector& changed,
+                                                  AlwaysWeightedIndexVector& removed) {
     copyEntries(_newEntries, entriesNew, szNew);
     copyEntries(_oldEntries, entriesOld, szOld);
     MergeDupIterator<WeightedIndex> oldIt(_oldEntries);
@@ -292,29 +260,30 @@ ActualChangeComputer<WeightedIndex>::compute(const WeightedIndex * entriesNew, s
 template <typename WeightedIndex, typename PostingMap>
 template <typename MultivalueMapping>
 PostingMap
-PostingChangeComputerT<WeightedIndex, PostingMap>::
-compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
-        const vespalib::datastore::EntryComparator & compare, const EnumIndexMapper & mapper)
-{
+PostingChangeComputerT<WeightedIndex, PostingMap>::compute(const MultivalueMapping& mvm, const DocIndices& docIndices,
+                                                           const vespalib::datastore::EntryComparator& compare,
+                                                           const EnumIndexMapper&                      mapper) {
     using AC = ActualChangeComputer<WeightedIndex>;
-    AC actualChange(compare, mapper);
+    AC                                     actualChange(compare, mapper);
     typename AC::AlwaysWeightedIndexVector added, changed, removed;
-    PostingMap changePost;
-    
+    PostingMap                             changePost;
+
     // generate add postings and remove postings
-    for (const auto & docIndex : docIndices) {
+    for (const auto& docIndex : docIndices) {
         std::span<const WeightedIndex> oldIndices(mvm.get(docIndex.first));
         added.clear(), changed.clear(), removed.clear();
         actualChange.compute(docIndex.second.data(), docIndex.second.size(), oldIndices.data(), oldIndices.size(),
                              added, changed, removed);
-        for (const auto & wi : added) {
+        for (const auto& wi : added) {
             changePost[EnumPostingPair(wi.value_ref().load_relaxed(), &compare)].add(docIndex.first, wi.weight());
         }
-        for (const auto & wi : removed) {
+        for (const auto& wi : removed) {
             changePost[EnumPostingPair(wi.value_ref().load_relaxed(), &compare)].remove(docIndex.first);
         }
-        for (const auto & wi : changed) {
-            changePost[EnumPostingPair(wi.value_ref().load_relaxed(), &compare)].remove(docIndex.first).add(docIndex.first, wi.weight());
+        for (const auto& wi : changed) {
+            changePost[EnumPostingPair(wi.value_ref().load_relaxed(), &compare)]
+                .remove(docIndex.first)
+                .add(docIndex.first, wi.weight());
         }
     }
     return changePost;
@@ -324,7 +293,7 @@ template class PostingChange<AttributePosting>;
 
 template class PostingChange<AttributeWeightPosting>;
 
-using WeightedPostingChange = PostingChange<vespalib::btree::BTreeKeyData<unsigned int, int> >;
+using WeightedPostingChange = PostingChange<vespalib::btree::BTreeKeyData<unsigned int, int>>;
 using WeightedPostingChangeMap = std::map<EnumPostingPair, WeightedPostingChange>;
 using WeightedIndex = multivalue::WeightedValue<AtomicEntryRef>;
 using ValueIndex = AtomicEntryRef;
@@ -334,23 +303,21 @@ using ValueMultiValueMapping = attribute::MultiValueMapping<ValueIndex>;
 using DocIndicesWeighted = std::vector<std::pair<uint32_t, std::vector<WeightedIndex>>>;
 using DocIndicesValue = std::vector<std::pair<uint32_t, std::vector<ValueIndex>>>;
 
-template WeightedPostingChangeMap PostingChangeComputerT<WeightedIndex, WeightedPostingChangeMap>
-             ::compute<WeightedMultiValueMapping>(const WeightedMultiValueMapping &,
-                                                   const DocIndicesWeighted &,
-                                                   const vespalib::datastore::EntryComparator &,
-                                                   const EnumIndexMapper &);
+template WeightedPostingChangeMap
+PostingChangeComputerT<WeightedIndex, WeightedPostingChangeMap>::compute<WeightedMultiValueMapping>(
+    const WeightedMultiValueMapping&, const DocIndicesWeighted&, const vespalib::datastore::EntryComparator&,
+    const EnumIndexMapper&);
 
-template WeightedPostingChangeMap PostingChangeComputerT<ValueIndex, WeightedPostingChangeMap>
-             ::compute<ValueMultiValueMapping>(const ValueMultiValueMapping &,
-                                                const DocIndicesValue &,
-                                                const vespalib::datastore::EntryComparator &,
-                                                const EnumIndexMapper &);
+template WeightedPostingChangeMap
+PostingChangeComputerT<ValueIndex, WeightedPostingChangeMap>::compute<ValueMultiValueMapping>(
+    const ValueMultiValueMapping&, const DocIndicesValue&, const vespalib::datastore::EntryComparator&,
+    const EnumIndexMapper&);
 
-}
+} // namespace search
 
 namespace vespalib {
 
 template class Array<search::AttributePosting>;
 template class Array<search::AttributeWeightPosting>;
 
-}
+} // namespace vespalib

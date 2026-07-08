@@ -4,20 +4,23 @@
 
 #include <string>
 
-namespace document { class StringFieldValue; }
-namespace vespalib::slime { struct Inserter; }
+namespace document {
+class StringFieldValue;
+}
+namespace vespalib::slime {
+struct Inserter;
+}
 
 namespace search::docsummary {
 
 /**
  * Interface class for inserting a dynamic string.
  */
-class IStringFieldConverter
-{
+class IStringFieldConverter {
 public:
     virtual ~IStringFieldConverter() = default;
-    virtual void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) = 0;
+    virtual void convert(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter) = 0;
     virtual bool render_weighted_set_as_array() const = 0;
 };
 
-}
+} // namespace search::docsummary

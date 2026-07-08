@@ -2,8 +2,10 @@
 #pragma once
 
 #include "result.h"
-#include <vector>
+
 #include <vespa/document/fieldvalue/variablemap.h>
+
+#include <vector>
 
 namespace document::select {
 
@@ -17,10 +19,10 @@ public:
     using reverse_iterator = Results::reverse_iterator;
 
     ResultList();
-    ResultList(ResultList &&) noexcept;
-    ResultList & operator = (ResultList &&) noexcept;
-    ResultList(const ResultList &) = delete;
-    ResultList & operator = (const ResultList &) = delete;
+    ResultList(ResultList&&) noexcept;
+    ResultList& operator=(ResultList&&) noexcept;
+    ResultList(const ResultList&) = delete;
+    ResultList& operator=(const ResultList&) = delete;
     ~ResultList();
 
     /**
@@ -50,7 +52,7 @@ public:
 
 private:
     Results _results;
-    static bool combineVariables(VariableMap & combination, const VariableMap& output, const VariableMap& input);
+    static bool combineVariables(VariableMap& combination, const VariableMap& output, const VariableMap& input);
 };
 
 inline bool operator==(const ResultList& list, const Result& other) {
@@ -61,5 +63,4 @@ inline bool operator!=(const ResultList& list, const Result& other) {
     return (list.combineResults() != other);
 }
 
-}
-
+} // namespace document::select

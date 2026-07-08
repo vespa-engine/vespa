@@ -7,6 +7,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.GeoPos;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -41,6 +42,8 @@ public class ValidateFieldTypes extends Processor {
         schema.allFields().forEach(field -> {
             checkFieldType(searchName, "index field", field.getName(), field.getDataType(), seenFields);
             if (!field.isImportedField()) {
+                // Position field attributes are transient — CreatePositionZCurve replaces them with zcurve attributes
+                if (GeoPos.isAnyPos(field.getDataType())) return;
                 for (Map.Entry<String, Attribute> entry : field.getAttributes().entrySet()) {
                     checkFieldType(searchName, "attribute", entry.getKey(), entry.getValue().getDataType(), seenFields);
                 }

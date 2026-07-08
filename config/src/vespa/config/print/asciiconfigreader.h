@@ -3,7 +3,9 @@
 
 #include "configreader.h"
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 
 namespace config {
 
@@ -12,15 +14,14 @@ class ConfigFormatter;
 /**
  * Read a config from istream
  */
-template <typename ConfigType>
-class AsciiConfigReader : public ConfigReader<ConfigType>
-{
+template <typename ConfigType> class AsciiConfigReader : public ConfigReader<ConfigType> {
 public:
-    AsciiConfigReader(vespalib::asciistream & is);
+    AsciiConfigReader(vespalib::asciistream& is);
     std::unique_ptr<ConfigType> read();
-    std::unique_ptr<ConfigType> read(const ConfigFormatter & formatter) override;
+    std::unique_ptr<ConfigType> read(const ConfigFormatter& formatter) override;
+
 private:
-    vespalib::asciistream & _is;
+    vespalib::asciistream& _is;
 };
 
 } // namespace config

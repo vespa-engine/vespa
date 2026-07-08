@@ -25,10 +25,13 @@ import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HeapDumpRedaction;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
@@ -80,6 +83,7 @@ public class DeploymentSpecXmlReader {
     private static final String devTag = "dev";
     private static final String upgradeTag = "upgrade";
     private static final String blockChangeTag = "block-change";
+    private static final String backupTag = "backup";
     private static final String prodTag = "prod";
     private static final String regionTag = "region";
     private static final String delayTag = "delay";
@@ -97,6 +101,11 @@ public class DeploymentSpecXmlReader {
     private static final String majorVersionAttribute = "major-version";
     private static final String cloudAccountAttribute = "cloud-account";
     private static final String hostTTLAttribute = "empty-host-ttl";
+    private static final String cloudResourceTagsTag = "resource-tags";
+    private static final String memoryDumpTag = "memory-dump";
+    private static final String heapDumpRedactionAttribute = "heap-dump-redaction";
+    private static final String availabilityZoneTag = "availability-zone";
+    private static final String skipAttribute = "skip"; // Undocumented on purpose
 
     private final boolean validate;
     private final Clock clock;
@@ -170,6 +179,8 @@ public class DeploymentSpecXmlReader {
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   readCloudAccounts(root),
                                   readHostTTL(root),
+                                  readCloudResourceTags(root),
+                                  readHeapDumpRedaction(root),
                                   applicationEndpoints,
                                   xmlForm,
                                   deprecatedElements,
@@ -203,14 +214,17 @@ public class DeploymentSpecXmlReader {
         DeploymentSpec.UpgradePolicy upgradePolicy = getWithFallback(instanceElement, parentTag, upgradeTag, "policy", this::readUpgradePolicy, UpgradePolicy.defaultPolicy);
         DeploymentSpec.RevisionTarget revisionTarget = getWithFallback(instanceElement, parentTag, upgradeTag, "revision-target", this::readRevisionTarget, RevisionTarget.latest);
         DeploymentSpec.RevisionChange revisionChange = getWithFallback(instanceElement, parentTag, upgradeTag, "revision-change", this::readRevisionChange, RevisionChange.whenFailing);
-        DeploymentSpec.UpgradeRollout upgradeRollout = getWithFallback(instanceElement, parentTag, upgradeTag, "rollout", this::readUpgradeRollout, UpgradeRollout.separate);
+        DeploymentSpec.UpgradeRollout upgradeRollout = getWithFallback(instanceElement, parentTag, upgradeTag, "rollout", this::readUpgradeRollout, UpgradeRollout.simultaneous);
         int minRisk = getWithFallback(instanceElement, parentTag, upgradeTag, "min-risk", Integer::parseInt, 0);
         int maxRisk = getWithFallback(instanceElement, parentTag, upgradeTag, "max-risk", Integer::parseInt, 0);
         int maxIdleHours = getWithFallback(instanceElement, parentTag, upgradeTag, "max-idle-hours", Integer::parseInt, 8);
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceElement, parentTag);
+        Optional<DeploymentSpec.BackupSpec> backup = readBackup(instanceElement);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
         Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(instanceElement);
         Optional<Duration> hostTTL = readHostTTL(instanceElement);
+        CloudResourceTags cloudResourceTags = readCloudResourceTags(instanceElement);
+        Optional<HeapDumpRedaction> heapDumpRedaction = readHeapDumpRedaction(instanceElement);
         Notifications notifications = readNotifications(instanceElement, parentTag);
 
         // Values where there is no default
@@ -240,10 +254,13 @@ public class DeploymentSpecXmlReader {
                                                              athenzService,
                                                              cloudAccounts,
                                                              hostTTL,
+                                                             cloudResourceTags,
+                                                             heapDumpRedaction,
                                                              notifications,
                                                              endpoints,
                                                              zoneEndpoints,
                                                              bcp,
+                                                             backup,
                                                              now))
                      .toList();
     }
@@ -277,15 +294,24 @@ public class DeploymentSpecXmlReader {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
             case stagingTag: // Intentional fallthrough from test tag.
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag)));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes,
+                                                readCloudAccounts(stepTag), readHostTTL(stepTag), readCloudResourceTags(stepTag),
+                                                List.of(), "true".equals(stepTag.getAttribute(skipAttribute))));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
                                                .toList();
-            case delayTag:
+            case delayTag: {
+                boolean delaysVersion = trueOrMissing(stepTag.getAttribute("version"));
+                boolean delaysRevision = trueOrMissing(stepTag.getAttribute("revision"));
+                if (validate && ! delaysVersion && ! delaysRevision)
+                    illegal("A <delay> with both version='false' and revision='false' has no effect; " +
+                            "remove it or enable at least one change kind");
                 return List.of(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
                                                             longAttribute("minutes", stepTag) * 60 +
-                                                            longAttribute("seconds", stepTag))));
+                                                            longAttribute("seconds", stepTag)),
+                                         delaysVersion, delaysRevision));
+            }
             case parallelTag: // regions and instances may be nested within
                 return List.of(new ParallelSteps(XML.getChildren(stepTag).stream()
                                                     .flatMap(child -> readSteps(child, prodAttributes, parentTag, defaultBcp).stream())
@@ -637,8 +663,13 @@ public class DeploymentSpecXmlReader {
     private void validateTagOrder(Element root) {
         List<String> tags = XML.getChildren(root).stream().map(Element::getTagName).toList();
         for (int i = 0; i < tags.size(); i++) {
-            if (tags.get(i).equals(blockChangeTag)) {
-                String constraint = "<block-change> must be placed after <test> and <staging> and before <prod>";
+
+            // Extra constraints for block change and backup
+            var blockChange = tags.get(i).equals(blockChangeTag);
+            var backupSpec = tags.get(i).equals(backupTag);
+            if (blockChange || backupSpec) {
+                String constraint = "<%s> must be placed after <test> and <staging> and before <prod>"
+                        .formatted(blockChange ? blockChangeTag : backupTag);
                 if (containsAfter(i, testTag, tags)) illegal(constraint);
                 if (containsAfter(i, stagingTag, tags)) illegal(constraint);
                 if (containsBefore(i, prodTag, tags)) illegal(constraint);
@@ -704,9 +735,24 @@ public class DeploymentSpecXmlReader {
 
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
                                           Optional<String> testerNodes, Element regionTag) {
-        return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
+        return new DeclaredZone(environment, Optional.of(RegionName.from(readRegionName(regionTag))),
                                 athenzService, testerNodes,
-                                readCloudAccounts(regionTag), readHostTTL(regionTag));
+                                readCloudAccounts(regionTag), readHostTTL(regionTag), readCloudResourceTags(regionTag),
+                                readAvailabilityZones(regionTag), false);
+    }
+
+    /** A region name can be given either as the region element text content or by a 'name' attribute. */
+    private static String readRegionName(Element regionTag) {
+        return stringAttribute("name", regionTag).orElseGet(() -> XML.getValue(regionTag).trim());
+    }
+
+    private static List<AzName> readAvailabilityZones(Element tag) {
+        List<AzName> zones = new ArrayList<>();
+        for (Element child : XML.getChildren(tag, availabilityZoneTag)) {
+            String name = XML.getValue(child).trim();
+            if ( ! name.isEmpty()) zones.add(AzName.from(name));
+        }
+        return zones;
     }
 
     private Map<CloudName, CloudAccount> readCloudAccounts(Element tag) {
@@ -729,6 +775,34 @@ public class DeploymentSpecXmlReader {
         return mostSpecificAttribute(tag, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
     }
 
+    private CloudResourceTags readCloudResourceTags(Element tag) {
+        return mostSpecificSibling(tag, cloudResourceTagsTag)
+                .map(element -> {
+                    Map<String, String> tags = new LinkedHashMap<>();
+                    for (Element tagChild : XML.getChildren(element, "tag")) {
+                        String key = requireStringAttribute("key", tagChild);
+                        String value = requireStringAttribute("value", tagChild);
+                        tags.put(key, value);
+                    }
+                    return CloudResourceTags.from(tags);
+                })
+                .orElse(CloudResourceTags.empty());
+    }
+
+    private Optional<HeapDumpRedaction> readHeapDumpRedaction(Element parent) {
+        Element memoryDumpElement = XML.getChild(parent, memoryDumpTag);
+        if (memoryDumpElement == null) return Optional.empty();
+
+        String value = requireStringAttribute(heapDumpRedactionAttribute, memoryDumpElement);
+        return Optional.of(switch (value) {
+            case "none" -> HeapDumpRedaction.none;
+            case "basic" -> HeapDumpRedaction.basic;
+            case "full" -> HeapDumpRedaction.full;
+            default -> throw new IllegalArgumentException("Illegal " + heapDumpRedactionAttribute + " '" + value +
+                                                          "': Must be one of 'none', 'basic', 'full'");
+        });
+    }
+
     private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element parent, Element globalBlockersParent) {
         List<DeploymentSpec.ChangeBlocker> changeBlockers = new ArrayList<>();
         if (globalBlockersParent != parent) {
@@ -743,6 +817,7 @@ public class DeploymentSpecXmlReader {
     private DeploymentSpec.ChangeBlocker readChangeBlocker(Element tag) {
         boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
         boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"));
+        boolean blockMaintenance = tag.getAttribute("maintenance").equals("true");
 
         String daySpec = tag.getAttribute("days");
         String hourSpec = tag.getAttribute("hours");
@@ -750,8 +825,39 @@ public class DeploymentSpecXmlReader {
         String dateStart = tag.getAttribute("from-date");
         String dateEnd = tag.getAttribute("to-date");
 
-        return new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions,
+        return new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions, blockMaintenance,
                                                 TimeWindow.from(daySpec, hourSpec, zoneSpec, dateStart, dateEnd));
+    }
+
+    private Optional<DeploymentSpec.BackupSpec> readBackup(Element instanceElement) {
+        Element backupElement = XML.getChild(instanceElement, backupTag);
+        if (backupElement == null) return Optional.empty();
+
+        Duration frequency = parseBackupFrequency(requireStringAttribute("frequency", backupElement));
+        if (validate && frequency.compareTo(Duration.ofHours(24)) < 0) illegal("backup frequency must be at least 24h");
+
+        DeploymentSpec.BackupSpec.Granularity granularity =
+                stringAttribute("granularity", backupElement)
+                        .map(g -> switch (g) {
+                            case "cluster" -> DeploymentSpec.BackupSpec.Granularity.cluster;
+                            case "group"   -> DeploymentSpec.BackupSpec.Granularity.group;
+                            default -> throw new IllegalArgumentException(
+                                    "Invalid backup granularity '" + g + "': must be 'cluster' or 'group'");
+                        })
+                        .orElse(DeploymentSpec.BackupSpec.Granularity.cluster);
+        return Optional.of(new DeploymentSpec.BackupSpec(frequency, granularity));
+    }
+
+    private static Duration parseBackupFrequency(String value) {
+        if(!value.endsWith("h") && !value.endsWith("d"))
+            illegal("backup frequency must have a unit suffix of either 'd' or 'h'");
+        var hourUnit = value.endsWith("h");
+        try {
+            long number = Long.parseLong(value.substring(0, value.length() - 1));
+            return hourUnit ? Duration.ofHours(number) : Duration.ofDays(number);
+        } catch (NumberFormatException e) {
+            throw illegal("invalid backup frequency '" + value + "': must be a positive integer followed by 'h' or 'd'");
+        }
     }
 
     /** Returns true if the given value is "true", or if it is missing */
@@ -815,6 +921,7 @@ public class DeploymentSpecXmlReader {
         Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(devElement);
         Optional<Duration> hostTTL = XML.attribute(hostTTLAttribute, devElement).map(s -> toDuration(s, "host TTL"));
         Tags tags = XML.attribute(tagsTag, devElement).map(Tags::fromString).orElse(Tags.empty());
+        CloudResourceTags cloudResourceTags = readCloudResourceTags(devElement);
 
         Map<ClusterSpec.Id, ZoneEndpoint> endpoints = new LinkedHashMap<>();
         Element endpointsElement = XML.getChild(devElement, endpointsTag);
@@ -823,7 +930,7 @@ public class DeploymentSpecXmlReader {
                 readDevZoneEndpoint(endpointElement, endpoints);
             }
         }
-        return new DevSpec(athenzService, Optional.of(cloudAccounts), hostTTL, tags, endpoints);
+        return new DevSpec(athenzService, Optional.of(cloudAccounts), hostTTL, tags, cloudResourceTags, endpoints);
     }
 
     // TODO: if the other readEndpoints is ever refactored, factor in this, too.
@@ -895,7 +1002,7 @@ public class DeploymentSpecXmlReader {
     private static Duration toDuration(String durationSpec, String sourceDescription) {
         try {
             if (durationSpec == null || durationSpec.isBlank()) return Duration.ZERO;
-            durationSpec = durationSpec.trim().toLowerCase();
+            durationSpec = durationSpec.trim().toLowerCase(java.util.Locale.ROOT);
             var magnitude = toMagnitude(durationSpec);
             return switch (durationSpec.substring(durationSpec.length() - 1)) {
                 case "m" -> Duration.ofMinutes(magnitude);

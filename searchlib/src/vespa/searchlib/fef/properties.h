@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <string>
 #include <vector>
 
@@ -20,24 +21,24 @@ class Properties;
  * added. This object is only valid until the @ref Properties object
  * it was obtained from is changed or deleted.
  **/
-class Property
-{
+class Property {
 public:
     using Value = std::string;
     using Values = std::vector<Value>;
+
 private:
     friend class Properties;
 
-    static const Value     _emptyValue;
-    static const Values    _emptyValues;
-    const Values          *_values;
+    static const Value  _emptyValue;
+    static const Values _emptyValues;
+    const Values*       _values;
 
     /**
      * Create a new property using the given value vector.
      *
      * @param values the values for this property
      **/
-    Property(const Values &values) noexcept : _values(&values) { }
+    Property(const Values& values) noexcept : _values(&values) {}
 
 public:
     /**
@@ -46,16 +47,14 @@ public:
      * object on the stack in the application, and will also be used
      * by the @ref Properties class when a lookup gives no results.
      **/
-    Property() noexcept : _values(&_emptyValues) { }
+    Property() noexcept : _values(&_emptyValues) {}
 
     /**
      * Check if we found what we were looking for or not.
      *
      * @return true if the key we looked up had at least one value
      **/
-    bool found() const noexcept {
-        return !(*_values).empty();
-    }
+    bool found() const noexcept { return !(*_values).empty(); }
 
     /**
      * Get the first value assigned to the looked up key. This method
@@ -63,7 +62,7 @@ public:
      *
      * @return first value for the looked up key, or ""
      **/
-    const Value &get() const noexcept {
+    const Value& get() const noexcept {
         if ((*_values).empty()) {
             return _emptyValue;
         }
@@ -78,7 +77,7 @@ public:
      * @return first value for the looked up key, or fallBack
      * @param fallBack value to return if no values were found
      **/
-    const Value & get(const Value &fallBack) const noexcept {
+    const Value& get(const Value& fallBack) const noexcept {
         if ((*_values).empty()) {
             return fallBack;
         }
@@ -98,7 +97,7 @@ public:
      * @return the requested value, or "" if idx was out of bounds
      * @param idx the index of the value we want to access
      **/
-    const Value &getAt(uint32_t idx) const noexcept;
+    const Value& getAt(uint32_t idx) const noexcept;
 };
 
 //-----------------------------------------------------------------------------
@@ -107,8 +106,7 @@ public:
  * This interface is implemented by objects that want to visit all
  * properties contained in a Properties object.
  **/
-class IPropertiesVisitor
-{
+class IPropertiesVisitor {
 public:
     /**
      * Visit a single key and all its values. Keys are visited in
@@ -121,8 +119,7 @@ public:
      * @param key the key
      * @param values the values
      **/
-    virtual void visitProperty(const Property::Value &key,
-                               const Property &values) = 0;
+    virtual void visitProperty(const Property::Value& key, const Property& values) = 0;
 
     /**
      * Virtual destructor to allow safe subclassing.
@@ -138,13 +135,12 @@ public:
  * key. When data is imported from one object to another, the set of
  * values for common keys are totally replaced.
  **/
-class Properties
-{
+class Properties {
 private:
     using Key = std::string;
-    using Value =  Property::Values;
-    using Map = vespalib::hash_map<Key, Value, vespalib::hash<Key>,
-                                   std::equal_to<>, vespalib::hashtable_base::and_modulator>;
+    using Value = Property::Values;
+    using Map =
+        vespalib::hash_map<Key, Value, vespalib::hash<Key>, std::equal_to<>, vespalib::hashtable_base::and_modulator>;
 
     uint32_t _numValues;
     Map      _data;
@@ -156,7 +152,7 @@ private:
      * @param buf data pointer
      * @param len data length
      **/
-    static uint32_t rawHash(const void *buf, uint32_t len) noexcept;
+    static uint32_t rawHash(const void* buf, uint32_t len) noexcept;
 
 public:
     using UP = std::unique_ptr<Properties>;
@@ -165,10 +161,10 @@ public:
      * Create an empty properties object.
      **/
     Properties() noexcept;
-    Properties(Properties &&) noexcept = default;
-    Properties & operator=(Properties &&) noexcept = default;
-    Properties(const Properties &);
-    Properties & operator=(const Properties &);
+    Properties(Properties&&) noexcept = default;
+    Properties& operator=(Properties&&) noexcept = default;
+    Properties(const Properties&);
+    Properties& operator=(const Properties&);
 
     /**
      * The destructor asserts that key/value counts look sane before
@@ -184,7 +180,7 @@ public:
      * @param key the key
      * @param value the value
      **/
-    Properties &add(std::string_view key, std::string_view value);
+    Properties& add(std::string_view key, std::string_view value);
 
     /**
      * Obtain the number of values for a given key.
@@ -200,7 +196,7 @@ public:
      * @return this object, for chaining
      * @param key the key
      **/
-    Properties &remove(std::string_view key);
+    Properties& remove(std::string_view key);
 
     /**
      * Import all key/value pairs from src into this object. All
@@ -210,7 +206,7 @@ public:
      * @return this object, for chaining
      * @param src where to import from
      **/
-    Properties &import(const Properties &src);
+    Properties& import(const Properties& src);
 
     /**
      * Remove all key/value pairs from this object, making it
@@ -219,7 +215,7 @@ public:
      *
      * @return this object, for chaining
      **/
-    Properties &clear();
+    Properties& clear();
 
     /**
      * Obtain the total number of keys stored in this object.
@@ -242,7 +238,7 @@ public:
      *
      * @return true if we are equal to rhs
      **/
-    bool operator==(const Properties &rhs) const noexcept;
+    bool operator==(const Properties& rhs) const noexcept;
 
     /**
      * Calculate a hash code for this object
@@ -256,7 +252,7 @@ public:
      *
      * @param visitor the object being notified of all key/value pairs
      **/
-    void visitProperties(IPropertiesVisitor &visitor) const;
+    void visitProperties(IPropertiesVisitor& visitor) const;
 
     /**
      * Visit all key/value pairs inside a namespace. The namespace
@@ -265,8 +261,7 @@ public:
      * @param ns the namespace to visit
      * @param visitor the object being notified of key/value pairs inside the namespace
      **/
-    void visitNamespace(std::string_view ns,
-                        IPropertiesVisitor &visitor) const;
+    void visitNamespace(std::string_view ns, IPropertiesVisitor& visitor) const;
 
     /**
      * Look up a key in this object. An empty key will result in an
@@ -288,8 +283,7 @@ public:
      * @param namespace1 the namespace
      * @param key the key to look up
      **/
-    Property lookup(std::string_view namespace1,
-                    std::string_view key) const noexcept;
+    Property lookup(std::string_view namespace1, std::string_view key) const noexcept;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -303,9 +297,7 @@ public:
      * @param namespace the second namespace
      * @param key the key to look up
      **/
-    Property lookup(std::string_view namespace1,
-                    std::string_view namespace2,
-                    std::string_view key) const noexcept;
+    Property lookup(std::string_view namespace1, std::string_view namespace2, std::string_view key) const noexcept;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -320,19 +312,14 @@ public:
      * @param namespace the third namespace
      * @param key the key to look up
      **/
-    Property lookup(std::string_view namespace1,
-                    std::string_view namespace2,
-                    std::string_view namespace3,
+    Property lookup(std::string_view namespace1, std::string_view namespace2, std::string_view namespace3,
                     std::string_view key) const noexcept;
 
-    void swap(Properties & rhs) noexcept ;
+    void swap(Properties& rhs) noexcept;
 };
 
-inline void
-swap(Properties & a, Properties & b) noexcept
-{
+inline void swap(Properties& a, Properties& b) noexcept {
     a.swap(b);
 }
 
-
-}
+} // namespace search::fef

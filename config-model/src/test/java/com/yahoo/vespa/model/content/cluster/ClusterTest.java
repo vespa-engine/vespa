@@ -15,7 +15,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Simon Thoresen Hult
@@ -126,6 +128,27 @@ public class ClusterTest {
         assertEquals("localhost", nodesConfig.node(2).host());
     }
 
+    @Test
+    void requireThatNodeCoveragePolicyAutoSetsMinActiveDocsCoverage() {
+        // 3 nodes in 1 group, coverage-policy:node gives (1 - 1/3) * 100 - 0.01 = 66.666...
+        ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
+                "", "", false, "node");
+        DispatchConfig.Builder builder = new DispatchConfig.Builder();
+        cluster.getSearch().getConfig(builder);
+        DispatchConfig config = new DispatchConfig(builder);
+        assertEquals(100.0 * (1.0 - 1.0 / 3) - 0.01, config.minActivedocsPercentage(), DELTA);
+    }
+
+    @Test
+    void requireThatExplicitMinActiveDocsCoverageOverridesNodeCoveragePolicy() {
+        ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
+                "", "<min-active-docs-coverage>80</min-active-docs-coverage>", false, "node");
+        DispatchConfig.Builder builder = new DispatchConfig.Builder();
+        cluster.getSearch().getConfig(builder);
+        DispatchConfig config = new DispatchConfig(builder);
+        assertEquals(80.0, config.minActivedocsPercentage(), DELTA);
+    }
+
     private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) {
         return newContentCluster(contentSearchXml, searchNodeTuningXml, "", false);
     }
@@ -141,6 +164,13 @@ public class ClusterTest {
     private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml,
                                                     String dispatchTuning, boolean globalDocType)
     {
+        return newContentCluster(contentSearchXml, searchNodeTuningXml, dispatchTuning, globalDocType, "");
+    }
+
+    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml,
+                                                    String dispatchTuning, boolean globalDocType, String coveragePolicy)
+    {
+        String coveragePolicyXml = coveragePolicy.isEmpty() ? "" : "<coverage-policy>" + coveragePolicy + "</coverage-policy>";
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withHosts(joinLines(
                         "<hosts>",
@@ -157,6 +187,7 @@ public class ClusterTest {
                         "</container>",
                         "  <content version='1.0'>",
                         "    <redundancy>3</redundancy>",
+                        coveragePolicyXml,
                         "    <documents>",
                         "    " + getDocumentXml(globalDocType),
                         "    </documents>",

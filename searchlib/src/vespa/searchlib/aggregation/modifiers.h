@@ -3,44 +3,45 @@
 
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
-#include <memory>
+
 #include <functional>
+#include <memory>
 
 namespace search::expression {
-    class ExpressionNode;
-    class AttributeNode;
-}
+class ExpressionNode;
+class AttributeNode;
+} // namespace search::expression
 
 namespace search::attribute {
-    class IAttributeContext;
+class IAttributeContext;
 }
 
 namespace search::aggregation {
 
-class AttributeNodeReplacer : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
-{
+class AttributeNodeReplacer : public vespalib::ObjectOperation, public vespalib::ObjectPredicate {
 protected:
     using ExpressionNodeUP = std::unique_ptr<expression::ExpressionNode>;
+
 private:
-    void replaceRecurse(expression::ExpressionNode * exp, std::function<void(ExpressionNodeUP)> && modifier);
-    void execute(vespalib::Identifiable &obj) override;
-    bool check(const vespalib::Identifiable &obj) const override;
-    virtual ExpressionNodeUP getReplacementNode(const expression::AttributeNode &attributeNode) = 0;
+    void replaceRecurse(expression::ExpressionNode* exp, std::function<void(ExpressionNodeUP)>&& modifier);
+    void execute(vespalib::Identifiable& obj) override;
+    bool check(const vespalib::Identifiable& obj) const override;
+    virtual ExpressionNodeUP getReplacementNode(const expression::AttributeNode& attributeNode) = 0;
 };
 
-class Attribute2DocumentAccessor : public AttributeNodeReplacer
-{
+class Attribute2DocumentAccessor : public AttributeNodeReplacer {
 protected:
-    ExpressionNodeUP getReplacementNode(const expression::AttributeNode &attributeNode) override;
+    ExpressionNodeUP getReplacementNode(const expression::AttributeNode& attributeNode) override;
 };
 
-class NonAttribute2DocumentAccessor : public Attribute2DocumentAccessor
-{
+class NonAttribute2DocumentAccessor : public Attribute2DocumentAccessor {
 public:
-    explicit NonAttribute2DocumentAccessor(const attribute::IAttributeContext &attrCtx) noexcept : _attrCtx(attrCtx) {}
+    explicit NonAttribute2DocumentAccessor(const attribute::IAttributeContext& attrCtx) noexcept
+        : _attrCtx(attrCtx) {}
+
 private:
-    ExpressionNodeUP getReplacementNode(const expression::AttributeNode &attributeNode) override;
-    const attribute::IAttributeContext &_attrCtx;
+    ExpressionNodeUP getReplacementNode(const expression::AttributeNode& attributeNode) override;
+    const attribute::IAttributeContext& _attrCtx;
 };
 
-}
+} // namespace search::aggregation

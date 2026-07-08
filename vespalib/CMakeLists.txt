@@ -103,6 +103,7 @@ vespa_define_module(
     src/tests/io/mapped_file_input
     src/tests/latch
     src/tests/left_right_heap
+    src/tests/quant
     src/tests/memory
     src/tests/memorydatastore
     src/tests/metrics
@@ -203,6 +204,7 @@ vespa_define_module(
     src/vespa/vespalib/objects
     src/vespa/vespalib/portal
     src/vespa/vespalib/process
+    src/vespa/vespalib/quant
     src/vespa/vespalib/regex
     src/vespa/vespalib/stllike
     src/vespa/vespalib/test

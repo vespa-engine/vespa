@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include <vespa/searchlib/parsequery/item_creator.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include <vespa/searchlib/parsequery/item_creator.h>
 
 #ifndef JUNIPER_RPIF
 #define JUNIPER_RPIF 1

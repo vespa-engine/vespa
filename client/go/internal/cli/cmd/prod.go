@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -110,6 +111,7 @@ type prodDeployOptions struct {
 	description string
 	authorEmail string
 	sourceURL   string
+	waitSecs    int
 }
 
 func newProdDeployCmd(cli *CLI) *cobra.Command {
@@ -143,6 +145,9 @@ $ vespa prod deploy`,
 				// TODO: Add support for hosted
 				return fmt.Errorf("prod deploy does not support %s target", target.Type())
 			}
+			if _, ok := cli.config.get(instanceFlag); ok {
+				cli.printWarning("Instance is set in config but will be ignored for production deployments. Only deployment.xml is used to configure production instances")
+			}
 			pkg, err := cli.applicationPackageFrom(args, vespa.PackageOptions{Compiled: true})
 			if err != nil {
 				return err
@@ -167,10 +172,21 @@ $ vespa prod deploy`,
 			build, err := vespa.Submit(deployment, submission)
 			if err != nil {
 				return fmt.Errorf("could not deploy application: %w", err)
-			} else {
-				cli.printSuccess(fmt.Sprintf("Deployed '%s' with build number %s", color.CyanString(pkg.Path), color.CyanString(strconv.FormatInt(build, 10))))
-				log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
-					deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
+			}
+			cli.printSuccess(fmt.Sprintf("Submitted '%s' with build number %s", color.CyanString(pkg.Path), color.CyanString(strconv.FormatInt(build, 10))))
+			log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
+				deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
+			if options.waitSecs > 0 {
+				log.Printf("Waiting up to %s for build pipeline to complete...\n", (time.Duration(options.waitSecs) * time.Second).String())
+				skipped, skipReason, err := vespa.AwaitBuild(target, build, time.Duration(options.waitSecs)*time.Second, cli.Stderr)
+				if err != nil {
+					return err
+				}
+				if skipped {
+					cli.printSuccess(fmt.Sprintf("Build %d skipped: %s", build, skipReason))
+				} else {
+					cli.printSuccess(fmt.Sprintf("Build %d deployed to production", build))
+				}
 			}
 			return nil
 		},
@@ -181,6 +197,7 @@ $ vespa prod deploy`,
 	cmd.Flags().StringVarP(&options.description, "description", "", "", "Description of the source code being deployed. For example a git commit message")
 	cmd.Flags().StringVarP(&options.authorEmail, "author-email", "", "", "Email of the author of the commit being deployed")
 	cmd.Flags().StringVarP(&options.sourceURL, "source-url", "", "", "URL which points to the source code being deployed. For example the build job running the submission")
+	cmd.Flags().IntVarP(&options.waitSecs, "wait", "", 0, "Seconds to wait for the build to complete before returning (0 to return immediately)")
 	return cmd
 }
 

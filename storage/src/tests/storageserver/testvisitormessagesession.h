@@ -2,35 +2,34 @@
 
 #pragma once
 
-#include <vespa/storage/visiting/visitormessagesession.h>
-#include <vespa/storage/visiting/visitorthread.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
 #include <vespa/storage/storageserver/priorityconverter.h>
-#include <vespa/config/subscription/configuri.h>
+#include <vespa/storage/visiting/visitormessagesession.h>
+#include <vespa/storage/visiting/visitorthread.h>
 
 #include <atomic>
 #include <deque>
 
 namespace storage {
 
-class TestVisitorMessageSession : public VisitorMessageSession
-{
+class TestVisitorMessageSession : public VisitorMessageSession {
 private:
-    std::mutex _waitMonitor;
+    std::mutex              _waitMonitor;
     std::condition_variable _waitCond;
-    mbus::Error _autoReplyError;
-    bool _autoReply;
+    mbus::Error             _autoReplyError;
+    bool                    _autoReply;
 
 public:
     using UP = std::unique_ptr<TestVisitorMessageSession>;
 
-    VisitorThread& thread;
-    Visitor& visitor;
+    VisitorThread&        thread;
+    Visitor&              visitor;
     std::atomic<uint32_t> pendingCount;
 
     ~TestVisitorMessageSession() override;
 
-    std::deque<std::unique_ptr<documentapi::DocumentMessage> > sentMessages;
+    std::deque<std::unique_ptr<documentapi::DocumentMessage>> sentMessages;
 
     TestVisitorMessageSession(VisitorThread& t, Visitor& v, const mbus::Error& autoReplyError, bool autoReply);
 
@@ -38,26 +37,22 @@ public:
     uint32_t pending() override { return pendingCount; }
     mbus::Result send(std::unique_ptr<documentapi::DocumentMessage> message) override;
     void waitForMessages(unsigned int msgCount);
-    std::mutex & getMonitor() { return _waitMonitor; }
+    std::mutex& getMonitor() { return _waitMonitor; }
 };
 
-struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory
-{
-    std::mutex _accessLock;
+struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory {
+    std::mutex                              _accessLock;
     std::vector<TestVisitorMessageSession*> _visitorSessions;
-    mbus::Error _autoReplyError;
-    bool _createAutoReplyVisitorSessions;
-    PriorityConverter _priConverter;
+    mbus::Error                             _autoReplyError;
+    bool                                    _createAutoReplyVisitorSessions;
+    PriorityConverter                       _priConverter;
 
-    TestVisitorMessageSessionFactory()
-        : _createAutoReplyVisitorSessions(false),
-          _priConverter()
-    {
-    }
+    TestVisitorMessageSessionFactory() : _createAutoReplyVisitorSessions(false), _priConverter() {}
 
     VisitorMessageSession::UP createSession(Visitor& v, VisitorThread& vt) override {
         std::lock_guard lock(_accessLock);
-        auto session = std::make_unique<TestVisitorMessageSession>(vt, v, _autoReplyError, _createAutoReplyVisitorSessions);
+        auto            session =
+            std::make_unique<TestVisitorMessageSession>(vt, v, _autoReplyError, _createAutoReplyVisitorSessions);
         _visitorSessions.push_back(session.get());
         return session;
     }
@@ -65,7 +60,6 @@ struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override {
         return _priConverter.toDocumentPriority(storagePriority);
     }
-
 };
 
-} // storage
+} // namespace storage

@@ -1,24 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketcopy.h"
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <iostream>
 #include <sstream>
 
 namespace storage {
 
-template <typename NodeSeq>
-std::string
-BucketInfoBase<NodeSeq>::toString() const {
+template <typename NodeSeq> std::string BucketInfoBase<NodeSeq>::toString() const {
     std::ostringstream ost;
     print(ost, true, "");
     return ost.str();
 }
 
-template <typename NodeSeq>
-bool
-BucketInfoBase<NodeSeq>::emptyAndConsistent() const noexcept {
-    for (const auto & n : _nodes) {
+template <typename NodeSeq> bool BucketInfoBase<NodeSeq>::emptyAndConsistent() const noexcept {
+    for (const auto& n : _nodes) {
         if (!n.empty()) {
             return false;
         }
@@ -26,10 +24,8 @@ BucketInfoBase<NodeSeq>::emptyAndConsistent() const noexcept {
     return consistentNodes();
 }
 
-template <typename NodeSeq>
-bool
-BucketInfoBase<NodeSeq>::validAndConsistent() const noexcept {
-    for (const auto & n : _nodes) {
+template <typename NodeSeq> bool BucketInfoBase<NodeSeq>::validAndConsistent() const noexcept {
+    for (const auto& n : _nodes) {
         if (!n.valid()) {
             return false;
         }
@@ -37,10 +33,8 @@ BucketInfoBase<NodeSeq>::validAndConsistent() const noexcept {
     return consistentNodes();
 }
 
-template <typename NodeSeq>
-bool
-BucketInfoBase<NodeSeq>::hasInvalidCopy() const noexcept {
-    for (const auto & n : _nodes){
+template <typename NodeSeq> bool BucketInfoBase<NodeSeq>::hasInvalidCopy() const noexcept {
+    for (const auto& n : _nodes) {
         if (!n.valid()) {
             return true;
         }
@@ -48,11 +42,9 @@ BucketInfoBase<NodeSeq>::hasInvalidCopy() const noexcept {
     return false;
 }
 
-template <typename NodeSeq>
-uint16_t
-BucketInfoBase<NodeSeq>::getTrustedCount() const noexcept {
+template <typename NodeSeq> uint16_t BucketInfoBase<NodeSeq>::getTrustedCount() const noexcept {
     uint32_t trustedCount = 0;
-    for (const auto & n : _nodes) {
+    for (const auto& n : _nodes) {
         if (n.trusted()) {
             trustedCount++;
         }
@@ -60,12 +52,11 @@ BucketInfoBase<NodeSeq>::getTrustedCount() const noexcept {
     return trustedCount;
 }
 
-template <typename NodeSeq>
-bool
-BucketInfoBase<NodeSeq>::consistentNodes() const noexcept {
+template <typename NodeSeq> bool BucketInfoBase<NodeSeq>::consistentNodes() const noexcept {
     int compareIndex = 0;
     for (uint32_t i = 1; i < _nodes.size(); i++) {
-        if (!_nodes[i].consistentWith(_nodes[compareIndex])) return false;
+        if (!_nodes[i].consistentWith(_nodes[compareIndex]))
+            return false;
     }
     return true;
 }
@@ -78,9 +69,7 @@ struct ReplicaMetadata {
     api::BucketInfo info;
 
     ReplicaMetadata() noexcept = default;
-    explicit ReplicaMetadata(const api::BucketInfo& info_) noexcept
-        : info(info_)
-    {}
+    explicit ReplicaMetadata(const api::BucketInfo& info_) noexcept : info(info_) {}
     bool operator==(const ReplicaMetadata& rhs) const noexcept {
         // TODO merge state checker itself only considers checksum, should we do the same...?
         return ((info.getChecksum() == rhs.info.getChecksum()) &&
@@ -94,16 +83,14 @@ struct ReplicaMetadata {
     };
 };
 
-constexpr bool
-is_majority(size_t n, size_t m) noexcept {
+constexpr bool is_majority(size_t n, size_t m) noexcept {
     return (n >= (m / 2) + 1);
 }
 
-}
+} // namespace
 
 template <typename NodeSeq>
-api::BucketInfo
-BucketInfoBase<NodeSeq>::majority_consistent_bucket_info() const noexcept {
+api::BucketInfo BucketInfoBase<NodeSeq>::majority_consistent_bucket_info() const noexcept {
     if (_nodes.size() < 3) {
         return {};
     }
@@ -122,8 +109,7 @@ BucketInfoBase<NodeSeq>::majority_consistent_bucket_info() const noexcept {
 }
 
 template <typename NodeSeq>
-void
-BucketInfoBase<NodeSeq>::print(std::ostream& out, bool verbose, const std::string& indent) const {
+void BucketInfoBase<NodeSeq>::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (_nodes.size() == 0) {
         out << "no nodes";
     }
@@ -135,9 +121,7 @@ BucketInfoBase<NodeSeq>::print(std::ostream& out, bool verbose, const std::strin
     }
 }
 
-template <typename NodeSeq>
-const BucketCopy*
-BucketInfoBase<NodeSeq>::getNode(uint16_t node) const noexcept {
+template <typename NodeSeq> const BucketCopy* BucketInfoBase<NodeSeq>::getNode(uint16_t node) const noexcept {
     for (const auto& n : _nodes) {
         if (n.getNode() == node) {
             return &n;
@@ -146,9 +130,7 @@ BucketInfoBase<NodeSeq>::getNode(uint16_t node) const noexcept {
     return nullptr;
 }
 
-template <typename NodeSeq>
-uint16_t
-BucketInfoBase<NodeSeq>::internal_entry_index(uint16_t node) const noexcept {
+template <typename NodeSeq> uint16_t BucketInfoBase<NodeSeq>::internal_entry_index(uint16_t node) const noexcept {
     for (uint16_t i = 0; i < _nodes.size(); i++) {
         if (_nodes[i].getNode() == node) {
             return i;
@@ -157,61 +139,50 @@ BucketInfoBase<NodeSeq>::internal_entry_index(uint16_t node) const noexcept {
     return 0xffff; // Not found signal
 }
 
-template <typename NodeSeq>
-std::vector<uint16_t>
-BucketInfoBase<NodeSeq>::getNodes() const noexcept {
+template <typename NodeSeq> std::vector<uint16_t> BucketInfoBase<NodeSeq>::getNodes() const noexcept {
     std::vector<uint16_t> result;
     result.reserve(_nodes.size());
-    for (const auto & n : _nodes) {
+    for (const auto& n : _nodes) {
         result.emplace_back(n.getNode());
     }
     return result;
 }
 
 template <typename NodeSeq>
-typename BucketInfoBase<NodeSeq>::Highest
-BucketInfoBase<NodeSeq>::getHighest() const noexcept {
+typename BucketInfoBase<NodeSeq>::Highest BucketInfoBase<NodeSeq>::getHighest() const noexcept {
     Highest highest;
-    for (const auto & n : _nodes) {
+    for (const auto& n : _nodes) {
         highest.update(n);
     }
     return highest;
 }
 
-template <typename NodeSeq>
-uint32_t
-BucketInfoBase<NodeSeq>::getHighestDocumentCount() const noexcept {
+template <typename NodeSeq> uint32_t BucketInfoBase<NodeSeq>::getHighestDocumentCount() const noexcept {
     uint32_t highest = 0;
-    for (const auto & n : _nodes) {
+    for (const auto& n : _nodes) {
         highest = std::max(highest, n.getDocumentCount());
     }
     return highest;
 }
 
-template <typename NodeSeq>
-uint32_t
-BucketInfoBase<NodeSeq>::getHighestMetaCount() const noexcept {
+template <typename NodeSeq> uint32_t BucketInfoBase<NodeSeq>::getHighestMetaCount() const noexcept {
     uint32_t highest = 0;
-    for (const auto & n : _nodes) {
+    for (const auto& n : _nodes) {
         highest = std::max(highest, n.getMetaCount());
     }
     return highest;
 }
 
-template <typename NodeSeq>
-uint32_t
-BucketInfoBase<NodeSeq>::getHighestUsedFileSize() const noexcept {
+template <typename NodeSeq> uint32_t BucketInfoBase<NodeSeq>::getHighestUsedFileSize() const noexcept {
     uint32_t highest = 0;
-    for (const auto & n : _nodes) {
+    for (const auto& n : _nodes) {
         highest = std::max(highest, n.getUsedFileSize());
     }
     return highest;
 }
 
-template <typename NodeSeq>
-bool
-BucketInfoBase<NodeSeq>::hasRecentlyCreatedEmptyCopy() const noexcept {
-    for (const auto & n : _nodes) {
+template <typename NodeSeq> bool BucketInfoBase<NodeSeq>::hasRecentlyCreatedEmptyCopy() const noexcept {
+    for (const auto& n : _nodes) {
         if (n.wasRecentlyCreated()) {
             return true;
         }
@@ -220,8 +191,7 @@ BucketInfoBase<NodeSeq>::hasRecentlyCreatedEmptyCopy() const noexcept {
 }
 
 template <typename NodeSeq>
-bool
-BucketInfoBase<NodeSeq>::operator==(const BucketInfoBase<NodeSeq>& other) const noexcept {
+bool BucketInfoBase<NodeSeq>::operator==(const BucketInfoBase<NodeSeq>& other) const noexcept {
     if (_nodes.size() != other._nodes.size()) {
         return false;
     }
@@ -239,4 +209,4 @@ BucketInfoBase<NodeSeq>::operator==(const BucketInfoBase<NodeSeq>& other) const 
     return true;
 }
 
-}
+} // namespace storage

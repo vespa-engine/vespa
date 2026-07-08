@@ -2,14 +2,14 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
+
 #include <type_traits>
 
 template <typename T> struct IsWeightedType : std::false_type {};
 template <typename T> struct IsWeightedType<search::attribute::WeightedType<T>> : std::true_type {};
 
 struct value_then_weight_order {
-    template <typename T>
-    bool operator()(const T& lhs, const T& rhs) const noexcept {
+    template <typename T> bool operator()(const T& lhs, const T& rhs) const noexcept {
         if (lhs.getValue() != rhs.getValue()) {
             return (lhs.getValue() < rhs.getValue());
         }
@@ -18,8 +18,7 @@ struct value_then_weight_order {
 };
 
 struct order_by_value {
-    template <typename T>
-    bool operator()(const T& lhs, const T& rhs) const noexcept {
+    template <typename T> bool operator()(const T& lhs, const T& rhs) const noexcept {
         if constexpr (IsWeightedType<T>::value) {
             return (lhs.getValue() < rhs.getValue());
         } else {
@@ -27,7 +26,6 @@ struct order_by_value {
         }
     }
 };
-
 
 struct order_by_weight {
     template <typename T>

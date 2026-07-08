@@ -15,6 +15,7 @@ import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.text.Text;
+import io.opentelemetry.api.OpenTelemetry;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -63,13 +64,12 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
                            ServerConfig serverConfig,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            RequestLog requestLog,
-                           ConnectionLog connectionLog) {
+                           ConnectionLog connectionLog,
+                           OpenTelemetry openTelemetry) {
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
 
         var histogramSettings = new MetricSettings.Builder().histogram(true).build();
-        metricReceiver.declareGauge(MetricDefinitions.TOTAL_SUCCESSFUL_LATENCY, Optional.empty(), histogramSettings);
-        metricReceiver.declareGauge(MetricDefinitions.TOTAL_FAILED_LATENCY, Optional.empty(), histogramSettings);
         metricReceiver.declareGauge(MetricDefinitions.TIME_TO_FIRST_BYTE, Optional.empty(), histogramSettings);
 
         this.config = serverConfig;
@@ -85,14 +85,14 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         server.setErrorHandler(errorHandler);
 
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
-        var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric());
+        var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric(), metric, metricReceiver);
         server.addBean(metricAggregatingRequestLog);
         if (requestLog instanceof VoidRequestLog) {
             server.setRequestLog(metricAggregatingRequestLog);
         } else {
             server.setRequestLog(new org.eclipse.jetty.server.RequestLog.Collection(
-                    new AccessLogRequestLog(requestLog),
-                    metricAggregatingRequestLog));
+                    metricAggregatingRequestLog,
+                    new AccessLogRequestLog(requestLog)));
         }
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
@@ -117,13 +117,16 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         var connectionMetricAggregator = new ConnectionMetricAggregator(serverConfig, metric, statisticsHandler);
 
 
+        Handler topHandler;
         if (!(connectionLog instanceof VoidConnectionLog)) {
             var connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog, connectionMetricAggregator);
             server.addBeanToAllConnectors(connectionLogger);
-            server.setHandler(connectionLogger);
+            topHandler = connectionLogger;
         } else {
-            server.setHandler(connectionMetricAggregator);
+            topHandler = connectionMetricAggregator;
         }
+        // Server span handler is outermost so the span encloses the entire request handling.
+        server.setHandler(new JettyServerSpanHandler(openTelemetry, topHandler));
 
         server.addBeanToAllConnectors(connectionMetricAggregator);
 
@@ -235,7 +238,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
     }
 
     private static GzipHandler newGzipHandler(Handler handler) {
-        var h = new GzipHandler(new org.eclipse.jetty.server.handler.gzip.GzipRequestCleanupHandler(handler));
+        var h = new GzipHandler(handler);
         h.setInflateBufferSize(8 * 1024);
         h.setIncludedMethods("GET", "POST", "PUT", "PATCH");
         return h;

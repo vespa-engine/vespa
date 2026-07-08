@@ -16,4 +16,4 @@ double randomIn(double min, double max) {
     return min + (uniformRandom() * (max - min));
 }
 
-} // namespace <unnamed>
+} // namespace

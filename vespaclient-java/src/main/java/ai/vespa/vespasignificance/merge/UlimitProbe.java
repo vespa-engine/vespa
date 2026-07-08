@@ -4,6 +4,7 @@ package ai.vespa.vespasignificance.merge;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,7 +28,7 @@ public class UlimitProbe {
         Process p = null;
         try {
             p = new ProcessBuilder(cmd).redirectErrorStream(true).start();
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
                 String out = r.readLine();
                 // Example outputs: "10240" or "unlimited"
                 if (out == null) return -1L;

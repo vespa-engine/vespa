@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_document_type_inspector.h"
+
 #include <vespa/document/datatype/documenttype.h>
 
 namespace proton {
@@ -10,18 +11,15 @@ namespace proton {
 /**
  * Inspector of a concrete document type.
  */
-class DocumentTypeInspector : public IDocumentTypeInspector
-{
+class DocumentTypeInspector : public IDocumentTypeInspector {
 private:
-    const document::DocumentType &_oldDocType;
-    const document::DocumentType &_newDocType;
+    const document::DocumentType& _oldDocType;
+    const document::DocumentType& _newDocType;
 
 public:
-    DocumentTypeInspector(const document::DocumentType &oldDocType,
-                          const document::DocumentType &newDocType);
+    DocumentTypeInspector(const document::DocumentType& oldDocType, const document::DocumentType& newDocType);
 
-    bool hasUnchangedField(const std::string &name) const override;
+    bool hasUnchangedField(const std::string& name) const override;
 };
 
 } // namespace proton
-

@@ -2,7 +2,5 @@
 #include "simple_metrics.h"
 
 namespace vespalib {
-namespace metrics {
-
-} // namespace vespalib::metrics
+namespace metrics {} // namespace metrics
 } // namespace vespalib

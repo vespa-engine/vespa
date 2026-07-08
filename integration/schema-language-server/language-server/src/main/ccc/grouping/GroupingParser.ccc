@@ -184,9 +184,11 @@ TOKEN :
     <FILTER: "filter"> |
     <FIXEDWIDTH: "fixedwidth"> |
     <FLOOR: "floor"> |
+    <GEO_DISTANCE: "geo_distance"> |
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
+    <ISTRUE: "istrue"> |
     <KEEP: "keep"> |
     <LOG: "log"> |
     <LOG1P: "log1p"> |
@@ -247,6 +249,8 @@ TOKEN :
     <X: "x"> |
     <XOR: "xor"> |
     <XORBIT: "xorbit"> |
+    <KM: "km"> |
+    <MILES: "miles"> |
     <Y: "y"> |
     <ZCURVE: "zcurve"> |
     <IDENTIFIER: ["A"-"Z","a"-"z"](["A"-"Z","a"-"z","0"-"9","_","@"])*>
@@ -1045,7 +1049,8 @@ FilterExpression filterPrimary(GroupingOperation grp) :
 (
     ( lbraceElm f = filterExp(grp) rbraceElm ) |
     ( f = regexPredicate(grp) )                |
-    ( f = rangePredicate(grp) )
+    ( f = rangePredicate(grp) )                |
+    ( f = istruePredicate(grp) )
 )
 {
     return f;
@@ -1088,6 +1093,16 @@ RangePredicate rangePredicate(GroupingOperation grp) :
 }
 ;
 
+IsTruePredicate istruePredicate(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+    ( <ISTRUE> lbraceElm exp = expElm(grp) rbraceElm )
+{
+    return new IsTruePredicate(exp);
+}
+;
+
 FilterExpression orPredicate(GroupingOperation grp) :
 {
     FilterExpression left, right;
@@ -1122,9 +1137,11 @@ FilterExpression notPredicate(GroupingOperation grp) :
 {
     FilterExpression inner;
 }
+(
     ( <NOT> spaceElm inner = notPredicate(grp) {
         return new NotPredicate(inner);
     } ) | ( inner = filterPrimary(grp) )
+)
     { return inner; }
 ;
 
@@ -1228,6 +1245,7 @@ String identifierStr :
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
+        <ISTRUE> |
         <KEEP> |
         <LOG> |
         <LOG1P> |

@@ -1,18 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "apply_bucket_diff_entry_complete.h"
+
 #include "apply_bucket_diff_state.h"
+
 #include <vespa/persistence/spi/result.h>
+
 #include <cassert>
 
 namespace storage {
 
 ApplyBucketDiffEntryComplete::ApplyBucketDiffEntryComplete(std::shared_ptr<ApplyBucketDiffState> state,
-                                                           document::DocumentId doc_id,
-                                                           ThrottleToken op_throttle_token,
-                                                           ThrottleToken maintenance_throttle_token,
-                                                           const char *op,
-                                                           const framework::Clock& clock,
+                                                           document::DocumentId                  doc_id,
+                                                           ThrottleToken                         op_throttle_token,
+                                                           ThrottleToken maintenance_throttle_token, const char* op,
+                                                           const framework::Clock&       clock,
                                                            metrics::DoubleAverageMetric& latency_metric)
     : _result_handler(nullptr),
       _state(std::move(state)),
@@ -21,15 +23,12 @@ ApplyBucketDiffEntryComplete::ApplyBucketDiffEntryComplete(std::shared_ptr<Apply
       _maintenance_throttle_token(std::move(maintenance_throttle_token)),
       _op(op),
       _start_time(clock),
-      _latency_metric(latency_metric)
-{
+      _latency_metric(latency_metric) {
 }
 
 ApplyBucketDiffEntryComplete::~ApplyBucketDiffEntryComplete() = default;
 
-void
-ApplyBucketDiffEntryComplete::onComplete(std::unique_ptr<spi::Result> result) noexcept
-{
+void ApplyBucketDiffEntryComplete::onComplete(std::unique_ptr<spi::Result> result) noexcept {
     if (_result_handler != nullptr) {
         _result_handler->handle(*result);
     }
@@ -40,11 +39,9 @@ ApplyBucketDiffEntryComplete::onComplete(std::unique_ptr<spi::Result> result) no
     _state->on_entry_complete(std::move(result), _doc_id, _op);
 }
 
-void
-ApplyBucketDiffEntryComplete::addResultHandler(const spi::ResultHandler* resultHandler)
-{
+void ApplyBucketDiffEntryComplete::addResultHandler(const spi::ResultHandler* resultHandler) {
     assert(_result_handler == nullptr);
     _result_handler = resultHandler;
 }
 
-}
+} // namespace storage

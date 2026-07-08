@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "multi_numeric_enum_search_context.hpp"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 
 using ValueRef = vespalib::datastore::AtomicEntryRef;
@@ -22,4 +23,4 @@ template class MultiNumericEnumSearchContext<int64_t, WeightedValueRef>;
 template class MultiNumericEnumSearchContext<float, WeightedValueRef>;
 template class MultiNumericEnumSearchContext<double, WeightedValueRef>;
 
-}
+} // namespace search::attribute

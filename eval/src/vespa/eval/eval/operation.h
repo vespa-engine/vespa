@@ -3,63 +3,159 @@
 #pragma once
 #include <optional>
 
-namespace vespalib::eval { class Function; }
+namespace vespalib::eval {
+class Function;
+}
 
 namespace vespalib::eval::operation {
 
-struct Neg { static double f(double a); };
-struct Not { static double f(double a); };
-struct Add { static double f(double a, double b); };
-struct Sub { static double f(double a, double b); };
-struct Mul { static double f(double a, double b); };
-struct Div { static double f(double a, double b); };
-struct Mod { static double f(double a, double b); };
-struct Pow { static double f(double a, double b); };
-struct Equal { static double f(double a, double b); };
-struct NotEqual { static double f(double a, double b); };
-struct Approx { static double f(double a, double b); };
-struct Less { static double f(double a, double b); };
-struct LessEqual { static double f(double a, double b); };
-struct Greater { static double f(double a, double b); };
-struct GreaterEqual { static double f(double a, double b); };
-struct And { static double f(double a, double b); };
-struct Or { static double f(double a, double b); };
-struct Cos { static double f(double a); };
-struct Sin { static double f(double a); };
-struct Tan { static double f(double a); };
-struct Cosh { static double f(double a); };
-struct Sinh { static double f(double a); };
-struct Tanh { static double f(double a); };
-struct Acos { static double f(double a); };
-struct Asin { static double f(double a); };
-struct Atan { static double f(double a); };
-struct Exp { static double f(double a); };
-struct Log10 { static double f(double a); };
-struct Log { static double f(double a); };
-struct Sqrt { static double f(double a); };
-struct Ceil { static double f(double a); };
-struct Fabs { static double f(double a); };
-struct Floor { static double f(double a); };
-struct Atan2 { static double f(double a, double b); };
-struct Ldexp { static double f(double a, double b); };
-struct Min { static double f(double a, double b); };
-struct Max { static double f(double a, double b); };
-struct IsNan { static double f(double a); };
-struct Relu { static double f(double a); };
-struct Sigmoid { static double f(double a); };
-struct Elu { static double f(double a); };
-struct Erf { static double f(double a); };
-struct Bit { static double f(double a, double b); };
-struct Hamming { static double f(double a, double b); };
+struct Neg {
+    static double f(double a);
+};
+struct Not {
+    static double f(double a);
+};
+struct Add {
+    static double f(double a, double b);
+};
+struct Sub {
+    static double f(double a, double b);
+};
+struct Mul {
+    static double f(double a, double b);
+};
+struct Div {
+    static double f(double a, double b);
+};
+struct Mod {
+    static double f(double a, double b);
+};
+struct Pow {
+    static double f(double a, double b);
+};
+struct Equal {
+    static double f(double a, double b);
+};
+struct NotEqual {
+    static double f(double a, double b);
+};
+struct Approx {
+    static double f(double a, double b);
+};
+struct Less {
+    static double f(double a, double b);
+};
+struct LessEqual {
+    static double f(double a, double b);
+};
+struct Greater {
+    static double f(double a, double b);
+};
+struct GreaterEqual {
+    static double f(double a, double b);
+};
+struct And {
+    static double f(double a, double b);
+};
+struct Or {
+    static double f(double a, double b);
+};
+struct Cos {
+    static double f(double a);
+};
+struct Sin {
+    static double f(double a);
+};
+struct Tan {
+    static double f(double a);
+};
+struct Cosh {
+    static double f(double a);
+};
+struct Sinh {
+    static double f(double a);
+};
+struct Tanh {
+    static double f(double a);
+};
+struct Acos {
+    static double f(double a);
+};
+struct Asin {
+    static double f(double a);
+};
+struct Atan {
+    static double f(double a);
+};
+struct Exp {
+    static double f(double a);
+};
+struct Log10 {
+    static double f(double a);
+};
+struct Log {
+    static double f(double a);
+};
+struct Sqrt {
+    static double f(double a);
+};
+struct Ceil {
+    static double f(double a);
+};
+struct Fabs {
+    static double f(double a);
+};
+struct Floor {
+    static double f(double a);
+};
+struct Atan2 {
+    static double f(double a, double b);
+};
+struct Ldexp {
+    static double f(double a, double b);
+};
+struct Min {
+    static double f(double a, double b);
+};
+struct Max {
+    static double f(double a, double b);
+};
+struct IsNan {
+    static double f(double a);
+};
+struct Relu {
+    static double f(double a);
+};
+struct Sigmoid {
+    static double f(double a);
+};
+struct Elu {
+    static double f(double a);
+};
+struct Erf {
+    static double f(double a);
+};
+struct Bit {
+    static double f(double a, double b);
+};
+struct Hamming {
+    static double f(double a, double b);
+};
 //-----------------------------------------------------------------------------
-struct Inv { static double f(double a); };
-struct Square { static double f(double a); };
-struct Cube { static double f(double a); };
+struct Inv {
+    static double f(double a);
+};
+struct Square {
+    static double f(double a);
+};
+struct Cube {
+    static double f(double a);
+};
 
 using op1_t = double (*)(double);
 using op2_t = double (*)(double, double);
 
-std::optional<op1_t> lookup_op1(const Function &fun);
-std::optional<op2_t> lookup_op2(const Function &fun);
+std::optional<op1_t> lookup_op1(const Function& fun);
+std::optional<op2_t> lookup_op2(const Function& fun);
 
-}
+} // namespace vespalib::eval::operation

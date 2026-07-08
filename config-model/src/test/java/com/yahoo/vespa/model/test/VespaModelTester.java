@@ -19,8 +19,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
@@ -44,7 +46,7 @@ import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateS
  *     VespaModel model = tester.createModel(servicesString);
  *     ... assert on model
  * </code>
- * 
+ *
  * @author bratseth
  */
 public class VespaModelTester {
@@ -86,7 +88,7 @@ public class VespaModelTester {
             // Let host names sort in the opposite order of the order the hosts are added
             // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster
             // (for e.g cluster controllers and slobrok nodes)
-            String hostname = String.format("%s-%03d",
+            String hostname = Text.format("%s-%03d",
                                             "node" + "-" + Math.round(resources.vcpu()) +
                                                      "-" + Math.round(resources.memoryGiB()) +
                                                      "-" + Math.round(resources.diskGb()),
@@ -254,8 +256,8 @@ public class VespaModelTester {
         }
 
         @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
-            return provisioner.prepare(cluster, capacity, logger);
+        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+            return provisioner.prepare(cluster, capacity, context);
         }
 
     }

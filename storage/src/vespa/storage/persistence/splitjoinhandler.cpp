@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "splitjoinhandler.h"
-#include "persistenceutil.h"
+
 #include "bucketownershipnotifier.h"
-#include "splitbitdetector.h"
 #include "messages.h"
+#include "persistenceutil.h"
+#include "splitbitdetector.h"
+
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/message/bucket.h>
 
@@ -13,18 +15,16 @@ LOG_SETUP(".persistence.splitjoinhandler");
 
 namespace storage {
 
-SplitJoinHandler::SplitJoinHandler(PersistenceUtil & env, spi::PersistenceProvider & spi,
-                                   BucketOwnershipNotifier & notifier, bool enableMultibitSplitOptimalization)
+SplitJoinHandler::SplitJoinHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
+                                   BucketOwnershipNotifier& notifier, bool enableMultibitSplitOptimalization)
     : _env(env),
       _spi(spi),
       _bucketOwnershipNotifier(notifier),
-      _enableMultibitSplitOptimalization(enableMultibitSplitOptimalization)
-{
+      _enableMultibitSplitOptimalization(enableMultibitSplitOptimalization) {
 }
 
-MessageTracker::UP
-SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker::UP tracker) const
-{
+MessageTracker::UP SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd,
+                                                       MessageTracker::UP       tracker) const {
     tracker->setMetric(_env._metrics.splitBuckets);
     NotificationGuard notifyGuard(_bucketOwnershipNotifier);
 
@@ -40,11 +40,11 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
         return tracker;
     }
 
-    spi::Bucket spiBucket(cmd.getBucket());
+    spi::Bucket              spiBucket(cmd.getBucket());
     SplitBitDetector::Result targetInfo;
     if (_enableMultibitSplitOptimalization) {
-        targetInfo = SplitBitDetector::detectSplit(_spi, spiBucket, cmd.getMaxSplitBits(),
-                                                   tracker->context(), cmd.getMinDocCount(), cmd.getMinByteSize());
+        targetInfo = SplitBitDetector::detectSplit(_spi, spiBucket, cmd.getMaxSplitBits(), tracker->context(),
+                                                   cmd.getMinDocCount(), cmd.getMinByteSize());
     }
     if (targetInfo.empty() || !_enableMultibitSplitOptimalization) {
         document::BucketId src(cmd.getBucketId());
@@ -62,8 +62,8 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
     document::Bucket target1(spiBucket.getBucketSpace(), targetInfo.getTarget1());
     document::Bucket target2(spiBucket.getBucketSpace(), targetInfo.getTarget2());
 
-    LOG(debug, "split(%s -> %s, %s)", cmd.getBucketId().toString().c_str(),
-        target1.getBucketId().toString().c_str(), target2.getBucketId().toString().c_str());
+    LOG(debug, "split(%s -> %s, %s)", cmd.getBucketId().toString().c_str(), target1.getBucketId().toString().c_str(),
+        target2.getBucketId().toString().c_str());
 
     PersistenceUtil::LockResult lock1(_env.lockAndGetDisk(target1));
     PersistenceUtil::LockResult lock2(_env.lockAndGetDisk(target2));
@@ -75,39 +75,36 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
     }
     // After split we need to take all bucket db locks to update them.
     // Ensure to take them in rising order.
-    StorBucketDatabase::WrappedEntry sourceEntry(_env.getBucketDatabase(spiBucket.getBucket().getBucketSpace()).get(
-            cmd.getBucketId(), "PersistenceThread::handleSplitBucket-source"));
-    auto reply = std::make_shared<api::SplitBucketReply>(cmd);
-    api::SplitBucketReply & splitReply = *reply;
+    StorBucketDatabase::WrappedEntry sourceEntry(
+        _env.getBucketDatabase(spiBucket.getBucket().getBucketSpace())
+            .get(cmd.getBucketId(), "PersistenceThread::handleSplitBucket-source"));
+    auto                   reply = std::make_shared<api::SplitBucketReply>(cmd);
+    api::SplitBucketReply& splitReply = *reply;
     tracker->setReply(std::move(reply));
 
     using TargetInfo = std::pair<StorBucketDatabase::WrappedEntry, FileStorHandler::RemapInfo>;
     std::vector<TargetInfo> targets;
     for (uint32_t i = 0; i < 2; i++) {
-        const document::Bucket &target(i == 0 ? target1 : target2);
+        const document::Bucket& target(i == 0 ? target1 : target2);
         assert(target.getBucketId().getRawId() != 0);
-        targets.emplace_back(_env.getBucketDatabase(target.getBucketSpace()).get(
-                target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
-                StorBucketDatabase::CREATE_IF_NONEXISTING),
+        targets.emplace_back(_env.getBucketDatabase(target.getBucketSpace())
+                                 .get(target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
+                                      StorBucketDatabase::CREATE_IF_NONEXISTING),
                              FileStorHandler::RemapInfo(target));
         targets.back().first->setBucketInfo(_env.getBucketInfo(target));
     }
     if (LOG_WOULD_LOG(spam)) {
         api::BucketInfo targ1(targets[0].first->getBucketInfo());
         api::BucketInfo targ2(targets[1].first->getBucketInfo());
-        LOG(spam, "split(%s - %u -> %s - %u, %s - %u)",
-            cmd.getBucketId().toString().c_str(),
-            targ1.getMetaCount() + targ2.getMetaCount(),
-            target1.getBucketId().toString().c_str(),
-            targ1.getMetaCount(),
-            target2.getBucketId().toString().c_str(),
-            targ2.getMetaCount());
+        LOG(spam, "split(%s - %u -> %s - %u, %s - %u)", cmd.getBucketId().toString().c_str(),
+            targ1.getMetaCount() + targ2.getMetaCount(), target1.getBucketId().toString().c_str(),
+            targ1.getMetaCount(), target2.getBucketId().toString().c_str(), targ2.getMetaCount());
     }
     FileStorHandler::RemapInfo source(cmd.getBucket());
     _env._fileStorHandler.remapQueueAfterSplit(source, targets[0].second, targets[1].second);
     bool ownershipChanged(!_bucketOwnershipNotifier.distributorOwns(cmd.getSourceIndex(), cmd.getBucket()));
     // Now release all the bucketdb locks.
-    for (auto & target : targets) {
+    for (auto& target : targets) {
         if (ownershipChanged) {
             notifyGuard.notifyAlways(target.second.bucket, target.first->getBucketInfo());
         }
@@ -121,12 +118,12 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
                 // to an empty target bucket, since the provider will have
                 // implicitly erased it by this point.
                 spi::Bucket createTarget(target.second.bucket);
-                LOG(debug, "Split target %s was empty, but re-creating it since there are remapped operations queued to it",
+                LOG(debug,
+                    "Split target %s was empty, but re-creating it since there are remapped operations queued to it",
                     createTarget.toString().c_str());
                 _spi.createBucket(createTarget);
             }
-            splitReply.getSplitInfo().emplace_back(target.second.bucket.getBucketId(),
-                                                   target.first->getBucketInfo());
+            splitReply.getSplitInfo().emplace_back(target.second.bucket.getBucketId(), target.first->getBucketInfo());
             target.first.write();
         } else {
             target.first.remove();
@@ -142,17 +139,16 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
     return tracker;
 }
 
-MessageTracker::UP
-SplitJoinHandler::handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTracker::UP tracker) const
-{
+MessageTracker::UP SplitJoinHandler::handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd,
+                                                             MessageTracker::UP        tracker) const {
     tracker->setMetric(_env._metrics.recheckBucketInfo);
-    document::Bucket bucket(cmd.getBucket());
-    api::BucketInfo info(_env.getBucketInfo(bucket));
+    document::Bucket  bucket(cmd.getBucket());
+    api::BucketInfo   info(_env.getBucketInfo(bucket));
     NotificationGuard notifyGuard(_bucketOwnershipNotifier);
     {
         // Update bucket database
         StorBucketDatabase::WrappedEntry entry(
-                _env.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "handleRecheckBucketInfo"));
+            _env.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "handleRecheckBucketInfo"));
 
         if (entry.exists()) {
             api::BucketInfo prevInfo(entry->getBucketInfo());
@@ -172,9 +168,8 @@ SplitJoinHandler::handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, Message
     return tracker;
 }
 
-MessageTracker::UP
-SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker::UP tracker) const
-{
+MessageTracker::UP SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd,
+                                                       MessageTracker::UP       tracker) const {
     tracker->setMetric(_env._metrics.joinBuckets);
     if (!validateJoinCommand(cmd, *tracker)) {
         return tracker;
@@ -188,8 +183,8 @@ SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker
     {
         // Create empty bucket for target.
         StorBucketDatabase::WrappedEntry entry =
-                _env.getBucketDatabase(destBucket.getBucketSpace()).get(destBucket.getBucketId(), "join",
-                                                                        StorBucketDatabase::CREATE_IF_NONEXISTING);
+            _env.getBucketDatabase(destBucket.getBucketSpace())
+                .get(destBucket.getBucketId(), "join", StorBucketDatabase::CREATE_IF_NONEXISTING);
         entry.write();
     }
 
@@ -208,12 +203,12 @@ SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker
     }
     uint64_t lastModified = 0;
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
-        document::Bucket srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
+        document::Bucket           srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
         FileStorHandler::RemapInfo target(cmd.getBucket());
         _env._fileStorHandler.remapQueueAfterJoin(FileStorHandler::RemapInfo(srcBucket), target);
         // Remove source from bucket db.
         StorBucketDatabase::WrappedEntry entry =
-                _env.getBucketDatabase(srcBucket.getBucketSpace()).get(srcBucket.getBucketId(), "join-remove-source");
+            _env.getBucketDatabase(srcBucket.getBucketSpace()).get(srcBucket.getBucketId(), "join-remove-source");
         if (entry.exists()) {
             lastModified = std::max(lastModified, entry->info.getLastModified());
             entry.remove();
@@ -221,8 +216,8 @@ SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker
     }
     {
         StorBucketDatabase::WrappedEntry entry =
-                _env.getBucketDatabase(destBucket.getBucketSpace()).get(destBucket.getBucketId(), "join",
-                                                                        StorBucketDatabase::CREATE_IF_NONEXISTING);
+            _env.getBucketDatabase(destBucket.getBucketSpace())
+                .get(destBucket.getBucketId(), "join", StorBucketDatabase::CREATE_IF_NONEXISTING);
         if (entry->info.getLastModified() == 0) {
             entry->info.setLastModified(std::max(lastModified, entry->info.getLastModified()));
         }
@@ -231,9 +226,7 @@ SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker
     return tracker;
 }
 
-bool
-SplitJoinHandler::validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker)
-{
+bool SplitJoinHandler::validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker) {
     if (cmd.getSourceBuckets().size() != 2) {
         tracker.fail(api::ReturnCode::ILLEGAL_PARAMETERS,
                      "Join needs exactly two buckets to be joined together" + cmd.getBucketId().toString());
@@ -248,12 +241,12 @@ SplitJoinHandler::validateJoinCommand(const api::JoinBucketsCommand& cmd, Messag
         }
         if (!cmd.getBucketId().contains(cmd.getSourceBuckets()[i])) {
             tracker.fail(api::ReturnCode::ILLEGAL_PARAMETERS,
-                         "Source bucket " + cmd.getSourceBuckets()[i].toString()
-                         + " is not contained in target " + cmd.getBucketId().toString());
+                         "Source bucket " + cmd.getSourceBuckets()[i].toString() + " is not contained in target " +
+                             cmd.getBucketId().toString());
             return false;
         }
     }
     return true;
 }
 
-}
+} // namespace storage

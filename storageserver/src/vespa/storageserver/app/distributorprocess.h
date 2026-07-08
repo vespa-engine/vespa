@@ -8,6 +8,7 @@
 #pragma once
 
 #include "process.h"
+
 #include <vespa/storage/storageserver/distributornode.h>
 
 namespace storage {
@@ -15,15 +16,15 @@ namespace storage {
 class IStorageChainBuilder;
 
 class DistributorProcess final : public Process {
-    DistributorNodeContext _context;
-    uint32_t               _num_distributor_stripes;
-    DistributorNode::UP    _node;
+    DistributorNodeContext                             _context;
+    uint32_t                                           _num_distributor_stripes;
+    DistributorNode::UP                                _node;
     config::ConfigHandle<DistributorManagerConfig>::UP _distributorConfigHandler;
     config::ConfigHandle<VisitorDispatcherConfig>::UP  _visitDispatcherConfigHandler;
     std::unique_ptr<IStorageChainBuilder>              _storage_chain_builder;
 
 public:
-    explicit DistributorProcess(const config::ConfigUri & configUri);
+    explicit DistributorProcess(const config::ConfigUri& configUri);
     ~DistributorProcess() override;
 
     void shutdown() override;
@@ -39,4 +40,4 @@ public:
     void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };
 
-} // storage
+} // namespace storage

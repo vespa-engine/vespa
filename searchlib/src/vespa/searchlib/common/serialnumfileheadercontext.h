@@ -6,17 +6,14 @@
 
 namespace search::common {
 
-class SerialNumFileHeaderContext : public FileHeaderContext
-{
-    const FileHeaderContext &_parentFileHeaderContext;
-    SerialNum _serialNum;
+class SerialNumFileHeaderContext : public FileHeaderContext {
+    const FileHeaderContext& _parentFileHeaderContext;
+    SerialNum                _serialNum;
 
 public:
-    SerialNumFileHeaderContext(const FileHeaderContext &
-                               parentFileHeaderContext,
-                               SerialNum serialNum);
+    SerialNumFileHeaderContext(const FileHeaderContext& parentFileHeaderContext, SerialNum serialNum);
 
-    void addTags(vespalib::GenericHeader &header, const std::string &name) const override;
+    void addTags(vespalib::GenericHeader& header, const std::string& name) const override;
 };
 
-}
+} // namespace search::common

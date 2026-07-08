@@ -1,50 +1,44 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dot_product_search.h"
+
 #include "iterator_pack.h"
+
 #include <vespa/vespalib/objects/visit.h>
 
-using search::fef::TermFieldMatchData;
 using search::fef::MatchData;
+using search::fef::TermFieldMatchData;
 using vespalib::ObjectVisitor;
 
 namespace search::queryeval {
 
-template <typename HEAP, typename IteratorPack>
-class DotProductSearchImpl : public DotProductSearch
-{
+template <typename HEAP, typename IteratorPack> class DotProductSearchImpl : public DotProductSearch {
 private:
     using ref_t = uint32_t;
     using Weights = std::span<const int32_t>;
 
     struct CmpDocId {
-        const uint32_t *termPos;
-        CmpDocId(const uint32_t *tp) noexcept : termPos(tp) {}
-        bool operator()(const ref_t &a, const ref_t &b) const noexcept {
-            return (termPos[a] < termPos[b]);
-        }
+        const uint32_t* termPos;
+        CmpDocId(const uint32_t* tp) noexcept : termPos(tp) {}
+        bool operator()(const ref_t& a, const ref_t& b) const noexcept { return (termPos[a] < termPos[b]); }
     };
 
-    TermFieldMatchData     &_tmd;
-    Weights                 _weights;
-    std::vector<uint32_t>   _termPos;
-    CmpDocId                _cmpDocId;
-    std::vector<ref_t>      _data_space;
-    ref_t                  *_data_begin;
-    ref_t                  *_data_stash;
-    ref_t                  *_data_end;
-    IteratorPack            _children;
-    bool                    _field_is_filter;
+    TermFieldMatchData&   _tmd;
+    Weights               _weights;
+    std::vector<uint32_t> _termPos;
+    CmpDocId              _cmpDocId;
+    std::vector<ref_t>    _data_space;
+    ref_t*                _data_begin;
+    ref_t*                _data_stash;
+    ref_t*                _data_end;
+    IteratorPack          _children;
+    bool                  _field_is_filter;
 
-    void seek_child(ref_t child, uint32_t docId) {
-        _termPos[child] = _children.seek(child, docId);
-    }
+    void seek_child(ref_t child, uint32_t docId) { _termPos[child] = _children.seek(child, docId); }
 
 public:
-    DotProductSearchImpl(TermFieldMatchData &tmd,
-                         bool field_is_filter,
-                         const std::vector<int32_t> &weights,
-                         IteratorPack &&iteratorPack)
+    DotProductSearchImpl(TermFieldMatchData& tmd, bool field_is_filter, const std::vector<int32_t>& weights,
+                         IteratorPack&& iteratorPack)
         : _tmd(tmd),
           _weights(weights),
           _termPos(weights.size()),
@@ -54,8 +48,7 @@ public:
           _data_stash(nullptr),
           _data_end(nullptr),
           _children(std::move(iteratorPack)),
-          _field_is_filter(field_is_filter)
-    {
+          _field_is_filter(field_is_filter) {
         HEAP::require_left_heap();
         assert(_weights.size() > 0);
         assert(_weights.size() == _children.size());
@@ -86,12 +79,10 @@ public:
     void doUnpack(uint32_t docId) override {
         if (!_field_is_filter && !_tmd.isNotNeeded()) {
             feature_t score = 0.0;
-            while ((_data_begin < _data_stash) &&
-                   _termPos[HEAP::front(_data_begin, _data_stash)] == docId)
-            {
+            while ((_data_begin < _data_stash) && _termPos[HEAP::front(_data_begin, _data_stash)] == docId) {
                 HEAP::pop(_data_begin, _data_stash--, _cmpDocId);
                 const ref_t child = *_data_stash;
-                double tmp = _weights[child];
+                double      tmp = _weights[child];
                 tmp *= _children.get_weight(child, docId);
                 score += tmp;
             };
@@ -114,23 +105,19 @@ public:
     }
     Trinary is_strict() const final { return Trinary::True; }
 
-    void visitMembers(vespalib::ObjectVisitor &) const override {}
+    void visitMembers(vespalib::ObjectVisitor&) const override {}
 };
 
 template <typename HEAP, typename IteratorPack>
-DotProductSearchImpl<HEAP,IteratorPack>::~DotProductSearchImpl() = default;
+DotProductSearchImpl<HEAP, IteratorPack>::~DotProductSearchImpl() = default;
 
 class SingleTermDotProductSearch : public DotProductSearch {
 public:
-    SingleTermDotProductSearch(TermFieldMatchData &tmd, SearchIterator::UP child,
-                                const TermFieldMatchData &childTmd, feature_t weight, MatchData::UP md)
-        : _child(std::move(child)),
-          _childTmd(childTmd),
-          _tmd(tmd),
-          _weight(weight),
-          _md(std::move(md))
-    { }
+    SingleTermDotProductSearch(TermFieldMatchData& tmd, SearchIterator::UP child, const TermFieldMatchData& childTmd,
+                               feature_t weight, MatchData::UP md)
+        : _child(std::move(child)), _childTmd(childTmd), _tmd(tmd), _weight(weight), _md(std::move(md)) {}
     ~SingleTermDotProductSearch() override;
+
 private:
     void doSeek(uint32_t docid) override {
         _child->doSeek(docid);
@@ -139,7 +126,7 @@ private:
 
     void doUnpack(uint32_t docid) override {
         _child->doUnpack(docid);
-        _tmd.setRawScore(docid, _weight*_childTmd.getWeight());
+        _tmd.setRawScore(docid, _weight * _childTmd.getWeight());
     }
 
     void initRange(uint32_t beginId, uint32_t endId) override {
@@ -148,8 +135,8 @@ private:
         setDocId(_child->getDocId());
     }
     SearchIterator::UP        _child;
-    const TermFieldMatchData &_childTmd;
-    TermFieldMatchData       &_tmd;
+    const TermFieldMatchData& _childTmd;
+    TermFieldMatchData&       _tmd;
     feature_t                 _weight;
     MatchData::UP             _md;
 };
@@ -158,45 +145,40 @@ SingleTermDotProductSearch::~SingleTermDotProductSearch() = default;
 
 //-----------------------------------------------------------------------------
 
-
-SearchIterator::UP
-DotProductSearch::create(const std::vector<SearchIterator*> &children,
-                         TermFieldMatchData &tmd,
-                         bool field_is_filter,
-                         const std::vector<TermFieldMatchData*> &childMatch,
-                         const std::vector<int32_t> &weights,
-                         MatchData::UP md)
-{
+SearchIterator::UP DotProductSearch::create(const std::vector<SearchIterator*>& children, TermFieldMatchData& tmd,
+                                            bool field_is_filter, const std::vector<TermFieldMatchData*>& childMatch,
+                                            const std::vector<int32_t>& weights, MatchData::UP md) {
     using ArrayHeapImpl = DotProductSearchImpl<vespalib::LeftArrayHeap, SearchIteratorPack>;
     using HeapImpl = DotProductSearchImpl<vespalib::LeftHeap, SearchIteratorPack>;
 
     if (childMatch.size() == 1) {
-        return std::make_unique<SingleTermDotProductSearch>(tmd, SearchIterator::UP(children[0]),
-                                                             *childMatch[0], weights[0], std::move(md));
+        return std::make_unique<SingleTermDotProductSearch>(tmd, SearchIterator::UP(children[0]), *childMatch[0],
+                                                            weights[0], std::move(md));
     }
     if (childMatch.size() < 128) {
-        return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights, SearchIteratorPack(children, childMatch, std::move(md)));
+        return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights,
+                                               SearchIteratorPack(children, childMatch, std::move(md)));
     }
-    return std::make_unique<HeapImpl>(tmd, field_is_filter, weights,  SearchIteratorPack(children, childMatch, std::move(md)));
+    return std::make_unique<HeapImpl>(tmd, field_is_filter, weights,
+                                      SearchIteratorPack(children, childMatch, std::move(md)));
 }
 
 //-----------------------------------------------------------------------------
 
-SearchIterator::UP
-DotProductSearch::create(TermFieldMatchData &tmd,
-                         bool field_is_filter,
-                         const std::vector<int32_t> &weights,
-                         std::vector<DocidWithWeightIterator> &&iterators)
-{
+SearchIterator::UP DotProductSearch::create(TermFieldMatchData& tmd, bool field_is_filter,
+                                            const std::vector<int32_t>&            weights,
+                                            std::vector<DocidWithWeightIterator>&& iterators) {
     using ArrayHeapImpl = DotProductSearchImpl<vespalib::LeftArrayHeap, DocidWithWeightIteratorPack>;
     using HeapImpl = DotProductSearchImpl<vespalib::LeftHeap, DocidWithWeightIteratorPack>;
 
     if (iterators.size() < 128) {
-        return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights, DocidWithWeightIteratorPack(std::move(iterators)));
+        return std::make_unique<ArrayHeapImpl>(tmd, field_is_filter, weights,
+                                               DocidWithWeightIteratorPack(std::move(iterators)));
     }
-    return std::make_unique<HeapImpl>(tmd, field_is_filter, weights, DocidWithWeightIteratorPack(std::move(iterators)));
+    return std::make_unique<HeapImpl>(tmd, field_is_filter, weights,
+                                      DocidWithWeightIteratorPack(std::move(iterators)));
 }
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace search::queryeval

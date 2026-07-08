@@ -5,6 +5,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.parser.CharStream;
 
@@ -21,6 +22,7 @@ public class ScriptParserContext {
     private final Map<String, Chunker> chunkers;
     private final Map<String, Embedder> embedders;
     private final Map<String, FieldGenerator> generators;
+    private MetricReceiver metricReceiver = MetricReceiver.nullImplementation;
     private String defaultFieldName = null;
     private CharStream inputStream = null;
 
@@ -62,6 +64,13 @@ public class ScriptParserContext {
 
     public Map<String, FieldGenerator> getGenerators() {
         return Collections.unmodifiableMap(generators);
+    }
+
+    public MetricReceiver getMetricReceiver() { return metricReceiver; }
+
+    public ScriptParserContext setMetricReceiver(MetricReceiver metricReceiver) {
+        this.metricReceiver = metricReceiver;
+        return this;
     }
 
     public String getDefaultFieldName() {

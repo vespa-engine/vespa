@@ -1,39 +1,37 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "prenormalized_angular_distance.h"
-#include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelerated/functions.h>
 
+#include "distance_function_vector_access.h"
+#include "temporary_vector_store.h"
+
+using vespalib::typify_invoke;
 using vespalib::eval::Int8Float;
 using vespalib::eval::TypifyCellType;
-using vespalib::typify_invoke;
-namespace hwaccelerated = vespalib::hwaccelerated;
 
 namespace search::tensor {
 
-template <typename VectorStoreType>
+template <typename VectorAccessType>
 class BoundPrenormalizedAngularDistance final : public BoundDistanceFunction {
-    using FloatType = VectorStoreType::FloatType;
-    mutable VectorStoreType _tmpSpace;
-    const std::span<const FloatType> _lhs;
-    double _lhs_norm_sq;
+    mutable VectorAccessType _access;
+    double                   _lhs_norm_sq;
+
 public:
-    explicit BoundPrenormalizedAngularDistance(TypedCells lhs)
-        : _tmpSpace(lhs.size),
-          _lhs(_tmpSpace.storeLhs(lhs))
-    {
-        auto a = _lhs.data();
-        _lhs_norm_sq = hwaccelerated::dot_product(cast(a), cast(a), lhs.size);
+    template <typename... AccessArgs>
+    explicit BoundPrenormalizedAngularDistance(AccessArgs&&... access_args)
+        : _access(std::forward<AccessArgs>(access_args)...) {
+        const auto* a = _access.lhs().data();
+        _lhs_norm_sq = _access.dot_product(cast(a), cast(a)); // TODO dedicated squared L2 norm function
         if (_lhs_norm_sq <= 0.0) {
             _lhs_norm_sq = 1.0;
         }
     }
     double calc(TypedCells rhs) const noexcept override {
-        std::span<const FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
-        auto a = _lhs.data();
-        auto b = rhs_vector.data();
-        double dot_product = hwaccelerated::dot_product(cast(a), cast(b), _lhs.size());
-        double distance = _lhs_norm_sq - dot_product;
+        auto        rhs_vector = _access.convert_rhs(rhs);
+        const auto* a = _access.lhs().data();
+        const auto* b = rhs_vector.data();
+        double      dot_product = _access.dot_product(cast(a), cast(b));
+        double      distance = _lhs_norm_sq - dot_product;
         return distance;
     }
     double convert_threshold(double threshold) const noexcept override {
@@ -52,24 +50,22 @@ public:
         double score = 1.0 / (1.0 + cosine_distance);
         return score;
     }
-    double calc_with_limit(TypedCells rhs, double) const noexcept override {
-        return calc(rhs);
-    }
+    double calc_with_limit(TypedCells rhs, double) const noexcept override { return calc(rhs); }
 };
 
-template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<float>>;
-template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<double>>;
-template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<Int8Float>>;
-template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<vespalib::BFloat16>>;
-template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<float>>;
-template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<double>>;
-template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<Int8Float>>;
-template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<vespalib::BFloat16>>;
+template class BoundPrenormalizedAngularDistance<TemporaryVectorAccess<float>>;
+template class BoundPrenormalizedAngularDistance<TemporaryVectorAccess<double>>;
+template class BoundPrenormalizedAngularDistance<TemporaryVectorAccess<Int8Float>>;
+template class BoundPrenormalizedAngularDistance<TemporaryVectorAccess<vespalib::BFloat16>>;
+template class BoundPrenormalizedAngularDistance<ReferenceVectorAccess<float>>;
+template class BoundPrenormalizedAngularDistance<ReferenceVectorAccess<double>>;
+template class BoundPrenormalizedAngularDistance<ReferenceVectorAccess<Int8Float>>;
+template class BoundPrenormalizedAngularDistance<ReferenceVectorAccess<vespalib::BFloat16>>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
 PrenormalizedAngularDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
-    using DFT = BoundPrenormalizedAngularDistance<TemporaryVectorStore<FloatType>>;
+    using DFT = BoundPrenormalizedAngularDistance<TemporaryVectorAccess<FloatType>>;
     return std::make_unique<DFT>(lhs);
 }
 
@@ -77,10 +73,10 @@ template <typename FloatType>
 BoundDistanceFunction::UP
 PrenormalizedAngularDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
     if (_reference_insertion_vector) {
-        using DFT = BoundPrenormalizedAngularDistance<ReferenceVectorStore<FloatType>>;
+        using DFT = BoundPrenormalizedAngularDistance<ReferenceVectorAccess<FloatType>>;
         return std::make_unique<DFT>(lhs);
     } else {
-        using DFT = BoundPrenormalizedAngularDistance<TemporaryVectorStore<FloatType>>;
+        using DFT = BoundPrenormalizedAngularDistance<TemporaryVectorAccess<FloatType>>;
         return std::make_unique<DFT>(lhs);
     }
 }
@@ -90,4 +86,16 @@ template class PrenormalizedAngularDistanceFunctionFactory<double>;
 template class PrenormalizedAngularDistanceFunctionFactory<Int8Float>;
 template class PrenormalizedAngularDistanceFunctionFactory<vespalib::BFloat16>;
 
+BoundDistanceFunction::UP
+QuantizedPrenormalizedAngularDistanceFunctionFactory::for_query_vector(TypedCells lhs) const {
+    using DFT = BoundPrenormalizedAngularDistance<Float32LhsQuantizedRhsVectorAccess>;
+    return std::make_unique<DFT>(lhs, _dimensions, _bits, _seed);
 }
+
+BoundDistanceFunction::UP
+QuantizedPrenormalizedAngularDistanceFunctionFactory::for_insertion_vector(TypedCells lhs) const {
+    using DFT = BoundPrenormalizedAngularDistance<QuantizedLhsAndRhsVectorAccess>;
+    return std::make_unique<DFT>(lhs, _dimensions, _bits, _seed);
+}
+
+} // namespace search::tensor

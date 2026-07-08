@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "split_float.h"
+
 #include <cctype>
 
 namespace search::queryeval {
 
-SplitFloat::SplitFloat(std::string_view input)
-{
+SplitFloat::SplitFloat(std::string_view input) {
     bool seenText = false;
     for (unsigned char c : input) {
         if (std::isalnum(c)) {
@@ -21,5 +21,4 @@ SplitFloat::SplitFloat(std::string_view input)
     }
 }
 
-}
-
+} // namespace search::queryeval

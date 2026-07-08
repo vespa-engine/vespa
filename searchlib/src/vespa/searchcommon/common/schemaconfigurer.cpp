@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "schemaconfigurer.h"
+
 #include "schema.h"
 #include "subscriptionproxyng.h"
+
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-summary.h>
-#include <vespa/searchcommon/attribute/collectiontype.h>
 #include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/searchcommon/attribute/collectiontype.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".index.schemaconfigurer");
@@ -18,14 +20,12 @@ using namespace vespa::config::search;
 
 namespace search::index {
 
-using schema::DataType;
 using schema::CollectionType;
+using schema::DataType;
 
 namespace {
 
-Schema::DataType
-convertIndexDataType(const IndexschemaConfig::Indexfield::Datatype &type)
-{
+Schema::DataType convertIndexDataType(const IndexschemaConfig::Indexfield::Datatype& type) {
     switch (type) {
     case IndexschemaConfig::Indexfield::Datatype::STRING:
         return DataType::STRING;
@@ -35,10 +35,7 @@ convertIndexDataType(const IndexschemaConfig::Indexfield::Datatype &type)
     return DataType::STRING;
 }
 
-
-Schema::CollectionType
-convertIndexCollectionType(const IndexschemaConfig::Indexfield::Collectiontype &type)
-{
+Schema::CollectionType convertIndexCollectionType(const IndexschemaConfig::Indexfield::Collectiontype& type) {
     switch (type) {
     case IndexschemaConfig::Indexfield::Collectiontype::SINGLE:
         return CollectionType::SINGLE;
@@ -50,10 +47,7 @@ convertIndexCollectionType(const IndexschemaConfig::Indexfield::Collectiontype &
     return CollectionType::SINGLE;
 }
 
-template <typename ConfigType>
-Schema::DataType
-convertDataType(const ConfigType &type)
-{
+template <typename ConfigType> Schema::DataType convertDataType(const ConfigType& type) {
     switch (type) {
     case ConfigType::STRING:
         return DataType::STRING;
@@ -88,10 +82,7 @@ convertDataType(const ConfigType &type)
     return DataType::STRING;
 }
 
-template <typename ConfigType>
-Schema::CollectionType
-convertCollectionType(const ConfigType &type)
-{
+template <typename ConfigType> Schema::CollectionType convertCollectionType(const ConfigType& type) {
     switch (type) {
     case ConfigType::SINGLE:
         return CollectionType::SINGLE;
@@ -103,21 +94,19 @@ convertCollectionType(const ConfigType &type)
     return CollectionType::SINGLE;
 }
 
-}
+} // namespace
 
-void
-SchemaBuilder::build(const IndexschemaConfig &cfg, Schema &schema)
-{
+void SchemaBuilder::build(const IndexschemaConfig& cfg, Schema& schema) {
     for (size_t i = 0; i < cfg.indexfield.size(); ++i) {
-        const IndexschemaConfig::Indexfield & f = cfg.indexfield[i];
-        schema.addIndexField(Schema::IndexField(f.name, convertIndexDataType(f.datatype),
-                                                convertIndexCollectionType(f.collectiontype)).
-                setAvgElemLen(f.averageelementlen).
-                set_interleaved_features(f.interleavedfeatures));
+        const IndexschemaConfig::Indexfield& f = cfg.indexfield[i];
+        schema.addIndexField(
+            Schema::IndexField(f.name, convertIndexDataType(f.datatype), convertIndexCollectionType(f.collectiontype))
+                .setAvgElemLen(f.averageelementlen)
+                .set_interleaved_features(f.interleavedfeatures));
     }
     for (size_t i = 0; i < cfg.fieldset.size(); ++i) {
-        const IndexschemaConfig::Fieldset &fs = cfg.fieldset[i];
-        Schema::FieldSet toAdd(fs.name);
+        const IndexschemaConfig::Fieldset& fs = cfg.fieldset[i];
+        Schema::FieldSet                   toAdd(fs.name);
         for (size_t j = 0; j < fs.field.size(); ++j) {
             toAdd.addField(fs.field[j].name);
         }
@@ -125,45 +114,33 @@ SchemaBuilder::build(const IndexschemaConfig &cfg, Schema &schema)
     }
 }
 
-
-void
-SchemaBuilder::build(const AttributesConfig &cfg, Schema &schema)
-{
-    for (const auto &attr : cfg.attribute) {
+void SchemaBuilder::build(const AttributesConfig& cfg, Schema& schema) {
+    for (const auto& attr : cfg.attribute) {
         if (attr.imported) {
-            schema.addImportedAttributeField(Schema::ImportedAttributeField(attr.name,
-                                                                            convertDataType(attr.datatype),
-                                                                            convertCollectionType(attr.collectiontype)));
+            schema.addImportedAttributeField(Schema::ImportedAttributeField(
+                attr.name, convertDataType(attr.datatype), convertCollectionType(attr.collectiontype)));
         } else {
-            schema.addAttributeField(Schema::Field(attr.name,
-                                                   convertDataType(attr.datatype),
-                                                   convertCollectionType(attr.collectiontype)));
+            schema.addAttributeField(
+                Schema::Field(attr.name, convertDataType(attr.datatype), convertCollectionType(attr.collectiontype)));
         }
     }
 }
 
-
-void
-SchemaConfigurer::configure(const IndexschemaConfig &cfg)
-{
+void SchemaConfigurer::configure(const IndexschemaConfig& cfg) {
     SchemaBuilder::build(cfg, _schema);
 }
 
-void
-SchemaConfigurer::configure(const AttributesConfig &cfg)
-{
+void SchemaConfigurer::configure(const AttributesConfig& cfg) {
     SchemaBuilder::build(cfg, _schema);
 }
 
-SchemaConfigurer::SchemaConfigurer(Schema &schema, const std::string &configId)
-    : _schema(schema)
-{
-    search::SubscriptionProxyNg<SchemaConfigurer, IndexschemaConfig>
-        indexSchemaSubscriber(*this, &SchemaConfigurer::configure);
-    search::SubscriptionProxyNg<SchemaConfigurer, AttributesConfig>
-        attributesSubscriber(*this, &SchemaConfigurer::configure);
+SchemaConfigurer::SchemaConfigurer(Schema& schema, const std::string& configId) : _schema(schema) {
+    search::SubscriptionProxyNg<SchemaConfigurer, IndexschemaConfig> indexSchemaSubscriber(
+        *this, &SchemaConfigurer::configure);
+    search::SubscriptionProxyNg<SchemaConfigurer, AttributesConfig> attributesSubscriber(
+        *this, &SchemaConfigurer::configure);
     indexSchemaSubscriber.subscribe(configId.c_str());
     attributesSubscriber.subscribe(configId.c_str());
 }
 
-}
+} // namespace search::index

@@ -4,14 +4,10 @@
 
 namespace proton {
 
-DocumentSubDbCollectionInitializer::DocumentSubDbCollectionInitializer()
-    : _subDbInitializers()
-{
+DocumentSubDbCollectionInitializer::DocumentSubDbCollectionInitializer() : _subDbInitializers() {
 }
 
-void
-DocumentSubDbCollectionInitializer::run()
-{
+void DocumentSubDbCollectionInitializer::run() {
 }
 
 } // namespace proton

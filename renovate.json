@@ -4,5 +4,33 @@
     "local>vespa-engine/renovate-config"
   ],
   "prHourlyLimit": 20,
-  "prConcurrentLimit": 20
+  "prConcurrentLimit": 20,
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "net.bytebuddy:byte-buddy",
+        "net.bytebuddy:byte-buddy-agent"
+      ],
+      "allowedVersions": "!/-jdk5$/"
+    },
+    // Need to wait for Vespa 9 before using Jetty 12.1.x or higher
+    {
+      "matchUpdateTypes": ["minor"],
+      "enabled": false,
+      "matchPackageNames": [
+        "org.eclipse.jetty:{/,}**",
+        "org.eclipse.jetty.http2:{/,}**"
+      ]
+    },
+    // Jackson 2.21 is the Long Term support release, stick to that until next LTS release (2.22 and 2.23 are not LTS)
+    {
+      "matchPackageNames": [
+        "com.fasterxml.jackson.core:{/,}**",
+        "com.fasterxml.jackson.dataformat:{/,}**",
+        "com.fasterxml.jackson.datatype:{/,}**",
+        "com.fasterxml.jackson.module:{/,}**",
+      ],
+      "allowedVersions": "< 2.22.0 || >= 2.24.0"
+    }
+  ]
 }

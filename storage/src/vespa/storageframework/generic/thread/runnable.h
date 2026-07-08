@@ -59,4 +59,4 @@ struct Runnable {
     virtual void run(ThreadHandle&) = 0;
 };
 
-} // storage::framework
+} // namespace storage::framework

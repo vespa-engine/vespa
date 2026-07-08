@@ -2,18 +2,18 @@
 // @author Vegard Sjonfjell
 
 #include "message_fixture.h"
+
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/select/parser.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/select/parser.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/casts.h>
 #include <vespa/vespalib/util/featureset.h>
-
 
 using document::DataType;
 using document::DocumentTypeRepo;
@@ -24,17 +24,16 @@ namespace {
 std::vector<char> doc1_mf_data{'H', 'i'};
 std::vector<char> doc2_mf_data{'T', 'h', 'e', 'r', 'e'};
 
-}
+} // namespace
 
-template <typename T>
-struct Unwrap {
+template <typename T> struct Unwrap {
     mbus::Routable::UP value;
-    const T *ptr = nullptr;
+    const T*           ptr = nullptr;
     explicit Unwrap(mbus::Routable::UP value_in) : value(std::move(value_in)) {
         ptr = dynamic_cast<T*>(value.get());
         assert(ptr != nullptr);
     }
-    const T *operator->() const noexcept { return ptr; }
+    const T* operator->() const noexcept { return ptr; }
 };
 
 namespace documentapi {
@@ -51,15 +50,11 @@ static const int MESSAGE_BASE_LENGTH = 5;
 
 namespace {
 
-document::Document::SP
-createDoc(const DocumentTypeRepo &repo, const string &type_name, const string &id)
-{
-    return std::make_shared<document::Document>(repo,
-                    *repo.getDocumentType(type_name),
-                    document::DocumentId(id));
+document::Document::SP createDoc(const DocumentTypeRepo& repo, const string& type_name, const string& id) {
+    return std::make_shared<document::Document>(repo, *repo.getDocumentType(type_name), document::DocumentId(id));
 }
 
-}  // namespace
+} // namespace
 
 TEST_F(Messages60Test, testGetBucketListMessage) {
     GetBucketListMessage msg(document::BucketId(16, 123));
@@ -77,7 +72,7 @@ TEST_F(Messages60Test, testGetBucketListMessage) {
 
 TEST_F(Messages60Test, testEmptyBucketsMessage) {
     std::vector<document::BucketId> bids;
-    for (size_t i=0; i < 13; ++i) {
+    for (size_t i = 0; i < 13; ++i) {
         bids.push_back(document::BucketId(16, i));
     }
 
@@ -89,12 +84,11 @@ TEST_F(Messages60Test, testEmptyBucketsMessage) {
         mbus::Routable::UP obj = deserialize("EmptyBucketsMessage", DocumentProtocol::MESSAGE_EMPTYBUCKETS, lang);
         ASSERT_TRUE(obj);
         auto& ref = dynamic_cast<EmptyBucketsMessage&>(*obj);
-        for (size_t i=0; i < 13; ++i) {
+        for (size_t i = 0; i < 13; ++i) {
             EXPECT_EQ(document::BucketId(16, i), ref.getBucketIds()[i]);
         }
     }
 }
-
 
 TEST_F(Messages60Test, testStatBucketMessage) {
     StatBucketMessage msg(document::BucketId(16, 123), "id.user=123");
@@ -162,8 +156,7 @@ TEST_F(Messages60Test, testDestroyVisitorMessage) {
 }
 
 TEST_F(Messages60Test, testDocumentListMessage) {
-    document::Document::SP doc =
-        createDoc(type_repo(), "testdoc", "id:scheme:testdoc:n=1234:1");
+    document::Document::SP     doc = createDoc(type_repo(), "testdoc", "id:scheme:testdoc:n=1234:1");
     DocumentListMessage::Entry entry(1234, doc, false);
 
     DocumentListMessage tmp(document::BucketId(16, 1234));
@@ -184,12 +177,13 @@ TEST_F(Messages60Test, testDocumentListMessage) {
 TEST_F(Messages60Test, testRemoveLocationMessage) {
     {
         document::BucketIdFactory factory;
-        document::select::Parser parser(type_repo(), factory);
-        RemoveLocationMessage msg(factory, parser, "id.group == \"mygroup\"");
+        document::select::Parser  parser(type_repo(), factory);
+        RemoveLocationMessage     msg(factory, parser, "id.group == \"mygroup\"");
 
         EXPECT_EQ(MESSAGE_BASE_LENGTH + 29u, serialize("RemoveLocationMessage", msg));
         for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-            mbus::Routable::UP obj = deserialize("RemoveLocationMessage", DocumentProtocol::MESSAGE_REMOVELOCATION, lang);
+            mbus::Routable::UP obj =
+                deserialize("RemoveLocationMessage", DocumentProtocol::MESSAGE_REMOVELOCATION, lang);
             ASSERT_TRUE(obj);
             auto& ref = dynamic_cast<RemoveLocationMessage&>(*obj);
             EXPECT_EQ(string("id.group == \"mygroup\""), ref.getDocumentSelection());
@@ -202,7 +196,9 @@ TEST_F(Messages60Test, testRemoveLocationMessage) {
 TEST_F(Messages60Test, testGetDocumentMessage) {
     GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
-    EXPECT_EQ(sizeof(DocumentMessage) + sizeof(document::DocumentId) + sizeof(std::string) + sizeof(std::optional<uint16_t>) + /* padding */ 4, sizeof(GetDocumentMessage));
+    EXPECT_EQ(sizeof(DocumentMessage) + sizeof(document::DocumentId) + sizeof(std::string) +
+                  sizeof(std::optional<uint16_t>) + /* padding */ 4,
+              sizeof(GetDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + (size_t)31, serialize("GetDocumentMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -258,7 +254,7 @@ TEST_F(Messages60Test, testCreateVisitorReply) {
 }
 
 TEST_F(Messages60Test, testPutDocumentMessage) {
-    auto doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
+    auto               doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
     PutDocumentMessage msg(doc);
 
     msg.setTimestamp(666);
@@ -269,16 +265,14 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
     EXPECT_EQ(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
     EXPECT_EQ(sizeof(TestAndSetMessage) + 40, sizeof(PutDocumentMessage));
     int size_of_create_if_non_existent_flag = 1;
-    EXPECT_EQ(MESSAGE_BASE_LENGTH +
-                 45u +
-                 serializedLength(msg.getCondition().getSelection()) +
-                 size_of_create_if_non_existent_flag,
-                 serialize("PutDocumentMessage", msg));
+    EXPECT_EQ(MESSAGE_BASE_LENGTH + 45u + serializedLength(msg.getCondition().getSelection()) +
+                  size_of_create_if_non_existent_flag,
+              serialize("PutDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         auto routableUp = deserialize("PutDocumentMessage", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang);
         ASSERT_TRUE(routableUp);
-        auto& deserializedMsg = dynamic_cast<PutDocumentMessage &>(*routableUp);
+        auto& deserializedMsg = dynamic_cast<PutDocumentMessage&>(*routableUp);
 
         EXPECT_EQ(msg.getDocument().getType().getName(), deserializedMsg.getDocument().getType().getName());
         EXPECT_EQ(msg.getDocument().getId().toString(), deserializedMsg.getDocument().getId().toString());
@@ -294,8 +288,8 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
     PutDocumentMessage msg2(createDoc(type_repo(), "testdoc", "id:ns:testdoc::"));
     msg2.set_create_if_non_existent(true);
     uint32_t expected_message_size = MESSAGE_BASE_LENGTH + 45u +
-        serializedLength(msg2.getCondition().getSelection()) +
-        size_of_create_if_non_existent_flag;
+                                     serializedLength(msg2.getCondition().getSelection()) +
+                                     size_of_create_if_non_existent_flag;
     auto trunc1 = [](mbus::Blob x) noexcept { return truncate(std::move(x), 1); };
     auto pad1 = [](mbus::Blob x) noexcept { return pad(std::move(x), 1); };
     EXPECT_EQ(expected_message_size, serialize("PutDocumentMessage-create", msg2));
@@ -303,9 +297,12 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
     EXPECT_EQ(expected_message_size + 1, serialize("PutDocumentMessage-create-pad", msg2, pad1));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        auto decoded = Unwrap<PutDocumentMessage>(deserialize("PutDocumentMessage-create", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
-        auto decoded_trunc = Unwrap<PutDocumentMessage>(deserialize("PutDocumentMessage-create-truncate", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
-        auto decoded_pad = Unwrap<PutDocumentMessage>(deserialize("PutDocumentMessage-create-pad", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
+        auto decoded = Unwrap<PutDocumentMessage>(
+            deserialize("PutDocumentMessage-create", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
+        auto decoded_trunc = Unwrap<PutDocumentMessage>(
+            deserialize("PutDocumentMessage-create-truncate", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
+        auto decoded_pad = Unwrap<PutDocumentMessage>(
+            deserialize("PutDocumentMessage-create-pad", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
         EXPECT_EQ(true, decoded->get_create_if_non_existent());
         EXPECT_EQ(false, decoded_trunc->get_create_if_non_existent());
         EXPECT_EQ(true, decoded_pad->get_create_if_non_existent());
@@ -365,7 +362,8 @@ TEST_F(Messages60Test, testRemoveDocumentMessage) {
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
     EXPECT_EQ(sizeof(TestAndSetMessage) + 48 + sizeof(std::string), sizeof(RemoveDocumentMessage));
-    EXPECT_EQ(MESSAGE_BASE_LENGTH + size_t(20) + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
+    EXPECT_EQ(MESSAGE_BASE_LENGTH + size_t(20) + serializedLength(msg.getCondition().getSelection()),
+              serialize("RemoveDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         auto routablePtr = deserialize("RemoveDocumentMessage", DocumentProtocol::MESSAGE_REMOVEDOCUMENT, lang);
@@ -378,7 +376,7 @@ TEST_F(Messages60Test, testRemoveDocumentMessage) {
 }
 
 TEST_F(Messages60Test, testRemoveDocumentReply) {
-    RemoveDocumentReply reply;
+    RemoveDocumentReply   reply;
     std::vector<uint64_t> ts;
     reply.setWasFound(false);
     reply.setHighestModificationTimestamp(30);
@@ -396,12 +394,14 @@ TEST_F(Messages60Test, testRemoveDocumentReply) {
 }
 
 TEST_F(Messages60Test, testUpdateDocumentMessage) {
-    const DocumentTypeRepo & repo = type_repo();
-    const document::DocumentType & docType = *repo.getDocumentType("testdoc");
+    const DocumentTypeRepo&       repo = type_repo();
+    const document::DocumentType& docType = *repo.getDocumentType("testdoc");
 
-    auto docUpdate = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
+    auto docUpdate =
+        std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
 
-    docUpdate->addFieldPathUpdate(std::make_unique<document::RemoveFieldPathUpdate>("intfield", "testdoc.intfield > 0"));
+    docUpdate->addFieldPathUpdate(
+        std::make_unique<document::RemoveFieldPathUpdate>("intfield", "testdoc.intfield > 0"));
 
     UpdateDocumentMessage msg(docUpdate);
     msg.setOldTimestamp(666u);
@@ -409,7 +409,8 @@ TEST_F(Messages60Test, testUpdateDocumentMessage) {
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
     EXPECT_EQ(sizeof(TestAndSetMessage) + 40, sizeof(UpdateDocumentMessage));
-    EXPECT_EQ(MESSAGE_BASE_LENGTH + 93u + serializedLength(msg.getCondition().getSelection()), serialize("UpdateDocumentMessage", msg));
+    EXPECT_EQ(MESSAGE_BASE_LENGTH + 93u + serializedLength(msg.getCondition().getSelection()),
+              serialize("UpdateDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         auto routableUp = deserialize("UpdateDocumentMessage", DocumentProtocol::MESSAGE_UPDATEDOCUMENT, lang);
@@ -424,8 +425,8 @@ TEST_F(Messages60Test, testUpdateDocumentMessage) {
 }
 
 TEST_F(Messages60Test, testQueryResultMessage) {
-    QueryResultMessage srm;
-    vdslib::SearchResult & sr(srm.getSearchResult());
+    QueryResultMessage    srm;
+    vdslib::SearchResult& sr(srm.getSearchResult());
     EXPECT_EQ(srm.getSequenceId(), 0u);
     EXPECT_EQ(sr.getHitCount(), 0u);
     EXPECT_EQ(sr.getAggregatorList().getSerializedSize(), 4u);
@@ -434,11 +435,12 @@ TEST_F(Messages60Test, testQueryResultMessage) {
 
     EXPECT_EQ(MESSAGE_BASE_LENGTH + size_t(32), serialize("QueryResultMessage-1", srm));
 
-    mbus::Routable::UP routable = deserialize("QueryResultMessage-1", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
+    mbus::Routable::UP routable =
+        deserialize("QueryResultMessage-1", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
     ASSERT_TRUE(routable);
     auto* dm = dynamic_cast<QueryResultMessage*>(routable.get());
     ASSERT_TRUE(dm);
-    vdslib::SearchResult * dr(&dm->getSearchResult());
+    vdslib::SearchResult* dr(&dm->getSearchResult());
     EXPECT_EQ(dm->getSequenceId(), size_t(0));
     EXPECT_EQ(dr->getHitCount(), size_t(0));
 
@@ -452,7 +454,7 @@ TEST_F(Messages60Test, testQueryResultMessage) {
     ASSERT_TRUE(dm);
     dr = &dm->getSearchResult();
     EXPECT_EQ(dr->getHitCount(), size_t(2));
-    const char *docId;
+    const char*                    docId;
     vdslib::SearchResult::RankType rank;
     dr->getHit(0, docId, rank);
     EXPECT_EQ(rank, vdslib::SearchResult::RankType(89));
@@ -477,8 +479,8 @@ TEST_F(Messages60Test, testQueryResultMessage) {
     EXPECT_EQ(rank, vdslib::SearchResult::RankType(89));
     EXPECT_EQ(strcmp("doc1", docId), 0);
 
-    QueryResultMessage srm2;
-    vdslib::SearchResult & sr2(srm2.getSearchResult());
+    QueryResultMessage    srm2;
+    vdslib::SearchResult& sr2(srm2.getSearchResult());
     sr2.addHit(0, "doc1", 89, "sortdata2", 9);
     sr2.addHit(1, "doc17", 109, "sortdata1", 9);
     sr2.addHit(2, "doc18", 90, "sortdata3", 9);
@@ -501,8 +503,8 @@ TEST_F(Messages60Test, testQueryResultMessage) {
     EXPECT_EQ(strcmp("doc18", docId), 0);
 
     sr2.sort();
-    const void *buf;
-    size_t sz;
+    const void* buf;
+    size_t      sz;
     sr2.getHit(0, docId, rank);
     sr2.getSortBlob(0, buf, sz);
     EXPECT_EQ(sz, 9u);
@@ -549,7 +551,7 @@ TEST_F(Messages60Test, testQueryResultMessage) {
     EXPECT_EQ(strcmp("doc18", docId), 0);
 
     QueryResultMessage qrm3;
-    auto& sr3(qrm3.getSearchResult());
+    auto&              sr3(qrm3.getSearchResult());
     sr3.addHit(0, "doc1", 5);
     sr3.addHit(1, "doc2", 7);
     FeatureValues mf;
@@ -557,16 +559,16 @@ TEST_F(Messages60Test, testQueryResultMessage) {
     mf.names.push_back("bar");
     mf.values.resize(4);
     mf.values[0].set_double(1.0);
-    mf.values[1].set_data({ doc1_mf_data.data(), doc1_mf_data.size()});
+    mf.values[1].set_data({doc1_mf_data.data(), doc1_mf_data.size()});
     mf.values[2].set_double(12.0);
-    mf.values[3].set_data({ doc2_mf_data.data(), doc2_mf_data.size()});
+    mf.values[3].set_data({doc2_mf_data.data(), doc2_mf_data.size()});
     sr3.set_match_features(FeatureValues(mf));
     sr3.sort();
 
     EXPECT_EQ(MESSAGE_BASE_LENGTH + 125u, serialize("QueryResultMessage-6", qrm3));
     routable = deserialize("QueryResultMessage-6", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
     ASSERT_TRUE(routable);
-    dm = dynamic_cast<QueryResultMessage *>(routable.get());
+    dm = dynamic_cast<QueryResultMessage*>(routable.get());
     ASSERT_TRUE(dm);
     dr = &dm->getSearchResult();
     EXPECT_EQ(size_t(2), dr->getHitCount());
@@ -624,9 +626,7 @@ TEST_F(Messages60Test, testDocumentIgnoredReply) {
     DocumentIgnoredReply tmp;
     serialize("DocumentIgnoredReply", tmp);
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj(
-                deserialize("DocumentIgnoredReply",
-                            DocumentProtocol::REPLY_DOCUMENTIGNORED, lang));
+        mbus::Routable::UP obj(deserialize("DocumentIgnoredReply", DocumentProtocol::REPLY_DOCUMENTIGNORED, lang));
         EXPECT_TRUE(obj);
     }
 }
@@ -636,9 +636,8 @@ TEST_F(Messages60Test, testDocumentListReply) {
 }
 
 TEST_F(Messages60Test, testGetDocumentReply) {
-    document::Document::SP doc =
-        createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
-    GetDocumentReply tmp(doc);
+    document::Document::SP doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
+    GetDocumentReply       tmp(doc);
 
     EXPECT_EQ(128u, sizeof(GetDocumentReply));
     EXPECT_EQ((size_t)47, serialize("GetDocumentReply", tmp));
@@ -681,7 +680,8 @@ TEST_F(Messages60Test, testWrongDistributionReply) {
     serialize("WrongDistributionReply", tmp);
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj = deserialize("WrongDistributionReply", DocumentProtocol::REPLY_WRONGDISTRIBUTION, lang);
+        mbus::Routable::UP obj =
+            deserialize("WrongDistributionReply", DocumentProtocol::REPLY_WRONGDISTRIBUTION, lang);
         ASSERT_TRUE(obj);
         auto& ref = dynamic_cast<WrongDistributionReply&>(*obj);
         EXPECT_EQ(string("distributor:3 storage:2"), ref.getSystemState());
@@ -745,17 +745,13 @@ TEST_F(Messages60Test, testRemoveLocationReply) {
     }
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Utilities
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void
-Messages60Test::tryVisitorReply(const string& filename, uint32_t type)
-{
+void Messages60Test::tryVisitorReply(const string& filename, uint32_t type) {
     VisitorReply tmp(type);
     EXPECT_EQ((uint32_t)5, serialize(filename, tmp));
 
@@ -767,4 +763,4 @@ Messages60Test::tryVisitorReply(const string& filename, uint32_t type)
     }
 }
 
-} // documentapi
+} // namespace documentapi

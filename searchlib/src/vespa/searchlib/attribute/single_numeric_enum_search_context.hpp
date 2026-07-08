@@ -2,18 +2,20 @@
 
 #pragma once
 
-#include "single_numeric_enum_search_context.h"
 #include "single_enum_search_context.h"
+#include "single_numeric_enum_search_context.h"
 
 namespace search::attribute {
 
 template <typename T>
-SingleNumericEnumSearchContext<T>::SingleNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<T>& enum_store)
-    : SingleEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>>(NumericRangeMatcher<T>(*qTerm, true), toBeSearched, enum_indices, enum_store)
-{
+SingleNumericEnumSearchContext<T>::SingleNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm,
+                                                                  const AttributeVector&           toBeSearched,
+                                                                  EnumIndices                      enum_indices,
+                                                                  const EnumStoreT<T>&             enum_store)
+    : SingleEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>>(
+          NumericRangeMatcher<T>(*qTerm, true), toBeSearched, enum_indices, enum_store) {
 }
 
-template <typename T>
-SingleNumericEnumSearchContext<T>::~SingleNumericEnumSearchContext() = default;
+template <typename T> SingleNumericEnumSearchContext<T>::~SingleNumericEnumSearchContext() = default;
 
-}
+} // namespace search::attribute

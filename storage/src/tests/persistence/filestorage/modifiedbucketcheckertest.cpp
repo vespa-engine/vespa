@@ -1,47 +1,43 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config/common/exceptions.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
-#include <vespa/config/common/exceptions.h>
-#include <vespa/config/helper/configgetter.hpp>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
-#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
 
 namespace storage {
 
 struct ModifiedBucketCheckerTest : Test {
-    enum {
-        MESSAGE_WAIT_TIME = 60*2
-    };
+    enum { MESSAGE_WAIT_TIME = 60 * 2 };
 
     void SetUp() override;
     void TearDown() override;
 
     spi::dummy::DummyPersistence& getDummyPersistence() {
-        return static_cast<spi::dummy::DummyPersistence&>(
-                _node->getPersistenceProvider());
+        return static_cast<spi::dummy::DummyPersistence&>(_node->getPersistenceProvider());
     }
     void expectCommandsAndSendReplies(uint32_t count, uint32_t firstBucket);
     void modifyBuckets(uint32_t count, uint32_t firstBucket);
-    void replyToAll(const std::vector<api::StorageMessage::SP>& messages,
-                    uint32_t firstBucket);
+    void replyToAll(const std::vector<api::StorageMessage::SP>& messages, uint32_t firstBucket);
 
     std::unique_ptr<DummyStorageLink> _top;
-    ModifiedBucketChecker* _handler;
-    DummyStorageLink* _bottom;
+    ModifiedBucketChecker*            _handler;
+    DummyStorageLink*                 _bottom;
 
-    std::unique_ptr<StorageConfigSet> _config;
+    std::unique_ptr<StorageConfigSet>    _config;
     std::unique_ptr<TestServiceLayerApp> _node;
 };
 
-void
-ModifiedBucketCheckerTest::SetUp()
-{
+void ModifiedBucketCheckerTest::SetUp() {
     _config = StorageConfigSet::make_storage_node_config();
     _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->config_uri());
     _node->setupDummyPersistence();
@@ -49,26 +45,21 @@ ModifiedBucketCheckerTest::SetUp()
     _top = std::make_unique<DummyStorageLink>();
     using vespa::config::content::core::StorServerConfig;
     auto bootstrap_cfg = config_from<StorServerConfig>(_config->config_uri());
-    _handler = new ModifiedBucketChecker(_node->getComponentRegister(),
-                                         _node->getPersistenceProvider(),
-                                         *bootstrap_cfg);
+    _handler =
+        new ModifiedBucketChecker(_node->getComponentRegister(), _node->getPersistenceProvider(), *bootstrap_cfg);
     _top->push_back(std::unique_ptr<StorageLink>(_handler));
     _bottom = new DummyStorageLink;
     _handler->push_back(std::unique_ptr<StorageLink>(_bottom));
 }
 
-void
-ModifiedBucketCheckerTest::TearDown()
-{
+void ModifiedBucketCheckerTest::TearDown() {
     _top->close();
     _top.reset();
     _node.reset();
     _config.reset();
 }
 
-void
-ModifiedBucketCheckerTest::modifyBuckets(uint32_t count, uint32_t firstBucket)
-{
+void ModifiedBucketCheckerTest::modifyBuckets(uint32_t count, uint32_t firstBucket) {
     spi::BucketIdListResult::List buckets;
     for (uint32_t i = firstBucket; i < firstBucket + count; ++i) {
         buckets.push_back(document::BucketId(16, i));
@@ -76,11 +67,8 @@ ModifiedBucketCheckerTest::modifyBuckets(uint32_t count, uint32_t firstBucket)
     getDummyPersistence().setModifiedBuckets(std::move(buckets));
 }
 
-void
-ModifiedBucketCheckerTest::replyToAll(
-        const std::vector<api::StorageMessage::SP>& messages,
-        uint32_t firstBucket)
-{
+void ModifiedBucketCheckerTest::replyToAll(const std::vector<api::StorageMessage::SP>& messages,
+                                           uint32_t                                    firstBucket) {
     for (uint32_t i = 0; i < messages.size(); ++i) {
         auto& cmd = dynamic_cast<RecheckBucketInfoCommand&>(*messages[i]);
         ASSERT_EQ(document::BucketId(16, i + firstBucket), cmd.getBucketId());
@@ -88,10 +76,7 @@ ModifiedBucketCheckerTest::replyToAll(
     }
 }
 
-void
-ModifiedBucketCheckerTest::expectCommandsAndSendReplies(
-        uint32_t count, uint32_t firstBucket)
-{
+void ModifiedBucketCheckerTest::expectCommandsAndSendReplies(uint32_t count, uint32_t firstBucket) {
     std::vector<api::StorageMessage::SP> messages(_bottom->getCommandsOnce());
     ASSERT_EQ(count, messages.size());
     replyToAll(messages, firstBucket);
@@ -160,7 +145,7 @@ TEST_F(ModifiedBucketCheckerTest, recheck_requests_are_chunked) {
 
     // New round of fetching
     _handler->tick();
-    ASSERT_NO_FATAL_FAILURE(    expectCommandsAndSendReplies(1, 10));
+    ASSERT_NO_FATAL_FAILURE(expectCommandsAndSendReplies(1, 10));
     _handler->tick(); // global bucket space ==> nothing to do
     ASSERT_NO_FATAL_FAILURE(expectCommandsAndSendReplies(0, 0));
 
@@ -183,4 +168,4 @@ TEST_F(ModifiedBucketCheckerTest, invalid_chunk_size_config_is_rejected) {
 // RecheckBucketInfoCommand handling is done in persistence threads,
 // so that functionality is tested in the filestor tests.
 
-} // ns storage
+} // namespace storage

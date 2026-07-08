@@ -9,16 +9,16 @@ namespace search::attribute {
 /**
  * Class for saving a single value small numeric attribute.
  */
-class SingleSmallNumericAttributeSaver : public AttributeSaver
-{
+class SingleSmallNumericAttributeSaver : public AttributeSaver {
     uint32_t              _num_docs;
     std::vector<uint32_t> _word_data;
 
     bool onSave(IAttributeSaveTarget& saveTarget) override;
+
 public:
     SingleSmallNumericAttributeSaver(const attribute::AttributeHeader& header, uint32_t num_docs,
                                      std::vector<uint32_t> word_data);
     ~SingleSmallNumericAttributeSaver() override;
 };
 
-}
+} // namespace search::attribute

@@ -5,25 +5,27 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/util/index_stats.h>
 
-namespace searchcorespi { class IndexSearchable; }
+namespace searchcorespi {
+class IndexSearchable;
+}
 
 namespace searchcorespi::index {
 
 /**
  * Information about a searchable index usable by state explorer.
  */
-class IndexSearchableStats
-{
+class IndexSearchableStats {
     using SerialNum = search::SerialNum;
     using IndexStats = search::IndexStats;
-    SerialNum       _serialNum;
+    SerialNum  _serialNum;
     IndexStats _index_stats;
+
 public:
     IndexSearchableStats();
-    IndexSearchableStats(const IndexSearchable &index);
-    bool operator<(const IndexSearchableStats &rhs) const;
+    IndexSearchableStats(const IndexSearchable& index);
+    bool operator<(const IndexSearchableStats& rhs) const;
     SerialNum getSerialNum() const { return _serialNum; }
-    const IndexStats &get_index_stats() const { return _index_stats; }
+    const IndexStats& get_index_stats() const { return _index_stats; }
 };
 
-}
+} // namespace searchcorespi::index

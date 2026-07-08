@@ -3,6 +3,7 @@
 #pragma once
 
 #include "address_space_usage_stats.h"
+
 #include <vespa/searchlib/attribute/address_space_usage.h>
 
 namespace proton {
@@ -11,8 +12,7 @@ namespace proton {
  * Class representing aggregated max address space usage
  * among components in attributes vectors in all sub databases.
  */
-class AttributeUsageStats
-{
+class AttributeUsageStats {
     AddressSpaceUsageStats _max_usage;
     std::string            _document_type;
 
@@ -24,16 +24,14 @@ public:
     ~AttributeUsageStats();
     AttributeUsageStats& operator=(const AttributeUsageStats&);
     AttributeUsageStats& operator=(AttributeUsageStats&&) noexcept = default;
-    void merge(const search::AddressSpaceUsage &usage,
-               const std::string &attributeName,
-               const std::string &subDbName);
+    void merge(const search::AddressSpaceUsage& usage, const std::string& attributeName,
+               const std::string& subDbName);
 
     const AddressSpaceUsageStats& max_address_space_usage() const noexcept { return _max_usage; }
     const std::string& document_type() const noexcept { return _document_type; }
 
     bool operator==(const AttributeUsageStats& rhs) const {
-        return (_max_usage == rhs._max_usage) &&
-               (_document_type == rhs._document_type);
+        return (_max_usage == rhs._max_usage) && (_document_type == rhs._document_type);
     }
 
     bool less_usage_than(const AttributeUsageStats& new_stats) const noexcept {

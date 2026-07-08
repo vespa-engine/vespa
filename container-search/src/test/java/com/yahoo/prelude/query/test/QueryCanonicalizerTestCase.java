@@ -1,12 +1,31 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.test;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.DocumentFrequency;
+import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.FalseItem;
+import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.QueryCanonicalizer;
+import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.TrueItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.WandItem;
+import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -34,7 +53,7 @@ public class QueryCanonicalizerTestCase {
     void testSingleLevelSingleItemNonReducibleWeakAndItem() {
         CompositeItem root = new WeakAndItem();
         root.addItem(new WordItem("word"));
-        assertCanonicalized("WEAKAND(100) word", null, root);
+        assertCanonicalized("WEAKAND word", null, root);
     }
 
     @Test
@@ -67,10 +86,10 @@ public class QueryCanonicalizerTestCase {
         nestedAnd.addItem(new WordItem("b"));
         nestedAnd.addItem(new WordItem("c"));
         rank.addItem(nestedAnd);
-        WandItem wand = new WandItem("default", 100);
+        WandItem wand = new WandItem("default");
         and.addItem(wand);
 
-        assertCanonicalized("AND a b c WAND(100,0.0,1.0) default}", null, and);
+        assertCanonicalized("AND a b c WAND default}", null, and);
     }
 
     @Test
@@ -140,14 +159,14 @@ public class QueryCanonicalizerTestCase {
 
         l4.addItem(new WordItem("l4"));
 
-        assertCanonicalized("WEAKAND(100) l4 l3 l2 l1", null, root);
+        assertCanonicalized("WEAKAND l4 l3 l2 l1", null, root);
     }
 
     @Test
     void testWeakAndCollapsingRequireSameNAndIndex() {
-        CompositeItem root = new WeakAndItem(10);
-        CompositeItem l1 = new WeakAndItem(100);
-        CompositeItem l2 = new WeakAndItem(100);
+        CompositeItem root = new WeakAndItem(Integer.valueOf(10));
+        CompositeItem l1 = new WeakAndItem(Integer.valueOf(100));
+        CompositeItem l2 = new WeakAndItem(Integer.valueOf(100));
         l2.setIndexName("other");
 
         root.addItem(l1);
@@ -416,7 +435,7 @@ public class QueryCanonicalizerTestCase {
         Query q = new Query("?query=a%20b");
         CompositeItem root = (CompositeItem) q.getModel().getQueryTree().getRoot();
         ((WordItem) root.getItem(0)).setDocumentFrequency(new DocumentFrequency(13, 100));
-        ((WordItem) root.getItem(1)).setDocumentFrequency(new DocumentFrequency(14, 110));;
+        ((WordItem) root.getItem(1)).setDocumentFrequency(new DocumentFrequency(14, 110));
         q.prepare();
         assertEquals("13", q.getRanking().getProperties().get("vespa.term.1.docfreq").get(0));
         assertEquals("100", q.getRanking().getProperties().get("vespa.term.1.docfreq").get(1));

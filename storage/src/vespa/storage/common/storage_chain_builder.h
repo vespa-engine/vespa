@@ -9,10 +9,10 @@ namespace storage {
 /**
  * Class for building a storage chain.
  */
-class StorageChainBuilder : public IStorageChainBuilder
-{
+class StorageChainBuilder : public IStorageChainBuilder {
 protected:
     std::unique_ptr<StorageLink> _top;
+
 public:
     StorageChainBuilder();
     ~StorageChainBuilder() override;
@@ -20,4 +20,4 @@ public:
     std::unique_ptr<StorageLink> build() && override;
 };
 
-}
+} // namespace storage

@@ -3,33 +3,37 @@
 #pragma once
 
 #include "predicate_interval.h"
-#include <vespa/vespalib/data/memory.h>
-#include <climits>
-#include <vector>
-#include <unordered_map>
 
-namespace vespalib::slime { struct Inspector; }
+#include <vespa/vespalib/data/memory.h>
+
+#include <climits>
+#include <unordered_map>
+#include <vector>
+
+namespace vespalib::slime {
+struct Inspector;
+}
 
 namespace search::predicate {
 
 struct RangeFeature {
     vespalib::Memory label;
-    int64_t from;
-    int64_t to;
+    int64_t          from;
+    int64_t          to;
 };
 
 constexpr uint32_t MIN_INTERVAL = 0x0001;
 constexpr uint32_t MAX_INTERVAL = 0xffff;
 
 struct PredicateTreeAnnotations {
-    explicit PredicateTreeAnnotations(uint32_t mf=0, uint16_t ir=MAX_INTERVAL);
+    explicit PredicateTreeAnnotations(uint32_t mf = 0, uint16_t ir = MAX_INTERVAL);
     ~PredicateTreeAnnotations();
-    uint32_t min_feature;
-    uint16_t interval_range;
-    std::unordered_map<uint64_t, std::vector<Interval>> interval_map;
+    uint32_t                                                      min_feature;
+    uint16_t                                                      interval_range;
+    std::unordered_map<uint64_t, std::vector<Interval>>           interval_map;
     std::unordered_map<uint64_t, std::vector<IntervalWithBounds>> bounds_map;
 
-    std::vector<uint64_t> features;
+    std::vector<uint64_t>     features;
     std::vector<RangeFeature> range_features;
 };
 
@@ -38,10 +42,8 @@ struct PredicateTreeAnnotations {
  * intervals used for matching with the interval algorithm.
  */
 struct PredicateTreeAnnotator {
-    static void annotate(const vespalib::slime::Inspector &in,
-                         PredicateTreeAnnotations &result,
-                         int64_t lower_bound=LLONG_MIN,
-                         int64_t upper_bound=LLONG_MAX);
+    static void annotate(const vespalib::slime::Inspector& in, PredicateTreeAnnotations& result,
+                         int64_t lower_bound = LLONG_MIN, int64_t upper_bound = LLONG_MAX);
 };
 
-}  // namespace predicate
+} // namespace search::predicate

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import com.yahoo.component.Version;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -167,16 +169,81 @@ public class NodesSpecificationTest {
         assertEquals(30, spec.minResources().nodes());
         assertEquals( 3, spec.minResources().groups());
         assertEquals(30, spec.maxResources().nodes());
-        assertEquals( 30, spec.maxResources().groups());
+        assertEquals(30, spec.maxResources().groups());
         assertTrue(spec.groupSize().from().isEmpty());
         assertEquals(10, spec.groupSize().to().getAsInt());
+    }
+
+
+    @Test
+    void testVariableGroupCount() {
+        var spec = nodesSpecification("<nodes groups='[1,2]' group-size='3'/>");
+        assertEquals( 3, spec.minResources().nodes());
+        assertEquals( 1, spec.minResources().groups());
+        assertEquals( 6, spec.maxResources().nodes());
+        assertEquals( 2, spec.maxResources().groups());
+        assertEquals( 3, spec.groupSize().from().getAsInt());
+        assertEquals( 3, spec.groupSize().to().getAsInt());
+    }
+
+    @Test
+    void testVariableGroupCount2() {
+        var spec = nodesSpecification("<nodes groups='[,4]' group-size='3'/>");
+        assertEquals( 3, spec.minResources().nodes());
+        assertEquals( 1, spec.minResources().groups()); // No lower limit means 1
+        assertEquals(12, spec.maxResources().nodes());
+        assertEquals( 4, spec.maxResources().groups());
+        assertEquals( 3, spec.groupSize().from().getAsInt());
+        assertEquals( 3, spec.groupSize().to().getAsInt());
+    }
+
+    @Test
+    void testVariableGroupCount3() {
+        var spec = nodesSpecification("<nodes groups='[1, ]' group-size='3'/>");
+        assertEquals(3, spec.minResources().nodes());
+        assertEquals(1, spec.minResources().groups());
+        assertEquals(3, spec.maxResources().nodes());
+        assertEquals(1, spec.maxResources().groups()); // No upper limit means 1
+        assertEquals(3, spec.groupSize().from().getAsInt());
+        assertEquals(3, spec.groupSize().to().getAsInt());
+    }
+
+    @Test
+    void testVariableNodeCount() {
+        var spec = nodesSpecification("<nodes count='[,10]' groups='2'/>");
+        assertEquals( 1, spec.minResources().nodes()); // No lower limit means 1
+        assertEquals( 2, spec.minResources().groups());
+        assertEquals(10, spec.maxResources().nodes());
+        assertEquals( 2, spec.maxResources().groups());
+    }
+
+    @Test
+    void testVariableNodeCount2() {
+        var spec = nodesSpecification("<nodes count='[1,]' groups='2'/>");
+        assertEquals(1, spec.minResources().nodes());
+        assertEquals(2, spec.minResources().groups());
+        assertEquals(1, spec.maxResources().nodes()); // No upper limit means 1
+        assertEquals(2, spec.maxResources().groups());
+    }
+
+    @Test
+    void testValidProfile() {
+        var spec = nodesSpecification("<nodes count='3' profile='large-storage'/>");
+        assertEquals(Optional.of("large-storage"), spec.profile());
+    }
+
+    @Test
+    void testNoProfile() {
+        var spec = nodesSpecification("<nodes count='3'/>");
+        assertTrue(spec.profile().isEmpty());
     }
 
     private NodesSpecification nodesSpecification(String nodesElement) {
         Document nodesXml = XML.getDocument(nodesElement);
         return NodesSpecification.create(false, false, Version.emptyVersion,
                                          new ModelElement(nodesXml.getDocumentElement()),
-                                         Optional.empty(), Optional.empty());
+                                         Optional.empty(), Optional.empty(),
+                                         CloudResourceTags.empty(), List.of());
 
     }
 

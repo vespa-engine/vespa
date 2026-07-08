@@ -4,11 +4,8 @@
 
 namespace search::features::mutable_value {
 
-MutableDenseValueView::MutableDenseValueView(const ValueType &type_in)
-  : _type(type_in),
-    _cells()
-{
+MutableDenseValueView::MutableDenseValueView(const ValueType& type_in) : _type(type_in), _cells() {
     assert(_type.is_dense());
 }
 
-}
+} // namespace search::features::mutable_value

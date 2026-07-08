@@ -11,11 +11,11 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
 
 //-----------------------------------------------------------------------------
 
-void verify_impl(const TensorSpec &a, const TensorSpec &b, const std::string &expr, bool optimized) {
+void verify_impl(const TensorSpec& a, const TensorSpec& b, const std::string& expr, bool optimized) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", a).add("b", b);
     EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
@@ -23,22 +23,22 @@ void verify_impl(const TensorSpec &a, const TensorSpec &b, const std::string &ex
     EXPECT_EQ(fast_fixture.find_all<BestSimilarityFunction>().size(), optimized ? 1 : 0);
 }
 
-void verify(const TensorSpec &a, const TensorSpec &b, const std::string &expr, bool optimized = true) {
+void verify(const TensorSpec& a, const TensorSpec& b, const std::string& expr, bool optimized = true) {
     verify_impl(a, b, expr, optimized);
     verify_impl(b, a, expr, optimized);
 }
 
 //-----------------------------------------------------------------------------
 
-GenSpec gen_double(const std::string &desc, int bias) {
+GenSpec gen_double(const std::string& desc, int bias) {
     return GenSpec::from_desc(desc).cells(CellType::DOUBLE).seq(N(bias));
 }
 
-GenSpec gen_float(const std::string &desc, int bias) {
+GenSpec gen_float(const std::string& desc, int bias) {
     return GenSpec::from_desc(desc).cells(CellType::FLOAT).seq(N(bias));
 }
 
-GenSpec gen_int8(const std::string &desc, int bias) {
+GenSpec gen_int8(const std::string& desc, int bias) {
     return GenSpec::from_desc(desc).cells(CellType::INT8).seq(N(bias));
 }
 
@@ -49,7 +49,7 @@ std::string min_hamming = "reduce(reduce(hamming(a,b),sum,d),min,b)";
 
 TEST(BestSimilarityFunctionTest, result_is_mutable) {
     tensor_function::Inject child(ValueType::double_type(), 0);
-    BestSimilarityFunction node(ValueType::double_type(), child, child, nullptr, 1);
+    BestSimilarityFunction  node(ValueType::double_type(), child, child, nullptr, 1);
     EXPECT_TRUE(node.result_is_mutable());
 }
 

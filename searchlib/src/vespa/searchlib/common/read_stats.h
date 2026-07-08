@@ -10,15 +10,10 @@ namespace search {
  * Struct passed to read functions to pick up information about read
  * stats.
  */
-struct ReadStats
-{
-    uint64_t read_bytes;        // bytes read from disk or bytes in pages containing the data
-    ReadStats() noexcept
-        : read_bytes(0)
-    { }
-    void clear() noexcept {
-        read_bytes = 0;
-    }
+struct ReadStats {
+    uint64_t read_bytes; // bytes read from disk or bytes in pages containing the data
+    ReadStats() noexcept : read_bytes(0) {}
+    void clear() noexcept { read_bytes = 0; }
 };
 
-}
+} // namespace search

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "index_metrics_entry.h"
 #include "field_metrics.h"
+#include "index_metrics_entry.h"
 
 namespace proton {
 
@@ -11,8 +11,7 @@ namespace proton {
  * Class containing metrics for the index aspect of multiple fields, i.e.
  * disk indexes and memory indexes.
  */
-class IndexMetrics : public FieldMetrics<IndexMetricsEntry>
-{
+class IndexMetrics : public FieldMetrics<IndexMetricsEntry> {
 public:
     IndexMetrics(metrics::MetricSet* parent);
     ~IndexMetrics();

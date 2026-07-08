@@ -4,22 +4,19 @@
 
 #include "attributefilebufferwriter.h"
 
-namespace search
-{
+namespace search {
 
 /*
  * BufferWriter implementation that passes full buffers on to
  * memory variant of IAttributeFileWriter.
  */
-class AttributeMemoryFileBufferWriter : public AttributeFileBufferWriter
-{
+class AttributeMemoryFileBufferWriter : public AttributeFileBufferWriter {
 public:
-    AttributeMemoryFileBufferWriter(IAttributeFileWriter &memoryFileWriter);
+    AttributeMemoryFileBufferWriter(IAttributeFileWriter& memoryFileWriter);
 
     ~AttributeMemoryFileBufferWriter() override;
 
     void onFlush(size_t nowSize) override;
 };
-
 
 } // namespace search

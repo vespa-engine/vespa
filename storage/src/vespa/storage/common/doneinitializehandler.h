@@ -17,5 +17,4 @@ struct DoneInitializeHandler {
     virtual void notifyDoneInitializing() = 0;
 };
 
-} // storage
-
+} // namespace storage

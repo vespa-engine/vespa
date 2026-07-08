@@ -14,6 +14,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -63,7 +64,12 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 			if err != nil {
 				return err
 			}
-			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
+			opts := vespa.DeploymentOptions{
+				ApplicationPackage: pkg,
+				Target:             target,
+				AuthMethod:         cli.selectAuthMethod(),
+				BearerToken:        cli.Environment[envvars.VESPA_CLI_DATA_PLANE_TOKEN],
+			}
 			if versionArg != "" {
 				version, err := version.Parse(versionArg)
 				if err != nil {
@@ -77,6 +83,14 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 				if !skipCertCheck {
 					if err := requireCertificate(copyCert, true, cli, target, pkg); err != nil {
 						return err
+					}
+				}
+				if err == nil {
+					if vaultNames := services.VaultNames(); len(vaultNames) > 0 {
+						if vaultErr := vespa.EnsureVaultAccessForDev(target, vaultNames); vaultErr != nil {
+							cli.printWarning("Could not set up vault access: "+vaultErr.Error(),
+								"You may need to configure vault access manually in the Vespa Cloud console")
+						}
 					}
 				}
 			}
@@ -142,7 +156,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			var result vespa.PrepareResult
 			err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
-				result, err = vespa.Prepare(opts)
+				result, err = vespa.Prepare(opts, time.Duration(waitSecs)*time.Second)
 				return err
 			})
 			if err != nil {
@@ -182,7 +196,7 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 				return err
 			}
 			opts := vespa.DeploymentOptions{Target: target}
-			err = vespa.Activate(sessionID, opts)
+			err = vespa.Activate(sessionID, opts, time.Duration(waitSecs)*time.Second)
 			if err != nil {
 				return err
 			}

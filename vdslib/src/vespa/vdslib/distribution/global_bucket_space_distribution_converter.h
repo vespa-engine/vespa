@@ -3,6 +3,7 @@
 #pragma once
 
 #include "distribution.h"
+
 #include <memory>
 
 namespace storage::lib {
@@ -16,4 +17,4 @@ struct GlobalBucketSpaceDistributionConverter {
     static std::unique_ptr<DistributionConfig> string_to_config(const std::string&);
 };
 
-}
+} // namespace storage::lib

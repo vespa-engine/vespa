@@ -12,18 +12,29 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 /**
  * Calls the generate-sources phase in the container lifecycle defined in lifecycle.xml.
@@ -40,7 +51,6 @@ public class GenerateSourcesMojo extends AbstractMojo {
     protected MavenSession session;
 
     @Inject
-    @Requirement
     private BuildPluginManager pluginManager;
 
     @Parameter
@@ -94,7 +104,7 @@ public class GenerateSourcesMojo extends AbstractMojo {
             return parent.getVersion();
 
         String defaultConfigGenVersion = loadDefaultConfigGenVersion();
-        getLog().warn(String.format(
+        getLog().warn(String.format(Locale.ROOT,
                 "Did not find either container or container-dev artifact in project dependencies, "
                 + "using default version '%s' of the config class plugin.",
                 defaultConfigGenVersion));

@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/eval_spec.h>
+#include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
@@ -12,19 +12,19 @@ using namespace vespalib::eval::test;
 
 //-----------------------------------------------------------------------------
 
-TensorSpec ref_eval(const Function &fun, const std::vector<TensorSpec> &params) {
+TensorSpec ref_eval(const Function& fun, const std::vector<TensorSpec>& params) {
     return ReferenceEvaluation::eval(fun, params);
 }
 
-TensorSpec ref_eval(std::shared_ptr<const Function> fun, const std::vector<TensorSpec> &params) {
+TensorSpec ref_eval(std::shared_ptr<const Function> fun, const std::vector<TensorSpec>& params) {
     return ref_eval(*fun, params);
 }
 
-TensorSpec ref_eval(const std::string &expr, const std::vector<TensorSpec> &params) {
+TensorSpec ref_eval(const std::string& expr, const std::vector<TensorSpec>& params) {
     return ref_eval(*Function::parse(expr), params);
 }
 
-TensorSpec make_val(const std::string &expr) {
+TensorSpec make_val(const std::string& expr) {
     return ref_eval(*Function::parse(expr), {});
 }
 
@@ -33,33 +33,27 @@ TensorSpec make_val(const std::string &expr) {
 struct MyEvalTest : EvalSpec::EvalTest {
     size_t pass_cnt = 0;
     size_t fail_cnt = 0;
-    bool print_pass = false;
-    bool print_fail = false;
-    void next_expression(const std::vector<std::string> &,
-                         const std::string &) override {}
-    void handle_case(const std::vector<std::string> &param_names,
-                     const std::vector<double> &param_values,
-                     const std::string &expression,
-                     double expected_result) override
-    {
+    bool   print_pass = false;
+    bool   print_fail = false;
+    void next_expression(const std::vector<std::string>&, const std::string&) override {}
+    void handle_case(const std::vector<std::string>& param_names, const std::vector<double>& param_values,
+                     const std::string& expression, double expected_result) override {
         auto function = Function::parse(param_names, expression);
         ASSERT_FALSE(function->has_error());
         std::vector<TensorSpec> params;
-        for (double param: param_values) {
+        for (double param : param_values) {
             params.push_back(TensorSpec("double").add({}, param));
         }
         auto eval_result = ref_eval(function, params);
         ASSERT_EQ(eval_result.type(), "double");
         double result = eval_result.as_double();
         if (is_same(expected_result, result)) {
-            print_pass && fprintf(stderr, "verifying: %s -> %g ... PASS\n",
-                                  as_string(param_names, param_values, expression).c_str(),
-                                  expected_result);
+            print_pass&& fprintf(stderr, "verifying: %s -> %g ... PASS\n",
+                                 as_string(param_names, param_values, expression).c_str(), expected_result);
             ++pass_cnt;
         } else {
-            print_fail && fprintf(stderr, "verifying: %s -> %g ... FAIL: got %g\n",
-                                  as_string(param_names, param_values, expression).c_str(),
-                                  expected_result, result);
+            print_fail&& fprintf(stderr, "verifying: %s -> %g ... FAIL: got %g\n",
+                                 as_string(param_names, param_values, expression).c_str(), expected_result, result);
             ++fail_cnt;
         }
     }
@@ -69,7 +63,7 @@ struct MyEvalTest : EvalSpec::EvalTest {
 
 TEST(ReferenceEvaluationTest, reference_evaluation_passes_all_eval_spec_tests) {
     MyEvalTest test;
-    EvalSpec spec;
+    EvalSpec   spec;
     test.print_fail = true;
     spec.add_all_cases();
     spec.each_case(test);
@@ -87,9 +81,7 @@ TEST(ReferenceEvaluationTest, reference_evaluation_passes_all_eval_spec_tests) {
 // constant folding.
 
 TEST(ReferenceEvaluationTest, constant_create_expression_works) {
-    auto expect = TensorSpec("tensor(x{},y[2])")
-                  .add({{"x", "a"}, {"y", 0}}, 1.0)
-                  .add({{"x", "a"}, {"y", 1}}, 2.0);
+    auto expect = TensorSpec("tensor(x{},y[2])").add({{"x", "a"}, {"y", 0}}, 1.0).add({{"x", "a"}, {"y", 1}}, 2.0);
     auto result = make_val("tensor(x{},y[2]):{a:[1,2]}");
     EXPECT_EQ(result, expect);
 }
@@ -106,8 +98,7 @@ TEST(ReferenceEvaluationTest, parameter_expression_works) {
 }
 
 TEST(ReferenceEvaluationTest, parameter_expression_will_pad_with_zero) {
-    auto a = TensorSpec("tensor(x[3])")
-             .add({{"x", 1}}, 5.0);
+    auto a = TensorSpec("tensor(x[3])").add({{"x", 1}}, 5.0);
     auto expect = make_val("tensor(x[3]):[0,5,0]");
     EXPECT_EQ(ref_eval("a", {a}), expect);
 }

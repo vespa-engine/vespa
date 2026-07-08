@@ -4,15 +4,17 @@
 
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 
-namespace search { struct IDocumentMetaStoreContext; }
+namespace search {
+struct IDocumentMetaStoreContext;
+}
 
 namespace proton {
 
 class DocumentMetaStore;
 
-class GidToLidMapperFactory : public search::IGidToLidMapperFactory
-{
+class GidToLidMapperFactory : public search::IGidToLidMapperFactory {
     std::shared_ptr<const search::IDocumentMetaStoreContext> _dmsContext;
+
 public:
     GidToLidMapperFactory(std::shared_ptr<const search::IDocumentMetaStoreContext> dmsContext);
     ~GidToLidMapperFactory() override;

@@ -7,42 +7,34 @@ using search::transactionlog::DomainStats;
 
 namespace proton {
 
-TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
-                                                    const std::string &documentType)
+TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet* parent, const std::string& documentType)
     : metrics::MetricSet("transactionlog", {{"documenttype", documentType}},
-            "Transaction log metrics for a document type", parent),
+                         "Transaction log metrics for a document type", parent),
       entries("entries", {}, "The current number of entries in the transaction log", this),
       diskUsage("disk_usage", {}, "The disk usage (in bytes) of the transaction log", this),
-      replayTime("replay_time", {}, "The replay time (in seconds) of the transaction log during start-up", this)
-{
+      replayTime("replay_time", {}, "The replay time (in seconds) of the transaction log during start-up", this) {
 }
 
 TransLogServerMetrics::DomainMetrics::~DomainMetrics() = default;
 
-void
-TransLogServerMetrics::DomainMetrics::update(const DomainInfo &stats)
-{
+void TransLogServerMetrics::DomainMetrics::update(const DomainInfo& stats) {
     entries.set(stats.numEntries);
     diskUsage.set(stats.byteSize);
     replayTime.set(stats.maxSessionRunTime.count());
 }
 
-void
-TransLogServerMetrics::considerAddDomains(const DomainStats &stats)
-{
-    for (const auto &elem : stats) {
-        const std::string &documentType = elem.first;
+void TransLogServerMetrics::considerAddDomains(const DomainStats& stats) {
+    for (const auto& elem : stats) {
+        const std::string& documentType = elem.first;
         if (_domainMetrics.find(documentType) == _domainMetrics.end()) {
             _domainMetrics[documentType] = std::make_unique<DomainMetrics>(_parent, documentType);
         }
     }
 }
 
-void
-TransLogServerMetrics::considerRemoveDomains(const DomainStats &stats)
-{
-    for (auto itr = _domainMetrics.begin(); itr != _domainMetrics.end(); ) {
-        const std::string &documentType = itr->first;
+void TransLogServerMetrics::considerRemoveDomains(const DomainStats& stats) {
+    for (auto itr = _domainMetrics.begin(); itr != _domainMetrics.end();) {
+        const std::string& documentType = itr->first;
         if (stats.find(documentType) == stats.end()) {
             _parent->unregisterMetric(*itr->second);
             itr = _domainMetrics.erase(itr);
@@ -52,25 +44,19 @@ TransLogServerMetrics::considerRemoveDomains(const DomainStats &stats)
     }
 }
 
-void
-TransLogServerMetrics::updateDomainMetrics(const DomainStats &stats)
-{
-    for (const auto &elem : stats) {
-        const std::string &documentType = elem.first;
+void TransLogServerMetrics::updateDomainMetrics(const DomainStats& stats) {
+    for (const auto& elem : stats) {
+        const std::string& documentType = elem.first;
         _domainMetrics.find(documentType)->second->update(elem.second);
     }
 }
 
-TransLogServerMetrics::TransLogServerMetrics(metrics::MetricSet *parent)
-    : _parent(parent)
-{
+TransLogServerMetrics::TransLogServerMetrics(metrics::MetricSet* parent) : _parent(parent) {
 }
 
 TransLogServerMetrics::~TransLogServerMetrics() = default;
 
-void
-TransLogServerMetrics::update(const DomainStats &stats)
-{
+void TransLogServerMetrics::update(const DomainStats& stats) {
     considerAddDomains(stats);
     considerRemoveDomains(stats);
     updateDomainMetrics(stats);

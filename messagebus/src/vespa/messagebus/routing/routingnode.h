@@ -6,14 +6,16 @@
 #include "route.h"
 #include "routingcontext.h"
 #include "routingnodeiterator.h"
+
 #include <vespa/messagebus/idiscardhandler.h>
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/network/iserviceaddress.h>
 #include <vespa/messagebus/reply.h>
-#include <vector>
+
 #include <map>
+#include <vector>
 
 namespace mbus {
 
@@ -29,24 +31,24 @@ class INetwork;
  */
 class RoutingNode : public IReplyHandler {
 private:
-    MessageBus               &_mbus;
-    INetwork                 &_net;
-    Resender                 *_resender;
-    RoutingNode              *_parent;
-    std::vector<Route>        _recipients;
-    std::vector<RoutingNode*> _children;
-    IReplyHandler            *_replyHandler;
-    IDiscardHandler          *_discardHandler;
-    Trace                     _trace;
-    std::atomic<uint32_t>     _pending;
-    Message                  &_msg;
-    Reply::UP                 _reply;
-    Route                     _route;
-    IRoutingPolicy::SP        _policy;
-    std::unique_ptr<RoutingContext>  _routingContext;
-    IServiceAddress::UP              _serviceAddress;
-    bool                             _isActive;
-    bool                             _shouldRetry;
+    MessageBus&                     _mbus;
+    INetwork&                       _net;
+    Resender*                       _resender;
+    RoutingNode*                    _parent;
+    std::vector<Route>              _recipients;
+    std::vector<RoutingNode*>       _children;
+    IReplyHandler*                  _replyHandler;
+    IDiscardHandler*                _discardHandler;
+    Trace                           _trace;
+    std::atomic<uint32_t>           _pending;
+    Message&                        _msg;
+    Reply::UP                       _reply;
+    Route                           _route;
+    IRoutingPolicy::SP              _policy;
+    std::unique_ptr<RoutingContext> _routingContext;
+    IServiceAddress::UP             _serviceAddress;
+    bool                            _isActive;
+    bool                            _shouldRetry;
 
     /**
      * Constructs a new instance of this class. This is the child node
@@ -55,7 +57,7 @@ private:
      * @param parent The parent routing node.
      * @param route  The route to assign to this.
      */
-    RoutingNode(RoutingNode &parent, Route route);
+    RoutingNode(RoutingNode& parent, Route route);
 
     /**
      * Clears the list of child routing node objects, and frees the memory used
@@ -179,7 +181,7 @@ private:
      *
      * @param hop The blueprint to use for configuration.
      */
-    void configureFromBlueprint(const HopBlueprint &hop);
+    void configureFromBlueprint(const HopBlueprint& hop);
 
     /**
      * This method mergs this node as ready for merge. If it has a parent
@@ -191,7 +193,7 @@ private:
     void notifyParent();
 
     /**
-     * If a reply has been set containing an error, and {@link 
+     * If a reply has been set containing an error, and {@link
      * #shouldIgnoreResult()} returns <tt>true</tt>, this method replaces that
      * reply with one that has no error.
      *
@@ -225,9 +227,8 @@ public:
      * @param msg            The message being sent.
      * @param discardHandler The handler to notify when discarding this.
      */
-    RoutingNode(MessageBus &mbus, INetwork &net, Resender *resender,
-                IReplyHandler &replyHandler, Message &msg,
-                IDiscardHandler *discardHandler = nullptr);
+    RoutingNode(MessageBus& mbus, INetwork& net, Resender* resender, IReplyHandler& replyHandler, Message& msg,
+                IDiscardHandler* discardHandler = nullptr);
 
     /**
      * Destructor. Frees up any allocated resources, namely all child nodes of
@@ -278,7 +279,7 @@ public:
      *
      * @param msg The error message to assign.
      */
-    void notifyAbort(const string &msg);
+    void notifyAbort(const string& msg);
 
     /**
      * Adds a child routing node to this based on a route. This is package
@@ -295,7 +296,7 @@ public:
      * @param code The code of the error to set.
      * @param msg  The message of the error to set.
      */
-    void setError(uint32_t code, const string &msg);
+    void setError(uint32_t code, const string& msg);
 
     /**
      * This is a convenience method to assign an {@link EmptyReply} containing a
@@ -305,7 +306,7 @@ public:
      * @param err The error to set.
      * @see #setReply(Reply)
      */
-    void setError(const Error &err);
+    void setError(const Error& err);
 
     /**
      * This is a convenience method to call {@link #addError(Error)}.
@@ -313,7 +314,7 @@ public:
      * @param code The code of the error to add.
      * @param msg  The message of the error to add.
      */
-    void addError(uint32_t code, const string &msg);
+    void addError(uint32_t code, const string& msg);
 
     /**
      * This is a convenience method to add an error to this. If a reply has
@@ -323,21 +324,21 @@ public:
      *
      * @param err The error to add.
      */
-    void addError(const Error &err);
+    void addError(const Error& err);
 
     /**
      * Returns the message bus being used to send the message.
      *
      * @return The message bus.
      */
-    MessageBus &getMessageBus() { return _mbus; }
+    MessageBus& getMessageBus() { return _mbus; }
 
     /**
      * Returns the network being used to send the message.
      *
      * @return The network layer.
      */
-    INetwork &getNetwork() { return _net; }
+    INetwork& getNetwork() { return _net; }
 
     /**
      * Returns the message being routed. You should NEVER modify a message that
@@ -346,8 +347,8 @@ public:
      *
      * @return The message being routed.
      */
-    Message &getMessage() { return _msg; }
-    const Message & getMessage() const { return _msg; }
+    Message& getMessage() { return _msg; }
+    const Message& getMessage() const { return _msg; }
 
     /**
      * Returns the trace object for this node. Each node has a separate trace
@@ -355,15 +356,15 @@ public:
      *
      * @return The trace object.
      */
-    Trace &getTrace() { return _trace; }
-    const Trace &getTrace() const { return _trace; }
+    Trace& getTrace() { return _trace; }
+    const Trace& getTrace() const { return _trace; }
 
     /**
      * Returns the route object as it exists at this point of the tree.
      *
      * @return The route at this point.
      */
-    const Route &getRoute() const { return _route; }
+    const Route& getRoute() const { return _route; }
 
     /**
      * Returns whether or not this node contains a reply.
@@ -386,7 +387,7 @@ public:
      *
      * @return The reply assigned to this node.
      */
-    Reply &getReplyRef() { return *_reply; }
+    Reply& getReplyRef() { return *_reply; }
 
     /**
      * Sets the reply of this routing node. This method also updates the
@@ -405,7 +406,7 @@ public:
      *
      * @return The list of recipients.
      */
-    std::vector<Route> &getRecipients() { return _recipients; }
+    std::vector<Route>& getRecipients() { return _recipients; }
 
     /**
      * Returns the list of current child nodes. This is accessed by client code
@@ -413,7 +414,7 @@ public:
      *
      * @return The list of children.
      */
-    std::vector<RoutingNode*> &getChildren() { return _children; }
+    std::vector<RoutingNode*>& getChildren() { return _children; }
 
     /**
      * Returns whether or not the service address of this node has been set.
@@ -429,8 +430,8 @@ public:
      *
      * @return The recipient address.
      */
-    IServiceAddress &getServiceAddress() { return *_serviceAddress; }
-    const IServiceAddress &getServiceAddress() const { return *_serviceAddress; }
+    IServiceAddress& getServiceAddress() { return *_serviceAddress; }
+    const IServiceAddress& getServiceAddress() const { return *_serviceAddress; }
 
     /**
      * Sets the service address of this node. This is called by the network
@@ -445,4 +446,3 @@ public:
 };
 
 } // namespace mbus
-

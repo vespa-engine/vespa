@@ -5,31 +5,28 @@
 
 namespace vsm {
 
-template <typename T>
-class FloatFieldSearcherT : public FieldSearcher
-{
+template <typename T> class FloatFieldSearcherT : public FieldSearcher {
 public:
     explicit FloatFieldSearcherT(FieldIdT fId);
     ~FloatFieldSearcherT() override;
-    void prepare(search::streaming::QueryTermList& qtl,
-                 const SharedSearcherBuf& buf,
-                 const vsm::FieldPathMapT& field_paths,
-                 search::fef::IQueryEnvironment& query_env) override;
-    void onValue(const document::FieldValue & fv) override;
+    void prepare(search::streaming::QueryTermList& qtl, const SharedSearcherBuf& buf,
+                 const vsm::FieldPathMapT& field_paths, search::fef::IQueryEnvironment& query_env) override;
+    void onValue(const document::FieldValue& fv) override;
+
 protected:
-    class FloatInfo
-    {
+    class FloatInfo {
     public:
-        FloatInfo(T low, T high, bool v) noexcept : _lower(low), _upper(high), _valid(v) { }
+        FloatInfo(T low, T high, bool v) noexcept : _lower(low), _upper(high), _valid(v) {}
         bool cmp(T key) const;
-        bool valid()          const { return _valid; }
-        void setValid(bool v)       { _valid = v; }
-        T getLow()            const { return _lower; }
-        T getHigh()           const { return _upper; }
+        bool valid() const { return _valid; }
+        void setValid(bool v) { _valid = v; }
+        T getLow() const { return _lower; }
+        T getHigh() const { return _upper; }
+
     private:
-        T _lower;
-        T _upper;
-        bool    _valid;
+        T    _lower;
+        T    _upper;
+        bool _valid;
     };
     using FloatInfoListT = std::vector<FloatInfo>;
     FloatInfoListT _floatTerm;
@@ -38,19 +35,16 @@ protected:
 using FloatFieldSearcherTF = FloatFieldSearcherT<float>;
 using FloatFieldSearcherTD = FloatFieldSearcherT<double>;
 
-class FloatFieldSearcher : public FloatFieldSearcherTF
-{
+class FloatFieldSearcher : public FloatFieldSearcherTF {
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    explicit FloatFieldSearcher(FieldIdT fId) : FloatFieldSearcherTF(fId) { }
+    explicit FloatFieldSearcher(FieldIdT fId) : FloatFieldSearcherTF(fId) {}
 };
 
-class DoubleFieldSearcher : public FloatFieldSearcherTD
-{
+class DoubleFieldSearcher : public FloatFieldSearcherTD {
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    DoubleFieldSearcher(FieldIdT fId) : FloatFieldSearcherTD(fId) { }
+    DoubleFieldSearcher(FieldIdT fId) : FloatFieldSearcherTD(fId) {}
 };
 
-}
-
+} // namespace vsm

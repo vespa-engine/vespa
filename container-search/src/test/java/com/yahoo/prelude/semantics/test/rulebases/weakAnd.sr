@@ -1,0 +1,13 @@
+@default
+
+# Abbreviation expansions
+tva +> taxe sur la valeur ajoutée; taxe sur la valeur ajoutée +> tva;
+
+# Replacing EQUIV rules exercising an emptied single-term weakAnd root, incl. mixed target types
+ig -> =ig =instagram;
+fbb -> =facebook;
+q3 -> =a3 =b3 =c3;
+nyc -> =nyc ="new york";
+mix -> =foo bar;
+neg -> =foo -bar;
+orthr -> =foo ?bar;

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_attribute_writer.h"
+
 #include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
@@ -21,5 +22,4 @@ public:
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
-}
-
+} // namespace proton

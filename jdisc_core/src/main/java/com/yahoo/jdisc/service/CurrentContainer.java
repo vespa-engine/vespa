@@ -23,7 +23,7 @@ public interface CurrentContainer {
 
     /**
      * Returns a reference to the currently active {@link Container}. Until {@link Container#release()} has been called,
-     * the Container can not shut down.
+     * the Container cannot shut down.
      *
      * @param uri The identifier used to match this Request to an appropriate {@link ClientProvider} or {@link
      *            RequestHandler}. The hostname must be "localhost" or a fully qualified domain name.

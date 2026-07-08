@@ -9,8 +9,7 @@ class FastOS_FileInterface;
 
 namespace search {
 
-class FileAlign
-{
+class FileAlign {
 private:
     size_t _directIOFileAlign;
     size_t _preferredFileAlign;
@@ -19,7 +18,6 @@ private:
     size_t _elemSize;
     size_t _directIOMemAlign;
     bool   _directio;
-
 
 public:
     FileAlign();
@@ -59,7 +57,7 @@ public:
      *
      * @return adjusted number of elements in buffer
      */
-    size_t setupAlign(size_t elements, size_t elemSize, FastOS_FileInterface *file, size_t preferredFileAlignment);
+    size_t setupAlign(size_t elements, size_t elemSize, FastOS_FileInterface* file, size_t preferredFileAlignment);
     bool getDirectIO() const { return _directio; }
     size_t getDirectIOFileAlign() const { return _directIOFileAlign; }
     size_t getDirectIOMemAlign() const { return _directIOMemAlign; }
@@ -69,4 +67,4 @@ public:
     size_t getElemSize() const { return _elemSize; }
 };
 
-}
+} // namespace search

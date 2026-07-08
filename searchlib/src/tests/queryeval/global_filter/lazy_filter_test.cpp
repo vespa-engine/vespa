@@ -2,23 +2,23 @@
 
 #include "vespa/searchcommon/attribute/config.h"
 #include "vespa/searchlib/attribute/attribute_blueprint_factory.h"
+#include "vespa/searchlib/attribute/integerbase.h"
+#include "vespa/searchlib/query/tree/querybuilder.h"
+#include "vespa/searchlib/query/tree/simplequery.h"
+
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include "vespa/searchlib/attribute/integerbase.h"
 #include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
-
-#include "vespa/searchlib/query/tree/querybuilder.h"
-#include "vespa/searchlib/query/tree/simplequery.h"
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/lazy_filter.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vector>
 
@@ -27,7 +27,7 @@ using namespace search::attribute;
 using namespace search::common;
 using namespace search::queryeval;
 
-class LazyFilterTest: public ::testing::Test {
+class LazyFilterTest : public ::testing::Test {
 protected:
     std::shared_ptr<GlobalFilter> _multiples_of_four;
     std::shared_ptr<GlobalFilter> _multiples_of_six;
@@ -39,9 +39,7 @@ protected:
     static std::vector<uint32_t> get_multiples_of(uint32_t number, uint32_t up_to);
 };
 
-LazyFilterTest::LazyFilterTest()
-    : ::testing::Test()
-{
+LazyFilterTest::LazyFilterTest() : ::testing::Test() {
     _multiples_of_four = GlobalFilter::create(get_multiples_of(4, 100), 100);
     _multiples_of_six = GlobalFilter::create(get_multiples_of(6, 150), 150);
     _multiples_of_seven = GlobalFilter::create(get_multiples_of(7, 200), 200);
@@ -50,8 +48,7 @@ LazyFilterTest::LazyFilterTest()
 
 LazyFilterTest::~LazyFilterTest() = default;
 
-std::vector<uint32_t>
-LazyFilterTest::get_multiples_of(uint32_t number, uint32_t up_to) {
+std::vector<uint32_t> LazyFilterTest::get_multiples_of(uint32_t number, uint32_t up_to) {
     std::vector<uint32_t> multiples;
     for (uint32_t i = 1; number * i < up_to; i += 1) {
         multiples.push_back(number * i);
@@ -92,25 +89,28 @@ TEST_F(LazyFilterTest, fallback_filter_check) {
 
 class LoggingGlobalFilter : public GlobalFilter {
 private:
-    const GlobalFilter & _global_filter;
-    mutable uint32_t _number_of_checks;
+    const GlobalFilter& _global_filter;
+    mutable uint32_t    _number_of_checks;
 
 public:
-    LoggingGlobalFilter(const GlobalFilter & global_filter) noexcept
-        : _global_filter(global_filter),
-          _number_of_checks(0) {
-    }
+    LoggingGlobalFilter(const GlobalFilter& global_filter) noexcept
+        : _global_filter(global_filter), _number_of_checks(0) {}
     bool is_active() const override { return _global_filter.is_active(); }
     uint32_t size() const override { return _global_filter.size(); }
     uint32_t count() const override { return _global_filter.count(); }
-    bool check(uint32_t index) const override { ++_number_of_checks; return _global_filter.check(index); }
+    bool check(uint32_t index) const override {
+        ++_number_of_checks;
+        return _global_filter.check(index);
+    }
 
     uint32_t get_number_of_checks() const { return _number_of_checks; }
 };
 
 TEST_F(LazyFilterTest, fallback_filter_fallback_is_checked_only_when_necessary) {
-    std::shared_ptr<LoggingGlobalFilter> logging_multiples_of_four = std::make_shared<LoggingGlobalFilter>(*_multiples_of_four);
-    std::shared_ptr<LoggingGlobalFilter> logging_multiples_of_eight = std::make_shared<LoggingGlobalFilter>(*_multiples_of_eight);
+    std::shared_ptr<LoggingGlobalFilter> logging_multiples_of_four =
+        std::make_shared<LoggingGlobalFilter>(*_multiples_of_four);
+    std::shared_ptr<LoggingGlobalFilter> logging_multiples_of_eight =
+        std::make_shared<LoggingGlobalFilter>(*_multiples_of_eight);
     auto and_filter = FallbackFilter::create(*logging_multiples_of_four, *logging_multiples_of_eight);
 
     EXPECT_EQ(0, logging_multiples_of_four->get_number_of_checks());
@@ -165,14 +165,14 @@ TEST_F(LazyFilterTest, and_filter_check) {
 using Position = std::pair<int32_t, int32_t>;
 using Positions = std::vector<Position>;
 
-class LocationLazyFilterTest: public ::testing::Test {
+class LocationLazyFilterTest : public ::testing::Test {
 protected:
     search::attribute::test::MockAttributeManager _attribute_manager;
-    FieldSpec _field_spec_my_location;
-    FieldSpec _field_spec_my_location_many;
-    AttributeVector::SP   _location_attribute;
-    AttributeVector::SP   _location_attribute_many;
-    std::deque<Location>  _locations;
+    FieldSpec                                     _field_spec_my_location;
+    FieldSpec                                     _field_spec_my_location_many;
+    AttributeVector::SP                           _location_attribute;
+    AttributeVector::SP                           _location_attribute_many;
+    std::deque<Location>                          _locations;
 
 public:
     LocationLazyFilterTest()
@@ -181,11 +181,10 @@ public:
           _field_spec_my_location_many("my_location_many", 2, 2),
           _location_attribute(create_location_attribute(_field_spec_my_location.getName(), 10)),
           _location_attribute_many(create_location_attribute(_field_spec_my_location_many.getName(), 1000)),
-          _locations() {
-    }
+          _locations() {}
     ~LocationLazyFilterTest() override;
 
-    AttributeVector::SP create_location_attribute(const std::string &name, uint32_t num_documents) {
+    AttributeVector::SP create_location_attribute(const std::string& name, uint32_t num_documents) {
         // Create AttributeVector
         Config cfg(BasicType::INT64, CollectionType::SINGLE);
         cfg.setFastSearch(true);
@@ -194,7 +193,7 @@ public:
 
         // Add documents
         AttributeVector::DocId docid;
-        //attr->addReservedDoc(); // called in MockAttributeManager
+        // attr->addReservedDoc(); // called in MockAttributeManager
         for (size_t i = 1; i <= num_documents; ++i) {
             attr->addDoc(docid);
         }
@@ -202,7 +201,7 @@ public:
         EXPECT_EQ(num_documents, docid);
 
         // Add positions to documents
-        IntegerAttribute *ia = dynamic_cast<IntegerAttribute *>(attr.get());
+        IntegerAttribute* ia = dynamic_cast<IntegerAttribute*>(attr.get());
         EXPECT_TRUE(ia != nullptr);
         Position invalid(0, 0x80000000);
         set_doc(ia, 1, num_documents, Position(10000, 15000));
@@ -217,7 +216,7 @@ public:
         return attr;
     }
 
-    void set_doc(IntegerAttribute *ia, uint32_t docid, uint32_t num_documents, const Position &p) {
+    void set_doc(IntegerAttribute* ia, uint32_t docid, uint32_t num_documents, const Position& p) {
         if (docid <= num_documents) {
             ia->clearDoc(docid);
             int64_t value = vespalib::geo::ZCurve::encode(p.first, p.second);
@@ -226,7 +225,8 @@ public:
         }
     }
 
-    std::shared_ptr<LocationLazyFilter> create_lazy_filter(const GeoLocation &geo_location, uint32_t est_hits = 2, bool empty = false) {
+    std::shared_ptr<LocationLazyFilter> create_lazy_filter(const GeoLocation& geo_location, uint32_t est_hits = 2,
+                                                           bool empty = false) {
         // LocationLazyFilter stores a reference to the Location (but not to the HitEstimate)
         // We store the Location in a std::deque to get a reference that remains valid
         _locations.emplace_back(geo_location);
@@ -314,10 +314,11 @@ TEST_F(LocationLazyFilterTest, location_filter_check_docids_over_limit) {
 class LazyFilterCreationTest : public LocationLazyFilterTest {
 protected:
     search::AttributeBlueprintFactory _factory;
-    IAttributeContext::UP _attribute_context;
-    FakeRequestContext _request_context;
-    FieldSpec _field_spec_my_double;
-    search::fef::MatchDataLayout _mdl;
+    IAttributeContext::UP             _attribute_context;
+    FakeRequestContext                _request_context;
+    FieldSpec                         _field_spec_my_double;
+    search::fef::MatchDataLayout      _mdl;
+
 public:
     LazyFilterCreationTest()
         : _factory(),
@@ -325,21 +326,24 @@ public:
           _request_context(_attribute_context.get()),
           _field_spec_my_double("my_double", 3, 3),
           _mdl() {
-        _attribute_manager.addAttribute(search::AttributeFactory::createAttribute(_field_spec_my_double.getName(), Config(BasicType::DOUBLE)));
+        _attribute_manager.addAttribute(
+            search::AttributeFactory::createAttribute(_field_spec_my_double.getName(), Config(BasicType::DOUBLE)));
     }
     Blueprint::UP create_location_blueprint(const FieldSpec& field_spec, const GeoLocation& geo_location) {
-            Location location(geo_location);
-            //location.setVec(*_location_attribute_many);
-            location.setVec(*_attribute_manager.getAttribute(field_spec.getName())->get());
+        Location location(geo_location);
+        // location.setVec(*_location_attribute_many);
+        location.setVec(*_attribute_manager.getAttribute(field_spec.getName())->get());
 
-            query::QueryBuilder<query::SimpleQueryNodeTypes> builder;
-            builder.addLocationTerm(location, field_spec.getName(), 42, search::query::Weight(1));
-            query::Node::UP node = builder.build();
+        query::QueryBuilder<query::SimpleQueryNodeTypes> builder;
+        builder.addLocationTerm(location, field_spec.getName(), 42, search::query::Weight(1));
+        query::Node::UP node = builder.build();
 
-            return _factory.createBlueprint(_request_context, field_spec, *node, _mdl);
+        return _factory.createBlueprint(_request_context, field_spec, *node, _mdl);
     }
-    Blueprint::UP create_range_blueprint(const FieldSpec& field_spec, const std::string& from, const std::string& to) {
-        search::query::SimpleNumberTerm term(vespalib::make_string("[%s;%s]", from.c_str(), to.c_str()), field_spec.getName(), 0, search::query::Weight(1));
+    Blueprint::UP create_range_blueprint(const FieldSpec& field_spec, const std::string& from,
+                                         const std::string& to) {
+        search::query::SimpleNumberTerm term(vespalib::make_string("[%s;%s]", from.c_str(), to.c_str()),
+                                             field_spec.getName(), 0, search::query::Weight(1));
         return _factory.createBlueprint(_request_context, field_spec, term, _mdl);
     }
 };
@@ -352,8 +356,8 @@ TEST_F(LazyFilterCreationTest, creation_from_location_blueprint) {
 }
 
 TEST_F(LazyFilterCreationTest, creation_from_location_blueprint_low_hit_ratio) {
-    // Having a low hit ratio (less than 10%) means that a LocationPreFilterBlueprint is generated in addition to a LocationPostFilterBlueprint
-    // Make sure that we also get a lazy filter in this case
+    // Having a low hit ratio (less than 10%) means that a LocationPreFilterBlueprint is generated in addition to a
+    // LocationPostFilterBlueprint Make sure that we also get a lazy filter in this case
     Blueprint::UP root = create_location_blueprint(_field_spec_my_location_many, GeoLocation({0, 0}, 1u << 30));
     std::cout << root->asString() << std::endl;
     std::shared_ptr<GlobalFilter> filter = root->create_lazy_filter();
@@ -432,7 +436,7 @@ TEST_F(LazyFilterCreationTest, functional_test_from_and_blueprint) {
 
     std::shared_ptr<GlobalFilter> filter = root->create_lazy_filter();
     EXPECT_FALSE(filter->check(11)); // document has coordinates 10000, 15001
-    EXPECT_TRUE(filter->check(12)); // document has coordinates 10000, 15003
+    EXPECT_TRUE(filter->check(12));  // document has coordinates 10000, 15003
     EXPECT_FALSE(filter->check(13)); // document has coordinates 10000, 15005
 }
 

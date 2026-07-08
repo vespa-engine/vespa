@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "regex_predicate_node.h"
+
 #include "resultnode.h"
 #include "resultvector.h"
 
@@ -19,10 +20,11 @@ void RegexPredicateNode::RE::compile() {
 
 bool RegexPredicateNode::check(const ResultNode* result) const {
     if (result->inherits(ResultNodeVector::classId)) {
-        const auto * rv = static_cast<const ResultNodeVector *>(result);
+        const auto* rv = static_cast<const ResultNodeVector*>(result);
         for (size_t i = 0; i < rv->size(); i++) {
             HoldString tmp(*rv, i);
-            if (_re.regex.full_match(tmp)) return true;
+            if (_re.regex.full_match(tmp))
+                return true;
         }
         return false;
     } else {
@@ -31,7 +33,7 @@ bool RegexPredicateNode::check(const ResultNode* result) const {
     }
 }
 
-bool RegexPredicateNode::allow(const document::Document & doc, HitRank rank) {
+bool RegexPredicateNode::allow(const document::Document& doc, HitRank rank) {
     if (_argument.getRoot()) {
         _argument.execute(doc, rank);
         return check(_argument.getResult());
@@ -47,20 +49,20 @@ bool RegexPredicateNode::allow(DocId docId, HitRank rank) {
     return false;
 }
 
-RegexPredicateNode::RegexPredicateNode() noexcept : _re(), _argument() {}
+RegexPredicateNode::RegexPredicateNode() noexcept : _re(), _argument() {
+}
 
 RegexPredicateNode::~RegexPredicateNode() = default;
 
 RegexPredicateNode::RegexPredicateNode(std::string regex, ExpressionNode::UP input)
-  : _re(),
-    _argument(std::move(input))
-{
+    : _re(), _argument(std::move(input)) {
     _re.pattern = regex;
     _re.compile();
 }
 
-
-Serializer& RegexPredicateNode::onSerialize(Serializer& os) const { return os << _re.pattern << _argument; }
+Serializer& RegexPredicateNode::onSerialize(Serializer& os) const {
+    return os << _re.pattern << _argument;
+}
 
 Deserializer& RegexPredicateNode::onDeserialize(Deserializer& is) {
     is >> _re.pattern;
@@ -75,7 +77,7 @@ void RegexPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
 }
 
 void RegexPredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate,
-                                       vespalib::ObjectOperation& operation) {
+                                       vespalib::ObjectOperation&       operation) {
     _argument.select(predicate, operation);
 }
 

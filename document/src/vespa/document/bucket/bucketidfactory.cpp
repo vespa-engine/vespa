@@ -1,28 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketidfactory.h"
+
 #include "bucketid.h"
+
 #include <vespa/document/base/documentid.h>
-#include <ostream>
+
 #include <cassert>
 #include <limits>
+#include <ostream>
 
 namespace document {
 
 BucketIdFactory::BucketIdFactory()
-    : _locationBits(32),
-      _gidBits(26),
-      _countBits(6),
-      _locationMask(0),
-      _gidMask(0),
-      _initialCount(0)
-{
+    : _locationBits(32), _gidBits(26), _countBits(6), _locationMask(0), _gidMask(0), _initialCount(0) {
     initializeMasks();
 }
 
-void
-BucketIdFactory::initializeMasks()
-{
+void BucketIdFactory::initializeMasks() {
     assert(_countBits == 6);
     _locationMask = _gidMask = std::numeric_limits<uint64_t>::max();
 
@@ -37,25 +32,18 @@ BucketIdFactory::initializeMasks()
     _initialCount <<= 58;
 }
 
-BucketId
-BucketIdFactory::getBucketId(const DocumentId& id) const
-{
+BucketId BucketIdFactory::getBucketId(const DocumentId& id) const {
     uint64_t location = id.getScheme().getLocation();
     assert(GlobalId::LENGTH >= sizeof(uint64_t) + 4u);
     uint64_t gid;
     memcpy(&gid, id.getGlobalId().get() + 4, sizeof(gid));
 
-    return BucketId(_locationBits + _gidBits,
-        _initialCount | (_gidMask & gid) | (_locationMask & location));
+    return BucketId(_locationBits + _gidBits, _initialCount | (_gidMask & gid) | (_locationMask & location));
 }
 
-void
-BucketIdFactory::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
-    out << "BucketIdFactory("
-        << _locationBits << " location bits, "
-        << _gidBits << " gid bits, "
-        << _countBits << " count bits";
+void BucketIdFactory::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "BucketIdFactory(" << _locationBits << " location bits, " << _gidBits << " gid bits, " << _countBits
+        << " count bits";
     if (verbose) {
         out << std::hex;
         out << ",\n" << indent << "                location mask: " << _locationMask;
@@ -66,4 +54,4 @@ BucketIdFactory::print(std::ostream& out, bool verbose, const std::string& inden
     out << ")";
 }
 
-} // document
+} // namespace document

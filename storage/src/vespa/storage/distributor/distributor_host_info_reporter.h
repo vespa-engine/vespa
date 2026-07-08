@@ -3,6 +3,7 @@
 
 #include <vespa/storage/common/hostreporter/hostreporter.h>
 #include <vespa/storage/distributor/content_node_message_stats_tracker.h>
+
 #include <mutex>
 
 namespace storage::distributor {
@@ -11,12 +12,11 @@ class BucketSpacesStatsProvider;
 class ContentNodeStatsProvider;
 class MinReplicaProvider;
 
-class DistributorHostInfoReporter : public HostReporter
-{
+class DistributorHostInfoReporter : public HostReporter {
 public:
-    DistributorHostInfoReporter(MinReplicaProvider& minReplicaProvider,
+    DistributorHostInfoReporter(MinReplicaProvider&        minReplicaProvider,
                                 BucketSpacesStatsProvider& bucketSpacesStatsProvider,
-                                ContentNodeStatsProvider& content_node_stats_provider);
+                                ContentNodeStatsProvider&  content_node_stats_provider);
 
     DistributorHostInfoReporter(const DistributorHostInfoReporter&) = delete;
     DistributorHostInfoReporter& operator=(const DistributorHostInfoReporter&) = delete;
@@ -36,4 +36,4 @@ private:
     mutable std::mutex                        _stat_mutex;
 };
 
-} // storage::distributor
+} // namespace storage::distributor

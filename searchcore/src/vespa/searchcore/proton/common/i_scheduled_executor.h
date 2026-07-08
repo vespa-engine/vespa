@@ -2,8 +2,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+#include <vespa/vespalib/util/time.h>
+
 #include <memory>
 
 namespace proton {
@@ -26,7 +27,8 @@ public:
      * @param interval The interval between the task is executed.
      * @return A handle that will cancel the recurring task when it goes out of scope
      */
-    [[nodiscard]] virtual Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) = 0;
+    [[nodiscard]] virtual Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay,
+                                                     duration interval) = 0;
 };
 
-}
+} // namespace proton

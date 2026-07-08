@@ -1,62 +1,54 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "gid_to_lid_change_handler.h"
+
 #include "i_gid_to_lid_change_listener.h"
 #include "pending_gid_to_lid_changes.h"
+
 #include <vespa/vespalib/util/lambdatask.h>
-#include <cassert>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <cassert>
 
 using vespalib::makeLambdaTask;
 
 namespace proton {
 
 GidToLidChangeHandler::GidToLidChangeHandler()
-    : _lock(),
-      _listeners(),
-      _closed(false),
-      _pendingRemove(),
-      _pending_changes()
-{
+    : _lock(), _listeners(), _closed(false), _pendingRemove(), _pending_changes() {
 }
 
-GidToLidChangeHandler::~GidToLidChangeHandler()
-{
+GidToLidChangeHandler::~GidToLidChangeHandler() {
     assert(_closed);
     assert(_listeners.empty());
     assert(_pendingRemove.empty());
 }
 
-void
-GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid)
-{
-    for (const auto &listener : _listeners) {
+void GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid) {
+    for (const auto& listener : _listeners) {
         listener->notifyPutDone(context, gid, lid);
     }
 }
 
-void
-GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, GlobalId gid)
-{
-    for (const auto &listener : _listeners) {
+void GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, GlobalId gid) {
+    for (const auto& listener : _listeners) {
         listener->notifyRemove(context, gid);
     }
 }
 
-void
-GidToLidChangeHandler::notifyPut(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serial_num)
-{
+void GidToLidChangeHandler::notifyPut(IDestructorCallbackSP context, GlobalId gid, uint32_t lid,
+                                      SerialNum serial_num) {
     lock_guard guard(_lock);
     _pending_changes.emplace_back(std::move(context), gid, lid, serial_num, false);
 }
 
-void
-GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum)
-{
+void GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid,
+                                          SerialNum serialNum) {
     lock_guard guard(_lock);
-    auto itr = _pendingRemove.find(gid);
+    auto       itr = _pendingRemove.find(gid);
     if (itr != _pendingRemove.end()) {
-        auto &entry = itr->second;
+        auto& entry = itr->second;
         assert(entry.removeSerialNum != serialNum);
         if (entry.removeSerialNum > serialNum) {
             return; // Document has already been removed later on
@@ -70,15 +62,14 @@ GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid
     notifyPutDone(std::move(context), gid, lid);
 }
 
-void
-GidToLidChangeHandler::notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum)
-{
+void GidToLidChangeHandler::notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId>& gids,
+                                          SerialNum serialNum) {
     lock_guard guard(_lock);
     _pending_changes.reserve(vespalib::roundUp2inN(_pending_changes.size() + gids.size()));
-    for (const GlobalId & gid : gids) {
+    for (const GlobalId& gid : gids) {
         auto insRes = _pendingRemove.insert(std::make_pair(gid, PendingRemoveEntry(serialNum)));
         if (!insRes.second) {
-            auto &entry = insRes.first->second;
+            auto& entry = insRes.first->second;
             assert(entry.removeSerialNum < serialNum);
             assert(entry.putSerialNum < serialNum);
             if (entry.removeSerialNum < entry.putSerialNum) {
@@ -93,13 +84,11 @@ GidToLidChangeHandler::notifyRemoves(IDestructorCallbackSP context, const std::v
     }
 }
 
-void
-GidToLidChangeHandler::notifyRemoveDone(GlobalId gid, SerialNum serialNum)
-{
+void GidToLidChangeHandler::notifyRemoveDone(GlobalId gid, SerialNum serialNum) {
     lock_guard guard(_lock);
-    auto itr = _pendingRemove.find(gid);
+    auto       itr = _pendingRemove.find(gid);
     assert(itr != _pendingRemove.end());
-    auto &entry = itr->second;
+    auto& entry = itr->second;
     assert(entry.removeSerialNum >= serialNum);
     if (entry.refCount == 1) {
         _pendingRemove.erase(itr);
@@ -108,9 +97,7 @@ GidToLidChangeHandler::notifyRemoveDone(GlobalId gid, SerialNum serialNum)
     }
 }
 
-std::unique_ptr<IPendingGidToLidChanges>
-GidToLidChangeHandler::grab_pending_changes()
-{
+std::unique_ptr<IPendingGidToLidChanges> GidToLidChangeHandler::grab_pending_changes() {
     lock_guard guard(_lock);
     if (_pending_changes.empty()) {
         return {};
@@ -118,9 +105,7 @@ GidToLidChangeHandler::grab_pending_changes()
     return std::make_unique<PendingGidToLidChanges>(*this, std::move(_pending_changes));
 }
 
-void
-GidToLidChangeHandler::close()
-{
+void GidToLidChangeHandler::close() {
     Listeners deferredDelete;
     {
         lock_guard guard(_lock);
@@ -129,14 +114,12 @@ GidToLidChangeHandler::close()
     }
 }
 
-void
-GidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> listener)
-{
+void GidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> listener) {
     lock_guard guard(_lock);
     if (!_closed) {
-        const std::string &docTypeName = listener->getDocTypeName();
-        const std::string &name = listener->getName();
-        for (const auto &oldlistener : _listeners) {
+        const std::string& docTypeName = listener->getDocTypeName();
+        const std::string& name = listener->getName();
+        for (const auto& oldlistener : _listeners) {
             if (oldlistener->getDocTypeName() == docTypeName && oldlistener->getName() == name) {
                 return;
             }
@@ -156,20 +139,14 @@ GidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> list
 
 namespace {
 
-bool shouldRemoveListener(const IGidToLidChangeListener &listener,
-                          const std::string &docTypeName,
-                          const std::set<std::string> &keepNames)
-{
-    return ((listener.getDocTypeName() == docTypeName) &&
-            (keepNames.find(listener.getName()) == keepNames.end()));
+bool shouldRemoveListener(const IGidToLidChangeListener& listener, const std::string& docTypeName,
+                          const std::set<std::string>& keepNames) {
+    return ((listener.getDocTypeName() == docTypeName) && (keepNames.find(listener.getName()) == keepNames.end()));
 }
 
-}
+} // namespace
 
-void
-GidToLidChangeHandler::removeListeners(const std::string &docTypeName,
-                                       const std::set<std::string> &keepNames)
-{
+void GidToLidChangeHandler::removeListeners(const std::string& docTypeName, const std::set<std::string>& keepNames) {
     Listeners deferredDelete;
     {
         lock_guard guard(_lock);

@@ -5,10 +5,13 @@ import com.yahoo.collections.Comparables;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HeapDumpRedaction;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
@@ -54,6 +57,8 @@ public final class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Map.of(),
                                                                   Optional.empty(),
+                                                                  CloudResourceTags.empty(),
+                                                                  Optional.empty(),
                                                                   List.of(),
                                                                   "<deployment version='1.0'/>",
                                                                   List.of(),
@@ -67,6 +72,8 @@ public final class DeploymentSpec {
     private final Optional<AthenzService> athenzService;
     private final Map<CloudName, CloudAccount> cloudAccounts;
     private final Optional<Duration> hostTTL;
+    private final CloudResourceTags cloudResourceTags;
+    private final Optional<HeapDumpRedaction> heapDumpRedaction;
     private final List<Endpoint> endpoints;
     private final List<DeprecatedElement> deprecatedElements;
     private final DevSpec devSpec;
@@ -79,6 +86,8 @@ public final class DeploymentSpec {
                           Optional<AthenzService> athenzService,
                           Map<CloudName, CloudAccount> cloudAccounts,
                           Optional<Duration> hostTTL,
+                          CloudResourceTags cloudResourceTags,
+                          Optional<HeapDumpRedaction> heapDumpRedaction,
                           List<Endpoint> endpoints,
                           String xmlForm,
                           List<DeprecatedElement> deprecatedElements,
@@ -89,6 +98,8 @@ public final class DeploymentSpec {
         this.athenzService = Objects.requireNonNull(athenzService);
         this.cloudAccounts = Map.copyOf(cloudAccounts);
         this.hostTTL = Objects.requireNonNull(hostTTL);
+        this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
+        this.heapDumpRedaction = Objects.requireNonNull(heapDumpRedaction);
         this.xmlForm = Objects.requireNonNull(xmlForm);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         this.deprecatedElements = List.copyOf(Objects.requireNonNull(deprecatedElements));
@@ -222,6 +233,28 @@ public final class DeploymentSpec {
 
     public Map<CloudName, CloudAccount> cloudAccounts() { return cloudAccounts; }
 
+    /** Returns the cloud resource tags set on the root tag. */
+    public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
+
+    /** Returns cloud resource tags merged from root, instance, and zone levels. More specific levels take precedence. */
+    public CloudResourceTags cloudResourceTags(InstanceName instance, ZoneId zone) {
+        CloudResourceTags specificTags = zone.environment().isManuallyDeployed()
+                ? devSpec.cloudResourceTags
+                : instance(instance).map(spec -> spec.cloudResourceTags(zone.environment(), zone.region()))
+                                    .orElse(CloudResourceTags.empty());
+        return cloudResourceTags.mergedWith(specificTags);
+    }
+
+    /** Returns the heap dump redaction level set on the root tag, if any. */
+    public Optional<HeapDumpRedaction> heapDumpRedaction() { return heapDumpRedaction; }
+
+    /** The most specific heap dump redaction level for the given instance. Instance level takes precedence over root. */
+    public HeapDumpRedaction heapDumpRedaction(InstanceName instance) {
+        return instance(instance).flatMap(DeploymentInstanceSpec::heapDumpRedaction)
+                                 .or(this::heapDumpRedaction)
+                                 .orElse(HeapDumpRedaction.none);
+    }
+
     public Tags tags(InstanceName instance, Environment environment) {
         return environment.isManuallyDeployed() ? devSpec.tags
                                                 : instance(instance).map(DeploymentInstanceSpec::tags).orElse(Tags.empty());
@@ -292,6 +325,13 @@ public final class DeploymentSpec {
 
         return instance(instance).flatMap(spec -> spec.zoneEndpoint(zone, cluster))
                                  .orElse(ZoneEndpoint.defaultEndpoint);
+    }
+
+    public List<AzName> availabilityZones(InstanceName instance, Zone zone) {
+        var declaredInstance = instance(instance);
+        if (declaredInstance.isEmpty()) return List.of();
+        var declaredZone = declaredInstance.get().zone(zone);
+        return declaredZone.map(DeclaredZone::availabilityZones).orElse(List.of());
     }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
@@ -465,22 +505,39 @@ public final class DeploymentSpec {
 
     /** A deployment step which is to wait for some time before progressing to the next step */
     public static class Delay extends Step {
-        
+
         private final Duration duration;
-        
-        public Delay(Duration duration) {
+        private final boolean delaysVersion;
+        private final boolean delaysRevision;
+
+        public Delay(Duration duration, boolean delaysVersion, boolean delaysRevision) {
             this.duration = duration;
+            this.delaysVersion = delaysVersion;
+            this.delaysRevision = delaysRevision;
+        }
+
+        /** Creates a delay which applies to both platform version upgrades and application revisions. */
+        public Delay(Duration duration) {
+            this(duration, true, true);
         }
 
         @Override
         public Duration delay() { return duration; }
+
+        /** Whether this delay applies to platform (Vespa version) upgrades. */
+        public boolean delaysVersion() { return delaysVersion; }
+
+        /** Whether this delay applies to application revision changes. */
+        public boolean delaysRevision() { return delaysRevision; }
 
         @Override
         public boolean concerns(Environment environment, Optional<RegionName> region) { return false; }
 
         @Override
         public String toString() {
-            return "delay " + duration;
+            return "delay " + duration
+                   + (delaysVersion && delaysRevision ? ""
+                                                       : " (version=" + delaysVersion + ", revision=" + delaysRevision + ")");
         }
 
     }
@@ -494,13 +551,18 @@ public final class DeploymentSpec {
         private final Optional<String> testerNodes;
         private final Map<CloudName, CloudAccount> cloudAccounts;
         private final Optional<Duration> hostTTL;
+        private final CloudResourceTags cloudResourceTags;
+        private final List<AzName> availabilityZones;
+        private final boolean skip;
 
+        @SuppressWarnings("unused")
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
+            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty(), CloudResourceTags.empty(), List.of(), false);
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, Optional<AthenzService> athenzService,
-                            Optional<String> testerNodes, Map<CloudName, CloudAccount> cloudAccounts, Optional<Duration> hostTTL) {
+                            Optional<String> testerNodes, Map<CloudName, CloudAccount> cloudAccounts, Optional<Duration> hostTTL,
+                            CloudResourceTags cloudResourceTags, List<AzName> availabilityZones, boolean skip) {
             if (environment != Environment.prod && region.isPresent())
                 illegal("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
@@ -512,6 +574,9 @@ public final class DeploymentSpec {
             this.testerNodes = Objects.requireNonNull(testerNodes);
             this.cloudAccounts = Map.copyOf(cloudAccounts);
             this.hostTTL = Objects.requireNonNull(hostTTL);
+            this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
+            this.availabilityZones = List.copyOf(Objects.requireNonNull(availabilityZones));
+            this.skip = skip;
         }
 
         public Environment environment() { return environment; }
@@ -525,6 +590,17 @@ public final class DeploymentSpec {
         Optional<AthenzService> athenzService() { return athenzService; }
 
         Map<CloudName, CloudAccount> cloudAccounts() { return cloudAccounts; }
+
+        CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
+
+        /**
+         * The cloud provider availability zones that clusters deployed in this regional zone should be
+         * provisioned across, or empty in non-regional (single az) zones.
+         */
+        public List<AzName> availabilityZones() { return availabilityZones; }
+
+        /** Returns whether this step should be skipped, i.e. the corresponding job should not be run. */
+        public boolean skip() { return skip; }
 
         @Override
         public List<DeclaredZone> zones() { return List.of(this); }
@@ -541,7 +617,7 @@ public final class DeploymentSpec {
 
         @Override
         public int hashCode() {
-            return Objects.hash(environment, region);
+            return Objects.hash(environment, region, skip);
         }
 
         @Override
@@ -551,6 +627,7 @@ public final class DeploymentSpec {
             DeclaredZone other = (DeclaredZone)o;
             if (this.environment != other.environment) return false;
             if ( ! this.region.equals(other.region())) return false;
+            if (this.skip != other.skip) return false;
             return true;
         }
 
@@ -630,6 +707,15 @@ public final class DeploymentSpec {
             return steps.stream()
                         .flatMap(step -> step.zones().stream())
                         .toList();
+        }
+
+        /** Returns the declared zone matching the given zone spec in this instance, if any. */
+        public Optional<DeclaredZone> zone(Zone zone) {
+            return steps.stream()
+                        .filter(step -> step.concerns(zone.environment()))
+                        .flatMap(step -> step.zones().stream())
+                        .filter(declaredZone -> declaredZone.concerns(zone.environment(), Optional.of(zone.region())))
+                        .findAny();
         }
 
         @Override
@@ -737,32 +823,71 @@ public final class DeploymentSpec {
         separate,
         /** Leading: Application changes are allowed to start and catch up to the platform upgrade. */
         leading,
-        // /** Simultaneous: Application changes deploy independently of platform upgrades. */
+        /** Simultaneous: Application changes deploy independently of platform upgrades. */
         simultaneous
+    }
+
+    /** Configures automatic backups for an instance's content clusters. */
+    public static class BackupSpec {
+
+        public enum Granularity { cluster, group }
+
+        private final Duration frequency;
+        private final Granularity granularity;
+
+        public BackupSpec(Duration frequency, Granularity granularity) {
+            this.frequency = Objects.requireNonNull(frequency);
+            this.granularity = Objects.requireNonNull(granularity);
+            if (frequency.isNegative() || frequency.isZero())
+                illegal("Backup frequency must be positive, got " + frequency);
+        }
+
+        public Duration frequency() { return frequency; }
+        public Granularity granularity() { return granularity; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BackupSpec other = (BackupSpec) o;
+            return frequency.equals(other.frequency) && granularity == other.granularity;
+        }
+
+        @Override
+        public int hashCode() { return Objects.hash(frequency, granularity); }
+
+        @Override
+        public String toString() {
+            return "backup with frequency " + frequency + " and granularity " + granularity;
+        }
+
     }
 
     /** A blocking of changes in a given time window */
     public static class ChangeBlocker {
-        
+
         private final boolean revision;
         private final boolean version;
+        private final boolean maintenance;
         private final TimeWindow window;
-        
-        public ChangeBlocker(boolean revision, boolean version, TimeWindow window) {
+
+        public ChangeBlocker(boolean revision, boolean version, boolean maintenance, TimeWindow window) {
             this.revision = revision;
             this.version = version;
+            this.maintenance = maintenance;
             this.window = window;
         }
-        
+
         public boolean blocksRevisions() { return revision; }
         public boolean blocksVersions() { return version; }
+        public boolean blocksMaintenance() { return maintenance; }
         public TimeWindow window() { return window; }
 
         @Override
         public String toString() {
-            return "change blocker revision=" + revision + " version=" + version + " window=" + window;
+            return "change blocker revision=" + revision + " version=" + version + " maintenance=" + maintenance + " window=" + window;
         }
-        
+
     }
 
     /**
@@ -808,23 +933,26 @@ public final class DeploymentSpec {
 
     public static class DevSpec {
 
-        public static final DevSpec empty = new DevSpec(Optional.empty(), Optional.empty(), Optional.empty(), Tags.empty(), Map.of());
+        public static final DevSpec empty = new DevSpec(Optional.empty(), Optional.empty(), Optional.empty(), Tags.empty(), CloudResourceTags.empty(), Map.of());
 
         private final Optional<AthenzService> athenzService;
         private final Optional<Map<CloudName, CloudAccount>> cloudAccounts;
         private final Optional<Duration> hostTTL;
         private final Tags tags;
+        private final CloudResourceTags cloudResourceTags;
         private final Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints;
 
         public DevSpec(Optional<AthenzService> athenzService,
                        Optional<Map<CloudName, CloudAccount>> cloudAccounts,
                        Optional<Duration> hostTTL,
                        Tags tags,
+                       CloudResourceTags cloudResourceTags,
                        Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints) {
             this.athenzService = Objects.requireNonNull(athenzService);
             this.cloudAccounts = cloudAccounts.map(Map::copyOf);
             this.hostTTL = Objects.requireNonNull(hostTTL);
             this.tags = Objects.requireNonNull(tags);
+            this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
             this.zoneEndpoints = Map.copyOf(zoneEndpoints);
         }
 
@@ -833,12 +961,12 @@ public final class DeploymentSpec {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             DevSpec devSpec = (DevSpec) o;
-            return Objects.equals(athenzService, devSpec.athenzService) && Objects.equals(cloudAccounts, devSpec.cloudAccounts) && Objects.equals(hostTTL, devSpec.hostTTL) && Objects.equals(tags, devSpec.tags) && Objects.equals(zoneEndpoints, devSpec.zoneEndpoints);
+            return Objects.equals(athenzService, devSpec.athenzService) && Objects.equals(cloudAccounts, devSpec.cloudAccounts) && Objects.equals(hostTTL, devSpec.hostTTL) && Objects.equals(tags, devSpec.tags) && Objects.equals(cloudResourceTags, devSpec.cloudResourceTags) && Objects.equals(zoneEndpoints, devSpec.zoneEndpoints);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(athenzService, cloudAccounts, hostTTL, tags, zoneEndpoints);
+            return Objects.hash(athenzService, cloudAccounts, hostTTL, tags, cloudResourceTags, zoneEndpoints);
         }
 
         @Override
@@ -848,6 +976,7 @@ public final class DeploymentSpec {
             cloudAccounts.ifPresent(cas -> joiner.add(cas.entrySet().stream().map(ca -> ca.getKey() + ": " + ca.getValue()).collect(joining(", ", "cloud accounts: ", ""))));
             hostTTL.ifPresent(ttl -> joiner.add("host-ttl: " + ttl));
             if ( ! tags.isEmpty()) joiner.add("tags: " + tags);
+            if ( ! cloudResourceTags.isEmpty()) joiner.add("resource-tags: " + cloudResourceTags);
             if ( ! zoneEndpoints.isEmpty()) joiner.add("endpoint settings for clusters: " + zoneEndpoints.keySet().stream().map(ClusterSpec.Id::value).collect(joining(", ")));
             return joiner.toString();
         }

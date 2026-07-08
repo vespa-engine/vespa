@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Locale;
 
 import static com.yahoo.security.ArrayUtils.hex;
 import static com.yahoo.security.ArrayUtils.unhex;
@@ -284,7 +285,7 @@ public class HKDFTest {
         for (var salt : salts) {
             var hkdf = HKDF.extractedFrom(unhex(salt), ikm);
             var okm = hkdf.expand(32, info);
-            assertEquals(expectedOkm, hex(okm), "Failed for salt %s".formatted(salt));
+            assertEquals(expectedOkm, hex(okm), String.format(Locale.ROOT, "Failed for salt %s", salt));
         }
     }
 

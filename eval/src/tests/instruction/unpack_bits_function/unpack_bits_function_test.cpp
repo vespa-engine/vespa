@@ -2,15 +2,15 @@
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/instruction/unpack_bits_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
+#include <vespa/eval/instruction/unpack_bits_function.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
-const ValueBuilderFactory &test_factory = SimpleValueBuilderFactory::get();
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory& test_factory = SimpleValueBuilderFactory::get();
 
 //-----------------------------------------------------------------------------
 
@@ -22,13 +22,13 @@ auto vy8 = GenSpec().seq(my_seq).idx("y", 8).cells(CellType::INT8);
 auto vxf = GenSpec().seq(my_seq).idx("x", 8).cells(CellType::FLOAT);
 auto tmxy8 = GenSpec().seq(my_seq).idx("t", 1).idx("x", 3).idx("y", 4).cells(CellType::INT8);
 
-void assert_expr(const GenSpec &spec, const std::string &expr, bool optimized) {
+void assert_expr(const GenSpec& spec, const std::string& expr, bool optimized) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", spec);
     EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
     EvalFixture test_fixture(test_factory, expr, param_repo, true);
     EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
-    auto expect = EvalFixture::ref(expr, param_repo);
+    auto        expect = EvalFixture::ref(expr, param_repo);
     EXPECT_EQ(fast_fixture.result(), expect);
     EXPECT_EQ(test_fixture.result(), expect);
     EXPECT_EQ(slow_fixture.result(), expect);
@@ -37,7 +37,7 @@ void assert_expr(const GenSpec &spec, const std::string &expr, bool optimized) {
     EXPECT_EQ(slow_fixture.find_all<UnpackBitsFunction>().size(), 0u);
 }
 
-void assert_impl(const GenSpec &spec, const std::string &expr, bool optimized) {
+void assert_impl(const GenSpec& spec, const std::string& expr, bool optimized) {
     assert_expr(spec, expr, optimized);
     std::string wrapped_expr("map_subspaces(a,f(a)(");
     wrapped_expr.append(expr);
@@ -46,11 +46,11 @@ void assert_impl(const GenSpec &spec, const std::string &expr, bool optimized) {
     assert_expr(spec.cpy().map("m", {"foo", "bar", "baz"}), wrapped_expr, optimized);
 }
 
-void assert_optimized(const GenSpec &spec, const std::string &expr) {
+void assert_optimized(const GenSpec& spec, const std::string& expr) {
     assert_impl(spec, expr, true);
 }
 
-void assert_not_optimized(const GenSpec &spec, const std::string &expr) {
+void assert_not_optimized(const GenSpec& spec, const std::string& expr) {
     assert_impl(spec, expr, false);
 }
 

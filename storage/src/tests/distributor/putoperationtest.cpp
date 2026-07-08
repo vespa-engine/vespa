@@ -1,21 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributor_stripe_test_util.h>
+#include <vespa/config/helper/configgetter.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/cancel_scope.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
-#include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/config/helper/configgetter.h>
-#include <gtest/gtest.h>
+
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 
 using config::ConfigGetter;
 using config::FileSpec;
@@ -29,31 +30,23 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-class PutOperationTest : public Test,
-                         public DistributorStripeTestUtil
-{
+class PutOperationTest : public Test, public DistributorStripeTestUtil {
 public:
-    document::TestDocMan _testDocMan;
+    document::TestDocMan       _testDocMan;
     std::unique_ptr<Operation> op;
 
     ~PutOperationTest() override;
 
     void do_test_creation_with_bucket_activation_disabled(bool disabled);
 
-    void SetUp() override {
-        createLinks();
-    };
+    void SetUp() override { createLinks(); };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     document::BucketId createAndSendSampleDocument(vespalib::duration timeout);
 
-    void sendReply(int idx = -1,
-                   api::ReturnCode::Result result = api::ReturnCode::OK,
-                   api::BucketInfo info = api::BucketInfo(1,2,3,4,5))
-    {
+    void sendReply(int idx = -1, api::ReturnCode::Result result = api::ReturnCode::OK,
+                   api::BucketInfo info = api::BucketInfo(1, 2, 3, 4, 5)) {
         ASSERT_FALSE(_sender.commands().empty());
         if (idx == -1) {
             idx = _sender.commands().size() - 1;
@@ -62,8 +55,8 @@ public:
                                    "than number of received messages");
         }
 
-        std::shared_ptr<api::StorageCommand> msg =  _sender.command(idx);
-        api::StorageReply::SP reply(msg->makeReply());
+        std::shared_ptr<api::StorageCommand> msg = _sender.command(idx);
+        api::StorageReply::SP                reply(msg->makeReply());
         dynamic_cast<api::BucketInfoReply&>(*reply).setBucketInfo(info);
         reply->setResult(result);
 
@@ -71,12 +64,8 @@ public:
     }
 
     void sendPut(std::shared_ptr<api::PutCommand> msg) {
-        op = std::make_unique<PutOperation>(node_context(),
-                                            operation_context(),
-                                            getDistributorBucketSpace(),
-                                            msg,
-                                            metrics().puts,
-                                            metrics().put_condition_probes);
+        op = std::make_unique<PutOperation>(node_context(), operation_context(), getDistributorBucketSpace(), msg,
+                                            metrics().puts, metrics().put_condition_probes);
         op->start(_sender);
     }
 
@@ -84,12 +73,11 @@ public:
         return *_testDocMan.getTypeRepo().getDocumentType("testdoctype1");
     }
 
-    const document::DocumentTypeRepo& type_repo() const {
-        return _testDocMan.getTypeRepo();
-    }
+    const document::DocumentTypeRepo& type_repo() const { return _testDocMan.getTypeRepo(); }
 
     Document::SP createDummyDocument(const char* ns, const char* id) const {
-        return std::make_shared<Document>(type_repo(), doc_type(), DocumentId(vespalib::make_string("id:%s:testdoctype1::%s", ns, id)));
+        return std::make_shared<Document>(type_repo(), doc_type(),
+                                          DocumentId(vespalib::make_string("id:%s:testdoctype1::%s", ns, id)));
     }
 
     static std::shared_ptr<api::PutCommand> createPut(Document::SP doc) {
@@ -98,19 +86,14 @@ public:
 
     void set_up_3_nodes_and_send_put_with_create_bucket_acks();
 
-    std::shared_ptr<api::GetCommand> sent_get_command(size_t idx) {
-        return sent_command<api::GetCommand>(idx);
-    }
+    std::shared_ptr<api::GetCommand> sent_get_command(size_t idx) { return sent_command<api::GetCommand>(idx); }
 
-    std::shared_ptr<api::PutCommand> sent_put_command(size_t idx) {
-        return sent_command<api::PutCommand>(idx);
-    }
+    std::shared_ptr<api::PutCommand> sent_put_command(size_t idx) { return sent_command<api::PutCommand>(idx); }
 
     static std::shared_ptr<api::GetReply> make_get_reply(const api::GetCommand& cmd, api::Timestamp ts,
-                                                         bool is_tombstone, bool condition_matched)
-    {
-        return std::make_shared<api::GetReply>(cmd, std::shared_ptr<document::Document>(), ts,
-                                               false, is_tombstone, condition_matched);
+                                                         bool is_tombstone, bool condition_matched) {
+        return std::make_shared<api::GetReply>(cmd, std::shared_ptr<document::Document>(), ts, false, is_tombstone,
+                                               condition_matched);
     }
 
     std::shared_ptr<api::GetReply> make_failed_get_reply(size_t cmd_idx) {
@@ -120,13 +103,11 @@ public:
     }
 
     void set_up_tas_put_with_2_inconsistent_replica_nodes(bool create = false);
-
 };
 
 PutOperationTest::~PutOperationTest() = default;
 
-document::BucketId
-PutOperationTest::createAndSendSampleDocument(vespalib::duration timeout) {
+document::BucketId PutOperationTest::createAndSendSampleDocument(vespalib::duration timeout) {
     auto doc = std::make_shared<Document>(type_repo(), doc_type(), DocumentId("id:test:testdoctype1::"));
 
     document::BucketId id = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
@@ -147,7 +128,7 @@ using NodeCount = int;
 using ReturnAfter = uint32_t;
 using RequirePrimaryWritten = bool;
 
-}
+} // namespace
 
 const vespalib::duration TIMEOUT = 180ms;
 
@@ -350,7 +331,7 @@ TEST_F(PutOperationTest, multiple_copies) {
               "Create bucket => 1,Put => 3,Put => 2,Put => 1",
               _sender.getCommands(true));
 
-    for (uint32_t i = 0;  i < 6; i++) {
+    for (uint32_t i = 0; i < 6; i++) {
         sendReply(i);
     }
 
@@ -375,11 +356,11 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_required) {
               _sender.getCommands(true));
 
     // Reply to 2 CreateBucket, including primary
-    for (uint32_t i = 0;  i < 2; i++) {
+    for (uint32_t i = 0; i < 2; i++) {
         sendReply(i);
     }
     // Reply to 2 puts, including primary
-    for (uint32_t i = 0;  i < 2; i++) {
+    for (uint32_t i = 0; i < 2; i++) {
         sendReply(3 + i);
     }
 
@@ -398,10 +379,10 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_not_required) {
               _sender.getCommands(true));
 
     // Reply only to 2 nodes (but not the primary)
-    for (uint32_t i = 1;  i < 3; i++) {
+    for (uint32_t i = 1; i < 3; i++) {
         sendReply(i); // CreateBucket
     }
-    for (uint32_t i = 1;  i < 3; i++) {
+    for (uint32_t i = 1; i < 3; i++) {
         sendReply(3 + i); // Put
     }
 
@@ -441,8 +422,7 @@ TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
     // Manually shove sent messages into pending message tracker, since
     // this isn't done automatically.
     for (size_t i = 0; i < _sender.commands().size(); ++i) {
-        operation_context().pending_message_tracker()
-            .insert(_sender.command(i));
+        operation_context().pending_message_tracker().insert(_sender.command(i));
     }
 
     sendPut(createPut(doc));
@@ -466,18 +446,18 @@ TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
     setup_stripe(2, 2, "storage:2 distributor:1");
 
     auto doc = std::make_shared<Document>(type_repo(), doc_type(), DocumentId("id:test:testdoctype1:n=13:uri"));
-    addNodesToBucketDB(document::BucketId(16,13), "0=0,1=0");
+    addNodesToBucketDB(document::BucketId(16, 13), "0=0,1=0");
     sendPut(createPut(doc));
 
     ASSERT_EQ("Put => 0,Put => 1", _sender.getCommands(true));
 
     {
-        std::shared_ptr<api::StorageCommand> msg2  = _sender.command(0);
-        std::shared_ptr<api::StorageReply> reply(msg2->makeReply());
-        auto* sreply = dynamic_cast<api::PutReply*>(reply.get());
+        std::shared_ptr<api::StorageCommand> msg2 = _sender.command(0);
+        std::shared_ptr<api::StorageReply>   reply(msg2->makeReply());
+        auto*                                sreply = dynamic_cast<api::PutReply*>(reply.get());
         ASSERT_TRUE(sreply);
         sreply->remapBucketId(document::BucketId(17, 13));
-        sreply->setBucketInfo(api::BucketInfo(1,2,3,4,5));
+        sreply->setBucketInfo(api::BucketInfo(1, 2, 3, 4, 5));
         op->receive(_sender, reply);
     }
 
@@ -497,7 +477,7 @@ TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
 TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_state) {
     setup_stripe(Redundancy(3), NodeCount(3), "distributor:1 storage:3");
 
-    Document::SP doc(createDummyDocument("test", "uri"));
+    Document::SP       doc(createDummyDocument("test", "uri"));
     document::BucketId bId = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
 
     addNodesToBucketDB(bId, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
@@ -588,12 +568,12 @@ TEST_F(PutOperationTest, db_not_updated_if_operation_cancelled_by_ownership_chan
     // Normally DB updates triggered by replies don't _create_ buckets in the DB, unless
     // they're remapped buckets. Use a remapping to ensure we hit a create-if-missing DB path.
     {
-        std::shared_ptr<api::StorageCommand> msg2  = _sender.command(0);
-        std::shared_ptr<api::StorageReply> reply(msg2->makeReply());
-        auto* sreply = dynamic_cast<api::PutReply*>(reply.get());
+        std::shared_ptr<api::StorageCommand> msg2 = _sender.command(0);
+        std::shared_ptr<api::StorageReply>   reply(msg2->makeReply());
+        auto*                                sreply = dynamic_cast<api::PutReply*>(reply.get());
         ASSERT_TRUE(sreply);
         sreply->remapBucketId(remap_bucket);
-        sreply->setBucketInfo(api::BucketInfo(1,2,3,4,5));
+        sreply->setBucketInfo(api::BucketInfo(1, 2, 3, 4, 5));
         op->receive(_sender, reply);
     }
 
@@ -630,11 +610,9 @@ TEST_F(PutOperationTest, individually_cancelled_nodes_are_not_updated_in_db) {
 }
 
 TEST_F(PutOperationTest, send_to_retired_nodes_if_no_up_nodes_available) {
-    setup_stripe(Redundancy(2), NodeCount(2),
-                     "distributor:1 storage:2 .0.s:r .1.s:r");
-    Document::SP doc(createDummyDocument("test", "uri"));
-    document::BucketId bucket(
-            operation_context().make_split_bit_constrained_bucket_id(doc->getId()));
+    setup_stripe(Redundancy(2), NodeCount(2), "distributor:1 storage:2 .0.s:r .1.s:r");
+    Document::SP       doc(createDummyDocument("test", "uri"));
+    document::BucketId bucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId()));
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t");
 
     sendPut(createPut(doc));
@@ -678,7 +656,7 @@ void PutOperationTest::set_up_3_nodes_and_send_put_with_create_bucket_acks() {
               _sender.getCommands(true));
 
     // ACK all CreateBuckets
-    for (uint32_t i = 0;  i < 3; ++i) {
+    for (uint32_t i = 0; i < 3; ++i) {
         sendReply(i);
     }
 }
@@ -950,7 +928,7 @@ TEST_F(PutOperationTest, operation_tracks_estimated_memory_from_msg_footprint) {
     EXPECT_EQ(_memory_usage_tracker.bytes_total(), 1337);
     ASSERT_EQ("Create bucket => 1,Create bucket => 0,"
               "Put => 1,Put => 0",
-          _sender.getCommands(true));
+              _sender.getCommands(true));
     sendReply(0);
     sendReply(1);
 
@@ -958,4 +936,4 @@ TEST_F(PutOperationTest, operation_tracks_estimated_memory_from_msg_footprint) {
     EXPECT_EQ(_memory_usage_tracker.bytes_total(), 0);
 }
 
-}
+} // namespace storage::distributor

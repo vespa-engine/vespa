@@ -4,11 +4,16 @@
 
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
+
 #include <cstdint>
 
-namespace document { class BucketIdFactory; }
+namespace document {
+class BucketIdFactory;
+}
 
-namespace storage::framework { struct Clock; }
+namespace storage::framework {
+struct Clock;
+}
 
 namespace storage::distributor {
 
@@ -24,5 +29,4 @@ public:
     virtual api::StorageMessageAddress node_address(uint16_t node_index) const noexcept = 0;
 };
 
-}
-
+} // namespace storage::distributor

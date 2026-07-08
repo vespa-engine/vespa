@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -79,7 +81,7 @@ public class ResourceExhaustionCalculator {
 
     public static String decoratedMessage(ContentCluster cluster, String msg) {
         // Disambiguate content cluster and add a user-friendly documentation link to the error message
-        return "in content cluster '%s': %s. See https://docs.vespa.ai/en/writing/feed-block.html".formatted(cluster.getName(), msg);
+        return Text.format("in content cluster '%s': %s. See https://docs.vespa.ai/en/writing/feed-block.html", cluster.getName(), msg);
     }
 
     public ClusterStateBundle.FeedBlock inferContentClusterFeedBlockOrNull(ContentCluster cluster) {
@@ -97,7 +99,7 @@ public class ResourceExhaustionCalculator {
                 .map(NodeResourceExhaustion::toExhaustionAddedDescription)
                 .collect(Collectors.joining(", "));
         if (exhaustions.size() > maxDescriptions) {
-            description += String.format(" (... and %d more)", exhaustions.size() - maxDescriptions);
+            description += Text.format(" (... and %d more)", exhaustions.size() - maxDescriptions);
         }
         description = decoratedMessage(cluster, description);
         // FIXME we currently will trigger a cluster state recomputation even if the number of

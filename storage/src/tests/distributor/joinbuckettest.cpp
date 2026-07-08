@@ -1,13 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "dummy_cluster_context.h"
-#include <tests/distributor/distributor_stripe_test_util.h>
+
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
-#include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <gmock/gmock.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -15,18 +17,12 @@ using namespace ::testing;
 namespace storage::distributor {
 
 struct JoinOperationTest : Test, DistributorStripeTestUtil {
-    void checkSourceBucketsAndSendReply(
-            JoinOperation& op,
-            size_t msgIndex,
-            const std::vector<document::BucketId>& wantedIds);
+    void checkSourceBucketsAndSendReply(JoinOperation& op, size_t msgIndex,
+                                        const std::vector<document::BucketId>& wantedIds);
 
-    void SetUp() override {
-        createLinks();
-    };
+    void SetUp() override { createLinks(); };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 };
 
 TEST_F(JoinOperationTest, simple) {
@@ -41,10 +37,8 @@ TEST_F(JoinOperationTest, simple) {
     enable_cluster_state("distributor:1 storage:1");
 
     JoinOperation op(dummy_cluster_context,
-                     BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
-                                    toVector<uint16_t>(0)),
-                     toVector(document::BucketId(33, 1),
-                              document::BucketId(33, 0x100000001)));
+                     BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)), toVector<uint16_t>(0)),
+                     toVector(document::BucketId(33, 1), document::BucketId(33, 0x100000001)));
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
@@ -60,12 +54,8 @@ TEST_F(JoinOperationTest, simple) {
     EXPECT_EQ(api::BucketInfo(666, 90, 500), entry->getNodeRef(0).getBucketInfo());
 }
 
-void
-JoinOperationTest::checkSourceBucketsAndSendReply(
-        JoinOperation& op,
-        size_t msgIndex,
-        const std::vector<document::BucketId>& wantedIds)
-{
+void JoinOperationTest::checkSourceBucketsAndSendReply(JoinOperation& op, size_t msgIndex,
+                                                       const std::vector<document::BucketId>& wantedIds) {
     ASSERT_GT(_sender.commands().size(), msgIndex);
 
     std::shared_ptr<api::StorageCommand> msg(_sender.command(msgIndex));
@@ -75,7 +65,7 @@ JoinOperationTest::checkSourceBucketsAndSendReply(
     EXPECT_THAT(joinCmd.getSourceBuckets(), ContainerEq(wantedIds));
 
     std::shared_ptr<api::StorageReply> reply(joinCmd.makeReply());
-    auto& sreply = dynamic_cast<api::JoinBucketsReply&>(*reply);
+    auto&                              sreply = dynamic_cast<api::JoinBucketsReply&>(*reply);
     sreply.setBucketInfo(api::BucketInfo(666, 90, 500));
 
     op.receive(_sender, reply);
@@ -98,10 +88,8 @@ TEST_F(JoinOperationTest, send_sparse_joins_to_nodes_without_both_source_buckets
     enable_cluster_state("distributor:1 storage:2");
 
     JoinOperation op(dummy_cluster_context,
-                     BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
-                                    toVector<uint16_t>(0, 1)),
-                     toVector(document::BucketId(33, 1),
-                              document::BucketId(33, 0x100000001)));
+                     BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)), toVector<uint16_t>(0, 1)),
+                     toVector(document::BucketId(33, 1), document::BucketId(33, 0x100000001)));
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
@@ -138,4 +126,4 @@ TEST_F(JoinOperationTest, cancelled_node_does_not_update_bucket_db) {
     EXPECT_FALSE(op.ok());
 }
 
-}
+} // namespace storage::distributor

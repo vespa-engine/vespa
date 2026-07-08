@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import org.junit.jupiter.api.Test;
 
@@ -36,12 +37,12 @@ public class ModelTest {
     @Test
     void valid_url(){
         var dummyUrl = "https://vespa.ai/some-model.onxx";
-        var xml = """
+        var xml = Text.format("""
                 <component id="bert-embedder" type="hugging-face-embedder">
                   <transformer-model url="%s" />
                   <tokenizer-model url="%s"/>
                 </component>
-                """.formatted(dummyUrl, dummyUrl);
+                """, dummyUrl, dummyUrl);
 
         var state = new DeployState.Builder().build();
         var element = XML.getDocument(xml).getDocumentElement();
@@ -56,12 +57,12 @@ public class ModelTest {
     @Test
     void authenticated_url(){
         var dummyUrl = "https://vespa.ai/some-model.onxx";
-        var xml = """
+        var xml = Text.format("""
                 <component id="bert-embedder" type="hugging-face-embedder">
                   <transformer-model url="%s" secret-ref="myTransformerSecret" />
                   <tokenizer-model url="%s" secret-ref="myTokenizerSecret"/>
                 </component>
-                """.formatted(dummyUrl, dummyUrl);
+                """, dummyUrl, dummyUrl);
 
         var state = new DeployState.Builder().build();
         var element = XML.getDocument(xml).getDocumentElement();

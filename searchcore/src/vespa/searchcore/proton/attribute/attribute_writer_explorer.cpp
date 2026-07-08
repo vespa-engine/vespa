@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_writer.h"
 #include "attribute_writer_explorer.h"
+
+#include "attribute_writer.h"
+
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
@@ -11,17 +13,14 @@ using vespalib::slime::Inserter;
 namespace proton {
 
 AttributeWriterExplorer::AttributeWriterExplorer(std::shared_ptr<IAttributeWriter> writer)
-    : _writer(std::move(writer))
-{
+    : _writer(std::move(writer)) {
 }
 
 AttributeWriterExplorer::~AttributeWriterExplorer() = default;
 
 namespace {
 
-void
-convert_to_slime(const AttributeWriter::WriteContext& context, Cursor& object)
-{
+void convert_to_slime(const AttributeWriter::WriteContext& context, Cursor& object) {
     object.setLong("executor_id", context.getExecutorId().getId());
     Cursor& fields = object.setArray("fields");
     for (const auto& field : context.getFields()) {
@@ -29,11 +28,9 @@ convert_to_slime(const AttributeWriter::WriteContext& context, Cursor& object)
     }
 }
 
-}
+} // namespace
 
-void
-AttributeWriterExplorer::get_state(const Inserter& inserter, bool full) const
-{
+void AttributeWriterExplorer::get_state(const Inserter& inserter, bool full) const {
     Cursor& object = inserter.insertObject();
     if (full) {
         auto* writer = dynamic_cast<AttributeWriter*>(_writer.get());
@@ -46,4 +43,4 @@ AttributeWriterExplorer::get_state(const Inserter& inserter, bool full) const
     }
 }
 
-}
+} // namespace proton

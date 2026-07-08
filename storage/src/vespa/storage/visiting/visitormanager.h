@@ -23,18 +23,19 @@
 #include "visitor.h"
 #include "visitormetrics.h"
 #include "visitorthread.h"
-#include <vespa/storage/visiting/config-stor-visitor.h>
+
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/visitor.h>
-#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 
 namespace config {
-    class ConfigUri;
-    class ConfigFetcher;
-}
+class ConfigUri;
+class ConfigFetcher;
+} // namespace config
 
 namespace storage {
 
@@ -44,48 +45,45 @@ class VisitorManager : public framework::Runnable,
                        public StorageLink,
                        public framework::HtmlStatusReporter,
                        private VisitorMessageHandler,
-                       private framework::MetricUpdateHook
-{
+                       private framework::MetricUpdateHook {
 private:
     using StorVisitorConfig = vespa::config::content::core::StorVisitorConfig;
 
-    StorageComponentRegister& _componentRegister;
+    StorageComponentRegister&     _componentRegister;
     VisitorMessageSessionFactory& _messageSessionFactory;
-    std::vector<std::pair<std::shared_ptr<VisitorThread>,
-                          std::map<api::VisitorId, std::string>> > _visitorThread;
+    std::vector<std::pair<std::shared_ptr<VisitorThread>, std::map<api::VisitorId, std::string>>> _visitorThread;
 
     struct MessageInfo {
-        api::VisitorId id;
+        api::VisitorId        id;
         vespalib::system_time timestamp;
-        vespalib::duration timeout;
-        std::string destination;
+        vespalib::duration    timeout;
+        std::string           destination;
     };
 
-    std::map<api::StorageMessage::Id, MessageInfo> _visitorMessages;
-    mutable std::mutex      _visitorLock;
-    std::condition_variable _visitorCond;
-    uint64_t _visitorCounter;
-    std::shared_ptr<VisitorMetrics> _metrics;
-    uint32_t _maxFixedConcurrentVisitors;
-    uint32_t _maxVariableConcurrentVisitors;
-    uint32_t _maxVisitorQueueSize;
-    std::map<std::string, api::VisitorId> _nameToId;
-    StorageComponent _component;
-    std::unique_ptr<framework::Thread> _thread;
-    CommandQueue<api::CreateVisitorCommand> _visitorQueue;
-    std::deque<std::pair<std::string, vespalib::steady_time> > _recentlyDeletedVisitors;
-    vespalib::duration _recentlyDeletedMaxTime;
+    std::map<api::StorageMessage::Id, MessageInfo>            _visitorMessages;
+    mutable std::mutex                                        _visitorLock;
+    std::condition_variable                                   _visitorCond;
+    uint64_t                                                  _visitorCounter;
+    std::shared_ptr<VisitorMetrics>                           _metrics;
+    uint32_t                                                  _maxFixedConcurrentVisitors;
+    uint32_t                                                  _maxVariableConcurrentVisitors;
+    uint32_t                                                  _maxVisitorQueueSize;
+    std::map<std::string, api::VisitorId>                     _nameToId;
+    StorageComponent                                          _component;
+    std::unique_ptr<framework::Thread>                        _thread;
+    CommandQueue<api::CreateVisitorCommand>                   _visitorQueue;
+    std::deque<std::pair<std::string, vespalib::steady_time>> _recentlyDeletedVisitors;
+    vespalib::duration                                        _recentlyDeletedMaxTime;
 
-    mutable std::mutex _statusLock; // Only one can get status at a time
-    mutable std::condition_variable _statusCond;// Notify when done
-    mutable std::vector<std::shared_ptr<RequestStatusPageReply> > _statusRequest;
-    bool _enforceQueueUse;
-    VisitorFactory::Map _visitorFactories;
+    mutable std::mutex                                           _statusLock; // Only one can get status at a time
+    mutable std::condition_variable                              _statusCond; // Notify when done
+    mutable std::vector<std::shared_ptr<RequestStatusPageReply>> _statusRequest;
+    bool                                                         _enforceQueueUse;
+    VisitorFactory::Map                                          _visitorFactories;
+
 public:
-    VisitorManager(const StorVisitorConfig& bootstrap_config,
-                   StorageComponentRegister&,
-                   VisitorMessageSessionFactory&,
-                   VisitorFactory::Map external = VisitorFactory::Map(),
+    VisitorManager(const StorVisitorConfig& bootstrap_config, StorageComponentRegister&,
+                   VisitorMessageSessionFactory&, VisitorFactory::Map external = VisitorFactory::Map(),
                    bool defer_manager_thread_start = false);
     ~VisitorManager() override;
 
@@ -112,9 +110,7 @@ public:
     }
 
     /** For unit testing */
-    VisitorThread& getThread(uint32_t index) {
-        return *_visitorThread[index].first;
-    }
+    VisitorThread& getThread(uint32_t index) { return *_visitorThread[index].first; }
     /** For unit testing */
     bool hasPendingMessageState() const;
     // Must be called exactly once iff manager was created with defer_manager_thread_start == true
@@ -133,8 +129,8 @@ private:
      *
      * @return True if successful, false if failed and reply is sent.
      */
-    bool scheduleVisitor(const std::shared_ptr<api::CreateVisitorCommand>&,
-                         bool skipQueue, MonitorGuard & visitorLock);
+    bool scheduleVisitor(const std::shared_ptr<api::CreateVisitorCommand>&, bool skipQueue,
+                         MonitorGuard& visitorLock);
 
     bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
 
@@ -167,10 +163,11 @@ private:
      * by the formula: fixed + variable * ((255 - priority) / 255)
      */
     uint32_t maximumConcurrent(const api::CreateVisitorCommand& cmd) const {
-        return _maxFixedConcurrentVisitors + static_cast<uint32_t>(_maxVariableConcurrentVisitors * ((255.0 - cmd.getPriority()) / 255.0));
+        return _maxFixedConcurrentVisitors +
+               static_cast<uint32_t>(_maxVariableConcurrentVisitors * ((255.0 - cmd.getPriority()) / 255.0));
     }
 
-    void updateMetrics(const MetricLockGuard &) override;
+    void updateMetrics(const MetricLockGuard&) override;
 };
 
-}
+} // namespace storage

@@ -4,7 +4,10 @@
 
 #include <memory>
 
-namespace vespalib { class DataBuffer; }
+namespace vespalib {
+class DataBuffer;
+class TransientMemoryTracker;
+} // namespace vespalib
 namespace search {
 
 class BufferWriter;
@@ -13,8 +16,7 @@ class BufferWriter;
  * Interface class to write to a single attribute vector file. Used by
  * IAttributSaver.
  */
-class IAttributeFileWriter
-{
+class IAttributeFileWriter {
 public:
     using BufferBuf = vespalib::DataBuffer;
     using Buffer = std::unique_ptr<BufferBuf>;
@@ -31,8 +33,10 @@ public:
      * last call can provide an unaligned buffer.
      **/
     virtual void writeBuf(Buffer buf) = 0;
+    virtual void write_buf(Buffer buf, vespalib::TransientMemoryTracker tracker) = 0;
 
     virtual std::unique_ptr<BufferWriter> allocBufferWriter() = 0;
+    virtual void close() = 0;
 };
 
 } // namespace search

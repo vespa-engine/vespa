@@ -2,18 +2,18 @@
 
 #pragma once
 
-#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/value_type.h>
 
-namespace vespalib::eval { struct ValueBuilderFactory; }
+namespace vespalib::eval {
+struct ValueBuilderFactory;
+}
 
 namespace vespalib::eval::instruction {
 
 struct GenericCellCast {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &result_type,
-                     const ValueType &input_type, CellType to_cell_type,
-                     Stash &stash);
+    make_instruction(const ValueType& result_type, const ValueType& input_type, CellType to_cell_type, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval::instruction

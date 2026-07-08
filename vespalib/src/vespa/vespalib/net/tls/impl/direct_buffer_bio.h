@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/crypto/openssl_typedefs.h>
+
 #include <openssl/bio.h>
 
 /*
@@ -27,31 +28,28 @@ crypto::BioPtr new_const_direct_buffer_bio();
 
 struct MutableBufferView {
     // Could use a pointer pair instead (or just modify the ptr), but being explicit is good for readability.
-    char* buffer;
+    char*  buffer;
     size_t size;
     size_t pos;
     size_t rpos;
 
     // Pending means "how much is written"
-    size_t pending() const noexcept {
-        return pos;
-    }
+    size_t pending() const noexcept { return pos; }
 };
 
 struct ConstBufferView {
     const char* buffer;
-    size_t size;
-    size_t pos;
+    size_t      size;
+    size_t      pos;
 
     // Pending means "how much is left to read"
-    size_t pending() const noexcept {
-        return size - pos;
-    }
+    size_t pending() const noexcept { return size - pos; }
 };
 
 class ConstBufferViewGuard {
-    ::BIO& _bio;
+    ::BIO&          _bio;
     ConstBufferView _view;
+
 public:
     // Important: buffer view pointer and the buffer it points to MUST be
     // valid until unset_bio_buffer_view is called! Exception to the latter is
@@ -69,8 +67,9 @@ public:
 };
 
 class MutableBufferViewGuard {
-    ::BIO& _bio;
+    ::BIO&            _bio;
     MutableBufferView _view;
+
 public:
     // Important: buffer view pointer and the buffer it points to MUST be
     // valid until unset_bio_buffer_view is called! Exception to the latter is
@@ -87,4 +86,4 @@ public:
     MutableBufferViewGuard& operator=(MutableBufferViewGuard&&) = delete;
 };
 
-}
+} // namespace vespalib::net::tls::impl

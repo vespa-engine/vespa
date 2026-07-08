@@ -2,44 +2,46 @@
 
 #include "flushtargetproxy.h"
 
+#include "vespa/log/log.h"
+
 namespace proton {
 
-using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
+using searchcorespi::IFlushTarget;
 
-FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP &target)
-    : IFlushTarget(target->getName(), target->getType(),
-                   target->getComponent()),
-      _target(target)
-{
+FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP& target)
+    : IFlushTarget(target->getName(), target->getType(), target->getComponent()), _target(target) {
 }
 
-FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP &target,
-                                   const std::string & prefix)
-    : IFlushTarget(prefix + "." + target->getName(), target->getType(),
-                   target->getComponent()),
-      _target(target)
-{
+FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP& target, const std::string& prefix)
+    : IFlushTarget(prefix + "." + target->getName(), target->getType(), target->getComponent()), _target(target) {
 }
 
 FlushTargetProxy::~FlushTargetProxy() = default;
 
-IFlushTarget::Task::UP
-FlushTargetProxy::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token)
-{
+IFlushTarget::Task::UP FlushTargetProxy::initFlush(SerialNum                            currentSerial,
+                                                   std::shared_ptr<search::IFlushToken> flush_token) {
     return _target->initFlush(currentSerial, std::move(flush_token));
 }
 
-uint64_t
-FlushTargetProxy::get_approx_bytes_to_read_from_disk() const noexcept
-{
+bool FlushTargetProxy::can_flush(SerialNum current_serial) const noexcept {
+    return _target->can_flush(current_serial);
+}
+
+uint64_t FlushTargetProxy::get_approx_bytes_to_read_from_disk() const noexcept {
     return _target->get_approx_bytes_to_read_from_disk();
 }
 
-std::chrono::steady_clock::duration
-FlushTargetProxy::last_flush_duration() const noexcept
-{
+size_t FlushTargetProxy::reserved_memory_for_flush() const noexcept {
+    return _target->reserved_memory_for_flush();
+}
+
+std::chrono::steady_clock::duration FlushTargetProxy::last_flush_duration() const noexcept {
     return _target->last_flush_duration();
+}
+
+std::chrono::steady_clock::duration FlushTargetProxy::estimated_flush_duration() const noexcept {
+    return _target->estimated_flush_duration();
 }
 
 } // namespace proton

@@ -9,6 +9,7 @@ import com.yahoo.documentapi.SyncParameters;
 import com.yahoo.documentapi.SyncSession;
 import com.yahoo.documentapi.local.LocalDocumentAccess;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
+import com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Destination implements MessageHandler {
 
     final AtomicBoolean discard = new AtomicBoolean();
+    final AtomicBoolean generateIgnoredReply = new AtomicBoolean(false);
 
     private final DestinationSession session;
     private final DocumentAccess access;
@@ -61,6 +63,12 @@ public class Destination implements MessageHandler {
     public void handleMessage(Message msg) {
         if (discard.get()) {
             msg.discard();
+            return;
+        }
+        if (generateIgnoredReply.get()) {
+            var reply = new DocumentIgnoredReply();
+            msg.swapState(reply);
+            session.reply(reply);
             return;
         }
 

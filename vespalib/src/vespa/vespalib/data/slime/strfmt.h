@@ -6,6 +6,6 @@
 
 namespace vespalib::slime {
 
-extern std::string strfmt(const char *fmt, ...) __attribute__((format (printf,1,2), nonnull(1)));
+extern std::string strfmt(const char* fmt, ...) __attribute__((format(printf, 1, 2), nonnull(1)));
 
 } // namespace vespalib::slime

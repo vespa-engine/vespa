@@ -97,6 +97,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   endif()
 endif()
 
+include(CheckCompilerFlag)
+check_compiler_flag(CXX "-Wpsabi" HAS_W_PSABI)
+if(HAS_W_PSABI)
+    set(CXX_SPECIFIC_WARN_OPTS "-Wno-psabi ${CXX_SPECIFIC_WARN_OPTS}")
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
   # Enable lto
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto -ffat-lto-objects")
@@ -217,7 +223,7 @@ endif()
 find_program(VALGRIND_EXECUTABLE valgrind)
 if(VALGRIND_EXECUTABLE)
     set(VALGRIND_SUPPRESSIONS_FILE "${PROJECT_SOURCE_DIR}/valgrind-suppressions.txt")
-    set(VALGRIND_OPTIONS "--leak-check=yes --fair-sched=yes --error-exitcode=1 --run-libc-freeres=no --track-origins=yes --suppressions=${VALGRIND_SUPPRESSIONS_FILE}")
+    set(VALGRIND_OPTIONS "--leak-check=yes --fair-sched=yes --error-exitcode=1 --run-libc-freeres=yes --track-origins=yes --suppressions=${VALGRIND_SUPPRESSIONS_FILE}")
     set(VALGRIND_COMMAND "${VALGRIND_EXECUTABLE} ${VALGRIND_OPTIONS}")
 endif()
 # Automatically set sanitizer suppressions file and arguments for unit tests

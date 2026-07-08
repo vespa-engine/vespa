@@ -3,11 +3,13 @@
 #pragma once
 
 #include "request.h"
-#include <vbench/core/provider.h>
-#include <vbench/core/handler.h>
-#include <vbench/http/http_connection_pool.h>
+
 #include <vespa/vespalib/util/runnable.h>
 #include <vespa/vespalib/util/thread.h>
+
+#include <vbench/core/handler.h>
+#include <vbench/core/provider.h>
+#include <vbench/http/http_connection_pool.h>
 
 namespace vbench {
 
@@ -17,20 +19,19 @@ namespace vbench {
  * internal thread that will stop when the request provider starts
  * handing out empty requests.
  **/
-class Worker : public vespalib::Runnable
-{
+class Worker : public vespalib::Runnable {
 private:
     std::thread         _thread;
-    Provider<Request>  &_provider;
-    Handler<Request>   &_next;
-    HttpConnectionPool &_pool;
-    Timer              &_timer;
+    Provider<Request>&  _provider;
+    Handler<Request>&   _next;
+    HttpConnectionPool& _pool;
+    Timer&              _timer;
 
     void run() override;
+
 public:
     using UP = std::unique_ptr<Worker>;
-    Worker(Provider<Request> &provider, Handler<Request> &next,
-           HttpConnectionPool &pool, Timer &timer);
+    Worker(Provider<Request>& provider, Handler<Request>& next, HttpConnectionPool& pool, Timer& timer);
     void join() { _thread.join(); }
 };
 

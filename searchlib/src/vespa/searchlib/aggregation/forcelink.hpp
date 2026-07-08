@@ -26,4 +26,3 @@ void forcelink_searchlib_aggregation() {
     forcelink_file_searchlib_aggregation_hitsaggregationresult();
     forcelink_file_searchlib_aggregation_groupinglevel();
 }
-

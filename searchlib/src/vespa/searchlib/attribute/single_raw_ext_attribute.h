@@ -3,6 +3,7 @@
 #pragma once
 
 #include "raw_attribute.h"
+
 #include <vespa/vespalib/stllike/allocator.h>
 
 namespace search::attribute {
@@ -10,11 +11,10 @@ namespace search::attribute {
 /**
  * Attribute vector storing a single raw value per document in streaming search.
  */
-class SingleRawExtAttribute : public RawAttribute,
-                              public IExtendAttribute
-{
+class SingleRawExtAttribute : public RawAttribute, public IExtendAttribute {
     std::vector<char, vespalib::allocator_large<char>>         _buffer;
     std::vector<uint32_t, vespalib::allocator_large<uint32_t>> _offsets;
+
 public:
     SingleRawExtAttribute(const std::string& name);
     ~SingleRawExtAttribute() override;
@@ -26,4 +26,4 @@ public:
     IExtendAttribute* getExtendInterface() override;
 };
 
-}
+} // namespace search::attribute

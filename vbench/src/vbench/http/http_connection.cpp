@@ -4,19 +4,12 @@
 
 namespace vbench {
 
-HttpConnection::HttpConnection(CryptoEngine &crypto, const ServerSpec &s)
-    : _server(s),
-      _socket(crypto, s.host, s.port),
-      _lastUsed(-1000.0)
-{
+HttpConnection::HttpConnection(CryptoEngine& crypto, const ServerSpec& s)
+    : _server(s), _socket(crypto, s.host, s.port), _lastUsed(-1000.0) {
 }
 
-bool
-HttpConnection::mayReuse(double now) const
-{
-    return (((now - _lastUsed) < 1.0) &&
-            !_socket.eof() &&
-            !_socket.tainted());
+bool HttpConnection::mayReuse(double now) const {
+    return (((now - _lastUsed) < 1.0) && !_socket.eof() && !_socket.tainted());
 }
 
 } // namespace vbench

@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <iosfwd>
 #include <cstdint>
+#include <iosfwd>
 
 namespace storage::spi {
 
@@ -29,5 +29,4 @@ enum class ReadConsistency : uint8_t {
 
 std::ostream& operator<<(std::ostream&, ReadConsistency);
 
-}
-
+} // namespace storage::spi

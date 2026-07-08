@@ -3,6 +3,7 @@
 #pragma once
 
 #include "searchiterator.h"
+
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
@@ -13,23 +14,20 @@ namespace search::queryeval {
  *
  * This is used by the parallel weak AND search iterator.
  */
-class DocidWithWeightSearchIterator : public SearchIterator
-{
+class DocidWithWeightSearchIterator : public SearchIterator {
 private:
-    fef::TermFieldMatchData          &_tfmd;
-    fef::TermFieldMatchDataPosition * _matchPosition;
-    DocidWithWeightIterator            _iterator;
-    queryeval::MinMaxPostingInfo      _postingInfo;
+    fef::TermFieldMatchData&         _tfmd;
+    fef::TermFieldMatchDataPosition* _matchPosition;
+    DocidWithWeightIterator          _iterator;
+    queryeval::MinMaxPostingInfo     _postingInfo;
 
 public:
-    DocidWithWeightSearchIterator(fef::TermFieldMatchData &tfmd,
-                                  const IDocidWithWeightPostingStore &attr,
+    DocidWithWeightSearchIterator(fef::TermFieldMatchData& tfmd, const IDocidWithWeightPostingStore& attr,
                                   IDirectPostingStore::LookupResult dict_entry)
         : _tfmd(tfmd),
           _matchPosition(_tfmd.populate_fixed()),
           _iterator(attr.create(dict_entry.posting_idx)),
-          _postingInfo(queryeval::MinMaxPostingInfo(dict_entry.min_weight, dict_entry.max_weight))
-    { }
+          _postingInfo(queryeval::MinMaxPostingInfo(dict_entry.min_weight, dict_entry.max_weight)) {}
     ~DocidWithWeightSearchIterator() override;
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
@@ -54,8 +52,8 @@ public:
         _matchPosition->setElementWeight(_iterator.getData());
     }
 
-    const queryeval::PostingInfo *getPostingInfo() const override { return &_postingInfo; }
+    const queryeval::PostingInfo* getPostingInfo() const override { return &_postingInfo; }
     Trinary is_strict() const override { return Trinary::True; }
 };
 
-}
+} // namespace search::queryeval

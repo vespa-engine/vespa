@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/storageapi/message/bucket.h>
+
 #include <tests/persistence/common/filestortestfixture.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
+
+#include <vespa/log/log.h>
 
 LOG_SETUP(".deletebuckettest");
 
@@ -13,12 +15,11 @@ using document::test::makeDocumentBucket;
 
 namespace storage {
 
-struct DeleteBucketTest : FileStorTestFixture {
-};
+struct DeleteBucketTest : FileStorTestFixture {};
 
 TEST_F(DeleteBucketTest, delete_aborts_operations_for_bucket) {
     TestFileStorComponents c(*this);
-    document::BucketId bucket(16, 1);
+    document::BucketId     bucket(16, 1);
 
     createBucket(bucket);
     LOG(debug, "TEST STAGE: taking resume guard");
@@ -38,7 +39,7 @@ TEST_F(DeleteBucketTest, delete_aborts_operations_for_bucket) {
         // Problem is, their returned ordering is not deterministic so we're left
         // with having to check that _at least_ 1 reply had BUCKET_DELETED. Joy!
         c.top.waitForMessages(2, 60 * 2);
-        std::vector <api::StorageMessage::SP> msgs(c.top.getRepliesOnce());
+        std::vector<api::StorageMessage::SP> msgs(c.top.getRepliesOnce());
         ASSERT_EQ(2, msgs.size());
         int numDeleted = 0;
         for (uint32_t i = 0; i < 2; ++i) {
@@ -51,7 +52,7 @@ TEST_F(DeleteBucketTest, delete_aborts_operations_for_bucket) {
         LOG(debug, "TEST STAGE: done, releasing resume guard");
     }
     // Ensure we don't shut down persistence threads before DeleteBucket op has completed
-    c.top.waitForMessages(1, 60*2);
+    c.top.waitForMessages(1, 60 * 2);
 }
 
 } // namespace storage

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.text.Text;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
@@ -49,7 +50,7 @@ public enum SystemName {
         return Arrays.stream(values())
                 .filter(systemName -> systemName.value().equals(value))
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("'%s' is not a valid system".formatted(value)));
+                .orElseThrow(() -> new IllegalArgumentException(Text.format("'%s' is not a valid system", value)));
     }
 
     public String value() {

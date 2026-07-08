@@ -12,8 +12,7 @@ class GrowableBitVector;
  * search::AllocatedBitVector provides an interface to a bit vector
  * internally implemented as an array of words.
  */
-class AllocatedBitVector : public BitVector
-{
+class AllocatedBitVector : public BitVector {
 public:
     /**
      * Class constructor specifying size but not content.  New bitvector
@@ -47,8 +46,8 @@ public:
     AllocatedBitVector(Index numberOfElements, Index capacity, const BitVector* org, const Alloc* init_alloc,
                        bool dynamic_guard_bits);
 
-    AllocatedBitVector(const BitVector &other);
-    AllocatedBitVector(const AllocatedBitVector &other);
+    AllocatedBitVector(const BitVector& other);
+    AllocatedBitVector(const AllocatedBitVector& other);
     ~AllocatedBitVector() override;
 
     /**
@@ -71,13 +70,13 @@ public:
     size_t get_allocated_bytes(bool include_self) const noexcept override;
 
 protected:
-    Index          _capacityBits;
-    Alloc          _alloc;
+    Index _capacityBits;
+    Alloc _alloc;
 
 private:
     friend class GrowableBitVector;
 
-    AllocatedBitVector(const BitVector &other, std::pair<Index, Index> size_capacity);
+    AllocatedBitVector(const BitVector& other, std::pair<Index, Index> size_capacity);
 };
 
 } // namespace search

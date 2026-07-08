@@ -288,6 +288,8 @@ documentdb[].configid string
 documentdb[].visibilitydelay double default=0.0
 ## Whether this document type is globally distributed or not.
 documentdb[].global bool default=false
+## Whether the full document ids are stored in memory
+documentdb[].document_id_attribute bool default=false
 
 ## Minimum initial size for any per document tables.
 documentdb[].allocation.initialnumdocs long default=1024
@@ -433,6 +435,20 @@ writefilter.disklimit double default = 0.8
 
 ## Interval between sampling of disk and memory usage. Default is 60 seconds.
 writefilter.sampleinterval double default = 60.0
+
+## Factor used when adding reserved disk space to non-transient used disk
+## space when reporting disk space usage to cluster controller and calculating
+## feed block internally in proton.
+## 0.0 means that reserved disk space is not accounted for.
+## 1.0 means that reserved disk space is fully accounted for.
+writefilter.reserved_disk_space_factor double default = 1.0
+
+## Factor used when adding reserved memory to non-transient memory
+## when reporting memory usage to cluster controller and calculating
+## feed block internally in proton.
+## 0.0 means that reserved memory is not accounted for.
+## 1.0 means that reserved memory is fully accounted for.
+writefilter.reserved_memory_factor double default = 0.0
 
 ## The size of the disk partition (in bytes) on which proton basedir is located.
 ## If set to 0, the disk size is sampled by looking at the filesystem space info.
@@ -608,3 +624,10 @@ tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = FAST_VALUE
 ## TODO Remove always on
 forward_issues bool default = true
 
+## Log a warning when the sampled disk capacity differs from the previous sample.
+## TODO: Remove when resampling of disk capacity has been re-landed.
+log_warning_on_disk_capacity_change bool default=false
+
+## Periodically resample disk capacity instead of using the value detected at startup.
+## TODO: Remove when resampling of disk capacity has been re-landed.
+resample_disk_capacity bool default=false

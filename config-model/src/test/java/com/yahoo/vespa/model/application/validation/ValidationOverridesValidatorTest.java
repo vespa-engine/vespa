@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ValidationOverridesValidatorTest {
 
-    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", java.util.Locale.ROOT)
                                                                                 .withZone(ZoneId.systemDefault());
 
     @Test

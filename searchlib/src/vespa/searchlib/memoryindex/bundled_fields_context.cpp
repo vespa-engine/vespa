@@ -5,25 +5,18 @@
 namespace search::memoryindex {
 
 BundledFieldsContext::BundledFieldsContext(vespalib::ISequencedTaskExecutor::ExecutorId id)
-    : _id(id),
-      _fields(),
-      _uri_fields()
-{
+    : _id(id), _fields(), _uri_fields() {
 }
 
 BundledFieldsContext::~BundledFieldsContext() = default;
 
-void
-BundledFieldsContext::add_field(uint32_t field_id)
-{
+void BundledFieldsContext::add_field(uint32_t field_id) {
     _fields.emplace_back(field_id);
 }
 
-void
-BundledFieldsContext::add_uri_field(uint32_t uri_field_id, uint32_t uri_all_field_id)
-{
+void BundledFieldsContext::add_uri_field(uint32_t uri_field_id, uint32_t uri_all_field_id) {
     _uri_fields.emplace_back(uri_field_id);
     _uri_all_field_ids.emplace_back(uri_all_field_id);
 }
 
-}
+} // namespace search::memoryindex

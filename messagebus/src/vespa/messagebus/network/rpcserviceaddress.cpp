@@ -3,13 +3,8 @@
 
 namespace mbus {
 
-RPCServiceAddress::RPCServiceAddress(const string &serviceName,
-                                     const string &connectionSpec) :
-    _serviceName(serviceName),
-    _sessionName(""),
-    _connectionSpec(connectionSpec),
-    _target()
-{
+RPCServiceAddress::RPCServiceAddress(const string& serviceName, const string& connectionSpec)
+    : _serviceName(serviceName), _sessionName(""), _connectionSpec(connectionSpec), _target() {
     size_t pos = serviceName.find_last_of('/');
     if (pos != string::npos) {
         _sessionName = serviceName.substr(pos + 1);
@@ -18,9 +13,7 @@ RPCServiceAddress::RPCServiceAddress(const string &serviceName,
 
 RPCServiceAddress::~RPCServiceAddress() = default;
 
-bool
-RPCServiceAddress::isMalformed()
-{
+bool RPCServiceAddress::isMalformed() {
     if (_serviceName.empty()) {
         return true; // no service
     }

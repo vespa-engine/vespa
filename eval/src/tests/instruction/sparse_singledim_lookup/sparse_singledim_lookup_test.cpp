@@ -2,11 +2,11 @@
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/instruction/sparse_singledim_lookup.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/eval/instruction/sparse_singledim_lookup.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
@@ -17,17 +17,15 @@ using vespalib::make_string_short::fmt;
 
 struct FunInfo {
     using LookFor = SparseSingledimLookup;
-    void verify(const LookFor &fun) const {
-        EXPECT_TRUE(fun.result_is_mutable());
-    }
+    void verify(const LookFor& fun) const { EXPECT_TRUE(fun.result_is_mutable()); }
 };
 
-void verify_optimized(const std::string &expr) {
+void verify_optimized(const std::string& expr) {
     CellTypeSpace type_space(CellTypeUtils::list_types(), 1);
     EvalFixture::verify<FunInfo>(expr, {FunInfo()}, type_space);
 }
 
-void verify_not_optimized(const std::string &expr) {
+void verify_not_optimized(const std::string& expr) {
     CellTypeSpace just_float({CellType::FLOAT}, 1);
     EvalFixture::verify<FunInfo>(expr, {}, just_float);
 }

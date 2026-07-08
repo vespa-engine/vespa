@@ -5,13 +5,9 @@
 namespace storage::spi {
 
 Selection::Selection(const DocumentSelection& docSel)
-    : _documentSelection(docSel),
-      _fromTimestamp(0),
-      _toTimestamp(INT64_MAX),
-      _timestampSubset()
-{ }
+    : _documentSelection(docSel), _fromTimestamp(0), _toTimestamp(INT64_MAX), _timestampSubset() {
+}
 
 Selection::~Selection() = default;
 
-}
-
+} // namespace storage::spi

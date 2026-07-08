@@ -3,6 +3,7 @@
 #pragma once
 
 #include "field_length_info.h"
+
 #include <string>
 
 namespace search::index {
@@ -20,4 +21,4 @@ public:
     virtual FieldLengthInfo get_field_length_info(const std::string& field_name) const = 0;
 };
 
-}
+} // namespace search::index

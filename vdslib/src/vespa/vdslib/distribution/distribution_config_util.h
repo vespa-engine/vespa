@@ -13,4 +13,4 @@ struct DistributionConfigUtil {
     static std::vector<uint16_t> getGroupPath(std::string_view path);
 };
 
-}
+} // namespace storage::lib

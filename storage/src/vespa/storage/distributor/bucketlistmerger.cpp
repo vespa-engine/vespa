@@ -4,11 +4,8 @@
 
 using namespace storage::distributor;
 
-BucketListMerger::BucketListMerger(const BucketList& newList,
-                                   const BucketList& oldList,
-                                   uint64_t timestamp)
-    : _timestamp(timestamp)
-{
+BucketListMerger::BucketListMerger(const BucketList& newList, const BucketList& oldList, uint64_t timestamp)
+    : _timestamp(timestamp) {
     uint32_t i = 0;
     uint32_t j = 0;
 
@@ -29,7 +26,8 @@ BucketListMerger::BucketListMerger(const BucketList& newList,
             if (!(newList[i].second == oldList[j].second)) {
                 _addedEntries.push_back(newList[i]);
             }
-            i++; j++;
+            i++;
+            j++;
         }
     }
 }

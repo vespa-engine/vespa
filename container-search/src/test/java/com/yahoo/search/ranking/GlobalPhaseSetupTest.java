@@ -12,7 +12,8 @@ import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class GlobalPhaseSetupTest {
     private static final String CONFIG_DIR = "src/test/resources/config/";

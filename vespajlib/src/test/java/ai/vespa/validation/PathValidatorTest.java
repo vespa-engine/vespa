@@ -31,6 +31,6 @@ public class PathValidatorTest {
     private void assertInvalid(Path path, Path root) {
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
                                                                          () -> PathValidator.validateChildOf(root, path));
-        assertEquals("Invalid path %s".formatted(path), illegalArgumentException.getMessage());
+        assertEquals(String.format(java.util.Locale.ROOT, "Invalid path %s", path), illegalArgumentException.getMessage());
     }
 }

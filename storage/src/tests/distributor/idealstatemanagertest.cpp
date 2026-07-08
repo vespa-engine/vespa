@@ -1,75 +1,61 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "dummy_cluster_context.h"
-#include <tests/distributor/distributor_stripe_test_util.h>
+
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/top_level_bucket_db_updater.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
+#include <vespa/storage/distributor/top_level_bucket_db_updater.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-using document::test::makeDocumentBucket;
-using document::test::makeBucketSpace;
+#include <tests/distributor/distributor_stripe_test_util.h>
+
 using document::FixedBucketSpaces;
+using document::test::makeBucketSpace;
+using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
 
 struct IdealStateManagerTest : Test, DistributorStripeTestUtil {
-    IdealStateManagerTest()
-        : Test(),
-          DistributorStripeTestUtil(),
-          _bucketSpaces()
-    {}
+    IdealStateManagerTest() : Test(), DistributorStripeTestUtil(), _bucketSpaces() {}
     void SetUp() override {
         createLinks();
         _bucketSpaces = getBucketSpaces();
     };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
-    bool checkBlock(const IdealStateOperation& op,
-                    const document::Bucket& bucket,
-                    const DistributorStripeOperationContext& ctx,
-                    const OperationSequencer& op_seq) const
-    {
+    bool checkBlock(const IdealStateOperation& op, const document::Bucket& bucket,
+                    const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const {
         return op.checkBlock(bucket, ctx, op_seq);
     }
 
-    bool checkBlockForAllNodes(const IdealStateOperation& op,
-                               const document::Bucket& bucket,
-                               const DistributorStripeOperationContext& ctx,
-                               const OperationSequencer& op_seq) const
-    {
+    bool checkBlockForAllNodes(const IdealStateOperation& op, const document::Bucket& bucket,
+                               const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const {
         return op.checkBlockForAllNodes(bucket, ctx, op_seq);
     }
 
     std::vector<document::BucketSpace> _bucketSpaces;
-    std::string makeBucketStatusString(const std::string &defaultSpaceBucketStatus);
+    std::string makeBucketStatusString(const std::string& defaultSpaceBucketStatus);
 };
 
 TEST_F(IdealStateManagerTest, sibling) {
-    EXPECT_EQ(document::BucketId(1,1),
-              getIdealStateManager().operation_context()
-              .get_sibling(document::BucketId(1, 0)));
-    EXPECT_EQ(document::BucketId(1,0),
-              getIdealStateManager().operation_context()
-              .get_sibling(document::BucketId(1, 1)));
-    EXPECT_EQ(document::BucketId(2,3),
-              getIdealStateManager().operation_context()
-              .get_sibling(document::BucketId(2, 1)));
-    EXPECT_EQ(document::BucketId(2,1),
-              getIdealStateManager().operation_context()
-              .get_sibling(document::BucketId(2, 3)));
+    EXPECT_EQ(document::BucketId(1, 1),
+              getIdealStateManager().operation_context().get_sibling(document::BucketId(1, 0)));
+    EXPECT_EQ(document::BucketId(1, 0),
+              getIdealStateManager().operation_context().get_sibling(document::BucketId(1, 1)));
+    EXPECT_EQ(document::BucketId(2, 3),
+              getIdealStateManager().operation_context().get_sibling(document::BucketId(2, 1)));
+    EXPECT_EQ(document::BucketId(2, 1),
+              getIdealStateManager().operation_context().get_sibling(document::BucketId(2, 3)));
 }
 
 TEST_F(IdealStateManagerTest, status_page) {
@@ -87,10 +73,14 @@ TEST_F(IdealStateManagerTest, status_page) {
     std::ostringstream ost;
     getIdealStateManager().getBucketStatus(ost);
 
-    EXPECT_EQ(makeBucketStatusString("BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true,ready=false)]<br>\n"
-                                     "<b>BucketId(0x4000000000000005):</b> <i> : split: [Splitting bucket because its maximum size (200 b, 100 docs, 100 meta, 200 b total) is "
-                                     "higher than the configured limit of (100, 1000000)]</i> [node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,"
-                                     "active=true,ready=false)]<br>\n"),
+    EXPECT_EQ(makeBucketStatusString(
+                  "BucketId(0x4000000000000002) : "
+                  "[node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true,ready=false)]<br>\n"
+                  "<b>BucketId(0x4000000000000005):</b> <i> : split: [Splitting bucket because its maximum size (200 "
+                  "b, 100 docs, 100 meta, 200 b total) is "
+                  "higher than the configured limit of (100, 1000000)]</i> "
+                  "[node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,"
+                  "active=true,ready=false)]<br>\n"),
               ost.str());
 }
 
@@ -110,10 +100,11 @@ TEST_F(IdealStateManagerTest, clear_active_on_node_down) {
     }
 
     // Node 2 gets activated for each bucket as it has the most documents.
-    EXPECT_EQ("setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n"
-              "setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)) (pri 100)\n"
-              "setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)) (pri 100)\n",
-              active_ideal_state_operations());
+    EXPECT_EQ(
+        "setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n"
+        "setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)) (pri 100)\n"
+        "setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)) (pri 100)\n",
+        active_ideal_state_operations());
 
     setSystemState(lib::ClusterState("distributor:1 storage:3 .2.s:d"));
 
@@ -130,18 +121,21 @@ TEST_F(IdealStateManagerTest, recheck_when_active) {
 
     tick();
 
-    EXPECT_EQ("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
-              active_ideal_state_operations());
+    EXPECT_EQ(
+        "setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
+        active_ideal_state_operations());
 
     tick();
 
-    EXPECT_EQ("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
-              active_ideal_state_operations());
+    EXPECT_EQ(
+        "setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
+        active_ideal_state_operations());
 
     tick();
 
-    EXPECT_EQ("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
-              active_ideal_state_operations());
+    EXPECT_EQ(
+        "setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
+        active_ideal_state_operations());
 }
 
 /**
@@ -184,12 +178,13 @@ TEST_F(IdealStateManagerTest, block_ideal_state_ops_when_pending_cluster_state_i
 TEST_F(IdealStateManagerTest, block_check_for_all_operations_to_specific_bucket) {
     setup_stripe(2, 10, "distributor:1 storage:2");
     framework::defaultimplementation::FakeClock clock;
-    OperationSequencer op_seq;
-    document::BucketId bid(16, 1234);
+    OperationSequencer                          op_seq;
+    document::BucketId                          bid(16, 1234);
 
     {
         auto msg = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(bid));
-        msg->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 4));
+        msg->setAddress(
+            api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 4));
         pending_message_tracker().insert(msg);
     }
     {
@@ -205,12 +200,13 @@ TEST_F(IdealStateManagerTest, block_check_for_all_operations_to_specific_bucket)
 TEST_F(IdealStateManagerTest, block_operations_with_locked_buckets) {
     setup_stripe(2, 10, "distributor:1 storage:2");
     framework::defaultimplementation::FakeClock clock;
-    OperationSequencer op_seq;
-    const auto bucket = makeDocumentBucket(document::BucketId(16, 1234));
+    OperationSequencer                          op_seq;
+    const auto                                  bucket = makeDocumentBucket(document::BucketId(16, 1234));
 
     {
         auto msg = std::make_shared<api::JoinBucketsCommand>(bucket);
-        msg->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 1));
+        msg->setAddress(
+            api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 1));
         pending_message_tracker().insert(msg);
     }
     auto token = op_seq.try_acquire(bucket, "foo");
@@ -222,11 +218,9 @@ TEST_F(IdealStateManagerTest, block_operations_with_locked_buckets) {
     }
 }
 
-std::string
-IdealStateManagerTest::makeBucketStatusString(const std::string &defaultSpaceBucketStatus)
-{
+std::string IdealStateManagerTest::makeBucketStatusString(const std::string& defaultSpaceBucketStatus) {
     std::ostringstream ost;
-    for (const auto &bucketSpace : _bucketSpaces) {
+    for (const auto& bucketSpace : _bucketSpaces) {
         ost << "<h2>" << FixedBucketSpaces::to_string(bucketSpace) << " - " << bucketSpace << "</h2>\n";
         if (bucketSpace == FixedBucketSpaces::default_space()) {
             ost << defaultSpaceBucketStatus;
@@ -235,4 +229,4 @@ IdealStateManagerTest::makeBucketStatusString(const std::string &defaultSpaceBuc
     return ost.str();
 }
 
-} // storage::distributor
+} // namespace storage::distributor

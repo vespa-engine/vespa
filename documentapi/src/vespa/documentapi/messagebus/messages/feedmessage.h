@@ -76,5 +76,4 @@ public:
     void setIncrement(int increment) { _increment = increment; };
 };
 
-}
-
+} // namespace documentapi

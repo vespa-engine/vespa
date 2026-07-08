@@ -10,8 +10,7 @@ namespace proton {
 /*
  * Stats for feed handler.
  */
-class FeedHandlerStats
-{
+class FeedHandlerStats {
     uint64_t                _commits;
     uint64_t                _operations;
     double                  _total_latency;
@@ -47,8 +46,7 @@ public:
           _operationsCompleted(0),
           _operationsStartedAtLastCommitStart(0),
           _commitsStarted(0),
-          _commitsCompleted(0)
-    {}
+          _commitsCompleted(0) {}
     void startOperation() { ++_operationsStarted; }
     void startCommit() {
         _commitsStarted++;
@@ -57,20 +55,17 @@ public:
 
     void commitCompleted(size_t numOperations);
 
-    size_t operationsSinceLastCommitStart() const {
-        return _operationsStarted - _operationsStartedAtLastCommitStart;
-    }
+    size_t operationsSinceLastCommitStart() const { return _operationsStarted - _operationsStartedAtLastCommitStart; }
     size_t operationsInFlight() const { return _operationsStarted - _operationsCompleted; }
     size_t commitsInFlight() const { return _commitsStarted - _commitsCompleted; }
-    bool shouldScheduleCommit() const {
-        return (operationsInFlight() > 0) && (commitsInFlight() == 0);
-    }
+    bool shouldScheduleCommit() const { return (operationsInFlight() > 0) && (commitsInFlight() == 0); }
+
 private:
-    size_t  _operationsStarted;
-    size_t  _operationsCompleted;
-    size_t  _operationsStartedAtLastCommitStart;
-    size_t  _commitsStarted;
-    size_t  _commitsCompleted;
+    size_t _operationsStarted;
+    size_t _operationsCompleted;
+    size_t _operationsStartedAtLastCommitStart;
+    size_t _commitsStarted;
+    size_t _commitsCompleted;
 };
 
-}
+} // namespace proton

@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.List;
@@ -272,7 +273,7 @@ public class MultiTenantRpcAuthorizerTest {
         request.setString("clientHostname", hostname);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             new JsonFormat(false).encode(out, data);
-            return out.toString();
+            return out.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

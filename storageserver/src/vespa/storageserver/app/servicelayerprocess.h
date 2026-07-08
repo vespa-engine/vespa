@@ -2,23 +2,28 @@
 #pragma once
 
 #include "process.h"
+
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/storageserver/servicelayernodecontext.h>
 #include <vespa/vespalib/util/hw_info.h>
 
-namespace config { class ConfigUri; }
+namespace config {
+class ConfigUri;
+}
 
 namespace vespa::config::content::internal {
-    class InternalStorFilestorType;
-    class InternalPersistenceType;
-}
+class InternalStorFilestorType;
+class InternalPersistenceType;
+} // namespace vespa::config::content::internal
 namespace vespa::config::content::core::internal {
-    class InternalStorVisitorType;
+class InternalStorVisitorType;
 }
 
 namespace storage {
 
-namespace spi { struct PersistenceProvider; }
+namespace spi {
+struct PersistenceProvider;
+}
 
 class ServiceLayerNode;
 class IStorageChainBuilder;
@@ -26,9 +31,10 @@ class IStorageChainBuilder;
 class ServiceLayerProcess : public Process {
 protected:
     VisitorFactory::Map _externalVisitors;
+
 private:
-    using PersistenceConfig  = vespa::config::content::internal::InternalPersistenceType;
-    using StorVisitorConfig  = vespa::config::content::core::internal::InternalStorVisitorType;
+    using PersistenceConfig = vespa::config::content::internal::InternalPersistenceType;
+    using StorVisitorConfig = vespa::config::content::core::internal::InternalStorVisitorType;
     using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
 
     std::unique_ptr<config::ConfigHandle<PersistenceConfig>>  _persistence_cfg_handle;
@@ -43,7 +49,7 @@ protected:
     ServiceLayerNodeContext _context;
 
 public:
-    ServiceLayerProcess(const config::ConfigUri & configUri, const vespalib::HwInfo& hw_info);
+    ServiceLayerProcess(const config::ConfigUri& configUri, const vespalib::HwInfo& hw_info);
     ~ServiceLayerProcess() override;
 
     void shutdown() override;
@@ -63,5 +69,4 @@ public:
     virtual void add_external_visitors();
 };
 
-} // storage
-
+} // namespace storage

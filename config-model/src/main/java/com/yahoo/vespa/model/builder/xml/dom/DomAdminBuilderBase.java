@@ -20,6 +20,11 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.LogType;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -131,6 +136,64 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         for (ModelElement e : loggingElement.children("package")) {
             addLoggingSpec(e, admin);
         }
+    }
+
+    void addTelemetryExport(ModelElement telemetryElement, Admin admin) {
+        if (telemetryElement == null) return;
+        List<Exporter> exporters = new ArrayList<>();
+        for (ModelElement exporterElement : telemetryElement.children("exporter")) {
+            String id = exporterElement.requiredStringAttribute("id");
+            ExporterType type = ExporterType.valueOf(exporterElement.requiredStringAttribute("type"));
+            String endpoint = exporterElement.stringAttribute("endpoint");
+            String project = exporterElement.stringAttribute("project");
+
+            Auth auth = null;
+            ModelElement authElement = exporterElement.child("auth");
+            if (authElement != null) {
+                auth = parseTelemetryAuth(authElement);
+            }
+
+            List<String> metricSets = new ArrayList<>();
+            for (ModelElement metricSetElement : exporterElement.children("metric-set")) {
+                metricSets.add(metricSetElement.requiredStringAttribute("id"));
+            }
+
+            List<LogType> logTypes = new ArrayList<>();
+            ModelElement logsElement = exporterElement.child("logs");
+            if (logsElement != null) {
+                for (ModelElement logTypeElement : logsElement.children("type")) {
+                    logTypes.add(LogType.from(logTypeElement.requiredStringAttribute("id")));
+                }
+            }
+
+            exporters.add(new Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
+                                      Optional.ofNullable(auth), metricSets, logTypes));
+        }
+        admin.setTelemetryExporterConfiguration(new TelemetryExporterConfiguration(exporters));
+    }
+
+    private Auth parseTelemetryAuth(ModelElement authElement) {
+        ModelElement bearerToken = authElement.child("bearer-token");
+        if (bearerToken != null) {
+            return Auth.bearerToken(
+                    bearerToken.requiredStringAttribute("vault"),
+                    bearerToken.requiredStringAttribute("secret-name"));
+        }
+        ModelElement apiKey = authElement.child("api-key");
+        if (apiKey != null) {
+            return Auth.apiKey(
+                    apiKey.requiredStringAttribute("vault"),
+                    apiKey.requiredStringAttribute("secret-name"),
+                    apiKey.requiredStringAttribute("header"));
+        }
+        ModelElement basicAuth = authElement.child("basic-auth");
+        if (basicAuth != null) {
+            return Auth.basicAuth(
+                    basicAuth.requiredStringAttribute("vault"),
+                    basicAuth.requiredStringAttribute("username-secret-name"),
+                    basicAuth.requiredStringAttribute("password-secret-name"));
+        }
+        throw new IllegalArgumentException("Unknown auth type in <auth> element. Supported types: bearer-token, api-key, basic-auth");
     }
 
     private String parseLogforwarderRole(String role, DeployState deployState) {

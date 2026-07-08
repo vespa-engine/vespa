@@ -2,20 +2,20 @@
 
 #pragma once
 
-#include "string.h"
 #include "stream.h"
+#include "string.h"
+
 #include <vespa/vespalib/data/simple_buffer.h>
-#include <vespa/vespalib/net/socket_handle.h>
-#include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/sync_crypto_socket.h>
+
 #include <memory>
 
 namespace vbench {
 
-
-class Socket : public Stream
-{
+class Socket : public Stream {
 public:
     using Input = vespalib::Input;
     using Memory = vespalib::Memory;
@@ -24,23 +24,24 @@ public:
     using WritableMemory = vespalib::WritableMemory;
     using CryptoEngine = vespalib::CryptoEngine;
     using SyncCryptoSocket = vespalib::SyncCryptoSocket;
+
 private:
-    SyncCryptoSocket::UP   _socket;
-    SimpleBuffer           _input;
-    SimpleBuffer           _output;
-    Taint                  _taint;
-    bool                   _eof;
+    SyncCryptoSocket::UP _socket;
+    SimpleBuffer         _input;
+    SimpleBuffer         _output;
+    Taint                _taint;
+    bool                 _eof;
 
 public:
     Socket(SyncCryptoSocket::UP socket);
-    Socket(CryptoEngine &crypto, const string &host, int port);
+    Socket(CryptoEngine& crypto, const string& host, int port);
     ~Socket();
     bool eof() const override { return _eof; }
     Memory obtain() override;
-    Input &evict(size_t bytes) override;
+    Input& evict(size_t bytes) override;
     WritableMemory reserve(size_t bytes) override;
-    Output &commit(size_t bytes) override;
-    const Taint &tainted() const override { return _taint; }
+    Output& commit(size_t bytes) override;
+    const Taint& tainted() const override { return _taint; }
 };
 
 struct ServerSocket {
@@ -49,7 +50,7 @@ struct ServerSocket {
     vespalib::ServerSocket server_socket;
     ServerSocket() : server_socket(0) {}
     int port() const { return server_socket.address().port(); }
-    Stream::UP accept(CryptoEngine &crypto) {
+    Stream::UP accept(CryptoEngine& crypto) {
         vespalib::SocketHandle handle = server_socket.accept();
         if (handle.valid()) {
             return std::make_unique<Socket>(SyncCryptoSocket::create_server(crypto, std::move(handle)));

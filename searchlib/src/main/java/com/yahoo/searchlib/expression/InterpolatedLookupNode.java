@@ -50,7 +50,7 @@ public class InterpolatedLookupNode extends UnaryFunctionNode {
      */
     final InterpolatedLookupNode setAttributeName(String attribute) {
         if (attribute == null) {
-            throw new IllegalArgumentException("Attribute name can not be null.");
+            throw new IllegalArgumentException("Attribute name cannot be null.");
         }
         this.attribute = attribute;
         return this;

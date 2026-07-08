@@ -15,6 +15,7 @@
 #pragma once
 
 #include "fieldvalue.h"
+
 #include <vespa/document/datatype/primitivedatatype.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 
@@ -30,10 +31,13 @@ public:
     explicit LiteralFieldValueB(Type type);
     ~LiteralFieldValueB() override;
 
-    LiteralFieldValueB(const LiteralFieldValueB &);
-    LiteralFieldValueB(Type type, const string_view & value);
+    LiteralFieldValueB(const LiteralFieldValueB&);
+    LiteralFieldValueB(Type type, const string_view& value);
 
-    const value_type & getValue() const { sync(); return _backing; }
+    const value_type& getValue() const {
+        sync();
+        return _backing;
+    }
     /**
      * Get a ref to the value. If value has recently been deserialized, and
      * never needed as an std::string before, this method lets you get a hold
@@ -41,11 +45,9 @@ public:
      */
     string_view getValueRef() const { return _value; }
 
-    LiteralFieldValueB & operator=(const LiteralFieldValueB &);
+    LiteralFieldValueB& operator=(const LiteralFieldValueB&);
 
-    void setValueRef(string_view value) {
-        _value = value;
-    }
+    void setValueRef(string_view value) { _value = value; }
 
     void setValue(string_view value) {
         _backing = value;
@@ -65,6 +67,7 @@ public:
     FieldValue& assign(const FieldValue&) override;
 
     FieldValue& operator=(std::string_view) override;
+
 protected:
     void syncBacking() const __attribute__((noinline));
     void sync() const {
@@ -73,19 +76,17 @@ protected:
         }
     }
     mutable string_view _value;
-    mutable string    _backing; // Lazily set when needed
+    mutable string      _backing; // Lazily set when needed
 };
 
-template<typename SubClass, int dataType>
-class LiteralFieldValue : public LiteralFieldValueB {
+template <typename SubClass, int dataType> class LiteralFieldValue : public LiteralFieldValueB {
 public:
-    explicit LiteralFieldValue(Type type) : LiteralFieldValueB(type) { }
-    LiteralFieldValue(Type type, const string_view& value) : LiteralFieldValueB(type, value) { }
-    const DataType *getDataType() const override;
+    explicit LiteralFieldValue(Type type) : LiteralFieldValueB(type) {}
+    LiteralFieldValue(Type type, const string_view& value) : LiteralFieldValueB(type, value) {}
+    const DataType* getDataType() const override;
 };
 
 extern template class LiteralFieldValue<RawFieldValue, DataType::T_RAW>;
 extern template class LiteralFieldValue<StringFieldValue, DataType::T_STRING>;
 
-} // document
-
+} // namespace document

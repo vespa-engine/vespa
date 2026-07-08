@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/eval/eval/int8float.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/test/test_io.h>
+#include <vespa/eval/eval/value_type.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/bfloat16.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <iostream>
 
 using namespace vespalib;
@@ -20,22 +21,46 @@ using Dict = std::vector<std::string>;
 //-----------------------------------------------------------------------------
 
 template <typename T> std::vector<bool> with_cell_type_opts();
-template <> std::vector<bool> with_cell_type_opts<double>() { return {false, true}; }
-template <> std::vector<bool> with_cell_type_opts<float>() { return {true}; }
-template <> std::vector<bool> with_cell_type_opts<BFloat16>() { return {true}; }
-template <> std::vector<bool> with_cell_type_opts<Int8Float>() { return {true}; }
+template <> std::vector<bool> with_cell_type_opts<double>() {
+    return {false, true};
+}
+template <> std::vector<bool> with_cell_type_opts<float>() {
+    return {true};
+}
+template <> std::vector<bool> with_cell_type_opts<BFloat16>() {
+    return {true};
+}
+template <> std::vector<bool> with_cell_type_opts<Int8Float>() {
+    return {true};
+}
 
 template <typename T> uint8_t cell_type_id();
-template <> uint8_t cell_type_id<double>() { return 0; }
-template <> uint8_t cell_type_id<float>() { return 1; }
-template <> uint8_t cell_type_id<BFloat16>() { return 2; }
-template <> uint8_t cell_type_id<Int8Float>() { return 3; }
+template <> uint8_t cell_type_id<double>() {
+    return 0;
+}
+template <> uint8_t cell_type_id<float>() {
+    return 1;
+}
+template <> uint8_t cell_type_id<BFloat16>() {
+    return 2;
+}
+template <> uint8_t cell_type_id<Int8Float>() {
+    return 3;
+}
 
-template <typename T> const char *cell_type_str();
-template <> const char *cell_type_str<double>() { return ""; }
-template <> const char *cell_type_str<float>() { return "<float>"; }
-template <> const char *cell_type_str<BFloat16>() { return "<bfloat16>"; }
-template <> const char *cell_type_str<Int8Float>() { return "<int8>"; }
+template <typename T> const char* cell_type_str();
+template <> const char* cell_type_str<double>() {
+    return "";
+}
+template <> const char* cell_type_str<float>() {
+    return "<float>";
+}
+template <> const char* cell_type_str<BFloat16>() {
+    return "<bfloat16>";
+}
+template <> const char* cell_type_str<Int8Float>() {
+    return "<int8>";
+}
 
 template <typename T> nbostream make_sparse(bool with_cell_type) {
     nbostream data;
@@ -70,9 +95,9 @@ template <typename T> nbostream make_mixed(bool with_cell_type) {
     return data;
 }
 
-void set_tensor(Cursor &test, const TensorSpec &spec_in) {
-    auto spec = spec_in.normalize();
-    const Inspector &old_tensor = test["tensor"];
+void set_tensor(Cursor& test, const TensorSpec& spec_in) {
+    auto             spec = spec_in.normalize();
+    const Inspector& old_tensor = test["tensor"];
     if (old_tensor.valid()) {
         TensorSpec old_spec = TensorSpec::from_slime(old_tensor);
         if (!(old_spec == spec)) {
@@ -82,25 +107,25 @@ void set_tensor(Cursor &test, const TensorSpec &spec_in) {
             abort(); // inconsistent specs across binary permutations
         }
     } else {
-        Cursor &tensor = test.setObject("tensor");
+        Cursor& tensor = test.setObject("tensor");
         spec.to_slime(tensor);
     }
 }
 
-void add_binary(Cursor &test, const nbostream &data) {
+void add_binary(Cursor& test, const nbostream& data) {
     if (!test["binary"].valid()) {
         test.setArray("binary");
     }
     test["binary"].addData(Memory(data.peek(), data.size()));
 }
 
-void add_binary(Cursor &test, Options opts) {
-    for (const nbostream &opt: opts) {
+void add_binary(Cursor& test, Options opts) {
+    for (const nbostream& opt : opts) {
         add_binary(test, opt);
     }
 }
 
-std::vector<Dict> make_permutations(const Dict &dict) {
+std::vector<Dict> make_permutations(const Dict& dict) {
     std::vector<Dict> list;
     if (dict.empty()) {
     } else if (dict.size() == 1) {
@@ -122,15 +147,12 @@ std::vector<Dict> make_permutations(const Dict &dict) {
     return list;
 };
 
-const std::map<std::string, double> val_map{
-    {"a",    1.0},
-    {"b",    2.0},
-    {"c",    3.0},
-    {"foo",  1.0},
-    {"bar",  2.0}};
+const std::map<std::string, double> val_map{{"a", 1.0}, {"b", 2.0}, {"c", 3.0}, {"foo", 1.0}, {"bar", 2.0}};
 
-double val(size_t idx) { return double(idx + 1); }
-double val(const std::string &label) {
+double val(size_t idx) {
+    return double(idx + 1);
+}
+double val(const std::string& label) {
     auto res = val_map.find(label);
     if (res == val_map.end()) {
         fprintf(stderr, "unsupported label: '%s'\n", label.c_str());
@@ -140,7 +162,7 @@ double val(const std::string &label) {
 }
 double mix(std::initializer_list<double> vals) {
     double value = 0.0;
-    for (double val: vals) {
+    for (double val : vals) {
         value = ((value * 10) + val);
     }
     return value;
@@ -148,8 +170,8 @@ double mix(std::initializer_list<double> vals) {
 
 //-----------------------------------------------------------------------------
 
-void make_number_test(Cursor &test, double value) {
-    for (bool with_cell_type: with_cell_type_opts<double>()) {
+void make_number_test(Cursor& test, double value) {
+    for (bool with_cell_type : with_cell_type_opts<double>()) {
         TensorSpec spec("double");
         spec.add({{}}, value);
         nbostream sparse = make_sparse<double>(with_cell_type);
@@ -176,11 +198,10 @@ void make_number_test(Cursor &test, double value) {
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-void make_vector_test(Cursor &test, size_t x_size) {
-    for (bool with_cell_type: with_cell_type_opts<T>()) {
+template <typename T> void make_vector_test(Cursor& test, size_t x_size) {
+    for (bool with_cell_type : with_cell_type_opts<T>()) {
         TensorSpec spec(vespalib::make_string("tensor%s(x[%zu])", cell_type_str<T>(), x_size));
-        nbostream dense = make_dense<T>(with_cell_type);
+        nbostream  dense = make_dense<T>(with_cell_type);
         dense.putInt1_4Bytes(1);
         dense.writeSmallString("x");
         dense.putInt1_4Bytes(x_size);
@@ -200,11 +221,10 @@ void make_vector_test(Cursor &test, size_t x_size) {
     }
 }
 
-template <typename T>
-void make_matrix_test(Cursor &test, size_t x_size, size_t y_size) {
-    for (bool with_cell_type: with_cell_type_opts<T>()) {
+template <typename T> void make_matrix_test(Cursor& test, size_t x_size, size_t y_size) {
+    for (bool with_cell_type : with_cell_type_opts<T>()) {
         TensorSpec spec(vespalib::make_string("tensor%s(x[%zu],y[%zu])", cell_type_str<T>(), x_size, y_size));
-        nbostream dense = make_dense<T>(with_cell_type);
+        nbostream  dense = make_dense<T>(with_cell_type);
         dense.putInt1_4Bytes(2);
         dense.writeSmallString("x");
         dense.putInt1_4Bytes(x_size);
@@ -232,9 +252,8 @@ void make_matrix_test(Cursor &test, size_t x_size, size_t y_size) {
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-void make_map_test(Cursor &test, const Dict &x_dict_in) {
-    for (bool with_cell_type: with_cell_type_opts<T>()) {
+template <typename T> void make_map_test(Cursor& test, const Dict& x_dict_in) {
+    for (bool with_cell_type : with_cell_type_opts<T>()) {
         nbostream sparse_base = make_sparse<T>(with_cell_type);
         sparse_base.putInt1_4Bytes(1);
         sparse_base.writeSmallString("x");
@@ -245,11 +264,11 @@ void make_map_test(Cursor &test, const Dict &x_dict_in) {
         mixed_base.putInt1_4Bytes(0);
         mixed_base.putInt1_4Bytes(x_dict_in.size());
         auto x_perm = make_permutations(x_dict_in);
-        for (const Dict &x_dict: x_perm) {
+        for (const Dict& x_dict : x_perm) {
             TensorSpec spec(vespalib::make_string("tensor%s(x{})", cell_type_str<T>()));
-            nbostream sparse = sparse_base;
-            nbostream mixed = mixed_base;
-            for (std::string x: x_dict) {
+            nbostream  sparse = sparse_base;
+            nbostream  mixed = mixed_base;
+            for (std::string x : x_dict) {
                 double value = val(x);
                 spec.add({{"x", x}}, value);
                 sparse.writeSmallString(x);
@@ -268,9 +287,8 @@ void make_map_test(Cursor &test, const Dict &x_dict_in) {
     }
 }
 
-template <typename T>
-void make_mesh_test(Cursor &test, const Dict &x_dict_in, const std::string &y) {
-    for (bool with_cell_type: with_cell_type_opts<T>()) {
+template <typename T> void make_mesh_test(Cursor& test, const Dict& x_dict_in, const std::string& y) {
+    for (bool with_cell_type : with_cell_type_opts<T>()) {
         nbostream sparse_base = make_sparse<T>(with_cell_type);
         sparse_base.putInt1_4Bytes(2);
         sparse_base.writeSmallString("x");
@@ -283,11 +301,11 @@ void make_mesh_test(Cursor &test, const Dict &x_dict_in, const std::string &y) {
         mixed_base.putInt1_4Bytes(0);
         mixed_base.putInt1_4Bytes(x_dict_in.size() * 1);
         auto x_perm = make_permutations(x_dict_in);
-        for (const Dict &x_dict: x_perm) {
+        for (const Dict& x_dict : x_perm) {
             TensorSpec spec(vespalib::make_string("tensor%s(x{},y{})", cell_type_str<T>()));
-            nbostream sparse = sparse_base;
-            nbostream mixed = mixed_base;
-            for (std::string x: x_dict) {
+            nbostream  sparse = sparse_base;
+            nbostream  mixed = mixed_base;
+            for (std::string x : x_dict) {
                 double value = mix({val(x), val(y)});
                 spec.add({{"x", x}, {"y", y}}, value);
                 sparse.writeSmallString(x);
@@ -311,13 +329,11 @@ void make_mesh_test(Cursor &test, const Dict &x_dict_in, const std::string &y) {
 //-----------------------------------------------------------------------------
 
 template <typename T>
-void make_vector_map_test(Cursor &test,
-                          const std::string &mapped_name, const Dict &mapped_dict,
-                          const std::string &indexed_name, size_t indexed_size)
-{
-    for (bool with_cell_type: with_cell_type_opts<T>()) {
-        auto type_str = vespalib::make_string("tensor%s(%s{},%s[%zu])", cell_type_str<T>(),
-                                              mapped_name.c_str(), indexed_name.c_str(), indexed_size);
+void make_vector_map_test(Cursor& test, const std::string& mapped_name, const Dict& mapped_dict,
+                          const std::string& indexed_name, size_t indexed_size) {
+    for (bool with_cell_type : with_cell_type_opts<T>()) {
+        auto      type_str = vespalib::make_string("tensor%s(%s{},%s[%zu])", cell_type_str<T>(), mapped_name.c_str(),
+                                                   indexed_name.c_str(), indexed_size);
         ValueType type = ValueType::from_spec(type_str);
         nbostream mixed_base = make_mixed<T>(with_cell_type);
         mixed_base.putInt1_4Bytes(1);
@@ -327,10 +343,10 @@ void make_vector_map_test(Cursor &test,
         mixed_base.putInt1_4Bytes(indexed_size);
         mixed_base.putInt1_4Bytes(mapped_dict.size());
         auto mapped_perm = make_permutations(mapped_dict);
-        for (const Dict &dict: mapped_perm) {
+        for (const Dict& dict : mapped_perm) {
             TensorSpec spec(type.to_spec()); // ensures type string is normalized
-            nbostream mixed = mixed_base;
-            for (std::string label: dict) {
+            nbostream  mixed = mixed_base;
+            for (std::string label : dict) {
                 mixed.writeSmallString(label);
                 for (size_t idx = 0; idx < indexed_size; ++idx) {
                     double value = mix({val(label), val(idx)});
@@ -351,7 +367,7 @@ void make_vector_map_test(Cursor &test,
 
 //-----------------------------------------------------------------------------
 
-template <typename T> void make_typed_tests(test::TestWriter &writer) {
+template <typename T> void make_typed_tests(test::TestWriter& writer) {
     make_vector_test<T>(writer.create(), 3);
     make_matrix_test<T>(writer.create(), 2, 3);
     make_map_test<T>(writer.create(), {});
@@ -364,7 +380,7 @@ template <typename T> void make_typed_tests(test::TestWriter &writer) {
     make_vector_map_test<T>(writer.create(), "y", {"a", "b"}, "x", 3);
 }
 
-void make_tests(test::TestWriter &writer) {
+void make_tests(test::TestWriter& writer) {
     make_number_test(writer.create(), 0.0);
     make_number_test(writer.create(), 42.0);
     make_typed_tests<double>(writer);
@@ -373,8 +389,8 @@ void make_tests(test::TestWriter &writer) {
     make_typed_tests<Int8Float>(writer);
 }
 
-int main(int, char **) {
-    test::StdOut std_out;
+int main(int, char**) {
+    test::StdOut     std_out;
     test::TestWriter writer(std_out);
     make_tests(writer);
     return 0;

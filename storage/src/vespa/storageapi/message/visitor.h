@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include <vespa/storageapi/defs.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/vdslib/container/parameters.h>
-#include <vespa/vdslib/container/visitorstatistics.h>
+#include <vespa/storageapi/defs.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
+#include <vespa/vdslib/container/parameters.h>
+#include <vespa/vdslib/container/visitorstatistics.h>
 
 namespace storage::api {
 
@@ -25,24 +25,24 @@ namespace storage::api {
 class CreateVisitorCommand : public StorageCommand {
 private:
     document::BucketSpace _bucketSpace;
-    std::string _libName; // Name of visitor library to use, ie. DumpVisitor.so
-    vdslib::Parameters _params;
+    std::string           _libName; // Name of visitor library to use, ie. DumpVisitor.so
+    vdslib::Parameters    _params;
 
     std::string _controlDestination;
     std::string _dataDestination;
 
-    std::string _docSelection;
+    std::string                     _docSelection;
     std::vector<document::BucketId> _buckets;
-    Timestamp _fromTime;
-    Timestamp _toTime;
+    Timestamp                       _fromTime;
+    Timestamp                       _toTime;
 
-    uint32_t _visitorCmdId;
+    uint32_t    _visitorCmdId;
     std::string _instanceId;
-    VisitorId _visitorId; // Set on storage node
+    VisitorId   _visitorId; // Set on storage node
 
-    bool _visitRemoves;
+    bool        _visitRemoves;
     std::string _fieldSet;
-    bool _visitInconsistentBuckets;
+    bool        _visitInconsistentBuckets;
 
     duration _queueTimeout;
     uint32_t _maxPendingReplyCount;
@@ -51,9 +51,7 @@ private:
     uint32_t _maxBucketsPerVisitor;
 
 public:
-    CreateVisitorCommand(document::BucketSpace bucketSpace,
-                         std::string_view libraryName,
-                         std::string_view instanceId,
+    CreateVisitorCommand(document::BucketSpace bucketSpace, std::string_view libraryName, std::string_view instanceId,
                          std::string_view docSelection);
 
     /** Create another command with similar visitor settings. */
@@ -80,11 +78,11 @@ public:
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     document::Bucket getBucket() const override;
     document::BucketId super_bucket_id() const;
-    const std::string & getLibraryName() const { return _libName; }
-    const std::string & getInstanceId() const { return _instanceId; }
-    const std::string & getControlDestination() const { return _controlDestination; }
-    const std::string & getDataDestination() const { return _dataDestination; }
-    const std::string & getDocumentSelection() const { return _docSelection; }
+    const std::string& getLibraryName() const { return _libName; }
+    const std::string& getInstanceId() const { return _instanceId; }
+    const std::string& getControlDestination() const { return _controlDestination; }
+    const std::string& getDataDestination() const { return _dataDestination; }
+    const std::string& getDocumentSelection() const { return _docSelection; }
     const vdslib::Parameters& getParameters() const { return _params; }
     vdslib::Parameters& getParameters() { return _params; }
     uint32_t getMaximumPendingReplyCount() const { return _maxPendingReplyCount; }
@@ -115,8 +113,8 @@ public:
  */
 class CreateVisitorReply : public StorageReply {
 private:
-    document::BucketId _super_bucket_id;
-    document::BucketId _lastBucket;
+    document::BucketId        _super_bucket_id;
+    document::BucketId        _lastBucket;
     vdslib::VisitorStatistics _visitorStatistics;
 
 public:
@@ -144,12 +142,12 @@ public:
  */
 class DestroyVisitorCommand : public StorageCommand {
 private:
-    std::string  _instanceId;
+    std::string _instanceId;
 
 public:
     explicit DestroyVisitorCommand(std::string_view instanceId);
 
-    const std::string & getInstanceId() const { return _instanceId; }
+    const std::string& getInstanceId() const { return _instanceId; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -187,12 +185,11 @@ class VisitorInfoCommand : public StorageCommand {
 public:
     struct BucketTimestampPair {
         document::BucketId bucketId;
-        Timestamp timestamp;
+        Timestamp          timestamp;
 
         BucketTimestampPair() noexcept : bucketId(), timestamp(0) {}
         BucketTimestampPair(const document::BucketId& bucket, const Timestamp& ts) noexcept
-            : bucketId(bucket), timestamp(ts)
-        {}
+            : bucketId(bucket), timestamp(ts) {}
 
         bool operator==(const BucketTimestampPair& other) const noexcept {
             return (bucketId == other.bucketId && timestamp && other.timestamp);
@@ -200,27 +197,23 @@ public:
     };
 
 private:
-    bool _completed;
+    bool                             _completed;
     std::vector<BucketTimestampPair> _bucketsCompleted;
-    ReturnCode _error;
+    ReturnCode                       _error;
 
 public:
     VisitorInfoCommand();
     ~VisitorInfoCommand() override;
 
-    void setErrorCode(ReturnCode && code) { _error = std::move(code); }
+    void setErrorCode(ReturnCode&& code) { _error = std::move(code); }
     void setCompleted() { _completed = true; }
     void setBucketCompleted(const document::BucketId& id, Timestamp lastVisited) {
         _bucketsCompleted.emplace_back(id, lastVisited);
     }
-    void setBucketsCompleted(const std::vector<BucketTimestampPair>& bc) {
-        _bucketsCompleted = bc;
-    }
+    void setBucketsCompleted(const std::vector<BucketTimestampPair>& bc) { _bucketsCompleted = bc; }
 
     const ReturnCode& getErrorCode() const { return _error; }
-    const std::vector<BucketTimestampPair>& getCompletedBucketsList() const {
-        return _bucketsCompleted;
-    }
+    const std::vector<BucketTimestampPair>& getCompletedBucketsList() const { return _bucketsCompleted; }
     bool visitorCompleted() const { return _completed; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -241,4 +234,4 @@ public:
     DECLARE_STORAGEREPLY(VisitorInfoReply, onVisitorInfoReply)
 };
 
-}
+} // namespace storage::api

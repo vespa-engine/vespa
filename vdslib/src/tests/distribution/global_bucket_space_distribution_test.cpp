@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config-stor-distribution.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/config-stor-distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <gmock/gmock.h>
+
 #include <span>
 
 using namespace ::testing;
@@ -22,23 +24,24 @@ std::shared_ptr<const lib::Distribution> default_to_global(const std::string& de
     return GlobalBucketSpaceDistributionConverter::convert_to_global(lib::Distribution(*default_cfg));
 }
 
-void verify_ideal_nodes(const Distribution& distr, const ClusterState& state, std::span<const uint16_t> expected_nodes) {
+void verify_ideal_nodes(const Distribution& distr, const ClusterState& state,
+                        std::span<const uint16_t> expected_nodes) {
     // Since ideal state node assignment is pseudo-random, check for "enough" distinct bucket
     // IDs that it's extremely unlikely that we only test values for which we accidentally
     // compute the correct output.
     for (uint16_t i = 0; i < 100; ++i) {
-        BucketId bucket(16, i);
+        BucketId              bucket(16, i);
         std::vector<uint16_t> nodes = distr.getIdealStorageNodes(state, bucket);
         ASSERT_THAT(nodes, UnorderedElementsAreArray(expected_nodes)) << bucket;
     }
 }
 
-}
+} // namespace
 
 TEST(GlobalBucketSpaceDistributionTest, flat_global_distribution_includes_all_available_storage_nodes) {
     // topology: {0, 1, 2}
     std::string default_flat_config(
-R"(redundancy 1
+        R"(redundancy 1
 group[1]
 group[0].name "invalid"
 group[0].index "invalid"
@@ -59,13 +62,12 @@ group[0].nodes[2].index 2
 
     verify_ideal_nodes(*gd, ClusterState("distributor:3 storage:3"), {{0, 1, 2}});
     verify_ideal_nodes(*gd, ClusterState("distributor:3 storage:3 .1.s:d"), {{0, 2}});
-
 }
 
 TEST(GlobalBucketSpaceDistributionTest, single_level_multi_group_config_includes_nodes_across_all_groups) {
     // topology: {{0, 1, 2}, {3, 4, 5}}
     std::string default_config(
-R"(redundancy 2
+        R"(redundancy 2
 group[3]
 group[0].name "invalid"
 group[0].index "invalid"
@@ -98,7 +100,7 @@ group[2].nodes[2].index 5
 TEST(GlobalBucketSpaceDistributionTest, multi_level_multi_group_config_includes_nodes_across_all_groups) {
     // topology: {{{0}, {1}}, {{2}, {3}}}
     std::string default_config(
-R"(redundancy 2
+        R"(redundancy 2
 group[5]
 group[0].name "invalid"
 group[0].index "invalid"
@@ -142,7 +144,7 @@ group[6].nodes[0].index 3
 TEST(GlobalBucketSpaceDistributionTest, global_distribution_handles_hetereogenous_nested_topology) {
     // topology: {{0, 1}, {2}}
     std::string default_config(
-R"(redundancy 2
+        R"(redundancy 2
 ready_copies 2
 group[3]
 group[0].name "invalid"
@@ -172,7 +174,7 @@ group[2].nodes[1].index 2
 TEST(GlobalBucketSpaceDistributionTest, global_distribution_has_same_owner_distributors_as_default) {
     // topology: {{0}, {1, 2}}
     std::string default_config(
-R"(redundancy 2
+        R"(redundancy 2
 ready_copies 2
 group[3]
 group[0].name "invalid"
@@ -198,10 +200,10 @@ group[2].nodes[1].index 2
 
     for (unsigned int i = 0; i < UINT16_MAX; ++i) {
         document::BucketId bucket(16, i);
-        const auto default_index = default_distr.getIdealDistributorNode(state, bucket, "ui");
-        const auto global_index = global_distr->getIdealDistributorNode(state, bucket, "ui");
+        const auto         default_index = default_distr.getIdealDistributorNode(state, bucket, "ui");
+        const auto         global_index = global_distr->getIdealDistributorNode(state, bucket, "ui");
         ASSERT_EQ(default_index, global_index) << bucket;
     }
 }
 
-}
+} // namespace storage::lib

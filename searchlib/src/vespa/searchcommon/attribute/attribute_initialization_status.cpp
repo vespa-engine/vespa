@@ -23,12 +23,8 @@ std::string AttributeInitializationStatus::state_to_string(State state) {
     return "queued";
 }
 
-AttributeInitializationStatus::AttributeInitializationStatus(const std::string &name) :
-    _name(name),
-    _state(State::QUEUED),
-    _was_reprocessed(false),
-    _reprocessing_percentage(0.0f)
-{
+AttributeInitializationStatus::AttributeInitializationStatus(const std::string& name)
+    : _name(name), _state(State::QUEUED), _was_reprocessed(false), _reprocessing_percentage(0.0f) {
 }
 
 void AttributeInitializationStatus::start_loading() {
@@ -109,16 +105,16 @@ float AttributeInitializationStatus::get_reprocessing_percentage() const {
     return _reprocessing_percentage;
 }
 
-void AttributeInitializationStatus::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
+void AttributeInitializationStatus::report_initialization_status(const vespalib::slime::Inserter& inserter) const {
     std::lock_guard<std::mutex> guard(_mutex);
 
-    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    vespalib::slime::Cursor& cursor = inserter.insertObject();
     cursor.setString("name", _name);
 
     cursor.setString("state", state_to_string(_state));
 
     if (_state >= State::LOADING && _was_reprocessed) {
-        cursor.setString("reprocess_progress",  std::format("{:.6f}", _reprocessing_percentage));
+        cursor.setString("reprocess_progress", std::format("{:.6f}", _reprocessing_percentage));
     }
 
     if (_state >= State::LOADING) {
@@ -126,7 +122,7 @@ void AttributeInitializationStatus::report_initialization_status(const vespalib:
     }
 
     if (_state >= State::LOADING && _was_reprocessed) {
-        cursor.setString("reprocess_start_time",timepoint_to_string(_reprocessing_start_time));
+        cursor.setString("reprocess_start_time", timepoint_to_string(_reprocessing_start_time));
     }
 
     if ((_state == State::LOADING || _state == State::LOADED) && _was_reprocessed) {
@@ -138,4 +134,4 @@ void AttributeInitializationStatus::report_initialization_status(const vespalib:
     }
 }
 
-}
+} // namespace search::attribute

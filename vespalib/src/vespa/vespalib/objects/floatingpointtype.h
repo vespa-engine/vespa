@@ -29,8 +29,7 @@ namespace vespalib {
 
 class asciistream;
 
-template<typename Number>
-class FloatingPointType {
+template <typename Number> class FloatingPointType {
     Number _value;
 
 public:
@@ -55,25 +54,49 @@ public:
     Type operator*(Type n) const { return Type(_value * n._value); }
     Type operator/(Type n) const { return Type(_value / n._value); }
 
-    Type& operator+=(Type n) { _value += n._value; return *this; }
-    Type& operator-=(Type n) { _value -= n._value; return *this; }
-    Type& operator*=(Type n) { _value *= n._value; return *this; }
-    Type& operator/=(Type n) { _value /= n._value; return *this; }
+    Type& operator+=(Type n) {
+        _value += n._value;
+        return *this;
+    }
+    Type& operator-=(Type n) {
+        _value -= n._value;
+        return *this;
+    }
+    Type& operator*=(Type n) {
+        _value *= n._value;
+        return *this;
+    }
+    Type& operator/=(Type n) {
+        _value /= n._value;
+        return *this;
+    }
 
-    Type& operator++() { ++_value; return *this; }
-    Type operator++(int) { Type t(_value); ++_value; return t; }
-    Type& operator--() { --_value; return *this; }
-    Type operator--(int) { Type t(_value); --_value; return t; }
+    Type& operator++() {
+        ++_value;
+        return *this;
+    }
+    Type operator++(int) {
+        Type t(_value);
+        ++_value;
+        return t;
+    }
+    Type& operator--() {
+        --_value;
+        return *this;
+    }
+    Type operator--(int) {
+        Type t(_value);
+        --_value;
+        return t;
+    }
 };
 
 using Double = FloatingPointType<double>;
 using Float = FloatingPointType<double>;
 
-template<typename Number>
-std::ostream& operator<<(std::ostream& out, FloatingPointType<Number> number);
+template <typename Number> std::ostream& operator<<(std::ostream& out, FloatingPointType<Number> number);
 
-template<typename Number>
-vespalib::asciistream & operator<<(vespalib::asciistream & out, FloatingPointType<Number> number);
+template <typename Number>
+vespalib::asciistream& operator<<(vespalib::asciistream& out, FloatingPointType<Number> number);
 
-} // vespalib
-
+} // namespace vespalib

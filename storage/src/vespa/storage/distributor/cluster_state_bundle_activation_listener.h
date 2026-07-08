@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-namespace storage::lib { class ClusterStateBundle; }
+namespace storage::lib {
+class ClusterStateBundle;
+}
 
 namespace storage::distributor {
 
@@ -21,4 +23,4 @@ public:
                                                    bool has_bucket_ownership_transfer) = 0;
 };
 
-}
+} // namespace storage::distributor

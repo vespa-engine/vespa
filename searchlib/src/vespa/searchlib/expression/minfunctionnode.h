@@ -6,17 +6,16 @@
 namespace search {
 namespace expression {
 
-class MinFunctionNode : public NumericFunctionNode
-{
+class MinFunctionNode : public NumericFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(MinFunctionNode);
-    MinFunctionNode() { }
+    MinFunctionNode() {}
+
 private:
-    void onArgument(const ResultNode & arg, ResultNode & result) const override;
-    ResultNode & flatten(const ResultNodeVector & v, ResultNode & result) const override { return v.flattenMin(result); }
+    void onArgument(const ResultNode& arg, ResultNode& result) const override;
+    ResultNode& flatten(const ResultNodeVector& v, ResultNode& result) const override { return v.flattenMin(result); }
     ResultNode::CP getInitialValue() const override;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

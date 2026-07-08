@@ -28,6 +28,9 @@ connectivity.minOkPercent int default=50
 ## Absolute number of nodes with confirmed network connectivity problems, maximum
 connectivity.maxBadCount int default=1
 
+## Ignore connectivity check results at startup (start services regardless)
+connectivity.ignore bool default=false
+
 ## The command to run. This will be run by sh -c, and the following
 ## environment variables are defined: $ROOT, $VESPA_SERVICE_NAME,
 ## $VESPA_CONFIG_ID

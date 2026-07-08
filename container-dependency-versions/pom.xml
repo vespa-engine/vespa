@@ -37,6 +37,13 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.vespa.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>aopalliance</groupId>
                 <artifactId>aopalliance</artifactId>
                 <version>${aopalliance.vespa.version}</version>
@@ -44,7 +51,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${jackson2.vespa.version}</version>
+                <version>${jackson-annotations.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>

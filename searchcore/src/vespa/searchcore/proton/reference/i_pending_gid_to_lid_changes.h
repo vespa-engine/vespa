@@ -8,11 +8,10 @@ namespace proton {
  * Interface class for a container of gid to lid changes awaiting a
  * force commit.
  */
-class IPendingGidToLidChanges
-{
+class IPendingGidToLidChanges {
 public:
     virtual ~IPendingGidToLidChanges() = default;
     virtual void notify_done() = 0;
 };
 
-}
+} // namespace proton

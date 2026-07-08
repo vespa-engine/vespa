@@ -6,29 +6,27 @@
 namespace document {
 class DocumentTypeRepo;
 class DocumentUpdate;
-}
+} // namespace document
 
 namespace proton {
 
-class UpdateOperation : public DocumentOperation
-{
+class UpdateOperation : public DocumentOperation {
 private:
     using DocumentUpdateSP = std::shared_ptr<document::DocumentUpdate>;
     DocumentUpdateSP _upd;
-    UpdateOperation(Type type, const document::BucketId &bucketId,
-                    Timestamp timestamp, DocumentUpdateSP upd);
-    void serializeUpdate(vespalib::nbostream &os) const;
-    void deserializeUpdate(vespalib::nbostream && is, const document::DocumentTypeRepo &repo);
+    UpdateOperation(Type type, const document::BucketId& bucketId, Timestamp timestamp, DocumentUpdateSP upd);
+    void serializeUpdate(vespalib::nbostream& os) const;
+    void deserializeUpdate(vespalib::nbostream&& is, const document::DocumentTypeRepo& repo);
+
 public:
     UpdateOperation();
     UpdateOperation(Type type);
-    UpdateOperation(const document::BucketId &bucketId,
-                    Timestamp timestamp, DocumentUpdateSP upd);
+    UpdateOperation(const document::BucketId& bucketId, Timestamp timestamp, DocumentUpdateSP upd);
     ~UpdateOperation() override;
-    const DocumentUpdateSP &getUpdate() const { return _upd; }
-    void serialize(vespalib::nbostream &os) const override;
-    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
-    void verifyUpdate(const document::DocumentTypeRepo &repo);
+    const DocumentUpdateSP& getUpdate() const { return _upd; }
+    void serialize(vespalib::nbostream& os) const override;
+    void deserialize(vespalib::nbostream& is, const document::DocumentTypeRepo& repo) override;
+    void verifyUpdate(const document::DocumentTypeRepo& repo);
     std::string toString() const override;
 };
 

@@ -11,8 +11,7 @@ using storage::stripe_of_bucket_key;
 using storage::tune_num_stripes_based_on_cpu_cores;
 constexpr uint8_t MUB = storage::spi::BucketLimits::MinUsedBits;
 
-TEST(BucketStripeUtilsTest, stripe_of_bucket_key)
-{
+TEST(BucketStripeUtilsTest, stripe_of_bucket_key) {
     BucketId id(MUB, std::numeric_limits<uint64_t>::max());
     uint64_t key = id.stripUnused().toKey();
     EXPECT_EQ(0, stripe_of_bucket_key(key, 0));
@@ -22,8 +21,7 @@ TEST(BucketStripeUtilsTest, stripe_of_bucket_key)
     EXPECT_EQ(255, stripe_of_bucket_key(key, 8));
 }
 
-TEST(BucketStripeUtilsTest, calc_num_stripe_bits)
-{
+TEST(BucketStripeUtilsTest, calc_num_stripe_bits) {
     EXPECT_EQ(0, calc_num_stripe_bits(1));
     EXPECT_EQ(1, calc_num_stripe_bits(2));
     EXPECT_EQ(2, calc_num_stripe_bits(4));
@@ -31,8 +29,7 @@ TEST(BucketStripeUtilsTest, calc_num_stripe_bits)
     EXPECT_EQ(8, calc_num_stripe_bits(256));
 }
 
-TEST(BucketStripeUtilsTest, adjusted_num_stripes)
-{
+TEST(BucketStripeUtilsTest, adjusted_num_stripes) {
     EXPECT_EQ(0, adjusted_num_stripes(0));
     EXPECT_EQ(1, adjusted_num_stripes(1));
     EXPECT_EQ(2, adjusted_num_stripes(2));
@@ -42,14 +39,12 @@ TEST(BucketStripeUtilsTest, adjusted_num_stripes)
     EXPECT_EQ(256, adjusted_num_stripes(257));
 }
 
-TEST(BucketStripeUtilsTest, max_stripe_values)
-{
+TEST(BucketStripeUtilsTest, max_stripe_values) {
     EXPECT_EQ(8, storage::MaxStripeBits);
     EXPECT_EQ(256, storage::MaxStripes);
 }
 
-TEST(BucketStripeUtilsTest, num_stripes_tuned_based_on_cpu_cores)
-{
+TEST(BucketStripeUtilsTest, num_stripes_tuned_based_on_cpu_cores) {
     EXPECT_EQ(1, tune_num_stripes_based_on_cpu_cores(0));
     EXPECT_EQ(1, tune_num_stripes_based_on_cpu_cores(1));
     EXPECT_EQ(1, tune_num_stripes_based_on_cpu_cores(16));
@@ -57,4 +52,3 @@ TEST(BucketStripeUtilsTest, num_stripes_tuned_based_on_cpu_cores)
     EXPECT_EQ(2, tune_num_stripes_based_on_cpu_cores(64));
     EXPECT_EQ(4, tune_num_stripes_based_on_cpu_cores(65));
 }
-

@@ -72,7 +72,9 @@ public class DistributionTestCase {
         for (int i=0; i<buckets.size(); ++i) {
             BucketId bucket = buckets.get(i);
             DistributionTestFactory.Test t = test.recordResult(bucket).assertNodeCount(1);
-            if (i < nodes.length) t.assertNodeUsed(nodes[i]);
+            if (i < nodes.length) {
+                t.assertNodeUsed(nodes[i]);
+            }
         }
     }
 
@@ -103,7 +105,9 @@ public class DistributionTestCase {
             state.setDistributionBits(distributionBits);
             RandomGen randomizer = new RandomGen(distributionBits);
             for (int bucketIndex = 0; bucketIndex < 64; ++bucketIndex) {
-                if (bucketIndex >= maxBucket) break;
+                if (bucketIndex >= maxBucket) {
+                    break;
+                }
                 long bucketId = bucketIndex;
                     // Use random bucket if we dont test all
                 if (maxBucket > 64) {
@@ -281,7 +285,9 @@ public class DistributionTestCase {
     }
 
     private int getNodeCount(int depth, int branchCount, int nodesPerLeaf) {
-        if (depth <= 1) return branchCount * nodesPerLeaf;
+        if (depth <= 1) {
+            return branchCount * nodesPerLeaf;
+        }
         int count = 0;
         for (int i=0; i<branchCount; ++i) {
             count += getNodeCount(depth - 1, branchCount, nodesPerLeaf);
@@ -296,7 +302,9 @@ public class DistributionTestCase {
         builder.group(new StorDistributionConfig.Group.Builder()
                 .name("invalid").index("invalid").partitions(partitions));
         Stack<Integer> nodeIndexes = new Stack<>();
-        for (int i=0, n=getNodeCount(depth, branchCount, nodesPerLeaf); i<n; ++i) nodeIndexes.push(i);
+        for (int i=0, n=getNodeCount(depth, branchCount, nodesPerLeaf); i<n; ++i) {
+            nodeIndexes.push(i);
+        }
         Collections.shuffle(nodeIndexes, new Random(123));
         addLevel(builder, "top", "", branchCount, depth, partitions, nodesPerLeaf, nodeIndexes);
         return builder;
@@ -347,7 +355,6 @@ public class DistributionTestCase {
 
     @Test
     public void testHierarchicalDistributionDeep() throws Exception {
-        System.out.println(new StorDistributionConfig(buildHierarchicalConfig(8, 5, 3, "*|*", 3)));
         test = new DistributionTestFactory("hierarchical-grouping-deep")
                 .setNodeCount(500)
                 .setDistribution(buildHierarchicalConfig(8, 5, 3, "*|*", 3));
@@ -391,6 +398,179 @@ public class DistributionTestCase {
         StorDistributionConfig.Builder config = buildHierarchicalConfig(4, 4, 1, "1|1|1|*", 1);
         Distribution distr = new Distribution(new StorDistributionConfig(config));
         distr.getIdealDistributorNode(clusterState, new BucketId(16, 0), "uim");
+    }
+
+    @Test
+    public void relative_node_order_scoring_is_distribution_key_invariant() throws Exception {
+        // 3 groups of 3 nodes, redundancy 6 globally, i.e. 2 within each group
+        StorDistributionConfig.Builder config = buildHierarchicalConfig(6, 3, 1, "*|*|*", 3);
+        config.relative_node_order_scoring(true);
+        var distr = new Distribution(new StorDistributionConfig(config));
+        var allUpState = new ClusterState("version:1 storage:9 distributor:9");
+        // Subtle difference between C++ and Java test setup; in C++ the group node distribution
+        // keys are [0, 1, 2], [3, 4, 5], [6, 7, 8], whereas in Java they are [8, 1, 6], [5, 0, 2], [4, 3, 7].
+        //                                     0  1  2  3  4  5  6  7  8
+        int[] keyToRelativeIndex = new int[] { 1, 1, 2, 1, 0, 0, 2, 2, 0 };
+        int nBuckets = 1000;
+        for (int i = 0; i < nBuckets; ++i) {
+            var bucketId = new BucketId(16, i);
+            var nodes = distr.getIdealStorageNodes(allUpState, bucketId, "ui");
+            assertEquals(6, nodes.size());
+            // All replicas should be placed on nodes that have the same _relative_ configured
+            // intra-group ordering across all groups.
+            assertEquals(bucketId.toString(), keyToRelativeIndex[nodes.get(0)], keyToRelativeIndex[nodes.get(2)]);
+            assertEquals(bucketId.toString(), keyToRelativeIndex[nodes.get(0)], keyToRelativeIndex[nodes.get(4)]);
+
+            assertEquals(bucketId.toString(), keyToRelativeIndex[nodes.get(1)], keyToRelativeIndex[nodes.get(3)]);
+            assertEquals(bucketId.toString(), keyToRelativeIndex[nodes.get(1)], keyToRelativeIndex[nodes.get(5)]);
+
+            int distributorNode = distr.getIdealDistributorNode(allUpState, bucketId, "u");
+            assertEquals((int)nodes.get(0), distributorNode);
+        }
+    }
+
+    private StorDistributionConfig.Builder buildFlatConfigWithRelativeScoring(List<Integer> nodeKeys) {
+        StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder()
+                .redundancy(1)
+                .relative_node_order_scoring(true);
+        var group = new StorDistributionConfig.Group.Builder()
+                .name("invalid")
+                .index("invalid")
+                .partitions("*");
+        nodeKeys.forEach(n -> group.nodes(new StorDistributionConfig.Group.Nodes.Builder().index(n)));
+        builder.group(group);
+        return builder;
+    }
+
+    @Test
+    public void relative_order_scoring_allows_for_verbatim_node_replacement_via_retiring() throws Exception {
+        var cfg8Nodes = buildFlatConfigWithRelativeScoring(List.of(0, 1, 2, 3, 4, 5, 6, 7));
+        // Note that node 8 is configured _right after_ 5.
+        // With relative index scoring, config order matters!
+        var cfg9Nodes = buildFlatConfigWithRelativeScoring(List.of(0, 1, 2, 3, 4, 5, 8, 6, 7));
+
+        var distr8 = new Distribution(new StorDistributionConfig(cfg8Nodes));
+        var distr9 = new Distribution(new StorDistributionConfig(cfg9Nodes));
+        var allUpState = new ClusterState("version:1 storage:8 distributor:8");
+        // In this state, node 5 is retired with node 8 logically taking up its "slot"
+        // in the relative index order of the ideal state computation. This means that
+        // all its buckets will intrinsically belong to node 8, and no other buckets
+        // in the system will move. This hinges on group node order _not_ being implicitly
+        // normalized to be in distribution key order as part of configuration.
+        var oneRetiredState = new ClusterState("version:1 storage:9 .5.s:r distributor:9");
+
+        for (int i = 0; i < 10_000; ++i) {
+            var bucketId = new BucketId(16, i);
+            var origNodes = distr8.getIdealStorageNodes(allUpState, bucketId, "ui");
+            assertEquals(1, origNodes.size());
+
+            var newNodes = distr9.getIdealStorageNodes(oneRetiredState, bucketId, "ui");
+            assertEquals(1, newNodes.size());
+            if (origNodes.get(0) == 5) {
+                // Should be taken over by node 8
+                assertEquals(bucketId.toString(), 8, (long)newNodes.get(0));
+            } else {
+                // Node should be unchanged
+                assertEquals(bucketId.toString(), origNodes.get(0), newNodes.get(0));
+            }
+        }
+    }
+
+    private DistributionTestFactory makeRelativeScoring3x4TestFactory(String testName, NodeType nodeType, String clusterStateString) throws Exception {
+        // groups: [2, 9, 6, 8], [11, 4, 0, 7], [3, 1, 10, 5]
+        // 2 replicas within each group.
+        StorDistributionConfig.Builder config = buildHierarchicalConfig(6, 3, 1, "*|*|*", 4);
+        config.relative_node_order_scoring(true);
+        return new DistributionTestFactory(testName)
+                .setNodeCount(12)
+                .setRedundancy(6)
+                .setNodeType(nodeType)
+                .setClusterState(new ClusterState(clusterStateString))
+                .setDistribution(config);
+    }
+
+    @Test
+    public void relative_distributor_scoring_matches_cross_language_all_nodes_up() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-scoring-all-distributors-up",
+                NodeType.DISTRIBUTOR, "version:1 storage:12 distributor:12");
+        for (BucketId bucket : getTestBuckets()) {
+            test.recordResult(bucket).assertNodeCount(1);
+        }
+    }
+
+    @Test
+    public void relative_distributor_scoring_matches_cross_language_some_nodes_down() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-scoring-some-distributors-down",
+                NodeType.DISTRIBUTOR, "version:1 storage:12 distributor:12 .1.s:d .2.s:d .5.s:d .7.s:d");
+        for (BucketId bucket : getTestBuckets()) {
+            test.recordResult(bucket).assertNodeCount(1).assertNodesNotUsed(1, 2, 5, 7);
+        }
+    }
+
+    @Test
+    public void relative_distributor_scoring_matches_cross_language_group_failover() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-scoring-distributor-group-failover",
+                NodeType.DISTRIBUTOR, "version:1 storage:12 distributor:12 .1.s:d .3.s:d .5.s:d .10.s:d");
+        for (BucketId bucket : getTestBuckets()) {
+            test.recordResult(bucket).assertNodeCount(1).assertNodesNotUsed(3, 1, 10, 5);
+        }
+    }
+
+    @Test
+    public void relative_distributor_scoring_matches_cross_language_retired_storage_node() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-scoring-distributor-with-storagenode-retired",
+                NodeType.DISTRIBUTOR, "version:1 storage:12 .4.s:r distributor:12");
+        for (BucketId bucket : getTestBuckets()) {
+            // Distributors should not be affected by storage nodes in retired mode
+            test.recordResult(bucket).assertNodeCount(1);
+        }
+    }
+
+    @Test
+    public void relative_storage_node_scoring_matches_cross_language_all_nodes_up() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-scoring-all-storagenodes-up",
+                NodeType.STORAGE, "version:1 storage:12 distributor:12");
+        for (BucketId bucket : getTestBuckets()) {
+            test.recordResult(bucket).assertNodeCount(6);
+        }
+    }
+
+    @Test
+    public void relative_storage_node_scoring_matches_cross_language_some_nodes_down() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-node-index-some-storagenodes-down",
+                NodeType.STORAGE, "version:1 storage:12 .1.s:d .2.s:d .5.s:d .7.s:d distributor:12");
+        for (BucketId bucket : getTestBuckets()) {
+            test.recordResult(bucket).assertNodeCount(6).assertNodesNotUsed(1, 2, 5, 7);
+        }
+    }
+
+    @Test
+    public void relative_storage_node_scoring_matches_cross_language_whole_group_down() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-scoring-storagenode-group-down",
+                NodeType.STORAGE, "version:1 storage:12 .1.s:d .3.s:d .5.s:d .10.s:d distributor:12");
+        for (BucketId bucket : getTestBuckets()) {
+            // only 2 groups can 2-way replicate data each
+            test.recordResult(bucket).assertNodeCount(4).assertNodesNotUsed(3, 1, 10, 5);
+        }
+    }
+
+    @Test
+    public void relative_storage_node_scoring_matches_cross_language_retired_node() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-scoring-storagenode-retired",
+                NodeType.STORAGE, "version:1 storage:12 .4.s:r distributor:12");
+        for (BucketId bucket : getTestBuckets()) {
+            test.recordResult(bucket).assertNodeCount(6).assertNodesNotUsed(4);
+        }
+    }
+
+    @Test
+    public void relative_storage_node_scoring_matches_cross_language_maintenance_nodes() throws Exception {
+        test = makeRelativeScoring3x4TestFactory("relative-scoring-storagenode-maintenance",
+                NodeType.STORAGE, "version:1 storage:12 .5.s:m .9.s:m distributor:12");
+        test.setUpStates("ui"); // Fixture uses "uim" by default, which includes Maintenance nodes
+        for (BucketId bucket : getTestBuckets()) {
+            test.recordResult(bucket).assertNodeCount(6).assertNodesNotUsed(5, 9);
+        }
     }
 
 }

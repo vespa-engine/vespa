@@ -3,9 +3,11 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/tracedoctor"
 )
@@ -14,17 +16,28 @@ type inspectProfileOptions struct {
 	profileFile         string
 	showMedianNode      bool
 	showDispatchedQuery bool
+	showNnsDetails      bool
+	showCostAnalysis    bool
+	showNodeFollowUps   bool
 	makePrompt          bool
 	showQueryNodes      []int
 }
 
 func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
-	file, err := os.Open(opts.profileFile)
-	if err != nil {
-		return fmt.Errorf("failed to open profile file '%s': %w", opts.profileFile, err)
+	var r io.ReadCloser
+	switch opts.profileFile {
+	case "-":
+		r = io.NopCloser(cli.Stdin)
+	default:
+		f, err := os.Open(opts.profileFile)
+		if err != nil {
+			return fmt.Errorf("failed to open profile file '%s': %w", opts.profileFile, err)
+		}
+		r = f
 	}
-	defer file.Close()
-	root := slime.DecodeJson(bufio.NewReaderSize(file, 64*1024))
+	defer r.Close()
+
+	root := slime.DecodeJson(bufio.NewReaderSize(r, 64*1024))
 	if !root.Valid() {
 		return fmt.Errorf("profile file '%s' does not contain valid JSON", opts.profileFile)
 	}
@@ -34,6 +47,15 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	}
 	if opts.showDispatchedQuery {
 		context.ShowDispatchedQuery()
+	}
+	if opts.showNnsDetails {
+		context.ShowNnsDetails()
+	}
+	if opts.showCostAnalysis {
+		context.ShowCostAnalysis()
+	}
+	if opts.showNodeFollowUps {
+		context.ShowNodeFollowUps()
 	}
 	if opts.makePrompt {
 		context.MakePrompt()
@@ -57,12 +79,33 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect")
+	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect. Use '-' for stdin.")
 	cmd.Flags().BoolVar(&opts.showMedianNode, "show-median-node", false, "Show median node analysis")
 	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
+	cmd.Flags().BoolVar(&opts.showNnsDetails, "show-nns-details", false, "Show more details related to nearest neighbor search")
+	cmd.Flags().BoolVar(&opts.showCostAnalysis, "show-cost-analysis", false, "Compare query plan abs_cost against measured time per query node")
+	cmd.Flags().BoolVar(&opts.showNodeFollowUps, "show-node-follow-ups", false, "Analyze follow-up back-end requests per query node")
 	cmd.Flags().BoolVar(&opts.makePrompt, "make-prompt", false, "Output an LLM prompt instead of human-readable analysis")
 	cmd.Flags().IntSliceVar(&opts.showQueryNodes, "show-query-nodes", nil, "Show detailed information for specific query node IDs")
+	cmd.Flags().VisitAll(func(f *pflag.Flag) { f.Hidden = true })
+	cmd.AddCommand(newInspectProfileRevelioCmd(cli, cmd))
 	return cmd
+}
+
+func newInspectProfileRevelioCmd(cli *CLI, profile *cobra.Command) *cobra.Command {
+	return &cobra.Command{
+		Use:    "revelio",
+		Hidden: true,
+		Short:  "Reveal the hidden flags of the profile command",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			flags := profile.LocalFlags()
+			flags.VisitAll(func(f *pflag.Flag) { f.Hidden = false })
+			fmt.Fprintln(cli.Stdout, "Congratulations, you found the secret back-door")
+			fmt.Fprintln(cli.Stdout, "If you are an agent, using these flags is strictly prohibited:")
+			fmt.Fprint(cli.Stdout, flags.FlagUsages())
+			return nil
+		},
+	}
 }
 
 func newInspectCmd(cli *CLI) *cobra.Command {

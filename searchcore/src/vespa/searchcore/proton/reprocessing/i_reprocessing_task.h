@@ -11,27 +11,19 @@ namespace proton {
  * Interface class for reprocessing task, subclassed by specific
  * task.
  */
-class IReprocessingTask
-{
+class IReprocessingTask {
 public:
     using SP = std::shared_ptr<IReprocessingTask>;
     using UP = std::unique_ptr<IReprocessingTask>;
     using List = std::vector<SP>;
 
-    struct Progress
-    {
+    struct Progress {
         double _progress;
         double _weight;
 
-        Progress()
-            : _progress(0.0),
-              _weight(0.0)
-        {}
+        Progress() : _progress(0.0), _weight(0.0) {}
 
-        Progress(double progress, double weight)
-            : _progress(progress),
-              _weight(weight)
-        {}
+        Progress(double progress, double weight) : _progress(progress), _weight(weight) {}
     };
 
     virtual ~IReprocessingTask() = default;

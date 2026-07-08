@@ -1,0 +1,6 @@
+{
+  "localEndpoints": {
+    "default": "https://localhost:8080/"
+  },
+  "application": "my-tenant:my-app:my-instance"
+}

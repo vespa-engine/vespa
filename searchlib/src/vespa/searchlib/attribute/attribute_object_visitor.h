@@ -2,7 +2,9 @@
 
 #pragma once
 
-namespace vespalib { class ObjectVisitor; }
+namespace vespalib {
+class ObjectVisitor;
+}
 
 namespace search::attribute {
 
@@ -13,4 +15,4 @@ class IAttributeVector;
  */
 void visit_attribute(vespalib::ObjectVisitor& visitor, const IAttributeVector& attr);
 
-}
+} // namespace search::attribute

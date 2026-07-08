@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nearest_neighbor_field_searcher.h"
+
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
@@ -15,6 +16,7 @@
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
+
 #include <algorithm>
 #include <cctype>
 
@@ -32,68 +34,52 @@ namespace {
 
 constexpr uint32_t scratch_docid = 0;
 
-std::unique_ptr<TensorExtAttribute>
-make_attribute(const ValueType& tensor_type, search::attribute::DistanceMetric dm)
-{
+std::unique_ptr<TensorExtAttribute> make_attribute(const ValueType&                  tensor_type,
+                                                   search::attribute::DistanceMetric dm) {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     cfg.setTensorType(tensor_type);
     cfg.set_distance_metric(dm);
-    auto result = std::make_unique<TensorExtAttribute>("nnfs_attr", cfg);
+    auto     result = std::make_unique<TensorExtAttribute>("nnfs_attr", cfg);
     uint32_t docid;
     result->addDoc(docid);
     assert(docid == scratch_docid);
     return result;
 }
 
-}
+} // namespace
 
 namespace vsm {
 
-NearestNeighborFieldSearcher::NodeAndCalc::NodeAndCalc(search::streaming::NearestNeighborQueryNode* node_in,
+NearestNeighborFieldSearcher::NodeAndCalc::NodeAndCalc(search::streaming::NearestNeighborQueryNode*        node_in,
                                                        std::unique_ptr<search::tensor::DistanceCalculator> calc_in)
-    : node(node_in),
-      calc(std::move(calc_in)),
-      heap(node->get_target_hits())
-{
+    : node(node_in), calc(std::move(calc_in)), heap(node->get_target_hits()) {
     node->set_raw_score_calc(this);
     heap.set_distance_threshold(calc->function().convert_threshold(node->get_distance_threshold()));
 }
 
-double
-NearestNeighborFieldSearcher::NodeAndCalc::to_raw_score(double distance)
-{
+double NearestNeighborFieldSearcher::NodeAndCalc::to_raw_score(double distance) {
     heap.used(distance);
     return calc->function().to_rawscore(distance);
 }
 
-NearestNeighborFieldSearcher::NearestNeighborFieldSearcher(FieldIdT fid,
-                                                           DistanceMetric metric)
-    : FieldSearcher(fid),
-      _metric(metric),
-      _attr(),
-      _calcs()
-{
+NearestNeighborFieldSearcher::NearestNeighborFieldSearcher(FieldIdT fid, DistanceMetric metric)
+    : FieldSearcher(fid), _metric(metric), _attr(), _calcs() {
 }
 
 NearestNeighborFieldSearcher::~NearestNeighborFieldSearcher() = default;
 
-std::unique_ptr<FieldSearcher>
-NearestNeighborFieldSearcher::duplicate() const
-{
+std::unique_ptr<FieldSearcher> NearestNeighborFieldSearcher::duplicate() const {
     return std::make_unique<NearestNeighborFieldSearcher>(field(), _metric);
 }
 
-void
-NearestNeighborFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
-                                      const SharedSearcherBuf& buf,
-                                      const vsm::FieldPathMapT& field_paths,
-                                      search::fef::IQueryEnvironment& query_env)
-{
+void NearestNeighborFieldSearcher::prepare(search::streaming::QueryTermList& qtl, const SharedSearcherBuf& buf,
+                                           const vsm::FieldPathMapT&       field_paths,
+                                           search::fef::IQueryEnvironment& query_env) {
     FieldSearcher::prepare(qtl, buf, field_paths, query_env);
     const auto* tensor_type = field_paths[field()].back().getDataType().cast_tensor();
     if (tensor_type == nullptr) {
-        vespalib::Issue::report("Data type for field %u is '%s', but expected it to be a tensor type",
-                                field(), field_paths[field()].back().getDataType().toString().c_str());
+        vespalib::Issue::report("Data type for field %u is '%s', but expected it to be a tensor type", field(),
+                                field_paths[field()].back().getDataType().toString().c_str());
     }
     _attr = make_attribute(tensor_type->getTensorType(), _metric);
     _calcs.clear();
@@ -122,9 +108,7 @@ NearestNeighborFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
     }
 }
 
-void
-NearestNeighborFieldSearcher::onValue(const document::FieldValue& fv)
-{
+void NearestNeighborFieldSearcher::onValue(const document::FieldValue& fv) {
     if (fv.isA(document::FieldValue::Type::TENSOR)) {
         const auto* tfv = dynamic_cast<const document::TensorFieldValue*>(&fv);
         if (tfv && tfv->getAsTensorPtr()) {
@@ -140,14 +124,11 @@ NearestNeighborFieldSearcher::onValue(const document::FieldValue& fv)
     }
 }
 
-DistanceMetric
-NearestNeighborFieldSearcher::distance_metric_from_string(std::string_view value)
-{
+DistanceMetric NearestNeighborFieldSearcher::distance_metric_from_string(std::string_view value) {
     // Valid string values must match the definition of DistanceMetric in
     // config-model/src/main/java/com/yahoo/schema/document/Attribute.java
     std::string v(value);
-    std::transform(v.begin(), v.end(), v.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
+    std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c) { return std::tolower(c); });
     try {
         return DistanceMetricUtils::to_distance_metric(v);
     } catch (vespalib::IllegalStateException&) {
@@ -156,5 +137,4 @@ NearestNeighborFieldSearcher::distance_metric_from_string(std::string_view value
     }
 }
 
-}
-
+} // namespace vsm

@@ -10,8 +10,7 @@ namespace vbench {
  * Deletes incoming request object. This handler is used to terminate
  * a chain of handlers.
  **/
-class RequestSink : public Analyzer
-{
+class RequestSink : public Analyzer {
 public:
     RequestSink();
     void handle(Request::UP request) override;

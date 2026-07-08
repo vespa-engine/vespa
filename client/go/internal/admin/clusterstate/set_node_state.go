@@ -29,7 +29,7 @@ Arguments:
 
 	longSetNodeState = `Set the user state of a node. This will set the generated state to the user state if the user state is "better" than the generated state that would
 have been created if the user state was up. For instance, a node that is currently in initializing state can be forced into down state, while a node
-that is currently down can not be forced into retired state, but can be forced into maintenance state.`
+that is currently down cannot be forced into retired state, but can be forced into maintenance state.`
 )
 
 func NewSetNodeStateCmd() *cobra.Command {

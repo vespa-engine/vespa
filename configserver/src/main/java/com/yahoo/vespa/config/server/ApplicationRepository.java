@@ -9,6 +9,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -27,10 +28,12 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.ParentHostUnavailableException;
+import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -53,6 +56,7 @@ import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ConfigStateChecker;
 import com.yahoo.vespa.config.server.application.DefaultClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -66,6 +70,7 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
@@ -76,8 +81,10 @@ import com.yahoo.vespa.config.server.http.v2.PrepareAndActivateResult;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.response.SearchNodeMetricsResponse;
+import com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.SearchNodeMetricsRetriever;
+import com.yahoo.vespa.config.server.provision.DeploymentConfigStoreProvider;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -97,6 +104,7 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -133,6 +141,7 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
+import static java.util.logging.Level.INFO;
 
 /**
  * The API for managing applications.
@@ -149,8 +158,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public final TenantRepository tenantRepository;
     private final Optional<Provisioner> hostProvisioner;
+    private final Optional<DeploymentConfigStore> deploymentConfigStore;
     private final Optional<InfraDeployer> infraDeployer;
     private final ConfigConvergenceChecker convergeChecker;
+    private final ConfigStateChecker configStateChecker;
     private final HttpProxy httpProxy;
     private final EndpointsChecker endpointsChecker;
     private final Clock clock;
@@ -163,22 +174,28 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final ClusterReindexingStatusClient clusterReindexingStatusClient;
     private final ActiveTokenFingerprints activeTokenFingerprints;
     private final FlagSource flagSource;
+    private final DeploymentMetricsRetriever deploymentMetricsRetriever;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
                                  HostProvisionerProvider hostProvisionerProvider,
+                                 DeploymentConfigStoreProvider deploymentConfigStoreProvider,
                                  InfraDeployerProvider infraDeployerProvider,
                                  ConfigConvergenceChecker configConvergenceChecker,
+                                 ConfigStateChecker configStateChecker,
                                  HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
                                  TesterClient testerClient,
                                  HealthCheckerProvider healthCheckers,
                                  Metric metric,
-                                 FlagSource flagSource) {
+                                 FlagSource flagSource,
+                                 ComponentRegistry<NodeSuspensionProvider> nodeSuspensionProviders) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
+             deploymentConfigStoreProvider.getStore(),
              infraDeployerProvider.getInfraDeployer(),
              configConvergenceChecker,
+             configStateChecker,
              httpProxy,
              EndpointsChecker.of(healthCheckers.getHealthChecker()),
              configserverConfig,
@@ -189,13 +206,28 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new SecretStoreValidator(),
              new DefaultClusterReindexingStatusClient(),
              new ActiveTokenFingerprintsClient(),
-             flagSource);
+             flagSource,
+             new DeploymentMetricsRetriever(new ClusterDeploymentMetricsRetriever(),
+                     nodeSuspensionProvider(nodeSuspensionProviders)));
+    }
+
+    private static NodeSuspensionProvider nodeSuspensionProvider(ComponentRegistry<NodeSuspensionProvider> registry) {
+        var providers = registry.allComponents();
+        if (providers.size() > 1) {
+            String providerDescriptions = providers.stream()
+                    .map(provider -> provider.getClass().getName())
+                    .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException("Multiple NodeSuspensionProvider components registered: " + providerDescriptions);
+        }
+        return providers.isEmpty() ? NodeSuspensionProvider.EMPTY : providers.get(0);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
                                   Optional<Provisioner> hostProvisioner,
+                                  Optional<DeploymentConfigStore> deploymentConfigStore,
                                   Optional<InfraDeployer> infraDeployer,
                                   ConfigConvergenceChecker configConvergenceChecker,
+                                  ConfigStateChecker configStateChecker,
                                   HttpProxy httpProxy,
                                   EndpointsChecker endpointsChecker,
                                   ConfigserverConfig configserverConfig,
@@ -206,11 +238,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   SecretStoreValidator secretStoreValidator,
                                   ClusterReindexingStatusClient clusterReindexingStatusClient,
                                   ActiveTokenFingerprints activeTokenFingerprints,
-                                  FlagSource flagSource) {
+                                  FlagSource flagSource,
+                                  DeploymentMetricsRetriever deploymentMetricsRetriever) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
+        this.deploymentConfigStore = Objects.requireNonNull(deploymentConfigStore);
         this.infraDeployer = Objects.requireNonNull(infraDeployer);
         this.convergeChecker = Objects.requireNonNull(configConvergenceChecker);
+        this.configStateChecker = Objects.requireNonNull(configStateChecker);
         this.httpProxy = Objects.requireNonNull(httpProxy);
         this.endpointsChecker = Objects.requireNonNull(endpointsChecker);
         this.configserverConfig = Objects.requireNonNull(configserverConfig);
@@ -222,6 +257,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clusterReindexingStatusClient = Objects.requireNonNull(clusterReindexingStatusClient);
         this.activeTokenFingerprints = Objects.requireNonNull(activeTokenFingerprints);
         this.flagSource = flagSource;
+        this.deploymentMetricsRetriever = Objects.requireNonNull(deploymentMetricsRetriever);
     }
 
     // Should be used by tests only (first constructor in this class makes sure we use injectable components where possible)
@@ -236,8 +272,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private Metric metric = new NullMetric();
         private SecretStoreValidator secretStoreValidator = new SecretStoreValidator();
         private FlagSource flagSource = new InMemoryFlagSource();
-        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
+        private ConfigConvergenceChecker configConvergenceChecker = null;
+        private ConfigStateChecker configStateChecker = new ConfigStateChecker();
         private Map<String, List<Token>> activeTokens = Map.of();
+        private Optional<DeploymentConfigStore> deploymentConfigStore = Optional.empty();
 
         public Builder withTenantRepository(TenantRepository tenantRepository) {
             this.tenantRepository = tenantRepository;
@@ -288,6 +326,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             this.configConvergenceChecker = configConvergenceChecker;
             return this;
         }
+        
+        public Builder withConfigStateChecker(ConfigStateChecker configStateChecker) {
+            this.configStateChecker = configStateChecker;
+            return this;
+        }
 
         public Builder withEndpointsChecker(EndpointsChecker endpointsChecker) {
             this.endpointsChecker = endpointsChecker;
@@ -299,11 +342,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return this;
         }
 
+        public Builder withDeploymentConfigStore(Optional<DeploymentConfigStore> deploymentConfigStore) {
+            this.deploymentConfigStore = deploymentConfigStore;
+            return this;
+        }
+
         public ApplicationRepository build() {
             return new ApplicationRepository(tenantRepository,
                                              tenantRepository.hostProvisionerProvider().getHostProvisioner(),
+                                             deploymentConfigStore,
                                              InfraDeployerProvider.empty().getInfraDeployer(),
-                                             configConvergenceChecker,
+                                             configConvergenceChecker == null ? new ConfigConvergenceChecker(flagSource) : configConvergenceChecker,
+                                             configStateChecker,
                                              httpProxy,
                                              endpointsChecker,
                                              configserverConfig,
@@ -314,7 +364,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              secretStoreValidator,
                                              ClusterReindexingStatusClient.DUMMY_INSTANCE,
                                              __ -> activeTokens,
-                                             flagSource);
+                                             flagSource,
+                                             new DeploymentMetricsRetriever());
         }
 
     }
@@ -335,7 +386,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult prepare(long sessionId, PrepareParams prepareParams) {
-        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+        DeployHandlerLogger logger = DeployHandlerLogger.fromPrepareParams(prepareParams);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
@@ -343,21 +394,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         Tenant tenant = getTenant(prepareParams.getApplicationId());
         Session session = validateThatLocalSessionIsNotActive(tenant, sessionId);
-        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
+        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, deploymentConfigStore, prepareParams, logger, clock);
         deployment.prepare();
         logConfigChangeActions(deployment.configChangeActions(), logger);
         log.log(Level.INFO, TenantRepository.logPre(prepareParams.getApplicationId()) + "Session " + sessionId + " prepared successfully. ");
         return deployment;
     }
 
-    public PrepareAndActivateResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
-        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+    public PrepareAndActivateResult prepareAndActivate(CompressedApplicationInputStream in, PrepareParams prepareParams) {
+        DeployHandlerLogger logger = DeployHandlerLogger.fromPrepareParams(prepareParams);
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
         PrepareAndActivateResult result;
         try {
             threadLockStats.startRecording("deploy of " + prepareParams.getApplicationId().serializedForm());
-            result = deploy(decompressApplication(in, tempDir), prepareParams, logger);
+            result = prepareAndActivate(decompressApplication(in, tempDir), prepareParams, logger);
         } finally {
             threadLockStats.stopRecording();
             cleanupTempDirectory(tempDir, logger);
@@ -365,11 +416,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return result;
     }
 
-    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
-        return deploy(applicationPackage, prepareParams, DeployHandlerLogger.forPrepareParams(prepareParams)).deployResult();
+    public PrepareAndActivateResult prepareAndActivate(File applicationPackage, PrepareParams prepareParams) {
+        return prepareAndActivate(applicationPackage, prepareParams, DeployHandlerLogger.fromPrepareParams(prepareParams));
     }
 
-    private PrepareAndActivateResult deploy(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
+    private PrepareAndActivateResult prepareAndActivate(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
         long sessionId = createSession(prepareParams.getApplicationId(),
                                        prepareParams.getTimeoutBudget(),
                                        applicationDir,
@@ -445,7 +496,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         DeployLogger logger = new SilentDeployLogger();
         Session newSession = sessionRepository.createSessionFromExisting(activeSession.get(), true, timeoutBudget, logger);
 
-        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
+        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, deploymentConfigStore, logger, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
     }
 
@@ -501,7 +552,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   boolean force) {
         DeployLogger logger = new SilentDeployLogger();
         Session session = getLocalSession(tenant, sessionId);
-        Deployment deployment = Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
+        Deployment deployment = Deployment.prepared(session, this, hostProvisioner, deploymentConfigStore, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
         return sessionRepository(tenant).read(session).applicationId();
     }
@@ -650,8 +701,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         log.log(Level.FINE, () -> "File references not in use: " + toDelete);
         List<String> deleted = new ArrayList<>();
         toDelete.forEach(fileReference -> {
-            if (fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse, this::isFileReferenceOld))
-                deleted.add(fileReference);
+            try {
+                // Note that a file reference will only be deleted if it is not in use and is old enough
+                if (fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse, this::isFileReferenceOld))
+                    deleted.add(fileReference);
+            } catch (UncheckedIOException e) {
+                log.log(Level.INFO, () -> "Deleting file reference not in use (" + fileReference + ") failed, probably deleted already: " + e.getMessage());
+            }
         });
         log.log(Level.FINE, () -> "Deleted " + deleted.size() + " file references not in use");
         return deleted;
@@ -670,7 +726,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Set<String> getFileReferencesInUse() {
         Set<String> fileReferencesInUse = new HashSet<>();
         for (var applicationId : listApplications()) {
-            Application app = getApplication(applicationId);
+            Application app;
+            try {
+                 app = getApplication(applicationId);
+            } catch (NotFoundException e) {
+                continue; // Just skip if not found
+            }
             fileReferencesInUse.addAll(app.getModel().fileReferences().stream()
                                           .map(FileReference::value)
                                           .collect(Collectors.toSet()));
@@ -684,7 +745,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
-                .sorted(Comparator.comparing(a -> lastModified(new File(fileReferencesPath, a))))
+                .sorted(Comparator.comparing(a -> {
+                    try {
+                        return lastModified(new File(fileReferencesPath, a));
+                    } catch (UncheckedIOException e) {
+                        log.log(Level.INFO, "Unable to get last modified time for file reference " + a + ", probably deleted");
+                        return clock.instant();
+                    }
+                }))
                 // Do max 20 at a time
                 .limit(20)
                 .toList();
@@ -768,6 +836,100 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return secretStoreValidator.validateSecretStore(application, systemName, slime);
     }
 
+    public void removeStaleHostRegistryEntries() {
+        Duration lockTimeout = Duration.ofSeconds(2);
+
+        for (var tenant : tenantRepository.getAllTenants()) {
+            TenantApplications tenantApplications = tenant.getApplicationRepo();
+            SessionRepository sessionRepository = tenant.getSessionRepository();
+            HostRegistry hostRegistry = tenantApplications.hostRegistry();
+
+            // Phase A: Optimistic (lock-free) comparison of ApplicationId sets.
+            // hostRegistry is global (hosts for all apps for all tenants), so scope to the current tenant.
+            Set<ApplicationId> registryApps = hostRegistry.getApplicationIds().stream()
+                    .filter(app -> app.tenant().equals(tenant.getName()))
+                    .collect(Collectors.toSet());
+            Set<ApplicationId> activeApps = Set.copyOf(tenantApplications.activeApplications());
+
+            Set<ApplicationId> inRegistryOnly = new HashSet<>(registryApps);
+            inRegistryOnly.removeAll(activeApps);
+
+            Set<ApplicationId> inActiveOnly = new HashSet<>(activeApps);
+            inActiveOnly.removeAll(registryApps);
+
+            Set<ApplicationId> inBoth = new HashSet<>(registryApps);
+            inBoth.retainAll(activeApps);
+
+            // Phase B: Re-verify ApplicationId mismatches under lock
+            for (ApplicationId app : inRegistryOnly) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    if (hostRegistry.getHosts(app).isEmpty()) continue;
+                    if (tenantApplications.activeApplications().contains(app)) continue;
+                    log.log(INFO, "Host registry has hosts " + hostRegistry.getHosts(app) +
+                            " for " + app + " but application is not active" +
+                            " (tenant " + tenant.getName() + ")");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+
+            for (ApplicationId app : inActiveOnly) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    if (!tenantApplications.activeApplications().contains(app)) continue;
+                    if (!hostRegistry.getHosts(app).isEmpty()) continue;
+                    log.log(INFO, "Application " + app + " is active with hosts " +
+                            getSessionHosts(app, tenantApplications, sessionRepository) +
+                            " but has no hosts in host registry (tenant " + tenant.getName() + ")");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+
+            // Phase C: Per-application host diff under lock
+            for (ApplicationId app : inBoth) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    Set<String> registryHosts = new HashSet<>(hostRegistry.getHosts(app));
+                    Set<String> sessionHosts = getSessionHosts(app, tenantApplications, sessionRepository);
+
+                    Set<String> inRegistryNotSession = new HashSet<>(registryHosts);
+                    inRegistryNotSession.removeAll(sessionHosts);
+
+                    Set<String> inSessionNotRegistry = new HashSet<>(sessionHosts);
+                    inSessionNotRegistry.removeAll(registryHosts);
+
+                    if (!inRegistryNotSession.isEmpty() || !inSessionNotRegistry.isEmpty()) {
+                        log.log(INFO, "Host diff for " + app + " (tenant " + tenant.getName() + "): " +
+                                "in registry but not session=" + inRegistryNotSession +
+                                ", in session but not registry=" + inSessionNotRegistry);
+                    }
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+        }
+    }
+
+    private static Set<String> getSessionHosts(ApplicationId app, TenantApplications tenantApplications, SessionRepository sessionRepository) {
+        Set<String> sessionHosts = new HashSet<>();
+        tenantApplications.activeSessionOf(app).ifPresent(sessionId -> {
+            Session session = sessionRepository.getRemoteSession(sessionId);
+            if (session != null) {
+                session.getAllocatedHosts().getHosts()
+                        .forEach(hostSpec -> sessionHosts.add(hostSpec.hostname()));
+            }
+        });
+        return sessionHosts;
+    }
+
     // ---------------- Convergence ----------------------------------------------------------------
 
     public ServiceResponse checkServiceForConfigConvergence(ApplicationId applicationId,
@@ -787,6 +949,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }
+    
+    public ConfigStateChecker configStateChecker() { return configStateChecker; }
 
     public Availability verifyEndpoints(List<Endpoint> endpoints) {
         return endpointsChecker.endpointsAvailable(endpoints);
@@ -856,10 +1020,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-    public Activation activate(Session session, ApplicationId applicationId, Tenant tenant, boolean isBootstrap, boolean force) {
+    public Activation activate(Session session, ApplicationId applicationId, boolean isBootstrap, boolean force) {
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
+
+        Tenant tenant = tenantRepository().getTenant(applicationId.tenant());
         try (@SuppressWarnings("unused") var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
             Optional<Session> activeSession = getActiveSession(applicationId);
             var sessionZooKeeperClient = tenant.getSessionRepository().createSessionZooKeeperClient(session.getSessionId());
@@ -968,7 +1134,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public DeploymentMetricsResponse getDeploymentMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        DeploymentMetricsRetriever deploymentMetricsRetriever = new DeploymentMetricsRetriever();
         return deploymentMetricsRetriever.getMetrics(application);
     }
 

@@ -8,10 +8,9 @@ class FastOS_FileInterface;
 
 namespace search {
 
-class SummaryException : public vespalib::IoException
-{
+class SummaryException : public vespalib::IoException {
 public:
-    SummaryException(std::string_view msg, FastOS_FileInterface & file, std::string_view location);
+    SummaryException(std::string_view msg, FastOS_FileInterface& file, std::string_view location);
 };
 
 } // namespace search

@@ -5,7 +5,6 @@ import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.utils.Duration;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
@@ -22,9 +21,11 @@ import static com.yahoo.text.XML.getChildValue;
  */
 abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfig.Producer {
     final protected OnnxModelOptions onnxModelOptions;
+    private final boolean forceDisableOptimization;
 
     protected OnnxEmbedder(String className, String bundle, Element xml, DeployState state) {
         super(className, bundle, xml);
+        this.forceDisableOptimization = state.featureFlags().forceDisableOnnxModelOptimization();
         var opts = OnnxModelOptions.empty();
 
         opts = getChildValue(xml, "onnx-execution-mode")
@@ -47,24 +48,15 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                 .map(opts::withGpuDevice)
                 .orElse(opts);
 
-        var batchingElement = getChild(xml, "batching");
-        if (batchingElement != null) {
-            opts = XML.attribute("max-size", batchingElement)
-                    .map(value -> {
-                        try {
-                            return Integer.parseUnsignedInt(value);
-                        } catch (NumberFormatException e) {
-                            throw new IllegalArgumentException(
-                                    "Batching max-size should be a positive integer, provided: " + value, e);
-                        }
-                    })
-                    .map(opts::withBatchingMaxSize)
-                    .orElse(opts);
+        opts = getChildValue(xml, "onnx-optimize-model")
+                .map(Boolean::parseBoolean)
+                .map(opts::withOptimizeModel)
+                .orElse(opts);
 
-            opts = XML.attribute("max-delay", batchingElement)
-                    .map(OnnxEmbedder::parseMillis)
-                    .map(opts::withBatchingMaxDelay)
-                    .orElse(opts);
+        var batchingConfig = EmbedderBatchingConfig.parseBatchingElement(xml);
+        if (batchingConfig != null) {
+            opts = opts.withBatchingMaxSize(batchingConfig.maxSize());
+            opts = opts.withBatchingMaxDelay(batchingConfig.maxDelay());
         }
 
         var concurrencyElement = getChild(xml, "concurrency");
@@ -106,10 +98,11 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                         builder.concurrency.factorType(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.valueOf(value)));
         onnxModelOptions.concurrencyFactor().ifPresent(builder.concurrency::factor);
         builder.modelConfigOverride(onnxModelOptions.modelConfigOverride());
+        if (forceDisableOptimization)
+            builder.optimizeModel(false);
+        else
+            onnxModelOptions.optimizeModel().ifPresent(builder::optimizeModel);
     }
 
 
-    private static java.time.Duration parseMillis(String duration) {
-        return java.time.Duration.ofMillis(new Duration(duration).getMilliSeconds());
-    }
 }

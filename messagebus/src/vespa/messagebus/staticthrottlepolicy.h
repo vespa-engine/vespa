@@ -14,7 +14,7 @@ namespace mbus {
  * <b>NOTE:</b> By context, "pending" is refering to the number of sent messages that have not been replied to
  * yet.
  */
-class StaticThrottlePolicy: public IThrottlePolicy {
+class StaticThrottlePolicy : public IThrottlePolicy {
 private:
     uint32_t _maxPendingCount;
     uint64_t _maxPendingSize;
@@ -45,7 +45,7 @@ public:
      * @param maxCount The max count.
      * @return This, to allow chaining.
      */
-    StaticThrottlePolicy &setMaxPendingCount(uint32_t maxCount);
+    StaticThrottlePolicy& setMaxPendingCount(uint32_t maxCount);
 
     /**
      * Returns the maximum total size of pending messages allowed.
@@ -61,7 +61,7 @@ public:
      * @param maxSize The max size.
      * @return This, to allow chaining.
      */
-    StaticThrottlePolicy &setMaxPendingSize(uint64_t maxSize);
+    StaticThrottlePolicy& setMaxPendingSize(uint64_t maxSize);
 
     /**
      * Returns the total size of pending messages.
@@ -70,10 +70,9 @@ public:
      */
     uint64_t getPendingSize() const;
 
-    bool canSend(const Message &msg, uint32_t pendingCount) override;
-    void processMessage(Message &msg) override;
-    void processReply(Reply &reply) override;
+    bool canSend(const Message& msg, uint32_t pendingCount) override;
+    void processMessage(Message& msg) override;
+    void processReply(Reply& reply) override;
 };
 
 } // namespace mbus
-

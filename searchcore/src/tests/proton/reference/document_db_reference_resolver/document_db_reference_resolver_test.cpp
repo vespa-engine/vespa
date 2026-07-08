@@ -1,5 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config-imported-fields.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/referencedatatype.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
@@ -14,13 +18,10 @@
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <vespa/config-imported-fields.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -34,21 +35,19 @@ using proton::test::MockDocumentDBReference;
 using search::attribute::test::MockAttributeManager;
 using vespa::config::search::ImportedFieldsConfig;
 using vespa::config::search::ImportedFieldsConfigBuilder;
+using vespalib::ISequencedTaskExecutor;
 using vespalib::MonitoredRefCount;
 using vespalib::SequencedTaskExecutor;
-using vespalib::ISequencedTaskExecutor;
 
-const ReferenceAttribute *getReferenceAttribute(const IGidToLidChangeListener &listener) {
-    auto mylistener = dynamic_cast<const GidToLidChangeListener *>(&listener);
+const ReferenceAttribute* getReferenceAttribute(const IGidToLidChangeListener& listener) {
+    auto mylistener = dynamic_cast<const GidToLidChangeListener*>(&listener);
     assert(mylistener);
     return mylistener->getReferenceAttribute().get();
 }
 
 struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
     using SP = std::shared_ptr<MyGidToLidMapperFactory>;
-    std::unique_ptr<IGidToLidMapper> getMapper() const override {
-        return {};
-    }
+    std::unique_ptr<IGidToLidMapper> getMapper() const override { return {}; }
 };
 
 using proton::test::MockGidToLidChangeHandler;
@@ -58,19 +57,14 @@ using RemoveEntry = MockGidToLidChangeHandler::RemoveEntry;
 struct MyDocumentDBReference : public MockDocumentDBReference {
     using SP = std::shared_ptr<MyDocumentDBReference>;
     using AttributesMap = std::map<std::string, AttributeVector::SP>;
-    MyGidToLidMapperFactory::SP factory;
-    AttributesMap attributes;
+    MyGidToLidMapperFactory::SP                factory;
+    AttributesMap                              attributes;
     std::shared_ptr<MockGidToLidChangeHandler> _gidToLidChangeHandler;
 
-    MyDocumentDBReference(MyGidToLidMapperFactory::SP factory_,
+    MyDocumentDBReference(MyGidToLidMapperFactory::SP                factory_,
                           std::shared_ptr<MockGidToLidChangeHandler> gidToLidChangeHandler) noexcept
-        : factory(std::move(factory_)),
-          _gidToLidChangeHandler(std::move(gidToLidChangeHandler))
-    {
-    }
-    IGidToLidMapperFactory::SP getGidToLidMapperFactory() override {
-        return factory;
-    }
+        : factory(std::move(factory_)), _gidToLidChangeHandler(std::move(gidToLidChangeHandler)) {}
+    IGidToLidMapperFactory::SP getGidToLidMapperFactory() override { return factory; }
     std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view name) override {
         auto itr = attributes.find(std::string(name));
         if (itr != attributes.end()) {
@@ -82,16 +76,13 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
     void addIntAttribute(std::string_view name) {
         attributes[std::string(name)] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
     }
-    std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string &docTypeName) override {
+    std::unique_ptr<GidToLidChangeRegistrator>
+    makeGidToLidChangeRegistrator(const std::string& docTypeName) override {
         return std::make_unique<GidToLidChangeRegistrator>(_gidToLidChangeHandler, docTypeName);
     }
 
-    MockGidToLidChangeHandler &getGidToLidChangeHandler() {
-        return *_gidToLidChangeHandler;
-    }
-    void removeAttribute(std::string_view name) {
-        attributes.erase(std::string(name));
-    }
+    MockGidToLidChangeHandler& getGidToLidChangeHandler() { return *_gidToLidChangeHandler; }
+    void removeAttribute(std::string_view name) { attributes.erase(std::string(name)); }
 };
 
 struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
@@ -117,28 +108,28 @@ struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
 };
 
 struct MyAttributeManager : public MockAttributeManager {
-    void addIntAttribute(const std::string &name) {
+    void addIntAttribute(const std::string& name) {
         addAttribute(name, AttributeFactory::createAttribute(name, Config(BasicType::INT32)));
     }
-    void addReferenceAttribute(const std::string &name) {
+    void addReferenceAttribute(const std::string& name) {
         addAttribute(name, std::make_shared<ReferenceAttribute>(name));
     }
-    const ReferenceAttribute *getReferenceAttribute(const std::string &name) const {
+    const ReferenceAttribute* getReferenceAttribute(const std::string& name) const {
         AttributeGuard::UP guard = getAttribute(name);
-        auto *result = dynamic_cast<const ReferenceAttribute *>(guard->get());
+        auto*              result = dynamic_cast<const ReferenceAttribute*>(guard->get());
         assert(result != nullptr);
         return result;
     }
 };
 
 struct DocumentModel {
-    DocumentType parentDocType;
+    DocumentType      parentDocType;
     ReferenceDataType refDataType;
-    DocumentType parentDocType2;
+    DocumentType      parentDocType2;
     ReferenceDataType refDataType2;
-    DocumentType parentDocType3;
+    DocumentType      parentDocType3;
     ReferenceDataType refDataType3;
-    DocumentType childDocType;
+    DocumentType      childDocType;
     DocumentModel()
         : parentDocType("parent"),
           refDataType(parentDocType, 1234),
@@ -146,8 +137,7 @@ struct DocumentModel {
           refDataType2(parentDocType2, 1235),
           parentDocType3("parent3"),
           refDataType3(parentDocType3, 1236),
-          childDocType("child")
-    {
+          childDocType("child") {
         initChildDocType();
     }
     ~DocumentModel();
@@ -161,20 +151,14 @@ struct DocumentModel {
 
 DocumentModel::~DocumentModel() = default;
 
-void
-set(const std::string &name,
-    const std::string &referenceField,
-    const std::string &targetField,
-    ImportedFieldsConfigBuilder::Attribute &attr)
-{
+void set(const std::string& name, const std::string& referenceField, const std::string& targetField,
+         ImportedFieldsConfigBuilder::Attribute& attr) {
     attr.name = name;
     attr.referencefield = referenceField;
     attr.targetfield = targetField;
 }
 
-ImportedFieldsConfig
-createImportedFieldsConfig()
-{
+ImportedFieldsConfig createImportedFieldsConfig() {
     ImportedFieldsConfigBuilder builder;
     builder.attribute.resize(2);
     set("imported_a", "ref", "target_a", builder.attribute[0]);
@@ -182,10 +166,8 @@ createImportedFieldsConfig()
     return builder;
 }
 
-const ImportedAttributeVector &
-asImportedAttribute(const IAttributeVector &attr)
-{
-    auto *result = dynamic_cast<const ImportedAttributeVector *>(&attr);
+const ImportedAttributeVector& asImportedAttribute(const IAttributeVector& attr) {
+    auto* result = dynamic_cast<const ImportedAttributeVector*>(&attr);
     assert(result != nullptr);
     return *result;
 }
@@ -197,18 +179,18 @@ using RemoveVector = std::vector<MockGidToLidChangeHandler::RemoveEntry>;
 
 class DocumentDBReferenceResolverTest : public ::testing::Test {
 protected:
-    MyGidToLidMapperFactory::SP factory;
-    MonitoredRefCount _gidToLidChangeListenerRefCount;
-    std::unique_ptr<ISequencedTaskExecutor> _attributeFieldWriter;
+    MyGidToLidMapperFactory::SP                factory;
+    MonitoredRefCount                          _gidToLidChangeListenerRefCount;
+    std::unique_ptr<ISequencedTaskExecutor>    _attributeFieldWriter;
     std::shared_ptr<MockGidToLidChangeHandler> _parentGidToLidChangeHandler;
     std::shared_ptr<MockGidToLidChangeHandler> _parentGidToLidChangeHandler2;
-    MyDocumentDBReference::SP parentReference;
-    MyDocumentDBReference::SP parentReference2;
-    MyReferenceRegistry registry;
-    MyAttributeManager attrMgr;
-    MyAttributeManager oldAttrMgr;
-    DocumentModel docModel;
-    ImportedFieldsConfig importedFieldsCfg;
+    MyDocumentDBReference::SP                  parentReference;
+    MyDocumentDBReference::SP                  parentReference2;
+    MyReferenceRegistry                        registry;
+    MyAttributeManager                         attrMgr;
+    MyAttributeManager                         oldAttrMgr;
+    DocumentModel                              docModel;
+    ImportedFieldsConfig                       importedFieldsCfg;
     DocumentDBReferenceResolverTest();
     ~DocumentDBReferenceResolverTest() override;
     void populateTargetAttributes() {
@@ -223,30 +205,27 @@ protected:
         oldAttrMgr.addReferenceAttribute("parent3_ref");
     }
     ImportedAttributesRepo::UP resolve(vespalib::duration visibilityDelay, bool useReferences) {
-        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, *_attributeFieldWriter, useReferences);
-        return resolver.resolve(attrMgr, oldAttrMgr, std::shared_ptr<search::IDocumentMetaStoreContext>(), visibilityDelay);
+        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg,
+                                             docModel.childDocType, _gidToLidChangeListenerRefCount,
+                                             *_attributeFieldWriter, useReferences);
+        return resolver.resolve(attrMgr, oldAttrMgr, std::shared_ptr<search::IDocumentMetaStoreContext>(),
+                                visibilityDelay);
     }
-    ImportedAttributesRepo::UP resolve(vespalib::duration visibilityDelay) {
-        return resolve(visibilityDelay, true);
-    }
-    ImportedAttributesRepo::UP resolveReplay() {
-        return resolve(vespalib::duration::zero(), false);
-    }
-    ImportedAttributesRepo::UP resolve() {
-        return resolve(vespalib::duration::zero());
-    }
+    ImportedAttributesRepo::UP resolve(vespalib::duration visibilityDelay) { return resolve(visibilityDelay, true); }
+    ImportedAttributesRepo::UP resolveReplay() { return resolve(vespalib::duration::zero(), false); }
+    ImportedAttributesRepo::UP resolve() { return resolve(vespalib::duration::zero()); }
     void teardown() {
-        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, *_attributeFieldWriter, false);
+        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg,
+                                             docModel.childDocType, _gidToLidChangeListenerRefCount,
+                                             *_attributeFieldWriter, false);
         resolver.teardown(attrMgr);
     }
-    const IGidToLidMapperFactory *getMapperFactoryPtr(const std::string &attrName) {
+    const IGidToLidMapperFactory* getMapperFactoryPtr(const std::string& attrName) {
         return attrMgr.getReferenceAttribute(attrName)->getGidToLidMapperFactory().get();
     }
-    void assertImportedAttribute(const std::string &name,
-                                 const std::string &referenceField,
-                                 const std::string &targetField,
-                                 bool useSearchCache,
-                                 const ImportedAttributeVector::SP & attr) {
+    void assertImportedAttribute(const std::string& name, const std::string& referenceField,
+                                 const std::string& targetField, bool useSearchCache,
+                                 const ImportedAttributeVector::SP& attr) {
         ASSERT_TRUE(attr.get());
         EXPECT_EQ(name, attr->getName());
         EXPECT_EQ(attrMgr.getReferenceAttribute(referenceField), attr->getReferenceAttribute().get());
@@ -254,19 +233,19 @@ protected:
         EXPECT_EQ(useSearchCache, attr->getSearchCache().get() != nullptr);
     }
 
-    MockGidToLidChangeHandler &getGidToLidChangeHandler(const std::string &referencedDocTypeName) {
+    MockGidToLidChangeHandler& getGidToLidChangeHandler(const std::string& referencedDocTypeName) {
         auto ireference = registry.get(referencedDocTypeName);
         auto reference = std::dynamic_pointer_cast<MyDocumentDBReference>(ireference);
         assert(reference);
         return reference->getGidToLidChangeHandler();
     }
 
-    const AddVector& get_parent_adds(const std::string &referenced_doc_type_name) {
+    const AddVector& get_parent_adds(const std::string& referenced_doc_type_name) {
         auto& handler = getGidToLidChangeHandler(referenced_doc_type_name);
         return handler.get_adds();
     }
 
-    const RemoveVector& get_parent_removes(const std::string &referenced_doc_type_name) {
+    const RemoveVector& get_parent_removes(const std::string& referenced_doc_type_name) {
         auto& handler = getGidToLidChangeHandler(referenced_doc_type_name);
         return handler.get_removes();
     }
@@ -284,8 +263,7 @@ DocumentDBReferenceResolverTest::DocumentDBReferenceResolverTest()
       registry(),
       attrMgr(),
       docModel(),
-      importedFieldsCfg(createImportedFieldsConfig())
-{
+      importedFieldsCfg(createImportedFieldsConfig()) {
     registry.add("parent", parentReference);
     registry.add("parent2", parentReference2);
     populateTargetAttributes();
@@ -294,51 +272,49 @@ DocumentDBReferenceResolverTest::DocumentDBReferenceResolverTest()
 
 DocumentDBReferenceResolverTest::~DocumentDBReferenceResolverTest() = default;
 
-TEST_F(DocumentDBReferenceResolverTest, require_that_reference_attributes_are_connected_to_gid_mapper)
-{
+TEST_F(DocumentDBReferenceResolverTest, require_that_reference_attributes_are_connected_to_gid_mapper) {
     resolve();
     EXPECT_EQ(factory.get(), getMapperFactoryPtr("ref"));
     EXPECT_EQ(factory.get(), getMapperFactoryPtr("other_ref"));
 }
 
-TEST_F(DocumentDBReferenceResolverTest, require_that_reference_attributes_are_not_connected_to_gid_mapper_during_replay)
-{
+TEST_F(DocumentDBReferenceResolverTest,
+       require_that_reference_attributes_are_not_connected_to_gid_mapper_during_replay) {
     resolveReplay();
-    EXPECT_EQ(static_cast<IGidToLidMapperFactory *>(nullptr), getMapperFactoryPtr("ref"));
-    EXPECT_EQ(static_cast<IGidToLidMapperFactory *>(nullptr), getMapperFactoryPtr("other_ref"));
+    EXPECT_EQ(static_cast<IGidToLidMapperFactory*>(nullptr), getMapperFactoryPtr("ref"));
+    EXPECT_EQ(static_cast<IGidToLidMapperFactory*>(nullptr), getMapperFactoryPtr("other_ref"));
 }
 
-TEST_F(DocumentDBReferenceResolverTest, require_that_imported_attributes_are_instantiated_without_search_cache_as_default)
-{
+TEST_F(DocumentDBReferenceResolverTest,
+       require_that_imported_attributes_are_instantiated_without_search_cache_as_default) {
     auto repo = resolve();
     EXPECT_EQ(2u, repo->size());
     assertImportedAttribute("imported_a", "ref", "target_a", false, repo->get("imported_a"));
     assertImportedAttribute("imported_b", "other_ref", "target_b", false, repo->get("imported_b"));
 }
 
-TEST_F(DocumentDBReferenceResolverTest, require_that_imported_attributes_are_instantiated_with_search_cache_if_visibility_delay_gt_0)
-{
+TEST_F(DocumentDBReferenceResolverTest,
+       require_that_imported_attributes_are_instantiated_with_search_cache_if_visibility_delay_gt_0) {
     auto repo = resolve(1s);
     EXPECT_EQ(2u, repo->size());
     assertImportedAttribute("imported_a", "ref", "target_a", true, repo->get("imported_a"));
     assertImportedAttribute("imported_b", "other_ref", "target_b", true, repo->get("imported_b"));
 }
 
-TEST_F(DocumentDBReferenceResolverTest, require_that_missing_target_attribute_prevents_creation_of_imported_attribute)
-{
+TEST_F(DocumentDBReferenceResolverTest,
+       require_that_missing_target_attribute_prevents_creation_of_imported_attribute) {
     parentReference->removeAttribute("target_a");
-    auto repo =  resolve();
+    auto repo = resolve();
     EXPECT_EQ(1u, repo->size());
     EXPECT_FALSE(repo->get("imported_a"));
     EXPECT_TRUE(repo->get("imported_b"));
 }
 
-TEST_F(DocumentDBReferenceResolverTest, require_that_listeners_are_added)
-{
+TEST_F(DocumentDBReferenceResolverTest, require_that_listeners_are_added) {
     resolve();
-    EXPECT_EQ((AddVector{{"child","other_ref"},{"child","ref"}}), get_parent_adds("parent"));
-    EXPECT_EQ((RemoveVector{{"child", {"other_ref","ref"}}}), get_parent_removes("parent"));
-    auto &listeners = getGidToLidChangeHandler("parent").getListeners();
+    EXPECT_EQ((AddVector{{"child", "other_ref"}, {"child", "ref"}}), get_parent_adds("parent"));
+    EXPECT_EQ((RemoveVector{{"child", {"other_ref", "ref"}}}), get_parent_removes("parent"));
+    auto& listeners = getGidToLidChangeHandler("parent").getListeners();
     EXPECT_EQ(2u, listeners.size());
     EXPECT_EQ(attrMgr.getReferenceAttribute("other_ref"), getReferenceAttribute(*listeners[0]));
     EXPECT_EQ(attrMgr.getReferenceAttribute("ref"), getReferenceAttribute(*listeners[1]));
@@ -346,8 +322,7 @@ TEST_F(DocumentDBReferenceResolverTest, require_that_listeners_are_added)
     EXPECT_EQ((RemoveVector{{"child", {}}}), get_parent_removes("parent2"));
 }
 
-TEST_F(DocumentDBReferenceResolverTest, require_that_listeners_are_removed)
-{
+TEST_F(DocumentDBReferenceResolverTest, require_that_listeners_are_removed) {
     teardown();
     EXPECT_EQ(AddVector{}, get_parent_adds("parent"));
     EXPECT_EQ((RemoveVector{{"child", {}}}), get_parent_removes("parent"));

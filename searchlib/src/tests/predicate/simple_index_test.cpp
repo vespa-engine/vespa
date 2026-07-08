@@ -1,19 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for simple_index.
 
-#include <vespa/searchlib/predicate/simple_index.hpp>
-#include <vespa/searchlib/predicate/simple_index_saver.hpp>
+#include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/predicate/nbo_write.h>
 #include <vespa/searchlib/util/data_buffer_writer.h>
-#include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/searchlib/predicate/simple_index.hpp>
+#include <vespa/searchlib/predicate/simple_index_saver.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/rcuvector.hpp>
+
 #include <map>
 
 using namespace search;
@@ -26,21 +28,15 @@ struct MyData {
     uint32_t data;
     MyData() : data(0) {}
     MyData(uint32_t d) : data(d) {}
-    bool valid() const {
-        return data != 0;
-    }
+    bool valid() const { return data != 0; }
 };
 
 struct MyDataSaver : PostingSaver<MyData> {
-    void save(const MyData &data, BufferWriter& writer) const override {
-        nbo_write<uint32_t>(writer, data.data);
-    }
+    void save(const MyData& data, BufferWriter& writer) const override { nbo_write<uint32_t>(writer, data.data); }
 };
 
 struct MyDataDeserializer : PostingDeserializer<MyData> {
-    MyData deserialize(vespalib::DataBuffer& buffer) override {
-        return {buffer.readInt32()};
-    }
+    MyData deserialize(vespalib::DataBuffer& buffer) override { return {buffer.readInt32()}; }
 };
 
 struct SimpleDocIdLimitProvider : public DocIdLimitProvider {
@@ -52,7 +48,7 @@ struct SimpleDocIdLimitProvider : public DocIdLimitProvider {
 
 constexpr uint64_t key = 0x123456;
 constexpr uint32_t doc_id = 42;
-const MyData data{100};
+const MyData       data{100};
 
 constexpr double UPPER_DOCID_FREQ_THRESHOLD = 0.5;
 constexpr double LOWER_DOCID_FREQ_THRESHOLD = 0.25;
@@ -60,46 +56,29 @@ constexpr size_t UPPER_VECTOR_SIZE_THRESHOLD = 10;
 constexpr size_t LOWER_VECTOR_SIZE_THRESHOLD = 8;
 constexpr size_t VECTOR_PRUNE_FREQUENCY = 1;
 constexpr double FOREACH_VECTOR_THRESHOLD = 0.0;
-const auto config = SimpleIndexConfig(UPPER_DOCID_FREQ_THRESHOLD,
-                                      LOWER_DOCID_FREQ_THRESHOLD,
-                                      UPPER_VECTOR_SIZE_THRESHOLD,
-                                      LOWER_VECTOR_SIZE_THRESHOLD,
-                                      VECTOR_PRUNE_FREQUENCY,
-                                      FOREACH_VECTOR_THRESHOLD,
-                                      vespalib::GrowStrategy());
+const auto       config = SimpleIndexConfig(UPPER_DOCID_FREQ_THRESHOLD, LOWER_DOCID_FREQ_THRESHOLD,
+                                            UPPER_VECTOR_SIZE_THRESHOLD, LOWER_VECTOR_SIZE_THRESHOLD,
+                                            VECTOR_PRUNE_FREQUENCY, FOREACH_VECTOR_THRESHOLD, vespalib::GrowStrategy());
 struct Fixture {
-    GenerationHolder _generation_holder;
+    GenerationHolder         _generation_holder;
     SimpleDocIdLimitProvider _limit_provider;
-    SimpleIndex<MyData> _index;
-    Fixture() : _generation_holder(), _limit_provider(),
-                _index(_generation_holder, _limit_provider, config) {}
-    ~Fixture() {
-        _generation_holder.reclaim_all();
-    }
-    SimpleIndex<MyData> &index() {
-        return _index;
-    }
-    void addPosting(uint64_t k, uint32_t id, const MyData &d) {
+    SimpleIndex<MyData>      _index;
+    Fixture() : _generation_holder(), _limit_provider(), _index(_generation_holder, _limit_provider, config) {}
+    ~Fixture() { _generation_holder.reclaim_all(); }
+    SimpleIndex<MyData>& index() { return _index; }
+    void addPosting(uint64_t k, uint32_t id, const MyData& d) {
         if (id >= _limit_provider._doc_id_limit) {
             _limit_provider._doc_id_limit = id + 1;
         }
         _index.addPosting(k, id, d);
     }
-    SimpleIndex<MyData>::DictionaryIterator lookup(uint64_t k) {
-        return _index.lookup(k);
-    }
-    bool hasKey(uint64_t k) {
-        return lookup(k).valid();
-    }
+    SimpleIndex<MyData>::DictionaryIterator lookup(uint64_t k) { return _index.lookup(k); }
+    bool hasKey(uint64_t k) { return lookup(k).valid(); }
     std::pair<MyData, bool> removeFromPostingList(uint64_t k, uint32_t id) {
         return _index.removeFromPostingList(k, id);
     }
-    bool hasVectorPostingList(uint64_t k) {
-        return _index.getVectorPostingList(k).operator bool();
-    }
-    SimpleIndex<MyData>::VectorIterator getVectorPostingList(uint64_t k) {
-        return *_index.getVectorPostingList(k);
-    }
+    bool hasVectorPostingList(uint64_t k) { return _index.getVectorPostingList(k).operator bool(); }
+    SimpleIndex<MyData>::VectorIterator getVectorPostingList(uint64_t k) { return *_index.getVectorPostingList(k); }
     SimpleIndex<MyData>::BTreeIterator getBTreePostingList(vespalib::datastore::EntryRef ref) {
         return _index.getBTreePostingList(ref);
     }
@@ -116,7 +95,7 @@ TEST(SimpleIndexTest, require_that_SimpleIndex_can_insert_and_remove_a_value) {
     auto it = f.lookup(key);
     ASSERT_TRUE(it.valid());
     vespalib::datastore::EntryRef ref = it.getData();
-    auto posting_it = f.getBTreePostingList(ref);
+    auto                          posting_it = f.getBTreePostingList(ref);
     ASSERT_TRUE(posting_it.valid());
     EXPECT_EQ(doc_id, posting_it.getKey());
     EXPECT_EQ(data.data, posting_it.getData().data);
@@ -142,7 +121,7 @@ TEST(SimpleIndexTest, require_that_SimpleIndex_can_insert_and_remove_many_values
     auto it = f.lookup(key);
     ASSERT_TRUE(it.valid());
     vespalib::datastore::EntryRef ref = it.getData();
-    auto posting_it = f.getBTreePostingList(ref);
+    auto                          posting_it = f.getBTreePostingList(ref);
     for (size_t id = 1; id < 100; ++id) {
         ASSERT_TRUE(posting_it.valid());
         EXPECT_EQ(id, posting_it.getKey());
@@ -164,12 +143,8 @@ TEST(SimpleIndexTest, require_that_SimpleIndex_can_insert_and_remove_many_values
 
 struct MyObserver : SimpleIndexDeserializeObserver<> {
     std::map<uint32_t, uint64_t> features;
-    void notifyInsert(uint64_t my_key, uint32_t my_doc_id, uint32_t) override {
-        features[my_doc_id] = my_key;
-    }
-    bool hasSeenDoc(uint32_t doc) {
-        return features.find(doc) != features.end();
-    }
+    void notifyInsert(uint64_t my_key, uint32_t my_doc_id, uint32_t) override { features[my_doc_id] = my_key; }
+    bool hasSeenDoc(uint32_t doc) { return features.find(doc) != features.end(); }
 };
 
 TEST(SimpleIndexTest, require_that_SimpleIndex_can_be_serialized_and_deserialized) {
@@ -185,14 +160,14 @@ TEST(SimpleIndexTest, require_that_SimpleIndex_can_be_serialized_and_deserialize
         f1.index().make_saver(std::make_unique<MyDataSaver>())->save(writer);
         writer.flush();
     }
-    MyObserver observer;
+    MyObserver         observer;
     MyDataDeserializer deserializer;
     f2.index().deserialize(buffer, deserializer, observer, PredicateAttribute::PREDICATE_ATTRIBUTE_VERSION);
 
     auto it = f2.lookup(key);
     ASSERT_TRUE(it.valid());
     vespalib::datastore::EntryRef ref = it.getData();
-    auto posting_it = f1.getBTreePostingList(ref);
+    auto                          posting_it = f1.getBTreePostingList(ref);
     for (uint32_t id = 1; id < 100; ++id) {
         ASSERT_TRUE(posting_it.valid());
         EXPECT_EQ(id, posting_it.getKey());
@@ -214,7 +189,7 @@ TEST(SimpleIndexTest, require_that_SimpleIndex_can_update_by_inserting_the_same_
     auto it = f.lookup(key);
     ASSERT_TRUE(it.valid());
     vespalib::datastore::EntryRef ref = it.getData();
-    auto posting_it = f.getBTreePostingList(ref);
+    auto                          posting_it = f.getBTreePostingList(ref);
     ASSERT_TRUE(posting_it.valid());
     EXPECT_EQ(doc_id, posting_it.getKey());
     EXPECT_EQ(new_data.data, posting_it.getData().data);
@@ -350,4 +325,4 @@ TEST(SimpleIndexTest, require_that_vector_contains_correct_postings) {
     EXPECT_FALSE(v.valid());
 }
 
-}  // namespace
+} // namespace

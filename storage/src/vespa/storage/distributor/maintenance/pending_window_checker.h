@@ -16,4 +16,4 @@ public:
     [[nodiscard]] virtual bool may_allow_operation_with_priority(OperationStarter::Priority) const noexcept = 0;
 };
 
-}
+} // namespace storage::distributor

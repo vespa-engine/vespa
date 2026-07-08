@@ -58,10 +58,9 @@ public:
     void print(std::ostream& out, const std::string& indent) const;
 
     /** Utility function to get this output as a string.  */
-    std::string toString(bool verbose=false, const std::string& indent="") const;
+    std::string toString(bool verbose = false, const std::string& indent = "") const;
 };
 
 std::ostream& operator<<(std::ostream& out, const Printable& p);
 
-} // document
-
+} // namespace document

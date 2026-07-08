@@ -83,9 +83,8 @@ public class FilesApplicationFile extends ApplicationFile {
 
     @Override
     public Reader createReader() throws FileNotFoundException {
-        return new FileReader(file);
+        return Utf8.createReader(file);
     }
-
     @Override
     public InputStream createInputStream() throws FileNotFoundException {
         return new FileInputStream(file);

@@ -100,4 +100,26 @@ public class TensorFieldValueTestCase {
         assertEquals(copy.getWrappedValue(), orig.getWrappedValue());
     }
 
+    @Test
+    public void requireThatAssignConvertsFloatTensorToBfloat16Tensor() {
+        TensorFieldValue target = new TensorFieldValue(TensorType.fromSpec("tensor<bfloat16>(x[2])"));
+        target.assign(new TensorFieldValue(Tensor.from("tensor<float>(x[2]):[1.25,2.5]")));
+
+        assertEquals(Optional.of(TensorType.fromSpec("tensor<bfloat16>(x[2])")), target.getTensorType());
+        assertEquals(Optional.of(Tensor.from("tensor<bfloat16>(x[2]):[1.25,2.5]")), target.getTensor());
+    }
+
+    @Test
+    public void requireThatAssignConvertsSerializedFloatTensorToBfloat16Tensor() {
+        Tensor sourceTensor = Tensor.from("tensor<float>(x[2]):[1.25,2.5]");
+        TensorFieldValue serializedSource = new TensorFieldValue(sourceTensor.type());
+        serializedSource.assignSerializedTensor(new TensorFieldValue(sourceTensor).getSerializedTensor().get());
+
+        TensorFieldValue target = new TensorFieldValue(TensorType.fromSpec("tensor<bfloat16>(x[2])"));
+        target.assign(serializedSource);
+
+        assertEquals(Optional.of(TensorType.fromSpec("tensor<bfloat16>(x[2])")), target.getTensorType());
+        assertEquals(Optional.of(Tensor.from("tensor<bfloat16>(x[2]):[1.25,2.5]")), target.getTensor());
+    }
+
 }

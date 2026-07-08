@@ -2,6 +2,7 @@
 #pragma once
 
 #include "indexmaintainer.h"
+
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
 namespace searchcorespi::index {
@@ -11,30 +12,33 @@ namespace searchcorespi::index {
  **/
 class IndexFlushTarget : public LeafFlushTarget {
 private:
-    IndexMaintainer                   &_indexMaintainer;
-    const IndexMaintainer::FlushStats  _flushStats;
-    uint32_t                           _numFrozenMemoryIndexes;
-    uint32_t                           _maxFrozenMemoryIndexes;
-    FlushStats                         _lastStats;
+    IndexMaintainer&                  _indexMaintainer;
+    const IndexMaintainer::FlushStats _flushStats;
+    uint32_t                          _numFrozenMemoryIndexes;
+    uint32_t                          _maxFrozenMemoryIndexes;
+    FlushStats                        _lastStats;
 
 public:
-    explicit IndexFlushTarget(IndexMaintainer &indexMaintainer);
-    IndexFlushTarget(IndexMaintainer &indexMaintainer, IndexMaintainer::FlushStats flushStats);
+    explicit IndexFlushTarget(IndexMaintainer& indexMaintainer);
+    IndexFlushTarget(IndexMaintainer& indexMaintainer, IndexMaintainer::FlushStats flushStats);
     ~IndexFlushTarget() override;
 
     // Implements IFlushTarget
     MemoryGain getApproxMemoryGain() const override;
-    DiskGain   getApproxDiskGain() const override;
+    DiskGain getApproxDiskGain() const override;
     SerialNum getFlushedSerialNum() const override;
-    Time    getLastFlushTime() const override;
+    Time getLastFlushTime() const override;
 
     bool needUrgentFlush() const override;
     Priority getPriority() const override { return Priority::HIGH; }
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override;
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
-}
+} // namespace searchcorespi::index

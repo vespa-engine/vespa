@@ -51,7 +51,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
     private final Collection<String> schemasWithGlobalPhase;
     private final ApplicationPackage app;
     private final boolean useLegacyWandQueryParsing;
-    private final boolean sendProtobufQuerytree;
+    private final boolean sendOldQueryStack;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
@@ -63,7 +63,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
         this.app = deployState.getApplicationPackage();
         this.owningCluster = cluster;
         this.useLegacyWandQueryParsing = deployState.featureFlags().useLegacyWandQueryParsing();
-        this.sendProtobufQuerytree = deployState.featureFlags().sendProtobufQuerytree();
+        this.sendOldQueryStack = deployState.featureFlags().sendOldQueryStack();
 
         owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class, SEARCH_AND_DOCPROC_BUNDLE));
@@ -179,7 +179,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
                                    .keepSegmentAnds(true)
                                    .keepIdeographicPunctuation(true));
         }
-        builder.sendProtobufQuerytree(sendProtobufQuerytree);
+        builder.sendOldQueryStack(sendOldQueryStack);
     }
 
 }

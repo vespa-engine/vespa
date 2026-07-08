@@ -24,4 +24,4 @@ public:
     virtual size_t hash(const EntryRef rhs) const noexcept = 0;
 };
 
-}
+} // namespace vespalib::datastore

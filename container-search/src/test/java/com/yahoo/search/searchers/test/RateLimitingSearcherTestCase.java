@@ -20,7 +20,9 @@ import com.yahoo.test.ManualClock;
 import java.time.Duration;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for RateLimitingSearcher
@@ -134,6 +136,7 @@ public class RateLimitingSearcherTestCase {
     }
 
     /** The purpose of this test is simply to verify that cost is picked up after executing the query */
+    @SuppressWarnings("removal")
     @After(RateLimitingSearcher.RATE_LIMITING)
     private static class CostSettingSearcher extends Searcher {
 

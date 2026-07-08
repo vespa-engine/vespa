@@ -2,6 +2,7 @@
 #pragma once
 
 #include "iroutingpolicyfactory.h"
+
 #include <map>
 #include <mutex>
 
@@ -11,12 +12,12 @@ class RoutingPolicyRepository {
 private:
     using FactoryMap = std::map<string, IRoutingPolicyFactory::SP>;
 
-    mutable std::mutex  _lock;
-    FactoryMap          _factories;
+    mutable std::mutex _lock;
+    FactoryMap         _factories;
 
 public:
-    RoutingPolicyRepository(const RoutingPolicyRepository &) = delete;
-    RoutingPolicyRepository & operator = (const RoutingPolicyRepository &) = delete;
+    RoutingPolicyRepository(const RoutingPolicyRepository&) = delete;
+    RoutingPolicyRepository& operator=(const RoutingPolicyRepository&) = delete;
     /**
      * Constructs a new routing policy repository.
      */
@@ -28,7 +29,7 @@ public:
      * @param name    The name of the factory to register.
      * @param factory The factory to register.
      */
-    void putFactory(const string &name, IRoutingPolicyFactory::SP factory);
+    void putFactory(const string& name, IRoutingPolicyFactory::SP factory);
 
     /**
      * Returns the routing policy factory for a given name.
@@ -36,7 +37,7 @@ public:
      * @param name The name of the factory to return.
      * @return The routing policy factory matching the criteria, or null.
      */
-    IRoutingPolicyFactory::SP getFactory(const string &name) const;
+    IRoutingPolicyFactory::SP getFactory(const string& name) const;
 
     /**
      * Creates and returns a routing policy using the named factory and the given parameter.
@@ -45,8 +46,7 @@ public:
      * @param param The parameter to pass to the factory.
      * @return The craeted policy.
      */
-    mbus::IRoutingPolicy::UP createPolicy(const string &name, const string &param) const;
+    mbus::IRoutingPolicy::UP createPolicy(const string& name, const string& param) const;
 };
 
-}
-
+} // namespace documentapi

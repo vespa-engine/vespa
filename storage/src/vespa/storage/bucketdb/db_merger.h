@@ -9,8 +9,7 @@ namespace storage::bucketdb {
  * Database implementation-specific interface for appending entries
  * during a merge() operation.
  */
-template <typename ValueT>
-struct TrailingInserter {
+template <typename ValueT> struct TrailingInserter {
     virtual ~TrailingInserter() = default;
     /**
      * Insert a new database entry at the end of the current bucket space.
@@ -25,8 +24,7 @@ struct TrailingInserter {
  * Database implementation-specific interface for accessing bucket
  * entries and prepending entries during a merge() operation.
  */
-template <typename ValueT>
-struct Merger {
+template <typename ValueT> struct Merger {
     virtual ~Merger() = default;
 
     // TODO this should ideally be separated into read/write functions, but this
@@ -68,14 +66,9 @@ struct Merger {
  * Interface to be implemented by callers that wish to receive callbacks
  * during a bucket merge() operation.
  */
-template <typename ValueT>
-struct MergingProcessor {
+template <typename ValueT> struct MergingProcessor {
     // See merge() for semantics on enum values.
-    enum class Result {
-        Update,
-        KeepUnchanged,
-        Skip
-    };
+    enum class Result { Update, KeepUnchanged, Skip };
 
     virtual ~MergingProcessor() = default;
     /**
@@ -107,5 +100,4 @@ struct MergingProcessor {
     virtual void insert_remaining_at_end(TrailingInserter<ValueT>&) {}
 };
 
-
-}
+} // namespace storage::bucketdb

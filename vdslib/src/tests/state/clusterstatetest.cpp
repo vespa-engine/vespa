@@ -5,53 +5,56 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exception.h>
+
+#include <gmock/gmock.h>
+
 #include <cmath>
 #include <string>
-#include <gmock/gmock.h>
 
 using std::string;
 using ::testing::ContainsRegex;
 
 namespace storage::lib {
 
-#define VERIFY3(source, result, typestr) { \
-    vespalib::asciistream ost; \
-    try { \
-        state->serialize(ost); \
-    } catch (std::exception& e) { \
-        FAIL() << ("Failed to serialize system state " \
-                + state->toString(true) + " in " + std::string(typestr) \
-                + " format: " + std::string(e.what())); \
-    } \
-    EXPECT_EQ(std::string(typestr) + " \"" + std::string(result) + "\"", \
-              std::string(typestr) + " \"" + ost.str() + "\"") << state->toString(true); \
-}
+#define VERIFY3(source, result, typestr)                                                                             \
+    {                                                                                                                \
+        vespalib::asciistream ost;                                                                                   \
+        try {                                                                                                        \
+            state->serialize(ost);                                                                                   \
+        } catch (std::exception & e) {                                                                               \
+            FAIL() << ("Failed to serialize system state " + state->toString(true) + " in " + std::string(typestr) + \
+                       " format: " + std::string(e.what()));                                                         \
+        }                                                                                                            \
+        EXPECT_EQ(std::string(typestr) + " \"" + std::string(result) + "\"",                                         \
+                  std::string(typestr) + " \"" + ost.str() + "\"")                                                   \
+            << state->toString(true);                                                                                \
+    }
 
-#define VERIFY2(serialized, result) { \
-    std::unique_ptr<ClusterState> state; \
-    try { \
-        state.reset(new ClusterState(serialized)); \
-    } catch (std::exception& e) { \
-        FAIL() << ("Failed to parse '" + std::string(serialized) + "': " + e.what()); \
-    } \
-    VERIFY3(serialized, result, "New") \
-}
+#define VERIFY2(serialized, result)                                                       \
+    {                                                                                     \
+        std::unique_ptr<ClusterState> state;                                              \
+        try {                                                                             \
+            state.reset(new ClusterState(serialized));                                    \
+        } catch (std::exception & e) {                                                    \
+            FAIL() << ("Failed to parse '" + std::string(serialized) + "': " + e.what()); \
+        }                                                                                 \
+        VERIFY3(serialized, result, "New")                                                \
+    }
 
 #define VERIFYSAMENEW(serialized) VERIFY2(serialized, serialized)
 #define VERIFYNEW(serialized, result) VERIFY2(serialized, result)
 
-#define VERIFY_FAIL(serialized, error) { \
-    try{ \
-        ClusterState state(serialized); \
-        FAIL() << ("Parsing the state '" + std::string(serialized) \
-                     + "' is supposed to fail."); \
-    } catch (vespalib::Exception& e) { \
-        EXPECT_THAT(e.getMessage(), ContainsRegex(error)); \
-    } \
-}
+#define VERIFY_FAIL(serialized, error)                                                              \
+    {                                                                                               \
+        try {                                                                                       \
+            ClusterState state(serialized);                                                         \
+            FAIL() << ("Parsing the state '" + std::string(serialized) + "' is supposed to fail."); \
+        } catch (vespalib::Exception & e) {                                                         \
+            EXPECT_THAT(e.getMessage(), ContainsRegex(error));                                      \
+        }                                                                                           \
+    }
 
-TEST(ClusterStateTest, test_basic_functionality)
-{
+TEST(ClusterStateTest, test_basic_functionality) {
     // Version is default and should not be written
     VERIFYNEW("version:0", "");
     VERIFYNEW("version:1", "version:1");
@@ -66,12 +69,10 @@ TEST(ClusterStateTest, test_basic_functionality)
     VERIFYNEW("cluster:d distributor:0 storage:0", "cluster:d");
 
     // Test legal distributor states
-    VERIFYNEW("distributor:10 .1.s:i .2.s:u .3.s:s .4.s:d",
-              "distributor:10 .1.s:i .1.i:0 .3.s:s .4.s:d");
+    VERIFYNEW("distributor:10 .1.s:i .2.s:u .3.s:s .4.s:d", "distributor:10 .1.s:i .1.i:0 .3.s:s .4.s:d");
 
     // Test legal storage states
-    VERIFYNEW("storage:10 .1.s:i .2.s:u .3.s:d .4.s:m .5.s:r",
-              "storage:10 .1.s:i .1.i:0 .3.s:d .4.s:m .5.s:r");
+    VERIFYNEW("storage:10 .1.s:i .2.s:u .3.s:d .4.s:m .5.s:r", "storage:10 .1.s:i .1.i:0 .3.s:d .4.s:m .5.s:r");
 
     // Test other distributor node propertise
     // (Messages is excluded from system states to not make them too long as
@@ -82,59 +83,46 @@ TEST(ClusterStateTest, test_basic_functionality)
     // Test other storage node propertise
     // (Messages is excluded from system states to not make them too long as
     // most nodes have no use for them)
-    VERIFYNEW("storage:9 .3.c:2.3 .7.m:foo\\x20bar",
-              "storage:9 .3.c:2.3");
+    VERIFYNEW("storage:9 .3.c:2.3 .7.m:foo\\x20bar", "storage:9 .3.c:2.3");
 
     // Test that messages are kept in verbose mode, even if last index
     {
-        ClusterState state("storage:5 .4.s:d .4.m:Foo\\x20bar");
+        ClusterState     state("storage:5 .4.s:d .4.m:Foo\\x20bar");
         const NodeState& ns(state.getNodeState(Node(NodeType::STORAGE, 4)));
         EXPECT_EQ(string("Foo bar"), ns.getDescription());
     }
 
     ClusterState state;
     state.setClusterState(State::UP);
-    state.setNodeState(Node(NodeType::DISTRIBUTOR, 3),
-                       NodeState(NodeType::DISTRIBUTOR, State::UP));
-    EXPECT_EQ(std::string("distributor:4 .0.s:d .1.s:d .2.s:d"),
-              state.toString(false));
-    state.setNodeState(Node(NodeType::DISTRIBUTOR, 1),
-                       NodeState(NodeType::DISTRIBUTOR, State::UP));
-    EXPECT_EQ(std::string("distributor:4 .0.s:d .2.s:d"),
-              state.toString(false));
-    state.setNodeState(Node(NodeType::DISTRIBUTOR, 3),
-                       NodeState(NodeType::DISTRIBUTOR, State::DOWN));
-    EXPECT_EQ(std::string("distributor:2 .0.s:d"),
-              state.toString(false));
-    state.setNodeState(Node(NodeType::DISTRIBUTOR, 4),
-                       NodeState(NodeType::DISTRIBUTOR, State::UP));
-    EXPECT_EQ(std::string("distributor:5 .0.s:d .2.s:d .3.s:d"),
-              state.toString(false));
+    state.setNodeState(Node(NodeType::DISTRIBUTOR, 3), NodeState(NodeType::DISTRIBUTOR, State::UP));
+    EXPECT_EQ(std::string("distributor:4 .0.s:d .1.s:d .2.s:d"), state.toString(false));
+    state.setNodeState(Node(NodeType::DISTRIBUTOR, 1), NodeState(NodeType::DISTRIBUTOR, State::UP));
+    EXPECT_EQ(std::string("distributor:4 .0.s:d .2.s:d"), state.toString(false));
+    state.setNodeState(Node(NodeType::DISTRIBUTOR, 3), NodeState(NodeType::DISTRIBUTOR, State::DOWN));
+    EXPECT_EQ(std::string("distributor:2 .0.s:d"), state.toString(false));
+    state.setNodeState(Node(NodeType::DISTRIBUTOR, 4), NodeState(NodeType::DISTRIBUTOR, State::UP));
+    EXPECT_EQ(std::string("distributor:5 .0.s:d .2.s:d .3.s:d"), state.toString(false));
 }
 
-TEST(ClusterStateTest, test_error_behaviour)
-{
+TEST(ClusterStateTest, test_error_behaviour) {
     // Keys with invalid values
 
     // Index out of range
-    VERIFY_FAIL("storage:5 distributor:4 .4.s:s",
-                "Cannot index distributor node 4 of 4");
-    VERIFY_FAIL("distributor:5 storage:4 .4.s:s",
-                "Cannot index storage node 4 of 4");
+    VERIFY_FAIL("storage:5 distributor:4 .4.s:s", "Cannot index distributor node 4 of 4");
+    VERIFY_FAIL("distributor:5 storage:4 .4.s:s", "Cannot index storage node 4 of 4");
 
     // Test illegal cluster states
     VERIFY_FAIL("cluster:m", "Maintenance is not a legal cluster state");
     VERIFY_FAIL("cluster:r", "Retired is not a legal cluster state");
 
     // Test illegal distributor states
-// Currently set to legal
-//    VERIFY_FAIL("distributor:4 .2.s:r",
-//                "Retired is not a legal distributor state");
+    // Currently set to legal
+    //    VERIFY_FAIL("distributor:4 .2.s:r",
+    //                "Retired is not a legal distributor state");
 
     // Test blatantly illegal values for known attributes:
     VERIFY_FAIL("distributor:4 .2.s:z", "Unknown state z given.*");
-    VERIFY_FAIL("distributor:4 .2.i:foobar",
-                ".*Init progress must be a floating point number from .*");
+    VERIFY_FAIL("distributor:4 .2.i:foobar", ".*Init progress must be a floating point number from .*");
 
     // Lacking absolute path first
     VERIFY_FAIL(".2.s:d distributor:4", "The first path in system state.*");
@@ -149,14 +137,11 @@ TEST(ClusterStateTest, test_error_behaviour)
               "distributor:4 .2.s:s storage:10 .3.s:s");
 }
 
-TEST(ClusterStateTest, test_detailed)
-{
-    ClusterState state(
-            "version:314 cluster:i "
-            "distributor:8 .1.s:i .3.s:i .3.i:0.5 .5.s:d .7.m:foo\\x20bar "
-            "storage:10 .2.d:16 .2.d.3:d .4.s:d .5.c:1.3 "
-            " .6.m:bar\\tfoo .7.s:m .8.d:10 .8.d.4.c:0.6 .8.d.4.m:small"
-    );
+TEST(ClusterStateTest, test_detailed) {
+    ClusterState state("version:314 cluster:i "
+                       "distributor:8 .1.s:i .3.s:i .3.i:0.5 .5.s:d .7.m:foo\\x20bar "
+                       "storage:10 .2.d:16 .2.d.3:d .4.s:d .5.c:1.3 "
+                       " .6.m:bar\\tfoo .7.s:m .8.d:10 .8.d.4.c:0.6 .8.d.4.m:small");
     EXPECT_EQ(314u, state.getVersion());
     EXPECT_EQ(State::INITIALIZING, state.getClusterState());
     EXPECT_EQ(uint16_t(8), state.getNodeCount(NodeType::DISTRIBUTOR));
@@ -213,19 +198,16 @@ TEST(ClusterStateTest, test_detailed)
             EXPECT_EQ(vespalib::Double(1.0), ns.getCapacity());
         }
     }
-
 }
 
-TEST(ClusterStateTest, test_parse_failure)
-{
+TEST(ClusterStateTest, test_parse_failure) {
     EXPECT_THROW(ClusterState state("storage"), vespalib::Exception);
     EXPECT_NO_THROW(ClusterState state(""));
     EXPECT_THROW(ClusterState state(".her:tull"), vespalib::Exception);
 }
 
-TEST(ClusterStateTest, test_parse_failure_groups)
-{
+TEST(ClusterStateTest, test_parse_failure_groups) {
     EXPECT_THROW(ClusterState state(")"), vespalib::Exception);
 }
 
-}
+} // namespace storage::lib

@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/util/address_space.h>
+
 #include <string>
 #include <unordered_map>
 
@@ -12,8 +13,7 @@ namespace search {
 /**
  * Represents the address space usage for a set of attribute vector components.
  */
-class AddressSpaceUsage
-{
+class AddressSpaceUsage {
 private:
     using AddressSpaceMap = std::unordered_map<std::string, vespalib::AddressSpace, vespalib::hash<std::string>>;
     AddressSpaceMap _map;
@@ -27,4 +27,4 @@ public:
     vespalib::AddressSpace multi_value_usage() const;
 };
 
-}
+} // namespace search

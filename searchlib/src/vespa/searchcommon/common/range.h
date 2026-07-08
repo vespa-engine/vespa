@@ -2,23 +2,21 @@
 
 #pragma once
 
-#include <limits>
 #include <cstdint>
+#include <limits>
 
 namespace search {
 
-template <typename T>
-class Range {
+template <typename T> class Range {
 public:
-    Range() :
-        _lower(std::numeric_limits<T>::max()),
-        _upper(std::numeric_limits<T>::min()) { }
-    Range(T v) : _lower(v), _upper(v) { }
-    Range(T low, T high) : _lower(low), _upper(high) { }
+    Range() : _lower(std::numeric_limits<T>::max()), _upper(std::numeric_limits<T>::min()) {}
+    Range(T v) : _lower(v), _upper(v) {}
+    Range(T low, T high) : _lower(low), _upper(high) {}
     T lower() const { return _lower; }
     T upper() const { return _upper; }
     bool valid() const { return _lower <= _upper; }
     bool isPoint() const { return _lower == _upper; }
+
 private:
     T _lower;
     T _upper;

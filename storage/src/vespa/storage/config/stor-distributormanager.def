@@ -6,9 +6,9 @@ namespace=vespa.config.content.core
 splitsize int default=16772216
 
 ## The maximum amount of entries in a file before we should attempt to split it.
-## A meta data entry in a slotfile currently uses 40 bytes. It is probably
-## good to have the split size, such that all meta data entries are normally
-## read when you do the initial read. With the default of 1024, meta data will
+## A metadata entry in a slotfile currently uses 40 bytes. It is probably
+## good to have the split size, such that all metadata entries are normally
+## read when you do the initial read. With the default of 1024, metadata will
 ## take up around 40 kB, and the default initial read is 64 kB, allowing the
 ## file to grow a bit above max and still all be read in initial read.
 splitcount int default=1024
@@ -36,7 +36,7 @@ garbagecollection.interval int default=0
 ## If false, dont do splits inline with feeding.
 inlinebucketsplitting bool default=true
 
-## Maximum nodes involved in a merge operation. Currently, this can not be more
+## Maximum nodes involved in a merge operation. Currently, this cannot be more
 ## than 16 nodes due to protocol limitations. However, decreasing the max may
 ## be useful if 16 node merges ends up too expensive.
 maximum_nodes_per_merge int default=16

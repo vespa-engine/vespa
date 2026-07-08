@@ -70,7 +70,7 @@ public class QueryProfileIntegrationTestCase {
         request = HttpRequest.createTestRequest("search?query=word&queryProfile=test", Method.GET);
         response = (HttpSearchResponse) searchHandler.handle(request); // Cast to access content directly
         assertEquals("index", response.getQuery().getModel().getDefaultIndex());
-        assertEquals("WEAKAND(100) index:word", response.getQuery().getModel().getQueryTree().toString());
+        assertEquals("WEAKAND index:word", response.getQuery().getModel().getQueryTree().toString());
         configurer.shutdown();
     }
 

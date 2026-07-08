@@ -2,14 +2,17 @@
 #pragma once
 
 #include <vespa/vespalib/util/trinary.h>
+
 #include <cstdint>
 #include <memory>
 
-namespace vespalib { class nbostream; }
-namespace storage::lib {
-    class ClusterState;
-    class Distribution;
+namespace vespalib {
+class nbostream;
 }
+namespace storage::lib {
+class ClusterState;
+class Distribution;
+} // namespace storage::lib
 
 namespace storage::spi {
 
@@ -23,14 +26,11 @@ public:
     using SP = std::shared_ptr<ClusterState>;
 
     ClusterState(std::shared_ptr<const lib::ClusterState> state,
-                 std::shared_ptr<const lib::Distribution> distribution,
-                 uint16_t node_index,
+                 std::shared_ptr<const lib::Distribution> distribution, uint16_t node_index,
                  bool maintenance_in_all_spaces);
 
     // Constructor used by a bunch of unit tests. Prefer the constructor taking in shared_ptrs to avoid copying.
-    ClusterState(const lib::ClusterState& state,
-                 uint16_t nodeIndex,
-                 const lib::Distribution& distribution,
+    ClusterState(const lib::ClusterState& state, uint16_t nodeIndex, const lib::Distribution& distribution,
                  bool maintenanceInAllSpaces = false);
 
     ClusterState(const ClusterState& other);
@@ -88,4 +88,4 @@ private:
     bool nodeHasStateOneOf(const char* states) const noexcept;
 };
 
-}
+} // namespace storage::spi

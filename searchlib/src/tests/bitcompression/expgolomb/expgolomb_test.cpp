@@ -3,9 +3,10 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <algorithm>
-#include <cinttypes>
 #include <cassert>
+#include <cinttypes>
 #include <type_traits>
 #include <vector>
 
@@ -17,23 +18,18 @@ using search::bitcompression::DecodeContext64Base;
 using search::bitcompression::EncodeContext64;
 using search::bitcompression::EncodeContext64Base;
 
-template <bool bigEndian>
-class DecodeContext : public DecodeContext64<bigEndian>
-{
+template <bool bigEndian> class DecodeContext : public DecodeContext64<bigEndian> {
 public:
     using Parent = DecodeContext64<bigEndian>;
     using Parent::defineReadOffset;
     using EC = EncodeContext64<bigEndian>;
 
-    DecodeContext(const uint64_t *compr, int bitOffset)
-        : DecodeContext64<bigEndian>(compr, bitOffset)
-    {
+    DecodeContext(const uint64_t* compr, int bitOffset) : DecodeContext64<bigEndian>(compr, bitOffset) {
         this->defineReadOffset(0);
     }
 };
 
-class IDecodeFunc
-{
+class IDecodeFunc {
 public:
     virtual uint64_t decode() = 0;
     virtual void skip() = 0;
@@ -49,25 +45,20 @@ public:
  * Expressions involving kValue are not constant and can thus not be
  * folded to constant values.
  */
-template <bool bigEndian>
-class DecodeExpGolombVarK : public IDecodeFunc
-{
+template <bool bigEndian> class DecodeExpGolombVarK : public IDecodeFunc {
 public:
     using DCB = DecodeContext64Base;
     using DC = DecodeContext<bigEndian>;
     using EC = typename DC::EC;
 
-    DCB &_dc;
-    int _kValue;
+    DCB& _dc;
+    int  _kValue;
 
-    DecodeExpGolombVarK(DCB &dc, int kValue)
-        : _dc(dc),
-          _kValue(kValue)
-    { }
+    DecodeExpGolombVarK(DCB& dc, int kValue) : _dc(dc), _kValue(kValue) {}
 
     uint64_t decode() override {
         unsigned int length;
-        uint64_t val64;
+        uint64_t     val64;
         UC64_DECODEEXPGOLOMB(_dc._val, _dc._valI, _dc._preRead, _dc._cacheInt, _kValue, EC);
         return val64;
     }
@@ -79,14 +70,14 @@ public:
 
     uint64_t decodeSmall() override {
         unsigned int length;
-        uint64_t val64;
+        uint64_t     val64;
         UC64_DECODEEXPGOLOMB_SMALL(_dc._val, _dc._valI, _dc._preRead, _dc._cacheInt, _kValue, EC);
         return val64;
     }
 
     uint64_t decodeSmallApply() override {
         unsigned int length;
-        uint64_t val64;
+        uint64_t     val64;
         UC64_DECODEEXPGOLOMB_SMALL_APPLY(_dc._val, _dc._valI, _dc._preRead, _dc._cacheInt, _kValue, EC, val64 =);
         return val64;
     }
@@ -96,34 +87,29 @@ public:
         UC64_SKIPEXPGOLOMB_SMALL(_dc._val, _dc._valI, _dc._preRead, _dc._cacheInt, _kValue, EC);
     }
 
-    static std::unique_ptr<IDecodeFunc> make(DCB &dc, int kValue) {
+    static std::unique_ptr<IDecodeFunc> make(DCB& dc, int kValue) {
         return std::make_unique<DecodeExpGolombVarK<bigEndian>>(dc, kValue);
     }
 };
-
 
 /*
  * Exp golomb decode functions getting kValue from a template argument
  * i.e. compiler is allowed to generate shift instructions with
  * immediate values and fold constant expressions involving kValue.
  */
-template <bool bigEndian, int kValue>
-class DecodeExpGolombConstK : public IDecodeFunc
-{
+template <bool bigEndian, int kValue> class DecodeExpGolombConstK : public IDecodeFunc {
 public:
     using DCB = DecodeContext64Base;
     using DC = DecodeContext<bigEndian>;
     using EC = typename DC::EC;
 
-    DCB &_dc;
+    DCB& _dc;
 
-    explicit DecodeExpGolombConstK(DCB &dc)
-        : _dc(dc)
-    { }
+    explicit DecodeExpGolombConstK(DCB& dc) : _dc(dc) {}
 
     uint64_t decode() override {
         unsigned int length;
-        uint64_t val64;
+        uint64_t     val64;
         UC64_DECODEEXPGOLOMB(_dc._val, _dc._valI, _dc._preRead, _dc._cacheInt, kValue, EC);
         return val64;
     }
@@ -135,14 +121,14 @@ public:
 
     uint64_t decodeSmall() override {
         unsigned int length;
-        uint64_t val64;
+        uint64_t     val64;
         UC64_DECODEEXPGOLOMB_SMALL(_dc._val, _dc._valI, _dc._preRead, _dc._cacheInt, kValue, EC);
         return val64;
     }
 
     uint64_t decodeSmallApply() override {
         unsigned int length;
-        uint64_t val64;
+        uint64_t     val64;
         UC64_DECODEEXPGOLOMB_SMALL_APPLY(_dc._val, _dc._valI, _dc._preRead, _dc._cacheInt, kValue, EC, val64 =);
         return val64;
     }
@@ -152,20 +138,18 @@ public:
         UC64_SKIPEXPGOLOMB_SMALL(_dc._val, _dc._valI, _dc._preRead, _dc._cacheInt, kValue, EC);
     }
 
-    static std::unique_ptr<IDecodeFunc> make(DCB &dc, int){
+    static std::unique_ptr<IDecodeFunc> make(DCB& dc, int) {
         return std::make_unique<DecodeExpGolombConstK<bigEndian, kValue>>(dc);
     }
 };
 
-using IDecodeFuncFactory = std::unique_ptr<IDecodeFunc> (*)(DecodeContext64Base &dc, int kValue);
+using IDecodeFuncFactory = std::unique_ptr<IDecodeFunc> (*)(DecodeContext64Base& dc, int kValue);
 
-template <bool bigEndian>
-class DecodeFuncFactories
-{
+template <bool bigEndian> class DecodeFuncFactories {
 public:
     using IDF = IDecodeFuncFactory;
     std::vector<IDF> _constK;
-    IDF _varK;
+    IDF              _varK;
 
 public:
     DecodeFuncFactories();
@@ -173,8 +157,7 @@ public:
     void addConstKFactory(int kValue, IDecodeFuncFactory factory) __attribute__((noinline));
 
     [[nodiscard]] IDecodeFuncFactory getConstKFactory(int kValue) const {
-        assert(kValue >= 0 &&
-               static_cast<unsigned int>(kValue) < _constK.size());
+        assert(kValue >= 0 && static_cast<unsigned int>(kValue) < _constK.size());
         return _constK[kValue];
     }
 
@@ -182,85 +165,63 @@ public:
 };
 
 template <bool bigEndian>
-void
-DecodeFuncFactories<bigEndian>::addConstKFactory(int kValue, IDecodeFuncFactory factory) {
-    (void) kValue;
+void DecodeFuncFactories<bigEndian>::addConstKFactory(int kValue, IDecodeFuncFactory factory) {
+    (void)kValue;
     assert(static_cast<unsigned int>(kValue) == _constK.size());
     _constK.push_back(factory);
 }
 
-template <bool bigEndian>
-struct RegisterFactoryPtr;
-
+template <bool bigEndian> struct RegisterFactoryPtr;
 
 template <bool bigEndian>
-using RegisterFactory = void (*)(DecodeFuncFactories<bigEndian> &factories,
-                                 RegisterFactoryPtr<bigEndian> &ptr);
+using RegisterFactory = void (*)(DecodeFuncFactories<bigEndian>& factories, RegisterFactoryPtr<bigEndian>& ptr);
 
-template <bool bigEndian>
-struct RegisterFactoryPtr
-{
+template <bool bigEndian> struct RegisterFactoryPtr {
     RegisterFactory<bigEndian> _ptr;
 
-    explicit RegisterFactoryPtr(RegisterFactory<bigEndian> ptr)
-        : _ptr(ptr)
-    { }
+    explicit RegisterFactoryPtr(RegisterFactory<bigEndian> ptr) : _ptr(ptr) {}
 };
 
-template <bool bigEndian, int kValue>
-class RegisterFactories
-{
+template <bool bigEndian, int kValue> class RegisterFactories {
 public:
-    static void registerFactory(DecodeFuncFactories<bigEndian> &factories,
-                                RegisterFactoryPtr<bigEndian> &ptr)
-    {
+    static void registerFactory(DecodeFuncFactories<bigEndian>& factories, RegisterFactoryPtr<bigEndian>& ptr) {
         factories.addConstKFactory(kValue, &DecodeExpGolombConstK<bigEndian, kValue>::make);
-        ptr._ptr = &RegisterFactories<bigEndian, kValue+1>::registerFactory;
+        ptr._ptr = &RegisterFactories<bigEndian, kValue + 1>::registerFactory;
     }
 };
 
-template <bool bigEndian>
-class RegisterFactories<bigEndian, 64>
-{
+template <bool bigEndian> class RegisterFactories<bigEndian, 64> {
 public:
-    static void registerFactory(DecodeFuncFactories<bigEndian> &factories,
-                                RegisterFactoryPtr<bigEndian> &ptr)
-    {
-        (void) factories;
+    static void registerFactory(DecodeFuncFactories<bigEndian>& factories, RegisterFactoryPtr<bigEndian>& ptr) {
+        (void)factories;
         ptr._ptr = nullptr;
     }
 };
 
 template <bool bigEndian>
-DecodeFuncFactories<bigEndian>::DecodeFuncFactories()
-    : _constK(),
-      _varK(&DecodeExpGolombVarK<bigEndian>::make)
-{
+DecodeFuncFactories<bigEndian>::DecodeFuncFactories() : _constK(), _varK(&DecodeExpGolombVarK<bigEndian>::make) {
     RegisterFactoryPtr<bigEndian> f(&RegisterFactories<bigEndian, 0>::registerFactory);
     while (f._ptr) {
         (*f._ptr)(*this, f);
     }
 }
 
-class TestFixtureBase
-{
+class TestFixtureBase {
 public:
     std::vector<uint64_t> _randNums;
     using EC = EncodeContext64Base;
 
     void fillRandNums();
-    static void calcBoundaries(int kValue, bool small, std::vector<uint64_t> &v);
+    static void calcBoundaries(int kValue, bool small, std::vector<uint64_t>& v);
 
-    static void testBoundaries(int kValue, bool small, std::vector<uint64_t> &v,
-                               DecodeContext64Base &dc, DecodeContext64Base &dcSkip, DecodeContext64Base &dcApply,
-                               IDecodeFunc &df, IDecodeFunc &dfSkip, IDecodeFunc &dfApply);
+    static void testBoundaries(int kValue, bool small, std::vector<uint64_t>& v, DecodeContext64Base& dc,
+                               DecodeContext64Base& dcSkip, DecodeContext64Base& dcApply, IDecodeFunc& df,
+                               IDecodeFunc& dfSkip, IDecodeFunc& dfApply);
 
-    void testRandNums(DecodeContext64Base &dc, DecodeContext64Base &dcSkip, IDecodeFunc &df, IDecodeFunc &dfSkip);
+    void testRandNums(DecodeContext64Base& dc, DecodeContext64Base& dcSkip, IDecodeFunc& df, IDecodeFunc& dfSkip);
 };
 
-void
-TestFixtureBase::fillRandNums()
-{
+void TestFixtureBase::fillRandNums() {
     for (int i = 0; i < 10000; ++i) {
         uint64_t rval = rand();
         rval <<= 30;
@@ -282,9 +243,7 @@ namespace {
 /*
  * Add values around a calculated boundary, to catch off by one errors.
  */
-void
-addBoundary(uint64_t boundary, uint64_t maxVal, std::vector<uint64_t> &v)
-{
+void addBoundary(uint64_t boundary, uint64_t maxVal, std::vector<uint64_t>& v) {
     uint64_t low = boundary > 2u ? boundary - 2 : 0;
     uint64_t high = maxVal - 2u < boundary ? maxVal : boundary + 2;
     assert(low <= high);
@@ -294,48 +253,38 @@ addBoundary(uint64_t boundary, uint64_t maxVal, std::vector<uint64_t> &v)
     }
 }
 
-}
+} // namespace
 
-void
-TestFixtureBase::calcBoundaries(int kValue, bool small, std::vector<uint64_t> &v)
-{
-    const char *smallStr = small ? "small" : "not small";
+void TestFixtureBase::calcBoundaries(int kValue, bool small, std::vector<uint64_t>& v) {
+    const char* smallStr = small ? "small" : "not small";
     v.push_back(0);
     uint64_t maxVal = EC::maxExpGolombVal(kValue); // encode method limit
     if (small) {
         maxVal = EC::maxExpGolombVal(kValue, 64);
     }
     LOG(debug, "kValue=%u, %s, maxVal is 0x%" PRIx64, kValue, smallStr, maxVal);
-    for (int bits = kValue + 1;
-         bits + kValue <= 128 && (bits <= 64 || !small);
-         ++bits) {
+    for (int bits = kValue + 1; bits + kValue <= 128 && (bits <= 64 || !small); ++bits) {
         uint64_t boundary = EC::maxExpGolombVal(kValue, bits);
         if (bits + kValue == 128) {
-            LOG(debug,
-                "boundary for kValue=%d, %s, bits=%d: 0x%" PRIx64,
-                kValue, smallStr, bits, boundary);
+            LOG(debug, "boundary for kValue=%d, %s, bits=%d: 0x%" PRIx64, kValue, smallStr, bits, boundary);
         }
         addBoundary(boundary, maxVal, v);
     }
     std::sort(v.begin(), v.end());
-    auto ve = std::unique(v.begin(), v.end());
+    auto     ve = std::unique(v.begin(), v.end());
     uint32_t oldSize = v.size();
     v.resize(ve - v.begin());
     uint32_t newSize = v.size();
-    LOG(debug,
-        "kValues=%u, %s, boundaries %u -> %u, maxVal=0x%" PRIx64 ", highest=0x%" PRIx64,
-        kValue, smallStr, oldSize, newSize, maxVal, v.back());
+    LOG(debug, "kValues=%u, %s, boundaries %u -> %u, maxVal=0x%" PRIx64 ", highest=0x%" PRIx64, kValue, smallStr,
+        oldSize, newSize, maxVal, v.back());
 }
 
-
-void
-TestFixtureBase::testBoundaries(int kValue, bool small, std::vector<uint64_t> &v,
-                                DecodeContext64Base &dc, DecodeContext64Base &dcSkip, DecodeContext64Base &dcApply,
-                                IDecodeFunc &df, IDecodeFunc &dfSkip, IDecodeFunc &dfApply)
-{
+void TestFixtureBase::testBoundaries(int kValue, bool small, std::vector<uint64_t>& v, DecodeContext64Base& dc,
+                                     DecodeContext64Base& dcSkip, DecodeContext64Base& dcApply, IDecodeFunc& df,
+                                     IDecodeFunc& dfSkip, IDecodeFunc& dfApply) {
     uint32_t bits = 0;
     uint64_t maxSame = 0;
-    
+
     for (auto num : v) {
         uint64_t prevPos = dc.getReadOffset();
         uint64_t val64 = small ? df.decodeSmall() : df.decode();
@@ -367,10 +316,8 @@ TestFixtureBase::testBoundaries(int kValue, bool small, std::vector<uint64_t> &v
     }
 }
 
-void
-TestFixtureBase::testRandNums(DecodeContext64Base &dc, DecodeContext64Base &dcSkip,
-                              IDecodeFunc &df, IDecodeFunc &dfSkip)
-{
+void TestFixtureBase::testRandNums(DecodeContext64Base& dc, DecodeContext64Base& dcSkip, IDecodeFunc& df,
+                                   IDecodeFunc& dfSkip) {
     for (auto num : _randNums) {
         uint64_t val64 = df.decode();
         EXPECT_EQ(num, val64);
@@ -380,9 +327,7 @@ TestFixtureBase::testRandNums(DecodeContext64Base &dc, DecodeContext64Base &dcSk
     }
 }
 
-template <bool bigEndian>
-class TestFixture : public TestFixtureBase
-{
+template <bool bigEndian> class TestFixture : public TestFixtureBase {
 public:
     DecodeFuncFactories<bigEndian> _factories;
     using DC = DecodeContext<bigEndian>;
@@ -394,34 +339,27 @@ public:
     TestFixture();
     ~TestFixture();
 
-    void testBoundaries(int kValue, bool small, std::vector<uint64_t> &v,
-                        IDecodeFuncFactory f, search::ComprFileWriteContext &wc);
-    void testBoundaries(int kValue, bool small, std::vector<uint64_t> &v);
+    void testBoundaries(int kValue, bool small, std::vector<uint64_t>& v, IDecodeFuncFactory f,
+                        search::ComprFileWriteContext& wc);
+    void testBoundaries(int kValue, bool small, std::vector<uint64_t>& v);
     void testBoundaries();
-    void testRandNums(int kValue, IDecodeFuncFactory f, search::ComprFileWriteContext &wc);
+    void testRandNums(int kValue, IDecodeFuncFactory f, search::ComprFileWriteContext& wc);
     void testRandNums(int kValue);
     void testRandNums();
 };
 
-template <bool bigEndian>
-TestFixture<bigEndian>::TestFixture()
-    : TestFixtureBase(),
-      _factories()
-{
+template <bool bigEndian> TestFixture<bigEndian>::TestFixture() : TestFixtureBase(), _factories() {
     fillRandNums();
 }
 
-template <bool bigEndian>
-TestFixture<bigEndian>::~TestFixture() = default;
+template <bool bigEndian> TestFixture<bigEndian>::~TestFixture() = default;
 
 template <bool bigEndian>
-void
-TestFixture<bigEndian>::testBoundaries(int kValue, bool small, std::vector<uint64_t> &v,
-                                       IDecodeFuncFactory f, search::ComprFileWriteContext &wc)
-{
-    DC dc(wc.getComprBuf(), 0);
-    DC dcSkip(wc.getComprBuf(), 0);
-    DC dcApply(wc.getComprBuf(), 0);
+void TestFixture<bigEndian>::testBoundaries(int kValue, bool small, std::vector<uint64_t>& v, IDecodeFuncFactory f,
+                                            search::ComprFileWriteContext& wc) {
+    DC                           dc(wc.getComprBuf(), 0);
+    DC                           dcSkip(wc.getComprBuf(), 0);
+    DC                           dcApply(wc.getComprBuf(), 0);
     std::unique_ptr<IDecodeFunc> df((*f)(dc, kValue));
     std::unique_ptr<IDecodeFunc> dfSkip((*f)(dcSkip, kValue));
     std::unique_ptr<IDecodeFunc> dfApply((*f)(dcApply, kValue));
@@ -429,10 +367,8 @@ TestFixture<bigEndian>::testBoundaries(int kValue, bool small, std::vector<uint6
 }
 
 template <bool bigEndian>
-void
-TestFixture<bigEndian>::testBoundaries(int kValue, bool small, std::vector<uint64_t> &v)
-{
-    EC e;
+void TestFixture<bigEndian>::testBoundaries(int kValue, bool small, std::vector<uint64_t>& v) {
+    EC                            e;
     search::ComprFileWriteContext wc(e);
     wc.allocComprBuf(32_Ki, 32_Ki);
     e.setupWrite(wc);
@@ -449,10 +385,7 @@ TestFixture<bigEndian>::testBoundaries(int kValue, bool small, std::vector<uint6
     testBoundaries(kValue, small, v, f, wc);
 }
 
-template <bool bigEndian>
-void
-TestFixture<bigEndian>::testBoundaries()
-{
+template <bool bigEndian> void TestFixture<bigEndian>::testBoundaries() {
     for (int kValue = 0; kValue < 64; ++kValue) {
         std::vector<uint64_t> v;
         calcBoundaries(kValue, false, v);
@@ -461,7 +394,7 @@ TestFixture<bigEndian>::testBoundaries()
          * Note: We don't support kValue being 63 for when decoding
          * "small" numbers (limited to 64 bits in encoded form) since
          * performance penalty is not worth the extra flexibility.
-         */ 
+         */
         if (kValue < 63) {
             v.clear();
             calcBoundaries(kValue, true, v);
@@ -471,21 +404,16 @@ TestFixture<bigEndian>::testBoundaries()
 }
 
 template <bool bigEndian>
-void
-TestFixture<bigEndian>::testRandNums(int kValue, IDecodeFuncFactory f, search::ComprFileWriteContext &wc)
-{
-    DC dc(wc.getComprBuf(), 0);
-    DC dcSkip(wc.getComprBuf(), 0);
+void TestFixture<bigEndian>::testRandNums(int kValue, IDecodeFuncFactory f, search::ComprFileWriteContext& wc) {
+    DC                           dc(wc.getComprBuf(), 0);
+    DC                           dcSkip(wc.getComprBuf(), 0);
     std::unique_ptr<IDecodeFunc> df((*f)(dc, kValue));
     std::unique_ptr<IDecodeFunc> dfSkip((*f)(dcSkip, kValue));
     testRandNums(dc, dcSkip, *df, *dfSkip);
 }
 
-template <bool bigEndian>
-void
-TestFixture<bigEndian>::testRandNums(int kValue)
-{
-    EC e;
+template <bool bigEndian> void TestFixture<bigEndian>::testRandNums(int kValue) {
+    EC                            e;
     search::ComprFileWriteContext wc(e);
     wc.allocComprBuf(32_Ki, 32_Ki);
     e.setupWrite(wc);
@@ -502,43 +430,32 @@ TestFixture<bigEndian>::testRandNums(int kValue)
     testRandNums(kValue, f, wc);
 }
 
-template <bool bigEndian>
-void
-TestFixture<bigEndian>::testRandNums()
-{
+template <bool bigEndian> void TestFixture<bigEndian>::testRandNums() {
     for (int k = 0; k < 64; ++k) {
         testRandNums(k);
     }
 }
 
-template <typename bigEndian>
-class ExpGolombTest : public ::testing::Test, public TestFixture<bigEndian::value>
-{
+template <typename bigEndian> class ExpGolombTest : public ::testing::Test, public TestFixture<bigEndian::value> {
 protected:
     ExpGolombTest();
     ~ExpGolombTest() override;
 };
 
 template <typename bigEndian>
-ExpGolombTest<bigEndian>::ExpGolombTest()
-    : ::testing::Test(),
-      TestFixture<bigEndian::value>()
-{
+ExpGolombTest<bigEndian>::ExpGolombTest() : ::testing::Test(), TestFixture<bigEndian::value>() {
 }
 
-template <typename bigEndian>
-ExpGolombTest<bigEndian>::~ExpGolombTest() = default;
+template <typename bigEndian> ExpGolombTest<bigEndian>::~ExpGolombTest() = default;
 
 using ExpGolombTestTypes = ::testing::Types<std::false_type, std::true_type>;
 TYPED_TEST_SUITE(ExpGolombTest, ExpGolombTestTypes);
 
-TYPED_TEST(ExpGolombTest, random_numbers)
-{
+TYPED_TEST(ExpGolombTest, random_numbers) {
     this->testRandNums();
 }
 
-TYPED_TEST(ExpGolombTest, boundaries)
-{
+TYPED_TEST(ExpGolombTest, boundaries) {
     this->testBoundaries();
 }
 

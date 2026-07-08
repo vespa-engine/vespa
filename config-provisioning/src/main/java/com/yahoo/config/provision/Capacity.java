@@ -2,8 +2,11 @@
 package com.yahoo.config.provision;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A capacity request.
@@ -20,6 +23,7 @@ public final class Capacity {
     private final boolean canFail;
     private final NodeType type;
     private final Optional<CloudAccount> cloudAccount;
+    private final CloudResourceTags cloudResourceTags;
     private final ClusterInfo clusterInfo;
 
     private Capacity(ClusterResources min,
@@ -29,6 +33,7 @@ public final class Capacity {
                      boolean canFail,
                      NodeType type,
                      Optional<CloudAccount> cloudAccount,
+                     CloudResourceTags cloudResourceTags,
                      ClusterInfo clusterInfo) {
         validate(min);
         validate(max);
@@ -44,6 +49,7 @@ public final class Capacity {
         this.canFail = canFail;
         this.type = type;
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.cloudResourceTags = requireNonNull(cloudResourceTags);
         this.clusterInfo = clusterInfo;
     }
 
@@ -62,7 +68,7 @@ public final class Capacity {
     public boolean isRequired() { return required; }
 
     /**
-     * Returns true if an exception should be thrown if the specified capacity can not be satisfied
+     * Returns true if an exception should be thrown if the specified capacity cannot be satisfied
      * (to whatever policies are applied and taking required true/false into account).
      * Returns false if it is preferable to still succeed with partially satisfied capacity.
      */
@@ -80,6 +86,11 @@ public final class Capacity {
         return cloudAccount;
     }
 
+    /** Returns the cloud resource tags for this capacity */
+    public CloudResourceTags cloudResourceTags() {
+        return cloudResourceTags;
+    }
+
     public ClusterInfo clusterInfo() { return clusterInfo; }
 
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
@@ -87,7 +98,7 @@ public final class Capacity {
     }
 
     public Capacity withLimits(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount, clusterInfo);
+        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     @Override
@@ -107,7 +118,7 @@ public final class Capacity {
     }
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return from(min, max, groupSize, false, true, Optional.empty(), ClusterInfo.empty());
+        return from(min, max, groupSize, false, true, Optional.empty(), CloudResourceTags.empty(), ClusterInfo.empty());
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
@@ -120,7 +131,13 @@ public final class Capacity {
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 Optional<CloudAccount> cloudAccount, ClusterInfo clusterInfo) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, clusterInfo);
+        return from(min, max, groupSize, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
+                                Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
+                                ClusterInfo clusterInfo) {
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     /** Creates this from a node type */
@@ -129,7 +146,8 @@ public final class Capacity {
     }
 
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type, Duration hostTTL) {
-        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(), new ClusterInfo.Builder().hostTTL(hostTTL).build());
+        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(),
+                            CloudResourceTags.empty(), new ClusterInfo.Builder().hostTTL(hostTTL).build());
     }
 
 }

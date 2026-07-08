@@ -11,18 +11,22 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.TensorType.Dimension;
+import com.yahoo.tensor.serialization.HexEncoding;
 
 import java.util.function.Supplier;
 
-import static com.yahoo.document.json.readers.JsonParserHelpers.*;
-import static com.yahoo.tensor.serialization.JsonFormat.decodeHexString;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectCompositeEnd;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectEnd;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectObjectStart;
+import static com.yahoo.document.json.readers.JsonParserHelpers.expectOneOf;
 import static com.yahoo.tensor.serialization.JsonFormat.decodeNumberString;
 
 /**
  * Reads the tensor format defined at
- * See <a href="https://docs.vespa.ai/en/reference/schemas/document-json-format.html">https://docs.vespa.ai/en/reference/document-json-format.html</a>
+ * <a href="https://docs.vespa.ai/en/reference/schemas/document-json-format.html">https://docs.vespa.ai/en/reference/document-json-format.html</a>
  *
- * @author geirst
+ * @author Geir Storli
  * @author bratseth
  */
 public class TensorReader {
@@ -40,9 +44,9 @@ public class TensorReader {
         if (buffer.current() == JsonToken.VALUE_STRING
             && builder instanceof IndexedTensor.BoundBuilder indexedBuilder)
         {
-            double[] decoded = decodeHexString(buffer.currentText(), builder.type().valueType());
-            if (decoded.length == 0)
+            if (buffer.currentText().isEmpty())
                 throw new IllegalArgumentException("Bad string input for tensor with type " + builder.type());
+            double[] decoded = HexEncoding.decodeHex(buffer.currentText(), builder.type());
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
@@ -135,10 +139,11 @@ public class TensorReader {
         if ( ! (builder instanceof IndexedTensor.BoundBuilder indexedBuilder))
             throw new IllegalArgumentException("The 'values' field can only be used with dense tensors. " +
                                                "Use 'cells' or 'blocks' instead");
+        long expectedSize = expectedDenseSize(indexedBuilder);
         if (buffer.current() == JsonToken.VALUE_STRING) {
-            double[] decoded = decodeHexString(buffer.currentText(), builder.type().valueType());
-            if (decoded.length == 0)
+            if (buffer.currentText().isEmpty())
                 throw new IllegalArgumentException("The 'values' string does not contain any values");
+            double[] decoded = HexEncoding.decodeHex(buffer.currentText(), builder.type());
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
@@ -152,6 +157,8 @@ public class TensorReader {
         }
         if (index == 0)
             throw new IllegalArgumentException("The 'values' array does not contain any values");
+        if (index != expectedSize)
+            throw new IllegalArgumentException("Expected " + expectedSize + " values, but got " + index);
         expectCompositeEnd(buffer.current());
     }
 
@@ -248,7 +255,7 @@ public class TensorReader {
         int index = 0;
         double[] values = new double[size];
         if (buffer.current() == JsonToken.VALUE_STRING) {
-            values = decodeHexString(buffer.currentText(), type.valueType());
+            values = HexEncoding.decodeHex(buffer.currentText(), type);
             index = values.length;
         } else {
             expectArrayStart(buffer.current());
@@ -275,6 +282,13 @@ public class TensorReader {
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Expected a number but got '" + buffer.currentText() + "'");
         }
+    }
+
+    private static long expectedDenseSize(IndexedTensor.BoundBuilder builder) {
+        long size = 1;
+        for (var dim : builder.type().dimensions())
+            size *= dim.size().get();
+        return size;
     }
 
     private static TensorAddress asAddress(String label, TensorType type) {

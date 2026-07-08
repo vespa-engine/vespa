@@ -18,37 +18,32 @@ class BucketDeltaPair;
  * also removes empty source buckets after join.
  *
  */
-class JoinBucketsSession : public BucketSessionBase
-{
+class JoinBucketsSession : public BucketSessionBase {
 private:
     BucketState _source1Delta;
     BucketState _source2Delta;
-    bool _wantTargetActive;
-    bool _adjustSource1ActiveLids;
-    bool _adjustSource2ActiveLids;
-    bool _adjustTargetActiveLids;
-    BucketId _source1;
-    BucketId _source2;
-    BucketId _target;
+    bool        _wantTargetActive;
+    bool        _adjustSource1ActiveLids;
+    bool        _adjustSource2ActiveLids;
+    bool        _adjustTargetActiveLids;
+    BucketId    _source1;
+    BucketId    _source2;
+    BucketId    _target;
 
-    bool
-    applyDelta(const BucketState &delta, BucketId &srcBucket, BucketState *dst);
+    bool applyDelta(const BucketState& delta, BucketId& srcBucket, BucketState* dst);
 
 public:
-    JoinBucketsSession(BucketDBOwner &bucketDB,
-                       IBucketCreateNotifier &bucketCreateNotifier,
-                       const BucketId &source1,
-                       const BucketId &source2,
-                       const BucketId &target);
+    JoinBucketsSession(BucketDBOwner& bucketDB, IBucketCreateNotifier& bucketCreateNotifier, const BucketId& source1,
+                       const BucketId& source2, const BucketId& target);
 
-    void applyDeltas(const BucketDeltaPair &deltas);
+    void applyDeltas(const BucketDeltaPair& deltas);
     bool getWantTargetActive() const { return _wantTargetActive; }
     bool mustFixupTargetActiveLids(bool movedSource1Docs, bool movedSource2Docs) const;
     void setup();
     void finish();
-    const BucketId & getSource1() const { return _source1; }
-    const BucketId & getSource2() const { return _source2; }
-    const BucketId & getTarget() const { return _target;}
+    const BucketId& getSource1() const { return _source1; }
+    const BucketId& getSource2() const { return _source2; }
+    const BucketId& getTarget() const { return _target; }
 };
 
-}
+} // namespace proton::bucketdb

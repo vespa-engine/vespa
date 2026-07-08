@@ -1,16 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "positionsdfw.h"
+
 #include "docsumstate.h"
-#include <vespa/searchlib/attribute/iattributemanager.h>
+
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/geo_gcd.h>
 #include <vespa/searchlib/common/location.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <cmath>
+#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <climits>
+#include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.positionsdfw");
@@ -26,7 +29,7 @@ double to_degrees(int32_t microDegrees) {
     return d;
 }
 
-}
+} // namespace
 
 using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
@@ -35,20 +38,18 @@ using search::attribute::IntegerContent;
 using search::common::GeoGcd;
 using search::common::Location;
 
-LocationAttrDFW::AllLocations
-LocationAttrDFW::getAllLocations(GetDocsumsState& state) const
-{
+LocationAttrDFW::AllLocations LocationAttrDFW::getAllLocations(GetDocsumsState& state) const {
     AllLocations retval;
-    if (! state._args.locations_possible()) {
+    if (!state._args.locations_possible()) {
         return retval;
     }
     if (state._parsedLocations.empty()) {
         state.parse_locations();
     }
-    for (const auto & loc : state._parsedLocations) {
+    for (const auto& loc : state._parsedLocations) {
         if (loc.location.valid()) {
-            LOG(debug, "found location(field %s) for DFW(field %s)\n",
-                loc.field_name.c_str(), getAttributeName().c_str());
+            LOG(debug, "found location(field %s) for DFW(field %s)\n", loc.field_name.c_str(),
+                getAttributeName().c_str());
             if (getAttributeName() == loc.field_name) {
                 retval.matching.push_back(&loc.location);
             } else {
@@ -66,21 +67,18 @@ LocationAttrDFW::getAllLocations(GetDocsumsState& state) const
 LocationAttrDFW::AllLocations::AllLocations() = default;
 LocationAttrDFW::AllLocations::~AllLocations() = default;
 
-AbsDistanceDFW::AbsDistanceDFW(const std::string & attrName)
-    : LocationAttrDFW(attrName)
-{ }
+AbsDistanceDFW::AbsDistanceDFW(const std::string& attrName) : LocationAttrDFW(attrName) {
+}
 
-uint64_t
-AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState& state,
-                                const std::vector<const GeoLoc *> &locations) const
-{
+uint64_t AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState& state,
+                                         const std::vector<const GeoLoc*>& locations) const {
     // ensure result fits in Java "int"
-    uint64_t absdist = std::numeric_limits<int32_t>::max();
-    uint64_t sqdist = absdist*absdist;
+    uint64_t    absdist = std::numeric_limits<int32_t>::max();
+    uint64_t    sqdist = absdist * absdist;
     const auto& attribute = get_attribute(state);
     for (auto location : locations) {
-        int32_t docx = 0;
-        int32_t docy = 0;
+        int32_t        docx = 0;
+        int32_t        docy = 0;
         IntegerContent pos;
         pos.fill(attribute, docid);
         uint32_t numValues = pos.size();
@@ -93,17 +91,12 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState& state,
             }
         }
     }
-    return (uint64_t) std::sqrt((double) sqdist);
+    return (uint64_t)std::sqrt((double)sqdist);
 }
 
-void
-AbsDistanceDFW::insert_field(uint32_t docid,
-                             const IDocsumStoreDocument*,
-                             GetDocsumsState& state,
-                             ElementIds,
-                             vespalib::slime::Inserter &target) const
-{
-    const auto & all_locations = getAllLocations(state);
+void AbsDistanceDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state, ElementIds,
+                                  vespalib::slime::Inserter& target) const {
+    const auto& all_locations = getAllLocations(state);
     if (all_locations.empty()) {
         return;
     }
@@ -113,14 +106,12 @@ AbsDistanceDFW::insert_field(uint32_t docid,
 
 //--------------------------------------------------------------------------
 
-PositionsDFW::PositionsDFW(const std::string & attrName) :
-    AttrDFW(attrName)
-{
+PositionsDFW::PositionsDFW(const std::string& attrName) : AttrDFW(attrName) {
 }
 
 namespace {
 
-void insertPosV8(int64_t docxy, vespalib::slime::Inserter &target) {
+void insertPosV8(int64_t docxy, vespalib::slime::Inserter& target) {
     int32_t docx = 0;
     int32_t docy = 0;
     vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
@@ -128,9 +119,9 @@ void insertPosV8(int64_t docxy, vespalib::slime::Inserter &target) {
         LOG(spam, "skipping empty zcurve value");
         return;
     }
-    double degrees_ns = to_degrees(docy);
-    double degrees_ew = to_degrees(docx);
-    vespalib::slime::Cursor &obj = target.insertObject();
+    double                   degrees_ns = to_degrees(docy);
+    double                   degrees_ew = to_degrees(docx);
+    vespalib::slime::Cursor& obj = target.insertObject();
     obj.setDouble("lat", degrees_ns);
     obj.setDouble("lng", degrees_ew);
     vespalib::asciistream latlong;
@@ -149,8 +140,8 @@ void insertPosV8(int64_t docxy, vespalib::slime::Inserter &target) {
     obj.setString("latlong", vespalib::Memory(latlong.view()));
 }
 
-
-void insertV8FromAttr(const attribute::IAttributeVector &attribute, uint32_t docid, vespalib::slime::Inserter &target) {
+void insertV8FromAttr(const attribute::IAttributeVector& attribute, uint32_t docid,
+                      vespalib::slime::Inserter& target) {
     IntegerContent pos;
     pos.fill(attribute, docid);
     uint32_t numValues = pos.size();
@@ -159,7 +150,7 @@ void insertV8FromAttr(const attribute::IAttributeVector &attribute, uint32_t doc
         if (attribute.getCollectionType() == attribute::CollectionType::SINGLE) {
             insertPosV8(pos[0], target);
         } else {
-            vespalib::slime::Cursor &arr = target.insertArray();
+            vespalib::slime::Cursor& arr = target.insertArray();
             for (uint32_t i = 0; i < numValues; i++) {
                 vespalib::slime::ArrayInserter ai(arr);
                 insertPosV8(pos[i], ai);
@@ -170,19 +161,14 @@ void insertV8FromAttr(const attribute::IAttributeVector &attribute, uint32_t doc
 
 } // namespace
 
-void
-PositionsDFW::insert_field(uint32_t docid,
-                           const IDocsumStoreDocument*,
-                           GetDocsumsState& dsState,
-                           ElementIds,
-                           vespalib::slime::Inserter &target) const
-{
+void PositionsDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& dsState, ElementIds,
+                                vespalib::slime::Inserter& target) const {
     insertV8FromAttr(get_attribute(dsState), docid, target);
 }
 
 //--------------------------------------------------------------------------
 
-PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttributeManager *attribute_manager) {
+PositionsDFW::UP PositionsDFW::create(const char* attribute_name, const IAttributeManager* attribute_manager) {
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(debug, "createPositionsDFW: missing attribute name '%p'", attribute_name);
@@ -193,7 +179,7 @@ PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttribu
             LOG(debug, "createPositionsDFW: could not create context from attribute manager");
             return {};
         }
-        const IAttributeVector *attribute = context->getAttribute(attribute_name);
+        const IAttributeVector* attribute = context->getAttribute(attribute_name);
         if (!attribute) {
             LOG(debug, "createPositionsDFW: could not get attribute '%s' from context", attribute_name);
             return {};
@@ -202,8 +188,8 @@ PositionsDFW::UP PositionsDFW::create(const char *attribute_name, const IAttribu
     return std::make_unique<PositionsDFW>(attribute_name);
 }
 
-std::unique_ptr<DocsumFieldWriter>
-AbsDistanceDFW::create(const char *attribute_name, const IAttributeManager *attribute_manager) {
+std::unique_ptr<DocsumFieldWriter> AbsDistanceDFW::create(const char*              attribute_name,
+                                                          const IAttributeManager* attribute_manager) {
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(debug, "createAbsDistanceDFW: missing attribute name '%p'", attribute_name);
@@ -214,7 +200,7 @@ AbsDistanceDFW::create(const char *attribute_name, const IAttributeManager *attr
             LOG(debug, "createAbsDistanceDFW: could not create context from attribute manager");
             return {};
         }
-        const IAttributeVector *attribute = context->getAttribute(attribute_name);
+        const IAttributeVector* attribute = context->getAttribute(attribute_name);
         if (!attribute) {
             LOG(debug, "createAbsDistanceDFW: could not get attribute '%s' from context", attribute_name);
             return {};
@@ -223,4 +209,4 @@ AbsDistanceDFW::create(const char *attribute_name, const IAttributeManager *attr
     return std::make_unique<AbsDistanceDFW>(attribute_name);
 }
 
-}
+} // namespace search::docsummary

@@ -24,7 +24,9 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
 
-namespace document { class DocumentTypeRepo; }
+namespace document {
+class DocumentTypeRepo;
+}
 
 namespace storage {
 
@@ -33,12 +35,12 @@ struct StorageNodeContext;
 
 class Process : public ApplicationGenerationFetcher {
 protected:
-    using DocumentTypesConfig        = document::config::DocumenttypesConfig;
-    using BucketspacesConfig         = vespa::config::content::core::BucketspacesConfig;
+    using DocumentTypesConfig = document::config::DocumenttypesConfig;
+    using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
     using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
-    using StorBouncerConfig          = vespa::config::content::core::StorBouncerConfig;
-    using StorDistributionConfig     = vespa::config::content::StorDistributionConfig;
-    using StorServerConfig           = vespa::config::content::core::StorServerConfig;
+    using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
+    using StorDistributionConfig = vespa::config::content::StorDistributionConfig;
+    using StorServerConfig = vespa::config::content::core::StorServerConfig;
 
     using DocumentTypeRepoSP = std::shared_ptr<const document::DocumentTypeRepo>;
     config::ConfigUri _configUri;
@@ -58,7 +60,7 @@ private:
 public:
     using UP = std::unique_ptr<Process>;
 
-    explicit Process(const config::ConfigUri & configUri);
+    explicit Process(const config::ConfigUri& configUri);
     ~Process() override;
 
     virtual void setupConfig(vespalib::duration subscribeTimeout);
@@ -75,5 +77,4 @@ public:
     int64_t getGeneration() const override;
 };
 
-} // storage
-
+} // namespace storage

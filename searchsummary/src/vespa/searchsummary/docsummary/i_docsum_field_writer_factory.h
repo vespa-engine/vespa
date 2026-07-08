@@ -12,8 +12,7 @@ class DocsumFieldWriter;
 /*
  * Factory interface class for creating docsum field writers.
  */
-class IDocsumFieldWriterFactory
-{
+class IDocsumFieldWriterFactory {
 public:
     virtual ~IDocsumFieldWriterFactory() = default;
     /**
@@ -24,4 +23,4 @@ public:
                                                                           const std::string& source) = 0;
 };
 
-}
+} // namespace search::docsummary

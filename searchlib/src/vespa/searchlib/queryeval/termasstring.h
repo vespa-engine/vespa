@@ -4,11 +4,13 @@
 
 #include <string>
 
-namespace search::query { class Node; }
+namespace search::query {
+class Node;
+}
 
 namespace search::queryeval {
 
-std::string termAsString(const search::query::Node &term_node);
-std::string_view termAsString(const search::query::Node &term_node, std::string & scratchPad);
+std::string termAsString(const search::query::Node& term_node);
+std::string_view termAsString(const search::query::Node& term_node, std::string& scratchPad);
 
-}
+} // namespace search::queryeval

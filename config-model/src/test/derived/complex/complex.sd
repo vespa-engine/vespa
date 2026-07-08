@@ -155,4 +155,9 @@ schema complex {
     fieldset all {
         fields: combineda, combinedb
     }
+
+    document-summary mydocsumclass {
+        omit-summary-features
+        summary title {}
+    }
 }

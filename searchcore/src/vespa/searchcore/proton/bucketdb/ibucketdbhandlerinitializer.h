@@ -2,19 +2,21 @@
 
 #pragma once
 
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+#include <vespa/searchlib/common/serialnum.h>
+
 namespace proton::bucketdb {
 
 /**
- * The IBucketDBHandlerInitiaizer class handles initialization of a 
+ * The IBucketDBHandlerInitiaizer class handles initialization of a
  * BucketDBHandler.
  */
-class IBucketDBHandlerInitializer
-{
+class IBucketDBHandlerInitializer {
 public:
-    IBucketDBHandlerInitializer() { }
+    IBucketDBHandlerInitializer() {}
     virtual ~IBucketDBHandlerInitializer() = default;
 
-    virtual void addDocumentMetaStore(IDocumentMetaStore *dms, search::SerialNum flushedSerialNum) = 0;
+    virtual void addDocumentMetaStore(IDocumentMetaStore* dms, search::SerialNum flushedSerialNum) = 0;
 };
 
-}
+} // namespace proton::bucketdb

@@ -3,26 +3,22 @@
 #pragma once
 
 #include <vespa/vespalib/util/rand48.h>
+
 #include <cassert>
 #include <string>
 #include <vector>
 
 namespace search {
-class RandomGenerator
-{
+class RandomGenerator {
 private:
     vespalib::Rand48 _rnd;
 
 public:
     RandomGenerator() : _rnd() {}
 
-    RandomGenerator(long seed) : _rnd() {
-        _rnd.srand48(seed);
-    }
+    RandomGenerator(long seed) : _rnd() { _rnd.srand48(seed); }
 
-    void srand(long seed) {
-        _rnd.srand48(seed);
-    }
+    void srand(long seed) { _rnd.srand48(seed); }
 
     uint32_t rand(uint32_t min, uint32_t max) {
         assert(min <= max);
@@ -31,7 +27,7 @@ public:
     }
 
     std::string getRandomString(uint32_t minLen, uint32_t maxLen) {
-        uint32_t len = rand(minLen, maxLen);
+        uint32_t    len = rand(minLen, maxLen);
         std::string retval;
         for (uint32_t i = 0; i < len; ++i) {
             char c = static_cast<char>(rand('a', 'z'));
@@ -40,8 +36,7 @@ public:
         return retval;
     }
 
-    void fillRandomStrings(std::vector<std::string> & vec, uint32_t numStrings,
-                           uint32_t minLen, uint32_t maxLen) {
+    void fillRandomStrings(std::vector<std::string>& vec, uint32_t numStrings, uint32_t minLen, uint32_t maxLen) {
         vec.clear();
         vec.reserve(numStrings);
         for (uint32_t i = 0; i < numStrings; ++i) {
@@ -49,8 +44,7 @@ public:
         }
     }
 
-    template <typename T>
-    void fillRandomIntegers(std::vector<T> & vec, uint32_t numValues) {
+    template <typename T> void fillRandomIntegers(std::vector<T>& vec, uint32_t numValues) {
         vec.clear();
         vec.reserve(numValues);
         for (uint32_t i = 0; i < numValues; ++i) {
@@ -59,5 +53,4 @@ public:
     }
 };
 
-} // search
-
+} // namespace search

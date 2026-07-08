@@ -2,6 +2,4 @@
 
 #include "blob.h"
 
-namespace mbus {
-
-} // namespace mbus
+namespace mbus {} // namespace mbus

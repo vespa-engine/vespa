@@ -25,4 +25,4 @@ struct Clock {
     [[nodiscard]] virtual vespalib::system_time getSystemTime() const = 0;
 };
 
-}
+} // namespace storage::framework

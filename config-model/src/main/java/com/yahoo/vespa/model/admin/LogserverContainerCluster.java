@@ -11,7 +11,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,8 +25,10 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
         addDefaultHandlersWithVip();
         addLogHandler();
-        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin),
-                                                                 Optional.of(ClusterSpec.Id.from(name))));
+        setJvmGCOptions(deployState.getProperties().jvmGCOptionsFlag()
+                                .withClusterType(ClusterSpec.Type.admin)
+                                .withClusterId(ClusterSpec.Id.from(name))
+                                .value());
         if (isHostedVespa())
             addAccessLog(getName());
     }

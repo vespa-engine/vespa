@@ -14,4 +14,3 @@ namespace vespalib::hwaccelerated {
 using PlatformGenericAccelerator = NeonAccelerator;
 }
 #endif
-

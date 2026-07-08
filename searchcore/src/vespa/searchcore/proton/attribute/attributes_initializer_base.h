@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "i_attribute_initializer_registry.h"
 #include "attribute_initializer_result.h"
+#include "i_attribute_initializer_registry.h"
+
 #include <vector>
 
 namespace proton {
@@ -11,8 +12,7 @@ namespace proton {
 /**
  * Base class for initialization and loading of a set of attribute vectors.
  */
-class AttributesInitializerBase : public IAttributeInitializerRegistry
-{
+class AttributesInitializerBase : public IAttributeInitializerRegistry {
 public:
     using AttributesVector = std::vector<AttributeInitializerResult>;
 
@@ -20,13 +20,10 @@ protected:
     AttributesVector _initializedAttributes;
 
 public:
-    static void considerPadAttribute(search::AttributeVector &attribute,
-                                     std::optional<search::SerialNum> currentSerialNum,
-                                     uint32_t newDocIdLimit);
+    static void considerPadAttribute(search::AttributeVector&         attribute,
+                                     std::optional<search::SerialNum> currentSerialNum, uint32_t newDocIdLimit);
 
     AttributesInitializerBase();
-
 };
 
 } // namespace proton
-

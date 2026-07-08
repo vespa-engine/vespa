@@ -45,7 +45,7 @@
             <extension>
                 <groupId>org.apache.maven.archetype</groupId>
                 <artifactId>archetype-packaging</artifactId>
-                <version>3.2.1</version>
+                <version>3.4.1</version>
             </extension>
         </extensions>
         <pluginManagement>
@@ -75,7 +75,7 @@
                         <dependency>
                             <groupId>biz.aQute.bnd</groupId>
                             <artifactId>biz.aQute.bndlib</artifactId>
-                            <version>7.2.0</version>
+                            <version>7.3.0</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -93,7 +93,6 @@
                         <showWarnings>true</showWarnings>
                         <showDeprecation>false</showDeprecation>
                         <compilerArgs>
-                            <arg>${vespaCompilerArgs.preview}</arg>
                             <arg>${vespaCompilerArgs.xlint}</arg>
                             <arg>-Xlint:-serial</arg>
                             <arg>-Xlint:-try</arg>
@@ -132,9 +131,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-failsafe-plugin.vespa.version}</version>
                     <configuration>
-                        <systemPropertyVariables>
-                            <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
-                        </systemPropertyVariables>
+                        <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -220,11 +217,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>${maven-site-plugin.vespa.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>${maven-source-plugin.vespa.version}</version>
                     <configuration>
@@ -240,7 +232,6 @@
                         <systemPropertyVariables>
                             <config_model.ip_check>false</config_model.ip_check>
                             <jdisc.logger.level>INFO</jdisc.logger.level>
-                            <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
                         <argLine>-Djava.io.tmpdir=${project.build.directory} ${ffm.args}</argLine>
@@ -266,12 +257,12 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.6.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.4.1</version>
+                    <version>3.6.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -304,6 +295,9 @@
                     <groupId>io.github.tulipcc</groupId>
                     <artifactId>tulipcc-maven-plugin</artifactId>
                     <version>5.0.0</version>
+                    <configuration>
+                        <jdkVersion>17</jdkVersion>
+                    </configuration>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>
@@ -312,11 +306,24 @@
                             </goals>
                         </execution>
                     </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.reporting</groupId>
+                            <artifactId>maven-reporting-impl</artifactId>
+                            <version>3.2.0</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>dom4j</groupId>
+                                    <artifactId>dom4j</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>io.github.ascopes</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
-                    <version>3.10.2</version>
+                    <version>3.10.3</version>
                     <configuration>
                         <protocVersion>${protobuf.vespa.version}</protocVersion>
                         <sourceDirectories>
@@ -341,9 +348,17 @@
                     </configuration>
                     <executions>
                         <execution>
+                            <id>abicheck</id>
                             <phase>package</phase>
                             <goals>
                                 <goal>abicheck</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>leakagecheck</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>leakagecheck</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -355,7 +370,7 @@
                     -->
                     <groupId>org.openrewrite.maven</groupId>
                     <artifactId>rewrite-maven-plugin</artifactId>
-                    <version>5.39.0</version>
+                    <version>5.47.3</version>
                     <configuration>
                         <activeRecipes>
                             <recipe>org.openrewrite.java.testing.junit5.JUnit5BestPractices</recipe>
@@ -365,7 +380,7 @@
                         <dependency>
                             <groupId>org.openrewrite.recipe</groupId>
                             <artifactId>rewrite-testing-frameworks</artifactId>
-                            <version>2.16.0</version>
+                            <version>2.24.1</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -578,6 +593,16 @@
                 <vespaCompilerArgs.xlint>-Xlint:all,-this-escape</vespaCompilerArgs.xlint>
             </properties>
         </profile>
+        <!-- Build schema-language-server modules (language-server and lemminx-vespa).
+             Disabled by default as these are only needed for IDE plugin development/deployment.
+             Enable with -Pschema-language-server or activate in IntelliJ via
+             Maven tool window > Profiles > schema-language-server -->
+        <profile>
+            <id>schema-language-server</id>
+            <properties>
+                <schema-language-server.skip>false</schema-language-server.skip>
+            </properties>
+        </profile>
     </profiles>
 
     <dependencyManagement>
@@ -588,6 +613,11 @@
                 <groupId>ai.djl.huggingface</groupId>
                 <artifactId>tokenizers</artifactId>
                 <version>${huggingface.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>classworlds</groupId>
+                <artifactId>classworlds</artifactId>
+                <version>${classworlds-classworlds.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.dev-smart</groupId>
@@ -741,9 +771,9 @@
                 <version>${onnxruntime.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>de.kherud</groupId>
-                <artifactId>llama</artifactId>
-                <version>${kherud.llama.vespa.version}</version>
+                <groupId>io.github.arnej27959</groupId>
+                <artifactId>jllama</artifactId>
+                <version>${jllama.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -766,6 +796,13 @@
                         <artifactId>LatencyUtils</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.vespa.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>jakarta.inject</groupId>
@@ -828,6 +865,11 @@
                 <version>${dropwizard.metrics.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>${reactor-core.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-buffer</artifactId>
                 <version>${netty.vespa.version}</version>
@@ -835,6 +877,31 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-base</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-classes-quic</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-compression</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http3</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-native-quic</artifactId>
                 <version>${netty.vespa.version}</version>
             </dependency>
             <dependency>
@@ -944,11 +1011,6 @@
                 <version>${apache.httpclient.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-csv</artifactId>
-                <version>${commons-csv.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>org.apache.felix.framework</artifactId>
                 <version>${felix.vespa.version}</version>
@@ -1033,6 +1095,11 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-xml-impl</artifactId>
                 <version>${maven-xml-impl.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-api-xml</artifactId>
+                <version>${maven-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.enforcer</groupId>
@@ -1162,6 +1229,11 @@
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-component-annotations</artifactId>
+                <version>${plexus-component-annotations.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-interpolation</artifactId>
                 <version>${plexus-interpolation.vespa.version}</version>
             </dependency>
@@ -1223,7 +1295,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
                 <artifactId>jetty-http2-client-transport</artifactId>
-                <version>${jetty.client.vespa.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
@@ -1243,7 +1315,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-client</artifactId>
-                <version>${jetty.client.vespa.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -1343,7 +1415,7 @@
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-common</artifactId>
-                <version>${kotlin.vespa.version}</version>
+                <version>${kotlin-stdlib-common.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -1354,11 +1426,6 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-jdk8</artifactId>
                 <version>${kotlin.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jvnet.mimepull</groupId>
-                <artifactId>mimepull</artifactId>
-                <version>${mimepull.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>at.yawk.lz4</groupId>
@@ -1376,7 +1443,7 @@
                      See pluginManagement of rewrite-maven-plugin for more details -->
                 <groupId>org.openrewrite.recipe</groupId>
                 <artifactId>rewrite-recipe-bom</artifactId>
-                <version>2.17.0</version>
+                <version>2.23.2</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1456,6 +1523,7 @@
         <test.hide>true</test.hide>
         <ffm.args/>
 
+        <schema-language-server.skip>true</schema-language-server.skip>
         <vespaClients.jdk.releaseVersion>11</vespaClients.jdk.releaseVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

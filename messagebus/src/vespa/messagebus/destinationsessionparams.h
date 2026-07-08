@@ -1,15 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "imessagehandler.h"
 #include "common.h"
+#include "imessagehandler.h"
 
 namespace mbus {
 
 /**
  * To facilitate several configuration parameters to the {@link MessageBus#createDestinationSession(MessageHandler,
- * DestinationSessionParams)}, all parameters are held by this class. This class has reasonable default values for each
- * parameter.
+ * DestinationSessionParams)}, all parameters are held by this class. This class has reasonable default values for
+ * each parameter.
  *
  * @author Simon Thoresen Hult
  * @version $Id$
@@ -19,7 +19,7 @@ private:
     string           _name;
     bool             _broadcastName;
     bool             _defer_registration;
-    IMessageHandler *_handler;
+    IMessageHandler* _handler;
 
 public:
     /**
@@ -32,7 +32,7 @@ public:
      *
      * @return The name.
      */
-    const string &getName() const { return _name; }
+    const string& getName() const { return _name; }
 
     /**
      * Sets the name to register with message bus.
@@ -40,7 +40,10 @@ public:
      * @param name The name to set.
      * @return This, to allow chaining.
      */
-    DestinationSessionParams &setName(const string &name) { _name = name; return *this; }
+    DestinationSessionParams& setName(const string& name) {
+        _name = name;
+        return *this;
+    }
 
     /**
      * Returns whether or not to broadcast the name of this session on the network.
@@ -57,7 +60,10 @@ public:
      * @param broadcastName True to broadcast, false otherwise.
      * @return This, to allow chaining.
      */
-    DestinationSessionParams &setBroadcastName(bool broadcastName) { _broadcastName = broadcastName; return *this; }
+    DestinationSessionParams& setBroadcastName(bool broadcastName) {
+        _broadcastName = broadcastName;
+        return *this;
+    }
 
     DestinationSessionParams& defer_registration(bool defer) noexcept {
         _defer_registration = defer;
@@ -70,7 +76,7 @@ public:
      *
      * @return The handler.
      */
-    IMessageHandler &getMessageHandler() const { return *_handler; }
+    IMessageHandler& getMessageHandler() const { return *_handler; }
 
     /**
      * Sets the handler to receive incoming messages.
@@ -78,8 +84,10 @@ public:
      * @param handler The handler to set.
      * @return This, to allow chaining.
      */
-    DestinationSessionParams &setMessageHandler(IMessageHandler &handler) { _handler = &handler; return *this; }
+    DestinationSessionParams& setMessageHandler(IMessageHandler& handler) {
+        _handler = &handler;
+        return *this;
+    }
 };
 
 } // namespace mbus
-

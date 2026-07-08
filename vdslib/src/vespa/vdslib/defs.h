@@ -9,6 +9,4 @@ namespace vdslib {
 using Timestamp = uint64_t;
 const Timestamp MAX_TIMESTAMP = (Timestamp)-1ll;
 
-}
-
-
+} // namespace vdslib

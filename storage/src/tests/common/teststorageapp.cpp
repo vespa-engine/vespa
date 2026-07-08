@@ -1,21 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "teststorageapp.h"
-#include <vespa/storage/common/content_bucket_db_options.h>
-#include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/config/config-stor-visitordispatcher.h>
+
 #include <vespa/config-stor-distribution.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/storage/common/content_bucket_db_options.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/config/subscription/configuri.h>
+
 #include <vespa/config/helper/configgetter.hpp>
-#include <thread>
+
 #include <sstream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.servicelayerapp");
@@ -24,8 +27,7 @@ using storage::framework::defaultimplementation::ComponentRegisterImpl;
 
 namespace storage {
 
-TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
-                               const lib::NodeType& type, NodeIndex index,
+TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg, const lib::NodeType& type, NodeIndex index,
                                const config::ConfigUri& config_uri)
     : TestComponentRegister(ComponentRegisterImpl::UP(std::move(compReg))),
       _compReg(dynamic_cast<StorageComponentRegisterImpl&>(TestComponentRegister::getComponentRegister())),
@@ -33,18 +35,20 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
       _nodeStateUpdater(type),
       _configId(config_uri.getConfigId()),
       _node_identity("test_cluster", type, index),
-      _initialized(false)
-{
+      _initialized(false) {
     // Use config to adjust values
     std::string clusterName = "mycluster";
-    uint32_t redundancy = 2;
-    uint32_t nodeCount = 10;
-    auto serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(config_uri.getConfigId(), config_uri.getContext());
+    uint32_t    redundancy = 2;
+    uint32_t    nodeCount = 10;
+    auto        serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(
+        config_uri.getConfigId(), config_uri.getContext());
     clusterName = serverConfig->clusterName;
     if (index == 0xffff) {
         index = serverConfig->nodeIndex;
     }
-    redundancy = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(config_uri.getConfigId(), config_uri.getContext())->redundancy;
+    redundancy = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(
+                     config_uri.getConfigId(), config_uri.getContext())
+                     ->redundancy;
     if (index >= nodeCount) {
         nodeCount = index + 1;
     }
@@ -56,49 +60,43 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
     _compReg.setNodeStateUpdater(_nodeStateUpdater);
     _compReg.setDocumentTypeRepo(_docMan.getTypeRepoSP());
     _compReg.setBucketIdFactory(document::BucketIdFactory());
-    auto distr = std::make_shared<lib::Distribution>(
-            lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));
+    auto distr =
+        std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));
     _compReg.setDistribution(distr);
     _nodeStateUpdater.patch_distribution(distr);
 }
 
 TestStorageApp::~TestStorageApp() = default;
 
-void
-TestStorageApp::setDistribution(Redundancy redundancy, NodeCount nodeCount)
-{
-    auto distr = std::make_shared<lib::Distribution>(
-            lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));
+void TestStorageApp::setDistribution(Redundancy redundancy, NodeCount nodeCount) {
+    auto distr =
+        std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));
     _compReg.setDistribution(distr);
     _nodeStateUpdater.patch_distribution(distr);
 }
 
-void
-TestStorageApp::setTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo)
-{
+void TestStorageApp::setTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo) {
     _compReg.setDocumentTypeRepo(std::move(repo));
 }
 
-void
-TestStorageApp::setClusterState(const lib::ClusterState& c)
-{
+void TestStorageApp::setClusterState(const lib::ClusterState& c) {
     _nodeStateUpdater.setClusterState(std::make_shared<lib::ClusterState>(c));
 }
 
-void
-TestStorageApp::set_cluster_state_bundle(std::shared_ptr<const lib::ClusterStateBundle> state_bundle)
-{
+void TestStorageApp::set_cluster_state_bundle(std::shared_ptr<const lib::ClusterStateBundle> state_bundle) {
     _nodeStateUpdater.setClusterStateBundle(std::move(state_bundle));
 }
 
 namespace {
 
 NodeIndex node_index_from_config(const config::ConfigUri& uri) {
-    return NodeIndex(config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext())->nodeIndex);
+    return NodeIndex(config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(
+                         uri.getConfigId(), uri.getContext())
+                         ->nodeIndex);
 }
 
 VESPA_THREAD_STACK_TAG(test_executor)
-}
+} // namespace
 
 TestServiceLayerApp::TestServiceLayerApp(NodeIndex index, const config::ConfigUri& config_uri)
     : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(ContentBucketDbOptions()),
@@ -106,37 +104,29 @@ TestServiceLayerApp::TestServiceLayerApp(NodeIndex index, const config::ConfigUr
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
       _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
-      _host_info()
-{
+      _host_info() {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     _nodeStateUpdater.setReportedNodeState(ns);
 }
 
 TestServiceLayerApp::TestServiceLayerApp(const config::ConfigUri& config_uri)
-    : TestServiceLayerApp(node_index_from_config(config_uri), config_uri)
-{
+    : TestServiceLayerApp(node_index_from_config(config_uri), config_uri) {
 }
 
 TestServiceLayerApp::~TestServiceLayerApp() = default;
 
-void
-TestServiceLayerApp::setupDummyPersistence()
-{
+void TestServiceLayerApp::setupDummyPersistence() {
     auto provider = std::make_unique<spi::dummy::DummyPersistence>(getTypeRepo());
     provider->initialize();
     setPersistenceProvider(std::move(provider));
 }
 
-void
-TestServiceLayerApp::setPersistenceProvider(PersistenceProviderUP provider)
-{
+void TestServiceLayerApp::setPersistenceProvider(PersistenceProviderUP provider) {
     _persistenceProvider = std::move(provider);
 }
 
-spi::PersistenceProvider&
-TestServiceLayerApp::getPersistenceProvider()
-{
-    if ( ! _persistenceProvider) {
+spi::PersistenceProvider& TestServiceLayerApp::getPersistenceProvider() {
+    if (!_persistenceProvider) {
         throw vespalib::IllegalStateException("Persistence provider requested but not initialized.", VESPA_STRLOC);
     }
     return *_persistenceProvider;
@@ -144,16 +134,13 @@ TestServiceLayerApp::getPersistenceProvider()
 
 namespace {
 
-template<typename T>
-[[nodiscard]] T get_config(const config::ConfigUri& uri) {
+template <typename T> [[nodiscard]] T get_config(const config::ConfigUri& uri) {
     return *config::ConfigGetter<T>::getConfig(uri.getConfigId(), uri.getContext());
 }
 
-}
+} // namespace
 
-void
-TestDistributorApp::configure(const config::ConfigUri& config_uri)
-{
+void TestDistributorApp::configure(const config::ConfigUri& config_uri) {
     auto dc = get_config<vespa::config::content::core::StorDistributormanagerConfig>(config_uri);
     _compReg.setDistributorConfig(dc);
     auto vc = get_config<vespa::config::content::core::StorVisitordispatcherConfig>(config_uri);
@@ -161,34 +148,30 @@ TestDistributorApp::configure(const config::ConfigUri& config_uri)
 }
 
 TestDistributorApp::TestDistributorApp(NodeIndex index, const config::ConfigUri& config_uri)
-    : TestStorageApp(std::make_unique<DistributorComponentRegisterImpl>(),
-                     lib::NodeType::DISTRIBUTOR, index, config_uri),
+    : TestStorageApp(std::make_unique<DistributorComponentRegisterImpl>(), lib::NodeType::DISTRIBUTOR, index,
+                     config_uri),
       _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _lastUniqueTimestampRequested(0),
-      _uniqueTimestampCounter(0)
-{
+      _uniqueTimestampCounter(0) {
     _compReg.setTimeCalculator(*this);
     configure(config_uri);
 }
 
 TestDistributorApp::TestDistributorApp(const config::ConfigUri& config_uri)
-    : TestDistributorApp(node_index_from_config(config_uri), config_uri)
-{
+    : TestDistributorApp(node_index_from_config(config_uri), config_uri) {
 }
 
 TestDistributorApp::~TestDistributorApp() = default;
 
-api::Timestamp
-TestDistributorApp::generate_unique_timestamp()
-{
+api::Timestamp TestDistributorApp::generate_unique_timestamp() {
     std::lock_guard guard(_accessLock);
-    uint64_t timeNow(vespalib::count_s(getClock().getSystemTime().time_since_epoch()));
+    uint64_t        timeNow(vespalib::count_s(getClock().getSystemTime().time_since_epoch()));
     if (timeNow == _lastUniqueTimestampRequested) {
         ++_uniqueTimestampCounter;
     } else {
         if (timeNow < _lastUniqueTimestampRequested) {
-            LOG(error, "Time has moved backwards, from %" PRIu64 " to %" PRIu64 ".",
-                    _lastUniqueTimestampRequested, timeNow);
+            LOG(error, "Time has moved backwards, from %" PRIu64 " to %" PRIu64 ".", _lastUniqueTimestampRequested,
+                timeNow);
         }
         _lastUniqueTimestampRequested = timeNow;
         _uniqueTimestampCounter = 0;
@@ -197,4 +180,4 @@ TestDistributorApp::generate_unique_timestamp()
     return _lastUniqueTimestampRequested * 1000000ll + _uniqueTimestampCounter;
 }
 
-} // storage
+} // namespace storage

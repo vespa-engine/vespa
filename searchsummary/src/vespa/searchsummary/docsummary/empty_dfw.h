@@ -9,14 +9,13 @@ namespace search::docsummary {
 /*
  * Class for writing empty document summaries.
  */
-class EmptyDFW : public SimpleDFW
-{
+class EmptyDFW : public SimpleDFW {
 public:
     EmptyDFW();
     ~EmptyDFW() override;
 
     bool isGenerated() const override { return true; }
-    void insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
+    void insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter& target) const override;
 };
 
-}
+} // namespace search::docsummary

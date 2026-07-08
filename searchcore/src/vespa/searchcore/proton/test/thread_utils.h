@@ -10,9 +10,7 @@ namespace proton::test {
  * Run the given function in the master thread and wait until done.
  */
 template <typename FunctionType>
-void
-runInMasterAndSync(searchcorespi::index::IThreadingService &writeService, FunctionType func)
-{
+void runInMasterAndSync(searchcorespi::index::IThreadingService& writeService, FunctionType func) {
     writeService.master().execute(vespalib::makeLambdaTask(std::move(func)));
     writeService.master().sync();
 }
@@ -21,10 +19,8 @@ runInMasterAndSync(searchcorespi::index::IThreadingService &writeService, Functi
  * Run the given function in the master thread.
  */
 template <typename FunctionType>
-void
-runInMaster(searchcorespi::index::IThreadingService &writeService, FunctionType func)
-{
+void runInMaster(searchcorespi::index::IThreadingService& writeService, FunctionType func) {
     writeService.master().execute(vespalib::makeLambdaTask(std::move(func)));
 }
 
-}
+} // namespace proton::test

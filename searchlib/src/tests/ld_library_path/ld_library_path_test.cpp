@@ -5,9 +5,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("");
 
-int
-main(int, char **)
-{
+int main(int, char**) {
     LOG(info, "LD_LIBRARY_PATH='%s'", getenv("LD_LIBRARY_PATH"));
     return 0;
 }

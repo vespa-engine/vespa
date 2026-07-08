@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/storageserver/configurable_bucket_resolver.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/storageserver/configurable_bucket_resolver.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage {
@@ -19,9 +19,7 @@ struct ConfigurableBucketResolverTest : Test {
                 {"baz", document::FixedBucketSpaces::global_space()}};
     }
 
-    ConfigurableBucketResolver create_empty_resolver() {
-        return ConfigurableBucketResolver({});
-    }
+    ConfigurableBucketResolver create_empty_resolver() { return ConfigurableBucketResolver({}); }
 
     ConfigurableBucketResolver create_simple_resolver() {
         return ConfigurableBucketResolver(create_simple_mapping());
@@ -40,8 +38,7 @@ TEST_F(ConfigurableBucketResolverTest, bucket_space_from_name_is_defined_for_glo
 }
 
 TEST_F(ConfigurableBucketResolverTest, bucket_space_from_name_throws_exception_for_unknown_space) {
-    EXPECT_THROW(create_empty_resolver().bucketSpaceFromName("bjarne"),
-                 document::UnknownBucketSpaceException);
+    EXPECT_THROW(create_empty_resolver().bucketSpaceFromName("bjarne"), document::UnknownBucketSpaceException);
 }
 
 TEST_F(ConfigurableBucketResolverTest, name_from_bucket_space_is_defined_for_default_space) {
@@ -83,7 +80,7 @@ BucketSpacesConfigBuilder::Documenttype make_doc_type(std::string_view name, std
     return doc_type;
 }
 
-}
+} // namespace
 
 TEST_F(ConfigurableBucketResolverTest, can_create_resolver_from_bucket_space_config) {
     BucketSpacesConfigBuilder builder;
@@ -99,5 +96,4 @@ TEST_F(ConfigurableBucketResolverTest, can_create_resolver_from_bucket_space_con
               resolver->bucketFromId(DocumentId("id::baz::xyz")).getBucketSpace());
 }
 
-}
-
+} // namespace storage

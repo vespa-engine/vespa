@@ -59,8 +59,10 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
-    private final int searchCoreMaxOutstandingMoveOps;
     private final int searchNodeInitializerThreads;
+    private final double searchNodeReservedMemoryFactor;
+    private final boolean logWarningOnDiskCapacityChange;
+    private final boolean resampleDiskCapacity;
 
     public ContentSearchCluster(TreeConfigProducer<?> parent,
                                 String clusterName,
@@ -81,8 +83,10 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
-        this.searchCoreMaxOutstandingMoveOps = featureFlags.searchCoreMaxOutstandingMoveOps();
         this.searchNodeInitializerThreads = searchNodeInitializeThreads;
+        this.searchNodeReservedMemoryFactor = featureFlags.searchNodeReservedMemoryFactor();
+        this.logWarningOnDiskCapacityChange = featureFlags.protonLogWarningOnDiskCapacityChange();
+        this.resampleDiskCapacity = featureFlags.protonResampleDiskCapacity();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -209,6 +213,14 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         return !hasIndexingModeStreaming(type) && !hasIndexingModeIndexed(type);
     }
 
+    private boolean hasDocumentIdAttributeEnabled(NewDocumentType type) {
+        if (searchCluster == null) return false;
+        var schemaInfo = searchCluster.schemas().get(type.getName());
+        if (schemaInfo == null) return false;
+        var schema = schemaInfo.fullSchema();
+        return (schema != null) && (schema.documentIdAttributeEnabled());
+    }
+
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         boolean hasAnyNonIndexedSchema = false;
@@ -219,7 +231,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             ddbB.inputdoctypename(docTypeName)
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
-                .global(globalDocType);
+                .global(globalDocType)
+                .document_id_attribute(hasDocumentIdAttributeEnabled(type));
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedSchema = true;
@@ -248,8 +261,10 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         builder.flush.memory.each.diskbloatfactor(DEFAULT_DISK_BLOAT);
         builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
-        builder.maintenancejobs.maxoutstandingmoveops(searchCoreMaxOutstandingMoveOps);
         builder.forward_issues(forwardIssuesToQrs);
+        builder.writefilter.reserved_memory_factor(searchNodeReservedMemoryFactor);
+        builder.log_warning_on_disk_capacity_change(logWarningOnDiskCapacityChange);
+        builder.resample_disk_capacity(resampleDiskCapacity);
 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(

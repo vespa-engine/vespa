@@ -2,6 +2,7 @@
 #pragma once
 
 #include "configsnapshotwriter.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
@@ -11,11 +12,11 @@ namespace config {
  */
 class AsciiConfigSnapshotWriter : public ConfigSnapshotWriter {
 public:
-    AsciiConfigSnapshotWriter(vespalib::asciistream & os);
-    bool write(const ConfigSnapshot & snapshot) override;
+    AsciiConfigSnapshotWriter(vespalib::asciistream& os);
+    bool write(const ConfigSnapshot& snapshot) override;
+
 private:
-    vespalib::asciistream & _os;
+    vespalib::asciistream& _os;
 };
 
 } // namespace config
-

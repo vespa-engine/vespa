@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_attribute_manager_reconfig.h"
+
 #include <memory>
 
 namespace proton {
@@ -17,11 +18,12 @@ class SequentialAttributesInitializer;
 class AttributeManagerReconfig : public IAttributeManagerReconfig {
     std::shared_ptr<AttributeManager>                _mgr;
     std::unique_ptr<SequentialAttributesInitializer> _initializer;
+
 public:
-    AttributeManagerReconfig(std::shared_ptr<AttributeManager> mgr,
+    AttributeManagerReconfig(std::shared_ptr<AttributeManager>                mgr,
                              std::unique_ptr<SequentialAttributesInitializer> initializer);
     ~AttributeManagerReconfig() override;
     std::shared_ptr<IAttributeManager> create(uint32_t docid_limit, search::SerialNum serial_num) override;
 };
 
-}
+} // namespace proton

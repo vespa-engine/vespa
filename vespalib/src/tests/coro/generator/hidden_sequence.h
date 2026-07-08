@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/sequence.h>
+
 #include <vector>
 
-vespalib::Sequence<size_t>::UP make_ext_seq(const std::vector<size_t> &data);
+vespalib::Sequence<size_t>::UP make_ext_seq(const std::vector<size_t>& data);

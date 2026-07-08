@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search;
 
@@ -11,7 +11,7 @@ std::vector<uint32_t> vec(const std::initializer_list<uint32_t> list) {
     return std::vector<uint32_t>(list);
 }
 
-}
+} // namespace
 
 struct MatchingElementsTest : ::testing::Test {
     MatchingElements matches;

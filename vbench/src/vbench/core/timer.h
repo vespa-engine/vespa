@@ -9,11 +9,11 @@ namespace vbench {
 /**
  * Simple utility class used to handle low-level time sampling.
  **/
-class Timer
-{
+class Timer {
 private:
     using clock = std::chrono::steady_clock;
     clock::time_point _zero;
+
 public:
     Timer();
     void reset();

@@ -20,25 +20,15 @@ private:
     uint64_t    _required_timestamp;
 
 public:
-    constexpr TestAndSetCondition() noexcept
-        : _selection(),
-          _required_timestamp(0)
-    {}
-    
-    explicit TestAndSetCondition(std::string_view selection)
-        : _selection(selection),
-          _required_timestamp(0)
-    {}
+    constexpr TestAndSetCondition() noexcept : _selection(), _required_timestamp(0) {}
+
+    explicit TestAndSetCondition(std::string_view selection) : _selection(selection), _required_timestamp(0) {}
 
     explicit TestAndSetCondition(uint64_t required_timestamp) noexcept
-        : _selection(),
-          _required_timestamp(required_timestamp)
-    {}
+        : _selection(), _required_timestamp(required_timestamp) {}
 
     TestAndSetCondition(uint64_t required_timestamp, std::string_view selection)
-        : _selection(selection),
-          _required_timestamp(required_timestamp)
-    {}
+        : _selection(selection), _required_timestamp(required_timestamp) {}
 
     ~TestAndSetCondition();
 
@@ -50,25 +40,18 @@ public:
 
     [[nodiscard]] const std::string& getSelection() const noexcept { return _selection; }
     // A return value of 0 implies no timestamp predicate is set.
-    [[nodiscard]] uint64_t required_timestamp() const noexcept {
-        return _required_timestamp;
-    }
+    [[nodiscard]] uint64_t required_timestamp() const noexcept { return _required_timestamp; }
     [[nodiscard]] bool has_selection() const noexcept { return !_selection.empty(); }
-    [[nodiscard]] bool has_required_timestamp() const noexcept {
-        return (_required_timestamp != 0);
-    }
-    [[nodiscard]] bool isPresent() const noexcept {
-        return (has_selection() || has_required_timestamp());
-    }
+    [[nodiscard]] bool has_required_timestamp() const noexcept { return (_required_timestamp != 0); }
+    [[nodiscard]] bool isPresent() const noexcept { return (has_selection() || has_required_timestamp()); }
 
     [[nodiscard]] std::string to_string() const;
 
     bool operator==(const TestAndSetCondition& rhs) const noexcept {
-        return ((_required_timestamp == rhs._required_timestamp) &&
-                (_selection == rhs._selection));
+        return ((_required_timestamp == rhs._required_timestamp) && (_selection == rhs._selection));
     }
 };
 
 std::ostream& operator<<(std::ostream&, const TestAndSetCondition&);
 
-}
+} // namespace documentapi

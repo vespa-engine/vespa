@@ -2,8 +2,10 @@
 #pragma once
 
 #include "queryterm.h"
+
 #include <vespa/searchlib/attribute/dfa_fuzzy_matcher.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
+
 #include <memory>
 #include <string_view>
 
@@ -20,10 +22,10 @@ namespace search::streaming {
 class FuzzyTerm : public QueryTerm {
     std::unique_ptr<attribute::DfaFuzzyMatcher> _dfa_matcher;
     std::unique_ptr<vespalib::FuzzyMatcher>     _fallback_matcher;
+
 public:
-    FuzzyTerm(std::unique_ptr<QueryNodeResultBase> result_base, string_view term,
-              const string& index, Type type, Normalizing normalizing,
-              uint8_t max_edits, uint32_t prefix_lock_length, bool prefix_match);
+    FuzzyTerm(std::unique_ptr<QueryNodeResultBase> result_base, string_view term, const string& index, Type type,
+              Normalizing normalizing, uint8_t max_edits, uint32_t prefix_lock_length, bool prefix_match);
     ~FuzzyTerm() override;
 
     [[nodiscard]] FuzzyTerm* as_fuzzy_term() noexcept override { return this; }
@@ -31,4 +33,4 @@ public:
     [[nodiscard]] bool is_match(std::string_view term) const;
 };
 
-}
+} // namespace search::streaming

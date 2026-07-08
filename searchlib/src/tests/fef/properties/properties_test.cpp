@@ -2,42 +2,37 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <limits>
 
 using namespace search::fef;
 using namespace search::fef::indexproperties;
 
-struct CopyVisitor : public IPropertiesVisitor
-{
-    Properties &dst;
-    explicit CopyVisitor(Properties &p) noexcept : dst(p) {}
-    void visitProperty(const Property::Value &key, const Property &values) override
-    {
+struct CopyVisitor : public IPropertiesVisitor {
+    Properties& dst;
+    explicit CopyVisitor(Properties& p) noexcept : dst(p) {}
+    void visitProperty(const Property::Value& key, const Property& values) override {
         for (uint32_t i = 0; i < values.size(); ++i) {
             dst.add(key, values.getAt(i));
         }
     }
 };
 
-Properties make_props(std::initializer_list<std::pair<const char *, std::initializer_list<const char *> > > entries) {
+Properties make_props(std::initializer_list<std::pair<const char*, std::initializer_list<const char*>>> entries) {
     Properties props;
-    for (const auto &entry: entries) {
+    for (const auto& entry : entries) {
         std::string key = entry.first;
-        for (std::string value: entry.second) {
+        for (std::string value : entry.second) {
             props.add(key, value);
         }
     }
     return props;
 }
 
-TEST(PropertiesTest, require_that_namespace_visitation_works)
-{
-    Properties props = make_props({    {"foo",   {"outside"}},
-                                       {"foo.a", {"a_value"}},
-                                       {"foo.b", {"b_value"}},
-                                       {"foo.",  {"outside"}}
-                                   });
-    Properties result;
+TEST(PropertiesTest, require_that_namespace_visitation_works) {
+    Properties props =
+        make_props({{"foo", {"outside"}}, {"foo.a", {"a_value"}}, {"foo.b", {"b_value"}}, {"foo.", {"outside"}}});
+    Properties  result;
     CopyVisitor copy_visitor(result);
     props.visitNamespace("foo", copy_visitor);
     EXPECT_EQ(2u, result.numKeys());
@@ -45,8 +40,7 @@ TEST(PropertiesTest, require_that_namespace_visitation_works)
     EXPECT_EQ(result.lookup("b").get(), Property::Value("b_value"));
 }
 
-TEST(PropertiesTest, test_stuff)
-{
+TEST(PropertiesTest, test_stuff) {
     { // empty lookup result
         Property p;
 
@@ -57,11 +51,8 @@ TEST(PropertiesTest, test_stuff)
         EXPECT_EQ(p.getAt(0), Property::Value(""));
     }
     { // add / count / remove
-        Properties p = make_props({    {"a", {"a1", "a2", "a3"}},
-                                       {"b", {"b1", "b2"}},
-                                       {"c", {"c1"}}
-                                   });
-        const Properties &pc = p;
+        Properties        p = make_props({{"a", {"a1", "a2", "a3"}}, {"b", {"b1", "b2"}}, {"c", {"c1"}}});
+        const Properties& pc = p;
 
         EXPECT_EQ(pc.numKeys(), 3u);
         EXPECT_EQ(pc.numValues(), 6u);
@@ -109,9 +100,9 @@ TEST(PropertiesTest, test_stuff)
     { // lookup / import / visit / compare / hash
         Properties p;
 
-        p.add("x",       "x1");
-        p.add("a.x",     "x2");
-        p.add("a.b.x",   "x3");
+        p.add("x", "x1");
+        p.add("a.x", "x2");
+        p.add("a.b.x", "x3");
         p.add("a.b.c.x", "x4");
 
         p.add("list", "e1").add("list", "e2").add("list", "e3");
@@ -119,23 +110,23 @@ TEST(PropertiesTest, test_stuff)
         EXPECT_EQ(p.numKeys(), 5u);
         EXPECT_EQ(p.numValues(), 7u);
 
-        EXPECT_EQ(p.lookup("x").found(),       true);
-        EXPECT_EQ(p.lookup("a.x").found(),     true);
-        EXPECT_EQ(p.lookup("a.b.x").found(),   true);
+        EXPECT_EQ(p.lookup("x").found(), true);
+        EXPECT_EQ(p.lookup("a.x").found(), true);
+        EXPECT_EQ(p.lookup("a.b.x").found(), true);
         EXPECT_EQ(p.lookup("a.b.c.x").found(), true);
-        EXPECT_EQ(p.lookup("list").found(),    true);
-        EXPECT_EQ(p.lookup("y").found(),       false);
+        EXPECT_EQ(p.lookup("list").found(), true);
+        EXPECT_EQ(p.lookup("y").found(), false);
 
-        EXPECT_EQ(p.lookup("x").get(),       Property::Value("x1"));
-        EXPECT_EQ(p.lookup("a.x").get(),     Property::Value("x2"));
-        EXPECT_EQ(p.lookup("a.b.x").get(),   Property::Value("x3"));
+        EXPECT_EQ(p.lookup("x").get(), Property::Value("x1"));
+        EXPECT_EQ(p.lookup("a.x").get(), Property::Value("x2"));
+        EXPECT_EQ(p.lookup("a.b.x").get(), Property::Value("x3"));
         EXPECT_EQ(p.lookup("a.b.c.x").get(), Property::Value("x4"));
-        EXPECT_EQ(p.lookup("list").get(),    Property::Value("e1"));
-        EXPECT_EQ(p.lookup("y").get(),       Property::Value(""));
+        EXPECT_EQ(p.lookup("list").get(), Property::Value("e1"));
+        EXPECT_EQ(p.lookup("y").get(), Property::Value(""));
 
-        EXPECT_EQ(p.lookup("x").get(),                Property::Value("x1"));
-        EXPECT_EQ(p.lookup("a", "x").get(),           Property::Value("x2"));
-        EXPECT_EQ(p.lookup("a", "b", "x").get(),      Property::Value("x3"));
+        EXPECT_EQ(p.lookup("x").get(), Property::Value("x1"));
+        EXPECT_EQ(p.lookup("a", "x").get(), Property::Value("x2"));
+        EXPECT_EQ(p.lookup("a", "b", "x").get(), Property::Value("x3"));
         EXPECT_EQ(p.lookup("a", "b", "c", "x").get(), Property::Value("x4"));
 
         EXPECT_EQ(p.lookup("x").get("fallback"), Property::Value("x1"));
@@ -181,8 +172,8 @@ TEST(PropertiesTest, test_stuff)
 
         Properties p3;
 
-        EXPECT_TRUE(!(p  == p2));
-        EXPECT_TRUE(!(p  == p3));
+        EXPECT_TRUE(!(p == p2));
+        EXPECT_TRUE(!(p == p3));
         EXPECT_TRUE(!(p2 == p));
         EXPECT_TRUE(!(p3 == p));
         EXPECT_TRUE(!(p2 == p3));
@@ -204,7 +195,7 @@ TEST(PropertiesTest, test_stuff)
         EXPECT_TRUE(!(p == p3));
         EXPECT_TRUE(!(p3 == p));
 
-        Properties p4;
+        Properties  p4;
         CopyVisitor cv2(p4);
         p.visitProperties(cv);
         EXPECT_EQ(p4.numKeys(), 0u);
@@ -214,7 +205,7 @@ TEST(PropertiesTest, test_stuff)
         EXPECT_EQ(p.hashCode(), p4.hashCode());
     }
 
-    { // test index properties known by the framework
+    {     // test index properties known by the framework
         { // vespa.eval.lazy_expressions
             EXPECT_EQ(eval::LazyExpressions::NAME, std::string("vespa.eval.lazy_expressions"));
             {
@@ -321,7 +312,8 @@ TEST(PropertiesTest, test_stuff)
             EXPECT_EQ(matchphase::DegradationAttribute::lookup(p), "foobar");
         }
         { // vespa.matchphase.degradation.ascending
-            EXPECT_EQ(matchphase::DegradationAscendingOrder::NAME, std::string("vespa.matchphase.degradation.ascendingorder"));
+            EXPECT_EQ(matchphase::DegradationAscendingOrder::NAME,
+                      std::string("vespa.matchphase.degradation.ascendingorder"));
             EXPECT_EQ(matchphase::DegradationAscendingOrder::DEFAULT_VALUE, false);
             Properties p;
             EXPECT_EQ(matchphase::DegradationAscendingOrder::lookup(p), false);
@@ -337,7 +329,8 @@ TEST(PropertiesTest, test_stuff)
             EXPECT_EQ(matchphase::DegradationMaxHits::lookup(p), 123789u);
         }
         { // vespa.matchphase.degradation.samplepercentage
-            EXPECT_EQ(matchphase::DegradationSamplePercentage::NAME, std::string("vespa.matchphase.degradation.samplepercentage"));
+            EXPECT_EQ(matchphase::DegradationSamplePercentage::NAME,
+                      std::string("vespa.matchphase.degradation.samplepercentage"));
             EXPECT_EQ(matchphase::DegradationSamplePercentage::DEFAULT_VALUE, 0.2);
             Properties p;
             EXPECT_EQ(matchphase::DegradationSamplePercentage::lookup(p), 0.2);
@@ -345,7 +338,8 @@ TEST(PropertiesTest, test_stuff)
             EXPECT_EQ(matchphase::DegradationSamplePercentage::lookup(p), 0.9);
         }
         { // vespa.matchphase.degradation.maxfiltercoverage
-            EXPECT_EQ(matchphase::DegradationMaxFilterCoverage::NAME, std::string("vespa.matchphase.degradation.maxfiltercoverage"));
+            EXPECT_EQ(matchphase::DegradationMaxFilterCoverage::NAME,
+                      std::string("vespa.matchphase.degradation.maxfiltercoverage"));
             EXPECT_EQ(matchphase::DegradationMaxFilterCoverage::DEFAULT_VALUE, 0.2);
             Properties p;
             EXPECT_EQ(matchphase::DegradationMaxFilterCoverage::lookup(p), 0.2);
@@ -353,7 +347,8 @@ TEST(PropertiesTest, test_stuff)
             EXPECT_EQ(matchphase::DegradationMaxFilterCoverage::lookup(p), 0.076);
         }
         { // vespa.matchphase.degradation.postfiltermultiplier
-            EXPECT_EQ(matchphase::DegradationPostFilterMultiplier::NAME, std::string("vespa.matchphase.degradation.postfiltermultiplier"));
+            EXPECT_EQ(matchphase::DegradationPostFilterMultiplier::NAME,
+                      std::string("vespa.matchphase.degradation.postfiltermultiplier"));
             EXPECT_EQ(matchphase::DegradationPostFilterMultiplier::DEFAULT_VALUE, 1.0);
             Properties p;
             EXPECT_EQ(matchphase::DegradationPostFilterMultiplier::lookup(p), 1.0);
@@ -409,18 +404,21 @@ TEST(PropertiesTest, test_stuff)
             EXPECT_EQ(hitcollector::EstimateLimit::lookup(p), 50u);
         }
         { // vespa.hitcollector.rankscoredroplimit
-            EXPECT_EQ(std::string("vespa.hitcollector.rankscoredroplimit"), hitcollector::FirstPhaseRankScoreDropLimit::NAME);
+            EXPECT_EQ(std::string("vespa.hitcollector.rankscoredroplimit"),
+                      hitcollector::FirstPhaseRankScoreDropLimit::NAME);
             Properties p;
-            auto got2 = hitcollector::FirstPhaseRankScoreDropLimit::lookup(p);
+            auto       got2 = hitcollector::FirstPhaseRankScoreDropLimit::lookup(p);
             EXPECT_EQ(std::optional<search::feature_t>(), got2);
             got2 = hitcollector::FirstPhaseRankScoreDropLimit::lookup(p, std::nullopt);
             EXPECT_EQ(std::optional<search::feature_t>(), got2);
             got2 = hitcollector::FirstPhaseRankScoreDropLimit::lookup(p, 4.5);
             EXPECT_EQ(std::optional<search::feature_t>(4.5), got2);
             p.add("vespa.hitcollector.rankscoredroplimit", "-123456789.12345");
-            EXPECT_EQ(std::optional<search::feature_t>(-123456789.12345), hitcollector::FirstPhaseRankScoreDropLimit::lookup(p));
+            EXPECT_EQ(std::optional<search::feature_t>(-123456789.12345),
+                      hitcollector::FirstPhaseRankScoreDropLimit::lookup(p));
             p.clear().add("vespa.hitcollector.rankscoredroplimit", "123456789.12345");
-            EXPECT_EQ(std::optional<search::feature_t>(123456789.12345), hitcollector::FirstPhaseRankScoreDropLimit::lookup(p));
+            EXPECT_EQ(std::optional<search::feature_t>(123456789.12345),
+                      hitcollector::FirstPhaseRankScoreDropLimit::lookup(p));
         }
         { // vespa.fieldweight.
             EXPECT_EQ(FieldWeight::BASE_NAME, std::string("vespa.fieldweight."));
@@ -474,7 +472,8 @@ TEST(PropertiesTest, test_stuff)
             EXPECT_EQ(mutate::on_first_phase::Operation::lookup(p), "+=1");
         }
         {
-            EXPECT_EQ(mutate::on_second_phase::Attribute::NAME, std::string("vespa.mutate.on_second_phase.attribute"));
+            EXPECT_EQ(mutate::on_second_phase::Attribute::NAME,
+                      std::string("vespa.mutate.on_second_phase.attribute"));
             EXPECT_EQ(mutate::on_second_phase::Attribute::DEFAULT_VALUE, "");
             Properties p;
             EXPECT_EQ(mutate::on_second_phase::Attribute::lookup(p), "");
@@ -482,7 +481,8 @@ TEST(PropertiesTest, test_stuff)
             EXPECT_EQ(mutate::on_second_phase::Attribute::lookup(p), "foobar");
         }
         {
-            EXPECT_EQ(mutate::on_second_phase::Operation::NAME, std::string("vespa.mutate.on_second_phase.operation"));
+            EXPECT_EQ(mutate::on_second_phase::Operation::NAME,
+                      std::string("vespa.mutate.on_second_phase.operation"));
             EXPECT_EQ(mutate::on_second_phase::Operation::DEFAULT_VALUE, "");
             Properties p;
             EXPECT_EQ(mutate::on_second_phase::Operation::lookup(p), "");
@@ -577,24 +577,21 @@ TEST(PropertiesTest, test_stuff)
     }
 }
 
-TEST(PropertiesTest, test_attribute_type_properties)
-{
+TEST(PropertiesTest, test_attribute_type_properties) {
     Properties p;
     p.add("vespa.type.attribute.foo", "tensor(x[10])");
     EXPECT_EQ("tensor(x[10])", type::Attribute::lookup(p, "foo"));
     EXPECT_EQ("", type::Attribute::lookup(p, "bar"));
 }
 
-TEST(PropertiesTest, test_query_feature_type_properties)
-{
+TEST(PropertiesTest, test_query_feature_type_properties) {
     Properties p;
     p.add("vespa.type.query.foo", "tensor(x[10])");
     EXPECT_EQ("tensor(x[10])", type::QueryFeature::lookup(p, "foo"));
     EXPECT_EQ("", type::QueryFeature::lookup(p, "bar"));
 }
 
-TEST(PropertiesTest, test_integer_lookup)
-{
+TEST(PropertiesTest, test_integer_lookup) {
     EXPECT_EQ(matching::NumThreadsPerSearch::NAME, std::string("vespa.matching.numthreadspersearch"));
     EXPECT_EQ(matching::NumThreadsPerSearch::DEFAULT_VALUE, std::numeric_limits<uint32_t>::max());
     {
@@ -629,39 +626,39 @@ TEST(PropertiesTest, test_integer_lookup)
     }
 }
 
-TEST(PropertiesTest, second_phase_rank_score_drop_limit)
-{
+TEST(PropertiesTest, second_phase_rank_score_drop_limit) {
     std::string_view name = hitcollector::SecondPhaseRankScoreDropLimit::NAME;
     EXPECT_EQ(std::string("vespa.hitcollector.secondphase.rankscoredroplimit"), name);
     Properties p;
     EXPECT_EQ(std::optional<search::feature_t>(), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));
     EXPECT_EQ(std::optional<search::feature_t>(4.0), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
     p.add(name, "-123456789.12345");
-    EXPECT_EQ(std::optional<search::feature_t>(-123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));
-    EXPECT_EQ(std::optional<search::feature_t>(-123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
+    EXPECT_EQ(std::optional<search::feature_t>(-123456789.12345),
+              hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));
+    EXPECT_EQ(std::optional<search::feature_t>(-123456789.12345),
+              hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
     p.clear().add(name, "123456789.12345");
-    EXPECT_EQ(std::optional<search::feature_t>(123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));
-    EXPECT_EQ(std::optional<search::feature_t>(123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
+    EXPECT_EQ(std::optional<search::feature_t>(123456789.12345),
+              hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));
+    EXPECT_EQ(std::optional<search::feature_t>(123456789.12345),
+              hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
 }
 
-TEST(PropertiesTest, filter_threshold_setting)
-{
+TEST(PropertiesTest, filter_threshold_setting) {
     Properties p;
     EXPECT_EQ(std::nullopt, matching::FilterThreshold::lookup(p));
     matching::FilterThreshold::set(p, "0.5");
     EXPECT_EQ(std::optional<double>(0.5), matching::FilterThreshold::lookup(p));
 }
 
-TEST(PropertiesTest, per_field_filter_threshold_setting)
-{
+TEST(PropertiesTest, per_field_filter_threshold_setting) {
     Properties p;
     EXPECT_EQ(std::nullopt, matching::FilterThreshold::lookup_for_field(p, "foo"));
     matching::FilterThreshold::set_for_field(p, "foo", "0.4");
     EXPECT_EQ(std::optional<double>(0.4), matching::FilterThreshold::lookup_for_field(p, "foo"));
 }
 
-TEST(PropertiesTest, element_gap)
-{
+TEST(PropertiesTest, element_gap) {
     Properties p;
     EXPECT_EQ(std::optional<ElementGap>(std::nullopt), matching::ElementGap::lookup_for_field(p, "foo"));
     matching::ElementGap::set_for_field(p, "foo", "infinity");

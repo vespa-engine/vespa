@@ -8,7 +8,9 @@ import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution;
 import org.junit.jupiter.api.Test;
 
-import static com.yahoo.processing.test.ProcessorLibrary.*;
+import static com.yahoo.processing.test.ProcessorLibrary.CombineData;
+import static com.yahoo.processing.test.ProcessorLibrary.DataSource;
+import static com.yahoo.processing.test.ProcessorLibrary.Get6DataItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**

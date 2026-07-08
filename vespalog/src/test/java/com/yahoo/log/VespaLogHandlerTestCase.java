@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.logging.Level;
@@ -205,7 +206,7 @@ public class VespaLogHandlerTestCase {
     @Test
     public void testRotate () throws IOException {
         // Doesn't work in Windows. TODO: Fix the logging stuff
-        if (System.getProperty("os.name").toLowerCase().contains("win"))
+        if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win"))
             return;
         try {
             VespaLogHandler h
@@ -420,7 +421,7 @@ public class VespaLogHandlerTestCase {
         private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         String[] getLines() {
-            return baos.toString().split("\n");
+            return baos.toString(StandardCharsets.UTF_8).split("\n");
         }
         @Override
         public OutputStream open() {

@@ -12,4 +12,4 @@ const uint32_t none{0};
 
 const std::span<const uint32_t> ElementIds::_empty{&none, 0};
 
-}
+} // namespace search::common

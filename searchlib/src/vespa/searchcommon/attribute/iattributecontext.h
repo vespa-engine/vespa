@@ -22,7 +22,7 @@ public:
      * @param name the name of the attribute vector.
      * @return const view of the attribute vector or NULL if the attribute vector does not exists.
      **/
-    virtual const IAttributeVector * getAttribute(std::string_view name) const = 0;
+    virtual const IAttributeVector* getAttribute(std::string_view name) const = 0;
 
     /**
      * Returns the attribute vector with the given name.
@@ -31,14 +31,14 @@ public:
      * @param name the name of the attribute vector
      * @return const view of the attribute vector or NULL if the attribute vector does not exists.
      **/
-    virtual const IAttributeVector * getAttributeStableEnum(std::string_view name) const = 0;
+    virtual const IAttributeVector* getAttributeStableEnum(std::string_view name) const = 0;
 
     /**
      * Fill the given list with all attribute vectors registered.
      *
      * @param list the list to fill in attribute vectors.
      **/
-    virtual void getAttributeList(std::vector<const IAttributeVector *> & list) const = 0;
+    virtual void getAttributeList(std::vector<const IAttributeVector*>& list) const = 0;
 
     /**
      * Releases all cached attribute guards.
@@ -51,4 +51,4 @@ public:
     virtual void enableMultiThreadSafe() {}
 };
 
-}
+} // namespace search::attribute

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,7 +20,7 @@ public class BenchmarkProgressPrinterTest {
     void testSimple() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ManualTimer timer = new ManualTimer();
-        BenchmarkProgressPrinter printer = new BenchmarkProgressPrinter(timer, new PrintStream(output));
+        BenchmarkProgressPrinter printer = new BenchmarkProgressPrinter(timer, new PrintStream(output, false, StandardCharsets.UTF_8));
         RouteMetricSet metrics = new RouteMetricSet("foobar", timer, printer);
 
         {
@@ -62,7 +63,7 @@ public class BenchmarkProgressPrinterTest {
 
         metrics.done();
 
-        String val = output.toString().split("\n")[1];
+        String val = output.toString(StandardCharsets.UTF_8).split("\n")[1];
 
         String correctPattern = "62000, \\d+, \\d+, \\d+, \\d+, \\d+$";
         assertTrue(val.matches(correctPattern), "Value '" + val + "' does not match pattern '" + correctPattern + "'");

@@ -25,13 +25,12 @@ using SAF = Schema::AttributeField;
 using SIAF = Schema::ImportedAttributeField;
 using SIF = Schema::IndexField;
 
-const std::string my_expr_ref(
-    "this is my reference ranking expression.\n"
-    "this is my reference ranking expression.\n"
-    "it will not compile into a function.\n"
-    "it will not compile into a function.\n"
-    "it is just some text, that can also be compressed...\n"
-    "it is just some text, that can also be compressed...\n");
+const std::string my_expr_ref("this is my reference ranking expression.\n"
+                              "this is my reference ranking expression.\n"
+                              "it will not compile into a function.\n"
+                              "it will not compile into a function.\n"
+                              "it is just some text, that can also be compressed...\n"
+                              "it is just some text, that can also be compressed...\n");
 
 RankingExpressions make_expressions() {
     RankingExpressions expr_list;
@@ -42,64 +41,46 @@ RankingExpressions make_expressions() {
 
 OnnxModels make_models() {
     OnnxModels::Vector list;
-    list.emplace_back(std::move(OnnxModel("model1", "path1").input_feature("input1","feature1").output_name("output1", "out1")));
+    list.emplace_back(
+        std::move(OnnxModel("model1", "path1").input_feature("input1", "feature1").output_name("output1", "out1")));
     list.emplace_back(OnnxModel("model2", "path2"));
     return {std::move(list)};
 }
 
 struct MyRankingAssetsRepo : public IRankingAssetsRepo {
     RankingExpressions _expressions;
-    OnnxModels _onnxModels;
+    OnnxModels         _onnxModels;
     MyRankingAssetsRepo(RankingExpressions expressions, OnnxModels onnxModels)
-        : _expressions(std::move(expressions)),
-          _onnxModels(std::move(onnxModels))
-    {}
+        : _expressions(std::move(expressions)), _onnxModels(std::move(onnxModels)) {}
     ~MyRankingAssetsRepo() override;
-    ConstantValue::UP getConstant(const std::string &) const override {
-        return {};
-    }
+    ConstantValue::UP getConstant(const std::string&) const override { return {}; }
 
-    std::string getExpression(const std::string & name) const override {
-        return _expressions.loadExpression(name);
-    }
+    std::string getExpression(const std::string& name) const override { return _expressions.loadExpression(name); }
 
-    const OnnxModel *getOnnxModel(const std::string & name) const override {
-        return _onnxModels.getModel(name);
-    }
+    const OnnxModel* getOnnxModel(const std::string& name) const override { return _onnxModels.getModel(name); }
 };
 
 MyRankingAssetsRepo::~MyRankingAssetsRepo() = default;
 
-Schema::UP
-buildSchema()
-{
+Schema::UP buildSchema() {
     Schema::UP result = std::make_unique<Schema>();
     result->addImportedAttributeField(SIAF("imported_a", DataType::INT32, CollectionType::SINGLE));
     result->addImportedAttributeField(SIAF("imported_b", DataType::STRING, CollectionType::ARRAY));
     return result;
 }
 
-Schema::UP
-buildEmptySchema()
-{
+Schema::UP buildEmptySchema() {
     return std::make_unique<Schema>();
 }
 
 struct Fixture {
     MyRankingAssetsRepo repo;
-    Schema::UP schema;
-    IndexEnvironment env;
+    Schema::UP          schema;
+    IndexEnvironment    env;
     explicit Fixture(Schema::UP schema_, Properties props = Properties())
-        : repo(make_expressions(), make_models()),
-          schema(std::move(schema_)),
-          env(7, *schema, props, repo)
-    {
-    }
+        : repo(make_expressions(), make_models()), schema(std::move(schema_)), env(7, *schema, props, repo) {}
     ~Fixture();
-    void assert_field_common(const FieldInfo *field,
-                             size_t idx,
-                             const std::string &name,
-                             DataType dataType,
+    void assert_field_common(const FieldInfo* field, size_t idx, const std::string& name, DataType dataType,
                              CollectionType collectionType) const {
         EXPECT_EQ(field, env.getFieldByName(name));
         EXPECT_EQ(name, field->name());
@@ -107,43 +88,35 @@ struct Fixture {
         EXPECT_TRUE(collectionType == field->collection());
         EXPECT_EQ(idx, field->id());
     }
-    void assertField(size_t idx,
-                     const std::string &name,
-                     DataType dataType,
-                     CollectionType collectionType) const {
+    void assertField(size_t idx, const std::string& name, DataType dataType, CollectionType collectionType) const {
         SCOPED_TRACE("idx=" + std::to_string(idx) + ", name=" + name);
-        const FieldInfo *field = env.getField(idx);
+        const FieldInfo* field = env.getField(idx);
         ASSERT_NE(nullptr, field);
         assert_field_common(field, idx, name, dataType, collectionType);
     }
-    void assertHiddenAttributeField(size_t idx,
-                                    const std::string &name,
-                                    DataType dataType,
+    void assertHiddenAttributeField(size_t idx, const std::string& name, DataType dataType,
                                     CollectionType collectionType) const {
         SCOPED_TRACE("idx=" + std::to_string(idx) + ", name=" + name);
-        const FieldInfo *field = env.getField(idx);
+        const FieldInfo* field = env.getField(idx);
         ASSERT_NE(nullptr, field);
         assert_field_common(field, idx, name, dataType, collectionType);
         EXPECT_FALSE(field->hasAttribute());
         EXPECT_TRUE(field->type() == FieldType::HIDDEN_ATTRIBUTE);
         EXPECT_TRUE(field->isFilter());
     }
-    void assertAttributeField(size_t idx,
-                              const std::string &name,
-                              DataType dataType,
+    void assertAttributeField(size_t idx, const std::string& name, DataType dataType,
                               CollectionType collectionType) const {
         SCOPED_TRACE("idx=" + std::to_string(idx) + ", name=" + name);
-        const FieldInfo *field = env.getField(idx);
+        const FieldInfo* field = env.getField(idx);
         ASSERT_NE(nullptr, field);
         assert_field_common(field, idx, name, dataType, collectionType);
         EXPECT_TRUE(field->hasAttribute());
         EXPECT_TRUE(field->type() == FieldType::ATTRIBUTE);
         EXPECT_FALSE(field->isFilter());
     }
-    void assert_virtual_field(size_t idx,
-                              const std::string& name) const {
+    void assert_virtual_field(size_t idx, const std::string& name) const {
         SCOPED_TRACE("idx=" + std::to_string(idx) + ", name=" + name);
-        const FieldInfo *field = env.getField(idx);
+        const FieldInfo* field = env.getField(idx);
         ASSERT_NE(nullptr, field);
         assert_field_common(field, idx, name, DataType::COMBINED, CollectionType::ARRAY);
         EXPECT_TRUE(field->type() == FieldType::VIRTUAL);
@@ -152,21 +125,18 @@ struct Fixture {
 
 Fixture::~Fixture() = default;
 
-TEST(IndexEnvironmentTest, require_that_document_meta_store_is_always_extracted_in_index_environment)
-{
+TEST(IndexEnvironmentTest, require_that_document_meta_store_is_always_extracted_in_index_environment) {
     Fixture f(buildEmptySchema());
     ASSERT_EQ(1u, f.env.getNumFields());
     f.assertHiddenAttributeField(0, "[documentmetastore]", DataType::RAW, CollectionType::SINGLE);
 }
 
-TEST(IndexEnvironmentTest, require_that_distribution_key_is_visible_in_index_environment)
-{
+TEST(IndexEnvironmentTest, require_that_distribution_key_is_visible_in_index_environment) {
     Fixture f(buildEmptySchema());
     ASSERT_EQ(7u, f.env.getDistributionKey());
 }
 
-TEST(IndexEnvironmentTest, require_that_imported_attribute_fields_are_extracted_in_index_environment)
-{
+TEST(IndexEnvironmentTest, require_that_imported_attribute_fields_are_extracted_in_index_environment) {
     Fixture f(buildSchema());
     ASSERT_EQ(3u, f.env.getNumFields());
     f.assertAttributeField(0, "imported_a", DataType::INT32, CollectionType::SINGLE);
@@ -179,7 +149,8 @@ Schema::UP schema_with_virtual_fields() {
     //   * field person_map type map<int, person>, where the person struct has the fields name and year.
     //   * field int_map type map<int, int>
     //
-    // In this example 'person_map', 'person_map.value', and 'int_map' are virtual fields as seen from the ranking framework.
+    // In this example 'person_map', 'person_map.value', and 'int_map' are virtual fields as seen from the ranking
+    // framework.
     auto result = std::make_unique<Schema>();
     result->addAttributeField(SAF("person_map.key", DataType::INT32, CollectionType::ARRAY));
     result->addAttributeField(SAF("person_map.value.name", DataType::STRING, CollectionType::ARRAY));
@@ -192,8 +163,7 @@ Schema::UP schema_with_virtual_fields() {
     return result;
 }
 
-TEST(IndexEnvironmentTest, virtual_fields_are_extracted_in_index_environment)
-{
+TEST(IndexEnvironmentTest, virtual_fields_are_extracted_in_index_environment) {
     Fixture f(schema_with_virtual_fields());
     ASSERT_EQ(11u, f.env.getNumFields());
     f.assertAttributeField(0, "person_map.key", DataType::INT32, CollectionType::ARRAY);
@@ -209,8 +179,7 @@ TEST(IndexEnvironmentTest, virtual_fields_are_extracted_in_index_environment)
     f.assert_virtual_field(10, "person_map.value");
 }
 
-TEST(IndexEnvironmentTest, require_that_onnx_model_config_can_be_obtained)
-{
+TEST(IndexEnvironmentTest, require_that_onnx_model_config_can_be_obtained) {
     Fixture f1(buildEmptySchema());
     {
         auto model = f1.env.getOnnxModel("model1");
@@ -229,20 +198,17 @@ TEST(IndexEnvironmentTest, require_that_onnx_model_config_can_be_obtained)
     EXPECT_TRUE(f1.env.getOnnxModel("model3") == nullptr);
 }
 
-TEST(IndexEnvironmentTest, require_that_external_ranking_expressions_can_be_obtained)
-{
+TEST(IndexEnvironmentTest, require_that_external_ranking_expressions_can_be_obtained) {
     Fixture f1(buildEmptySchema());
-    auto expr1 = f1.env.getRankingExpression("expr1");
-    auto expr2 = f1.env.getRankingExpression("expr2");
-    auto expr3 = f1.env.getRankingExpression("expr3");
+    auto    expr1 = f1.env.getRankingExpression("expr1");
+    auto    expr2 = f1.env.getRankingExpression("expr2");
+    auto    expr3 = f1.env.getRankingExpression("expr3");
     EXPECT_EQ(expr1, my_expr_ref);
     EXPECT_EQ(expr2, my_expr_ref);
     EXPECT_TRUE(expr3.empty());
 }
 
-Schema::UP
-schema_with_index_fields()
-{
+Schema::UP schema_with_index_fields() {
     auto result = std::make_unique<Schema>();
     result->addIndexField(SIF("a", DataType::STRING));
     result->addIndexField(SIF("b", DataType::STRING));
@@ -250,14 +216,11 @@ schema_with_index_fields()
     return result;
 }
 
-
-
-TEST(IndexEnvironmentTest, no_filter_threshold_settings_are_default)
-{
+TEST(IndexEnvironmentTest, no_filter_threshold_settings_are_default) {
     Fixture f(schema_with_index_fields());
-    auto a = f.env.getFieldByName("a");
-    auto b = f.env.getFieldByName("b");
-    auto c = f.env.getFieldByName("c");
+    auto    a = f.env.getFieldByName("a");
+    auto    b = f.env.getFieldByName("b");
+    auto    c = f.env.getFieldByName("c");
     EXPECT_FALSE(a->isFilter());
     EXPECT_FALSE(b->isFilter());
     EXPECT_FALSE(c->isFilter());
@@ -266,8 +229,7 @@ TEST(IndexEnvironmentTest, no_filter_threshold_settings_are_default)
     EXPECT_FLOAT_EQ(1.0, c->get_filter_threshold().threshold());
 }
 
-TEST(IndexEnvironmentTest, is_filter_and_filter_threshold_settings_are_extracted_in_precedence_order)
-{
+TEST(IndexEnvironmentTest, is_filter_and_filter_threshold_settings_are_extracted_in_precedence_order) {
     Properties p;
     {
         IsFilterField::set(p, "a");
@@ -277,9 +239,9 @@ TEST(IndexEnvironmentTest, is_filter_and_filter_threshold_settings_are_extracted
         FilterThreshold::set_for_field(p, "b", "0.2");
     }
     Fixture f(schema_with_index_fields(), p);
-    auto a = f.env.getFieldByName("a");
-    auto b = f.env.getFieldByName("b");
-    auto c = f.env.getFieldByName("c");
+    auto    a = f.env.getFieldByName("a");
+    auto    b = f.env.getFieldByName("b");
+    auto    c = f.env.getFieldByName("c");
     EXPECT_TRUE(a->isFilter());
     EXPECT_FALSE(b->isFilter());
     EXPECT_FALSE(c->isFilter());
@@ -288,8 +250,7 @@ TEST(IndexEnvironmentTest, is_filter_and_filter_threshold_settings_are_extracted
     EXPECT_FLOAT_EQ(0.1, c->get_filter_threshold().threshold());
 }
 
-TEST(IndexEnvironmentTest, element_gap_is_populated)
-{
+TEST(IndexEnvironmentTest, element_gap_is_populated) {
     Properties p;
     {
         using ElementGap = search::fef::indexproperties::matching::ElementGap;

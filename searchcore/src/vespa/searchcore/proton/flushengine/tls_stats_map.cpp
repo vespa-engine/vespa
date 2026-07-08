@@ -1,20 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tls_stats_map.h"
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.tls_stats_map");
 
 namespace proton::flushengine {
 
-TlsStatsMap::TlsStatsMap(Map &&map)
-    : _map(std::move(map))
-{ }
+TlsStatsMap::TlsStatsMap(Map&& map) : _map(std::move(map)) {
+}
 
-TlsStatsMap::~TlsStatsMap() { }
+TlsStatsMap::~TlsStatsMap() {
+}
 
-const TlsStats &
-TlsStatsMap::getTlsStats(const std::string &domain) const {
+const TlsStats& TlsStatsMap::getTlsStats(const std::string& domain) const {
     auto itr = _map.find(domain);
     if (itr != _map.end()) {
         return itr->second;
@@ -22,6 +23,6 @@ TlsStatsMap::getTlsStats(const std::string &domain) const {
     LOG_ABORT("should not be reached");
 }
 
-}
+} // namespace proton::flushengine
 
 VESPALIB_HASH_MAP_INSTANTIATE(std::string, proton::flushengine::TlsStats);

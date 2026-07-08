@@ -6,13 +6,12 @@
 using search::streaming::HitIterator;
 using search::streaming::HitIteratorPack;
 using search::streaming::QueryNodeList;
-using search::streaming::QueryTerm;
 using search::streaming::QueryNodeResultBase;
+using search::streaming::QueryTerm;
 
 using FieldElement = HitIterator::FieldElement;
 
-TEST(HitIteratorPackTest, seek_to_matching_field_element)
-{
+TEST(HitIteratorPackTest, seek_to_matching_field_element) {
     QueryNodeList qnl;
     auto qt = std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), "7", "", QueryTerm::Type::WORD);
     qt->add(11, 0, 10, 0);

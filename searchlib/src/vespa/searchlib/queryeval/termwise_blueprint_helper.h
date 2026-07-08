@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "multisearch.h"
 #include "blueprint.h"
-#include "unpackinfo.h"
+#include "multisearch.h"
 #include "searchiterator.h"
+#include "unpackinfo.h"
 
 namespace search::queryeval {
 
@@ -18,18 +18,19 @@ struct TermwiseBlueprintHelper {
 private:
     MultiSearch::Children termwise_ch;
     MultiSearch::Children other_ch;
+
 public:
-    size_t                first_termwise;
-    UnpackInfo            termwise_unpack;
+    size_t     first_termwise;
+    UnpackInfo termwise_unpack;
 
     MultiSearch::Children get_termwise_children() { return std::move(termwise_ch); }
     MultiSearch::Children get_result() { return std::move(other_ch); }
 
-    TermwiseBlueprintHelper(const IntermediateBlueprint &self,
-                            MultiSearch::Children subSearches, UnpackInfo &unpackInfo);
+    TermwiseBlueprintHelper(const IntermediateBlueprint& self, MultiSearch::Children subSearches,
+                            UnpackInfo& unpackInfo);
     ~TermwiseBlueprintHelper();
 
     void insert_termwise(SearchIterator::UP search, bool strict);
 };
 
-}
+} // namespace search::queryeval

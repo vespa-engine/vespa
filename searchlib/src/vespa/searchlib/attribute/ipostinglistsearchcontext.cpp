@@ -2,7 +2,4 @@
 
 #include "ipostinglistsearchcontext.h"
 
-namespace search {
-
-} // namespace search
-
+namespace search {} // namespace search

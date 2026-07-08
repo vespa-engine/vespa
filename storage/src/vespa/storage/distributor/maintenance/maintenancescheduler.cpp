@@ -1,31 +1,29 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "maintenancescheduler.h"
+
 #include "maintenanceoperationgenerator.h"
 #include "pending_window_checker.h"
-#include <vespa/storage/distributor/operationstarter.h>
+
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
+#include <vespa/storage/distributor/operationstarter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.maintenance.maintenance_scheduler");
 
 namespace storage::distributor {
 
-MaintenanceScheduler::MaintenanceScheduler(
-        MaintenanceOperationGenerator& operationGenerator,
-        BucketPriorityDatabase& priorityDb,
-        const PendingWindowChecker& pending_window_checker,
-        OperationStarter& operationStarter)
+MaintenanceScheduler::MaintenanceScheduler(MaintenanceOperationGenerator& operationGenerator,
+                                           BucketPriorityDatabase&        priorityDb,
+                                           const PendingWindowChecker&    pending_window_checker,
+                                           OperationStarter&              operationStarter)
     : _operationGenerator(operationGenerator),
       _priorityDb(priorityDb),
       _pending_window_checker(pending_window_checker),
-      _operationStarter(operationStarter)
-{
+      _operationStarter(operationStarter) {
 }
 
-PrioritizedBucket
-MaintenanceScheduler::getMostImportantBucket()
-{
+PrioritizedBucket MaintenanceScheduler::getMostImportantBucket() {
     auto mostImportant = _priorityDb.begin();
     if (mostImportant == _priorityDb.end()) {
         return PrioritizedBucket::INVALID;
@@ -33,9 +31,7 @@ MaintenanceScheduler::getMostImportantBucket()
     return *mostImportant;
 }
 
-MaintenanceScheduler::WaitTimeMs
-MaintenanceScheduler::tick(SchedulingMode currentMode)
-{
+MaintenanceScheduler::WaitTimeMs MaintenanceScheduler::tick(SchedulingMode currentMode) {
     PrioritizedBucket mostImportant(getMostImportantBucket());
 
     if (!possibleToSchedule(mostImportant, currentMode)) {
@@ -59,15 +55,13 @@ MaintenanceScheduler::tick(SchedulingMode currentMode)
     return WaitTimeMs(0);
 }
 
-bool
-MaintenanceScheduler::possibleToSchedule(const PrioritizedBucket& bucket,
-                                         SchedulingMode currentMode) const
-{
+bool MaintenanceScheduler::possibleToSchedule(const PrioritizedBucket& bucket, SchedulingMode currentMode) const {
     if (!bucket.valid()) {
         return false;
     }
     // If pending window is full nothing of equal or lower priority can be scheduled, so no point in trying.
-    if (!_pending_window_checker.may_allow_operation_with_priority(convertToOperationPriority(bucket.getPriority()))) {
+    if (!_pending_window_checker.may_allow_operation_with_priority(convertToOperationPriority(bucket.getPriority())))
+    {
         return false;
     }
     if (currentMode == RECOVERY_SCHEDULING_MODE) {
@@ -77,21 +71,16 @@ MaintenanceScheduler::possibleToSchedule(const PrioritizedBucket& bucket,
     }
 }
 
-bool
-MaintenanceScheduler::possibleToScheduleInEmergency(const PrioritizedBucket& bucket) const
-{
+bool MaintenanceScheduler::possibleToScheduleInEmergency(const PrioritizedBucket& bucket) const {
     return bucket.moreImportantThan(MaintenancePriority::VERY_HIGH);
 }
 
-void
-MaintenanceScheduler::clearPriority(const PrioritizedBucket& bucket)
-{
+void MaintenanceScheduler::clearPriority(const PrioritizedBucket& bucket) {
     _priorityDb.setPriority(PrioritizedBucket(bucket.getBucket(), MaintenancePriority::NO_MAINTENANCE_NEEDED));
 }
 
 OperationStarter::Priority
-MaintenanceScheduler::convertToOperationPriority(MaintenancePriority::Priority priority) const
-{
+MaintenanceScheduler::convertToOperationPriority(MaintenancePriority::Priority priority) const {
     switch (priority) {
     case MaintenancePriority::VERY_LOW:
         return OperationStarter::Priority(200);
@@ -110,9 +99,7 @@ MaintenanceScheduler::convertToOperationPriority(MaintenancePriority::Priority p
     }
 }
 
-bool
-MaintenanceScheduler::startOperation(const PrioritizedBucket& bucket)
-{
+bool MaintenanceScheduler::startOperation(const PrioritizedBucket& bucket) {
     Operation::SP operation(_operationGenerator.generate(bucket.getBucket()));
     if (!operation) {
         return true;
@@ -121,10 +108,8 @@ MaintenanceScheduler::startOperation(const PrioritizedBucket& bucket)
     return _operationStarter.start(operation, operationPriority);
 }
 
-bool
-MaintenanceScheduler::has_bucket_activation_priority(const PrioritizedBucket& bucket) const noexcept
-{
+bool MaintenanceScheduler::has_bucket_activation_priority(const PrioritizedBucket& bucket) const noexcept {
     return (bucket.getPriority() == MaintenancePriority::HIGHEST);
 }
 
-}
+} // namespace storage::distributor

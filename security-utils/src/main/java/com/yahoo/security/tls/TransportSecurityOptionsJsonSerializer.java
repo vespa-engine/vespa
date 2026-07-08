@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -181,6 +182,6 @@ class TransportSecurityOptionsJsonSerializer {
     }
 
     private static IllegalArgumentException missingFieldException(String fieldName) {
-        return new IllegalArgumentException(String.format("'%s' missing", fieldName));
+        return new IllegalArgumentException(String.format(Locale.ROOT, "'%s' missing", fieldName));
     }
 }

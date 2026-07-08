@@ -1,10 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "query_term_filter_factory.h"
+
 #include <vespa/searchsummary/docsummary/query_term_filter.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
+
 #include <cassert>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.query_term_filter_factory");
 
@@ -16,21 +20,16 @@ using vespa::config::search::vsm::VsmsummaryConfig;
 
 namespace vsm {
 
-QueryTermFilterFactory::QueryTermFilterFactory(VsmfieldsConfig& vsm_fields_config,
-                                                 VsmsummaryConfig& vsm_summary_config)
-    : IQueryTermFilterFactory(),
-      _view_map(),
-      _field_map()
-{
+QueryTermFilterFactory::QueryTermFilterFactory(VsmfieldsConfig&  vsm_fields_config,
+                                               VsmsummaryConfig& vsm_summary_config)
+    : IQueryTermFilterFactory(), _view_map(), _field_map() {
     populate_view_map(vsm_fields_config);
     populate_field_map(vsm_summary_config);
 }
 
 QueryTermFilterFactory::~QueryTermFilterFactory() = default;
 
-void
-QueryTermFilterFactory::populate_view_map(VsmfieldsConfig& vsm_fields_config)
-{
+void QueryTermFilterFactory::populate_view_map(VsmfieldsConfig& vsm_fields_config) {
     for (auto& doctype : vsm_fields_config.documenttype) {
         for (auto& index : doctype.index) {
             for (auto& field : index.field) {
@@ -40,9 +39,7 @@ QueryTermFilterFactory::populate_view_map(VsmfieldsConfig& vsm_fields_config)
     }
 }
 
-void
-QueryTermFilterFactory::populate_field_map(VsmsummaryConfig& vsm_summary_config)
-{
+void QueryTermFilterFactory::populate_field_map(VsmsummaryConfig& vsm_summary_config) {
     for (auto& summary_field : vsm_summary_config.fieldmap) {
         for (auto& document : summary_field.document) {
             _field_map[summary_field.summary].insert(document.field);
@@ -50,9 +47,7 @@ QueryTermFilterFactory::populate_field_map(VsmsummaryConfig& vsm_summary_config)
     }
 }
 
-void
-QueryTermFilterFactory::populate_views(StringSet& views, std::string_view field) const
-{
+void QueryTermFilterFactory::populate_views(StringSet& views, std::string_view field) const {
     auto itr = _view_map.find(field);
     if (itr != _view_map.end()) {
         for (auto& index : itr->second) {
@@ -61,11 +56,9 @@ QueryTermFilterFactory::populate_views(StringSet& views, std::string_view field)
     }
 }
 
-std::shared_ptr<const IQueryTermFilter>
-QueryTermFilterFactory::make(std::string_view input_field) const
-{
+std::shared_ptr<const IQueryTermFilter> QueryTermFilterFactory::make(std::string_view input_field) const {
     StringSet views;
-    auto itr = _field_map.find(input_field);
+    auto      itr = _field_map.find(input_field);
     if (itr != _field_map.end()) {
         for (auto& field : itr->second) {
             populate_views(views, field);
@@ -77,4 +70,4 @@ QueryTermFilterFactory::make(std::string_view input_field) const
     return std::make_shared<QueryTermFilter>(std::move(views));
 }
 
-}
+} // namespace vsm

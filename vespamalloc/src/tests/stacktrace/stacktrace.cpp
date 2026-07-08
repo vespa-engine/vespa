@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cstdlib>
-#include <pthread.h>
 #include <dlfcn.h>
-#include <cassert>
 #include <malloc.h>
+#include <pthread.h>
 
-void * run(void * arg)
-{
-    (void) arg;
-    char * a = new char [100]; // a should not remain in stacktrace
-    char * b = new char [1];   // but b should as it not deleted.
-    (void) b;
-    delete [] a;
+#include <cassert>
+#include <cstdlib>
+
+void* run(void* arg) {
+    (void)arg;
+    char* a = new char[100]; // a should not remain in stacktrace
+    char* b = new char[1];   // but b should as it not deleted.
+    (void)b;
+    delete[] a;
     return nullptr;
 }
 
@@ -32,7 +32,7 @@ void verify_that_vespamalloc_datasegment_size_exists() {
     assert(info.usmblks > 0);
 #else
     struct mallinfo info = mallinfo();
-    printf("Malloc used %dm of memory\n",info.arena);
+    printf("Malloc used %dm of memory\n", info.arena);
     assert(info.arena >= 10);
     assert(info.arena < 10000);
     assert(info.fordblks == 0);
@@ -47,16 +47,15 @@ void verify_that_vespamalloc_datasegment_size_exists() {
 #endif
 }
 
-int main(int argc, char *argv[])
-{
-    (void) argc;
-    (void) argv;
-    char * a = new char [100]; // a should not remain in stacktrace
-    char * b = new char [1];   // but b should as it not deleted.
-    (void) b;
-    delete [] a;
+int main(int argc, char* argv[]) {
+    (void)argc;
+    (void)argv;
+    char* a = new char[100]; // a should not remain in stacktrace
+    char* b = new char[1];   // but b should as it not deleted.
+    (void)b;
+    delete[] a;
     pthread_t tid;
-    int retval = pthread_create(&tid, nullptr, run, nullptr);
+    int       retval = pthread_create(&tid, nullptr, run, nullptr);
     if (retval != 0) {
         perror("pthread_create failed");
         abort();

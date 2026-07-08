@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "sentmessagemap.h"
 #include "distributormessagesender.h"
 #include "operationstarter.h"
+#include "sentmessagemap.h"
 
-namespace storage::framework { struct Clock; }
+namespace storage::framework {
+struct Clock;
+}
 
 namespace storage::distributor {
 
@@ -17,35 +19,21 @@ class Operation;
  */
 class OperationOwner : public OperationStarter {
 public:
-
     class Sender : public DistributorStripeMessageSender {
     public:
-        Sender(OperationOwner& owner,
-               DistributorStripeMessageSender& sender,
-               const std::shared_ptr<Operation>& cb)
-            : _owner(owner),
-              _sender(sender),
-              _cb(cb) 
-         {}
+        Sender(OperationOwner& owner, DistributorStripeMessageSender& sender, const std::shared_ptr<Operation>& cb)
+            : _owner(owner), _sender(sender), _cb(cb) {}
 
-        void sendCommand(const std::shared_ptr<api::StorageCommand> &) override;
-        void sendReply(const std::shared_ptr<api::StorageReply> & msg) override;
+        void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
+        void sendReply(const std::shared_ptr<api::StorageReply>& msg) override;
 
-        OperationOwner& getOwner() {
-            return _owner;
-        }
+        OperationOwner& getOwner() { return _owner; }
 
-        int getDistributorIndex() const override {
-            return _sender.getDistributorIndex();
-        }
-        
-        const ClusterContext & cluster_context() const override {
-            return _sender.cluster_context();
-        }
+        int getDistributorIndex() const override { return _sender.getDistributorIndex(); }
 
-        PendingMessageTracker& getPendingMessageTracker() override {
-            return _sender.getPendingMessageTracker();
-        }
+        const ClusterContext& cluster_context() const override { return _sender.cluster_context(); }
+
+        PendingMessageTracker& getPendingMessageTracker() override { return _sender.getPendingMessageTracker(); }
 
         const PendingMessageTracker& getPendingMessageTracker() const override {
             return _sender.getPendingMessageTracker();
@@ -55,21 +43,16 @@ public:
             return _sender.operation_sequencer();
         }
 
-        OperationSequencer& operation_sequencer() noexcept override {
-            return _sender.operation_sequencer();
-        }
+        OperationSequencer& operation_sequencer() noexcept override { return _sender.operation_sequencer(); }
 
     private:
-        OperationOwner& _owner;
+        OperationOwner&                 _owner;
         DistributorStripeMessageSender& _sender;
-        std::shared_ptr<Operation> _cb;
+        std::shared_ptr<Operation>      _cb;
     };
 
-    OperationOwner(DistributorStripeMessageSender& sender,
-                   const framework::Clock& clock)
-    : _sender(sender),
-      _clock(clock) {
-    }
+    OperationOwner(DistributorStripeMessageSender& sender, const framework::Clock& clock)
+        : _sender(sender), _clock(clock) {}
     ~OperationOwner() override;
 
     /**
@@ -81,9 +64,7 @@ public:
      */
     bool handleReply(const std::shared_ptr<api::StorageReply>& reply);
 
-    SentMessageMap& getSentMessageMap() {
-        return _sentMessageMap;
-    };
+    SentMessageMap& getSentMessageMap() { return _sentMessageMap; };
 
     bool start(const std::shared_ptr<Operation>& operation, Priority priority) override;
 
@@ -109,9 +90,9 @@ public:
     std::string toString() const;
 
 private:
-    SentMessageMap _sentMessageMap;
+    SentMessageMap                  _sentMessageMap;
     DistributorStripeMessageSender& _sender;
-    const framework::Clock& _clock;
+    const framework::Clock&         _clock;
 };
 
-}
+} // namespace storage::distributor

@@ -3,42 +3,32 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-using search::attribute::Config;
+using search::DictionaryConfig;
+using search::GrowStrategy;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
+using search::attribute::Config;
 using vespalib::eval::ValueType;
-using search::GrowStrategy;
-using search::DictionaryConfig;
 
-
-struct Fixture
-{
+struct Fixture {
     Config _config;
-    Fixture()
-        : _config()
-    { }
+    Fixture() : _config() {}
 
-    Fixture(BasicType bt,
-            CollectionType ct = CollectionType::SINGLE,
-            bool fastSearch_ = false)
-        : _config(bt, ct, fastSearch_)
-    { }
+    Fixture(BasicType bt, CollectionType ct = CollectionType::SINGLE, bool fastSearch_ = false)
+        : _config(bt, ct, fastSearch_) {}
 };
 
-TEST(AttributeConfigTest, test_default_attribute_config)
-{
+TEST(AttributeConfigTest, test_default_attribute_config) {
     Fixture f;
     EXPECT_EQ(BasicType::Type::NONE, f._config.basicType().type());
-    EXPECT_EQ(CollectionType::Type::SINGLE,
-                 f._config.collectionType().type());
+    EXPECT_EQ(CollectionType::Type::SINGLE, f._config.collectionType().type());
     EXPECT_TRUE(!f._config.fastSearch());
     EXPECT_TRUE(!f._config.getIsFilter());
     EXPECT_TRUE(!f._config.fastAccess());
     EXPECT_TRUE(f._config.tensorType().is_error());
 }
 
-TEST(AttributeConfigTest, test_integer_weightedset_attribute_config)
-{
+TEST(AttributeConfigTest, test_integer_weightedset_attribute_config) {
     Fixture f(BasicType::Type::INT32, CollectionType::Type::WSET);
     EXPECT_EQ(BasicType::Type::INT32, f._config.basicType().type());
     EXPECT_EQ(CollectionType::Type::WSET, f._config.collectionType().type());
@@ -48,9 +38,7 @@ TEST(AttributeConfigTest, test_integer_weightedset_attribute_config)
     EXPECT_TRUE(f._config.tensorType().is_error());
 }
 
-
-TEST(AttributeConfigTest, test_operator_equals_on_attribute_config)
-{
+TEST(AttributeConfigTest, test_operator_equals_on_attribute_config) {
     Config cfg1(BasicType::Type::INT32, CollectionType::Type::WSET);
     Config cfg2(BasicType::Type::INT32, CollectionType::Type::ARRAY);
     Config cfg3(BasicType::Type::INT32, CollectionType::Type::WSET);
@@ -60,9 +48,7 @@ TEST(AttributeConfigTest, test_operator_equals_on_attribute_config)
     EXPECT_TRUE(cfg1 == cfg3);
 }
 
-
-TEST(AttributeConfigTest, test_operator_equals_on_attribute_config_for_tensor_type)
-{
+TEST(AttributeConfigTest, test_operator_equals_on_attribute_config_for_tensor_type) {
     Config cfg1(BasicType::Type::TENSOR);
     Config cfg2(BasicType::Type::TENSOR);
     Config cfg3(BasicType::Type::TENSOR);
@@ -129,6 +115,5 @@ TEST(AttributeConfigTest, DictionaryConfig) {
     EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) !=
                 Config().set_dictionary_config(DictionaryConfig(Type::BTREE)));
 }
-
 
 GTEST_MAIN_RUN_ALL_TESTS()

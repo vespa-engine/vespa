@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_enum_store.h"
+
 #include <vespa/vespalib/datastore/unique_store_enumerator.h>
 
 namespace search {
@@ -14,22 +15,21 @@ class IAttributeSaveTarget;
  *
  * It handles writing to the udat file.
  */
-class EnumAttributeSaver
-{
+class EnumAttributeSaver {
 public:
     using Enumerator = IEnumStore::Enumerator;
 
 private:
-    const IEnumStore  &_enumStore;
+    const IEnumStore&           _enumStore;
     std::unique_ptr<Enumerator> _enumerator;
 
 public:
-    EnumAttributeSaver(IEnumStore &enumStore);
+    EnumAttributeSaver(IEnumStore& enumStore);
     ~EnumAttributeSaver();
 
-    void writeUdat(IAttributeSaveTarget &saveTarget);
-    const IEnumStore &getEnumStore() const { return _enumStore; }
-    Enumerator &get_enumerator() { return *_enumerator; }
+    void writeUdat(IAttributeSaveTarget& saveTarget);
+    const IEnumStore& getEnumStore() const { return _enumStore; }
+    Enumerator& get_enumerator() { return *_enumerator; }
     void clear() { _enumerator->clear(); }
 };
 

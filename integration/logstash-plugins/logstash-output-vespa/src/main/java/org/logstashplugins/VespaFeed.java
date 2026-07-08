@@ -2,7 +2,12 @@
 
 package org.logstashplugins;
 
-import ai.vespa.feed.client.*;
+import ai.vespa.feed.client.DocumentId;
+import ai.vespa.feed.client.FeedClient;
+import ai.vespa.feed.client.FeedClientBuilder;
+import ai.vespa.feed.client.MultiFeedException;
+import ai.vespa.feed.client.OperationParameters;
+import ai.vespa.feed.client.Result;
 import ai.vespa.feed.client.impl.GracePeriodCircuitBreaker;
 import co.elastic.logstash.api.Configuration;
 import co.elastic.logstash.api.Context;
@@ -24,7 +29,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 // class name must match plugin name
@@ -389,7 +400,7 @@ public class VespaFeed implements Output {
                 }
             } catch (JsonProcessingException | RuntimeException e) {
                 // RuntimeException shouldn't really happen here, we use it in tests
-                String errorMessage = String.format("Error processing event to generate async feed request: %s", e.getMessage());
+                String errorMessage = Text.format("Error processing event to generate async feed request: %s", e.getMessage());
                 logger.error(errorMessage);
                 writeToDlq(event, errorMessage);
             }
@@ -410,7 +421,7 @@ public class VespaFeed implements Output {
                     try {
                         promise.get(); // This will throw the exception
                     } catch (Exception ex) {
-                        String errorMessage = String.format("Error while waiting for async operation to complete: %s", ex.getMessage());
+                        String errorMessage = Text.format("Error while waiting for async operation to complete: %s", ex.getMessage());
                         logger.error(errorMessage);
                         writeToDlq(event, errorMessage);
                     }
@@ -456,7 +467,7 @@ public class VespaFeed implements Output {
         if (feedConfig.isDynamicOperation()) {
             operation = getDynamicField(event, feedConfig.getOperation());
             if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
-                String errorMessage = String.format("Invalid operation (must be put, update or remove): {}", operation);
+                String errorMessage = Text.format("Invalid operation (must be put, update or remove): {}", operation);
                 logger.error(errorMessage);
                 writeToDlq(event, errorMessage);
                 return null;

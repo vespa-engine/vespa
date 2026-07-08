@@ -2,6 +2,4 @@
 
 #include "external_memory.h"
 
-namespace vespalib::slime {
-
-} // namespace vespalib::slime
+namespace vespalib::slime {} // namespace vespalib::slime

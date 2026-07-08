@@ -9,11 +9,10 @@ namespace vespalib {
 /**
  * An executor service that executes tasks in multiple threads.
  **/
-class BlockingThreadStackExecutor : public ThreadStackExecutorBase
-{
+class BlockingThreadStackExecutor : public ThreadStackExecutorBase {
 public:
-    bool acceptNewTask(unique_lock & guard, std::condition_variable & cond) override;
-    void wakeup(unique_lock & guard, std::condition_variable &) override;
+    bool acceptNewTask(unique_lock& guard, std::condition_variable& cond) override;
+    void wakeup(unique_lock& guard, std::condition_variable&) override;
 
     /**
      * Create a new blocking thread stack executor. The task limit specifies

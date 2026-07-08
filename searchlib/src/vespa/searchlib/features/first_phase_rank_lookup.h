@@ -5,7 +5,9 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace search::fef { class IObjectStore; }
+namespace search::fef {
+class IObjectStore;
+}
 
 namespace search::features {
 
@@ -15,6 +17,7 @@ namespace search::features {
  */
 class FirstPhaseRankLookup {
     vespalib::hash_map<uint32_t, uint32_t> _map;
+
 public:
     FirstPhaseRankLookup();
     FirstPhaseRankLookup(const FirstPhaseRankLookup&) = delete;
@@ -29,4 +32,4 @@ public:
     static const FirstPhaseRankLookup* get_shared_state(const fef::IObjectStore& store);
 };
 
-}
+} // namespace search::features

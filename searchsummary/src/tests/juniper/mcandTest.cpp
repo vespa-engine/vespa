@@ -4,10 +4,13 @@
  */
 
 #include "testenv.h"
+
+#include <vespa/juniper/mcand.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
 #include <map>
-#include <vespa/juniper/mcand.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".mcandtest");
 
@@ -132,7 +135,7 @@ TEST(MatchCandidateTest, testMatches_limit) {
     // Check if we get the correct teaser as well..
     juniper::Summary* sum = juniper::GetTeaser(*res);
     EXPECT_TRUE(strcmp(sum->Text(), "This is a simple text where a <b>phrase</b> <b>match</b> can be found not"
-                              " quite adjacent to a <b>test</b> <b>word</b>") == 0);
+                                    " quite adjacent to a <b>test</b> <b>word</b>") == 0);
 }
 
 /**
@@ -232,7 +235,7 @@ TEST(MatchCandidateTest, testAdd_to_keylist) {
     juniper::Summary* sum = juniper::GetTeaser(*res);
     std::string       s(sum->Text());
     EXPECT_EQ(s, "connect truende. <b>phr1</b> <b>phr2</b> www www www <b>phr3</b>"
-                   " <b>phr4</b> acuicola 8844");
+                 " <b>phr4</b> acuicola 8844");
 }
 
 /**
@@ -257,8 +260,8 @@ TEST(MatchCandidateTest, testLength) {
 
         std::string s(sum->Text());
         EXPECT_EQ(s, "this <b>simple</b> text <b>with</b> <b>adjacent</b> words of "
-                       "a certain <b>pattern</b> must be matched according to specific"
-                       " rules to be detailed in this test.");
+                     "a certain <b>pattern</b> must be matched according to specific"
+                     " rules to be detailed in this test.");
     }
 
     {
@@ -325,13 +328,15 @@ TEST(MatchCandidateTest, requireThatMaxNumberOfMatchCandidatesCanBeControlled) {
     res->Scan();
 
     EXPECT_EQ(proc._cands.size(), 20u);
-    for (size_t i = 0; i < proc._cands.size(); ++i) { EXPECT_TRUE(proc._cands[i] <= 4u); }
+    for (size_t i = 0; i < proc._cands.size(); ++i) {
+        EXPECT_TRUE(proc._cands[i] <= 4u);
+    }
     EXPECT_EQ(m.TotalHits(), 20);
     match_candidate_set& mcs = m.OrderedMatchSet();
     EXPECT_EQ(static_cast<size_t>(mcs.size()), 2u);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     juniper::TestEnv te(argc, argv, TEST_PATH("testclient.rc").c_str());
     return RUN_ALL_TESTS();

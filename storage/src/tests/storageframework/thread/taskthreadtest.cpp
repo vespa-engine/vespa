@@ -9,15 +9,12 @@ namespace {
 
 struct Task {
     std::string _name;
-    uint8_t _priority;
+    uint8_t     _priority;
 
-    Task(const std::string& name, uint8_t priority)
-        : _name(name), _priority(priority) {}
+    Task(const std::string& name, uint8_t priority) : _name(name), _priority(priority) {}
     ~Task();
 
-    bool operator<(const Task& other) const {
-        return (_priority > other._priority);
-    }
+    bool operator<(const Task& other) const { return (_priority > other._priority); }
     uint8_t getPriority() const { return _priority; }
 };
 
@@ -25,15 +22,12 @@ Task::~Task() = default;
 
 struct MyThread : public TaskThread<Task> {
     MyThread(ThreadLock& lock) : TaskThread<Task>(lock) {}
-    ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
-        return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
-    }
+    ThreadWaitInfo doNonCriticalTick(ThreadIndex) override { return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN; }
 };
 
-}
+} // namespace
 
-TEST(TaskThreadTest, test_normal_usage)
-{
+TEST(TaskThreadTest, test_normal_usage) {
     TickingThreadPool::UP pool(TickingThreadPool::createDefault("testApp", 100ms));
 
     MyThread t(*pool);
@@ -48,10 +42,10 @@ TEST(TaskThreadTest, test_normal_usage)
     std::ostringstream ost;
     while (!t.empty()) {
         Task task(t.peek());
-        ost << task._name << '(' << ((int) task.getPriority()) << ") ";
+        ost << task._name << '(' << ((int)task.getPriority()) << ") ";
         t.pop();
     }
     EXPECT_EQ(std::string("b(3) d(4) a(6) c(8) "), ost.str());
 }
 
-}
+} // namespace storage::framework

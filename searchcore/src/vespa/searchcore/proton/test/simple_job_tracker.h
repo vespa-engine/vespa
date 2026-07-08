@@ -6,20 +6,15 @@
 
 namespace proton::test {
 
-struct SimpleJobTracker : public IJobTracker
-{
+struct SimpleJobTracker : public IJobTracker {
     using SP = std::shared_ptr<SimpleJobTracker>;
     vespalib::CountDownLatch _started;
     vespalib::CountDownLatch _ended;
-    SimpleJobTracker(uint32_t numJobTrackings) noexcept
-        : _started(numJobTrackings),
-          _ended(numJobTrackings)
-    {}
+    SimpleJobTracker(uint32_t numJobTrackings) noexcept : _started(numJobTrackings), _ended(numJobTrackings) {}
 
     // Implements IJobTracker
     void start() override { _started.countDown(); }
     void end() override { _ended.countDown(); }
 };
 
-}
-
+} // namespace proton::test

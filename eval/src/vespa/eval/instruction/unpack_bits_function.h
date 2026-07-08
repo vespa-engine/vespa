@@ -24,15 +24,15 @@ namespace vespalib::eval {
  * (Note: make sure this is the actual order of your bits)
  * 'tensor<int8>(x[64])(bit(packed{x:(x/8)},x%8))'
  **/
-class UnpackBitsFunction : public tensor_function::Op1
-{
+class UnpackBitsFunction : public tensor_function::Op1 {
 private:
     bool _big_bitorder;
+
 public:
-    UnpackBitsFunction(const ValueType &res_type_in, const TensorFunction &packed, bool big);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    UnpackBitsFunction(const ValueType& res_type_in, const TensorFunction& packed, bool big);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     bool result_is_mutable() const override { return true; }
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval

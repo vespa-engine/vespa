@@ -4,10 +4,9 @@
 
 namespace vespalib::eval {
 
-template<typename T> DenseCellsValue<T>::~DenseCellsValue() = default;
+template <typename T> DenseCellsValue<T>::~DenseCellsValue() = default;
 
-template<typename T> MemoryUsage
-DenseCellsValue<T>::get_memory_usage() const {
+template <typename T> MemoryUsage DenseCellsValue<T>::get_memory_usage() const {
     auto usage = self_memory_usage<DenseCellsValue<T>>();
     usage.merge(vector_extra_memory_usage(_cells));
     return usage;
@@ -18,4 +17,4 @@ template class DenseCellsValue<float>;
 template class DenseCellsValue<BFloat16>;
 template class DenseCellsValue<Int8Float>;
 
-}
+} // namespace vespalib::eval

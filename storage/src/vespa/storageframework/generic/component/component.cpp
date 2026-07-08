@@ -1,23 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "component.h"
+
 #include "componentregister.h"
+
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
-#include <vespa/storageframework/generic/thread/threadpool.h>
 #include <vespa/storageframework/generic/thread/thread.h>
+#include <vespa/storageframework/generic/thread/threadpool.h>
 
 #include <cassert>
 
 namespace storage::framework {
 
-void
-Component::open()
-{
+void Component::open() {
 }
 
-void
-Component::close()
-{
+void Component::close() {
 }
 
 Component::Component(ComponentRegister& cr, std::string_view name)
@@ -27,23 +25,18 @@ Component::Component(ComponentRegister& cr, std::string_view name)
       _metric(nullptr),
       _threadPool(nullptr),
       _metricReg(nullptr),
-      _clock(nullptr)
-{
+      _clock(nullptr) {
     cr.registerComponent(*this);
 }
 
 Component::~Component() = default;
 
-void
-Component::registerStatusPage(const StatusReporter& sr)
-{
+void Component::registerStatusPage(const StatusReporter& sr) {
     assert(_status == nullptr);
     _status = &sr;
 }
 
-void
-Component::registerMetric(metrics::Metric& m)
-{
+void Component::registerMetric(metrics::Metric& m) {
     assert(_metric == nullptr);
     _metric = &m;
     if (_metricReg != nullptr) {
@@ -51,9 +44,7 @@ Component::registerMetric(metrics::Metric& m)
     }
 }
 
-void
-Component::registerMetricUpdateHook(MetricUpdateHook& hook, vespalib::system_time::duration period)
-{
+void Component::registerMetricUpdateHook(MetricUpdateHook& hook, vespalib::system_time::duration period) {
     assert(_metricUpdateHook.first == nullptr);
     _metricUpdateHook = std::make_pair(&hook, period);
     if (_metricReg != nullptr) {
@@ -61,8 +52,7 @@ Component::registerMetricUpdateHook(MetricUpdateHook& hook, vespalib::system_tim
     }
 }
 
-void
-Component::setMetricRegistrator(MetricRegistrator& mr) {
+void Component::setMetricRegistrator(MetricRegistrator& mr) {
     _metricReg = &mr;
     if (_metricUpdateHook.first != nullptr) {
         _metricReg->registerUpdateHook(_name, *_metricUpdateHook.first, _metricUpdateHook.second);
@@ -72,26 +62,20 @@ Component::setMetricRegistrator(MetricRegistrator& mr) {
     }
 }
 
-ThreadPool&
-Component::getThreadPool() const
-{
+ThreadPool& Component::getThreadPool() const {
     assert(_threadPool != nullptr);
     return *_threadPool;
 }
 
 // Helper functions for components wanting to start a single thread.
-std::unique_ptr<Thread>
-Component::startThread(Runnable& runnable, vespalib::duration waitTime, vespalib::duration maxProcessTime,
-                       int ticksBeforeWait, std::optional<vespalib::CpuUsage::Category> cpu_category) const
-{
-    return getThreadPool().startThread(runnable, getName(), waitTime,
-                                       maxProcessTime, ticksBeforeWait, cpu_category);
+std::unique_ptr<Thread> Component::startThread(Runnable& runnable, vespalib::duration waitTime,
+                                               vespalib::duration maxProcessTime, int ticksBeforeWait,
+                                               std::optional<vespalib::CpuUsage::Category> cpu_category) const {
+    return getThreadPool().startThread(runnable, getName(), waitTime, maxProcessTime, ticksBeforeWait, cpu_category);
 }
 
-void
-Component::requestShutdown(std::string_view reason)
-{
+void Component::requestShutdown(std::string_view reason) {
     _componentRegister->requestShutdown(reason);
 }
 
-}
+} // namespace storage::framework

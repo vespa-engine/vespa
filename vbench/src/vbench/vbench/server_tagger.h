@@ -3,6 +3,7 @@
 #pragma once
 
 #include "tagger.h"
+
 #include <vbench/http/server_spec.h>
 
 namespace vbench {
@@ -10,14 +11,13 @@ namespace vbench {
 /**
  * Sets the target server for requests.
  **/
-class ServerTagger : public Tagger
-{
+class ServerTagger : public Tagger {
 private:
     ServerSpec        _server;
-    Handler<Request> &_next;
+    Handler<Request>& _next;
 
 public:
-    ServerTagger(const ServerSpec &server, Handler<Request> &next);
+    ServerTagger(const ServerSpec& server, Handler<Request>& next);
     void handle(Request::UP request) override;
 };
 

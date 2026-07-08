@@ -8,6 +8,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import com.yahoo.text.Utf8;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -132,7 +134,7 @@ public class ArchiverHandlerTestCase {
             File f = new File(name);
             assertTrue(f.exists());
 
-            BufferedReader br = new BufferedReader(new FileReader(f));
+            BufferedReader br = new BufferedReader(Utf8.createReader(f));
             for (String line = br.readLine();
                  line != null;
                  line = br.readLine()) {
@@ -184,7 +186,7 @@ public class ArchiverHandlerTestCase {
             assertTrue(f.exists());
 
             // ensure there's the same log message in all files
-            BufferedReader br = new BufferedReader(new FileReader(f));
+            BufferedReader br = new BufferedReader(Utf8.createReader(f));
             for (String line = br.readLine();
                  line != null;
                  line = br.readLine()) {

@@ -4,9 +4,7 @@
 
 namespace proton {
 
-IndexMetrics::IndexMetrics(metrics::MetricSet* parent)
-    : FieldMetrics(parent)
-{
+IndexMetrics::IndexMetrics(metrics::MetricSet* parent) : FieldMetrics(parent) {
 }
 
 IndexMetrics::~IndexMetrics() = default;

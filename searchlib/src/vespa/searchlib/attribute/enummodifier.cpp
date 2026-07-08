@@ -4,12 +4,10 @@
 
 namespace search::attribute {
 
-EnumModifier::EnumModifier(std::shared_mutex &lock, attribute::InterlockGuard &interlockGuard)
-    : _enumLock(lock)
-{
-    (void) interlockGuard;
+EnumModifier::EnumModifier(std::shared_mutex& lock, attribute::InterlockGuard& interlockGuard) : _enumLock(lock) {
+    (void)interlockGuard;
 }
 
 EnumModifier::~EnumModifier() = default;
 
-}
+} // namespace search::attribute

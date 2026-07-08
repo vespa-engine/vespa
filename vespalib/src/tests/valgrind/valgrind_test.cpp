@@ -1,40 +1,37 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/valgrind.h>
+
 #include <cstring>
 
 using namespace vespalib;
 
-void testUninitializedUser()
-{
+void testUninitializedUser() {
     char buf[7];
     buf[0] = 7;
     buf[5] = 7;
     Valgrind::testUninitialized(buf, sizeof(buf));
 }
 
-void testUninitializedSystemCall()
-{
+void testUninitializedSystemCall() {
     char buf[7];
     buf[0] = 7;
     buf[5] = 7;
     Valgrind::testSystemCall(buf, sizeof(buf));
 }
-void testInitializedUser()
-{
+void testInitializedUser() {
     char buf[7];
     memset(buf, 0, sizeof(buf));
     Valgrind::testUninitialized(buf, sizeof(buf));
 }
 
-void testInitializedSystemCall()
-{
+void testInitializedSystemCall() {
     char buf[7];
     memset(buf, 0, sizeof(buf));
     Valgrind::testSystemCall(buf, sizeof(buf));
 }
 
-int main(int, char **argv) {
+int main(int, char** argv) {
     if (strcmp(argv[1], "testInitializedUser") == 0) {
         testInitializedUser();
     } else if (strcmp(argv[1], "testInitializedSystemCall") == 0) {

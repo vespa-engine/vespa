@@ -3,62 +3,60 @@
 #pragma once
 
 #include <vespa/searchlib/fef/handle.h>
+
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
-namespace search::tensor { class DistanceCalculator; }
+namespace search::tensor {
+class DistanceCalculator;
+}
 namespace search::fef {
 class IObjectStore;
 class IQueryEnvironment;
-}
+} // namespace search::fef
 
 namespace search::features {
 
 /**
- * A bundle of term-field tuples (TermFieldHandle, DistanceCalculator) used by the closeness and distance rank features.
+ * A bundle of term-field tuples (TermFieldHandle, DistanceCalculator) used by the closeness and distance rank
+ * features.
  *
  * For most document ids the raw score is available in the TermFieldMatchData retrieved using the TermFieldHandle,
- * as it was calculated during matching. In the other cases the DistanceCalculator can be used to calculate the score on the fly.
+ * as it was calculated during matching. In the other cases the DistanceCalculator can be used to calculate the score
+ * on the fly.
  */
 class DistanceCalculatorBundle {
 public:
     struct Element {
-        fef::TermFieldHandle handle;
+        fef::TermFieldHandle                                handle;
         std::unique_ptr<search::tensor::DistanceCalculator> calc;
         Element(Element&& rhs) noexcept = default; // Needed as std::vector::reserve() is used.
         Element(fef::TermFieldHandle handle_in) noexcept;
         Element(fef::TermFieldHandle handle_in, std::unique_ptr<search::tensor::DistanceCalculator> calc_in) noexcept;
         ~Element();
     };
+
 private:
     std::vector<Element> _elems;
-    double _min_rawscore;
+    double               _min_rawscore;
 
 public:
-    DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
-                             uint32_t field_id,
-                             const std::string& feature_name);
+    DistanceCalculatorBundle(const fef::IQueryEnvironment& env, uint32_t field_id, const std::string& feature_name);
 
-    DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
-                             std::optional<uint32_t> field_id,
-                             const std::string& label,
-                             const std::string& feature_name);
+    DistanceCalculatorBundle(const fef::IQueryEnvironment& env, std::optional<uint32_t> field_id,
+                             const std::string& label, const std::string& feature_name);
 
     const std::vector<Element>& elements() const { return _elems; }
 
     double min_rawscore() const { return _min_rawscore; }
 
-    static void prepare_shared_state(const fef::IQueryEnvironment& env,
-                                     fef::IObjectStore& store,
-                                     uint32_t field_id,
+    static void prepare_shared_state(const fef::IQueryEnvironment& env, fef::IObjectStore& store, uint32_t field_id,
                                      const std::string& feature_name);
 
-    static void prepare_shared_state(const fef::IQueryEnvironment& env,
-                                     fef::IObjectStore& store,
-                                     const std::string& label,
-                                     const std::string& feature_name);
+    static void prepare_shared_state(const fef::IQueryEnvironment& env, fef::IObjectStore& store,
+                                     const std::string& label, const std::string& feature_name);
 };
 
-}
+} // namespace search::features

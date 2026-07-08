@@ -6,8 +6,8 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/juniper/juniper_separators.h>
 #include <vespa/searchlib/util/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/annotation_converter.h>
@@ -32,32 +32,27 @@ using vespalib::slime::SlimeInserter;
 
 namespace {
 
-DocumenttypesConfig
-get_document_types_config()
-{
+DocumenttypesConfig get_document_types_config() {
     using namespace document::new_config_builder;
     NewConfigBuilder builder;
     builder.document("indexingdocument", 42);
     return builder.config();
 }
 
-class MockJuniperConverter : public IJuniperConverter
-{
+class MockJuniperConverter : public IJuniperConverter {
     std::string _result;
+
 public:
     ~MockJuniperConverter() override;
-    void convert(std::string_view input, vespalib::slime::Inserter&) override {
-        _result = input;
-    }
+    void convert(std::string_view input, vespalib::slime::Inserter&) override { _result = input; }
     const std::string& get_result() const noexcept { return _result; }
 };
 
 MockJuniperConverter::~MockJuniperConverter() = default;
 
-}
+} // namespace
 
-class AnnotationConverterTest : public testing::Test
-{
+class AnnotationConverterTest : public testing::Test {
 protected:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType*                     _document_type;
@@ -78,23 +73,18 @@ AnnotationConverterTest::AnnotationConverterTest()
     : testing::Test(),
       _repo(std::make_unique<DocumentTypeRepo>(get_document_types_config())),
       _document_type(_repo->getDocumentType("indexingdocument")),
-      _fixed_repo(*_repo, *_document_type)
-{
+      _fixed_repo(*_repo, *_document_type) {
 }
 
 AnnotationConverterTest::~AnnotationConverterTest() = default;
 
-void
-AnnotationConverterTest::set_span_tree(StringFieldValue & value, std::unique_ptr<SpanTree> tree)
-{
+void AnnotationConverterTest::set_span_tree(StringFieldValue& value, std::unique_ptr<SpanTree> tree) {
     StringFieldValue::SpanTrees trees;
     trees.push_back(std::move(tree));
     value.setSpanTrees(trees, _fixed_repo);
 }
 
-StringFieldValue
-AnnotationConverterTest::make_annotated_string()
-{
+StringFieldValue AnnotationConverterTest::make_annotated_string() {
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
@@ -106,9 +96,7 @@ AnnotationConverterTest::make_annotated_string()
     return value;
 }
 
-StringFieldValue
-AnnotationConverterTest::make_annotated_chinese_string()
-{
+StringFieldValue AnnotationConverterTest::make_annotated_chinese_string() {
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
@@ -120,80 +108,61 @@ AnnotationConverterTest::make_annotated_chinese_string()
     return value;
 }
 
-std::string
-AnnotationConverterTest::make_exp_il_annotated_string()
-{
+std::string AnnotationConverterTest::make_exp_il_annotated_string() {
     using namespace juniper::separators;
     vespalib::asciistream exp;
-    exp << "foo" << unit_separator_string <<
-        " " << unit_separator_string << interlinear_annotation_anchor_string <<
-        "bar" << interlinear_annotation_separator_string <<
-        "baz" << interlinear_annotation_terminator_string << unit_separator_string;
+    exp << "foo" << unit_separator_string << " " << unit_separator_string << interlinear_annotation_anchor_string
+        << "bar" << interlinear_annotation_separator_string << "baz" << interlinear_annotation_terminator_string
+        << unit_separator_string;
     return exp.str();
 }
 
-std::string
-AnnotationConverterTest::make_exp_il_annotated_chinese_string()
-{
+std::string AnnotationConverterTest::make_exp_il_annotated_chinese_string() {
     using namespace juniper::separators;
     vespalib::asciistream exp;
-    exp << "我就是那个" << unit_separator_string <<
-        "大灰狼" << unit_separator_string;
+    exp << "我就是那个" << unit_separator_string << "大灰狼" << unit_separator_string;
     return exp.str();
 }
 
-void
-AnnotationConverterTest::expect_annotated(const std::string& exp, const StringFieldValue& fv)
-{
+void AnnotationConverterTest::expect_annotated(const std::string& exp, const StringFieldValue& fv) {
     MockJuniperConverter juniper_converter;
-    AnnotationConverter annotation_converter(juniper_converter);
-    Slime slime;
-    SlimeInserter inserter(slime);
+    AnnotationConverter  annotation_converter(juniper_converter);
+    Slime                slime;
+    SlimeInserter        inserter(slime);
     annotation_converter.convert(fv, inserter);
     EXPECT_EQ(exp, juniper_converter.get_result());
 }
 
-
-TEST_F(AnnotationConverterTest, convert_plain_string)
-{
+TEST_F(AnnotationConverterTest, convert_plain_string) {
     using namespace juniper::separators;
-    std::string exp("Foo Bar Baz");
+    std::string      exp("Foo Bar Baz");
     StringFieldValue plain_string("Foo Bar Baz");
     expect_annotated(exp + unit_separator_string, plain_string);
 }
 
-TEST_F(AnnotationConverterTest, convert_annotated_string)
-{
+TEST_F(AnnotationConverterTest, convert_annotated_string) {
     auto exp = make_exp_il_annotated_string();
     auto annotated_string = make_annotated_string();
     expect_annotated(exp, annotated_string);
 }
 
-TEST_F(AnnotationConverterTest, convert_annotated_chinese_string)
-{
-        auto exp = make_exp_il_annotated_chinese_string();
-        auto annotated_chinese_string = make_annotated_chinese_string();
-        expect_annotated(exp, annotated_chinese_string);
+TEST_F(AnnotationConverterTest, convert_annotated_chinese_string) {
+    auto exp = make_exp_il_annotated_chinese_string();
+    auto annotated_chinese_string = make_annotated_chinese_string();
+    expect_annotated(exp, annotated_chinese_string);
 }
 
 std::string make_exp_overlaps() {
     using namespace juniper::separators;
     vespalib::asciistream exp;
-    exp << "foo " << unit_separator_string <<
-            interlinear_annotation_anchor_string <<
-            "abcde" << interlinear_annotation_separator_string <<
-            "ab" << " " <<
-            "abcde" <<  " " <<
-            "bcd" <<  " " <<
-            "de" << interlinear_annotation_terminator_string << unit_separator_string <<
-            "fg" << unit_separator_string <<
-            "hi" << unit_separator_string;
+    exp << "foo " << unit_separator_string << interlinear_annotation_anchor_string << "abcde"
+        << interlinear_annotation_separator_string << "ab" << " " << "abcde" << " " << "bcd" << " " << "de"
+        << interlinear_annotation_terminator_string << unit_separator_string << "fg" << unit_separator_string << "hi"
+        << unit_separator_string;
     return exp.str();
 }
 
-StringFieldValue
-AnnotationConverterTest::make_annotated_overlaps()
-{
+StringFieldValue AnnotationConverterTest::make_annotated_overlaps() {
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
@@ -207,8 +176,7 @@ AnnotationConverterTest::make_annotated_overlaps()
     return value;
 }
 
-TEST_F(AnnotationConverterTest, convert_annotated_overlaps)
-{
+TEST_F(AnnotationConverterTest, convert_annotated_overlaps) {
     auto exp = make_exp_overlaps();
     auto annotated_overlaps = make_annotated_overlaps();
     expect_annotated(exp, annotated_overlaps);

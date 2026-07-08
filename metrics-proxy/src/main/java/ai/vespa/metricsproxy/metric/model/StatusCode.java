@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model;
 
+import java.util.Locale;
 /**
  * Status code for a Vespa service.
  *
@@ -23,7 +24,7 @@ public enum StatusCode {
     public static StatusCode fromString(String statusString) {
         if ("ok".equalsIgnoreCase(statusString)) return UP;
         try {
-            return valueOf(statusString.trim().toUpperCase());
+            return valueOf(statusString.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException | NullPointerException e) {
             return UNKNOWN;
         }

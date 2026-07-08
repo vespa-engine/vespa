@@ -126,7 +126,7 @@ public class OnnxModelProbe {
         g.writeEndObject();
         g.writeEndObject();
         g.close();
-        return out.toString();
+        return out.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private static JsonNode callVespaAnalyzeOnnxModel(String jsonInput) throws IOException, InterruptedException {

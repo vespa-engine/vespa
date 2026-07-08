@@ -3,23 +3,23 @@
 #pragma once
 
 #include "span.h"
+
 #include <memory>
 #include <vector>
 
 namespace document {
 
 class SpanList : public SpanNode {
-    std::vector<SpanNode *> _span_vector;
+    std::vector<SpanNode*> _span_vector;
 
 public:
     using UP = std::unique_ptr<SpanList>;
-    using const_iterator = std::vector<SpanNode *>::const_iterator;
+    using const_iterator = std::vector<SpanNode*>::const_iterator;
 
     ~SpanList();
 
-    template <typename T>
-    T &add(std::unique_ptr<T> node) {
-        T *n = node.get();
+    template <typename T> T& add(std::unique_ptr<T> node) {
+        T* n = node.get();
         _span_vector.push_back(node.release());
         return *n;
     }
@@ -30,7 +30,7 @@ public:
     const_iterator begin() const { return _span_vector.begin(); }
     const_iterator end() const { return _span_vector.end(); }
 
-    void accept(SpanTreeVisitor &visitor) const override;
+    void accept(SpanTreeVisitor& visitor) const override;
 };
 
 class SimpleSpanList : public SpanNode {
@@ -45,14 +45,13 @@ public:
     ~SimpleSpanList();
 
     size_t size() const { return _span_vector.size(); }
-    Span & operator [] (size_t index) { return _span_vector[index]; }
-    const Span & operator [] (size_t index) const { return _span_vector[index]; }
+    Span& operator[](size_t index) { return _span_vector[index]; }
+    const Span& operator[](size_t index) const { return _span_vector[index]; }
 
     const_iterator begin() const { return _span_vector.begin(); }
     const_iterator end() const { return _span_vector.end(); }
 
-    void accept(SpanTreeVisitor &visitor) const override;
+    void accept(SpanTreeVisitor& visitor) const override;
 };
 
-}  // namespace document
-
+} // namespace document

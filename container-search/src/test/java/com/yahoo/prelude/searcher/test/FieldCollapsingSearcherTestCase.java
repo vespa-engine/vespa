@@ -26,7 +26,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the FieldCollapsingSearcher class
@@ -647,15 +652,15 @@ public class FieldCollapsingSearcherTestCase {
         @Override
         public Result search(Query query, Execution execution) {
             Result r = execution.search(query);
-            r.hits().add(createAggregationGroup("g1"));
+            r.hits().add(createAggregationGroup("g1", query));
             return r;
         }
 
-        private HitGroup createAggregationGroup(String label) {
-            Group root = new Group(new RootId(0), new Relevance(1));
+        private HitGroup createAggregationGroup(String label, Query query) {
+            Group root = new Group(new RootId(0), new Relevance(1), query);
             GroupList groupList = new GroupList(label);
             root.add(groupList);
-            Group value = new Group(new LongId(37L), new Relevance(2.11));
+            Group value = new Group(new LongId(37L), new Relevance(2.11), query);
             groupList.add(value);
             return root;
         }

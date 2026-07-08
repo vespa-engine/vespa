@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "integer_term_vector.h"
+
 #include <cassert>
 #include <charconv>
 
 namespace search::query {
 
-IntegerTermVector::IntegerTermVector(uint32_t sz)
-    : _terms()
-{
+IntegerTermVector::IntegerTermVector(uint32_t sz) : _terms() {
     _terms.reserve(sz);
 }
 
@@ -29,8 +28,8 @@ void IntegerTermVector::addTerm(int64_t term) {
 }
 
 TermVector::StringAndWeight IntegerTermVector::getAsString(uint32_t index) const {
-    const auto & v = _terms[index];
-    auto res = std::to_chars(_scratchPad, _scratchPad + sizeof(_scratchPad) - 1, v, 10);
+    const auto& v = _terms[index];
+    auto        res = std::to_chars(_scratchPad, _scratchPad + sizeof(_scratchPad) - 1, v, 10);
     res.ptr[0] = '\0';
     return {std::string_view(_scratchPad, res.ptr - _scratchPad), Weight(1)};
 }
@@ -47,4 +46,4 @@ uint32_t IntegerTermVector::size() const {
     return _terms.size();
 }
 
-}
+} // namespace search::query

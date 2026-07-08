@@ -1,0 +1,16 @@
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+  <admin version='4.0'>
+    <telemetry>
+      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>
+        <auth>
+          <bearer-token vault='my-vault' secret-name='my-token'/>
+        </auth>
+        <metric-set id='default'/>
+      </exporter>
+    </telemetry>
+  </admin>
+  <container id="container" version="1.0">
+    <nodes count="2"/>
+  </container>
+</services>

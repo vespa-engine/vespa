@@ -2,15 +2,20 @@
 
 #pragma once
 
-#include "types.h"
 #include "messages.h"
+#include "types.h"
+
 #include <vespa/storageapi/message/persistence.h>
 
-namespace document { class BucketIdFactory; }
+namespace document {
+class BucketIdFactory;
+}
 
 namespace storage {
 
-namespace spi { struct PersistenceProvider; }
+namespace spi {
+struct PersistenceProvider;
+}
 class PersistenceUtil;
 
 /**
@@ -20,12 +25,11 @@ class PersistenceUtil;
  */
 class SimpleMessageHandler : public Types {
 public:
-    SimpleMessageHandler(const PersistenceUtil&,
-                         spi::PersistenceProvider&,
-                         const document::BucketIdFactory&);
+    SimpleMessageHandler(const PersistenceUtil&, spi::PersistenceProvider&, const document::BucketIdFactory&);
     MessageTrackerUP handleGet(api::GetCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateIterator(CreateIteratorCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleGetIter(GetIterCommand& cmd, MessageTrackerUP tracker) const;
+
 private:
     MessageTrackerUP handle_conditional_get(api::GetCommand& cmd, MessageTrackerUP tracker) const;
 
@@ -34,5 +38,4 @@ private:
     const document::BucketIdFactory& _bucket_id_factory;
 };
 
-} // storage
-
+} // namespace storage

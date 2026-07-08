@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.security.X509CertificateUtils;
@@ -229,6 +230,27 @@ public class PrepareParamsTest {
         String json = "{\"cloudAccount\": {\"id\": \"012345678912\"}}";
         PrepareParams params = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), TenantName.defaultName(), Duration.ZERO);
         assertEquals(CloudAccount.from("012345678912"), params.cloudAccount().get());
+    }
+
+    @Test
+    public void testCloudResourceTags() {
+        String json = "{\"cloudResourceTags\": {\"env\": \"prod\", \"team\": \"search\"}}";
+        PrepareParams params = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), TenantName.defaultName(), Duration.ZERO);
+        assertEquals(CloudResourceTags.from(java.util.Map.of("env", "prod", "team", "search")), params.cloudResourceTags());
+    }
+
+    @Test
+    public void testCloudResourceTagsEmpty() {
+        String json = "{}";
+        PrepareParams params = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), TenantName.defaultName(), Duration.ZERO);
+        assertTrue(params.cloudResourceTags().isEmpty());
+    }
+
+    @Test
+    public void testCloudResourceTagsEmptyObject() {
+        String json = "{\"cloudResourceTags\": {}}";
+        PrepareParams params = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), TenantName.defaultName(), Duration.ZERO);
+        assertTrue(params.cloudResourceTags().isEmpty());
     }
 
     @Test

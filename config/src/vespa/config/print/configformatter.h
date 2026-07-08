@@ -18,17 +18,16 @@ public:
      * @param buffer A ConfigDataBuffer containing a slime object that should be
      *               encoded.
      */
-    virtual void encode(ConfigDataBuffer & buffer) const = 0;
+    virtual void encode(ConfigDataBuffer& buffer) const = 0;
 
     /**
      * Decode a string in the config data buffer and populate its slime object.
      *
      * @param buffer A ConfigDataBuffer containing a string of the config.
      */
-    virtual size_t decode(ConfigDataBuffer & buffer) const = 0;
+    virtual size_t decode(ConfigDataBuffer& buffer) const = 0;
 
     virtual ~ConfigFormatter() = default;
 };
 
 } // namespace config
-

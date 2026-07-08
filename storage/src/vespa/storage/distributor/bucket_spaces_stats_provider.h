@@ -16,17 +16,11 @@ class DistributorGlobalStats {
     bool     _valid;
     uint64_t _documents_total;
     uint64_t _bytes_total;
+
 public:
-    constexpr DistributorGlobalStats() noexcept
-        : _valid(false),
-          _documents_total(0),
-          _bytes_total(0)
-    {}
+    constexpr DistributorGlobalStats() noexcept : _valid(false), _documents_total(0), _bytes_total(0) {}
     constexpr DistributorGlobalStats(uint64_t documents_total, uint64_t bytes_total) noexcept
-        : _valid(true),
-          _documents_total(documents_total),
-          _bytes_total(bytes_total)
-    {}
+        : _valid(true), _documents_total(documents_total), _bytes_total(bytes_total) {}
 
     [[nodiscard]] constexpr static DistributorGlobalStats make_invalid() noexcept { return {}; }
     [[nodiscard]] constexpr static DistributorGlobalStats make_empty_but_valid() noexcept { return {0, 0}; }
@@ -49,17 +43,11 @@ class BucketSpaceStats {
     bool   _valid;
     size_t _bucketsTotal;
     size_t _bucketsPending;
+
 public:
     constexpr BucketSpaceStats(size_t bucketsTotal_, size_t bucketsPending_) noexcept
-        : _valid(true),
-          _bucketsTotal(bucketsTotal_),
-          _bucketsPending(bucketsPending_)
-    {}
-    constexpr BucketSpaceStats() noexcept
-        : _valid(false),
-          _bucketsTotal(0),
-          _bucketsPending(0)
-    {}
+        : _valid(true), _bucketsTotal(bucketsTotal_), _bucketsPending(bucketsPending_) {}
+    constexpr BucketSpaceStats() noexcept : _valid(false), _bucketsTotal(0), _bucketsPending(0) {}
 
     static constexpr BucketSpaceStats make_invalid() noexcept { return {}; }
 
@@ -93,10 +81,10 @@ public:
     [[nodiscard]] virtual DistributorGlobalStats distributor_global_stats() const = 0;
 };
 
-void merge_bucket_spaces_stats(BucketSpacesStatsProvider::BucketSpacesStats& dest,
+void merge_bucket_spaces_stats(BucketSpacesStatsProvider::BucketSpacesStats&       dest,
                                const BucketSpacesStatsProvider::BucketSpacesStats& src);
 
-void merge_per_node_bucket_spaces_stats(BucketSpacesStatsProvider::PerNodeBucketSpacesStats& dest,
+void merge_per_node_bucket_spaces_stats(BucketSpacesStatsProvider::PerNodeBucketSpacesStats&       dest,
                                         const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& src);
 
-}
+} // namespace storage::distributor

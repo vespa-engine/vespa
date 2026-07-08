@@ -1,67 +1,84 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_mem_usage_sampler.h"
+
 #include "resource_usage_write_filter.h"
+
+#include <vespa/searchcore/proton/common/i_reserved_disk_space_and_memory_provider.h>
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
+#include <vespa/searchcorespi/common/i_resource_usage_provider.h>
+#include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
+
 #include <filesystem>
-#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
+
+using search::DirectoryTraverse;
+using searchcorespi::common::IResourceUsageProvider;
+using searchcorespi::common::ResourceUsage;
 
 using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, ResourceUsageWriteFilter& filter,
-                                         ResourceUsageNotifier& resource_usage_notifier,
-                                         const IReservedDiskSpaceProvider& reserved_disk_space_provider)
+DiskMemUsageSampler::DiskMemUsageSampler(
+    const std::string& path_in, ResourceUsageWriteFilter& filter, ResourceUsageNotifier& resource_usage_notifier,
+    const IReservedDiskSpaceAndMemoryProvider& reserved_disk_space_and_memory_provider)
     : _filter(filter),
       _notifier(resource_usage_notifier),
-      _reserved_disk_space_provider(reserved_disk_space_provider),
+      _reserved_disk_space_and_memory_provider(reserved_disk_space_and_memory_provider),
       _path(path_in),
       _sampleInterval(60s),
       _lastSampleTime(),
       _lock(),
-      _transient_usage_providers(),
-      _periodicHandle()
-{
+      _should_resample_disk_capacity(false),
+      _resample_disk_capacity_feature_flag(false),
+      _resource_usage_providers(),
+      _periodicHandle() {
 }
 
 DiskMemUsageSampler::~DiskMemUsageSampler() = default;
 
-void
-DiskMemUsageSampler::close() {
+void DiskMemUsageSampler::close() {
     _periodicHandle.reset();
 }
 
-bool
-DiskMemUsageSampler::timeToSampleAgain() const noexcept {
+bool DiskMemUsageSampler::timeToSampleAgain() const noexcept {
     return vespalib::steady_clock::now() >= (_lastSampleTime + _sampleInterval);
 }
 
-void
-DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & executor)
-{
+void DiskMemUsageSampler::setConfig(const Config& config, IScheduledExecutor& executor) {
     bool wasChanged = _notifier.setConfig(config.filterConfig);
+    if ((_should_resample_disk_capacity != config.should_resample_disk_capacity) ||
+        (_resample_disk_capacity_feature_flag != config.resample_disk_capacity))
+    {
+        wasChanged = true;
+    }
     if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged) {
         return;
     }
+    _should_resample_disk_capacity = config.should_resample_disk_capacity;
+    _resample_disk_capacity_feature_flag = config.resample_disk_capacity;
+    restart(config.sampleInterval, executor);
+}
+
+void DiskMemUsageSampler::restart(std::optional<vespalib::duration> sample_interval, IScheduledExecutor& executor) {
     _periodicHandle.reset();
-    _sampleInterval = config.sampleInterval;
+    if (sample_interval.has_value()) {
+        _sampleInterval = sample_interval.value();
+    }
     sampleAndReportUsage();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
     _periodicHandle = executor.scheduleAtFixedRate(makeLambdaTask([this]() {
-        if (!_filter.acceptWriteOperation() || timeToSampleAgain()) {
-            sampleAndReportUsage();
-        }
-    }), maxInterval, maxInterval);
+                                                       if (!_filter.acceptWriteOperation() || timeToSampleAgain()) {
+                                                           sampleAndReportUsage();
+                                                       }
+                                                   }),
+                                                   maxInterval, maxInterval);
 }
 
-void
-DiskMemUsageSampler::sampleAndReportUsage()
-{
-    TransientResourceUsage transientUsage = sample_transient_resource_usage();
+void DiskMemUsageSampler::sampleAndReportUsage() {
+    ResourceUsage resource_usage = sample_resource_usage();
     /* It is important that transient resource usage is sampled first. This prevents
      * a false positive where we report a too high disk or memory usage causing
      * either feed blocked, or an alert due to metric spike.
@@ -69,9 +86,10 @@ DiskMemUsageSampler::sampleAndReportUsage()
      * and a short period of allowed feed. The latter will be very rare as you are rarely feed blocked anyway.
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
-    uint64_t diskUsage = sampleDiskUsage();
-    uint64_t reserved_disk_space = _reserved_disk_space_provider.get_reserved_disk_space();
-    _notifier.set_resource_usage(transientUsage, memoryStats, diskUsage, reserved_disk_space);
+    DiskUsage                    diskUsage = sampleDiskUsage(resource_usage);
+    auto                         reserved_disk_space_and_memory =
+        _reserved_disk_space_and_memory_provider.get_reserved_disk_space_and_memory();
+    _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space_and_memory);
     _lastSampleTime = vespalib::steady_clock::now();
 }
 
@@ -79,103 +97,53 @@ namespace {
 
 namespace fs = std::filesystem;
 
-// Disk usage for symbolic links and directories
-constexpr uint64_t symlink_disk_usage = 4_Ki;
-constexpr uint64_t directory_disk_usage = 4_Ki;
-
-uint64_t
-sampleDiskUsageOnFileSystem(const fs::path &path, const vespalib::HwInfo::Disk &disk)
-{
-    auto space_info = fs::space(path);
-    uint64_t result = (space_info.capacity - space_info.available);
-    if (result > disk.sizeBytes()) {
-        return disk.sizeBytes();
+DiskUsage sampleDiskUsageOnFileSystem(const fs::path& path, const vespalib::HwInfo::Disk& disk,
+                                      bool resample_disk_capacity) {
+    auto     space_info = fs::space(path);
+    uint64_t capacity = resample_disk_capacity ? space_info.capacity : disk.sizeBytes();
+    uint64_t used = (space_info.capacity - space_info.available);
+    if (used > capacity) {
+        used = capacity;
     }
-    return result;
+    return {used, capacity};
 }
 
-// May throw fs::filesystem_error on concurrent directory tree modification
-uint64_t
-attemptSampleDirectoryDiskUsageOnce(const fs::path &path)
-{
-    uint64_t result = directory_disk_usage;
-    for (const auto &elem : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
-        if (elem.is_symlink()) {
-            result += symlink_disk_usage;
-        } else if (elem.is_regular_file()) {
-            std::error_code fsize_err;
-            const auto size = elem.file_size(fsize_err);
-            // Errors here typically happens when a file is removed while doing the directory scan. Ignore them.
-            if (!fsize_err) {
-                result += size;
-            }
-        } else if (elem.is_directory()) {
-            result += directory_disk_usage;
-        }
-    }
-    return result;
+} // namespace
+
+DiskUsage DiskMemUsageSampler::sampleDiskUsage(const ResourceUsage& resource_usage) {
+    const auto& disk = _notifier.getHwInfo().disk();
+    bool        resample_disk_capacity = _should_resample_disk_capacity && _resample_disk_capacity_feature_flag;
+    return disk.shared() ? DiskUsage(resource_usage.disk() + resource_usage.transient().disk(), disk.sizeBytes())
+                         : sampleDiskUsageOnFileSystem(_path, disk, resample_disk_capacity);
 }
 
-uint64_t
-sampleDiskUsageInDirectory(const fs::path &path)
-{
-    // Since attemptSampleDirectoryDiskUsageOnce may throw on concurrent directory
-    // modifications, immediately retry a bounded number of times if this happens.
-    // Number of retries chosen randomly by counting fingers.
-    for (int i = 0; i < 10; ++i) {
-        try {
-            return attemptSampleDirectoryDiskUsageOnce(path);
-        } catch (const fs::filesystem_error&) {
-            // Go around for another spin that hopefully won't race.
-        }
-    }
-    return 0;
-}
-
-}
-
-uint64_t
-DiskMemUsageSampler::sampleDiskUsage()
-{
-    const auto &disk = _notifier.getHwInfo().disk();
-    return disk.shared()
-        ? sampleDiskUsageInDirectory(_path)
-        : sampleDiskUsageOnFileSystem(_path, disk);
-}
-
-vespalib::ProcessMemoryStats
-DiskMemUsageSampler::sampleMemoryUsage()
-{
+vespalib::ProcessMemoryStats DiskMemUsageSampler::sampleMemoryUsage() {
     return vespalib::ProcessMemoryStats::create(0.01);
 }
 
-TransientResourceUsage
-DiskMemUsageSampler::sample_transient_resource_usage()
-{
-    TransientResourceUsage transient_usage;
+ResourceUsage DiskMemUsageSampler::sample_resource_usage() {
+    ResourceUsage resource_usage;
     {
         std::lock_guard<std::mutex> guard(_lock);
-        for (auto provider : _transient_usage_providers) {
-            transient_usage.merge(provider->get_transient_resource_usage());
+        for (auto provider : _resource_usage_providers) {
+            resource_usage.merge(provider->get_resource_usage());
         }
     }
-    return transient_usage;
+    return resource_usage;
 }
 
-void
-DiskMemUsageSampler::add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider)
-{
+void DiskMemUsageSampler::add_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider) {
     std::lock_guard<std::mutex> guard(_lock);
-    _transient_usage_providers.push_back(provider);
+    if (provider) {
+        _resource_usage_providers.push_back(provider);
+    }
 }
 
-void
-DiskMemUsageSampler::remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider)
-{
+void DiskMemUsageSampler::remove_resource_usage_provider(std::shared_ptr<const IResourceUsageProvider> provider) {
     std::lock_guard<std::mutex> guard(_lock);
-    for (auto itr = _transient_usage_providers.begin(); itr != _transient_usage_providers.end(); ++itr) {
+    for (auto itr = _resource_usage_providers.begin(); itr != _resource_usage_providers.end(); ++itr) {
         if (*itr == provider) {
-            _transient_usage_providers.erase(itr);
+            _resource_usage_providers.erase(itr);
             break;
         }
     }

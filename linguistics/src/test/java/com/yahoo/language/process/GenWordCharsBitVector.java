@@ -2,6 +2,7 @@
 
 package com.yahoo.language.process;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 // program to generate code tables used by Fast_UnicodeUtil::IsWordChar()
 
@@ -36,7 +37,7 @@ public class GenWordCharsBitVector {
                 while (s.length() < nextpos) s.append(' ');
                 nextpos += 18;
                 s.append("0x");
-                String hex = Long.toHexString(val).toUpperCase();
+                String hex = Long.toHexString(val).toUpperCase(Locale.ROOT);
                 while (s.length() + hex.length() < nextpos) s.append('0');
                 s.append(hex);
                 if (codepoint + 1 < maxCodeBlocks * 0x100) s.append(",");

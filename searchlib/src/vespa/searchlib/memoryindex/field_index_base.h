@@ -6,12 +6,15 @@
 #include "field_index_remover.h"
 #include "i_field_index.h"
 #include "word_store.h"
+
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <cstring>
 #include <string>
 
@@ -32,11 +35,10 @@ public:
     struct WordKey {
         vespalib::datastore::EntryRef _wordRef;
 
-        explicit WordKey(vespalib::datastore::EntryRef wordRef) : _wordRef(wordRef) { }
-        WordKey() : _wordRef() { }
+        explicit WordKey(vespalib::datastore::EntryRef wordRef) : _wordRef(wordRef) {}
+        WordKey() : _wordRef() {}
 
-        friend vespalib::asciistream&
-        operator<<(vespalib::asciistream& os, const WordKey& rhs);
+        friend vespalib::asciistream& operator<<(vespalib::asciistream& os, const WordKey& rhs);
     };
 
     /**
@@ -44,7 +46,7 @@ public:
      */
     class KeyComp {
     private:
-        const WordStore& _wordStore;
+        const WordStore&       _wordStore;
         const std::string_view _word;
 
         const char* getWord(vespalib::datastore::EntryRef wordRef) const {
@@ -55,10 +57,7 @@ public:
         }
 
     public:
-        KeyComp(const WordStore& wordStore, const std::string_view word)
-            : _wordStore(wordStore),
-              _word(word)
-        { }
+        KeyComp(const WordStore& wordStore, const std::string_view word) : _wordStore(wordStore), _word(word) {}
 
         bool operator()(const WordKey& lhs, const WordKey& rhs) const {
             int cmpres = strcmp(getWord(lhs._wordRef), getWord(rhs._wordRef));
@@ -67,26 +66,23 @@ public:
     };
 
     using PostingListPtr = vespalib::datastore::AtomicEntryRef;
-    using DictionaryTree = vespalib::btree::BTree<WordKey, PostingListPtr,
-                                        vespalib::btree::NoAggregated,
-                                        const KeyComp>;
+    using DictionaryTree =
+        vespalib::btree::BTree<WordKey, PostingListPtr, vespalib::btree::NoAggregated, const KeyComp>;
 
 protected:
     using GenerationHandler = vespalib::GenerationHandler;
 
-    WordStore               _wordStore;
-    uint64_t                _numUniqueWords;
-    GenerationHandler       _generationHandler;
-    DictionaryTree          _dict;
-    FeatureStore            _featureStore;
-    const uint32_t          _fieldId;
-    FieldIndexRemover       _remover;
+    WordStore                                   _wordStore;
+    uint64_t                                    _numUniqueWords;
+    GenerationHandler                           _generationHandler;
+    DictionaryTree                              _dict;
+    FeatureStore                                _featureStore;
+    const uint32_t                              _fieldId;
+    FieldIndexRemover                           _remover;
     std::unique_ptr<IOrderedFieldIndexInserter> _inserter;
-    index::FieldLengthCalculator _calculator;
+    index::FieldLengthCalculator                _calculator;
 
-    void incGeneration() {
-        _generationHandler.incGeneration();
-    }
+    void incGeneration() { _generationHandler.incGeneration(); }
 
 public:
     vespalib::datastore::EntryRef addWord(const std::string_view word) {
@@ -110,14 +106,10 @@ public:
     IOrderedFieldIndexInserter& getInserter() override { return *_inserter; }
     index::FieldLengthCalculator& get_calculator() override { return _calculator; }
 
-    GenerationHandler::Guard takeGenerationGuard() override {
-        return _generationHandler.takeGuard();
-    }
+    vespalib::GenerationGuard takeGenerationGuard() override { return _generationHandler.takeGuard(); }
 
     DictionaryTree& getDictionaryTree() { return _dict; }
     FieldIndexRemover& getDocumentRemover() override { return _remover; }
-
 };
 
-}
-
+} // namespace search::memoryindex

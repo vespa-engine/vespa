@@ -202,7 +202,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 
         @Override
         public ContentChannel handleResponse(Response response) {
-            if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
+            if (tryHasResponded()) throw new IllegalStateException("Response already handled");
             if (getRequestType().isPresent() && response.getRequestType() == null)
                 response.setRequestType(getRequestType().get());
             ContentChannel cc = responseHandler.handleResponse(response);
@@ -240,7 +240,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 
 
         /**
-         * Clean up when the task can not be executed because no worker thread is available.
+         * Clean up when the task cannot be executed because no worker thread is available.
          */
         void failOnOverload() {
             try (ResourceReference reference = requestReference) {

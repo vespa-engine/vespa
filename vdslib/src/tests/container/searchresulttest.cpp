@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdslib/container/searchresult.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+
 #include <span>
 #include <variant>
 
@@ -18,7 +19,6 @@ namespace {
 std::vector<char> doc1_mf_data{'H', 'i'};
 std::vector<char> doc2_mf_data{'T', 'h', 'e', 'r', 'e'};
 
-
 std::vector<ConvertedValue> convert(std::span<const FeatureValue> v) {
     std::vector<ConvertedValue> result;
     for (auto& iv : v) {
@@ -32,15 +32,14 @@ std::vector<ConvertedValue> convert(std::span<const FeatureValue> v) {
 }
 
 std::vector<char> serialize(const SearchResult& sr) {
-    auto serialized_size = sr.getSerializedSize();
+    auto                         serialized_size = sr.getSerializedSize();
     vespalib::GrowableByteBuffer buf;
     sr.serialize(buf);
     EXPECT_EQ(serialized_size, buf.position());
-    return { buf.getBuffer(), buf.getBuffer() + buf.position() };
+    return {buf.getBuffer(), buf.getBuffer() + buf.position()};
 }
 
-void deserialize(SearchResult& sr, std::span<const char> buf)
-{
+void deserialize(SearchResult& sr, std::span<const char> buf) {
     document::ByteBuffer dbuf(buf.data(), buf.size());
     sr.deserialize(dbuf);
     EXPECT_EQ(0, dbuf.getRemaining());
@@ -50,8 +49,7 @@ void set_errors(SearchResult& sr, std::vector<std::string> errors) {
     sr.set_errors(std::move(errors));
 }
 
-void populate(SearchResult& sr, FeatureValues& mf)
-{
+void populate(SearchResult& sr, FeatureValues& mf) {
     sr.addHit(7, "doc1", 5);
     sr.addHit(8, "doc2", 7);
     mf.names.emplace_back("foo");
@@ -64,15 +62,13 @@ void populate(SearchResult& sr, FeatureValues& mf)
     sr.set_match_features(FeatureValues(mf));
 }
 
-void check_match_features(SearchResult& sr, const std::string& label, bool sort_remap)
-{
+void check_match_features(SearchResult& sr, const std::string& label, bool sort_remap) {
     SCOPED_TRACE(label);
     EXPECT_EQ((std::vector<ConvertedValue>{1.0, "Hi"}), convert(sr.get_match_feature_values(sort_remap ? 1 : 0)));
     EXPECT_EQ((std::vector<ConvertedValue>{12.0, "There"}), convert(sr.get_match_feature_values(sort_remap ? 0 : 1)));
 }
 
-void check_match_features(const std::vector<char> & buf, const std::string& label, bool sort_remap)
-{
+void check_match_features(const std::vector<char>& buf, const std::string& label, bool sort_remap) {
     SearchResult sr;
     deserialize(sr, buf);
     check_match_features(sr, label, sort_remap);
@@ -84,17 +80,16 @@ std::vector<std::string> get_errors(const std::vector<char>& buf) {
     return sr.get_errors();
 }
 
-}
+} // namespace
 
-TEST(SearchResultTest, test_simple)
-{
+TEST(SearchResultTest, test_simple) {
     SearchResult a;
     EXPECT_EQ(0, a.getHitCount());
     a.addHit(7, "doc1", 6);
     ASSERT_EQ(1, a.getHitCount());
     a.addHit(8, "doc2", 7);
     ASSERT_EQ(2, a.getHitCount());
-    const char *docId;
+    const char*            docId;
     SearchResult::RankType r;
     EXPECT_EQ(7, a.getHit(0, docId, r));
     EXPECT_EQ("doc1", std::string(docId));
@@ -111,21 +106,20 @@ TEST(SearchResultTest, test_simple)
     EXPECT_EQ(6, r);
 }
 
-TEST(SearchResultTest, test_simple_sort_data)
-{
+TEST(SearchResultTest, test_simple_sort_data) {
     SearchResult a;
     EXPECT_EQ(0, a.getHitCount());
     a.addHit(7, "doc1", 6, "abce", 4);
     ASSERT_EQ(1, a.getHitCount());
     a.addHit(8, "doc2", 7, "abcde", 5);
     ASSERT_EQ(2, a.getHitCount());
-    const char *docId;
+    const char*            docId;
     SearchResult::RankType r;
     EXPECT_EQ(7, a.getHit(0, docId, r));
     EXPECT_EQ("doc1", std::string(docId));
     EXPECT_EQ(6, r);
-    const void *buf;
-    size_t sz;
+    const void* buf;
+    size_t      sz;
     a.getSortBlob(0, buf, sz);
     EXPECT_EQ(4, sz);
     EXPECT_TRUE(memcmp("abce", buf, sz) == 0);
@@ -148,9 +142,8 @@ TEST(SearchResultTest, test_simple_sort_data)
     EXPECT_EQ(4, sz);
 }
 
-TEST(SearchResultTest, test_match_features)
-{
-    SearchResult sr;
+TEST(SearchResultTest, test_match_features) {
+    SearchResult  sr;
     FeatureValues mf;
     populate(sr, mf);
     EXPECT_EQ(mf.names, sr.get_match_features().names);
@@ -164,9 +157,8 @@ TEST(SearchResultTest, test_match_features)
     check_match_features(sr, "sorted", true);
 }
 
-TEST(SearchResultTest, test_deserialized_match_features)
-{
-    SearchResult sr;
+TEST(SearchResultTest, test_deserialized_match_features) {
+    SearchResult  sr;
     FeatureValues mf;
     populate(sr, mf);
     check_match_features(serialize(sr), "deserialized unsorted", false);
@@ -174,11 +166,10 @@ TEST(SearchResultTest, test_deserialized_match_features)
     check_match_features(serialize(sr), "deserialized sorted", true);
 }
 
-TEST(SearchResultTest, test_errors)
-{
+TEST(SearchResultTest, test_errors) {
     SearchResult sr;
-    set_errors(sr, { "one two", "three four"});
+    set_errors(sr, {"one two", "three four"});
     EXPECT_EQ((std::vector<std::string>{"one two", "three four"}), get_errors(serialize(sr)));
 }
 
-}
+} // namespace vdslib

@@ -24,4 +24,5 @@ public interface RpcConnectionPool extends AutoCloseable {
     void close();
 
     default Collection<Integer> knownNodeIds() { return List.of(); }
+
 }

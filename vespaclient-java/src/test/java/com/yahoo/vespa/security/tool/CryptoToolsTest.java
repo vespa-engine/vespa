@@ -5,6 +5,7 @@ import com.yahoo.security.KeyId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.security.SharedKeyGenerator;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -13,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -132,9 +134,9 @@ public class CryptoToolsTest {
         verifyStderrEquals(List.of("keygen",
                                    "--private-out-file", absPathOf(privKeyFile),
                                    "--public-out-file",  absPathOf(pubKeyFile)),
-                ("Invalid command line arguments: Output file '%s' already exists. No keys written. " +
-                 "If you want to overwrite existing files, specify --overwrite-existing.\n")
-                .formatted(absPathOf(privKeyFile)));
+                Text.format("Invalid command line arguments: Output file '%s' already exists. No keys written. " +
+                 "If you want to overwrite existing files, specify --overwrite-existing.\n",
+                 absPathOf(privKeyFile)));
 
         Files.delete(privKeyFile);
         Files.writeString(pubKeyFile, TEST_PUB_KEY);
@@ -142,9 +144,9 @@ public class CryptoToolsTest {
         verifyStderrEquals(List.of("keygen",
                                    "--private-out-file", absPathOf(privKeyFile),
                                    "--public-out-file",  absPathOf(pubKeyFile)),
-                ("Invalid command line arguments: Output file '%s' already exists. No keys written. " +
-                 "If you want to overwrite existing files, specify --overwrite-existing.\n")
-                 .formatted(absPathOf(pubKeyFile)));
+                Text.format("Invalid command line arguments: Output file '%s' already exists. No keys written. " +
+                 "If you want to overwrite existing files, specify --overwrite-existing.\n",
+                 absPathOf(pubKeyFile)));
     }
 
     @Test
@@ -274,8 +276,8 @@ public class CryptoToolsTest {
                                    "--output-file",      "foo",
                                    "--private-key-file", absPathOf(privKeyFile),
                                    "--token",            TEST_TOKEN),
-                ("Invalid command line arguments: Private key file '%s' is insecurely " +
-                 "world-readable; refusing to read it\n").formatted(absPathOf(privKeyFile)));
+                Text.format("Invalid command line arguments: Private key file '%s' is insecurely " +
+                 "world-readable; refusing to read it\n", absPathOf(privKeyFile)));
     }
 
     @Test
@@ -606,15 +608,15 @@ public class CryptoToolsTest {
         var stdOutBytes = new ByteArrayOutputStream();
         var stdErrBytes = new ByteArrayOutputStream();
         var stdIn       = new ByteArrayInputStream(stdInBytes);
-        var stdOut      = new PrintStream(stdOutBytes);
-        var stdError    = new PrintStream(stdErrBytes);
+        var stdOut      = new PrintStream(stdOutBytes, false, StandardCharsets.UTF_8);
+        var stdError    = new PrintStream(stdErrBytes, false, StandardCharsets.UTF_8);
 
         int exitCode = new Main(stdIn, stdOut, stdError, consoleInput).execute(args.toArray(new String[0]), env);
 
         stdOut.flush();
         stdError.flush();
 
-        return new ProcessOutput(exitCode, stdOutBytes.toString(), stdErrBytes.toString());
+        return new ProcessOutput(exitCode, stdOutBytes.toString(StandardCharsets.UTF_8), stdErrBytes.toString(StandardCharsets.UTF_8));
     }
 
     private static String readTestResource(String fileName) throws IOException {

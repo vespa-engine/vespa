@@ -2,8 +2,14 @@
 #pragma once
 
 #include "indexsearchable.h"
+
 #include <vespa/searchcommon/common/schema.h>
+
 #include <string>
+
+namespace search::common {
+class CreateAndFreezeTimes;
+}
 
 namespace searchcorespi::index {
 
@@ -17,15 +23,15 @@ struct IDiskIndex : public IndexSearchable {
     /**
      * Returns the directory in which this disk index exists.
      */
-    virtual const std::string &getIndexDir() const = 0;
+    virtual const std::string& getIndexDir() const = 0;
 
     /**
      * Returns the schema used by this disk index.
      * Note that the schema should be part of the index on disk.
      */
-    virtual const search::index::Schema &getSchema() const = 0;
+    virtual const search::index::Schema& getSchema() const = 0;
+
+    [[nodiscard]] virtual const search::common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept = 0;
 };
 
-}
-
-
+} // namespace searchcorespi::index

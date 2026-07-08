@@ -13,4 +13,4 @@ namespace vespalib::test {
  */
 std::string test_path(const std::string& local_file);
 
-}
+} // namespace vespalib::test

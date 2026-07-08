@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+    <container id="container" version="1.0">
+        <search />
+        <document-api />
+
+        <component id="mistral" type="mistral-embedder">
+            <model>mistral-embed</model>
+            <api-key-secret-ref>mistral_key</api-key-secret-ref>
+            <dimensions>1024</dimensions>
+        </component>
+
+        <component id="codestral" type="mistral-embedder">
+            <model>codestral-embed</model>
+            <api-key-secret-ref>mistral_key</api-key-secret-ref>
+            <dimensions>2048</dimensions>
+            <quantization>int8</quantization>
+            <batching max-size="16" max-delay="200ms"/>
+        </component>
+    </container>
+</services>

@@ -11,11 +11,10 @@ struct ConfigStore;
 /**
  * Class managing the initialization and replay of the transaction log.
  **/
-class TransactionLogManager : public TransactionLogManagerBase
-{
+class TransactionLogManager : public TransactionLogManagerBase {
     std::unique_ptr<Visitor> _visitor;
 
-    void doLogReplayComplete(const std::string &domainName, vespalib::duration elapsedTime) const override;
+    void doLogReplayComplete(const std::string& domainName, vespalib::duration elapsedTime) const override;
 
 public:
     /**
@@ -24,7 +23,7 @@ public:
      * @param tlsSpec the spec of the transaction log server.
      * @param domainName the name of the domain this manager should handle.
      **/
-    TransactionLogManager(FNET_Transport & transport, const std::string &tlsSpec, const std::string &domainName);
+    TransactionLogManager(FNET_Transport& transport, const std::string& tlsSpec, const std::string& domainName);
     ~TransactionLogManager() override;
 
     /**
@@ -36,29 +35,23 @@ public:
      * @param replay_end_serial_num will be set to the serial num of
      *        the last entry in the transaction log.
      **/
-    void init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &replay_end_serial_num);
+    void init(SerialNum oldestConfigSerial, SerialNum& prunedSerialNum, SerialNum& replay_end_serial_num);
 
     /**
      * Prepare replay of the transaction log.
      **/
-    static void
-    prepareReplay(TransLogClient &client,
-                  const std::string &domainName,
-                  SerialNum flushedIndexMgrSerial,
-                  SerialNum flushedSummaryMgrSerial,
-                  ConfigStore &config_store);
-
+    static void prepareReplay(TransLogClient& client, const std::string& domainName, SerialNum flushedIndexMgrSerial,
+                              SerialNum flushedSummaryMgrSerial, ConfigStore& config_store);
 
     /*
      * Make a tls replay progress object for serial numbers (first..last]
      */
-    std::shared_ptr<TlsReplayProgress>
-    make_replay_progress(SerialNum first, SerialNum last);
+    std::shared_ptr<TlsReplayProgress> make_replay_progress(SerialNum first, SerialNum last);
 
     /**
      * Start replay of the transaction log.
      **/
-    void startReplay(SerialNum first, SerialNum syncToken, Callback &callback);
+    void startReplay(SerialNum first, SerialNum syncToken, Callback& callback);
 
     /**
      * Indicate that replay is done.
@@ -68,4 +61,3 @@ public:
 };
 
 } // namespace proton
-

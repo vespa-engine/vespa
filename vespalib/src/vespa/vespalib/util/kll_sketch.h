@@ -14,7 +14,7 @@ namespace vespalib {
  *
  * Supported java datatypes: double, float, long, item(generic).
  */
-class KLLSketch  {
+class KLLSketch {
     struct Impl;
     std::unique_ptr<Impl> _impl{};
 
@@ -39,4 +39,4 @@ public:
     static KLLSketch deserialize(const std::vector<uint8_t>& bytes);
 };
 
-} // namespace
+} // namespace vespalib

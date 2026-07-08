@@ -1,28 +1,29 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/data/slime/slime.h>
+#include "mock_tick.h"
+
 #include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/metrics/json_formatter.h>
+#include <vespa/vespalib/metrics/prometheus_formatter.h>
 #include <vespa/vespalib/metrics/simple_metrics.h>
 #include <vespa/vespalib/metrics/simple_metrics_manager.h>
 #include <vespa/vespalib/metrics/stable_store.h>
-#include <vespa/vespalib/metrics/json_formatter.h>
-#include <vespa/vespalib/metrics/prometheus_formatter.h>
-#include "mock_tick.h"
+
 #include <stdio.h>
 #include <unistd.h>
 
 using namespace vespalib;
 using namespace vespalib::metrics;
 
-TEST(SimpleMetricsTest, require_that_simple_metrics_gauge_merge_works)
-{
+TEST(SimpleMetricsTest, require_that_simple_metrics_gauge_merge_works) {
     std::pair<MetricId, Point> id(MetricId(42), Point(17));
-    Gauge::Measurement a1(id, 0.0);
-    Gauge::Measurement b1(id, 7.0);
-    Gauge::Measurement b2(id, 9.0);
-    Gauge::Measurement b3(id, 8.0);
-    Gauge::Measurement c1(id, 10.0);
-    Gauge::Measurement c2(id, 1.0);
+    Gauge::Measurement         a1(id, 0.0);
+    Gauge::Measurement         b1(id, 7.0);
+    Gauge::Measurement         b2(id, 9.0);
+    Gauge::Measurement         b3(id, 8.0);
+    Gauge::Measurement         c1(id, 10.0);
+    Gauge::Measurement         c2(id, 1.0);
 
     GaugeAggregator a(a1), b(b1), c(c1);
     b.merge(b2);
@@ -71,53 +72,52 @@ TEST(SimpleMetricsTest, require_that_simple_metrics_gauge_merge_works)
     EXPECT_EQ(a.lastValue, 1.0);
 }
 
-bool compare_json(const std::string &a, const std::string &b)
-{
+bool compare_json(const std::string& a, const std::string& b) {
     using vespalib::Memory;
     using vespalib::slime::JsonFormat;
 
     Slime slimeA, slimeB;
-    if (! JsonFormat::decode(a, slimeA)) {
-fprintf(stderr, "bad json a:\n>>>%s\n<<<\n", a.c_str());
+    if (!JsonFormat::decode(a, slimeA)) {
+        fprintf(stderr, "bad json a:\n>>>%s\n<<<\n", a.c_str());
         return false;
     }
-    if (! JsonFormat::decode(b, slimeB)) {
-fprintf(stderr, "bad json b\n");
+    if (!JsonFormat::decode(b, slimeB)) {
+        fprintf(stderr, "bad json b\n");
         return false;
     }
     if (!(slimeA == slimeB)) {
-fprintf(stderr, "compares unequal:\n[A]\n%s\n[B]\n%s\n", a.c_str(), b.c_str());
+        fprintf(stderr, "compares unequal:\n[A]\n%s\n[B]\n%s\n", a.c_str(), b.c_str());
     }
     return slimeA == slimeB;
 }
 
-void check_json(const std::string &actual)
-{
-    std::string expect = "{"
-    "   snapshot: { from: 1, to: 4 },"
-    "   values: [ { name: 'foo',"
-    "       values: { count: 17, rate: 4.85714 }"
-    "   }, {"
-    "       name: 'foo',"
-    "       dimensions: { chain: 'default', documenttype: 'music', thread: '0' },"
-    "       values: { count: 4, rate: 1.14286 }"
-    "   }, {"
-    "       name: 'bar',"
-    "       values: { count: 4, rate: 1.14286, average: 42, sum: 168, min: 41, max: 43, last: 42 }"
-    "   }, {"
-    "       name: 'bar',"
-    "       dimensions: { chain: 'vespa', documenttype: 'blogpost', thread: '1' },"
-    "       values: { count: 1, rate: 0.285714, average: 14, sum: 14, min: 14, max: 14, last: 14 }"
-    "   }, {"
-    "       name: 'bar',"
-    "       dimensions: { chain: 'vespa', documenttype: 'blogpost', thread: '2' },"
-    "       values: { count: 1, rate: 0.285714, average: 11, sum: 11, min: 11, max: 11, last: 11 }"
-    "   } ]"
-    "}";
+void check_json(const std::string& actual) {
+    std::string expect =
+        "{"
+        "   snapshot: { from: 1, to: 4 },"
+        "   values: [ { name: 'foo',"
+        "       values: { count: 17, rate: 4.85714 }"
+        "   }, {"
+        "       name: 'foo',"
+        "       dimensions: { chain: 'default', documenttype: 'music', thread: '0' },"
+        "       values: { count: 4, rate: 1.14286 }"
+        "   }, {"
+        "       name: 'bar',"
+        "       values: { count: 4, rate: 1.14286, average: 42, sum: 168, min: 41, max: 43, last: 42 }"
+        "   }, {"
+        "       name: 'bar',"
+        "       dimensions: { chain: 'vespa', documenttype: 'blogpost', thread: '1' },"
+        "       values: { count: 1, rate: 0.285714, average: 14, sum: 14, min: 14, max: 14, last: 14 }"
+        "   }, {"
+        "       name: 'bar',"
+        "       dimensions: { chain: 'vespa', documenttype: 'blogpost', thread: '2' },"
+        "       values: { count: 1, rate: 0.285714, average: 11, sum: 11, min: 11, max: 11, last: 11 }"
+        "   } ]"
+        "}";
     EXPECT_TRUE(compare_json(expect, actual));
 }
 
-void check_prometheus(const std::string &actual) {
+void check_prometheus(const std::string& actual) {
     std::string expect = R"(foo 17 4500
 foo{chain="default",documenttype="music",thread="0"} 4 4500
 bar_count 4 4500
@@ -136,14 +136,12 @@ bar_max{chain="vespa",documenttype="blogpost",thread="2"} 11 4500
     EXPECT_EQ(expect, actual);
 }
 
-
-TEST(SimpleMetricsTest, use_simple_metrics_collector)
-{
+TEST(SimpleMetricsTest, use_simple_metrics_collector) {
     using namespace vespalib::metrics;
     SimpleManagerConfig cf;
     cf.sliding_window_seconds = 5;
     std::shared_ptr<MockTick> ticker = std::make_shared<MockTick>(TimeStamp(1.0));
-    auto manager = SimpleMetricsManager::createForTest(cf, std::make_unique<TickProxy>(ticker));
+    auto                      manager = SimpleMetricsManager::createForTest(cf, std::make_unique<TickProxy>(ticker));
 
     Counter myCounter = manager->counter("foo", "no description");
     myCounter.add();
@@ -172,22 +170,17 @@ TEST(SimpleMetricsTest, use_simple_metrics_collector)
     EXPECT_EQ(43.0, snap1.gauges()[0].maxValue());
     EXPECT_EQ(42.0, snap1.gauges()[0].lastValue());
 
-    Point one = manager->pointBuilder()
-            .bind("chain", "default")
-            .bind("documenttype", "music")
-            .bind("thread", "0").build();
+    Point one =
+        manager->pointBuilder().bind("chain", "default").bind("documenttype", "music").bind("thread", "0").build();
     PointBuilder b2 = manager->pointBuilder();
-    b2.bind("chain", "vespa")
-      .bind("documenttype", "blogpost");
+    b2.bind("chain", "vespa").bind("documenttype", "blogpost");
     b2.bind("thread", "1");
     Point two = b2.build();
     EXPECT_EQ(one.id(), 1u);
     EXPECT_EQ(two.id(), 2u);
 
-    Point anotherOne = manager->pointBuilder()
-            .bind("chain", "default")
-            .bind("documenttype", "music")
-            .bind("thread", "0");
+    Point anotherOne =
+        manager->pointBuilder().bind("chain", "default").bind("documenttype", "music").bind("thread", "0");
     EXPECT_EQ(anotherOne.id(), 1u);
 
     Point three = manager->pointBuilder(two).bind("thread", "2");
@@ -228,12 +221,12 @@ TEST(SimpleMetricsTest, use_simple_metrics_collector)
     EXPECT_EQ(0u, snap3.gauges()[2].observedCount());
 
     Snapshot snap4 = manager->totalSnapshot();
-    EXPECT_EQ(1.0,    snap4.startTime());
-    EXPECT_EQ(10.0,   snap4.endTime());
-    EXPECT_EQ(2u,     snap4.counters().size());
+    EXPECT_EQ(1.0, snap4.startTime());
+    EXPECT_EQ(10.0, snap4.endTime());
+    EXPECT_EQ(2u, snap4.counters().size());
     EXPECT_NE(0u, snap4.counters()[0].count());
     EXPECT_NE(0u, snap4.counters()[1].count());
-    EXPECT_EQ(3u,     snap4.gauges().size());
+    EXPECT_EQ(3u, snap4.gauges().size());
     EXPECT_NE(0u, snap4.gauges()[0].observedCount());
     EXPECT_NE(0u, snap4.gauges()[1].observedCount());
     EXPECT_NE(0u, snap4.gauges()[2].observedCount());

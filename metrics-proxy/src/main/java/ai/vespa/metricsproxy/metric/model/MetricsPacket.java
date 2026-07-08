@@ -96,6 +96,8 @@ public class MetricsPacket {
             return this;
         }
 
+        public ServiceId getServiceId() { return service; }
+
         public Builder statusCode(Integer statusCode) {
             if (statusCode != null) this.statusCode = statusCode;
             return this;

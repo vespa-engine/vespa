@@ -11,6 +11,8 @@ start = element deployment {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
+   MemoryDump? &
    Step &
    Dev?
 }
@@ -23,6 +25,7 @@ StepExceptInstance =
     Delay* &
     ParallelInstances* &
     Upgrade? &
+    Backup? &
     BlockChange* &
     Notifications? &
     Endpoints? &
@@ -42,6 +45,8 @@ Instance = element instance {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
+   MemoryDump? &
    StepExceptInstance
 }
 
@@ -75,9 +80,15 @@ Upgrade = element upgrade {
     attribute rollout { xsd:string }?
 }
 
+Backup = element backup {
+    attribute frequency { xsd:string } &
+    attribute granularity { xsd:string }?
+}
+
 BlockChange = element block-change {
     attribute revision { xsd:boolean }? &
     attribute version { xsd:boolean }? &
+    attribute maintenance { xsd:boolean }? &
     attribute days { xsd:string }? &
     attribute hours { xsd:string }? &
     attribute from-date { xsd:string }? &
@@ -100,6 +111,8 @@ Test = element test {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   attribute skip { xsd:string }? &
+   CloudResourceTags? &
    Tester?
 }
 
@@ -107,6 +120,8 @@ Staging = element staging {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   attribute skip { xsd:string }? &
+   CloudResourceTags? &
    Tester?
 }
 
@@ -115,6 +130,7 @@ Dev = element dev {
    attribute empty-host-ttl { xsd:string }? &
    attribute athenz-service { xsd:string }? &
    attribute tags { xsd:string }? &
+   CloudResourceTags? &
    Endpoints?
 }
 
@@ -122,6 +138,7 @@ Prod = element prod {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
    Region* &
    Delay* &
    ProdTest* &
@@ -139,13 +156,22 @@ Region = element region {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   attribute name { xsd:string }? &
+   CloudResourceTags? &
+   AvailabilityZone* &
+   text
+}
+
+AvailabilityZone = element availability-zone {
    text
 }
 
 Delay = element delay {
    attribute hours { xsd:long }? &
    attribute minutes { xsd:long }? &
-   attribute seconds { xsd:long }?
+   attribute seconds { xsd:long }? &
+   attribute version { xsd:boolean }? &
+   attribute revision { xsd:boolean }?
 }
 
 EndpointRegion = element region {
@@ -194,6 +220,19 @@ Group = element group {
 MemberRegion = element region {
     attribute fraction { xsd:double }? &
     text
+}
+
+CloudResourceTags = element resource-tags {
+    CloudResourceTag*
+}
+
+MemoryDump = element memory-dump {
+    attribute heap-dump-redaction { xsd:string }
+}
+
+CloudResourceTag = element tag {
+    attribute key { xsd:string } &
+    attribute value { xsd:string }
 }
 
 Tester = element tester {

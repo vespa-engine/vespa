@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disktermblueprint.h"
+
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
@@ -8,6 +9,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -30,17 +32,13 @@ namespace search::diskindex {
 
 namespace {
 
-std::string
-getName(uint32_t indexId)
-{
+std::string getName(uint32_t indexId) {
     return vespalib::make_string("fieldId(%u)", indexId);
 }
 
-}
+} // namespace
 
-DiskTermBlueprint::DiskTermBlueprint(FieldSpec field,
-                                     const FieldIndex& field_index,
-                                     const std::string& query_term,
+DiskTermBlueprint::DiskTermBlueprint(FieldSpec field, const FieldIndex& field_index, const std::string& query_term,
                                      DictionaryLookupResult lookupRes)
     : SimpleLeafBlueprint(field),
       _field(std::move(field)),
@@ -53,43 +51,33 @@ DiskTermBlueprint::DiskTermBlueprint(FieldSpec field,
       _postingHandle(),
       _bitVector(),
       _mutex(),
-      _late_bitvector()
-{
-    setEstimate(HitEstimate(_lookupRes.counts._numDocs,
-                            _lookupRes.counts._numDocs == 0));
+      _late_bitvector() {
+    setEstimate(HitEstimate(_lookupRes.counts._numDocs, _lookupRes.counts._numDocs == 0));
 }
 
 DiskTermBlueprint::~DiskTermBlueprint() = default;
 
-void
-DiskTermBlueprint::log_bitvector_read() const
-{
+void DiskTermBlueprint::log_bitvector_read() const {
     auto range = _field_index.get_bitvector_file_range(_bitvector_lookup_result);
-    LOG(debug, "DiskTermBlueprint::fetchPosting "
+    LOG(debug,
+        "DiskTermBlueprint::fetchPosting "
         "bitvector %s %s %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu32 " %" PRIu64 " %" PRIu64,
-        _field.getName().c_str(), _query_term.c_str(), _field_index.get_file_id(),
-        _lookupRes.wordNum, _lookupRes.counts._numDocs,
-        _bitvector_lookup_result.idx,
-        range.start_offset, range.size());
-
+        _field.getName().c_str(), _query_term.c_str(), _field_index.get_file_id(), _lookupRes.wordNum,
+        _lookupRes.counts._numDocs, _bitvector_lookup_result.idx, range.start_offset, range.size());
 }
 
-void
-DiskTermBlueprint::log_posting_list_read() const
-{
+void DiskTermBlueprint::log_posting_list_read() const {
     auto range = _field_index.get_posting_list_file_range(_lookupRes);
-    LOG(debug, "DiskTermBlueprint::fetchPosting "
+    LOG(debug,
+        "DiskTermBlueprint::fetchPosting "
         "posting %s %s %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64,
-        _field.getName().c_str(), _query_term.c_str(), _field_index.get_file_id(),
-        _lookupRes.wordNum, _lookupRes.counts._numDocs,
-        _lookupRes.bitOffset, _lookupRes.counts._bitLength,
-        range.start_offset, range.size());
+        _field.getName().c_str(), _query_term.c_str(), _field_index.get_file_id(), _lookupRes.wordNum,
+        _lookupRes.counts._numDocs, _lookupRes.bitOffset, _lookupRes.counts._bitLength, range.start_offset,
+        range.size());
 }
 
-void
-DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
-{
-    (void) execInfo;
+void DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo& execInfo) {
+    (void)execInfo;
     if (!_fetchPostingsDone) {
         if (use_bitvector() && _bitvector_lookup_result.valid()) {
             if (LOG_WOULD_LOG(debug)) [[unlikely]] {
@@ -107,23 +95,18 @@ DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
     _fetchPostingsDone = true;
 }
 
-queryeval::FlowStats
-DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
-{
+queryeval::FlowStats DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
     double rel_est = abs_to_rel_est(_lookupRes.counts._numDocs, docid_limit);
     return {rel_est, disk_index_cost(rel_est), disk_index_strict_cost(rel_est)};
 }
 
-bool
-DiskTermBlueprint::use_bitvector() const
-{
+bool DiskTermBlueprint::use_bitvector() const {
     return _is_filter_field ||
-        ((get_docid_limit() > 0) && _field.get_filter_threshold().is_filter((double)_lookupRes.counts._numDocs / (double)get_docid_limit()));
+           ((get_docid_limit() > 0) &&
+            _field.get_filter_threshold().is_filter((double)_lookupRes.counts._numDocs / (double)get_docid_limit()));
 }
 
-const BitVector *
-DiskTermBlueprint::get_bitvector() const
-{
+const BitVector* DiskTermBlueprint::get_bitvector() const {
     if (_bitVector) {
         return _bitVector.get();
     }
@@ -138,9 +121,7 @@ DiskTermBlueprint::get_bitvector() const
     return _late_bitvector.get();
 }
 
-SearchIterator::UP
-DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
-{
+SearchIterator::UP DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray& tfmda) const {
     if (_bitvector_lookup_result.valid() && (_bitVector || tfmda[0]->isNotNeeded())) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_field_index.get_field_id()).c_str(), _lookupRes.wordNum, _lookupRes.counts._numDocs);
@@ -163,11 +144,9 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
     return search;
 }
 
-SearchIterator::UP
-DiskTermBlueprint::createFilterSearchImpl(FilterConstraint) const
-{
-    auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
-    auto & tfmda = wrapper->tfmda();
+SearchIterator::UP DiskTermBlueprint::createFilterSearchImpl(FilterConstraint) const {
+    auto  wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
+    auto& tfmda = wrapper->tfmda();
     if (_bitvector_lookup_result.valid()) {
         wrapper->wrap(BitVectorIterator::create(get_bitvector(), *tfmda[0], strict()));
     } else {
@@ -176,12 +155,10 @@ DiskTermBlueprint::createFilterSearchImpl(FilterConstraint) const
     return wrapper;
 }
 
-void
-DiskTermBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
-{
+void DiskTermBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
     SimpleLeafBlueprint::visitMembers(visitor);
     visit(visitor, "field_name", _field.getName());
     visit(visitor, "query_term", _query_term);
 }
 
-} // namespace
+} // namespace search::diskindex

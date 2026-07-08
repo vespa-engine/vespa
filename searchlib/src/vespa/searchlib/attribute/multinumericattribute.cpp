@@ -21,4 +21,3 @@ template class MultiValueNumericAttribute<FloatingPointAttributeTemplate<float>,
 template class MultiValueNumericAttribute<FloatingPointAttributeTemplate<double>, multivalue::WeightedValue<double>>;
 
 } // namespace search
-

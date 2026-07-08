@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "operation_sequencer.h"
+
 #include <vespa/document/base/documentid.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <cassert>
 
 namespace storage::distributor {
@@ -14,7 +17,7 @@ void SequencingHandle::release() {
     }
 }
 
-OperationSequencer::OperationSequencer()  = default;
+OperationSequencer::OperationSequencer() = default;
 OperationSequencer::~OperationSequencer() = default;
 
 SequencingHandle OperationSequencer::try_acquire(document::BucketSpace bucket_space, const document::DocumentId& id) {
@@ -24,9 +27,7 @@ SequencingHandle OperationSequencer::try_acquire(document::BucketSpace bucket_sp
         // TODO avoid O(n), but sub bucket resolving is tricky and we expect the number
         // of locked buckets to be in the range of 0 to <very small number>.
         for (const auto& entry : _active_buckets) {
-            if ((entry.first.getBucketSpace() == bucket_space)
-                && entry.first.getBucketId().contains(doc_bucket_id))
-            {
+            if ((entry.first.getBucketSpace() == bucket_space) && entry.first.getBucketId().contains(doc_bucket_id)) {
                 return SequencingHandle(SequencingHandle::BlockedByLockedBucket(entry.second));
             }
         }
@@ -39,8 +40,7 @@ SequencingHandle OperationSequencer::try_acquire(document::BucketSpace bucket_sp
     }
 }
 
-SequencingHandle OperationSequencer::try_acquire(const document::Bucket& bucket,
-                                                 const std::string& token) {
+SequencingHandle OperationSequencer::try_acquire(const document::Bucket& bucket, const std::string& token) {
     const auto inserted = _active_buckets.insert(std::make_pair(bucket, token));
     if (inserted.second) {
         return SequencingHandle(*this, bucket);
@@ -63,4 +63,4 @@ void OperationSequencer::release(const SequencingHandle& handle) {
     }
 }
 
-} // storage::distributor
+} // namespace storage::distributor

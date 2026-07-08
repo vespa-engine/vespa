@@ -3,6 +3,7 @@ package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PureWeightedString;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Unit tests for WandItem.
@@ -23,12 +25,23 @@ public class WandItemTestCase {
 
     @Test
     void requireThatWandItemCanBeConstructed() {
-        WandItem item = new WandItem("myfield", 10);
+        WandItem item = new WandItem("myfield");
+        item.setTargetHits(10);
         assertEquals("myfield", item.getIndexName());
-        assertEquals(10, item.getTargetNumHits());
+        assertEquals(Integer.valueOf(10), item.getTargetHits());
         assertEquals(0.0, item.getScoreThreshold(), DELTA);
         assertEquals(1.0, item.getThresholdBoostFactor(), DELTA);
         assertEquals(Item.ItemType.WAND, item.getItemType());
+        assertNull(item.getTotalTargetHits());
+    }
+
+    @Test
+    void requireThatTotalTargetHitsCanBeSet() {
+        WandItem item = new WandItem("myfield");
+        assertNull(item.getTargetHits());
+        assertNull(item.getTotalTargetHits());
+        item.setTotalTargetHits(200);
+        assertEquals(Integer.valueOf(200), item.getTotalTargetHits());
     }
 
     @Test
@@ -42,9 +55,9 @@ public class WandItemTestCase {
         expect.put((byte) 10);  // targetNumHits
         expect.putDouble(20);  // scoreThreshold
         expect.putDouble(2.0); // thresholdBoostFactor
-        new PureWeightedString("foo", 30).encode(expect);
+        new PureWeightedString("foo", 30).encode(expect, new SerializationContext(1.0));
 
-        assertEquals(2, item.encode(actual));
+        assertEquals(2, item.encode(actual, new SerializationContext(1.0)));
 
         actual.flip();
         expect.flip();
@@ -54,7 +67,7 @@ public class WandItemTestCase {
 
     @Test
     void requireThatToStringIsWorking() {
-        assertEquals("WAND(10,20.0,2.0) myfield{[30]:\"foo\"}", createSimpleItem().toString());
+        assertEquals("WAND(10) {scoreThreshold=20.0, thresholdBoostFactor=2.0} myfield{[30]:\"foo\"}", createSimpleItem().toString());
     }
 
     @Test
@@ -74,7 +87,7 @@ public class WandItemTestCase {
         }
         TestDiscloser discloser = new TestDiscloser();
         createSimpleItem().disclose(discloser);
-        assertEquals(10, discloser.props.get("targetNumHits"));
+        assertEquals(10, discloser.props.get("targetHits"));
         assertEquals(20.0, discloser.props.get("scoreThreshold"));
         assertEquals(2.0, discloser.props.get("thresholdBoostFactor"));
         assertEquals("myfield", discloser.props.get("index"));
@@ -82,18 +95,20 @@ public class WandItemTestCase {
 
     @Test
     void testTextualRepresentation() {
-        WandItem item = new WandItem("myfield", 10);
+        WandItem item = new WandItem("myfield");
+        item.setTargetHits(10);
         item.addToken("term1", 10);
         item.setScoreThreshold(20);
         item.setThresholdBoostFactor(2.0);
-        assertEquals("WAND[index=\"myfield\" scoreThreshold=20.0 targetNumHits=10 thresholdBoostFactor=2.0]{\n" +
+        assertEquals("WAND[index=\"myfield\" scoreThreshold=20.0 targetHits=10 thresholdBoostFactor=2.0]{\n" +
                 "  PURE_WEIGHTED_STRING[weight=10]{\"term1\"}\n" +
                 "}\n",
                 new TextualQueryRepresentation(item).toString());
     }
 
     private static WandItem createSimpleItem() {
-        WandItem item = new WandItem("myfield", 10);
+        WandItem item = new WandItem("myfield");
+        item.setTargetHits(10);
         item.addToken("foo", 30);
         item.setScoreThreshold(20);
         item.setThresholdBoostFactor(2.0);

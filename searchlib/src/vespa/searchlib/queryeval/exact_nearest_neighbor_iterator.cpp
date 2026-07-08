@@ -1,30 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "blueprint.h"
 #include "exact_nearest_neighbor_iterator.h"
+
+#include "blueprint.h"
 #include "global_filter.h"
 #include "queryeval_stats.h"
+
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/distance_function.h>
 
 using search::tensor::ITensorAttribute;
-using vespalib::eval::TypedCells;
 using vespalib::eval::CellType;
+using vespalib::eval::TypedCells;
 
 namespace search::queryeval {
 
-ExactNearestNeighborIterator::Params::Params(std::shared_ptr<QueryEvalStats> stats_in,
-                                             fef::TermFieldMatchData &tfmd_in,
+ExactNearestNeighborIterator::Params::Params(std::shared_ptr<QueryEvalStats>                     stats_in,
+                                             fef::TermFieldMatchData&                            tfmd_in,
                                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
-                                             NearestNeighborDistanceHeap &distanceHeap_in,
-                                             const GlobalFilter &filter_in)
+                                             NearestNeighborDistanceHeap&                        distanceHeap_in,
+                                             const GlobalFilter&                                 filter_in)
     : stats(std::move(stats_in)),
       tfmd(tfmd_in),
       distance_calc(std::move(distance_calc_in)),
       distanceHeap(distanceHeap_in),
-      filter(filter_in)
-{}
+      filter(filter_in) {
+}
 
 ExactNearestNeighborIterator::Params::Params(Params&& rhs) = default;
 
@@ -37,16 +39,13 @@ ExactNearestNeighborIterator::Params::~Params() = default;
  * Currently always does brute-force scanning, which is very expensive.
  **/
 template <bool strict, bool has_filter, bool has_single_subspace>
-class ExactNearestNeighborImpl final : public ExactNearestNeighborIterator
-{
+class ExactNearestNeighborImpl final : public ExactNearestNeighborIterator {
 public:
     explicit ExactNearestNeighborImpl(bool readonly_distance_heap, Params params_in)
         : ExactNearestNeighborIterator(std::move(params_in)),
           _lastScore(0.0),
           _readonly_distance_heap(readonly_distance_heap),
-          _distance_offset(params().distance_calc->distances_computed())
-    {
-    }
+          _distance_offset(params().distance_calc->distances_computed()) {}
 
     ~ExactNearestNeighborImpl() override;
 
@@ -78,31 +77,31 @@ public:
         }
     }
 
-    Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False ; }
+    Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False; }
 
 private:
     double computeDistance(uint32_t docId, double limit) {
         return params().distance_calc->template calc_with_limit<has_single_subspace>(docId, limit);
     }
 
-    double                 _lastScore;
-    const bool             _readonly_distance_heap;
-    size_t                 _distance_offset;
+    double     _lastScore;
+    const bool _readonly_distance_heap;
+    size_t     _distance_offset;
 };
 
 template <bool strict, bool has_filter, bool has_single_subspace>
 ExactNearestNeighborImpl<strict, has_filter, has_single_subspace>::~ExactNearestNeighborImpl() {
     if (params().stats) {
-        params().stats->add_to_exact_nns_distances_computed(params().distance_calc->distances_computed() - _distance_offset);
+        params().stats->add_to_exact_nns_distances_computed(params().distance_calc->distances_computed() -
+                                                            _distance_offset);
     }
 }
 
 namespace {
 
 template <bool strict, bool has_filter>
-std::unique_ptr<ExactNearestNeighborIterator>
-resolve_single_subspace(bool readonly_distance_heap, ExactNearestNeighborIterator::Params params)
-{
+std::unique_ptr<ExactNearestNeighborIterator> resolve_single_subspace(bool readonly_distance_heap,
+                                                                      ExactNearestNeighborIterator::Params params) {
     if (params.distance_calc->has_single_subspace()) {
         using NNI = ExactNearestNeighborImpl<strict, has_filter, true>;
         return std::make_unique<NNI>(readonly_distance_heap, std::move(params));
@@ -113,9 +112,8 @@ resolve_single_subspace(bool readonly_distance_heap, ExactNearestNeighborIterato
 }
 
 template <bool has_filter>
-std::unique_ptr<ExactNearestNeighborIterator>
-resolve_strict(bool strict, bool readonly_distance_heap, ExactNearestNeighborIterator::Params params)
-{
+std::unique_ptr<ExactNearestNeighborIterator> resolve_strict(bool strict, bool readonly_distance_heap,
+                                                             ExactNearestNeighborIterator::Params params) {
     if (strict) {
         return resolve_single_subspace<true, has_filter>(readonly_distance_heap, std::move(params));
     } else {
@@ -123,21 +121,18 @@ resolve_strict(bool strict, bool readonly_distance_heap, ExactNearestNeighborIte
     }
 }
 
-} // namespace <unnamed>
+} // namespace
 
-std::unique_ptr<ExactNearestNeighborIterator>
-ExactNearestNeighborIterator::create(std::shared_ptr<QueryEvalStats> stats,
-                                     bool strict, fef::TermFieldMatchData &tfmd,
-                                     std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
-                                     NearestNeighborDistanceHeap &distanceHeap, const GlobalFilter &filter,
-                                     bool readonly_distance_heap)
-{
+std::unique_ptr<ExactNearestNeighborIterator> ExactNearestNeighborIterator::create(
+    std::shared_ptr<QueryEvalStats> stats, bool strict, fef::TermFieldMatchData& tfmd,
+    std::unique_ptr<search::tensor::DistanceCalculator> distance_calc, NearestNeighborDistanceHeap& distanceHeap,
+    const GlobalFilter& filter, bool readonly_distance_heap) {
     Params params(std::move(stats), tfmd, std::move(distance_calc), distanceHeap, filter);
     if (filter.is_active()) {
         return resolve_strict<true>(strict, readonly_distance_heap, std::move(params));
-    } else  {
+    } else {
         return resolve_strict<false>(strict, readonly_distance_heap, std::move(params));
     }
 }
 
-} // namespace
+} // namespace search::queryeval

@@ -479,12 +479,12 @@ public class StateRestAPITest {
             assertEquals(expected, result.getContent().toString());
         }
         {
-            stateApi.induceException(new InvalidOptionValueException("foo", "bar", "Foo can not be bar"));
+            stateApi.induceException(new InvalidOptionValueException("foo", "bar", "Foo cannot be bar"));
             HttpResult result = execute(new HttpRequest().setPath("/cluster/v2"));
             assertEquals(400, result.getHttpReturnCode(), result.toString(true));
             assertEquals("Option 'foo' have invalid value 'bar'", result.getHttpReturnCodeDescription(), result.toString(true));
             assertEquals("application/json", result.getHeader("Content-Type"), result.toString(true));
-            String expected = "{\"message\":\"Option 'foo' have invalid value 'bar': Foo can not be bar\"}";
+            String expected = "{\"message\":\"Option 'foo' have invalid value 'bar': Foo cannot be bar\"}";
             assertEquals(expected, result.getContent().toString());
         }
         {

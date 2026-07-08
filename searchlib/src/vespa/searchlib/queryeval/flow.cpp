@@ -2,6 +2,4 @@
 
 #include "flow.h"
 
-namespace search::queryeval {
-
-}
+namespace search::queryeval {}

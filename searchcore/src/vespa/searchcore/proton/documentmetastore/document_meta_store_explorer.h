@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_document_meta_store_context.h"
+
 #include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
@@ -10,16 +11,14 @@ namespace proton {
 /**
  * Class used to explore the state of a document meta store.
  */
-class DocumentMetaStoreExplorer : public vespalib::StateExplorer
-{
+class DocumentMetaStoreExplorer : public vespalib::StateExplorer {
 private:
     IDocumentMetaStoreContext::IReadGuard::SP _metaStore;
 
 public:
     DocumentMetaStoreExplorer(IDocumentMetaStoreContext::IReadGuard::SP metaStore);
 
-    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
 } // namespace proton
-

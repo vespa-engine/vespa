@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "tickingthread.h"
-#include "threadpool.h"
+
 #include "runnable.h"
 #include "thread.h"
+#include "threadpool.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <cassert>
 
 namespace storage::framework {
@@ -11,8 +14,7 @@ namespace storage::framework {
 ThreadWaitInfo ThreadWaitInfo::MORE_WORK_ENQUEUED(false);
 ThreadWaitInfo ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN(true);
 
-void
-ThreadWaitInfo::merge(const ThreadWaitInfo& other) {
+void ThreadWaitInfo::merge(const ThreadWaitInfo& other) {
     if (!other._waitWanted) {
         _waitWanted = false;
     }
@@ -23,23 +25,26 @@ ThreadWaitInfo::merge(const ThreadWaitInfo& other) {
  *        global synchronization point where no thread is currently running.
  */
 class TickingThreadRunner final : public Runnable {
-    std::mutex              & _monitor;
-    std::condition_variable & _cond;
-    TickingThread           & _tickingThread;
-    uint32_t                  _threadIndex;
-    bool                      _wantToFreeze;
-    bool                      _frozen;
-    char                      _state;
+    std::mutex&              _monitor;
+    std::condition_variable& _cond;
+    TickingThread&           _tickingThread;
+    uint32_t                 _threadIndex;
+    bool                     _wantToFreeze;
+    bool                     _frozen;
+    char                     _state;
 
 public:
     using SP = std::shared_ptr<TickingThreadRunner>;
 
-    TickingThreadRunner(std::mutex& m,
-                        std::condition_variable & cond,
-                        TickingThread& ticker,
+    TickingThreadRunner(std::mutex& m, std::condition_variable& cond, TickingThread& ticker,
                         uint32_t threadIndex) noexcept
-        : _monitor(m), _cond(cond), _tickingThread(ticker),
-          _threadIndex(threadIndex), _wantToFreeze(false), _frozen(false), _state('n') {}
+        : _monitor(m),
+          _cond(cond),
+          _tickingThread(ticker),
+          _threadIndex(threadIndex),
+          _wantToFreeze(false),
+          _frozen(false),
+          _state('n') {}
 
     /**
      * Call to freeze this thread. Returns then the thread has done executing
@@ -69,8 +74,8 @@ public:
 private:
     void run(ThreadHandle& handle) override {
         ThreadWaitInfo info = ThreadWaitInfo::MORE_WORK_ENQUEUED;
-        CycleType cycle = PROCESS_CYCLE;
-        int ticksExecutedAfterWait = 0;
+        CycleType      cycle = PROCESS_CYCLE;
+        int            ticksExecutedAfterWait = 0;
         while (!handle.interrupted()) {
             {
                 std::unique_lock guard(_monitor);
@@ -98,7 +103,7 @@ private:
         }
         _state = 's';
     }
-    void doFreeze(std::unique_lock<std::mutex> & guard, std::condition_variable & cond) {
+    void doFreeze(std::unique_lock<std::mutex>& guard, std::condition_variable& cond) {
         _frozen = true;
         cond.notify_all();
         while (_wantToFreeze) {
@@ -109,7 +114,7 @@ private:
 };
 
 class TickingThreadPoolImpl final : public TickingThreadPool {
-    const std::string               _name;
+    const std::string                    _name;
     const vespalib::duration             _waitTime;
     const vespalib::duration             _maxProcessTime;
     const uint32_t                       _ticksBeforeWait;
@@ -127,25 +132,19 @@ class TickingThreadPoolImpl final : public TickingThreadPool {
     };
     struct CriticalGuard final : public TickingLockGuard::Impl {
         std::unique_lock<std::mutex> _guard;
-        std::condition_variable &_cond;
+        std::condition_variable&     _cond;
 
-        explicit CriticalGuard(std::mutex & lock, std::condition_variable & cond) : _guard(lock), _cond(cond) {}
+        explicit CriticalGuard(std::mutex& lock, std::condition_variable& cond) : _guard(lock), _cond(cond) {}
 
         void broadcast() override { _cond.notify_all(); }
     };
 
 public:
-    TickingThreadPoolImpl(std::string_view name, vespalib::duration waitTime,
-                          int ticksBeforeWait, vespalib::duration maxProcessTime)
-        : _name(name),
-          _waitTime(waitTime),
-          _maxProcessTime(maxProcessTime),
-          _ticksBeforeWait(ticksBeforeWait)
-    { }
+    TickingThreadPoolImpl(std::string_view name, vespalib::duration waitTime, int ticksBeforeWait,
+                          vespalib::duration maxProcessTime)
+        : _name(name), _waitTime(waitTime), _maxProcessTime(maxProcessTime), _ticksBeforeWait(ticksBeforeWait) {}
 
-    ~TickingThreadPoolImpl() override {
-        stop();
-    }
+    ~TickingThreadPoolImpl() override { stop(); }
 
     void addThread(TickingThread& ticker) override {
         ThreadIndex index = _tickers.size();
@@ -155,21 +154,15 @@ public:
 
     void start(ThreadPool& pool) override {
         assert(!_tickers.empty());
-        for (uint32_t i=0; i<_tickers.size(); ++i) {
+        for (uint32_t i = 0; i < _tickers.size(); ++i) {
             vespalib::asciistream ost;
             ost << _name.c_str() << " thread " << i;
             _threads.push_back(std::shared_ptr<Thread>(pool.startThread(
-                    *_tickers[i],
-                    ost.view(),
-                    _waitTime,
-                    _maxProcessTime,
-                    _ticksBeforeWait, std::nullopt)));
+                *_tickers[i], ost.view(), _waitTime, _maxProcessTime, _ticksBeforeWait, std::nullopt)));
         }
     }
 
-    TickingLockGuard freezeAllTicks() override {
-        return TickingLockGuard(std::make_unique<FreezeGuard>(*this));
-    }
+    TickingLockGuard freezeAllTicks() override { return TickingLockGuard(std::make_unique<FreezeGuard>(*this)); }
 
     TickingLockGuard freezeCriticalTicks() override {
         return TickingLockGuard(std::make_unique<CriticalGuard>(_lock, _cond));
@@ -189,7 +182,7 @@ public:
 
     std::string getStatus() override {
         std::string result(_tickers.size(), ' ');
-        for (uint32_t i=0, n=_tickers.size(); i<n; ++i) {
+        for (uint32_t i = 0, n = _tickers.size(); i < n; ++i) {
             result[i] = _tickers[i]->getState();
         }
         return result;
@@ -209,20 +202,13 @@ private:
     }
 };
 
-TickingThreadPool::UP
-TickingThreadPool::createDefault(
-        std::string_view name,
-        vespalib::duration waitTime,
-        int ticksBeforeWait,
-        vespalib::duration maxProcessTime)
-{
+TickingThreadPool::UP TickingThreadPool::createDefault(std::string_view name, vespalib::duration waitTime,
+                                                       int ticksBeforeWait, vespalib::duration maxProcessTime) {
     return std::make_unique<TickingThreadPoolImpl>(name, waitTime, ticksBeforeWait, maxProcessTime);
 }
 
-TickingThreadPool::UP
-TickingThreadPool::createDefault(std::string_view name, vespalib::duration waitTime)
-{
+TickingThreadPool::UP TickingThreadPool::createDefault(std::string_view name, vespalib::duration waitTime) {
     return createDefault(name, waitTime, 1, 5s);
 }
 
-} // storage::framework
+} // namespace storage::framework

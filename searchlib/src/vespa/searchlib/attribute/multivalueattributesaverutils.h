@@ -3,7 +3,9 @@
 #pragma once
 
 #include "iattributesavetarget.h"
+
 #include <vespa/searchlib/util/bufferwriter.h>
+
 #include <span>
 
 namespace search::multivalueattributesaver {
@@ -11,13 +13,12 @@ namespace search::multivalueattributesaver {
 /*
  * Class to write to count files for multivalue attributes (.idx suffix).
  */
-class CountWriter
-{
+class CountWriter {
     std::unique_ptr<search::BufferWriter> _countWriter;
-    uint64_t _cnt;
+    uint64_t                              _cnt;
 
 public:
-    CountWriter(IAttributeSaveTarget &saveTarget);
+    CountWriter(IAttributeSaveTarget& saveTarget);
     ~CountWriter();
 
     void writeCount(uint32_t count);
@@ -26,30 +27,21 @@ public:
 /*
  * Class to write to weight files (or not) for multivalue attributes.
  */
-template <bool hasWeight>
-class WeightWriter;
+template <bool hasWeight> class WeightWriter;
 
 /*
  * Class to write to weight files for multivalue attributes (.weight suffix).
  */
-template <>
-class WeightWriter<true>
-{
+template <> class WeightWriter<true> {
     std::unique_ptr<search::BufferWriter> _weightWriter;
 
 public:
-    WeightWriter(IAttributeSaveTarget &saveTarget)
-        : _weightWriter(saveTarget.weightWriter().allocBufferWriter())
-    {}
+    WeightWriter(IAttributeSaveTarget& saveTarget) : _weightWriter(saveTarget.weightWriter().allocBufferWriter()) {}
 
-    ~WeightWriter() {
-        _weightWriter->flush();
-    }
+    ~WeightWriter() { _weightWriter->flush(); }
 
-    template <typename MultiValueT>
-    void
-    writeWeights(std::span<const MultiValueT> values) {
-        for (const MultiValueT &valueRef : values) {
+    template <typename MultiValueT> void writeWeights(std::span<const MultiValueT> values) {
+        for (const MultiValueT& valueRef : values) {
             int32_t weight = valueRef.weight();
             _weightWriter->write(&weight, sizeof(int32_t));
         }
@@ -59,16 +51,13 @@ public:
 /*
  * Class to not write to weight files for multivalue attributes.
  */
-template <>
-class WeightWriter<false>
-{
+template <> class WeightWriter<false> {
 public:
-    WeightWriter(IAttributeSaveTarget &) {}
+    WeightWriter(IAttributeSaveTarget&) {}
 
     ~WeightWriter() {}
 
-    template <typename MultiValueT>
-    void writeWeights(std::span<const MultiValueT>) {}
+    template <typename MultiValueT> void writeWeights(std::span<const MultiValueT>) {}
 };
 
-}
+} // namespace search::multivalueattributesaver

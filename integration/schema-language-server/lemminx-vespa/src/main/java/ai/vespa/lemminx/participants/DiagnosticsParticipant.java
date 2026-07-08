@@ -41,6 +41,7 @@ import com.thaiopensource.validate.ValidateProperty;
 import com.thaiopensource.validate.ValidationDriver;
 import com.thaiopensource.validate.auto.AutoSchemaReader;
 import com.yahoo.config.application.XmlPreProcessor;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -157,6 +158,7 @@ public class DiagnosticsParticipant implements IDiagnosticsParticipant {
         XmlPreProcessor preProcessor = new XmlPreProcessor(
             applicationDir,
             new StringReader(xmlDocument.getTextDocument().getText()),
+            ApplicationName.defaultName(),
             InstanceName.defaultName(),
             Environment.dev,
             RegionName.defaultName(),

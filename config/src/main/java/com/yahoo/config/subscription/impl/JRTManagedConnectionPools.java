@@ -2,6 +2,7 @@
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.TimingValues;
 
@@ -15,7 +16,7 @@ public class JRTManagedConnectionPools {
     private static class JRTSourceThreadFactory implements ThreadFactory {
         @Override
         public Thread newThread(Runnable runnable) {
-            Thread t = new Thread(runnable, String.format("jrt-config-requester-%d", System.currentTimeMillis()));
+            Thread t = new Thread(runnable, Text.format("jrt-config-requester-%d", System.currentTimeMillis()));
             // We want a daemon thread to avoid hanging threads in case something goes wrong in the config system
             t.setDaemon(true);
             return t;

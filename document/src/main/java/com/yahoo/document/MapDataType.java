@@ -7,6 +7,7 @@ import com.yahoo.document.datatypes.MapFieldValue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Represents a map type.
@@ -26,7 +27,7 @@ public class MapDataType extends DataType {
 
     public MapDataType(DataType keyType, DataType valueType) {
         this(keyType, valueType, 0);
-        setId(getName().toLowerCase().hashCode());
+        setId(getName().toLowerCase(Locale.ROOT).hashCode());
     }
 
     @Override

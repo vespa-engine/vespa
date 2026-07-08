@@ -2,9 +2,12 @@
 #pragma once
 
 #include <vespa/document/bucket/bucket.h>
+
 #include <string>
 
-namespace document { class DocumentId; }
+namespace document {
+class DocumentId;
+}
 
 namespace storage {
 
@@ -13,9 +16,9 @@ namespace storage {
  */
 struct BucketResolver {
     virtual ~BucketResolver() = default;
-    virtual document::Bucket bucketFromId(const document::DocumentId &documentId) const = 0;
-    virtual document::BucketSpace bucketSpaceFromName(const std::string &bucketSpace) const = 0;
-    virtual std::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const = 0;
+    virtual document::Bucket bucketFromId(const document::DocumentId& documentId) const = 0;
+    virtual document::BucketSpace bucketSpaceFromName(const std::string& bucketSpace) const = 0;
+    virtual std::string nameFromBucketSpace(const document::BucketSpace& bucketSpace) const = 0;
 };
 
-}
+} // namespace storage

@@ -2,13 +2,13 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/guard.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 
 using namespace vespalib;
 
-TEST(GuardTest, testFilePointer)
-{
+TEST(GuardTest, testFilePointer) {
     {
         FilePointer file(fopen("bogus", "r"));
         EXPECT_TRUE(!file.valid());
@@ -21,13 +21,13 @@ TEST(GuardTest, testFilePointer)
     {
         FilePointer file(fopen("filept.txt", "r"));
         EXPECT_TRUE(file.valid());
-        char tmp[128];
-        char *fgetsres = fgets(tmp, sizeof(tmp), file);
+        char  tmp[128];
+        char* fgetsres = fgets(tmp, sizeof(tmp), file);
         ASSERT_EQ(tmp, fgetsres);
         EXPECT_TRUE(strcmp(tmp, "Hello") == 0);
     }
     {
-        FILE *pt = nullptr;
+        FILE* pt = nullptr;
         {
             FilePointer file(fopen("filept.txt", "r"));
             EXPECT_TRUE(file.valid());
@@ -44,13 +44,13 @@ TEST(GuardTest, testFilePointer)
 
         file.reset(fopen("filept.txt", "r"));
         EXPECT_TRUE(file.valid());
-        char tmp[128];
-        char *fgetsres = fgets(tmp, sizeof(tmp), file.fp());
+        char  tmp[128];
+        char* fgetsres = fgets(tmp, sizeof(tmp), file.fp());
         ASSERT_EQ(tmp, fgetsres);
         EXPECT_TRUE(strcmp(tmp, "World") == 0);
 
-        FILE *ref = file.fp();
-        FILE *fp = file.release();
+        FILE* ref = file.fp();
+        FILE* fp = file.release();
         EXPECT_TRUE(fp != nullptr);
         EXPECT_TRUE(fp == ref);
         EXPECT_TRUE(!file.valid());
@@ -59,8 +59,7 @@ TEST(GuardTest, testFilePointer)
     }
 }
 
-TEST(GuardTest, testFileDescriptor)
-{
+TEST(GuardTest, testFileDescriptor) {
     {
         FileDescriptor file(open("bogus", O_RDONLY));
         EXPECT_TRUE(!file.valid());
@@ -73,7 +72,7 @@ TEST(GuardTest, testFileDescriptor)
     {
         FileDescriptor file(open("filedesc.txt", O_RDONLY));
         EXPECT_TRUE(file.valid());
-        char tmp[128];
+        char   tmp[128];
         size_t res = read(file.fd(), tmp, sizeof(tmp));
         EXPECT_TRUE(res == strlen("Hello"));
         tmp[res] = '\0';
@@ -96,7 +95,7 @@ TEST(GuardTest, testFileDescriptor)
 
         file.reset(open("filedesc.txt", O_RDONLY));
         EXPECT_TRUE(file.valid());
-        char tmp[128];
+        char   tmp[128];
         size_t res = read(file.fd(), tmp, sizeof(tmp));
         EXPECT_TRUE(res == strlen("World"));
         tmp[res] = '\0';
@@ -112,8 +111,7 @@ TEST(GuardTest, testFileDescriptor)
     }
 }
 
-TEST(GuardTest, testCounterGuard)
-{
+TEST(GuardTest, testCounterGuard) {
     int cnt = 10;
     {
         EXPECT_TRUE(cnt == 10);

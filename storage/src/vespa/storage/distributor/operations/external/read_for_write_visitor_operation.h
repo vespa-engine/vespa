@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
+#include <vespa/storage/distributor/operations/operation.h>
+
 #include <memory>
 
 namespace storage::distributor {
@@ -24,30 +25,28 @@ class UuidGenerator;
  * bucket operations have completed. These will be started in the context of the
  * OperationOwner provided to the operation.
  */
-class ReadForWriteVisitorOperationStarter
-        : public Operation,
-          public std::enable_shared_from_this<ReadForWriteVisitorOperationStarter>
-{
+class ReadForWriteVisitorOperationStarter : public Operation,
+                                            public std::enable_shared_from_this<ReadForWriteVisitorOperationStarter> {
     std::shared_ptr<VisitorOperation> _visitor_op;
     OperationSequencer&               _operation_sequencer;
     OperationOwner&                   _stable_operation_owner;
     PendingMessageTracker&            _message_tracker;
     UuidGenerator&                    _uuid_generator;
+
 public:
     ReadForWriteVisitorOperationStarter(std::shared_ptr<VisitorOperation> visitor_op,
-                                        OperationSequencer& operation_sequencer,
-                                        OperationOwner& stable_operation_owner,
-                                        PendingMessageTracker& message_tracker,
-                                        UuidGenerator& uuid_generator);
+                                        OperationSequencer&               operation_sequencer,
+                                        OperationOwner&                   stable_operation_owner,
+                                        PendingMessageTracker& message_tracker, UuidGenerator& uuid_generator);
     ~ReadForWriteVisitorOperationStarter() override;
 
     const char* getName() const noexcept override { return "ReadForWriteVisitorOperationStarter"; }
     void onClose(DistributorStripeMessageSender& sender) override;
     void onStart(DistributorStripeMessageSender& sender) override;
-    void onReceive(DistributorStripeMessageSender& sender,
-                   const std::shared_ptr<api::StorageReply> & msg) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg) override;
+
 private:
     bool bucket_has_pending_merge(const document::Bucket&, const PendingMessageTracker& tracker) const;
 };
 
-}
+} // namespace storage::distributor

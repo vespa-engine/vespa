@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "posocc_fields_params.h"
+
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -15,47 +17,31 @@ using vespalib::GenericHeader;
 
 namespace search::bitcompression {
 
-PosOccFieldsParams::PosOccFieldsParams()
-    : _numFields(0u),
-      _fieldParams(nullptr),
-      _params()
-{
+PosOccFieldsParams::PosOccFieldsParams() : _numFields(0u), _fieldParams(nullptr), _params() {
 }
 
-PosOccFieldsParams::PosOccFieldsParams(const PosOccFieldsParams &rhs)
-    : _numFields(0u),
-      _fieldParams(nullptr),
-      _params(rhs._params)
-{
+PosOccFieldsParams::PosOccFieldsParams(const PosOccFieldsParams& rhs)
+    : _numFields(0u), _fieldParams(nullptr), _params(rhs._params) {
     cacheParamsRef();
 }
 
-PosOccFieldsParams &
-PosOccFieldsParams::operator=(const PosOccFieldsParams &rhs)
-{
+PosOccFieldsParams& PosOccFieldsParams::operator=(const PosOccFieldsParams& rhs) {
     assertCachedParamsRef();
     _params = rhs._params;
     cacheParamsRef();
     return *this;
 }
 
-void
-PosOccFieldsParams::assertCachedParamsRef() const {
+void PosOccFieldsParams::assertCachedParamsRef() const {
     assert(_numFields == _params.size());
     assert(_fieldParams == (_params.empty() ? nullptr : &_params[0]));
 }
 
-
-bool
-PosOccFieldsParams::operator==(const PosOccFieldsParams &rhs) const
-{
+bool PosOccFieldsParams::operator==(const PosOccFieldsParams& rhs) const {
     return _params == rhs._params;
 }
 
-
-void
-PosOccFieldsParams::getParams(PostingListParams &params) const
-{
+void PosOccFieldsParams::getParams(PostingListParams& params) const {
     assertCachedParamsRef();
     assert(_numFields == 1u); // Only single field for now
     params.set("numFields", _numFields);
@@ -65,10 +51,7 @@ PosOccFieldsParams::getParams(PostingListParams &params) const
     }
 }
 
-
-void
-PosOccFieldsParams::setParams(const PostingListParams &params)
-{
+void PosOccFieldsParams::setParams(const PostingListParams& params) {
     assertCachedParamsRef();
     uint32_t numFields = _numFields;
     params.get("numFields", numFields);
@@ -81,28 +64,20 @@ PosOccFieldsParams::setParams(const PostingListParams &params)
     }
 }
 
-
-void
-PosOccFieldsParams::setSchemaParams(const Schema &schema,
-                                    const uint32_t indexId)
-{
+void PosOccFieldsParams::setSchemaParams(const Schema& schema, const uint32_t indexId) {
     assertCachedParamsRef();
     SchemaUtil::IndexIterator i(schema, indexId);
     assert(i.isValid());
     _params.resize(1u);
     cacheParamsRef();
-    const Schema::IndexField &field = schema.getIndexField(indexId);
+    const Schema::IndexField& field = schema.getIndexField(indexId);
     if (!SchemaUtil::validateIndexField(field)) {
         LOG_ABORT("should not be reached");
     }
     _params[0].setSchemaParams(schema, indexId);
 }
 
-
-void
-PosOccFieldsParams::readHeader(const vespalib::GenericHeader &header,
-               const std::string &prefix)
-{
+void PosOccFieldsParams::readHeader(const vespalib::GenericHeader& header, const std::string& prefix) {
     std::string numFieldsKey(prefix + "numFields");
     assertCachedParamsRef();
     uint32_t numFields = header.getTag(numFieldsKey).asInteger();
@@ -118,11 +93,7 @@ PosOccFieldsParams::readHeader(const vespalib::GenericHeader &header,
     }
 }
 
-
-void
-PosOccFieldsParams::writeHeader(vespalib::GenericHeader &header,
-                                const std::string &prefix) const
-{
+void PosOccFieldsParams::writeHeader(vespalib::GenericHeader& header, const std::string& prefix) const {
     std::string numFieldsKey(prefix + "numFields");
     assertCachedParamsRef();
     assert(_numFields == 1u);
@@ -136,11 +107,9 @@ PosOccFieldsParams::writeHeader(vespalib::GenericHeader &header,
     }
 }
 
-void
-PosOccFieldsParams::set_field_length_info(const index::FieldLengthInfo &field_length_info)
-{
+void PosOccFieldsParams::set_field_length_info(const index::FieldLengthInfo& field_length_info) {
     assert(!_params.empty());
     _params.front().set_field_length_info(field_length_info);
 }
 
-}
+} // namespace search::bitcompression

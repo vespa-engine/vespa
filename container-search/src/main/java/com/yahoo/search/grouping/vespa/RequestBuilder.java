@@ -18,14 +18,15 @@ import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
 import com.yahoo.searchlib.expression.RangeBucketPreDefFunctionNode;
+import com.yahoo.text.Text;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalLong;
-import java.util.Deque;
 import java.util.TimeZone;
 
 /**
@@ -434,7 +435,7 @@ class RequestBuilder {
             }
         }
         if (totalGroupsAndSummaries > globalMaxGroups)
-            throw new IllegalInputException(String.format(
+            throw new IllegalInputException(Text.format(
                     "The theoretical total number of groups and summaries in grouping query exceeds " +
                             "'grouping.globalMaxGroups' ( %d > %d ). " +
                             "Either restrict group/summary counts with max() or disable 'grouping.globalMaxGroups'. " +

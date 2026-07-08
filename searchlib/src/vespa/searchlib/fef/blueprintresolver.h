@@ -3,8 +3,9 @@
 #pragma once
 
 #include "feature_type.h"
-#include <vector>
+
 #include <map>
+#include <vector>
 
 namespace search::fef {
 
@@ -20,8 +21,7 @@ class Blueprint;
  * not inteded for direct use. It is used by the @ref RankSetup
  * class. It may also be used for low-level testing.
  **/
-class BlueprintResolver
-{
+class BlueprintResolver {
 public:
     using SP = std::shared_ptr<BlueprintResolver>;
     using BlueprintSP = std::shared_ptr<Blueprint>;
@@ -36,13 +36,12 @@ public:
      * executor.
      **/
     struct FeatureRef {
-        uint32_t executor;
-        uint32_t output;
+        uint32_t                  executor;
+        uint32_t                  output;
         static constexpr uint32_t undef = -1;
 
         FeatureRef() : executor(undef), output(0) {}
-        FeatureRef(uint32_t executor_in, uint32_t output_in)
-            : executor(executor_in), output(output_in) {}
+        FeatureRef(uint32_t executor_in, uint32_t output_in) : executor(executor_in), output(output_in) {}
         [[nodiscard]] bool valid() const { return (executor != undef); }
     };
     using FeatureMap = std::map<std::string, FeatureRef>;
@@ -58,9 +57,9 @@ public:
         std::vector<FeatureType> output_types;
 
         explicit ExecutorSpec(BlueprintSP blueprint_in) noexcept;
-        ExecutorSpec(ExecutorSpec &&) noexcept;
-        ExecutorSpec & operator =(ExecutorSpec &&) noexcept;
-        ExecutorSpec(const ExecutorSpec &);
+        ExecutorSpec(ExecutorSpec&&) noexcept;
+        ExecutorSpec& operator=(ExecutorSpec&&) noexcept;
+        ExecutorSpec(const ExecutorSpec&);
         ~ExecutorSpec();
     };
     using ExecutorSpecList = std::vector<ExecutorSpec>;
@@ -82,17 +81,17 @@ public:
     static constexpr int MAX_TRACE_SIZE = 16;
 
 private:
-    const BlueprintFactory       &_factory;
-    const IIndexEnvironment      &_indexEnv;
+    const BlueprintFactory&  _factory;
+    const IIndexEnvironment& _indexEnv;
     std::vector<std::string> _seeds;
-    ExecutorSpecList              _executorSpecs;
-    FeatureMap                    _featureMap;
-    FeatureMap                    _seedMap;
-    Warnings                      _warnings;
+    ExecutorSpecList         _executorSpecs;
+    FeatureMap               _featureMap;
+    FeatureMap               _seedMap;
+    Warnings                 _warnings;
 
 public:
-    BlueprintResolver(const BlueprintResolver &) = delete;
-    BlueprintResolver &operator=(const BlueprintResolver &) = delete;
+    BlueprintResolver(const BlueprintResolver&) = delete;
+    BlueprintResolver& operator=(const BlueprintResolver&) = delete;
     ~BlueprintResolver();
 
     /**
@@ -102,14 +101,13 @@ public:
      * @param factory blueprint factory
      * @param indexEnv index environment
      **/
-    BlueprintResolver(const BlueprintFactory &factory,
-                      const IIndexEnvironment &indexEnv);
+    BlueprintResolver(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv);
 
     // Describe a feature based on its name (intended for log messages)
     //
     // rankingExpression(foo@hash) -> function 'foo'
     // feature -> rank feature 'feature'
-    static std::string describe_feature(const std::string &name);
+    static std::string describe_feature(const std::string& name);
 
     /**
      * Add a feature name to the list of seeds. During compilation,
@@ -139,7 +137,7 @@ public:
      *
      * @return feature executor assembly directions
      **/
-    [[nodiscard]] const ExecutorSpecList &getExecutorSpecs() const { return _executorSpecs; }
+    [[nodiscard]] const ExecutorSpecList& getExecutorSpecs() const { return _executorSpecs; }
 
     /**
      * Obtain the location of all named features known to this
@@ -150,7 +148,7 @@ public:
      *
      * @return feature locations
      **/
-    [[nodiscard]] const FeatureMap &getFeatureMap() const { return _featureMap; }
+    [[nodiscard]] const FeatureMap& getFeatureMap() const { return _featureMap; }
 
     /**
      * Obtain the location of all seeds used by this resolver. This
@@ -161,13 +159,13 @@ public:
      *
      * @return seed locations
      **/
-    [[nodiscard]] const FeatureMap &getSeedMap() const { return _seedMap; }
+    [[nodiscard]] const FeatureMap& getSeedMap() const { return _seedMap; }
 
     /**
      * Will return any accumulated warnings during compile
      * @return list of warnings
      **/
-    [[nodiscard]] const Warnings & getWarnings() const { return _warnings; }
+    [[nodiscard]] const Warnings& getWarnings() const { return _warnings; }
 };
 
-}
+} // namespace search::fef

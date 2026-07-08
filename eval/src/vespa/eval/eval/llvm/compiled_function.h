@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vespa/eval/eval/function.h>
-#include <vespa/eval/eval/lazy_params.h>
-#include <vespa/eval/eval/gbdt.h>
 #include "llvm_wrapper.h"
+
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/gbdt.h>
+#include <vespa/eval/eval/lazy_params.h>
 
 namespace vespalib {
 namespace eval {
@@ -14,8 +15,7 @@ namespace eval {
  * A Function that has been compiled to machine code using LLVM. Note
  * that tensors are currently not supported for compiled functions.
  **/
-class CompiledFunction
-{
+class CompiledFunction {
 public:
     // expand<N>::type will resolve to the type of a function that
     // takes N separate double parameters and returns double.
@@ -23,34 +23,36 @@ public:
     // count down N and add a single double parameter to the list of parameters
     template <size_t N, typename... T> struct expand : expand<N - 1, double, T...> {};
     // when N is 0; define 'type' with the list of collected parameters
-    template <typename... T> struct expand<0, T...> { using type = double(*)(T...); };
+    template <typename... T> struct expand<0, T...> {
+        using type = double (*)(T...);
+    };
 
-    using array_function = double (*)(const double *);
+    using array_function = double (*)(const double*);
 
     using resolve_function = LazyParams::resolve_function;
-    using lazy_function = double (*)(resolve_function, void *ctx);
+    using lazy_function = double (*)(resolve_function, void* ctx);
 
 private:
     LLVMWrapper _llvm_wrapper;
-    void       *_address;
+    void*       _address;
     size_t      _num_params;
     PassParams  _pass_params;
 
 public:
     using UP = std::unique_ptr<CompiledFunction>;
-    CompiledFunction(const nodes::Node &root_in, size_t num_params_in, PassParams pass_params_in,
-                     const gbdt::Optimize::Chain &forest_optimizers);
-    CompiledFunction(const Function &function_in, PassParams pass_params_in, const gbdt::Optimize::Chain &forest_optimizers)
+    CompiledFunction(const nodes::Node& root_in, size_t num_params_in, PassParams pass_params_in,
+                     const gbdt::Optimize::Chain& forest_optimizers);
+    CompiledFunction(const Function& function_in, PassParams pass_params_in,
+                     const gbdt::Optimize::Chain& forest_optimizers)
         : CompiledFunction(function_in.root(), function_in.num_params(), pass_params_in, forest_optimizers) {}
-    CompiledFunction(const nodes::Node &root_in, size_t num_params_in, PassParams pass_params_in)
+    CompiledFunction(const nodes::Node& root_in, size_t num_params_in, PassParams pass_params_in)
         : CompiledFunction(root_in, num_params_in, pass_params_in, gbdt::Optimize::best) {}
-    CompiledFunction(const Function &function_in, PassParams pass_params_in)
+    CompiledFunction(const Function& function_in, PassParams pass_params_in)
         : CompiledFunction(function_in.root(), function_in.num_params(), pass_params_in, gbdt::Optimize::best) {}
-    CompiledFunction(CompiledFunction &&rhs);
+    CompiledFunction(CompiledFunction&& rhs);
     size_t num_params() const { return _num_params; }
     PassParams pass_params() const { return _pass_params; }
-    template <size_t NUM_PARAMS>
-    typename expand<NUM_PARAMS>::type get_function() const {
+    template <size_t NUM_PARAMS> typename expand<NUM_PARAMS>::type get_function() const {
         assert(_pass_params == PassParams::SEPARATE);
         assert(_num_params == NUM_PARAMS);
         return ((typename expand<NUM_PARAMS>::type)_address);
@@ -63,16 +65,12 @@ public:
         assert(_pass_params == PassParams::LAZY);
         return ((lazy_function)_address);
     }
-    const std::vector<gbdt::Forest::UP> &get_forests() const {
-        return _llvm_wrapper.get_forests();
-    }
-    double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
-    static Function::Issues detect_issues(const nodes::Node &node);
-    static Function::Issues detect_issues(const Function &function) {
-        return detect_issues(function.root());
-    }
-    static bool should_use_lazy_params(const Function &function);
+    const std::vector<gbdt::Forest::UP>& get_forests() const { return _llvm_wrapper.get_forests(); }
+    double estimate_cost_us(const std::vector<double>& params, double budget = 5.0) const;
+    static Function::Issues detect_issues(const nodes::Node& node);
+    static Function::Issues detect_issues(const Function& function) { return detect_issues(function.root()); }
+    static bool should_use_lazy_params(const Function& function);
 };
 
-} // namespace vespalib::eval
+} // namespace eval
 } // namespace vespalib

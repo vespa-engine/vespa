@@ -15,13 +15,14 @@ inline constexpr size_t dynamic_alignment = std::numeric_limits<size_t>::max();
  * Alignment template parameter must be a power of 2 or the
  * dynamic_alignment value (which triggers specialization below).
  */
-template <size_t alignment_v = dynamic_alignment>
-class Aligner {
+template <size_t alignment_v = dynamic_alignment> class Aligner {
 public:
     explicit constexpr Aligner() = default;
     explicit constexpr Aligner(size_t); // Never used but must be declared
-    static constexpr size_t align(size_t unaligned) noexcept { return (unaligned + alignment_v - 1) & (- alignment_v); }
-    static constexpr size_t pad(size_t unaligned) noexcept { return (- unaligned & (alignment_v - 1)); }
+    static constexpr size_t align(size_t unaligned) noexcept {
+        return (unaligned + alignment_v - 1) & (-alignment_v);
+    }
+    static constexpr size_t pad(size_t unaligned) noexcept { return (-unaligned & (alignment_v - 1)); }
     static constexpr size_t alignment() noexcept { return alignment_v; }
 };
 
@@ -29,17 +30,14 @@ public:
  * Specialization when alignment template argument is dynamic_alignment.
  * The constructor argument must be a power of 2.
  */
-template <>
-class Aligner<dynamic_alignment> {
+template <> class Aligner<dynamic_alignment> {
     size_t _alignment;
+
 public:
-    explicit constexpr Aligner(size_t alignment_)
-        : _alignment(alignment_)
-    {
-    }
-    constexpr size_t align(size_t unaligned) const noexcept { return (unaligned + _alignment - 1) & (- _alignment); }
-    constexpr size_t pad(size_t unaligned) const noexcept { return (- unaligned & (_alignment - 1)); }
+    explicit constexpr Aligner(size_t alignment_) : _alignment(alignment_) {}
+    constexpr size_t align(size_t unaligned) const noexcept { return (unaligned + _alignment - 1) & (-_alignment); }
+    constexpr size_t pad(size_t unaligned) const noexcept { return (-unaligned & (_alignment - 1)); }
     constexpr size_t alignment() const noexcept { return _alignment; }
 };
 
-}
+} // namespace vespalib::datastore

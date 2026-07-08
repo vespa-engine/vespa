@@ -2,20 +2,21 @@
 #pragma once
 
 #include "i_document_db_reference_registry.h"
-#include <mutex>
+
 #include <condition_variable>
 #include <map>
+#include <mutex>
 
 namespace proton {
 
 /*
  * Class implementing a registry of named IDocumentDBReferences.
  */
-class DocumentDBReferenceRegistry : public IDocumentDBReferenceRegistry
-{
-    mutable std::mutex _lock;
-    mutable std::condition_variable _cv;
+class DocumentDBReferenceRegistry : public IDocumentDBReferenceRegistry {
+    mutable std::mutex                                           _lock;
+    mutable std::condition_variable                              _cv;
     std::map<std::string, std::shared_ptr<IDocumentDBReference>> _handlers;
+
 public:
     DocumentDBReferenceRegistry();
     virtual ~DocumentDBReferenceRegistry();

@@ -4,8 +4,7 @@
 
 namespace search::index {
 
-PostingListHandle::~PostingListHandle()
-{
+PostingListHandle::~PostingListHandle() {
 }
 
-}
+} // namespace search::index

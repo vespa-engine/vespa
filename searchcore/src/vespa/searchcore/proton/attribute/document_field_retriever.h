@@ -11,13 +11,9 @@ namespace proton {
 /**
  * Class used to retrieve a document field and populate it with the content from an attribute vector.
  */
-struct DocumentFieldRetriever
-{
-    static void populate(search::DocumentIdT lid,
-                         document::Document &doc,
-                         const document::Field &field,
-                         const search::attribute::IAttributeVector &attr);
+struct DocumentFieldRetriever {
+    static void populate(search::DocumentIdT lid, document::Document& doc, const document::Field& field,
+                         const search::attribute::IAttributeVector& attr);
 };
 
 } // namespace proton
-

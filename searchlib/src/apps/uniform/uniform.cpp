@@ -1,25 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/searchlib/bitcompression/compression.h>
-#include <cinttypes>
-#include <cassert>
+#include <vespa/vespalib/util/signalhandler.h>
 
-static uint64_t
-maxExpGolombVal(uint64_t kValue, uint64_t maxBits)
-{
-    return static_cast<uint64_t>
-        ((UINT64_C(1) << ((maxBits + kValue + 1) / 2)) -
-         (UINT64_C(1) << kValue));
+#include <cassert>
+#include <cinttypes>
+
+static uint64_t maxExpGolombVal(uint64_t kValue, uint64_t maxBits) {
+    return static_cast<uint64_t>((UINT64_C(1) << ((maxBits + kValue + 1) / 2)) - (UINT64_C(1) << kValue));
 }
 
-class UniformApp
-{
+class UniformApp {
     using EC64 = search::bitcompression::EncodeContext64BE;
 
-    enum {
-        MAXK = 30
-    };
+    enum { MAXK = 30 };
 
     uint64_t _bits[MAXK + 1];
     uint64_t _next;
@@ -27,37 +21,25 @@ class UniformApp
     static uint32_t encodeSpace(uint64_t x, uint32_t k) { return EC64::encodeExpGolombSpace(x, k); }
     void clearBits();
     void reportBits();
+
 public:
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-
-void
-UniformApp::clearBits()
-{
+void UniformApp::clearBits() {
     for (unsigned int k = 0; k <= MAXK; ++k)
         _bits[k] = 0;
     _next = 0;
 }
 
-
-void
-UniformApp::reportBits()
-{
+void UniformApp::reportBits() {
     printf("next=%" PRIu64 " ", _next);
     for (unsigned int k = 0; k <= MAXK; ++k)
-        printf("b[%u]=%" PRIu64 " ",
-               static_cast<unsigned int>(k),
-               _bits[k]);
+        printf("b[%u]=%" PRIu64 " ", static_cast<unsigned int>(k), _bits[k]);
     printf("\n");
-
 }
 
-
-
-int
-UniformApp::main(int, char **)
-{
+int UniformApp::main(int, char**) {
     int k, l, m, bestmask, oldbestmask;
     printf("Hello world\n");
     clearBits();
@@ -67,8 +49,8 @@ UniformApp::main(int, char **)
     oldbestmask = 0;
     for (;;) {
         uint64_t minnext = 0;
-        int minnextk = 0;
-        int bestk = 0;
+        int      minnextk = 0;
+        int      bestk = 0;
         printf("_next=%" PRIu64 "\n", _next);
         for (k = 0; k <= MAXK; ++k) {
             uint32_t bits = encodeSpace(_next, k); // Current bits
@@ -83,8 +65,7 @@ UniformApp::main(int, char **)
                 bestk = k;
             printf("k=%d, bits=%d, next=%" PRIu64 "\n", k, bits, next);
         }
-        printf("minnext=%" PRIu64 ", minnextk=%d, bestk=%d\n",
-               minnext, minnextk, bestk);
+        printf("minnext=%" PRIu64 ", minnextk=%d, bestk=%d\n", minnext, minnextk, bestk);
         for (k = 0; k <= MAXK; ++k) {
             uint32_t kbits = encodeSpace(_next, k); // Current bits
             l = bestk;
@@ -102,8 +83,7 @@ UniformApp::main(int, char **)
                 bestk = k;
             }
         }
-        printf("minnext=%" PRIu64 ", minnextk=%d, bestk=%d\n",
-               minnext, minnextk, bestk);
+        printf("minnext=%" PRIu64 ", minnextk=%d, bestk=%d\n", minnext, minnextk, bestk);
         for (k = 0; k <= MAXK; ++k) {
             assert(encodeSpace(_next, k) == encodeSpace(minnext - 1, k));
             _bits[k] += (minnext - _next) * encodeSpace(_next, k);
@@ -137,13 +117,11 @@ UniformApp::main(int, char **)
         }
     }
 
-        return 0;
+    return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     UniformApp app;
     return app.main(argc, argv);
 }
-
-

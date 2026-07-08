@@ -3,6 +3,7 @@
 #pragma once
 
 #include "request.h"
+
 #include <vbench/core/handler.h>
 
 namespace vbench {
@@ -10,13 +11,12 @@ namespace vbench {
 /**
  * Tags a request as dropped before passing it along.
  **/
-class DroppedTagger : public Handler<Request>
-{
+class DroppedTagger : public Handler<Request> {
 private:
-    Handler<Request> &_next;
+    Handler<Request>& _next;
 
 public:
-    DroppedTagger(Handler<Request> &next);
+    DroppedTagger(Handler<Request>& next);
     void handle(Request::UP request) override;
 };
 

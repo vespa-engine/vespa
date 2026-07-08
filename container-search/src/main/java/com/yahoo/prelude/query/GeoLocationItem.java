@@ -100,8 +100,8 @@ public class GeoLocationItem extends TermItem {
     }
 
     @Override
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer); // takes care of index bytes
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context); // takes care of index bytes
         // TODO: use a better format for encoding the location on the wire.
         putString(location.backendString(), buffer);
     }
@@ -122,7 +122,7 @@ public class GeoLocationItem extends TermItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemGeoLocationTerm.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
 

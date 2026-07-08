@@ -100,7 +100,7 @@ public class ApplicationId implements Comparable<ApplicationId> {
     }
 
     @Override
-    public String toString() { return toShortString(); }
+    public String toString() { return toFullString(); }
 
     public TenantName tenant() { return tenant; }
     public ApplicationName application() { return application; }

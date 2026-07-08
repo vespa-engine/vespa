@@ -13,4 +13,4 @@ template class ArrayStoreDynamicTypeMapper<float>;
 template class ArrayStoreDynamicTypeMapper<double>;
 template class ArrayStoreDynamicTypeMapper<AtomicEntryRef>;
 
-}
+} // namespace vespalib::datastore

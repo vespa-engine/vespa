@@ -18,9 +18,9 @@ namespace storage::api {
 class StatBucketCommand : public BucketCommand {
 private:
     std::string _docSelection;
+
 public:
-    StatBucketCommand(const document::Bucket &bucket,
-                      std::string_view documentSelection);
+    StatBucketCommand(const document::Bucket& bucket, std::string_view documentSelection);
     ~StatBucketCommand() override;
 
     const std::string& getDocumentSelection() const { return _docSelection; }
@@ -30,6 +30,7 @@ public:
 
 class StatBucketReply : public BucketReply {
     std::string _results;
+
 public:
     explicit StatBucketReply(const StatBucketCommand&, std::string_view results = "");
     const std::string& getResults() const noexcept { return _results; }
@@ -49,7 +50,7 @@ public:
  */
 class GetBucketListCommand : public BucketCommand {
 public:
-    explicit GetBucketListCommand(const document::Bucket &bucket);
+    explicit GetBucketListCommand(const document::Bucket& bucket);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(GetBucketListCommand, onGetBucketList);
 };
@@ -58,17 +59,13 @@ class GetBucketListReply : public BucketReply {
 public:
     struct BucketInfo {
         document::BucketId _bucket;
-        std::string   _bucketInformation;
+        std::string        _bucketInformation;
 
-        BucketInfo(const document::BucketId& id,
-                   std::string_view bucketInformation) noexcept
-            : _bucket(id),
-              _bucketInformation(bucketInformation)
-        {}
+        BucketInfo(const document::BucketId& id, std::string_view bucketInformation) noexcept
+            : _bucket(id), _bucketInformation(bucketInformation) {}
 
         bool operator==(const BucketInfo& other) const noexcept {
-            return (_bucket == other._bucket
-                    && _bucketInformation == other._bucketInformation);
+            return (_bucket == other._bucket && _bucketInformation == other._bucketInformation);
         }
     };
 
@@ -82,9 +79,8 @@ public:
     const std::vector<BucketInfo>& getBuckets() const { return _buckets; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(GetBucketListReply, onGetBucketListReply)
-
 };
 
 std::ostream& operator<<(std::ostream& out, const GetBucketListReply::BucketInfo& instance);
 
-}
+} // namespace storage::api

@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
-#include <vespa/vespalib/util/mmap_file_allocator.h>
-#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/memory_allocator.h>
+#include <vespa/vespalib/util/mmap_file_allocator.h>
+#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
+
 #include <filesystem>
 
 using vespalib::alloc::MemoryAllocator;
@@ -14,22 +15,19 @@ namespace {
 
 std::string basedir("mmap-file-allocator-factory-dir");
 
-bool is_mmap_file_allocator(const MemoryAllocator *allocator)
-{
-    return dynamic_cast<const MmapFileAllocator *>(allocator) != nullptr;
+bool is_mmap_file_allocator(const MemoryAllocator* allocator) {
+    return dynamic_cast<const MmapFileAllocator*>(allocator) != nullptr;
 }
 
-}
+} // namespace
 
-TEST(MmapFileAllocatorFactoryTest, empty_dir_gives_no_allocator)
-{
+TEST(MmapFileAllocatorFactoryTest, empty_dir_gives_no_allocator) {
     MmapFileAllocatorFactory::instance().setup("");
     auto allocator = MmapFileAllocatorFactory::instance().make_memory_allocator("foo");
     EXPECT_FALSE(allocator);
 }
 
-TEST(MmapFileAllocatorFactoryTest, nonempty_dir_gives_allocator)
-{
+TEST(MmapFileAllocatorFactoryTest, nonempty_dir_gives_allocator) {
     MmapFileAllocatorFactory::instance().setup(basedir);
     auto allocator0 = MmapFileAllocatorFactory::instance().make_memory_allocator("foo");
     auto allocator1 = MmapFileAllocatorFactory::instance().make_memory_allocator("bar");

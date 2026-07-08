@@ -4,20 +4,19 @@
 
 #include "iindexmaintaineroperations.h"
 #include "indexdisklayout.h"
+
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
+namespace common {
 
 class FileHeaderContext;
 
 }
 
-}
+} // namespace search
 
 namespace searchcorespi {
 namespace index {
@@ -30,20 +29,19 @@ struct FusionSpec;
  * will be stored similarly in directories named "index.fusion.<id>".
  **/
 class FusionRunner {
-    const IndexDiskLayout _diskLayout;
-    const search::index::Schema _schema;
-    const search::TuneFileAttributes _tuneFileAttributes;
-    const search::common::FileHeaderContext &_fileHeaderContext;
+    const IndexDiskLayout                    _diskLayout;
+    const search::index::Schema              _schema;
+    const search::TuneFileAttributes         _tuneFileAttributes;
+    const search::common::FileHeaderContext& _fileHeaderContext;
 
 public:
     /**
      * Create a FusionRunner that operates on indexes stored in the
      * base dir.
      **/
-    FusionRunner(const std::string &base_dir,
-                 const search::index::Schema &schema,
-                 const search::TuneFileAttributes &tuneFileAttributes,
-                 const search::common::FileHeaderContext &fileHeaderContext);
+    FusionRunner(const std::string& base_dir, const search::index::Schema& schema,
+                 const search::TuneFileAttributes&        tuneFileAttributes,
+                 const search::common::FileHeaderContext& fileHeaderContext);
     ~FusionRunner();
 
     /**
@@ -54,12 +52,9 @@ public:
      * @param operations interface used for running the actual fusion.
      * @return the id of the fusioned disk index
      **/
-    uint32_t fuse(const FusionSpec &fusion_spec,
-                  search::SerialNum lastSerialNum,
-                  IIndexMaintainerOperations &operations,
-                  std::shared_ptr<search::IFlushToken> flush_token);
+    uint32_t fuse(const FusionSpec& fusion_spec, search::SerialNum lastSerialNum,
+                  IIndexMaintainerOperations& operations, std::shared_ptr<search::IFlushToken> flush_token);
 };
 
-}  // namespace index
-}  // namespace searchcorespi
-
+} // namespace index
+} // namespace searchcorespi

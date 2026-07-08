@@ -35,7 +35,7 @@ public class SearchErrorInvoker extends SearchInvoker {
     }
 
     @Override
-    protected Object sendSearchRequest(Query query, Object context) {
+    protected Object sendSearchRequest(Query query, double contentShare, Object context) {
         this.query = query;
         if (monitor != null) {
             monitor.responseAvailable(this);

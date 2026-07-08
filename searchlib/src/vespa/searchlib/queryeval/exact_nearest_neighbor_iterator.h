@@ -2,59 +2,55 @@
 
 #pragma once
 
-#include "searchiterator.h"
 #include "nearest_neighbor_distance_heap.h"
+#include "searchiterator.h"
+
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/vespalib/util/priority_queue.h>
+
 #include <cmath>
 
-namespace search::tensor { class DistanceCalculator; }
+namespace search::tensor {
+class DistanceCalculator;
+}
 
 namespace search::queryeval {
 
 class QueryEvalStats;
 class GlobalFilter;
 
-class ExactNearestNeighborIterator : public SearchIterator
-{
+class ExactNearestNeighborIterator : public SearchIterator {
 public:
     using ITensorAttribute = search::tensor::ITensorAttribute;
     using Value = vespalib::eval::Value;
 
     struct Params {
-        std::shared_ptr<QueryEvalStats> stats;
-        fef::TermFieldMatchData &tfmd;
+        std::shared_ptr<QueryEvalStats>                     stats;
+        fef::TermFieldMatchData&                            tfmd;
         std::unique_ptr<search::tensor::DistanceCalculator> distance_calc;
-        NearestNeighborDistanceHeap &distanceHeap;
-        const GlobalFilter &filter;
+        NearestNeighborDistanceHeap&                        distanceHeap;
+        const GlobalFilter&                                 filter;
 
-        Params(std::shared_ptr<QueryEvalStats> stats,
-               fef::TermFieldMatchData &tfmd_in,
+        Params(std::shared_ptr<QueryEvalStats> stats, fef::TermFieldMatchData& tfmd_in,
                std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
-               NearestNeighborDistanceHeap &distanceHeap_in,
-               const GlobalFilter &filter_in);
+               NearestNeighborDistanceHeap& distanceHeap_in, const GlobalFilter& filter_in);
         Params(Params&& rhs);
         ~Params();
     };
 
-    explicit ExactNearestNeighborIterator(Params params_in)
-        : _params(std::move(params_in))
-    {}
+    explicit ExactNearestNeighborIterator(Params params_in) : _params(std::move(params_in)) {}
 
-    static std::unique_ptr<ExactNearestNeighborIterator> create(
-            std::shared_ptr<QueryEvalStats> stats,
-            bool strict,
-            fef::TermFieldMatchData &tfmd,
-            std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
-            NearestNeighborDistanceHeap &distanceHeap,
-            const GlobalFilter &filter,
-            bool readonly_distance_heap);
+    static std::unique_ptr<ExactNearestNeighborIterator>
+    create(std::shared_ptr<QueryEvalStats> stats, bool strict, fef::TermFieldMatchData& tfmd,
+           std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
+           NearestNeighborDistanceHeap& distanceHeap, const GlobalFilter& filter, bool readonly_distance_heap);
 
     const Params& params() const { return _params; }
+
 private:
     Params _params;
 };
 
-} // namespace
+} // namespace search::queryeval

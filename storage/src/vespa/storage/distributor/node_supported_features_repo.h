@@ -3,7 +3,9 @@
 #pragma once
 
 #include "node_supported_features.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <memory>
 
 namespace storage::distributor {
@@ -19,6 +21,7 @@ class NodeSupportedFeaturesRepo {
     const NodeSupportedFeatures                               _supported_by_all_nodes;
 
     struct PrivateCtorTag {};
+
 public:
     NodeSupportedFeaturesRepo();
 
@@ -40,4 +43,4 @@ public:
     make_union_of(const vespalib::hash_map<uint16_t, NodeSupportedFeatures>& node_features) const;
 };
 
-}
+} // namespace storage::distributor

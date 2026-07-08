@@ -1,0 +1,12 @@
+# Dependencies
+tools/node_modules/
+tools/package-lock.json
+playground/node_modules/
+playground/package-lock.json
+
+# Generated tool output
+tools/java_tokens.json
+tools/tm_tokens.json
+
+# Python
+__pycache__/

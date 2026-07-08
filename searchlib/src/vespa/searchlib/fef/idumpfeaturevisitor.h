@@ -10,8 +10,7 @@ namespace search::fef {
  * This interface is implemented by objects that want to visit all
  * dump features.
  **/
-class IDumpFeatureVisitor
-{
+class IDumpFeatureVisitor {
 public:
     /**
      * Visit a feature that should be dumped when doing a full feature
@@ -20,9 +19,8 @@ public:
      *
      * @param name full feature name
      **/
-    virtual void visitDumpFeature(const std::string &name) = 0;
+    virtual void visitDumpFeature(const std::string& name) = 0;
     virtual ~IDumpFeatureVisitor() = default;
 };
 
-}
-
+} // namespace search::fef

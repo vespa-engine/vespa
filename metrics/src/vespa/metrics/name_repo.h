@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/metrics/handle.h>
+
 #include <string>
 
 namespace metrics {
@@ -28,5 +29,4 @@ struct NameRepo {
     static const std::string& tagValue(TagValueId id);
 };
 
-} // metrics
-
+} // namespace metrics

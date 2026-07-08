@@ -171,6 +171,10 @@ public class RankProfileList extends Derived {
                       schema != null ? schema.toString() : "[global]");
         for (var profile : rankProfiles)
             addOnnxModels(profile.onnxModels(), allModels, profile.toString());
+        if (deployState.getProperties().featureFlags().forceDisableOnnxModelOptimization()) {
+            for (var model : allModels.values())
+                model.setOptimizeModel(false);
+        }
         return new FileDistributedOnnxModels(deployState.getFileRegistry(), allModels.values());
     }
 

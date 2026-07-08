@@ -2,6 +2,7 @@
 package com.yahoo.vdslib.state;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  *
@@ -68,7 +69,7 @@ public enum State {
     @Override
     public String toString() {
         String id = name();
-        String lower = id.substring(1).toLowerCase();
+        String lower = id.substring(1).toLowerCase(Locale.ROOT);
         return id.charAt(0) + lower;
     }
 

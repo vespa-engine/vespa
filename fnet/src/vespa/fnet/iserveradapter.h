@@ -2,15 +2,15 @@
 
 #pragma once
 
+#include "channel.h"
+
 /**
  * This class must be extended by the server application. It is needed
  * to let the application define the target packet handler for
  * incoming channels without creating a race condition.
  **/
-class FNET_IServerAdapter
-{
+class FNET_IServerAdapter {
 public:
-
     /**
      * Destructor.  No cleanup needed for base class.
      */
@@ -28,6 +28,5 @@ public:
      * @param channel the channel being initialized.
      * @param pcode the packet type of the first packet on the channel.
      **/
-    virtual bool InitChannel(FNET_Channel *channel,
-                             uint32_t pcode) = 0;
+    virtual bool InitChannel(FNET_Channel* channel, uint32_t pcode) = 0;
 };

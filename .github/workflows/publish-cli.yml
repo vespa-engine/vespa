@@ -120,7 +120,7 @@ jobs:
         run: |
           make test
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: vespa-cli
           path: client/go/dist
@@ -154,7 +154,7 @@ jobs:
           # Prefix the version with "v" to checkout the tag.
           ref: "v${{ needs.prepare.outputs.build-version }}"
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: vespa-cli
           path: client/go/dist

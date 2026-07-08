@@ -17,6 +17,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
+import com.yahoo.text.Text;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,12 @@ import java.util.logging.Logger;
 
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
 
+/**
+ * Embedder backed by a HuggingFace-style transformer ONNX model and a HuggingFace tokenizer.
+ *
+ * @author arnej
+ * @author glebashnik
+ */
 @Beta
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
@@ -34,8 +41,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final boolean normalize;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
-    private final String prependQuery;
-    private final String prependDocument;
+    private final TextPrepender prepender;
 
     record ModelAnalysis(int numInputs,
                          String inputIdsName,
@@ -105,15 +111,14 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         
         this.analysis = analyze(evaluator, embedderConfig);
         normalize = embedderConfig.normalize();
-        prependQuery = embedderConfig.prependQuery();
-        prependDocument = embedderConfig.prependDocument();
+        prepender = new TextPrepender(embedderConfig.prependQuery(), embedderConfig.prependDocument());
         var tokenizerPath = modelHelper.getModelPathResolvingIfNecessary(embedderConfig.tokenizerPathReference());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(tokenizerPath)
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
-        log.fine(() -> "'%s' has info '%s'".formatted(tokenizerPath, info));
+        log.fine(() -> Text.format("'%s' has info '%s'", tokenizerPath, info));
         if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
             // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
             int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
@@ -154,7 +159,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         if (!targetType.dimensions().get(0).isIndexed()) {
             throw new IllegalArgumentException("Error in embedding to type '" + targetType + "': dimension should be indexed.");
         }
-        var embeddingResult = lookupOrEvaluate(context, prependInstruction(text, context));
+        var embeddingResult = lookupOrEvaluate(context, prepender.prepend(text, context));
         IndexedTensor tokenEmbeddings = embeddingResult.output;
         if (targetType.valueType() == TensorType.Value.INT8) {
             return binaryQuantization(embeddingResult, targetType);
@@ -163,17 +168,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             return normalize ? EmbeddingNormalizer.normalize(result, targetType) : result;
         }
     }
-
-    String prependInstruction(String text, Context context) {
-        if (prependQuery != null && !prependQuery.isEmpty() && context.getDestination().startsWith("query")) {
-            return prependQuery + " " + text;
-        }
-        if (prependDocument != null && !prependDocument.isEmpty()){
-            return prependDocument + " " + text;
-        }
-        return text;
-    }
-
 
     private HuggingFaceEmbedder.HFEmbeddingResult lookupOrEvaluate(Context context, String text) {
         var key = new HFEmbedderCacheKey(context.getEmbedderId(), text);
@@ -200,7 +194,9 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         } else {
             inputs = Map.of(analysis.inputIdsName(), inputSequence);
         }
-        IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator.evaluate(inputs).get(analysis.outputName());
+        IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator
+                .evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context))
+                .get(analysis.outputName());
         long[] resultShape = tokenEmbeddings.shape();
         // shape should have batch, sequence, embedding dimensionality
         if (resultShape.length != analysis.outputDimensions()) {
@@ -212,7 +208,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     }
 
     private Tensor binaryQuantization(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType) {
-        long outputDimensions = embeddingResult.output().shape()[2];
+        long[] shape = embeddingResult.output().shape();
+        long outputDimensions = shape[shape.length - 1];
         long targetDimensions = targetType.dimensions().get(0).size().get();
         //🪆 flexibility - packing only the first 8*targetDimension float values from the model output
         long targetUnpackagedDimensions = 8 * targetDimensions;

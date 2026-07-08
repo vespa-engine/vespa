@@ -3,6 +3,7 @@
 #pragma once
 
 #include "attributevector.h"
+
 #include <vespa/config-attributes.h>
 
 namespace search::attribute {
@@ -12,7 +13,7 @@ namespace search::attribute {
  **/
 class ConfigConverter {
 public:
-    static Config convert(const vespa::config::search::AttributesConfig::Attribute & cfg);
+    static Config convert(const vespa::config::search::AttributesConfig::Attribute& cfg);
 };
 
-}
+} // namespace search::attribute

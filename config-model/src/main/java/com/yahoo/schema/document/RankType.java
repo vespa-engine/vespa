@@ -17,7 +17,7 @@ public enum RankType {
 
     @Override
     public String toString() {
-        return "rank type " + name().toLowerCase();
+        return "rank type " + name().toLowerCase(java.util.Locale.ROOT);
     }
 
     /**
@@ -29,7 +29,7 @@ public enum RankType {
      */
     public static RankType fromString(String rankTypeName) {
         try {
-            return RankType.valueOf(rankTypeName.toUpperCase());
+            return RankType.valueOf(rankTypeName.toUpperCase(java.util.Locale.ROOT));
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unknown rank type '" + rankTypeName + "'. Supported rank types are " +

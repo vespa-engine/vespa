@@ -11,18 +11,16 @@ class FlushEngine;
 /**
  * Class used to explore the state of a flush engine and its flush targets.
  */
-class FlushEngineExplorer : public vespalib::StateExplorer
-{
+class FlushEngineExplorer : public vespalib::StateExplorer {
 private:
-    const FlushEngine &_engine;
+    const FlushEngine& _engine;
 
 public:
-    FlushEngineExplorer(const FlushEngine &engine);
+    FlushEngineExplorer(const FlushEngine& engine);
 
-    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
     std::vector<std::string> get_children_names() const override;
     std::unique_ptr<StateExplorer> get_child(std::string_view name) const override;
 };
 
 } // namespace proton
-

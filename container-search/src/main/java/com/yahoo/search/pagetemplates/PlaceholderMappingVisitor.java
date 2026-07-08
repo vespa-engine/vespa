@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.pagetemplates;
 
-import com.yahoo.search.pagetemplates.model.*;
+import com.yahoo.search.pagetemplates.model.MapChoice;
+import com.yahoo.search.pagetemplates.model.PageTemplateVisitor;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;

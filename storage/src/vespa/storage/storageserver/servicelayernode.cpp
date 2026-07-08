@@ -1,26 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "servicelayernode.h"
+
 #include "bouncer.h"
-#include "communicationmanager.h"
 #include "changedbucketownershiphandler.h"
+#include "communicationmanager.h"
 #include "mergethrottler.h"
-#include "statemanager.h"
 #include "priorityconverter.h"
 #include "service_layer_error_listener.h"
-#include <vespa/storage/common/i_storage_chain_builder.h>
-#include <vespa/storage/visiting/messagebusvisitormessagesession.h>
-#include <vespa/storage/visiting/visitormanager.h>
+#include "statemanager.h"
+
+#include <vespa/config-persistence.h>
+#include <vespa/config-stor-filestor.h>
+#include <vespa/config/common/exceptions.h>
+#include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/persistence/spi/exceptions.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
+#include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
-#include <vespa/persistence/spi/exceptions.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/config/common/exceptions.h>
-#include <vespa/config-stor-filestor.h>
-#include <vespa/config-persistence.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
+#include <vespa/storage/visiting/messagebusvisitormessagesession.h>
+#include <vespa/storage/visiting/visitormanager.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".node.servicelayer");
@@ -29,19 +31,18 @@ namespace storage {
 
 ServiceLayerNode::ServiceLayerBootstrapConfigs::ServiceLayerBootstrapConfigs() = default;
 ServiceLayerNode::ServiceLayerBootstrapConfigs::~ServiceLayerBootstrapConfigs() = default;
-ServiceLayerNode::ServiceLayerBootstrapConfigs::ServiceLayerBootstrapConfigs(ServiceLayerBootstrapConfigs&&) noexcept = default;
+ServiceLayerNode::ServiceLayerBootstrapConfigs::ServiceLayerBootstrapConfigs(
+    ServiceLayerBootstrapConfigs&&) noexcept = default;
 ServiceLayerNode::ServiceLayerBootstrapConfigs&
 ServiceLayerNode::ServiceLayerBootstrapConfigs::operator=(ServiceLayerBootstrapConfigs&&) noexcept = default;
 
-ServiceLayerNode::ServiceLayerNode(const config::ConfigUri& configUri,
-                                   ServiceLayerNodeContext& context,
-                                   const vespalib::HwInfo& hw_info,
-                                   ServiceLayerBootstrapConfigs bootstrap_configs,
+ServiceLayerNode::ServiceLayerNode(const config::ConfigUri& configUri, ServiceLayerNodeContext& context,
+                                   const vespalib::HwInfo& hw_info, ServiceLayerBootstrapConfigs bootstrap_configs,
                                    ApplicationGenerationFetcher& generationFetcher,
-                                   spi::PersistenceProvider& persistenceProvider,
-                                   const VisitorFactory::Map& externalVisitors)
-    : StorageNode(configUri, context, std::move(bootstrap_configs.storage_bootstrap_configs),
-                  generationFetcher, std::make_unique<HostInfo>()),
+                                   spi::PersistenceProvider&     persistenceProvider,
+                                   const VisitorFactory::Map&    externalVisitors)
+    : StorageNode(configUri, context, std::move(bootstrap_configs.storage_bootstrap_configs), generationFetcher,
+                  std::make_unique<HostInfo>()),
       _context(context),
       _persistenceProvider(persistenceProvider),
       _externalVisitors(externalVisitors),
@@ -56,13 +57,10 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri& configUri,
       _merge_throttler(nullptr),
       _visitor_manager(nullptr),
       _modified_bucket_checker(nullptr),
-      _init_has_been_called(false)
-{
+      _init_has_been_called(false) {
 }
 
-void
-ServiceLayerNode::report(vespalib::JsonStream &stream) const
-{
+void ServiceLayerNode::report(vespalib::JsonStream& stream) const {
     using namespace vespalib::jsonstream;
     if (_bucket_manager) {
         stream << "metrics" << Object() << "values" << Array();
@@ -71,9 +69,8 @@ ServiceLayerNode::report(vespalib::JsonStream &stream) const
     }
 }
 
-void ServiceLayerNode::init()
-{
-    assert( ! _init_has_been_called);
+void ServiceLayerNode::init() {
+    assert(!_init_has_been_called);
     _init_has_been_called = true;
     spi::Result initResult(_persistenceProvider.initialize());
     if (initResult.hasError()) {
@@ -81,18 +78,18 @@ void ServiceLayerNode::init()
         throw spi::HandledException("Failed provider init: " + initResult.toString(), VESPA_STRLOC);
     }
 
-    try{
+    try {
         initialize(*this);
     } catch (spi::HandledException& e) {
         requestShutdown("Failed to initialize: " + e.getMessage());
         throw;
-    } catch (const config::ConfigTimeoutException &e) {
+    } catch (const config::ConfigTimeoutException& e) {
         LOG(warning, "Error subscribing to initial config: '%s'", e.what());
         throw;
-    } catch (const vespalib::NetworkSetupFailureException & e) {
+    } catch (const vespalib::NetworkSetupFailureException& e) {
         LOG(warning, "Network failure: '%s'", e.what());
         throw;
-    } catch (const vespalib::Exception & e) {
+    } catch (const vespalib::Exception& e) {
         LOG(error, "Caught exception %s during startup. Calling destruct functions in hopes of dying gracefully.",
             e.getMessage().c_str());
         requestShutdown("Failed to initialize: " + e.getMessage());
@@ -100,19 +97,16 @@ void ServiceLayerNode::init()
     }
 }
 
-ServiceLayerNode::~ServiceLayerNode()
-{
+ServiceLayerNode::~ServiceLayerNode() {
     assert(_init_has_been_called);
     shutdown();
 }
 
-void
-ServiceLayerNode::initializeNodeSpecific()
-{
+void ServiceLayerNode::initializeNodeSpecific() {
     // Give node state to mount point initialization, such that we can
     // get capacity set in reported node state.
     NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
-    lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
+    lib::NodeState             ns(*_component->getStateUpdater().getReportedNodeState());
 
     ns.setCapacity(server_config().nodeCapacity);
     LOG(debug, "Adjusting reported node state to include capacity: %s", ns.toString().c_str());
@@ -120,25 +114,27 @@ ServiceLayerNode::initializeNodeSpecific()
 }
 
 #define DIFFER(a) (!(oldC.a == newC.a))
-#define ASSIGN(a) { oldC.a = newC.a; updated = true; }
+#define ASSIGN(a)        \
+    {                    \
+        oldC.a = newC.a; \
+        updated = true;  \
+    }
 
-void
-ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
-{
+void ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard& initGuard) {
     {
         std::lock_guard config_lock(_configLock);
         // Live server config patching happens both here and in StorageNode::handleLiveConfigUpdate,
         // which we have to delegate to afterward (_without_ holding _configLock at the time).
         if (_server_config.staging) {
-            bool updated = false;
+            bool                                                  updated = false;
             vespa::config::content::core::StorServerConfigBuilder oldC(*_server_config.active);
-            StorServerConfig& newC(*_server_config.staging);
+            StorServerConfig&                                     newC(*_server_config.staging);
             {
                 NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
-                lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
+                lib::NodeState             ns(*_component->getStateUpdater().getReportedNodeState());
                 if (DIFFER(nodeCapacity)) {
-                    LOG(info, "Live config update: Updating node capacity from %f to %f.",
-                        oldC.nodeCapacity, newC.nodeCapacity);
+                    LOG(info, "Live config update: Updating node capacity from %f to %f.", oldC.nodeCapacity,
+                        newC.nodeCapacity);
                     ASSIGN(nodeCapacity);
                     ns.setCapacity(newC.nodeCapacity);
                 }
@@ -153,29 +149,25 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     StorageNode::handleLiveConfigUpdate(initGuard);
 }
 
-VisitorMessageSession::UP
-ServiceLayerNode::createSession(Visitor& visitor, VisitorThread& thread)
-{
-    auto mbusSession = std::make_unique<MessageBusVisitorMessageSession>(visitor, thread);
+VisitorMessageSession::UP ServiceLayerNode::createSession(Visitor& visitor, VisitorThread& thread) {
+    auto                      mbusSession = std::make_unique<MessageBusVisitorMessageSession>(visitor, thread);
     mbus::SourceSessionParams srcParams;
     srcParams.setThrottlePolicy(mbus::IThrottlePolicy::SP());
     srcParams.setReplyHandler(*mbusSession);
-    mbusSession->setSourceSession(_communicationManager->getMessageBus().getMessageBus().createSourceSession(srcParams));
+    mbusSession->setSourceSession(
+        _communicationManager->getMessageBus().getMessageBus().createSourceSession(srcParams));
     return VisitorMessageSession::UP(std::move(mbusSession));
 }
 
-documentapi::Priority::Value
-ServiceLayerNode::toDocumentPriority(uint8_t storagePriority) const
-{
+documentapi::Priority::Value ServiceLayerNode::toDocumentPriority(uint8_t storagePriority) const {
     return _communicationManager->getPriorityConverter().toDocumentPriority(storagePriority);
 }
 
-void
-ServiceLayerNode::createChain(IStorageChainBuilder &builder)
-{
+void ServiceLayerNode::createChain(IStorageChainBuilder& builder) {
     ServiceLayerComponentRegister& compReg(_context.getComponentRegister());
 
-    auto communication_manager = std::make_unique<CommunicationManager>(compReg, _configUri, communication_manager_config());
+    auto communication_manager =
+        std::make_unique<CommunicationManager>(compReg, _configUri, communication_manager_config());
     _communicationManager = communication_manager.get();
     builder.add(std::move(communication_manager));
     auto bouncer = std::make_unique<Bouncer>(compReg, bouncer_config());
@@ -184,23 +176,26 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto merge_throttler_up = std::make_unique<MergeThrottler>(server_config(), compReg, _hw_info);
     _merge_throttler = merge_throttler_up.get();
     builder.add(std::move(merge_throttler_up));
-    auto bucket_ownership_handler = std::make_unique<ChangedBucketOwnershipHandler>(*_persistence_bootstrap_config, compReg);
+    auto bucket_ownership_handler =
+        std::make_unique<ChangedBucketOwnershipHandler>(*_persistence_bootstrap_config, compReg);
     _changed_bucket_ownership_handler = bucket_ownership_handler.get();
     builder.add(std::move(bucket_ownership_handler));
     auto bucket_manager = std::make_unique<BucketManager>(server_config(), _context.getComponentRegister());
     _bucket_manager = bucket_manager.get();
     builder.add(std::move(bucket_manager));
-    auto visitor_manager = std::make_unique<VisitorManager>(*_visitor_bootstrap_config, _context.getComponentRegister(),
-                                                            static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors);
+    auto visitor_manager =
+        std::make_unique<VisitorManager>(*_visitor_bootstrap_config, _context.getComponentRegister(),
+                                         static_cast<VisitorMessageSessionFactory&>(*this), _externalVisitors);
     _visitor_manager = visitor_manager.get();
     builder.add(std::move(visitor_manager));
-    auto bucket_checker = std::make_unique<ModifiedBucketChecker>(_context.getComponentRegister(), _persistenceProvider, server_config());
+    auto bucket_checker = std::make_unique<ModifiedBucketChecker>(_context.getComponentRegister(),
+                                                                  _persistenceProvider, server_config());
     _modified_bucket_checker = bucket_checker.get();
     builder.add(std::move(bucket_checker));
     auto state_manager = releaseStateManager();
-    auto filstor_manager = std::make_unique<FileStorManager>(*_filestor_bootstrap_config, _persistenceProvider,
-                                                             _context.getComponentRegister(),
-                                                             getDoneInitializeHandler(), state_manager->getHostInfo());
+    auto filstor_manager = std::make_unique<FileStorManager>(
+        *_filestor_bootstrap_config, _persistenceProvider, _context.getComponentRegister(),
+        getDoneInitializeHandler(), state_manager->getHostInfo());
     _fileStorManager = filstor_manager.get();
     builder.add(std::move(filstor_manager));
     builder.add(std::move(state_manager));
@@ -217,39 +212,29 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     _filestor_bootstrap_config.reset();
 }
 
-void
-ServiceLayerNode::on_configure(const StorServerConfig& config)
-{
+void ServiceLayerNode::on_configure(const StorServerConfig& config) {
     assert(_merge_throttler);
     _merge_throttler->on_configure(config);
     assert(_modified_bucket_checker);
     _modified_bucket_checker->on_configure(config);
 }
 
-void
-ServiceLayerNode::on_configure(const PersistenceConfig& config)
-{
+void ServiceLayerNode::on_configure(const PersistenceConfig& config) {
     assert(_changed_bucket_ownership_handler);
     _changed_bucket_ownership_handler->on_configure(config);
 }
 
-void
-ServiceLayerNode::on_configure(const StorVisitorConfig& config)
-{
+void ServiceLayerNode::on_configure(const StorVisitorConfig& config) {
     assert(_visitor_manager);
     _visitor_manager->on_configure(config);
 }
 
-void
-ServiceLayerNode::on_configure(const StorFilestorConfig& config)
-{
+void ServiceLayerNode::on_configure(const StorFilestorConfig& config) {
     assert(_fileStorManager);
     _fileStorManager->on_configure(config);
 }
 
-ResumeGuard
-ServiceLayerNode::pause()
-{
+ResumeGuard ServiceLayerNode::pause() {
     return _fileStorManager->getFileStorHandler().pause();
 }
 
@@ -276,4 +261,4 @@ void ServiceLayerNode::on_bouncer_config_changed() {
     _bouncer->on_configure(bouncer_config());
 }
 
-} // storage
+} // namespace storage

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
+import com.yahoo.search.Query;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ public class GroupTestCase {
 
     @Test
     void requireThatListsAreAccessibleByLabel() {
-        Group grp = new Group(new LongId(69L), new Relevance(1));
+        Group grp = new Group(new LongId(69L), new Relevance(1), new Query());
         grp.add(new Hit("hit"));
         grp.add(new HitList("hitList"));
         grp.add(new GroupList("groupList"));

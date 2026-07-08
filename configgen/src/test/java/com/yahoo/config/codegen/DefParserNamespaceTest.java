@@ -8,7 +8,9 @@ import java.io.IOException;
 import static com.yahoo.config.codegen.DefParserTest.assertLineFails;
 import static com.yahoo.config.codegen.DefParserTest.createDefTemplate;
 import static com.yahoo.config.codegen.DefParserTest.createParser;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author gjoranv

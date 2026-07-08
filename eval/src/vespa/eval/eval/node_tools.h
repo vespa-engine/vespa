@@ -6,11 +6,13 @@
 
 namespace vespalib::eval {
 
-namespace nodes { struct Node; }
+namespace nodes {
+struct Node;
+}
 
 struct NodeTools {
-    static size_t min_num_params(const nodes::Node &node);
-    static std::unique_ptr<nodes::Node> copy(const nodes::Node &node);
+    static size_t min_num_params(const nodes::Node& node);
+    static std::unique_ptr<nodes::Node> copy(const nodes::Node& node);
 };
 
 } // namespace vespalib::eval

@@ -27,6 +27,17 @@ public class TraceTestCase {
         assertEquals("trace: [ [ first message second message ] ]", h.toString());
     }
 
+    /** profile=true overrides the values of these properties. */
+    @Test
+    void testProfiling() {
+        Query query = new Query("?profile=true");
+        assertEquals(  1, query.getTrace().getLevel());
+        assertEquals(  1, query.getTrace().getExplainLevel());
+        assertEquals(100, query.getTrace().getProfileDepth());
+        assertTrue(query.getTrace().getTimestamps());
+        assertTrue(query.getPresentation().getTiming());
+    }
+
     @Test
     void testCloning() throws IOException {
         Query query = new Query();

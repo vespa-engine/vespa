@@ -2,10 +2,12 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.requests;
 
 import com.yahoo.time.TimeBudget;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
 import java.util.Map;
+import java.util.Locale;
 
 public interface SetUnitStateRequest extends UnitRequest {
 
@@ -23,9 +25,9 @@ public interface SetUnitStateRequest extends UnitRequest {
 
         public static Condition fromString(String value) throws InvalidContentException {
             try {
-                return Condition.valueOf(value.toUpperCase());
+                return Condition.valueOf(value.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException e) {
-                throw new InvalidContentException(String.format("Invalid value for condition: '%s', expected one of 'force', 'safe'", value));
+                throw new InvalidContentException(Text.format("Invalid value for condition: '%s', expected one of 'force', 'safe'", value));
             }
         }
     }
@@ -57,7 +59,7 @@ public interface SetUnitStateRequest extends UnitRequest {
             } else if (value.equalsIgnoreCase(NO_WAIT.name)) {
                 return NO_WAIT;
             }
-            throw new InvalidContentException(String.format("Invalid value for response-wait: '%s', expected one of '%s', '%s'",
+            throw new InvalidContentException(Text.format("Invalid value for response-wait: '%s', expected one of '%s', '%s'",
                     value, WAIT_UNTIL_CLUSTER_ACKED.name, NO_WAIT.name));
         }
     }

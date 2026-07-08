@@ -3,15 +3,19 @@
 #pragma once
 
 #include "blueprintresolver.h"
-#include "featureexecutor.h"
-#include "properties.h"
-#include "matchdata.h"
 #include "feature_resolver.h"
-#include <vespa/vespalib/util/stash.h>
+#include "featureexecutor.h"
+#include "matchdata.h"
+#include "properties.h"
+
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/stash.h>
+
 #include <string>
 
-namespace vespalib { class ExecutionProfiler; }
+namespace vespalib {
+class ExecutionProfiler;
+}
 
 namespace search::fef {
 
@@ -27,30 +31,29 @@ class IQueryEnvironment;
  * MatchData object passed to the setup function before trying to
  * resolve lazy values.
  **/
-class RankProgram
-{
+class RankProgram {
 private:
-    using MappedValues = std::map<const NumberOrObject *, LazyValue>;
-    using ValueSet = vespalib::hash_set<const NumberOrObject *, vespalib::hash<const NumberOrObject *>,
-                                        std::equal_to<>, vespalib::hashtable_base::and_modulator>;
+    using MappedValues = std::map<const NumberOrObject*, LazyValue>;
+    using ValueSet = vespalib::hash_set<const NumberOrObject*, vespalib::hash<const NumberOrObject*>, std::equal_to<>,
+                                        vespalib::hashtable_base::and_modulator>;
 
-    BlueprintResolver::SP            _resolver;
-    vespalib::Stash                  _hot_stash;
-    vespalib::Stash                  _cold_stash;
-    std::vector<FeatureExecutor *>   _executors;
-    MappedValues                     _unboxed_seeds;
-    ValueSet                         _is_const;
+    BlueprintResolver::SP         _resolver;
+    vespalib::Stash               _hot_stash;
+    vespalib::Stash               _cold_stash;
+    std::vector<FeatureExecutor*> _executors;
+    MappedValues                  _unboxed_seeds;
+    ValueSet                      _is_const;
 
-    bool check_const(const NumberOrObject *value) const { return (_is_const.count(value) == 1); }
-    bool check_const(FeatureExecutor *executor, const std::vector<BlueprintResolver::FeatureRef> &inputs) const;
-    void run_const(FeatureExecutor *executor);
-    void unbox(BlueprintResolver::FeatureRef seed, const MatchData &md);
-    FeatureResolver resolve(const BlueprintResolver::FeatureMap &features, bool unbox_seeds) const;
+    bool check_const(const NumberOrObject* value) const { return (_is_const.count(value) == 1); }
+    bool check_const(FeatureExecutor* executor, const std::vector<BlueprintResolver::FeatureRef>& inputs) const;
+    void run_const(FeatureExecutor* executor);
+    void unbox(BlueprintResolver::FeatureRef seed, const MatchData& md);
+    FeatureResolver resolve(const BlueprintResolver::FeatureMap& features, bool unbox_seeds) const;
 
 public:
     using UP = std::unique_ptr<RankProgram>;
-    RankProgram(const RankProgram &) = delete;
-    RankProgram &operator=(const RankProgram &) = delete;
+    RankProgram(const RankProgram&) = delete;
+    RankProgram& operator=(const RankProgram&) = delete;
 
     /**
      * Create a new rank program backed by the given resolver.
@@ -61,17 +64,15 @@ public:
     ~RankProgram();
 
     size_t num_executors() const { return _executors.size(); }
-    const FeatureExecutor &get_executor(size_t i) const { return *_executors[i]; }
+    const FeatureExecutor& get_executor(size_t i) const { return *_executors[i]; }
 
     /**
      * Set up this rank program by creating the needed feature
      * executors and wiring them together. This function will also
      * pre-calculate all constant features.
      **/
-    void setup(const MatchData &md,
-               const IQueryEnvironment &queryEnv,
-               const Properties &featureOverrides = Properties(),
-               vespalib::ExecutionProfiler *profiler = nullptr);
+    void setup(const MatchData& md, const IQueryEnvironment& queryEnv,
+               const Properties& featureOverrides = Properties(), vespalib::ExecutionProfiler* profiler = nullptr);
 
     /**
      * Obtain the names and storage locations of all seed features for
@@ -93,4 +94,4 @@ public:
     FeatureResolver get_all_features(bool unbox_seeds = true) const;
 };
 
-}
+} // namespace search::fef

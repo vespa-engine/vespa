@@ -5,7 +5,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace vespa::config::search::internal {
-    class InternalSummaryType;
+class InternalSummaryType;
 }
 namespace search::docsummary {
 
@@ -27,14 +27,13 @@ class StructFieldsMapper;
  * class, while the unpacking of the docsum fields is done by a
  * GeneralResult object backed by a ResultClass object.
  **/
-class ResultConfig
-{
+class ResultConfig {
 private:
     using NameMap = vespalib::hash_map<std::string, uint32_t>;
     using IdMap = vespalib::hash_map<uint32_t, std::unique_ptr<ResultClass>>;
-    uint32_t                    _defaultSummaryId;
-    IdMap                       _classLookup;
-    NameMap                     _nameLookup; // name -> class id
+    uint32_t _defaultSummaryId;
+    IdMap    _classLookup;
+    NameMap  _nameLookup; // name -> class id
 
     void Clean();
 
@@ -42,42 +41,58 @@ public:
     using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     class iterator {
     public:
-        iterator(IdMap::iterator it) : _it(it) { }
-        iterator operator ++(int) { iterator tmp(_it); ++_it; return tmp; }
-        iterator & operator ++() { ++_it; return *this; }
-        bool operator == (const iterator & b) const { return _it == b._it; }
-        bool operator != (const iterator & b) const { return _it != b._it; }
-        ResultClass & operator *() { return *_it->second; }
-        ResultClass * operator ->() { return _it->second.get(); }
+        iterator(IdMap::iterator it) : _it(it) {}
+        iterator operator++(int) {
+            iterator tmp(_it);
+            ++_it;
+            return tmp;
+        }
+        iterator& operator++() {
+            ++_it;
+            return *this;
+        }
+        bool operator==(const iterator& b) const { return _it == b._it; }
+        bool operator!=(const iterator& b) const { return _it != b._it; }
+        ResultClass& operator*() { return *_it->second; }
+        ResultClass* operator->() { return _it->second.get(); }
+
     private:
         IdMap::iterator _it;
     };
 
     class const_iterator {
     public:
-        const_iterator(IdMap::const_iterator it) : _it(it) { }
-        const_iterator operator ++(int) { const_iterator tmp(_it); ++_it; return tmp; }
-        const_iterator & operator ++() { ++_it; return *this; }
-        bool operator == (const const_iterator & b) const { return _it == b._it; }
-        bool operator != (const const_iterator & b) const { return _it != b._it; }
-        const ResultClass & operator *() const { return *_it->second; }
-        const ResultClass * operator ->() const { return _it->second.get(); }
+        const_iterator(IdMap::const_iterator it) : _it(it) {}
+        const_iterator operator++(int) {
+            const_iterator tmp(_it);
+            ++_it;
+            return tmp;
+        }
+        const_iterator& operator++() {
+            ++_it;
+            return *this;
+        }
+        bool operator==(const const_iterator& b) const { return _it == b._it; }
+        bool operator!=(const const_iterator& b) const { return _it != b._it; }
+        const ResultClass& operator*() const { return *_it->second; }
+        const ResultClass* operator->() const { return _it->second.get(); }
+
     private:
         IdMap::const_iterator _it;
     };
 
-    iterator begin() { return { _classLookup.begin() }; }
-    iterator   end() { return { _classLookup.end() }; }
-    const_iterator begin() const { return { _classLookup.begin() }; }
-    const_iterator   end() const { return { _classLookup.end() }; }
+    iterator begin() { return {_classLookup.begin()}; }
+    iterator end() { return {_classLookup.end()}; }
+    const_iterator begin() const { return {_classLookup.begin()}; }
+    const_iterator end() const { return {_classLookup.end()}; }
 
     /**
      * Constructor. Create an initially empty result configuration.
      * NOTE: This method simply calls the Init method.
      **/
     ResultConfig();
-    ResultConfig(const ResultConfig &) = delete;
-    ResultConfig& operator=(const ResultConfig &) = delete;
+    ResultConfig(const ResultConfig&) = delete;
+    ResultConfig& operator=(const ResultConfig&) = delete;
 
     /**
      * Destructor. Delete all internal structures. NOTE: This method
@@ -85,12 +100,12 @@ public:
      **/
     ~ResultConfig();
 
-
 private:
     /**
      * @return value denoting an undefined class id.
      **/
     static constexpr uint32_t noClassID = -1;
+
 public:
     /**
      * Discard the current configuration and start over. After this
@@ -99,7 +114,6 @@ public:
      * and Init.
      **/
     void reset();
-
 
     /**
      * Add a new result class to this result configuration. This will
@@ -111,7 +125,7 @@ public:
      * @param name name of result class to add.
      * @param classID id of result class to add.
      **/
-    ResultClass *addResultClass(const std::string& name, uint32_t classID);
+    ResultClass* addResultClass(const std::string& name, uint32_t classID);
 
     /*
      * Set default result class id.
@@ -126,7 +140,7 @@ private:
      * @return result class with the given id or NULL if not found.
      * @param classID the id of the result class to look up.
      **/
-    const ResultClass *lookupResultClass(uint32_t classID) const;
+    const ResultClass* lookupResultClass(uint32_t classID) const;
 
     /**
      * Obtain result class id from the result class name.
@@ -144,7 +158,7 @@ public:
      * @return result class with the given id or NULL if not found.
      * @param name the name of the result class,
      */
-    const ResultClass *lookupResultClass(std::string_view name) const {
+    const ResultClass* lookupResultClass(std::string_view name) const {
         uint32_t id = lookupResultClassId(name);
         return lookupResultClass(id);
     }
@@ -155,9 +169,9 @@ public:
      * @return true(success)/false(fail)
      * @param configId reference on server
      **/
-    bool readConfig(const SummaryConfig &cfg, const std::string& configId,
+    bool readConfig(const SummaryConfig& cfg, const std::string& configId,
                     IDocsumFieldWriterFactory& docsum_field_writer_factory,
-                    const StructFieldsMapper& struct_fields_mapper);
+                    const StructFieldsMapper&  struct_fields_mapper);
 };
 
-}
+} // namespace search::docsummary

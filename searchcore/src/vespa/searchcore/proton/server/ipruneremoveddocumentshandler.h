@@ -2,22 +2,15 @@
 
 #pragma once
 
-namespace proton
-{
+namespace proton {
 
 class PruneRemovedDocumentsOperation;
 
-class IPruneRemovedDocumentsHandler
-{
+class IPruneRemovedDocumentsHandler {
 public:
-    virtual void
-    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) = 0;
+    virtual void performPruneRemovedDocuments(PruneRemovedDocumentsOperation& pruneOp) = 0;
 
-    virtual
-    ~IPruneRemovedDocumentsHandler()
-    {
-    }
+    virtual ~IPruneRemovedDocumentsHandler() {}
 };
 
 } // namespace proton
-

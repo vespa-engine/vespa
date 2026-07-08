@@ -24,12 +24,16 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.VaultReference;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
@@ -64,6 +68,7 @@ import java.nio.file.Files;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -320,9 +325,11 @@ public class SessionPreparer {
 
         void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData, Tags tags) {
             try {
+                ApplicationName application = metaData.getApplicationId().application();
                 InstanceName instance = metaData.getApplicationId().instance();
                 new XmlPreProcessor(appDir,
                                     inputXml,
+                                    application,
                                     instance,
                                     zone.environment(),
                                     zone.region(),
@@ -368,8 +375,13 @@ public class SessionPreparer {
                                   params.tenantSecretStores(),
                                   params.operatorCertificates(),
                                   params.cloudAccount(),
+                                  params.cloudResourceTags(),
                                   params.dataplaneTokens(),
-                                  ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()));
+                                  ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()),
+                                  telemetryExporterConfiguration().withTenantVaultReferences(
+                                          params.tenantVaults().stream()
+                                                .map(v -> new VaultReference(v.id(), v.name(), v.externalId()))
+                                                .toList()));
             checkTimeout("write state to zookeeper");
         }
 
@@ -395,6 +407,13 @@ public class SessionPreparer {
             return List.copyOf(endpoints);
         }
 
+        private TelemetryExporterConfiguration telemetryExporterConfiguration() {
+            return modelResultList.stream()
+                                  .max(Comparator.comparing(r -> r.version))
+                                  .map(r -> r.getModel().telemetryExporterConfiguration())
+                                  .orElse(TelemetryExporterConfiguration.empty());
+        }
+
     }
 
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
@@ -414,8 +433,10 @@ public class SessionPreparer {
                                        List<TenantSecretStore> tenantSecretStores,
                                        List<X509Certificate> operatorCertificates,
                                        Optional<CloudAccount> cloudAccount,
+                                       CloudResourceTags cloudResourceTags,
                                        List<DataplaneToken> dataplaneTokens,
-                                       ActivationTriggers activationTriggers) {
+                                       ActivationTriggers activationTriggers,
+                                       TelemetryExporterConfiguration telemetryExporterConfiguration) {
         var zooKeeperDeployer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
         try {
             zooKeeperDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -432,8 +453,10 @@ public class SessionPreparer {
                                           tenantSecretStores,
                                           operatorCertificates,
                                           cloudAccount,
+                                          cloudResourceTags,
                                           dataplaneTokens,
                                           activationTriggers,
+                                          telemetryExporterConfiguration,
                                           writeSessionData);
         } catch (RuntimeException | IOException e) {
             zooKeeperDeployer.cleanup();

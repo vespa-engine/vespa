@@ -17,4 +17,4 @@ public:
     virtual std::unique_ptr<AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const = 0;
 };
 
-}
+} // namespace search::attribute

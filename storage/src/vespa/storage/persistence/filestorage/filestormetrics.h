@@ -5,50 +5,48 @@
 
 #pragma once
 
-#include "merge_handler_metrics.h"
 #include "active_operations_metrics.h"
+#include "merge_handler_metrics.h"
+
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/summetric.h>
 
 namespace storage {
 
-struct FileStorThreadMetrics : public metrics::MetricSet
-{
+struct FileStorThreadMetrics : public metrics::MetricSet {
     using SP = std::shared_ptr<FileStorThreadMetrics>;
 
     struct Op : metrics::MetricSet {
-        std::string _name;
-        metrics::LongCountMetric count;
+        std::string                  _name;
+        metrics::LongCountMetric     count;
         metrics::DoubleAverageMetric latency;
-        metrics::LongCountMetric failed;
+        metrics::LongCountMetric     failed;
 
         Op(const std::string& id, const std::string& name, MetricSet* owner = nullptr);
         ~Op() override;
 
-        MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                          MetricSet* owner, bool includeUnused) const override;
+        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                         bool includeUnused) const override;
     };
 
-    template <typename BaseOp>
-    struct OpWithRequestSize : BaseOp {
+    template <typename BaseOp> struct OpWithRequestSize : BaseOp {
         metrics::LongAverageMetric request_size;
 
         OpWithRequestSize(const std::string& id, const std::string& name, MetricSet* owner = nullptr);
         ~OpWithRequestSize() override;
 
-        MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                          MetricSet* owner, bool includeUnused) const override;
+        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                         bool includeUnused) const override;
     };
 
-    template <typename BaseOp>
-    struct OpWithTestAndSetFailed : BaseOp {
+    template <typename BaseOp> struct OpWithTestAndSetFailed : BaseOp {
         metrics::LongCountMetric test_and_set_failed;
 
         OpWithTestAndSetFailed(const std::string& id, const std::string& name, MetricSet* owner = nullptr);
         ~OpWithTestAndSetFailed() override;
 
-        MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                          MetricSet* owner, bool includeUnused) const override;
+        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                         bool includeUnused) const override;
     };
 
     struct OpWithNotFound : Op {
@@ -56,8 +54,8 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
         OpWithNotFound(const std::string& id, const std::string& name, metrics::MetricSet* owner = nullptr);
         ~OpWithNotFound() override;
-        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                         MetricSet* owner, bool includeUnused) const override;
+        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                         bool includeUnused) const override;
     };
 
     struct Update : OpWithTestAndSetFailed<OpWithRequestSize<OpWithNotFound>> {
@@ -66,8 +64,8 @@ struct FileStorThreadMetrics : public metrics::MetricSet
         explicit Update(MetricSet* owner = nullptr);
         ~Update() override;
 
-        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                         MetricSet* owner, bool includeUnused) const override;
+        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                         bool includeUnused) const override;
     };
 
     struct Visitor : Op {
@@ -76,69 +74,67 @@ struct FileStorThreadMetrics : public metrics::MetricSet
         explicit Visitor(MetricSet* owner = nullptr);
         ~Visitor() override;
 
-        MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                         MetricSet* owner, bool includeUnused) const override;
+        MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                         bool includeUnused) const override;
     };
 
     // FIXME this daisy-chaining approach to metric set variants is not the prettiest...
-    using PutMetricType    = OpWithTestAndSetFailed<OpWithRequestSize<Op>>;
-    using GetMetricType    = OpWithRequestSize<OpWithNotFound>;
+    using PutMetricType = OpWithTestAndSetFailed<OpWithRequestSize<Op>>;
+    using GetMetricType = OpWithRequestSize<OpWithNotFound>;
     using RemoveMetricType = OpWithTestAndSetFailed<OpWithRequestSize<OpWithNotFound>>;
 
     metrics::LongCountMetric operations;
     metrics::LongCountMetric failedOperations;
-    PutMetricType put;
-    GetMetricType get;
-    RemoveMetricType remove;
-    Op removeLocation;
-    Op statBucket;
-    Update update;
-    Op createIterator;
-    Visitor visit;
-    Op createBuckets;
-    Op deleteBuckets;
-    Op remove_by_gid;
-    Op recheckBucketInfo;
-    Op splitBuckets;
-    Op joinBuckets;
-    Op setBucketStates;
-    Op mergeBuckets;
-    Op getBucketDiff;
-    Op applyBucketDiff;
+    PutMetricType            put;
+    GetMetricType            get;
+    RemoveMetricType         remove;
+    Op                       removeLocation;
+    Op                       statBucket;
+    Update                   update;
+    Op                       createIterator;
+    Visitor                  visit;
+    Op                       createBuckets;
+    Op                       deleteBuckets;
+    Op                       remove_by_gid;
+    Op                       recheckBucketInfo;
+    Op                       splitBuckets;
+    Op                       joinBuckets;
+    Op                       setBucketStates;
+    Op                       mergeBuckets;
+    Op                       getBucketDiff;
+    Op                       applyBucketDiff;
     metrics::LongCountMetric getBucketDiffReply;
     metrics::LongCountMetric applyBucketDiffReply;
-    MergeHandlerMetrics merge_handler_metrics;
+    MergeHandlerMetrics      merge_handler_metrics;
 
     FileStorThreadMetrics(const std::string& name, const std::string& desc);
     ~FileStorThreadMetrics() override;
 };
 
-class FileStorStripeMetrics : public metrics::MetricSet
-{
+class FileStorStripeMetrics : public metrics::MetricSet {
 public:
     using SP = std::shared_ptr<FileStorStripeMetrics>;
     metrics::DoubleAverageMetric averageQueueWaitingTime;
-    metrics::LongCountMetric throttled_rpc_direct_dispatches;
-    metrics::LongCountMetric throttled_persistence_thread_polls;
-    metrics::LongCountMetric timeouts_waiting_for_throttle_token;
+    metrics::LongCountMetric     throttled_rpc_direct_dispatches;
+    metrics::LongCountMetric     throttled_persistence_thread_polls;
+    metrics::LongCountMetric     timeouts_waiting_for_throttle_token;
     FileStorStripeMetrics(const std::string& name, const std::string& description);
     ~FileStorStripeMetrics() override;
 };
 
-struct FileStorMetrics : public metrics::MetricSet
-{
+struct FileStorMetrics : public metrics::MetricSet {
     std::vector<FileStorThreadMetrics::SP> threads;
     std::vector<FileStorStripeMetrics::SP> stripes;
-    metrics::SumMetric<MetricSet> sumThreads;
-    metrics::SumMetric<MetricSet> sumStripes;
-    metrics::DoubleAverageMetric  averageQueueWaitingTime;
-    metrics::LongAverageMetric    queueSize;
-    metrics::LongAverageMetric    pendingMerges;
-    metrics::LongAverageMetric    throttle_window_size;
-    metrics::LongAverageMetric    throttle_waiting_threads;
-    metrics::LongAverageMetric    throttle_active_tokens;
-    ActiveOperationsMetrics       active_operations;
-    metrics::LongAverageMetric    bucket_db_init_latency;
+    metrics::SumMetric<MetricSet>          sumThreads;
+    metrics::SumMetric<MetricSet>          sumStripes;
+    metrics::DoubleAverageMetric           averageQueueWaitingTime;
+    metrics::LongAverageMetric             queueSize;
+    metrics::LongAverageMetric             pendingMerges;
+    metrics::LongAverageMetric             throttle_window_size;
+    metrics::LongAverageMetric             throttle_waiting_threads;
+    metrics::LongAverageMetric             throttle_active_tokens;
+    ActiveOperationsMetrics                active_operations;
+    metrics::LongAverageMetric             bucket_db_init_latency;
 
     FileStorMetrics();
     ~FileStorMetrics() override;
@@ -146,5 +142,4 @@ struct FileStorMetrics : public metrics::MetricSet
     void initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk);
 };
 
-}
-
+} // namespace storage

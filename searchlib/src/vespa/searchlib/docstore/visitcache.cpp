@@ -1,13 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitcache.h"
+
 #include "ibucketizer.h"
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/stllike/cache.h>
+
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/stllike/cache.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/memory_allocator.h>
+
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -19,53 +22,41 @@ using vespalib::DataBuffer;
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;
 
-KeySet::KeySet(uint32_t key)
-    : _keys()
-{
+KeySet::KeySet(uint32_t key) : _keys() {
     _keys.push_back(key);
 }
 
-KeySet::KeySet(const IDocumentStore::LidVector &keys)
-    : _keys(keys)
-{
+KeySet::KeySet(const IDocumentStore::LidVector& keys) : _keys(keys) {
     std::sort(_keys.begin(), _keys.end());
 }
 
-bool
-KeySet::contains(const KeySet &rhs) const {
+bool KeySet::contains(const KeySet& rhs) const {
     return std::includes(_keys.begin(), _keys.end(), rhs._keys.begin(), rhs._keys.end());
 }
 
-BlobSet::BlobSet()
-    : _positions(),
-      _buffer(Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE), 0)
-{ }
+BlobSet::BlobSet() : _positions(), _buffer(Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE), 0) {
+}
 
 BlobSet::~BlobSet() = default;
 
 namespace {
 
-size_t
-getBufferSize(const BlobSet::Positions & p) {
+size_t getBufferSize(const BlobSet::Positions& p) {
     return p.empty() ? 0 : p.back().offset() + p.back().size();
 }
 
+} // namespace
+
+BlobSet::BlobSet(Positions positions, Alloc&& buffer) noexcept
+    : _positions(std::move(positions)), _buffer(std::move(buffer), getBufferSize(_positions)) {
 }
 
-BlobSet::BlobSet(Positions positions, Alloc && buffer) noexcept
-    : _positions(std::move(positions)),
-      _buffer(std::move(buffer), getBufferSize(_positions))
-{ }
-
-void
-BlobSet::append(uint32_t lid, ConstBufferRef blob) {
+void BlobSet::append(uint32_t lid, ConstBufferRef blob) {
     _positions.emplace_back(lid, getBufferSize(_positions), blob.size());
     _buffer.write(blob.c_str(), blob.size());
 }
 
-ConstBufferRef
-BlobSet::get(uint32_t lid) const
-{
+ConstBufferRef BlobSet::get(uint32_t lid) const {
     ConstBufferRef buf;
     for (LidPosition pos : _positions) {
         if (pos.lid() == lid) {
@@ -77,22 +68,15 @@ BlobSet::get(uint32_t lid) const
 }
 
 CompressedBlobSet::CompressedBlobSet() noexcept
-    : _positions(),
-      _buffer(),
-      _used(0),
-      _compression(CompressionConfig::Type::LZ4)
-{ }
+    : _positions(), _buffer(), _used(0), _compression(CompressionConfig::Type::LZ4) {
+}
 
 CompressedBlobSet::~CompressedBlobSet() = default;
 
 CompressedBlobSet::CompressedBlobSet(CompressionConfig compression, BlobSet uncompressed)
-    : _positions(uncompressed.stealPositions()),
-      _buffer(),
-      _used(0),
-      _compression(compression.type)
-{
-    if ( ! _positions.empty() ) {
-        DataBuffer compressed;
+    : _positions(uncompressed.stealPositions()), _buffer(), _used(0), _compression(compression.type) {
+    if (!_positions.empty()) {
+        DataBuffer     compressed;
         ConstBufferRef org = uncompressed.getBuffer();
         _compression = vespalib::compression::compress(compression, org, compressed, false);
         _used = compressed.getDataLen();
@@ -103,54 +87,46 @@ CompressedBlobSet::CompressedBlobSet(CompressionConfig compression, BlobSet unco
     }
 }
 
-BlobSet
-CompressedBlobSet::getBlobSet() const
-{
+BlobSet CompressedBlobSet::getBlobSet() const {
     using vespalib::compression::decompress;
     // These are frequent lage allocations that are to expensive to mmap.
     DataBuffer uncompressed(0, 1, Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE));
-    if ( ! _positions.empty() ) {
-        decompress(_compression, getBufferSize(_positions),
-                   ConstBufferRef(_buffer->get(), _used), uncompressed, false);
+    if (!_positions.empty()) {
+        decompress(_compression, getBufferSize(_positions), ConstBufferRef(_buffer->get(), _used), uncompressed,
+                   false);
     }
     return BlobSet(_positions, std::move(uncompressed).stealBuffer());
 }
 
-size_t
-CompressedBlobSet::bytesAllocated() const {
+size_t CompressedBlobSet::bytesAllocated() const {
     return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer->size();
 }
 
 namespace {
 
-class VisitCollector : public IBufferVisitor
-{
+class VisitCollector : public IBufferVisitor {
 public:
-    VisitCollector(BlobSet & blobSet) : _blobSet(blobSet) { }
+    VisitCollector(BlobSet& blobSet) : _blobSet(blobSet) {}
     void visit(uint32_t lid, ConstBufferRef buf) override;
+
 private:
-    BlobSet & _blobSet;
+    BlobSet& _blobSet;
 };
 
-void
-VisitCollector::visit(uint32_t lid, ConstBufferRef buf) {
+void VisitCollector::visit(uint32_t lid, ConstBufferRef buf) {
     if (buf.size() > 0) {
         _blobSet.append(lid, buf);
     }
 }
 
 struct ByteSize {
-    size_t operator() (const CompressedBlobSet & arg) const noexcept { return arg.bytesAllocated(); }
+    size_t operator()(const CompressedBlobSet& arg) const noexcept { return arg.bytesAllocated(); }
 };
 
-}
+} // namespace
 
-using CacheParams = vespalib::CacheParam<
-        vespalib::LruParam<KeySet, CompressedBlobSet>,
-        VisitCache::BackingStore,
-        vespalib::zero<KeySet>,
-        ByteSize
->;
+using CacheParams = vespalib::CacheParam<vespalib::LruParam<KeySet, CompressedBlobSet>, VisitCache::BackingStore,
+                                         vespalib::zero<KeySet>, ByteSize>;
 
 /**
  * This extends the default thread safe cache implementation so that
@@ -160,61 +136,55 @@ using CacheParams = vespalib::CacheParam<
  */
 class VisitCache::Cache : public vespalib::cache<CacheParams> {
 public:
-    Cache(BackingStore & b, size_t maxBytes);
+    Cache(BackingStore& b, size_t maxBytes);
     ~Cache() override;
-    CompressedBlobSet readSet(const KeySet & keys);
+    CompressedBlobSet readSet(const KeySet& keys);
     void removeKey(uint32_t key);
     vespalib::MemoryUsage getStaticMemoryUsage() const override;
     CacheStats get_stats() const override;
+
 private:
-    void locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys);
+    void locateAndInvalidateOtherSubsets(const UniqueLock& cacheGuard, const KeySet& keys);
     using IdSet = vespalib::hash_set<uint64_t>;
     using Parent = vespalib::cache<CacheParams>;
     using LidUniqueKeySetId = vespalib::hash_map<uint32_t, uint64_t>;
     using IdKeySetMap = vespalib::hash_map<uint64_t, KeySet>;
-    IdSet findSetsContaining(const UniqueLock &, const KeySet & keys) const;
-    void onInsert(const K & key) override;
-    void onRemove(const K & key) override;
+    IdSet findSetsContaining(const UniqueLock&, const KeySet& keys) const;
+    void onInsert(const K& key) override;
+    void onRemove(const K& key) override;
     LidUniqueKeySetId _lid2Id;
     IdKeySetMap       _id2KeySet;
 };
 
-bool
-VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) const {
+bool VisitCache::BackingStore::read(const KeySet& key, CompressedBlobSet& blobs) const {
     BlobSet blobSet;
     blobSet.reserve(key.getKeys().size());
     VisitCollector collector(blobSet);
     _backingStore.read(key.getKeys(), collector);
     blobs = CompressedBlobSet(_compression.load(std::memory_order_relaxed), std::move(blobSet));
-    return ! blobs.empty();
+    return !blobs.empty();
 }
 
-void
-VisitCache::BackingStore::reconfigure(CompressionConfig compression) {
+void VisitCache::BackingStore::reconfigure(CompressionConfig compression) {
     _compression.store(compression, std::memory_order_relaxed);
 }
 
-
-VisitCache::VisitCache(IDataStore &store, size_t cacheSize, CompressionConfig compression) :
-    _store(store, compression),
-    _cache(std::make_unique<Cache>(_store, cacheSize))
-{ }
+VisitCache::VisitCache(IDataStore& store, size_t cacheSize, CompressionConfig compression)
+    : _store(store, compression), _cache(std::make_unique<Cache>(_store, cacheSize)) {
+}
 
 VisitCache::~VisitCache() = default;
 
-void
-VisitCache::reconfigure(size_t cacheSize, CompressionConfig compression) {
+void VisitCache::reconfigure(size_t cacheSize, CompressionConfig compression) {
     _store.reconfigure(compression);
     _cache->setCapacityBytes(cacheSize);
 }
 
-vespalib::MemoryUsage
-VisitCache::getStaticMemoryUsage() const {
+vespalib::MemoryUsage VisitCache::getStaticMemoryUsage() const {
     return _cache->getStaticMemoryUsage();
 }
 
-VisitCache::Cache::IdSet
-VisitCache::Cache::findSetsContaining(const UniqueLock &, const KeySet & keys) const {
+VisitCache::Cache::IdSet VisitCache::Cache::findSetsContaining(const UniqueLock&, const KeySet& keys) const {
     IdSet found;
     for (uint32_t subKey : keys.getKeys()) {
         const auto foundLid = _lid2Id.find(subKey);
@@ -225,9 +195,7 @@ VisitCache::Cache::findSetsContaining(const UniqueLock &, const KeySet & keys) c
     return found;
 }
 
-CompressedBlobSet
-VisitCache::Cache::readSet(const KeySet & key)
-{
+CompressedBlobSet VisitCache::Cache::readSet(const KeySet& key) {
     if (!key.empty()) {
         {
             auto cacheGuard = getGuard();
@@ -240,15 +208,13 @@ VisitCache::Cache::readSet(const KeySet & key)
     return CompressedBlobSet();
 }
 
-void
-VisitCache::Cache::locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys)
-{
+void VisitCache::Cache::locateAndInvalidateOtherSubsets(const UniqueLock& cacheGuard, const KeySet& keys) {
     // Due to the implementation of insert where the global lock is released and the fact
     // that 2 overlapping keysets kan have different keys and use different ValueLock
     // We do have a theoretical issue.
     // The reason it is theoretical is that for all practical purpose this inconsitency
     // is prevented by the storage layer above alloing only one visit/mutating operation to a single bucket.
-    // So for that reason we will just merge this one to get testing started. 
+    // So for that reason we will just merge this one to get testing started.
     // The final fix will come in 2 days.
     IdSet otherSubSets = findSetsContaining(cacheGuard, keys);
     for (uint64_t keyId : otherSubSets) {
@@ -256,74 +222,65 @@ VisitCache::Cache::locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard
     }
 }
 
-CompressedBlobSet
-VisitCache::read(const IDocumentStore::LidVector & lids) const {
+CompressedBlobSet VisitCache::read(const IDocumentStore::LidVector& lids) const {
     return _cache->readSet(KeySet(lids));
 }
 
-void
-VisitCache::remove(uint32_t key) {
+void VisitCache::remove(uint32_t key) {
     _cache->removeKey(key);
 }
 
-CacheStats
-VisitCache::getCacheStats() const {
+CacheStats VisitCache::getCacheStats() const {
     CacheStats stats = _cache->get_stats();
     return stats;
 }
 
-VisitCache::Cache::Cache(BackingStore & b, size_t maxBytes) :
-    Parent(b, maxBytes)
-{ }
+VisitCache::Cache::Cache(BackingStore& b, size_t maxBytes) : Parent(b, maxBytes) {
+}
 
 VisitCache::Cache::~Cache() = default;
 
-void
-VisitCache::Cache::removeKey(uint32_t subKey) {
+void VisitCache::Cache::removeKey(uint32_t subKey) {
     // Need to take hashLock
-    auto cacheGuard = getGuard();
+    auto       cacheGuard = getGuard();
     const auto foundLid = _lid2Id.find(subKey);
     if (foundLid != _lid2Id.end()) {
         invalidate(cacheGuard, _id2KeySet[foundLid->second]);
     }
 }
 
-void
-VisitCache::Cache::onInsert(const K & key) {
+void VisitCache::Cache::onInsert(const K& key) {
     uint32_t first(key.getKeys().front());
     _id2KeySet[first] = key;
-    for(uint32_t subKey : key.getKeys()) {
+    for (uint32_t subKey : key.getKeys()) {
         _lid2Id[subKey] = first;
     }
 }
 
-void
-VisitCache::Cache::onRemove(const K & key) {
+void VisitCache::Cache::onRemove(const K& key) {
     for (uint32_t subKey : key.getKeys()) {
         _lid2Id.erase(subKey);
     }
     _id2KeySet.erase(key.getKeys().front());
 }
 
-vespalib::MemoryUsage
-VisitCache::Cache::getStaticMemoryUsage() const {
+vespalib::MemoryUsage VisitCache::Cache::getStaticMemoryUsage() const {
     vespalib::MemoryUsage usage = Parent::getStaticMemoryUsage();
-    size_t baseSelf = sizeof(_lid2Id) + sizeof(_id2KeySet);
+    size_t                baseSelf = sizeof(_lid2Id) + sizeof(_id2KeySet);
     usage.incAllocatedBytes(baseSelf);
     usage.incUsedBytes(baseSelf);
     return usage;
 }
 
-CacheStats
-VisitCache::Cache::get_stats() const {
+CacheStats VisitCache::Cache::get_stats() const {
     CacheStats stats = Parent::get_stats();
-    auto cacheGuard = getGuard();
+    auto       cacheGuard = getGuard();
     stats.memory_used += _lid2Id.capacity() * sizeof(LidUniqueKeySetId::value_type);
     stats.memory_used += _id2KeySet.capacity() * sizeof(IdKeySetMap::value_type);
-    for (const auto & entry: _id2KeySet) {
+    for (const auto& entry : _id2KeySet) {
         stats.memory_used = entry.second.getKeys().capacity() * sizeof(uint32_t);
     }
     return stats;
 }
 
-}
+} // namespace search::docstore

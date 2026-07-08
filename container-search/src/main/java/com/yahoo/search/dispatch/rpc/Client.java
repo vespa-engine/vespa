@@ -2,9 +2,7 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.compress.CompressionType;
-import com.yahoo.prelude.fastsearch.FastHit;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -60,37 +58,6 @@ public interface Client {
 
         /** @return true if error is a timeout */
         public boolean timeout() { return isTimeout; }
-    }
-
-    class GetDocsumsResponse {
-        private final byte compression;
-        private final int uncompressedSize;
-        private final byte[] compressedSlimeBytes;
-        private final List<FastHit> hitsContext;
-
-        public GetDocsumsResponse(byte compression, int uncompressedSize, byte[] compressedSlimeBytes, List<FastHit> hitsContext) {
-            this.compression = compression;
-            this.uncompressedSize = uncompressedSize;
-            this.compressedSlimeBytes = compressedSlimeBytes;
-            this.hitsContext = hitsContext;
-        }
-
-        public byte compression() {
-            return compression;
-        }
-
-        public int uncompressedSize() {
-            return uncompressedSize;
-        }
-
-        public byte[] compressedSlimeBytes() {
-            return compressedSlimeBytes;
-        }
-
-        public List<FastHit> hitsContext() {
-            return hitsContext;
-        }
-
     }
 
     interface NodeConnection {

@@ -4,7 +4,6 @@
 #include <vespa/vespalib/trace/tracelevel.h>
 namespace mbus {
 
-    using TraceLevel = vespalib::TraceLevel;
+using TraceLevel = vespalib::TraceLevel;
 
 } // namespace mbus
-

@@ -3,6 +3,7 @@ package com.yahoo.config.model.api;
 
 import org.junit.Test;
 
+import com.yahoo.text.Text;
 import java.lang.reflect.Method;
 
 import static org.junit.Assert.assertNotNull;
@@ -16,8 +17,9 @@ public class ModelContextTest {
     @Test
     public void verify_all_feature_flag_methods_have_annotation() {
         for (Method method : ModelContext.FeatureFlags.class.getDeclaredMethods()) {
+            if (ignoreMethod(method)) continue;
             assertNotNull(
-                    String.format(
+                    Text.format(
                             "Method '%s' is not annotated with '%s'",
                             method.getName(), ModelContext.ModelFeatureFlag.class.getSimpleName()),
                     method.getDeclaredAnnotation(ModelContext.ModelFeatureFlag.class));
@@ -27,10 +29,17 @@ public class ModelContextTest {
     @Test
     public void verify_all_feature_flag_methods_have_default_implementation() {
         for (Method method : ModelContext.FeatureFlags.class.getDeclaredMethods()) {
+            if (ignoreMethod(method)) continue;
             assertTrue(
-                    String.format("Method '%s' has no default implementation", method.getName()),
+                    Text.format("Method '%s' has no default implementation", method.getName()),
                     method.isDefault());
         }
+    }
+
+    private static boolean ignoreMethod(Method method) {
+        // If a default interface method "foo" has a lambda, e.g. `() -> false`, then OpenJDK 17 appears to create
+        // a synthetic method in the interface called "lambda$foo$0".
+        return method.isSynthetic();
     }
 
 }

@@ -21,12 +21,13 @@ namespace documentapi {
 class IRoutableFactory {
 protected:
     IRoutableFactory() = default;
+
 public:
     using UP = std::unique_ptr<IRoutableFactory>;
     using SP = std::shared_ptr<IRoutableFactory>;
 
-    IRoutableFactory(const IRoutableFactory &) = delete;
-    IRoutableFactory & operator = (const IRoutableFactory &) = delete;
+    IRoutableFactory(const IRoutableFactory&) = delete;
+    IRoutableFactory& operator=(const IRoutableFactory&) = delete;
 
     virtual ~IRoutableFactory() = default;
 
@@ -40,8 +41,7 @@ public:
      * @param out The buffer to write into.
      * @return True if the routable could be encoded.
      */
-    [[nodiscard]] virtual bool encode(const mbus::Routable &obj,
-                                      vespalib::GrowableByteBuffer &out) const = 0;
+    [[nodiscard]] virtual bool encode(const mbus::Routable& obj, vespalib::GrowableByteBuffer& out) const = 0;
 
     /**
      * This method decodes the given byte buffer to a routable.
@@ -52,8 +52,7 @@ public:
      * @param loadTypes The set of configured load types.
      * @return The decoded routable.
      */
-    [[nodiscard]] virtual mbus::Routable::UP decode(document::ByteBuffer &in) const = 0;
+    [[nodiscard]] virtual mbus::Routable::UP decode(document::ByteBuffer& in) const = 0;
 };
 
-}
-
+} // namespace documentapi

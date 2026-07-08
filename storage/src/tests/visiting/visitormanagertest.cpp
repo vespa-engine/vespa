@@ -1,36 +1,39 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/storage_config_set.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/config-stor-filestor.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/storageapi/message/datagram.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storage/visiting/visitormanager.h>
-#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <tests/storageserver/testvisitormessagesession.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storage/visiting/visitormanager.h>
+#include <vespa/storageapi/message/bucket.h>
+#include <vespa/storageapi/message/datagram.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/config-stor-filestor.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <gmock/gmock.h>
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+#include <tests/storageserver/testvisitormessagesession.h>
+
+#include <chrono>
 #include <optional>
 #include <thread>
-#include <chrono>
 
-using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
+using document::test::makeDocumentBucket;
 using documentapi::Priority;
 using namespace std::chrono_literals;
 using namespace ::testing;
@@ -41,7 +44,7 @@ namespace {
 using msg_ptr_vector = std::vector<api::StorageMessage::SP>;
 
 [[nodiscard]] const api::StorageMessageAddress& storage_address() {
-    static std::string storage("storage");
+    static std::string                storage("storage");
     static api::StorageMessageAddress address(&storage, lib::NodeType::STORAGE, 0);
     return address;
 }
@@ -59,18 +62,18 @@ struct MessageMeta {
 MessageMeta::MessageMeta() = default;
 MessageMeta::~MessageMeta() = default;
 
-}
+} // namespace
 
 struct VisitorManagerTest : Test {
 protected:
     static uint32_t docCount;
 
-    std::unique_ptr<StorageConfigSet> _config;
-    std::vector<document::Document::SP> _documents;
+    std::unique_ptr<StorageConfigSet>                 _config;
+    std::vector<document::Document::SP>               _documents;
     std::unique_ptr<TestVisitorMessageSessionFactory> _messageSessionFactory;
-    std::unique_ptr<TestServiceLayerApp> _node;
-    std::unique_ptr<DummyStorageLink> _top;
-    VisitorManager* _manager;
+    std::unique_ptr<TestServiceLayerApp>              _node;
+    std::unique_ptr<DummyStorageLink>                 _top;
+    VisitorManager*                                   _manager;
 
     VisitorManagerTest() : _node(), _top(), _manager(nullptr) {}
     ~VisitorManagerTest() override;
@@ -80,17 +83,11 @@ protected:
     void addSomeRemoves(bool removeAll = false);
     void TearDown() override;
     TestVisitorMessageSession& getSession(uint32_t n);
-    void verifyCreateVisitorReply(
-            api::ReturnCode::Result expectedResult,
-            int checkStatsDocsVisited = -1,
-            int checkStatsBytesVisited = -1,
-            uint64_t* message_id_out = nullptr);
-    void getMessagesAndReply(
-            size_t expectedCount,
-            TestVisitorMessageSession& session,
-            MessageMeta& meta,
-            api::ReturnCode::Result returnCode = api::ReturnCode::OK,
-            std::optional<Priority::Value> priority = documentapi::Priority::PRI_NORMAL_4);
+    void verifyCreateVisitorReply(api::ReturnCode::Result expectedResult, int checkStatsDocsVisited = -1,
+                                  int checkStatsBytesVisited = -1, uint64_t* message_id_out = nullptr);
+    void getMessagesAndReply(size_t expectedCount, TestVisitorMessageSession& session, MessageMeta& meta,
+                             api::ReturnCode::Result        returnCode = api::ReturnCode::OK,
+                             std::optional<Priority::Value> priority = documentapi::Priority::PRI_NORMAL_4);
 
     uint32_t getMatchingDocuments(std::vector<document::Document::SP>& docs);
 
@@ -101,9 +98,7 @@ VisitorManagerTest::~VisitorManagerTest() = default;
 
 uint32_t VisitorManagerTest::docCount = 10;
 
-void
-VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
-{
+void VisitorManagerTest::initializeTest(bool defer_manager_thread_start) {
     _config = StorageConfigSet::make_storage_node_config();
     _config->visitor_config().visitorthreads = 1;
 
@@ -114,11 +109,8 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
     _top = std::make_unique<DummyStorageLink>();
     using vespa::config::content::core::StorVisitorConfig;
     auto bootstrap_cfg = config_from<StorVisitorConfig>(_config->config_uri());
-    auto vm = std::make_unique<VisitorManager>(*bootstrap_cfg,
-                                               _node->getComponentRegister(),
-                                               *_messageSessionFactory,
-                                               VisitorFactory::Map(),
-                                               defer_manager_thread_start);
+    auto vm = std::make_unique<VisitorManager>(*bootstrap_cfg, _node->getComponentRegister(), *_messageSessionFactory,
+                                               VisitorFactory::Map(), defer_manager_thread_start);
     _manager = vm.get();
     _top->push_back(std::move(vm));
     using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
@@ -129,49 +121,46 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
     _top->open();
 
     // Adding some documents so database isn't empty
-    std::string content(
-            "To be, or not to be: that is the question:\n"
-            "Whether 'tis nobler in the mind to suffer\n"
-            "The slings and arrows of outrageous fortune,\n"
-            "Or to take arms against a sea of troubles,\n"
-            "And by opposing end them? To die: to sleep;\n"
-            "No more; and by a sleep to say we end\n"
-            "The heart-ache and the thousand natural shocks\n"
-            "That flesh is heir to, 'tis a consummation\n"
-            "Devoutly to be wish'd. To die, to sleep;\n"
-            "To sleep: perchance to dream: ay, there's the rub;\n"
-            "For in that sleep of death what dreams may come\n"
-            "When we have shuffled off this mortal coil,\n"
-            "Must give us pause: there's the respect\n"
-            "That makes calamity of so long life;\n"
-            "For who would bear the whips and scorns of time,\n"
-            "The oppressor's wrong, the proud man's contumely,\n"
-            "The pangs of despised love, the law's delay,\n"
-            "The insolence of office and the spurns\n"
-            "That patient merit of the unworthy takes,\n"
-            "When he himself might his quietus make\n"
-            "With a bare bodkin? who would fardels bear,\n"
-            "To grunt and sweat under a weary life,\n"
-            "But that the dread of something after death,\n"
-            "The undiscover'd country from whose bourn\n"
-            "No traveller returns, puzzles the will\n"
-            "And makes us rather bear those ills we have\n"
-            "Than fly to others that we know not of?\n"
-            "Thus conscience does make cowards of us all;\n"
-            "And thus the native hue of resolution\n"
-            "Is sicklied o'er with the pale cast of thought,\n"
-            "And enterprises of great pith and moment\n"
-            "With this regard their currents turn awry,\n"
-            "And lose the name of action. - Soft you now!\n"
-            "The fair Ophelia! Nymph, in thy orisons\n"
-            "Be all my sins remember'd.\n");
+    std::string content("To be, or not to be: that is the question:\n"
+                        "Whether 'tis nobler in the mind to suffer\n"
+                        "The slings and arrows of outrageous fortune,\n"
+                        "Or to take arms against a sea of troubles,\n"
+                        "And by opposing end them? To die: to sleep;\n"
+                        "No more; and by a sleep to say we end\n"
+                        "The heart-ache and the thousand natural shocks\n"
+                        "That flesh is heir to, 'tis a consummation\n"
+                        "Devoutly to be wish'd. To die, to sleep;\n"
+                        "To sleep: perchance to dream: ay, there's the rub;\n"
+                        "For in that sleep of death what dreams may come\n"
+                        "When we have shuffled off this mortal coil,\n"
+                        "Must give us pause: there's the respect\n"
+                        "That makes calamity of so long life;\n"
+                        "For who would bear the whips and scorns of time,\n"
+                        "The oppressor's wrong, the proud man's contumely,\n"
+                        "The pangs of despised love, the law's delay,\n"
+                        "The insolence of office and the spurns\n"
+                        "That patient merit of the unworthy takes,\n"
+                        "When he himself might his quietus make\n"
+                        "With a bare bodkin? who would fardels bear,\n"
+                        "To grunt and sweat under a weary life,\n"
+                        "But that the dread of something after death,\n"
+                        "The undiscover'd country from whose bourn\n"
+                        "No traveller returns, puzzles the will\n"
+                        "And makes us rather bear those ills we have\n"
+                        "Than fly to others that we know not of?\n"
+                        "Thus conscience does make cowards of us all;\n"
+                        "And thus the native hue of resolution\n"
+                        "Is sicklied o'er with the pale cast of thought,\n"
+                        "And enterprises of great pith and moment\n"
+                        "With this regard their currents turn awry,\n"
+                        "And lose the name of action. - Soft you now!\n"
+                        "The fair Ophelia! Nymph, in thy orisons\n"
+                        "Be all my sins remember'd.\n");
     for (uint32_t i = 0; i < docCount; ++i) {
         std::ostringstream uri;
-        uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/"
-            << i << ".html";
+        uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/" << i << ".html";
 
-        _documents.push_back(document::Document::SP(
-                _node->getTestDocMan().createDocument(content, uri.str())));
+        _documents.push_back(document::Document::SP(_node->getTestDocMan().createDocument(content, uri.str())));
         const document::DocumentType& type(_documents.back()->getType());
         _documents.back()->setValue(type.getField("headerval"), document::IntFieldValue(i % 4));
     }
@@ -186,14 +175,13 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
         _top->reset();
 
         StorBucketDatabase::WrappedEntry entry(
-                _node->getStorageBucketDatabase().get(bid, "",
-                    StorBucketDatabase::CREATE_IF_NONEXISTING));
+            _node->getStorageBucketDatabase().get(bid, "", StorBucketDatabase::CREATE_IF_NONEXISTING));
         entry.write();
     }
     for (uint32_t i = 0; i < docCount; ++i) {
         document::BucketId bid(16, i);
 
-        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), _documents[i], i+1);
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), _documents[i], i + 1);
         cmd->setAddress(storage_address());
         _top->sendDown(cmd);
         _top->waitForMessages(1, 60);
@@ -205,15 +193,14 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
     }
 }
 
-void
-VisitorManagerTest::addSomeRemoves(bool removeAll)
-{
+void VisitorManagerTest::addSomeRemoves(bool removeAll) {
     framework::defaultimplementation::FakeClock clock;
     for (uint32_t i = 0; i < docCount; i += (removeAll ? 1 : 4)) {
         // Add it to the database
         document::BucketId bid(16, i % 10);
-        auto cmd = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid), _documents[i]->getId(),
-                                                        vespalib::count_us(clock.getSystemTime().time_since_epoch()) + docCount + i + 1);
+        auto               cmd = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid), _documents[i]->getId(),
+                                                                      vespalib::count_us(clock.getSystemTime().time_since_epoch()) +
+                                                                          docCount + i + 1);
         cmd->setAddress(storage_address());
         _top->sendDown(cmd);
         _top->waitForMessages(1, 60);
@@ -225,9 +212,7 @@ VisitorManagerTest::addSomeRemoves(bool removeAll)
     }
 }
 
-void
-VisitorManagerTest::TearDown()
-{
+void VisitorManagerTest::TearDown() {
     if (_top) {
         assert(_top->getNumReplies() == 0);
         _top->close();
@@ -239,13 +224,11 @@ VisitorManagerTest::TearDown()
     _manager = nullptr;
 }
 
-TestVisitorMessageSession&
-VisitorManagerTest::getSession(uint32_t n)
-{
+TestVisitorMessageSession& VisitorManagerTest::getSession(uint32_t n) {
     // Wait until we have started the visitor
     const std::vector<TestVisitorMessageSession*>& sessions(_messageSessionFactory->_visitorSessions);
-    framework::defaultimplementation::RealClock clock;
-    vespalib::steady_time endTime = clock.getMonotonicTime() + 30s;
+    framework::defaultimplementation::RealClock    clock;
+    vespalib::steady_time                          endTime = clock.getMonotonicTime() + 30s;
     while (true) {
         {
             std::lock_guard lock(_messageSessionFactory->_accessLock);
@@ -261,14 +244,9 @@ VisitorManagerTest::getSession(uint32_t n)
     abort();
 }
 
-void
-VisitorManagerTest::getMessagesAndReply(
-        size_t expectedCount,
-        TestVisitorMessageSession& session,
-        MessageMeta& meta,
-        api::ReturnCode::Result result,
-        std::optional<Priority::Value> priority)
-{
+void VisitorManagerTest::getMessagesAndReply(size_t expectedCount, TestVisitorMessageSession& session,
+                                             MessageMeta& meta, api::ReturnCode::Result result,
+                                             std::optional<Priority::Value> priority) {
     for (size_t i = 0; i < expectedCount; i++) {
         session.waitForMessages(i + 1);
         mbus::Reply::UP reply;
@@ -309,13 +287,8 @@ VisitorManagerTest::getMessagesAndReply(
     }
 }
 
-void
-VisitorManagerTest::verifyCreateVisitorReply(
-        api::ReturnCode::Result expectedResult,
-        int checkStatsDocsVisited,
-        int checkStatsBytesVisited,
-        uint64_t* message_id_out)
-{
+void VisitorManagerTest::verifyCreateVisitorReply(api::ReturnCode::Result expectedResult, int checkStatsDocsVisited,
+                                                  int checkStatsBytesVisited, uint64_t* message_id_out) {
     _top->waitForMessages(1, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
     ASSERT_EQ(1, replies.size());
@@ -329,12 +302,10 @@ VisitorManagerTest::verifyCreateVisitorReply(
     ASSERT_EQ(expectedResult, reply->getResult().getResult());
 
     if (checkStatsDocsVisited >= 0) {
-        ASSERT_EQ(checkStatsDocsVisited,
-                  reply->getVisitorStatistics().getDocumentsVisited());
+        ASSERT_EQ(checkStatsDocsVisited, reply->getVisitorStatistics().getDocumentsVisited());
     }
     if (checkStatsBytesVisited >= 0) {
-        ASSERT_EQ(checkStatsBytesVisited,
-                  reply->getVisitorStatistics().getBytesVisited());
+        ASSERT_EQ(checkStatsBytesVisited, reply->getVisitorStatistics().getBytesVisited());
     }
 
     if (message_id_out) {
@@ -342,8 +313,7 @@ VisitorManagerTest::verifyCreateVisitorReply(
     }
 }
 
-uint32_t
-VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP>& docs) {
+uint32_t VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP>& docs) {
     uint32_t equalCount = 0;
     for (const auto& doc : docs) {
         for (const auto& document : _documents) {
@@ -366,7 +336,7 @@ int getTotalSerializedSize(const std::vector<document::Document::SP>& docs) {
     return total;
 }
 
-}
+} // namespace
 
 TEST_F(VisitorManagerTest, normal_usage) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
@@ -381,7 +351,8 @@ TEST_F(VisitorManagerTest, normal_usage) {
     getMessagesAndReply(1, getSession(0), meta);
 
     // All data has been replied to, expecting to get a create visitor reply
-    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, int(meta.docs.size()), getTotalSerializedSize(meta.docs)));
+    ASSERT_NO_FATAL_FAILURE(
+        verifyCreateVisitorReply(api::ReturnCode::OK, int(meta.docs.size()), getTotalSerializedSize(meta.docs)));
 
     EXPECT_EQ(1u, getMatchingDocuments(meta.docs));
     EXPECT_FALSE(_manager->hasPendingMessageState());
@@ -406,8 +377,7 @@ TEST_F(VisitorManagerTest, resending) {
 
         mbus::Reply::UP reply = msg->createReply();
 
-        ASSERT_EQ(documentapi::DocumentProtocol::MESSAGE_VISITORINFO,
-                  session.sentMessages[1]->getType());
+        ASSERT_EQ(documentapi::DocumentProtocol::MESSAGE_VISITORINFO, session.sentMessages[1]->getType());
         reply->swapState(*session.sentMessages[1]);
         reply->setMessage(mbus::Message::UP(session.sentMessages[1].release()));
         session.reply(std::move(reply));
@@ -536,8 +506,8 @@ TEST_F(VisitorManagerTest, visit_with_timeframe_and_selection) {
 
 TEST_F(VisitorManagerTest, visit_with_timeframe_and_bogus_selection) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis",
-                                                           "DocType(testdoctype1---///---) XXX BAD Field(headerval) < 2");
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(
+        makeBucketSpace(), "DumpVisitor", "testvis", "DocType(testdoctype1---///---) XXX BAD Field(headerval) < 2");
     cmd->setFromTime(3);
     cmd->setToTime(8);
     for (uint32_t i = 0; i < 10; ++i) {
@@ -556,16 +526,15 @@ TEST_F(VisitorManagerTest, visit_with_timeframe_and_bogus_selection) {
 }
 
 void assert_substring_count(std::string_view source, size_t expectedCount, std::string_view substring) {
-    uint32_t count = 0;
+    uint32_t               count = 0;
     std::string::size_type pos = source.find(substring);
     while (pos != std::string::npos) {
         ++count;
         pos = source.find(substring, pos + 1);
     }
-    if (count != (uint32_t) expectedCount) {
-        FAIL() << "Value of '" << source << "' contained " << count
-               << " instances of substring '" << substring << "', not "
-               << expectedCount << " as expected.";
+    if (count != (uint32_t)expectedCount) {
+        FAIL() << "Value of '" << source << "' contained " << count << " instances of substring '" << substring
+               << "', not " << expectedCount << " as expected.";
     }
 }
 
@@ -614,7 +583,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
 
     // Start a bunch of invalid visitors
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         std::ostringstream ost;
         ost << "testvis" << i;
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "InvalidVisitor", ost.str(), "");
@@ -622,11 +591,11 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         cmd->setAddress(storage_address());
         cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
-        _top->waitForMessages(i+1, 60);
+        _top->waitForMessages(i + 1, 60);
     }
 
     // Start a bunch of visitors
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         std::ostringstream ost;
         ost << "testvis" << (i + 10);
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", ost.str(), "");
@@ -646,7 +615,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         int failures = 0;
         int busy = 0;
 
-        for (uint32_t i=0; i< expected_total; ++i) {
+        for (uint32_t i = 0; i < expected_total; ++i) {
             const std::shared_ptr<api::StorageMessage>& msg(replies[i]);
             ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
             auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);
@@ -694,7 +663,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
     }
 
     // Start a bunch of more visitors
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         std::ostringstream ost;
         ost << "testvis" << (i + 24);
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", ost.str(), "");
@@ -709,7 +678,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
     const msg_ptr_vector replies = _top->getRepliesOnce();
     ASSERT_EQ(8, replies.size());
 
-    for (const auto & msg : replies) {
+    for (const auto& msg : replies) {
         ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
         auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);
         ASSERT_TRUE(reply.get());
@@ -758,8 +727,8 @@ TEST_F(VisitorManagerTest, abort_on_field_path_error) {
     initializeTest();
 
     // Use bogus field path to force error to happen
-    auto cmd = std::make_shared<api::CreateVisitorCommand>(
-            makeBucketSpace(), "DumpVisitor", "testvis", "testdoctype1.headerval{bogus} == 1234");
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis",
+                                                           "testdoctype1.headerval{bogus} == 1234");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
     cmd->setAddress(storage_address());
     cmd->setQueueTimeout(0ms);
@@ -787,13 +756,12 @@ TEST_F(VisitorManagerTest, visitor_queue_timeout) {
 
     // Don't answer any messages. Make sure we timeout anyways.
     _top->waitForMessages(1, 60);
-    const msg_ptr_vector replies = _top->getRepliesOnce();
+    const msg_ptr_vector                        replies = _top->getRepliesOnce();
     const std::shared_ptr<api::StorageMessage>& msg(replies[0]);
 
     ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
     auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);
-    ASSERT_EQ(api::ReturnCode(api::ReturnCode::BUSY, "Visitor timed out in visitor queue"),
-              reply->getResult());
+    ASSERT_EQ(api::ReturnCode(api::ReturnCode::BUSY, "Visitor timed out in visitor queue"), reply->getResult());
 }
 
 TEST_F(VisitorManagerTest, visitor_processing_timeout) {
@@ -819,8 +787,7 @@ namespace {
 
 uint32_t nextVisitor = 0;
 
-api::StorageMessage::Id
-sendCreateVisitor(vespalib::duration timeout, DummyStorageLink& top, uint8_t priority = 127) {
+api::StorageMessage::Id sendCreateVisitor(vespalib::duration timeout, DummyStorageLink& top, uint8_t priority = 127) {
     std::ostringstream ost;
     ost << "testvis" << ++nextVisitor;
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", ost.str(), "");
@@ -832,7 +799,7 @@ sendCreateVisitor(vespalib::duration timeout, DummyStorageLink& top, uint8_t pri
     return cmd->getMsgId();
 }
 
-}
+} // namespace
 
 TEST_F(VisitorManagerTest, prioritized_visitor_queing) {
     framework::HttpUrlPath path("?verbose=true&allvisitors=true");
@@ -841,11 +808,11 @@ TEST_F(VisitorManagerTest, prioritized_visitor_queing) {
     _manager->setMaxConcurrentVisitors(4);
     _manager->setMaxVisitorQueueSize(4);
 
-    api::StorageMessage::Id ids[10] = { 0 };
+    api::StorageMessage::Id ids[10] = {0};
 
     // First 4 should just start..
     for (uint32_t i = 0; i < 4; ++i) {
-        ids[i] = sendCreateVisitor(i*1ms, *_top, i);
+        ids[i] = sendCreateVisitor(i * 1ms, *_top, i);
     }
 
     // Next ones should be queued - (Better not finish before we get here)
@@ -895,7 +862,7 @@ TEST_F(VisitorManagerTest, prioritized_max_concurrent_visitors) {
     framework::HttpUrlPath path("?verbose=true&allvisitors=true");
     ASSERT_NO_FATAL_FAILURE(initializeTest());
 
-    api::StorageMessage::Id ids[17] = { 0 };
+    api::StorageMessage::Id ids[17] = {0};
 
     // Number of concurrent visitors is in [4, 8], depending on priority
     // Max concurrent:
@@ -909,7 +876,7 @@ TEST_F(VisitorManagerTest, prioritized_max_concurrent_visitors) {
 
     // First 4 should just start..
     for (uint32_t i = 0; i < 4; ++i) {
-        ids[i] = sendCreateVisitor(i*1ms, *_top, i);
+        ids[i] = sendCreateVisitor(i * 1ms, *_top, i);
     }
 
     // Low pri messages; get put into queue
@@ -948,13 +915,12 @@ TEST_F(VisitorManagerTest, prioritized_max_concurrent_visitors) {
     // Very Important Visitor(tm) gets a concurrent slot
     ids[16] = sendCreateVisitor(1000ms, *_top, 0);
 
-    MessageMeta meta;
+    MessageMeta        meta;
     std::set<uint64_t> finishedVisitors;
 
     // Verify that the correct visitors are running.
     for (int i = 0; i < 8; i++) {
-        documentapi::Priority::Value priority =
-            documentapi::Priority::PRI_HIGHEST; // ids 0-3,16
+        documentapi::Priority::Value priority = documentapi::Priority::PRI_HIGHEST; // ids 0-3,16
         if (i == 4) {
             priority = documentapi::Priority::PRI_VERY_LOW; // ids 10
         } else if (i == 5) {
@@ -979,8 +945,7 @@ TEST_F(VisitorManagerTest, prioritized_max_concurrent_visitors) {
     finishedVisitors.clear();
 
     for (int i = 8; i < 14; i++) {
-        documentapi::Priority::Value priority =
-            documentapi::Priority::PRI_LOWEST; // ids 6-9,11
+        documentapi::Priority::Value priority = documentapi::Priority::PRI_LOWEST; // ids 6-9,11
         if (i == 8) {
             priority = documentapi::Priority::PRI_HIGH_2; // ids 14
         }
@@ -1043,12 +1008,12 @@ TEST_F(VisitorManagerTest, status_page) {
     EXPECT_THAT(str, HasSubstr("Running 1 visitors")); // 1 active
     EXPECT_THAT(str, HasSubstr("waiting visitors 1")); // 1 queued
     EXPECT_THAT(str, HasSubstr("Visitor thread 0"));
-    EXPECT_THAT(str, HasSubstr("Iterators per bucket")); // verbose per thread
+    EXPECT_THAT(str, HasSubstr("Iterators per bucket"));                 // verbose per thread
     EXPECT_THAT(str, HasSubstr("Message #1 <b>putdocumentmessage</b>")); // 1 active
 
-    for (uint32_t session = 0; session < 2 ; ++session){
+    for (uint32_t session = 0; session < 2; ++session) {
         finishAndWaitForVisitorSessionCompletion(session);
     }
 }
 
-}
+} // namespace storage

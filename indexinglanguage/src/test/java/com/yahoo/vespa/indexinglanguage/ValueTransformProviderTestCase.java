@@ -2,7 +2,17 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.ValueTransformProvider;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.IfThenExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.LowerCaseExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SelectInputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SwitchExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.TrimExpression;
 import org.junit.Test;
 
 import java.util.LinkedHashMap;

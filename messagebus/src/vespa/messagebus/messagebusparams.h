@@ -2,6 +2,7 @@
 #pragma once
 
 #include "iprotocol.h"
+
 #include <vespa/messagebus/routing/iretrypolicy.h>
 
 namespace mbus {
@@ -9,8 +10,8 @@ namespace mbus {
 class MessageBus;
 
 /**
- * To facilitate several configuration parameters to the {@link MessageBus} constructor, all parameters are held by this
- * class. This class has reasonable default values for each parameter.
+ * To facilitate several configuration parameters to the {@link MessageBus} constructor, all parameters are held by
+ * this class. This class has reasonable default values for each parameter.
  *
  * @author Simon Thoresen Hult
  * @version $Id$
@@ -42,7 +43,10 @@ public:
      * @param retryPolicy The policy to set.
      * @return This, to allow chaining.
      */
-    MessageBusParams &setRetryPolicy(IRetryPolicy::SP retryPolicy) { _retryPolicy = retryPolicy; return *this; }
+    MessageBusParams& setRetryPolicy(IRetryPolicy::SP retryPolicy) {
+        _retryPolicy = retryPolicy;
+        return *this;
+    }
 
     /**
      * Registers a protocol under the name given by {@link com.yahoo.messagebus.Protocol#getName()}.
@@ -50,7 +54,7 @@ public:
      * @param protocol The protocol to register.
      * @return This, to allow chaining.
      */
-    MessageBusParams &addProtocol(IProtocol::SP protocol);
+    MessageBusParams& addProtocol(IProtocol::SP protocol);
 
     /**
      * Returns the number of protocols that are contained in this.
@@ -80,7 +84,10 @@ public:
      * @param maxCount The count limit to set.
      * @return This, to allow chaining.
      */
-    MessageBusParams &setMaxPendingCount(uint32_t maxCount) { _maxPendingCount = maxCount; return *this; }
+    MessageBusParams& setMaxPendingCount(uint32_t maxCount) {
+        _maxPendingCount = maxCount;
+        return *this;
+    }
 
     /**
      * Returns the maximum number of bytes allowed for pending messages.
@@ -95,8 +102,10 @@ public:
      * @param maxSize The size limit to set.
      * @return This, to allow chaining.
      */
-    MessageBusParams &setMaxPendingSize(int maxSize) { _maxPendingSize = maxSize; return *this; }
+    MessageBusParams& setMaxPendingSize(int maxSize) {
+        _maxPendingSize = maxSize;
+        return *this;
+    }
 };
 
 } // namespace mbus
-

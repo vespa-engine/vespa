@@ -7,7 +7,9 @@
 #include <chrono>
 #include <mutex>
 
-namespace vespalib::slime { struct Inserter; }
+namespace vespalib::slime {
+struct Inserter;
+}
 
 namespace search::attribute {
 
@@ -18,16 +20,11 @@ namespace search::attribute {
  */
 class AttributeInitializationStatus : public vespalib::InitializationStatusProducer {
 public:
-    enum State {
-        QUEUED,
-        LOADING,
-        REPROCESSING,
-        LOADED
-    };
+    enum State { QUEUED, LOADING, REPROCESSING, LOADED };
     static std::string state_to_string(State state);
     using time_point = std::chrono::system_clock::time_point;
 
-    AttributeInitializationStatus(const std::string &name);
+    AttributeInitializationStatus(const std::string& name);
 
     void start_loading();
     void start_reprocessing();
@@ -44,21 +41,21 @@ public:
     bool was_reprocessed() const;
     float get_reprocessing_percentage() const;
 
-    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
+    void report_initialization_status(const vespalib::slime::Inserter& inserter) const override;
 
 private:
     mutable std::mutex _mutex;
 
     const std::string _name;
-    State _state;
+    State             _state;
 
     time_point _start_time;
     time_point _reprocessing_start_time;
     time_point _reprocessing_end_time;
     time_point _end_time;
 
-    bool _was_reprocessed;
+    bool  _was_reprocessed;
     float _reprocessing_percentage;
 };
 
-}
+} // namespace search::attribute

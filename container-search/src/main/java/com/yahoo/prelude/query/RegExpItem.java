@@ -68,17 +68,12 @@ public class RegExpItem extends TermItem {
         return ItemType.REGEXP.name();
     }
 
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         putString(getIndexedString(), buffer);
     }
 
     public Pattern getRegexp() { return regexp; }
-
-    @Override
-    public String toString() {
-        return "RegExpItem [expression=" + expression + "]";
-    }
 
     @Override
     public int hashCode() {
@@ -96,7 +91,7 @@ public class RegExpItem extends TermItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemRegexp.newBuilder();
         builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));
         builder.setRegexp(expression);

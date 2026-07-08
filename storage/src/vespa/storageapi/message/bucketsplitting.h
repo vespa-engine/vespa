@@ -38,8 +38,8 @@ namespace storage::api {
  */
 class SplitBucketCommand : public MaintenanceCommand {
 private:
-    uint8_t _minSplitBits;
-    uint8_t _maxSplitBits;
+    uint8_t  _minSplitBits;
+    uint8_t  _maxSplitBits;
     uint32_t _minByteSize;
     uint32_t _minDocCount;
 
@@ -90,9 +90,10 @@ private:
  */
 class JoinBucketsCommand : public MaintenanceCommand {
     std::vector<document::BucketId> _sources;
-    uint8_t _minJoinBits;
+    uint8_t                         _minJoinBits;
+
 public:
-    explicit JoinBucketsCommand(const document::Bucket &target);
+    explicit JoinBucketsCommand(const document::Bucket& target);
     std::vector<document::BucketId>& getSourceBuckets() { return _sources; }
     const std::vector<document::BucketId>& getSourceBuckets() const { return _sources; }
     void setMinJoinBits(uint8_t minJoinBits) { _minJoinBits = minJoinBits; }
@@ -109,6 +110,7 @@ public:
  */
 class JoinBucketsReply : public BucketInfoReply {
     std::vector<document::BucketId> _sources;
+
 public:
     explicit JoinBucketsReply(const JoinBucketsCommand& cmd);
     JoinBucketsReply(const JoinBucketsCommand& cmd, const BucketInfo& bucketInfo);
@@ -117,4 +119,4 @@ public:
     DECLARE_STORAGEREPLY(JoinBucketsReply, onJoinBucketsReply)
 };
 
-}
+} // namespace storage::api

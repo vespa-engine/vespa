@@ -35,8 +35,7 @@ void add_docs(AttributeVector::SP attr_ptr, size_t limit = 1000) {
     ASSERT_EQ((limit - 1), docid);
 }
 
-template <typename ATTR, typename KEY>
-void set_doc(ATTR *attr, uint32_t docid, KEY key, int32_t weight) {
+template <typename ATTR, typename KEY> void set_doc(ATTR* attr, uint32_t docid, KEY key, int32_t weight) {
     attr->clearDoc(docid);
     if (attr->getCollectionType() == CollectionType::SINGLE) {
         attr->update(docid, key);
@@ -47,14 +46,14 @@ void set_doc(ATTR *attr, uint32_t docid, KEY key, int32_t weight) {
 }
 
 void populate_long(AttributeVector::SP attr_ptr) {
-    IntegerAttribute *attr = static_cast<IntegerAttribute *>(attr_ptr.get());
+    IntegerAttribute* attr = static_cast<IntegerAttribute*>(attr_ptr.get());
     set_doc(attr, 1, int64_t(111), 20);
     set_doc(attr, 5, int64_t(111), 5);
     set_doc(attr, 7, int64_t(111), 10);
 }
 
 void populate_string(AttributeVector::SP attr_ptr) {
-    StringAttribute *attr = static_cast<StringAttribute *>(attr_ptr.get());
+    StringAttribute* attr = static_cast<StringAttribute*>(attr_ptr.get());
     set_doc(attr, 1, "foo", 20);
     set_doc(attr, 5, "foo", 5);
     set_doc(attr, 7, "foo", 10);
@@ -62,24 +61,22 @@ void populate_string(AttributeVector::SP attr_ptr) {
 
 struct TestParam {
     CollectionType col_type;
-    BasicType type;
-    const char* valid_term;
-    const char* invalid_term;
-    TestParam(CollectionType col_type_in, BasicType type_in,
-              const char* valid_term_in, const char* invalid_term_in)
+    BasicType      type;
+    const char*    valid_term;
+    const char*    invalid_term;
+    TestParam(CollectionType col_type_in, BasicType type_in, const char* valid_term_in, const char* invalid_term_in)
         : col_type(col_type_in), type(type_in), valid_term(valid_term_in), invalid_term(invalid_term_in) {}
     ~TestParam() {}
 };
 
-std::ostream& operator<<(std::ostream& os, const TestParam& param)
-{
+std::ostream& operator<<(std::ostream& os, const TestParam& param) {
     os << param.col_type.asString() << "_" << param.type.asString();
     return os;
 }
 
 struct DirectPostingStoreTest : public ::testing::TestWithParam<TestParam> {
-    AttributeVector::SP attr;
-    bool has_weight;
+    AttributeVector::SP        attr;
+    bool                       has_weight;
     const IDirectPostingStore* api;
 
     const IDirectPostingStore* extract_api() {
@@ -93,8 +90,7 @@ struct DirectPostingStoreTest : public ::testing::TestWithParam<TestParam> {
     DirectPostingStoreTest()
         : attr(make_attribute(GetParam().type, GetParam().col_type, true)),
           has_weight(GetParam().col_type != CollectionType::SINGLE),
-          api(extract_api())
-    {
+          api(extract_api()) {
         assert(api != nullptr);
         add_docs(attr);
         if (GetParam().type == BasicType::STRING) {
@@ -176,12 +172,11 @@ void verify_invalid_lookup(IDirectPostingStore::LookupResult result) {
     EXPECT_EQ(0, result.max_weight);
 }
 
-INSTANTIATE_TEST_SUITE_P(DefaultInstantiation,
-                         DirectPostingStoreTest,
+INSTANTIATE_TEST_SUITE_P(DefaultInstantiation, DirectPostingStoreTest,
                          testing::Values(TestParam(CollectionType::SINGLE, BasicType::INT64, "111", "222"),
-                                 TestParam(CollectionType::WSET, BasicType::INT64, "111", "222"),
-                                 TestParam(CollectionType::SINGLE, BasicType::STRING, "foo", "bar"),
-                                 TestParam(CollectionType::WSET, BasicType::STRING, "foo", "bar")),
+                                         TestParam(CollectionType::WSET, BasicType::INT64, "111", "222"),
+                                         TestParam(CollectionType::SINGLE, BasicType::STRING, "foo", "bar"),
+                                         TestParam(CollectionType::WSET, BasicType::STRING, "foo", "bar")),
                          testing::PrintToStringParamName());
 
 TEST_P(DirectPostingStoreTest, lookup_works_correctly) {
@@ -203,19 +198,19 @@ void verify_posting(const IDirectPostingStore& api, const std::string& term) {
             itr.linearSeek(1);
         }
         ASSERT_TRUE(itr.valid());
-        EXPECT_EQ(1u, itr.getKey());  // docid
+        EXPECT_EQ(1u, itr.getKey()); // docid
         if constexpr (has_weight) {
             EXPECT_EQ(20, itr.getData()); // weight
         }
         itr.linearSeek(2);
         ASSERT_TRUE(itr.valid());
-        EXPECT_EQ(5u, itr.getKey());  // docid
+        EXPECT_EQ(5u, itr.getKey()); // docid
         if constexpr (has_weight) {
-            EXPECT_EQ(5, itr.getData());  // weight
+            EXPECT_EQ(5, itr.getData()); // weight
         }
         itr.linearSeek(6);
         ASSERT_TRUE(itr.valid());
-        EXPECT_EQ(7u, itr.getKey());  // docid
+        EXPECT_EQ(7u, itr.getKey()); // docid
         if constexpr (has_weight) {
             EXPECT_EQ(10, itr.getData()); // weight
         }
@@ -232,18 +227,20 @@ TEST_P(DirectPostingStoreTest, iterators_are_created_correctly) {
     }
 }
 
-TEST_P(DirectPostingStoreTest, collect_folded_works)
-{
+TEST_P(DirectPostingStoreTest, collect_folded_works) {
     if (GetParam().type == BasicType::STRING) {
         auto* sa = static_cast<StringAttribute*>(attr.get());
         set_doc(sa, 2, "bar", 30);
         attr->commit();
         set_doc(sa, 3, "FOO", 30);
         attr->commit();
-        auto snapshot = api->get_dictionary_snapshot();
-        auto lookup = api->lookup(GetParam().valid_term, snapshot);
-        std::vector<std::string> folded;
-        std::function<void(vespalib::datastore::EntryRef)> save_folded = [&folded,sa](vespalib::datastore::EntryRef enum_idx) { folded.emplace_back(sa->getFromEnum(enum_idx.ref())); };
+        auto                                               snapshot = api->get_dictionary_snapshot();
+        auto                                               lookup = api->lookup(GetParam().valid_term, snapshot);
+        std::vector<std::string>                           folded;
+        std::function<void(vespalib::datastore::EntryRef)> save_folded =
+            [&folded, sa](vespalib::datastore::EntryRef enum_idx) {
+                folded.emplace_back(sa->getFromEnum(enum_idx.ref()));
+            };
         api->collect_folded(lookup.enum_idx, snapshot, save_folded);
         std::vector<std::string> expected_folded{"FOO", "foo"};
         EXPECT_EQ(expected_folded, folded);
@@ -251,11 +248,13 @@ TEST_P(DirectPostingStoreTest, collect_folded_works)
         auto* ia = dynamic_cast<IntegerAttributeTemplate<int64_t>*>(attr.get());
         set_doc(ia, 2, int64_t(112), 30);
         attr->commit();
-        auto snapshot = api->get_dictionary_snapshot();
-        auto lookup = api->lookup(GetParam().valid_term, snapshot);
-        std::vector<int64_t> folded;
-        std::function<void(vespalib::datastore::EntryRef)> save_folded = [&folded, ia](
-                vespalib::datastore::EntryRef enum_idx) { folded.emplace_back(ia->getFromEnum(enum_idx.ref())); };
+        auto                                               snapshot = api->get_dictionary_snapshot();
+        auto                                               lookup = api->lookup(GetParam().valid_term, snapshot);
+        std::vector<int64_t>                               folded;
+        std::function<void(vespalib::datastore::EntryRef)> save_folded =
+            [&folded, ia](vespalib::datastore::EntryRef enum_idx) {
+                folded.emplace_back(ia->getFromEnum(enum_idx.ref()));
+            };
         api->collect_folded(lookup.enum_idx, snapshot, save_folded);
         std::vector<int64_t> expected_folded{int64_t(111)};
         EXPECT_EQ(expected_folded, folded);
@@ -267,23 +266,22 @@ public:
     Verifier();
     ~Verifier() override;
     SearchIterator::UP create(bool strict) const override {
-        (void) strict;
+        (void)strict;
         const auto* api = _attr->as_docid_with_weight_posting_store();
         assert(api != nullptr);
         auto dict_entry = api->lookup("123", api->get_dictionary_snapshot());
         assert(dict_entry.posting_idx.valid());
         return std::make_unique<queryeval::DocidWithWeightSearchIterator>(_tfmd, *api, dict_entry);
     }
+
 private:
     mutable fef::TermFieldMatchData _tfmd;
-    AttributeVector::SP _attr;
+    AttributeVector::SP             _attr;
 };
 
-Verifier::Verifier()
-    : _attr(make_attribute(BasicType::INT64, CollectionType::WSET, true))
-{
+Verifier::Verifier() : _attr(make_attribute(BasicType::INT64, CollectionType::WSET, true)) {
     add_docs(_attr, getDocIdLimit());
-    auto docids = getExpectedDocIds();
+    auto  docids = getExpectedDocIds();
     auto* int_attr = static_cast<IntegerAttribute*>(_attr.get());
     for (auto docid : docids) {
         set_doc(int_attr, docid, int64_t(123), 1);

@@ -16,14 +16,9 @@ private:
 
 public:
     WrapInserter(FieldIndexCollection& field_indexes, uint32_t field_id)
-        : _inserter(field_indexes.getFieldIndex(field_id)->getInserter())
-    {
-    }
+        : _inserter(field_indexes.getFieldIndex(field_id)->getInserter()) {}
 
-    WrapInserter(IFieldIndex& field_index)
-            : _inserter(field_index.getInserter())
-    {
-    }
+    WrapInserter(IFieldIndex& field_index) : _inserter(field_index.getInserter()) {}
 
     WrapInserter& word(std::string_view word_) {
         _inserter.setNextWord(word_);
@@ -56,9 +51,7 @@ public:
         return *this;
     }
 
-    vespalib::datastore::EntryRef getWordRef() {
-        return _inserter.getWordRef();
-    }
+    vespalib::datastore::EntryRef getWordRef() { return _inserter.getWordRef(); }
 };
 
-}
+} // namespace search::memoryindex::test

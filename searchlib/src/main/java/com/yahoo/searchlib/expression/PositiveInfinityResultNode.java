@@ -20,7 +20,7 @@ public class PositiveInfinityResultNode extends ResultNode {
 
     @Override
     public double getFloat() {
-        return Double.MAX_VALUE;
+        return Double.POSITIVE_INFINITY;
     }
 
     @Override

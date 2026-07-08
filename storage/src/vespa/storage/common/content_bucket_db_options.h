@@ -15,4 +15,4 @@ struct ContentBucketDbOptions {
     uint8_t n_stripe_bits = 0;
 };
 
-}
+} // namespace storage

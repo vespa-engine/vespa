@@ -1,28 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "index_manager_stats.h"
+
 #include "iindexmanager.h"
-#include "indexsearchablevisitor.h"
 #include "imemoryindex.h"
+#include "indexsearchablevisitor.h"
 
 namespace searchcorespi {
 
 namespace {
 
-class Visitor : public IndexSearchableVisitor
-{
+class Visitor : public IndexSearchableVisitor {
 public:
-    std::vector<index::DiskIndexStats> _diskIndexes;
+    std::vector<index::DiskIndexStats>   _diskIndexes;
     std::vector<index::MemoryIndexStats> _memoryIndexes;
 
     Visitor();
     ~Visitor() override;
-    void visit(const index::IDiskIndex &index) override {
-        _diskIndexes.emplace_back(index);
-    }
-    void visit(const index::IMemoryIndex &index) override {
-        _memoryIndexes.emplace_back(index);
-    }
+    void visit(const index::IDiskIndex& index) override { _diskIndexes.emplace_back(index); }
+    void visit(const index::IMemoryIndex& index) override { _memoryIndexes.emplace_back(index); }
 
     void normalize() {
         std::sort(_diskIndexes.begin(), _diskIndexes.end());
@@ -33,19 +29,13 @@ public:
 Visitor::Visitor() = default;
 Visitor::~Visitor() = default;
 
+} // namespace
+
+IndexManagerStats::IndexManagerStats() : _diskIndexes(), _memoryIndexes() {
 }
 
-IndexManagerStats::IndexManagerStats()
-    : _diskIndexes(),
-      _memoryIndexes()
-{
-}
-
-IndexManagerStats::IndexManagerStats(const IIndexManager &indexManager)
-    : _diskIndexes(),
-      _memoryIndexes()
-{
-    Visitor visitor;
+IndexManagerStats::IndexManagerStats(const IIndexManager& indexManager) : _diskIndexes(), _memoryIndexes() {
+    Visitor             visitor;
     IndexSearchable::SP searchable(indexManager.getSearchable());
     searchable->accept(visitor);
     visitor.normalize();
@@ -55,4 +45,4 @@ IndexManagerStats::IndexManagerStats(const IIndexManager &indexManager)
 
 IndexManagerStats::~IndexManagerStats() = default;
 
-}
+} // namespace searchcorespi

@@ -38,21 +38,12 @@ public abstract class StructuredDataType extends DataType {
     @Override
     protected FieldValue createByReflection(Object arg) { return null; }
 
-    /**
-     * Returns the name of this as a DataTypeName
-     *
-     * @return Return the Documentname of this doumenttype.
-     */
+    /** Returns the name of this as a DataTypeName. */
     public DataTypeName getDataTypeName() {
         return new DataTypeName(getName());
     }
 
-    /**
-     * Gets the field  matching a given name.
-     *
-     * @param name The name of a field.
-     * @return Returns the matching field, or null if not found.
-     */
+    /** Returns the given field, or null if not found. */
     public abstract Field getField(String name);
 
     /**

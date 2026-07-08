@@ -8,21 +8,15 @@ namespace search::attribute {
  * Class describing how to compact a reference attribute
  */
 class ReferenceAttributeCompactionSpec {
-    bool           _values;
-    bool           _dictionary;
+    bool _values;
+    bool _dictionary;
+
 public:
-    ReferenceAttributeCompactionSpec() noexcept
-        : _values(false),
-          _dictionary(false)
-    {
-    }
+    ReferenceAttributeCompactionSpec() noexcept : _values(false), _dictionary(false) {}
     ReferenceAttributeCompactionSpec(bool values_, bool dictionary_) noexcept
-        : _values(values_),
-          _dictionary(dictionary_)
-    {
-    }
+        : _values(values_), _dictionary(dictionary_) {}
     bool values() const noexcept { return _values; }
     bool dictionary() const noexcept { return _dictionary; }
 };
 
-}
+} // namespace search::attribute

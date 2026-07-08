@@ -32,17 +32,13 @@ private:
     uint32_t _ticksBeforeWait;
 
 public:
-    ThreadProperties(vespalib::duration waitTime,
-                     vespalib::duration maxProcessTime,
-                     int ticksBeforeWait);
+    ThreadProperties(vespalib::duration waitTime, vespalib::duration maxProcessTime, int ticksBeforeWait);
 
     [[nodiscard]] vespalib::duration getMaxProcessTime() const { return _maxProcessTime; }
     [[nodiscard]] vespalib::duration getWaitTime() const { return _waitTime; }
     [[nodiscard]] int getTicksBeforeWait() const { return _ticksBeforeWait; }
 
-    [[nodiscard]] vespalib::duration getMaxCycleTime() const {
-        return std::max(_maxProcessTime, _waitTime);
-    }
+    [[nodiscard]] vespalib::duration getMaxCycleTime() const { return std::max(_maxProcessTime, _waitTime); }
 };
 
-}
+} // namespace storage::framework

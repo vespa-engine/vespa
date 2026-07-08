@@ -19,7 +19,7 @@ public class BucketValue extends GroupingExpression implements Comparable<Bucket
     protected BucketValue(String label, Integer level, ConstantValue<?> inclusiveFrom, ConstantValue<?> exclusiveTo) {
         super("bucket[" + asImage(inclusiveFrom) + ", " + asImage(exclusiveTo) + ">", label, level);
         if (comparator.compare(exclusiveTo, inclusiveFrom) < 0) {
-            throw new IllegalArgumentException("Bucket to-value can not be less than from-value.");
+            throw new IllegalArgumentException("Bucket to-value cannot be less than from-value.");
         }
         from = inclusiveFrom;
         to = exclusiveTo;

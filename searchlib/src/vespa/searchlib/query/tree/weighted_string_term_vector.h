@@ -3,6 +3,7 @@
 #pragma once
 
 #include "term_vector.h"
+
 #include <vector>
 
 namespace search::query {
@@ -20,8 +21,9 @@ public:
     [[nodiscard]] IntegerAndWeight getAsInteger(uint32_t index) const override;
     [[nodiscard]] Weight getWeight(uint32_t index) const override;
     [[nodiscard]] uint32_t size() const override;
+
 private:
     std::vector<std::pair<std::string, Weight>> _terms;
 };
 
-}
+} // namespace search::query

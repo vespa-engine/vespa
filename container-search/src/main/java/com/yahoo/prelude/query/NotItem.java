@@ -140,10 +140,10 @@ public class NotItem extends CompositeItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemAndNot.newBuilder();
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf());
+            builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemAndNot(builder.build())

@@ -9,8 +9,7 @@ namespace search::index {
 /**
  * Fields from an index schema used to represent an uri.
  **/
-class UriField
-{
+class UriField {
 public:
     using UsedFieldsMap = std::vector<bool>;
 
@@ -24,18 +23,17 @@ public:
     uint32_t _hostname;
 
 private:
-    static void markUsed(UsedFieldsMap &usedFields, uint32_t field);
-    static bool valid(const Schema &schema, uint32_t fieldId,
-                      const Schema::CollectionType &collectionType);
+    static void markUsed(UsedFieldsMap& usedFields, uint32_t field);
+    static bool valid(const Schema& schema, uint32_t fieldId, const Schema::CollectionType& collectionType);
 
 public:
     UriField();
 
-    bool broken(const Schema &schema, const Schema::CollectionType &collectionType) const;
-    bool valid(const Schema &schema, const Schema::CollectionType &collectionType) const;
-    void setup(const Schema &schema, const std::string &field);
-    void markUsed(UsedFieldsMap &usedFields) const;
+    bool broken(const Schema& schema, const Schema::CollectionType& collectionType) const;
+    bool valid(const Schema& schema, const Schema::CollectionType& collectionType) const;
+    void setup(const Schema& schema, const std::string& field);
+    void markUsed(UsedFieldsMap& usedFields) const;
     static bool mightBePartofUri(std::string_view name);
 };
 
-}
+} // namespace search::index

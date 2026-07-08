@@ -6,31 +6,28 @@
 
 #include "db_merger.h"
 #include "read_guard.h"
-#include <vespa/vespalib/util/printable.h>
+
 #include <vespa/storage/bucketdb/bucketinfo.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/vespalib/util/printable.h>
 
 namespace storage {
 
-class BucketDatabase : public vespalib::Printable
-{
+class BucketDatabase : public vespalib::Printable {
 public:
-    template <typename BucketInfoType>
-    class EntryBase {
+    template <typename BucketInfoType> class EntryBase {
         document::BucketId _bucketId;
-        BucketInfoType _info;
+        BucketInfoType     _info;
 
     public:
         EntryBase() noexcept : _bucketId(0), _info() {} // Invalid entry
         EntryBase(const document::BucketId& bId, BucketInfoType&& bucketInfo) noexcept
-            : _bucketId(bId),
-              _info(std::move(bucketInfo))
-        {}
+            : _bucketId(bId), _info(std::move(bucketInfo)) {}
         explicit EntryBase(const document::BucketId& bId) noexcept : _bucketId(bId), _info() {}
-        EntryBase(EntryBase &&) noexcept = default;
-        EntryBase & operator=(EntryBase &&) noexcept = default;
-        EntryBase(const EntryBase &) = default;
-        EntryBase & operator=(const EntryBase &) = default;
+        EntryBase(EntryBase&&) noexcept = default;
+        EntryBase& operator=(EntryBase&&) noexcept = default;
+        EntryBase(const EntryBase&) = default;
+        EntryBase& operator=(const EntryBase&) = default;
         bool operator==(const EntryBase& other) const noexcept {
             return (_bucketId == other._bucketId && _info == other._info);
         }
@@ -43,9 +40,7 @@ public:
         BucketInfoType* operator->() noexcept { return &_info; }
         const BucketInfoType* operator->() const noexcept { return &_info; }
 
-        static EntryBase createInvalid() noexcept {
-            return EntryBase();
-        }
+        static EntryBase createInvalid() noexcept { return EntryBase(); }
     };
 
     using Entry = EntryBase<BucketInfo>;
@@ -71,7 +66,7 @@ public:
          * returns true if modified entry should be kept.
          * returns false if entry should be removed.
          */
-        virtual bool process_entry(Entry &entry) const = 0;
+        virtual bool process_entry(Entry& entry) const = 0;
     };
 
     ~BucketDatabase() override = default;
@@ -83,15 +78,13 @@ public:
      * Puts all entries that may contain the given bucket id
      * into the given entry vector, including itself if found.
      */
-    virtual void getParents(const document::BucketId& childBucket,
-                            std::vector<Entry>& entries) const = 0;
+    virtual void getParents(const document::BucketId& childBucket, std::vector<Entry>& entries) const = 0;
 
     /**
      * Puts the sum of entries from getParents() and getChildren() into
      * the given vector.
      */
-    virtual void getAll(const document::BucketId& bucket,
-                        std::vector<Entry>& entries) const = 0;
+    virtual void getAll(const document::BucketId& bucket, std::vector<Entry>& entries) const = 0;
 
     /**
      * Updates the entry for the given bucket. Adds the bucket to the bucket
@@ -99,20 +92,17 @@ public:
      */
     virtual void update(const Entry& newEntry) = 0;
 
-    virtual void process_update(const document::BucketId& bucket, EntryUpdateProcessor &processor, bool create_if_nonexisting) = 0;
+    virtual void process_update(const document::BucketId& bucket, EntryUpdateProcessor& processor,
+                                bool create_if_nonexisting) = 0;
 
     virtual void for_each_lower_bound(EntryProcessor&, const document::BucketId& at_or_after) const = 0;
-    void for_each_lower_bound(EntryProcessor& proc) const {
-        for_each_lower_bound(proc, document::BucketId());
-    }
+    void for_each_lower_bound(EntryProcessor& proc) const { for_each_lower_bound(proc, document::BucketId()); }
 
     virtual void for_each_upper_bound(EntryProcessor&, const document::BucketId& after) const = 0;
-    void for_each_upper_bound(EntryProcessor& proc) const {
-        for_each_upper_bound(proc, document::BucketId());
-    }
+    void for_each_upper_bound(EntryProcessor& proc) const { for_each_upper_bound(proc, document::BucketId()); }
 
     using TrailingInserter = bucketdb::TrailingInserter<Entry>;
-    using Merger           = bucketdb::Merger<Entry>;
+    using Merger = bucketdb::Merger<Entry>;
     using MergingProcessor = bucketdb::MergingProcessor<Entry>;
 
     /**
@@ -145,24 +135,20 @@ public:
     virtual Entry upperBound(const document::BucketId& value) const = 0;
 
     Entry getNext(const document::BucketId& last) const;
-    
+
     virtual uint64_t size() const = 0;
     virtual void clear() = 0;
 
     // FIXME: make const as soon as Judy distributor bucket database
     // has been removed, as it has no such function and will always
     // mutate its internal database!
-    virtual document::BucketId getAppropriateBucket(
-            uint16_t minBits,
-            const document::BucketId& bid) = 0;
+    virtual document::BucketId getAppropriateBucket(uint16_t minBits, const document::BucketId& bid) = 0;
     /**
      * Based on the minimum split bits and the existing buckets,
      * creates the correct new bucket in the bucket database,
      * and returns the resulting entry.
      */
-    BucketDatabase::Entry createAppropriateBucket(
-            uint16_t minBits,
-            const document::BucketId& bid);
+    BucketDatabase::Entry createAppropriateBucket(uint16_t minBits, const document::BucketId& bid);
 
     virtual uint32_t childCount(const document::BucketId&) const = 0;
 
@@ -178,4 +164,4 @@ public:
 template <typename BucketInfoType>
 std::ostream& operator<<(std::ostream& o, const BucketDatabase::EntryBase<BucketInfoType>& e);
 
-} // storage
+} // namespace storage

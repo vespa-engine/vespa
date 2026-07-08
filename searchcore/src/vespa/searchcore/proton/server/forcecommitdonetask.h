@@ -24,28 +24,24 @@ class IPendingGidToLidChanges;
  * 2.  Shrinking of document meta store lid space.  This also goes through
  *     a hold cycle, since it must be handled after any lids to be reused.
  */
-class ForceCommitDoneTask : public vespalib::Executor::Task
-{
-    std::vector<uint32_t>  _lidsToReuse;
-    bool                   _holdUnblockShrinkLidSpace;
-    IDocumentMetaStore    &_documentMetaStore;
+class ForceCommitDoneTask : public vespalib::Executor::Task {
+    std::vector<uint32_t>                    _lidsToReuse;
+    bool                                     _holdUnblockShrinkLidSpace;
+    IDocumentMetaStore&                      _documentMetaStore;
     std::unique_ptr<IPendingGidToLidChanges> _pending_gid_to_lid_changes;
 
 public:
-    ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore, std::unique_ptr<IPendingGidToLidChanges> pending_gid_to_lid_changes);
+    ForceCommitDoneTask(IDocumentMetaStore&                      documentMetaStore,
+                        std::unique_ptr<IPendingGidToLidChanges> pending_gid_to_lid_changes);
     ~ForceCommitDoneTask() override;
 
-    void reuseLids(std::vector<uint32_t> &&lids);
+    void reuseLids(std::vector<uint32_t>&& lids);
 
-    void holdUnblockShrinkLidSpace() {
-        _holdUnblockShrinkLidSpace = true;
-    }
+    void holdUnblockShrinkLidSpace() { _holdUnblockShrinkLidSpace = true; }
 
     void run() override;
 
-    bool empty() const {
-        return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace && !_pending_gid_to_lid_changes;
-    }
+    bool empty() const { return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace && !_pending_gid_to_lid_changes; }
 };
 
-}  // namespace proton
+} // namespace proton

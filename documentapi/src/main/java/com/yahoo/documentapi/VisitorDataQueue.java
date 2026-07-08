@@ -6,6 +6,7 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.Message;
+import com.yahoo.text.Text;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -52,7 +53,7 @@ public class VisitorDataQueue extends VisitorDataHandler {
             appendSingleOpToPendingList(((RemoveDocumentMessage)m).getDocumentRemove(), token);
         } else {
             throw new UnsupportedOperationException(
-                    String.format("Expected put/remove message, got '%s' of type %s",
+                    Text.format("Expected put/remove message, got '%s' of type %s",
                                   m.toString(), m.getClass().toString()));
         }
     }

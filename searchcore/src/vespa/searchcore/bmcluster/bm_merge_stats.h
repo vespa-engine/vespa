@@ -9,19 +9,18 @@ namespace search::bmcluster {
 /*
  * Class containing merge (throttler) stats for a service layer node.
  */
-class BmMergeStats
-{
+class BmMergeStats {
     uint32_t _active;
     uint32_t _queued;
-    
+
 public:
     BmMergeStats();
     BmMergeStats(uint32_t active, uint32_t queued);
     ~BmMergeStats();
     BmMergeStats& operator+=(const BmMergeStats& rhs);
-    bool operator==(const BmMergeStats &rhs) const;
+    bool operator==(const BmMergeStats& rhs) const;
     uint32_t get_active() const noexcept { return _active; }
     uint32_t get_queued() const noexcept { return _queued; }
 };
 
-}
+} // namespace search::bmcluster

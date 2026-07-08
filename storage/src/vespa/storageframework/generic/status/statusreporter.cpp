@@ -5,15 +5,11 @@
 namespace storage {
 namespace framework {
 
-StatusReporter::StatusReporter(std::string_view id, std::string_view name)
-    : _id(id),
-      _name(name)
-{
+StatusReporter::StatusReporter(std::string_view id, std::string_view name) : _id(id), _name(name) {
 }
 
-StatusReporter::~StatusReporter()
-{
+StatusReporter::~StatusReporter() {
 }
 
-} // framework
-} // storage
+} // namespace framework
+} // namespace storage

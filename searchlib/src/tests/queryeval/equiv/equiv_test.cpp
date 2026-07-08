@@ -1,20 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
-#include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/searchlib/queryeval/equiv_blueprint.h>
+#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("equiv_test");
 
 using namespace search::queryeval;
+using search::fef::FieldPositionsIterator;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
-using search::fef::FieldPositionsIterator;
 
 class EquivTest : public ::testing::Test {
 protected:
@@ -28,9 +28,7 @@ EquivTest::EquivTest() = default;
 
 EquivTest::~EquivTest() = default;
 
-void
-EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_interleaved_features)
-{
+void EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_interleaved_features) {
     FakeResult a;
     FakeResult b;
     FakeResult c;
@@ -55,7 +53,7 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
 
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     for (uint32_t field_id = 1; field_id <= 2; ++field_id) {
-        TermFieldMatchData &data = *md->resolveTermField(field_id);
+        TermFieldMatchData& data = *md->resolveTermField(field_id);
         data.setNeedNormalFeatures(unpack_normal_features);
         data.setNeedInterleavedFeatures(unpack_interleaved_features);
     }
@@ -73,9 +71,9 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
     { // test doc 5 results
         search->unpack(5u);
         {
-            TermFieldMatchData &data = *md->resolveTermField(1);
+            TermFieldMatchData& data = *md->resolveTermField(1);
             EXPECT_EQ(1u, data.getFieldId());
-            EXPECT_EQ(5u, data.getDocId());
+            EXPECT_TRUE(data.has_ranking_data(5u));
             FieldPositionsIterator itr = data.getIterator();
             if (unpack_normal_features) {
                 EXPECT_EQ(1u, itr.size());
@@ -93,9 +91,9 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
             }
         }
         {
-            TermFieldMatchData &data = *md->resolveTermField(2);
+            TermFieldMatchData& data = *md->resolveTermField(2);
             EXPECT_EQ(2u, data.getFieldId());
-            EXPECT_EQ(5u, data.getDocId());
+            EXPECT_TRUE(data.has_ranking_data(5u));
             FieldPositionsIterator itr = data.getIterator();
             if (unpack_normal_features) {
                 EXPECT_EQ(2u, itr.size());
@@ -124,11 +122,11 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
     EXPECT_EQ(10u, search->getDocId());
     { // test doc 10 results
         search->unpack(10u);
-        EXPECT_EQ(5u, md->resolveTermField(1)->getDocId()); // no match
+        EXPECT_TRUE(md->resolveTermField(1)->has_ranking_data(5u)); // no match
         {
-            TermFieldMatchData &data = *md->resolveTermField(2);
+            TermFieldMatchData& data = *md->resolveTermField(2);
             EXPECT_EQ(2u, data.getFieldId());
-            EXPECT_EQ(10u, data.getDocId());
+            EXPECT_TRUE(data.has_ranking_data(10u));
             FieldPositionsIterator itr = data.getIterator();
             if (unpack_normal_features) {
                 EXPECT_EQ(1u, itr.size());
@@ -154,44 +152,35 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
     }
 }
 
-
-TEST_F(EquivTest, nonstrict)
-{
+TEST_F(EquivTest, nonstrict) {
     test_equiv(false, true, false);
 }
 
-TEST_F(EquivTest, strict)
-{
+TEST_F(EquivTest, strict) {
     test_equiv(true, true, false);
 }
 
-TEST_F(EquivTest, nonstrict_no_normal_no_interleaved)
-{
+TEST_F(EquivTest, nonstrict_no_normal_no_interleaved) {
     test_equiv(false, false, false);
 }
 
-TEST_F(EquivTest, strict_no_normal_no_interleaved)
-{
+TEST_F(EquivTest, strict_no_normal_no_interleaved) {
     test_equiv(true, false, false);
 }
 
-TEST_F(EquivTest, nonstrict_no_normal_interleaved)
-{
+TEST_F(EquivTest, nonstrict_no_normal_interleaved) {
     test_equiv(false, false, true);
 }
 
-TEST_F(EquivTest, strict_no_normal_interleaved)
-{
+TEST_F(EquivTest, strict_no_normal_interleaved) {
     test_equiv(true, false, true);
 }
 
-TEST_F(EquivTest, nonstrict_normal_interleaved)
-{
+TEST_F(EquivTest, nonstrict_normal_interleaved) {
     test_equiv(false, true, true);
 }
 
-TEST_F(EquivTest, strict_normal_interleaved)
-{
+TEST_F(EquivTest, strict_normal_interleaved) {
     test_equiv(true, true, true);
 }
 

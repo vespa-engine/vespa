@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "proton_thread_pools_explorer.h"
+
 #include "executor_explorer_utils.h"
 #include "sequenced_task_executor_explorer.h"
+
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 
@@ -12,24 +14,14 @@ namespace proton {
 
 using explorer::convert_executor_to_slime;
 
-ProtonThreadPoolsExplorer::ProtonThreadPoolsExplorer(const ThreadExecutor* shared,
-                                                     const ThreadExecutor* match,
-                                                     const ThreadExecutor* docsum,
-                                                     const ThreadExecutor* flush,
-                                                     const ThreadExecutor* proton,
+ProtonThreadPoolsExplorer::ProtonThreadPoolsExplorer(const ThreadExecutor* shared, const ThreadExecutor* match,
+                                                     const ThreadExecutor* docsum, const ThreadExecutor* flush,
+                                                     const ThreadExecutor*             proton,
                                                      vespalib::ISequencedTaskExecutor* field_writer)
-    : _shared(shared),
-      _match(match),
-      _docsum(docsum),
-      _flush(flush),
-      _proton(proton),
-      _field_writer(field_writer)
-{
+    : _shared(shared), _match(match), _docsum(docsum), _flush(flush), _proton(proton), _field_writer(field_writer) {
 }
 
-void
-ProtonThreadPoolsExplorer::get_state(const vespalib::slime::Inserter& inserter, bool full) const
-{
+void ProtonThreadPoolsExplorer::get_state(const vespalib::slime::Inserter& inserter, bool full) const {
     auto& object = inserter.insertObject();
     if (full) {
         convert_executor_to_slime(_shared, object.setObject("shared"));
@@ -42,19 +34,15 @@ ProtonThreadPoolsExplorer::get_state(const vespalib::slime::Inserter& inserter, 
 
 const std::string FIELD_WRITER = "field_writer";
 
-std::vector<std::string>
-ProtonThreadPoolsExplorer::get_children_names() const
-{
+std::vector<std::string> ProtonThreadPoolsExplorer::get_children_names() const {
     return {FIELD_WRITER};
 }
 
-std::unique_ptr<vespalib::StateExplorer>
-ProtonThreadPoolsExplorer::get_child(std::string_view name) const
-{
+std::unique_ptr<vespalib::StateExplorer> ProtonThreadPoolsExplorer::get_child(std::string_view name) const {
     if (name == FIELD_WRITER) {
         return std::make_unique<SequencedTaskExecutorExplorer>(_field_writer);
     }
     return {};
 }
 
-}
+} // namespace proton

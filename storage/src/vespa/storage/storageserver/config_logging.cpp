@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "config_logging.h"
+
 #include <vespa/config/configgen/configinstance.h>
 #include <vespa/config/print/configdatabuffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -19,4 +20,4 @@ void log_config_received(const config::ConfigInstance& cfg) {
     }
 }
 
-}
+} // namespace storage

@@ -11,14 +11,12 @@ using namespace search::query;
 using namespace search::queryeval;
 
 namespace {
-    int32_t
-    getWeight(const Node &node) {
-        return getWeightFromNode(node).percent();
-    }
+int32_t getWeight(const Node& node) {
+    return getWeightFromNode(node).percent();
 }
+} // namespace
 
-TEST(GetNodeWeightTest, test_variations_of_getWeight)
-{
+TEST(GetNodeWeightTest, test_variations_of_getWeight) {
     EXPECT_EQ(0, getWeight(SimpleAnd()));
     EXPECT_EQ(0, getWeight(SimpleAndNot()));
     EXPECT_EQ(42, getWeight(SimpleEquiv(0, Weight(42))));

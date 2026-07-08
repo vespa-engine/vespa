@@ -15,8 +15,7 @@ namespace storage {
 
 class DumpVisitorSingle : public Visitor {
 public:
-    DumpVisitorSingle(StorageComponent&,
-                      const vdslib::Parameters& params);
+    DumpVisitorSingle(StorageComponent&, const vdslib::Parameters& params);
 
 private:
     void handleDocuments(const document::BucketId&, DocEntryList&, HitCounter&) override;
@@ -24,15 +23,13 @@ private:
 
 struct DumpVisitorSingleFactory : public VisitorFactory {
 
-    std::shared_ptr<VisitorEnvironment>
-    makeVisitorEnvironment(StorageComponent&) override {
+    std::shared_ptr<VisitorEnvironment> makeVisitorEnvironment(StorageComponent&) override {
         return std::make_shared<VisitorEnvironment>();
     };
 
-    Visitor*
-    makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters& params) override {
+    Visitor* makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters& params) override {
         return new DumpVisitorSingle(c, params);
     }
 };
 
-}
+} // namespace storage

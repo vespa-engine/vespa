@@ -14,7 +14,7 @@ public:
     /**
      * bootstrap VESPA_HOME (if unset) from argv[0]
      **/
-    static void bootstrap(const char *argv0);
+    static void bootstrap(const char* argv0);
 
     /**
      * Compute the path prefix where Vespa files will live.
@@ -23,15 +23,15 @@ public:
      *
      * @return the vespa home directory
      **/
-    static const char *vespaHome();
+    static const char* vespaHome();
 
-    static std::string underVespaHome(const char *path);
+    static std::string underVespaHome(const char* path);
 
     /**
      * Compute the user name to own directories and run processes.
      * @return the vespa user name
      **/
-    static const char *vespaUser();
+    static const char* vespaUser();
 
     /**
      * Compute the host name that identifies myself.
@@ -40,7 +40,7 @@ public:
      * if that variable isn't set a default of "localhost" is always returned.
      * @return the vespa host name
      **/
-    static const char *vespaHostname();
+    static const char* vespaHostname();
 
     /**
      * Compute the port number where the Vespa webservice

@@ -99,7 +99,7 @@ public class ListMap<K, V> {
      */
     public List<V> get(K key) {
         List<V> list = map.get(key);
-        if (list == null) return List.of();;
+        if (list == null) return List.of();
         return list;
     }
 

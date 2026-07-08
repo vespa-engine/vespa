@@ -136,6 +136,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
 
     /**
      * Prune away any field update that will not modify any field in the document.
+     *
      * @param doc document to check against
      * @return a reference to itself
      * @throws IllegalArgumentException if the document does not have the same document type as this update
@@ -238,7 +239,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     public void setFieldUpdates(Collection<FieldUpdate> fieldUpdates) {
         if (fieldUpdates == null) {
-            throw new NullPointerException("The field updates of a document update can not be null");
+            throw new NullPointerException("The field updates of a document update cannot be null");
         }
         clearFieldUpdates();
         addFieldUpdates(fieldUpdates);

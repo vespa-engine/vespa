@@ -2,7 +2,11 @@
 package com.yahoo.config.model.provision;
 
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionContext;
+import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.vespa.model.container.Container;
 
 import java.io.Reader;
@@ -45,9 +49,9 @@ public class HostsXmlProvisioner implements HostProvisioner {
         throw new IllegalArgumentException("Unable to find host for alias '" + alias + "'");
     }
 
-    /** Called when provisioning nodes using &lt;nodes count="..." */
+    /** Called when provisioning nodes using &lt;nodes count=... */
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity quantity, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity quantity, ProvisionContext context) {
         throw new UnsupportedOperationException("Using <nodes count=\"...\"> is not supported when there is a " +
                                                 "hosts.xml file. Remove hosts.xml to make this deployable on " +
                                                 "Vespa Cloud and single-node self-hosted instances.");

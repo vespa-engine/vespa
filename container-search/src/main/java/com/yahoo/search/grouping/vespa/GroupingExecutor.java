@@ -94,7 +94,7 @@ public class GroupingExecutor extends Searcher {
         // Convert Vespa style results to hits.
         HitConverter hitConverter = new HitConverter(this);
         for (RequestContext context : requestContextList) {
-            RootGroup group = convertResult(context, groupingMap, hitConverter);
+            RootGroup group = convertResult(query, context, groupingMap, hitConverter);
             result.hits().add(group);
         }
         return result;
@@ -104,9 +104,7 @@ public class GroupingExecutor extends Searcher {
         Object metaData = hit.getSearcherSpecificMetaData(this);
         if (metaData instanceof String metaDataString) {
             // Use the summary class specified by grouping, set in
-            // HitConverter, in the fill request indented for presentation.
-            // We reset the summary class here as cleanup.
-            hit.setSearcherSpecificMetaData(this, null);
+            // HitConverter, in the fill request intended for presentation.
             return metaDataString;
         }
         return summaryClass;
@@ -152,6 +150,15 @@ public class GroupingExecutor extends Searcher {
                 hit.setFilled(null);
             }
         }
+        for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
+            Hit hit = it.next();
+            if (hit.getSearcherSpecificMetaData(this) instanceof String metaDataString) {
+                if (hit.isFilled(metaDataString)) {
+                    // mark as fully filled:
+                    hit.setUnfillable();
+                }
+            }
+        }
     }
 
     /**
@@ -195,9 +202,9 @@ public class GroupingExecutor extends Searcher {
      * @param hitConverter   the converter to use for {@link Hit} conversion
      * @return the corresponding root RootGroup.
      */
-    private RootGroup convertResult(RequestContext requestContext, Map<Integer, Grouping> groupingMap,
+    private RootGroup convertResult(Query query, RequestContext requestContext, Map<Integer, Grouping> groupingMap,
                                     HitConverter hitConverter) {
-        ResultBuilder builder = new ResultBuilder();
+        ResultBuilder builder = new ResultBuilder(query);
         builder.setHitConverter(hitConverter);
         builder.setTransform(requestContext.transform);
         builder.setRequestId(requestContext.request.getRequestId());

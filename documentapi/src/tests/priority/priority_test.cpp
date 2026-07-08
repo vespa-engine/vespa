@@ -3,8 +3,9 @@
 #include <vespa/documentapi/messagebus/priority.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
-#include <fstream>
+
 #include <algorithm>
+#include <fstream>
 
 using namespace documentapi;
 
@@ -42,8 +43,7 @@ TEST(PriorityTest, priority_test) {
         int32_t pri = atoi(str.substr(pos + 1).c_str());
         ASSERT_EQ(Priority::getPriority(str.substr(0, pos)), pri);
 
-        std::vector<int32_t>::iterator it =
-            std::find(expected.begin(), expected.end(), pri);
+        std::vector<int32_t>::iterator it = std::find(expected.begin(), expected.end(), pri);
         ASSERT_TRUE(it != expected.end());
         expected.erase(it);
     }

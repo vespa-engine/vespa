@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for dummypersistence.
 
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -37,7 +37,7 @@ TEST(DummyPersistenceTest, require_that_empty_BucketContent_behaves) {
 }
 
 TEST(DummyPersistenceTest, require_that_BucketContent_can_retrieve_by_timestamp) {
-    Fixture f;
+    Fixture      f;
     DocEntry::SP entry = f.content.getEntry(Timestamp(1));
     ASSERT_TRUE(entry.get());
     ASSERT_TRUE(entry->getDocumentId());
@@ -45,7 +45,7 @@ TEST(DummyPersistenceTest, require_that_BucketContent_can_retrieve_by_timestamp)
 }
 
 TEST(DummyPersistenceTest, require_that_BucketContent_can_retrieve_by_doc_id) {
-    Fixture f;
+    Fixture      f;
     DocEntry::SP entry = f.content.getEntry(DocumentId("id:ns:type::test:2"));
     ASSERT_TRUE(entry.get());
     ASSERT_TRUE(entry->getDocumentId());
@@ -62,7 +62,7 @@ TEST(DummyPersistenceTest, require_that_BucketContent_can_check_a_timestamp) {
 }
 
 TEST(DummyPersistenceTest, require_that_BucketContent_can_provide_bucket_info) {
-    Fixture f;
+    Fixture  f;
     uint32_t lastChecksum = 0;
     EXPECT_NE(lastChecksum, f.content.getBucketInfo().getChecksum());
     lastChecksum = f.content.getBucketInfo().getChecksum();
@@ -77,18 +77,18 @@ TEST(DummyPersistenceTest, require_that_BucketContent_can_provide_bucket_info) {
 }
 
 TEST(DummyPersistenceTest, require_that_setClusterState_sets_the_cluster_state) {
-    Fixture f;
+    Fixture           f;
     lib::ClusterState s("version:1 storage:3 .1.s:d distributor:3");
     lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
-    ClusterState state(s, 1, d);
+    ClusterState      state(s, 1, d);
 
     std::shared_ptr<const document::DocumentTypeRepo> repo;
-    dummy::DummyPersistence provider(repo);
+    dummy::DummyPersistence                           provider(repo);
     provider.setClusterState(makeBucketSpace(), state);
 
     EXPECT_EQ(false, provider.getClusterState().nodeUp());
 }
 
-}  // namespace
+} // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -3,6 +3,7 @@ package com.yahoo.security;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * <p>
@@ -70,8 +71,7 @@ public class BaseNCodec {
             Arrays.fill(reverseLut, -1); // -1 => invalid mapping
             for (int i = 0; i < alphabetChars.length; ++i) {
                 if (reverseLut[alphabetChars[i]] != -1) {
-                    throw new IllegalArgumentException("Alphabet character '%c' occurs more than once"
-                                                       .formatted(alphabetChars[i]));
+                    throw new IllegalArgumentException(String.format(Locale.ROOT, "Alphabet character '%c' occurs more than once", alphabetChars[i]));
                 }
                 reverseLut[alphabetChars[i]] = i;
             }

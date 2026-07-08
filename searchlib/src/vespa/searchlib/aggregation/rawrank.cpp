@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rawrank.h"
+
 #include <vespa/vespalib/util/sort.h>
+
 #include <algorithm>
 
 #if 0
@@ -47,4 +49,5 @@ operator >> (vespalib::nbostream &is, RawRank &rr)
 
 #endif
 // this function was added by ../../forcelink.sh
-void forcelink_file_searchlib_aggregation_rawrank() {}
+void forcelink_file_searchlib_aggregation_rawrank() {
+}

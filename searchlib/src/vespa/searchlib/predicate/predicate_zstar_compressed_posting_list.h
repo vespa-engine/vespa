@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "predicate_posting_list.h"
-#include "predicate_interval_store.h"
 #include "predicate_interval.h"
+#include "predicate_interval_store.h"
+#include "predicate_posting_list.h"
 
 namespace search::predicate {
 
@@ -12,18 +12,18 @@ namespace search::predicate {
  * PredicatePostingList implementation for zstar iterators from
  * PredicateIndex.
  */
-template <typename Iterator>
-class PredicateZstarCompressedPostingList : public PredicatePostingList {
-    const PredicateIntervalStore &_interval_store;
-    Iterator _iterator;
-    const Interval *_current_interval;
-    uint32_t _interval_count;
-    uint32_t _interval;
-    uint32_t _prev_interval;
+template <typename Iterator> class PredicateZstarCompressedPostingList : public PredicatePostingList {
+    const PredicateIntervalStore& _interval_store;
+    Iterator                      _iterator;
+    const Interval*               _current_interval;
+    uint32_t                      _interval_count;
+    uint32_t                      _interval;
+    uint32_t                      _prev_interval;
 
     void setInterval(uint32_t interval) { _interval = interval; }
+
 public:
-    PredicateZstarCompressedPostingList(const PredicateIntervalStore &store, Iterator it);
+    PredicateZstarCompressedPostingList(const PredicateIntervalStore& store, Iterator it);
     bool next(uint32_t doc_id) override;
     bool nextInterval() override;
     VESPA_DLL_LOCAL uint32_t getInterval() const override { return _interval; }
@@ -31,18 +31,16 @@ public:
 
 template <typename Iterator>
 PredicateZstarCompressedPostingList<Iterator>::PredicateZstarCompressedPostingList(
-        const PredicateIntervalStore &interval_store, Iterator it)
-        : _interval_store(interval_store),
-          _iterator(it),
-          _current_interval(0),
-          _interval_count(0),
-          _interval(0),
-          _prev_interval(0) {
+    const PredicateIntervalStore& interval_store, Iterator it)
+    : _interval_store(interval_store),
+      _iterator(it),
+      _current_interval(0),
+      _interval_count(0),
+      _interval(0),
+      _prev_interval(0) {
 }
 
-template<typename Iterator>
-bool
-PredicateZstarCompressedPostingList<Iterator>::next(uint32_t doc_id) {
+template <typename Iterator> bool PredicateZstarCompressedPostingList<Iterator>::next(uint32_t doc_id) {
     if (_iterator.valid() && _iterator.getKey() <= doc_id) {
         _iterator.linearSeek(doc_id + 1);
     }
@@ -57,9 +55,7 @@ PredicateZstarCompressedPostingList<Iterator>::next(uint32_t doc_id) {
     return true;
 }
 
-template<typename Iterator>
-bool
-PredicateZstarCompressedPostingList<Iterator>::nextInterval() {
+template <typename Iterator> bool PredicateZstarCompressedPostingList<Iterator>::nextInterval() {
     uint32_t next_interval = UINT32_MAX;
     if (_interval_count > 1) {
         next_interval = _current_interval[1].interval;
@@ -85,4 +81,4 @@ PredicateZstarCompressedPostingList<Iterator>::nextInterval() {
     return false;
 }
 
-}
+} // namespace search::predicate

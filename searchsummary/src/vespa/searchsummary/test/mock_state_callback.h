@@ -10,25 +10,18 @@ private:
     MatchingElements _matching_elems;
 
 public:
-    MockStateCallback()
-        : GetDocsumsStateCallback(),
-          _matching_elems()
-    {
-    }
-    ~MockStateCallback() override { }
-    void fillSummaryFeatures(GetDocsumsState&) override { }
-    void fillRankFeatures(GetDocsumsState&) override { }
+    MockStateCallback() : GetDocsumsStateCallback(), _matching_elems() {}
+    ~MockStateCallback() override {}
+    void fillSummaryFeatures(GetDocsumsState&) override {}
+    void fillRankFeatures(GetDocsumsState&) override {}
     std::unique_ptr<MatchingElements> fill_matching_elements(const search::MatchingElementsFields&) override {
         return std::make_unique<MatchingElements>(_matching_elems);
     }
 
-    void add_matching_elements(uint32_t docid, const std::string& field_name,
-                               const std::vector<uint32_t>& elements) {
+    void add_matching_elements(uint32_t docid, const std::string& field_name, const std::vector<uint32_t>& elements) {
         _matching_elems.add_matching_elements(docid, field_name, elements);
     }
-    void clear() {
-        _matching_elems = MatchingElements();
-    }
+    void clear() { _matching_elems = MatchingElements(); }
 };
 
-}
+} // namespace search::docsummary::test

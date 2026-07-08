@@ -14,4 +14,4 @@ ONear::~ONear() = default;
 Phrase::~Phrase() = default;
 SameElement::~SameElement() = default;
 
-}
+} // namespace search::query

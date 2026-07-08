@@ -36,6 +36,7 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.content.ClusterControllerConfig;
+import com.yahoo.vespa.model.content.CoveragePolicy;
 import com.yahoo.vespa.model.content.ClusterResourceLimits;
 import com.yahoo.vespa.model.content.ContentSearch;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
@@ -102,6 +103,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
     private DistributionMode distributionMode;
+    private boolean usePseudoRowColumnDistribution = false;
 
     public static class Builder {
 
@@ -110,7 +112,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         public Builder(Admin admin) {
             this.admin = Objects.requireNonNull(admin, "admin cannot be null");
         }
-        
+
         public ContentCluster build(ConfigModelContext context, Element w3cContentElement) {
             ModelElement contentElement = new ModelElement(w3cContentElement);
             DeployState deployState = context.getDeployState();
@@ -218,6 +220,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
             index.getTuning().dispatch = DomTuningDispatchBuilder.build(element, logger);
+            index.setCoveragePolicy(CoveragePolicy.from(element.childAsString("coverage-policy")).policy());
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
@@ -248,6 +251,10 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                     } else {
                         throw new IllegalArgumentException("Distribution type " + attr + " not supported.");
                     }
+                }
+                Boolean pseudoRowCol = distribution.childAsBoolean("pseudo-row-column-mode");
+                if (pseudoRowCol != null) {
+                    c.usePseudoRowColumnDistribution = pseudoRowCol;
                 }
             }
             ModelElement merges = tuning.child("merges");
@@ -305,11 +312,12 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             int warnThreshold = 100; // ... Not scientifically chosen
             if (!deployState.isHosted() && (aggr.highestNodeDistributionKey - aggr.nodeCount) >= warnThreshold) {
                 deployState.getDeployLogger().logApplicationPackage(WARNING,
-                        ("Content cluster '%s' has %d node(s), but the highest distribution key is %d. " +
-                         "Having much higher distribution keys than the number of nodes is not recommended, " +
-                         "as it may negatively affect performance. " +
-                         "See https://docs.vespa.ai/en/reference/services/content.html#node")
-                        .formatted(clusterId, aggr.nodeCount, aggr.highestNodeDistributionKey));
+                        String.format(java.util.Locale.ROOT,
+                                "Content cluster '%s' has %d node(s), but the highest distribution key is %d. " +
+                                "Having much higher distribution keys than the number of nodes is not recommended, " +
+                                "as it may negatively affect performance. " +
+                                "See https://docs.vespa.ai/en/reference/services/content.html#node",
+                                clusterId, aggr.nodeCount, aggr.highestNodeDistributionKey));
             }
         }
 
@@ -392,7 +400,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
                                                                 ClusterSpec.Type.admin,
                                                                 ClusterSpec.Id.from(clusterName),
-                                                                context.getDeployLogger(),
+                                                                context.getDeployState(),
                                                                 true,
                                                                 context.clusterInfo().build())
                                                      .keySet();
@@ -526,6 +534,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         if (search.usesHierarchicDistribution()) {
             builder.active_per_leaf_group(true);
         }
+        builder.relative_node_order_scoring(usePseudoRowColumnDistribution);
     }
 
     int getNodeCount() {
@@ -699,6 +708,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         clusterBuilder.ready_copies(config.ready_copies());
         clusterBuilder.redundancy(config.redundancy());
         clusterBuilder.initial_redundancy(config.initial_redundancy());
+        clusterBuilder.relative_node_order_scoring(config.relative_node_order_scoring());
 
         for (StorDistributionConfig.Group group : config.group()) {
             DistributionConfig.Cluster.Group.Builder groupBuilder = new DistributionConfig.Cluster.Group.Builder();

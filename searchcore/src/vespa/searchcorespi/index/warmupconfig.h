@@ -10,13 +10,14 @@ namespace searchcorespi::index {
  **/
 class WarmupConfig {
 public:
-    WarmupConfig() : _duration(vespalib::duration::zero()), _unpack(false) { }
-    WarmupConfig(vespalib::duration duration, bool unpack) : _duration(duration), _unpack(unpack) { }
+    WarmupConfig() : _duration(vespalib::duration::zero()), _unpack(false) {}
+    WarmupConfig(vespalib::duration duration, bool unpack) : _duration(duration), _unpack(unpack) {}
     vespalib::duration getDuration() const { return _duration; }
     bool getUnpack() const { return _unpack; }
+
 private:
     const vespalib::duration _duration;
     const bool               _unpack;
 };
 
-}
+} // namespace searchcorespi::index

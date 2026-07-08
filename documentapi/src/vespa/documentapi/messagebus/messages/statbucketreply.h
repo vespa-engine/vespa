@@ -17,5 +17,4 @@ public:
     string toString() const override { return "statbucketreply"; }
 };
 
-}
-
+} // namespace documentapi

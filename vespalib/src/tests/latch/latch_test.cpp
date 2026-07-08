@@ -19,50 +19,50 @@ TEST(LatchTest, require_that_write_then_read_works) {
 }
 
 TEST(LatchTest, require_that_read_waits_for_write) {
-    size_t num_threads = 2;
+    size_t     num_threads = 2;
     Latch<int> f1;
-    Gate f2;
-    TimeBomb f3(60);
-    auto task = [&](Nexus &ctx){
-                    if (ctx.thread_id() == 0) {
-                        EXPECT_TRUE(!f2.await(10ms));
-                        f1.write(123);
-                        EXPECT_TRUE(f2.await(60s));
-                    } else {
-                        EXPECT_EQ(f1.read(), 123);
-                        f2.countDown();
-                    }
-                };
+    Gate       f2;
+    TimeBomb   f3(60);
+    auto       task = [&](Nexus& ctx) {
+        if (ctx.thread_id() == 0) {
+            EXPECT_TRUE(!f2.await(10ms));
+            f1.write(123);
+            EXPECT_TRUE(f2.await(60s));
+        } else {
+            EXPECT_EQ(f1.read(), 123);
+            f2.countDown();
+        }
+    };
     Nexus::run(num_threads, task);
 }
 
 TEST(LatchTest, require_that_write_waits_for_read) {
-    size_t num_threads = 2;
+    size_t     num_threads = 2;
     Latch<int> f1;
-    Gate f2;
-    TimeBomb f3(60);
-    auto task = [&](Nexus &ctx){
-                    if (ctx.thread_id() == 0) {
-                        f1.write(123);
-                        f1.write(456);
-                        f2.countDown();
-                    } else {
-                        EXPECT_TRUE(!f2.await(10ms));
-                        EXPECT_EQ(f1.read(), 123);
-                        EXPECT_TRUE(f2.await(60s));
-                        EXPECT_EQ(f1.read(), 456);
-                    }
-                };
+    Gate       f2;
+    TimeBomb   f3(60);
+    auto       task = [&](Nexus& ctx) {
+        if (ctx.thread_id() == 0) {
+            f1.write(123);
+            f1.write(456);
+            f2.countDown();
+        } else {
+            EXPECT_TRUE(!f2.await(10ms));
+            EXPECT_EQ(f1.read(), 123);
+            EXPECT_TRUE(f2.await(60s));
+            EXPECT_EQ(f1.read(), 456);
+        }
+    };
     Nexus::run(num_threads, task);
 }
 
 struct MyInt {
     int value;
     MyInt(int value_in) : value(value_in) {}
-    MyInt(MyInt &&rhs) = default;
-    MyInt(const MyInt &rhs) = delete;
-    MyInt &operator=(const MyInt &rhs) = delete;
-    MyInt &operator=(MyInt &&rhs) = delete;
+    MyInt(MyInt&& rhs) = default;
+    MyInt(const MyInt& rhs) = delete;
+    MyInt& operator=(const MyInt& rhs) = delete;
+    MyInt& operator=(MyInt&& rhs) = delete;
 };
 
 TEST(LatchTest, require_that_un_assignable_non_default_constructable_move_only_objects_can_be_used) {
@@ -73,9 +73,9 @@ TEST(LatchTest, require_that_un_assignable_non_default_constructable_move_only_o
 
 struct MyObj {
     static int total;
-    int *with_state;
-    MyObj(int &with_state_in) : with_state(&with_state_in) {}
-    MyObj(MyObj &&rhs) {
+    int*       with_state;
+    MyObj(int& with_state_in) : with_state(&with_state_in) {}
+    MyObj(MyObj&& rhs) {
         with_state = rhs.with_state;
         rhs.with_state = nullptr;
     }
@@ -86,9 +86,9 @@ struct MyObj {
             ++(*with_state);
         }
     }
-    MyObj(const MyObj &rhs) = delete;
-    MyObj &operator=(const MyObj &rhs) = delete;
-    MyObj &operator=(MyObj &&rhs) = delete;
+    MyObj(const MyObj& rhs) = delete;
+    MyObj& operator=(const MyObj& rhs) = delete;
+    MyObj& operator=(MyObj&& rhs) = delete;
 };
 int MyObj::total = 0;
 

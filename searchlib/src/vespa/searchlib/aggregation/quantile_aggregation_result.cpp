@@ -2,8 +2,10 @@
 #include "quantile_aggregation_result.h"
 
 #include <vespa/searchlib/expression/resultvector.h>
-#include <vespa/vespalib/objects/serializer.hpp>
+
 #include <vespa/vespalib/objects/deserializer.hpp>
+#include <vespa/vespalib/objects/serializer.hpp>
+
 #include <format>
 
 #include <vespa/log/log.h>
@@ -12,8 +14,8 @@ LOG_SETUP(".searchlib.aggregation.quantile_aggregation_result");
 namespace search::aggregation {
 
 using expression::ResultNodeVector;
-using vespalib::Serializer;
 using vespalib::Deserializer;
+using vespalib::Serializer;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, QuantileAggregationResult, AggregationResult);
 
@@ -39,7 +41,7 @@ void QuantileAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) c
 }
 
 void QuantileAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    (void) result;
+    (void)result;
     if (useForInit) {
         LOG(warning, "useForInit was true. Should not happen for QuantileAggregationResult.");
     }
@@ -51,7 +53,7 @@ void QuantileAggregationResult::onMerge(const AggregationResult& b) {
 
 void QuantileAggregationResult::onAggregate(const ResultNode& result) {
     if (result.isMultiValue()) {
-        auto& rv = dynamic_cast<const ResultNodeVector &>(result);
+        auto& rv = dynamic_cast<const ResultNodeVector&>(result);
         for (size_t i = 0; i < rv.size(); ++i) {
             _sketch.update(rv.get(i).getFloat());
         }
@@ -98,14 +100,14 @@ std::vector<QuantileAggregationResult::QuantileResult> QuantileAggregationResult
         if (!_sketch.is_empty()) {
             value = _sketch.get_quantile(quantile);
         }
-        results.emplace_back(quantile,  value);
+        results.emplace_back(quantile, value);
     }
 
     return results;
 }
 
 void QuantileAggregationResult::set_quantiles(const std::vector<double>& quantiles) {
-    if (std::ranges::any_of(quantiles, [](const double q) noexcept{ return q < 0.0 || q > 1.0; })) {
+    if (std::ranges::any_of(quantiles, [](const double q) noexcept { return q < 0.0 || q > 1.0; })) {
         throw std::runtime_error("quantile value out of range (expected between 0 and 1)");
     }
 

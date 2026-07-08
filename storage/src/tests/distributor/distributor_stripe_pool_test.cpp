@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mock_tickable_stripe.h"
+
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <atomic>
 #include <thread>
 
@@ -17,11 +19,7 @@ struct DistributorStripePoolThreadingTest : Test {
     vespalib::steady_time _start_time;
     std::atomic<bool>     _is_parked;
 
-    DistributorStripePoolThreadingTest()
-        : _pool(),
-          _start_time(std::chrono::steady_clock::now()),
-          _is_parked(false)
-    {
+    DistributorStripePoolThreadingTest() : _pool(), _start_time(std::chrono::steady_clock::now()), _is_parked(false) {
         // Set an absurdly high tick wait duration to catch any regressions where
         // thread wakeups aren't triggering as expected.
         _pool.set_tick_wait_duration(600s);
@@ -35,7 +33,7 @@ struct DistributorStripePoolThreadingTest : Test {
 
     void loop_park_unpark_cycle_until_test_time_expired() {
         constexpr size_t min_cycles = 100;
-        size_t cycle = 0;
+        size_t           cycle = 0;
         // TODO enforce minimum number of actual calls to tick() per thread?
         while ((cycle < min_cycles) || !min_test_time_reached()) {
             _pool.park_all_threads();
@@ -55,9 +53,7 @@ struct ParkingInvariantCheckingMockStripe : MockTickableStripe {
     bool               _to_return;
 
     explicit ParkingInvariantCheckingMockStripe(std::atomic<bool>& is_parked)
-        : _is_parked(is_parked),
-          _to_return(true)
-    {}
+        : _is_parked(is_parked), _to_return(true) {}
 
     bool tick() override {
         std::this_thread::sleep_for(50us);
@@ -89,4 +85,4 @@ TEST_F(DistributorStripePoolThreadingTest, can_park_and_unpark_multiple_stripes)
     _pool.stop_and_join();
 }
 
-}
+} // namespace storage::distributor

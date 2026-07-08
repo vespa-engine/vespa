@@ -5,10 +5,11 @@
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
 #include "message.h"
-#include "reply.h"
 #include "queue.h"
-#include <mutex>
+#include "reply.h"
+
 #include <map>
+#include <mutex>
 
 namespace mbus {
 
@@ -17,12 +18,10 @@ namespace mbus {
  * object implementing the IMessageHandler API to use for sending messages. This class is used by the
  * SourceSession class and is not intended for external use.
  */
-class Sequencer : public IMessageHandler,
-                  public IReplyHandler
-{
+class Sequencer : public IMessageHandler, public IReplyHandler {
 private:
-    std::mutex      _lock;
-    IMessageHandler &_sender;
+    std::mutex       _lock;
+    IMessageHandler& _sender;
 
     using MessageQueue = Queue<Message*>;
     using QueueMap = std::map<uint64_t, MessageQueue*>;
@@ -58,7 +57,7 @@ public:
      *
      * @param sender The underlying sender.
      */
-    Sequencer(IMessageHandler &sender);
+    Sequencer(IMessageHandler& sender);
 
     /**
      * Destruct. This will also destruct any Message objects held back due to sequencing collisions.
@@ -84,4 +83,3 @@ public:
 };
 
 } // namespace mbus
-

@@ -7,7 +7,7 @@
 #include <vespa/messagebus/result.h>
 
 namespace documentapi {
-    class DocumentMessage;
+class DocumentMessage;
 }
 
 namespace storage {
@@ -21,8 +21,6 @@ struct VisitorMessageSession {
 
     /** @return Returns the number of pending messages this session has. */
     virtual uint32_t pending() = 0;
-
 };
 
-} // storage
-
+} // namespace storage

@@ -2,15 +2,14 @@
 #pragma once
 
 #include "idealstateoperation.h"
+
 #include <vespa/storage/distributor/messagetracker.h>
 
 namespace storage::distributor {
 
-class SetBucketStateOperation : public IdealStateOperation
-{
+class SetBucketStateOperation : public IdealStateOperation {
 public:
-    SetBucketStateOperation(const ClusterContext& cluster_ctx,
-                            const BucketAndNodes& nodes,
+    SetBucketStateOperation(const ClusterContext& cluster_ctx, const BucketAndNodes& nodes,
                             const std::vector<uint16_t>& wantedActiveNodes);
     ~SetBucketStateOperation() override;
 
@@ -18,8 +17,9 @@ public:
     void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override;
     const char* getName() const noexcept override { return "setbucketstate"; }
     Type getType() const noexcept override { return SET_BUCKET_STATE; }
+
 protected:
-    MessageTracker _tracker;
+    MessageTracker        _tracker;
     std::vector<uint16_t> _wantedActiveNodes;
 
 private:
@@ -29,4 +29,4 @@ private:
     bool shouldBeActive(uint16_t node) const;
 };
 
-}
+} // namespace storage::distributor

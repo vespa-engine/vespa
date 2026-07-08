@@ -2,33 +2,33 @@
 
 #pragma once
 
-#include "zc4_posting_writer.h"
-#include "zc4_posting_reader.h"
-#include <vespa/searchlib/index/postinglistfile.h>
-#include <vespa/fastos/file.h>
 #include "zc4_posting_params.h"
+#include "zc4_posting_reader.h"
+#include "zc4_posting_writer.h"
+
+#include <vespa/fastos/file.h>
+#include <vespa/searchlib/index/postinglistfile.h>
 
 namespace search::index {
-    class PostingListCountFileSeqRead;
-    class PostingListCountFileSeqWrite;
-}
+class PostingListCountFileSeqRead;
+class PostingListCountFileSeqWrite;
+} // namespace search::index
 
 namespace search::diskindex {
 
-class Zc4PostingSeqRead : public index::PostingListFileSeqRead
-{
-    Zc4PostingSeqRead(const Zc4PostingSeqRead &);
-    Zc4PostingSeqRead &operator=(const Zc4PostingSeqRead &);
+class Zc4PostingSeqRead : public index::PostingListFileSeqRead {
+    Zc4PostingSeqRead(const Zc4PostingSeqRead&);
+    Zc4PostingSeqRead& operator=(const Zc4PostingSeqRead&);
 
 protected:
-    Zc4PostingReader<true> _reader;
-    FastOS_File _file;
-    uint64_t _numWords;     // Number of words in file
-    uint64_t _fileBitSize;
-    index::PostingListCountFileSeqRead *const _countFile;
-    uint64_t _headerBitLen;       // Size of file header in bits
+    Zc4PostingReader<true>                    _reader;
+    FastOS_File                               _file;
+    uint64_t                                  _numWords; // Number of words in file
+    uint64_t                                  _fileBitSize;
+    index::PostingListCountFileSeqRead* const _countFile;
+    uint64_t                                  _headerBitLen; // Size of file header in bits
 public:
-    Zc4PostingSeqRead(index::PostingListCountFileSeqRead *countFile, bool dynamic_k);
+    Zc4PostingSeqRead(index::PostingListCountFileSeqRead* countFile, bool dynamic_k);
 
     ~Zc4PostingSeqRead();
 
@@ -36,60 +36,58 @@ public:
     using PostingListCounts = index::PostingListCounts;
     using PostingListParams = index::PostingListParams;
 
-    void readDocIdAndFeatures(DocIdAndFeatures &features) override;
-    void read_word_and_counts(const std::string& word, const PostingListCounts &counts) override; // Fill in for next word
-    bool open(const std::string &name, const TuneFileSeqRead &tuneFileRead) override;
+    void readDocIdAndFeatures(DocIdAndFeatures& features) override;
+    void read_word_and_counts(const std::string&       word,
+                              const PostingListCounts& counts) override; // Fill in for next word
+    bool open(const std::string& name, const TuneFileSeqRead& tuneFileRead) override;
     bool close() override;
-    void getParams(PostingListParams &params) override;
-    void getFeatureParams(PostingListParams &params) override;
+    void getParams(PostingListParams& params) override;
+    void getFeatureParams(PostingListParams& params) override;
     void readHeader();
-    static const std::string &getIdentifier(bool dynamic_k);
+    static const std::string& getIdentifier(bool dynamic_k);
 };
 
-
-class Zc4PostingSeqWrite : public index::PostingListFileSeqWrite
-{
-    Zc4PostingSeqWrite(const Zc4PostingSeqWrite &);
-    Zc4PostingSeqWrite &operator=(const Zc4PostingSeqWrite &);
+class Zc4PostingSeqWrite : public index::PostingListFileSeqWrite {
+    Zc4PostingSeqWrite(const Zc4PostingSeqWrite&);
+    Zc4PostingSeqWrite& operator=(const Zc4PostingSeqWrite&);
 
 protected:
     using EncodeContext = bitcompression::FeatureEncodeContextBE;
 
-    Zc4PostingWriter<true> _writer;
-    FastOS_File      _file;
-    uint64_t _fileBitSize;
-    index::PostingListCountFileSeqWrite *const _countFile;
+    Zc4PostingWriter<true>                     _writer;
+    FastOS_File                                _file;
+    uint64_t                                   _fileBitSize;
+    index::PostingListCountFileSeqWrite* const _countFile;
     /**
      * Make header using feature encode write context.
      */
-    void makeHeader(const search::common::FileHeaderContext &fileHeaderContext);
+    void makeHeader(const search::common::FileHeaderContext& fileHeaderContext);
     bool updateHeader();
+
 public:
-    Zc4PostingSeqWrite(index::PostingListCountFileSeqWrite *countFile);
+    Zc4PostingSeqWrite(index::PostingListCountFileSeqWrite* countFile);
     ~Zc4PostingSeqWrite();
 
     using DocIdAndFeatures = index::DocIdAndFeatures;
     using PostingListCounts = index::PostingListCounts;
     using PostingListParams = index::PostingListParams;
 
-    void writeDocIdAndFeatures(const DocIdAndFeatures &features) override;
+    void writeDocIdAndFeatures(const DocIdAndFeatures& features) override;
     void flushWord() override;
 
-    bool open(const std::string &name,
-              const TuneFileSeqWrite &tuneFileWrite,
-              const search::common::FileHeaderContext &fileHeaderContext) override;
+    bool open(const std::string& name, const TuneFileSeqWrite& tuneFileWrite,
+              const search::common::FileHeaderContext& fileHeaderContext) override;
 
     bool close() override;
-    void setParams(const PostingListParams &params) override;
-    void getParams(PostingListParams &params) override;
-    void setFeatureParams(const PostingListParams &params) override;
-    void getFeatureParams(PostingListParams &params) override;
+    void setParams(const PostingListParams& params) override;
+    void getParams(PostingListParams& params) override;
+    void setFeatureParams(const PostingListParams& params) override;
+    void getFeatureParams(PostingListParams& params) override;
 };
 
-class ZcPostingSeqWrite : public Zc4PostingSeqWrite
-{
+class ZcPostingSeqWrite : public Zc4PostingSeqWrite {
 public:
-    ZcPostingSeqWrite(index::PostingListCountFileSeqWrite *countFile);
+    ZcPostingSeqWrite(index::PostingListCountFileSeqWrite* countFile);
 };
 
-}
+} // namespace search::diskindex

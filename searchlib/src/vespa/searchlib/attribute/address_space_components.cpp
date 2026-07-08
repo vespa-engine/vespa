@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "address_space_components.h"
+
 #include "i_enum_store.h"
 
 namespace search {
@@ -24,4 +25,4 @@ const std::string AddressSpaceComponents::hnsw_levels_store = "hnsw-levels-store
 const std::string AddressSpaceComponents::hnsw_links_store = "hnsw-links-store";
 const std::string AddressSpaceComponents::hnsw_nodeid_mapping = "hnsw-nodeid-mapping";
 
-}
+} // namespace search

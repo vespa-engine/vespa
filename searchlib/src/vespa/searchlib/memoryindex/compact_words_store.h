@@ -3,9 +3,10 @@
 
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include <vespa/vespalib/stllike/hash_map.h>
+
 #include <atomic>
 
 namespace search::memoryindex {
@@ -26,15 +27,15 @@ public:
         using WordRefVector = vespalib::Array<vespalib::datastore::EntryRef>;
 
     private:
-        uint32_t   _docId;
+        uint32_t      _docId;
         WordRefVector _words;
 
     public:
         Builder(uint32_t docId_);
         ~Builder();
-        Builder &insert(vespalib::datastore::EntryRef wordRef);
+        Builder& insert(vespalib::datastore::EntryRef wordRef);
         uint32_t docId() const { return _docId; }
-        const WordRefVector &words() const { return _words; }
+        const WordRefVector& words() const { return _words; }
     };
 
     /**
@@ -42,7 +43,7 @@ public:
      */
     class Iterator {
     private:
-        const uint32_t *_buf;
+        const uint32_t* _buf;
         uint32_t        _remainingWords;
         uint32_t        _wordRef;
         bool            _valid;
@@ -51,9 +52,9 @@ public:
 
     public:
         Iterator();
-        Iterator(const uint32_t *buf);
+        Iterator(const uint32_t* buf);
         bool valid() const { return _valid; }
-        Iterator &operator++();
+        Iterator& operator++();
         vespalib::datastore::EntryRef wordRef() const { return vespalib::datastore::EntryRef(_wordRef); }
         bool hasBackingBuf() const { return _buf != nullptr; }
     };
@@ -67,14 +68,14 @@ public:
         using RefType = DataStoreType::RefType;
 
     private:
-        DataStoreType               _store;
+        DataStoreType                             _store;
         vespalib::datastore::BufferType<uint32_t> _type;
-        const uint32_t              _typeId;
+        const uint32_t                            _typeId;
 
     public:
         Store();
         ~Store();
-        vespalib::datastore::EntryRef insert(const Builder &builder);
+        vespalib::datastore::EntryRef insert(const Builder& builder);
         Iterator get(vespalib::datastore::EntryRef wordRef) const;
         vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     };
@@ -82,21 +83,21 @@ public:
     using DocumentWordsMap = vespalib::hash_map<uint32_t, vespalib::datastore::EntryRef>;
 
 private:
-    DocumentWordsMap _docs;
+    DocumentWordsMap    _docs;
     std::atomic<size_t> _docs_used_bytes;
     std::atomic<size_t> _docs_allocated_bytes;
-    Store            _wordsStore;
+    Store               _wordsStore;
 
     void update_docs_memory_usage();
 
 public:
     CompactWordsStore();
     ~CompactWordsStore();
-    void insert(const Builder &builder);
+    void insert(const Builder& builder);
     void remove(uint32_t docId);
     Iterator get(uint32_t docId) const;
     void commit();
     vespalib::MemoryUsage getMemoryUsage() const;
 };
 
-}
+} // namespace search::memoryindex

@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 namespace search::index {
 
@@ -22,24 +22,16 @@ public:
      * list for a word is less than 256 kB then it is not split into
      * segments.
      */
-    class Segment
-    {
+    class Segment {
     public:
         uint64_t _bitLength; // Length of segment
         uint32_t _numDocs;   // Number of documents in segment
         uint32_t _lastDoc;   // Last document id in segment
 
-        Segment() noexcept
-            : _bitLength(0),
-              _numDocs(0),
-              _lastDoc(0)
-        { }
+        Segment() noexcept : _bitLength(0), _numDocs(0), _lastDoc(0) {}
 
-        bool
-        operator==(const Segment &rhs) const noexcept {
-            return (_bitLength == rhs._bitLength &&
-                    _numDocs == rhs._numDocs &&
-                    _lastDoc == rhs._lastDoc);
+        bool operator==(const Segment& rhs) const noexcept {
+            return (_bitLength == rhs._bitLength && _numDocs == rhs._numDocs && _lastDoc == rhs._lastDoc);
         }
     };
 
@@ -48,8 +40,8 @@ public:
      * for prefix search), numDocs is then sum of documents for each posting
      * list, which segment info is absent.
      */
-    uint64_t _numDocs;      // Number of documents for word(s)
-    uint64_t _bitLength;    // Length of postings for word(s)
+    uint64_t _numDocs;   // Number of documents for word(s)
+    uint64_t _bitLength; // Length of postings for word(s)
 
     /**
      * Very large posting lists with skip info are split into multiple
@@ -58,12 +50,8 @@ public:
      */
     std::vector<Segment> _segments;
 
-    PostingListCounts() noexcept
-        : _numDocs(0),
-          _bitLength(0),
-          _segments()
-    { }
-    void swap(PostingListCounts & rhs) noexcept {
+    PostingListCounts() noexcept : _numDocs(0), _bitLength(0), _segments() {}
+    void swap(PostingListCounts& rhs) noexcept {
         std::swap(_numDocs, rhs._numDocs);
         std::swap(_bitLength, rhs._bitLength);
         std::swap(_segments, rhs._segments);
@@ -75,27 +63,20 @@ public:
         _segments.clear();
     }
 
-    bool operator==(const PostingListCounts &rhs) const noexcept {
-        return (_numDocs == rhs._numDocs &&
-                _bitLength == rhs._bitLength &&
-                _segments == rhs._segments);
+    bool operator==(const PostingListCounts& rhs) const noexcept {
+        return (_numDocs == rhs._numDocs && _bitLength == rhs._bitLength && _segments == rhs._segments);
     }
 };
 
-void swap(PostingListCounts & a, PostingListCounts & b);
-
+void swap(PostingListCounts& a, PostingListCounts& b);
 
 class PostingListOffsetAndCounts {
 public:
-    uint64_t _offset;
-    uint64_t _accNumDocs;   // Used by prefix search for now.
+    uint64_t          _offset;
+    uint64_t          _accNumDocs; // Used by prefix search for now.
     PostingListCounts _counts;
 
-    PostingListOffsetAndCounts() noexcept
-        : _offset(0),
-          _accNumDocs(0u),
-          _counts()
-    { }
+    PostingListOffsetAndCounts() noexcept : _offset(0), _accNumDocs(0u), _counts() {}
 };
 
-}
+} // namespace search::index

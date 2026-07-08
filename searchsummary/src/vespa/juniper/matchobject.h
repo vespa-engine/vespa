@@ -5,6 +5,7 @@
 #include "hashbase.h"
 #include "queryhandle.h"
 #include "querynode.h"
+
 #include <vespa/fastlib/text/unicodeutil.h>
 
 using Result = juniper::Result;
@@ -28,8 +29,8 @@ public:
     QueryTerm* first_match(Token& token);
 
 private:
-    QueryTerm*                    first();
-    QueryTerm*                    next_reduce_match();
+    QueryTerm* first();
+    QueryTerm* next_reduce_match();
     queryterm_hashtable&          _table;
     queryterm_hashtable::element* _el;
 
@@ -77,13 +78,13 @@ public:
 
     inline size_t TermCount() { return _qt.size(); }
     inline size_t NontermCount() { return _nonterms.size(); }
-    inline int    MaxArity() { return _max_arity; }
+    inline int MaxArity() { return _max_arity; }
 
     inline bool HasConstraints() { return (_query ? (_query->_options & X_CONSTR) : false); }
     inline bool UsesValid() { return (_query ? (_query->_options & X_CHKVAL) : false); }
 
     inline QueryExpr* Query() { return _query; }
-    inline bool       HasReductions() { return _has_reductions; }
+    inline bool HasReductions() { return _has_reductions; }
 
     // internal use only..
     void add_queryterm(QueryTerm* term);

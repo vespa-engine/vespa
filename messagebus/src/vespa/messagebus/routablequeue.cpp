@@ -6,30 +6,23 @@ using namespace std::chrono;
 
 namespace mbus {
 
-RoutableQueue::RoutableQueue()
-    : _lock(),
-      _queue()
-{ }
+RoutableQueue::RoutableQueue() : _lock(), _queue() {
+}
 
-RoutableQueue::~RoutableQueue()
-{
+RoutableQueue::~RoutableQueue() {
     while (_queue.size() > 0) {
-        Routable *r = _queue.front();
+        Routable* r = _queue.front();
         _queue.pop();
         delete r;
     }
 }
 
-uint32_t
-RoutableQueue::size()
-{
+uint32_t RoutableQueue::size() {
     std::lock_guard guard(_lock);
     return _queue.size();
 }
 
-void
-RoutableQueue::enqueue(Routable::UP r)
-{
+void RoutableQueue::enqueue(Routable::UP r) {
     std::unique_lock guard(_lock);
     _queue.push(r.get());
     r.release();
@@ -39,12 +32,10 @@ RoutableQueue::enqueue(Routable::UP r)
     }
 }
 
-Routable::UP
-RoutableQueue::dequeue(duration timeout)
-{
+Routable::UP RoutableQueue::dequeue(duration timeout) {
     steady_clock::time_point startTime = steady_clock::now();
-    duration left = timeout;
-    std::unique_lock guard(_lock);
+    duration                 left = timeout;
+    std::unique_lock         guard(_lock);
     while (_queue.size() == 0 && left > duration::zero()) {
         if ((_cond.wait_for(guard, left) == std::cv_status::timeout) || (_queue.size() > 0)) {
             break;
@@ -60,15 +51,11 @@ RoutableQueue::dequeue(duration timeout)
     return ret;
 }
 
-void
-RoutableQueue::handleMessage(Message::UP msg)
-{
+void RoutableQueue::handleMessage(Message::UP msg) {
     enqueue(std::move(msg));
 }
 
-void
-RoutableQueue::handleReply(Reply::UP reply)
-{
+void RoutableQueue::handleReply(Reply::UP reply) {
     enqueue(std::move(reply));
 }
 

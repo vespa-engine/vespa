@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
+
 #include <variant>
 
 namespace search::features {
@@ -15,19 +16,22 @@ namespace search::features {
  * build() or destructor is called.
  */
 class ElementwiseOutput {
-        struct CallBuilderHelper;
-        friend struct CallBuilderHelper;
-        vespalib::SharedStringRepo::Handles _labels;
-        std::variant<std::monostate, std::vector<double>, std::vector<float>, std::vector<vespalib::BFloat16>, std::vector<vespalib::eval::Int8Float>> _cells;
-        const vespalib::eval::Value& _empty_output;
-        std::unique_ptr<vespalib::eval::Value> _output;
+    struct CallBuilderHelper;
+    friend struct CallBuilderHelper;
+    vespalib::SharedStringRepo::Handles _labels;
+    std::variant<std::monostate, std::vector<double>, std::vector<float>, std::vector<vespalib::BFloat16>,
+                 std::vector<vespalib::eval::Int8Float>>
+                                           _cells;
+    const vespalib::eval::Value&           _empty_output;
+    std::unique_ptr<vespalib::eval::Value> _output;
 
-       template <typename CT>
-       vespalib::eval::TypedCells build_helper(const vespalib::hash_map<uint32_t, double>& scores);
-    public:
-        ElementwiseOutput(const vespalib::eval::Value& empty_output);
-        ~ElementwiseOutput();
-        const vespalib::eval::Value &build(const vespalib::hash_map<uint32_t, double>& scores);
+    template <typename CT>
+    vespalib::eval::TypedCells build_helper(const vespalib::hash_map<uint32_t, double>& scores);
+
+public:
+    ElementwiseOutput(const vespalib::eval::Value& empty_output);
+    ~ElementwiseOutput();
+    const vespalib::eval::Value& build(const vespalib::hash_map<uint32_t, double>& scores);
 };
 
-}
+} // namespace search::features

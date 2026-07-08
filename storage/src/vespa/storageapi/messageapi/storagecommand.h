@@ -15,12 +15,12 @@ class StorageReply;
 
 class StorageCommand : public StorageMessage {
     duration _timeout; /** Timeout of command in milliseconds */
-        /** Sets what node this message origins from. 0xFFFF is unset. */
+    /** Sets what node this message origins from. 0xFFFF is unset. */
     uint16_t _sourceIndex;
 
 protected:
     StorageCommand(const StorageCommand& other);
-    explicit StorageCommand(const MessageType& type) noexcept : StorageCommand(type, NORMAL) { }
+    explicit StorageCommand(const MessageType& type) noexcept : StorageCommand(type, NORMAL) {}
     explicit StorageCommand(const MessageType& type, Priority p) noexcept;
 
 public:
@@ -46,4 +46,4 @@ public:
     virtual std::unique_ptr<StorageReply> makeReply() = 0;
 };
 
-}
+} // namespace storage::api

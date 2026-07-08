@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
@@ -19,7 +20,8 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Validates and logs a warning (with deploy logger) when paged attributes are used in a
- * content cluster with nodes with remote storage
+ * content cluster with nodes with remote storage. No validation or warning will be produced
+ * for dev environment
  *
  * @author hmusum
  */
@@ -27,13 +29,15 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
 
     @Override
     public void validate(Context context) {
+        if (context.deployState().zone().environment() == Environment.dev) return;
+
         var contentClustersWithRemoteStorage = context.model().allocatedHosts().getHosts().stream()
                 .filter(hostSpec -> hostSpec.realResources().storageType() == remote)
                 .map(HostSpec::membership)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .filter(membership -> membership.cluster().type() == content)
-                .map(membership -> membership.cluster().id().value())
+                .filter(membership -> membership.type() == content)
+                .map(membership -> membership.id().value())
                 .collect(Collectors.toSet());
 
         for (var cluster : context.model().getSearchClusters()) {
@@ -51,10 +55,11 @@ public class PagedAttributesRemoteStorageValidator implements Validator {
                 .collect(Collectors.toList());
         if (fields.isEmpty()) return;
 
-        logger.logApplicationPackage(WARNING, ("Cluster '%s' has nodes with remote storage and fields with paged attributes." +
-                " This might lead to performance issues when doing I/O." +
-                " Consider using storage-type='local' or removing 'paged' setting for these fields: %s")
-                .formatted(clusterName, join(fields)));
+        logger.logApplicationPackage(WARNING, String.format(java.util.Locale.ROOT,
+                        "Cluster '%s' has nodes with remote storage and fields with paged attributes." +
+                        " This might lead to performance issues when doing I/O." +
+                        " Consider using storage-type='local' or removing 'paged' setting for these fields: %s",
+                        clusterName, join(fields)));
     }
 
     private static String join(List<Attribute> fields) {

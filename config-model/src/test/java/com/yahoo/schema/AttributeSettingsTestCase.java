@@ -16,7 +16,11 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Attribute settings
@@ -174,7 +178,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
                     "}\n");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.", e.getMessage());
+            assertEquals("Field 'f' in 'test' cannot be marked mutable as it is inside the document clause.", e.getMessage());
         }
     }
 

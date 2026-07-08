@@ -4,14 +4,19 @@
 #include <memory>
 #include <shared_mutex>
 
-namespace document { class DocumentTypeRepo; }
-namespace storage::mbusprot { class ProtocolSerialization7; }
+namespace document {
+class DocumentTypeRepo;
+}
+namespace storage::mbusprot {
+class ProtocolSerialization7;
+}
 
 namespace storage::rpc {
 
 class WrappedCodec {
     const std::shared_ptr<const document::DocumentTypeRepo> _doc_type_repo;
-    std::unique_ptr<mbusprot::ProtocolSerialization7> _codec;
+    std::unique_ptr<mbusprot::ProtocolSerialization7>       _codec;
+
 public:
     explicit WrappedCodec(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo);
     ~WrappedCodec();
@@ -28,8 +33,9 @@ class MessageCodecProvider {
     // TODO replace with std::atomic<std::shared_ptr<WrappedCodec>> once on a sufficiently new
     // C++20 STL that implements the P0718R2 proposal. We expect(tm) an implementation to use
     // lock-free compiler-specific 128-bit CAS atomics instead of explicit locks there.
-    mutable std::shared_mutex _rw_mutex;
+    mutable std::shared_mutex     _rw_mutex;
     std::shared_ptr<WrappedCodec> _active_codec;
+
 public:
     explicit MessageCodecProvider(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo);
     ~MessageCodecProvider();
@@ -39,4 +45,4 @@ public:
     void update_atomically(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo);
 };
 
-}
+} // namespace storage::rpc

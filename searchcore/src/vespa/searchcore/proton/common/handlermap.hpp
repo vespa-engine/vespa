@@ -2,8 +2,10 @@
 #pragma once
 
 #include "doctypename.h"
+
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sequence.h>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -14,8 +16,7 @@ namespace proton {
  * This template defines a mapping from a document type name to a shared pointer
  * to the template argument type.
  */
-template <typename T>
-class HandlerMap {
+template <typename T> class HandlerMap {
 private:
     using HandlerSP = typename std::shared_ptr<T>;
     using StdMap = std::map<DocTypeName, HandlerSP>;
@@ -31,56 +32,54 @@ public:
      * using event barriers to resolve visibility constraints in the
      * future without changing the external API.
      **/
-    class Snapshot final : public vespalib::Sequence<T*>
-    {
+    class Snapshot final : public vespalib::Sequence<T*> {
     private:
         std::vector<HandlerSP> _handlers;
         size_t                 _offset;
 
     public:
-        Snapshot() : _handlers(), _offset(0) { }
-        Snapshot(const StdMap &map) : _handlers(), _offset(0) {
+        Snapshot() : _handlers(), _offset(0) {}
+        Snapshot(const StdMap& map) : _handlers(), _offset(0) {
             _handlers.reserve(map.size());
-            for (const auto & itr : map) {
+            for (const auto& itr : map) {
                 _handlers.push_back(itr.second);
             }
         }
-        Snapshot(std::vector<HandlerSP> &&handlers) : _handlers(std::move(handlers)), _offset(0) {}
-        Snapshot(Snapshot &&) noexcept = default;
-        Snapshot & operator = (Snapshot &&) noexcept = default;
-        Snapshot(const Snapshot &) = delete;
-        Snapshot & operator = (const Snapshot &) = delete;
+        Snapshot(std::vector<HandlerSP>&& handlers) : _handlers(std::move(handlers)), _offset(0) {}
+        Snapshot(Snapshot&&) noexcept = default;
+        Snapshot& operator=(Snapshot&&) noexcept = default;
+        Snapshot(const Snapshot&) = delete;
+        Snapshot& operator=(const Snapshot&) = delete;
 
         size_t size() const { return _handlers.size(); }
 
         bool valid() const override { return (_offset < _handlers.size()); }
-        T *get() const override { return _handlers[_offset].get(); }
+        T* get() const override { return _handlers[_offset].get(); }
         void next() override { ++_offset; }
     };
 
-    class UnsafeSnapshot final : public vespalib::Sequence<T*>
-    {
+    class UnsafeSnapshot final : public vespalib::Sequence<T*> {
     private:
-        std::vector<T *> _handlers;
-        size_t           _offset;
+        std::vector<T*> _handlers;
+        size_t          _offset;
 
     public:
-        UnsafeSnapshot() : _handlers(), _offset(0) { }
-        UnsafeSnapshot(const StdMap &map) : _handlers(), _offset(0) {
+        UnsafeSnapshot() : _handlers(), _offset(0) {}
+        UnsafeSnapshot(const StdMap& map) : _handlers(), _offset(0) {
             _handlers.reserve(map.size());
-            for (const auto & itr : map) {
+            for (const auto& itr : map) {
                 _handlers.push_back(itr.second.get());
             }
         }
-        UnsafeSnapshot(UnsafeSnapshot &&) noexcept = default;
-        UnsafeSnapshot & operator = (UnsafeSnapshot &&) noexcept = default;
-        UnsafeSnapshot(const UnsafeSnapshot &) = delete;
-        UnsafeSnapshot & operator = (const UnsafeSnapshot &) = delete;
+        UnsafeSnapshot(UnsafeSnapshot&&) noexcept = default;
+        UnsafeSnapshot& operator=(UnsafeSnapshot&&) noexcept = default;
+        UnsafeSnapshot(const UnsafeSnapshot&) = delete;
+        UnsafeSnapshot& operator=(const UnsafeSnapshot&) = delete;
 
         size_t size() const { return _handlers.size(); }
 
         bool valid() const override { return (_offset < _handlers.size()); }
-        T *get() const override { return _handlers[_offset]; }
+        T* get() const override { return _handlers[_offset]; }
         void next() override { ++_offset; }
     };
 
@@ -104,14 +103,10 @@ public:
      * @param handler The handler to register.
      * @return The replaced handler, if any.
      */
-    HandlerSP
-    putHandler(const DocTypeName &docTypeNameVer,
-               const HandlerSP &handler)
-    {
-        if ( ! handler) {
-            throw vespalib::IllegalArgumentException(vespalib::make_string(
-                            "Handler is null for docType '%s'",
-                            docTypeNameVer.toString().c_str()));
+    HandlerSP putHandler(const DocTypeName& docTypeNameVer, const HandlerSP& handler) {
+        if (!handler) {
+            throw vespalib::IllegalArgumentException(
+                vespalib::make_string("Handler is null for docType '%s'", docTypeNameVer.toString().c_str()));
         }
         auto it = _handlers.find(docTypeNameVer);
         if (it == _handlers.end()) {
@@ -130,9 +125,7 @@ public:
      * @param docType The document type whose handler to return.
      * @return The registered handler, if any.
      */
-    HandlerSP
-    getHandler(const DocTypeName &docTypeNameVer) const
-    {
+    HandlerSP getHandler(const DocTypeName& docTypeNameVer) const {
         auto it = _handlers.find(docTypeNameVer);
         if (it != _handlers.end()) {
             return it->second;
@@ -147,16 +140,14 @@ public:
      * @param docType The document type whose handler to return.
      * @return The registered handler, if any.
      */
-    T *
-    getHandlerPtr(const DocTypeName &docTypeNameVer) const
-    {
+    T* getHandlerPtr(const DocTypeName& docTypeNameVer) const {
         auto it = _handlers.find(docTypeNameVer);
         return (it != _handlers.end()) ? it->second.get() : nullptr;
     }
 
-    bool hasHandler(const HandlerSP &handler) const {
+    bool hasHandler(const HandlerSP& handler) const {
         bool found = false;
-        for (const auto &kv : _handlers) {
+        for (const auto& kv : _handlers) {
             if (handler == kv.second) {
                 found = true;
                 break;
@@ -172,9 +163,7 @@ public:
      * @param docType The document type whose handler to remove.
      * @return The removed handler, if any.
      */
-    HandlerSP
-    removeHandler(const DocTypeName &docTypeNameVer)
-    {
+    HandlerSP removeHandler(const DocTypeName& docTypeNameVer) {
         auto it = _handlers.find(docTypeNameVer);
         if (it == _handlers.end()) {
             return HandlerSP();
@@ -207,8 +196,8 @@ public:
      **/
     UnsafeSnapshot unsafeSnapshot() const { return UnsafeSnapshot(_handlers); }
 
-// we want to use snapshots rather than direct iteration to reduce locking;
-// the below functions should be deprecated when possible.
+    // we want to use snapshots rather than direct iteration to reduce locking;
+    // the below functions should be deprecated when possible.
 
     const_iterator begin() const { return _handlers.begin(); }
     const_iterator end() const { return _handlers.end(); }
@@ -216,4 +205,3 @@ public:
 };
 
 } // namespace proton
-

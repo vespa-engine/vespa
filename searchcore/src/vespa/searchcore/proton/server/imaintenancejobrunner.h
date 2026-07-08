@@ -7,8 +7,7 @@ namespace proton {
 /**
  * Interface for running maintenance jobs (cf. IMaintenanceJob).
  */
-class IMaintenanceJobRunner
-{
+class IMaintenanceJobRunner {
 public:
     /*
      * Schedule job to be run in the future.
@@ -18,4 +17,3 @@ public:
 };
 
 } // namespace proton
-

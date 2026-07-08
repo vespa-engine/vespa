@@ -14,8 +14,9 @@
 #pragma once
 
 #include "componentregisterimpl.h"
-#include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
+
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+#include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 
 namespace storage::framework::defaultimplementation {
 
@@ -33,4 +34,4 @@ public:
     ThreadPoolImpl& getThreadPoolImpl() { return _threadPool; }
 };
 
-}
+} // namespace storage::framework::defaultimplementation

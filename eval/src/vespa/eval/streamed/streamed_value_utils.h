@@ -4,6 +4,7 @@
 
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/objects/nbostream.h>
+
 #include <cassert>
 
 namespace vespalib::eval {
@@ -13,9 +14,9 @@ namespace vespalib::eval {
  *  Reading more labels than available will trigger an assert.
  **/
 struct LabelStream {
-    const StringIdVector &source;
-    size_t pos;
-    LabelStream(const StringIdVector &data) : source(data), pos(0) {}
+    const StringIdVector& source;
+    size_t                pos;
+    LabelStream(const StringIdVector& data) : source(data), pos(0) {}
     string_id next_label() {
         assert(pos < source.size());
         return source[pos++];
@@ -27,8 +28,8 @@ struct LabelStream {
  *  Represents an address (set of labels) mapping to a subspace index
  **/
 struct LabelBlock {
-    static constexpr size_t npos = -1;
-    size_t subspace_index;
+    static constexpr size_t    npos = -1;
+    size_t                     subspace_index;
     std::span<const string_id> address;
     operator bool() const { return subspace_index != npos; }
 };
@@ -39,14 +40,15 @@ struct LabelBlock {
  **/
 class LabelBlockStream {
 private:
-    size_t _num_subspaces;
-    LabelStream _labels;
-    size_t _subspace_index;
+    size_t         _num_subspaces;
+    LabelStream    _labels;
+    size_t         _subspace_index;
     StringIdVector _current_address;
+
 public:
     LabelBlock next_block() {
         if (_subspace_index < _num_subspaces) {
-            for (auto & label : _current_address) {
+            for (auto& label : _current_address) {
                 label = _labels.next_label();
             }
             return LabelBlock{_subspace_index++, _current_address};
@@ -60,18 +62,15 @@ public:
         _labels.reset();
     }
 
-    LabelBlockStream(uint32_t num_subspaces,
-                     const StringIdVector &labels,
-                     uint32_t num_mapped_dims)
-      : _num_subspaces(num_subspaces),
-        _labels(labels),
-        _subspace_index(num_subspaces),
-        _current_address(num_mapped_dims)
-    {}
+    LabelBlockStream(uint32_t num_subspaces, const StringIdVector& labels, uint32_t num_mapped_dims)
+        : _num_subspaces(num_subspaces),
+          _labels(labels),
+          _subspace_index(num_subspaces),
+          _current_address(num_mapped_dims) {}
 
     LabelBlockStream(LabelBlockStream&&) noexcept;
 
     ~LabelBlockStream();
 };
 
-} // namespace
+} // namespace vespalib::eval

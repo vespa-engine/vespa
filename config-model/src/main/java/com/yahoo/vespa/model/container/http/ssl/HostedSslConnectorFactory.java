@@ -5,6 +5,7 @@ import ai.vespa.utils.BytesQuantity;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.security.tls.TlsContext;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 
 import java.time.Duration;
@@ -27,6 +28,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private final SslClientAuth clientAuth;
     private final List<String> tlsCiphersOverride;
     private final boolean proxyProtocolEnabled;
+    private final boolean tokenEndpoint;
     private final Duration endpointConnectionTtl;
     private final List<String> remoteAddressHeaders;
     private final List<String> remotePortHeaders;
@@ -41,6 +43,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.clientAuth = builder.clientAuth;
         this.tlsCiphersOverride = List.copyOf(builder.tlsCiphersOverride);
         this.proxyProtocolEnabled = builder.proxyProtocolEnabled;
+        this.tokenEndpoint = builder.tokenEndpoint;
         this.endpointConnectionTtl = builder.endpointConnectionTtl;
         this.remoteAddressHeaders = List.copyOf(builder.remoteAddressHeaders);
         this.remotePortHeaders = List.copyOf(builder.remotePortHeaders);
@@ -49,14 +52,14 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 .map(prefix -> {
                     var parts = prefix.split(":");
                     if (parts.length != 3) {
-                        throw new IllegalArgumentException("Expected string of format 'prefix:sample-rate:max-entity-size', got '%s'".formatted(prefix));
+                        throw new IllegalArgumentException(Text.format("Expected string of format 'prefix:sample-rate:max-entity-size', got '%s'", prefix));
                     }
                     var pathPrefix = parts[0];
                     if (pathPrefix.isBlank())
                         throw new IllegalArgumentException("Path prefix must not be blank");
                     var sampleRate = Double.parseDouble(parts[1]);
-                    if (sampleRate < 0 || sampleRate > 1)
-                        throw new IllegalArgumentException("Sample rate must be in range [0, 1], got '%s'".formatted(sampleRate));
+                    if (sampleRate < 0)
+                        throw new IllegalArgumentException(Text.format("Sample rate must be non-negative, got '%s'", sampleRate));
                     var maxEntitySize = BytesQuantity.fromString(parts[2]);
                     return new EntityLoggingEntry(pathPrefix, sampleRate, maxEntitySize);
                 })
@@ -91,7 +94,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         connectorBuilder
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
                                        .enabled(proxyProtocolEnabled))
-                .idleTimeout(Duration.ofSeconds(30).toSeconds())
+                .idleTimeout(tokenEndpoint ? Duration.ofMinutes(5).toSeconds() : Duration.ofSeconds(30).toSeconds())
                 .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0)
                 .accessLog(new ConnectorConfig.AccessLog.Builder()
                                    .remoteAddressHeaders(remoteAddressHeaders)
@@ -103,7 +106,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                                                             .maxSize(e.maxEntitySize.toBytes()))
                                                     .toList()))
                 .compliance(new ConnectorConfig.Compliance.Builder()
-                        .httpViolations(httpComplianceViolations))
+                        .httpViolations(httpComplianceViolations.stream().sorted().toList()))
                 .serverName.known(knownServerNames);
 
     }

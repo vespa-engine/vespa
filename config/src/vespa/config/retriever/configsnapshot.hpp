@@ -3,32 +3,26 @@
 #pragma once
 
 #include "configsnapshot.h"
+
 #include <vespa/config/common/configvalue.hpp>
 
 namespace config {
 
 template <typename ConfigType>
-std::unique_ptr<ConfigType>
-ConfigSnapshot::getConfig(const std::string & configId) const
-{
+std::unique_ptr<ConfigType> ConfigSnapshot::getConfig(const std::string& configId) const {
     ConfigKey key(ConfigKey::create<ConfigType>(configId));
     return find(key)->second.second.newInstance<ConfigType>();
 }
 
 template <typename ConfigType>
-bool
-ConfigSnapshot::isChanged(const std::string & configId, int64_t currentGeneration) const
-{
+bool ConfigSnapshot::isChanged(const std::string& configId, int64_t currentGeneration) const {
     ConfigKey key(ConfigKey::create<ConfigType>(configId));
     return currentGeneration < find(key)->second.first;
 }
 
-template <typename ConfigType>
-bool
-ConfigSnapshot::hasConfig(const std::string & configId) const
-{
+template <typename ConfigType> bool ConfigSnapshot::hasConfig(const std::string& configId) const {
     ConfigKey key(ConfigKey::create<ConfigType>(configId));
     return (_valueMap.find(key) != _valueMap.end());
 }
 
-}
+} // namespace config

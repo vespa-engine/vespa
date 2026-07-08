@@ -14,10 +14,9 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.net.URI;
@@ -57,7 +56,7 @@ public class ClusterDeploymentMetricsRetriever {
     private static final CloseableHttpClient httpClient =
             VespaHttpClientBuilder.custom()
                     .connectTimeout(Timeout.ofSeconds(10))
-                    .connectionManagerFactory(registry -> new PoolingHttpClientConnectionManager(registry, null, null, TimeValue.ofMinutes(1)))
+                    .timeToLive(TimeValue.ofMinutes(1))
                     .apacheBuilder()
                     .setDefaultRequestConfig(
                             RequestConfig.custom()
@@ -91,7 +90,7 @@ public class ClusterDeploymentMetricsRetriever {
         }
 
         log.log(Level.FINE, () ->
-                String.format("Metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
+                Text.format("Metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
         );
 
         return clusterMetricsMap;
@@ -139,13 +138,19 @@ public class ClusterDeploymentMetricsRetriever {
                         aggregator.get().addReadLatency(rlSum, values.field("vds.distributor.gets.latency.count").asDouble()));
             }
 
-            case VESPA_CONTAINER_CLUSTERCONTROLLER ->
-                    optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())).ifPresent(memoryUtil ->
-                            aggregator.get()
-                                    .addMemoryUsage(memoryUtil, values.field(ClusterControllerMetrics.RESOURCE_USAGE_MEMORY_LIMIT.last()).asDouble())
-                                    .addDiskUsage(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()).asDouble(),
-                                            values.field(ClusterControllerMetrics.RESOURCE_USAGE_DISK_LIMIT.last()).asDouble())
-                                    .setFeedBlockedNodes((int) values.field(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.last()).asLong()));
+            case VESPA_CONTAINER_CLUSTERCONTROLLER -> {
+                var memUtil = optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max()));
+                var memLimit = optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MEMORY_LIMIT.last()));
+                var diskUtil = optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()));
+                var diskLimit = optionalDouble(values.field(ClusterControllerMetrics.RESOURCE_USAGE_DISK_LIMIT.last()));
+                memUtil.ifPresent(util -> memLimit.ifPresent(limit -> aggregator.get().addMemoryUsage(util, limit)));
+                diskUtil.ifPresent(util -> diskLimit.ifPresent(limit -> aggregator.get().addDiskUsage(util, limit)));
+                var fbnField = values.field(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.last());
+                if (fbnField.valid()) {
+                    long feedBlockedNodes = fbnField.asLong();
+                    aggregator.get().setFeedBlockedNodes((int) feedBlockedNodes);
+                }
+            }
         }
     }
 
@@ -157,8 +162,7 @@ public class ClusterDeploymentMetricsRetriever {
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {
-            byte[] body = EntityUtils.toByteArray(response.getEntity());
-            return SlimeUtils.jsonToSlime(body);
+            return SlimeUtils.jsonToSlime(response.getEntity().getContent());
         } catch (IOException e) {
             log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
             return new Slime();

@@ -18,4 +18,4 @@ public:
                            const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids) override;
 };
 
-}
+} // namespace search::streaming

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "comprbuffer.h"
+
 #include <utility>
 
 class FastOS_FileInterface;
@@ -11,8 +12,7 @@ namespace search {
 
 class ComprFileWriteContext;
 
-class ComprFileDecodeContext
-{
+class ComprFileDecodeContext {
 public:
     virtual ~ComprFileDecodeContext() = default;
 
@@ -37,12 +37,12 @@ public:
     /**
      * Get unit ptr (e.g. _valI) from decode context.
      */
-    virtual const void *getUnitPtr() const = 0;
+    virtual const void* getUnitPtr() const = 0;
 
     /**
      * Setup unit buffer in decode context after read.
      */
-    virtual void afterRead(const void *start, size_t bufferUnits, uint64_t bufferEndFilePos, bool isMore) = 0;
+    virtual void afterRead(const void* start, size_t bufferUnits, uint64_t bufferEndFilePos, bool isMore) = 0;
 
     /**
      * Setup for bitwise reading.
@@ -60,45 +60,31 @@ public:
     virtual uint32_t getUnitByteSize() const = 0;
 };
 
-class ComprFileReadBase
-{
+class ComprFileReadBase {
 public:
-    static void ReadComprBuffer(uint64_t stopOffset,
-                                bool readAll,
-                                ComprFileDecodeContext &decodeContext,
-                                int &bitOffset,
-                                FastOS_FileInterface &file,
-                                uint64_t &fileReadByteOffset,
-                                uint64_t fileSize,
-                                ComprBuffer &cbuf);
-    static void SetPosition(uint64_t newPosition,
-                            uint64_t stopOffset,
-                            bool readAll,
-                            ComprFileDecodeContext &decodeContext,
-                            int &bitOffset,
-                            FastOS_FileInterface *file,
-                            uint64_t &fileReadByteOffset,
-                            uint64_t fileSize,
-                            ComprBuffer &cbuf);
+    static void ReadComprBuffer(uint64_t stopOffset, bool readAll, ComprFileDecodeContext& decodeContext,
+                                int& bitOffset, FastOS_FileInterface& file, uint64_t& fileReadByteOffset,
+                                uint64_t fileSize, ComprBuffer& cbuf);
+    static void SetPosition(uint64_t newPosition, uint64_t stopOffset, bool readAll,
+                            ComprFileDecodeContext& decodeContext, int& bitOffset, FastOS_FileInterface* file,
+                            uint64_t& fileReadByteOffset, uint64_t fileSize, ComprBuffer& cbuf);
 
 protected:
     virtual ~ComprFileReadBase() = default;
 };
 
-
-class ComprFileReadContext : public ComprBuffer
-{
+class ComprFileReadContext : public ComprBuffer {
 private:
-    ComprFileDecodeContext *_decodeContext;
-    uint64_t _fileSize;
-    uint64_t _fileReadByteOffset;
-    int _bitOffset;
-    uint64_t _stopOffset;
-    bool _readAll;
-    FastOS_FileInterface *_file;
+    ComprFileDecodeContext* _decodeContext;
+    uint64_t                _fileSize;
+    uint64_t                _fileReadByteOffset;
+    int                     _bitOffset;
+    uint64_t                _stopOffset;
+    bool                    _readAll;
+    FastOS_FileInterface*   _file;
 
 public:
-    ComprFileReadContext(ComprFileDecodeContext &decodeContext);
+    ComprFileReadContext(ComprFileDecodeContext& decodeContext);
     ComprFileReadContext(uint32_t unitSize);
     ~ComprFileReadContext();
 
@@ -106,9 +92,9 @@ public:
     void readComprBuffer();
     void setPosition(uint64_t newPosition);
     void allocComprBuf(size_t comprBufSize, size_t preferredFileAlignment);
-    void setDecodeContext(ComprFileDecodeContext *decodeContext) { _decodeContext = decodeContext; }
-    ComprFileDecodeContext *getDecodeContext() const { return _decodeContext; }
-    void setFile(FastOS_FileInterface *file) { _file = file; }
+    void setDecodeContext(ComprFileDecodeContext* decodeContext) { _decodeContext = decodeContext; }
+    ComprFileDecodeContext* getDecodeContext() const { return _decodeContext; }
+    void setFile(FastOS_FileInterface* file) { _file = file; }
     std::string get_file_name() const;
 
     /**
@@ -127,35 +113,33 @@ public:
      * For unit testing only. Reference data owned by rhs, only works as
      * long as rhs is live and unchanged.
      */
-    void referenceWriteContext(const ComprFileWriteContext &rhs);
-    void reference_compressed_buffer(void *buffer, size_t usedUnits);
+    void referenceWriteContext(const ComprFileWriteContext& rhs);
+    void reference_compressed_buffer(void* buffer, size_t usedUnits);
 };
 
-
-class ComprFileEncodeContext
-{
+class ComprFileEncodeContext {
 public:
     virtual ~ComprFileEncodeContext() = default;
 
     /**
      * Get number of used units (e.g. _valI - start)
      */
-    virtual int getUsedUnits(const uint64_t * start) = 0;
+    virtual int getUsedUnits(const uint64_t* start) = 0;
 
     /**
      * Get normal full buffer size (e.g. _valE - start)
      */
-    virtual int getNormalMaxUnits(void *start) = 0;
+    virtual int getNormalMaxUnits(void* start) = 0;
 
     /**
      * Adjust buffer after write (e.g. _valI, _fileWriteBias)
      */
-    virtual void afterWrite(ComprBuffer &cbuf, uint32_t remainingUnits, uint64_t bufferStartFilePos) = 0;
+    virtual void afterWrite(ComprBuffer& cbuf, uint32_t remainingUnits, uint64_t bufferStartFilePos) = 0;
 
     /**
      * Adjust buffer size to align end of buffer.
      */
-    virtual void adjustBufSize(ComprBuffer &cbuf) = 0;
+    virtual void adjustBufSize(ComprBuffer& cbuf) = 0;
 
     /**
      * Get size of each unit (typically 4 or 8)
@@ -163,38 +147,32 @@ public:
     virtual uint32_t getUnitByteSize() const = 0;
 };
 
-class ComprFileWriteBase
-{
+class ComprFileWriteBase {
 public:
-    static void WriteComprBuffer(ComprFileEncodeContext &encodeContext,
-                                 ComprBuffer &cbuf,
-                                 FastOS_FileInterface &file,
-                                 uint64_t &fileWriteByteOffset,
-                                 bool flushSlack);
+    static void WriteComprBuffer(ComprFileEncodeContext& encodeContext, ComprBuffer& cbuf, FastOS_FileInterface& file,
+                                 uint64_t& fileWriteByteOffset, bool flushSlack);
 
 protected:
     virtual ~ComprFileWriteBase() = default;
 };
 
-
-class ComprFileWriteContext : public ComprBuffer
-{
+class ComprFileWriteContext : public ComprBuffer {
 private:
-    ComprFileEncodeContext *_encodeContext;
-    FastOS_FileInterface *_file;
-    uint64_t _fileWriteByteOffset; // XXX: Migrating from encode context
+    ComprFileEncodeContext* _encodeContext;
+    FastOS_FileInterface*   _file;
+    uint64_t                _fileWriteByteOffset; // XXX: Migrating from encode context
 
 public:
-    ComprFileWriteContext(ComprFileEncodeContext &encodeContext);
+    ComprFileWriteContext(ComprFileEncodeContext& encodeContext);
     ComprFileWriteContext(uint32_t unitSize);
     ~ComprFileWriteContext();
 
     void writeComprBuffer(bool flushSlack);
     void allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment);
     void allocComprBuf();
-    void setEncodeContext(ComprFileEncodeContext *encodeContext) { _encodeContext = encodeContext; }
-    ComprFileEncodeContext *getEncodeContext() const { return _encodeContext; }
-    void setFile(FastOS_FileInterface *file) { _file = file; }
+    void setEncodeContext(ComprFileEncodeContext* encodeContext) { _encodeContext = encodeContext; }
+    ComprFileEncodeContext* getEncodeContext() const { return _encodeContext; }
+    void setFile(FastOS_FileInterface* file) { _file = file; }
 
     /**
      * Get file offset for start of compressed buffer.
@@ -205,7 +183,7 @@ public:
      * Grab compressed buffer from write context.  This is only legal when
      * no file is attached.
      */
-    std::pair<uint64_t *, size_t> grabComprBuffer(vespalib::alloc::Alloc & comprAlloc);
+    std::pair<uint64_t*, size_t> grabComprBuffer(vespalib::alloc::Alloc& comprAlloc);
 };
 
-}
+} // namespace search

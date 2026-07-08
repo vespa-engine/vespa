@@ -3,41 +3,40 @@
 #pragma once
 
 #include "bucketdb.h"
+
 #include <mutex>
 
 namespace proton::bucketdb {
 
-class Guard
-{
+class Guard {
 public:
-    Guard(BucketDB *bucketDB, std::mutex &mutex);
-    Guard(const Guard &) = delete;
-    Guard(Guard &&rhs);
-    Guard &operator=(const Guard &) = delete;
-    Guard &operator=(Guard &&rhs) = delete;
-    BucketDB *operator->() { return _bucketDB; }
-    BucketDB &operator*() { return *_bucketDB; }
-    const BucketDB *operator->() const { return _bucketDB; }
-    const BucketDB &operator*() const { return *_bucketDB; }
+    Guard(BucketDB* bucketDB, std::mutex& mutex);
+    Guard(const Guard&) = delete;
+    Guard(Guard&& rhs);
+    Guard& operator=(const Guard&) = delete;
+    Guard& operator=(Guard&& rhs) = delete;
+    BucketDB* operator->() { return _bucketDB; }
+    BucketDB& operator*() { return *_bucketDB; }
+    const BucketDB* operator->() const { return _bucketDB; }
+    const BucketDB& operator*() const { return *_bucketDB; }
+
 private:
-    BucketDB *_bucketDB;
+    BucketDB*                    _bucketDB;
     std::unique_lock<std::mutex> _guard;
 };
 
 /**
  * Class that owns and provides guarded access to a bucket database.
  */
-class BucketDBOwner
-{
+class BucketDBOwner {
 public:
     BucketDBOwner();
-    Guard takeGuard() {
-        return Guard(&_bucketDB, _mutex);
-    }
+    Guard takeGuard() { return Guard(&_bucketDB, _mutex); }
     size_t getNumActiveDocs() const { return _bucketDB.getNumActiveDocs(); }
+
 private:
     BucketDB   _bucketDB;
     std::mutex _mutex;
 };
 
-}
+} // namespace proton::bucketdb

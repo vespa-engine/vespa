@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Simple mock for use whne testing metrics.
+ * Simple mock for use when testing metrics.
  *
  * @author bjorncs
  */

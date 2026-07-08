@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/threadexecutor.h>
+
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -18,19 +19,20 @@ namespace proton {
  * e.g. due to running out of memory.
  * This adjustment should ensure that we eventually are able to initialize and start proton.
  */
- class InitializeThreadsCalculator {
- private:
-     using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
-     std::filesystem::path _path;
-     uint32_t _num_threads;
-     InitializeThreads _threads;
+class InitializeThreadsCalculator {
+private:
+    using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
+    std::filesystem::path _path;
+    uint32_t              _num_threads;
+    InitializeThreads     _threads;
 
- public:
-     InitializeThreadsCalculator(const vespalib::HwInfo::Cpu & cpu_info, const std::string& base_dir, uint32_t configured_num_threads);
-     ~InitializeThreadsCalculator();
-     uint32_t num_threads() const { return _num_threads; }
-     InitializeThreads threads() const { return _threads; }
-     void init_done();
- };
+public:
+    InitializeThreadsCalculator(const vespalib::HwInfo::Cpu& cpu_info, const std::string& base_dir,
+                                uint32_t configured_num_threads);
+    ~InitializeThreadsCalculator();
+    uint32_t num_threads() const { return _num_threads; }
+    InitializeThreads threads() const { return _threads; }
+    void init_done();
+};
 
-}
+} // namespace proton

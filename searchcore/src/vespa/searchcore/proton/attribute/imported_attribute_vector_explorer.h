@@ -4,15 +4,16 @@
 
 #include <vespa/vespalib/net/http/state_explorer.h>
 
-namespace search::attribute { class ImportedAttributeVector; }
+namespace search::attribute {
+class ImportedAttributeVector;
+}
 
 namespace proton {
 
 /**
  * Class used to explore the state of an imported attribute vector.
  */
-class ImportedAttributeVectorExplorer : public vespalib::StateExplorer
-{
+class ImportedAttributeVectorExplorer : public vespalib::StateExplorer {
 private:
     std::shared_ptr<search::attribute::ImportedAttributeVector> _attr;
 
@@ -20,7 +21,7 @@ public:
     ImportedAttributeVectorExplorer(std::shared_ptr<search::attribute::ImportedAttributeVector> attr);
 
     // Implements vespalib::StateExplorer
-    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
-}
+} // namespace proton

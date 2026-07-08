@@ -15,31 +15,32 @@ namespace storage::distributor {
 namespace {
 
 std::shared_ptr<ClusterState> stable_state(std::make_shared<ClusterState>("distributor:4 storage:4 bits:8"));
-std::shared_ptr<ClusterState> node_1_down_state(std::make_shared<ClusterState>("distributor:4 .1.s:d storage:4 .1.s:d bits:8"));
-std::shared_ptr<ClusterState> node_1_retired_state(std::make_shared<ClusterState>("distributor:4 .1.s:d storage:4 .1.s:r bits:8"));
-std::shared_ptr<ClusterState> node_1_maintenance_state(std::make_shared<ClusterState>("distributor:4 .1.s:d storage:4 .1.s:m bits:8"));
-std::shared_ptr<Distribution> distribution_r1(std::make_shared<Distribution>(Distribution::getDefaultDistributionConfig(1, 4)));
-std::shared_ptr<Distribution> distribution_r2(std::make_shared<Distribution>(Distribution::getDefaultDistributionConfig(2, 4)));
+std::shared_ptr<ClusterState>
+    node_1_down_state(std::make_shared<ClusterState>("distributor:4 .1.s:d storage:4 .1.s:d bits:8"));
+std::shared_ptr<ClusterState>
+    node_1_retired_state(std::make_shared<ClusterState>("distributor:4 .1.s:d storage:4 .1.s:r bits:8"));
+std::shared_ptr<ClusterState>
+    node_1_maintenance_state(std::make_shared<ClusterState>("distributor:4 .1.s:d storage:4 .1.s:m bits:8"));
+std::shared_ptr<Distribution>
+    distribution_r1(std::make_shared<Distribution>(Distribution::getDefaultDistributionConfig(1, 4)));
+std::shared_ptr<Distribution>
+    distribution_r2(std::make_shared<Distribution>(Distribution::getDefaultDistributionConfig(2, 4)));
 
-}
+} // namespace
 
-struct DistributorBucketSpaceTest : public ::testing::Test
-{
+struct DistributorBucketSpaceTest : public ::testing::Test {
     using CountVector = std::vector<uint32_t>;
 
     DistributorBucketSpace bucket_space;
 
-    DistributorBucketSpaceTest()
-        : ::testing::Test(),
-          bucket_space(0u)
-    {
-    }
+    DistributorBucketSpaceTest() : ::testing::Test(), bucket_space(0u) {}
     ~DistributorBucketSpaceTest() override;
 
     // make normal buckets
     std::vector<BucketId> make_normal_buckets();
 
-    // make deep split buckets. Ideal service layer nodes for a bucket changes for each split level when bucket used bits > 33.
+    // make deep split buckets. Ideal service layer nodes for a bucket changes for each split level when bucket used
+    // bits > 33.
     std::vector<BucketId> make_deep_split_buckets(std::function<bool(BucketId)> owned);
 
     // Count normal buckets using this distributor
@@ -54,24 +55,20 @@ struct DistributorBucketSpaceTest : public ::testing::Test
 
 DistributorBucketSpaceTest::~DistributorBucketSpaceTest() = default;
 
-std::vector<BucketId>
-DistributorBucketSpaceTest::make_normal_buckets()
-{
+std::vector<BucketId> DistributorBucketSpaceTest::make_normal_buckets() {
     std::vector<BucketId> buckets;
-    uint16_t distribution_bits = bucket_space.getClusterState().getDistributionBitCount();
+    uint16_t              distribution_bits = bucket_space.getClusterState().getDistributionBitCount();
     for (uint32_t i = 0; i < (1u << distribution_bits); ++i) {
         buckets.emplace_back(distribution_bits, i);
     }
     return buckets;
 }
 
-std::vector<BucketId>
-DistributorBucketSpaceTest::make_deep_split_buckets(std::function<bool(BucketId)> owned)
-{
+std::vector<BucketId> DistributorBucketSpaceTest::make_deep_split_buckets(std::function<bool(BucketId)> owned) {
     std::vector<BucketId> buckets;
-    uint16_t distribution_bits = bucket_space.getClusterState().getDistributionBitCount();
-    uint32_t bias = 0;
-    uint32_t bias_max = std::min(1u << distribution_bits, 1000u);
+    uint16_t              distribution_bits = bucket_space.getClusterState().getDistributionBitCount();
+    uint32_t              bias = 0;
+    uint32_t              bias_max = std::min(1u << distribution_bits, 1000u);
     for (; bias < bias_max; ++bias) {
         BucketId bucket(distribution_bits, bias);
         if (owned(bucket)) {
@@ -85,9 +82,7 @@ DistributorBucketSpaceTest::make_deep_split_buckets(std::function<bool(BucketId)
     return buckets;
 }
 
-uint32_t
-DistributorBucketSpaceTest::count_distributor_buckets(const std::vector<BucketId>& buckets)
-{
+uint32_t DistributorBucketSpaceTest::count_distributor_buckets(const std::vector<BucketId>& buckets) {
     uint32_t owned_buckets = 0;
     for (auto& bucket : buckets) {
         bool owned = bucket_space.check_ownership_in_pending_and_current_state(bucket).isOwned();
@@ -99,11 +94,10 @@ DistributorBucketSpaceTest::count_distributor_buckets(const std::vector<BucketId
 }
 
 DistributorBucketSpaceTest::CountVector
-DistributorBucketSpaceTest::count_service_layer_buckets(const std::vector<BucketId>& buckets)
-{
+DistributorBucketSpaceTest::count_service_layer_buckets(const std::vector<BucketId>& buckets) {
     CountVector result(3);
     for (auto& bucket : buckets) {
-        const auto & ideal_nodes_bundle = bucket_space.get_ideal_service_layer_nodes_bundle(bucket);
+        const auto& ideal_nodes_bundle = bucket_space.get_ideal_service_layer_nodes_bundle(bucket);
         for (uint32_t i = 0; i < 3; ++i) {
             IdealServiceLayerNodesBundle::ConstNodesRef ideal_nodes;
             switch (i) {
@@ -116,8 +110,7 @@ DistributorBucketSpaceTest::count_service_layer_buckets(const std::vector<Bucket
             case 2:
                 ideal_nodes = ideal_nodes_bundle.available_nonretired_or_maintenance_nodes();
                 break;
-            default:
-                ;
+            default:;
             }
             for (auto node : ideal_nodes) {
                 if (node == 0u) {
@@ -129,30 +122,27 @@ DistributorBucketSpaceTest::count_service_layer_buckets(const std::vector<Bucket
     return result;
 }
 
-DistributorBucketSpaceTest::CountVector
-DistributorBucketSpaceTest::count_buckets()
-{
+DistributorBucketSpaceTest::CountVector DistributorBucketSpaceTest::count_buckets() {
     CountVector result;
-    auto buckets = make_normal_buckets();
+    auto        buckets = make_normal_buckets();
     result.push_back(count_distributor_buckets(buckets));
     auto service_layer_result = count_service_layer_buckets(buckets);
     result.insert(result.end(), service_layer_result.cbegin(), service_layer_result.cend());
     return result;
 }
 
-DistributorBucketSpaceTest::CountVector
-DistributorBucketSpaceTest::count_deep_split_buckets()
-{
+DistributorBucketSpaceTest::CountVector DistributorBucketSpaceTest::count_deep_split_buckets() {
     CountVector result;
-    auto buckets = make_deep_split_buckets([this](BucketId bucket) { return bucket_space.check_ownership_in_pending_and_current_state(bucket).isOwned(); });
+    auto        buckets = make_deep_split_buckets([this](BucketId bucket) {
+        return bucket_space.check_ownership_in_pending_and_current_state(bucket).isOwned();
+    });
     result.push_back(count_distributor_buckets(buckets));
     auto service_layer_result = count_service_layer_buckets(buckets);
     result.insert(result.end(), service_layer_result.cbegin(), service_layer_result.cend());
     return result;
 }
 
-TEST_F(DistributorBucketSpaceTest, check_owned_buckets)
-{
+TEST_F(DistributorBucketSpaceTest, check_owned_buckets) {
     bucket_space.setDistribution(distribution_r1);
     bucket_space.setClusterState(stable_state);
     EXPECT_EQ((CountVector{64u, 64u, 64u, 64u}), count_buckets());
@@ -175,8 +165,7 @@ TEST_F(DistributorBucketSpaceTest, check_owned_buckets)
     EXPECT_EQ((CountVector{86u, 64u, 86u, 86u}), count_buckets());
 }
 
-TEST_F(DistributorBucketSpaceTest, check_available_nodes)
-{
+TEST_F(DistributorBucketSpaceTest, check_available_nodes) {
     bucket_space.setDistribution(distribution_r1);
     bucket_space.setClusterState(stable_state);
     EXPECT_EQ((std::vector<bool>{true, true, true, true}), bucket_space.get_available_nodes());
@@ -192,11 +181,10 @@ TEST_F(DistributorBucketSpaceTest, check_available_nodes)
     EXPECT_EQ((std::vector<bool>{true, true, true, true}), bucket_space.get_available_nodes());
 }
 
-TEST_F(DistributorBucketSpaceTest, check_owned_deep_split_buckets)
-{
+TEST_F(DistributorBucketSpaceTest, check_owned_deep_split_buckets) {
     bucket_space.setDistribution(distribution_r1);
     bucket_space.setClusterState(stable_state);
     EXPECT_EQ((CountVector{100u, 19u, 19u, 19u}), count_deep_split_buckets());
 }
 
-}
+} // namespace storage::distributor

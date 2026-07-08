@@ -56,10 +56,7 @@ public class Chain<COMPONENT extends ChainedComponent> {
 
     /** Create a chain by using a builder. This will order the chain by the ordering constraints. */
     public Chain(ComponentId id, Collection<COMPONENT> components, Collection<Phase> phases) {
-        this(id, buildChain(
-                emptyListIfNull(components),
-                emptyListIfNull(phases)).components());
-
+        this(id, buildChain(emptyListIfNull(components), emptyListIfNull(phases)).components());
     }
 
     public ComponentId getId() {

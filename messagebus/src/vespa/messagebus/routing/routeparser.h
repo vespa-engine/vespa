@@ -39,5 +39,4 @@ public:
     static Route createRoute(std::string_view str);
 };
 
-} // mbus
-
+} // namespace mbus

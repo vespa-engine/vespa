@@ -4,12 +4,11 @@
 
 namespace vespalib::btree {
 
-class NoAggregated
-{
+class NoAggregated {
 public:
-    NoAggregated() { }
-    bool operator==(const NoAggregated &) const { return true; }
-    bool operator!=(const NoAggregated &) const { return false; }
+    NoAggregated() {}
+    bool operator==(const NoAggregated&) const { return true; }
+    bool operator!=(const NoAggregated&) const { return false; }
 };
 
-}
+} // namespace vespalib::btree

@@ -166,6 +166,7 @@ TOKEN :
 | < AS: "as" >
 | < INDEXING: "indexing" >
 | < SUMMARY_TO: "summary-to" >
+| < DOCUMENTID: "documentid" >
 | < DOCUMENT_SUMMARY: "document-summary" >
 | < ELEMENT_GAP: "element-gap" >
 | < INFINITY: "infinity" >
@@ -200,6 +201,7 @@ TOKEN :
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
 | < EXECUTION_MODE: "execution-mode">
+| < OPTIMIZE_MODEL: "optimize-model">
 | < PARALLEL: "parallel">
 | < SEQUENTIAL: "sequential">
 | < MODEL: "model" >
@@ -294,6 +296,7 @@ TOKEN :
 | < ORDER: "order" >
 | < MAX_FILTER_COVERAGE: "max-filter-coverage" >
 | < MAX_HITS: "max-hits" >
+| < TOTAL_MAX_HITS: "total-max-hits" >
 | < FIRST_PHASE: "first-phase" >
 | < SECOND_PHASE: "second-phase" >
 | < GLOBAL_PHASE: "global-phase" >
@@ -335,6 +338,7 @@ TOKEN :
 | < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
 | < RANK_PROPERTIES: "rank-properties" >
 | < RERANK_COUNT: "rerank-count" >
+| < TOTAL_RERANK_COUNT: "total-rerank-count" >
 | < NUM_THREADS_PER_SEARCH: "num-threads-per-search" >
 | < MIN_HITS_PER_THREAD: "min-hits-per-thread" >
 | < NUM_SEARCH_PARTITIONS: "num-search-partitions" >
@@ -344,8 +348,10 @@ TOKEN :
 | < FILTER_FIRST_THRESHOLD: "filter-first-threshold" >
 | < FILTER_FIRST_EXPLORATION: "filter-first-exploration" >
 | < EXPLORATION_SLACK: "exploration-slack" >
+| < PREFETCH_TENSORS: "prefetch-tensors" >
 | < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
+| < TOTAL_KEEP_RANK_COUNT: "total-keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
 | < CONSTANTS: "constants" >
 | < FILE: "file" >
@@ -427,6 +433,7 @@ ParsedSchema rootSchema() :
 void rootSchemaItem(ParsedSchema schema) : { }
 {
     ( document(schema)
+      | documentId(schema)
       | rawAsBase64(schema)
       | searchStemming(schema)
       | importField(schema)
@@ -606,8 +613,8 @@ ParsedField field() :
 {
     <FIELD> name = identifier() <TYPE> type = dataType()
     {
-        if (name != null && Schema.isReservedName(name.toLowerCase())) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        if (name != null && Schema.isReservedName(name.toLowerCase(java.util.Locale.ROOT))) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' cannot be used as a field name.");
         }
         field = new ParsedField(name, type);
     }
@@ -825,8 +832,8 @@ void structFieldDefinition(ParsedStruct struct) :
 }
 {
     <FIELD> name = identifier() <TYPE> type = dataType() {
-        if (name != null && Schema.isReservedName(name.toLowerCase())) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        if (name != null && Schema.isReservedName(name.toLowerCase(java.util.Locale.ROOT))) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' cannot be used as a field name.");
         }
         field = new ParsedField(name, type);
     }
@@ -848,8 +855,8 @@ void structField(ParsedField field) :
 }
 {
     <STRUCT_FIELD> name = identifier() {
-        if (name != null && Schema.isReservedName(name.toLowerCase())) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        if (name != null && Schema.isReservedName(name.toLowerCase(java.util.Locale.ROOT))) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' cannot be used as a field name.");
         }
         structField = new ParsedField(name, null);
     }
@@ -1527,6 +1534,23 @@ void id(ParsedField field) :
 }
 
 /**
+ * Consumes the documentid setting.
+ *
+ * @param schema the schema object to add setting to
+ */
+void documentId(ParsedSchema schema) :
+{
+    boolean attribute = false;
+}
+{
+    <DOCUMENTID>
+    <COLON> ( ( <ATTRIBUTE> { attribute = true; } ) | ( <FROM_DISK> { attribute = false; } ) )
+    {
+        schema.enableDocumentIdAttribute(attribute);
+    }
+}
+
+/**
  * Consumes a document-summary block from within a schema block.
  *
  * @param schema the schema object to add content to
@@ -1712,6 +1736,7 @@ void onnxModelItem(OnnxModel onnxModel) :
 {
     String path = null;
     int num;
+    boolean enable;
 }
 {
     (
@@ -1722,6 +1747,7 @@ void onnxModelItem(OnnxModel onnxModel) :
         <INTEROP_THREADS> <COLON> num = integer() { onnxModel.setStatelessInterOpThreads(num); } |
         <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
                                   | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
+        <OPTIMIZE_MODEL> <COLON> enable = bool() { onnxModel.setOptimizeModel(enable); } |
         (<ONNX_INPUT_SL>) {
             String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
             if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
@@ -1831,6 +1857,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | filterFirstThreshold(profile)
       | filterFirstExploration(profile)
       | explorationSlack(profile)
+      | prefetchTensors(profile)
       | targetHitsMaxAdjustmentFactor(profile)
       | rankFeatures(profile)
       | rankProperties(profile)
@@ -1953,17 +1980,19 @@ void matchPhase(ParsedRankProfile profile) :
 
 void matchPhaseItem(ParsedRankProfile profile, MatchPhaseSettings settings) :
 {
-    String str;
-    int num;
+    String string;
+    int count;
+    int totalCount;
     double multiplier;
     double coverage;
 }
 {
-    ( <ATTRIBUTE> <COLON> str = identifier() { settings.setAttribute(str); }
+    ( <ATTRIBUTE> <COLON> string = identifier() { settings.setAttribute(string); }
       | diversityDeprecated(profile)
       | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); }
                           | <DESCENDING> { settings.setAscending(false); } )
-      | <MAX_HITS> <COLON> num = integer() { settings.setMaxHits(num); }
+      | <MAX_HITS> <COLON> count = integer() { settings.setMaxHits(count); }
+      | <TOTAL_MAX_HITS> <COLON> totalCount = integer() { settings.setTotalMaxHits(totalCount); }
       | <MAX_FILTER_COVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
       | <EVALUATION_POINT> <COLON> multiplier = floatValue() { settings.setEvaluationPoint(multiplier); }
       | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = floatValue() { settings.setPrePostFilterTippingPoint(multiplier); }
@@ -2034,11 +2063,13 @@ void firstPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int keepRankCount;
+    int totalKeepRankCount;
     double dropLimit;
 }
 {
     ( expression = expression()                               { profile.setFirstPhaseRanking(expression); }
     | (<KEEP_RANK_COUNT> <COLON> keepRankCount = integer())     { profile.setKeepRankCount(keepRankCount); }
+    | (<TOTAL_KEEP_RANK_COUNT> <COLON> totalKeepRankCount = integer()) { profile.setTotalKeepRankCount(totalKeepRankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 }
@@ -2062,11 +2093,13 @@ void secondPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int rerankCount;
+    int totalRerankCount;
     double dropLimit;
 }
 {
     ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
+    | (<TOTAL_RERANK_COUNT> <COLON> totalRerankCount = integer()) { profile.setTotalRerankCount(totalRerankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setSecondPhaseRankScoreDropLimit(dropLimit); }
     )
 }
@@ -2440,6 +2473,19 @@ void explorationSlack(ParsedRankProfile profile) :
 }
 {
     (<EXPLORATION_SLACK> <COLON> slack = floatValue()) { profile.setExplorationSlack(slack); }
+}
+
+/**
+ * This rule consumes a prefetch-tensors statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void prefetchTensors(ParsedRankProfile profile) :
+{
+    boolean value;
+}
+{
+    (<PREFETCH_TENSORS> <COLON> value = bool()) { profile.setPrefetchTensors(value); }
 }
 
 /**
@@ -2894,6 +2940,7 @@ String identifierWithDash() :
     | <EXACT_TERMINATOR>
     | <EXECUTION_MODE>
     | <EXPLORATION_SLACK>
+    | <PREFETCH_TENSORS>
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>
@@ -2945,6 +2992,9 @@ String identifierWithDash() :
     | <SUMMARY_TO>
     | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
     | <TERMWISE_LIMIT>
+    | <TOTAL_MAX_HITS>
+    | <TOTAL_KEEP_RANK_COUNT>
+    | <TOTAL_RERANK_COUNT>
     | <UPPER_BOUND>
     | <USE_MODEL>
     ) { return token.image; }
@@ -2978,6 +3028,7 @@ String identifier() : { }
       | <DIRECT>
       | <DIVERSITY>
       | <DOCUMENT>
+      | <DOCUMENTID>
       | <DOUBLE_KEYWORD>
       | <FLOAT_KEYWORD>
       | <LONG_KEYWORD>

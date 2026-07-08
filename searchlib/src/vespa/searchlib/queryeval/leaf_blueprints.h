@@ -3,18 +3,18 @@
 #pragma once
 
 #include "blueprint.h"
-#include "simpleresult.h"
 #include "fake_result.h"
 #include "searchable.h"
+#include "simpleresult.h"
 
 namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
-class EmptyBlueprint : public SimpleLeafBlueprint
-{
+class EmptyBlueprint : public SimpleLeafBlueprint {
 protected:
-    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const override;
+
 public:
     EmptyBlueprint(FieldSpecBaseList fields);
     EmptyBlueprint(FieldSpecBase field) : SimpleLeafBlueprint(field) {}
@@ -22,77 +22,72 @@ public:
     ~EmptyBlueprint() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
-    EmptyBlueprint *as_empty() noexcept final override { return this; }
+    EmptyBlueprint* as_empty() noexcept final override { return this; }
 };
 
-class AlwaysTrueBlueprint : public SimpleLeafBlueprint
-{
+class AlwaysTrueBlueprint : public SimpleLeafBlueprint {
 protected:
-    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const override;
+
 public:
     AlwaysTrueBlueprint();
     ~AlwaysTrueBlueprint() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
-    const AlwaysTrueBlueprint *asAlwaysTrue() const noexcept override { return this; }
+    const AlwaysTrueBlueprint* asAlwaysTrue() const noexcept override { return this; }
 };
 
 //-----------------------------------------------------------------------------
 
-class SimpleBlueprint : public SimpleLeafBlueprint
-{
+class SimpleBlueprint : public SimpleLeafBlueprint {
 private:
     std::string  _tag;
     SimpleResult _result;
 
 protected:
-    SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const override;
+
 public:
-    SimpleBlueprint(const SimpleResult &result);
+    SimpleBlueprint(const SimpleResult& result);
     ~SimpleBlueprint() override;
-    SimpleBlueprint &tag(const std::string &tag);
-    const std::string &tag() const { return _tag; }
+    SimpleBlueprint& tag(const std::string& tag);
+    const std::string& tag() const { return _tag; }
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
 
-class FakeBlueprint : public SimpleLeafBlueprint
-{
+class FakeBlueprint : public SimpleLeafBlueprint {
 private:
-    std::string _tag;
-    std::string _term;
-    FieldSpec   _field;
-    FakeResult  _result;
+    std::string                                _tag;
+    std::string                                _term;
+    FieldSpec                                  _field;
+    FakeResult                                 _result;
     std::unique_ptr<attribute::ISearchContext> _ctx;
 
 protected:
-    SearchIterator::UP
-    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
+    SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray& tfmda) const override;
 
 public:
-    FakeBlueprint(const FieldSpec &field, const FakeResult &result);
+    FakeBlueprint(const FieldSpec& field, const FakeResult& result);
     ~FakeBlueprint() override;
 
-    FakeBlueprint &tag(const std::string &t) {
+    FakeBlueprint& tag(const std::string& t) {
         _tag = t;
         return *this;
     }
-    const std::string &tag() const { return _tag; }
+    const std::string& tag() const { return _tag; }
 
-    FakeBlueprint &is_attr(bool value);
+    FakeBlueprint& is_attr(bool value);
     bool is_attr() const { return bool(_ctx); }
 
-    FakeBlueprint &term(const std::string &t) {
+    FakeBlueprint& term(const std::string& t) {
         _term = t;
         return *this;
     }
 
-    const attribute::ISearchContext *get_attribute_search_context() const noexcept final {
-        return _ctx.get();
-    }
+    const attribute::ISearchContext* get_attribute_search_context() const noexcept final { return _ctx.get(); }
 
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, _result.inspect().size(), 0);
@@ -105,4 +100,4 @@ public:
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace search::queryeval

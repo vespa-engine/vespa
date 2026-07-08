@@ -6,18 +6,22 @@
 #include "serialized_tensor_ref.h"
 #include "subspace_type.h"
 #include "vector_bundle.h"
+
 #include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/util/string_id.h>
+
 #include <cstddef>
 #include <memory>
 #include <span>
 
-namespace vespalib { class nbostream; }
+namespace vespalib {
+class nbostream;
+}
 
 namespace vespalib::eval {
 struct Value;
 class ValueType;
-}
+} // namespace vespalib::eval
 
 namespace search::tensor {
 
@@ -39,8 +43,7 @@ namespace search::tensor {
  * Alignment is dynamic, based on cell type, memory used by tensor cell values and
  * alignment required for reading num_subspaces and labels array.
  */
-class TensorBufferOperations
-{
+class TensorBufferOperations {
     SubspaceType                      _subspace_type;
     uint32_t                          _num_mapped_dimensions;
     uint32_t                          _min_alignment;
@@ -50,8 +53,8 @@ class TensorBufferOperations
 
     using Aligner = vespalib::datastore::Aligner<vespalib::datastore::dynamic_alignment>;
 
-    static constexpr size_t CELLS_ALIGNMENT = 16;
-    static constexpr size_t CELLS_ALIGNMENT_MEM_SIZE_MIN = 32;
+    static constexpr size_t   CELLS_ALIGNMENT = 16;
+    static constexpr size_t   CELLS_ALIGNMENT_MEM_SIZE_MIN = 32;
     static constexpr uint32_t num_subspaces_mask = ((1u << 31) - 1);
     static constexpr uint32_t skip_reclaim_labels_mask = (1u << 31);
 
@@ -80,6 +83,7 @@ class TensorBufferOperations
     uint32_t get_num_subspaces(std::span<const char> buf) const noexcept {
         return get_num_subspaces(get_num_subspaces_and_flag(buf));
     }
+
 public:
     // Size (in bytes) used to serialize tensor with num_subspaces.
     size_t get_buffer_size(uint32_t num_subspaces) const noexcept {
@@ -94,17 +98,17 @@ public:
     TensorBufferOperations& operator=(const TensorBufferOperations&) = delete;
     TensorBufferOperations& operator=(TensorBufferOperations&&) = delete;
     void store_tensor(std::span<char> buf, const vespalib::eval::Value& tensor);
-    std::unique_ptr<vespalib::eval::Value> make_fast_view(std::span<const char> buf, const vespalib::eval::ValueType& tensor_type) const;
+    std::unique_ptr<vespalib::eval::Value> make_fast_view(std::span<const char>            buf,
+                                                          const vespalib::eval::ValueType& tensor_type) const;
 
     // Mark that reclaim_labels should be skipped for old buffer after copying tensor buffer
     void copied_labels(std::span<char> buf) const;
     // Decrease reference counts for labels and set skip flag unless skip flag is set.
     void reclaim_labels(std::span<char> buf) const;
     // Serialize stored tensor to target (used when saving attribute)
-    void encode_stored_tensor(std::span<const char> buf, const vespalib::eval::ValueType& type, vespalib::nbostream& target) const;
-    vespalib::eval::TypedCells get_empty_subspace() const noexcept {
-        return _empty.cells();
-    }
+    void encode_stored_tensor(std::span<const char> buf, const vespalib::eval::ValueType& type,
+                              vespalib::nbostream& target) const;
+    vespalib::eval::TypedCells get_empty_subspace() const noexcept { return _empty.cells(); }
     VectorBundle get_vectors(std::span<const char> buf) const noexcept {
         auto num_subspaces = get_num_subspaces(buf);
         auto cells_mem_size = get_cells_mem_size(num_subspaces);
@@ -112,13 +116,16 @@ public:
         return {buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type};
     }
     SerializedTensorRef get_serialized_tensor_ref(std::span<const char> buf) const noexcept {
-        auto num_subspaces = get_num_subspaces(buf);
-        auto cells_mem_size = get_cells_mem_size(num_subspaces);
-        auto aligner = select_aligner(cells_mem_size);
-        std::span<const vespalib::string_id> labels(reinterpret_cast<const vespalib::string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
-        return {VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type), _num_mapped_dimensions, labels};
+        auto                                 num_subspaces = get_num_subspaces(buf);
+        auto                                 cells_mem_size = get_cells_mem_size(num_subspaces);
+        auto                                 aligner = select_aligner(cells_mem_size);
+        std::span<const vespalib::string_id> labels(
+            reinterpret_cast<const vespalib::string_id*>(buf.data() + get_labels_offset()),
+            num_subspaces * _num_mapped_dimensions);
+        return {VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type),
+                _num_mapped_dimensions, labels};
     }
     bool is_dense() const noexcept { return _num_mapped_dimensions == 0; }
 };
 
-}
+} // namespace search::tensor

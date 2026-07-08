@@ -28,19 +28,18 @@ public:
      *
      * @param config The config for this executor.
      */
-    JaroWinklerDistanceExecutor(const fef::IQueryEnvironment &env,
-                                const JaroWinklerDistanceConfig &config);
+    JaroWinklerDistanceExecutor(const fef::IQueryEnvironment& env, const JaroWinklerDistanceConfig& config);
     void execute(uint32_t docId) override;
 
 private:
-    feature_t jaroWinklerProximity(const std::vector<fef::FieldPositionsIterator> &termPos, uint32_t fieldLen);
+    feature_t jaroWinklerProximity(const std::vector<fef::FieldPositionsIterator>& termPos, uint32_t fieldLen);
 
 private:
-    const JaroWinklerDistanceConfig  &_config;      // The config for this executor.
+    const JaroWinklerDistanceConfig&  _config;           // The config for this executor.
     std::vector<fef::TermFieldHandle> _termFieldHandles; // The handles of all query terms.
-    const fef::MatchData             *_md;
+    const fef::MatchData*             _md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData& md) override;
 };
 
 /**
@@ -53,16 +52,16 @@ public:
      */
     JaroWinklerDistanceBlueprint();
 
-    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE);
     }
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 
 private:
     JaroWinklerDistanceConfig _config; // The config for this blueprint.
 };
 
-}
+} // namespace search::features

@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Discrete event simulation test for LoadBalancer that measures group skew
@@ -268,7 +269,7 @@ public class LoadBalancerSimulationTest {
         void handleArrival(ArrivalEvent event) {
             clock.setInstant(event.getTimestamp());
 
-            Optional<Group> groupOpt = loadBalancer.takeGroup(null);
+            Optional<Group> groupOpt = loadBalancer.takeAnyGroupNotIn(Set.of());
             if (groupOpt.isPresent()) {
                 Group group = groupOpt.get();
                 statistics.recordTakeGroup(group.id());
@@ -323,7 +324,7 @@ public class LoadBalancerSimulationTest {
         // Create groups with dummy nodes
         List<Group> groups = new ArrayList<>();
         for (int i = 0; i < config.numGroups; i++) {
-            Node node = new Node("test-cluster", i, "node-" + i, i);
+            Node node = new Node("test-cluster", i, "node-" + i, i, true);
             Group group = new Group(i, List.of(node)) {
                 @Override
                 public boolean hasSufficientCoverage() {
@@ -370,7 +371,7 @@ public class LoadBalancerSimulationTest {
 
     @Test
     void testLatencyAmortizedOverRequestsPolicy() {
-        runSimulation(LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS);
+        runSimulation(LoadBalancer.Policy.ADAPTIVE);
     }
 
     @Test

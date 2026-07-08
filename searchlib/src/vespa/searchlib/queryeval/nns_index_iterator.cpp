@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nns_index_iterator.h"
+
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
+
 #include <cmath>
 
 using Neighbor = search::tensor::NearestNeighborIndex::Neighbor;
@@ -13,24 +15,18 @@ namespace search::queryeval {
  * where the actual search is done up front and this class
  * just iterates over a vector held by the blueprint.
  **/
-class NeighborVectorIterator : public NnsIndexIterator
-{
+class NeighborVectorIterator : public NnsIndexIterator {
 private:
-    fef::TermFieldMatchData &_tfmd;
-    const std::vector<Neighbor> &_hits;
-    const search::tensor::BoundDistanceFunction &_dist_fun;
-    uint32_t _idx;
-    double _last_abstract_dist;
+    fef::TermFieldMatchData&                     _tfmd;
+    const std::vector<Neighbor>&                 _hits;
+    const search::tensor::BoundDistanceFunction& _dist_fun;
+    uint32_t                                     _idx;
+    double                                       _last_abstract_dist;
+
 public:
-    NeighborVectorIterator(fef::TermFieldMatchData &tfmd,
-                           const std::vector<Neighbor> &hits,
-                           const search::tensor::BoundDistanceFunction &dist_fun)
-        : _tfmd(tfmd),
-          _hits(hits),
-          _dist_fun(dist_fun),
-          _idx(0),
-          _last_abstract_dist(0.0)
-    {}
+    NeighborVectorIterator(fef::TermFieldMatchData& tfmd, const std::vector<Neighbor>& hits,
+                           const search::tensor::BoundDistanceFunction& dist_fun)
+        : _tfmd(tfmd), _hits(hits), _dist_fun(dist_fun), _idx(0), _last_abstract_dist(0.0) {}
     ~NeighborVectorIterator() override;
 
     void initRange(uint32_t begin_id, uint32_t end_id) override {
@@ -64,13 +60,10 @@ public:
 
 NeighborVectorIterator::~NeighborVectorIterator() = default;
 
-std::unique_ptr<NnsIndexIterator>
-NnsIndexIterator::create(
-        fef::TermFieldMatchData &tfmd,
-        const std::vector<Neighbor> &hits,
-        const search::tensor::BoundDistanceFunction &dist_fun)
-{
+std::unique_ptr<NnsIndexIterator> NnsIndexIterator::create(fef::TermFieldMatchData&                     tfmd,
+                                                           const std::vector<Neighbor>&                 hits,
+                                                           const search::tensor::BoundDistanceFunction& dist_fun) {
     return std::make_unique<NeighborVectorIterator>(tfmd, hits, dist_fun);
 }
 
-} // namespace
+} // namespace search::queryeval

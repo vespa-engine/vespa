@@ -3,26 +3,35 @@
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
-namespace search::common { struct ICompactableLidSpace; }
+#include <atomic>
+
+namespace search::common {
+struct ICompactableLidSpace;
+}
 
 namespace proton {
-
 
 /**
  * Implements a flush target that shrinks lid space in target.
  */
-class ShrinkLidSpaceFlushTarget : public searchcorespi::LeafFlushTarget
-{
+class ShrinkLidSpaceFlushTarget : public searchcorespi::LeafFlushTarget {
     /**
      * Task representing that shrinking has been performed.
      **/
     class Flusher;
     using ICompactableLidSpace = search::common::ICompactableLidSpace;
     using FlushStats = searchcorespi::FlushStats;
-    std::shared_ptr<ICompactableLidSpace> _target;
-    SerialNum                             _flushedSerialNum;
-    Time                                  _lastFlushTime;
-    FlushStats                            _lastStats;
+    std::shared_ptr<ICompactableLidSpace>   _target;
+    std::atomic<SerialNum>                  _flushedSerialNum;
+    std::atomic<vespalib::system_time::rep> _last_flush_time;
+    FlushStats                              _lastStats;
+
+    void set_flushed_serial_num(SerialNum flushed_serial_num) noexcept {
+        _flushedSerialNum.store(flushed_serial_num, std::memory_order_relaxed);
+    }
+    void set_last_flush_time(vespalib::system_time last_flush_time) {
+        _last_flush_time.store(last_flush_time.time_since_epoch().count(), std::memory_order_relaxed);
+    }
 
 public:
     /**
@@ -34,12 +43,8 @@ public:
      * @param flushedSerialNum    When target shrank lid space last time
      * @param target              The target supporting lid space compaction
      */
-    ShrinkLidSpaceFlushTarget(const std::string &name,
-                              Type type,
-                              Component component,
-                              SerialNum flushedSerialNum,
-                              Time lastFlushTime,
-                              std::shared_ptr<ICompactableLidSpace> target);
+    ShrinkLidSpaceFlushTarget(const std::string& name, Type type, Component component, SerialNum flushedSerialNum,
+                              Time lastFlushTime, std::shared_ptr<ICompactableLidSpace> target);
 
     // Implements IFlushTarget.
     MemoryGain getApproxMemoryGain() const override;
@@ -47,8 +52,12 @@ public:
     SerialNum getFlushedSerialNum() const override;
     Time getLastFlushTime() const override;
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     searchcorespi::FlushStats getLastFlushStats() const override;
     uint64_t getApproxBytesToWriteToDisk() const override;
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
 } // namespace proton

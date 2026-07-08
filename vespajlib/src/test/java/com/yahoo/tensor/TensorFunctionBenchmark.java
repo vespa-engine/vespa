@@ -11,6 +11,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 
@@ -139,76 +140,76 @@ public class TensorFunctionBenchmark {
                 5000, vectorSize, vectors(100, vectorSize, TensorType.Dimension.Type.indexedUnbound, false),
                 TensorType.Dimension.Type.indexedUnbound, false, false
         );
-        System.out.printf("Indexed unbound vectors,                     time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Indexed unbound vectors,                     time per join: %1$8.3f ms\n", time);
         time = new TensorFunctionBenchmark().benchmark(
                 5000, vectorSize, matrix(100, vectorSize, TensorType.Dimension.Type.indexedUnbound, false),
                 TensorType.Dimension.Type.indexedUnbound, false, false
         );
-        System.out.printf("Indexed unbound matrix,                      time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Indexed unbound matrix,                      time per join: %1$8.3f ms\n", time);
 
         // ---------------- Indexed bound:
         time = new TensorFunctionBenchmark().benchmark(
                 5000, vectorSize, vectors(100, vectorSize, TensorType.Dimension.Type.indexedBound, false),
                 TensorType.Dimension.Type.indexedBound, false, false
         );
-        System.out.printf("Indexed bound vectors,                       time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Indexed bound vectors,                       time per join: %1$8.3f ms\n", time);
 
         time = new TensorFunctionBenchmark().benchmark(
                 5000, vectorSize, matrix(100, vectorSize, TensorType.Dimension.Type.indexedBound, false),
                 TensorType.Dimension.Type.indexedBound, false, false
         );
-        System.out.printf("Indexed bound matrix,                        time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Indexed bound matrix,                        time per join: %1$8.3f ms\n", time);
 
         // ---------------- Mapped:
         time = new TensorFunctionBenchmark().benchmark(
                 500, vectorSize, vectors(100, vectorSize, TensorType.Dimension.Type.mapped, false),
                 TensorType.Dimension.Type.mapped, false, false
         );
-        System.out.printf("Mapped vectors,                              time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Mapped vectors,                              time per join: %1$8.3f ms\n", time);
 
         time = new TensorFunctionBenchmark().benchmark(
                 100, vectorSize, matrix(100, vectorSize, TensorType.Dimension.Type.mapped, false),
                 TensorType.Dimension.Type.mapped, false, false
         );
-        System.out.printf("Mapped matrix,                               time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Mapped matrix,                               time per join: %1$8.3f ms\n", time);
 
         // ---------------- Mapped with string labels:
         time = new TensorFunctionBenchmark().benchmark(
                 500, vectorSize, vectors(100, vectorSize, TensorType.Dimension.Type.mapped, true),
                 TensorType.Dimension.Type.mapped, false, true
         );
-        System.out.printf("Mapped vectors with string labels,           time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Mapped vectors with string labels,           time per join: %1$8.3f ms\n", time);
 
         time = new TensorFunctionBenchmark().benchmark(
                 100, vectorSize, matrix(100, vectorSize, TensorType.Dimension.Type.mapped, true),
                 TensorType.Dimension.Type.mapped, false, true
         );
-        System.out.printf("Mapped matrix with string labels,            time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Mapped matrix with string labels,            time per join: %1$8.3f ms\n", time);
 
         // ---------------- Indexed (unbound) with extra space (sidesteps current special-case optimizations):
         time = new TensorFunctionBenchmark().benchmark(
                 50, vectorSize, vectors(100, vectorSize, TensorType.Dimension.Type.indexedUnbound, false),
                 TensorType.Dimension.Type.indexedUnbound, true, false
         );
-        System.out.printf("Indexed vectors, x space                     time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Indexed vectors, x space                     time per join: %1$8.3f ms\n", time);
 
         time = new TensorFunctionBenchmark().benchmark(
                 50, vectorSize, matrix(100, vectorSize, TensorType.Dimension.Type.indexedUnbound, false),
                 TensorType.Dimension.Type.indexedUnbound, true, false
         );
-        System.out.printf("Indexed matrix, x space                      time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Indexed matrix, x space                      time per join: %1$8.3f ms\n", time);
 
         // ---------------- Mapped with extra space (sidesteps current special-case optimizations) with string labels:
         time = new TensorFunctionBenchmark().benchmark(
                 100, vectorSize, vectors(100, vectorSize, TensorType.Dimension.Type.mapped, true),
                 TensorType.Dimension.Type.mapped, true, true
         );
-        System.out.printf("Mapped vectors, x space with string labels   time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Mapped vectors, x space with string labels   time per join: %1$8.3f ms\n", time);
 
         time = new TensorFunctionBenchmark().benchmark(
                 100, vectorSize, matrix(100, vectorSize, TensorType.Dimension.Type.mapped, true),
                 TensorType.Dimension.Type.mapped, true, true
         );
-        System.out.printf("Mapped matrix, x space with string labels    time per join: %1$8.3f ms\n", time);
+        System.out.printf(Locale.ROOT, "Mapped matrix, x space with string labels    time per join: %1$8.3f ms\n", time);
     }
 }

@@ -1,31 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "policydirective.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 
 namespace mbus {
 
-PolicyDirective::PolicyDirective(std::string_view name, std::string_view param) :
-    _name(name),
-    _param(param)
-{ }
+PolicyDirective::PolicyDirective(std::string_view name, std::string_view param) : _name(name), _param(param) {
+}
 
-PolicyDirective::~PolicyDirective() {}
+PolicyDirective::~PolicyDirective() {
+}
 
-string
-PolicyDirective::toString() const
-{
+string PolicyDirective::toString() const {
     if (_param.empty()) {
         return make_string("[%s]", _name.c_str());
     }
     return make_string("[%s:%s]", _name.c_str(), _param.c_str());
 }
 
-string
-PolicyDirective::toDebugString() const
-{
+string PolicyDirective::toDebugString() const {
     return make_string("PolicyDirective(name = '%s', param = '%s')", _name.c_str(), _param.c_str());
 }
 
-} // mbus
+} // namespace mbus

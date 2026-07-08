@@ -9,15 +9,13 @@ namespace search::docsummary {
 /**
  * This is the docsum field writer used to extract the position (as a string) from a zcurve attribute
  **/
-class GeoPositionDFW : public AttrDFW
-{
+class GeoPositionDFW : public AttrDFW {
 public:
     using UP = std::unique_ptr<GeoPositionDFW>;
-    GeoPositionDFW(const std::string & attrName);
+    GeoPositionDFW(const std::string& attrName);
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      search::common::ElementIds selected_elements,
-                      vespalib::slime::Inserter &target) const override;
-    static UP create(const char *attribute_name, const IAttributeManager *attribute_manager);
+                      search::common::ElementIds selected_elements, vespalib::slime::Inserter& target) const override;
+    static UP create(const char* attribute_name, const IAttributeManager* attribute_manager);
 };
 
-}
+} // namespace search::docsummary

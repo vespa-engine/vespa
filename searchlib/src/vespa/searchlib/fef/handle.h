@@ -11,4 +11,4 @@ using TermFieldHandle = uint32_t;
 
 const uint32_t IllegalHandle = 0xffffffff;
 
-}
+} // namespace search::fef

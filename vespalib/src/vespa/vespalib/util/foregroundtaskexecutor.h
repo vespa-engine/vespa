@@ -2,6 +2,7 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
+
 #include <atomic>
 
 namespace vespalib {
@@ -12,8 +13,7 @@ namespace vespalib {
  *
  * Currently, this is a dummy version that runs everything in the foreground.
  */
-class ForegroundTaskExecutor : public ISequencedTaskExecutor
-{
+class ForegroundTaskExecutor : public ISequencedTaskExecutor {
 public:
     using ISequencedTaskExecutor::getExecutorId;
 
@@ -26,8 +26,9 @@ public:
     void sync_all() override;
     void setTaskLimit(uint32_t taskLimit) override;
     ExecutorStats getStats() override;
+
 private:
     std::atomic<uint64_t> _accepted;
 };
 
-} // namespace search
+} // namespace vespalib

@@ -3,7 +3,9 @@
 
 #include "iroutablefactory.h"
 
-namespace document { class DocumentTypeRepo; }
+namespace document {
+class DocumentTypeRepo;
+}
 
 namespace documentapi::messagebus {
 
@@ -16,22 +18,27 @@ public:
 
     // CRUD messages
 
-    [[nodiscard]] static std::shared_ptr<IRoutableFactory> put_document_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
+    [[nodiscard]] static std::shared_ptr<IRoutableFactory>
+    put_document_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
     [[nodiscard]] static std::shared_ptr<IRoutableFactory> put_document_reply_factory();
 
     [[nodiscard]] static std::shared_ptr<IRoutableFactory> get_document_message_factory();
-    [[nodiscard]] static std::shared_ptr<IRoutableFactory> get_document_reply_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
+    [[nodiscard]] static std::shared_ptr<IRoutableFactory>
+    get_document_reply_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
 
     [[nodiscard]] static std::shared_ptr<IRoutableFactory> remove_document_message_factory();
     [[nodiscard]] static std::shared_ptr<IRoutableFactory> remove_document_reply_factory();
 
-    [[nodiscard]] static std::shared_ptr<IRoutableFactory> update_document_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
+    [[nodiscard]] static std::shared_ptr<IRoutableFactory>
+    update_document_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
     [[nodiscard]] static std::shared_ptr<IRoutableFactory> update_document_reply_factory();
 
-    [[nodiscard]] static std::shared_ptr<IRoutableFactory> remove_location_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
+    [[nodiscard]] static std::shared_ptr<IRoutableFactory>
+    remove_location_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
     [[nodiscard]] static std::shared_ptr<IRoutableFactory> remove_location_reply_factory();
 
-    [[nodiscard]] static std::shared_ptr<IRoutableFactory> document_list_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
+    [[nodiscard]] static std::shared_ptr<IRoutableFactory>
+    document_list_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo);
     [[nodiscard]] static std::shared_ptr<IRoutableFactory> document_list_reply_factory();
 
     // Visitor-related messages
@@ -72,4 +79,4 @@ public:
     [[nodiscard]] static std::shared_ptr<IRoutableFactory> document_ignored_reply_factory();
 };
 
-}
+} // namespace documentapi::messagebus

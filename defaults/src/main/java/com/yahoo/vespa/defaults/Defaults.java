@@ -13,6 +13,17 @@ import java.util.logging.Logger;
  */
 public class Defaults {
 
+    /**
+     * Relative path (under $VESPA_HOME) where host-admin writes the local host's hostname for the
+     * container's OpenTelemetry exporter to read. Shared between host-admin (writer) and the config-model
+     * (which points the container at it) so the two cannot drift.
+     *
+     * Under conf/ (not var/): var/ is a mounted volume, so host-admin cannot stage files there via
+     * container-data; conf/ is part of the container image and is the home for host-admin-generated
+     * startup inputs the container reads (e.g. conf/vespa/transport-security-options.json).
+     */
+    public static final String OPENTELEMETRY_HOST_HOSTNAME_FILE = "conf/vespa/otel/host-hostname";
+
     private static final Logger log = Logger.getLogger(Defaults.class.getName());
     private static final Defaults defaults = new Defaults();
 

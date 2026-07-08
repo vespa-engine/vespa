@@ -4,8 +4,17 @@
 
 #include "itlssyncer.h"
 
-namespace vespalib { class ThreadExecutor; }
-namespace search::transactionlog { class SyncProxy; }
+#include <vespa/searchlib/common/serialnum.h>
+
+#include <thread>
+
+namespace vespalib {
+class ThreadExecutor;
+}
+
+namespace search::transactionlog {
+class SyncProxy;
+}
 
 namespace proton {
 
@@ -17,19 +26,20 @@ class IGetSerialNum;
  * master thread to ensure that it reflects changes performed to data
  * structures as of now.
  */
-class TlsSyncer : public ITlsSyncer
-{
-    vespalib::ThreadExecutor &_executor;
-    const IGetSerialNum &_getSerialNum;
-    search::transactionlog::SyncProxy &_proxy;
-public:
-    virtual ~TlsSyncer() = default;
+class TlsSyncer : public ITlsSyncer {
+    vespalib::ThreadExecutor&          _executor;
+    std::thread::id                    _executor_thread_id;
+    const IGetSerialNum&               _getSerialNum;
+    search::transactionlog::SyncProxy& _proxy;
 
-    TlsSyncer(vespalib::ThreadExecutor &executor,
-              const IGetSerialNum &getSerialNum,
-              search::transactionlog::SyncProxy &proxy);
+    search::SerialNum get_serial_num();
+
+public:
+    TlsSyncer(vespalib::ThreadExecutor& executor, const IGetSerialNum& getSerialNum,
+              search::transactionlog::SyncProxy& proxy);
+    virtual ~TlsSyncer() = default;
 
     void sync() override;
 };
 
-}
+} // namespace proton

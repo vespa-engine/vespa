@@ -8,6 +8,9 @@ import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +37,8 @@ public class MetricsProxyContainerTest {
     @Test
     void one_metrics_proxy_container_is_added_to_every_node() {
         int numberOfHosts = 7;
-        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted, new DeployState.Builder(), numberOfHosts);
+        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted,
+                                    new DeployState.Builder(), numberOfHosts, new TestProperties());
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         for (var host : model.hostSystem().getHosts()) {
@@ -50,7 +54,8 @@ public class MetricsProxyContainerTest {
     @Test
     void one_metrics_proxy_container_is_added_to_every_node_also_when_dedicated_CCC() {
         int numberOfHosts = 7;
-        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted, new DeployState.Builder(), numberOfHosts);
+        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted,
+                                    new DeployState.Builder(), numberOfHosts, new TestProperties());
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         for (var host : model.hostSystem().getHosts()) {
@@ -119,7 +124,8 @@ public class MetricsProxyContainerTest {
     @Test
     void hosted_application_propagates_node_dimensions() {
         String services = hostedServicesWithContent();
-        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(), 5);
+        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(),
+                                          5, new TestProperties());
         assertEquals(5, hostedModel.getHosts().size());
         String configId = hostedConfigIdForHost(hostedModel, 1);
 
@@ -133,7 +139,8 @@ public class MetricsProxyContainerTest {
     @Test
     void metrics_v2_handler_is_set_up_with_node_info_config() {
         String services = hostedServicesWithContent();
-        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(), 5);
+        VespaModel hostedModel = getModel(services, hosted, new DeployState.Builder(),
+                                          5, new TestProperties());
 
         String configId = hostedConfigIdForHost(hostedModel, 1);
         var container = (MetricsProxyContainer) hostedModel.id2producer().get(configId);
@@ -172,6 +179,43 @@ public class MetricsProxyContainerTest {
                 assertEquals("cluster-controllers", service.dimension(0).value());
             }
         }
+    }
+
+    @Test
+    void heapSizeUsesBaseValuesWhenFlagDisabled() {
+        // Test with default setup - should use base heap size when flag is off
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted);
+        QrStartConfig config = model.getConfig(QrStartConfig.class, CONTAINER_CONFIG_ID);
+
+        // Should use base heap (320 MB) regardless of node count
+        assertEquals(320, config.jvm().heapsize());
+        assertEquals(320, config.jvm().minHeapsize());
+    }
+
+    @Test
+    void heapSizeUsesExplicitFlagWhenSet() {
+        VespaModel model = getModel(hostedServicesWithContent(), self_hosted, new DeployState.Builder(),
+                                    1, new TestProperties().setMetricsProxyHeapSizeInMib(512));
+        QrStartConfig config = model.getConfig(QrStartConfig.class, CONTAINER_CONFIG_ID);
+        assertEquals(512, config.jvm().heapsize());
+        assertEquals(512, config.jvm().minHeapsize());
+    }
+
+    @Test
+    void adminHeapSizeUsesExplicitFlagWhenSet() {
+        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted, new DeployState.Builder(),
+                                    7, new TestProperties().setMetricsProxyAdminNodeHeapSizeInMib(256));
+        boolean foundAdminNode = false;
+        for (var host : model.hostSystem().getHosts()) {
+            if (host.spec().membership().isPresent() &&
+                host.spec().membership().get().type() == ClusterSpec.Type.admin) {
+                QrStartConfig config = model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID + "/" + host.getHostname());
+                assertEquals(256, config.jvm().heapsize());
+                assertEquals(256, config.jvm().minHeapsize());
+                foundAdminNode = true;
+            }
+        }
+        assertTrue(foundAdminNode, "Expected at least one admin cluster node");
     }
 
 

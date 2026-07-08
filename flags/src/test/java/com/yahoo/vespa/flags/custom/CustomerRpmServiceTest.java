@@ -34,13 +34,16 @@ public class CustomerRpmServiceTest {
                             "unit": "example3",
                             "package": "package3",
                             "memory": 400.0,
-                            "disabled": true
+                            "disabled": true,
+                            "reserveMemory": true
                         },
                         {
                             "unit": "example4",
                             "package": "package4",
                             "memory": 450.0,
-                            "repositories": ["repo1", "repo2"]
+                            "repositories": ["repo1", "repo2"],
+                            "version": "1.2.3",
+                            "release": "4"
                         }
                    ]
                 }
@@ -56,6 +59,7 @@ public class CustomerRpmServiceTest {
         assertEquals(200.0, service1.get().memoryLimitMib());
         assertEquals(List.of(), service1.get().repositories());
         assertFalse(service1.get().disabled());
+        assertFalse(service1.get().reserveMemory());
 
         Optional<CustomerRpmService> service2 = serviceList.services().stream()
                 .filter(r -> r.unitName().equals("example2"))
@@ -73,6 +77,7 @@ public class CustomerRpmServiceTest {
         assertEquals(400.0, service3.get().memoryLimitMib());
         assertEquals(List.of(), service3.get().repositories());
         assertTrue(service3.get().disabled());
+        assertTrue(service3.get().reserveMemory());
 
         Optional<CustomerRpmService> service4 = serviceList.services().stream()
                 .filter(r -> r.unitName().equals("example4"))
@@ -80,6 +85,8 @@ public class CustomerRpmServiceTest {
         assertEquals("package4", service4.get().packageName());
         assertEquals(450.0, service4.get().memoryLimitMib());
         assertEquals(List.of("repo1", "repo2"), service4.get().repositories());
+        assertEquals("1.2.3", service4.get().packageVersion().get());
+        assertEquals("4", service4.get().packageRelease().get());
         assertFalse(service4.get().disabled());
 
         // Empty variant
@@ -103,10 +110,10 @@ public class CustomerRpmServiceTest {
 
     @Test
     void customer_rpm_services_serialize() throws JsonProcessingException {
-        CustomerRpmService service1 = new CustomerRpmService("foo", null, 123.4, null, List.of(), false);
-        CustomerRpmService service2 = new CustomerRpmService("bar",  null, 567.8, 1.0, List.of(), true);
-        CustomerRpmService service3 = new CustomerRpmService("dog",  "pack", 500.0, 0.3, List.of(), false);
-        CustomerRpmService service4 = new CustomerRpmService("hi",  "there", 450.0, 0.4, List.of("repo1", "repo2"), false);
+        CustomerRpmService service1 = new CustomerRpmService("foo", null, null, null, 123.4, null, List.of(), false, false);
+        CustomerRpmService service2 = new CustomerRpmService("bar",  null, "1.0", "3", 567.8, 1.0, List.of(), true, true);
+        CustomerRpmService service3 = new CustomerRpmService("dog",  "pack", null, null, 500.0, 0.3, List.of(), false, true);
+        CustomerRpmService service4 = new CustomerRpmService("hi",  "there", null, null, 450.0, 0.4, List.of("repo1", "repo2"), false, false);
         CustomerRpmServiceList serviceList = new CustomerRpmServiceList(List.of(service1, service2, service3, service4));
         var mapper = Jackson.mapper();
         String serialized = mapper.writeValueAsString(serviceList);

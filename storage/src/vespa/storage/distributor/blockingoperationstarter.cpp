@@ -4,9 +4,7 @@
 
 namespace storage::distributor {
 
-bool
-BlockingOperationStarter::start(const std::shared_ptr<Operation>& operation, Priority priority)
-{
+bool BlockingOperationStarter::start(const std::shared_ptr<Operation>& operation, Priority priority) {
     if (operation->isBlocked(_operation_context, _operation_sequencer)) {
         operation->on_blocked();
         return true;
@@ -14,4 +12,4 @@ BlockingOperationStarter::start(const std::shared_ptr<Operation>& operation, Pri
     return _starterImpl.start(operation, priority);
 }
 
-}
+} // namespace storage::distributor

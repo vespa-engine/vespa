@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include "tls_statistics_metrics_wrapper.h"
 #include "fnet_metrics_wrapper.h"
+#include "tls_statistics_metrics_wrapper.h"
 
 namespace storage {
 
-class MessageMemoryUseMetricSet : public metrics::MetricSet
-{
+class MessageMemoryUseMetricSet : public metrics::MetricSet {
 public:
     metrics::LongValueMetric total;
     metrics::LongValueMetric lowpri;
@@ -20,19 +19,17 @@ public:
     ~MessageMemoryUseMetricSet() override;
 };
 
-struct StorageMetricSet : public metrics::MetricSet
-{
-    metrics::LongValueMetric memoryUse;
+struct StorageMetricSet : public metrics::MetricSet {
+    metrics::LongValueMetric  memoryUse;
     MessageMemoryUseMetricSet memoryUse_messages;
-    metrics::LongValueMetric memoryUse_visiting;
+    metrics::LongValueMetric  memoryUse_visiting;
 
     TlsStatisticsMetricsWrapper tls_metrics;
-    FnetMetricsWrapper fnet_metrics;
+    FnetMetricsWrapper          fnet_metrics;
 
     StorageMetricSet();
     ~StorageMetricSet() override;
     void updateMetrics();
 };
 
-} // storage
-
+} // namespace storage

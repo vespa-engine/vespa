@@ -6,30 +6,22 @@ namespace documentapi {
 
 QueryResultMessage::QueryResultMessage() = default;
 
-QueryResultMessage::QueryResultMessage(vdslib::SearchResult && result, const vdslib::DocumentSummary & summary) :
-    VisitorMessage(),
-    _searchResult(std::move(result)),
-    _summary(summary)
-{}
+QueryResultMessage::QueryResultMessage(vdslib::SearchResult&& result, const vdslib::DocumentSummary& summary)
+    : VisitorMessage(), _searchResult(std::move(result)), _summary(summary) {
+}
 
 QueryResultMessage::~QueryResultMessage() = default;
 
-DocumentReply::UP
-QueryResultMessage::doCreateReply() const
-{
+DocumentReply::UP QueryResultMessage::doCreateReply() const {
     return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_QUERYRESULT);
 }
 
-uint32_t
-QueryResultMessage::getApproxSize() const
-{
+uint32_t QueryResultMessage::getApproxSize() const {
     return getSearchResult().getSerializedSize() + getDocumentSummary().getSerializedSize();
 }
 
-uint32_t
-QueryResultMessage::getType() const
-{
+uint32_t QueryResultMessage::getType() const {
     return DocumentProtocol::MESSAGE_QUERYRESULT;
 }
 
-}
+} // namespace documentapi

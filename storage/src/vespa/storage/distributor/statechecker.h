@@ -3,18 +3,22 @@
 
 #include "bucketgctimecalculator.h"
 #include "ideal_service_layer_nodes_bundle.h"
+
+#include <vespa/storage/bucketdb/bucketdatabase.h>
+#include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/distributor/maintenance/maintenancepriority.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
-#include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+
 #include <map>
 #include <set>
 
 namespace storage::lib {
-    class ClusterState;
+class ClusterState;
 }
-namespace storage { class DistributorConfiguration; }
+namespace storage {
+class DistributorConfiguration;
+}
 
 namespace storage::distributor {
 
@@ -44,18 +48,14 @@ public:
      * Context object used when generating operations and metrics for a
      * bucket.
      */
-    class Context
-    {
+    class Context {
     public:
-        Context(const DistributorNodeContext& node_ctx_in,
-                const DistributorStripeOperationContext& op_ctx_in,
-                const DistributorBucketSpace &distributorBucketSpace,
-                NodeMaintenanceStatsTracker&,
-                const document::Bucket& bucket_);
+        Context(const DistributorNodeContext& node_ctx_in, const DistributorStripeOperationContext& op_ctx_in,
+                const DistributorBucketSpace& distributorBucketSpace, NodeMaintenanceStatsTracker&,
+                const document::Bucket&       bucket_);
         ~Context();
         Context(const Context&) = delete;
         Context& operator=(const Context&) = delete;
-
 
         // Per bucket
         document::Bucket                   bucket;
@@ -64,17 +64,17 @@ public:
         std::vector<BucketDatabase::Entry> entries;
 
         // Common
-        const lib::ClusterState                 & systemState;
-        const lib::ClusterState                 * pending_cluster_state; // nullptr if no state is pending.
-        const DistributorConfiguration          & distributorConfig;
-        const lib::Distribution                 & distribution;
-        BucketGcTimeCalculator                    gcTimeCalculator;
-        const IdealServiceLayerNodesBundle      & idealStateBundle;
-        const DistributorNodeContext            & node_ctx;
-        const DistributorStripeOperationContext & op_ctx;
-        const BucketDatabase                    & db;
-        NodeMaintenanceStatsTracker             & stats;
-        const bool                                merges_inhibited_in_bucket_space;
+        const lib::ClusterState&                 systemState;
+        const lib::ClusterState*                 pending_cluster_state; // nullptr if no state is pending.
+        const DistributorConfiguration&          distributorConfig;
+        const lib::Distribution&                 distribution;
+        BucketGcTimeCalculator                   gcTimeCalculator;
+        const IdealServiceLayerNodesBundle&      idealStateBundle;
+        const DistributorNodeContext&            node_ctx;
+        const DistributorStripeOperationContext& op_ctx;
+        const BucketDatabase&                    db;
+        NodeMaintenanceStatsTracker&             stats;
+        const bool                               merges_inhibited_in_bucket_space;
 
         const BucketDatabase::Entry& getSiblingEntry() const noexcept { return siblingEntry; }
         IdealServiceLayerNodesBundle::ConstNodesRef idealState() const noexcept {
@@ -89,15 +89,15 @@ public:
         void fillParentAndChildBuckets();
         void fillSiblingBucket();
         const BucketDatabase::Entry* getEntryForPrimaryBucket() const;
-        const BucketDatabase::Entry & entry() const noexcept { return _entry; }
+        const BucketDatabase::Entry& entry() const noexcept { return _entry; }
 
-        void set_entry(const BucketDatabase::Entry & e) { _entry = e; }
+        void set_entry(const BucketDatabase::Entry& e) { _entry = e; }
+
     private:
-        BucketDatabase::Entry  _entry;
+        BucketDatabase::Entry _entry;
     };
 
-    class ResultImpl
-    {
+    class ResultImpl {
     public:
         virtual ~ResultImpl() = default;
         virtual IdealStateOperation::UP createOperation() = 0;
@@ -105,17 +105,15 @@ public:
         virtual MaintenanceOperation::Type getType() const = 0;
     };
 
-    class Result
-    {
+    class Result {
         std::unique_ptr<ResultImpl> _impl;
+
     public:
         IdealStateOperation::UP createOperation() {
             return (_impl ? _impl->createOperation() : IdealStateOperation::UP());
         }
 
-        MaintenancePriority getPriority() const {
-            return (_impl ? _impl->getPriority() : MaintenancePriority());
-        }
+        MaintenancePriority getPriority() const { return (_impl ? _impl->getPriority() : MaintenancePriority()); }
 
         MaintenanceOperation::Type getType() const {
             return (_impl ? _impl->getType() : MaintenanceOperation::OPERATION_COUNT);
@@ -123,10 +121,9 @@ public:
 
         static Result noMaintenanceNeeded();
         static Result createStoredResult(IdealStateOperation::UP operation, MaintenancePriority::Priority priority);
+
     private:
-        explicit Result(std::unique_ptr<ResultImpl> impl)
-            : _impl(std::move(impl))
-        {}
+        explicit Result(std::unique_ptr<ResultImpl> impl) : _impl(std::move(impl)) {}
     };
 
     StateChecker() noexcept = default;
@@ -138,7 +135,7 @@ public:
      *
      * @return Returns an operation to perform for the given bucket.
      */
-    virtual Result check(const Context &c) const = 0;
+    virtual Result check(const Context& c) const = 0;
 
     /**
      * Returns the name of this state checker.
@@ -146,4 +143,4 @@ public:
     virtual const char* getName() const noexcept = 0;
 };
 
-}
+} // namespace storage::distributor

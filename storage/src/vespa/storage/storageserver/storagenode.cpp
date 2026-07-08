@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "storagenode.h"
+
 #include "communicationmanager.h"
 #include "config_logging.h"
 #include "statemanager.h"
 #include "statereporter.h"
 #include "storagemetricsset.h"
-#include "storagenode.h"
 #include "storagenodecontext.h"
 
 #include <vespa/metrics/metricmanager.h>
@@ -14,20 +15,23 @@
 #include <vespa/storage/common/storage_chain_builder.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
-#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
+
+#include <vespa/config/helper/configfetcher.hpp>
+
 #include <fcntl.h>
+
 #include <filesystem>
 
 #include <vespa/log/log.h>
 
 LOG_SETUP(".node.server");
 
+using std::make_shared;
 using vespa::config::content::StorDistributionConfigBuilder;
 using vespa::config::content::core::StorServerConfigBuilder;
-using std::make_shared;
 
 namespace storage {
 
@@ -35,12 +39,10 @@ namespace {
 
 using vespalib::getLastErrorString;
 
-void
-writePidFile(const std::string& pidfile)
-{
-    ssize_t rv = -1;
+void writePidFile(const std::string& pidfile) {
+    ssize_t     rv = -1;
     std::string mypid = vespalib::make_string("%d\n", getpid());
-    size_t lastSlash = pidfile.rfind('/');
+    size_t      lastSlash = pidfile.rfind('/');
     if (lastSlash != std::string::npos) {
         std::filesystem::create_directories(std::filesystem::path(pidfile.substr(0, lastSlash)));
     }
@@ -50,17 +52,13 @@ writePidFile(const std::string& pidfile)
         close(fd);
     }
     if (rv < 1) {
-        LOG(warning, "Failed to write pidfile '%s': %s",
-            pidfile.c_str(), getLastErrorString().c_str());
+        LOG(warning, "Failed to write pidfile '%s': %s", pidfile.c_str(), getLastErrorString().c_str());
     }
 }
 
-void
-removePidFile(const std::string& pidfile)
-{
+void removePidFile(const std::string& pidfile) {
     if (unlink(pidfile.c_str()) != 0) {
-        LOG(warning, "Failed to delete pidfile '%s': %s",
-            pidfile.c_str(), getLastErrorString().c_str());
+        LOG(warning, "Failed to delete pidfile '%s': %s", pidfile.c_str(), getLastErrorString().c_str());
     }
 }
 
@@ -71,13 +69,9 @@ StorageNode::BootstrapConfigs::~BootstrapConfigs() = default;
 StorageNode::BootstrapConfigs::BootstrapConfigs(BootstrapConfigs&&) noexcept = default;
 StorageNode::BootstrapConfigs& StorageNode::BootstrapConfigs::operator=(BootstrapConfigs&&) noexcept = default;
 
-StorageNode::StorageNode(
-        const config::ConfigUri & configUri,
-        StorageNodeContext& context,
-        BootstrapConfigs bootstrap_configs,
-        ApplicationGenerationFetcher& generationFetcher,
-        std::unique_ptr<HostInfo> hostInfo,
-        RunMode mode)
+StorageNode::StorageNode(const config::ConfigUri& configUri, StorageNodeContext& context,
+                         BootstrapConfigs bootstrap_configs, ApplicationGenerationFetcher& generationFetcher,
+                         std::unique_ptr<HostInfo> hostInfo, RunMode mode)
     : _singleThreadedDebugMode(mode == SINGLE_THREADED_TEST_MODE),
       _hostInfo(std::move(hostInfo)),
       _context(context),
@@ -105,13 +99,10 @@ StorageNode::StorageNode(
       _node_identity(),
       _configUri(configUri),
       _communicationManager(nullptr),
-      _chain_builder(std::make_unique<StorageChainBuilder>())
-{
+      _chain_builder(std::make_unique<StorageChainBuilder>()) {
 }
 
-void
-StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
-{
+void StorageNode::initialize(const NodeStateReporter& nodeStateReporter) {
     // Avoid racing with concurrent reconfigurations before we've set up the entire
     // node component stack.
     // TODO no longer needed... probably
@@ -123,11 +114,13 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
     // available
     _rootFolder = server_config().rootFolder;
 
-    _context.getComponentRegister().setNodeInfo(server_config().clusterName, getNodeType(), server_config().nodeIndex);
+    _context.getComponentRegister().setNodeInfo(server_config().clusterName, getNodeType(),
+                                                server_config().nodeIndex);
     _context.getComponentRegister().setBucketIdFactory(document::BucketIdFactory());
     _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(distribution_config()));
     _context.getComponentRegister().setBucketSpacesConfig(bucket_spaces_config());
-    _node_identity = std::make_unique<NodeIdentity>(server_config().clusterName, getNodeType(), server_config().nodeIndex);
+    _node_identity =
+        std::make_unique<NodeIdentity>(server_config().clusterName, getNodeType(), server_config().nodeIndex);
 
     _metrics = std::make_shared<StorageMetricSet>();
     _component = std::make_unique<StorageComponent>(_context.getComponentRegister(), "storagenode");
@@ -142,12 +135,10 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
     // update node state according min used bits etc.
     // Needs node type to be set right away. Needs thread pool, index and
     // deadlock detector too, but not before open()
-    _stateManager = std::make_unique<StateManager>(
-            _context.getComponentRegister(),
-            std::move(_hostInfo),
-            nodeStateReporter,
-            _singleThreadedDebugMode);
-    _stateManager->set_require_strictly_increasing_cluster_state_versions(server_config().requireStrictlyIncreasingClusterStateVersions);
+    _stateManager = std::make_unique<StateManager>(_context.getComponentRegister(), std::move(_hostInfo),
+                                                   nodeStateReporter, _singleThreadedDebugMode);
+    _stateManager->set_require_strictly_increasing_cluster_state_versions(
+        server_config().requireStrictlyIncreasingClusterStateVersions);
     _state_manager_ptr = _stateManager.get();
     _context.getComponentRegister().setNodeStateUpdater(*_stateManager);
 
@@ -160,9 +151,8 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
 
     _statusMetrics = std::make_unique<StatusMetricConsumer>(_context.getComponentRegister(),
                                                             _context.getComponentRegister().getMetricManager());
-    _stateReporter = std::make_unique<StateReporter>(_context.getComponentRegister(),
-                                                     _context.getComponentRegister().getMetricManager(),
-                                                     _generationFetcher);
+    _stateReporter = std::make_unique<StateReporter>(
+        _context.getComponentRegister(), _context.getComponentRegister().getMetricManager(), _generationFetcher);
 
     // Start deadlock detector
     _deadLockDetector = std::make_unique<DeadLockDetector>(_context.getComponentRegister());
@@ -184,7 +174,7 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
     // and the like. Note that at this time, all metrics should hopefully
     // have been created, such that we don't need to pay the extra cost of
     // reinitializing metric manager often.
-    if ( ! _context.getComponentRegister().getMetricManager().isInitialized() ) {
+    if (!_context.getComponentRegister().getMetricManager().isInitialized()) {
         _context.getComponentRegister().getMetricManager().init(_configUri);
     }
 
@@ -207,22 +197,25 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
     }
 }
 
-void
-StorageNode::initializeStatusWebServer()
-{
-    if (_singleThreadedDebugMode) return;
+void StorageNode::initializeStatusWebServer() {
+    if (_singleThreadedDebugMode)
+        return;
     _statusWebServer = std::make_unique<StatusWebServer>(_context.getComponentRegister(),
                                                          _context.getComponentRegister(), _configUri);
 }
 
 #define DIFFER(a) (!(oldC.a == newC.a))
-#define ASSIGN(a) { oldC.a = newC.a; updated = true; }
-#define DIFFERWARN(a, b) \
-    if (DIFFER(a)) { LOG(warning, "Live config failure: %s.", b); }
+#define ASSIGN(a)        \
+    {                    \
+        oldC.a = newC.a; \
+        updated = true;  \
+    }
+#define DIFFERWARN(a, b)                             \
+    if (DIFFER(a)) {                                 \
+        LOG(warning, "Live config failure: %s.", b); \
+    }
 
-void
-StorageNode::setNewDocumentRepo(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
-{
+void StorageNode::setNewDocumentRepo(const std::shared_ptr<const document::DocumentTypeRepo>& repo) {
     std::lock_guard configLockGuard(_configLock);
     _context.getComponentRegister().setDocumentTypeRepo(repo);
     if (_communicationManager != nullptr) {
@@ -230,11 +223,9 @@ StorageNode::setNewDocumentRepo(const std::shared_ptr<const document::DocumentTy
     }
 }
 
-void
-StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
-{
+void StorageNode::handleLiveConfigUpdate(const InitialGuard& initGuard) {
     // Make sure we don't conflict with initialize or shutdown threads.
-    (void) initGuard;
+    (void)initGuard;
     std::lock_guard configLockGuard(_configLock);
 
     assert(_chain);
@@ -243,7 +234,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
 
     if (_server_config.staging) {
         StorServerConfigBuilder oldC(*_server_config.active);
-        StorServerConfig& newC(*_server_config.staging);
+        StorServerConfig&       newC(*_server_config.staging);
         DIFFERWARN(rootFolder, "Cannot alter root folder of node live");
         DIFFERWARN(clusterName, "Cannot alter cluster name of node live");
         DIFFERWARN(nodeIndex, "Cannot alter node index of node live");
@@ -262,19 +253,20 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         _deadLockDetector->setProcessSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
         _deadLockDetector->setWaitSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
         assert(_state_manager_ptr);
-        _state_manager_ptr->set_require_strictly_increasing_cluster_state_versions(server_config().requireStrictlyIncreasingClusterStateVersions);
+        _state_manager_ptr->set_require_strictly_increasing_cluster_state_versions(
+            server_config().requireStrictlyIncreasingClusterStateVersions);
     }
     if (_distribution_config.staging) {
         StorDistributionConfigBuilder oldC(*_distribution_config.active);
-        StorDistributionConfig& newC(*_distribution_config.staging);
-        bool updated = false;
+        StorDistributionConfig&       newC(*_distribution_config.staging);
+        bool                          updated = false;
         if (DIFFER(redundancy)) {
             LOG(info, "Live config update: Altering redundancy from %u to %u.", oldC.redundancy, newC.redundancy);
             ASSIGN(redundancy);
         }
         if (DIFFER(initialRedundancy)) {
-            LOG(info, "Live config update: Altering initial redundancy from %u to %u.",
-                oldC.initialRedundancy, newC.initialRedundancy);
+            LOG(info, "Live config update: Altering initial redundancy from %u to %u.", oldC.initialRedundancy,
+                newC.initialRedundancy);
             ASSIGN(initialRedundancy);
         }
         if (DIFFER(ensurePrimaryPersisted)) {
@@ -284,13 +276,12 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         }
         if (DIFFER(activePerLeafGroup)) {
             LOG(info, "Live config update: Active per leaf group setting altered from %s to %s",
-                oldC.activePerLeafGroup ? "true" : "false",
-                newC.activePerLeafGroup ? "true" : "false");
+                oldC.activePerLeafGroup ? "true" : "false", newC.activePerLeafGroup ? "true" : "false");
             ASSIGN(activePerLeafGroup);
         }
         if (DIFFER(readyCopies)) {
-            LOG(info, "Live config update: Altering number of searchable copies from %u to %u",
-                oldC.readyCopies, newC.readyCopies);
+            LOG(info, "Live config update: Altering number of searchable copies from %u to %u", oldC.readyCopies,
+                newC.readyCopies);
             ASSIGN(readyCopies);
         }
         if (DIFFER(group)) {
@@ -323,9 +314,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     }
 }
 
-void
-StorageNode::notifyDoneInitializing()
-{
+void StorageNode::notifyDoneInitializing() {
     bool isDistributor = (getNodeType() == lib::NodeType::DISTRIBUTOR);
     LOG(info, "%s node ready. Done initializing. Giving out of sequence metric event. Config id is %s",
         isDistributor ? "Distributor" : "Storage", _configUri.getConfigId().c_str());
@@ -335,7 +324,7 @@ StorageNode::notifyDoneInitializing()
     }
 
     NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
-    lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
+    lib::NodeState             ns(*_component->getStateUpdater().getReportedNodeState());
     ns.setState(lib::State::UP);
     _component->getStateUpdater().setReportedNodeState(ns);
     _chain->doneInit();
@@ -343,9 +332,7 @@ StorageNode::notifyDoneInitializing()
 
 StorageNode::~StorageNode() = default;
 
-void
-StorageNode::shutdown()
-{
+void StorageNode::shutdown() {
     // Try to shut down in opposite order of initialize. Bear in mind that
     // we might be shutting down after init exception causing only parts
     // of the server to have been initialized
@@ -362,7 +349,7 @@ StorageNode::shutdown()
         _chain->flush();
     }
 
-    if ( !_pidFile.empty() ) {
+    if (!_pidFile.empty()) {
         LOG(debug, "Removing pid file");
         removePidFile(_pidFile);
     }
@@ -419,34 +406,28 @@ StorageNode::shutdown()
     LOG(debug, "Done shutting down node");
 }
 
-void
-StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
+void StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
     stage_config_change(_server_config, std::move(config));
 }
 
-void
-StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
+void StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
     stage_config_change(_distribution_config, std::move(config));
 }
 
-void
-StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
+void StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
     stage_config_change(_bucket_spaces_config, std::move(config));
 }
 
-void
-StorageNode::configure(std::unique_ptr<CommunicationManagerConfig> config) {
+void StorageNode::configure(std::unique_ptr<CommunicationManagerConfig> config) {
     stage_config_change(_comm_mgr_config, std::move(config));
 }
 
-void
-StorageNode::configure(std::unique_ptr<StorBouncerConfig> config) {
+void StorageNode::configure(std::unique_ptr<StorBouncerConfig> config) {
     stage_config_change(_bouncer_config, std::move(config));
 }
 
 template <typename ConfigT>
-void
-StorageNode::stage_config_change(ConfigWrapper<ConfigT>& cfg, std::unique_ptr<ConfigT> new_cfg) {
+void StorageNode::stage_config_change(ConfigWrapper<ConfigT>& cfg, std::unique_ptr<ConfigT> new_cfg) {
     log_config_received(*new_cfg);
     // When we get config, we try to grab the config lock to ensure no one
     // else is doing configuration work, and then we write the new config
@@ -468,25 +449,22 @@ StorageNode::stage_config_change(ConfigWrapper<ConfigT>& cfg, std::unique_ptr<Co
     }
 }
 
-bool
-StorageNode::attemptedStopped() const
-{
+bool StorageNode::attemptedStopped() const {
     return _attemptedStopped.load(std::memory_order_relaxed);
 }
 
-void
-StorageNode::updateMetrics(const MetricLockGuard &) {
+void StorageNode::updateMetrics(const MetricLockGuard&) {
     _metrics->updateMetrics();
 }
 
-void
-StorageNode::waitUntilInitialized(vespalib::duration timeout) {
+void StorageNode::waitUntilInitialized(vespalib::duration timeout) {
     vespalib::steady_time doom = vespalib::steady_clock::now() + timeout;
     while (true) {
         {
             NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
-            lib::NodeState nodeState(*_component->getStateUpdater().getReportedNodeState());
-            if (nodeState.getState() == lib::State::UP) break;
+            lib::NodeState             nodeState(*_component->getStateUpdater().getReportedNodeState());
+            if (nodeState.getState() == lib::State::UP)
+                break;
         }
         std::this_thread::sleep_for(10ms);
         if (vespalib::steady_clock::now() >= doom) {
@@ -497,18 +475,16 @@ StorageNode::waitUntilInitialized(vespalib::duration timeout) {
     }
 }
 
-void
-StorageNode::requestShutdown(std::string_view reason)
-{
-    bool was_stopped = false;
-    const bool stop_now = _attemptedStopped.compare_exchange_strong(was_stopped, true,
-                                                                    std::memory_order_relaxed, std::memory_order_relaxed);
+void StorageNode::requestShutdown(std::string_view reason) {
+    bool       was_stopped = false;
+    const bool stop_now = _attemptedStopped.compare_exchange_strong(was_stopped, true, std::memory_order_relaxed,
+                                                                    std::memory_order_relaxed);
     if (!stop_now) {
         return; // Someone else beat us to it.
     }
     if (_component) {
         NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
-        lib::NodeState nodeState(*_component->getStateUpdater().getReportedNodeState());
+        lib::NodeState             nodeState(*_component->getStateUpdater().getReportedNodeState());
         if (nodeState.getState() != lib::State::STOPPING) {
             nodeState.setState(lib::State::STOPPING);
             nodeState.setDescription(reason);
@@ -517,34 +493,26 @@ StorageNode::requestShutdown(std::string_view reason)
     }
 }
 
-std::unique_ptr<StateManager>
-StorageNode::releaseStateManager() {
+std::unique_ptr<StateManager> StorageNode::releaseStateManager() {
     return std::move(_stateManager);
 }
 
-void
-StorageNode::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder)
-{
+void StorageNode::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder) {
     _chain_builder = std::move(builder);
 }
 
-template <typename ConfigT>
-StorageNode::ConfigWrapper<ConfigT>::ConfigWrapper() noexcept = default;
+template <typename ConfigT> StorageNode::ConfigWrapper<ConfigT>::ConfigWrapper() noexcept = default;
 
 template <typename ConfigT>
 StorageNode::ConfigWrapper<ConfigT>::ConfigWrapper(std::unique_ptr<ConfigT> initial_active) noexcept
-    : staging(),
-      active(std::move(initial_active))
-{
+    : staging(), active(std::move(initial_active)) {
 }
 
-template <typename ConfigT>
-StorageNode::ConfigWrapper<ConfigT>::~ConfigWrapper() = default;
+template <typename ConfigT> StorageNode::ConfigWrapper<ConfigT>::~ConfigWrapper() = default;
 
-template <typename ConfigT>
-void StorageNode::ConfigWrapper<ConfigT>::promote_staging_to_active() noexcept {
+template <typename ConfigT> void StorageNode::ConfigWrapper<ConfigT>::promote_staging_to_active() noexcept {
     assert(staging);
     active = std::move(staging);
 }
 
-} // storage
+} // namespace storage

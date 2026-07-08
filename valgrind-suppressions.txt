@@ -68,7 +68,7 @@
    fun:pthread_create@@GLIBC_2.2.5
 }
 {
-   This is a bug in glibc. We can not suffer for that.
+   This is a bug in glibc. We cannot suffer for that.
    Memcheck:Free
    fun:free
    fun:free_mem
@@ -746,10 +746,9 @@
    ...
 }
 {
-   for LLVM 19 (almalinux 9) 3
+   for LLVM 19, LLVM 20 or LLVM 21 (almalinux 9) 3
    Memcheck:Cond
    ...
-   fun:_ZN4llvm10MCStreamer6finishENS_5SMLocE
    fun:_ZN4llvm10AsmPrinter14doFinalizationERNS_6ModuleE
    fun:_ZN4llvm13FPPassManager14doFinalizationERNS_6ModuleE
    ...
@@ -809,5 +808,82 @@
    fun:_ZN4llvm5MCJIT10emitObjectEPNS_6ModuleE
    fun:_ZN4llvm5MCJIT21generateCodeForModuleEPNS_6ModuleE
    fun:_ZN4llvm5MCJIT14finalizeObjectEv
+   ...
+}
+{
+   for RE2 (AlmaLinux 10) 1A
+   Memcheck:Cond
+   ...
+   fun:_ZN3re24Prog9IsOnePassEv
+   fun:_ZN3re23RE24InitESt17basic_string_viewIcSt11char_traitsIcEERKNS0_7OptionsE
+   fun:_ZN3re23RE2C1ESt17basic_string_viewIcSt11char_traitsIcEERKNS0_7OptionsE
+   ...
+}
+{
+   for RE2 (AlmaLinux 10) 1B
+   Memcheck:Value8
+   ...
+   fun:_ZN3re24Prog9IsOnePassEv
+   fun:_ZN3re23RE24InitESt17basic_string_viewIcSt11char_traitsIcEERKNS0_7OptionsE
+   fun:_ZN3re23RE2C1ESt17basic_string_viewIcSt11char_traitsIcEERKNS0_7OptionsE
+   ...
+}
+{
+   for RE2 (AlmaLinux 10) 2A
+   Memcheck:Cond
+   ...
+   fun:_ZN3re23DFA6SearchESt17basic_string_viewIcSt11char_traitsIcEES4_bbbPbPPKcPNS_10SparseSetTIvEE
+   fun:_ZN3re24Prog9SearchDFAESt17basic_string_viewIcSt11char_traitsIcEES4_NS0_6AnchorENS0_9MatchKindEPS4_PbPNS_10SparseSetTIvEE
+   fun:_ZNK3re23RE25MatchESt17basic_string_viewIcSt11char_traitsIcEEmmNS0_6AnchorEPS4_i
+   fun:_ZNK3re23RE27DoMatchESt17basic_string_viewIcSt11char_traitsIcEENS0_6AnchorEPmPKPKNS0_3ArgEi
+   ...
+}
+{
+   for RE2 (AlmaLinux 10) 2B
+   Memcheck:Value8
+   ...
+   fun:_ZN3re23DFA6SearchESt17basic_string_viewIcSt11char_traitsIcEES4_bbbPbPPKcPNS_10SparseSetTIvEE
+   fun:_ZN3re24Prog9SearchDFAESt17basic_string_viewIcSt11char_traitsIcEES4_NS0_6AnchorENS0_9MatchKindEPS4_PbPNS_10SparseSetTIvEE
+   fun:_ZNK3re23RE25MatchESt17basic_string_viewIcSt11char_traitsIcEEmmNS0_6AnchorEPS4_i
+   fun:_ZNK3re23RE27DoMatchESt17basic_string_viewIcSt11char_traitsIcEENS0_6AnchorEPmPKPKNS0_3ArgEi
+   ...
+}
+{
+   for onnxruntime CPUIDInfo on ARM
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:cpuinfo_arm_linux_init
+   ...
+   fun:_ZN11onnxruntime9CPUIDInfoC2Ev.constprop.0
+   ...
+}
+{
+   for GCC 15 optimized string scanning in pagedict4
+   Memcheck:Cond
+   fun:getLCP
+   ...
+   fun:_Z9testWordsRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERN8vespalib6Rand48ESt8optionalIjEmjjjjjbbb
+   fun:_ZN16PageDict4TestApp9testWordsEv
+   ...
+}
+{
+   for GCC 15 optimized string scanning in pagedict4 version 2
+   Memcheck:Cond
+   fun:_ZN6search14bitcompression16PageDict4PWriter9addCountsESt17basic_string_viewIcSt11char_traitsIcEERKNS_5index17PostingListCountsE
+   fun:_ZN6search9diskindex11FieldWriter5flushEv
+   fun:_ZN6search9diskindex11FieldWriter7newWordEmSt17basic_string_viewIcSt11char_traitsIcEE
+   ...
+}
+{
+   for new openssl on EL8/arm64 (optimized strlcpy)
+   Memcheck:Cond
+   fun:OPENSSL_strlcpy
+   ...
+}
+{
+   for new openssl on EL8/arm64 (optimized strlcat)
+   Memcheck:Cond
+   fun:OPENSSL_strlcat
    ...
 }

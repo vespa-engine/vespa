@@ -19,14 +19,14 @@ namespace storage::api {
 
 // Commands
 
-class GetCommand; // Retrieve document
-class PutCommand; // Add document
+class GetCommand;    // Retrieve document
+class PutCommand;    // Add document
 class UpdateCommand; // Update document
 class RemoveCommand; // Remove document
 
-class CreateVisitorCommand; // Create a new visitor
+class CreateVisitorCommand;  // Create a new visitor
 class DestroyVisitorCommand; // Destroy a running visitor
-class VisitorInfoCommand; // Sends visitor info to visitor controller
+class VisitorInfoCommand;    // Sends visitor info to visitor controller
 class MapVisitorCommand;
 class QueryResultCommand;
 
@@ -96,9 +96,12 @@ class EmptyBucketsReply;
 class RemoveLocationCommand;
 class RemoveLocationReply;
 
-#define _INTERNAL_DEF_ON_MC(m, c) bool m(const std::shared_ptr<storage::api::c> & ) override
-#define _INTERNAL_DEF_IMPL_ON_MC(m, c) bool m(const std::shared_ptr<storage::api::c> & ) override { return false; }
-#define _INTERNAL_IMPL_ON_MC(cl, m, c, p) bool cl::m(const std::shared_ptr<storage::api::c> & p)
+#define _INTERNAL_DEF_ON_MC(m, c) bool m(const std::shared_ptr<storage::api::c>&) override
+#define _INTERNAL_DEF_IMPL_ON_MC(m, c)                         \
+    bool m(const std::shared_ptr<storage::api::c>&) override { \
+        return false;                                          \
+    }
+#define _INTERNAL_IMPL_ON_MC(cl, m, c, p) bool cl::m(const std::shared_ptr<storage::api::c>& p)
 #define DEF_IMPL_MSG_COMMAND_H(m) _INTERNAL_DEF_IMPL_ON_MC(on##m, m##Command)
 #define DEF_IMPL_MSG_REPLY_H(m) _INTERNAL_DEF_IMPL_ON_MC(on##m##Reply, m##Reply)
 #define DEF_MSG_COMMAND_H(m) _INTERNAL_DEF_ON_MC(on##m, m##Command)
@@ -107,7 +110,9 @@ class RemoveLocationReply;
 #define IMPL_MSG_REPLY_ARG_H(cl, m, p) _INTERNAL_IMPL_ON_MC(cl, on##m##Reply, m##Reply, p)
 #define IMPL_MSG_COMMAND_H(cl, m) IMPL_MSG_COMMAND_ARG_H(cl, m, cmd)
 #define IMPL_MSG_REPLY_H(cl, m) IMPL_MSG_REPLY_ARG_H(cl, m, reply)
-#define ON_M(m) DEF_IMPL_MSG_COMMAND_H(m); DEF_IMPL_MSG_REPLY_H(m)
+#define ON_M(m)                \
+    DEF_IMPL_MSG_COMMAND_H(m); \
+    DEF_IMPL_MSG_REPLY_H(m)
 
 class MessageHandler {
 public:
@@ -161,8 +166,12 @@ public:
     virtual bool onGetNodeStateReply(const std::shared_ptr<api::GetNodeStateReply>&) { return false; }
     virtual bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) { return false; }
     virtual bool onSetSystemStateReply(const std::shared_ptr<api::SetSystemStateReply>&) { return false; }
-    virtual bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>&) { return false; }
-    virtual bool onActivateClusterStateVersionReply(const std::shared_ptr<api::ActivateClusterStateVersionReply>&) { return false; }
+    virtual bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>&) {
+        return false;
+    }
+    virtual bool onActivateClusterStateVersionReply(const std::shared_ptr<api::ActivateClusterStateVersionReply>&) {
+        return false;
+    }
     virtual bool onGetSystemState(const std::shared_ptr<api::GetSystemStateCommand>&) { return false; }
     virtual bool onGetSystemStateReply(const std::shared_ptr<api::GetSystemStateReply>&) { return false; }
     virtual bool onBucketsAdded(const std::shared_ptr<api::BucketsAddedCommand>&) { return false; }
@@ -181,4 +190,4 @@ public:
 
 #undef ON_M
 
-}
+} // namespace storage::api

@@ -2,14 +2,14 @@
 #pragma once
 
 #include "configkey.h"
+
 #include <vespa/vespalib/util/time.h>
 
 namespace config {
 
 class ConfigSubscription;
 
-struct SubscribeHandler
-{
+struct SubscribeHandler {
     /**
      * Subscribes to a spesific config given by a subscription.
      * If the subscribe call is successful, the callback handler will be called
@@ -19,9 +19,8 @@ struct SubscribeHandler
      * @param timeout the timeout of the subscribe call.
      * @return subscription object containing data relevant to client
      */
-    virtual std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, vespalib::duration timeout) = 0;
+    virtual std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey& key, vespalib::duration timeout) = 0;
     virtual ~SubscribeHandler() = default;
 };
 
-}
-
+} // namespace config

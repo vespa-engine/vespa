@@ -38,15 +38,18 @@ public class ParsedRankProfile extends ParsedBlock {
     private Double filterFirstThreshold = null;
     private Double filterFirstExploration = null;
     private Double explorationSlack = null;
+    private Boolean prefetchTensors = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private final List<FeatureList> matchFeatures = new ArrayList<>();
     private final List<FeatureList> rankFeatures = new ArrayList<>();
     private final List<FeatureList> summaryFeatures = new ArrayList<>();
     private Integer keepRankCount = null;
+    private Integer totalKeepRankCount = null;
     private Integer minHitsPerThread = null;
     private Integer numSearchPartitions = null;
     private Integer numThreadsPerSearch = null;
-    private Integer reRankCount = null;
+    private Integer rerankCount = null;
+    private Integer totalRerankCount = null;
     private MatchPhaseSettings matchPhase = null;
     private DiversitySettings diversity = null;
     private String firstPhaseExpression     = null;
@@ -97,15 +100,18 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<Double> getFilterFirstThreshold() { return Optional.ofNullable(this.filterFirstThreshold); }
     Optional<Double> getFilterFirstExploration() { return Optional.ofNullable(this.filterFirstExploration); }
     Optional<Double> getExplorationSlack() { return Optional.ofNullable(this.explorationSlack); }
+    Optional<Boolean> getPrefetchTensors() { return Optional.ofNullable(this.prefetchTensors); }
     Optional<Double> getTargetHitsMaxAdjustmentFactor() { return Optional.ofNullable(this.targetHitsMaxAdjustmentFactor); }
     List<FeatureList> getMatchFeatures() { return List.copyOf(this.matchFeatures); }
     List<FeatureList> getRankFeatures() { return List.copyOf(this.rankFeatures); }
     List<FeatureList> getSummaryFeatures() { return List.copyOf(this.summaryFeatures); }
     Optional<Integer> getKeepRankCount() { return Optional.ofNullable(this.keepRankCount); }
+    Optional<Integer> getTotalKeepRankCount() { return Optional.ofNullable(this.totalKeepRankCount); }
     Optional<Integer> getMinHitsPerThread() { return Optional.ofNullable(this.minHitsPerThread); }
     Optional<Integer> getNumSearchPartitions() { return Optional.ofNullable(this.numSearchPartitions); }
     Optional<Integer> getNumThreadsPerSearch() { return Optional.ofNullable(this.numThreadsPerSearch); }
-    Optional<Integer> getReRankCount() { return Optional.ofNullable(this.reRankCount); }
+    Optional<Integer> getRerankCount() { return Optional.ofNullable(this.rerankCount); }
+    Optional<Integer> getTotalRerankCount() { return Optional.ofNullable(this.totalRerankCount); }
     Optional<MatchPhaseSettings> getMatchPhase() { return Optional.ofNullable(this.matchPhase); }
     Optional<DiversitySettings> getDiversity() { return Optional.ofNullable(this.diversity); }
     Optional<String> getFirstPhaseExpression() { return Optional.ofNullable(this.firstPhaseExpression); }
@@ -215,8 +221,13 @@ public class ParsedRankProfile extends ParsedBlock {
     }
 
     public void setKeepRankCount(int count) {
-        verifyThat(keepRankCount == null, "already has rerank-count");
+        verifyThat(keepRankCount == null, "already has keep-rank-count");
         this.keepRankCount = count;
+    }
+
+    public void setTotalKeepRankCount(int count) {
+        verifyThat(totalKeepRankCount == null, "already has total-keep-rank-count");
+        this.totalKeepRankCount = count;
     }
 
     public void setMatchPhase(MatchPhaseSettings settings) {
@@ -259,8 +270,13 @@ public class ParsedRankProfile extends ParsedBlock {
     }
 
     public void setRerankCount(int count) {
-        verifyThat(reRankCount == null, "already has rerank-count");
-        this.reRankCount = count;
+        verifyThat(rerankCount == null, "already has rerank-count");
+        this.rerankCount = count;
+    }
+
+    public void setTotalRerankCount(int count) {
+        verifyThat(totalRerankCount == null, "already has total-rerank-count");
+        this.totalRerankCount = count;
     }
 
     public void setSecondPhaseRanking(String expression) {
@@ -339,6 +355,11 @@ public class ParsedRankProfile extends ParsedBlock {
     public void setExplorationSlack(double slack) {
         verifyThat(explorationSlack == null, "already has exploration-slack");
         this.explorationSlack = slack;
+    }
+
+    public void setPrefetchTensors(boolean value) {
+        verifyThat(prefetchTensors == null, "already has prefetch-tensors");
+        this.prefetchTensors = value;
     }
 
     public void setTargetHitsMaxAdjustmentFactor(double factor) {

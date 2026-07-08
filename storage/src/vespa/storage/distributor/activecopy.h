@@ -3,9 +3,12 @@
 #pragma once
 
 #include "ideal_service_layer_nodes_bundle.h"
+
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 
-namespace storage::lib { class Distribution; }
+namespace storage::lib {
+class Distribution;
+}
 namespace storage::distributor {
 
 class ActiveList;
@@ -14,6 +17,7 @@ struct ActiveStateOrder;
 class ActiveCopy {
     using Index = IdealServiceLayerNodesBundle::Index;
     using Node2Index = IdealServiceLayerNodesBundle::Node2Index;
+
 public:
     constexpr ActiveCopy() noexcept
         : _nodeIndex(Index::invalid()),
@@ -21,31 +25,30 @@ public:
           _doc_count(0),
           _entryIndex(Index::invalid()),
           _ready(false),
-          _active(false)
-    { }
-    ActiveCopy(uint16_t node, const BucketCopy & copy, uint16_t ideal, uint16_t entryIndex_in) noexcept
+          _active(false) {}
+    ActiveCopy(uint16_t node, const BucketCopy& copy, uint16_t ideal, uint16_t entryIndex_in) noexcept
         : _nodeIndex(node),
           _ideal(ideal),
           _doc_count(copy.getDocumentCount()),
           _entryIndex(entryIndex_in),
           _ready(copy.ready()),
-          _active(copy.active())
-    { }
+          _active(copy.active()) {}
 
     std::string getReason() const;
     friend std::ostream& operator<<(std::ostream& out, const ActiveCopy& e);
 
-    static ActiveList calculate(const Node2Index & idealState, const lib::Distribution&,
-                                const BucketDatabase::Entry&, uint32_t max_activation_inhibited_out_of_sync_groups);
+    static ActiveList calculate(const Node2Index& idealState, const lib::Distribution&, const BucketDatabase::Entry&,
+                                uint32_t          max_activation_inhibited_out_of_sync_groups);
     uint16_t nodeIndex() const noexcept { return _nodeIndex; }
     Index entryIndex() const noexcept { return Index(_entryIndex); }
+
 private:
     friend ActiveStateOrder;
     bool valid_ideal() const noexcept { return _ideal < Index::invalid(); }
     uint16_t _nodeIndex;
     uint16_t _ideal;
     uint32_t _doc_count;
-    uint16_t _entryIndex;  // Index in BucketCopyList
+    uint16_t _entryIndex; // Index in BucketCopyList
     bool     _ready;
     bool     _active;
 };
@@ -53,15 +56,16 @@ private:
 class ActiveList : public vespalib::Printable {
 public:
     ActiveList() noexcept {}
-    ActiveList(std::vector<ActiveCopy>&& v) noexcept : _v(std::move(v)) { }
+    ActiveList(std::vector<ActiveCopy>&& v) noexcept : _v(std::move(v)) {}
 
     const ActiveCopy& operator[](size_t i) const noexcept { return _v[i]; }
     [[nodiscard]] bool contains(uint16_t) const noexcept;
     [[nodiscard]] bool empty() const noexcept { return _v.empty(); }
     size_t size() const noexcept { return _v.size(); }
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
+
 private:
     std::vector<ActiveCopy> _v;
 };
 
-}
+} // namespace storage::distributor

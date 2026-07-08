@@ -53,6 +53,14 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
         }
     }
 
+    @Override
+    public String getFieldName() {
+        if (getParent() instanceof SameElementItem sameElementParent)
+            return sameElementParent.getFieldName() + "." + getIndexName();
+        else
+            return getIndexName();
+    }
+
     public void setWeight(int w) {
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             i.next().setWeight(w);
@@ -60,11 +68,11 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         // AndSegmentItem should be folded/converted before serialization
         var builder = SearchProtocol.ItemAnd.newBuilder();
         for (var child : items()) {
-            builder.addChildren(child.toProtobuf());
+            builder.addChildren(child.toProtobuf(context));
         }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemAnd(builder.build())

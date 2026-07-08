@@ -97,7 +97,7 @@ public class SearchHandlerTest {
         HttpSearchResponse s = new HttpSearchResponse(200, r, q, new XmlRenderer());
         assertEquals("text/xml", s.getContentType());
         assertNull(s.getCoverage());
-        assertEquals("query 'WEAKAND(100) dummy'", s.getParsedQuery());
+        assertEquals("query 'WEAKAND dummy'", s.getParsedQuery());
         assertEquals(500, s.getTiming().getTimeout());
     }
 
@@ -145,6 +145,43 @@ public class SearchHandlerTest {
         assertEquals(400, responseHandler.getStatus());
         assertTrue(response.contains("offset"));
         assertTrue(response.contains("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
+
+        // Illegal request property key should be handled as IllegalInputException, which will give
+        // a 400 response saying this was an illegal query
+        responseHandler = testDriver.sendRequest("http://localhost/search/?query=status_code%3A0&T.=20");
+        response = responseHandler.readAll();
+        assertEquals(400, responseHandler.getStatus());
+        assertTrue(response.contains("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
+    }
+
+    @Test
+    void testQueryProfileOnlyQueryParam() {
+        try (var tester = new SearchHandlerTester()) {
+            verifyQueryProfileOnlyResponse(sendQueryViaGet(tester.driver, "maxHits"), "maxHits");
+            verifyQueryProfileOnlyResponse(sendQueryViaPost(tester.driver, "maxHits"), "maxHits");
+            verifyQueryProfileOnlyResponse(sendQueryViaGet(tester.driver, "maxOffset"), "maxOffset");
+            verifyQueryProfileOnlyResponse(sendQueryViaPost(tester.driver, "maxOffset"), "maxOffset");
+            verifyQueryProfileOnlyResponse(sendQueryViaGet(tester.driver, "maxQueryItems"), "maxQueryItems");
+            verifyQueryProfileOnlyResponse(sendQueryViaPost(tester.driver, "maxQueryItems"), "maxQueryItems");
+        }
+    }
+
+    private RequestHandlerTestDriver.MockResponseHandler sendQueryViaGet(RequestHandlerTestDriver testDriver, String parameter) {
+        return testDriver.sendRequest("http://localhost/search/?query=status_code%3A0&" + parameter + "=42");
+    }
+
+    private RequestHandlerTestDriver.MockResponseHandler sendQueryViaPost(RequestHandlerTestDriver testDriver, String parameter) {
+        return testDriver.sendRequest("http://localhost/search/",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST,
+                "{ \"query\": \"status_code:0\", \"" + parameter + "\": 42 }",
+                "application/json");
+    }
+
+    private void verifyQueryProfileOnlyResponse(RequestHandlerTestDriver.MockResponseHandler responseHandler, String parameter) {
+        String response = responseHandler.readAll();
+        assertEquals(500, responseHandler.getStatus());
+        assertTrue(response.contains(parameter + " must be specified in a query profile"));
+        assertTrue(response.contains("\"code\":" + com.yahoo.container.protect.Error.UNSPECIFIED.code));
     }
 
     @Test
@@ -540,7 +577,7 @@ public class SearchHandlerTest {
         }
 
         public ResultBuilder withGroups() {
-            result.hits().add(new Group(new RootId(1), new Relevance(1.0)));
+            result.hits().add(new Group(new RootId(1), new Relevance(1.0), result.getQuery()));
             return this;
         }
 

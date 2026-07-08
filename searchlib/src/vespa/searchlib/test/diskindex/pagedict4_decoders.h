@@ -9,8 +9,7 @@ namespace search::diskindex::test {
 /*
  * Class for writing to memory based pagedict4 structure
  */
-struct PageDict4Decoders
-{
+struct PageDict4Decoders {
     using DC = search::bitcompression::PostingListCountFileDecodeContext;
 
     DC ssd;
@@ -21,4 +20,4 @@ struct PageDict4Decoders
     ~PageDict4Decoders();
 };
 
-}
+} // namespace search::diskindex::test

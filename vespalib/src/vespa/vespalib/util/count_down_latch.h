@@ -3,8 +3,9 @@
 #pragma once
 
 #include "time.h"
-#include <mutex>
+
 #include <condition_variable>
+#include <mutex>
 
 namespace vespalib {
 
@@ -19,17 +20,16 @@ namespace vespalib {
  * 0, additional invocations of await will not block and additional
  * invocations of countDown will have no effect.
  **/
-class CountDownLatch
-{
+class CountDownLatch {
 private:
     mutable std::mutex      _lock;
     std::condition_variable _cond;
     uint32_t                _count;
 
-    CountDownLatch(const CountDownLatch &rhs) = delete;
-    CountDownLatch(CountDownLatch &&rhs) = delete;
-    CountDownLatch &operator=(const CountDownLatch &rhs) = delete;
-    CountDownLatch &operator=(CountDownLatch &&rhs) = delete;
+    CountDownLatch(const CountDownLatch& rhs) = delete;
+    CountDownLatch(CountDownLatch&& rhs) = delete;
+    CountDownLatch& operator=(const CountDownLatch& rhs) = delete;
+    CountDownLatch& operator=(CountDownLatch&& rhs) = delete;
 
 public:
     /**
@@ -94,4 +94,3 @@ public:
 };
 
 } // namespace vespalib
-

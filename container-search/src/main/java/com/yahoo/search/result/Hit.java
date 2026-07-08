@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -87,7 +88,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     private int addNumber = -1;
 
-    /** The query which produced this hit. Used for multi phase searching */
+    /** The query which produced this hit. Used for multiphase searching */
     private Query query;
 
     /**
@@ -260,7 +261,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         assignId(new URI(id));
     }
 
-
     /**
      * Initializes the id of this hit.
      *
@@ -313,9 +313,11 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         setRelevance(new Relevance(relevance));
     }
 
-
     /** Returns the relevance of this hit */
     public Relevance getRelevance() { return relevance; }
+
+    /** Returns the id of the search group that produced this, or empty when not apt. */
+    public OptionalInt getSearchGroup() { return OptionalInt.empty(); }
 
     /** Sets whether this hit is returned from a cache. Default is false */
     public void setCached(boolean cached) { this.cached = cached; }
@@ -329,7 +331,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * summaries. This also enables tracking of which summary classes
      * have been used for filling so far. Invoking this method
      * multiple times is allowed and will have no addition
-     * effect. Note that a fillable hit may not be made unfillable.
+     * effect. Call setUnfillable() if there is no more data fill()
+     * can obtain for that hit.
      */
     public void setFillable() {
         if (filled == null) {
@@ -337,6 +340,14 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
             filled = Collections.emptySet();
             unmodifiableFilled = filled;
         }
+    }
+
+    /**
+     * Tag this hit as no longer fillable.
+     */
+    public void setUnfillable() {
+        filled = null;
+        unmodifiableFilled = null;
     }
 
     /**
@@ -354,7 +365,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         } else if (filled.size() == 1) {
             filled = new HashSet<>(filled);
             unmodifiableFilled = Collections.unmodifiableSet(filled);
-
             filled.add(summaryClass);
         } else {
             filled.add(summaryClass);
@@ -385,6 +395,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * will also return true if this hit is not fillable.
      */
     public boolean isFilled(String summaryClass) {
+        // TODO: consider also checking filled.contains(null) which signals "filled completely"
         return (filled == null) || filled.contains(summaryClass);
     }
 
@@ -599,7 +610,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     final void setFilledInternal(Set<String> filled) {
         this.filled = filled;
-        unmodifiableFilled = (filled != null) ? Collections.unmodifiableSet(filled) : null;
+        unmodifiableFilled = (filled == null) ? null : Collections.unmodifiableSet(filled);
     }
 
     /**

@@ -63,7 +63,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Specification for the conversion of YQL+ expressions to Vespa search queries.
@@ -119,9 +128,11 @@ public class YqlParserTestCase {
     }
 
     @Test
-    void backslashCanBeEscaped() {
+    void testRegexpItem() {
+        assertParse("select * from sources * where myField matches '10001-1234*'",
+                    "REGEXP myField:10001-1234*");
         // Java escaping on top of YQL escaping, to produce a regexp with a single backslash
-        assertParse("select * from sources * where artist matches 'a\\\\.'", "RegExpItem [expression=a\\.]");
+        assertParse("select * from sources * where artist matches 'a\\\\.'", "REGEXP artist:a\\.");
     }
 
     @Test
@@ -398,6 +409,20 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testCompoundItemAnnotations() {
+        assertEquals("and", parse("select foo from bar where ({annotations: {scope: \"and\"}}(a contains \"A\" and b contains \"B\"))")
+            .getRoot().getAnnotation("scope"));
+        assertEquals("not", parse("select foo from bar where ({annotations: {scope: \"not\"}}!(a contains \"A\"))")
+            .getRoot().getAnnotation("scope"));
+        assertEquals("or", parse("select foo from bar where ({annotations: {scope: \"or\"}}(a contains \"A\" or b contains \"B\"))")
+            .getRoot().getAnnotation("scope"));
+        assertEquals("rank", parse("select foo from bar where ({annotations: {scope: \"rank\"}}rank(a contains \"A\", b contains \"B\"))")
+            .getRoot().getAnnotation("scope"));
+        assertEquals("weakAnd", parse("select foo from bar where ({annotations: {scope: \"weakAnd\"}}weakAnd(a contains \"A\", b contains \"B\"))")
+            .getRoot().getAnnotation("scope"));
+    }
+
+    @Test
     void testAnnotationsCanBeInBrackets() {
         assertEquals("merkelapp",
                 getRootWord("select foo from bar where baz contains " +
@@ -447,6 +472,70 @@ public class YqlParserTestCase {
     void testSameElementWithNestedRank() {
         assertParse("select * from sources * where myStringArray contains sameElement(rank('a', 'b'))",
             "myStringArray:{(RANK a b)}");
+    }
+
+    @Test
+    void testSameElementWithElementFilter() {
+        // Test with array of element filters
+        QueryTree queryTree = parse("select * from sources * where myfield contains ({elementFilter:[1,2,5]} sameElement(name contains 'John'))");
+        SameElementItem sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(1, 2, 5), sameElem.getElementFilter(), "Element filter should match");
+
+        // Test with single element filter
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:42} sameElement(name contains 'Jane'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(42), sameElem.getElementFilter(), "Single element filter should work");
+
+        // Test with zero value (should be valid)
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:0} sameElement(name contains 'Zero'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(0), sameElem.getElementFilter(), "Zero should be valid");
+
+        // Test deduplication and sorting
+        queryTree = parse("select * from sources * where myfield contains ({elementFilter:[5,2,5,1,2]} sameElement(name contains 'Dedup'))");
+        sameElem = (SameElementItem) queryTree.getRoot();
+        assertEquals(List.of(1, 2, 5), sameElem.getElementFilter(), "Should be sorted and deduplicated");
+    }
+
+    @Test
+    void testSameElementWithInvalidElementFilter() {
+        // Test negative number
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:-1} sameElement(name contains 'John'))",
+                new IllegalArgumentException("element id must be non-negative, got: -1"));
+
+        // Test negative in array
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,-2,3]} sameElement(name contains 'John'))",
+                new IllegalArgumentException("element id must be non-negative, got: -2"));
+
+        // Test floating point number
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:1.5} sameElement(name contains 'John'))",
+                new IllegalArgumentException("element id must be integer, not floating point number. Got: 1.5"));
+
+        // Test floating point in array
+        assertParseFail("select * from sources * where myfield contains ({elementFilter:[1,2.5,3]} sameElement(name contains 'John'))",
+                new IllegalArgumentException("element id must be integer, not floating point number. Got: 2.5"));
+    }
+
+    @Test
+    void testIndexedAccessRewritesToSameElement() {
+        // ints[1] = 2 should rewrite to ints contains ({elementFilter:[1]}sameElement(2))
+        QueryTree qt = parse("select * from sources * where strings[1] = \"foo\"");
+        SameElementItem se = (SameElementItem) qt.getRoot();
+        assertEquals("strings", se.getFieldName());
+        assertEquals(List.of(1), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+
+        qt = parse("select * from sources * where ints[1] = 2");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("ints", se.getFieldName());
+        assertEquals(List.of(1), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+
+        qt = parse("select * from sources * where bools[0] = true");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("bools", se.getFieldName());
+        assertEquals(List.of(0), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
     }
 
     @Test
@@ -508,7 +597,7 @@ public class YqlParserTestCase {
     }
 
     @Test
-    void testRaw() {
+    void testRawContainsLiteral() {
         // Default: Not raw, for comparison
         Item root = parse("select foo from bar where baz contains (\"yoni jo dima\")").getRoot();
         assertEquals("baz:'yoni jo dima'", root.toString());
@@ -520,16 +609,6 @@ public class YqlParserTestCase {
         assertInstanceOf(WordItem.class, root);
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
-
-        root = parse("select foo from bar where {grammar:\"all\"}userInput(\"yoni jo dima\")").getRoot();
-        assertInstanceOf(AndItem.class, root);
-        AndItem andItem = (AndItem) root;
-        assertEquals(3, andItem.getItemCount());
-
-        root = parse("select foo from bar where {grammar:\"raw\"}userInput(\"yoni jo dima\")").getRoot();
-        assertInstanceOf(WordItem.class, root);
-        assertInstanceOf(ExactStringItem.class, root);
-        assertEquals("yoni jo dima", ((WordItem) root).getWord());
     }
 
     @Test
@@ -537,7 +616,7 @@ public class YqlParserTestCase {
         // Default for comparison
         Item root = parse("select foo from bar where userInput(\"yoni jo dima\")").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
+        assertEquals("WEAKAND default:yoni default:jo default:dima", root.toString());
         for (Item child : ((WeakAndItem)root).items()) {
             assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem)child;
@@ -548,7 +627,7 @@ public class YqlParserTestCase {
 
         root = parse("select foo from bar where {grammar:\"linguistics\"}userInput(\"yoni jo dima\")").getRoot();
         assertInstanceOf(WeakAndItem.class, root);
-        assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
+        assertEquals("WEAKAND default:yoni default:jo default:dima", root.toString());
         for (Item child : ((WeakAndItem)root).items()) {
             assertInstanceOf(WordItem.class, child);
             WordItem childWord = (WordItem)child;
@@ -683,7 +762,7 @@ public class YqlParserTestCase {
         QueryTree parsed = parse("select * from sources * where " +
                                  "weakAnd(field1 contains ({weight: 120}'term1'), " +
                                  "        field1 contains ({weight: 70}'term2'))");
-        assertEquals("WEAKAND(100) field1:term1!120 field1:term2!70", parsed.toString());
+        assertEquals("WEAKAND field1:term1!120 field1:term2!70", parsed.toString());
     }
 
     @Test
@@ -758,22 +837,25 @@ public class YqlParserTestCase {
     @Test
     void testWand() {
         assertParse("select foo from bar where wand(description, {\"a\":1, \"b\":2});",
-                "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND description{[1]:\"a\",[2]:\"b\"}");
         assertParse("select foo from bar where {scoreThreshold : 13.3, targetHits: 7, " +
                 "thresholdBoostFactor: 2.3} wand(description, {\"a\":1, \"b\":2})",
-                "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\",[2]:\"b\"}");
+        assertParse("select foo from bar where {scoreThreshold : 13, targetHits: 7, " +
+                "thresholdBoostFactor: 2} wand(description, {\"a\":1, \"b\":2})",
+                "WAND(7) {scoreThreshold=13.0, thresholdBoostFactor=2.0} description{[1]:\"a\",[2]:\"b\"}");
     }
 
     @Test
     void testQuotedAnnotations() {
         assertParse("select foo from bar where {\"scoreThreshold\": 13.3, \"targetHits\": 7, " +
                 "'thresholdBoostFactor': 2.3} wand(description, {\"a\":1})",
-                "WAND(7,13.3,2.3) description{[1]:\"a\"}");
+                "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\"}");
     }
 
     @Test
     void testNumericWand() {
-        String numWand = "WAND(10,0.0,1.0) description{[1]:\"11\",[2]:\"37\"}";
+        String numWand = "WAND description{[1]:\"11\",[2]:\"37\"}";
         assertParse("select foo from bar where wand(description, [[11,1], [37,2]])", numWand);
         assertParse("select foo from bar where wand(description, [[11L,1], [37L,2]])", numWand);
         assertParseFail("select foo from bar where wand(description, 12);",
@@ -804,59 +886,101 @@ public class YqlParserTestCase {
     @Test
     void testGeoLocation() {
         assertParse("select foo from bar where geoLocation(workplace, 63.418417, 10.433033, \"0.5 deg\")",
-                "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
-        assertParse("select foo from bar where geoLocation(headquarters, \"37.416383\", \"-122.024683\", \"100 miles\")",
-                "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
+            "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
+        assertParse(
+            "select foo from bar where geoLocation(headquarters, \"37.416383\", \"-122.024683\", \"100 miles\")",
+            "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
         assertParse("select foo from bar where geoLocation(home, \"E10.433033\", \"N63.418417\", \"5km\")",
-                "GEO_LOCATION home:(2,10433033,63418417,45066,0,1,0,1921876103)");
+            "GEO_LOCATION home:(2,10433033,63418417,45066,0,1,0,1921876103)");
 
         assertParseFail("select foo from bar where geoLocation(qux, 1, 2)",
-                new IllegalArgumentException("Expected 4 arguments, got 3."));
+            new IllegalArgumentException("Expected 4 arguments, got 3."));
         assertParseFail("select foo from bar where geoLocation(qux, 2.0, \"N5.0\", \"0.5 deg\");",
-                new IllegalArgumentException(
-                        "Invalid geoLocation coordinates 'Latitude: 2.0 degrees' and 'Latitude: 5.0 degrees'"));
+            new IllegalArgumentException(
+                "Invalid geoLocation coordinates 'Latitude: 2.0 degrees' and 'Latitude: 5.0 degrees'"));
         assertParse("select foo from bar where geoLocation(workplace, -12, -34, \"-77 d\")",
-                "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
+            "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
         assertParse("select * from test_index where geoLocation(coordinate, 0.000010, 0.000010, \"10.000000 km\")",
-                "GEO_LOCATION coordinate:(2,10,10,90133,0,1,0,4294967294)");
+            "GEO_LOCATION coordinate:(2,10,10,90133,0,1,0,4294967294)");
+
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var builder = new Query.Builder();
+        var query = builder.build();
+        query.properties().set("mylatitude", "42.123456");
+        query.properties().set("mylongitude", "17.123456");
+        query.properties().set("myradius", "10 km");
+        parser.setUserQuery(query);
+        var qt = parse("select * from sources * where geoLocation(mypos, @mylatitude, @mylongitude, @myradius);");
+        assertEquals("GEO_LOCATION mypos:(2,17123456,42123456,90133,0,1,0,3185582897)", qt.toString());
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        parser.setUserQuery(query);
+        var ex = assertThrows(IllegalStateException.class,
+            () -> parse("select * from sources * where geoLocation(mypos, @mylatitude, @bad, @myradius);"));
+        assertTrue(ex.getMessage().contains("missing"));
     }
 
     @Test
     void testGeoBoundingBox() {
         assertParse("select foo from bar where geoBoundingBox('workplace', -63.418, -10.433, 63.5, 10.5)",
                     "GEO_LOCATION workplace:[2,-10433000,-63418000,10500000,63500000]");
+
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var builder = new Query.Builder();
+        var query = builder.build();
+        query.properties().set("my_s", "-63.418");
+        query.properties().set("my_n", "63.5");
+        query.properties().set("my_w", "-10.433");
+        query.properties().set("my_e", "10.5");
+        parser.setUserQuery(query);
+        var qt = parse("select foo from bar where geoBoundingBox('workplace', @my_s, @my_w, @my_n, @my_e);");
+        assertEquals("GEO_LOCATION workplace:[2,-10433000,-63418000,10500000,63500000]", qt.toString());
     }
 
     @Test
     void testNearestNeighbor() {
         assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector}");
         assertParse("select foo from bar where {targetHits: 37} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=37}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=37}");
         assertParse("select foo from bar where {approximate: false, hnsw.exploreAdditionalHits: 8, targetHits: 3} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=8,distanceThreshold=Infinity,approximate=false,targetHits=3}");
-
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=3,approximate=false,hnsw.exploreAdditionalHits=8}");
         assertParse("select foo from bar where {targetHits: 7, distanceThreshold: 100100.25} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=100100.25,approximate=true,targetHits=7}");
-
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=7,distanceThreshold=100100.25}");
+        assertParse("select foo from bar where {targetHits: 7, distanceThreshold: 45} nearestNeighbor(semantic_embedding, my_vector)",
+            "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=7,distanceThreshold=45.0}");
+        assertParse("select foo from bar where {totalTargetHits: 100, minTargetHits: 11} nearestNeighbor(semantic_embedding, my_vector)",
+                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,totalTargetHits=100,minTargetHits=11}");
     }
 
     @Test
     void testNearestNeighborWithHnswTuningParameters() {
         assertParse("select foo from bar where {targetHits: 10, hnsw.approximateThreshold: 0.05} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.approximateThreshold=0.05}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.approximateThreshold=0.05}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.explorationSlack: 0.1} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.explorationSlack=0.1}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.explorationSlack=0.1}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstExploration: 0.3} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstExploration=0.3}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstExploration=0.3}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 0.2} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstThreshold=0.2}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstThreshold=0.2}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.postFilterThreshold: 0.8} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.postFilterThreshold=0.8}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.postFilterThreshold=0.8}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.targetHitsMaxAdjustmentFactor: 20.0} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.targetHitsMaxAdjustmentFactor=20.0}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.targetHitsMaxAdjustmentFactor=20.0}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 0.1, hnsw.filterFirstExploration: 0.25, hnsw.postFilterThreshold: 0.9} nearestNeighbor(semantic_embedding, my_vector)",
-                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=10,hnsw.filterFirstExploration=0.25,hnsw.filterFirstThreshold=0.1,hnsw.postFilterThreshold=0.9}");
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstExploration=0.25,hnsw.filterFirstThreshold=0.1,hnsw.postFilterThreshold=0.9}");
+        // Integer values for HNSW tuning parameters should be accepted and coerced to double
+        assertParse("select foo from bar where {targetHits: 10, hnsw.approximateThreshold: 1} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.approximateThreshold=1.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.explorationSlack: 2} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.explorationSlack=2.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstExploration: 3} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstExploration=3.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 4} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstThreshold=4.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.postFilterThreshold: 5} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.postFilterThreshold=5.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.targetHitsMaxAdjustmentFactor: 20} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.targetHitsMaxAdjustmentFactor=20.0}");
     }
 
     @Test
@@ -906,14 +1030,16 @@ public class YqlParserTestCase {
     @Test
     void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")",
-                "WEAKAND(100) a:A b:B");
+                "WEAKAND a:A b:B");
         assertParse("select foo from bar where {targetHits: 37}weakAnd(a contains \"A\", " +
-                "b contains \"B\")",
-                "WEAKAND(37) a:A b:B");
+                    "b contains \"B\")",
+                    "WEAKAND(37) a:A b:B");
+        assertParse("select foo from bar where {totalTargetHits: 37}weakAnd(a contains \"A\", " +
+                    "b contains \"B\")",
+                    "WEAKAND {totalTargetHits=37} a:A b:B");
 
-        QueryTree tree = parse("select foo from bar where weakAnd(a " +
-                "contains \"A\", b contains \"B\")");
-        assertEquals("WEAKAND(100) a:A b:B", tree.toString());
+        QueryTree tree = parse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")");
+        assertEquals("WEAKAND a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
     }
 
@@ -1104,6 +1230,12 @@ public class YqlParserTestCase {
             AttributeSorter sorter = fieldOrder.getSorter();
             assertEquals(LowerCaseSorter.class, sorter.getClass());
         }
+    }
+
+    @Test
+    void testArrayIndex() {
+        assertParse("SELECT title FROM product WHERE inventory.in_stock[10000] = true",
+                    "inventory.in_stock[10000]:{true}");
     }
 
     @Test
@@ -1305,6 +1437,26 @@ public class YqlParserTestCase {
         yql.properties().set("yql", "select * from sources * where urlfield.hostname contains uri(\"google.com\")");
         assertUrlQuery("urlfield.hostname", yql, false, true, true);
     }
+    
+    @Test
+    void testUriTokenization() {
+        //Tokenizer should match searchlib URL::IsTokenChar
+        
+        // '-' or '_' are token characters, not separators
+        assertEquals(List.of("my-subdomain", "example", "com"), YqlParser.tokenizeUri("my-subdomain.example.com"));
+        assertEquals(List.of("foo_bar", "example", "com"), YqlParser.tokenizeUri("foo_bar.example.com"));
+
+        // %xx escapes are not decoded: '%' is a separator and the hex chars are token chars
+        assertEquals(List.of("my", "2dsub", "example", "com"), YqlParser.tokenizeUri("my%2dsub.example.com"));
+
+        // Non-ASCII char stay a separator
+        assertEquals(List.of("a", "b", "example", "com"), YqlParser.tokenizeUri("a\u212Ab.example.com"));
+
+        // Leading/trailing/repeated separators produce no empty tokens.
+        assertEquals(List.of("example", "com"), YqlParser.tokenizeUri("://example..com/"));
+        assertEquals(List.of(), YqlParser.tokenizeUri(""));
+        assertEquals(List.of(), YqlParser.tokenizeUri("..."));
+    }
 
     @Test
     void testUrlHostSearchingNoAnchors() {
@@ -1356,10 +1508,15 @@ public class YqlParserTestCase {
         parser.setUserQuery(createUserQuery());
         var query = parse("select * from sources * where field in (42, 22L, -7, @foonumeric)");
         assertNumericInItem("field", new long[]{-11, -7, 22, 24, 25, 26, 42}, query);
+
         parser.setUserQuery(createUserQuery());
         query = parse("select * from sources * where string in ('a','b', @foostring)");
         assertStringInItem("string", new String[]{"a","b","might","this", "work"}, query);
         parser.setUserQuery(null);
+
+        query = parse("select * from sources * where {ranked:false}string in ('a','b')");
+        assertFalse(query.getRoot().isRanked());
+
         assertParseFail("select * from sources * where field in (29.9, -7.4)",
                 new ClassCastException("Cannot cast java.lang.Double to java.lang.Long"));
         assertParseFail("select * from sources * where string in ('a', 25L)",
@@ -1619,6 +1776,67 @@ public class YqlParserTestCase {
         for (VespaGroupingStep step : steps)
             actual.add(step.continuations().toString() + step.getOperation());
         return actual.toString();
+    }
+
+    @Test
+    void testExplicitEnglishOnContainsSetsLanguage() {
+        QueryTree tree = parse("select * from sources * where foo contains ({language: 'en'}\"hello\")");
+        Item root = tree.getRoot();
+        assertEquals(Language.ENGLISH, root.getLanguage(),
+                "Explicit {language: 'en'} on contains should set ENGLISH, not UNKNOWN");
+    }
+
+    @Test
+    void testExplicitFrenchOnContainsSetsLanguage() {
+        QueryTree tree = parse("select * from sources * where foo contains ({language: 'fr'}\"hello\")");
+        Item root = tree.getRoot();
+        assertEquals(Language.FRENCH, root.getLanguage(),
+                "Explicit {language: 'fr'} on contains should set FRENCH");
+    }
+
+    @Test
+    void testNoLanguageOnContainsStaysUnknown() {
+        QueryTree tree = parse("select * from sources * where foo contains \"hello\"");
+        Item root = tree.getRoot();
+        assertEquals(Language.UNKNOWN, root.getLanguage(),
+                "No language annotation on contains should leave UNKNOWN");
+    }
+
+    /** Creates index facts where top-level "x" and struct-field "myArray.x" have different settings. */
+    private static IndexFacts createIndexFactsWithFieldNameCollision() {
+        SearchDefinition sd = new SearchDefinition("default");
+        // Top-level field x: indexed, not exact
+        Index topX = new Index("x");
+        topX.setString(true);
+        sd.addIndex(topX);
+        // Struct-field myArray.x: attribute, exact
+        Index structX = new Index("myArray.x");
+        structX.setExact(true, null);
+        structX.setString(true);
+        sd.addIndex(structX);
+        // Parent field for sameElement
+        Index myArray = new Index("myArray");
+        sd.addIndex(myArray);
+        return new IndexFacts(new IndexModel(sd));
+    }
+
+    @Test
+    void testSameElementUsesStructFieldSettings() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsWithFieldNameCollision()));
+        // Inside sameElement, "x" should resolve to struct-field "myArray.x" which is exact
+        QueryTree tree = parse("select * from sources * where myArray contains sameElement(x contains \"hello\")");
+        SameElementItem sameElement = (SameElementItem) tree.getRoot();
+        assertInstanceOf(ExactStringItem.class, sameElement.getItem(0),
+                "struct-field myArray.x is exact, so should produce ExactStringItem");
+    }
+
+    @Test
+    void testTopLevelFieldNotAffectedByStructFieldSettings() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsWithFieldNameCollision()));
+        // Outside sameElement, "x" should resolve to top-level field which is not exact
+        QueryTree tree = parse("select * from sources * where x contains \"hello\"");
+        assertInstanceOf(WordItem.class, tree.getRoot(),
+                "Top-level field x is not exact, so should produce WordItem");
     }
 
 }

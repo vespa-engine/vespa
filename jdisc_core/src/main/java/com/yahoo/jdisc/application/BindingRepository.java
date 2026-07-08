@@ -3,6 +3,7 @@ package com.yahoo.jdisc.application;
 
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.text.Text;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -34,7 +35,7 @@ public class BindingRepository<T> implements Iterable<Map.Entry<UriPattern, T>> 
      */
     public void bind(String uriPattern, T target) {
         if (uriPattern.startsWith("https://")) {
-            log.warning(() -> String.format("For binding '%s': 'https' is deprecated, use 'http' to match both 'http' and 'https'", uriPattern));
+            log.warning(() -> Text.format("For binding '%s': 'https' is deprecated, use 'http' to match both 'http' and 'https'", uriPattern));
         }
         put(new UriPattern(uriPattern), target);
     }

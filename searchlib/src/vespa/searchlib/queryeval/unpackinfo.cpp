@@ -1,21 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "unpackinfo.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <cassert>
+
 #include <algorithm>
+#include <cassert>
 
 namespace search::queryeval {
 
-UnpackInfo::UnpackInfo()
-    : _size(0)
-{
+UnpackInfo::UnpackInfo() : _size(0) {
     memset(_unpack, 0, sizeof(_unpack));
 }
 
-UnpackInfo &
-UnpackInfo::add(size_t index)
-{
+UnpackInfo& UnpackInfo::add(size_t index) {
     if ((index <= max_index) && (_size < max_size)) {
         _unpack[_size++] = index;
         std::sort(&_unpack[0], &_unpack[_size]);
@@ -25,9 +23,7 @@ UnpackInfo::add(size_t index)
     return *this;
 }
 
-UnpackInfo &
-UnpackInfo::insert(size_t index, bool unpack)
-{
+UnpackInfo& UnpackInfo::insert(size_t index, bool unpack) {
     if (unpackAll()) {
         return *this;
     }
@@ -46,14 +42,12 @@ UnpackInfo::insert(size_t index, bool unpack)
     return *this;
 }
 
-UnpackInfo &
-UnpackInfo::remove(size_t index)
-{
+UnpackInfo& UnpackInfo::remove(size_t index) {
     if (unpackAll()) {
         return *this;
     }
     size_t wp = 0;
-    bool found_index = false;
+    bool   found_index = false;
     for (size_t rp = 0; rp < _size; ++rp) {
         if (_unpack[rp] == index) {
             found_index = true;
@@ -70,9 +64,7 @@ UnpackInfo::remove(size_t index)
     return *this;
 }
 
-bool
-UnpackInfo::needUnpack(size_t index) const
-{
+bool UnpackInfo::needUnpack(size_t index) const {
     if (unpackAll()) {
         return true;
     }
@@ -84,9 +76,7 @@ UnpackInfo::needUnpack(size_t index) const
     return false;
 }
 
-std::string 
-UnpackInfo::toString() const
-{
+std::string UnpackInfo::toString() const {
     vespalib::asciistream os;
     if (unpackAll()) {
         os << "full-unpack";
@@ -101,4 +91,4 @@ UnpackInfo::toString() const
     return os.str();
 }
 
-}
+} // namespace search::queryeval

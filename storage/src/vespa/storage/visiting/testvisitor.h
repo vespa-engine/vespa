@@ -19,15 +19,11 @@ public:
 private:
     void startingVisitor(const std::vector<document::BucketId>& buckets) override;
 
-    void handleDocuments(const document::BucketId& bucketId,
-                         DocEntryList & entries,
-                         HitCounter& hitCounter) override;
+    void handleDocuments(const document::BucketId& bucketId, DocEntryList& entries, HitCounter& hitCounter) override;
 
     void completedBucket(const document::BucketId& bucket, HitCounter& hitCounter) override;
 
-    spi::ReadConsistency getRequiredReadConsistency() const override {
-        return spi::ReadConsistency::WEAK;
-    }
+    spi::ReadConsistency getRequiredReadConsistency() const override { return spi::ReadConsistency::WEAK; }
 
     void completedVisiting(HitCounter& hitCounter) override;
     void abortedVisiting() override;
@@ -40,17 +36,13 @@ private:
 
 struct TestVisitorFactory : public VisitorFactory {
 
-    std::shared_ptr<VisitorEnvironment>
-    makeVisitorEnvironment(StorageComponent&) override {
+    std::shared_ptr<VisitorEnvironment> makeVisitorEnvironment(StorageComponent&) override {
         return std::make_shared<VisitorEnvironment>();
     };
 
-    Visitor*
-    makeVisitor(StorageComponent& c, VisitorEnvironment&,
-                const vdslib::Parameters& params) override {
+    Visitor* makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters& params) override {
         return new TestVisitor(c, params);
     }
-
 };
 
-}
+} // namespace storage

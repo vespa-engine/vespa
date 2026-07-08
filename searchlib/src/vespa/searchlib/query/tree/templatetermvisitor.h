@@ -15,52 +15,48 @@ namespace search::query {
  * its own derived class that has the visitTerm template member
  * function.
  */
-template <class Self, class NodeTypes>
-class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
-    template <class TermNode>
-    void myVisit(TermNode &n) {
-        static_cast<Self &>(*this).visitTerm(n);
-    }
+template <class Self, class NodeTypes> class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
+    template <class TermNode> void myVisit(TermNode& n) { static_cast<Self&>(*this).visitTerm(n); }
 
-    void visit(typename NodeTypes::NumberTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::LocationTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::PrefixTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::RangeTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::StringTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::SubstringTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::SuffixTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::PredicateQuery &n) override { myVisit(n); }
-    void visit(typename NodeTypes::RegExpTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::NearestNeighborTerm &n) override { myVisit(n); }
-    void visit(typename NodeTypes::FuzzyTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::NumberTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::LocationTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::PrefixTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::RangeTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::StringTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::SubstringTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::SuffixTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::PredicateQuery& n) override { myVisit(n); }
+    void visit(typename NodeTypes::RegExpTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::NearestNeighborTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::FuzzyTerm& n) override { myVisit(n); }
 
     // Phrases are terms with children. This visitor will not visit
     // the phrase's children, unless this member function is
     // overridden to do so.
-    void visit(typename NodeTypes::Phrase &n) override { myVisit(n); }
+    void visit(typename NodeTypes::Phrase& n) override { myVisit(n); }
 
     // WeightedSetTerms are terms with children. This visitor will not visit
     // the weighted set's children, unless this member function is
     // overridden to do so.
-    void visit(typename NodeTypes::WeightedSetTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::WeightedSetTerm& n) override { myVisit(n); }
 
     // DotProducts have children. This visitor will not visit the dot
     // product's children, unless this member function is overridden
     // to do so.
-    void visit(typename NodeTypes::DotProduct &n) override { myVisit(n); }
+    void visit(typename NodeTypes::DotProduct& n) override { myVisit(n); }
 
     // WandTerms have children. This visitor will not visit the wand
     // term's children, unless this member function is overridden
     // to do so.
-    void visit(typename NodeTypes::WandTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::WandTerm& n) override { myVisit(n); }
 
     // SameElement have children. This visitor will not visit the
     // term's children, unless this member function is overridden
     // to do so.
-    void visit(typename NodeTypes::SameElement &n) override { myVisit(n); }
+    void visit(typename NodeTypes::SameElement& n) override { myVisit(n); }
 
     void visit(typename NodeTypes::InTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::WordAlternatives& n) override { myVisit(n); }
 };
 
-}
+} // namespace search::query

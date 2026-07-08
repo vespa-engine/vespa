@@ -6,9 +6,8 @@
 
 namespace vespalib::eval {
 
-bool operator==(const Value &lhs, const Value &rhs);
+bool operator==(const Value& lhs, const Value& rhs);
 
-std::ostream &operator<<(std::ostream &out, const Value &value);
+std::ostream& operator<<(std::ostream& out, const Value& value);
 
-}
-
+} // namespace vespalib::eval

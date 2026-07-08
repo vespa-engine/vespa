@@ -2,8 +2,9 @@
 #pragma once
 
 #include "iprotocol.h"
-#include <map>
+
 #include <atomic>
+#include <map>
 #include <mutex>
 
 namespace mbus {
@@ -19,17 +20,17 @@ private:
     using ProtocolMap = std::map<string, IProtocol::SP>;
     using RoutingPolicyCache = std::map<string, IRoutingPolicy::SP>;
 
-    std::mutex     _lock; // Only guards the cache,
-                              // not the protocols as they are set up during messagebus construction.
-    static constexpr size_t MAX_PROTOCOLS = 16;
-    std::pair<string, std::atomic<IProtocol *>> _protocols[MAX_PROTOCOLS];
-    std::atomic<size_t>                         _numProtocols;
-    ProtocolMap        _activeProtocols;
-    RoutingPolicyCache _routingPolicyCache;
+    std::mutex _lock; // Only guards the cache,
+                      // not the protocols as they are set up during messagebus construction.
+    static constexpr size_t                    MAX_PROTOCOLS = 16;
+    std::pair<string, std::atomic<IProtocol*>> _protocols[MAX_PROTOCOLS];
+    std::atomic<size_t>                        _numProtocols;
+    ProtocolMap                                _activeProtocols;
+    RoutingPolicyCache                         _routingPolicyCache;
 
 public:
-    ProtocolRepository(const ProtocolRepository &) = delete;
-    ProtocolRepository & operator = (const ProtocolRepository &) = delete;
+    ProtocolRepository(const ProtocolRepository&) = delete;
+    ProtocolRepository& operator=(const ProtocolRepository&) = delete;
     ProtocolRepository();
     ~ProtocolRepository();
     /**
@@ -43,7 +44,7 @@ public:
      * @param protocol The protocol to register.
      * @return The previous protocol registered under this name.
      */
-    IProtocol::SP putProtocol(const IProtocol::SP & protocol);
+    IProtocol::SP putProtocol(const IProtocol::SP& protocol);
 
     /**
      * Returns the protocol whose name matches the given argument. This method will return null if no such
@@ -52,7 +53,7 @@ public:
      * @param name The name of the protocol to return.
      * @return The protocol registered, or null.
      */
-    IProtocol * getProtocol(std::string_view name);
+    IProtocol* getProtocol(std::string_view name);
 
     /**
      * Creates and returns a routing policy that matches the given arguments. If a routing policy has been
@@ -65,9 +66,8 @@ public:
      * @param policyParam  The parameter to pass to the routing policy constructor.
      * @return The created routing policy.
      */
-    IRoutingPolicy::SP getRoutingPolicy(const string &protocolName,
-                                        const string &policyName,
-                                        const string &policyParam);
+    IRoutingPolicy::SP getRoutingPolicy(const string& protocolName, const string& policyName,
+                                        const string& policyParam);
 
     /**
      * Clears the internal cache of routing policies.
@@ -75,4 +75,4 @@ public:
     void clearPolicyCache();
 };
 
-}
+} // namespace mbus

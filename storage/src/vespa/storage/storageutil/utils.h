@@ -9,9 +9,7 @@ namespace storage {
 /**
  * Creates a vector of the given type with one entry in it.
  */
-template<class A>
-std::vector<A>
-toVector(A entry) {
+template <class A> std::vector<A> toVector(A entry) {
     std::vector<A> entries;
     entries.push_back(entry);
     return entries;
@@ -20,9 +18,7 @@ toVector(A entry) {
 /**
  * Creates a vector of the given type with two entries in it.
  */
-template<class A>
-std::vector<A>
-toVector(A entry, A entry2) {
+template <class A> std::vector<A> toVector(A entry, A entry2) {
     std::vector<A> entries;
     entries.push_back(entry);
     entries.push_back(entry2);
@@ -32,9 +28,7 @@ toVector(A entry, A entry2) {
 /**
  * Creates a vector of the given type with two entries in it.
  */
-template<class A>
-std::vector<A>
-toVector(A entry, A entry2, A entry3) {
+template <class A> std::vector<A> toVector(A entry, A entry2, A entry3) {
     std::vector<A> entries;
     entries.push_back(entry);
     entries.push_back(entry2);
@@ -45,9 +39,7 @@ toVector(A entry, A entry2, A entry3) {
 /**
  * Creates a vector of the given type with two entries in it.
  */
-template<class A>
-std::vector<A>
-toVector(A entry, A entry2, A entry3, A entry4) {
+template <class A> std::vector<A> toVector(A entry, A entry2, A entry3, A entry4) {
     std::vector<A> entries;
     entries.push_back(entry);
     entries.push_back(entry2);
@@ -56,9 +48,7 @@ toVector(A entry, A entry2, A entry3, A entry4) {
     return entries;
 }
 
-template<class A>
-std::string
-dumpVector(const std::vector<A>& vec) {
+template <class A> std::string dumpVector(const std::vector<A>& vec) {
     std::ostringstream ost;
     for (uint32_t i = 0; i < vec.size(); ++i) {
         if (!ost.str().empty()) {
@@ -70,5 +60,4 @@ dumpVector(const std::vector<A>& vec) {
     return ost.str();
 }
 
-}
-
+} // namespace storage

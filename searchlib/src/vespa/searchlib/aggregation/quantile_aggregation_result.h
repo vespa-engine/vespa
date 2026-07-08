@@ -13,12 +13,11 @@ using FloatResultNode = expression::FloatResultNode;
 /*
  * Aggregator that calculates quantiles.
  */
-class QuantileAggregationResult : public AggregationResult
-{
-    std::vector<double>          _quantiles{};
-    uint8_t                      _extension{}; // Leave a byte to make it easier to change the sketch in the future.
-    vespalib::KLLSketch          _sketch;
-    FloatResultNode::CP          _no_rank; // for onGetRank()
+class QuantileAggregationResult : public AggregationResult {
+    std::vector<double> _quantiles{};
+    uint8_t             _extension{}; // Leave a byte to make it easier to change the sketch in the future.
+    vespalib::KLLSketch _sketch;
+    FloatResultNode::CP _no_rank; // for onGetRank()
 
 public:
     QuantileAggregationResult();
@@ -50,4 +49,4 @@ private:
     void onPrepare(const ResultNode& result, bool useForInit) override;
 };
 
-}
+} // namespace search::aggregation

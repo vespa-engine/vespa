@@ -1,32 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/storage/persistence/persistencehandler.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/persistence/spi/test.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
-#include <tests/persistence/persistencetestutils.h>
-#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
-using storage::spi::test::makeSpiBucket;
+#include <tests/persistence/persistencetestutils.h>
+
 using document::test::makeDocumentBucket;
+using storage::spi::test::makeSpiBucket;
 using namespace ::testing;
 
 namespace storage {
 
 struct PersistenceThreadSplitTest : public PersistenceTestUtils {
     enum SplitCase {
-        TOO_MANY_DOCS_SPLIT_ONCE, // Only one split needed to divide
+        TOO_MANY_DOCS_SPLIT_ONCE,          // Only one split needed to divide
         TOO_MANY_DOCS_SPLIT_MULTIPLE_BITS, // Multiple bits needed to divide
-        TOO_MANY_DOCS_ACTUALLY_NOT, // Other copy is too big but not this one
-                                    // Multi bits needed, but dont do it.
+        TOO_MANY_DOCS_ACTUALLY_NOT,        // Other copy is too big but not this one
+                                           // Multi bits needed, but dont do it.
         TOO_LARGE_DOCS_SPLIT_ONCE,
         TOO_LARGE_DOCS_SPLIT_MULTIPLE_BITS,
-        TOO_LARGE_DOCS_SINGLE_DOC, // Cannot split single doc even if too large
+        TOO_LARGE_DOCS_SINGLE_DOC,   // Cannot split single doc even if too large
         TOO_LARGE_DOCS_ACTUALLY_NOT, // Other copy is too large, not this one
         // Need to split to X bits to get in line with other copy or distr.
-        SPLIT_TOO_LITTLE_SINGLE_SPLIT, // Split all to one target
-        SPLIT_TOO_LITTLE_JUST_RIGHT, // Just manage to split in two at that lvl
+        SPLIT_TOO_LITTLE_SINGLE_SPLIT,         // Split all to one target
+        SPLIT_TOO_LITTLE_JUST_RIGHT,           // Just manage to split in two at that lvl
         SPLIT_TOO_LITTLE_SPLIT_TOWARDS_ENOUGH, // Has to split shorter
         SPLIT_INCONSISTENT_1_DOC,
         SPLIT_INCONSISTENT_ALL_DOCS_SAME_GID,
@@ -85,108 +86,106 @@ TEST_F(PersistenceThreadSplitTest, inconsistent_split_has_one_bit_fallback_when_
     doTest(SPLIT_INCONSISTENT_ALL_DOCS_SAME_GID);
 }
 
-void
-PersistenceThreadSplitTest::doTest(SplitCase splitCase)
-{
-    uint32_t maxCount = 4;
-    uint32_t maxSize = 1000 * 1000;
-    uint32_t maxBits = 58;
-    uint32_t minBits = 1;
-    uint32_t docCount = 8;
-    uint32_t docSize = 100 * 1000;
-    uint32_t currentSplitLevel = 1;
-    uint32_t splitLevelToDivide = 2;
-    uint32_t resultSplitLevel = 2;
-    size_t resultBuckets = 2;
-    bool simulateGidCollision = false;
+void PersistenceThreadSplitTest::doTest(SplitCase splitCase) {
+    uint32_t        maxCount = 4;
+    uint32_t        maxSize = 1000 * 1000;
+    uint32_t        maxBits = 58;
+    uint32_t        minBits = 1;
+    uint32_t        docCount = 8;
+    uint32_t        docSize = 100 * 1000;
+    uint32_t        currentSplitLevel = 1;
+    uint32_t        splitLevelToDivide = 2;
+    uint32_t        resultSplitLevel = 2;
+    size_t          resultBuckets = 2;
+    bool            simulateGidCollision = false;
     api::ReturnCode error(api::ReturnCode::OK);
     switch (splitCase) {
-        case TOO_MANY_DOCS_SPLIT_ONCE:
-            break; // Default. Do nothing
-        case TOO_MANY_DOCS_SPLIT_MULTIPLE_BITS:
-            splitLevelToDivide = 3;
-            resultSplitLevel = 3;
-            break;
-        case TOO_MANY_DOCS_ACTUALLY_NOT:
-            splitLevelToDivide = 3;
-            docCount = 2;
-            resultBuckets = 1;
-            break;
-        case TOO_LARGE_DOCS_SPLIT_ONCE:
-            maxCount = 100;
-            docSize = 400 * 1000;
-            break;
-        case TOO_LARGE_DOCS_SPLIT_MULTIPLE_BITS:
-            maxCount = 100;
-            docSize = 400 * 1000;
-            splitLevelToDivide = 3;
-            resultSplitLevel = 3;
-            break;
-        case TOO_LARGE_DOCS_SINGLE_DOC:
-            // It is possible for bucket to be inconsistent being big enough
-            // to split in other copy but this copy has only 1 too big doc.
-            docCount = 1;
-            docSize = 3000 * 1000;
-            splitLevelToDivide = 3;
-            resultBuckets = 1;
-            break;
-        case TOO_LARGE_DOCS_ACTUALLY_NOT:
-            maxCount = 100;
-            splitLevelToDivide = 3;
-            resultSplitLevel = 2;
-            resultBuckets = 1;
-            break;
-        case SPLIT_TOO_LITTLE_SINGLE_SPLIT:
-            maxBits = 5;
-            maxSize = 0;
-            maxCount = 0;
-            splitLevelToDivide = 16;
-            resultSplitLevel = 5;
-            resultBuckets = 1;
-            break;
-        case SPLIT_TOO_LITTLE_JUST_RIGHT:
-            maxBits = 5;
-            maxSize = 0;
-            maxCount = 0;
-            splitLevelToDivide = 5;
-            resultSplitLevel = 5;
-            break;
-        case SPLIT_TOO_LITTLE_SPLIT_TOWARDS_ENOUGH:
-            maxBits = 8;
-            maxSize = 0;
-            maxCount = 0;
-            splitLevelToDivide = 5;
-            resultSplitLevel = 5;
-            break;
-        case SPLIT_INCONSISTENT_1_DOC:
-            docCount = 1;
-            maxSize = 0;
-            maxCount = 0;
-            currentSplitLevel = 16;
-            resultSplitLevel = 17;
-            resultBuckets = 1;
-            break;
-        case SPLIT_INCONSISTENT_ALL_DOCS_SAME_GID:
-            docCount = 2;
-            maxSize = 0;
-            maxCount = 0;
-            currentSplitLevel = 16;
-            resultSplitLevel = 17;
-            resultBuckets = 1;
-            simulateGidCollision = true;
-            break;
-        default:
-            assert(false);
+    case TOO_MANY_DOCS_SPLIT_ONCE:
+        break; // Default. Do nothing
+    case TOO_MANY_DOCS_SPLIT_MULTIPLE_BITS:
+        splitLevelToDivide = 3;
+        resultSplitLevel = 3;
+        break;
+    case TOO_MANY_DOCS_ACTUALLY_NOT:
+        splitLevelToDivide = 3;
+        docCount = 2;
+        resultBuckets = 1;
+        break;
+    case TOO_LARGE_DOCS_SPLIT_ONCE:
+        maxCount = 100;
+        docSize = 400 * 1000;
+        break;
+    case TOO_LARGE_DOCS_SPLIT_MULTIPLE_BITS:
+        maxCount = 100;
+        docSize = 400 * 1000;
+        splitLevelToDivide = 3;
+        resultSplitLevel = 3;
+        break;
+    case TOO_LARGE_DOCS_SINGLE_DOC:
+        // It is possible for bucket to be inconsistent being big enough
+        // to split in other copy but this copy has only 1 too big doc.
+        docCount = 1;
+        docSize = 3000 * 1000;
+        splitLevelToDivide = 3;
+        resultBuckets = 1;
+        break;
+    case TOO_LARGE_DOCS_ACTUALLY_NOT:
+        maxCount = 100;
+        splitLevelToDivide = 3;
+        resultSplitLevel = 2;
+        resultBuckets = 1;
+        break;
+    case SPLIT_TOO_LITTLE_SINGLE_SPLIT:
+        maxBits = 5;
+        maxSize = 0;
+        maxCount = 0;
+        splitLevelToDivide = 16;
+        resultSplitLevel = 5;
+        resultBuckets = 1;
+        break;
+    case SPLIT_TOO_LITTLE_JUST_RIGHT:
+        maxBits = 5;
+        maxSize = 0;
+        maxCount = 0;
+        splitLevelToDivide = 5;
+        resultSplitLevel = 5;
+        break;
+    case SPLIT_TOO_LITTLE_SPLIT_TOWARDS_ENOUGH:
+        maxBits = 8;
+        maxSize = 0;
+        maxCount = 0;
+        splitLevelToDivide = 5;
+        resultSplitLevel = 5;
+        break;
+    case SPLIT_INCONSISTENT_1_DOC:
+        docCount = 1;
+        maxSize = 0;
+        maxCount = 0;
+        currentSplitLevel = 16;
+        resultSplitLevel = 17;
+        resultBuckets = 1;
+        break;
+    case SPLIT_INCONSISTENT_ALL_DOCS_SAME_GID:
+        docCount = 2;
+        maxSize = 0;
+        maxCount = 0;
+        currentSplitLevel = 16;
+        resultSplitLevel = 17;
+        resultBuckets = 1;
+        simulateGidCollision = true;
+        break;
+    default:
+        assert(false);
     }
 
-    uint64_t location = 0;
-    uint64_t splitMask = 1ULL << (splitLevelToDivide - 1);
-    spi::Bucket bucket(makeSpiBucket(document::BucketId(currentSplitLevel, 1)));
+    uint64_t                  location = 0;
+    uint64_t                  splitMask = 1ULL << (splitLevelToDivide - 1);
+    spi::Bucket               bucket(makeSpiBucket(document::BucketId(currentSplitLevel, 1)));
     spi::PersistenceProvider& spi(getPersistenceProvider());
     spi.deleteBucket(bucket);
     spi.createBucket(bucket);
     document::TestDocMan testDocMan;
-    for (uint32_t i=0; i<docCount; ++i) {
+    for (uint32_t i = 0; i < docCount; ++i) {
         uint64_t docloc;
         uint32_t seed;
         if (!simulateGidCollision) {
@@ -200,31 +199,31 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
         spi.put(bucket, spi::Timestamp(1000 + i), std::move(doc));
     }
 
-    getNode().getStateUpdater().setClusterState(
-            std::make_shared<lib::ClusterState>("distributor:1 storage:1"));
+    getNode().getStateUpdater().setClusterState(std::make_shared<lib::ClusterState>("distributor:1 storage:1"));
     document::Bucket docBucket = makeDocumentBucket(document::BucketId(currentSplitLevel, 1));
-    auto cmd = std::make_shared<api::SplitBucketCommand>(docBucket);
+    auto             cmd = std::make_shared<api::SplitBucketCommand>(docBucket);
     cmd->setMaxSplitBits(maxBits);
     cmd->setMinSplitBits(minBits);
     cmd->setMinByteSize(maxSize);
     cmd->setMinDocCount(maxCount);
     cmd->setSourceIndex(0);
-    MessageTracker::UP result = _persistenceHandler->splitjoinHandler().handleSplitBucket(*cmd, createTracker(cmd, docBucket));
+    MessageTracker::UP result =
+        _persistenceHandler->splitjoinHandler().handleSplitBucket(*cmd, createTracker(cmd, docBucket));
     api::ReturnCode code(result->getResult());
     EXPECT_EQ(error, code);
     if (!code.success()) {
         return;
     }
-    auto& reply = dynamic_cast<api::SplitBucketReply&>(result->getReply());
+    auto&                 reply = dynamic_cast<api::SplitBucketReply&>(result->getReply());
     std::set<std::string> expected;
-    for (uint32_t i=0; i<resultBuckets; ++i) {
+    for (uint32_t i = 0; i < resultBuckets; ++i) {
         document::BucketId b(resultSplitLevel, location | (i == 0 ? 0 : splitMask));
         std::ostringstream ost;
         ost << b << " - " << b.getUsedBits();
         expected.insert(ost.str());
     }
     std::set<std::string> actual;
-    for (const auto & info : reply.getSplitInfo()) {
+    for (const auto& info : reply.getSplitInfo()) {
         std::ostringstream ost;
         document::BucketId b(info.first);
         ost << b << " - " << b.getUsedBits();
@@ -233,5 +232,4 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
     EXPECT_EQ(expected, actual);
 }
 
-} // storage
-
+} // namespace storage

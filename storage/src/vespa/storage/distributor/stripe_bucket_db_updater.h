@@ -9,12 +9,14 @@
 #include "outdated_nodes_map.h"
 #include "pendingclusterstate.h"
 #include "potential_data_loss_report.h"
+
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/storage/common/message_guard.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 #include <vespa/vdslib/state/clusterstate.h>
+
 #include <atomic>
 #include <list>
 #include <mutex>
@@ -22,23 +24,18 @@
 namespace vespalib::xml {
 class XmlOutputStream;
 class XmlAttribute;
-}
+} // namespace vespalib::xml
 
 namespace storage::distributor {
 
 class DistributorStripeInterface;
 class BucketSpaceDistributionContext;
 
-class StripeBucketDBUpdater final
-    : public framework::StatusReporter,
-      public api::MessageHandler
-{
+class StripeBucketDBUpdater final : public framework::StatusReporter, public api::MessageHandler {
 public:
     using OutdatedNodes = dbtransition::OutdatedNodes;
-    StripeBucketDBUpdater(const DistributorNodeContext& node_ctx,
-                          DistributorStripeOperationContext& op_ctx,
-                          DistributorStripeInterface& owner,
-                          DistributorMessageSender& sender);
+    StripeBucketDBUpdater(const DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx,
+                          DistributorStripeInterface& owner, DistributorMessageSender& sender);
     ~StripeBucketDBUpdater() override;
 
     void flush();
@@ -46,7 +43,7 @@ public:
     void recheckBucketInfo(uint32_t nodeIdx, const document::Bucket& bucket);
     void handle_activated_cluster_state_bundle();
 
-    bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
+    bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& repl) override;
     bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
     bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&) override;
     void resendDelayedMessages();
@@ -67,17 +64,16 @@ public:
     void set_stale_reads_enabled(bool enabled) noexcept {
         _stale_reads_enabled.store(enabled, std::memory_order_relaxed);
     }
-    bool stale_reads_enabled() const noexcept {
-        return _stale_reads_enabled.load(std::memory_order_relaxed);
-    }
+    bool stale_reads_enabled() const noexcept { return _stale_reads_enabled.load(std::memory_order_relaxed); }
 
     OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const;
 
     void reset_all_last_gc_timestamps_to_current_time();
+
 private:
     class MergeReplyGuard {
     public:
-        MergeReplyGuard(DistributorStripeInterface& distributor_interface,
+        MergeReplyGuard(DistributorStripeInterface&                   distributor_interface,
                         const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
             : _distributor_interface(distributor_interface), _reply(reply) {}
 
@@ -86,8 +82,9 @@ private:
         // Used when we're flushing and simply want to drop the reply rather
         // than send it down
         void resetReply() { _reply.reset(); }
+
     private:
-        DistributorStripeInterface& _distributor_interface;
+        DistributorStripeInterface&            _distributor_interface;
         std::shared_ptr<api::MergeBucketReply> _reply;
     };
 
@@ -96,31 +93,24 @@ private:
 
         BucketRequest(uint16_t t, uint64_t currentTime, const document::Bucket& b,
                       const std::shared_ptr<MergeReplyGuard>& guard) noexcept
-            : targetNode(t),
-              bucket(b),
-              timestamp(currentTime),
-              _mergeReplyGuard(guard),
-              cancelled(false)
-        {}
+            : targetNode(t), bucket(b), timestamp(currentTime), _mergeReplyGuard(guard), cancelled(false) {}
 
-        void print_xml_tag(vespalib::xml::XmlOutputStream &xos, const vespalib::xml::XmlAttribute &timestampAttribute) const;
-        uint16_t targetNode;
-        document::Bucket bucket;
-        uint64_t timestamp;
+        void print_xml_tag(vespalib::xml::XmlOutputStream&    xos,
+                           const vespalib::xml::XmlAttribute& timestampAttribute) const;
+        uint16_t                         targetNode;
+        document::Bucket                 bucket;
+        uint64_t                         timestamp;
         std::shared_ptr<MergeReplyGuard> _mergeReplyGuard;
-        bool cancelled;
+        bool                             cancelled;
     };
 
     struct EnqueuedBucketRecheck {
-        uint16_t node;
+        uint16_t         node;
         document::Bucket bucket;
 
         EnqueuedBucketRecheck() : node(0), bucket() {}
 
-        EnqueuedBucketRecheck(uint16_t _node, const document::Bucket& _bucket)
-          : node(_node),
-            bucket(_bucket)
-        {}
+        EnqueuedBucketRecheck(uint16_t _node, const document::Bucket& _bucket) : node(_node), bucket(_bucket) {}
 
         bool operator<(const EnqueuedBucketRecheck& o) const {
             if (node != o.node) {
@@ -128,9 +118,7 @@ private:
             }
             return bucket < o.bucket;
         }
-        bool operator==(const EnqueuedBucketRecheck& o) const {
-            return node == o.node && bucket == o.bucket;
-        }
+        bool operator==(const EnqueuedBucketRecheck& o) const { return node == o.node && bucket == o.bucket; }
     };
 
     friend class DistributorStripeTestUtil;
@@ -146,9 +134,9 @@ private:
     bool hasPendingClusterState() const;
     bool processSingleBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
     void handleSingleBucketInfoFailure(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-                                       const BucketRequest& req);
+                                       const BucketRequest&                                req);
     void mergeBucketInfoWithDatabase(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-                                     const BucketRequest& req);
+                                     const BucketRequest&                                req);
     static void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                               uint16_t targetNode, BucketListMerger::BucketList& newList);
     void sendRequestBucketInfo(uint16_t node, const document::Bucket& bucket,
@@ -175,15 +163,12 @@ private:
     void update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state);
     void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state);
 
-    PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace bucket_space,
+    PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace    bucket_space,
                                                        const lib::ClusterState& new_state,
-                                                       bool is_distribution_change);
-    void merge_entries_into_db(document::BucketSpace bucket_space,
-                               api::Timestamp gathered_at_timestamp,
-                               const lib::Distribution& distribution,
-                               const lib::ClusterState& new_state,
-                               const char* storage_up_states,
-                               const OutdatedNodes & outdated_nodes,
+                                                       bool                     is_distribution_change);
+    void merge_entries_into_db(document::BucketSpace bucket_space, api::Timestamp gathered_at_timestamp,
+                               const lib::Distribution& distribution, const lib::ClusterState& new_state,
+                               const char* storage_up_states, const OutdatedNodes& outdated_nodes,
                                const std::vector<dbtransition::Entry>& entries);
 
     void enqueueRecheckUntilPendingStateEnabled(uint16_t node, const document::Bucket&);
@@ -194,22 +179,18 @@ private:
     */
     class MergingNodeRemover : public BucketDatabase::MergingProcessor {
     public:
-        MergingNodeRemover(const lib::ClusterState& s,
-                           uint16_t localIndex,
-                           const lib::Distribution& distribution,
-                           const char* upStates,
-                           bool track_non_owned_entries);
+        MergingNodeRemover(const lib::ClusterState& s, uint16_t localIndex, const lib::Distribution& distribution,
+                           const char* upStates, bool track_non_owned_entries);
         ~MergingNodeRemover() override;
 
         Result merge(BucketDatabase::Merger&) override;
-        static void logRemove(const document::BucketId& bucketId, const char* msg) ;
+        static void logRemove(const document::BucketId& bucketId, const char* msg);
         [[nodiscard]] bool distributorOwnsBucket(const document::BucketId&) const;
 
-        const std::vector<BucketDatabase::Entry>& getNonOwnedEntries() const noexcept {
-            return _nonOwnedBuckets;
-        }
+        const std::vector<BucketDatabase::Entry>& getNonOwnedEntries() const noexcept { return _nonOwnedBuckets; }
         [[nodiscard]] size_t removed_buckets() const noexcept { return _removed_buckets; }
         [[nodiscard]] size_t removed_documents() const noexcept { return _removed_documents; }
+
     private:
         void setCopiesInEntry(BucketDatabase::Entry& e, const std::vector<BucketCopy>& copies) const;
 
@@ -228,11 +209,10 @@ private:
         bool                               _track_non_owned_entries;
     };
 
-    using DistributionContexts = std::unordered_map<document::BucketSpace,
-                                                    std::shared_ptr<BucketSpaceDistributionContext>,
-                                                    document::BucketSpace::hash>;
-    using DbGuards = std::unordered_map<document::BucketSpace,
-                                        std::shared_ptr<BucketDatabase::ReadGuard>,
+    using DistributionContexts =
+        std::unordered_map<document::BucketSpace, std::shared_ptr<BucketSpaceDistributionContext>,
+                           document::BucketSpace::hash>;
+    using DbGuards = std::unordered_map<document::BucketSpace, std::shared_ptr<BucketDatabase::ReadGuard>,
                                         document::BucketSpace::hash>;
     using DelayedRequestsQueue = std::deque<std::pair<vespalib::steady_time, BucketRequest>>;
 
@@ -249,4 +229,4 @@ private:
     mutable std::mutex                 _distribution_context_mutex;
 };
 
-}
+} // namespace storage::distributor

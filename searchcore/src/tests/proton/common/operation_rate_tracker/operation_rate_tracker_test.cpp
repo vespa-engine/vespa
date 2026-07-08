@@ -9,14 +9,12 @@ LOG_SETUP("operation_rate_tracker_test");
 
 using namespace proton;
 
-TEST(OperationRateTrackerTest, time_budget_per_op_is_inverse_of_rate_threshold)
-{
+TEST(OperationRateTrackerTest, time_budget_per_op_is_inverse_of_rate_threshold) {
     EXPECT_EQ(vespalib::from_s(0.25), OperationRateTracker(4).get_time_budget_per_op());
     EXPECT_EQ(vespalib::from_s(2.0), OperationRateTracker(0.5).get_time_budget_per_op());
 }
 
-TEST(OperationRateTrackerTest, time_budget_window_is_minimum_1_sec)
-{
+TEST(OperationRateTrackerTest, time_budget_window_is_minimum_1_sec) {
     EXPECT_EQ(vespalib::from_s(1.0), OperationRateTracker(4).get_time_budget_window());
     EXPECT_EQ(vespalib::from_s(2.0), OperationRateTracker(0.5).get_time_budget_window());
 }
@@ -24,23 +22,16 @@ TEST(OperationRateTrackerTest, time_budget_window_is_minimum_1_sec)
 class Simulator {
 public:
     vespalib::steady_time now;
-    OperationRateTracker ort;
-    Simulator(double rate_threshold)
-        : now(vespalib::steady_clock::now()),
-          ort(rate_threshold)
-    {
-    }
+    OperationRateTracker  ort;
+    Simulator(double rate_threshold) : now(vespalib::steady_clock::now()), ort(rate_threshold) {}
     void tick(double real_rate) {
         now = now + vespalib::from_s(1.0 / real_rate);
         ort.observe(now);
     }
-    bool above_threshold(double now_delta = 0) {
-        return ort.above_threshold(now + vespalib::from_s(now_delta));
-    }
+    bool above_threshold(double now_delta = 0) { return ort.above_threshold(now + vespalib::from_s(now_delta)); }
 };
 
-TEST(OperationRateTrackerTest, tracks_whether_operation_rate_is_below_or_above_threshold)
-{
+TEST(OperationRateTrackerTest, tracks_whether_operation_rate_is_below_or_above_threshold) {
     Simulator sim(2);
 
     // Simulate an actual rate of 4 ops / sec

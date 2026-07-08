@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_ext_attribute.h"
+
 #include "serialized_tensor_ref.h"
 #include "vector_bundle.h"
+
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
@@ -23,15 +25,13 @@ namespace search::tensor {
 
 namespace {
 
-std::unique_ptr<Value>
-create_empty_tensor(const ValueType& type)
-{
-    const auto &factory = FastValueBuilderFactory::get();
-    TensorSpec empty_spec(type.to_spec());
+std::unique_ptr<Value> create_empty_tensor(const ValueType& type) {
+    const auto& factory = FastValueBuilderFactory::get();
+    TensorSpec  empty_spec(type.to_spec());
     return vespalib::eval::value_from_spec(empty_spec, factory);
 }
 
-}
+} // namespace
 
 TensorExtAttribute::TensorExtAttribute(const std::string& name, const Config& cfg)
     : NotImplementedAttribute(name, cfg),
@@ -40,32 +40,23 @@ TensorExtAttribute::TensorExtAttribute(const std::string& name, const Config& cf
       _distance_function_factory(make_distance_function_factory(cfg.distance_metric(), cfg.tensorType().cell_type())),
       _subspace_type(cfg.tensorType()),
       _empty(_subspace_type),
-      _empty_tensor(create_empty_tensor(cfg.tensorType()))
-{
+      _empty_tensor(create_empty_tensor(cfg.tensorType())) {
 }
 
 TensorExtAttribute::~TensorExtAttribute() = default;
 
-const ITensorAttribute*
-TensorExtAttribute::asTensorAttribute() const
-{
+const ITensorAttribute* TensorExtAttribute::asTensorAttribute() const {
     return this;
 }
 
-void
-TensorExtAttribute::onCommit()
-{
+void TensorExtAttribute::onCommit() {
     LOG_ABORT("should not be reached");
 }
 
-void
-TensorExtAttribute::onUpdateStat(CommitParam::UpdateStats)
-{
+void TensorExtAttribute::onUpdateStat(CommitParam::UpdateStats) {
 }
 
-bool
-TensorExtAttribute::addDoc(DocId& docId)
-{
+bool TensorExtAttribute::addDoc(DocId& docId) {
     docId = _data.size();
     _data.emplace_back(nullptr);
     incNumDocs();
@@ -73,29 +64,21 @@ TensorExtAttribute::addDoc(DocId& docId)
     return true;
 }
 
-bool
-TensorExtAttribute::add(const vespalib::eval::Value& v, int32_t)
-{
+bool TensorExtAttribute::add(const vespalib::eval::Value& v, int32_t) {
     _data.back() = &v;
     return true;
 }
 
-IExtendAttribute*
-TensorExtAttribute::getExtendInterface()
-{
+IExtendAttribute* TensorExtAttribute::getExtendInterface() {
     return this;
 }
 
-TypedCells
-TensorExtAttribute::get_vector(uint32_t docid, uint32_t subspace) const noexcept
-{
+TypedCells TensorExtAttribute::get_vector(uint32_t docid, uint32_t subspace) const noexcept {
     auto vectors = get_vectors(docid);
     return (subspace < vectors.subspaces()) ? vectors.cells(subspace) : _empty.cells();
 }
 
-VectorBundle
-TensorExtAttribute::get_vectors(uint32_t docid) const noexcept
-{
+VectorBundle TensorExtAttribute::get_vectors(uint32_t docid) const noexcept {
     auto tensor = _data[docid];
     if (tensor == nullptr) {
         return {};
@@ -103,9 +86,7 @@ TensorExtAttribute::get_vectors(uint32_t docid) const noexcept
     return {tensor->cells().data, static_cast<uint32_t>(tensor->index().size()), _subspace_type};
 }
 
-std::unique_ptr<Value>
-TensorExtAttribute::getTensor(uint32_t docid) const
-{
+std::unique_ptr<Value> TensorExtAttribute::getTensor(uint32_t docid) const {
     auto tensor = _data[docid];
     if (tensor == nullptr) {
         return {};
@@ -113,71 +94,49 @@ TensorExtAttribute::getTensor(uint32_t docid) const
     return FastValueBuilderFactory::get().copy(*tensor);
 }
 
-std::unique_ptr<Value>
-TensorExtAttribute::getEmptyTensor() const
-{
+std::unique_ptr<Value> TensorExtAttribute::getEmptyTensor() const {
     return FastValueBuilderFactory::get().copy(*_empty_tensor);
 }
 
-TypedCells
-TensorExtAttribute::extract_cells_ref(uint32_t docid) const
-{
+TypedCells TensorExtAttribute::extract_cells_ref(uint32_t docid) const {
     return get_vector(docid, 0);
 }
 
-const vespalib::eval::Value&
-TensorExtAttribute::get_tensor_ref(uint32_t docid) const
-{
+const vespalib::eval::Value& TensorExtAttribute::get_tensor_ref(uint32_t docid) const {
     auto tensor = _data[docid];
     return (tensor == nullptr) ? *_empty_tensor : *tensor;
 }
 
-SerializedTensorRef
-TensorExtAttribute::get_serialized_tensor_ref(uint32_t) const
-{
+SerializedTensorRef TensorExtAttribute::get_serialized_tensor_ref(uint32_t) const {
     notImplemented();
 }
 
-bool
-TensorExtAttribute::supports_extract_cells_ref() const
-{
+bool TensorExtAttribute::supports_extract_cells_ref() const {
     return getConfig().tensorType().is_dense();
 }
 
-bool
-TensorExtAttribute::supports_get_tensor_ref() const
-{
+bool TensorExtAttribute::supports_get_tensor_ref() const {
     return true;
 }
 
-bool
-TensorExtAttribute::supports_get_serialized_tensor_ref() const
-{
+bool TensorExtAttribute::supports_get_serialized_tensor_ref() const {
     return false;
 }
 
-const ValueType&
-TensorExtAttribute::getTensorType() const
-{
+const ValueType& TensorExtAttribute::getTensorType() const {
     return getConfig().tensorType();
 }
 
-TensorExtAttribute::DistanceMetric
-TensorExtAttribute::distance_metric() const
-{
+TensorExtAttribute::DistanceMetric TensorExtAttribute::distance_metric() const {
     return getConfig().distance_metric();
 }
 
-uint32_t
-TensorExtAttribute::get_num_docs() const
-{
+uint32_t TensorExtAttribute::get_num_docs() const {
     return _data.size();
 }
 
-std::unique_ptr<vespalib::StateExplorer>
-TensorExtAttribute::make_state_explorer() const
-{
+std::unique_ptr<vespalib::StateExplorer> TensorExtAttribute::make_state_explorer() const {
     return {};
 }
 
-}
+} // namespace search::tensor

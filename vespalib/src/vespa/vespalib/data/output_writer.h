@@ -13,19 +13,17 @@ struct Output;
  * Thin layer on top of the Output interface that supplies us with an
  * inlined API for efficient buffer handling.
  **/
-class OutputWriter
-{
+class OutputWriter {
 private:
-    Output        &_output;
+    Output&        _output;
     WritableMemory _data;
     size_t         _pos;
     size_t         _chunk_size;
 
-    char *reserve_slow(size_t bytes);
+    char* reserve_slow(size_t bytes);
 
 public:
-    OutputWriter(Output &output, size_t chunk_size)
-        : _output(output), _data(), _pos(0), _chunk_size(chunk_size) {}
+    OutputWriter(Output& output, size_t chunk_size) : _output(output), _data(), _pos(0), _chunk_size(chunk_size) {}
     ~OutputWriter();
 
     /**
@@ -38,7 +36,7 @@ public:
      * @param the number of bytes to reserve
      * @return pointer to reserved bytes
      **/
-    char *reserve(size_t bytes) {
+    char* reserve(size_t bytes) {
         if (__builtin_expect((_pos + bytes) <= _data.size, true)) {
             return (_data.data + _pos);
         }
@@ -53,26 +51,24 @@ public:
      *
      * @param bytes the number of bytes to commit
      **/
-    void commit(size_t bytes) {
-        _pos += bytes;
-    }
+    void commit(size_t bytes) { _pos += bytes; }
 
     void write(char value) {
         reserve(1)[0] = value;
         commit(1);
     }
 
-    void write(const char *data, size_t size) {
+    void write(const char* data, size_t size) {
         memcpy(reserve(size), data, size);
         commit(size);
     }
 
-    void write(const Memory &memory) {
+    void write(const Memory& memory) {
         memcpy(reserve(memory.size), memory.data, memory.size);
         commit(memory.size);
     }
 
-    void printf(const char *fmt, ...) __attribute__ ((format (printf,2,3)));
+    void printf(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
 };
 
 } // namespace vespalib

@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <functional>
-#include <algorithm>
 
 namespace vespalib {
 
@@ -39,17 +39,15 @@ namespace vespalib {
  * double min_time_s = BenchmarkTimer::benchmark([](){... do stuff ...}, 1.0);
  * </pre>
  **/
-class BenchmarkTimer
-{
+class BenchmarkTimer {
 private:
-    using clock = std::conditional<std::chrono::high_resolution_clock::is_steady,
-                                   std::chrono::high_resolution_clock,
+    using clock = std::conditional<std::chrono::high_resolution_clock::is_steady, std::chrono::high_resolution_clock,
                                    std::chrono::steady_clock>::type;
 
-    using seconds = std::chrono::duration<double, std::ratio<1,1>>;
+    using seconds = std::chrono::duration<double, std::ratio<1, 1>>;
 
-    double _budget;
-    double _min_time;
+    double            _budget;
+    double            _min_time;
     clock::time_point _budget_start;
     clock::time_point _sample_start;
 
@@ -67,7 +65,7 @@ private:
 
     struct Caller : Loop {
         std::function<void()> function;
-        template <typename Callable> explicit Caller(Callable &&call_me) : function(call_me) {}
+        template <typename Callable> explicit Caller(Callable&& call_me) : function(call_me) {}
         void perform(size_t cnt) const override {
             for (size_t j = 0; j < cnt; ++j) {
                 function();
@@ -75,7 +73,7 @@ private:
         }
     };
 
-    static size_t calibrate(const Loop &loop) {
+    static size_t calibrate(const Loop& loop) {
         for (size_t loop_cnt = 1; true; loop_cnt *= 2) {
             vespalib::BenchmarkTimer timer(0.0);
             for (size_t i = 0; i < 3; ++i) {
@@ -89,7 +87,7 @@ private:
         }
     }
 
-    static double do_benchmark(const Loop &loop, size_t loop_cnt, double budget) {
+    static double do_benchmark(const Loop& loop, size_t loop_cnt, double budget) {
         vespalib::BenchmarkTimer timer(budget);
         while (timer.has_budget()) {
             timer.before();
@@ -101,14 +99,9 @@ private:
 
 public:
     explicit BenchmarkTimer(double budget)
-        : _budget(budget), _min_time(-1.0),
-          _budget_start(clock::now()), _sample_start(clock::now()) {}
-    bool has_budget() {
-        return (_min_time < 0.0 || elapsed(_budget_start) < _budget);
-    }
-    void before() {
-        _sample_start = clock::now();
-    }
+        : _budget(budget), _min_time(-1.0), _budget_start(clock::now()), _sample_start(clock::now()) {}
+    bool has_budget() { return (_min_time < 0.0 || elapsed(_budget_start) < _budget); }
+    void before() { _sample_start = clock::now(); }
     void after() {
         double new_time = elapsed(_sample_start);
         _min_time = (_min_time < 0.0 || new_time < _min_time) ? new_time : _min_time;
@@ -116,19 +109,18 @@ public:
     double min_time() const { return _min_time; }
 
     template <typename Callable1, typename Callable2>
-    static double benchmark(Callable1 &&function, Callable2 &&baseline, size_t loop_cnt, double budget) {
+    static double benchmark(Callable1&& function, Callable2&& baseline, size_t loop_cnt, double budget) {
         double overhead = do_benchmark(Caller(baseline), loop_cnt, budget * 0.2);
         double actual_time = do_benchmark(Caller(function), loop_cnt, budget * 0.8);
         return std::max(0.0, (actual_time - overhead));
     }
 
     template <typename Callable1, typename Callable2>
-    static double benchmark(Callable1 &&function, Callable2 &&baseline, double budget) {
+    static double benchmark(Callable1&& function, Callable2&& baseline, double budget) {
         return benchmark(function, baseline, calibrate(Caller(function)), budget);
     }
 
-    template <typename Callable>
-    static double benchmark(Callable &&function, double budget) {
+    template <typename Callable> static double benchmark(Callable&& function, double budget) {
         return benchmark(function, do_nothing, calibrate(Caller(function)), budget);
     }
 };

@@ -3,27 +3,26 @@
 #include <vespa/searchlib/tensor/hnsw_multi_best_neighbors.h>
 #include <vespa/searchlib/tensor/hnsw_single_best_neighbors.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <ostream>
 
-using vespalib::datastore::EntryRef;
 using search::tensor::HnswMultiBestNeighbors;
 using search::tensor::HnswSingleBestNeighbors;
 using search::tensor::NearestNeighborIndex;
+using vespalib::datastore::EntryRef;
 
 using Neighbor = NearestNeighborIndex::Neighbor;
 
-namespace search::tensor
-{
+namespace search::tensor {
 
 std::ostream& operator<<(std::ostream& os, const Neighbor& neighbor) {
     os << "{ docid=" << neighbor.docid << ", distance=" << neighbor.distance << "}";
     return os;
 }
 
-}
+} // namespace search::tensor
 
-struct DocidThenDistanceOrder
-{
+struct DocidThenDistanceOrder {
     bool operator()(const Neighbor& lhs, const Neighbor& rhs) const {
         if (lhs.docid != rhs.docid) {
             return lhs.docid < rhs.docid;
@@ -32,16 +31,10 @@ struct DocidThenDistanceOrder
     }
 };
 
-template <typename BestNeighbors>
-class HnswBestNeighborsTest : public testing::Test {
+template <typename BestNeighbors> class HnswBestNeighborsTest : public testing::Test {
 protected:
     BestNeighbors _neighbors;
-    HnswBestNeighborsTest()
-        : testing::Test(),
-          _neighbors()
-    {
-        populate();
-    }
+    HnswBestNeighborsTest() : testing::Test(), _neighbors() { populate(); }
     ~HnswBestNeighborsTest() override;
 
     void add(uint32_t nodeid, uint32_t docid, double distance) {
@@ -65,23 +58,20 @@ protected:
     }
 };
 
-template <typename BestNeighbors>
-HnswBestNeighborsTest<BestNeighbors>::~HnswBestNeighborsTest() = default;
+template <typename BestNeighbors> HnswBestNeighborsTest<BestNeighbors>::~HnswBestNeighborsTest() = default;
 
 using HnswBestNeighborsTypedTestTypes = testing::Types<HnswSingleBestNeighbors, HnswMultiBestNeighbors>;
 
 TYPED_TEST_SUITE(HnswBestNeighborsTest, HnswBestNeighborsTypedTestTypes);
 
-TYPED_TEST(HnswBestNeighborsTest, k_limit_is_enforced)
-{
+TYPED_TEST(HnswBestNeighborsTest, k_limit_is_enforced) {
     this->assert_neighbors({}, 0, 40.0);
     this->assert_neighbors({{1, 1.0}}, 1, 40.0);
     this->assert_neighbors({{1, 1.0}, {2, 5.0}}, 2, 40.0);
     this->assert_neighbors({{1, 1.0}, {2, 5.0}, {3, 7.0}}, 3, 40.0);
 }
 
-TYPED_TEST(HnswBestNeighborsTest, distance_limit_is_enforced)
-{
+TYPED_TEST(HnswBestNeighborsTest, distance_limit_is_enforced) {
     this->assert_neighbors({}, 40, 0.5);
     this->assert_neighbors({{1, 1.0}}, 40, 1.0);
     this->assert_neighbors({{1, 1.0}, {2, 5.0}}, 40, 5.0);
@@ -90,16 +80,14 @@ TYPED_TEST(HnswBestNeighborsTest, distance_limit_is_enforced)
 
 using HnswSingleBestNeighborsTest = HnswBestNeighborsTest<HnswSingleBestNeighbors>;
 
-TEST_F(HnswSingleBestNeighborsTest, duplicate_docids_are_not_elimiated)
-{
+TEST_F(HnswSingleBestNeighborsTest, duplicate_docids_are_not_eliminated) {
     EXPECT_EQ(4, size());
     assert_neighbors({{1, 1.0}, {2, 5.0}, {2, 10.0}, {3, 7.0}}, 40, 40.0);
 }
 
 using HnswMultiBestNeighborsTest = HnswBestNeighborsTest<HnswMultiBestNeighbors>;
 
-TEST_F(HnswMultiBestNeighborsTest, duplicate_docids_are_eliminated)
-{
+TEST_F(HnswMultiBestNeighborsTest, duplicate_docids_are_eliminated) {
     EXPECT_EQ(3, size());
     assert_neighbors({{1, 1.0}, {2, 5.0}, {3, 7.0}}, 40, 40.0);
 }

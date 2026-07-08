@@ -5,6 +5,7 @@
 #include "default_nearest_neighbor_index_factory.h"
 #include "dense_tensor_store.h"
 #include "tensor_attribute.h"
+
 #include <memory>
 
 namespace search::tensor {
@@ -28,6 +29,8 @@ public:
     // Implements DocVectorAccess
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override;
     VectorBundle get_vectors(uint32_t docid) const noexcept override;
+
+    void prefetch_vector(uint32_t docid) const noexcept override;
 };
 
-}
+} // namespace search::tensor

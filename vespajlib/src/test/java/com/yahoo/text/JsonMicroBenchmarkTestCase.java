@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.yahoo.text.Utf8;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -484,7 +485,7 @@ public class JsonMicroBenchmarkTestCase {
 
     @SuppressWarnings("unused")
     private void dumpToFile(String path, String b) throws IOException {
-        FileWriter f = new FileWriter(path);
+        FileWriter f = Utf8.createWriter(path);
         f.write(b);
         f.close();
     }

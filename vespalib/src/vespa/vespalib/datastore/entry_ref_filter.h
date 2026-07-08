@@ -3,6 +3,7 @@
 #pragma once
 
 #include "entryref.h"
+
 #include <vector>
 
 namespace vespalib::datastore {
@@ -16,6 +17,7 @@ class EntryRefFilter {
     std::vector<bool> _filter;
     uint32_t          _offset_bits;
     EntryRefFilter(std::vector<bool> filter, uint32_t offset_bits);
+
 public:
     EntryRefFilter(uint32_t num_buffers, uint32_t offset_bits);
     ~EntryRefFilter();
@@ -32,4 +34,4 @@ public:
     static EntryRefFilter create_all_filter(uint32_t num_buffers, uint32_t offset_bits);
 };
 
-}
+} // namespace vespalib::datastore

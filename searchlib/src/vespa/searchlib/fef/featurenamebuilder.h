@@ -12,8 +12,7 @@ namespace search::fef {
  * convenient way. Using this class will ensure things like correct
  * quoting of reserved characters used in parameters.
  **/
-class FeatureNameBuilder
-{
+class FeatureNameBuilder {
 private:
     std::string              _baseName;
     std::vector<std::string> _parameters;
@@ -32,7 +31,7 @@ public:
      * @return this object, for chaining
      * @param str base name
      **/
-    FeatureNameBuilder &baseName(const std::string &str);
+    FeatureNameBuilder& baseName(const std::string& str);
 
     /**
      * Add a parameter to the end of the parameter list.
@@ -43,14 +42,14 @@ public:
      * exact string value. If this is false, the framework is allowed
      * to normalize the string as if it was a feature name.
      **/
-    FeatureNameBuilder &parameter(const std::string &str, bool exact = true);
+    FeatureNameBuilder& parameter(const std::string& str, bool exact = true);
 
     /**
      * Clear the list of parameters.
      *
      * @return this object, for chaining
      **/
-    FeatureNameBuilder &clearParameters();
+    FeatureNameBuilder& clearParameters();
 
     /**
      * Set the output name
@@ -58,7 +57,7 @@ public:
      * @return this object, for chaining
      * @param str output name
      **/
-    FeatureNameBuilder &output(const std::string &str);
+    FeatureNameBuilder& output(const std::string& str);
 
     /**
      * Build a full feature name from the information put into this
@@ -69,4 +68,4 @@ public:
     std::string buildName() const;
 };
 
-}
+} // namespace search::fef

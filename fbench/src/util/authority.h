@@ -17,7 +17,7 @@
  * @param port which port we are connecting to
  * @param use_https are we using https? (TLS)
  **/
-vespalib::SocketSpec make_sni_spec(const std::string &authority, const char *hostname, int port, bool use_https);
+vespalib::SocketSpec make_sni_spec(const std::string& authority, const char* hostname, int port, bool use_https);
 
 /**
  * Use an SNI spec to generate a matching Host header to be used in
@@ -27,4 +27,4 @@ vespalib::SocketSpec make_sni_spec(const std::string &authority, const char *hos
  * @param sni_spec SNI spec
  * @param use_https are we using https? (TLS)
  **/
-std::string make_host_header_value(const vespalib::SocketSpec &sni_spec, bool use_https);
+std::string make_host_header_value(const vespalib::SocketSpec& sni_spec, bool use_https);

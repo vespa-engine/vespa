@@ -6,4 +6,4 @@ vespa_add_executable(searchlib_verify_feature_test_app TEST
     vespa_searchlib
     GTest::gtest
 )
-vespa_add_test(NAME searchlib_verify_feature_test_app COMMAND searchlib_verify_feature_test_app)
+vespa_add_test(NAME searchlib_verify_feature_test_app COMMAND run.sh)

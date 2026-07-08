@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dot_product_term.h"
+
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -12,20 +13,15 @@ using search::fef::MatchData;
 namespace search::streaming {
 
 DotProductTerm::DotProductTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms)
-    : MultiTerm(std::move(result_base), std::move(index), num_terms)
-{
+    : MultiTerm(std::move(result_base), std::move(index), num_terms) {
 }
 
 DotProductTerm::~DotProductTerm() = default;
 
-void
-DotProductTerm::get_element_ids(std::vector<uint32_t>&)
-{
+void DotProductTerm::get_element_ids(std::vector<uint32_t>&) {
 }
 
-void
-DotProductTerm::build_scores(Scores& scores) const
-{
+void DotProductTerm::build_scores(Scores& scores) const {
     HitList hl_store;
     for (const auto& term : _terms) {
         auto& hl = term->evaluateHits(hl_store);
@@ -35,13 +31,12 @@ DotProductTerm::build_scores(Scores& scores) const
     }
 }
 
-void
-DotProductTerm::unpack_scores(Scores& scores, std::optional<double> score_threshold, uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data)
-{
+void DotProductTerm::unpack_scores(Scores& scores, std::optional<double> score_threshold, uint32_t docid,
+                                   const fef::ITermData& td, fef::MatchData& match_data) {
     auto num_fields = td.numFields();
     for (uint32_t field_idx = 0; field_idx < num_fields; ++field_idx) {
         auto& tfd = td.field(field_idx);
-        auto field_id = tfd.getFieldId();
+        auto  field_id = tfd.getFieldId();
         if (scores.contains(field_id)) {
             auto score = scores[field_id];
             if (!score_threshold.has_value() || score_threshold.value() < score) {
@@ -56,12 +51,11 @@ DotProductTerm::unpack_scores(Scores& scores, std::optional<double> score_thresh
     }
 }
 
-void
-DotProductTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&, ElementIds)
-{
+void DotProductTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data,
+                                       const fef::IIndexEnvironment&, ElementIds) {
     Scores scores;
     build_scores(scores);
     unpack_scores(scores, std::nullopt, docid, td, match_data);
 }
 
-}
+} // namespace search::streaming

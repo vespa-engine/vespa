@@ -4,7 +4,9 @@
 
 #include <cstdint>
 
-namespace search::index { class FieldLengthCalculator; }
+namespace search::index {
+class FieldLengthCalculator;
+}
 
 namespace search::memoryindex {
 
@@ -17,10 +19,10 @@ class IOrderedFieldIndexInserter;
  */
 class IFieldIndexCollection {
 public:
-    virtual FieldIndexRemover &get_remover(uint32_t field_id) = 0;
-    virtual IOrderedFieldIndexInserter &get_inserter(uint32_t field_id) = 0;
-    virtual index::FieldLengthCalculator &get_calculator(uint32_t field_id) = 0;
+    virtual FieldIndexRemover& get_remover(uint32_t field_id) = 0;
+    virtual IOrderedFieldIndexInserter& get_inserter(uint32_t field_id) = 0;
+    virtual index::FieldLengthCalculator& get_calculator(uint32_t field_id) = 0;
     virtual ~IFieldIndexCollection() = default;
 };
 
-}
+} // namespace search::memoryindex

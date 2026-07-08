@@ -21,11 +21,16 @@
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
+
 #include <atomic>
 #include <mutex>
 
-namespace document { class DocumentTypeRepo; }
-namespace config { class ConfigFetcher; }
+namespace document {
+class DocumentTypeRepo;
+}
+namespace config {
+class ConfigFetcher;
+}
 
 namespace storage {
 
@@ -46,24 +51,24 @@ struct DeadLockDetector;
 struct StorageMetricSet;
 struct StorageNodeContext;
 
-namespace lib { class NodeType; }
-
+namespace lib {
+class NodeType;
+}
 
 class StorageNode : private framework::MetricUpdateHook,
                     private DoneInitializeHandler,
-                    private framework::defaultimplementation::ShutdownListener
-{
+                    private framework::defaultimplementation::ShutdownListener {
 public:
-    using BucketspacesConfig         = vespa::config::content::core::BucketspacesConfig;
+    using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
     using CommunicationManagerConfig = vespa::config::content::core::StorCommunicationmanagerConfig;
-    using StorBouncerConfig          = vespa::config::content::core::StorBouncerConfig;
-    using StorDistributionConfig     = vespa::config::content::StorDistributionConfig;
-    using StorServerConfig           = vespa::config::content::core::StorServerConfig;
+    using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
+    using StorDistributionConfig = vespa::config::content::StorDistributionConfig;
+    using StorServerConfig = vespa::config::content::core::StorServerConfig;
 
     enum RunMode { NORMAL, SINGLE_THREADED_TEST_MODE };
 
-    StorageNode(const StorageNode &) = delete;
-    StorageNode & operator = (const StorageNode &) = delete;
+    StorageNode(const StorageNode&) = delete;
+    StorageNode& operator=(const StorageNode&) = delete;
 
     struct BootstrapConfigs {
         std::unique_ptr<StorBouncerConfig>          bouncer_cfg;
@@ -78,11 +83,8 @@ public:
         BootstrapConfigs& operator=(BootstrapConfigs&&) noexcept;
     };
 
-    StorageNode(const config::ConfigUri& configUri,
-                StorageNodeContext& context,
-                BootstrapConfigs bootstrap_configs,
-                ApplicationGenerationFetcher& generationFetcher,
-                std::unique_ptr<HostInfo> hostInfo,
+    StorageNode(const config::ConfigUri& configUri, StorageNodeContext& context, BootstrapConfigs bootstrap_configs,
+                ApplicationGenerationFetcher& generationFetcher, std::unique_ptr<HostInfo> hostInfo,
                 RunMode = NORMAL);
     ~StorageNode() override;
 
@@ -90,7 +92,7 @@ public:
     [[nodiscard]] bool attemptedStopped() const;
     void notifyDoneInitializing() override;
     void waitUntilInitialized(vespalib::duration timeout = 15s);
-    void updateMetrics(const MetricLockGuard & guard) override;
+    void updateMetrics(const MetricLockGuard& guard) override;
 
     /** Updates the document type repo. */
     void setNewDocumentRepo(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
@@ -112,39 +114,39 @@ public:
     // For testing
     StorageLink* getChain() { return _chain.get(); }
     virtual void initializeStatusWebServer();
+
 private:
     bool _singleThreadedDebugMode;
 
     std::unique_ptr<HostInfo> _hostInfo;
 
-    StorageNodeContext& _context;
+    StorageNodeContext&           _context;
     ApplicationGenerationFetcher& _generationFetcher;
-    std::string _rootFolder;
-    std::atomic<bool> _attemptedStopped;
-    std::string _pidFile;
+    std::string                   _rootFolder;
+    std::atomic<bool>             _attemptedStopped;
+    std::string                   _pidFile;
 
     // First components that doesn't depend on others
-    std::unique_ptr<StatusWebServer>           _statusWebServer;
-    std::shared_ptr<StorageMetricSet>          _metrics;
-    std::unique_ptr<metrics::MetricManager>    _metricManager;
+    std::unique_ptr<StatusWebServer>        _statusWebServer;
+    std::shared_ptr<StorageMetricSet>       _metrics;
+    std::unique_ptr<metrics::MetricManager> _metricManager;
 
     // Depends on bucket databases and stop() functionality
-    std::unique_ptr<DeadLockDetector>          _deadLockDetector;
+    std::unique_ptr<DeadLockDetector> _deadLockDetector;
     // Depends on metric manager
-    std::unique_ptr<StatusMetricConsumer>      _statusMetrics;
+    std::unique_ptr<StatusMetricConsumer> _statusMetrics;
     // Depends on metric manager
-    std::unique_ptr<StateReporter>             _stateReporter;
-    std::unique_ptr<StateManager>              _stateManager;
+    std::unique_ptr<StateReporter> _stateReporter;
+    std::unique_ptr<StateManager>  _stateManager;
     // Node subclasses may take ownership of _stateManager in order to infuse it into
     // their own storage link chain, but they MUST ensure its lifetime is maintained.
     // We need to remember the original pointer in order to update its config.
-    StateManager*                              _state_manager_ptr;
+    StateManager* _state_manager_ptr;
 
     // The storage chain can depend on anything.
-    std::unique_ptr<StorageLink>               _chain;
+    std::unique_ptr<StorageLink> _chain;
 
-    template <typename ConfigT>
-    struct ConfigWrapper {
+    template <typename ConfigT> struct ConfigWrapper {
         std::unique_ptr<ConfigT> staging;
         std::unique_ptr<ConfigT> active;
 
@@ -170,9 +172,7 @@ protected:
     ConfigWrapper<StorDistributionConfig>     _distribution_config;
     ConfigWrapper<StorServerConfig>           _server_config;
 
-    [[nodiscard]] const StorBouncerConfig& bouncer_config() const noexcept {
-        return *_bouncer_config.active;
-    }
+    [[nodiscard]] const StorBouncerConfig& bouncer_config() const noexcept { return *_bouncer_config.active; }
     [[nodiscard]] const BucketspacesConfig& bucket_spaces_config() const noexcept {
         return *_bucket_spaces_config.active;
     }
@@ -182,18 +182,17 @@ protected:
     [[nodiscard]] const StorDistributionConfig& distribution_config() const noexcept {
         return *_distribution_config.active;
     }
-    [[nodiscard]] const StorServerConfig& server_config() const noexcept {
-        return *_server_config.active;
-    }
+    [[nodiscard]] const StorServerConfig& server_config() const noexcept { return *_server_config.active; }
 
     std::unique_ptr<StorageComponent> _component;
-    std::unique_ptr<NodeIdentity> _node_identity;
-    config::ConfigUri _configUri;
-    CommunicationManager* _communicationManager;
-private:
-    std::unique_ptr<IStorageChainBuilder>      _chain_builder;
-protected:
+    std::unique_ptr<NodeIdentity>     _node_identity;
+    config::ConfigUri                 _configUri;
+    CommunicationManager*             _communicationManager;
 
+private:
+    std::unique_ptr<IStorageChainBuilder> _chain_builder;
+
+protected:
     /**
      * Node subclasses currently need to explicitly acquire ownership of state
      * manager so that they can add it to the end of their processing chains,
@@ -203,16 +202,17 @@ protected:
      */
     std::unique_ptr<StateManager> releaseStateManager();
 
-    void initialize(const NodeStateReporter & reporter);
+    void initialize(const NodeStateReporter& reporter);
     virtual void initializeNodeSpecific() = 0;
     virtual void perform_post_chain_creation_init_steps() = 0;
-    virtual void createChain(IStorageChainBuilder &builder) = 0;
-    virtual void handleLiveConfigUpdate(const InitialGuard & initGuard);
+    virtual void createChain(IStorageChainBuilder& builder) = 0;
+    virtual void handleLiveConfigUpdate(const InitialGuard& initGuard);
     void shutdown();
 
     virtual void on_bouncer_config_changed() { /* no-op by default */ }
+
 public:
     void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
 };
 
-} // storage
+} // namespace storage

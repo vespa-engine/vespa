@@ -2,8 +2,8 @@
 
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/diskindex/posting_list_cache.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using search::BitVector;
 using search::diskindex::PostingListCache;
@@ -16,19 +16,16 @@ public:
     MockFile();
     ~MockFile() override;
     PostingListHandle read(const PostingListCache::Key& key, PostingListCache::Context& ctx) const override;
-    std::shared_ptr<const BitVector> read(const PostingListCache::BitVectorKey& key, PostingListCache::Context& ctx) const override;
+    std::shared_ptr<const BitVector> read(const PostingListCache::BitVectorKey& key,
+                                          PostingListCache::Context&            ctx) const override;
 };
 
-MockFile::MockFile()
-    : PostingListCache::IPostingListFileBacking()
-{
+MockFile::MockFile() : PostingListCache::IPostingListFileBacking() {
 }
 
 MockFile::~MockFile() = default;
 
-PostingListHandle
-MockFile::read(const PostingListCache::Key& key, PostingListCache::Context& ctx) const
-{
+PostingListHandle MockFile::read(const PostingListCache::Key& key, PostingListCache::Context& ctx) const {
     EXPECT_NE(0, key.bit_length);
     ctx.cache_miss = true;
     PostingListHandle handle;
@@ -36,25 +33,23 @@ MockFile::read(const PostingListCache::Key& key, PostingListCache::Context& ctx)
     return handle;
 }
 
-std::shared_ptr<const BitVector>
-MockFile::read(const PostingListCache::BitVectorKey& key, PostingListCache::Context& ctx) const
-{
+std::shared_ptr<const BitVector> MockFile::read(const PostingListCache::BitVectorKey& key,
+                                                PostingListCache::Context&            ctx) const {
     EXPECT_NE(0, key.lookup_result.idx);
     ctx.cache_miss = true;
     return BitVector::create(100 * key.file_id + key.lookup_result.idx);
 }
 
-}
+} // namespace
 
-class PostingListCacheTest : public ::testing::Test
-{
+class PostingListCacheTest : public ::testing::Test {
 protected:
     using Key = PostingListCache::Key;
     using BitVectorKey = PostingListCache::BitVectorKey;
-    MockFile _mock_file;
-    PostingListCache _cache;
-    Key _key;
-    BitVectorKey _bv_key;
+    MockFile                  _mock_file;
+    PostingListCache          _cache;
+    Key                       _key;
+    BitVectorKey              _bv_key;
     PostingListCache::Context _ctx;
     PostingListCacheTest();
     ~PostingListCacheTest() override;
@@ -69,19 +64,12 @@ protected:
 };
 
 PostingListCacheTest::PostingListCacheTest()
-    : ::testing::Test(),
-      _mock_file(),
-      _cache(256_Ki, 256_Ki),
-      _key(),
-      _bv_key(),
-      _ctx(&_mock_file)
-{
+    : ::testing::Test(), _mock_file(), _cache(256_Ki, 256_Ki), _key(), _bv_key(), _ctx(&_mock_file) {
 }
 
 PostingListCacheTest::~PostingListCacheTest() = default;
 
-TEST_F(PostingListCacheTest, repeated_lookups_gives_hit)
-{
+TEST_F(PostingListCacheTest, repeated_lookups_gives_hit) {
     _key.bit_length = 24 * 8;
     auto handle = read();
     EXPECT_TRUE(_ctx.cache_miss);
@@ -97,12 +85,11 @@ TEST_F(PostingListCacheTest, repeated_lookups_gives_hit)
     EXPECT_EQ(PostingListCache::element_size() + 24, stats.memory_used);
 }
 
-TEST_F(PostingListCacheTest, large_elements_immediately_evicts_from_cache)
-{
+TEST_F(PostingListCacheTest, large_elements_immediately_evicts_from_cache) {
     _key.bit_length = 24 * 8;
-    (void) read();
+    (void)read();
     _key.bit_offset = 1000;
-    (void) read();
+    (void)read();
     auto stats = _cache.get_stats();
     EXPECT_EQ(2, stats.elements);
     _key.bit_length = 512_Ki * 8;
@@ -114,24 +101,22 @@ TEST_F(PostingListCacheTest, large_elements_immediately_evicts_from_cache)
     EXPECT_LT(512_Ki, stats.memory_used);
     _key.bit_length = 25 * 8;
     _key.bit_offset = 2000;
-    (void) read(); // Evicts all old entries after adding new one
+    (void)read(); // Evicts all old entries after adding new one
     stats = _cache.get_stats();
     EXPECT_EQ(1, stats.elements);
     EXPECT_EQ(PostingListCache::element_size() + 25, stats.memory_used);
 }
 
-TEST_F(PostingListCacheTest, file_id_is_part_of_key)
-{
+TEST_F(PostingListCacheTest, file_id_is_part_of_key) {
     _key.bit_length = 24 * 8;
-    (void) read();
+    (void)read();
     _key.file_id = 1;
-    (void) read();
+    (void)read();
     auto stats = _cache.get_stats();
     EXPECT_EQ(2, stats.elements);
 }
 
-TEST_F(PostingListCacheTest, repeated_bitvector_lookup_gives_hit)
-{
+TEST_F(PostingListCacheTest, repeated_bitvector_lookup_gives_hit) {
     _bv_key.lookup_result.idx = 1;
     _bv_key.file_id = 2;
     auto bv = read_bv();

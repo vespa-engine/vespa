@@ -121,7 +121,7 @@ public final class LocalVisitorSession implements VisitorSession {
                             control.onDone(VisitorControlHandler.CompletionCode.ABORTED, "Aborted by user");
                             return State.ABORTED;
                         default:
-                            control.onDone(VisitorControlHandler.CompletionCode.FAILURE, "Unexpected state '" + current + "'");;
+                            control.onDone(VisitorControlHandler.CompletionCode.FAILURE, "Unexpected state '" + current + "'");
                             return State.FAILURE;
                     }
                 });

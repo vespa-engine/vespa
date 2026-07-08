@@ -13,6 +13,6 @@ private:
     Map _backing;
 
 public:
-    void        Insert(const char* key, const char* value);
+    void Insert(const char* key, const char* value);
     const char* Lookup(const char* key, const char* defval) const;
 };

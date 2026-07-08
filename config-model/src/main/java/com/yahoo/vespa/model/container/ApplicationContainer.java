@@ -24,6 +24,7 @@ public final class ApplicationContainer extends Container implements
         ZookeeperServerConfig.Producer {
 
     private final boolean isHostedVespa;
+    private String jvmGCOptions;
 
     public ApplicationContainer(TreeConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
@@ -51,9 +52,12 @@ public final class ApplicationContainer extends Container implements
         MallocImplResolver.pathToLibrary(mallocImpl).ifPresent(this::setPreLoad);
     }
 
+    public void setJvmGCOptions(String jvmGCOptions) { this.jvmGCOptions = jvmGCOptions; }
+
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         realResources().ifPresent(r -> builder.jvm.availableProcessors(Math.max(2, (int) Math.ceil(r.vcpu()))));
+        if (jvmGCOptions != null) builder.jvm.gcopts(jvmGCOptions);
     }
 
     @Override

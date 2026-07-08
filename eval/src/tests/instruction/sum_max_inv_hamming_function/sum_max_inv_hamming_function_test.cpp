@@ -11,14 +11,15 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
 
 std::string main_expr = "reduce(reduce(1/(1+reduce(hamming(a,b),sum,z)),max,y),sum,x)";
-std::string alt_expr  = "reduce(reduce(1/(reduce(hamming(a,b),sum,z)+1),max,y),sum,x)";
+std::string alt_expr = "reduce(reduce(1/(reduce(hamming(a,b),sum,z)+1),max,y),sum,x)";
 
 //-----------------------------------------------------------------------------
 
-void assert_optimized(const TensorSpec &a, const TensorSpec &b, size_t vec_size, const std::string &expr = main_expr) {
+void assert_optimized(const TensorSpec& a, const TensorSpec& b, size_t vec_size,
+                      const std::string& expr = main_expr) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", a);
     param_repo.add("b", b);
@@ -34,7 +35,7 @@ void assert_optimized(const TensorSpec &a, const TensorSpec &b, size_t vec_size,
     EXPECT_EQ(info.size(), 1);
 }
 
-void assert_not_optimized(const TensorSpec &a, const TensorSpec &b, const std::string &expr = main_expr) {
+void assert_not_optimized(const TensorSpec& a, const TensorSpec& b, const std::string& expr = main_expr) {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("a", a);
     param_repo.add("b", b);
@@ -48,12 +49,12 @@ void assert_not_optimized(const TensorSpec &a, const TensorSpec &b, const std::s
 
 //-----------------------------------------------------------------------------
 
-GenSpec make_spec(const std::string &desc, CellType cell_type) {
-    return GenSpec::from_desc(desc).cells(cell_type).seq(Seq({0x1f, 0x2e, 0x3d, 0x4c, 0x5b, 0x6a, 0x79, 0x88,
-                                                              0x97, 0xa6, 0xb5, 0xc4, 0xd3, 0xe2, 0xf1}));
+GenSpec make_spec(const std::string& desc, CellType cell_type) {
+    return GenSpec::from_desc(desc).cells(cell_type).seq(
+        Seq({0x1f, 0x2e, 0x3d, 0x4c, 0x5b, 0x6a, 0x79, 0x88, 0x97, 0xa6, 0xb5, 0xc4, 0xd3, 0xe2, 0xf1}));
 }
 
-GenSpec query    = make_spec("x3_1z7", CellType::INT8);
+GenSpec query = make_spec("x3_1z7", CellType::INT8);
 GenSpec document = make_spec("y5_1z7", CellType::INT8);
 
 TEST(SumMaxInvHamming, expression_can_be_optimized) {
@@ -70,7 +71,7 @@ TEST(SumMaxInvHamming, expression_can_have_alternative_form) {
 }
 
 TEST(SumMaxInvHamming, optimization_works_with_empty_tensors) {
-    auto empty_query    = make_spec("x0_0z7", CellType::INT8);
+    auto empty_query = make_spec("x0_0z7", CellType::INT8);
     auto empty_document = make_spec("y0_0z7", CellType::INT8);
     assert_optimized(empty_query, document, 7);
     assert_optimized(query, empty_document, 7);
@@ -78,7 +79,7 @@ TEST(SumMaxInvHamming, optimization_works_with_empty_tensors) {
 }
 
 TEST(SumMaxInvHamming, the_hamming_dimension_may_be_trivial) {
-    GenSpec trivial_query    = make_spec("x3_1z1", CellType::INT8);
+    GenSpec trivial_query = make_spec("x3_1z1", CellType::INT8);
     GenSpec trivial_document = make_spec("y5_1z1", CellType::INT8);
     assert_optimized(trivial_query, trivial_document, 1);
 }
@@ -91,15 +92,15 @@ TEST(SumMaxInvHamming, other_dimensions_may_be_indexed_as_long_as_hamming_dimens
     assert_optimized(dense_query, dense_document, 7);
 
     std::string outer_expr = "reduce(reduce(1/(1+reduce(hamming(a,b),sum,y)),max,x),sum,z)";
-    auto dense_query2 = make_spec("x3y7", CellType::INT8);
-    auto dense_document2 = make_spec("y7z5", CellType::INT8);
+    auto        dense_query2 = make_spec("x3y7", CellType::INT8);
+    auto        dense_document2 = make_spec("y7z5", CellType::INT8);
     assert_not_optimized(dense_query2, dense_document2);
 }
 
 //-----------------------------------------------------------------------------
 
 TEST(SumMaxInvHamming, all_cells_must_be_int8) {
-    for (auto ct: CellTypeUtils::list_types()) {
+    for (auto ct : CellTypeUtils::list_types()) {
         if (ct != CellType::INT8) {
             assert_not_optimized(query.cpy().cells(ct), document);
             assert_not_optimized(query, document.cpy().cells(ct));
@@ -109,10 +110,10 @@ TEST(SumMaxInvHamming, all_cells_must_be_int8) {
 }
 
 TEST(SumMaxInvHamming, extra_dimensions_are_not_allowed) {
-    GenSpec query_es    = make_spec("a1_1x3_1z7", CellType::INT8);
-    GenSpec query_ed    = make_spec("x3_1w1z7",   CellType::INT8);
+    GenSpec query_es = make_spec("a1_1x3_1z7", CellType::INT8);
+    GenSpec query_ed = make_spec("x3_1w1z7", CellType::INT8);
     GenSpec document_es = make_spec("a1_1y5_1z7", CellType::INT8);
-    GenSpec document_ed = make_spec("y5_1w1z7",   CellType::INT8);
+    GenSpec document_ed = make_spec("y5_1w1z7", CellType::INT8);
     assert_not_optimized(query_es, document);
     assert_not_optimized(query, document_es);
     assert_not_optimized(query_ed, document);

@@ -4,11 +4,13 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInstanceSerializer;
 import com.yahoo.slime.Slime;
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.distribution.GroupVisitor;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -68,7 +70,7 @@ public class DistributionConfigBundle {
     public int searchableCopies() { return config.ready_copies(); }
 
     public String highLevelDescription() {
-        return "%d nodes; %d groups; redundancy %d; searchable-copies %d".formatted(
+        return Text.format("%d nodes; %d groups; redundancy %d; searchable-copies %d",
                 totalNodeCount(), totalLeafGroupCount(), redundancy(), searchableCopies());
     }
 

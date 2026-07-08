@@ -24,18 +24,17 @@ class PhraseSplitterQueryEnv;
  * Use this class and PhraseSplitterQueryEnv if you want to handle a
  * phrase term the same way as single terms.
  **/
-class PhraseSplitter
-{
+class PhraseSplitter {
     const PhraseSplitterQueryEnv&   _phrase_splitter_query_env;
     TermFieldHandle                 _skipHandles;
-    const MatchData                *_matchData;
+    const MatchData*                _matchData;
     std::vector<TermFieldMatchData> _termMatches; // match objects associated with splitted terms
 
-    TermFieldMatchData *resolveSplittedTermField(TermFieldHandle handle) {
+    TermFieldMatchData* resolveSplittedTermField(TermFieldHandle handle) {
         return &_termMatches[handle - _skipHandles];
     }
 
-    const TermFieldMatchData *resolveSplittedTermField(TermFieldHandle handle) const {
+    const TermFieldMatchData* resolveSplittedTermField(TermFieldHandle handle) const {
         return &_termMatches[handle - _skipHandles];
     }
 
@@ -46,7 +45,7 @@ public:
      * @param queryEnv the query environment to wrap.
      * @param field the field where we need to split phrases
      **/
-    PhraseSplitter(const PhraseSplitterQueryEnv &phrase_splitter_query_env);
+    PhraseSplitter(const PhraseSplitterQueryEnv& phrase_splitter_query_env);
     ~PhraseSplitter();
 
     /**
@@ -57,7 +56,7 @@ public:
      * @param src the source object.
      * @param hitOffset the offset to use when copying position information.
      **/
-    static void copyTermFieldMatchData(TermFieldMatchData & dst, const TermFieldMatchData & src, uint32_t hitOffset);
+    static void copyTermFieldMatchData(TermFieldMatchData& dst, const TermFieldMatchData& src, uint32_t hitOffset);
 
     /**
      * Update the underlying TermFieldMatchData objects based on the bound MatchData object.
@@ -67,15 +66,15 @@ public:
     /**
      * Inherit doc from MatchData.
      **/
-    const TermFieldMatchData * resolveTermField(TermFieldHandle handle) const {
+    const TermFieldMatchData* resolveTermField(TermFieldHandle handle) const {
         if (_matchData == nullptr) {
             return nullptr;
         }
         return handle < _skipHandles ? _matchData->resolveTermField(handle) : resolveSplittedTermField(handle);
     }
 
-    void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
+    void bind_match_data(const fef::MatchData& md) { _matchData = &md; }
     const PhraseSplitterQueryEnv& get_query_env() const { return _phrase_splitter_query_env; }
 };
 
-}
+} // namespace search::fef

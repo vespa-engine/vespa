@@ -26,6 +26,7 @@ import com.yahoo.net.AcceptHeaderMatcher;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
+import com.yahoo.prelude.statistics.StatisticsSearcher;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
@@ -33,6 +34,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.context.QueryContext;
+import com.yahoo.search.query.properties.IllegalAssignmentException;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.properties.DefaultProperties;
@@ -80,7 +82,6 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private static final CompoundName DETAILED_TIMING_LOGGING = CompoundName.from("trace.timingDetails");
     private static final CompoundName FORCE_TIMESTAMPS = CompoundName.from("trace.timestamps");
-
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = ContainerMetrics.SEARCH_CONNECTIONS.baseName();
     static final String RENDER_LATENCY_METRIC = ContainerMetrics.JDISC_RENDER_LATENCY.baseName();
@@ -183,7 +184,7 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             try {
                 return handleBody(request);
-            } catch (IllegalInputException e) {
+            } catch (IllegalInputException | IllegalAssignmentException e) {
                 return illegalQueryResponse(request, e);
             } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
@@ -227,19 +228,26 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private HttpSearchResponse handleBody(HttpRequest request) {
+        long executionStart = System.currentTimeMillis();
         Map<String, String> requestMap = requestMapFromRequest(request);
 
         // Get query profile
         String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
-        Query query = new Query.Builder().setRequest(request)
-                                         .setRequestMap(requestMap)
-                                         .setQueryProfile(queryProfile)
-                                         .setEmbedders(embedders)
-                                         .setZoneInfo(zoneInfo)
-                                         .setSchemaInfo(executionFactory.schemaInfo())
-                                         .build();
+        Query query;
+        try {
+            query = new Query.Builder().setRequest(request)
+                                       .setRequestMap(requestMap)
+                                       .setQueryProfile(queryProfile)
+                                       .setEmbedders(embedders)
+                                       .setZoneInfo(zoneInfo)
+                                       .setSchemaInfo(executionFactory.schemaInfo())
+                                       .build();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalInputException(e);
+        }
+        query.getHttpRequest().context().put("search.handlerStartTime", executionStart);
 
         // If format not explicitly set, use Accept header to determine response format
         if (!requestMap.containsKey("format") && !requestMap.containsKey("presentation.format")) {
@@ -283,7 +291,11 @@ public class SearchHandler extends LoggingRequestHandler {
 
         // Transform result to response
         Renderer<Result> renderer = toRendererCopy(query.getPresentation().getRenderer());
-        HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
+        int status = getHttpResponseStatus(request, result);
+        if (status == 500 && result.hits().getError() != null) {
+            log.log(Level.FINE, () -> "Search request returning %d: %s".formatted(status, result.hits().getError().getDetailedMessage()));
+        }
+        HttpSearchResponse response = new HttpSearchResponse(status,
                                                              result, query, renderer,
                                                              extractTraceNode(query),
                                                              metric);
@@ -358,9 +370,12 @@ public class SearchHandler extends LoggingRequestHandler {
             execution.context().setDetailedDiagnostics(true);
         }
         Result result = execution.search(query);
+        if (result.getQuery() == null)
+            result.setQuery(query);
 
-        ensureQuerySet(result, query);
-        execution.fill(result);
+        // StatisticsSearcher does fill, so we can skip the fill here for performance if it is the first in the chain
+        if ( ! searchChain.components().isEmpty() && ! (searchChain.components().get(0) instanceof StatisticsSearcher))
+            execution.fill(result);
 
         traceExecutionTimes(query, result);
         traceVespaVersion(query);
@@ -385,13 +400,6 @@ public class SearchHandler extends LoggingRequestHandler {
         Renderer<Result> copy = renderer.clone();
         copy.init();
         return copy;
-    }
-
-    private void ensureQuerySet(Result result, Query fallbackQuery) {
-        Query query = result.getQuery();
-        if (query == null) {
-            result.setQuery(fallbackQuery);
-        }
     }
 
     private Result search(String request, Query query, Chain<Searcher> searchChain) {
@@ -465,7 +473,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private Result validateQuery(Query query) {
-        DefaultProperties.requireNotPresentIn(query.getHttpRequest().propertyMap());
+        DefaultProperties.requireNotPresentIn(query.getRequestMap());
 
         int maxHits = query.properties().getInteger(DefaultProperties.MAX_HITS);
         int maxOffset = query.properties().getInteger(DefaultProperties.MAX_OFFSET);

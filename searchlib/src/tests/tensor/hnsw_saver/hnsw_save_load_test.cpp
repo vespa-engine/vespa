@@ -3,13 +3,15 @@
 #include <vespa/searchlib/tensor/hnsw_graph.h>
 #include <vespa/searchlib/tensor/hnsw_identity_mapping.h>
 #include <vespa/searchlib/tensor/hnsw_index_saver.h>
-#include <vespa/searchlib/tensor/hnsw_index_loader.hpp>
 #include <vespa/searchlib/tensor/hnsw_index_traits.h>
 #include <vespa/searchlib/tensor/hnsw_nodeid_mapping.h>
 #include <vespa/searchlib/test/vector_buffer_reader.h>
 #include <vespa/searchlib/test/vector_buffer_writer.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/searchlib/tensor/hnsw_index_loader.hpp>
+
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -23,18 +25,13 @@ using search::test::VectorBufferWriter;
 
 using V = std::vector<uint32_t>;
 
-template <HnswIndexType type>
-uint32_t fake_docid(uint32_t nodeid);
+template <HnswIndexType type> uint32_t fake_docid(uint32_t nodeid);
 
-template <>
-uint32_t fake_docid<HnswIndexType::SINGLE>(uint32_t nodeid)
-{
+template <> uint32_t fake_docid<HnswIndexType::SINGLE>(uint32_t nodeid) {
     return nodeid;
 }
 
-template <>
-uint32_t fake_docid<HnswIndexType::MULTI>(uint32_t nodeid)
-{
+template <> uint32_t fake_docid<HnswIndexType::MULTI>(uint32_t nodeid) {
     switch (nodeid) {
     case 5:
         return 104;
@@ -45,18 +42,13 @@ uint32_t fake_docid<HnswIndexType::MULTI>(uint32_t nodeid)
     }
 }
 
-template <HnswIndexType type>
-uint32_t fake_subspace(uint32_t nodeid);
+template <HnswIndexType type> uint32_t fake_subspace(uint32_t nodeid);
 
-template <>
-uint32_t fake_subspace<HnswIndexType::SINGLE>(uint32_t)
-{
+template <> uint32_t fake_subspace<HnswIndexType::SINGLE>(uint32_t) {
     return 0;
 }
 
-template <>
-uint32_t fake_subspace<HnswIndexType::MULTI>(uint32_t nodeid)
-{
+template <> uint32_t fake_subspace<HnswIndexType::MULTI>(uint32_t nodeid) {
     switch (nodeid) {
     case 5:
         return 2;
@@ -67,23 +59,17 @@ uint32_t fake_subspace<HnswIndexType::MULTI>(uint32_t nodeid)
     }
 }
 
-template <typename NodeType>
-uint32_t fake_get_docid(const NodeType& node, uint32_t nodeid);
+template <typename NodeType> uint32_t fake_get_docid(const NodeType& node, uint32_t nodeid);
 
-template <>
-uint32_t fake_get_docid<HnswSimpleNode>(const HnswSimpleNode &, uint32_t nodeid)
-{
+template <> uint32_t fake_get_docid<HnswSimpleNode>(const HnswSimpleNode&, uint32_t nodeid) {
     return fake_docid<HnswIndexType::SINGLE>(nodeid);
 }
 
-template <>
-uint32_t fake_get_docid<HnswNode>(const HnswNode& node, uint32_t)
-{
+template <> uint32_t fake_get_docid<HnswNode>(const HnswNode& node, uint32_t) {
     return node.acquire_docid();
 }
 
-template <HnswIndexType type>
-void populate(HnswGraph<type> &graph) {
+template <HnswIndexType type> void populate(HnswGraph<type>& graph) {
     // no 0
     graph.make_node(1, fake_docid<type>(1), fake_subspace<type>(1), 1);
     auto er = graph.make_node(2, fake_docid<type>(2), fake_subspace<type>(2), 2);
@@ -101,8 +87,7 @@ void populate(HnswGraph<type> &graph) {
     graph.set_entry_node({2, er, 1});
 }
 
-template <HnswIndexType type>
-void modify(HnswGraph<type> &graph) {
+template <HnswIndexType type> void modify(HnswGraph<type>& graph) {
     graph.remove_node(2);
     graph.remove_node(6);
     graph.make_node(7, fake_docid<type>(7), fake_subspace<type>(7), 2);
@@ -116,16 +101,12 @@ void modify(HnswGraph<type> &graph) {
     graph.set_entry_node({4, graph.get_levels_ref(4), 1});
 }
 
-
-template <typename GraphType>
-class CopyGraphTest : public ::testing::Test {
+template <typename GraphType> class CopyGraphTest : public ::testing::Test {
 public:
     GraphType original;
     GraphType copy;
 
-    void expect_empty_d(uint32_t nodeid) const {
-        EXPECT_FALSE(copy.acquire_levels_ref(nodeid).valid());
-    }
+    void expect_empty_d(uint32_t nodeid) const { EXPECT_FALSE(copy.acquire_levels_ref(nodeid).valid()); }
 
     void expect_level_0(uint32_t nodeid, const V& exp_links) const {
         auto levels = copy.acquire_level_array(nodeid);
@@ -148,15 +129,17 @@ public:
     }
 
     std::vector<char> save_original() const {
-        HnswIndexSaver saver(original);
+        HnswIndexSaver     saver(original);
         VectorBufferWriter vector_writer;
         saver.save(vector_writer);
         return vector_writer.output;
     }
     void load_copy(std::vector<char> data) {
         typename HnswIndexTraits<GraphType::index_type>::IdMapping id_mapping;
-        HnswIndexLoader<VectorBufferReader, GraphType::index_type> loader(copy, id_mapping, std::make_unique<VectorBufferReader>(data));
-        while (loader.load_next()) {}
+        HnswIndexLoader<VectorBufferReader, GraphType::index_type> loader(copy, id_mapping,
+                                                                          std::make_unique<VectorBufferReader>(data));
+        while (loader.load_next()) {
+        }
     }
 
     void expect_docid_and_subspace(uint32_t nodeid) const {
@@ -180,7 +163,7 @@ public:
         expect_level_0(2, {1, 4, 6});
         expect_level_0(4, {1, 2, 6});
         expect_level_0(6, {1, 2, 4});
-        
+
         expect_level_1(2, {4});
         expect_level_1(4, {2});
         expect_docid_and_subspace(1);
@@ -194,16 +177,14 @@ using GraphTestTypes = ::testing::Types<HnswGraph<HnswIndexType::SINGLE>, HnswGr
 
 TYPED_TEST_SUITE(CopyGraphTest, GraphTestTypes);
 
-TYPED_TEST(CopyGraphTest, reconstructs_graph)
-{
+TYPED_TEST(CopyGraphTest, reconstructs_graph) {
     populate(this->original);
     auto data = this->save_original();
     this->load_copy(data);
     this->expect_copy_as_populated();
 }
 
-TYPED_TEST(CopyGraphTest, later_changes_ignored)
-{
+TYPED_TEST(CopyGraphTest, later_changes_ignored) {
     populate(this->original);
     HnswIndexSaver saver(this->original);
     modify(this->original);

@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "searchrequest.h"
-#include "searchreply.h"
-#include "docsumrequest.h"
 #include "docsumreply.h"
-#include "monitorrequest.h"
+#include "docsumrequest.h"
 #include "monitorreply.h"
+#include "monitorrequest.h"
 #include "search_protocol_proto.h"
+#include "searchreply.h"
+#include "searchrequest.h"
 
 namespace search::engine {
 
@@ -22,14 +22,14 @@ struct ProtoConverter {
     using ProtoMonitorRequest = ::searchlib::searchprotocol::protobuf::MonitorRequest;
     using ProtoMonitorReply = ::searchlib::searchprotocol::protobuf::MonitorReply;
 
-    static void search_request_from_proto(const ProtoSearchRequest &proto, SearchRequest &request);
-    static void search_reply_to_proto(const SearchReply &reply, ProtoSearchReply &proto);
+    static void search_request_from_proto(const ProtoSearchRequest& proto, SearchRequest& request);
+    static void search_reply_to_proto(const SearchReply& reply, ProtoSearchReply& proto);
 
-    static void docsum_request_from_proto(const ProtoDocsumRequest &proto, DocsumRequest &request);
-    static void docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply &proto);
+    static void docsum_request_from_proto(const ProtoDocsumRequest& proto, DocsumRequest& request);
+    static void docsum_reply_to_proto(const DocsumReply& reply, ProtoDocsumReply& proto);
 
-    static void monitor_request_from_proto(const ProtoMonitorRequest &proto, MonitorRequest &request);
-    static void monitor_reply_to_proto(const MonitorReply &reply, ProtoMonitorReply &proto);
+    static void monitor_request_from_proto(const ProtoMonitorRequest& proto, MonitorRequest& request);
+    static void monitor_reply_to_proto(const MonitorReply& reply, ProtoMonitorReply& proto);
 };
 
-}
+} // namespace search::engine

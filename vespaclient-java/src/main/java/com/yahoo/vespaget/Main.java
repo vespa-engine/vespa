@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaget;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespaclient.ClusterList;
 
 import java.util.logging.Level;
@@ -27,9 +28,9 @@ public class Main {
                 documentRetriever.retrieveDocuments();
             }
         } catch (IllegalArgumentException e) {
-            System.err.printf("Failed to parse command line arguments: %s.\n", e.getMessage());
+            System.err.print(Text.format("Failed to parse command line arguments: %s.\n", e.getMessage()));
         } catch (DocumentRetrieverException e) {
-            System.err.printf("Failed to retrieve documents: %s\n", e.getMessage());
+            System.err.print(Text.format("Failed to retrieve documents: %s\n", e.getMessage()));
         }
     }
 

@@ -14,20 +14,20 @@ class RPCRequestWrapper {
 public:
     enum ErrorCode {
         ERR_HANDLE_NOT_CONNECTED = 75000, // > 0xffff
-        ERR_HANDLE_GONE          = 75001,
-        ERR_REQUEST_DELETED      = 75002,
-        ERR_HANDLE_DISABLED      = 75003,
-        ERR_NODE_SHUTTING_DOWN   = 75004,
-        ERR_BAD_REQUEST          = 75005
+        ERR_HANDLE_GONE = 75001,
+        ERR_REQUEST_DELETED = 75002,
+        ERR_HANDLE_DISABLED = 75003,
+        ERR_NODE_SHUTTING_DOWN = 75004,
+        ERR_BAD_REQUEST = 75005
     };
 
-    RPCRequestWrapper(FRT_RPCRequest *req);
+    RPCRequestWrapper(FRT_RPCRequest* req);
     ~RPCRequestWrapper();
 
     /**
      * @return request parameter data
      **/
-    const char *getParam() const;
+    const char* getParam() const;
 
     /**
      * @return request parameter length
@@ -40,7 +40,7 @@ public:
      * @param pt return data
      * @param len return data length
      **/
-    void returnData(const char *pt, uint32_t len);
+    void returnData(const char* pt, uint32_t len);
 
     /**
      * Return an error for this request
@@ -48,12 +48,12 @@ public:
      * @param errorCode numeric error code
      * @param errorMessage human readable error message
      **/
-    void returnError(uint32_t errorCode, const char *errorMessage);
+    void returnError(uint32_t errorCode, const char* errorMessage);
 
     FRT_RPCRequest* raw_request() noexcept { return _req; }
 
-    const char *getMethodName() const;
-    void addReturnString(const char *str, uint32_t len=0);
+    const char* getMethodName() const;
+    void addReturnString(const char* str, uint32_t len = 0);
     void addReturnInt(uint32_t value);
     void returnRequest();
 
@@ -65,10 +65,10 @@ public:
     void discardBlobs();
 
 private:
-    RPCRequestWrapper(const RPCRequestWrapper &);
-    RPCRequestWrapper &operator=(const RPCRequestWrapper &);
+    RPCRequestWrapper(const RPCRequestWrapper&);
+    RPCRequestWrapper& operator=(const RPCRequestWrapper&);
 
-    FRT_RPCRequest* _req;             // underlying RPC request
+    FRT_RPCRequest* _req; // underlying RPC request
 };
 
 } // namespace storage

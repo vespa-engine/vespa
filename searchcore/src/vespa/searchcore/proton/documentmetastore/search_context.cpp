@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "search_context.h"
+
 #include "documentmetastore.h"
+
 #include <vespa/searchlib/attribute/attributeiterators.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -17,49 +19,38 @@ namespace proton::documentmetastore {
 
 namespace {
 
-class GidAllSearchIterator : public AttributeIteratorBase
-{
+class GidAllSearchIterator : public AttributeIteratorBase {
 private:
-    void
-    doSeek(uint32_t docId) override
-    {
+    void doSeek(uint32_t docId) override {
         if (_store.validLidFast(docId)) {
             setDocId(docId);
         }
     }
 
-    void
-    doUnpack(uint32_t docId) override
-    {
-        _matchData->reset(docId);
-    }
+    void doUnpack(uint32_t docId) override { _matchData->reset(docId); }
 
 protected:
-    const DocumentMetaStore & _store;
+    const DocumentMetaStore& _store;
+
 public:
-    GidAllSearchIterator(const search::attribute::ISearchContext &baseSearchCtx,
-                         TermFieldMatchData *matchData, const DocumentMetaStore &store)
-        : AttributeIteratorBase(baseSearchCtx, matchData),
-          _store(store)
-    {
-    }
+    GidAllSearchIterator(const search::attribute::ISearchContext& baseSearchCtx, TermFieldMatchData* matchData,
+                         const DocumentMetaStore& store)
+        : AttributeIteratorBase(baseSearchCtx, matchData), _store(store) {}
     ~GidAllSearchIterator() override;
 };
 
 GidAllSearchIterator::~GidAllSearchIterator() = default;
 
-class GidStrictAllSearchIterator : public GidAllSearchIterator
-{
+class GidStrictAllSearchIterator : public GidAllSearchIterator {
 private:
     uint32_t _numDocs;
 
-    void
-    doSeek(uint32_t docId) override
-    {
+    void doSeek(uint32_t docId) override {
         if (_store.validLidFast(docId)) {
             setDocId(docId);
         } else {
-            for (docId++; docId < _numDocs && !_store.validLidFast(docId); docId++);
+            for (docId++; docId < _numDocs && !_store.validLidFast(docId); docId++)
+                ;
             if (docId < _numDocs) {
                 setDocId(docId);
             } else {
@@ -69,26 +60,19 @@ private:
     }
 
 public:
-    GidStrictAllSearchIterator(const search::attribute::ISearchContext &baseSearchCtx,
-                               TermFieldMatchData *matchData,
-                               const DocumentMetaStore &store)
-        : GidAllSearchIterator(baseSearchCtx, matchData, store),
-          _numDocs(store.getNumDocs())
-    {
-    }
+    GidStrictAllSearchIterator(const search::attribute::ISearchContext& baseSearchCtx, TermFieldMatchData* matchData,
+                               const DocumentMetaStore& store)
+        : GidAllSearchIterator(baseSearchCtx, matchData, store), _numDocs(store.getNumDocs()) {}
     ~GidStrictAllSearchIterator() override;
 };
 
 GidStrictAllSearchIterator::~GidStrictAllSearchIterator() = default;
 
-class GidSearchIterator : public GidAllSearchIterator
-{
+class GidSearchIterator : public GidAllSearchIterator {
 private:
-    const GlobalId & _gid;
+    const GlobalId& _gid;
 
-    void
-    doSeek(uint32_t docId) override
-    {
+    void doSeek(uint32_t docId) override {
         AttributeVector::DocId lid = 0;
         if (_store.getLid(_gid, lid) && (lid >= docId)) {
             setDocId(lid);
@@ -96,65 +80,48 @@ private:
             setAtEnd();
         }
     }
+
 public:
-    GidSearchIterator(const search::attribute::ISearchContext &baseSearchCtx,
-                      TermFieldMatchData *matchData, const DocumentMetaStore &store, const GlobalId &gid)
-        : GidAllSearchIterator(baseSearchCtx, matchData, store),
-          _gid(gid)
-    {
-    }
+    GidSearchIterator(const search::attribute::ISearchContext& baseSearchCtx, TermFieldMatchData* matchData,
+                      const DocumentMetaStore& store, const GlobalId& gid)
+        : GidAllSearchIterator(baseSearchCtx, matchData, store), _gid(gid) {}
     ~GidSearchIterator() override;
 };
 
 GidSearchIterator::~GidSearchIterator() = default;
 
-}
+} // namespace
 
-int32_t
-SearchContext::onFind(DocId, int32_t, int32_t &) const
-{
+int32_t SearchContext::onFind(DocId, int32_t, int32_t&) const {
     throw vespalib::IllegalStateException("The function is not implemented for documentmetastore::SearchContext");
 }
 
-int32_t
-SearchContext::onFind(DocId, int32_t ) const
-{
+int32_t SearchContext::onFind(DocId, int32_t) const {
     throw vespalib::IllegalStateException("The function is not implemented for documentmetastore::SearchContext");
 }
 
-search::attribute::HitEstimate
-SearchContext::calc_hit_estimate() const
-{
+search::attribute::HitEstimate SearchContext::calc_hit_estimate() const {
     return _isWord ? search::attribute::HitEstimate(1) : search::attribute::SearchContext::calc_hit_estimate();
 }
 
-SearchIterator::UP
-SearchContext::createIterator(TermFieldMatchData *matchData, bool strict)
-{
-    return _isWord
-        ? std::make_unique<GidSearchIterator>(*this, matchData, getStore(), _gid)
-        : strict
-            ?  std::make_unique<GidStrictAllSearchIterator>(*this, matchData, getStore())
-            :  std::make_unique<GidAllSearchIterator>(*this, matchData, getStore());
+SearchIterator::UP SearchContext::createIterator(TermFieldMatchData* matchData, bool strict) {
+    return _isWord  ? std::make_unique<GidSearchIterator>(*this, matchData, getStore(), _gid)
+           : strict ? std::make_unique<GidStrictAllSearchIterator>(*this, matchData, getStore())
+                    : std::make_unique<GidAllSearchIterator>(*this, matchData, getStore());
 }
 
-const DocumentMetaStore &
-SearchContext::getStore() const
-{
-    return static_cast<const DocumentMetaStore &>(attribute());
+const DocumentMetaStore& SearchContext::getStore() const {
+    return static_cast<const DocumentMetaStore&>(attribute());
 }
 
-SearchContext::SearchContext(QueryTermSimple::UP qTerm, const DocumentMetaStore &toBeSearched)
+SearchContext::SearchContext(QueryTermSimple::UP qTerm, const DocumentMetaStore& toBeSearched)
     : search::attribute::SearchContext(toBeSearched),
       _isWord(qTerm->isWord()),
-      _docid_limit(toBeSearched.getCommittedDocIdLimit())
-{
+      _docid_limit(toBeSearched.getCommittedDocIdLimit()) {
 }
 
-uint32_t
-SearchContext::get_committed_docid_limit() const noexcept
-{
+uint32_t SearchContext::get_committed_docid_limit() const noexcept {
     return _docid_limit;
 }
 
-}
+} // namespace proton::documentmetastore

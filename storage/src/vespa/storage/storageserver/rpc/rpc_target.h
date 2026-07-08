@@ -18,4 +18,4 @@ public:
     virtual const std::string& spec() const noexcept = 0;
 };
 
-}
+} // namespace storage::rpc

@@ -9,8 +9,7 @@ class Identifiable;
  * A predicate that is able to say either true or false when presented
  * with a generic object.
  **/
-class ObjectPredicate
-{
+class ObjectPredicate {
 public:
     /**
      * Apply this predicate to the given object.
@@ -18,7 +17,7 @@ public:
      * @return true or false
      * @param obj the object to check
      **/
-    virtual bool check(const Identifiable &obj) const = 0;
+    virtual bool check(const Identifiable& obj) const = 0;
 
     /**
      * empty
@@ -27,4 +26,3 @@ public:
 };
 
 } // namespace vespalib
-

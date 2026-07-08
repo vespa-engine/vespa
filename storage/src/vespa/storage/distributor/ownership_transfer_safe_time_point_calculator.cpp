@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "ownership_transfer_safe_time_point_calculator.h"
+
 #include <thread>
 
 namespace storage::distributor {
 
-vespalib::system_time
-OwnershipTransferSafeTimePointCalculator::safeTimePoint(vespalib::system_time now) const
-{
+vespalib::system_time OwnershipTransferSafeTimePointCalculator::safeTimePoint(vespalib::system_time now) const {
     if (_max_cluster_clock_skew.count() == 0) {
         return {};
     }
@@ -29,4 +28,4 @@ OwnershipTransferSafeTimePointCalculator::safeTimePoint(vespalib::system_time no
     return vespalib::system_time(now_sec + std::chrono::seconds(1) + _max_cluster_clock_skew);
 }
 
-}
+} // namespace storage::distributor

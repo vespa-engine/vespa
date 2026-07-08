@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "direct_buffer_bio.h"
+
 #include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/util/backtrace.h>
-#include <utility>
+
 #include <cassert>
+#include <utility>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.net.tls.impl.direct_buffer_bio");
@@ -40,38 +42,39 @@ long const_buffer_bio_ctrl(::BIO* bio, int cmd, long num, void* ptr);
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
 
 #if !defined(BIO_TYPE_START)
-#  define BIO_TYPE_START 128 // Constant hoisted from OpenSSL >= 1.1.0
+#define BIO_TYPE_START 128 // Constant hoisted from OpenSSL >= 1.1.0
 #endif
 
 const ::BIO_METHOD mutable_buf_method_instance = {
-    (BIO_TYPE_START + 1) | BIO_TYPE_SOURCE_SINK, // BIO_TYPE_SOURCE_SINK sets high bits, not low bits, so no clobbering
+    (BIO_TYPE_START + 1) |
+        BIO_TYPE_SOURCE_SINK, // BIO_TYPE_SOURCE_SINK sets high bits, not low bits, so no clobbering
     "mutable direct buffer access BIO",
     mutable_buffer_bio_write, // write func
-    mutable_buffer_bio_read, // read func
-    nullptr, // puts func
-    nullptr, // gets func
-    mutable_buffer_bio_ctrl, // ctrl func
-    buffer_bio_init, // init func
-    buffer_bio_destroy, // destroy func
-    nullptr, // callback ctrl func
+    mutable_buffer_bio_read,  // read func
+    nullptr,                  // puts func
+    nullptr,                  // gets func
+    mutable_buffer_bio_ctrl,  // ctrl func
+    buffer_bio_init,          // init func
+    buffer_bio_destroy,       // destroy func
+    nullptr,                  // callback ctrl func
 };
 
 const ::BIO_METHOD const_buf_method_instance = {
     (BIO_TYPE_START + 2) | BIO_TYPE_SOURCE_SINK,
     "const direct buffer access BIO",
     const_buffer_bio_write, // write func
-    const_buffer_bio_read, // read func
-    nullptr, // puts func
-    nullptr, // gets func
-    const_buffer_bio_ctrl, // ctrl func
-    buffer_bio_init, // init func
-    buffer_bio_destroy, // destroy func
-    nullptr, // callback ctrl func
+    const_buffer_bio_read,  // read func
+    nullptr,                // puts func
+    nullptr,                // gets func
+    const_buffer_bio_ctrl,  // ctrl func
+    buffer_bio_init,        // init func
+    buffer_bio_destroy,     // destroy func
+    nullptr,                // callback ctrl func
 };
 
 struct BioMethodWrapper {
     const ::BIO_METHOD* method; // Global instance
-    int type_index;
+    int                 type_index;
 };
 
 BioMethodWrapper mutable_buf_method() {
@@ -105,15 +108,13 @@ void set_bio_init(::BIO& bio, int init) {
 #else // OpenSSL 1.1 and beyond
 
 struct BioMethodDeleter {
-    void operator()(::BIO_METHOD* meth) const noexcept {
-        ::BIO_meth_free(meth);
-    }
+    void operator()(::BIO_METHOD* meth) const noexcept { ::BIO_meth_free(meth); }
 };
 using BioMethodPtr = std::unique_ptr<::BIO_METHOD, BioMethodDeleter>;
 
 struct BioMethodWrapper {
     BioMethodPtr method;
-    int type_index;
+    int          type_index;
 };
 
 struct BioMethodParams {
@@ -129,24 +130,23 @@ BioMethodWrapper create_bio_method(const BioMethodParams& params) {
         throw CryptoException("BIO_get_new_index");
     }
     BioMethodPtr bm(::BIO_meth_new(type_index, params.bio_name));
-    if (!::BIO_meth_set_create(bm.get(), buffer_bio_init) ||
-        !::BIO_meth_set_destroy(bm.get(), buffer_bio_destroy) ||
-        !::BIO_meth_set_write(bm.get(), params.bio_write) ||
-        !::BIO_meth_set_read(bm.get(), params.bio_read) ||
-        !::BIO_meth_set_ctrl(bm.get(), params.bio_ctrl)) {
+    if (!::BIO_meth_set_create(bm.get(), buffer_bio_init) || !::BIO_meth_set_destroy(bm.get(), buffer_bio_destroy) ||
+        !::BIO_meth_set_write(bm.get(), params.bio_write) || !::BIO_meth_set_read(bm.get(), params.bio_read) ||
+        !::BIO_meth_set_ctrl(bm.get(), params.bio_ctrl))
+    {
         throw CryptoException("Failed to set BIO_METHOD callback");
     }
     return {std::move(bm), type_index};
 }
 
 BioMethodWrapper create_mutable_bio_method() {
-    return create_bio_method({"mutable direct buffer access BIO", mutable_buffer_bio_write,
-                              mutable_buffer_bio_read, mutable_buffer_bio_ctrl});
+    return create_bio_method({"mutable direct buffer access BIO", mutable_buffer_bio_write, mutable_buffer_bio_read,
+                              mutable_buffer_bio_ctrl});
 }
 
 BioMethodWrapper create_const_bio_method() {
-    return create_bio_method({"const direct buffer access BIO", const_buffer_bio_write,
-                              const_buffer_bio_read, const_buffer_bio_ctrl});
+    return create_bio_method(
+        {"const direct buffer access BIO", const_buffer_bio_write, const_buffer_bio_read, const_buffer_bio_ctrl});
 }
 
 const BioMethodWrapper& mutable_buf_method() {
@@ -194,7 +194,7 @@ BioPtr new_direct_buffer_bio(const ::BIO_METHOD& method) {
     return BioPtr(bio);
 }
 
-} // anon ns
+} // namespace
 
 BioPtr new_mutable_direct_buffer_bio() {
     return new_direct_buffer_bio(*mutable_buf_method().method);
@@ -249,16 +249,16 @@ int mutable_buffer_bio_write(::BIO* bio, const char* src_buf, int len) {
 }
 
 int const_buffer_bio_write(::BIO* bio, const char* src_buf, int len) {
-    (void) bio;
-    (void) src_buf;
+    (void)bio;
+    (void)src_buf;
     // Const buffers are read only!
     LOG(error, "BIO_write() of length %d called on read-only BIO", len);
     return -1;
 }
 
 int mutable_buffer_bio_read(::BIO* bio, char* dest_buf, int len) {
-    (void) bio;
-    (void) dest_buf;
+    (void)bio;
+    (void)dest_buf;
     // Mutable buffers are write only!
     LOG(error, "BIO_read() of length %d called on write-only BIO", len);
     return -1;
@@ -276,7 +276,7 @@ int const_buffer_bio_read(::BIO* bio, char* dest_buf, int len) {
     }
 
     const auto sz_len = static_cast<size_t>(len);
-    auto* src_buf = static_cast<ConstBufferView*>(get_bio_data(*bio));
+    auto*      src_buf = static_cast<ConstBufferView*>(get_bio_data(*bio));
     const auto readable = std::min(sz_len, src_buf->size - src_buf->pos);
     if (readable != 0) {
         // Source and destination buffers should never overlap.
@@ -291,10 +291,9 @@ int const_buffer_bio_read(::BIO* bio, char* dest_buf, int len) {
     return -1;
 }
 
-template <typename BufferType>
-long do_buffer_bio_ctrl(::BIO* bio, int cmd, long num, void* ptr) {
+template <typename BufferType> long do_buffer_bio_ctrl(::BIO* bio, int cmd, long num, void* ptr) {
     const auto* buf_view = static_cast<const BufferType*>(get_bio_data(*bio));
-    long ret = 1;
+    long        ret = 1;
 
     switch (cmd) {
     case BIO_CTRL_EOF: // Is the buffer exhausted?
@@ -368,9 +367,9 @@ ConstBufferView const_buffer_view_of(const char* buffer, size_t sz) {
 // BIO's method type on this version is doomed to fail.
 // See https://github.com/openssl/openssl/pull/5812
 #if ((OPENSSL_VERSION_NUMBER & 0xfffffff0L) != 0x10100080L)
-#  define WHEN_NO_OPENSSL_BIO_TYPE_BUG(expr) expr
+#define WHEN_NO_OPENSSL_BIO_TYPE_BUG(expr) expr
 #else
-#  define WHEN_NO_OPENSSL_BIO_TYPE_BUG(expr)
+#define WHEN_NO_OPENSSL_BIO_TYPE_BUG(expr)
 #endif
 
 void set_bio_mutable_buffer_view(::BIO& bio, MutableBufferView* view) {
@@ -390,12 +389,10 @@ void unset_bio_buffer_view(::BIO& bio) {
     set_bio_data(bio, nullptr);
 }
 
-} // anon ns
+} // namespace
 
 ConstBufferViewGuard::ConstBufferViewGuard(::BIO& bio, const char* buffer, size_t sz) noexcept
-    : _bio(bio),
-      _view(const_buffer_view_of(buffer, sz))
-{
+    : _bio(bio), _view(const_buffer_view_of(buffer, sz)) {
     WHEN_NO_OPENSSL_BIO_TYPE_BUG(LOG_ASSERT(is_const_bio(bio)));
     set_bio_const_buffer_view(bio, &_view);
 }
@@ -405,9 +402,7 @@ ConstBufferViewGuard::~ConstBufferViewGuard() {
 }
 
 MutableBufferViewGuard::MutableBufferViewGuard(::BIO& bio, char* buffer, size_t sz) noexcept
-    : _bio(bio),
-      _view(mutable_buffer_view_of(buffer, sz))
-{
+    : _bio(bio), _view(mutable_buffer_view_of(buffer, sz)) {
     WHEN_NO_OPENSSL_BIO_TYPE_BUG(LOG_ASSERT(is_mutable_bio(bio)));
     set_bio_mutable_buffer_view(bio, &_view);
 }
@@ -416,4 +411,4 @@ MutableBufferViewGuard::~MutableBufferViewGuard() {
     unset_bio_buffer_view(_bio);
 }
 
-}
+} // namespace vespalib::net::tls::impl

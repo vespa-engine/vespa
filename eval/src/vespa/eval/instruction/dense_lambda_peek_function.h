@@ -13,19 +13,17 @@ namespace vespalib::eval {
  * indexes of the tensor to be created into global cell indexes of the
  * tensor to be peeked.
  **/
-class DenseLambdaPeekFunction : public tensor_function::Op1
-{
+class DenseLambdaPeekFunction : public tensor_function::Op1 {
 private:
     std::shared_ptr<Function const> _idx_fun;
 
 public:
-    DenseLambdaPeekFunction(const ValueType &result_type,
-                            const TensorFunction &child,
+    DenseLambdaPeekFunction(const ValueType& result_type, const TensorFunction& child,
                             std::shared_ptr<Function const> idx_fun);
     ~DenseLambdaPeekFunction() override;
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     std::string idx_fun_dump() const;
     bool result_is_mutable() const override { return true; }
 };
 
-} // namespace
+} // namespace vespalib::eval

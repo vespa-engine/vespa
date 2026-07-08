@@ -1,18 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "http_client.h"
+
 #include "hex_number.h"
-#include <vbench/core/line_reader.h>
+
 #include <vespa/vespalib/data/output_writer.h>
+
+#include <vbench/core/line_reader.h>
 
 namespace vbench {
 
 using OutputWriter = vespalib::OutputWriter;
 
-HttpClient::~HttpClient() {}
+HttpClient::~HttpClient() {
+}
 
-void
-HttpClient::writeRequest() {
+void HttpClient::writeRequest() {
     OutputWriter dst(_conn->stream(), WRITE_SIZE);
     dst.printf("GET %s HTTP/1.1\r\n", _url.c_str());
     dst.printf("Host: %s\r\n", _conn->server().host.c_str());
@@ -22,9 +25,7 @@ HttpClient::writeRequest() {
     dst.write("\r\n");
 }
 
-bool
-HttpClient::readStatus()
-{
+bool HttpClient::readStatus() {
     LineReader reader(_conn->stream());
     if (reader.readLine(_line) && (splitstr(_line, "\t ", _split) >= 2)) {
         if (_split[0] == "HTTP/1.0") {
@@ -43,17 +44,14 @@ HttpClient::readStatus()
         return true;
     }
     if (_conn->stream().tainted()) {
-        _handler.handleFailure(strfmt("Connection error: %s",
-                                      _conn->stream().tainted().reason().c_str()));
+        _handler.handleFailure(strfmt("Connection error: %s", _conn->stream().tainted().reason().c_str()));
     } else {
         _handler.handleFailure(strfmt("could not parse HTTP status line: '%s'", _line.c_str()));
     }
     return false;
 }
 
-bool
-HttpClient::readHeaders()
-{
+bool HttpClient::readHeaders() {
     LineReader reader(_conn->stream());
     while (reader.readLine(_line)) {
         if (_line.empty()) {
@@ -77,9 +75,7 @@ HttpClient::readHeaders()
                             _header.connectionCloseGiven = true;
                         }
                     }
-                } else if (strcasecmp(_split[0].c_str(), "content-length") == 0 &&
-                           _split.size() == 2)
-                {
+                } else if (strcasecmp(_split[0].c_str(), "content-length") == 0 && _split.size() == 2) {
                     _handler.handleHeader(_split[0], _split[1]);
                     _header.contentLengthGiven = true;
                     _header.contentLength = atoi(_split[1].c_str());
@@ -96,9 +92,8 @@ HttpClient::readHeaders()
     return false;
 }
 
-bool
-HttpClient::readContent(size_t len) {
-    Input &input = _conn->stream();
+bool HttpClient::readContent(size_t len) {
+    Input& input = _conn->stream();
     while (len > 0) {
         Memory mem = input.obtain();
         mem.size = std::min(len, mem.size);
@@ -113,9 +108,7 @@ HttpClient::readContent(size_t len) {
     return true;
 }
 
-bool
-HttpClient::readChunkSize(bool first, size_t &size)
-{
+bool HttpClient::readChunkSize(bool first, size_t& size) {
     LineReader reader(_conn->stream());
     if (!first && (!reader.readLine(_line) || !_line.empty())) {
         return false;
@@ -128,9 +121,7 @@ HttpClient::readChunkSize(bool first, size_t &size)
     return (hex.length() > 0);
 }
 
-bool
-HttpClient::skipTrailers()
-{
+bool HttpClient::skipTrailers() {
     LineReader reader(_conn->stream());
     while (reader.readLine(_line)) {
         if (_line.empty()) {
@@ -140,9 +131,7 @@ HttpClient::skipTrailers()
     return false;
 }
 
-bool
-HttpClient::readContent()
-{
+bool HttpClient::readContent() {
     if (_header.contentLengthGiven) {
         return readContent(_header.contentLength);
     } else if (_header.chunkedEncodingGiven) {
@@ -163,13 +152,12 @@ HttpClient::readContent()
                                    "but we need eof to terminate data");
             return false;
         }
-        Input &input = _conn->stream();
+        Input& input = _conn->stream();
         for (;;) {
             Memory mem = input.obtain();
             if (mem.size == 0) {
                 if (_conn->stream().tainted()) {
-                    _handler.handleFailure(strfmt("read error: '%s'",
-                                                  _conn->stream().tainted().reason().c_str()));
+                    _handler.handleFailure(strfmt("read error: '%s'", _conn->stream().tainted().reason().c_str()));
                 }
                 return true;
             }
@@ -179,9 +167,7 @@ HttpClient::readContent()
     }
 }
 
-bool
-HttpClient::perform(CryptoEngine &crypto)
-{
+bool HttpClient::perform(CryptoEngine& crypto) {
     writeRequest();
     if (!_conn->fresh() && (_conn->stream().obtain().size == 0)) {
         _conn.reset(new HttpConnection(crypto, _conn->server()));

@@ -3,7 +3,9 @@
 
 #include "flushtargetproxy.h"
 
-namespace vespalib { class Executor; }
+namespace vespalib {
+class Executor;
+}
 
 namespace proton {
 
@@ -14,12 +16,11 @@ class IGetSerialNum;
  * executor. This is used by the DocumentDB to ensure that initFlush() in the
  * underlying flush targets are run in the updater thread.
  */
-class ThreadedFlushTarget : public FlushTargetProxy
-{
+class ThreadedFlushTarget : public FlushTargetProxy {
 private:
     using IFlushTarget = searchcorespi::IFlushTarget;
-    vespalib::Executor  &_executor;
-    const IGetSerialNum &_getSerialNum;
+    vespalib::Executor&  _executor;
+    const IGetSerialNum& _getSerialNum;
 
 public:
     /**
@@ -30,9 +31,8 @@ public:
      * @param executor The executor to submit the task to.
      * @param target   The target to decorate.
      */
-    ThreadedFlushTarget(vespalib::Executor &executor,
-                        const IGetSerialNum &getSerialNum,
-                        const IFlushTarget::SP &target);
+    ThreadedFlushTarget(vespalib::Executor& executor, const IGetSerialNum& getSerialNum,
+                        const IFlushTarget::SP& target);
 
     /**
      * Constructs a new instance of this class. If the argument executor is
@@ -43,13 +43,10 @@ public:
      * @param target   The target to decorate.
      * @param prefix   The prefix to prepend to the target
      */
-    ThreadedFlushTarget(vespalib::Executor &executor,
-                        const IGetSerialNum &getSerialNum,
-                        const IFlushTarget::SP &target,
-                        const std::string & prefix);
+    ThreadedFlushTarget(vespalib::Executor& executor, const IGetSerialNum& getSerialNum,
+                        const IFlushTarget::SP& target, const std::string& prefix);
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 };
 
 } // namespace proton
-

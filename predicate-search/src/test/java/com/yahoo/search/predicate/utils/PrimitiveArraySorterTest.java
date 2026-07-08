@@ -3,10 +3,14 @@ package com.yahoo.search.predicate.utils;
 
 import org.junit.jupiter.api.Test;
 
+import com.yahoo.text.Text;
 import java.util.Arrays;
 import java.util.Random;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PrimitiveArraySorterTest {
 
@@ -53,7 +57,7 @@ public class PrimitiveArraySorterTest {
             short[] customSorted = Arrays.copyOf(original, original.length);
             PrimitiveArraySorter.sort(customSorted, Short::compare);
             Arrays.sort(javaSorted);
-            String errorMsg = String.format("%s != %s (before sorting: %s)", Arrays.toString(customSorted), Arrays.toString(javaSorted), Arrays.toString(original));
+            String errorMsg = Text.format("%s != %s (before sorting: %s)", Arrays.toString(customSorted), Arrays.toString(javaSorted), Arrays.toString(original));
             assertArrayEquals(customSorted, javaSorted, errorMsg);
         }
     }

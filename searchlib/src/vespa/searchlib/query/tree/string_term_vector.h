@@ -3,6 +3,7 @@
 #pragma once
 
 #include "term_vector.h"
+
 #include <vector>
 
 namespace search::query {
@@ -13,6 +14,7 @@ namespace search::query {
  */
 class StringTermVector : public TermVector {
     std::vector<std::string> _terms;
+
 public:
     explicit StringTermVector(uint32_t sz);
     ~StringTermVector() override;
@@ -25,4 +27,4 @@ public:
     [[nodiscard]] uint32_t size() const override;
 };
 
-}
+} // namespace search::query

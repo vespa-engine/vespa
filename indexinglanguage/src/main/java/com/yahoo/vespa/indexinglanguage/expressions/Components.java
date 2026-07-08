@@ -97,7 +97,7 @@ public abstract class Components<TYPE> {
 
         @Override
         public Optional<TYPE> singleSelected() {
-            return Optional.of(failingComponent("Components can not be created in this environment"));
+            return Optional.of(failingComponent("Components cannot be created in this environment"));
         }
 
         @Override
@@ -105,7 +105,7 @@ public abstract class Components<TYPE> {
 
         @Override
         public TYPE get(String componentId) {
-            return failingComponent("Components can not be created in this environment");
+            return failingComponent("Components cannot be created in this environment");
         }
 
     }

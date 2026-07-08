@@ -6,11 +6,10 @@
 using namespace config;
 using namespace vespalib::slime::convenience;
 
-TEST(ConfigFormatTest, requireThatConfigIsFormatted)
-{
+TEST(ConfigFormatTest, requireThatConfigIsFormatted) {
     ConfigDataBuffer buffer;
-    vespalib::Slime & slime(buffer.slimeObject());
-    Cursor &c = slime.setObject().setObject("configPayload").setObject("myField");
+    vespalib::Slime& slime(buffer.slimeObject());
+    Cursor&          c = slime.setObject().setObject("configPayload").setObject("myField");
     c.setString("type", "string");
     c.setString("value", "foo");
 

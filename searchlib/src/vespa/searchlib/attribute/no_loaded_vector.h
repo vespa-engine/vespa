@@ -9,7 +9,6 @@ namespace search {
  * from non-enumerated files for data types where enumeration is
  * mandatory.
  */
-class NoLoadedVector {
-};
+class NoLoadedVector {};
 
-}
+} // namespace search

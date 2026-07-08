@@ -2,6 +2,4 @@
 
 #include "time_queue.h"
 
-namespace vbench {
-
-} // namespace vbench
+namespace vbench {} // namespace vbench

@@ -4,9 +4,7 @@
 
 namespace storage::distributor {
 
-void
-merge_min_replica_stats(MinReplicaMap & dest, const MinReplicaMap & src)
-{
+void merge_min_replica_stats(MinReplicaMap& dest, const MinReplicaMap& src) {
     for (const auto& entry : src) {
         auto node_index = entry.first;
         auto itr = dest.find(node_index);
@@ -15,4 +13,4 @@ merge_min_replica_stats(MinReplicaMap & dest, const MinReplicaMap & src)
     }
 }
 
-}
+} // namespace storage::distributor

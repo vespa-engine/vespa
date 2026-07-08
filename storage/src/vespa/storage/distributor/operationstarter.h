@@ -8,12 +8,11 @@ namespace storage::distributor {
 
 class Operation;
 
-class OperationStarter
-{
+class OperationStarter {
 public:
     using Priority = uint8_t;
     virtual ~OperationStarter() = default;
     virtual bool start(const std::shared_ptr<Operation>& operation, Priority priority) = 0;
 };
 
-}
+} // namespace storage::distributor

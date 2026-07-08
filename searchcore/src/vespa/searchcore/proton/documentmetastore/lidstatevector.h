@@ -3,17 +3,17 @@
 #pragma once
 
 #include <vespa/searchlib/common/growablebitvector.h>
+
 #include <atomic>
 
 namespace proton {
 
-class LidStateVector
-{
+class LidStateVector {
     search::GrowableBitVector _bv;
-    std::atomic<uint32_t> _lowest;
-    std::atomic<uint32_t> _highest;
-    bool     _trackLowest;
-    bool     _trackHighest;
+    std::atomic<uint32_t>     _lowest;
+    std::atomic<uint32_t>     _highest;
+    bool                      _trackLowest;
+    bool                      _trackHighest;
 
     void updateLowest(uint32_t lowest);
     void updateHighest(uint32_t highest);
@@ -29,14 +29,11 @@ class LidStateVector
             updateHighest(highest);
         }
     }
-    template <bool do_set>
-    uint32_t assert_is_not_set_then_set_bits_helper(const std::vector<uint32_t>& idxs);
-    template <bool do_assert>
-    void assert_is_set_then_clear_bits_helper(const std::vector<uint32_t>& idxs);
+    template <bool do_set> uint32_t assert_is_not_set_then_set_bits_helper(const std::vector<uint32_t>& idxs);
+    template <bool do_assert> void assert_is_set_then_clear_bits_helper(const std::vector<uint32_t>& idxs);
+
 public:
-    
-    LidStateVector(unsigned int newSize, unsigned int newCapacity,
-                   vespalib::GenerationHolder &generationHolder,
+    LidStateVector(unsigned int newSize, unsigned int newCapacity, vespalib::GenerationHolder& generationHolder,
                    bool trackLowest, bool trackHighest);
 
     ~LidStateVector();
@@ -51,9 +48,7 @@ public:
     bool testBit(unsigned int idx) const { return _bv.reader().testBit(idx); }
     bool testBitAcquire(unsigned int idx) const { return _bv.reader().testBitAcquire(idx); }
     unsigned int size() const { return _bv.reader().size(); }
-    unsigned int byteSize() const {
-        return _bv.extraByteSize() + sizeof(LidStateVector);
-    }
+    unsigned int byteSize() const { return _bv.extraByteSize() + sizeof(LidStateVector); }
     bool empty() const { return count() == 0u; }
     unsigned int getLowest() const { return _lowest.load(std::memory_order_relaxed); }
     unsigned int getHighest() const { return _highest.load(std::memory_order_relaxed); }
@@ -67,11 +62,9 @@ public:
         return _bv.reader().countTrueBits();
     }
 
-    unsigned int getNextTrueBit(unsigned int idx) const {
-        return _bv.reader().getNextTrueBit(idx);
-    }
+    unsigned int getNextTrueBit(unsigned int idx) const { return _bv.reader().getNextTrueBit(idx); }
 
-    const search::BitVector &getBitVector() const { return _bv.reader(); }
-}; 
+    const search::BitVector& getBitVector() const { return _bv.reader(); }
+};
 
-}
+} // namespace proton

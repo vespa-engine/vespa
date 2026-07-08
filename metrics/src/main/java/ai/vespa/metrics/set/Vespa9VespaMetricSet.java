@@ -106,8 +106,9 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.APPLICATION_GENERATION.baseName());
 
-        addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
+        addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.rate());
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_LATENCY, EnumSet.of(max, sum, count, ninety_five_percentile, ninety_nine_percentile));
 
         addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS, EnumSet.of(max, average));
         addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS, EnumSet.of(max, average));
@@ -126,6 +127,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_BUSY_THREADS, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS.max());
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.max());
+        addMetric(metrics, ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.rate());
 
         addMetric(metrics, ContainerMetrics.HTTPAPI_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.HTTPAPI_PENDING, EnumSet.of(max, sum, count));
@@ -157,6 +159,7 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_CONTENT_SIZE, EnumSet.of(sum, count, max));
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUESTS.count());
 
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT.rate());
@@ -172,11 +175,26 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
 
+        addMetric(metrics, ContainerMetrics.JDISC_RENDER_LATENCY, EnumSet.of(max, count, sum));
+
         addMetric(metrics, ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count, max));
 
         // Embedders
         addMetric(metrics, ContainerMetrics.EMBEDDER_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_SEQUENCE_LENGTH, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_REQUEST_COUNT, EnumSet.of(count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_REQUEST_FAILURE_COUNT, EnumSet.of(count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_QUEUE_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_COUNT, EnumSet.of(count));
+
+        addMetric(metrics, ContainerMetrics.INFERENCE_PENDING.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_REQUEST_RATE.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_FAILURE_RATE.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_REQUEST_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_QUEUE_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_COMPUTE_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_QUEUE_COMPUTE_RATIO.baseName());
 
         return metrics;
     }
@@ -344,10 +362,14 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK_USAGE_TOTAL.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK_USAGE_TOTAL_UTILIZATION.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK_USAGE_TRANSIENT.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK_USAGE_RESERVED.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK_USAGE_USED_AND_RESERVED.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TOTAL.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TOTAL_UTILIZATION.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TRANSIENT.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_RESERVED.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_USED_AND_RESERVED.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_MAPPINGS.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MALLOC_ARENA.max());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_ATTRIBUTE_RESOURCE_USAGE_ADDRESS_SPACE.max());
@@ -405,8 +427,10 @@ public class Vespa9VespaMetricSet {
 
         // matching
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_APPROXIMATE_NNS_TIMED_OUT_QUERIES.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_SETUP_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_APPROXIMATE_NNS_TIME, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_DOCS_MATCHED, EnumSet.of(rate));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_EXACT_NNS_DISTANCES_COMPUTED, EnumSet.of(rate));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_APPROXIMATE_NNS_DISTANCES_COMPUTED, EnumSet.of(rate));

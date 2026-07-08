@@ -37,6 +37,12 @@ public class RemoteHealthStatusFetcher extends HttpMetricFetcher {
         try (CloseableHttpResponse response = getResponse()) {
             HttpEntity entity = response.getEntity();
             try {
+                int statusCode = response.getCode();
+                if (statusCode != 200) {
+                    EntityUtils.consumeQuietly(entity);
+                    log.log(FINE, () -> "Got status code " + statusCode + " for health page of service '" + service + "'");
+                    return HealthMetric.getUnknown("Got status code " + statusCode);
+                }
                 return parse(new BufferedInputStream(entity.getContent(), HttpMetricFetcher.BUFFER_SIZE));
             } catch (Exception e) {
                 handleException(e, entity.getContentType(), fetchCount);

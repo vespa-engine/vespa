@@ -2,5 +2,4 @@
 
 #include "lazy_source.h"
 
-namespace search::engine {
-}
+namespace search::engine {}

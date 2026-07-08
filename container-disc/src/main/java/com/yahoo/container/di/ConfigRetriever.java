@@ -6,6 +6,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.core.Keys;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.util.HashSet;
@@ -35,7 +36,9 @@ public final class ConfigRetriever {
     private Subscriber componentSubscriber;
     private int componentSubscriberIndex;
 
-    public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys, SubscriberFactory subscriberFactory) {
+    private final com.yahoo.container.Container vespaContainer;
+
+    public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys, SubscriberFactory subscriberFactory, com.yahoo.container.Container vespaContainer) {
         this.bootstrapKeys = bootstrapKeys;
         this.componentSubscriberKeys = new HashSet<>();
         this.subscriberFactory = subscriberFactory;
@@ -44,6 +47,7 @@ public final class ConfigRetriever {
         }
         this.bootstrapSubscriber = this.subscriberFactory.getSubscriber(bootstrapKeys, "bootstrap");
         this.componentSubscriber = this.subscriberFactory.getSubscriber(componentSubscriberKeys, "component_" + ++componentSubscriberIndex);
+        this.vespaContainer = vespaContainer;
     }
 
     public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
@@ -51,11 +55,18 @@ public final class ConfigRetriever {
         // Loop until we get config.
         while (true) {
             Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration, isInitializing);
+            updateApplyOnRestart();
+
             if (maybeSnapshot.isPresent()) {
                 var configSnapshot = maybeSnapshot.get();
+                log.fine(() -> Text.format("getConfigs: Returning snapshot type=%s, gen=%d",
+                                           configSnapshot.getClass().getSimpleName(),
+                                           configSnapshot instanceof BootstrapConfigs ?
+                                               bootstrapSubscriber.generation() : componentSubscriber.generation()));
                 resetComponentSubscriberIfBootstrap(configSnapshot);
                 return configSnapshot;
             }
+            log.fine(() -> "getConfigs: No snapshot available, continuing loop");
         }
     }
 
@@ -134,12 +145,16 @@ public final class ConfigRetriever {
 
     private void resetComponentSubscriberIfBootstrap(ConfigSnapshot configSnapshot) {
         if (configSnapshot instanceof BootstrapConfigs) {
+            log.fine(() -> Text.format("resetComponentSubscriberIfBootstrap: Resetting component subscriber (bootstrap gen=%d, applyOnRestart=%b)",
+                                       bootstrapSubscriber.generation(), bootstrapSubscriber.applyOnRestart()));
             setupComponentSubscriber(Set.of());
         }
     }
 
     private void setupComponentSubscriber(Set<ConfigKey<? extends ConfigInstance>> keys) {
         if (! componentSubscriberKeys.equals(keys)) {
+            log.fine(() -> Text.format("setupComponentSubscriber: Creating NEW component subscriber (old applyOnRestart=%b, gen=%d)",
+                                       componentSubscriber.applyOnRestart(), componentSubscriber.generation()));
             componentSubscriber.close();
             log.log(FINE, () -> "Closed " + componentSubscriber);
             componentSubscriberKeys = keys;
@@ -169,10 +184,19 @@ public final class ConfigRetriever {
     }
 
     /**
-     * @see Subscriber#applyOnRestart() 
+     * @see Subscriber#applyOnRestart()
      */
-    public boolean applyOnRestart() {
-        return bootstrapSubscriber.applyOnRestart() || componentSubscriber.applyOnRestart();
+    private void updateApplyOnRestart() {
+        boolean containerApplyOnRestart = vespaContainer.applyOnRestart();
+        boolean bootstrapApplyOnRestart = bootstrapSubscriber.applyOnRestart();
+        boolean componentApplyOnRestart = componentSubscriber.applyOnRestart();
+        log.fine(() -> Text.format(
+                "updateApplyOnRestart: container=%b, bootstrap=%b, component=%b",
+                containerApplyOnRestart, bootstrapApplyOnRestart, componentApplyOnRestart));
+
+        if (!containerApplyOnRestart) { // Keep it `true` until restart.
+            vespaContainer.setApplyOnRestart(bootstrapApplyOnRestart || componentApplyOnRestart);
+        }
     }
 
     public static class ConfigSnapshot {

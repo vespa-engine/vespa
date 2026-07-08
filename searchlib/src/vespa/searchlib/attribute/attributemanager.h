@@ -4,11 +4,15 @@
 #include "attributeguard.h"
 #include "iattributemanager.h"
 #include "interlock.h"
+
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <mutex>
 
-namespace search::attribute { class Config; }
+namespace search::attribute {
+class Config;
+}
 
 namespace search {
 
@@ -16,10 +20,10 @@ namespace search {
  * You use the attribute manager to get access to attributes. You must specify what kind
  * of access you want to have.
  **/
-class AttributeManager : public IAttributeManager
-{
+class AttributeManager : public IAttributeManager {
 private:
     using Config = attribute::Config;
+
 public:
     using StringVector = std::vector<string>;
     using Snapshot = search::IndexMetaInfo::Snapshot;
@@ -35,38 +39,41 @@ public:
      * about the content of the attribute. If that is required some of
      * the other getAttributeXX methods must be used.
      **/
-    const VectorHolder * getAttributeRef(std::string_view name) const;
+    const VectorHolder* getAttributeRef(std::string_view name) const;
 
     AttributeGuard::UP getAttribute(std::string_view name) const override;
-    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const override;
+    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name,
+                                                                         bool stableEnumGuard) const override;
     void asyncForAttribute(std::string_view name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
 
     /**
      * This will load attributes in the most memory economical way by loading largest first.
      */
-    bool addVector(std::string_view name, const Config & config);
-    bool add(const VectorHolder & vector);
+    bool addVector(std::string_view name, const Config& config);
+    bool add(const VectorHolder& vector);
 
-    void getAttributeList(AttributeList & list) const override;
+    void getAttributeList(AttributeList& list) const override;
     attribute::IAttributeContext::UP createContext() const override;
 
-    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const override;
+    std::shared_ptr<attribute::ReadableAttributeVector>
+    readable_attribute_vector(std::string_view name) const override;
 
-    const Snapshot & getSnapshot()         const { return _snapShot; }
-    const string & getBaseDir()       const { return _baseDir; }
-    void setBaseDir(const string & base);
+    const Snapshot& getSnapshot() const { return _snapShot; }
+    const string& getBaseDir() const { return _baseDir; }
+    void setBaseDir(const string& base);
     uint64_t getMemoryFootprint() const;
 
 protected:
     using AttributeMap = vespalib::hash_map<string, VectorHolder>;
-    AttributeMap   _attributes;
+    AttributeMap       _attributes;
     mutable std::mutex _loadLock;
+
 private:
-    const VectorHolder * findAndLoadAttribute(std::string_view name) const;
+    const VectorHolder* findAndLoadAttribute(std::string_view name) const;
     string createBaseFileName(std::string_view name) const;
-    string    _baseDir;
-    Snapshot  _snapShot;
+    string                                _baseDir;
+    Snapshot                              _snapShot;
     std::shared_ptr<attribute::Interlock> _interlock;
 };
 
-}
+} // namespace search

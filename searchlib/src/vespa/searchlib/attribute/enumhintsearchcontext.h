@@ -5,11 +5,13 @@
 #include "ipostinglistsearchcontext.h"
 
 namespace vespalib::datastore {
-    class EntryComparator;
-    class IUniqueStoreDictionaryReadSnapshot;
-}
+class EntryComparator;
+class IUniqueStoreDictionaryReadSnapshot;
+} // namespace vespalib::datastore
 
-namespace search { class IEnumStoreDictionary; }
+namespace search {
+class IEnumStoreDictionary;
+}
 
 namespace search::attribute {
 
@@ -18,31 +20,29 @@ namespace search::attribute {
  * searches for values that are not present at all.
  */
 
-class EnumHintSearchContext : public IPostingListSearchContext
-{
+class EnumHintSearchContext : public IPostingListSearchContext {
     const std::unique_ptr<vespalib::datastore::IUniqueStoreDictionaryReadSnapshot> _dict_snapshot;
-    uint32_t                _uniqueValues;
-    uint32_t                _docIdLimit;
-    uint64_t                _numValues; // attr.getStatus().getNumValues();
+    uint32_t                                                                       _uniqueValues;
+    uint32_t                                                                       _docIdLimit;
+    uint64_t _numValues; // attr.getStatus().getNumValues();
 
 protected:
-    EnumHintSearchContext(const IEnumStoreDictionary &dictionary,
-                          uint32_t docIdLimit,
-                          uint64_t numValues);
+    EnumHintSearchContext(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues);
     ~EnumHintSearchContext() override;
 
 public:
-    void lookupTerm(const vespalib::datastore::EntryComparator &comp);
-    void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
+    void lookupTerm(const vespalib::datastore::EntryComparator& comp);
+    void lookupRange(const vespalib::datastore::EntryComparator& low,
+                     const vespalib::datastore::EntryComparator& high);
 
 protected:
-    std::unique_ptr<queryeval::SearchIterator>
-    createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
+    std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData* matchData,
+                                                                     bool                     strict) override;
 
-    void fetchPostings(const queryeval::ExecuteInfo & execInfo, bool strict) override;
+    void fetchPostings(const queryeval::ExecuteInfo& execInfo, bool strict) override;
     HitEstimate calc_hit_estimate() const override;
     double posting_list_merge_factor() const override;
     uint32_t get_committed_docid_limit() const noexcept { return _docIdLimit; }
 };
 
-}
+} // namespace search::attribute

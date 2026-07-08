@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryfeature.h"
+
 #include "constant_tensor_executor.h"
 #include "utils.h"
 #include "valuefeature.h"
-#include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchlib/fef/feature_type.h>
+
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/searchlib/fef/feature_type.h>
+#include <vespa/searchlib/fef/featureexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.queryfeature");
@@ -16,29 +18,19 @@ using search::fef::FeatureType;
 
 namespace search::features {
 
-QueryBlueprint::QueryBlueprint()
-  : Blueprint("query"),
-    _qvalue(),
-    _default_object_value()
-{
+QueryBlueprint::QueryBlueprint() : Blueprint("query"), _qvalue(), _default_object_value() {
 }
 
 QueryBlueprint::~QueryBlueprint() = default;
 
-void
-QueryBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
-{
+void QueryBlueprint::visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const {
 }
 
-Blueprint::UP
-QueryBlueprint::createInstance() const
-{
+Blueprint::UP QueryBlueprint::createInstance() const {
     return std::make_unique<QueryBlueprint>();
 }
 
-bool
-QueryBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
-{
+bool QueryBlueprint::setup(const IIndexEnvironment& env, const ParameterList& params) {
     try {
         _qvalue = QueryValue::from_config(params[0].getValue(), env);
         _default_object_value = _qvalue.make_default_value(env);
@@ -54,17 +46,13 @@ QueryBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
     return true;
 }
 
-void
-QueryBlueprint::prepareSharedState(const fef::IQueryEnvironment &env, fef::IObjectStore &store) const
-{
+void QueryBlueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const {
     _qvalue.prepare_shared_state(env, store);
 }
 
-FeatureExecutor &
-QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
-{
+FeatureExecutor& QueryBlueprint::createExecutor(const IQueryEnvironment& env, vespalib::Stash& stash) const {
     if (_qvalue.type().has_dimensions()) {
-        if (const vespalib::eval::Value *value = _qvalue.lookup_value(env.getObjectStore())) {
+        if (const vespalib::eval::Value* value = _qvalue.lookup_value(env.getObjectStore())) {
             return stash.create<ConstantTensorRefExecutor>(*value);
         }
         return stash.create<ConstantTensorRefExecutor>(*_default_object_value);
@@ -73,4 +61,4 @@ QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &st
     }
 }
 
-}
+} // namespace search::features

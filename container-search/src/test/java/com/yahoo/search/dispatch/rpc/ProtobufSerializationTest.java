@@ -11,14 +11,19 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.InvokerResult;
 import com.yahoo.search.dispatch.LeanHit;
+import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author ollivir
@@ -34,7 +39,7 @@ public class ProtobufSerializationTest {
                 .setRequest("?query=test&ranking.features.query(tensor_1)=[1.200]")
                 .build();
 
-        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 0.5, new QrSearchersConfig.Builder().build());
+        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
         assertEquals(9, request1.getHits());
         assertEquals(0, request1.getRankPropertiesCount());
         assertEquals(0, request1.getTensorRankPropertiesCount());
@@ -47,7 +52,7 @@ public class ProtobufSerializationTest {
         assertFalse(request1.hasProfiling());
 
         query.prepare(); // calling prepare() moves "overrides" to "features" - content stays the same
-        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 0.5, new QrSearchersConfig.Builder().build());
+        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
         assertEquals(9, request2.getHits());
         assertEquals(0, request2.getRankPropertiesCount());
         assertEquals(2, request2.getTensorRankPropertiesCount());
@@ -63,13 +68,12 @@ public class ProtobufSerializationTest {
     void testDocsumSerialization() {
         Query q = new Query("search/?query=test&hits=10&offset=3");
         var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", Set.of("f1", "f2"),true, 0.5,
-                                                                       new QrSearchersConfig.Builder().sendProtobufQuerytree(false).build());
+                                                                       new QrSearchersConfig.Builder().sendProtobufQuerytree(true).build());
         builder.setTimeout(0);
-        var hit = new FastHit();
-        hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId());
+        var hit = new FastHit(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId(), 0, OptionalInt.of(0), 0, 0);
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, List.of(hit));
 
-        assertEquals(56, bytes.length);
+        assertEquals(63, bytes.length);
     }
 
     private String contentsOf(ByteString property) {
@@ -100,8 +104,10 @@ public class ProtobufSerializationTest {
     @Test
     void testSearchReplyDecodingWithRelevance() {
         Query q = new Query("search/?query=test");
-        InvokerResult result = ProtobufSerialization.convertToResult(q, createSearchReply(5, false), null, 1, 2);
-        assertEquals(result.getResult().getTotalHitCount(), 7);
+        Node node = new Node("test", 2, "host", 3, true);
+        node.setPathIndex(1);
+        InvokerResult result = ProtobufSerialization.convertToResult(q, createSearchReply(5, false), null, node);
+        assertEquals(7, result.getResult().getTotalHitCount());
         List<LeanHit> hits = result.getLeanHits();
         assertEquals(5, hits.size());
         double expectedRelevance = 5;
@@ -112,6 +118,7 @@ public class ProtobufSerializationTest {
             assertEquals(expectedRelevance--, hit.getRelevance(), DELTA);
             assertEquals(1, hit.getPartId());
             assertEquals(2, hit.getDistributionKey());
+            assertEquals(OptionalInt.of(3), hit.getSearchGroup());
             assertFalse(hit.hasSortData());
             hitNum++;
         }
@@ -120,8 +127,10 @@ public class ProtobufSerializationTest {
     @Test
     void testSearchReplyDecodingWithSortData() {
         Query q = new Query("search/?query=test");
-        InvokerResult result = ProtobufSerialization.convertToResult(q, createSearchReply(5, true), null, 1, 2);
-        assertEquals(result.getResult().getTotalHitCount(), 7);
+        Node node = new Node("test", 2, "host", 3, true);
+        node.setPathIndex(1);
+        InvokerResult result = ProtobufSerialization.convertToResult(q, createSearchReply(5, true), null, node);
+        assertEquals(7, result.getResult().getTotalHitCount());
         List<LeanHit> hits = result.getLeanHits();
         assertEquals(5, hits.size());
         int hitNum = 0;
@@ -131,6 +140,7 @@ public class ProtobufSerializationTest {
             assertEquals(0.0, hit.getRelevance(), DELTA);
             assertEquals(1, hit.getPartId());
             assertEquals(2, hit.getDistributionKey());
+            assertEquals(OptionalInt.of(3), hit.getSearchGroup());
             assertTrue(hit.hasSortData());
             assertEquals('b', hit.getSortData()[0]);
             assertEquals(hitNum, hit.getSortData()[11]);
@@ -144,7 +154,7 @@ public class ProtobufSerializationTest {
                 "trace.profiling.matching.depth=3&" +
                 "trace.profiling.firstPhaseRanking.depth=5&" +
                 "trace.profiling.secondPhaseRanking.depth=-7");
-        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 0.5, new QrSearchersConfig.Builder().build());
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertEquals(5, req.getProfiling().getFirstPhase().getDepth());
         assertEquals(-7, req.getProfiling().getSecondPhase().getDepth());
@@ -154,10 +164,42 @@ public class ProtobufSerializationTest {
     void only_set_profiling_parameters_are_serialized_in_search_request() {
         var q = new Query("?query=test&trace.level=1&" +
                 "trace.profiling.matching.depth=3");
-        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 0.5, new QrSearchersConfig.Builder().build());
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertFalse(req.getProfiling().hasFirstPhase());
         assertFalse(req.getProfiling().hasSecondPhase());
+    }
+
+    @Test
+    void soft_timeout_errors_use_timeout_error_code() {
+        Query q = new Query("search/?query=test");
+        SearchProtocol.SearchReply reply = SearchProtocol.SearchReply.newBuilder()
+                .setDegradedBySoftTimeout(true)
+                .addErrors(SearchProtocol.Error.newBuilder()
+                        .setMessage("Search request soft doomed during query setup and initialization."))
+                .build();
+        Node node = new Node("test", 1, "host", 3, true);
+        node.setPathIndex(2);
+        InvokerResult result = ProtobufSerialization.convertToResult(q, reply, null, node);
+        var error = result.getResult().hits().getError();
+        assertNotNull(error);
+        assertEquals(com.yahoo.container.protect.Error.TIMEOUT.code, error.getCode());
+    }
+
+    @Test
+    void ann_timeout_errors_use_timeout_error_code() {
+        Query q = new Query("search/?query=test");
+        SearchProtocol.SearchReply reply = SearchProtocol.SearchReply.newBuilder()
+                .setDegradedByAnnTimeout(true)
+                .addErrors(SearchProtocol.Error.newBuilder()
+                        .setMessage("Hypothetical ANN timeout error message.")) // No such error message as of now (that does not also trigger a soft timeout)
+                .build();
+        Node node = new Node("test", 1, "host", 3, true);
+        node.setPathIndex(2);
+        InvokerResult result = ProtobufSerialization.convertToResult(q, reply, null, node);
+        var error = result.getResult().hits().getError();
+        assertNotNull(error);
+        assertEquals(com.yahoo.container.protect.Error.TIMEOUT.code, error.getCode());
     }
 
 }

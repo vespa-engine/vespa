@@ -3,10 +3,14 @@
 #pragma once
 
 #include "readable_attribute_vector.h"
+
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
+
 #include <string>
 
-namespace vespalib { class MemoryUsage; }
+namespace vespalib {
+class MemoryUsage;
+}
 
 namespace search::attribute {
 
@@ -28,51 +32,40 @@ class ImportedAttributeVector : public ReadableAttributeVector {
 public:
     using SP = std::shared_ptr<ImportedAttributeVector>;
     using MetaStoreReadGuard = search::IDocumentMetaStoreContext::IReadGuard;
-    ImportedAttributeVector(std::string_view name,
-                            std::shared_ptr<ReferenceAttribute> reference_attribute,
-                            std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
-                            std::shared_ptr<ReadableAttributeVector> target_attribute,
+    ImportedAttributeVector(std::string_view name, std::shared_ptr<ReferenceAttribute> reference_attribute,
+                            std::shared_ptr<IDocumentMetaStoreContext>       document_meta_store,
+                            std::shared_ptr<ReadableAttributeVector>         target_attribute,
                             std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
-                            bool use_search_cache);
-    ImportedAttributeVector(std::string_view name,
-                            std::shared_ptr<ReferenceAttribute> reference_attribute,
-                            std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
-                            std::shared_ptr<ReadableAttributeVector> target_attribute,
+                            bool                                             use_search_cache);
+    ImportedAttributeVector(std::string_view name, std::shared_ptr<ReferenceAttribute> reference_attribute,
+                            std::shared_ptr<IDocumentMetaStoreContext>       document_meta_store,
+                            std::shared_ptr<ReadableAttributeVector>         target_attribute,
                             std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
-                            std::shared_ptr<BitVectorSearchCache> search_cache);
+                            std::shared_ptr<BitVectorSearchCache>            search_cache);
     ~ImportedAttributeVector() override;
 
-    const std::shared_ptr<ReferenceAttribute>& getReferenceAttribute() const noexcept {
-        return _reference_attribute;
-    }
-    const std::shared_ptr<IDocumentMetaStoreContext> &getDocumentMetaStore() const {
-        return _document_meta_store;
-    }
-    const std::shared_ptr<ReadableAttributeVector>& getTargetAttribute() const noexcept {
-        return _target_attribute;
-    }
-    const std::shared_ptr<const IDocumentMetaStoreContext> &getTargetDocumentMetaStore() const {
+    const std::shared_ptr<ReferenceAttribute>& getReferenceAttribute() const noexcept { return _reference_attribute; }
+    const std::shared_ptr<IDocumentMetaStoreContext>& getDocumentMetaStore() const { return _document_meta_store; }
+    const std::shared_ptr<ReadableAttributeVector>& getTargetAttribute() const noexcept { return _target_attribute; }
+    const std::shared_ptr<const IDocumentMetaStoreContext>& getTargetDocumentMetaStore() const {
         return _target_document_meta_store;
     }
-    const std::shared_ptr<BitVectorSearchCache> &getSearchCache() const {
-        return _search_cache;
-    }
+    const std::shared_ptr<BitVectorSearchCache>& getSearchCache() const { return _search_cache; }
     void clearSearchCache();
-    const std::string &getName() const {
-        return _name;
-    }
+    const std::string& getName() const { return _name; }
 
     std::unique_ptr<AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
-    virtual std::unique_ptr<AttributeReadGuard> makeReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard, bool stableEnumGuard) const;
+    virtual std::unique_ptr<AttributeReadGuard>
+    makeReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard, bool stableEnumGuard) const;
     vespalib::MemoryUsage get_memory_usage() const;
 
 protected:
-    std::string                           _name;
-    std::shared_ptr<ReferenceAttribute>        _reference_attribute;
-    std::shared_ptr<IDocumentMetaStoreContext> _document_meta_store;
-    std::shared_ptr<ReadableAttributeVector>   _target_attribute;
+    std::string                                      _name;
+    std::shared_ptr<ReferenceAttribute>              _reference_attribute;
+    std::shared_ptr<IDocumentMetaStoreContext>       _document_meta_store;
+    std::shared_ptr<ReadableAttributeVector>         _target_attribute;
     std::shared_ptr<const IDocumentMetaStoreContext> _target_document_meta_store;
-    std::shared_ptr<BitVectorSearchCache>      _search_cache;
+    std::shared_ptr<BitVectorSearchCache>            _search_cache;
 };
 
-}
+} // namespace search::attribute

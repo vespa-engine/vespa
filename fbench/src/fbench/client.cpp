@@ -1,13 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "client.h"
-#include <util/timer.h>
-#include <util/clientstatus.h>
+
+#include <vespa/vespalib/encoding/base64.h>
+
 #include <httpclient/httpclient.h>
+#include <util/clientstatus.h>
 #include <util/filereader.h>
+#include <util/timer.h>
+
 #include <cstring>
 #include <iostream>
-#include <vespa/vespalib/encoding/base64.h>
 
 using namespace vespalib;
 
@@ -18,54 +21,56 @@ Client::Client(vespalib::CryptoEngine::SP engine, std::unique_ptr<ClientArgument
       _cycleTimer(std::make_unique<Timer>()),
       _masterTimer(std::make_unique<Timer>()),
       _http(std::make_unique<HTTPClient>(std::move(engine), _args->_hostname, _args->_port, _args->_keepAlive,
-                                         _args->_headerBenchmarkdataCoverage, _args->_extraHeaders, _args->_authority)),
+                                         _args->_headerBenchmarkdataCoverage, _args->_extraHeaders,
+                                         _args->_authority)),
       _reader(std::make_unique<FileReader>()),
       _output(),
       _linebufsize(_args->_maxLineSize),
       _linebuf(std::make_unique<char[]>(_linebufsize)),
       _stop(false),
       _done(false),
-      _thread()
-{
+      _thread() {
     _cycleTimer->SetMax(_args->_cycle);
 }
 
 Client::~Client() = default;
 
-void Client::runMe(Client * me) {
+void Client::runMe(Client* me) {
     me->run();
 }
 
-
 class UrlReader {
-    FileReader &_reader;
-    const ClientArguments &_args;
-    int _restarts;
-    int _contentbufsize;
-    int _leftOversLen;
-    char *_contentbuf;
-    const char *_leftOvers;
+    FileReader&            _reader;
+    const ClientArguments& _args;
+    int                    _restarts;
+    int                    _contentbufsize;
+    int                    _leftOversLen;
+    char*                  _contentbuf;
+    const char*            _leftOvers;
+
 public:
-    UrlReader(FileReader& reader, const ClientArguments &args)
-        : _reader(reader), _args(args), _restarts(0),
-          _contentbufsize(0), _leftOversLen(0),
-          _contentbuf(nullptr), _leftOvers(nullptr)
-    {
+    UrlReader(FileReader& reader, const ClientArguments& args)
+        : _reader(reader),
+          _args(args),
+          _restarts(0),
+          _contentbufsize(0),
+          _leftOversLen(0),
+          _contentbuf(nullptr),
+          _leftOvers(nullptr) {
         if (_args._usePostMode) {
             _contentbufsize = 16 * _args._maxLineSize;
             _contentbuf = new char[_contentbufsize];
         }
     }
     bool reset();
-    int findUrl(char *buf, int buflen);
-    int nextUrl(char *buf, int buflen);
+    int findUrl(char* buf, int buflen);
+    int nextUrl(char* buf, int buflen);
     int nextContent();
-    const char *content() const { return _contentbuf; }
-    ~UrlReader() { delete [] _contentbuf; }
+    const char* content() const { return _contentbuf; }
+    ~UrlReader() { delete[] _contentbuf; }
 };
 
-bool UrlReader::reset()
-{
+bool UrlReader::reset() {
     if (_restarts == _args._restartLimit) {
         return false;
     } else if (_args._restartLimit > 0) {
@@ -79,10 +84,9 @@ bool UrlReader::reset()
     return true;
 }
 
-int UrlReader::findUrl(char *buf, int buflen)
-{
+int UrlReader::findUrl(char* buf, int buflen) {
     while (true) {
-        if ( _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
+        if (_args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset) {
             // reached logical EOF
             return -1;
         }
@@ -100,15 +104,14 @@ int UrlReader::findUrl(char *buf, int buflen)
     }
 }
 
-int UrlReader::nextUrl(char *buf, int buflen)
-{
+int UrlReader::nextUrl(char* buf, int buflen) {
     if (_leftOvers) {
-        if ( _args._usePostMode && _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
+        if (_args._usePostMode && _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset) {
             // reached logical EOF, discard leftover and treat like EOF
             _leftOvers = nullptr;
             // Fall through to regular EOF handling below
         } else {
-            int sz = std::min(_leftOversLen, buflen-1);
+            int sz = std::min(_leftOversLen, buflen - 1);
             strncpy(buf, _leftOvers, sz);
             buf[sz] = '\0';
             _leftOvers = nullptr;
@@ -126,39 +129,35 @@ int UrlReader::nextUrl(char *buf, int buflen)
     return ll;
 }
 
-int UrlReader::nextContent()
-{
-    char *buf = _contentbuf;
-    int totLen = 0;
+int UrlReader::nextContent() {
+    char* buf = _contentbuf;
+    int   totLen = 0;
     // make sure we don't chop leftover URL
     while (totLen + _args._maxLineSize < _contentbufsize) {
-       // allow space for newline:
-       int room = _contentbufsize - totLen - 1;
-       int len = _reader.ReadLine(buf, room);
-       if (len < 0) {
-           // reached EOF
-           break;
-       }
-       len = std::min(len, room);
-       if (len > 0 && buf[0] == '/') {
-           // reached next URL
-           _leftOvers = buf;
-           _leftOversLen = len;
-           break;
-       }
-       buf += len;
-       totLen += len;
-       *buf++ = '\n';
-       totLen++;
+        // allow space for newline:
+        int room = _contentbufsize - totLen - 1;
+        int len = _reader.ReadLine(buf, room);
+        if (len < 0) {
+            // reached EOF
+            break;
+        }
+        len = std::min(len, room);
+        if (len > 0 && buf[0] == '/') {
+            // reached next URL
+            _leftOvers = buf;
+            _leftOversLen = len;
+            break;
+        }
+        buf += len;
+        totLen += len;
+        *buf++ = '\n';
+        totLen++;
     }
     // ignore last newline
-    return (totLen > 0) ? totLen-1 : 0;
+    return (totLen > 0) ? totLen - 1 : 0;
 }
 
-
-void
-Client::run()
-{
+void Client::run() {
     char inputFilename[1024];
     char outputFilename[1024];
     char timestr[64];
@@ -170,17 +169,15 @@ Client::run()
     // open query file
     snprintf(inputFilename, 1024, _args->_filenamePattern.c_str(), _args->_myNum);
     if (!_reader->Open(inputFilename)) {
-        printf("Client %d: ERROR: could not open file '%s' [read mode]\n",
-               _args->_myNum, inputFilename);
+        printf("Client %d: ERROR: could not open file '%s' [read mode]\n", _args->_myNum, inputFilename);
         _status->SetError("Could not open query file.");
         return;
     }
-    if ( ! _args->_outputPattern.empty()) {
+    if (!_args->_outputPattern.empty()) {
         snprintf(outputFilename, 1024, _args->_outputPattern.c_str(), _args->_myNum);
         _output = std::make_unique<std::ofstream>(outputFilename, std::ofstream::out | std::ofstream::binary);
         if (_output->fail()) {
-            printf("Client %d: ERROR: could not open file '%s' [write mode]\n",
-                   _args->_myNum, outputFilename);
+            printf("Client %d: ERROR: could not open file '%s' [write mode]\n", _args->_myNum, outputFilename);
             _status->SetError("Could not open output file.");
             return;
         }
@@ -192,11 +189,11 @@ Client::run()
         _masterTimer->Start();
 
     // Start reading from offset
-    if ( _args->_singleQueryFile )
+    if (_args->_singleQueryFile)
         _reader->SetFilePos(_args->_queryfileOffset);
 
     UrlReader urlSource(*_reader, *_args);
-    size_t urlNumber = 0;
+    size_t    urlNumber = 0;
 
     // run queries
     while (!_stop) {
@@ -208,8 +205,8 @@ Client::run()
             ++urlNumber;
         } else {
             if (urlNumber == 0) {
-                fprintf(stderr, "Client %d: ERROR: could not read any lines from '%s'\n",
-                        _args->_myNum, inputFilename);
+                fprintf(stderr, "Client %d: ERROR: could not read any lines from '%s'\n", _args->_myNum,
+                        inputFilename);
                 _status->SetError("Could not read any lines from query file.");
             }
             break;
@@ -224,13 +221,13 @@ Client::run()
                 strcat(_linebuf.get(), _args->_queryStringToAppend.c_str());
             }
             int cLen = _args->_usePostMode ? urlSource.nextContent() : 0;
-            
+
             const char* content = urlSource.content();
             std::string base64_decoded;
             if (_args->_usePostMode && _args->_base64Decode) {
                 try {
                     base64_decoded = Base64::decode(content, cLen);
-                } catch (std::exception &e) {
+                } catch (std::exception& e) {
                     std::string msg = "POST request contains invalid base64 encoded data: ";
                     msg.append(e.what());
                     _status->SetError(msg.c_str());
@@ -239,7 +236,7 @@ Client::run()
                 content = base64_decoded.c_str();
                 cLen = base64_decoded.size();
             }
-                        
+
             _reqTimer->Start();
             auto fetch_status = _http->Fetch(_linebuf.get(), _output.get(), _args->_usePostMode, content, cLen);
             _reqTimer->Stop();
@@ -248,13 +245,10 @@ Client::run()
                 ++_status->_zeroHitQueries;
             if (_output) {
                 if (!fetch_status.Ok()) {
-                    _output->write("\nFBENCH: URL FETCH FAILED!\n",
-                                          strlen("\nFBENCH: URL FETCH FAILED!\n"));
+                    _output->write("\nFBENCH: URL FETCH FAILED!\n", strlen("\nFBENCH: URL FETCH FAILED!\n"));
                     _output->write(&FBENCH_DELIMITER[1], strlen(FBENCH_DELIMITER) - 1);
                 } else {
-                    snprintf(timestr, sizeof(timestr),
-                             "\nTIME USED: %0.4f s\n",
-                             _reqTimer->GetTimespan() / 1000.0);
+                    snprintf(timestr, sizeof(timestr), "\nTIME USED: %0.4f s\n", _reqTimer->GetTimespan() / 1000.0);
                     _output->write(timestr, strlen(timestr));
                     _output->write(&FBENCH_DELIMITER[1], strlen(FBENCH_DELIMITER) - 1);
                 }

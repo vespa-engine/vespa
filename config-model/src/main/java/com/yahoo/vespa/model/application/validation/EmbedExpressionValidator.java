@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
+import com.yahoo.text.Text;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -40,7 +41,7 @@ public class EmbedExpressionValidator implements Validator {
                                         ee.requestedEmbedderId().ifPresent(id -> {
                                             var fieldName = field.getName();
                                             var schemaName = schema.fullSchema().getName();
-                                            log.log(Level.FINE, () -> "Found embedder '%s' for field '%s' in schema '%s'".formatted(id, fieldName, schemaName));
+                                            log.log(Level.FINE, () -> Text.format("Found embedder '%s' for field '%s' in schema '%s'", id, fieldName, schemaName));
                                             fieldToEmbedderId.put(new SchemaAndField(schemaName, fieldName), id);
                                         });
                                     }
@@ -57,7 +58,7 @@ public class EmbedExpressionValidator implements Validator {
                 containerCluster.getAllComponents()
                         .forEach(component -> {
                             var id = component.getComponentId().getName();
-                            log.log(Level.FINE, () -> "Found component id '%s'".formatted(id));
+                            log.log(Level.FINE, () -> Text.format("Found component id '%s'", id));
                             allComponentIds.add(id);
                         }));
 
@@ -65,9 +66,7 @@ public class EmbedExpressionValidator implements Validator {
         fieldToEmbedderId.forEach((field, requestedEmbedderId) -> {
             if (!allComponentIds.contains(requestedEmbedderId)) {
                 context.illegal(
-                        ("The 'embed' expression for field '%s' in schema '%s' refers to an embedder with id '%s'. " +
-                                "No component with that id is configured.").formatted(
-                                        field.fieldName(), field.schemaName(), requestedEmbedderId));
+                        Text.format("The 'embed' expression for field '%s' in schema '%s' refers to an embedder with id '%s'. " + "No component with that id is configured.", field.fieldName(), field.schemaName(), requestedEmbedderId));
             }
         });
     }

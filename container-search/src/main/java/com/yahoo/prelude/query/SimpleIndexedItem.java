@@ -39,8 +39,8 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
     }
 
     // encode index bytes
-    protected void encodeThis(ByteBuffer buffer) {
-        super.encodeThis(buffer);
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context);
         putString(index, buffer);
     }
 

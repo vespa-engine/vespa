@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/address_space.h>
+
 #include <string>
 
 namespace search {
@@ -24,4 +25,4 @@ public:
     static const std::string hnsw_nodeid_mapping;
 };
 
-}
+} // namespace search

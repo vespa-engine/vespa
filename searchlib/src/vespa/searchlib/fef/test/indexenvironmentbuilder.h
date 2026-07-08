@@ -15,7 +15,7 @@ public:
      *
      * @param env The index environment to build to.
      */
-    IndexEnvironmentBuilder(IndexEnvironment &env);
+    IndexEnvironmentBuilder(IndexEnvironment& env);
 
     /**
      * Add a field to the index environment. This is analogous to adding fields to a document.
@@ -24,9 +24,8 @@ public:
      * @param coll collection type
      * @param name The name of the field.
      */
-    IndexEnvironmentBuilder &addField(const FieldType &type,
-                                      const FieldInfo::CollectionType &coll,
-                                      const std::string &name);
+    IndexEnvironmentBuilder& addField(const FieldType& type, const FieldInfo::CollectionType& coll,
+                                      const std::string& name);
 
     /**
      * Add a field to the index environment with specified data type.
@@ -36,10 +35,8 @@ public:
      * @param dataType  Collection base data type
      * @param name      The name of the field.
      */
-    IndexEnvironmentBuilder &addField(const FieldType &type,
-                                      const FieldInfo::CollectionType &coll,
-                                      const FieldInfo::DataType &dataType,
-                                      const std::string &name);
+    IndexEnvironmentBuilder& addField(const FieldType& type, const FieldInfo::CollectionType& coll,
+                                      const FieldInfo::DataType& dataType, const std::string& name);
 
     /**
      * Add a field to the index environment with specified data type.
@@ -50,24 +47,22 @@ public:
      * @param element_gap optional element gap setting
      * @param name        The name of the field.
      */
-    IndexEnvironmentBuilder &addField(const FieldType &type,
-                                      const FieldInfo::CollectionType &coll,
-                                      const FieldInfo::DataType &dataType,
-                                      std::optional<search::fef::ElementGap> element_gap,
-                                      const std::string &name);
+    IndexEnvironmentBuilder& addField(const FieldType& type, const FieldInfo::CollectionType& coll,
+                                      const FieldInfo::DataType&             dataType,
+                                      std::optional<search::fef::ElementGap> element_gap, const std::string& name);
 
     /** Returns a reference to the index environment of this. */
-    IndexEnvironment &getIndexEnv() { return _env; }
+    IndexEnvironment& getIndexEnv() { return _env; }
 
     /** Returns a const reference to the index environment of this. */
-    const IndexEnvironment &getIndexEnv() const { return _env; }
+    const IndexEnvironment& getIndexEnv() const { return _env; }
 
 private:
-    IndexEnvironmentBuilder(const IndexEnvironmentBuilder &);             // hide
-    IndexEnvironmentBuilder & operator=(const IndexEnvironmentBuilder &); // hide
+    IndexEnvironmentBuilder(const IndexEnvironmentBuilder&);            // hide
+    IndexEnvironmentBuilder& operator=(const IndexEnvironmentBuilder&); // hide
 
 private:
-    IndexEnvironment &_env;
+    IndexEnvironment& _env;
 };
 
-}
+} // namespace search::fef::test

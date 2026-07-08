@@ -3,6 +3,7 @@
 #pragma once
 
 #include "andsearchnostrict.h"
+
 #include <vespa/vespalib/util/vespa_dll_local.h>
 
 namespace search::queryeval {
@@ -10,22 +11,19 @@ namespace search::queryeval {
 /**
  * A simple strict implementation of the And search operation.
  **/
-template <typename Unpack>
-class AndSearchStrict : public AndSearchNoStrict<Unpack>
-{
+template <typename Unpack> class AndSearchStrict : public AndSearchNoStrict<Unpack> {
 private:
-    template<bool doSeekOnly>
-    VESPA_DLL_LOCAL void advance(uint32_t failedChildIndexd) __attribute__((noinline));
-    using Trinary=vespalib::Trinary;
+    template <bool doSeekOnly> VESPA_DLL_LOCAL void advance(uint32_t failedChildIndexd) __attribute__((noinline));
+    using Trinary = vespalib::Trinary;
+
 protected:
     void doSeek(uint32_t docid) override;
     Trinary is_strict() const override { return Trinary::True; }
     SearchIterator::UP andWith(SearchIterator::UP filter, uint32_t estimate) override;
+
 public:
-    AndSearchStrict(MultiSearch::Children children, const Unpack & unpacker)
-        : AndSearchNoStrict<Unpack>(std::move(children), unpacker)
-    {
-    }
+    AndSearchStrict(MultiSearch::Children children, const Unpack& unpacker)
+        : AndSearchNoStrict<Unpack>(std::move(children), unpacker) {}
     ~AndSearchStrict() override;
 
     void initRange(uint32_t beginid, uint32_t endid) override {
@@ -34,17 +32,14 @@ public:
     }
 };
 
-template<typename Unpack>
-AndSearchStrict<Unpack>::~AndSearchStrict() = default;
+template <typename Unpack> AndSearchStrict<Unpack>::~AndSearchStrict() = default;
 
-template<typename Unpack>
-template<bool doSeekOnly>
-void
-AndSearchStrict<Unpack>::advance(uint32_t failedChildIndex)
-{
-    const MultiSearch::Children & children(this->getChildren());
-    SearchIterator & firstChild(*children[0]);
-    bool foundHit(false);
+template <typename Unpack>
+template <bool doSeekOnly>
+void AndSearchStrict<Unpack>::advance(uint32_t failedChildIndex) {
+    const MultiSearch::Children& children(this->getChildren());
+    SearchIterator&              firstChild(*children[0]);
+    bool                         foundHit(false);
     if (failedChildIndex != 0) {
         if (doSeekOnly) {
             if (__builtin_expect(children[failedChildIndex]->isAtEnd(), false)) {
@@ -60,10 +55,10 @@ AndSearchStrict<Unpack>::advance(uint32_t failedChildIndex)
     while (!foundHit && !this->isAtEnd(nextId)) {
         foundHit = true;
         for (uint32_t i(1); foundHit && (i < children.size()); ++i) {
-            SearchIterator & child(*children[i]);
+            SearchIterator& child(*children[i]);
             if (!(foundHit = child.seek(nextId))) {
                 if (__builtin_expect(!child.isAtEnd(), true)) {
-                    firstChild.doSeek(std::max(nextId+1, child.getDocId()));
+                    firstChild.doSeek(std::max(nextId + 1, child.getDocId()));
                     nextId = firstChild.getDocId();
                 } else {
                     this->setAtEnd();
@@ -75,11 +70,8 @@ AndSearchStrict<Unpack>::advance(uint32_t failedChildIndex)
     this->setDocId(nextId);
 }
 
-template<typename Unpack>
-void
-AndSearchStrict<Unpack>::doSeek(uint32_t docid)
-{
-    const MultiSearch::Children & children(this->getChildren());
+template <typename Unpack> void AndSearchStrict<Unpack>::doSeek(uint32_t docid) {
+    const MultiSearch::Children& children(this->getChildren());
     for (uint32_t i(0); i < children.size(); ++i) {
         children[i]->doSeek(docid);
         if (children[i]->getDocId() != docid) {
@@ -90,10 +82,8 @@ AndSearchStrict<Unpack>::doSeek(uint32_t docid)
     this->setDocId(docid);
 }
 
-template<typename Unpack>
-SearchIterator::UP
-AndSearchStrict<Unpack>::andWith(SearchIterator::UP filter, uint32_t estimate_)
-{
+template <typename Unpack>
+SearchIterator::UP AndSearchStrict<Unpack>::andWith(SearchIterator::UP filter, uint32_t estimate_) {
     filter = this->getChildren()[0]->andWith(std::move(filter), estimate_);
     if (filter) {
         if ((estimate_ < this->estimate()) && (filter->is_strict() == Trinary::True)) {
@@ -109,4 +99,4 @@ AndSearchStrict<Unpack>::andWith(SearchIterator::UP filter, uint32_t estimate_)
     return filter; // Should always be empty, returning it incase logic changes.
 }
 
-}
+} // namespace search::queryeval

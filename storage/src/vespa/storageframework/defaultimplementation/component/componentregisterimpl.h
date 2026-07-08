@@ -17,20 +17,20 @@
  */
 #pragma once
 
+#include <vespa/metrics/metricset.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/storageframework/generic/component/managedcomponent.h>
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/status/statusreportermap.h>
-#include <vespa/metrics/metricset.h>
+
 #include <mutex>
 
 namespace metrics {
 
-    class MetricManager;
-    class UpdateHook;
+class MetricManager;
+class UpdateHook;
 
-}
-
+} // namespace metrics
 
 namespace storage::framework::defaultimplementation {
 
@@ -39,19 +39,16 @@ struct ShutdownListener {
     virtual void requestShutdown(std::string_view reason) = 0;
 };
 
-class ComponentRegisterImpl : public virtual ComponentRegister,
-                              public StatusReporterMap,
-                              public MetricRegistrator
-{
-    std::mutex _componentLock;
+class ComponentRegisterImpl : public virtual ComponentRegister, public StatusReporterMap, public MetricRegistrator {
+    std::mutex                     _componentLock;
     std::vector<ManagedComponent*> _components;
 
-    metrics::MetricSet _topMetricSet;
+    metrics::MetricSet                                _topMetricSet;
     std::vector<std::unique_ptr<metrics::UpdateHook>> _hooks;
-    metrics::MetricManager* _metricManager;
-    Clock* _clock;
-    ThreadPool* _threadPool;
-    ShutdownListener* _shutdownListener;
+    metrics::MetricManager*                           _metricManager;
+    Clock*                                            _clock;
+    ThreadPool*                                       _threadPool;
+    ShutdownListener*                                 _shutdownListener;
 
 public:
     using UP = std::unique_ptr<ComponentRegisterImpl>;
@@ -73,9 +70,9 @@ public:
     std::vector<const StatusReporter*> getStatusReporters() override;
 
     void registerMetric(metrics::Metric&) override;
-    void registerUpdateHook(std::string_view name, MetricUpdateHook& hook, vespalib::system_time::duration period) override;
+    void registerUpdateHook(std::string_view name, MetricUpdateHook& hook,
+                            vespalib::system_time::duration period) override;
     void registerShutdownListener(ShutdownListener&);
-
 };
 
-}
+} // namespace storage::framework::defaultimplementation

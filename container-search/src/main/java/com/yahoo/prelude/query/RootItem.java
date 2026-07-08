@@ -45,24 +45,25 @@ public class RootItem extends CompositeItem {
     public String getName() { return "ROOT"; }
 
     @Override
-    public int encode(ByteBuffer buffer) {
+    public int encode(ByteBuffer buffer, SerializationContext context) {
         if (getRoot() == null) return 0;
-        return getRoot().encode(buffer);
+        return getRoot().encode(buffer, context);
     }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         throw new UnsupportedOperationException("QueryTree itself should not be serialized, serialize its root");
     }
 
     /**
      * Convert this query tree to protobuf format.
+     *
      * @return a SearchProtocol.QueryTree protobuf message
      */
-    public SearchProtocol.QueryTree toProtobufQueryTree() {
+    public SearchProtocol.QueryTree toProtobufQueryTree(SerializationContext context) {
         var builder = SearchProtocol.QueryTree.newBuilder();
         if (getRoot() != null && !(getRoot() instanceof NullItem)) {
-            builder.setRoot(getRoot().toProtobuf());
+            builder.setRoot(getRoot().toProtobuf(context));
         }
         return builder.build();
     }
@@ -105,16 +106,17 @@ public class RootItem extends CompositeItem {
     public void addItem(Item item) {
         if (getItemCount() == 0)
             super.addItem(item);
+        else if (getItem(0) instanceof NullItem)
+            setItem(0, item);
         else
-            throw new RuntimeException("Programming error: Cannot add multiple roots");
+            throw new RuntimeException("Programming error: Cannot add multiple roots, have '" + getRoot() + "'");
     }
 
     @Override
     public void addItem(int index, Item item) {
-        if (getItemCount() == 0 && index == 0)
-            super.addItem(index, item);
-        else
-            throw new RuntimeException("Programming error: Cannot add multiple roots, have '" + getRoot() + "'");
+        if (index != 0)
+            throw new RuntimeException("Programming error: Cannot add multiple roots, so index must be 0, not " + index);
+        addItem(item);
     }
 
     /** Returns true if this represents the null query */

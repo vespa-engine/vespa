@@ -14,6 +14,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.model.VespaModel;
@@ -54,7 +55,7 @@ public class UrlConfigValidatorTest {
     }
 
     private static String containerXml(boolean isExclusive) {
-        return """
+        return Text.format("""
                            <container version='1.0' id='default'>
                                <component id='transformer' class='ai.vespa.embedding.BertBaseEmbedder' bundle='model-integration'>
                                    <config name='embedding.bert-base-embedder'>
@@ -66,16 +67,16 @@ public class UrlConfigValidatorTest {
                                <document-api/>
                                <nodes count='2' exclusive='%s' />
                            </container>
-                """.formatted(Boolean.toString(isExclusive));
+                """, Boolean.toString(isExclusive));
     }
 
     private static void runValidatorOnApp(boolean isExclusive, SystemName systemName) throws IOException, SAXException {
         String container = containerXml(isExclusive);
-        String servicesXml = """
+        String servicesXml = Text.format("""
                         <services version='1.0'>
                           %s
                         </services>
-                """.formatted(container);
+                """, container);
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();

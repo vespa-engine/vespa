@@ -1,28 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "drainingbufferwriter.h"
+
 #include <cassert>
 
 namespace search {
 
-DrainingBufferWriter::DrainingBufferWriter()
-    : BufferWriter(),
-      _buf(),
-      _bytesWritten(0),
-      _incompleteBuffers(0)
-{
+DrainingBufferWriter::DrainingBufferWriter() : BufferWriter(), _buf(), _bytesWritten(0), _incompleteBuffers(0) {
     _buf.resize(BUFFER_SIZE);
     setup(&_buf[0], _buf.size());
 }
 
-
-DrainingBufferWriter::~DrainingBufferWriter()
-{
+DrainingBufferWriter::~DrainingBufferWriter() {
 }
 
-
-void
-DrainingBufferWriter::flush() {
+void DrainingBufferWriter::flush() {
     // measure overhead above this flush method
     assert(_incompleteBuffers == 0); // all previous buffers must have been full
     size_t nowLen = usedLen();

@@ -4,11 +4,7 @@
 
 namespace search::diskindex::test {
 
-PageDict4Encoders::PageDict4Encoders(uint32_t chunkSize, uint64_t numWordIds)
-    : sse(),
-      spe(),
-      pe()
-{
+PageDict4Encoders::PageDict4Encoders(uint32_t chunkSize, uint64_t numWordIds) : sse(), spe(), pe() {
     sse._minChunkDocs = chunkSize;
     sse._numWordIds = numWordIds;
     spe.copyParams(sse);
@@ -17,4 +13,4 @@ PageDict4Encoders::PageDict4Encoders(uint32_t chunkSize, uint64_t numWordIds)
 
 PageDict4Encoders::~PageDict4Encoders() = default;
 
-}
+} // namespace search::diskindex::test

@@ -4,14 +4,10 @@
 
 namespace search {
 
-IDataStore::IDataStore(const std::string& dirName) :
-    _docIdLimit(0),
-    _dirName(dirName)
-{
+IDataStore::IDataStore(const std::string& dirName) : _docIdLimit(0), _dirName(dirName) {
 }
 
-IDataStore::~IDataStore()
-{
+IDataStore::~IDataStore() {
 }
 
 } // namespace search

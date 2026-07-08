@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.config.provision.NodeAllocationException;
@@ -59,7 +60,7 @@ public class HttpHandler extends ThreadedHttpRequestHandler {
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         } catch (UnknownVespaVersionException e) {
             return HttpErrorResponse.unknownVespaVersion(getMessage(e, request));
-        } catch (RequestTimeoutException e) {
+        } catch (RequestTimeoutException | UncheckedTimeoutException e) {
             return HttpErrorResponse.requestTimeout(getMessage(e, request));
         } catch (ApplicationLockException e) {
             return HttpErrorResponse.applicationLockFailure(getMessage(e, request));

@@ -5,7 +5,9 @@
 #include "idiscardhandler.h"
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
+
 #include <vespa/vespalib/util/ref_counted.h>
+
 #include <atomic>
 
 namespace mbus {
@@ -23,10 +25,9 @@ namespace mbus {
 class ReplyGate : public vespalib::enable_ref_counted,
                   public IDiscardHandler,
                   public IMessageHandler,
-                  public IReplyHandler
-{
+                  public IReplyHandler {
 private:
-    IMessageHandler &_sender;
+    IMessageHandler&  _sender;
     std::atomic<bool> _open;
 
 public:
@@ -35,7 +36,7 @@ public:
      *
      * @param sender The underlying IMessageHandler object.
      */
-    ReplyGate(IMessageHandler &sender);
+    ReplyGate(IMessageHandler& sender);
 
     /**
      * Send a Message to the underlying IMessageHandler. This method will

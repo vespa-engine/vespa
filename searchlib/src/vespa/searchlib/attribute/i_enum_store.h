@@ -3,27 +3,29 @@
 #pragma once
 
 #include "enum_store_types.h"
+
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
+
 #include <memory>
 
 namespace vespalib {
-    class AddressSpace;
-    class MemoryUsage;
-}
+class AddressSpace;
+class MemoryUsage;
+} // namespace vespalib
 
 namespace vespalib::datastore {
-    class CompactionSpec;
-    class CompactionStrategy;
-    class DataStoreBase;
-    class EntryComparator;
-    template <typename> class UniqueStoreRemapper;
-    template <typename> class UniqueStoreEnumerator;
-}
+class CompactionSpec;
+class CompactionStrategy;
+class DataStoreBase;
+class EntryComparator;
+template <typename> class UniqueStoreRemapper;
+template <typename> class UniqueStoreEnumerator;
+} // namespace vespalib::datastore
 
 namespace search::enumstore {
-    class EnumeratedLoader;
-    class EnumeratedPostingsLoader;
-}
+class EnumeratedLoader;
+class EnumeratedPostingsLoader;
+} // namespace search::enumstore
 namespace search {
 
 class BufferWriter;
@@ -62,8 +64,10 @@ public:
     virtual vespalib::AddressSpace get_values_address_space_usage() const = 0;
     virtual vespalib::MemoryUsage get_dictionary_memory_usage() const = 0;
     virtual vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) = 0;
-    virtual std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) = 0;
-    virtual std::unique_ptr<EnumIndexRemapper> compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) = 0;
+    virtual std::unique_ptr<EnumIndexRemapper>
+    consider_compact_values(const CompactionStrategy& compaction_strategy) = 0;
+    virtual std::unique_ptr<EnumIndexRemapper>
+    compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) = 0;
     virtual bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy) = 0;
     virtual uint64_t get_compaction_count() const = 0;
     // Should only be used by unit tests.
@@ -78,4 +82,4 @@ public:
     virtual void setup_default_value_ref() = 0;
 };
 
-}
+} // namespace search

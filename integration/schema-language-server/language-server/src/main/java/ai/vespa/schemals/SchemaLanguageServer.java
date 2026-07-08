@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -184,9 +185,9 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
             setupDocumentation(docPath);
         } catch (IOException ioex) {
             this.logger.error("Failed to set up documentation. Error: " + ioex.getMessage());
-            try (ByteArrayOutputStream os = new ByteArrayOutputStream(); PrintStream ps = new PrintStream(os)) {
+            try (ByteArrayOutputStream os = new ByteArrayOutputStream(); PrintStream ps = new PrintStream(os, true, StandardCharsets.UTF_8)) {
                 ioex.printStackTrace(ps);
-                logger.error(os.toString());
+                logger.error(os.toString(StandardCharsets.UTF_8));
             } catch (IOException bruh) {
                 logger.error("Error inside error " + bruh.getMessage());
             }
@@ -278,9 +279,9 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
                     }
                     Files.createDirectories(destination.getParent());
                     try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(entry.getName())) {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                         String content = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-                        Files.write(destination, content.getBytes(), StandardOpenOption.CREATE);
+                        Files.write(destination, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
                     }
                 }
             }

@@ -18,4 +18,4 @@ public:
     BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) const override;
 };
 
-}
+} // namespace search::tensor

@@ -6,12 +6,11 @@
 
 namespace search::transactionlog {
 
-class NoSyncProxy : public SyncProxy
-{
+class NoSyncProxy : public SyncProxy {
 public:
     NoSyncProxy();
     ~NoSyncProxy();
     void sync(SerialNum syncTo) override;
 };
 
-}
+} // namespace search::transactionlog

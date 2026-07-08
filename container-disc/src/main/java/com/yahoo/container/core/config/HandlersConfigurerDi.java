@@ -22,6 +22,7 @@ import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.osgi.OsgiWrapper;
+import com.yahoo.text.Text;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 
@@ -75,8 +76,9 @@ public class HandlersConfigurerDi {
 
         this.vespaContainer = vespaContainer;
         container = new Container(subscriberFactory, vespaContainer, configId, deconstructor, osgiWrapper);
-        Runnable cleanupTask = waitForNextGraphGeneration(discInjector, true);
-        cleanupTask.run();
+        Container.ComponentGraphResult result = waitForNextGraphGeneration(discInjector, true);
+        if (result.failed()) throw new RuntimeException("Failed to initialize component graph", result.failure());
+        result.oldComponentsCleanupTask().run();
     }
 
     private static class ContainerAndDiOsgi extends OsgiImpl implements OsgiWrapper {
@@ -127,7 +129,7 @@ public class HandlersConfigurerDi {
             if (qualifierIsUsed(bundleSpec, activeVersions)) {
                 versionsMessage += " Note that qualifier strings must be matched exactly. ";
             }
-            return String.format("%sInstalled application bundles: [%s]",
+            return Text.format("%sInstalled application bundles: [%s]",
                                  versionsMessage,
                                  activeBundles.stream()
                                          .map(BsnVersion::toReadableString)
@@ -149,15 +151,27 @@ public class HandlersConfigurerDi {
 
     /**
      * Wait for new config to arrive and produce the new graph
-     * @return Task for deconstructing previous component graph and bundles
+     * @return Result containing the new graph and cleanup task, or failure info if graph construction failed
      */
-    public Runnable waitForNextGraphGeneration(Injector discInjector, boolean isInitializing) {
-        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(
-                this.currentGraph,
-                createFallbackInjector(vespaContainer, discInjector),
-                isInitializing);
-        this.currentGraph = result.newGraph();
-        return result.oldComponentsCleanupTask();
+    public Container.ComponentGraphResult waitForNextGraphGeneration(Injector discInjector, boolean isInitializing) {
+        Injector fallbackInjector = createFallbackInjector(vespaContainer, discInjector);
+        var result = container.waitForNextGraphGeneration(this.currentGraph, fallbackInjector, isInitializing);
+        updateConfigStatus(result);
+        if (!result.failed()) {
+            this.currentGraph = result.newGraph();
+        }
+        return result;
+    }
+
+    private void updateConfigStatus(Container.ComponentGraphResult result) {
+        var newGeneration = result.configGeneration();
+        if (result.failed()) {
+            log.log(Level.FINE, "Failed to update config status for generation " + newGeneration + ": " + result.failure().getMessage());
+            vespaContainer.setConfigStatus(newGeneration, result.failure().getMessage());
+        } else{
+            log.log(Level.FINE, "Set config status to OK for generation " + newGeneration);
+            vespaContainer.setConfigStatusOk(newGeneration);
+        }
     }
 
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {

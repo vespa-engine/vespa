@@ -3,14 +3,16 @@
 #pragma once
 
 #include "value_builder_factory.h"
+
 #include <vespa/vespalib/util/shared_string_repo.h>
-#include <vector>
+
 #include <map>
+#include <vector>
 
 namespace vespalib {
 class Stash;
 class nbostream;
-}
+} // namespace vespalib
 
 namespace vespalib::eval {
 
@@ -23,44 +25,45 @@ class TensorSpec;
  * test the correctness of tensor operations as they are moved away
  * from the implementation of individual tensor classes.
  **/
-class SimpleValue : public Value, public Value::Index
-{
+class SimpleValue : public Value, public Value::Index {
 private:
     using Handle = SharedStringRepo::Handle;
     using Labels = std::vector<Handle>;
 
-    ValueType _type;
-    size_t _num_mapped_dims;
-    size_t _subspace_size;
-    std::map<Labels,size_t> _index;
+    ValueType                _type;
+    size_t                   _num_mapped_dims;
+    size_t                   _subspace_size;
+    std::map<Labels, size_t> _index;
+
 protected:
     size_t num_mapped_dims() const { return _num_mapped_dims; }
     size_t subspace_size() const { return _subspace_size; }
     void add_mapping(std::span<const std::string_view> addr);
     void add_mapping(std::span<const string_id> addr);
     MemoryUsage estimate_extra_memory_usage() const;
+
 public:
-    SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
+    SimpleValue(const ValueType& type, size_t num_mapped_dims_in, size_t subspace_size_in);
     ~SimpleValue() override;
-    const ValueType &type() const override { return _type; }
-    const Value::Index &index() const override { return *this; }
+    const ValueType& type() const override { return _type; }
+    const Value::Index& index() const override { return *this; }
     size_t size() const override { return _index.size(); }
     std::unique_ptr<View> create_view(std::span<const size_t> dims) const override;
-    static Value::UP from_spec(const TensorSpec &spec);
-    static Value::UP from_value(const Value &value);
-    static Value::UP from_stream(nbostream &stream);
+    static Value::UP from_spec(const TensorSpec& spec);
+    static Value::UP from_value(const Value& value);
+    static Value::UP from_stream(nbostream& stream);
 };
 
 /**
  * Subclasses of SimpleValue handling cell type specialization.
  **/
-template <typename T>
-class SimpleValueT : public SimpleValue, public ValueBuilder<T>
-{
+template <typename T> class SimpleValueT : public SimpleValue, public ValueBuilder<T> {
 private:
     std::vector<T> _cells;
+
 public:
-    SimpleValueT(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in);
+    SimpleValueT(const ValueType& type, size_t num_mapped_dims_in, size_t subspace_size_in,
+                 size_t expected_subspaces_in);
     ~SimpleValueT() override;
     TypedCells cells() const override { return TypedCells(std::span<const T>(_cells)); }
     std::span<T> add_subspace(std::span<const std::string_view> addr) override;
@@ -90,10 +93,12 @@ class SimpleValueBuilderFactory : public ValueBuilderFactory {
 private:
     SimpleValueBuilderFactory();
     static SimpleValueBuilderFactory _factory;
-    std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type, bool transient,
-            size_t num_mapped_dims, size_t subspace_size, size_t expected_subspaces) const override;
+    std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType& type, bool transient,
+                                                                size_t num_mapped_dims, size_t subspace_size,
+                                                                size_t expected_subspaces) const override;
+
 public:
-    static const SimpleValueBuilderFactory &get() { return _factory; }
+    static const SimpleValueBuilderFactory& get() { return _factory; }
 };
 
-}
+} // namespace vespalib::eval

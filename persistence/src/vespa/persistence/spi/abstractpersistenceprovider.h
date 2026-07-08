@@ -11,8 +11,7 @@ namespace storage::spi {
  * to review the full PersistenceProvider class to verify that
  * their desired behaviour is implemented.
  */
-class AbstractPersistenceProvider : public PersistenceProvider
-{
+class AbstractPersistenceProvider : public PersistenceProvider {
 public:
     Result initialize() override { return Result(); };
     Result removeEntry(const Bucket&, Timestamp) override { return Result(); }
@@ -21,4 +20,4 @@ public:
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
 };
 
-}
+} // namespace storage::spi

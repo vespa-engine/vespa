@@ -1,15 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/query/streaming/hit.h>
+#include <vespa/searchlib/queryeval/fake_index.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::queryeval;
 
 TEST(FakeIndexTest, require_that_basic_fake_index_works) {
     FakeIndex index;
-    index.doc(69).elem(0, "..A..B..")
-                 .elem(1, ".C...D..");
+    index.doc(69).elem(0, "..A..B..").elem(1, ".C...D..");
 
     auto a_result = index.lookup('A');
     auto expected_a = FakeResult().doc(69).elem(0).len(8).pos(2);
@@ -30,12 +29,10 @@ TEST(FakeIndexTest, require_that_basic_fake_index_works) {
 
 TEST(FakeIndexTest, require_that_multiple_documents_work) {
     FakeIndex index;
-    index.doc(10).elem(0, "A.B")
-         .doc(20).elem(0, "..A");
+    index.doc(10).elem(0, "A.B").doc(20).elem(0, "..A");
 
     auto a_result = index.lookup('A');
-    auto expected_a = FakeResult().doc(10).elem(0).len(3).pos(0)
-                                  .doc(20).elem(0).len(3).pos(2);
+    auto expected_a = FakeResult().doc(10).elem(0).len(3).pos(0).doc(20).elem(0).len(3).pos(2);
     EXPECT_EQ(a_result, expected_a);
 
     auto b_result = index.lookup('B');
@@ -71,8 +68,7 @@ TEST(FakeIndexTest, require_that_dots_are_skipped) {
 
 TEST(FakeIndexTest, require_that_multi_field_works) {
     FakeIndex index;
-    index.doc(69).field(0).elem(0, "A.B")
-                 .field(1).elem(0, "..A");
+    index.doc(69).field(0).elem(0, "A.B").field(1).elem(0, "..A");
 
     auto a0_result = index.lookup('A', 0);
     auto expected_a0 = FakeResult().doc(69).elem(0).len(3).pos(0);
@@ -88,8 +84,7 @@ TEST(FakeIndexTest, require_that_multi_field_works) {
 
 TEST(FakeIndexTest, require_that_streaming_hits_work) {
     FakeIndex index;
-    index.doc(69).field(0).elem(1, "A.B")
-                 .field(1).elem(2, "..A");
+    index.doc(69).field(0).elem(1, "A.B").field(1).elem(2, "..A");
 
     auto hits = index.get_streaming_hits('A', 69);
     EXPECT_EQ(hits.size(), 2u);
@@ -103,8 +98,7 @@ TEST(FakeIndexTest, require_that_streaming_hits_work) {
 
 TEST(FakeIndexTest, require_that_streaming_hits_with_field_filter_work) {
     FakeIndex index;
-    index.doc(69).field(0).elem(0, "A.B")
-                 .field(1).elem(0, "A.C");
+    index.doc(69).field(0).elem(0, "A.B").field(1).elem(0, "A.C");
 
     auto hits = index.get_streaming_hits('A', 69, std::vector<uint32_t>{1});
     EXPECT_EQ(hits.size(), 1u);

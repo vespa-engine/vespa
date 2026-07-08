@@ -6,11 +6,10 @@
 
 namespace search::transactionlog {
 
-class SyncProxy
-{
+class SyncProxy {
 public:
     virtual ~SyncProxy() = default;
     virtual void sync(SerialNum syncTo) = 0;
 };
 
-}
+} // namespace search::transactionlog

@@ -6,6 +6,7 @@ import com.yahoo.vespa.objects.Ids;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Einar M R Rosenvinge
@@ -17,7 +18,7 @@ public class ArrayDataType extends CollectionDataType {
 
     public ArrayDataType(DataType nestedType) {
         super("Array<"+nestedType.getName()+">", 0, nestedType);
-        setId(getName().toLowerCase().hashCode());
+        setId(getName().toLowerCase(Locale.ROOT).hashCode());
     }
 
     public ArrayDataType(DataType nestedType, int code) {

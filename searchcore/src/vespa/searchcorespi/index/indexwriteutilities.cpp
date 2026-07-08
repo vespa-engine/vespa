@@ -1,33 +1,36 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "indexwriteutilities.h"
+
 #include "indexdisklayout.h"
 #include "indexreadutilities.h"
+
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <unistd.h>
+
 #include <filesystem>
 #include <sstream>
 #include <system_error>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.indexwriteutilities");
 
-
 using search::FixedSourceSelector;
+using search::SerialNum;
 using search::TuneFileAttributes;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using search::index::Schema;
 using search::index::SchemaUtil;
-using search::SerialNum;
-using vespalib::IllegalStateException;
 using vespalib::FileHeader;
 using vespalib::getErrorString;
 using vespalib::getLastErrorString;
+using vespalib::IllegalStateException;
 
 namespace fs = std::filesystem;
 
@@ -39,29 +42,26 @@ SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
 
 }
 
-void
-IndexWriteUtilities::writeSerialNum(SerialNum serialNum,
-                                    const std::string &dir,
-                                    const FileHeaderContext &fileHeaderContext)
-{
+void IndexWriteUtilities::writeSerialNum(SerialNum serialNum, const std::string& dir,
+                                         const FileHeaderContext& fileHeaderContext) {
     const std::string fileName = IndexDiskLayout::getSerialNumFileName(dir);
     const std::string tmpFileName = fileName + ".tmp";
 
     SerialNumFileHeaderContext snFileHeaderContext(fileHeaderContext, serialNum);
-    Fast_BufferedFile file(16_Ki);
+    Fast_BufferedFile          file(16_Ki);
     file.WriteOpen(tmpFileName.c_str());
     FileHeader fileHeader;
     snFileHeaderContext.addTags(fileHeader, fileName);
     fileHeader.putTag(FileHeader::Tag(IndexDiskLayout::SerialNumTag, serialNum));
     bool ok = (fileHeader.writeFile(file) >= fileHeader.getSize());
-    if ( ! ok) {
+    if (!ok) {
         LOG(error, "Unable to write file header '%s'", tmpFileName.c_str());
     }
-    if ( ! file.Sync()) {
+    if (!file.Sync()) {
         ok = false;
         LOG(error, "Unable to fsync '%s'", tmpFileName.c_str());
     }
-    if ( ! file.Close()) {
+    if (!file.Close()) {
         ok = false;
         LOG(error, "Unable to close '%s'", tmpFileName.c_str());
     }
@@ -80,13 +80,10 @@ IndexWriteUtilities::writeSerialNum(SerialNum serialNum,
     vespalib::File::sync(dir);
 }
 
-bool
-IndexWriteUtilities::copySerialNumFile(const std::string &sourceDir,
-                                       const std::string &destDir)
-{
-    std::string source = IndexDiskLayout::getSerialNumFileName(sourceDir);
-    std::string dest = IndexDiskLayout::getSerialNumFileName(destDir);
-    std::string tmpDest = dest + ".tmp";
+bool IndexWriteUtilities::copySerialNumFile(const std::string& sourceDir, const std::string& destDir) {
+    std::string     source = IndexDiskLayout::getSerialNumFileName(sourceDir);
+    std::string     dest = IndexDiskLayout::getSerialNumFileName(destDir);
+    std::string     tmpDest = dest + ".tmp";
     std::error_code ec;
 
     fs::copy_file(fs::path(source), fs::path(tmpDest), ec);
@@ -105,13 +102,9 @@ IndexWriteUtilities::copySerialNumFile(const std::string &sourceDir,
     return true;
 }
 
-void
-IndexWriteUtilities::writeSourceSelector(FixedSourceSelector::SaveInfo & saveInfo,
-                                         uint32_t sourceId,
-                                         const TuneFileAttributes & tuneFileAttributes,
-                                         const FileHeaderContext & fileHeaderContext,
-                                         SerialNum serialNum)
-{
+void IndexWriteUtilities::writeSourceSelector(FixedSourceSelector::SaveInfo& saveInfo, uint32_t sourceId,
+                                              const TuneFileAttributes& tuneFileAttributes,
+                                              const FileHeaderContext& fileHeaderContext, SerialNum serialNum) {
     SerialNumFileHeaderContext snFileHeaderContext(fileHeaderContext, serialNum);
     if (!saveInfo.save(tuneFileAttributes, snFileHeaderContext)) {
         std::ostringstream msg;
@@ -120,11 +113,10 @@ IndexWriteUtilities::writeSourceSelector(FixedSourceSelector::SaveInfo & saveInf
     }
 }
 
-void
-IndexWriteUtilities::updateDiskIndexSchema(const std::string &indexDir, const Schema &schema, SerialNum serialNum)
-{
+void IndexWriteUtilities::updateDiskIndexSchema(const std::string& indexDir, const Schema& schema,
+                                                SerialNum serialNum) {
     std::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
-    Schema oldSchema;
+    Schema      oldSchema;
     if (!oldSchema.loadFromFile(schemaName)) {
         LOG(error, "Could not open schema '%s'", schemaName.c_str());
         return;
@@ -150,28 +142,26 @@ IndexWriteUtilities::updateDiskIndexSchema(const std::string &indexDir, const Sc
         LOG(error, "Could not save schema to '%s'", schemaTmpName.c_str());
     }
     FastOS_StatInfo statInfo;
-    bool statres;
+    bool            statres;
     statres = FastOS_File::Stat(schemaOrigName.c_str(), &statInfo);
     if (!statres) {
         if (statInfo._error != FastOS_StatInfo::FileNotFound) {
-            LOG(error, "Failed to stat orig schema '%s': %s",
-                schemaOrigName.c_str(), getLastErrorString().c_str());
+            LOG(error, "Failed to stat orig schema '%s': %s", schemaOrigName.c_str(), getLastErrorString().c_str());
         }
         int linkres = ::link(schemaName.c_str(), schemaOrigName.c_str());
         if (linkres != 0) {
-            LOG(error, "Could not link '%s' to '%s': %s",
-                schemaOrigName.c_str(), schemaName.c_str(), getLastErrorString().c_str());
+            LOG(error, "Could not link '%s' to '%s': %s", schemaOrigName.c_str(), schemaName.c_str(),
+                getLastErrorString().c_str());
         }
         vespalib::File::sync(indexDir);
     }
     int renameres = ::rename(schemaTmpName.c_str(), schemaName.c_str());
     if (renameres != 0) {
-        int error = errno;
+        int         error = errno;
         std::string errString = getErrorString(error);
-        LOG(error, "Could not rename '%s' to '%s': %s",
-            schemaTmpName.c_str(), schemaName.c_str(), errString.c_str());
+        LOG(error, "Could not rename '%s' to '%s': %s", schemaTmpName.c_str(), schemaName.c_str(), errString.c_str());
     }
     vespalib::File::sync(indexDir);
 }
 
-}
+} // namespace searchcorespi::index

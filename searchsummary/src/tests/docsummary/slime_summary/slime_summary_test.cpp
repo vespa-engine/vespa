@@ -22,8 +22,6 @@
 
 using namespace vespalib::slime::convenience;
 using namespace search::docsummary;
-using vespalib::slime::BinaryFormat;
-using search::MatchingElements;
 using document::ByteFieldValue;
 using document::DataType;
 using document::Document;
@@ -39,22 +37,24 @@ using document::ShortFieldValue;
 using document::StringFieldValue;
 using document::StructDataType;
 using document::StructFieldValue;
+using search::MatchingElements;
+using vespalib::slime::BinaryFormat;
 
 namespace {
 
 struct SlimeSummaryTest : testing::Test, IDocsumStore, GetDocsumsStateCallback {
     std::unique_ptr<DynamicDocsumWriter> writer;
-    StructDataType  int_pair_type;
-    DocumentType    doc_type;
-    GetDocsumsState state;
-    bool            fail_get_mapped_docsum;
-    bool            empty_get_mapped_docsum;
+    StructDataType                       int_pair_type;
+    DocumentType                         doc_type;
+    GetDocsumsState                      state;
+    bool                                 fail_get_mapped_docsum;
+    bool                                 empty_get_mapped_docsum;
     SlimeSummaryTest();
     ~SlimeSummaryTest() override;
-    void getDocsum(Slime &slime) {
-        Slime slimeOut;
+    void getDocsum(Slime& slime) {
+        Slime         slimeOut;
         SlimeInserter inserter(slimeOut);
-        auto rci = writer->resolveClassInfo(state._args.getResultClassName(), {});
+        auto          rci = writer->resolveClassInfo(state._args.getResultClassName(), {});
         writer->insertDocsum(rci, 1u, state, *this, inserter);
         vespalib::SmartBuffer buf(4_Ki);
         BinaryFormat::encode(slimeOut, buf);
@@ -87,11 +87,12 @@ struct SlimeSummaryTest : testing::Test, IDocsumStore, GetDocsumsStateCallback {
         }
         return std::make_unique<DocsumStoreDocument>(std::move(doc));
     }
-    void fillSummaryFeatures(GetDocsumsState&) override { }
-    void fillRankFeatures(GetDocsumsState&) override { }
-    std::unique_ptr<MatchingElements> fill_matching_elements(const search::MatchingElementsFields &) override { abort(); }
+    void fillSummaryFeatures(GetDocsumsState&) override {}
+    void fillRankFeatures(GetDocsumsState&) override {}
+    std::unique_ptr<MatchingElements> fill_matching_elements(const search::MatchingElementsFields&) override {
+        abort();
+    }
 };
-
 
 SlimeSummaryTest::SlimeSummaryTest()
     : writer(),
@@ -99,10 +100,9 @@ SlimeSummaryTest::SlimeSummaryTest()
       doc_type("test"),
       state(*this),
       fail_get_mapped_docsum(false),
-      empty_get_mapped_docsum(false)
-{
-    auto config = std::make_unique<ResultConfig>();
-    ResultClass *cfg = config->addResultClass("default", 0);
+      empty_get_mapped_docsum(false) {
+    auto         config = std::make_unique<ResultConfig>();
+    ResultClass* cfg = config->addResultClass("default", 0);
     EXPECT_TRUE(cfg != nullptr);
     EXPECT_TRUE(cfg->addConfigEntry("int_field"));
     EXPECT_TRUE(cfg->addConfigEntry("short_field"));
@@ -133,10 +133,9 @@ SlimeSummaryTest::SlimeSummaryTest()
 }
 SlimeSummaryTest::~SlimeSummaryTest() = default;
 
-} // namespace <unnamed>
+} // namespace
 
-TEST_F(SlimeSummaryTest, docsum_can_be_written_as_slime)
-{
+TEST_F(SlimeSummaryTest, docsum_can_be_written_as_slime) {
     Slime s;
     getDocsum(s);
     EXPECT_EQ(s.get()["int_field"].asLong(), 4u);
@@ -153,8 +152,7 @@ TEST_F(SlimeSummaryTest, docsum_can_be_written_as_slime)
     EXPECT_EQ(s.get()["int_pair_field"]["bar"].asLong(), 2u);
 }
 
-TEST_F(SlimeSummaryTest, unknown_summary_class_gives_empty_slime)
-{
+TEST_F(SlimeSummaryTest, unknown_summary_class_gives_empty_slime) {
     state._args.setResultClassName("unknown");
     Slime s;
     getDocsum(s);
@@ -162,8 +160,7 @@ TEST_F(SlimeSummaryTest, unknown_summary_class_gives_empty_slime)
     EXPECT_EQ(vespalib::slime::NIX::ID, s.get().type().getId());
 }
 
-TEST_F(SlimeSummaryTest, failure_to_retrieve_docsum_store_document_gives_empty_slime)
-{
+TEST_F(SlimeSummaryTest, failure_to_retrieve_docsum_store_document_gives_empty_slime) {
     fail_get_mapped_docsum = true;
     Slime s;
     getDocsum(s);
@@ -171,8 +168,7 @@ TEST_F(SlimeSummaryTest, failure_to_retrieve_docsum_store_document_gives_empty_s
     EXPECT_EQ(vespalib::slime::NIX::ID, s.get().type().getId());
 }
 
-TEST_F(SlimeSummaryTest, empty_docsum_store_document_gives_empty_object)
-{
+TEST_F(SlimeSummaryTest, empty_docsum_store_document_gives_empty_object) {
     empty_get_mapped_docsum = true;
     Slime s;
     getDocsum(s);

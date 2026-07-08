@@ -8,6 +8,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author jobergum
@@ -15,6 +16,7 @@ import java.net.InetSocketAddress;
 public final class MockHttpServer {
 
     private String response;
+    private int statusCode = 200;
     private final HttpServer server;
 
     /**
@@ -36,6 +38,10 @@ public final class MockHttpServer {
         this.response = r;
     }
 
+    public synchronized void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
     public int port() {
         return server.getAddress().getPort();
     }
@@ -48,9 +54,9 @@ public final class MockHttpServer {
         @Override
         public void handle(HttpExchange t) throws IOException {
             synchronized (MockHttpServer.this) {
-                t.sendResponseHeaders(200, response != null ? response.length() : 0);
+                t.sendResponseHeaders(statusCode, response != null ? response.length() : 0);
                 try (OutputStream os = t.getResponseBody()) {
-                    if (response != null) os.write(response.getBytes());
+                    if (response != null) os.write(response.getBytes(StandardCharsets.UTF_8));
                 }
             }
         }

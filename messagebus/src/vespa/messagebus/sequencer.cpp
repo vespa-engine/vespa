@@ -1,28 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "sequencer.h"
+
 #include "tracelevel.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 
 using vespalib::make_string;
 
 namespace mbus {
 
-Sequencer::Sequencer(IMessageHandler &sender) :
-    _lock(),
-    _sender(sender),
-    _seqMap()
-{
+Sequencer::Sequencer(IMessageHandler& sender) : _lock(), _sender(sender), _seqMap() {
     // empty
 }
 
-Sequencer::~Sequencer()
-{
-    for (auto & entry : _seqMap) {
-        MessageQueue *queue = entry.second;
+Sequencer::~Sequencer() {
+    for (auto& entry : _seqMap) {
+        MessageQueue* queue = entry.second;
         if (queue != nullptr) {
             while (queue->size() > 0) {
-                Message *msg = queue->front();
+                Message* msg = queue->front();
                 queue->pop();
                 msg->discard();
                 delete msg;
@@ -32,14 +30,12 @@ Sequencer::~Sequencer()
     }
 }
 
-Message::UP
-Sequencer::filter(Message::UP msg)
-{
+Message::UP Sequencer::filter(Message::UP msg) {
     uint64_t seqId = msg->getSequenceId();
     msg->setContext(Context(seqId));
     {
         std::lock_guard guard(_lock);
-        auto it = _seqMap.find(seqId);
+        auto            it = _seqMap.find(seqId);
         if (it != _seqMap.end()) {
             if (it->second == nullptr) {
                 it->second = new MessageQueue();
@@ -55,19 +51,15 @@ Sequencer::filter(Message::UP msg)
     return msg;
 }
 
-void
-Sequencer::sequencedSend(Message::UP msg)
-{
-    msg->getTrace().trace(TraceLevel::COMPONENT,
-                          make_string("Sequencer sending message with sequence id '%" PRIu64 "'.",
-                                      msg->getContext().value.UINT64));
+void Sequencer::sequencedSend(Message::UP msg) {
+    msg->getTrace().trace(
+        TraceLevel::COMPONENT,
+        make_string("Sequencer sending message with sequence id '%" PRIu64 "'.", msg->getContext().value.UINT64));
     msg->pushHandler(*this);
     _sender.handleMessage(std::move(msg));
 }
 
-void
-Sequencer::handleMessage(Message::UP msg)
-{
+void Sequencer::handleMessage(Message::UP msg) {
     if (msg->hasSequenceId()) {
         msg = filter(std::move(msg));
         if (msg.get() != nullptr) {
@@ -78,17 +70,15 @@ Sequencer::handleMessage(Message::UP msg)
     }
 }
 
-void
-Sequencer::handleReply(Reply::UP reply)
-{
+void Sequencer::handleReply(Reply::UP reply) {
     uint64_t seq = reply->getContext().value.UINT64;
     reply->getTrace().trace(TraceLevel::COMPONENT,
                             make_string("Sequencer received reply with sequence id '%" PRIu64 "'.", seq));
     Message::UP msg;
     {
         std::lock_guard guard(_lock);
-        auto it = _seqMap.find(seq);
-        MessageQueue *que = it->second;
+        auto            it = _seqMap.find(seq);
+        MessageQueue*   que = it->second;
         assert(it != _seqMap.end());
         if (que == nullptr || que->size() == 0) {
             if (que != nullptr) {
@@ -103,7 +93,7 @@ Sequencer::handleReply(Reply::UP reply)
     if (msg) {
         sequencedSend(std::move(msg));
     }
-    IReplyHandler &handler = reply->getCallStack().pop(*reply);
+    IReplyHandler& handler = reply->getCallStack().pop(*reply);
     handler.handleReply(std::move(reply));
 }
 

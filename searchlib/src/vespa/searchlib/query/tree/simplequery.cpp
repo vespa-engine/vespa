@@ -60,4 +60,4 @@ SimpleInTerm::~SimpleInTerm() = default;
 
 SimpleWordAlternatives::~SimpleWordAlternatives() = default;
 
-}
+} // namespace search::query

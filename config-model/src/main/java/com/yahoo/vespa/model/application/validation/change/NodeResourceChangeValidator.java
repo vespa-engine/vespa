@@ -41,7 +41,7 @@ public class NodeResourceChangeValidator implements ChangeValidator {
 
     private Optional<NodeResources> resourcesOf(ClusterSpec cluster, VespaModel model) {
         return model.allocatedHosts().getHosts().stream().filter(host -> host.membership().isPresent())
-                                                         .filter(host -> host.membership().get().cluster().id().equals(cluster.id()))
+                                                         .filter(host -> host.membership().get().id().equals(cluster.id()))
                                                          .findFirst()
                                                          .map(HostSpec::advertisedResources);
     }

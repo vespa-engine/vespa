@@ -7,22 +7,16 @@ using searchcorespi::IIndexManager;
 namespace proton {
 
 DocumentSubDbInitializerResult::DocumentSubDbInitializerResult()
-    : _documentMetaStore(std::make_shared<DocumentMetaStoreInitializerResult::SP>
-                         ()),
+    : _documentMetaStore(std::make_shared<DocumentMetaStoreInitializerResult::SP>()),
       _summaryManager(std::make_shared<SummaryManager::SP>()),
       _attributeManager(std::make_shared<AttributeManager::SP>()),
       _indexManager(std::make_shared<IIndexManager::SP>()),
       _flushConfig(),
-      _schema()
-{
+      _schema() {
 }
 
-void
-DocumentSubDbInitializerResult::
-setFlushConfig(const DocumentDBFlushConfig &flushConfig)
-{
+void DocumentSubDbInitializerResult::setFlushConfig(const DocumentDBFlushConfig& flushConfig) {
     _flushConfig = flushConfig;
 }
 
 } // namespace proton
-

@@ -64,10 +64,22 @@ public class CreatePositionZCurve extends Processor {
             boolean doesSummary = field.doesSummarying();
 
             String fieldName = field.getName();
+
+            // Read user-specified settings before removing the original attribute
+            Attribute originalAttr = field.getAttributes().get(fieldName);
+            boolean fastAccess = originalAttr != null && originalAttr.isFastAccess();
+            boolean paged = originalAttr != null && originalAttr.isPaged();
+
             field.getAttributes().remove(fieldName);
 
             String zName = PositionDataType.getZCurveFieldName(fieldName);
             SDField zCurveField = createZCurveField(field, zName, validate);
+
+            // Forward user-specified settings to the zcurve attribute
+            Attribute zAttr = zCurveField.getAttributes().get(zName);
+            if (fastAccess) zAttr.setFastAccess(true);
+            if (paged) zAttr.setPaged(true);
+
             schema.addExtraField(zCurveField);
             schema.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, zCurveField.getName());
 

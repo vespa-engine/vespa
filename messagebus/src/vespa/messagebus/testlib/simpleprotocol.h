@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/messagebus/iprotocol.h>
+
 #include <map>
 
 namespace mbus {
@@ -30,7 +31,7 @@ public:
          * @param param The param for the policy constructor.
          * @return The routing policy created.
          */
-        virtual IRoutingPolicy::UP create(const string &param) = 0;
+        virtual IRoutingPolicy::UP create(const string& param) = 0;
     };
 
 private:
@@ -38,7 +39,7 @@ private:
     FactoryMap _policies;
 
 public:
-    static const string NAME;
+    static const string   NAME;
     static const uint32_t MESSAGE;
     static const uint32_t REPLY;
 
@@ -57,8 +58,7 @@ public:
      * @param name    The name of the policy.
      * @param factory The policy factory.
      */
-    void addPolicyFactory(const string &name,
-                          IPolicyFactory::SP factory);
+    void addPolicyFactory(const string& name, IPolicyFactory::SP factory);
 
     /**
      * Common merge logic that can be used for any simple policy. It all errors across all replies into
@@ -66,12 +66,12 @@ public:
      *
      * @param ctx The routing context whose children to merge.
      */
-    static void simpleMerge(RoutingContext &ctx);
+    static void simpleMerge(RoutingContext& ctx);
 
-    const string & getName() const override;
-    IRoutingPolicy::UP createPolicy(const string &name, const string &param) const override;
-    Blob encode(const vespalib::Version &version, const Routable &routable) const override;
-    Routable::UP decode(const vespalib::Version &version, BlobRef data) const override;
+    const string& getName() const override;
+    IRoutingPolicy::UP createPolicy(const string& name, const string& param) const override;
+    Blob encode(const vespalib::Version& version, const Routable& routable) const override;
+    Routable::UP decode(const vespalib::Version& version, BlobRef data) const override;
 };
 
 } // namespace mbus

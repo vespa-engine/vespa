@@ -170,7 +170,7 @@ public class SummaryField extends FieldBase implements Cloneable {
      * into this field
      *
      * @param  merge the field to merge with this, if null, the merged field is *this* field
-     * @throws RuntimeException if the two fields can not be merged
+     * @throws RuntimeException if the two fields cannot be merged
      */
     public SummaryField mergeWith(SummaryField merge) {
         if (merge == null) return this;

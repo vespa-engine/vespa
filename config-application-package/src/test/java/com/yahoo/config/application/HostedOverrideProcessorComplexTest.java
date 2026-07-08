@@ -4,6 +4,7 @@ package com.yahoo.config.application;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -114,7 +115,7 @@ public class HostedOverrideProcessorComplexTest {
         ApplicationPackage app = FilesApplicationPackage.fromDir(new File(servicesFile).getParentFile(), Map.of());
         Document inputDoc = Xml.getDocument(app.getServices());
         Tags tags = app.getDeploymentSpec().tags(instance, environment);
-        Document newDoc = new OverrideProcessor(instance, environment, region, cloud, tags).process(inputDoc);
+        Document newDoc = new OverrideProcessor(ApplicationName.defaultName(), instance, environment, region, cloud, tags).process(inputDoc);
         assertEquals(expected, Xml.documentAsString(newDoc, true));
     }
 

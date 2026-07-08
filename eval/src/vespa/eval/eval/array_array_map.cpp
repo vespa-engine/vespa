@@ -2,6 +2,4 @@
 
 #include "array_array_map.h"
 
-namespace vespalib::eval {
-
-}
+namespace vespalib::eval {}

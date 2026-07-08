@@ -1,0 +1,5 @@
+{"put": "id:person:person::1", "fields": {"name": "Alice", "age": 30}}
+{"put": "id:person:person::2", "fields": {"name": "Bob", "age": 25}}
+{"put": "id:person:person::3", "fields": {"name": "Charlie", "age": 35}}
+{"put": "id:person:person::4", "fields": {"name": "Diana", "age": 28}}
+{"put": "id:person:person::5", "fields": {"name": "Eve", "age": 42}}

@@ -3,25 +3,27 @@
 #pragma once
 
 #include "objectvisitor.h"
-#include <vector>
+
 #include <memory>
+#include <vector>
 
 namespace vespalib {
 
-namespace slime { struct Cursor; }
+namespace slime {
+struct Cursor;
+}
 
 /**
  * This is a concrete object visitor that will build up a structured
  * slime representation of an object.
  **/
-class Object2Slime : public ObjectVisitor
-{
+class Object2Slime : public ObjectVisitor {
 private:
-    std::reference_wrapper<slime::Cursor> _cursor;
+    std::reference_wrapper<slime::Cursor>              _cursor;
     std::vector<std::reference_wrapper<slime::Cursor>> _stack;
 
 public:
-    explicit Object2Slime(slime::Cursor & cursor);
+    explicit Object2Slime(slime::Cursor& cursor);
     ~Object2Slime() override;
 
     void openStruct(std::string_view name, std::string_view type) override;

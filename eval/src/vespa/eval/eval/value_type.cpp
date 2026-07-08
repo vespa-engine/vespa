@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value_type.h"
+
 #include "value_type_spec.h"
+
 #include <algorithm>
 #include <cassert>
 #include <ostream>
@@ -13,7 +15,7 @@ namespace {
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
 
-size_t my_dimension_index(const std::vector<Dimension> &list, const std::string &name) {
+size_t my_dimension_index(const std::vector<Dimension>& list, const std::string& name) {
     for (size_t idx = 0; idx < list.size(); ++idx) {
         if (list[idx].name == name) {
             return idx;
@@ -22,17 +24,16 @@ size_t my_dimension_index(const std::vector<Dimension> &list, const std::string 
     return ValueType::Dimension::npos;
 }
 
-const Dimension *find_dimension(const std::vector<Dimension> &list, const std::string &name) {
+const Dimension* find_dimension(const std::vector<Dimension>& list, const std::string& name) {
     size_t idx = my_dimension_index(list, name);
     return (idx != ValueType::Dimension::npos) ? &list[idx] : nullptr;
 }
 
-void sort_dimensions(DimensionList &dimensions) {
-    std::sort(dimensions.begin(), dimensions.end(),
-              [](const auto &a, const auto &b){ return (a.name < b.name); });
+void sort_dimensions(DimensionList& dimensions) {
+    std::sort(dimensions.begin(), dimensions.end(), [](const auto& a, const auto& b) { return (a.name < b.name); });
 }
 
-bool verify_dimensions(const DimensionList &dimensions) {
+bool verify_dimensions(const DimensionList& dimensions) {
     for (size_t i = 0; i < dimensions.size(); ++i) {
         if (dimensions[i].size == 0) {
             return false;
@@ -45,14 +46,13 @@ bool verify_dimensions(const DimensionList &dimensions) {
 }
 
 struct MyReduce {
-    bool has_error;
+    bool                   has_error;
     std::vector<Dimension> dimensions;
-    MyReduce(const std::vector<Dimension> &dim_list, const std::vector<std::string> &rem_list)
-        : has_error(false), dimensions()
-    {
+    MyReduce(const std::vector<Dimension>& dim_list, const std::vector<std::string>& rem_list)
+        : has_error(false), dimensions() {
         if (!rem_list.empty()) {
             size_t removed = 0;
-            for (const Dimension &dim: dim_list) {
+            for (const Dimension& dim : dim_list) {
                 if (std::find(rem_list.begin(), rem_list.end(), dim.name) == rem_list.end()) {
                     dimensions.push_back(dim);
                 } else {
@@ -67,16 +67,20 @@ struct MyReduce {
 };
 
 struct MyJoin {
-    bool mismatch;
+    bool          mismatch;
     DimensionList dimensions;
-    std::string concat_dim;
-    MyJoin(const DimensionList &lhs, const DimensionList &rhs)
-        : mismatch(false), dimensions(), concat_dim() { my_join(lhs, rhs); }
-    MyJoin(const DimensionList &lhs, const DimensionList &rhs, const std::string & concat_dim_in)
-        : mismatch(false), dimensions(), concat_dim(concat_dim_in) { my_join(lhs, rhs); }
+    std::string   concat_dim;
+    MyJoin(const DimensionList& lhs, const DimensionList& rhs) : mismatch(false), dimensions(), concat_dim() {
+        my_join(lhs, rhs);
+    }
+    MyJoin(const DimensionList& lhs, const DimensionList& rhs, const std::string& concat_dim_in)
+        : mismatch(false), dimensions(), concat_dim(concat_dim_in) {
+        my_join(lhs, rhs);
+    }
     ~MyJoin();
+
 private:
-    void add(const Dimension &a) {
+    void add(const Dimension& a) {
         if (a.name == concat_dim) {
             if (a.is_indexed()) {
                 dimensions.emplace_back(a.name, a.size + 1);
@@ -87,7 +91,7 @@ private:
             dimensions.push_back(a);
         }
     }
-    void unify(const Dimension &a, const Dimension &b) {
+    void unify(const Dimension& a, const Dimension& b) {
         if (a.name == concat_dim) {
             if (a.is_indexed() && b.is_indexed()) {
                 dimensions.emplace_back(a.name, a.size + b.size);
@@ -100,10 +104,10 @@ private:
             mismatch = true;
         }
     }
-    void my_join(const DimensionList &lhs, const DimensionList &rhs) {
+    void my_join(const DimensionList& lhs, const DimensionList& rhs) {
         auto pos = rhs.begin();
         auto end = rhs.end();
-        for (const Dimension &dim: lhs) {
+        for (const Dimension& dim : lhs) {
             while ((pos != end) && (pos->name < dim.name)) {
                 add(*pos++);
             }
@@ -121,13 +125,12 @@ private:
 MyJoin::~MyJoin() = default;
 
 struct Renamer {
-    const std::vector<std::string> &from;
-    const std::vector<std::string> &to;
-    size_t match_cnt;
-    Renamer(const std::vector<std::string> &from_in,
-            const std::vector<std::string> &to_in)
+    const std::vector<std::string>& from;
+    const std::vector<std::string>& to;
+    size_t                          match_cnt;
+    Renamer(const std::vector<std::string>& from_in, const std::vector<std::string>& to_in)
         : from(from_in), to(to_in), match_cnt(0) {}
-    const std::string &rename(const std::string &name) {
+    const std::string& rename(const std::string& name) {
         for (size_t i = 0; i < from.size(); ++i) {
             if (name == from[i]) {
                 ++match_cnt;
@@ -139,10 +142,10 @@ struct Renamer {
     bool matched_all() const { return (match_cnt == from.size()); }
 };
 
-auto filter(const std::vector<Dimension> &dims, auto keep) {
+auto filter(const std::vector<Dimension>& dims, auto keep) {
     std::vector<Dimension> result;
     result.reserve(dims.size());
-    for (const auto &dim: dims) {
+    for (const auto& dim : dims) {
         if (keep(dim)) {
             result.push_back(dim);
         }
@@ -150,21 +153,19 @@ auto filter(const std::vector<Dimension> &dims, auto keep) {
     return result;
 }
 
-auto strip(CellType old_cell_type, const std::vector<Dimension> &old_dims, auto discard) {
-    auto new_dims = filter(old_dims, [discard](const auto  &dim){ return !discard(dim); });
+auto strip(CellType old_cell_type, const std::vector<Dimension>& old_dims, auto discard) {
+    auto new_dims = filter(old_dims, [discard](const auto& dim) { return !discard(dim); });
     if (new_dims.empty()) {
         return ValueType::double_type();
     }
     return ValueType::make_type(old_cell_type, std::move(new_dims));
 }
 
-} // namespace vespalib::eval::<unnamed>
+} // namespace
 
 constexpr ValueType::Dimension::size_type ValueType::Dimension::npos;
 
-ValueType
-ValueType::error_if(bool has_error, ValueType else_type)
-{
+ValueType ValueType::error_if(bool has_error, ValueType else_type) {
     if (has_error) {
         return error_type();
     } else {
@@ -172,13 +173,11 @@ ValueType::error_if(bool has_error, ValueType else_type)
     }
 }
 
-ValueType::ValueType(const ValueType &) = default;
-ValueType & ValueType::operator =(const ValueType &) = default;
+ValueType::ValueType(const ValueType&) = default;
+ValueType& ValueType::operator=(const ValueType&) = default;
 ValueType::~ValueType() = default;
 
-bool
-ValueType::is_double() const
-{
+bool ValueType::is_double() const {
     if (!_error && _dimensions.empty()) {
         assert(_cell_type == CellType::DOUBLE);
         return true;
@@ -186,13 +185,11 @@ ValueType::is_double() const
     return false;
 }
 
-bool
-ValueType::is_sparse() const
-{
+bool ValueType::is_sparse() const {
     if (dimensions().empty()) {
         return false;
     }
-    for (const auto &dim : dimensions()) {
+    for (const auto& dim : dimensions()) {
         if (!dim.is_mapped()) {
             return false;
         }
@@ -200,13 +197,11 @@ ValueType::is_sparse() const
     return true;
 }
 
-bool
-ValueType::is_dense() const
-{
+bool ValueType::is_dense() const {
     if (dimensions().empty()) {
         return false;
     }
-    for (const auto &dim : dimensions()) {
+    for (const auto& dim : dimensions()) {
         if (!dim.is_indexed()) {
             return false;
         }
@@ -214,23 +209,19 @@ ValueType::is_dense() const
     return true;
 }
 
-bool
-ValueType::is_mixed() const
-{
+bool ValueType::is_mixed() const {
     bool seen_mapped = false;
     bool seen_indexed = false;
-    for (const auto &dim : dimensions()) {
+    for (const auto& dim : dimensions()) {
         seen_mapped |= dim.is_mapped();
         seen_indexed |= dim.is_indexed();
     }
     return (seen_mapped && seen_indexed);
 }
 
-size_t
-ValueType::count_indexed_dimensions() const
-{
+size_t ValueType::count_indexed_dimensions() const {
     size_t cnt = 0;
-    for (const auto &dim : dimensions()) {
+    for (const auto& dim : dimensions()) {
         if (dim.is_indexed()) {
             ++cnt;
         }
@@ -238,11 +229,9 @@ ValueType::count_indexed_dimensions() const
     return cnt;
 }
 
-size_t
-ValueType::count_mapped_dimensions() const
-{
+size_t ValueType::count_mapped_dimensions() const {
     size_t cnt = 0;
-    for (const auto &dim : dimensions()) {
+    for (const auto& dim : dimensions()) {
         if (dim.is_mapped()) {
             ++cnt;
         }
@@ -250,11 +239,9 @@ ValueType::count_mapped_dimensions() const
     return cnt;
 }
 
-size_t
-ValueType::dense_subspace_size() const
-{
+size_t ValueType::dense_subspace_size() const {
     size_t size = 1;
-    for (const auto &dim : dimensions()) {
+    for (const auto& dim : dimensions()) {
         if (dim.is_indexed()) {
             size *= dim.size;
         }
@@ -262,35 +249,25 @@ ValueType::dense_subspace_size() const
     return size;
 }
 
-std::vector<ValueType::Dimension>
-ValueType::nontrivial_indexed_dimensions() const
-{
-    return filter(_dimensions, [](const auto &dim){ return !dim.is_trivial() && dim.is_indexed(); });
+std::vector<ValueType::Dimension> ValueType::nontrivial_indexed_dimensions() const {
+    return filter(_dimensions, [](const auto& dim) { return !dim.is_trivial() && dim.is_indexed(); });
 }
 
-std::vector<ValueType::Dimension>
-ValueType::indexed_dimensions() const
-{
-    return filter(_dimensions, [](const auto &dim){ return dim.is_indexed(); });
+std::vector<ValueType::Dimension> ValueType::indexed_dimensions() const {
+    return filter(_dimensions, [](const auto& dim) { return dim.is_indexed(); });
 }
 
-std::vector<ValueType::Dimension>
-ValueType::mapped_dimensions() const
-{
-    return filter(_dimensions, [](const auto &dim){ return dim.is_mapped(); });
+std::vector<ValueType::Dimension> ValueType::mapped_dimensions() const {
+    return filter(_dimensions, [](const auto& dim) { return dim.is_mapped(); });
 }
 
-size_t
-ValueType::dimension_index(const std::string &name) const
-{
+size_t ValueType::dimension_index(const std::string& name) const {
     return my_dimension_index(_dimensions, name);
 }
 
-size_t
-ValueType::stride_of(const std::string &name) const
-{
+size_t ValueType::stride_of(const std::string& name) const {
     size_t stride = 0;
-    for (const auto &dim: dimensions()) {
+    for (const auto& dim : dimensions()) {
         if (dim.is_indexed()) {
             if (stride == 0 && dim.name == name) {
                 stride = 1;
@@ -302,93 +279,67 @@ ValueType::stride_of(const std::string &name) const
     return stride;
 }
 
-std::vector<std::string>
-ValueType::dimension_names() const
-{
+std::vector<std::string> ValueType::dimension_names() const {
     std::vector<std::string> result;
     result.reserve(_dimensions.size());
-    for (const auto &dimension: _dimensions) {
+    for (const auto& dimension : _dimensions) {
         result.push_back(dimension.name);
     }
     return result;
 }
 
-ValueType
-ValueType::strip_mapped_dimensions() const
-{
-    return error_if(_error, strip(_cell_type, _dimensions,
-                                  [](const auto &dim){ return dim.is_mapped(); }));
+ValueType ValueType::strip_mapped_dimensions() const {
+    return error_if(_error, strip(_cell_type, _dimensions, [](const auto& dim) { return dim.is_mapped(); }));
 }
 
-ValueType
-ValueType::strip_indexed_dimensions() const
-{
-    return error_if(_error, strip(_cell_type, _dimensions,
-                                  [](const auto &dim){ return dim.is_indexed(); }));
+ValueType ValueType::strip_indexed_dimensions() const {
+    return error_if(_error, strip(_cell_type, _dimensions, [](const auto& dim) { return dim.is_indexed(); }));
 }
 
-ValueType
-ValueType::wrap(const ValueType &inner)
-{
+ValueType ValueType::wrap(const ValueType& inner) {
     MyJoin result(_dimensions, inner._dimensions);
-    auto meta = cell_meta().wrap(inner.cell_meta());
-    return error_if(_error || inner._error || result.mismatch ||
-                    (count_indexed_dimensions() > 0) ||
-                    (inner.count_mapped_dimensions() > 0),
+    auto   meta = cell_meta().wrap(inner.cell_meta());
+    return error_if(_error || inner._error || result.mismatch || (count_indexed_dimensions() > 0) ||
+                        (inner.count_mapped_dimensions() > 0),
                     make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
-ValueType
-ValueType::map() const
-{
+ValueType ValueType::map() const {
     auto meta = cell_meta().map();
     return error_if(_error, make_type(meta.cell_type, _dimensions));
 }
 
-ValueType
-ValueType::reduce(const std::vector<std::string> &dimensions_in) const
-{
+ValueType ValueType::reduce(const std::vector<std::string>& dimensions_in) const {
     MyReduce result(_dimensions, dimensions_in);
-    auto meta = cell_meta().reduce(result.dimensions.empty());
-    return error_if(_error || result.has_error,
-                    make_type(meta.cell_type, std::move(result.dimensions)));
+    auto     meta = cell_meta().reduce(result.dimensions.empty());
+    return error_if(_error || result.has_error, make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
-ValueType
-ValueType::peek(const std::vector<std::string> &dimensions_in) const
-{
+ValueType ValueType::peek(const std::vector<std::string>& dimensions_in) const {
     MyReduce result(_dimensions, dimensions_in);
-    auto meta = cell_meta().peek(result.dimensions.empty());
+    auto     meta = cell_meta().peek(result.dimensions.empty());
     return error_if(_error || result.has_error || dimensions_in.empty(),
                     make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
-ValueType
-ValueType::rename(const std::vector<std::string> &from,
-                  const std::vector<std::string> &to) const
-{
+ValueType ValueType::rename(const std::vector<std::string>& from, const std::vector<std::string>& to) const {
     if (from.empty() || (from.size() != to.size())) {
         return error_type();
     }
-    Renamer renamer(from, to);
+    Renamer                renamer(from, to);
     std::vector<Dimension> dim_list;
-    for (const auto &dim: _dimensions) {
+    for (const auto& dim : _dimensions) {
         dim_list.emplace_back(renamer.rename(dim.name), dim.size);
     }
     auto meta = cell_meta().rename();
-    return error_if(!renamer.matched_all(),
-                    make_type(meta.cell_type, std::move(dim_list)));
+    return error_if(!renamer.matched_all(), make_type(meta.cell_type, std::move(dim_list)));
 }
 
-ValueType
-ValueType::cell_cast(CellType to_cell_type) const
-{
+ValueType ValueType::cell_cast(CellType to_cell_type) const {
     return error_if(_error, make_type(to_cell_type, _dimensions));
 }
 
-ValueType
-ValueType::make_type(CellType cell_type, std::vector<Dimension> dimensions_in)
-{
+ValueType ValueType::make_type(CellType cell_type, std::vector<Dimension> dimensions_in) {
     if (dimensions_in.empty() && (cell_type != CellType::DOUBLE)) {
         // Note: all scalar values must have cell_type double
         return error_type();
@@ -400,44 +351,32 @@ ValueType::make_type(CellType cell_type, std::vector<Dimension> dimensions_in)
     return {cell_type, std::move(dimensions_in)};
 }
 
-ValueType
-ValueType::from_spec(const std::string &spec)
-{
+ValueType ValueType::from_spec(const std::string& spec) {
     return value_type::from_spec(spec);
 }
 
-ValueType
-ValueType::from_spec(const std::string &spec, std::vector<ValueType::Dimension> &unsorted)
-{
+ValueType ValueType::from_spec(const std::string& spec, std::vector<ValueType::Dimension>& unsorted) {
     return value_type::from_spec(spec, unsorted);
 }
 
-std::string
-ValueType::to_spec() const
-{
+std::string ValueType::to_spec() const {
     return value_type::to_spec(*this);
 }
 
-ValueType
-ValueType::join(const ValueType &lhs, const ValueType &rhs)
-{
+ValueType ValueType::join(const ValueType& lhs, const ValueType& rhs) {
     MyJoin result(lhs._dimensions, rhs._dimensions);
-    auto meta = CellMeta::join(lhs.cell_meta(), rhs.cell_meta());
+    auto   meta = CellMeta::join(lhs.cell_meta(), rhs.cell_meta());
     return error_if(lhs._error || rhs._error || result.mismatch,
                     make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
-ValueType
-ValueType::merge(const ValueType &lhs, const ValueType &rhs)
-{
+ValueType ValueType::merge(const ValueType& lhs, const ValueType& rhs) {
     auto meta = CellMeta::merge(lhs.cell_meta(), rhs.cell_meta());
     return error_if(lhs._error || rhs._error || (lhs._dimensions != rhs._dimensions),
                     make_type(meta.cell_type, lhs._dimensions));
 }
 
-ValueType
-ValueType::concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension)
-{
+ValueType ValueType::concat(const ValueType& lhs, const ValueType& rhs, const std::string& dimension) {
     MyJoin result(lhs._dimensions, rhs._dimensions, dimension);
     if (!find_dimension(result.dimensions, dimension)) {
         result.dimensions.emplace_back(dimension, 2);
@@ -447,14 +386,12 @@ ValueType::concat(const ValueType &lhs, const ValueType &rhs, const std::string 
                     make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
-ValueType
-ValueType::either(const ValueType &one, const ValueType &other) {
+ValueType ValueType::either(const ValueType& one, const ValueType& other) {
     return error_if(one != other, one);
 }
 
-std::ostream &
-operator<<(std::ostream &os, const ValueType &type) {
+std::ostream& operator<<(std::ostream& os, const ValueType& type) {
     return os << type.to_spec();
 }
 
-}
+} // namespace vespalib::eval

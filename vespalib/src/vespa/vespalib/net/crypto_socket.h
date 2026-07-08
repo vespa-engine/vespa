@@ -2,12 +2,14 @@
 
 #pragma once
 
-#include <memory>
 #include <cstdlib>
+#include <memory>
 
 namespace vespalib {
 
-namespace net { class ConnectionAuthContext; }
+namespace net {
+class ConnectionAuthContext;
+}
 
 /**
  * Abstraction of a low-level async network socket which can produce
@@ -66,7 +68,7 @@ struct CryptoSocket {
      * through the entire input pipeline. The semantics are the same
      * as with a normal socket read (errno, EOF, etc.).
      **/
-    virtual ssize_t read(char *buf, size_t len) = 0;
+    virtual ssize_t read(char* buf, size_t len) = 0;
 
     /**
      * Similar to read, but this function is not allowed to read from
@@ -78,14 +80,14 @@ struct CryptoSocket {
      * 0 when all data has been drained, and the application MUST NOT
      * interpret that as EOF.
      **/
-    virtual ssize_t drain(char *buf, size_t len) = 0;
+    virtual ssize_t drain(char* buf, size_t len) = 0;
 
     /**
      * Called when the application has data it wants to write. Write
      * through the entire output pipeline. The semantics are the same
      * as with a normal socket write (errno, etc.).
      **/
-    virtual ssize_t write(const char *buf, size_t len) = 0;
+    virtual ssize_t write(const char* buf, size_t len) = 0;
 
     /**
      * Try to flush data in the write pipeline that is not dependent

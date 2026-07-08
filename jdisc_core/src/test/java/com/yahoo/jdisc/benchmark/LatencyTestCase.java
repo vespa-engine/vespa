@@ -10,6 +10,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.TestDriver;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -240,23 +241,23 @@ public class LatencyTestCase {
         public String toString() {
             StringBuilder ret = new StringBuilder();
             ret.append("------------------------------------\n");
-            ret.append(String.format("HandleRequest           : %10.2f\n", (double)handleRequest / frameCnt));
-            ret.append(String.format("RequestWrite            : %10.2f\n", (double)requestWrite / frameCnt));
-            ret.append(String.format("RequestWriteCompletion  : %10.2f\n", (double)requestWriteCompletion / frameCnt));
-            ret.append(String.format("RequestClose            : %10.2f\n", (double)requestClose / frameCnt));
-            ret.append(String.format("RequestCloseCompletion  : %10.2f\n", (double)requestCloseCompletion / frameCnt));
-            ret.append(String.format("HandleResponse          : %10.2f\n", (double)handleResponse / frameCnt));
-            ret.append(String.format("ResponseWrite           : %10.2f\n", (double)responseWrite / frameCnt));
-            ret.append(String.format("ResponseWriteCompletion : %10.2f\n", (double)responseWriteCompletion / frameCnt));
-            ret.append(String.format("ResponseClose           : %10.2f\n", (double)responseClose / frameCnt));
-            ret.append(String.format("ResponseCloseCompletion : %10.2f\n", (double)responseCloseCompletion / frameCnt));
+            ret.append(Text.format("HandleRequest           : %10.2f\n", (double)handleRequest / frameCnt));
+            ret.append(Text.format("RequestWrite            : %10.2f\n", (double)requestWrite / frameCnt));
+            ret.append(Text.format("RequestWriteCompletion  : %10.2f\n", (double)requestWriteCompletion / frameCnt));
+            ret.append(Text.format("RequestClose            : %10.2f\n", (double)requestClose / frameCnt));
+            ret.append(Text.format("RequestCloseCompletion  : %10.2f\n", (double)requestCloseCompletion / frameCnt));
+            ret.append(Text.format("HandleResponse          : %10.2f\n", (double)handleResponse / frameCnt));
+            ret.append(Text.format("ResponseWrite           : %10.2f\n", (double)responseWrite / frameCnt));
+            ret.append(Text.format("ResponseWriteCompletion : %10.2f\n", (double)responseWriteCompletion / frameCnt));
+            ret.append(Text.format("ResponseClose           : %10.2f\n", (double)responseClose / frameCnt));
+            ret.append(Text.format("ResponseCloseCompletion : %10.2f\n", (double)responseCloseCompletion / frameCnt));
             ret.append("------------------------------------\n");
 
             double time = (handleRequest + requestWrite + requestWriteCompletion + requestClose +
                            requestCloseCompletion + handleResponse + responseWrite + responseWriteCompletion +
                            responseClose + responseCloseCompletion) / frameCnt;
-            ret.append(String.format("Total nanos             : %10.2f\n", time));
-            ret.append(String.format("Requests per second     : %10.2f\n", TimeUnit.SECONDS.toNanos(1) / time));
+            ret.append(Text.format("Total nanos             : %10.2f\n", time));
+            ret.append(Text.format("Requests per second     : %10.2f\n", TimeUnit.SECONDS.toNanos(1) / time));
             ret.append("------------------------------------\n");
             return ret.toString();
         }

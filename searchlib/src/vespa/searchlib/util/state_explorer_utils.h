@@ -4,7 +4,9 @@
 
 #include <vespa/vespalib/util/state_explorer_utils.h>
 
-namespace search::attribute { class Status; }
+namespace search::attribute {
+class Status;
+}
 
 namespace search {
 
@@ -13,8 +15,7 @@ namespace search {
  */
 class StateExplorerUtils : public vespalib::StateExplorerUtils {
 public:
-    static void status_to_slime(const search::attribute::Status &status, vespalib::slime::Cursor &object);
+    static void status_to_slime(const search::attribute::Status& status, vespalib::slime::Cursor& object);
 };
 
-}
-
+} // namespace search

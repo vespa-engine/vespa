@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitor.h"
+
 #include <vespa/document/fieldset/fieldsets.h>
+
 #include <vespa/vespalib/util/array.hpp>
+
 #include <climits>
 #include <ostream>
 
@@ -15,10 +18,8 @@ IMPLEMENT_REPLY(DestroyVisitorReply)
 IMPLEMENT_COMMAND(VisitorInfoCommand, VisitorInfoReply)
 IMPLEMENT_REPLY(VisitorInfoReply)
 
-CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
-                                           std::string_view libraryName,
-                                           std::string_view instanceId,
-                                           std::string_view docSelection)
+CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace, std::string_view libraryName,
+                                           std::string_view instanceId, std::string_view docSelection)
     : StorageCommand(MessageType::VISITOR_CREATE),
       _bucketSpace(bucketSpace),
       _libName(libraryName),
@@ -38,8 +39,7 @@ CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
       _queueTimeout(2000ms),
       _maxPendingReplyCount(2),
       _version(50),
-      _maxBucketsPerVisitor(1)
-{
+      _maxBucketsPerVisitor(1) {
 }
 
 CreateVisitorCommand::CreateVisitorCommand(const CreateVisitorCommand& o)
@@ -62,21 +62,16 @@ CreateVisitorCommand::CreateVisitorCommand(const CreateVisitorCommand& o)
       _queueTimeout(o._queueTimeout),
       _maxPendingReplyCount(o._maxPendingReplyCount),
       _version(o._version),
-      _maxBucketsPerVisitor(o._maxBucketsPerVisitor)
-{
+      _maxBucketsPerVisitor(o._maxBucketsPerVisitor) {
 }
 
 CreateVisitorCommand::~CreateVisitorCommand() = default;
 
-document::Bucket
-CreateVisitorCommand::getBucket() const
-{
+document::Bucket CreateVisitorCommand::getBucket() const {
     return document::Bucket(_bucketSpace, document::BucketId());
 }
 
-document::BucketId
-CreateVisitorCommand::super_bucket_id() const
-{
+document::BucketId CreateVisitorCommand::super_bucket_id() const {
     if (_buckets.empty()) {
         // TODO STRIPE: Is this actually an error situation? Should be fixed elsewhere.
         return document::BucketId();
@@ -84,10 +79,7 @@ CreateVisitorCommand::super_bucket_id() const
     return _buckets[0];
 }
 
-void
-CreateVisitorCommand::print(std::ostream& out, bool verbose,
-                            const std::string& indent) const
-{
+void CreateVisitorCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "CreateVisitorCommand(" << _libName << ", " << _docSelection;
     if (verbose) {
         out << ") {";
@@ -110,9 +102,7 @@ CreateVisitorCommand::print(std::ostream& out, bool verbose,
             out << "\n" << indent << "  Visiting inconsistent buckets";
         }
         out << "\n" << indent << "  From " << _fromTime << " to " << _toTime;
-        for (std::vector<document::BucketId>::const_iterator it
-                = _buckets.begin(); it != _buckets.end(); ++it)
-        {
+        for (std::vector<document::BucketId>::const_iterator it = _buckets.begin(); it != _buckets.end(); ++it) {
             out << "\n" << indent << "  " << (*it);
         }
         out << "\n" << indent << "  ";
@@ -125,20 +115,13 @@ CreateVisitorCommand::print(std::ostream& out, bool verbose,
     } else {
         out << ", " << _buckets.size() << " buckets)";
     }
-
 }
 
 CreateVisitorReply::CreateVisitorReply(const CreateVisitorCommand& cmd)
-    : StorageReply(cmd),
-      _super_bucket_id(cmd.super_bucket_id()),
-      _lastBucket(document::BucketId(INT_MAX))
-{
+    : StorageReply(cmd), _super_bucket_id(cmd.super_bucket_id()), _lastBucket(document::BucketId(INT_MAX)) {
 }
 
-void
-CreateVisitorReply::print(std::ostream& out, bool verbose,
-                          const std::string& indent) const
-{
+void CreateVisitorReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "CreateVisitorReply(last=" << _lastBucket << ")";
     if (verbose) {
         out << " : ";
@@ -147,14 +130,10 @@ CreateVisitorReply::print(std::ostream& out, bool verbose,
 }
 
 DestroyVisitorCommand::DestroyVisitorCommand(std::string_view instanceId)
-    : StorageCommand(MessageType::VISITOR_DESTROY),
-      _instanceId(instanceId)
-{
+    : StorageCommand(MessageType::VISITOR_DESTROY), _instanceId(instanceId) {
 }
 
-void
-DestroyVisitorCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void DestroyVisitorCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "DestroyVisitorCommand(" << _instanceId << ")";
     if (verbose) {
         out << " : ";
@@ -162,14 +141,10 @@ DestroyVisitorCommand::print(std::ostream& out, bool verbose, const std::string&
     }
 }
 
-DestroyVisitorReply::DestroyVisitorReply(const DestroyVisitorCommand& cmd)
-    : StorageReply(cmd)
-{
+DestroyVisitorReply::DestroyVisitorReply(const DestroyVisitorCommand& cmd) : StorageReply(cmd) {
 }
 
-void
-DestroyVisitorReply::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void DestroyVisitorReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "DestroyVisitorReply()";
     if (verbose) {
         out << " : ";
@@ -178,20 +153,16 @@ DestroyVisitorReply::print(std::ostream& out, bool verbose, const std::string& i
 }
 
 VisitorInfoCommand::VisitorInfoCommand()
-    : StorageCommand(MessageType::VISITOR_INFO),
-      _completed(false),
-      _bucketsCompleted(),
-      _error(ReturnCode::OK)
-{
+    : StorageCommand(MessageType::VISITOR_INFO), _completed(false), _bucketsCompleted(), _error(ReturnCode::OK) {
 }
 
 VisitorInfoCommand::~VisitorInfoCommand() = default;
 
-void
-VisitorInfoCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void VisitorInfoCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "VisitorInfoCommand(";
-    if (_completed) { out << "completed"; }
+    if (_completed) {
+        out << "completed";
+    }
     if (_error.failed()) {
         out << _error;
     }
@@ -207,16 +178,14 @@ VisitorInfoCommand::print(std::ostream& out, bool verbose, const std::string& in
 }
 
 VisitorInfoReply::VisitorInfoReply(const VisitorInfoCommand& cmd)
-    : StorageReply(cmd),
-      _completed(cmd.visitorCompleted())
-{
+    : StorageReply(cmd), _completed(cmd.visitorCompleted()) {
 }
 
-void
-VisitorInfoReply::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void VisitorInfoReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "VisitorInfoReply(";
-    if (_completed) { out << "completed"; }
+    if (_completed) {
+        out << "completed";
+    }
     if (verbose) {
         out << ") : ";
         StorageReply::print(out, verbose, indent);
@@ -225,9 +194,8 @@ VisitorInfoReply::print(std::ostream& out, bool verbose, const std::string& inde
     }
 }
 
-std::ostream&
-operator<<(std::ostream& out, const VisitorInfoCommand::BucketTimestampPair& pair) {
+std::ostream& operator<<(std::ostream& out, const VisitorInfoCommand::BucketTimestampPair& pair) {
     return out << pair.bucketId << " - " << pair.timestamp;
 }
 
-}
+} // namespace storage::api

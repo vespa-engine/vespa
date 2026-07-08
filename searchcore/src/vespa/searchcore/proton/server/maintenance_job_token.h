@@ -13,9 +13,10 @@ class MaintenanceJobTokenSource;
  */
 class MaintenanceJobToken {
     std::weak_ptr<MaintenanceJobTokenSource> _source;
+
 public:
     MaintenanceJobToken(std::weak_ptr<MaintenanceJobTokenSource> source);
     ~MaintenanceJobToken();
 };
 
-}
+} // namespace proton

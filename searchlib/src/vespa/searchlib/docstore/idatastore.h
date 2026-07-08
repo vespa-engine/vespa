@@ -3,27 +3,29 @@
 #pragma once
 
 #include "data_store_file_chunk_stats.h"
+
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <atomic>
 #include <string>
 #include <vector>
 
-namespace vespalib { class DataBuffer; }
+namespace vespalib {
+class DataBuffer;
+}
 namespace search {
 
 class IBufferVisitor;
 
-class IDataStoreVisitor
-{
+class IDataStoreVisitor {
 public:
     virtual ~IDataStoreVisitor() = default;
-    virtual void visit(uint32_t lid, const void *buffer, size_t sz) = 0;
+    virtual void visit(uint32_t lid, const void* buffer, size_t sz) = 0;
 };
 
-class IDataStoreVisitorProgress
-{
+class IDataStoreVisitorProgress {
 public:
     virtual ~IDataStoreVisitorProgress() = default;
     virtual void updateProgress(double progress) = 0;
@@ -36,8 +38,7 @@ public:
  * Changes are held in memory until flush() is called.
  * A sync token is associated with each flush().
  **/
-class IDataStore : public common::ICompactableLidSpace
-{
+class IDataStore : public common::ICompactableLidSpace {
 public:
     using LidVector = std::vector<uint32_t>;
     /**
@@ -46,8 +47,8 @@ public:
      *
      * @param dirName  The directory that will contain the data file.
      **/
-    IDataStore(const std::string & dirName);
-     ~IDataStore() override;
+    IDataStore(const std::string& dirName);
+    ~IDataStore() override;
 
     /**
      * Read data from the data store into a buffer.
@@ -56,8 +57,8 @@ public:
      * @param len On return is set to the number of bytes written to buffer
      * @return true if non-zero-size data was found.
      **/
-    virtual ssize_t read(uint32_t lid, vespalib::DataBuffer & buffer) const = 0;
-    virtual void read(const LidVector & lids, IBufferVisitor & visitor) const = 0;
+    virtual ssize_t read(uint32_t lid, vespalib::DataBuffer& buffer) const = 0;
+    virtual void read(const LidVector& lids, IBufferVisitor& visitor) const = 0;
 
     /**
      * Write data to the data store.
@@ -66,7 +67,7 @@ public:
      * @param buffer The source where the data will be fetched.
      * @param len The number of bytes to fetch from the buffer.
      **/
-    virtual void write(uint64_t serialNum, uint32_t lid, const void * buffer, size_t len) = 0;
+    virtual void write(uint64_t serialNum, uint32_t lid, const void* buffer, size_t len) = 0;
 
     /**
      * Remove old data for a key.  Equivalent to write with len==0.
@@ -93,17 +94,25 @@ public:
     virtual size_t memoryUsed() const = 0;
 
     /**
-     * Calculates memory that is used for meta data by this instance. Calling
+     * Calculates memory that is used for metadata by this instance. Calling
      * flush() does not free this memory.
      * @return memory usage (in bytes)
      **/
     virtual size_t memoryMeta() const = 0;
 
     /**
-     * Calculates how much disk is used
-     * @return disk space used.
+     * Calculate sum of file sizes.
+     *
+     * @return estimated disk space used.
      */
     virtual size_t getDiskFootprint() const = 0;
+
+    /*
+     * Calculate sum of file sizes each aligned up to assumed file system block size and a placeholder directory size.
+     *
+     * @return estimated disk space used.
+     */
+    virtual uint64_t get_size_on_disk() const = 0;
 
     /**
      * Calculates how much disk is used by file headers.
@@ -123,7 +132,6 @@ public:
      * @return diskspace to be gained.
      */
     virtual size_t getMaxSpreadAsBloat() const = 0;
-
 
     /**
      * The sync token used for the last successful flush() operation,
@@ -147,7 +155,7 @@ public:
     /**
      * Visit all data found in data store.
      */
-    virtual void accept(IDataStoreVisitor &visitor, IDataStoreVisitorProgress &visitorProgress, bool prune) = 0;
+    virtual void accept(IDataStoreVisitor& visitor, IDataStoreVisitorProgress& visitorProgress, bool prune) = 0;
 
     /**
      * Return cost of visiting all data found in data store.
@@ -169,6 +177,12 @@ public:
      */
     virtual std::vector<DataStoreFileChunkStats> getFileChunkStats() const = 0;
 
+    /*
+     * Return max file size for backing files. This corresponds to how much
+     * is read and stored in memory during summary compaction.
+     */
+    [[nodiscard]] virtual size_t max_file_size() const noexcept = 0;
+
     /**
      * Get the number of entries (including removed IDs
      * or gaps in the local ID sequence) in the data store.
@@ -178,12 +192,10 @@ public:
     /**
      * Returns the name of the base directory where the data file is stored.
      **/
-    const std::string & getBaseDir() const { return _dirName; }
+    const std::string& getBaseDir() const { return _dirName; }
 
 protected:
-    void setDocIdLimit(uint32_t docIdLimit) {
-        _docIdLimit.store(docIdLimit, std::memory_order_release);
-    }
+    void setDocIdLimit(uint32_t docIdLimit) { _docIdLimit.store(docIdLimit, std::memory_order_release); }
     void updateDocIdLimit(uint32_t docIdLimit) {
         if (docIdLimit > _docIdLimit.load(std::memory_order_relaxed)) {
             setDocIdLimit(docIdLimit);
@@ -192,8 +204,7 @@ protected:
 
 private:
     std::atomic<uint32_t> _docIdLimit;
-    std::string _dirName;
+    std::string           _dirName;
 };
 
 } // namespace search
-

@@ -11,20 +11,18 @@ namespace proton {
  * Interface for a handler of a particular reprocessing job.
  * Readers and rewriters are registered to this handler to receive all documents being reprocessed.
  */
-struct IReprocessingHandler
-{
+struct IReprocessingHandler {
     virtual ~IReprocessingHandler() = default;
 
     /**
      * Adds the given processing reader to this handler.
      */
-    virtual void addReader(const IReprocessingReader::SP &reader) = 0;
+    virtual void addReader(const IReprocessingReader::SP& reader) = 0;
 
     /**
      * Adds the given processing rewriter to this handler.
      */
-    virtual void addRewriter(const IReprocessingRewriter::SP &rewriter) = 0;
+    virtual void addRewriter(const IReprocessingRewriter::SP& rewriter) = 0;
 };
 
 } // namespace proton
-

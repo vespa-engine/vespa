@@ -1,28 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryhandle.h"
+
 #include "Matcher.h"
 #include "juniperdebug.h"
 #include "query.h"
+
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.queryhandle");
 
 namespace juniper {
 
 QueryHandle::QueryHandle(const IQuery& fquery, const char* options)
-  : _mo(nullptr),
-    _privileged_port(false),
-    _dynsum_len(-1),
-    _max_matches(-1),
-    _surround_max(-1),
-    _stem_extend(-1),
-    _stem_min(-1),
-    _winsize(-1),
-    _winsize_fallback_multiplier(-1),
-    _max_match_candidates(-1),
-    _log_mask(0),
-    _options(0),
-    _limit(0) {
+    : _mo(nullptr),
+      _privileged_port(false),
+      _dynsum_len(-1),
+      _max_matches(-1),
+      _surround_max(-1),
+      _stem_extend(-1),
+      _stem_min(-1),
+      _winsize(-1),
+      _winsize_fallback_multiplier(-1),
+      _max_match_candidates(-1),
+      _log_mask(0),
+      _options(0),
+      _limit(0) {
     QueryVisitor* vis;
 
     /* Parse the options parameter structure, the parameter
@@ -55,7 +57,8 @@ QueryHandle::QueryHandle(const IQuery& fquery, const char* options)
 
 QueryHandle::~QueryHandle() {
     LOG(debug, "juniper: Deleting query handle");
-    if (_mo) delete _mo;
+    if (_mo)
+        delete _mo;
 }
 
 MatchObject* QueryHandle::MatchObj() {
@@ -65,13 +68,15 @@ MatchObject* QueryHandle::MatchObj() {
 // small utility
 std::string fetchtext(char* cur, char** next) {
     *next = cur;
-    while (**next != '\0' && **next != '_') (*next)++;
+    while (**next != '\0' && **next != '_')
+        (*next)++;
     std::string t(cur, *next);
     return t;
 }
 
 void QueryHandle::parse_parameters(const char* options) {
-    if (!options) return;
+    if (!options)
+        return;
     char* p = const_cast<char*>(options);
 
     LOG(debug, "juniper parameter string '%s'", options);
@@ -133,8 +138,10 @@ void QueryHandle::parse_parameters(const char* options) {
                 juniper::SetDebug(strtol(p, &p, 0));
             }
         }
-        while (*p != '\0' && *p != '_') p++;
-        if (*p == '_') p++;
+        while (*p != '\0' && *p != '_')
+            p++;
+        if (*p == '_')
+            p++;
     }
 } // end parse_parameters
 

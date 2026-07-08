@@ -3,6 +3,7 @@
 #pragma once
 
 #include "iocomponent.h"
+
 #include <vespa/vespalib/net/server_socket.h>
 
 class FNET_IPacketStreamer;
@@ -12,16 +13,15 @@ class FNET_IServerAdapter;
  * Class used to listen for incoming connections on a single TCP/IP
  * port.
  **/
-class FNET_Connector : public FNET_IOComponent
-{
+class FNET_Connector : public FNET_IOComponent {
 private:
-    FNET_IPacketStreamer  *_streamer;
-    FNET_IServerAdapter   *_serverAdapter;
+    FNET_IPacketStreamer*  _streamer;
+    FNET_IServerAdapter*   _serverAdapter;
     vespalib::ServerSocket _server_socket;
-    uint32_t _cached_port;
+    uint32_t               _cached_port;
 
-    FNET_Connector(const FNET_Connector &);
-    FNET_Connector &operator=(const FNET_Connector &);
+    FNET_Connector(const FNET_Connector&);
+    FNET_Connector& operator=(const FNET_Connector&);
 
 public:
     /**
@@ -33,11 +33,8 @@ public:
      * @param spec listen spec for this connector
      * @param server_socket the underlying server socket
      **/
-    FNET_Connector(FNET_TransportThread *owner,
-                   FNET_IPacketStreamer *streamer,
-                   FNET_IServerAdapter *serverAdapter,
-                   const char *spec,
-                   vespalib::ServerSocket server_socket);
+    FNET_Connector(FNET_TransportThread* owner, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter,
+                   const char* spec, vespalib::ServerSocket server_socket);
 
     /**
      * Obtain the port number of the underlying server socket.
@@ -46,7 +43,7 @@ public:
      **/
     uint32_t GetPortNumber() const;
 
-    FNET_IServerAdapter *server_adapter() override;
+    FNET_IServerAdapter* server_adapter() override;
 
     /**
      * Close this connector. This method must be called in the transport
@@ -74,4 +71,3 @@ public:
      **/
     bool HandleWriteEvent() override;
 };
-

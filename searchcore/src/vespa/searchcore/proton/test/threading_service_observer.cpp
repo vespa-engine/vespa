@@ -4,16 +4,15 @@
 
 namespace proton::test {
 
-ThreadingServiceObserver::ThreadingServiceObserver(searchcorespi::index::IThreadingService &service)
+ThreadingServiceObserver::ThreadingServiceObserver(searchcorespi::index::IThreadingService& service)
     : _service(service),
       _master(_service.master()),
       _index(service.index()),
       _summary(service.summary()),
       _shared(service.shared()),
-      _field_writer(_service.field_writer())
-{
+      _field_writer(_service.field_writer()) {
 }
 
 ThreadingServiceObserver::~ThreadingServiceObserver() = default;
 
-}
+} // namespace proton::test

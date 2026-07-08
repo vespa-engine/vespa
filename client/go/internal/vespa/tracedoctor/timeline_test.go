@@ -39,6 +39,29 @@ func TestTimelineDurationOf(t *testing.T) {
 	assert.Equal(t, 0.0, duration, "Expected duration for non-existent event to be 0")
 }
 
+func TestTimelineDurationBetween(t *testing.T) {
+	tl := &timeline{}
+	tl.add(10.0, "Start event")
+	tl.add(15.0, "noise after start")
+	tl.add(30.0, "End event")
+	tl.add(50.0, "trailing event")
+
+	duration := tl.durationBetween("Start event", "End event")
+	assert.Equal(t, 20.0, duration, "Unexpected duration between 'Start event' and 'End event'")
+
+	duration = tl.durationBetween("Start", "End")
+	assert.Equal(t, 20.0, duration, "Prefix matching should locate both anchors")
+
+	duration = tl.durationBetween("Missing", "End event")
+	assert.Equal(t, 0.0, duration, "Expected 0 when start is missing")
+
+	duration = tl.durationBetween("Start event", "Missing")
+	assert.Equal(t, 0.0, duration, "Expected 0 when end is missing")
+
+	duration = tl.durationBetween("End event", "Start event")
+	assert.Equal(t, 0.0, duration, "Expected 0 when end occurs before start")
+}
+
 func TestTimelineAdd(t *testing.T) {
 	tl := &timeline{}
 	tl.add(12.34, "Test Event")

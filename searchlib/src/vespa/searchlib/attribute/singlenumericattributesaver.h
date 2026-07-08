@@ -5,25 +5,27 @@
 #include "attributesaver.h"
 #include "iattributefilewriter.h"
 
+#include <vespa/vespalib/util/transient_memory_tracker.h>
+
 namespace search {
 
 /*
  * Class for saving a plain attribute (i.e. single value numeric
  * atttribute).
  */
-class SingleValueNumericAttributeSaver : public AttributeSaver
-{
+class SingleValueNumericAttributeSaver : public AttributeSaver {
 public:
     using Buffer = IAttributeFileWriter::Buffer;
 
 private:
-    Buffer _buf;
+    Buffer                           _buf;
+    vespalib::TransientMemoryTracker _tracker;
     using BufferBuf = IAttributeFileWriter::BufferBuf;
 
-    bool onSave(IAttributeSaveTarget &saveTarget) override;
+    bool onSave(IAttributeSaveTarget& saveTarget) override;
+
 public:
-    SingleValueNumericAttributeSaver(const attribute::AttributeHeader &header,
-                                     const void *data, size_t size);
+    SingleValueNumericAttributeSaver(const attribute::AttributeHeader& header, const void* data, size_t size);
 
     ~SingleValueNumericAttributeSaver() override;
 };

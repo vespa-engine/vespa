@@ -2,8 +2,10 @@
 #pragma once
 
 #include "routingnodeiterator.h"
+
 #include <vespa/messagebus/context.h>
 #include <vespa/slobrok/imirrorapi.h>
+
 #include <set>
 
 namespace mbus {
@@ -21,7 +23,7 @@ class Error;
  */
 class RoutingContext {
 private:
-    RoutingNode       &_node;
+    RoutingNode&       _node;
     Context            _context;
     uint32_t           _directive;
     bool               _selectOnRetry;
@@ -34,11 +36,11 @@ public:
      * @param node      The owning routing node.
      * @param directive The index to the policy directive of the hop.
      */
-    RoutingContext(RoutingNode &node, uint32_t directive);
-    RoutingContext(const RoutingContext &) = delete;
-    RoutingContext(RoutingContext &&) = delete;
-    RoutingContext & operator=(const RoutingContext &) = delete;
-    RoutingContext & operator=(RoutingContext &&) = delete;
+    RoutingContext(RoutingNode& node, uint32_t directive);
+    RoutingContext(const RoutingContext&) = delete;
+    RoutingContext(RoutingContext&&) = delete;
+    RoutingContext& operator=(const RoutingContext&) = delete;
+    RoutingContext& operator=(RoutingContext&&) = delete;
     ~RoutingContext();
 
     /**
@@ -61,21 +63,21 @@ public:
      * @param idx The index of the recipient to return.
      * @return The reipient at the given index.
      */
-    [[nodiscard]] const Route &getRecipient(uint32_t idx) const;
+    [[nodiscard]] const Route& getRecipient(uint32_t idx) const;
 
     /**
      * Returns all configured recipients for this hop.
      *
      * @return An unmodifiable list of recipients.
      */
-    [[nodiscard]] const std::vector<Route> &getAllRecipients() const;
+    [[nodiscard]] const std::vector<Route>& getAllRecipients() const;
 
     /**
      * Returns a list of all configured recipients whose first hop matches this.
      *
      * @param ret The list to add matched recipients to.
      */
-    void getMatchedRecipients(std::vector<Route> &ret) const;
+    void getMatchedRecipients(std::vector<Route>& ret) const;
 
     /**
      * Returns whether or not the policy is required to reselect if resending occurs.
@@ -90,7 +92,7 @@ public:
      * @param selectOnRetry The value to set.
      * @return This, to allow chaining.
      */
-    RoutingContext &setSelectOnRetry(bool selectOnRetry) {
+    RoutingContext& setSelectOnRetry(bool selectOnRetry) {
         _selectOnRetry = selectOnRetry;
         return *this;
     }
@@ -100,14 +102,14 @@ public:
      *
      * @return The route.
      */
-    [[nodiscard]] const Route &getRoute() const;
+    [[nodiscard]] const Route& getRoute() const;
 
     /**
      * Returns the hop that contains the routing policy that spawned this.
      *
      * @return The hop.
      */
-    [[nodiscard]] const Hop &getHop() const;
+    [[nodiscard]] const Hop& getHop() const;
 
     /**
      * Returns the index of the hop directive that spawned this.
@@ -121,7 +123,7 @@ public:
      *
      * @return The directive object.
      */
-    [[nodiscard]] const PolicyDirective &getDirective() const;
+    [[nodiscard]] const PolicyDirective& getDirective() const;
 
     /**
      * Returns the part of the route string that precedes the active policy directive. This is the same as calling
@@ -132,8 +134,8 @@ public:
     [[nodiscard]] string getHopPrefix() const;
 
     /**
-     * Returns the remainder of the route string immediately following the active policy directive. This is the same as
-     * calling {@link this#getHop()}.getSuffix({@link this#getDirectiveIndex()}).
+     * Returns the remainder of the route string immediately following the active policy directive. This is the same
+     * as calling {@link this#getHop()}.getSuffix({@link this#getDirectiveIndex()}).
      *
      * @return The hop suffix.
      */
@@ -144,14 +146,14 @@ public:
      *
      * @return The context.
      */
-    Context &getContext() { return _context; }
+    Context& getContext() { return _context; }
 
     /**
      * Returns a const reference to the routing specific context object.
      *
      * @return The context.
      */
-    [[nodiscard]] const Context &getContext() const { return _context; }
+    [[nodiscard]] const Context& getContext() const { return _context; }
 
     /**
      * Sets a routing specific context object that will be available at merge().
@@ -159,7 +161,7 @@ public:
      * @param context An arbitrary object.
      * @return This, to allow chaining.
      */
-    RoutingContext &setContext(const Context &ctx) {
+    RoutingContext& setContext(const Context& ctx) {
         _context = ctx;
         return *this;
     }
@@ -169,7 +171,7 @@ public:
      *
      * @return The message.
      */
-    [[nodiscard]] const Message &getMessage() const;
+    [[nodiscard]] const Message& getMessage() const;
 
     /**
      * Adds a string to the trace of the message being routed.
@@ -177,14 +179,14 @@ public:
      * @param level The level of the trace note.
      * @param note  The note to add.
      */
-    void trace(uint32_t level, const string &note);
+    void trace(uint32_t level, const string& note);
 
     /**
      * Returns the reply generated by the associated routing policy.
      *
      * @return The reply.
      */
-    [[nodiscard]] const Reply &getReply() const;
+    [[nodiscard]] const Reply& getReply() const;
 
     /**
      * Sets the reply generated by the associated routing policy.
@@ -192,7 +194,7 @@ public:
      * @param reply The reply to set.
      * @return This, to allow chaining.
      */
-    RoutingContext &setReply(std::unique_ptr<Reply> reply);
+    RoutingContext& setReply(std::unique_ptr<Reply> reply);
 
     /**
      * This is a convenience method to call {@link #setError(Error)}.
@@ -201,24 +203,24 @@ public:
      * @param msg  The message of the error to set.
      * @return This, to allow chaining.
      */
-    RoutingContext &setError(uint32_t code, const string &msg);
+    RoutingContext& setError(uint32_t code, const string& msg);
 
     /**
-     * This is a convenience method to assign an {@link EmptyReply} containing a single error to this. This also fiddles
-     * with the trace object so that the error gets written to it.
+     * This is a convenience method to assign an {@link EmptyReply} containing a single error to this. This also
+     * fiddles with the trace object so that the error gets written to it.
      *
      * @param err The error to set.
      * @return This, to allow chaining.
      * @see #setReply(Reply)
      */
-    RoutingContext &setError(const Error &err);
+    RoutingContext& setError(const Error& err);
 
     /**
      * Returns the message bus instance on which this is running.
      *
      * @return The message bus.
      */
-    MessageBus &getMessageBus();
+    MessageBus& getMessageBus();
 
     /**
      * Returns whether or not the owning routing node has any child nodes.
@@ -242,8 +244,8 @@ public:
     RoutingNodeIterator getChildIterator();
 
     /**
-     * Adds a child routing context to this based on a given route. This is the typical entry point a policy will use to
-     * select recipients during a {@link RoutingPolicy#select(RoutingContext)} invocation.
+     * Adds a child routing context to this based on a given route. This is the typical entry point a policy will use
+     * to select recipients during a {@link RoutingPolicy#select(RoutingContext)} invocation.
      *
      * @param route The route to contain in the child context.
      */
@@ -262,7 +264,7 @@ public:
      *
      * @return The mirror api.
      */
-    [[nodiscard]] const slobrok::api::IMirrorAPI &getMirror() const;
+    [[nodiscard]] const slobrok::api::IMirrorAPI& getMirror() const;
 
     /**
      * Adds the given error code to the list of codes that the associated routing policy <u>may</u> consume. This is
@@ -287,4 +289,3 @@ public:
 };
 
 } // namespace mbus
-

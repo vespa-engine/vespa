@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace search::fef {
 
@@ -11,8 +11,7 @@ namespace search::fef {
  * This class represents a rank table with double values.
  * The content of a table is typically a pre-computed function that is used by a feature executor.
  **/
-class Table
-{
+class Table {
 private:
     std::vector<double> _table;
     double              _max;
@@ -29,7 +28,7 @@ public:
     /**
      * Adds the given element to this table.
      **/
-    Table & add(double val) {
+    Table& add(double val) {
         _table.push_back(val);
         _max = std::max(val, _max);
         return *this;
@@ -48,16 +47,12 @@ public:
     /**
      * Retrives the element at the given position or the last element if i is outside the range.
      **/
-    double get(size_t i) const {
-        return _table[std::min(i, size() - 1)];
-    };
+    double get(size_t i) const { return _table[std::min(i, size() - 1)]; };
 
     /**
      * Returns the largest element in this table.
      **/
-    double max() const {
-        return _max;
-    }
+    double max() const { return _max; }
 };
 
-}
+} // namespace search::fef

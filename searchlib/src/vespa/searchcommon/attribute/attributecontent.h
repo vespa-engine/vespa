@@ -3,10 +3,10 @@
 #pragma once
 
 #include "iattributevector.h"
+
 #include <cstdint>
 
 namespace search::attribute {
-
 
 /**
  * TODO Use SmallVector instead
@@ -17,32 +17,26 @@ namespace search::attribute {
  *
  * @param T the type of the data stored in this object
  **/
-template <typename T>
-class AttributeContent
-{
+template <typename T> class AttributeContent {
 private:
-    T _staticBuf[16];
-    T * _dynamicBuf;
+    T        _staticBuf[16];
+    T*       _dynamicBuf;
     uint32_t _size;
     uint32_t _capacity;
+
 public:
-    AttributeContent(const AttributeContent & rhs) = delete;
-    AttributeContent & operator=(const AttributeContent & rhs) = delete;
+    AttributeContent(const AttributeContent& rhs) = delete;
+    AttributeContent& operator=(const AttributeContent& rhs) = delete;
     /**
      * Creates a new object with an initial capacity of 16 without dynamic allocation.
      **/
-    AttributeContent() noexcept :
-        _dynamicBuf(nullptr),
-        _size(0),
-        _capacity(16)
-    {
-    }
+    AttributeContent() noexcept : _dynamicBuf(nullptr), _size(0), _capacity(16) {}
     /**
      * Destructs the object.
      **/
     ~AttributeContent() {
         if (_dynamicBuf != nullptr) {
-            delete [] _dynamicBuf;
+            delete[] _dynamicBuf;
         }
     }
 
@@ -51,7 +45,7 @@ public:
      *
      * @return iterator
      **/
-    const T * begin() const noexcept {
+    const T* begin() const noexcept {
         if (_dynamicBuf != nullptr) {
             return _dynamicBuf;
         }
@@ -63,9 +57,7 @@ public:
      *
      * @return iterator
      **/
-    const T * end() const noexcept {
-        return begin() + _size;
-    }
+    const T* end() const noexcept { return begin() + _size; }
 
     /**
      * Returns the element at the given position in the underlying data array.
@@ -73,9 +65,7 @@ public:
      * @return read-only reference to the element
      * @param idx position into the underlying data
      **/
-    const T & operator[](uint32_t idx) const noexcept {
-        return *(begin() + idx);
-    }
+    const T& operator[](uint32_t idx) const noexcept { return *(begin() + idx); }
 
     /**
      * Returns the number of elements used in the underlying data array.
@@ -96,7 +86,7 @@ public:
      *
      * @return read/write pointer.
      **/
-    T * data() noexcept {
+    T* data() noexcept {
         if (_dynamicBuf != nullptr) {
             return _dynamicBuf;
         }
@@ -108,9 +98,7 @@ public:
      *
      * @param n number of elements used
      **/
-    void setSize(uint32_t n) noexcept {
-        _size = n;
-    }
+    void setSize(uint32_t n) noexcept { _size = n; }
 
     /**
      * Allocates memory so that the underlying data array can hold the
@@ -122,7 +110,7 @@ public:
     void allocate(uint32_t n) {
         if (n > _capacity) {
             if (_dynamicBuf != nullptr) {
-                delete [] _dynamicBuf;
+                delete[] _dynamicBuf;
             }
             _dynamicBuf = new T[n];
             _capacity = n;
@@ -136,7 +124,7 @@ public:
      * @param attribute the attribute vector
      * @param docId the docId
      **/
-    void fill(const IAttributeVector & attribute, IAttributeVector::DocId docId) {
+    void fill(const IAttributeVector& attribute, IAttributeVector::DocId docId) {
         uint32_t count = attribute.get(docId, data(), capacity());
         while (count > capacity()) {
             allocate(count);
@@ -147,7 +135,7 @@ public:
 };
 
 using FloatContent = AttributeContent<double>;
-using ConstCharContent = AttributeContent<const char *>;
+using ConstCharContent = AttributeContent<const char*>;
 using IntegerContent = AttributeContent<IAttributeVector::largeint_t>;
 using EnumContent = AttributeContent<IAttributeVector::EnumHandle>;
 using WeightedIntegerContent = AttributeContent<IAttributeVector::WeightedInt>;
@@ -157,4 +145,4 @@ using WeightedStringContent = AttributeContent<IAttributeVector::WeightedString>
 using WeightedEnumContent = AttributeContent<IAttributeVector::WeightedEnum>;
 using EnumHandle = IAttributeVector::EnumHandle;
 
-}
+} // namespace search::attribute

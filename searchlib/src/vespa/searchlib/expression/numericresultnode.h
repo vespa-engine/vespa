@@ -5,16 +5,15 @@
 
 namespace search::expression {
 
-class NumericResultNode : public SingleResultNode
-{
+class NumericResultNode : public SingleResultNode {
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(NumericResultNode);
     using CP = vespalib::IdentifiablePtr<NumericResultNode>;
     using UP = std::unique_ptr<NumericResultNode>;
-    NumericResultNode *clone() const override = 0;
-    virtual void multiply(const ResultNode & b) = 0;
-    virtual void divide(const ResultNode & b) = 0;
-    virtual void modulo(const ResultNode & b) = 0;
+    NumericResultNode* clone() const override = 0;
+    virtual void multiply(const ResultNode& b) = 0;
+    virtual void divide(const ResultNode& b) = 0;
+    virtual void modulo(const ResultNode& b) = 0;
 };
 
-}
+} // namespace search::expression

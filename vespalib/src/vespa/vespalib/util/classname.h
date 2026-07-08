@@ -6,16 +6,14 @@
 
 namespace vespalib {
 
-std::string demangle(const char * native);
+std::string demangle(const char* native);
 
-template <typename T>
-std::string getClassName(const T & obj) {
+template <typename T> std::string getClassName(const T& obj) {
     return demangle(typeid(obj).name());
 }
 
-template <typename T>
-std::string getClassName() {
+template <typename T> std::string getClassName() {
     return demangle(typeid(T).name());
 }
 
-}
+} // namespace vespalib

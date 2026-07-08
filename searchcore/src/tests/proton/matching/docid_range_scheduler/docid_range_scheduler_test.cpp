@@ -16,14 +16,12 @@ void verify_range(const std::string& label, DocidRange a, DocidRange b) {
 }
 //-----------------------------------------------------------------------------
 
-TEST(DocidRangeSchedulerTest, require_that_default_docid_range_constructor_creates_and_empty_range)
-{
+TEST(DocidRangeSchedulerTest, require_that_default_docid_range_constructor_creates_and_empty_range) {
     EXPECT_TRUE(DocidRange().empty());
     EXPECT_EQ(DocidRange().size(), 0u);
 }
 
-TEST(DocidRangeSchedulerTest, require_that_docid_range_ensures_end_is_not_less_than_begin)
-{
+TEST(DocidRangeSchedulerTest, require_that_docid_range_ensures_end_is_not_less_than_begin) {
     EXPECT_EQ(DocidRange(10, 20).size(), 10u);
     EXPECT_TRUE(!DocidRange(10, 20).empty());
     EXPECT_EQ(DocidRange(10, 20).begin, 10u);
@@ -36,17 +34,15 @@ TEST(DocidRangeSchedulerTest, require_that_docid_range_ensures_end_is_not_less_t
 
 //-----------------------------------------------------------------------------
 
-TEST(DocidRangeSchedulerTest, require_that_default_constructed_IdleObserver_is_always_zero)
-{
+TEST(DocidRangeSchedulerTest, require_that_default_constructed_IdleObserver_is_always_zero) {
     IdleObserver observer;
     EXPECT_TRUE(observer.is_always_zero());
     EXPECT_EQ(0u, observer.get());
 }
 
-TEST(DocidRangeSchedulerTest, require_that_IdleObserver_can_observe_an_atomic_size_t_value)
-{
+TEST(DocidRangeSchedulerTest, require_that_IdleObserver_can_observe_an_atomic_size_t_value) {
     std::atomic<size_t> idle(0);
-    IdleObserver observer(idle);
+    IdleObserver        observer(idle);
     EXPECT_TRUE(!observer.is_always_zero());
     EXPECT_EQ(0u, observer.get());
     idle = 10;
@@ -55,8 +51,7 @@ TEST(DocidRangeSchedulerTest, require_that_IdleObserver_can_observe_an_atomic_si
 
 //-----------------------------------------------------------------------------
 
-TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_can_split_a_docid_range)
-{
+TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_can_split_a_docid_range) {
     DocidRangeSplitter splitter(DocidRange(1, 16), 4);
     verify_range("0", splitter.get(0), DocidRange(1, 5));
     verify_range("1", splitter.get(1), DocidRange(5, 9));
@@ -64,15 +59,13 @@ TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_can_split_a_
     verify_range("3", splitter.get(3), DocidRange(13, 16));
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_can_split_an_empty_range)
-{
+TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_can_split_an_empty_range) {
     DocidRangeSplitter splitter(DocidRange(5, 5), 2);
     verify_range("0", splitter.get(0), DocidRange(5, 5));
     verify_range("1", splitter.get(1), DocidRange(5, 5));
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_can_split_a_range_into_more_parts_than_values)
-{
+TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_can_split_a_range_into_more_parts_than_values) {
     DocidRangeSplitter splitter(DocidRange(1, 4), 4);
     verify_range("0", splitter.get(0), DocidRange(1, 2));
     verify_range("1", splitter.get(1), DocidRange(2, 3));
@@ -80,8 +73,8 @@ TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_can_split_a_
     verify_range("3", splitter.get(3), DocidRange(4, 4));
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_gives_empty_ranges_if_accessed_with_too_high_index)
-{
+TEST(DocidRangeSchedulerTest,
+     require_that_the_docid_range_splitter_gives_empty_ranges_if_accessed_with_too_high_index) {
     DocidRangeSplitter splitter(DocidRange(1, 4), 3);
     verify_range("0", splitter.get(0), DocidRange(1, 2));
     verify_range("1", splitter.get(1), DocidRange(2, 3));
@@ -92,8 +85,7 @@ TEST(DocidRangeSchedulerTest, require_that_the_docid_range_splitter_gives_empty_
 
 //-----------------------------------------------------------------------------
 
-TEST(DocidRangeSchedulerTest, require_that_the_partition_scheduler_acts_as_expected)
-{
+TEST(DocidRangeSchedulerTest, require_that_the_partition_scheduler_acts_as_expected) {
     PartitionDocidRangeScheduler scheduler(4, 16);
     EXPECT_EQ(scheduler.total_size(0), 4u);
     EXPECT_EQ(scheduler.total_size(1), 4u);
@@ -107,25 +99,23 @@ TEST(DocidRangeSchedulerTest, require_that_the_partition_scheduler_acts_as_expec
     verify_range("next0", scheduler.next_range(0), DocidRange());
     verify_range("next1", scheduler.next_range(1), DocidRange());
     verify_range("next2", scheduler.next_range(2), DocidRange());
-    verify_range("next3",scheduler.next_range(3), DocidRange());
+    verify_range("next3", scheduler.next_range(3), DocidRange());
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_partition_scheduler_protects_against_documents_underflow)
-{
+TEST(DocidRangeSchedulerTest, require_that_the_partition_scheduler_protects_against_documents_underflow) {
     PartitionDocidRangeScheduler scheduler(2, 0);
     EXPECT_EQ(scheduler.total_size(0), 0u);
     EXPECT_EQ(scheduler.total_size(1), 0u);
     EXPECT_EQ(scheduler.unassigned_size(), 0u);
-    verify_range("first0", scheduler.first_range(0), DocidRange(1,1));
-    verify_range("first1", scheduler.first_range(1), DocidRange(1,1));
+    verify_range("first0", scheduler.first_range(0), DocidRange(1, 1));
+    verify_range("first1", scheduler.first_range(1), DocidRange(1, 1));
     verify_range("next0", scheduler.next_range(0), DocidRange());
     verify_range("next1", scheduler.next_range(1), DocidRange());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST(DocidRangeSchedulerTest, require_that_the_task_scheduler_acts_as_expected)
-{
+TEST(DocidRangeSchedulerTest, require_that_the_task_scheduler_acts_as_expected) {
     TaskDocidRangeScheduler scheduler(2, 5, 20);
     EXPECT_EQ(scheduler.unassigned_size(), 19u);
     EXPECT_EQ(scheduler.total_size(0), 0u);
@@ -143,22 +133,20 @@ TEST(DocidRangeSchedulerTest, require_that_the_task_scheduler_acts_as_expected)
     EXPECT_EQ(scheduler.unassigned_size(), 0u);
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_task_scheduler_protects_against_documents_underflow)
-{
+TEST(DocidRangeSchedulerTest, require_that_the_task_scheduler_protects_against_documents_underflow) {
     TaskDocidRangeScheduler scheduler(2, 4, 0);
     EXPECT_EQ(scheduler.total_size(0), 0u);
     EXPECT_EQ(scheduler.total_size(1), 0u);
     EXPECT_EQ(scheduler.unassigned_size(), 0u);
-    verify_range("first0", scheduler.first_range(0), DocidRange(1,1));
-    verify_range("first", scheduler.first_range(1), DocidRange(1,1));
-    verify_range("next0", scheduler.next_range(0), DocidRange(1,1));
-    verify_range("next1", scheduler.next_range(1), DocidRange(1,1));
+    verify_range("first0", scheduler.first_range(0), DocidRange(1, 1));
+    verify_range("first", scheduler.first_range(1), DocidRange(1, 1));
+    verify_range("next0", scheduler.next_range(0), DocidRange(1, 1));
+    verify_range("next1", scheduler.next_range(1), DocidRange(1, 1));
 }
 
 //-----------------------------------------------------------------------------
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_starts_by_dividing_the_docid_space_equally)
-{
+TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_starts_by_dividing_the_docid_space_equally) {
     AdaptiveDocidRangeScheduler scheduler(4, 1, 16);
     EXPECT_EQ(scheduler.total_size(0), 4u);
     EXPECT_EQ(scheduler.total_size(1), 4u);
@@ -171,14 +159,13 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_starts_by_divi
     verify_range("first3", scheduler.first_range(3), DocidRange(13, 16));
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_terminates_when_all_workers_request_more_work)
-{
-    constexpr size_t num_threads = 4;
+TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_terminates_when_all_workers_request_more_work) {
+    constexpr size_t            num_threads = 4;
     AdaptiveDocidRangeScheduler f1(num_threads, 1, 16);
-    TimeBomb f2(60);
-    auto task = [&f1](Nexus& ctx) {
+    TimeBomb                    f2(60);
+    auto                        task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
-        (void) f1.first_range(thread_id);
+        (void)f1.first_range(thread_id);
         DocidRange range = f1.next_range(thread_id);
         EXPECT_TRUE(range.empty());
     };
@@ -187,22 +174,21 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_terminates_whe
 
 namespace {
 
-void wait_idle(const DocidRangeScheduler &scheduler, size_t wanted) {
+void wait_idle(const DocidRangeScheduler& scheduler, size_t wanted) {
     IdleObserver observer = scheduler.make_idle_observer();
     while (observer.get() != wanted) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
-}
+} // namespace
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_enables_threads_to_share_work)
-{
-    constexpr size_t num_threads = 3;
+TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_enables_threads_to_share_work) {
+    constexpr size_t            num_threads = 3;
     AdaptiveDocidRangeScheduler f1(num_threads, 1, 28);
-    TimeBomb f2(60);
-    auto task = [&f1](Nexus& ctx) {
-        auto thread_id = ctx.thread_id();
+    TimeBomb                    f2(60);
+    auto                        task = [&f1](Nexus& ctx) {
+        auto       thread_id = ctx.thread_id();
         DocidRange range = f1.first_range(thread_id);
         if (thread_id == 0) {
             verify_range("thread0", range, DocidRange(1, 10));
@@ -215,13 +201,14 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_enables_thread
         verify_range("before barrier", f1.share_range(thread_id, range), range);
         ctx.barrier();
         if (thread_id == 0) {
-            verify_range("after barrier0", f1.next_range(thread_id), DocidRange(25,28));
+            verify_range("after barrier0", f1.next_range(thread_id), DocidRange(25, 28));
         } else if (thread_id == 1) {
             wait_idle(f1, 1);
-            verify_range("after barrier1", f1.next_range(thread_id), DocidRange(22,25));
+            verify_range("after barrier1", f1.next_range(thread_id), DocidRange(22, 25));
         } else {
             wait_idle(f1, 2);
-            verify_range("after barrier" + std::to_string(thread_id), f1.share_range(thread_id, range), DocidRange(19,22));
+            verify_range("after barrier" + std::to_string(thread_id), f1.share_range(thread_id, range),
+                                                DocidRange(19, 22));
         }
         verify_range("exp empty" + std::to_string(thread_id), f1.next_range(thread_id), DocidRange());
         EXPECT_EQ(f1.total_size(0), 12u);
@@ -231,12 +218,11 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_enables_thread
     Nexus::run(num_threads, task);
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_protects_against_documents_underflow)
-{
-    constexpr size_t num_threads = 2;
+TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_protects_against_documents_underflow) {
+    constexpr size_t            num_threads = 2;
     AdaptiveDocidRangeScheduler f1(num_threads, 1, 0);
-    TimeBomb f2(60);
-    auto task = [&f1](Nexus& ctx) {
+    TimeBomb                    f2(60);
+    auto                        task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         verify_range(std::to_string(thread_id), f1.first_range(thread_id), DocidRange());
         EXPECT_EQ(f1.total_size(thread_id), 0u);
@@ -245,35 +231,33 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_protects_again
     Nexus::run(num_threads, task);
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_respects_the_minimal_task_size)
-{
-    constexpr size_t num_threads = 2;
+TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_respects_the_minimal_task_size) {
+    constexpr size_t            num_threads = 2;
     AdaptiveDocidRangeScheduler f1(num_threads, 3, 21);
-    TimeBomb f2(60);
-    auto task = [&f1](Nexus& ctx) {
+    TimeBomb                    f2(60);
+    auto                        task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         EXPECT_EQ(f1.first_range(thread_id).size(), 10u);
         if (thread_id == 0) {
-            verify_range("1st next0", f1.next_range(thread_id), DocidRange(18,21));
+            verify_range("1st next0", f1.next_range(thread_id), DocidRange(18, 21));
             verify_range("2nd next0", f1.next_range(thread_id), DocidRange());
         } else {
             wait_idle(f1, 1);
             // a range with size 5 will not be split
-            verify_range("1st share1", f1.share_range(thread_id, DocidRange(16,21)), DocidRange(16,21));
+            verify_range("1st share1", f1.share_range(thread_id, DocidRange(16, 21)), DocidRange(16, 21));
             // a range with size 6 will be split
-            verify_range("2nd share1", f1.share_range(thread_id, DocidRange(15,21)), DocidRange(15,18));
+            verify_range("2nd share1", f1.share_range(thread_id, DocidRange(15, 21)), DocidRange(15, 18));
             verify_range("next1", f1.next_range(thread_id), DocidRange());
         }
     };
     Nexus::run(num_threads, task);
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_will_never_split_a_task_with_size_1)
-{
-    constexpr size_t num_threads = 2;
+TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_will_never_split_a_task_with_size_1) {
+    constexpr size_t            num_threads = 2;
     AdaptiveDocidRangeScheduler f1(num_threads, 0, 21);
-    TimeBomb f2(60);
-    auto task = [&f1](Nexus& ctx) {
+    TimeBomb                    f2(60);
+    auto                        task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         EXPECT_EQ(f1.first_range(thread_id).size(), 10u);
         if (thread_id == 0) {
@@ -283,7 +267,7 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_will_never_spl
             while (observer.get() == 0) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
-            DocidRange small_range = DocidRange(20,21);
+            DocidRange small_range = DocidRange(20, 21);
             verify_range("1st next1", f1.share_range(thread_id, small_range), small_range);
             verify_range("2nd next1", f1.next_range(thread_id), DocidRange());
         }
@@ -291,23 +275,23 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_will_never_spl
     Nexus::run(num_threads, task);
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_can_leave_idle_workers_alone_due_to_minimal_task_size)
-{
-    constexpr size_t num_threads = 3;
+TEST(DocidRangeSchedulerTest,
+     require_that_the_adaptive_scheduler_can_leave_idle_workers_alone_due_to_minimal_task_size) {
+    constexpr size_t            num_threads = 3;
     AdaptiveDocidRangeScheduler f1(num_threads, 3, 28);
-    TimeBomb f2(60);
-    auto task = [&f1](Nexus& ctx) {
+    TimeBomb                    f2(60);
+    auto                        task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         EXPECT_EQ(f1.first_range(thread_id).size(), 9u);
         if (thread_id == 0) {
             verify_range("next0", f1.next_range(thread_id), DocidRange());
         } else if (thread_id == 1) {
             wait_idle(f1, 1);
-            verify_range("1st next1", f1.next_range(thread_id), DocidRange(24,28));
+            verify_range("1st next1", f1.next_range(thread_id), DocidRange(24, 28));
             verify_range("2nd next1", f1.next_range(thread_id), DocidRange());
         } else {
             wait_idle(f1, 2);
-            verify_range("1st next2", f1.share_range(thread_id, DocidRange(20,28)), DocidRange(20,24));
+            verify_range("1st next2", f1.share_range(thread_id, DocidRange(20, 28)), DocidRange(20, 24));
             verify_range("2nd next2", f1.next_range(thread_id), DocidRange());
         }
         EXPECT_EQ(f1.total_size(0), 9u);
@@ -317,15 +301,13 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_can_leave_idle
     Nexus::run(num_threads, task);
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_handles_no_documents)
-{
-    constexpr size_t num_threads = 4;
+TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_handles_no_documents) {
+    constexpr size_t            num_threads = 4;
     AdaptiveDocidRangeScheduler f1(num_threads, 1, 1);
-    TimeBomb f2(60);
-    auto task = [&f1](Nexus& ctx) {
+    TimeBomb                    f2(60);
+    auto                        task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
-        for (DocidRange docid_range = f1.first_range(thread_id);
-             !docid_range.empty();
+        for (DocidRange docid_range = f1.first_range(thread_id); !docid_range.empty();
              docid_range = f1.next_range(thread_id))
         {
             FAIL() << "no threads should get any work";
@@ -334,15 +316,13 @@ TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_handles_no_doc
     Nexus::run(num_threads, task);
 }
 
-TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_handles_fewer_documents_than_threads)
-{
-    constexpr size_t num_threads = 4;
+TEST(DocidRangeSchedulerTest, require_that_the_adaptive_scheduler_handles_fewer_documents_than_threads) {
+    constexpr size_t            num_threads = 4;
     AdaptiveDocidRangeScheduler f1(num_threads, 1, 3);
-    TimeBomb f2(60);
-    auto task = [&f1](Nexus& ctx) {
+    TimeBomb                    f2(60);
+    auto                        task = [&f1](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
-        for (DocidRange docid_range = f1.first_range(thread_id);
-             !docid_range.empty();
+        for (DocidRange docid_range = f1.first_range(thread_id); !docid_range.empty();
              docid_range = f1.next_range(thread_id))
         {
             EXPECT_EQ(1, docid_range.size());

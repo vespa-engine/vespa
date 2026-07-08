@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/messagebus/error.h>
+#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/message.h>
+#include <vespa/messagebus/reply.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/message.h>
-#include <vespa/messagebus/reply.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/error.h>
-
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
@@ -18,14 +17,14 @@ TEST(RoutableTest, routable_test) {
     {
         // Test message swap state.
         SimpleMessage foo("foo");
-        Route fooRoute = Route::parse("foo");
+        Route         fooRoute = Route::parse("foo");
         foo.setRoute(fooRoute);
         foo.setRetry(1);
         foo.setTimeReceivedNow();
         foo.setTimeRemaining(2ms);
 
         SimpleMessage bar("bar");
-        Route barRoute = Route::parse("bar");
+        Route         barRoute = Route::parse("bar");
         bar.setRoute(barRoute);
         bar.setRetry(3);
         bar.setTimeReceivedNow();
@@ -63,7 +62,7 @@ TEST(RoutableTest, routable_test) {
     }
     {
         // Test message discard logic.
-        Receptor handler;
+        Receptor      handler;
         SimpleMessage msg("foo");
         msg.pushHandler(handler);
         msg.discard();
@@ -73,7 +72,7 @@ TEST(RoutableTest, routable_test) {
     }
     {
         // Test reply discard logic.
-        Receptor handler;
+        Receptor      handler;
         SimpleMessage msg("foo");
         msg.pushHandler(handler);
 

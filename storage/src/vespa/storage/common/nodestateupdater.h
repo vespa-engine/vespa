@@ -23,14 +23,20 @@
  */
 #pragma once
 
-#include <vespa/vdslib/state/nodestate.h>
 #include "vespa/vespalib/util/jsonstream.h"
+
+#include <vespa/vdslib/state/nodestate.h>
+
 #include <string>
 
-namespace metrics { class JsonWriter; }
+namespace metrics {
+class JsonWriter;
+}
 namespace storage {
 
-namespace lib { class ClusterStateBundle; }
+namespace lib {
+class ClusterStateBundle;
+}
 
 struct StateListener {
     virtual ~StateListener() = default;
@@ -82,9 +88,7 @@ struct NodeStateUpdater {
 class NodeStateReporter {
 public:
     virtual ~NodeStateReporter() = default;
-    virtual void report(vespalib::JsonStream &writer) const = 0;
+    virtual void report(vespalib::JsonStream& writer) const = 0;
 };
 
-} // storage
-
-
+} // namespace storage

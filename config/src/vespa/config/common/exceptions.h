@@ -19,5 +19,4 @@ VESPA_DEFINE_EXCEPTION(ConfigReadException, vespalib::Exception);
 
 VESPA_DEFINE_EXCEPTION(ConfigTimeoutException, ConfigRuntimeException);
 
-}
-
+} // namespace config

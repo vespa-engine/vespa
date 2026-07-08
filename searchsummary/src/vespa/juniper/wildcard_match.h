@@ -9,10 +9,12 @@ template <typename T> bool wildcard_match(const T* word, const T* pattern, T mul
             return false;
         else if (*pattern == multiple) {
             // advance past occurrences of multiple
-            while (*pattern == multiple) ++pattern;
+            while (*pattern == multiple)
+                ++pattern;
 
             // if pattern ended with multiple, we're done
-            if (*pattern == 0) return true;
+            if (*pattern == 0)
+                return true;
 
             while (*word != 0) {
                 // does this position in the word match

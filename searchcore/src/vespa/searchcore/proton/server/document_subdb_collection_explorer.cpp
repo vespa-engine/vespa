@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_subdb_collection_explorer.h"
+
 #include "document_subdb_explorer.h"
 
 using vespalib::slime::Inserter;
@@ -13,36 +14,27 @@ const std::string NOT_READY = "notready";
 
 namespace {
 
-std::unique_ptr<vespalib::StateExplorer>
-createExplorer(const IDocumentSubDB &subDb)
-{
+std::unique_ptr<vespalib::StateExplorer> createExplorer(const IDocumentSubDB& subDb) {
     return std::unique_ptr<vespalib::StateExplorer>(new DocumentSubDBExplorer(subDb));
 }
 
+} // namespace
+
+DocumentSubDBCollectionExplorer::DocumentSubDBCollectionExplorer(const DocumentSubDBCollection& subDbs)
+    : _subDbs(subDbs) {
 }
 
-DocumentSubDBCollectionExplorer::DocumentSubDBCollectionExplorer(const DocumentSubDBCollection &subDbs)
-    : _subDbs(subDbs)
-{
-}
-
-void
-DocumentSubDBCollectionExplorer::get_state(const Inserter &inserter, bool full) const
-{
+void DocumentSubDBCollectionExplorer::get_state(const Inserter& inserter, bool full) const {
     // This is a transparent state where the short state of all children is rendered instead.
-    (void) inserter;
-    (void) full;
+    (void)inserter;
+    (void)full;
 }
 
-std::vector<std::string>
-DocumentSubDBCollectionExplorer::get_children_names() const
-{
+std::vector<std::string> DocumentSubDBCollectionExplorer::get_children_names() const {
     return {READY, REMOVED, NOT_READY};
 }
 
-std::unique_ptr<vespalib::StateExplorer>
-DocumentSubDBCollectionExplorer::get_child(std::string_view name) const
-{
+std::unique_ptr<vespalib::StateExplorer> DocumentSubDBCollectionExplorer::get_child(std::string_view name) const {
     if (name == READY) {
         return createExplorer(*_subDbs.getReadySubDB());
     } else if (name == REMOVED) {

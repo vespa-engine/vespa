@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -44,7 +45,7 @@ class CloudUserFilterValidatorTest {
     }
 
     private static void runValidatorOnApp(boolean isHosted, String applicationTypeAttribute) throws IOException, SAXException {
-        String servicesXml = """
+        String servicesXml = Text.format("""
                         <services version='1.0'%s>
                           <container version='1.0'>
                             <http>
@@ -57,7 +58,7 @@ class CloudUserFilterValidatorTest {
                             </http>
                           </container>
                         </services>
-                """.formatted(applicationTypeAttribute);
+                """, applicationTypeAttribute);
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();

@@ -3,14 +3,18 @@
 #pragma once
 
 #include "match_context.h"
+
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchlib/engine/request.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <memory>
 #include <string>
 
-namespace search::fef { class Properties; }
+namespace search::fef {
+class Properties;
+}
 
 namespace proton::matching {
 
@@ -25,34 +29,35 @@ class SearchSession {
 public:
     struct OwnershipBundle {
         OwnershipBundle() noexcept;
-        OwnershipBundle(MatchContext && matchContext, std::shared_ptr<const ISearchHandler> searchHandler) noexcept;
-        OwnershipBundle(OwnershipBundle &&) noexcept = default;
-        OwnershipBundle & operator = (OwnershipBundle &&) noexcept = delete;
+        OwnershipBundle(MatchContext&& matchContext, std::shared_ptr<const ISearchHandler> searchHandler) noexcept;
+        OwnershipBundle(OwnershipBundle&&) noexcept = default;
+        OwnershipBundle& operator=(OwnershipBundle&&) noexcept = delete;
         ~OwnershipBundle();
         // Note that SearchHandler must above the other members due to life time guarantees.
-        std::shared_ptr<const ISearchHandler> search_handler;
-        MatchContext context;
-        std::unique_ptr<search::fef::Properties> feature_overrides;
+        std::shared_ptr<const ISearchHandler>     search_handler;
+        MatchContext                              context;
+        std::unique_ptr<search::fef::Properties>  feature_overrides;
         IDocumentMetaStoreContext::IReadGuard::SP readGuard;
-        search::SerializedQueryTreeSP queryTree;
+        search::SerializedQueryTreeSP             queryTree;
     };
+
 private:
     using SessionId = std::string;
 
-    SessionId             _session_id;
-    vespalib::steady_time _create_time;
-    vespalib::steady_time _time_of_doom;
-    OwnershipBundle       _owned_objects;
+    SessionId                          _session_id;
+    vespalib::steady_time              _create_time;
+    vespalib::steady_time              _time_of_doom;
+    OwnershipBundle                    _owned_objects;
     std::unique_ptr<MatchToolsFactory> _match_tools_factory;
 
 public:
     using SP = std::shared_ptr<SearchSession>;
 
-    SearchSession(const SessionId &id, vespalib::steady_time create_time, vespalib::steady_time time_of_doom,
-                  std::unique_ptr<MatchToolsFactory> match_tools_factory, OwnershipBundle &&owned_objects);
+    SearchSession(const SessionId& id, vespalib::steady_time create_time, vespalib::steady_time time_of_doom,
+                  std::unique_ptr<MatchToolsFactory> match_tools_factory, OwnershipBundle&& owned_objects);
     ~SearchSession();
 
-    const SessionId &getSessionId() const { return _session_id; }
+    const SessionId& getSessionId() const { return _session_id; }
     void releaseEnumGuards();
 
     /**
@@ -65,7 +70,7 @@ public:
      */
     vespalib::steady_time getTimeOfDoom() const { return _time_of_doom; }
 
-    MatchToolsFactory &getMatchToolsFactory() { return *_match_tools_factory; }
+    MatchToolsFactory& getMatchToolsFactory() { return *_match_tools_factory; }
     std::string_view getStackDump() const noexcept {
         return _owned_objects.queryTree ? _owned_objects.queryTree->getStackRef() : std::string_view();
     }
@@ -74,4 +79,4 @@ public:
     }
 };
 
-}
+} // namespace proton::matching

@@ -12,7 +12,8 @@ import com.yahoo.data.access.ObjectTraverser;
 import com.yahoo.data.access.Type;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 
 abstract public class InspectorConformanceTestBase {
 

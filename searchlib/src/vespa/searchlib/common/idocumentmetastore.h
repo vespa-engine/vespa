@@ -3,68 +3,54 @@
 #pragma once
 
 #include "lid_usage_stats.h"
+
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <vector>
+#include <vespa/vespalib/util/generation.h>
+
 #include <memory>
+#include <vector>
 
 namespace search {
 
 /**
- * Meta data for a single document.
+ * Metadata for a single document.
  **/
-struct DocumentMetaData {
+struct DocumentMetadata {
     using DocId = uint32_t;
-    DocId lid;
-    uint64_t timestamp;
+    DocId              lid;
+    uint64_t           timestamp;
     document::BucketId bucketId;
     document::GlobalId gid;
-    bool removed;
+    bool               removed;
+    std::string        docid;
 
-    using Vector = std::vector<DocumentMetaData>;
+    using Vector = std::vector<DocumentMetadata>;
 
-    DocumentMetaData() noexcept
-        : lid(0),
-          timestamp(0),
-          bucketId(),
-          gid(),
-          removed(false)
-    { }
+    DocumentMetadata() noexcept : lid(0), timestamp(0), bucketId(), gid(), removed(false), docid() {}
 
-    DocumentMetaData(DocId lid_,
-                     uint64_t timestamp_,
-                     document::BucketId bucketId_,
-                     const document::GlobalId &gid_) noexcept
-        : DocumentMetaData(lid_, timestamp_, bucketId_, gid_, false)
-    { }
+    DocumentMetadata(DocId lid_, uint64_t timestamp_, document::BucketId bucketId_,
+                     const document::GlobalId& gid_) noexcept
+        : DocumentMetadata(lid_, timestamp_, bucketId_, gid_, false, {}) {}
 
-    DocumentMetaData(DocId lid_,
-                     uint64_t timestamp_,
-                     document::BucketId bucketId_,
-                     const document::GlobalId &gid_,
-                     bool removed_) noexcept
-        : lid(lid_),
-          timestamp(timestamp_),
-          bucketId(bucketId_),
-          gid(gid_),
-          removed(removed_)
-    { }
+    DocumentMetadata(DocId lid_, uint64_t timestamp_, document::BucketId bucketId_, const document::GlobalId& gid_,
+                     bool removed_, std::string_view docid_) noexcept
+        : lid(lid_), timestamp(timestamp_), bucketId(bucketId_), gid(gid_), removed(removed_), docid(docid_) {}
 
-    bool valid() const {
-        return lid != 0 && timestamp != 0 && bucketId.isSet();
-    }
+    [[nodiscard]] bool valid() const noexcept { return lid != 0 && timestamp != 0 && bucketId.isSet(); }
 };
 
-namespace queryeval { class Blueprint; }
+namespace queryeval {
+class Blueprint;
+}
 
 class IGidToLidMapperVisitor;
 class BitVector;
 
-
 /**
  * Read interface for a document meta store that provides mapping between
  * global document id (gid) and local document id (lid) with additional
- * meta data per document.
+ * metadata per document.
  **/
 struct IDocumentMetaStore {
     using DocId = uint32_t;
@@ -74,34 +60,37 @@ struct IDocumentMetaStore {
 
     virtual ~IDocumentMetaStore() = default;
 
-    virtual const BitVector & getValidLids() const = 0;
+    virtual const BitVector& getValidLids() const = 0;
 
     /**
      * Retrieves the gid associated with the given lid.
      * Returns true if found, false otherwise.
      **/
-    virtual bool getGid(DocId lid, GlobalId &gid) const = 0;
+    virtual bool getGid(DocId lid, GlobalId& gid) const = 0;
     /**
      * Retrieves the gid associated with the given lid, even if the lid has moved.
      * Returns true if found, false otherwise.
      **/
-    virtual bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const = 0;
+    virtual bool getGidEvenIfMoved(DocId lid, GlobalId& gid) const = 0;
 
     /**
      * Retrieves the lid associated with the given gid.
      * Returns true if found, false otherwise.
      **/
-    virtual bool getLid(const GlobalId &gid, DocId &lid) const = 0;
+    virtual bool getLid(const GlobalId& gid, DocId& lid) const = 0;
+
+    [[nodiscard]] virtual bool can_populate_document_metadata_docid() const noexcept = 0;
 
     /**
-     * Retrieves the meta data for the document with the given gid.
+     * Retrieves the metadata for the document with the given gid.
      **/
-    virtual DocumentMetaData getMetaData(const GlobalId &gid) const = 0;
+    virtual DocumentMetadata getMetadata(const GlobalId& gid) const = 0;
 
     /**
-     * Retrieves meta data for all documents contained in the given bucket.
+     * Retrieves metadata for all documents contained in the given bucket.
      **/
-    virtual void getMetaData(const BucketId &bucketId, DocumentMetaData::Vector &result) const = 0;
+    virtual void getMetadata(const BucketId& bucketId, DocumentMetadata::Vector& result,
+                             bool populate_docid) const = 0;
 
     /**
      * Returns the lid following the largest lid used in the store.
@@ -149,11 +138,9 @@ struct IDocumentMetaStore {
     /**
      * Give read access to the current generation of the metastore.
      **/
-    virtual uint64_t getCurrentGeneration() const = 0;
+    virtual vespalib::Generation getCurrentGeneration() const = 0;
 
-    virtual void foreach(const IGidToLidMapperVisitor &visitor) const = 0;
+    virtual void foreach(const IGidToLidMapperVisitor& visitor) const = 0;
 };
 
-
-}
-
+} // namespace search

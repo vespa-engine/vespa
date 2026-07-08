@@ -3,7 +3,9 @@
 #pragma once
 
 #include "outdated_nodes.h"
+
 #include <vespa/document/bucket/bucketspace.h>
+
 #include <unordered_map>
 
 namespace storage::distributor::dbtransition {

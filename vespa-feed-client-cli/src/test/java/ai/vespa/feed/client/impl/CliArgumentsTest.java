@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -109,8 +110,8 @@ class CliArgumentsTest {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         args.printHelp(out);
-        String text = out.toString();
-        String expectedHelp = new String(Files.readAllBytes(Paths.get("src", "test", "resources", "help.txt")));
+        String text = out.toString(StandardCharsets.UTF_8);
+        String expectedHelp = new String(Files.readAllBytes(Paths.get("src", "test", "resources", "help.txt")), StandardCharsets.UTF_8);
         assertEquals(expectedHelp, text);
     }
 

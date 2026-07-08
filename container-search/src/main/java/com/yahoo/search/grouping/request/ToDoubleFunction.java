@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * This class represents a todouble-function in a {@link GroupingExpression}. It converts the result of the argument to
- * a double. If the argument can not be converted, this function returns 0.
+ * a double. If the argument cannot be converted, this function returns 0.
  *
  * @author baldersheim
  * @author bratseth

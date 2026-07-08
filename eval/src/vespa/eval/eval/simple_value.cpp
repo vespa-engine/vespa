@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simple_value.h"
+
 #include "inline_operation.h"
 #include "value_codec.h"
+
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/typify.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -17,9 +20,9 @@ namespace vespalib::eval {
 namespace {
 
 struct CreateSimpleValueBuilderBase {
-    template <typename T> static std::unique_ptr<ValueBuilderBase> invoke(const ValueType &type,
-            size_t num_mapped_dims, size_t subspace_size, size_t expected_subspaces)
-    {
+    template <typename T>
+    static std::unique_ptr<ValueBuilderBase> invoke(const ValueType& type, size_t num_mapped_dims,
+                                                    size_t subspace_size, size_t expected_subspaces) {
         assert(check_cell_type<T>(type.cell_type()));
         return std::make_unique<SimpleValueT<T>>(type, num_mapped_dims, subspace_size, expected_subspaces);
     }
@@ -34,12 +37,11 @@ struct SimpleLookupView : public Value::Index::View {
     using Labels = std::vector<Handle>;
     using Map = std::map<Labels, size_t>;
 
-    const Map &map;
-    Labels my_addr;
+    const Map&          map;
+    Labels              my_addr;
     Map::const_iterator pos;
 
-    SimpleLookupView(const Map &map_in, size_t num_dims)
-        : map(map_in), my_addr(num_dims), pos(map.end()) {}
+    SimpleLookupView(const Map& map_in, size_t num_dims) : map(map_in), my_addr(num_dims), pos(map.end()) {}
 
     void lookup(std::span<const string_id* const> addr) override {
         assert(addr.size() == my_addr.size());
@@ -49,7 +51,7 @@ struct SimpleLookupView : public Value::Index::View {
         pos = map.find(my_addr);
     }
 
-    bool next_result(std::span<string_id* const>, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const>, size_t& idx_out) override {
         if (pos == map.end()) {
             return false;
         }
@@ -68,7 +70,7 @@ struct SimpleFilterView : public Value::Index::View {
     using Labels = std::vector<Handle>;
     using Map = std::map<Labels, size_t>;
 
-    const Map &map;
+    const Map&          map;
     std::vector<size_t> match_dims;
     std::vector<size_t> extract_dims;
     std::vector<Handle> query;
@@ -83,10 +85,12 @@ struct SimpleFilterView : public Value::Index::View {
         return true;
     }
 
-    SimpleFilterView(const Map &map_in, std::span<const size_t> match_dims_in, size_t num_dims)
-      : map(map_in), match_dims(match_dims_in.begin(), match_dims_in.end()),
-        extract_dims(), query(match_dims.size()), pos(map.end())
-    {
+    SimpleFilterView(const Map& map_in, std::span<const size_t> match_dims_in, size_t num_dims)
+        : map(map_in),
+          match_dims(match_dims_in.begin(), match_dims_in.end()),
+          extract_dims(),
+          query(match_dims.size()),
+          pos(map.end()) {
         auto my_pos = match_dims.begin();
         for (size_t i = 0; i < num_dims; ++i) {
             if ((my_pos == match_dims.end()) || (*my_pos != i)) {
@@ -107,7 +111,7 @@ struct SimpleFilterView : public Value::Index::View {
         pos = map.begin();
     }
 
-    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
         while (pos != map.end()) {
             if (is_match()) {
                 assert(addr_out.size() == extract_dims.size());
@@ -133,17 +137,14 @@ struct SimpleIterateView : public Value::Index::View {
     using Labels = std::vector<Handle>;
     using Map = std::map<Labels, size_t>;
 
-    const Map &map;
+    const Map&          map;
     Map::const_iterator pos;
 
-    SimpleIterateView(const Map &map_in)
-        : map(map_in), pos(map.end()) {}
+    SimpleIterateView(const Map& map_in) : map(map_in), pos(map.end()) {}
 
-    void lookup(std::span<const string_id* const>) override {
-        pos = map.begin();
-    }
+    void lookup(std::span<const string_id* const>) override { pos = map.begin(); }
 
-    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
         if (pos == map.end()) {
             return false;
         }
@@ -159,58 +160,46 @@ struct SimpleIterateView : public Value::Index::View {
 
 //-----------------------------------------------------------------------------
 
-} // namespace <unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-SimpleValue::SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in)
-    : _type(type),
-      _num_mapped_dims(num_mapped_dims_in),
-      _subspace_size(subspace_size_in),
-      _index()
-{
+SimpleValue::SimpleValue(const ValueType& type, size_t num_mapped_dims_in, size_t subspace_size_in)
+    : _type(type), _num_mapped_dims(num_mapped_dims_in), _subspace_size(subspace_size_in), _index() {
     assert(_type.count_mapped_dimensions() == _num_mapped_dims);
     assert(_type.dense_subspace_size() == _subspace_size);
 }
 
 SimpleValue::~SimpleValue() = default;
 
-void
-SimpleValue::add_mapping(std::span<const std::string_view> addr)
-{
+void SimpleValue::add_mapping(std::span<const std::string_view> addr) {
     Labels my_addr;
-    for(const auto &label: addr) {
+    for (const auto& label : addr) {
         my_addr.emplace_back(label);
     }
     auto [ignore, was_inserted] = _index.emplace(my_addr, _index.size());
     assert(was_inserted);
 }
 
-void
-SimpleValue::add_mapping(std::span<const string_id> addr)
-{
+void SimpleValue::add_mapping(std::span<const string_id> addr) {
     Labels my_addr;
-    for(string_id label: addr) {
+    for (string_id label : addr) {
         my_addr.emplace_back(Handle::handle_from_id(label));
     }
     auto [ignore, was_inserted] = _index.emplace(my_addr, _index.size());
     assert(was_inserted);
 }
 
-MemoryUsage
-SimpleValue::estimate_extra_memory_usage() const
-{
-    using Node = std::map<Labels,size_t>::value_type;
+MemoryUsage SimpleValue::estimate_extra_memory_usage() const {
+    using Node = std::map<Labels, size_t>::value_type;
     size_t key_extra_size = sizeof(std::string) * _num_mapped_dims;
-    size_t node_extra_size = 2 * sizeof(Node *); // left/right child ptr
+    size_t node_extra_size = 2 * sizeof(Node*); // left/right child ptr
     size_t entry_size = sizeof(Node) + key_extra_size + node_extra_size;
     size_t size = entry_size * _index.size();
     return MemoryUsage(size, size, 0, 0);
 }
 
-std::unique_ptr<Value::Index::View>
-SimpleValue::create_view(std::span<const size_t> dims) const
-{
+std::unique_ptr<Value::Index::View> SimpleValue::create_view(std::span<const size_t> dims) const {
     if (dims.empty()) {
         return std::make_unique<SimpleIterateView>(_index);
     } else if (dims.size() == _num_mapped_dims) {
@@ -220,51 +209,37 @@ SimpleValue::create_view(std::span<const size_t> dims) const
     }
 }
 
-std::unique_ptr<Value>
-SimpleValue::from_spec(const TensorSpec &spec)
-{
+std::unique_ptr<Value> SimpleValue::from_spec(const TensorSpec& spec) {
     return value_from_spec(spec, SimpleValueBuilderFactory::get());
 }
 
-std::unique_ptr<Value>
-SimpleValue::from_value(const Value& value)
-{
+std::unique_ptr<Value> SimpleValue::from_value(const Value& value) {
     return from_spec(spec_from_value(value));
 }
 
-std::unique_ptr<Value>
-SimpleValue::from_stream(nbostream &stream)
-{
+std::unique_ptr<Value> SimpleValue::from_stream(nbostream& stream) {
     return decode_value(stream, SimpleValueBuilderFactory::get());
 }
 
 //-----------------------------------------------------------------------------
 
 template <typename T>
-SimpleValueT<T>::SimpleValueT(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in)
-    : SimpleValue(type, num_mapped_dims_in, subspace_size_in),
-      _cells()
-{
+SimpleValueT<T>::SimpleValueT(const ValueType& type, size_t num_mapped_dims_in, size_t subspace_size_in,
+                              size_t expected_subspaces_in)
+    : SimpleValue(type, num_mapped_dims_in, subspace_size_in), _cells() {
     _cells.reserve(subspace_size_in * expected_subspaces_in);
 }
 
-template <typename T>
-SimpleValueT<T>::~SimpleValueT() = default;
+template <typename T> SimpleValueT<T>::~SimpleValueT() = default;
 
-template <typename T>
-std::span<T>
-SimpleValueT<T>::add_subspace(std::span<const std::string_view> addr)
-{
+template <typename T> std::span<T> SimpleValueT<T>::add_subspace(std::span<const std::string_view> addr) {
     size_t old_size = _cells.size();
     add_mapping(addr);
     _cells.resize(old_size + subspace_size(), std::numeric_limits<T>::quiet_NaN());
     return std::span<T>(&_cells[old_size], subspace_size());
 }
 
-template <typename T>
-std::span<T>
-SimpleValueT<T>::add_subspace(std::span<const string_id> addr)
-{
+template <typename T> std::span<T> SimpleValueT<T>::add_subspace(std::span<const string_id> addr) {
     size_t old_size = _cells.size();
     add_mapping(addr);
     _cells.resize(old_size + subspace_size(), std::numeric_limits<T>::quiet_NaN());
@@ -277,13 +252,13 @@ SimpleValueBuilderFactory::SimpleValueBuilderFactory() = default;
 SimpleValueBuilderFactory SimpleValueBuilderFactory::_factory;
 
 std::unique_ptr<ValueBuilderBase>
-SimpleValueBuilderFactory::create_value_builder_base(const ValueType &type, bool transient, size_t num_mapped_dims, size_t subspace_size,
-                                                     size_t expected_subspaces) const
-{
-    (void) transient;
-    return typify_invoke<1,TypifyCellType,CreateSimpleValueBuilderBase>(type.cell_type(), type, num_mapped_dims, subspace_size, expected_subspaces);
+SimpleValueBuilderFactory::create_value_builder_base(const ValueType& type, bool transient, size_t num_mapped_dims,
+                                                     size_t subspace_size, size_t expected_subspaces) const {
+    (void)transient;
+    return typify_invoke<1, TypifyCellType, CreateSimpleValueBuilderBase>(type.cell_type(), type, num_mapped_dims,
+                                                                          subspace_size, expected_subspaces);
 }
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace vespalib::eval

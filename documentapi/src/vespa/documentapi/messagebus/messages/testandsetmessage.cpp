@@ -7,4 +7,4 @@ namespace documentapi {
 TestAndSetMessage::TestAndSetMessage() = default;
 TestAndSetMessage::~TestAndSetMessage() = default;
 
-}
+} // namespace documentapi

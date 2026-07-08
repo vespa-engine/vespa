@@ -1,12 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "messagebus.h"
 #include "configagent.h"
+#include "messagebus.h"
 #include "protocolset.h"
+
 #include <vespa/messagebus/network/rpcnetwork.h>
 
-namespace config {class ConfigUri; }
+namespace config {
+class ConfigUri;
+}
 
 namespace mbus {
 
@@ -19,9 +22,9 @@ namespace mbus {
  */
 class RPCMessageBus {
 private:
-    RPCNetwork  _net;
-    MessageBus  _bus;
-    ConfigAgent _agent;
+    RPCNetwork            _net;
+    MessageBus            _bus;
+    ConfigAgent           _agent;
     config::ConfigFetcher _subscriber;
 
 public:
@@ -30,8 +33,8 @@ public:
      */
     using UP = std::unique_ptr<RPCMessageBus>;
     using SP = std::shared_ptr<RPCMessageBus>;
-    RPCMessageBus(const RPCMessageBus &) = delete;
-    RPCMessageBus & operator = (const RPCMessageBus &) = delete;
+    RPCMessageBus(const RPCMessageBus&) = delete;
+    RPCMessageBus& operator=(const RPCMessageBus&) = delete;
 
     /**
      * Constructs a new instance of this class.
@@ -40,12 +43,9 @@ public:
      * @param rpcParams    A complete set of network parameters.
      * @param routingCfgId The config id for message bus routing specs.
      */
-    RPCMessageBus(const MessageBusParams &mbusParams,
-                  const RPCNetworkParams &rpcParams,
-                  const config::ConfigUri & routingCfgId);
-    RPCMessageBus(const MessageBusParams &mbusParams,
-                  const RPCNetworkParams &rpcParams);
-
+    RPCMessageBus(const MessageBusParams& mbusParams, const RPCNetworkParams& rpcParams,
+                  const config::ConfigUri& routingCfgId);
+    RPCMessageBus(const MessageBusParams& mbusParams, const RPCNetworkParams& rpcParams);
 
     /**
      * This constructor requires an array of protocols that it is to support, as
@@ -57,9 +57,8 @@ public:
      * @param rpcParams    A complete set of network parameters.
      * @param routingCfgId The config id for messagebus routing specs.
      */
-    RPCMessageBus(const ProtocolSet &protocols,
-                  const RPCNetworkParams &rpcParams,
-                  const config::ConfigUri & routingCfgId);
+    RPCMessageBus(const ProtocolSet& protocols, const RPCNetworkParams& rpcParams,
+                  const config::ConfigUri& routingCfgId);
 
     /**
      * Destruct. This will destruct the internal MessageBus and RPCNetwork
@@ -74,29 +73,28 @@ public:
      *
      * @return The mbus object.
      */
-    MessageBus &getMessageBus() { return _bus; }
+    MessageBus& getMessageBus() { return _bus; }
 
     /**
      * Returns a const reference to the contained message bus object.
      *
      * @return The mbus object.
      */
-    const MessageBus &getMessageBus() const { return _bus; }
+    const MessageBus& getMessageBus() const { return _bus; }
 
     /**
      * Returns a reference to the contained rpc network object.
      *
      * @return The rpc network.
      */
-    RPCNetwork &getRPCNetwork() { return _net; }
+    RPCNetwork& getRPCNetwork() { return _net; }
 
     /**
      * Returns a const reference to the contained rpc network object.
      *
      * @return The rpc network.
      */
-    const RPCNetwork &getRPCNetwork() const { return _net; }
+    const RPCNetwork& getRPCNetwork() const { return _net; }
 };
 
 } // namespace mbus
-

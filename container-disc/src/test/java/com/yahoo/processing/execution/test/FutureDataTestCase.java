@@ -13,7 +13,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.yahoo.processing.test.ProcessorLibrary.*;
+import static com.yahoo.processing.test.ProcessorLibrary.AsyncDataProcessingInitiator;
+import static com.yahoo.processing.test.ProcessorLibrary.DataCounter;
+import static com.yahoo.processing.test.ProcessorLibrary.DataSource;
+import static com.yahoo.processing.test.ProcessorLibrary.Federator;
+import static com.yahoo.processing.test.ProcessorLibrary.FutureDataSource;
+import static com.yahoo.processing.test.ProcessorLibrary.StringData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**

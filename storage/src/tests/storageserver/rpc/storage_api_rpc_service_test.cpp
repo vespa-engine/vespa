@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/storage_config_set.h>
 #include <vespa/document/base/testdocman.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
@@ -14,14 +13,20 @@
 #include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
 #include <vespa/storage/storageserver/rpc/message_codec_provider.h>
+#include <vespa/storage/storageserver/rpc/metadata_propagator.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/messageapi/metadata_extractor.h>
+#include <vespa/storageapi/messageapi/metadata_injector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <gmock/gmock.h>
+#include <tests/common/storage_config_set.h>
+
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -29,7 +34,6 @@
 #include <mutex>
 #include <stdexcept>
 #include <string>
-
 #include <thread>
 
 using namespace ::testing;
@@ -49,6 +53,7 @@ class LockingMockOperationDispatcher : public MessageDispatcher {
     mutable std::mutex              _mutex;
     mutable std::condition_variable _cond;
     MessageQueueType                _enqueued;
+
 public:
     LockingMockOperationDispatcher();
     ~LockingMockOperationDispatcher() override;
@@ -72,8 +77,8 @@ public:
 
     void wait_until_n_messages_received(size_t n) const {
         std::unique_lock lock(_mutex);
-        const auto deadline = std::chrono::steady_clock::now() + message_timeout;
-        if (!_cond.wait_until(lock, deadline, [this, n]{ return (_enqueued.size() == n); })) {
+        const auto       deadline = std::chrono::steady_clock::now() + message_timeout;
+        if (!_cond.wait_until(lock, deadline, [this, n] { return (_enqueued.size() == n); })) {
             throw std::runtime_error("Timed out waiting for message");
         }
     }
@@ -87,8 +92,38 @@ public:
     }
 };
 
-LockingMockOperationDispatcher::LockingMockOperationDispatcher()  = default;
+LockingMockOperationDispatcher::LockingMockOperationDispatcher() = default;
 LockingMockOperationDispatcher::~LockingMockOperationDispatcher() = default;
+
+struct MockMetadataPropagator : MetadataPropagator {
+    ~MockMetadataPropagator() override = default;
+
+    MOCK_METHOD(void, on_send_command, (const api::StorageCommand&, api::MetadataInjector&), (const, override));
+    MOCK_METHOD(void, on_receive_command, (api::StorageCommand&, const api::MetadataExtractor&), (const, override));
+};
+
+ACTION_P2(InjectMetadata, key, value) {
+    // Assumes that injector is the 2nd parameter in the call
+    arg1.inject_key_value(key, value);
+}
+
+MATCHER_P2(ExtractorHasMetadata, key, value, "") {
+    auto maybe_value = arg.extract_value(key);
+    return ExplainMatchResult(Eq(maybe_value), value, result_listener);
+}
+
+struct MyTestParams {
+    std::shared_ptr<MockMetadataPropagator> node_0_propagator;
+    std::shared_ptr<MockMetadataPropagator> node_1_propagator;
+    ~MyTestParams();
+
+    static MyTestParams make_strict_mocks() {
+        // Strict mocks only allow exact matches of actual vs expected invocation counts.
+        return {std::make_shared<StrictMock<MockMetadataPropagator>>(),
+                std::make_shared<StrictMock<MockMetadataPropagator>>()};
+    }
+};
+MyTestParams::~MyTestParams() = default;
 
 api::StorageMessageAddress make_address(uint16_t node_index, bool is_distributor) {
     static std::string _coolcluster("coolcluster");
@@ -108,14 +143,14 @@ protected:
     std::unique_ptr<MessageCodecProvider>             _codec_provider;
     std::unique_ptr<SharedRpcResources>               _shared_rpc_resources;
     api::StorageMessageAddress                        _node_address;
-    std::string                                  _slobrok_id;
+    std::string                                       _slobrok_id;
+
 public:
     RpcNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
         : _config(StorageConfigSet::make_node_config(!is_distributor)),
           _doc_type_repo(document::TestDocRepo().getTypeRepoSp()),
           _node_address(make_address(node_index, is_distributor)),
-          _slobrok_id(to_slobrok_id(_node_address))
-    {
+          _slobrok_id(to_slobrok_id(_node_address)) {
         _config->set_node_index(node_index);
         _config->set_slobrok_config_port(slobrok.port());
 
@@ -143,13 +178,17 @@ public:
 RpcNode::~RpcNode() = default;
 
 class StorageApiNode : public RpcNode {
-    std::unique_ptr<StorageApiRpcService> _service;
+    std::unique_ptr<StorageApiRpcService>   _service;
+    std::shared_ptr<MockMetadataPropagator> _metadata_propagator;
+
 public:
-    StorageApiNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
-        : RpcNode(node_index, is_distributor, slobrok)
-    {
+    StorageApiNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok,
+                   std::shared_ptr<MockMetadataPropagator> message_interceptor)
+        : RpcNode(node_index, is_distributor, slobrok), _metadata_propagator(std::move(message_interceptor)) {
         StorageApiRpcService::Params params;
-        _service = std::make_unique<StorageApiRpcService>(_messages, *_shared_rpc_resources, *_codec_provider, params);
+        params.metadata_propagator = _metadata_propagator;
+        _service =
+            std::make_unique<StorageApiRpcService>(_messages, *_shared_rpc_resources, *_codec_provider, params);
 
         _shared_rpc_resources->start_server_and_register_slobrok(_slobrok_id);
         // Explicitly wait until we are visible in Slobrok. Just waiting for mirror readiness is not enough.
@@ -157,9 +196,15 @@ public:
     }
     ~StorageApiNode();
 
+    [[nodiscard]] const MockMetadataPropagator& meta_propagator_mock() noexcept {
+        assert(_metadata_propagator);
+        return *_metadata_propagator;
+    }
+
     std::shared_ptr<api::PutCommand> create_dummy_put_command() const {
         auto doc_type = _doc_type_repo->getDocumentType("testdoctype1");
-        auto doc = std::make_shared<document::Document>(*_doc_type_repo, *doc_type, document::DocumentId("id:foo:testdoctype1::bar"));
+        auto doc = std::make_shared<document::Document>(*_doc_type_repo, *doc_type,
+                                                        document::DocumentId("id:foo:testdoctype1::bar"));
         doc->setFieldValue(doc->getField("hstringval"), std::make_unique<document::StringFieldValue>("hello world"));
         return std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), std::move(doc), 100);
     }
@@ -174,15 +219,13 @@ public:
         }
     }
 
-    void send_request(std::shared_ptr<api::StorageCommand> req) {
-        _service->send_rpc_v1_request(std::move(req));
-    }
+    void send_request(std::shared_ptr<api::StorageCommand> req) { _service->send_rpc_v1_request(std::move(req)); }
 
     // TODO move StorageTransportContext away from communicationmanager.h
     // TODO refactor reply handling to avoid duping detail code with CommunicationManager?
     void send_response(const std::shared_ptr<api::StorageReply>& reply) {
-        std::unique_ptr<StorageTransportContext> context(dynamic_cast<StorageTransportContext*>(
-                reply->getTransportContext().release()));
+        std::unique_ptr<StorageTransportContext> context(
+            dynamic_cast<StorageTransportContext*>(reply->getTransportContext().release()));
         assert(context);
         _service->encode_rpc_v1_response(*context->_request->raw_request(), *reply);
         context->_request->returnRequest();
@@ -193,10 +236,9 @@ public:
         return _messages.pop_first_message();
     }
 
-    void send_raw_request_and_expect_error(StorageApiNode& node,
-                                           FRT_RPCRequest* req,
+    void send_raw_request_and_expect_error(StorageApiNode& node, FRT_RPCRequest* req,
                                            const std::string& expected_msg) {
-        auto spec = vespalib::make_string("tcp/localhost:%d", node.shared_rpc_resources().listen_port());
+        auto  spec = vespalib::make_string("tcp/localhost:%d", node.shared_rpc_resources().listen_port());
         auto* target = _shared_rpc_resources->supervisor().GetTarget(spec.c_str());
         target->InvokeSync(req, 60.0);
         EXPECT_TRUE(req->IsError());
@@ -217,27 +259,25 @@ StorageApiNode::~StorageApiNode() {
 
 // TODO consider completely mocking Slobrok to avoid any race conditions during node registration
 struct StorageApiRpcServiceTest : Test {
-    mbus::Slobrok _slobrok;
+    mbus::Slobrok                   _slobrok;
     std::unique_ptr<StorageApiNode> _node_0;
     std::unique_ptr<StorageApiNode> _node_1;
 
-    StorageApiRpcServiceTest()
+    StorageApiRpcServiceTest(MyTestParams params)
         : _slobrok(),
-          _node_0(std::make_unique<StorageApiNode>(1, true, _slobrok)),
-          _node_1(std::make_unique<StorageApiNode>(4, false, _slobrok))
-    {
+          _node_0(std::make_unique<StorageApiNode>(1, true, _slobrok, std::move(params.node_0_propagator))),
+          _node_1(std::make_unique<StorageApiNode>(4, false, _slobrok, std::move(params.node_1_propagator))) {
         // FIXME ugh, this isn't particularly pretty...
         _node_0->wait_until_visible_in_slobrok(to_slobrok_id(_node_1->node_address()));
         _node_1->wait_until_visible_in_slobrok(to_slobrok_id(_node_0->node_address()));
     }
+    StorageApiRpcServiceTest() : StorageApiRpcServiceTest(MyTestParams{}) {}
     ~StorageApiRpcServiceTest() override;
 
-    static api::StorageMessageAddress non_existing_address() {
-        return make_address(100, false);
-    }
+    static api::StorageMessageAddress non_existing_address() { return make_address(100, false); }
 
-    [[nodiscard]] std::shared_ptr<api::PutCommand> send_and_receive_put_command_at_node_1(
-            const std::function<void(api::PutCommand&)>& req_mutator) {
+    [[nodiscard]] std::shared_ptr<api::PutCommand>
+    send_and_receive_put_command_at_node_1(const std::function<void(api::PutCommand&)>& req_mutator) {
         auto cmd = _node_0->create_dummy_put_command();
         cmd->setAddress(_node_1->node_address());
         req_mutator(*cmd);
@@ -252,9 +292,9 @@ struct StorageApiRpcServiceTest : Test {
         return send_and_receive_put_command_at_node_1([]([[maybe_unused]] auto& cmd) noexcept {});
     }
 
-    [[nodiscard]] std::shared_ptr<api::PutReply> respond_and_receive_put_reply_at_node_0(
-            const std::shared_ptr<api::PutCommand>& cmd,
-            const std::function<void(api::StorageReply&)>& reply_mutator) {
+    [[nodiscard]] std::shared_ptr<api::PutReply>
+    respond_and_receive_put_reply_at_node_0(const std::shared_ptr<api::PutCommand>&        cmd,
+                                            const std::function<void(api::StorageReply&)>& reply_mutator) {
         auto reply = std::shared_ptr<api::StorageReply>(cmd->makeReply());
         reply_mutator(*reply);
         _node_1->send_response(reply);
@@ -265,8 +305,8 @@ struct StorageApiRpcServiceTest : Test {
         return recv_as_put_reply;
     }
 
-    [[nodiscard]] std::shared_ptr<api::PutReply> respond_and_receive_put_reply_at_node_0(
-            const std::shared_ptr<api::PutCommand>& cmd) {
+    [[nodiscard]] std::shared_ptr<api::PutReply>
+    respond_and_receive_put_reply_at_node_0(const std::shared_ptr<api::PutCommand>& cmd) {
         return respond_and_receive_put_reply_at_node_0(cmd, []([[maybe_unused]] auto& reply) noexcept {});
     }
 };
@@ -278,13 +318,13 @@ TEST_F(StorageApiRpcServiceTest, can_send_and_respond_to_request_end_to_end) {
     cmd->setAddress(_node_1->node_address());
     _node_0->send_request_verify_not_bounced(cmd);
 
-    auto recv_msg = _node_1->wait_and_receive_single_message();
+    auto  recv_msg = _node_1->wait_and_receive_single_message();
     auto* put_cmd = dynamic_cast<api::PutCommand*>(recv_msg.get());
     ASSERT_TRUE(put_cmd != nullptr);
     auto reply = std::shared_ptr<api::StorageReply>(put_cmd->makeReply());
     _node_1->send_response(reply);
 
-    auto recv_reply = _node_0->wait_and_receive_single_message();
+    auto  recv_reply = _node_0->wait_and_receive_single_message();
     auto* put_reply = dynamic_cast<api::PutReply*>(recv_reply.get());
     ASSERT_TRUE(put_reply != nullptr);
 }
@@ -295,24 +335,24 @@ TEST_F(StorageApiRpcServiceTest, send_to_unknown_address_bounces_with_error_repl
     cmd->getTrace().setLevel(9);
     _node_0->send_request(cmd);
 
-    auto bounced_msg = _node_0->wait_and_receive_single_message();
+    auto  bounced_msg = _node_0->wait_and_receive_single_message();
     auto* put_reply = dynamic_cast<api::PutReply*>(bounced_msg.get());
     ASSERT_TRUE(put_reply != nullptr);
 
     auto expected_code = static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE);
-    auto expected_msg = vespalib::make_string(
-            "The address of service '%s' could not be resolved. It is not currently "
-            "registered with the Vespa name server. "
-            "The service must be having problems, or the routing configuration is wrong. "
-            "Address resolution attempted from host '%s'",
-            to_slobrok_id(non_existing_address()).c_str(), vespalib::HostName::get().c_str());
+    auto expected_msg =
+        vespalib::make_string("The address of service '%s' could not be resolved. It is not currently "
+                              "registered with the Vespa name server. "
+                              "The service must be having problems, or the routing configuration is wrong. "
+                              "Address resolution attempted from host '%s'",
+                              to_slobrok_id(non_existing_address()).c_str(), vespalib::HostName::get().c_str());
 
     EXPECT_EQ(put_reply->getResult(), api::ReturnCode(expected_code, expected_msg));
     EXPECT_THAT(put_reply->getTrace().toString(), HasSubstr("The service must be having problems"));
 }
 
 TEST_F(StorageApiRpcServiceTest, request_metadata_is_propagated_to_receiver) {
-    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd){
+    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd) {
         cmd.getTrace().setLevel(7);
         cmd.setTimeout(1337s);
     });
@@ -321,21 +361,17 @@ TEST_F(StorageApiRpcServiceTest, request_metadata_is_propagated_to_receiver) {
 }
 
 TEST_F(StorageApiRpcServiceTest, response_trace_is_propagated_to_sender) {
-    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd){
-        cmd.getTrace().setLevel(1);
-    });
-    auto recv_reply = respond_and_receive_put_reply_at_node_0(recv_cmd, [](auto& reply){
-        reply.getTrace().trace(1, "Doing cool things", false);
-    });
+    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd) { cmd.getTrace().setLevel(1); });
+    auto recv_reply = respond_and_receive_put_reply_at_node_0(
+        recv_cmd, [](auto& reply) { reply.getTrace().trace(1, "Doing cool things", false); });
     auto trace_str = recv_reply->getTrace().toString();
     EXPECT_THAT(trace_str, HasSubstr("Doing cool things"));
 }
 
 TEST_F(StorageApiRpcServiceTest, response_trace_only_propagated_if_trace_level_set) {
     auto recv_cmd = send_and_receive_put_command_at_node_1();
-    auto recv_reply = respond_and_receive_put_reply_at_node_0(recv_cmd, [](auto& reply){
-        reply.getTrace().trace(1, "Doing cool things", false);
-    });
+    auto recv_reply = respond_and_receive_put_reply_at_node_0(
+        recv_cmd, [](auto& reply) { reply.getTrace().trace(1, "Doing cool things", false); });
     auto trace_str = recv_reply->getTrace().toString();
     EXPECT_THAT(trace_str, Not(HasSubstr("Doing cool things")));
 }
@@ -345,7 +381,7 @@ TEST_F(StorageApiRpcServiceTest, malformed_request_header_returns_rpc_error) {
     auto* req = supervisor.AllocRPCRequest();
     req->SetMethodName(StorageApiRpcService::rpc_v1_method_name());
     auto* params = req->GetParams();
-    params->AddInt8(0);  // No compression
+    params->AddInt8(0); // No compression
     params->AddInt32(24);
     strncpy(params->AddData(24), "some non protobuf stuff", 24);
     params->AddInt8(0);  // Still no compression
@@ -360,7 +396,7 @@ TEST_F(StorageApiRpcServiceTest, malformed_request_payload_returns_rpc_error) {
     auto* req = supervisor.AllocRPCRequest();
     req->SetMethodName(StorageApiRpcService::rpc_v1_method_name());
     auto* params = req->GetParams();
-    params->AddInt8(0);  // No compression
+    params->AddInt8(0); // No compression
     params->AddInt32(0);
     params->AddData(0);  // This is a valid empty protobuf header with no fields set
     params->AddInt8(0);  // Even still no compression
@@ -373,9 +409,7 @@ TEST_F(StorageApiRpcServiceTest, malformed_request_payload_returns_rpc_error) {
 // TODO also test bad response header/payload
 
 TEST_F(StorageApiRpcServiceTest, trace_events_are_emitted_for_send_and_receive) {
-    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd){
-        cmd.getTrace().setLevel(9);
-    });
+    auto recv_cmd = send_and_receive_put_command_at_node_1([](auto& cmd) { cmd.getTrace().setLevel(9); });
     auto recv_reply = respond_and_receive_put_reply_at_node_0(recv_cmd);
     auto trace_str = recv_reply->getTrace().toString();
     // Ordering of traced events matter, so we use a cheeky regex.
@@ -385,4 +419,33 @@ TEST_F(StorageApiRpcServiceTest, trace_events_are_emitted_for_send_and_receive) 
                                          "Response received at"));
 }
 
+struct StorageApiRpcServiceMetadataTest : StorageApiRpcServiceTest {
+    StorageApiRpcServiceMetadataTest() : StorageApiRpcServiceTest(MyTestParams::make_strict_mocks()) {}
+};
+
+TEST_F(StorageApiRpcServiceMetadataTest, propagators_are_always_invoked_when_set) {
+    EXPECT_CALL(_node_0->meta_propagator_mock(), on_send_command(_, _));
+    EXPECT_CALL(_node_1->meta_propagator_mock(), on_receive_command(_, _));
+
+    // Note: mock expectations must be set _prior_ to invocation
+    (void)send_and_receive_put_command_at_node_1();
 }
+
+TEST_F(StorageApiRpcServiceMetadataTest, can_propagate_single_metadata_entry) {
+    EXPECT_CALL(_node_0->meta_propagator_mock(), on_send_command(_, _)).WillOnce(InjectMetadata("foo", "marve"));
+    EXPECT_CALL(_node_1->meta_propagator_mock(), on_receive_command(_, ExtractorHasMetadata("foo", "marve")));
+
+    (void)send_and_receive_put_command_at_node_1();
+}
+
+TEST_F(StorageApiRpcServiceMetadataTest, can_propagate_multiple_metadata_entries) {
+    EXPECT_CALL(_node_0->meta_propagator_mock(), on_send_command(_, _))
+        .WillOnce(DoAll(InjectMetadata("foo", "marve"), InjectMetadata("bar", "fleksnes")));
+    EXPECT_CALL(
+        _node_1->meta_propagator_mock(),
+        on_receive_command(_, AllOf(ExtractorHasMetadata("foo", "marve"), ExtractorHasMetadata("bar", "fleksnes"))));
+
+    (void)send_and_receive_put_command_at_node_1();
+}
+
+} // namespace storage::rpc

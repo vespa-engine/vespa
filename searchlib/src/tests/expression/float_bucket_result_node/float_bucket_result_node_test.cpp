@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nboserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+
 #include <cmath>
 
 #include <vespa/log/log.h>
@@ -15,8 +16,8 @@ using namespace vespalib;
 namespace {
 
 // ugly test-only utility:
-std::string stringValue(const FloatBucketResultNode &result) {
-    nbostream buf;
+std::string stringValue(const FloatBucketResultNode& result) {
+    nbostream     buf;
     NBOSerializer s(buf);
     result.onSerialize(s);
     double f, t;
@@ -30,16 +31,13 @@ FloatBucketResultNode mkn(double f, double t) {
     return FloatBucketResultNode(f, t);
 }
 
-void check_cmp(const FloatBucketResultNode &a, const FloatBucketResultNode &b, int expect) {
+void check_cmp(const FloatBucketResultNode& a, const FloatBucketResultNode& b, int expect) {
     int res = a.cmp(b);
-    printf("Got %2d when comparing:   %s  <=>  %s\n", res,
-           stringValue(a).c_str(),
-           stringValue(b).c_str());
+    printf("Got %2d when comparing:   %s  <=>  %s\n", res, stringValue(a).c_str(), stringValue(b).c_str());
     EXPECT_EQ(expect, res);
 }
 
-TEST(FloatBucketResultNodeTest, test_sorting)
-{
+TEST(FloatBucketResultNodeTest, test_sorting) {
     auto n01 = mkn(0, 1);
     auto n12 = mkn(1, 2);
     auto n23 = mkn(2, 3);
@@ -58,7 +56,7 @@ TEST(FloatBucketResultNodeTest, test_sorting)
     check_cmp(n02, n01, 1);
 
     double nanv = std::nan("");
-    auto nan = mkn(nanv, nanv);
+    auto   nan = mkn(nanv, nanv);
     check_cmp(nan, nan, 0);
     check_cmp(n01, nan, 1);
     check_cmp(nan, n01, -1);

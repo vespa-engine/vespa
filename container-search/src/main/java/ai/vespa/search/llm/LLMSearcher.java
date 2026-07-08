@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.search.llm;
+import java.nio.charset.StandardCharsets;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
@@ -78,7 +79,7 @@ public class LLMSearcher extends Searcher {
         } else if (config.promptTemplate().isPresent()) {
             Path path = config.promptTemplate().get();
             try {
-                return new String(Files.readAllBytes(path));
+                return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new IllegalArgumentException("Could not read prompt template file: " + path, e);
             }

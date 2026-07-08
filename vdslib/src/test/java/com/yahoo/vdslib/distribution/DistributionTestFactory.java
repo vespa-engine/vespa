@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
@@ -85,9 +86,17 @@ public final class DistributionTestFactory extends CrossPlatformTestFactory {
             assertEquals(toString(), count, nodes.size());
             return this;
         }
-        public void assertNodeUsed(int node) {
+        public Test assertNodeUsed(int node) {
             assertEquals(toString(), Failure.NONE, failure);
             assertTrue(toString(), nodes.contains(node));
+            return this;
+        }
+        public Test assertNodesNotUsed(int... unwantedNodes) {
+            assertEquals(toString(), Failure.NONE, failure);
+            for (int n : unwantedNodes) {
+                assertFalse(toString(), nodes.contains(n));
+            }
+            return this;
         }
     }
 
@@ -140,6 +149,11 @@ public final class DistributionTestFactory extends CrossPlatformTestFactory {
 
     public DistributionTestFactory setUpStates(String up) {
         this.upStates = up;
+        return this;
+    }
+
+    public DistributionTestFactory setRedundancy(int redundancy) {
+        this.redundancy = redundancy;
         return this;
     }
 

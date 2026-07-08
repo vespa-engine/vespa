@@ -8,5 +8,4 @@ namespace documentapi {
 // Decide the type of string used once
 using string = std::string;
 
-} // namespace mbus
-
+} // namespace documentapi

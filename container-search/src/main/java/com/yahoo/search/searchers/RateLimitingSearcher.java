@@ -51,6 +51,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author bratseth
  */
+@SuppressWarnings("removal")
 @Provides(RateLimitingSearcher.RATE_LIMITING)
 public class RateLimitingSearcher extends Searcher {
 

@@ -9,21 +9,22 @@
 
 #include "bucketmanagermetrics.h"
 #include "storbucketdb.h"
+
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelinkqueued.h>
-#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 
 #include <chrono>
+#include <condition_variable>
 #include <list>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
-#include <mutex>
-#include <condition_variable>
 
 namespace storage {
 
@@ -31,13 +32,13 @@ class BucketManager : public StorageLink,
                       public framework::StatusReporter,
                       public NodeStateReporter,
                       private framework::Runnable,
-                      private framework::MetricUpdateHook
-{
+                      private framework::MetricUpdateHook {
 public:
     using StorServerConfig = vespa::config::content::core::StorServerConfig;
     /** Type used for message queues */
     using BucketInfoRequestList = std::list<std::shared_ptr<api::RequestBucketInfoCommand>>;
-    using BucketInfoRequestMap = std::unordered_map<document::BucketSpace, BucketInfoRequestList, document::BucketSpace::hash>;
+    using BucketInfoRequestMap =
+        std::unordered_map<document::BucketSpace, BucketInfoRequestList, document::BucketSpace::hash>;
 
 private:
     using ReplyQueue = std::vector<api::StorageReply::SP>;
@@ -53,14 +54,14 @@ private:
     /**
      * Lock kept for access to 3 values below concerning cluster state.
      */
-    std::mutex              _clusterStateLock;
-    mutable std::mutex      _queueProcessingLock;
+    std::mutex         _clusterStateLock;
+    mutable std::mutex _queueProcessingLock;
 
-    ReplyQueue                            _queuedReplies;
-    ConflictingBuckets                    _conflictingBuckets;
+    ReplyQueue         _queuedReplies;
+    ConflictingBuckets _conflictingBuckets;
     // The most current cluster state versions that we've observed on the way _down_
     // through the chain, i.e. prior to being enabled on the node.
-    uint32_t                              _last_cluster_state_version_initiated;
+    uint32_t _last_cluster_state_version_initiated;
     // The most current cluster state we've observed on the way _up_ through the
     // chain, i.e. after being enabled on the node.
     uint32_t                              _last_cluster_state_version_completed;
@@ -73,6 +74,7 @@ private:
 
     class ScopedQueueDispatchGuard {
         BucketManager& _mgr;
+
     public:
         explicit ScopedQueueDispatchGuard(BucketManager&);
         ~ScopedQueueDispatchGuard();
@@ -94,18 +96,19 @@ public:
     void dump(std::ostream& out) const;
 
     /** Get info for given bucket (Used for whitebox testing) */
-    StorBucketDatabase::Entry getBucketInfo(const document::Bucket &id) const;
+    StorBucketDatabase::Entry getBucketInfo(const document::Bucket& id) const;
 
     void force_db_sweep_and_metric_update() { updateMetrics(); }
 
     bool onUp(const std::shared_ptr<api::StorageMessage>&) override;
-    void report(vespalib::JsonStream &writer) const override;
+    void report(vespalib::JsonStream& writer) const override;
+
 private:
     friend struct BucketManagerTest;
 
     void run(framework::ThreadHandle&) override;
 
-        // Status::Reporter implementation
+    // Status::Reporter implementation
     std::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
@@ -115,12 +118,12 @@ private:
     void onClose() override;
 
     void updateMetrics() const;
-    void updateMetrics(const MetricLockGuard &) override { updateMetrics(); }
+    void updateMetrics(const MetricLockGuard&) override { updateMetrics(); }
     void update_bucket_db_memory_usage_metrics() const;
     void updateMinUsedBits();
 
     bool onRequestBucketInfo(const std::shared_ptr<api::RequestBucketInfoCommand>&) override;
-    bool processRequestBucketInfoCommands(document::BucketSpace bucketSpace, BucketInfoRequestList &reqs);
+    bool processRequestBucketInfoCommands(document::BucketSpace bucketSpace, BucketInfoRequestList& reqs);
 
     /**
      * Enqueue reply and add its bucket to the set of conflicting buckets iff
@@ -204,13 +207,10 @@ private:
     bool onUpdateReply(const std::shared_ptr<api::UpdateReply>&) override;
     bool onNotifyBucketChangeReply(const std::shared_ptr<api::NotifyBucketChangeReply>&) override;
 
-    bool verifyAndUpdateLastModified(api::StorageCommand& cmd,
-                                     const document::Bucket& bucket,
-                                     uint64_t lastModified);
+    bool verifyAndUpdateLastModified(api::StorageCommand& cmd, const document::Bucket& bucket, uint64_t lastModified);
     bool onSplitBucketReply(const std::shared_ptr<api::SplitBucketReply>&) override;
     bool onJoinBucketsReply(const std::shared_ptr<api::JoinBucketsReply>&) override;
     bool onDeleteBucketReply(const std::shared_ptr<api::DeleteBucketReply>&) override;
 };
 
-} // storage
-
+} // namespace storage

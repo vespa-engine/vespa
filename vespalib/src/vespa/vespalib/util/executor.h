@@ -23,8 +23,7 @@ public:
  * executing that task. Also, tasks are typically executed
  * concurrently in multiple threads.
  **/
-class Executor : public IWakeup
-{
+class Executor : public IWakeup {
 public:
     /**
      * A task that can be executed by an executor.
@@ -35,7 +34,7 @@ public:
         virtual ~Task() = default;
     };
 
-    enum class OptimizeFor {LATENCY, THROUGHPUT, ADAPTIVE};
+    enum class OptimizeFor { LATENCY, THROUGHPUT, ADAPTIVE };
 
     /**
      * Execute the given task using one of the internal threads some
@@ -53,4 +52,3 @@ public:
 };
 
 } // namespace vespalib
-

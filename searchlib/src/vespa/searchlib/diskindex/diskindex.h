@@ -3,9 +3,12 @@
 #pragma once
 
 #include "field_index.h"
+
+#include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/util/index_stats.h>
-#include <vespa/searchcommon/common/schema.h>
+
 #include <string>
 
 namespace search::diskindex {
@@ -14,16 +17,18 @@ namespace search::diskindex {
  * This class represents a disk index that contains a set of field indexes that are independent of each other.
  */
 class DiskIndex : public queryeval::Searchable {
-    std::string                       _indexDir;
-    index::Schema                          _schema;
-    std::vector<FieldIndex>                _field_indexes;
-    uint32_t                               _nonfield_size_on_disk;
-    TuneFileSearch                         _tuneFileSearch;
-    std::shared_ptr<IPostingListCache>     _posting_list_cache;
+    std::string                        _indexDir;
+    index::Schema                      _schema;
+    std::vector<FieldIndex>            _field_indexes;
+    uint32_t                           _nonfield_size_on_disk;
+    TuneFileSearch                     _tuneFileSearch;
+    std::shared_ptr<IPostingListCache> _posting_list_cache;
+    common::CreateAndFreezeTimes       _create_and_freeze_times;
 
     void calculate_nonfield_size_on_disk();
+    void calculate_schema_timestamp();
     bool loadSchema();
-    bool openDictionaries(const TuneFileSearch &tuneFileSearch);
+    bool openDictionaries(const TuneFileSearch& tuneFileSearch);
 
 public:
     /**
@@ -32,7 +37,7 @@ public:
      * @param indexDir the directory where the disk index is located.
      * @param posting_list_cache cache for posting lists and bitvectors.
      */
-    explicit DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache);
+    explicit DiskIndex(const std::string& indexDir, std::shared_ptr<IPostingListCache> posting_list_cache);
     ~DiskIndex() override;
 
     /**
@@ -40,8 +45,8 @@ public:
      *
      * @return true if this instance was successfully setup.
      */
-    bool setup(const TuneFileSearch &tuneFileSearch);
-    bool setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old);
+    bool setup(const TuneFileSearch& tuneFileSearch);
+    bool setup(const TuneFileSearch& tuneFileSearch, const DiskIndex& old);
 
     /**
      * Perform a dictionary lookup for the given word in the given field.
@@ -52,26 +57,28 @@ public:
      */
     index::DictionaryLookupResult lookup(uint32_t indexId, std::string_view word);
 
-    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
-                                                          const queryeval::FieldSpec &field,
-                                                          const query::Node &term,
-                                                          fef::MatchDataLayout &global_layout) override;
+    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext& requestContext,
+                                                          const queryeval::FieldSpec& field, const query::Node& term,
+                                                          fef::MatchDataLayout& global_layout) override;
 
-    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
-                                                          const queryeval::FieldSpecList &fields,
-                                                          const query::Node &term,
-                                                          fef::MatchDataLayout &global_layout) override;
+    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext& requestContext,
+                                                          const queryeval::FieldSpecList&   fields,
+                                                          const query::Node&                term,
+                                                          fef::MatchDataLayout&             global_layout) override;
 
     /**
      * Get stats for this index.
      */
     IndexStats get_stats(bool clear_disk_io_stats) const;
-    const index::Schema &getSchema() const { return _schema; }
-    const std::string &getIndexDir() const { return _indexDir; }
+    const index::Schema& getSchema() const { return _schema; }
+    const std::string& getIndexDir() const { return _indexDir; }
 
     index::FieldLengthInfo get_field_length_info(const std::string& field_name) const;
     const std::shared_ptr<IPostingListCache>& get_posting_list_cache() const noexcept { return _posting_list_cache; }
     const FieldIndex& get_field_index(uint32_t field_id) const noexcept { return _field_indexes[field_id]; }
+    [[nodiscard]] const common::CreateAndFreezeTimes& create_and_freeze_times() const noexcept {
+        return _create_and_freeze_times;
+    }
 };
 
-}
+} // namespace search::diskindex

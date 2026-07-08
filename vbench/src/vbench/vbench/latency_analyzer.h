@@ -10,15 +10,14 @@ namespace vbench {
  * Component picking up the latency of successful requests and
  * calculating relevant aggregated values.
  **/
-class LatencyAnalyzer : public Analyzer
-{
+class LatencyAnalyzer : public Analyzer {
 private:
-    Handler<Request>    &_next;
-    size_t               _cnt;
-    double               _min;
-    double               _max;
-    double               _total;
-    std::vector<size_t>  _hist;
+    Handler<Request>&   _next;
+    size_t              _cnt;
+    double              _min;
+    double              _max;
+    double              _total;
+    std::vector<size_t> _hist;
 
     double getN(size_t n) const;
     double getPercentile(double per) const;
@@ -34,7 +33,7 @@ public:
         Stats() : min(0), avg(0), max(0), per50(0), per95(0), per99(0) {}
         string toString() const;
     };
-    LatencyAnalyzer(Handler<Request> &next);
+    LatencyAnalyzer(Handler<Request>& next);
     ~LatencyAnalyzer() override;
     void handle(Request::UP request) override;
     void report() override;

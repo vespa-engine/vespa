@@ -1,40 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dictionarywordreader.h"
+
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/util/error.h>
-#include <vespa/fastlib/io/bufferedfile.h>
-
-#include <vespa/log/log.h>
 
 #include <memory>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.dictionarywordreader");
 
 namespace search::diskindex {
 
-using vespalib::getLastErrorString;
 using index::SchemaUtil;
+using vespalib::getLastErrorString;
 
-DictionaryWordReader::DictionaryWordReader()
-    : _word(),
-      _wordNum(noWordNumHigh()),
-      _old2newwordfile(),
-      _dictFile()
-{
+DictionaryWordReader::DictionaryWordReader() : _word(), _wordNum(noWordNumHigh()), _old2newwordfile(), _dictFile() {
 }
 
 DictionaryWordReader::~DictionaryWordReader() = default;
 
-bool
-DictionaryWordReader::open(const std::string & dictionaryName,
-                           const std::string & wordMapName,
-                           const TuneFileSeqRead &tuneFileRead)
-{
+bool DictionaryWordReader::open(const std::string& dictionaryName, const std::string& wordMapName,
+                                const TuneFileSeqRead& tuneFileRead) {
     _old2newwordfile = std::make_unique<Fast_BufferedFile>();
     _dictFile = std::make_unique<PageDict4FileSeqRead>();
     if (!_dictFile->open(dictionaryName, tuneFileRead)) {
-        LOG(error, "Could not open dictionary %s: %s",
-            dictionaryName.c_str(), getLastErrorString().c_str());
+        LOG(error, "Could not open dictionary %s: %s", dictionaryName.c_str(), getLastErrorString().c_str());
         return false;
     }
     _wordNum = noWordNum();
@@ -50,14 +42,11 @@ DictionaryWordReader::open(const std::string & dictionaryName,
     return true;
 }
 
-void
-DictionaryWordReader::writeNewWordNum(uint64_t newWordNum) {
+void DictionaryWordReader::writeNewWordNum(uint64_t newWordNum) {
     _old2newwordfile->WriteBuf(&newWordNum, sizeof(newWordNum));
 }
 
-void
-DictionaryWordReader::close()
-{
+void DictionaryWordReader::close() {
     if (!_dictFile->close()) {
         LOG(error, "Error closing input dictionary");
     }
@@ -67,4 +56,4 @@ DictionaryWordReader::close()
     assert(close_ok);
 }
 
-}
+} // namespace search::diskindex

@@ -6,9 +6,8 @@
 namespace vespalib {
 
 // const-cast for array references; use with care
-template <typename T>
-std::span<T> unconstify(const std::span<const T>& ref) {
+template <typename T> std::span<T> unconstify(const std::span<const T>& ref) {
     return std::span<T>(const_cast<T*>(ref.data()), ref.size());
 }
 
-}
+} // namespace vespalib

@@ -35,7 +35,7 @@ public class RuleBaseTester {
         searcher = createSearcher(ruleBaseName, automataFileName);
     }
 
-    private SemanticSearcher createSearcher(String ruleBaseName,String automataFileName) {
+    private SemanticSearcher createSearcher(String ruleBaseName, String automataFileName) {
         try {
             if (automataFileName != null)
                 automataFileName = root + automataFileName;

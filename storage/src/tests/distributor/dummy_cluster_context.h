@@ -9,5 +9,5 @@ namespace {
 
 SimpleClusterContext dummy_cluster_context("storage");
 
-} // namespace <unnamed>
+} // namespace
 } // namespace storage

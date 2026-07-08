@@ -4,12 +4,13 @@
 
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
-#include "queue.h"
-#include "routable.h"
 #include "message.h"
+#include "queue.h"
 #include "reply.h"
-#include <mutex>
+#include "routable.h"
+
 #include <condition_variable>
+#include <mutex>
 
 namespace mbus {
 
@@ -22,9 +23,7 @@ namespace mbus {
  * owns all objects currently on the queue. The RoutableQueue class is
  * thread-safe.
  **/
-class RoutableQueue : public IMessageHandler,
-                      public IReplyHandler
-{
+class RoutableQueue : public IMessageHandler, public IReplyHandler {
 private:
     std::mutex              _lock;
     std::condition_variable _cond;
@@ -69,7 +68,7 @@ public:
      * @param timeout how long to wait if the queue is empty
      **/
     Routable::UP dequeue(duration timeout);
-    Routable::UP dequeue() { return dequeue(duration::zero());}
+    Routable::UP dequeue() { return dequeue(duration::zero()); }
 
     /**
      * Handle a Message by enqueuing it.
@@ -87,4 +86,3 @@ public:
 };
 
 } // namespace mbus
-

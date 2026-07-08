@@ -2,27 +2,26 @@
 
 #pragma once
 
-#include "hnsw_index_loader.h"
 #include "hnsw_graph.h"
+#include "hnsw_index_loader.h"
+
 #include <vespa/searchlib/util/fileutil.h>
+
 #include <cassert>
 
 namespace search::tensor {
 
-template <typename ReaderType, HnswIndexType type>
-void
-HnswIndexLoader<ReaderType, type>::init()
-{
+template <typename ReaderType, HnswIndexType type> void HnswIndexLoader<ReaderType, type>::init() {
     _entry_nodeid = next_int();
     _entry_level = next_int();
     _num_nodes = next_int();
 }
 
-template <typename ReaderType, HnswIndexType type>
-HnswIndexLoader<ReaderType, type>::~HnswIndexLoader() = default;
+template <typename ReaderType, HnswIndexType type> HnswIndexLoader<ReaderType, type>::~HnswIndexLoader() = default;
 
 template <typename ReaderType, HnswIndexType type>
-HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, IdMapping& id_mapping, std::unique_ptr<ReaderType> reader)
+HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, IdMapping& id_mapping,
+                                                   std::unique_ptr<ReaderType> reader)
     : _graph(graph),
       _reader(std::move(reader)),
       _entry_nodeid(0),
@@ -31,24 +30,20 @@ HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, IdMap
       _nodeid(0),
       _link_array(),
       _complete(false),
-      _id_mapping(id_mapping)
-{
+      _id_mapping(id_mapping) {
     init();
 
     graph.nodes.reserve(_num_nodes);
 }
 
-template <typename ReaderType, HnswIndexType type>
-bool
-HnswIndexLoader<ReaderType, type>::load_next()
-{
+template <typename ReaderType, HnswIndexType type> bool HnswIndexLoader<ReaderType, type>::load_next() {
     assert(!_complete);
     static constexpr bool identity_mapping = (type == HnswIndexType::SINGLE);
     if (_nodeid < _num_nodes) {
         uint32_t num_levels = next_int();
         if (num_levels > 0) {
             uint32_t docid = identity_mapping ? _nodeid : next_int();
-            uint32_t subspace = identity_mapping  ? 0 : next_int();
+            uint32_t subspace = identity_mapping ? 0 : next_int();
             _graph.make_node(_nodeid, docid, subspace, num_levels);
             for (uint32_t level = 0; level < num_levels; ++level) {
                 uint32_t num_links = next_int();
@@ -74,4 +69,4 @@ HnswIndexLoader<ReaderType, type>::load_next()
     }
 }
 
-}
+} // namespace search::tensor

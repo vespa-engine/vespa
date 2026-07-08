@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -65,7 +67,7 @@ public class DistributionDiffCalculator {
             // "invalid" is the fixed index string value of the root group. If the root group contains
             // any nodes at all, there will not be any nested groups by definition, as only leaf groups
             // may contain nodes.
-            String name = "invalid".equals(g.index()) ? "root group" : "group %s".formatted(g.index());
+            String name = "invalid".equals(g.index()) ? "root group" : Text.format("group %s", g.index());
             groups.put(name, new GroupNodes(g.nodes().stream().map(n -> n.index()).collect(Collectors.toSet())));
         }
         return groups;

@@ -1,13 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "my_shared_library.h"
+
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/vespalib/util/backtrace.h>
-#include <vespa/vespalib/gtest/gtest.h>
+
 #include <gmock/gmock.h>
-#include <thread>
 #include <unistd.h>
+
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("signalhandler_test");
@@ -43,9 +46,7 @@ TEST(SignalHandlerTest, can_dump_stack_of_another_thread) {
     CountDownLatch arrival_latch(2);
     CountDownLatch departure_latch(2);
 
-    std::thread t([&]{
-        my_cool_function(arrival_latch, departure_latch);
-    });
+    std::thread t([&] { my_cool_function(arrival_latch, departure_latch); });
     arrival_latch.countDown();
     arrival_latch.await();
 

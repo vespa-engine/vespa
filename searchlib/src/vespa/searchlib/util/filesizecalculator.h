@@ -5,7 +5,9 @@
 #include <cstdint>
 #include <string>
 
-namespace vespalib { class GenericHeader; }
+namespace vespalib {
+class GenericHeader;
+}
 
 namespace search {
 
@@ -15,12 +17,10 @@ namespace search {
  * physical file size due to padding for directio alignment
  * constraints.
  */
-class FileSizeCalculator
-{
+class FileSizeCalculator {
 public:
-    static bool
-    extractFileSize(const vespalib::GenericHeader &header, size_t headerLen,
-                    std::string fileName, uint64_t &fileSize);
+    static bool extractFileSize(const vespalib::GenericHeader& header, size_t headerLen, std::string fileName,
+                                uint64_t& fileSize);
 };
 
-}
+} // namespace search

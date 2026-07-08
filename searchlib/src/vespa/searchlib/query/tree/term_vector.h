@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/query/weight.h>
+
 #include <string>
 #include <utility>
 
@@ -24,4 +25,4 @@ public:
     [[nodiscard]] virtual uint32_t size() const = 0;
 };
 
-}
+} // namespace search::query

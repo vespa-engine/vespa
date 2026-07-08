@@ -4,7 +4,9 @@
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/routable.h>
 #include <vespa/vespalib/component/version.h>
+
 #include <gtest/gtest.h>
+
 #include <array>
 #include <filesystem>
 #include <functional>
@@ -17,15 +19,9 @@ struct MessageFixture : ::testing::Test {
     DocumentProtocol                                  _protocol;
 
     // Declares what languages share serialization.
-    enum {
-        LANG_CPP = 0,
-        LANG_JAVA,
-        NUM_LANGUAGES
-    };
+    enum { LANG_CPP = 0, LANG_JAVA, NUM_LANGUAGES };
 
-    static constexpr std::array<uint32_t, 2> languages() noexcept {
-        return {LANG_CPP, LANG_JAVA};
-    }
+    static constexpr std::array<uint32_t, 2> languages() noexcept { return {LANG_CPP, LANG_JAVA}; }
 
     MessageFixture();
     ~MessageFixture() override;
@@ -56,8 +52,10 @@ struct MessageFixture : ::testing::Test {
     [[nodiscard]] mbus::Routable::UP decode(mbus::BlobRef data) const {
         return _protocol.decode(tested_protocol_version(), data);
     }
+
 private:
-    [[nodiscard]] static bool file_content_is_unchanged(const std::filesystem::path& filename, const mbus::Blob& data_to_write);
+    [[nodiscard]] static bool file_content_is_unchanged(const std::filesystem::path& filename,
+                                                        const mbus::Blob&            data_to_write);
 };
 
-} // documentapi
+} // namespace documentapi

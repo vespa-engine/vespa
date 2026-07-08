@@ -177,7 +177,7 @@ func TestProdDeployWithoutCertificate(t *testing.T) {
 	require.Nil(t, os.WriteFile(filepath.Join(pkgDir, "security", "clients.pem"), []byte{}, 0o644))
 	httpClient.NextResponseString(200, `{"build": 42}`)
 	assert.Nil(t, cli.Run("prod", "deploy", pkgDir))
-	assert.Contains(t, stdout.String(), "Success: Deployed '"+pkgDir+"' with build number 42")
+	assert.Contains(t, stdout.String(), "Success: Submitted '"+pkgDir+"' with build number 42")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
@@ -213,12 +213,12 @@ func prodDeploy(pkgDir string, t *testing.T) {
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
 	httpClient.NextResponseString(200, `{"build": 42}`)
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert"))
-	assert.Contains(t, stdout.String(), "Success: Deployed '.' with build number 42")
+	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 42")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 	stdout.Reset()
 	httpClient.NextResponseString(200, `{"build": 43}`)
 	assert.Nil(t, cli.Run("prod", "submit", "--add-cert")) // old variant also works
-	assert.Contains(t, stdout.String(), "Success: Deployed '.' with build number 43")
+	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 43")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
@@ -239,7 +239,7 @@ func TestProdDeployWithJava(t *testing.T) {
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert", pkgDir))
 	assert.Equal(t, "", stderr.String())
-	assert.Contains(t, stdout.String(), "Success: Deployed '"+pkgDir+"/target/application' with build number 42")
+	assert.Contains(t, stdout.String(), "Success: Submitted '"+pkgDir+"/target/application' with build number 42")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
@@ -261,4 +261,79 @@ func TestProdDeployInvalidZip(t *testing.T) {
 
 	assert.NotNil(t, cli.Run("prod", "deploy", zipFile))
 	assert.Equal(t, "Error: found invalid path inside zip: ../../../../../../../tmp/foo\n", stderr.String())
+}
+
+func TestProdDeployWithWait(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	httpClient := &mock.HTTPClient{}
+	cli, stdout, stderr := newTestCLI(t, "CI=true")
+	cli.httpClient = httpClient
+	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
+	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+
+	if cwd, err := os.Getwd(); err != nil {
+		t.Fatal(err)
+	} else {
+		defer os.Chdir(cwd)
+	}
+	if err := os.Chdir(pkgDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Deployed successfully
+	stdout.Reset()
+	stderr.Reset()
+	httpClient.NextResponseString(200, `{"build": 42}`)
+	httpClient.NextResponseString(200, `{"deployed": false, "status": "deploying", "jobs": [{"jobName":"system-test","runStatus":"running","runId":1,"instance":"default"}]}`)
+	httpClient.NextResponseString(200, `{"deployed": true, "status": "done", "jobs": [{"jobName":"system-test","runStatus":"success","runId":1,"instance":"default"}]}`)
+	assert.Nil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
+	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 42")
+	assert.Contains(t, stdout.String(), "Waiting up to 5s for build pipeline to complete...")
+	assert.Contains(t, stderr.String(), "system-test: running")
+	assert.Contains(t, stderr.String(), "system-test: success")
+	assert.Contains(t, stdout.String(), "Success: Build 42 deployed to production")
+
+	// Skipped due to no changes
+	stdout.Reset()
+	httpClient.NextResponseString(200, `{"build": 43}`)
+	httpClient.NextResponseString(200, `{"skipReason": "no changes detected"}`)
+	assert.Nil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
+	assert.Contains(t, stdout.String(), "Success: Build 43 skipped: no changes detected")
+
+	// Job failure
+	stdout.Reset()
+	stderr.Reset()
+	httpClient.NextResponseString(200, `{"build": 44}`)
+	httpClient.NextResponseString(200, `{"hasFailed": true, "jobs": [{"jobName": "production-aws-us-east-1c", "runStatus": "deploymentFailed", "runId": 1, "instance": "default"}]}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "deploymentFailed"}`)
+	assert.NotNil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
+	assert.Contains(t, stderr.String(), "Deployment failed")
+	assert.Contains(t, stderr.String(), "production-aws-us-east-1c")
+}
+
+func TestProdDeployWarnsOnInstance(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	httpClient := &mock.HTTPClient{}
+	httpClient.NextResponseString(200, `{"build": 42}`)
+	cli, stdout, stderr := newTestCLI(t, "CI=true")
+	cli.httpClient = httpClient
+	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1"))
+	assert.Nil(t, cli.Run("config", "set", "instance", "my-instance"))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
+
+	stdout.Reset()
+	stderr.Reset()
+	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert", pkgDir))
+	assert.Contains(t, stderr.String(), "Warning: Instance is set in config but will be ignored for production deployments")
+	assert.Contains(t, stdout.String(), "Success: Submitted")
 }

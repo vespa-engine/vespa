@@ -2,6 +2,7 @@
 package com.yahoo.security;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 
 import static com.yahoo.security.ArrayUtils.fromUtf8Bytes;
@@ -22,8 +23,7 @@ public class KeyId {
 
     private KeyId(byte[] keyIdBytes) {
         if (keyIdBytes.length > MAX_KEY_ID_UTF8_LENGTH) {
-            throw new IllegalArgumentException("Key ID is too large to be encoded (max is %d, got %d)"
-                                               .formatted(MAX_KEY_ID_UTF8_LENGTH, keyIdBytes.length));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Key ID is too large to be encoded (max is %d, got %d)", MAX_KEY_ID_UTF8_LENGTH, keyIdBytes.length));
         }
         verifyByteStringRoundtripsAsValidUtf8(keyIdBytes);
         this.keyIdBytes = keyIdBytes;
@@ -75,7 +75,7 @@ public class KeyId {
 
     @Override
     public String toString() {
-        return "KeyId(%s)".formatted(asString());
+        return String.format(Locale.ROOT, "KeyId(%s)", asString());
     }
 
     private static void verifyByteStringRoundtripsAsValidUtf8(byte[] byteStr) {

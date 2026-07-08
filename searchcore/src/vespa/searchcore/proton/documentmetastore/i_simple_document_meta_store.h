@@ -11,11 +11,8 @@ namespace proton {
  * Interface for a simple document meta store that combines the
  * interfaces IStore and IBucketHandler.
  */
-struct ISimpleDocumentMetaStore : public documentmetastore::IStore,
-                                  public documentmetastore::IBucketHandler
-{
+struct ISimpleDocumentMetaStore : public documentmetastore::IStore, public documentmetastore::IBucketHandler {
     ~ISimpleDocumentMetaStore() override = default;
 };
 
 } // namespace proton
-

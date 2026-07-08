@@ -1,34 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_collection_spec_factory.h"
-#include "attribute_collection_spec.h"
-#include <vespa/searchlib/attribute/configconverter.h>
-#include <vespa/searchcommon/attribute/config.h>
 
-using search::attribute::ConfigConverter;
+#include "attribute_collection_spec.h"
+
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/configconverter.h>
+
 using search::GrowStrategy;
+using search::attribute::ConfigConverter;
 
 namespace proton {
 
-AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(const AllocStrategy &alloc_strategy, bool fastAccessOnly)
-    : _alloc_strategy(alloc_strategy),
-      _fastAccessOnly(fastAccessOnly)
-{
+AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(const AllocStrategy& alloc_strategy,
+                                                               bool                 fastAccessOnly)
+    : _alloc_strategy(alloc_strategy), _fastAccessOnly(fastAccessOnly) {
 }
 
 AttributeCollectionSpecFactory::~AttributeCollectionSpecFactory() = default;
 
 std::unique_ptr<AttributeCollectionSpec>
-AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
-                                       uint32_t docIdLimit,
-                                       std::optional<search::SerialNum> serialNum) const
-{
+AttributeCollectionSpecFactory::create(const AttributesConfig& attrCfg, uint32_t docIdLimit,
+                                       std::optional<search::SerialNum> serialNum) const {
     AttributeCollectionSpec::AttributeList attrs;
     // Amortize memory spike cost over N docs
-    const size_t skew = _alloc_strategy.get_amortize_count()/(attrCfg.attribute.size()+1);
+    const size_t skew = _alloc_strategy.get_amortize_count() / (attrCfg.attribute.size() + 1);
     GrowStrategy grow = _alloc_strategy.get_grow_strategy();
     grow.setInitialCapacity(std::max(grow.getInitialCapacity(), size_t(docIdLimit)));
-    for (const auto &attr : attrCfg.attribute) {
+    for (const auto& attr : attrCfg.attribute) {
         search::attribute::Config cfg = ConfigConverter::convert(attr);
         if (_fastAccessOnly && !cfg.fastAccess()) {
             continue;

@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "select_utils.h"
+
 #include <vespa/document/select/valuenodes.h>
 
 namespace proton {
 
-std::string
-SelectUtils::extractFieldName(const document::select::FieldValueNode &expr, bool &isComplex)
-{
+std::string SelectUtils::extractFieldName(const document::select::FieldValueNode& expr, bool& isComplex) {
     std::string result = expr.getFieldName();
     isComplex = false;
     for (uint32_t i = 0; i < result.size(); ++i) {
@@ -21,4 +20,4 @@ SelectUtils::extractFieldName(const document::select::FieldValueNode &expr, bool
     return result;
 }
 
-}
+} // namespace proton

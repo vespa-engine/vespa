@@ -68,7 +68,7 @@ public final class RawData implements Cloneable, Comparable<RawData> {
      */
     public RawData setData(byte[] data) {
         if (data == null) {
-            throw new IllegalArgumentException("Data can not be null.");
+            throw new IllegalArgumentException("Data cannot be null.");
         }
         this.data = data;
         return this;

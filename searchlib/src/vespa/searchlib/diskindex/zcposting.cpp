@@ -1,13 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "zcposting.h"
-#include <vespa/searchlib/index/postinglistcounts.h>
-#include <vespa/searchlib/index/postinglistcountfile.h>
-#include <vespa/searchlib/index/postinglistfile.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/searchlib/index/postinglistparams.h>
+
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/postinglistcountfile.h>
+#include <vespa/searchlib/index/postinglistcounts.h>
+#include <vespa/searchlib/index/postinglistfile.h>
+#include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/data/fileheader.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -19,26 +21,19 @@ std::string myId5("Zc.5");
 std::string myId4("Zc.4");
 std::string interleaved_features("interleaved_features");
 
-}
+} // namespace
 
 namespace search::diskindex {
 
-using index::PostingListCountFileSeqRead;
-using index::PostingListCountFileSeqWrite;
-using common::FileHeaderContext;
 using bitcompression::FeatureDecodeContextBE;
 using bitcompression::FeatureEncodeContextBE;
+using common::FileHeaderContext;
+using index::PostingListCountFileSeqRead;
+using index::PostingListCountFileSeqWrite;
 using vespalib::getLastErrorString;
 
-
-Zc4PostingSeqRead::Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile, bool dynamic_k)
-    : PostingListFileSeqRead(),
-      _reader(dynamic_k),
-      _file(),
-      _numWords(0),
-      _fileBitSize(0),
-      _countFile(countFile)
-{
+Zc4PostingSeqRead::Zc4PostingSeqRead(PostingListCountFileSeqRead* countFile, bool dynamic_k)
+    : PostingListFileSeqRead(), _reader(dynamic_k), _file(), _numWords(0), _fileBitSize(0), _countFile(countFile) {
     if (_countFile != nullptr) {
         PostingListParams params;
         _countFile->getParams(params);
@@ -47,35 +42,26 @@ Zc4PostingSeqRead::Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile, boo
     }
 }
 
-
 Zc4PostingSeqRead::~Zc4PostingSeqRead() = default;
 
-void
-Zc4PostingSeqRead::readDocIdAndFeatures(DocIdAndFeatures &features)
-{
+void Zc4PostingSeqRead::readDocIdAndFeatures(DocIdAndFeatures& features) {
     _reader.read_doc_id_and_features(features);
 }
 
-void
-Zc4PostingSeqRead::read_word_and_counts(const std::string& word, const PostingListCounts& counts)
-{
+void Zc4PostingSeqRead::read_word_and_counts(const std::string& word, const PostingListCounts& counts) {
     _reader.set_word_and_counts(word, counts);
 }
 
-
-bool
-Zc4PostingSeqRead::open(const std::string &name,
-                        const TuneFileSeqRead &tuneFileRead)
-{
+bool Zc4PostingSeqRead::open(const std::string& name, const TuneFileSeqRead& tuneFileRead) {
     if (tuneFileRead.getWantDirectIO()) {
         _file.EnableDirectIO();
     }
     bool res = _file.OpenReadOnly(name.c_str());
     if (res) {
-        auto &readContext = _reader.get_read_context();
+        auto& readContext = _reader.get_read_context();
         readContext.setFile(&_file);
         readContext.setFileSize(_file.getSize());
-        auto &d = _reader.get_decode_features();
+        auto& d = _reader.get_decode_features();
         readContext.allocComprBuf(65536u, 32768u);
         d.emptyBuffer(0);
         readContext.readComprBuffer();
@@ -85,26 +71,19 @@ Zc4PostingSeqRead::open(const std::string &name,
             readContext.readComprBuffer();
         }
     } else {
-        LOG(error, "could not open %s: %s",
-            _file.GetFileName(), getLastErrorString().c_str());
+        LOG(error, "could not open %s: %s", _file.GetFileName(), getLastErrorString().c_str());
     }
     return res;
 }
 
-
-bool
-Zc4PostingSeqRead::close()
-{
-    auto &readContext = _reader.get_read_context();
+bool Zc4PostingSeqRead::close() {
+    auto& readContext = _reader.get_read_context();
     readContext.dropComprBuf();
     readContext.setFile(nullptr);
     return _file.Close();
 }
 
-
-void
-Zc4PostingSeqRead::getParams(PostingListParams &params)
-{
+void Zc4PostingSeqRead::getParams(PostingListParams& params) {
     if (_countFile != nullptr) {
         PostingListParams countParams;
         _countFile->getParams(countParams);
@@ -124,20 +103,14 @@ Zc4PostingSeqRead::getParams(PostingListParams &params)
     params.set(interleaved_features, _reader.get_posting_params()._encode_interleaved_features);
 }
 
-
-void
-Zc4PostingSeqRead::getFeatureParams(PostingListParams &params)
-{
+void Zc4PostingSeqRead::getFeatureParams(PostingListParams& params) {
     _reader.get_decode_features().getParams(params);
 }
 
-
-void
-Zc4PostingSeqRead::readHeader()
-{
-    FeatureDecodeContextBE &d = _reader.get_decode_features();
-    auto &posting_params = _reader.get_posting_params();
-    const std::string &myId = posting_params._dynamic_k ? myId5 : myId4;
+void Zc4PostingSeqRead::readHeader() {
+    FeatureDecodeContextBE& d = _reader.get_decode_features();
+    auto&                   posting_params = _reader.get_posting_params();
+    const std::string&      myId = posting_params._dynamic_k ? myId5 : myId4;
 
     vespalib::FileHeader header;
     d.readHeader(header, _file.getSize());
@@ -156,17 +129,17 @@ Zc4PostingSeqRead::readHeader()
     _fileBitSize = header.getTag("fileBitSize").asInteger();
     headerLen += (-headerLen & 7);
     assert(completed);
-    (void) completed;
+    (void)completed;
     assert(_fileBitSize >= 8 * headerLen);
     assert(header.getTag("format.0").asString() == myId);
-    (void) myId;
+    (void)myId;
     assert(header.getTag("format.1").asString() == d.getIdentifier());
     _numWords = header.getTag("numWords").asInteger();
     posting_params._min_chunk_docs = header.getTag("minChunkDocs").asInteger();
     posting_params._doc_id_limit = header.getTag("docIdLimit").asInteger();
     posting_params._min_skip_docs = header.getTag("minSkipDocs").asInteger();
     if (header.hasTag(interleaved_features) && (header.getTag(interleaved_features).asInteger() != 0)) {
-       posting_params._encode_interleaved_features = true;
+        posting_params._encode_interleaved_features = true;
     }
     assert(header.getTag("endian").asString() == "big");
     // Read feature decoding specific subheader
@@ -177,22 +150,12 @@ Zc4PostingSeqRead::readHeader()
     _headerBitLen = d.getReadOffset();
 }
 
-
-const std::string &
-Zc4PostingSeqRead::getIdentifier(bool dynamic_k)
-{
+const std::string& Zc4PostingSeqRead::getIdentifier(bool dynamic_k) {
     return (dynamic_k ? myId5 : myId4);
 }
 
-
-Zc4PostingSeqWrite::
-Zc4PostingSeqWrite(PostingListCountFileSeqWrite *countFile)
-    : PostingListFileSeqWrite(),
-      _writer(_counts),
-      _file(),
-      _fileBitSize(0),
-      _countFile(countFile)
-{
+Zc4PostingSeqWrite::Zc4PostingSeqWrite(PostingListCountFileSeqWrite* countFile)
+    : PostingListFileSeqWrite(), _writer(_counts), _file(), _fileBitSize(0), _countFile(countFile) {
     if (_countFile != nullptr) {
         PostingListParams params;
         _countFile->getParams(params);
@@ -200,32 +163,22 @@ Zc4PostingSeqWrite(PostingListCountFileSeqWrite *countFile)
     }
 }
 
-
 Zc4PostingSeqWrite::~Zc4PostingSeqWrite() = default;
 
-
-void
-Zc4PostingSeqWrite::writeDocIdAndFeatures(const DocIdAndFeatures &features)
-{
+void Zc4PostingSeqWrite::writeDocIdAndFeatures(const DocIdAndFeatures& features) {
     _writer.write_docid_and_features(features);
 }
 
-
-void
-Zc4PostingSeqWrite::flushWord()
-{
+void Zc4PostingSeqWrite::flushWord() {
     _writer.flush_word();
 }
 
+void Zc4PostingSeqWrite::makeHeader(const FileHeaderContext& fileHeaderContext) {
+    EncodeContext&         f = _writer.get_encode_features();
+    EncodeContext&         e = _writer.get_encode_context();
+    ComprFileWriteContext& wce = _writer.get_write_context();
 
-void
-Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
-{
-    EncodeContext &f = _writer.get_encode_features();
-    EncodeContext &e = _writer.get_encode_context();
-    ComprFileWriteContext &wce = _writer.get_write_context();
-
-    const std::string &myId = _writer.get_dynamic_k() ? myId5 : myId4;
+    const std::string&   myId = _writer.get_dynamic_k() ? myId5 : myId4;
     vespalib::FileHeader header;
 
     using Tag = vespalib::GenericHeader::Tag;
@@ -248,17 +201,14 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
     e.smallAlign(64);
     e.flush();
     uint32_t headerLen = header.getSize();
-    headerLen += (-headerLen & 7);      // Then to uint64_t
+    headerLen += (-headerLen & 7); // Then to uint64_t
     assert(e.getWriteOffset() == headerLen * 8);
     assert((e.getWriteOffset() & 63) == 0); // Header must be word aligned
 }
 
-
-bool
-Zc4PostingSeqWrite::updateHeader()
-{
+bool Zc4PostingSeqWrite::updateHeader() {
     vespalib::FileHeader h;
-    FastOS_File f;
+    FastOS_File          f;
     f.OpenReadWrite(_file.GetFileName());
     h.readFile(f);
     FileHeaderContext::setFreezeTime(h);
@@ -272,12 +222,8 @@ Zc4PostingSeqWrite::updateHeader()
     return success;
 }
 
-
-bool
-Zc4PostingSeqWrite::open(const std::string &name,
-                         const TuneFileSeqWrite &tuneFileWrite,
-                         const FileHeaderContext &fileHeaderContext)
-{
+bool Zc4PostingSeqWrite::open(const std::string& name, const TuneFileSeqWrite& tuneFileWrite,
+                              const FileHeaderContext& fileHeaderContext) {
     if (tuneFileWrite.getWantSyncWrites()) {
         _file.EnableSyncWrites();
     }
@@ -286,18 +232,17 @@ Zc4PostingSeqWrite::open(const std::string &name,
     }
     bool ok = _file.OpenWriteOnly(name.c_str());
     if (!ok) {
-        LOG(error, "could not open '%s' for writing: %s",
-            _file.GetFileName(), getLastErrorString().c_str());
+        LOG(error, "could not open '%s' for writing: %s", _file.GetFileName(), getLastErrorString().c_str());
         // XXX may need to do something more here, I don't know what...
         return false;
     }
-    auto &writeContext = _writer.get_write_context();
+    auto&    writeContext = _writer.get_write_context();
     uint64_t bufferStartFilePos = writeContext.getBufferStartFilePos();
     assert(bufferStartFilePos == 0);
     _file.SetSize(0);
     writeContext.setFile(&_file);
-    search::ComprBuffer &cb = writeContext;
-    EncodeContext &e = _writer.get_encode_context();
+    search::ComprBuffer& cb = writeContext;
+    EncodeContext&       e = _writer.get_encode_context();
     writeContext.allocComprBuf(65536u, 32768u);
     e.setupWrite(cb);
     // Reset accumulated stats
@@ -306,16 +251,13 @@ Zc4PostingSeqWrite::open(const std::string &name,
     makeHeader(fileHeaderContext);
     // end write initial header
     _writer.on_open();
-    return true;    // Assume success
+    return true; // Assume success
 }
 
-
-bool
-Zc4PostingSeqWrite::close()
-{
+bool Zc4PostingSeqWrite::close() {
     _fileBitSize = _writer.get_encode_context().getWriteOffset();
     _writer.on_close(); // flush and pad
-    auto &writeContext = _writer.get_write_context();
+    auto& writeContext = _writer.get_write_context();
     writeContext.dropComprBuf();
     bool success = _file.Sync();
     success &= _file.Close();
@@ -324,21 +266,14 @@ Zc4PostingSeqWrite::close()
     return success;
 }
 
-void
-Zc4PostingSeqWrite::
-setParams(const PostingListParams &params)
-{
+void Zc4PostingSeqWrite::setParams(const PostingListParams& params) {
     if (_countFile != nullptr) {
         _countFile->setParams(params);
     }
     _writer.set_posting_list_params(params);
 }
 
-
-void
-Zc4PostingSeqWrite::
-getParams(PostingListParams &params)
-{
+void Zc4PostingSeqWrite::getParams(PostingListParams& params) {
     if (_countFile != nullptr) {
         PostingListParams countParams;
         _countFile->getParams(countParams);
@@ -358,27 +293,16 @@ getParams(PostingListParams &params)
     params.set(interleaved_features, _writer.get_encode_interleaved_features());
 }
 
-
-void
-Zc4PostingSeqWrite::
-setFeatureParams(const PostingListParams &params)
-{
+void Zc4PostingSeqWrite::setFeatureParams(const PostingListParams& params) {
     _writer.get_encode_features().setParams(params);
 }
 
-
-void
-Zc4PostingSeqWrite::
-getFeatureParams(PostingListParams &params)
-{
+void Zc4PostingSeqWrite::getFeatureParams(PostingListParams& params) {
     _writer.get_encode_features().getParams(params);
 }
 
-
-ZcPostingSeqWrite::ZcPostingSeqWrite(PostingListCountFileSeqWrite *countFile)
-    : Zc4PostingSeqWrite(countFile)
-{
+ZcPostingSeqWrite::ZcPostingSeqWrite(PostingListCountFileSeqWrite* countFile) : Zc4PostingSeqWrite(countFile) {
     _writer.set_dynamic_k(true);
 }
 
-}
+} // namespace search::diskindex

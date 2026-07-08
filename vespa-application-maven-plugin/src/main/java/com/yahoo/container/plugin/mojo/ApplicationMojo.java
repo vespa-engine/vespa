@@ -1,11 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.mojo;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.IOFileFilter;
-import org.apache.commons.io.filefilter.NameFileFilter;
-import org.apache.commons.io.filefilter.NotFileFilter;
-import org.apache.commons.io.filefilter.OrFileFilter;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.plugin.AbstractMojo;
@@ -21,7 +16,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Tony Vaagenes
@@ -87,7 +85,7 @@ public class ApplicationMojo extends AbstractMojo {
                 throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
         }
 
-        String metaData = String.format("""
+        String metaData = String.format(Locale.ROOT, """
                                         {
                                           "compileVersion": "%s",
                                           "buildTime": %d,
@@ -131,19 +129,29 @@ public class ApplicationMojo extends AbstractMojo {
     private void copyApplicationPackage(File applicationPackage, File applicationDestination) throws MojoExecutionException {
         if (applicationPackage.exists()) {
             try {
-                FileUtils.copyDirectory(applicationPackage, applicationDestination, ignoredFilesFilter());
+                copyDirectory(applicationPackage.toPath(), applicationDestination.toPath(), ignoredFilesFilter());
             } catch (IOException e) {
                 throw new MojoExecutionException("Failed copying applicationPackage", e);
             }
         }
     }
 
+    private static void copyDirectory(Path source, Path destination, FileFilter filter) throws IOException {
+        try (var stream = Files.walk(source)) {
+            for (Path path : (Iterable<Path>) stream::iterator) {
+                if (!filter.accept(path.toFile())) continue;
+                Path target = destination.resolve(source.relativize(path));
+                if (Files.isDirectory(path)) {
+                    Files.createDirectories(target);
+                } else {
+                    Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        }
+    }
+
     static FileFilter ignoredFilesFilter() {
-        var ioFileFilters = IGNORED_FILES.stream()
-                .map(NameFileFilter::new)
-                .map(IOFileFilter.class::cast)
-                .toList();
-        return new NotFileFilter(new OrFileFilter(ioFileFilters));
+        return file -> !IGNORED_FILES.contains(file.getName());
     }
 
     private void copyModuleBundles(File moduleDir, File componentsDir) throws MojoExecutionException {

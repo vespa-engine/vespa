@@ -1,40 +1,43 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/metrics/updatehook.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributor_status.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
+#include <vespa/storage/distributor/distributor_stripe_pool.h>
+#include <vespa/storage/distributor/distributor_stripe_thread.h>
+#include <vespa/storage/distributor/distributor_total_metrics.h>
+#include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
-#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/visitor.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageframework/generic/thread/thread.h>
-#include <tests/distributor/top_level_distributor_test_util.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/test/make_bucket_space.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
-#include <vespa/storage/distributor/distributor_stripe.h>
-#include <vespa/storage/distributor/distributor_status.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/distributor/distributor_total_metrics.h>
-#include <vespa/storage/distributor/distributor_stripe_pool.h>
-#include <vespa/storage/distributor/distributor_stripe_thread.h>
-#include <vespa/storage/config/distributorconfiguration.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/metrics/updatehook.h>
-#include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <gmock/gmock.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
-using document::test::makeDocumentBucket;
-using document::test::makeBucketSpace;
-using document::FixedBucketSpaces;
-using document::BucketSpace;
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <gmock/gmock.h>
+#include <tests/distributor/top_level_distributor_test_util.h>
+
+#include <thread>
+
 using document::Bucket;
 using document::BucketId;
+using document::BucketSpace;
+using document::FixedBucketSpaces;
+using document::test::makeBucketSpace;
+using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
@@ -43,13 +46,9 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
     TopLevelDistributorTest();
     ~TopLevelDistributorTest() override;
 
-    void SetUp() override {
-        create_links();
-    };
+    void SetUp() override { create_links(); };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     void reply_to_1_node_bucket_info_fetch_with_n_buckets(size_t n);
 
@@ -59,11 +58,11 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
     using NodeCount = int;
     using Redundancy = int;
 
-    std::string resolve_stripe_operation_routing(const std::shared_ptr<api::StorageMessage> & msg) {
+    std::string resolve_stripe_operation_routing(const std::shared_ptr<api::StorageMessage>& msg) {
         handle_top_level_message(msg);
 
         vespalib::asciistream posted_msgs;
-        auto stripes = distributor_stripes();
+        auto                  stripes = distributor_stripes();
         for (size_t i = 0; i < stripes.size(); ++i) {
             // TODO less intrusive, this is brittle.
             for (auto& qmsg : stripes[i]->_messageQueue) {
@@ -76,17 +75,11 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
 
     // These indirections exist because TopLevelDistributorTest is friended by TopLevelDistributor,
     // but individual test cases are represented by subclasses that do not share this friendship.
-    StatusReporterDelegate& distributor_status_delegate() {
-        return _distributor->_distributorStatusDelegate;
-    }
+    StatusReporterDelegate& distributor_status_delegate() { return _distributor->_distributorStatusDelegate; }
 
-    framework::TickingThreadPool& distributor_thread_pool() {
-        return _distributor->_threadPool;
-    }
+    framework::TickingThreadPool& distributor_thread_pool() { return _distributor->_threadPool; }
 
-    DistributorHostInfoReporter& distributor_host_info_reporter() {
-        return _distributor->_hostInfoReporter;
-    }
+    DistributorHostInfoReporter& distributor_host_info_reporter() { return _distributor->_hostInfoReporter; }
 
     const std::vector<std::shared_ptr<DistributorStatus>>& distributor_status_todos() {
         return _distributor->_status_to_do;
@@ -96,26 +89,19 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
         return _distributor->per_node_bucket_spaces_stats();
     }
 
-    DistributorGlobalStats distributor_global_stats() {
-        return _distributor->distributor_global_stats();
-    }
+    DistributorGlobalStats distributor_global_stats() { return _distributor->distributor_global_stats(); }
 
-    MinReplicaMap distributor_min_replica_stats() {
-        return _distributor->getMinReplica();
-    }
+    MinReplicaMap distributor_min_replica_stats() { return _distributor->getMinReplica(); }
 
-    MemoryUsageTracker& memory_usage_tracker() {
-        return _distributor->_shared_memory_usage_tracker;
-    }
+    MemoryUsageTracker& memory_usage_tracker() { return _distributor->_shared_memory_usage_tracker; }
 
-    void update_top_level_metrics() {
-        _distributor->update_top_level_metrics();
-    }
+    void update_top_level_metrics() { _distributor->update_top_level_metrics(); }
 
     uint64_t db_sample_interval_sec() const noexcept {
         // Sampling interval is equal across stripes, so just grab the first one and go with it.
         return std::chrono::duration_cast<std::chrono::seconds>(
-                distributor_stripes().front()->db_memory_sample_interval()).count();
+                   distributor_stripes().front()->db_memory_sample_interval())
+            .count();
     }
 
     size_t explicit_node_state_reply_send_invocations() const noexcept {
@@ -123,10 +109,9 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
     }
 
     static std::shared_ptr<api::RemoveCommand> make_dummy_remove_command() {
-        return std::make_shared<api::RemoveCommand>(
-                makeDocumentBucket(document::BucketId(0)),
-                document::DocumentId("id:foo:testdoctype1:n=1:foo"),
-                api::Timestamp(0));
+        return std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)),
+                                                    document::DocumentId("id:foo:testdoctype1:n=1:foo"),
+                                                    api::Timestamp(0));
     }
 
     void assert_single_reply_present_with_return_code(api::ReturnCode::Result expected_result) {
@@ -165,13 +150,9 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
     ContentNodeMessageStatsTracker::NodeStats content_node_message_stats() const {
         return _distributor->content_node_stats();
     }
-
 };
 
-TopLevelDistributorTest::TopLevelDistributorTest()
-    : Test(),
-      TopLevelDistributorTestUtil()
-{
+TopLevelDistributorTest::TopLevelDistributorTest() : Test(), TopLevelDistributorTestUtil() {
 }
 
 TopLevelDistributorTest::~TopLevelDistributorTest() = default;
@@ -179,10 +160,8 @@ TopLevelDistributorTest::~TopLevelDistributorTest() = default;
 TEST_F(TopLevelDistributorTest, external_operation_is_routed_to_expected_stripe) {
     setup_distributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
-    auto op = std::make_shared<api::RemoveCommand>(
-            makeDocumentBucket(document::BucketId()),
-            document::DocumentId("id:m:test:n=1:foo"),
-            api::Timestamp(1234));
+    auto op = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId()),
+                                                   document::DocumentId("id:m:test:n=1:foo"), api::Timestamp(1234));
 
     // We expect stripe mapping to be deterministic.
     EXPECT_EQ("Stripe 2: Remove", resolve_stripe_operation_routing(op));
@@ -211,7 +190,8 @@ TEST_F(TopLevelDistributorTest, distributor_considered_initialized_once_self_obs
     EXPECT_FALSE(_distributor->done_initializing());
     enable_distributor_cluster_state("distributor:1 storage:1"); // We're up :D
     EXPECT_TRUE(_distributor->done_initializing());
-    enable_distributor_cluster_state("distributor:1 .0.s:d storage:1"); // And down again :I but that does not change init state
+    enable_distributor_cluster_state(
+        "distributor:1 .0.s:d storage:1"); // And down again :I but that does not change init state
     EXPECT_TRUE(_distributor->done_initializing());
 }
 
@@ -253,43 +233,39 @@ using namespace framework::defaultimplementation;
 
 class StatusRequestThread : public framework::Runnable {
     StatusReporterDelegate& _reporter;
-    std::string _result;
+    std::string             _result;
+
 public:
-    explicit StatusRequestThread(StatusReporterDelegate& reporter)
-        : _reporter(reporter)
-    {}
+    explicit StatusRequestThread(StatusReporterDelegate& reporter) : _reporter(reporter) {}
     ~StatusRequestThread() override;
     void run(framework::ThreadHandle&) override {
         framework::HttpUrlPath path("/distributor?page=buckets");
-        std::ostringstream stream;
+        std::ostringstream     stream;
         _reporter.reportStatus(stream, path);
         _result = stream.str();
     }
 
-    std::string getResult() const {
-        return _result;
-    }
+    std::string getResult() const { return _result; }
 };
 
 StatusRequestThread::~StatusRequestThread() = default;
 
-}
+} // namespace
 
 TEST_F(TopLevelDistributorTest, tick_aggregates_status_requests_from_all_stripes) {
     setup_distributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
-    ASSERT_NE(stripe_index_of_bucket(document::BucketId(16, 1)),
-              stripe_index_of_bucket(document::BucketId(16, 2)));
+    ASSERT_NE(stripe_index_of_bucket(document::BucketId(16, 1)), stripe_index_of_bucket(document::BucketId(16, 2)));
 
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 1), "0=1/1/1/t");
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 2), "0=2/2/2/t");
 
     // Must go via delegate since reportStatus is now just a rendering
     // function and not a request enqueuer (see Distributor::handleStatusRequest).
-    StatusRequestThread thread(distributor_status_delegate());
-    FakeClock clock;
-    ThreadPoolImpl pool(clock);
-    int ticksBeforeWait = 1;
+    StatusRequestThread   thread(distributor_status_delegate());
+    FakeClock             clock;
+    ThreadPoolImpl        pool(clock);
+    int                   ticksBeforeWait = 1;
     framework::Thread::UP tp(pool.startThread(thread, "statustest", 5ms, 5s, ticksBeforeWait, std::nullopt));
 
     while (true) {
@@ -298,7 +274,6 @@ TEST_F(TopLevelDistributorTest, tick_aggregates_status_requests_from_all_stripes
         if (!distributor_status_todos().empty()) {
             break;
         }
-        
     }
     ASSERT_TRUE(tick());
 
@@ -355,8 +330,9 @@ TEST_F(TopLevelDistributorTest, top_level_bucket_db_updater_are_tracked_by_stati
     setup_distributor(Redundancy(2), NodeCount(2), "version:1 storage:2 .0.s:d distributor:1");
     auto stats_before = content_node_message_stats();
 
-    receive_set_system_state_command("version:2 storage:2 distributor:1"); // node 0 came back up; must send bucket requests
-    tick_top_level_distributor_n_times(1); // Process enqueued message
+    receive_set_system_state_command(
+        "version:2 storage:2 distributor:1"); // node 0 came back up; must send bucket requests
+    tick_top_level_distributor_n_times(1);    // Process enqueued message
 
     auto stats_delta = content_node_message_stats().sparse_subtracted(stats_before);
     ASSERT_TRUE(stats_delta.per_node.contains(0));
@@ -418,7 +394,7 @@ void TopLevelDistributorTest::reply_to_1_node_bucket_info_fetch_with_n_buckets(s
     for (uint32_t i = 0; i < _sender.commands().size(); ++i) {
         ASSERT_EQ(api::MessageType::REQUESTBUCKETINFO, _sender.command(i)->getType());
         auto& bucket_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.command(i));
-        auto reply = bucket_req.makeReply();
+        auto  reply = bucket_req.makeReply();
         if (bucket_req.getBucketSpace() == FixedBucketSpaces::default_space()) {
             auto& bucket_reply = dynamic_cast<api::RequestBucketInfoReply&>(*reply);
             for (size_t j = 1; j <= n; ++j) {
@@ -453,9 +429,10 @@ TEST_F(TopLevelDistributorTest, cluster_state_lifecycle_is_propagated_to_stripes
             EXPECT_FALSE(s->getBucketSpaceRepo().get(space).has_pending_cluster_state());
         }
         auto& def_space = s->getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space());
-        def_space.getBucketDatabase().acquire_read_guard()->for_each([&](uint64_t key, [[maybe_unused]] const auto& entry) {
-           inserted_buckets.emplace_back(document::BucketId::keyToBucketId(key));
-        });
+        def_space.getBucketDatabase().acquire_read_guard()->for_each(
+            [&](uint64_t key, [[maybe_unused]] const auto& entry) {
+                inserted_buckets.emplace_back(document::BucketId::keyToBucketId(key));
+            });
     }
     // All buckets should be present. We track as vectors rather than sets to detect any cross-stripe duplicates.
     std::vector<document::BucketId> expected_buckets;
@@ -524,10 +501,8 @@ TEST_F(TopLevelDistributorTest, non_bootstrap_host_info_send_request_delays_send
 
 namespace {
 
-void assert_invalid_bucket_stats_for_all_spaces(
-        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats,
-        uint16_t node_index)
-{
+void assert_invalid_bucket_stats_for_all_spaces(const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats,
+                                                uint16_t node_index) {
     auto stats_iter = stats.find(node_index);
     ASSERT_TRUE(stats_iter != stats.cend());
     ASSERT_EQ(2, stats_iter->second.size());
@@ -539,13 +514,13 @@ void assert_invalid_bucket_stats_for_all_spaces(
     ASSERT_FALSE(space_iter->second.valid());
 }
 
-void assert_min_replica_stats_zeroed(const MinReplicaMap & stats, uint16_t node_index) {
+void assert_min_replica_stats_zeroed(const MinReplicaMap& stats, uint16_t node_index) {
     auto iter = stats.find(node_index);
     ASSERT_TRUE(iter != stats.cend());
     EXPECT_EQ(iter->second, 0);
 }
 
-}
+} // namespace
 
 TEST_F(TopLevelDistributorTest, entering_recovery_mode_resets_bucket_space_and_min_replica_stats_across_all_stripes) {
     // Set up a cluster state + DB contents which implies merge maintenance ops
@@ -602,8 +577,7 @@ TEST_F(TopLevelDistributorTest, leaving_recovery_mode_immediately_sends_getnodes
     ASSERT_EQ(0, explicit_node_state_reply_send_invocations());
     // Add a couple of buckets so we have something to iterate over. 2 buckets
     // map to the same stripe so we'll need 2 ticks to complete a full scan.
-    ASSERT_EQ(stripe_index_of_bucket(document::BucketId(16, 1)),
-              stripe_index_of_bucket(document::BucketId(16, 5)));
+    ASSERT_EQ(stripe_index_of_bucket(document::BucketId(16, 1)), stripe_index_of_bucket(document::BucketId(16, 5)));
 
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 1), "0=1/1/1/t/a");
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 2), "0=1/1/1/t/a");
@@ -673,7 +647,8 @@ TEST_F(TopLevelDistributorTest, configured_maintenance_safe_time_point_inhibitio
     ASSERT_NO_FATAL_FAILURE(assert_all_stripes_are_maintenance_inhibited(false));
 }
 
-TEST_F(TopLevelDistributorTest, maintenance_safe_time_not_triggered_if_state_transition_does_not_have_ownership_transfer) {
+TEST_F(TopLevelDistributorTest,
+       maintenance_safe_time_not_triggered_if_state_transition_does_not_have_ownership_transfer) {
     setup_distributor(Redundancy(2), NodeCount(2), "storage:1 distributor:2");
     fake_clock().setAbsoluteTimeInSeconds(1000);
 
@@ -765,13 +740,13 @@ TEST_F(TopLevelDistributorTest, memory_usage_is_propagated_to_dedicated_metric) 
         MemoryUsageToken t2(memory_usage_tracker(), 10000);
     }
     EXPECT_EQ(memory_usage_tracker().bytes_total(), 54321);
-    EXPECT_EQ(memory_usage_tracker().max_observed_bytes(), 54321+10000);
+    EXPECT_EQ(memory_usage_tracker().max_observed_bytes(), 54321 + 10000);
     update_top_level_metrics();
     EXPECT_EQ(total_distributor_metrics().mutatating_op_memory_usage.getCount(), 1);
     EXPECT_EQ(total_distributor_metrics().mutatating_op_memory_usage.getLast(), 54321);
-    EXPECT_EQ(total_distributor_metrics().mutatating_op_memory_usage.getMaximum(), 54321+10000);
+    EXPECT_EQ(total_distributor_metrics().mutatating_op_memory_usage.getMaximum(), 54321 + 10000);
     // Sampling is destructive for max memory usage within period
     EXPECT_EQ(memory_usage_tracker().max_observed_bytes(), 0);
 }
 
-}
+} // namespace storage::distributor

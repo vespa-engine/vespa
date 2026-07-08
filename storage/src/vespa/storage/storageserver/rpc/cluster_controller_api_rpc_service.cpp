@@ -1,15 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "cluster_controller_api_rpc_service.h"
+
 #include "shared_rpc_resources.h"
 #include "slime_cluster_state_bundle_codec.h"
+
+#include <vespa/fnet/frt/require_capabilities.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/storage/storageserver/communicationmanager.h>
 #include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/fnet/frt/supervisor.h>
-#include <vespa/fnet/frt/require_capabilities.h>
-#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -18,12 +20,9 @@ LOG_SETUP(".storage.cluster_controller_api_rpc_service");
 
 namespace storage::rpc {
 
-ClusterControllerApiRpcService::ClusterControllerApiRpcService(
-        MessageDispatcher& message_dispatcher,
-        SharedRpcResources& rpc_resources)
-    : _message_dispatcher(message_dispatcher),
-      _closed(false)
-{
+ClusterControllerApiRpcService::ClusterControllerApiRpcService(MessageDispatcher&  message_dispatcher,
+                                                               SharedRpcResources& rpc_resources)
+    : _message_dispatcher(message_dispatcher), _closed(false) {
     register_server_methods(rpc_resources);
 }
 
@@ -36,15 +35,17 @@ void ClusterControllerApiRpcService::close() {
 namespace {
 
 std::unique_ptr<FRT_RequireCapabilities> make_cc_api_capability_filter() {
-    return FRT_RequireCapabilities::of(vespalib::net::tls::Capability::content_cluster_controller_internal_state_api());
+    return FRT_RequireCapabilities::of(
+        vespalib::net::tls::Capability::content_cluster_controller_internal_state_api());
 }
 
-}
+} // namespace
 
 void ClusterControllerApiRpcService::register_server_methods(SharedRpcResources& rpc_resources) {
     FRT_ReflectionBuilder rb(&rpc_resources.supervisor());
 
-    rb.DefineMethod("getnodestate3", "sii", "ss", FRT_METHOD(ClusterControllerApiRpcService::RPC_getNodeState2), this);
+    rb.DefineMethod("getnodestate3", "sii", "ss", FRT_METHOD(ClusterControllerApiRpcService::RPC_getNodeState2),
+                    this);
     rb.RequestAccessFilter(make_cc_api_capability_filter());
     rb.MethodDesc("Get state of this node");
     rb.ParamDesc("nodestate", "Expected state of given node. If correct, the "
@@ -63,29 +64,30 @@ void ClusterControllerApiRpcService::register_server_methods(SharedRpcResources&
     rb.ParamDesc("timeout", "Timeout of message in milliseconds, set by the state requester");
     rb.ReturnDesc("nodestate", "State string for this node");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("setsystemstate2", "s", "", FRT_METHOD(ClusterControllerApiRpcService::RPC_setSystemState2), this);
+    rb.DefineMethod("setsystemstate2", "s", "", FRT_METHOD(ClusterControllerApiRpcService::RPC_setSystemState2),
+                    this);
     rb.RequestAccessFilter(make_cc_api_capability_filter());
     rb.MethodDesc("Set systemstate on this node");
     rb.ParamDesc("systemstate", "New systemstate to set");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("setdistributionstates", "bix", "", FRT_METHOD(ClusterControllerApiRpcService::RPC_setDistributionStates), this);
+    rb.DefineMethod("setdistributionstates", "bix", "",
+                    FRT_METHOD(ClusterControllerApiRpcService::RPC_setDistributionStates), this);
     rb.RequestAccessFilter(make_cc_api_capability_filter());
     rb.MethodDesc("Set distribution states for cluster and bucket spaces");
     rb.ParamDesc("compressionType", "Compression type for payload");
     rb.ParamDesc("uncompressedSize", "Uncompressed size for payload");
     rb.ParamDesc("payload", "Binary Slime format payload");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("activate_cluster_state_version", "i", "i", FRT_METHOD(ClusterControllerApiRpcService::RPC_activateClusterStateVersion), this);
+    rb.DefineMethod("activate_cluster_state_version", "i", "i",
+                    FRT_METHOD(ClusterControllerApiRpcService::RPC_activateClusterStateVersion), this);
     rb.RequestAccessFilter(make_cc_api_capability_filter());
     rb.MethodDesc("Explicitly activates an already prepared cluster state version");
     rb.ParamDesc("activate_version", "Expected cluster state version to activate");
     rb.ReturnDesc("actual_version", "Cluster state version that was prepared on the node prior to receiving RPC");
 }
 
-void ClusterControllerApiRpcService::detach_and_forward_to_enqueuer(
-        std::shared_ptr<api::StorageMessage> cmd,
-        FRT_RPCRequest* req)
-{
+void ClusterControllerApiRpcService::detach_and_forward_to_enqueuer(std::shared_ptr<api::StorageMessage> cmd,
+                                                                    FRT_RPCRequest*                      req) {
     // Create a request object to avoid needing a separate transport type
     cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
     req->Detach();
@@ -99,12 +101,10 @@ void ClusterControllerApiRpcService::RPC_getNodeState2(FRT_RPCRequest* req) {
         return;
     }
 
-    std::string expected(req->GetParams()->GetValue(0)._string._str,
-                              req->GetParams()->GetValue(0)._string._len);
+    std::string expected(req->GetParams()->GetValue(0)._string._str, req->GetParams()->GetValue(0)._string._len);
 
-    auto cmd = std::make_shared<api::GetNodeStateCommand>(expected != "unknown"
-                                                          ? std::make_unique<lib::NodeState>(expected)
-                                                          : std::unique_ptr<lib::NodeState>());
+    auto cmd = std::make_shared<api::GetNodeStateCommand>(
+        expected != "unknown" ? std::make_unique<lib::NodeState>(expected) : std::unique_ptr<lib::NodeState>());
 
     cmd->setPriority(api::StorageMessage::VERYHIGH);
     cmd->setTimeout(std::chrono::milliseconds(req->GetParams()->GetValue(1)._intval32));
@@ -120,8 +120,8 @@ void ClusterControllerApiRpcService::RPC_setSystemState2(FRT_RPCRequest* req) {
         req->SetError(RPCRequestWrapper::ERR_NODE_SHUTTING_DOWN, "Node shutting down");
         return;
     }
-    std::string systemStateStr(req->GetParams()->GetValue(0)._string._str,
-                                    req->GetParams()->GetValue(0)._string._len);
+    std::string       systemStateStr(req->GetParams()->GetValue(0)._string._str,
+                                     req->GetParams()->GetValue(0)._string._len);
     lib::ClusterState systemState(systemStateStr);
 
     auto bundle = std::make_shared<const lib::ClusterStateBundle>(systemState);
@@ -137,20 +137,21 @@ std::shared_ptr<const lib::ClusterStateBundle> decode_bundle_from_params(const F
     const uint32_t uncompressed_length = params[1]._intval32;
     if (uncompressed_length > ClusterControllerApiRpcService::StateBundleMaxUncompressedSize) {
         throw std::range_error(vespalib::make_string("RPC ClusterStateBundle uncompressed size (%u) is "
-                                                     "greater than max size (%u)", uncompressed_length,
+                                                     "greater than max size (%u)",
+                                                     uncompressed_length,
                                                      ClusterControllerApiRpcService::StateBundleMaxUncompressedSize));
     }
     SlimeClusterStateBundleCodec codec;
-    EncodedClusterStateBundle encoded_bundle;
+    EncodedClusterStateBundle    encoded_bundle;
     encoded_bundle._compression_type = vespalib::compression::CompressionConfig::toType(params[0]._intval8);
     encoded_bundle._uncompressed_length = uncompressed_length;
     // Caution: type cast to const ptr is essential or DataBuffer behavior changes!
-    encoded_bundle._buffer = std::make_unique<vespalib::DataBuffer>(
-            static_cast<const char*>(params[2]._data._buf), params[2]._data._len);
+    encoded_bundle._buffer =
+        std::make_unique<vespalib::DataBuffer>(static_cast<const char*>(params[2]._data._buf), params[2]._data._len);
     return codec.decode(encoded_bundle);
 }
 
-}
+} // namespace
 
 void ClusterControllerApiRpcService::RPC_setDistributionStates(FRT_RPCRequest* req) {
     if (_closed) {
@@ -182,7 +183,7 @@ void ClusterControllerApiRpcService::RPC_activateClusterStateVersion(FRT_RPCRequ
     }
 
     const uint32_t activate_version = req->GetParams()->GetValue(0)._intval32;
-    auto cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(activate_version);
+    auto           cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(activate_version);
     cmd->setPriority(api::StorageMessage::VERYHIGH);
 
     LOG(debug, "Got state activation request for version %u", activate_version);
@@ -190,4 +191,4 @@ void ClusterControllerApiRpcService::RPC_activateClusterStateVersion(FRT_RPCRequ
     detach_and_forward_to_enqueuer(std::move(cmd), req);
 }
 
-}
+} // namespace storage::rpc

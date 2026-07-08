@@ -13,19 +13,16 @@ namespace proton {
  * The FeedHandler is typically acting as a handler to do
  * heart beating on its underlying components.
  */
-class HeartBeatJob : public IMaintenanceJob
-{
+class HeartBeatJob : public IMaintenanceJob {
 private:
-    IHeartBeatHandler &_handler;
+    IHeartBeatHandler& _handler;
 
 public:
-    HeartBeatJob(IHeartBeatHandler &handler,
-                 const DocumentDBHeartBeatConfig &config);
+    HeartBeatJob(IHeartBeatHandler& handler, const DocumentDBHeartBeatConfig& config);
 
     // Implements IMaintenanceJob
     bool run() override;
-    void onStop() override { }
+    void onStop() override {}
 };
 
 } // namespace proton
-

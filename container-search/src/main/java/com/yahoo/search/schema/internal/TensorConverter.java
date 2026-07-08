@@ -7,11 +7,13 @@ import com.yahoo.language.process.InvocationContext;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Text;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,6 +23,8 @@ import java.util.regex.Pattern;
  * @author bratseth
  */
 public class TensorConverter {
+
+    private static final Logger log = Logger.getLogger(TensorConverter.class.getName());
 
     private static final Pattern embedderArgumentAndQuotedTextRegexp = Pattern.compile("^([A-Za-z0-9_@\\-.]+),\\s*([\"'].*[\"'])");
     private static final Pattern embedderArgumentAndReferenceRegexp = Pattern.compile("^([A-Za-z0-9_@\\-.]+),\\s*(@.*)");
@@ -87,7 +91,19 @@ public class TensorConverter {
             embedderId = entry.getKey();
             embedder = entry.getValue();
         }
-        return embedder.embed(resolve(argument, contextValues, properties), embedderContext.copy().setEmbedderId(embedderId), type);
+        var text = resolve(argument, contextValues, properties);
+
+        // Return zero tensor for empty input text as some embedder implementations does support blank or empty strings.
+        // A zero vector might be close to a document embedding with a completely different semantic meaning.
+        // Ideally we should include an additional annotation in the query to indicate empty input.
+        // The likelihood of searching on an empty input text is low, so this is an acceptable workaround.
+        if (text.isBlank()) {
+            log.fine(() ->
+                    Text.format("Input text is blank, returning zero tensor of type %s using embedder '%s'", type, embedderId));
+            return Tensor.generate(type, __ -> 0.0);
+        }
+
+        return embedder.embed(text, embedderContext.copy().setEmbedderId(embedderId), type);
     }
 
     private Embedder requireEmbedder(String embedderId) {

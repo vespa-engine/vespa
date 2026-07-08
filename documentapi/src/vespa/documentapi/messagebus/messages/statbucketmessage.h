@@ -2,6 +2,7 @@
 #pragma once
 
 #include "documentmessage.h"
+
 #include <vespa/document/bucket/bucketid.h>
 
 namespace documentapi {
@@ -9,8 +10,8 @@ namespace documentapi {
 class StatBucketMessage : public DocumentMessage {
 private:
     document::BucketId _bucketId;
-    string _documentSelection;
-    string _bucketSpace;
+    string             _documentSelection;
+    string             _bucketSpace;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -50,7 +51,7 @@ public:
      *
      * @return The selection string.
      */
-    const string &getDocumentSelection() const { return _documentSelection; };
+    const string& getDocumentSelection() const { return _documentSelection; };
 
     /**
      * Sets the document selection used to filter the documents returned.
@@ -59,10 +60,10 @@ public:
      */
     void setDocumentSelection(string value) { _documentSelection = std::move(value); };
 
-    const string &getBucketSpace() const { return _bucketSpace; }
+    const string& getBucketSpace() const { return _bucketSpace; }
     void setBucketSpace(string value) { _bucketSpace = std::move(value); }
     uint32_t getType() const override;
     string toString() const override { return "statbucketmessage"; }
 };
 
-}
+} // namespace documentapi

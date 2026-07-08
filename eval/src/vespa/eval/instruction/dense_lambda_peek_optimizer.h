@@ -12,7 +12,7 @@ namespace vespalib::eval {
  * wide area of operations (reshape, gather, slice).
  **/
 struct DenseLambdaPeekOptimizer {
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-}
+} // namespace vespalib::eval

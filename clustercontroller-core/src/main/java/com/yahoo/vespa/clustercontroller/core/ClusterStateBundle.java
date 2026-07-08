@@ -2,9 +2,11 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -319,19 +321,19 @@ public class ClusterStateBundle {
     @Override
     public String toString() {
         String feedBlockedStr = clusterFeedIsBlocked()
-                ? String.format(", feed blocked: '%s'", feedBlock.description)
+                ? Text.format(", feed blocked: '%s'", feedBlock.description)
                 : "";
         String distributionConfigStr = (distributionConfig != null)
-                ? ", distribution config: %s".formatted(distributionConfig.highLevelDescription())
+                ? Text.format(", distribution config: %s", distributionConfig.highLevelDescription())
                 : "";
         if (derivedBucketSpaceStates.isEmpty()) {
-            return String.format("ClusterStateBundle('%s'%s%s%s)", baselineState,
+            return Text.format("ClusterStateBundle('%s'%s%s%s)", baselineState,
                     deferredActivation ? " (deferred activation)" : "",
                     feedBlockedStr, distributionConfigStr);
         }
         Map<String, AnnotatedClusterState> orderedStates = new TreeMap<>(derivedBucketSpaceStates);
-        return String.format("ClusterStateBundle('%s', %s%s%s%s)", baselineState, orderedStates.entrySet().stream()
-                .map(e -> String.format("%s '%s'", e.getKey(), e.getValue()))
+        return Text.format("ClusterStateBundle('%s', %s%s%s%s)", baselineState, orderedStates.entrySet().stream()
+                .map(e -> Text.format("%s '%s'", e.getKey(), e.getValue()))
                 .collect(Collectors.joining(", ")),
                 deferredActivation ? " (deferred activation)" : "",
                 feedBlockedStr, distributionConfigStr);

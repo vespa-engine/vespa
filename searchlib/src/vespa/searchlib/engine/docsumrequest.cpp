@@ -4,19 +4,13 @@
 
 namespace search::engine {
 
-DocsumRequest::DocsumRequest()
-    : DocsumRequest(RelativeTime(std::make_unique<SteadyClock>()))
-{
+DocsumRequest::DocsumRequest() : DocsumRequest(RelativeTime(std::make_unique<SteadyClock>())) {
 }
 
 DocsumRequest::DocsumRequest(RelativeTime relativeTime)
-    : Request(std::move(relativeTime)),
-      resultClassName(),
-      hits(),
-      _fields()
-{
+    : Request(std::move(relativeTime)), resultClassName(), hits(), _fields() {
 }
 
 DocsumRequest::~DocsumRequest() = default;
 
-}
+} // namespace search::engine

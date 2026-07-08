@@ -9,8 +9,7 @@ namespace proton {
 /*
  * Metrics for commits during feeding within a document db.
  */
-struct DocumentDBCommitMetrics : metrics::MetricSet
-{
+struct DocumentDBCommitMetrics : metrics::MetricSet {
     metrics::DoubleAverageMetric operations;
     metrics::DoubleAverageMetric latency;
 
@@ -18,4 +17,4 @@ struct DocumentDBCommitMetrics : metrics::MetricSet
     ~DocumentDBCommitMetrics() override;
 };
 
-}
+} // namespace proton

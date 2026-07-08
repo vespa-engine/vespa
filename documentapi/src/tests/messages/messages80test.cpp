@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "message_fixture.h"
+
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -10,6 +11,7 @@
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vespalib/util/casts.h>
 #include <vespa/vespalib/util/featureset.h>
+
 #include <array>
 
 using document::DataType;
@@ -20,17 +22,19 @@ namespace documentapi {
 
 // This is not version-dependent
 TEST(MessagesTest, concrete_types_have_expected_sizes) {
-    EXPECT_EQ(sizeof(GetDocumentMessage),    sizeof(DocumentMessage) + sizeof(document::DocumentId) + sizeof(std::string) + sizeof(std::optional<uint16_t>) + /* padding */ 4);
-    EXPECT_EQ(sizeof(GetDocumentReply),      128u);
-    EXPECT_EQ(sizeof(TestAndSetCondition),   sizeof(std::string) + sizeof(uint64_t));
-    EXPECT_EQ(sizeof(DocumentMessage),       112u);
-    EXPECT_EQ(sizeof(TestAndSetMessage),     sizeof(TestAndSetCondition) + sizeof(DocumentMessage));
-    EXPECT_EQ(sizeof(PutDocumentMessage),    sizeof(TestAndSetMessage) + 40);
-    EXPECT_EQ(sizeof(WriteDocumentReply),    112u);
-    EXPECT_EQ(sizeof(UpdateDocumentReply),   120u);
+    EXPECT_EQ(sizeof(GetDocumentMessage), sizeof(DocumentMessage) + sizeof(document::DocumentId) +
+                                              sizeof(std::string) + sizeof(std::optional<uint16_t>) +
+                                              /* padding */ 4);
+    EXPECT_EQ(sizeof(GetDocumentReply), 128u);
+    EXPECT_EQ(sizeof(TestAndSetCondition), sizeof(std::string) + sizeof(uint64_t));
+    EXPECT_EQ(sizeof(DocumentMessage), 112u);
+    EXPECT_EQ(sizeof(TestAndSetMessage), sizeof(TestAndSetCondition) + sizeof(DocumentMessage));
+    EXPECT_EQ(sizeof(PutDocumentMessage), sizeof(TestAndSetMessage) + 40);
+    EXPECT_EQ(sizeof(WriteDocumentReply), 112u);
+    EXPECT_EQ(sizeof(UpdateDocumentReply), 120u);
     EXPECT_EQ(sizeof(UpdateDocumentMessage), sizeof(TestAndSetMessage) + 40);
     EXPECT_EQ(sizeof(RemoveDocumentMessage), sizeof(TestAndSetMessage) + 48 + sizeof(std::string));
-    EXPECT_EQ(sizeof(RemoveDocumentReply),   120u);
+    EXPECT_EQ(sizeof(RemoveDocumentReply), 120u);
 }
 
 struct Messages80Test : MessageFixture {
@@ -42,7 +46,8 @@ struct Messages80Test : MessageFixture {
 
     void try_visitor_reply(const std::string& filename, uint32_t type);
 
-    void check_update_create_flag(uint32_t lang, const std::string& name, bool expected_create, bool expected_cached) {
+    void check_update_create_flag(uint32_t lang, const std::string& name, bool expected_create,
+                                  bool expected_cached) {
         auto obj = deserialize(name, DocumentProtocol::MESSAGE_UPDATEDOCUMENT, lang);
         ASSERT_TRUE(obj);
         auto& msg = dynamic_cast<UpdateDocumentMessage&>(*obj);
@@ -56,22 +61,21 @@ namespace {
 std::vector<char> doc1_mf_data{'H', 'i'};
 std::vector<char> doc2_mf_data{'T', 'h', 'e', 'r', 'e'};
 
-}
+} // namespace
 
 namespace {
 
-document::Document::SP
-createDoc(const DocumentTypeRepo& repo, const string& type_name, const string& id) {
+document::Document::SP createDoc(const DocumentTypeRepo& repo, const string& type_name, const string& id) {
     return std::make_shared<document::Document>(repo, *repo.getDocumentType(type_name), document::DocumentId(id));
 }
 
 std::vector<std::pair<std::string, TestAndSetCondition>> tas_conditions() {
-    return {{"cond-only",   TestAndSetCondition("There's just one condition")},
-            {"ts-only",     TestAndSetCondition(0x1badcafef000000dULL)},
+    return {{"cond-only", TestAndSetCondition("There's just one condition")},
+            {"ts-only", TestAndSetCondition(0x1badcafef000000dULL)},
             {"cond-and-ts", TestAndSetCondition(0x1badcafef000000dULL, "There's just one condition")}};
 }
 
-}
+} // namespace
 
 TEST_F(Messages80Test, get_document_message) {
     GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
@@ -87,7 +91,7 @@ TEST_F(Messages80Test, get_document_message) {
 }
 
 TEST_F(Messages80Test, get_reply_with_doc) {
-    auto doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
+    auto             doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
     GetDocumentReply tmp(doc);
     tmp.setLastModified(1234567);
 
@@ -120,7 +124,7 @@ TEST_F(Messages80Test, empty_get_reply) {
 }
 
 TEST_F(Messages80Test, put_document_message) {
-    auto doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
+    auto               doc = createDoc(type_repo(), "testdoc", "id:ns:testdoc::");
     PutDocumentMessage msg(doc);
 
     msg.setTimestamp(666);
@@ -132,7 +136,7 @@ TEST_F(Messages80Test, put_document_message) {
     for (auto lang : languages()) {
         auto routableUp = deserialize("PutDocumentMessage", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang);
         ASSERT_TRUE(routableUp);
-        auto& deserializedMsg = dynamic_cast<PutDocumentMessage &>(*routableUp);
+        auto& deserializedMsg = dynamic_cast<PutDocumentMessage&>(*routableUp);
         EXPECT_EQ(deserializedMsg.getDocument().getType().getName(), msg.getDocument().getType().getName());
         EXPECT_EQ(deserializedMsg.getDocument().getId().toString(), msg.getDocument().getId().toString());
         EXPECT_EQ(deserializedMsg.getTimestamp(), msg.getTimestamp());
@@ -187,11 +191,13 @@ TEST_F(Messages80Test, put_document_reply) {
 }
 
 TEST_F(Messages80Test, update_document_message) {
-    const DocumentTypeRepo& repo = type_repo();
+    const DocumentTypeRepo&       repo = type_repo();
     const document::DocumentType& docType = *repo.getDocumentType("testdoc");
 
-    auto doc_update = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
-    doc_update->addFieldPathUpdate(std::make_unique<document::RemoveFieldPathUpdate>("intfield", "testdoc.intfield > 0"));
+    auto doc_update =
+        std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
+    doc_update->addFieldPathUpdate(
+        std::make_unique<document::RemoveFieldPathUpdate>("intfield", "testdoc.intfield > 0"));
 
     UpdateDocumentMessage msg(std::move(doc_update));
     msg.setOldTimestamp(666u);
@@ -216,18 +222,20 @@ TEST_F(Messages80Test, update_create_if_missing_flag_can_be_read_from_legacy_upd
     // Legacy binary files were created _prior_ to the create_if_missing flag being
     // written as part of the serialization process.
     for (auto lang : languages()) {
-        check_update_create_flag(lang, "UpdateDocumentMessage-legacy-no-create-if-missing",   false, false);
-        check_update_create_flag(lang, "UpdateDocumentMessage-legacy-with-create-if-missing", true,  false);
+        check_update_create_flag(lang, "UpdateDocumentMessage-legacy-no-create-if-missing", false, false);
+        check_update_create_flag(lang, "UpdateDocumentMessage-legacy-with-create-if-missing", true, false);
     }
 }
 
 TEST_F(Messages80Test, update_create_if_missing_flag_is_propagated) {
-    const DocumentTypeRepo& repo = type_repo();
+    const DocumentTypeRepo&       repo = type_repo();
     const document::DocumentType& docType = *repo.getDocumentType("testdoc");
 
     auto make_update_msg = [&](bool create_if_missing, bool cache_flag) {
-        auto doc_update = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
-        doc_update->addFieldPathUpdate(std::make_unique<document::RemoveFieldPathUpdate>("intfield", "testdoc.intfield > 0"));
+        auto doc_update =
+            std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
+        doc_update->addFieldPathUpdate(
+            std::make_unique<document::RemoveFieldPathUpdate>("intfield", "testdoc.intfield > 0"));
         doc_update->setCreateIfNonExistent(create_if_missing);
         auto msg = std::make_shared<UpdateDocumentMessage>(std::move(doc_update));
         msg->setOldTimestamp(666u);
@@ -239,19 +247,19 @@ TEST_F(Messages80Test, update_create_if_missing_flag_is_propagated) {
         return msg;
     };
 
-    serialize("UpdateDocumentMessage-no-create-if-missing",   *make_update_msg(false, true));
-    serialize("UpdateDocumentMessage-with-create-if-missing", *make_update_msg(true,  true));
+    serialize("UpdateDocumentMessage-no-create-if-missing", *make_update_msg(false, true));
+    serialize("UpdateDocumentMessage-with-create-if-missing", *make_update_msg(true, true));
 
     for (auto lang : languages()) {
-        check_update_create_flag(lang, "UpdateDocumentMessage-no-create-if-missing",   false, true);
-        check_update_create_flag(lang, "UpdateDocumentMessage-with-create-if-missing", true,  true);
+        check_update_create_flag(lang, "UpdateDocumentMessage-no-create-if-missing", false, true);
+        check_update_create_flag(lang, "UpdateDocumentMessage-with-create-if-missing", true, true);
     }
     // The Java protocol implementation always serializes with a cached create-flag,
     // but the C++ side does it conditionally. So these files are only checked for C++.
-    serialize("UpdateDocumentMessage-no-create-if-missing-uncached",   *make_update_msg(false, false));
-    serialize("UpdateDocumentMessage-with-create-if-missing-uncached", *make_update_msg(true,  false));
-    check_update_create_flag(LANG_CPP, "UpdateDocumentMessage-no-create-if-missing-uncached",   false, false);
-    check_update_create_flag(LANG_CPP, "UpdateDocumentMessage-with-create-if-missing-uncached", true,  false);
+    serialize("UpdateDocumentMessage-no-create-if-missing-uncached", *make_update_msg(false, false));
+    serialize("UpdateDocumentMessage-with-create-if-missing-uncached", *make_update_msg(true, false));
+    check_update_create_flag(LANG_CPP, "UpdateDocumentMessage-no-create-if-missing-uncached", false, false);
+    check_update_create_flag(LANG_CPP, "UpdateDocumentMessage-with-create-if-missing-uncached", true, false);
 }
 
 TEST_F(Messages80Test, update_document_reply) {
@@ -280,7 +288,7 @@ TEST_F(Messages80Test, remove_document_message) {
     for (auto lang : languages()) {
         auto obj = deserialize("RemoveDocumentMessage", DocumentProtocol::MESSAGE_REMOVEDOCUMENT, lang);
         ASSERT_TRUE(obj);
-        auto& ref = dynamic_cast<RemoveDocumentMessage &>(*obj);
+        auto& ref = dynamic_cast<RemoveDocumentMessage&>(*obj);
         EXPECT_EQ(ref.getDocumentId().toString(), "id:ns:testdoc::");
         EXPECT_EQ(ref.getCondition(), msg.getCondition());
         EXPECT_EQ(ref.persisted_timestamp(), 0x1badcafef000000dULL);
@@ -305,8 +313,8 @@ TEST_F(Messages80Test, remove_document_reply) {
 
 TEST_F(Messages80Test, remove_location_message) {
     document::BucketIdFactory factory;
-    document::select::Parser parser(type_repo(), factory);
-    RemoveLocationMessage msg(factory, parser, "id.group == \"mygroup\"");
+    document::select::Parser  parser(type_repo(), factory);
+    RemoveLocationMessage     msg(factory, parser, "id.group == \"mygroup\"");
     msg.setBucketSpace("bjarne");
     serialize("RemoveLocationMessage", msg);
 
@@ -431,7 +439,7 @@ TEST_F(Messages80Test, map_visitor_reply) {
 }
 
 TEST_F(Messages80Test, query_result_message) {
-    QueryResultMessage srm;
+    QueryResultMessage    srm;
     vdslib::SearchResult& sr(srm.getSearchResult());
     EXPECT_EQ(srm.getSequenceId(), 0u);
     EXPECT_EQ(sr.getHitCount(), 0u);
@@ -445,7 +453,7 @@ TEST_F(Messages80Test, query_result_message) {
     {
         auto routable = deserialize("QueryResultMessage-1", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
         ASSERT_TRUE(routable);
-        auto& dm = dynamic_cast<QueryResultMessage&>(*routable);
+        auto&                 dm = dynamic_cast<QueryResultMessage&>(*routable);
         vdslib::SearchResult& dr = dm.getSearchResult();
         EXPECT_EQ(dm.getSequenceId(), size_t(0));
         EXPECT_EQ(dr.getHitCount(), size_t(0));
@@ -455,7 +463,7 @@ TEST_F(Messages80Test, query_result_message) {
     sr.addHit(1, "doc17", 109);
     serialize("QueryResultMessage-2", srm);
 
-    const char* doc_id;
+    const char*                    doc_id;
     vdslib::SearchResult::RankType rank;
 
     {
@@ -489,7 +497,7 @@ TEST_F(Messages80Test, query_result_message) {
         EXPECT_EQ(strcmp("doc1", doc_id), 0);
     }
 
-    QueryResultMessage srm2;
+    QueryResultMessage    srm2;
     vdslib::SearchResult& sr2(srm2.getSearchResult());
     sr2.addHit(0, "doc1", 89, "sortdata2", 9);
     sr2.addHit(1, "doc17", 109, "sortdata1", 9);
@@ -515,7 +523,7 @@ TEST_F(Messages80Test, query_result_message) {
 
     sr2.sort();
     const void* buf;
-    size_t sz;
+    size_t      sz;
     sr2.getHit(0, doc_id, rank);
     sr2.getSortBlob(0, buf, sz);
     EXPECT_EQ(sz, 9u);
@@ -563,7 +571,7 @@ TEST_F(Messages80Test, query_result_message) {
     }
 
     QueryResultMessage qrm3;
-    auto& sr3 = qrm3.getSearchResult();
+    auto&              sr3 = qrm3.getSearchResult();
     sr3.addHit(0, "doc1", 5);
     sr3.addHit(1, "doc2", 7);
     FeatureValues mf;
@@ -604,7 +612,7 @@ TEST_F(Messages80Test, query_result_message) {
         EXPECT_EQ(mf_names[1], "bar");
     }
     QueryResultMessage qrm4;
-    auto& sr4 = qrm4.getSearchResult();
+    auto&              sr4 = qrm4.getSearchResult();
     sr4.set_errors(std::vector<std::string>{"hello", "world!"});
     sr4.sort();
     serialize("QueryResultMessage-7", qrm4);
@@ -616,7 +624,6 @@ TEST_F(Messages80Test, query_result_message) {
         EXPECT_EQ(dr.getHitCount(), size_t(0));
         EXPECT_EQ((std::vector<std::string>{"hello", "world!"}), dr.get_errors());
     }
-
 }
 
 TEST_F(Messages80Test, query_result_reply) {
@@ -650,9 +657,9 @@ TEST_F(Messages80Test, visitor_info_reply) {
 }
 
 TEST_F(Messages80Test, document_list_message) {
-    auto doc = createDoc(type_repo(), "testdoc", "id:scheme:testdoc:n=1234:1");
+    auto                       doc = createDoc(type_repo(), "testdoc", "id:scheme:testdoc:n=1234:1");
     DocumentListMessage::Entry entry(1234, std::move(doc), true);
-    DocumentListMessage tmp(document::BucketId(17, 1234));
+    DocumentListMessage        tmp(document::BucketId(17, 1234));
     tmp.getDocuments().push_back(std::move(entry));
 
     serialize("DocumentListMessage", tmp);
@@ -674,7 +681,7 @@ TEST_F(Messages80Test, document_list_reply) {
 
 TEST_F(Messages80Test, empty_buckets_message) {
     std::vector<document::BucketId> bids;
-    for (size_t i=0; i < 13; ++i) {
+    for (size_t i = 0; i < 13; ++i) {
         bids.emplace_back(16, i);
     }
     EmptyBucketsMessage msg(bids);
@@ -843,4 +850,4 @@ void Messages80Test::try_visitor_reply(const std::string& filename, uint32_t typ
     }
 }
 
-} // documentapi
+} // namespace documentapi

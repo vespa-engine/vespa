@@ -8,7 +8,7 @@ namespace {
 
 struct DummyItem {};
 
-} // namespace vbench::<unnamed>
+} // namespace
 
 template struct Handler<DummyItem>;
 

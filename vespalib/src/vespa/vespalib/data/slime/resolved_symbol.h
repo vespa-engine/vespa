@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "symbol_lookup.h"
 #include "symbol_inserter.h"
+#include "symbol_lookup.h"
 
 namespace vespalib::slime {
 
@@ -13,20 +13,14 @@ namespace vespalib::slime {
  * appropriate symbol table. Thus, this class can satisfy both the
  * symbol lookup and inserter interfaces.
  **/
-class ResolvedSymbol final : public SymbolLookup,
-                             public SymbolInserter
-{
+class ResolvedSymbol final : public SymbolLookup, public SymbolInserter {
 private:
     Symbol _symbol;
 
 public:
-    ResolvedSymbol(const Symbol &symbol) noexcept : _symbol(symbol) {}
-    Symbol lookup() const override {
-        return _symbol;
-    }
-    Symbol insert() override {
-        return _symbol;
-    }
+    ResolvedSymbol(const Symbol& symbol) noexcept : _symbol(symbol) {}
+    Symbol lookup() const override { return _symbol; }
+    Symbol insert() override { return _symbol; }
 };
 
 } // namespace vespalib::slime

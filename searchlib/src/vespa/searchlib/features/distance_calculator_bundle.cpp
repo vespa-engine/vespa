@@ -1,16 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distance_calculator_bundle.h"
+
 #include "utils.h"
+
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/query_value.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
 
-using search::fef::ITermData;
 using search::fef::IllegalHandle;
 using search::fef::InvalidValueTypeException;
+using search::fef::ITermData;
 using search::fef::QueryValue;
 using search::fef::TermFieldHandle;
 using search::tensor::DistanceCalculator;
@@ -20,51 +22,43 @@ namespace search::features {
 
 namespace {
 
-void
-prepare_query_tensor(const fef::IQueryEnvironment& env,
-                     fef::IObjectStore& store,
-                     const std::string& query_tensor_name,
-                     const std::string& feature_name)
-{
+void prepare_query_tensor(const fef::IQueryEnvironment& env, fef::IObjectStore& store,
+                          const std::string& query_tensor_name, const std::string& feature_name) {
     try {
         auto qvalue = QueryValue::from_config(query_tensor_name, env.getIndexEnvironment());
         qvalue.prepare_shared_state(env, store);
     } catch (const InvalidValueTypeException& ex) {
-        Issue::report("%s feature: Query tensor '%s' has invalid type '%s'.",
-                      feature_name.c_str(), query_tensor_name.c_str(), ex.type_str().c_str());
+        Issue::report("%s feature: Query tensor '%s' has invalid type '%s'.", feature_name.c_str(),
+                      query_tensor_name.c_str(), ex.type_str().c_str());
     }
 }
 
-std::unique_ptr<DistanceCalculator>
-make_distance_calculator(const fef::IQueryEnvironment& env,
-                         const search::attribute::IAttributeVector& attr,
-                         const std::string& query_tensor_name,
-                         const std::string& feature_name)
-{
+std::unique_ptr<DistanceCalculator> make_distance_calculator(const fef::IQueryEnvironment&              env,
+                                                             const search::attribute::IAttributeVector& attr,
+                                                             const std::string& query_tensor_name,
+                                                             const std::string& feature_name) {
     try {
-        auto qvalue = QueryValue::from_config(query_tensor_name, env.getIndexEnvironment());
+        auto        qvalue = QueryValue::from_config(query_tensor_name, env.getIndexEnvironment());
         const auto* query_tensor = qvalue.lookup_value(env.getObjectStore());
         if (query_tensor == nullptr) {
-            Issue::report("%s feature: Query tensor '%s' is not found in the object store.",
-                          feature_name.c_str(), query_tensor_name.c_str());
+            Issue::report("%s feature: Query tensor '%s' is not found in the object store.", feature_name.c_str(),
+                          query_tensor_name.c_str());
             return {};
         }
         return DistanceCalculator::make_with_validation(attr, *query_tensor);
     } catch (const InvalidValueTypeException& ex) {
-        Issue::report("%s feature: Query tensor '%s' has invalid type '%s'.",
-                      feature_name.c_str(), query_tensor_name.c_str(), ex.type_str().c_str());
+        Issue::report("%s feature: Query tensor '%s' has invalid type '%s'.", feature_name.c_str(),
+                      query_tensor_name.c_str(), ex.type_str().c_str());
     } catch (const vespalib::IllegalArgumentException& ex) {
-        Issue::report("%s feature: Could not create distance calculator for attribute '%s' and query tensor '%s': %s.",
-                      feature_name.c_str(), attr.getName().c_str(), query_tensor_name.c_str(), ex.getMessage().c_str());
+        Issue::report(
+            "%s feature: Could not create distance calculator for attribute '%s' and query tensor '%s': %s.",
+            feature_name.c_str(), attr.getName().c_str(), query_tensor_name.c_str(), ex.getMessage().c_str());
     }
     return {};
 }
 
 const search::attribute::IAttributeVector*
-resolve_attribute_for_field(const fef::IQueryEnvironment& env,
-                            uint32_t field_id,
-                            const std::string& feature_name)
-{
+resolve_attribute_for_field(const fef::IQueryEnvironment& env, uint32_t field_id, const std::string& feature_name) {
     const auto* field = env.getIndexEnvironment().getField(field_id);
     if (field != nullptr) {
         const auto* attr = env.getAttributeContext().getAttribute(field->name());
@@ -77,29 +71,22 @@ resolve_attribute_for_field(const fef::IQueryEnvironment& env,
     return nullptr;
 }
 
+} // namespace
+
+DistanceCalculatorBundle::Element::Element(fef::TermFieldHandle handle_in) noexcept : handle(handle_in), calc() {
 }
 
-DistanceCalculatorBundle::Element::Element(fef::TermFieldHandle handle_in) noexcept
-    : handle(handle_in),
-      calc()
-{
-}
-
-DistanceCalculatorBundle::Element::Element(fef::TermFieldHandle handle_in, std::unique_ptr<search::tensor::DistanceCalculator> calc_in) noexcept
-    : handle(handle_in),
-      calc(std::move(calc_in))
-{
+DistanceCalculatorBundle::Element::Element(fef::TermFieldHandle                                handle_in,
+                                           std::unique_ptr<search::tensor::DistanceCalculator> calc_in) noexcept
+    : handle(handle_in), calc(std::move(calc_in)) {
 }
 
 DistanceCalculatorBundle::Element::~Element() = default;
 
-DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
-                                                   uint32_t field_id,
+DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment& env, uint32_t field_id,
                                                    const std::string& feature_name)
 
-    : _elems(),
-      _min_rawscore(0.0)
-{
+    : _elems(), _min_rawscore(0.0) {
     _elems.reserve(env.getNumTerms());
     const auto* attr = resolve_attribute_for_field(env, field_id, feature_name);
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
@@ -107,7 +94,8 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
         if (handle != search::fef::IllegalHandle) {
             const auto* term = env.getTerm(i);
             if (term->query_tensor_name().has_value() && (attr != nullptr)) {
-                _elems.emplace_back(handle, make_distance_calculator(env, *attr, term->query_tensor_name().value(), feature_name));
+                _elems.emplace_back(
+                    handle, make_distance_calculator(env, *attr, term->query_tensor_name().value(), feature_name));
                 if (_elems.back().calc) {
                     _min_rawscore = _elems.back().calc->function().min_rawscore();
                 }
@@ -119,12 +107,9 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
 }
 
 DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
-                                                   std::optional<uint32_t> field_id,
-                                                   const std::string& label,
+                                                   std::optional<uint32_t> field_id, const std::string& label,
                                                    const std::string& feature_name)
-    : _elems(),
-      _min_rawscore(0.0)
-{
+    : _elems(), _min_rawscore(0.0) {
     const ITermData* term = util::getTermByLabel(env, label);
     if (term != nullptr) {
         // expect numFields() == 1
@@ -151,12 +136,8 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
     }
 }
 
-void
-DistanceCalculatorBundle::prepare_shared_state(const fef::IQueryEnvironment& env,
-                                               fef::IObjectStore& store,
-                                               uint32_t field_id,
-                                               const std::string& feature_name)
-{
+void DistanceCalculatorBundle::prepare_shared_state(const fef::IQueryEnvironment& env, fef::IObjectStore& store,
+                                                    uint32_t field_id, const std::string& feature_name) {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, field_id);
         if (handle != search::fef::IllegalHandle) {
@@ -168,17 +149,12 @@ DistanceCalculatorBundle::prepare_shared_state(const fef::IQueryEnvironment& env
     }
 }
 
-void
-DistanceCalculatorBundle::prepare_shared_state(const fef::IQueryEnvironment& env,
-                                               fef::IObjectStore& store,
-                                               const std::string& label,
-                                               const std::string& feature_name)
-{
+void DistanceCalculatorBundle::prepare_shared_state(const fef::IQueryEnvironment& env, fef::IObjectStore& store,
+                                                    const std::string& label, const std::string& feature_name) {
     const auto* term = util::getTermByLabel(env, label);
     if ((term != nullptr) && term->query_tensor_name().has_value()) {
         prepare_query_tensor(env, store, term->query_tensor_name().value(), feature_name);
     }
 }
 
-}
-
+} // namespace search::features

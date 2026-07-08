@@ -7,4 +7,4 @@ namespace vespalib::fuzzy {
 template class TableDfa<1>;
 template class TableDfa<2>;
 
-}
+} // namespace vespalib::fuzzy

@@ -2,8 +2,16 @@
 
 #include "mock_index_manager.h"
 
+#include <vespa/searchcorespi/common/resource_usage.h>
+
+using searchcorespi::common::ResourceUsage;
+
 namespace proton::test {
 
 MockIndexManager::~MockIndexManager() = default;
 
+ResourceUsage MockIndexManager::get_resource_usage() const {
+    return ResourceUsage{};
 }
+
+} // namespace proton::test

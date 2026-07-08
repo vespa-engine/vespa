@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include <vespa/documentapi/documentapi.h>
 #include <vespa/config-rank-profiles.h>
+#include <vespa/documentapi/documentapi.h>
 
 namespace storage {
 
-    extern void serverForceLink();
+extern void serverForceLink();
 
 }
-

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_maintenance_job.h"
+
 #include <vespa/vespalib/util/time.h>
 
 namespace proton {
@@ -12,13 +13,13 @@ struct IAttributeManager;
 /**
  * Job that regularly clears the search cache for imported attributes.
  */
-class ClearImportedAttributeSearchCacheJob : public IMaintenanceJob
-{
+class ClearImportedAttributeSearchCacheJob : public IMaintenanceJob {
     std::shared_ptr<IAttributeManager> _mgr;
+
 public:
     ClearImportedAttributeSearchCacheJob(std::shared_ptr<IAttributeManager> mgr, vespalib::duration visibilityDelay);
     bool run() override;
     void onStop() override;
 };
 
-}
+} // namespace proton

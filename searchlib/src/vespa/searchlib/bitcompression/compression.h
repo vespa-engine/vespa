@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/util/comprfile.h>
+
 #include <span>
 #include <string>
 
@@ -13,22 +14,25 @@ class GenericHeader;
 }
 
 namespace search::index {
-    class DocIdAndFeatures;
-    class PostingListParams;
-}
+class DocIdAndFeatures;
+class PostingListParams;
+} // namespace search::index
 
-namespace search::fef { class TermFieldMatchDataArray; }
+namespace search::fef {
+class TermFieldMatchDataArray;
+}
 
 namespace search::bitcompression {
 
 class Position {
 public:
-    Position(const uint64_t * occurences, int bitOffset) : _occurences(occurences), _bitOffset(bitOffset) { }
-    const uint64_t * getOccurences() const { return _occurences; }
+    Position(const uint64_t* occurences, int bitOffset) : _occurences(occurences), _bitOffset(bitOffset) {}
+    const uint64_t* getOccurences() const { return _occurences; }
     int getBitOffset() const { return _bitOffset; }
+
 private:
-    const uint64_t * _occurences;
-    int              _bitOffset;
+    const uint64_t* _occurences;
+    int             _bitOffset;
 };
 
 /*
@@ -77,606 +81,511 @@ private:
 /**
  * Lookup tables used for compression / decompression.
  */
-class CodingTables
-{
+class CodingTables {
 public:
     static uint64_t _intMask64[65];
     static uint64_t _intMask64le[65];
 };
 
-#define UC64_DECODECONTEXT(prefix)                  \
-  const uint64_t * prefix ## Compr;                 \
-  uint64_t prefix ## Val;                           \
-  uint64_t prefix ## CacheInt;                      \
-  uint32_t prefix ## PreRead;
+#define UC64_DECODECONTEXT(prefix)    \
+    const uint64_t* prefix##Compr;    \
+    uint64_t        prefix##Val;      \
+    uint64_t        prefix##CacheInt; \
+    uint32_t        prefix##PreRead;
 
-#define UC64_DECODECONTEXT_CONSTRUCTOR(prefix, ctx)         \
-  const uint64_t * prefix ## Compr = ctx ## valI;           \
-  uint64_t prefix ## Val = ctx ## val;                      \
-  uint64_t prefix ## CacheInt = ctx ## cacheInt;            \
-  uint32_t prefix ## PreRead = ctx ## preRead;
+#define UC64_DECODECONTEXT_CONSTRUCTOR(prefix, ctx)   \
+    const uint64_t* prefix##Compr = ctx##valI;        \
+    uint64_t        prefix##Val = ctx##val;           \
+    uint64_t        prefix##CacheInt = ctx##cacheInt; \
+    uint32_t        prefix##PreRead = ctx##preRead;
 
-#define UC64_DECODECONTEXT_LOAD(prefix, ctx)                \
-  prefix ## Compr = ctx ## valI;                            \
-  prefix ## Val = ctx ## val;                               \
-  prefix ## CacheInt = ctx ## cacheInt;                     \
-  prefix ## PreRead = ctx ## preRead;
+#define UC64_DECODECONTEXT_LOAD(prefix, ctx) \
+    prefix##Compr = ctx##valI;               \
+    prefix##Val = ctx##val;                  \
+    prefix##CacheInt = ctx##cacheInt;        \
+    prefix##PreRead = ctx##preRead;
 
-#define UC64_DECODECONTEXT_LOAD_PARTIAL(prefix, ctx)            \
-  prefix ## Compr = ctx ## valI;
+#define UC64_DECODECONTEXT_LOAD_PARTIAL(prefix, ctx) prefix##Compr = ctx##valI;
 
-#define UC64_DECODECONTEXT_STORE(prefix, ctx)               \
-  ctx ## valI = prefix ## Compr;                            \
-  ctx ## val = prefix ## Val;                               \
-  ctx ## cacheInt = prefix ## CacheInt;                     \
-  ctx ## preRead = prefix ## PreRead;
+#define UC64_DECODECONTEXT_STORE(prefix, ctx) \
+    ctx##valI = prefix##Compr;                \
+    ctx##val = prefix##Val;                   \
+    ctx##cacheInt = prefix##CacheInt;         \
+    ctx##preRead = prefix##PreRead;
 
+#define UC64_DECODECONTEXT_STORE_PARTIAL(prefix, ctx) ctx##valI = prefix##Compr;
 
-#define UC64_DECODECONTEXT_STORE_PARTIAL(prefix, ctx)           \
-  ctx ## valI = prefix ## Compr;
+#define UC64BE_READBITS(val, valI, preRead, cacheInt, EC)                                                           \
+    do {                                                                                                            \
+        if (__builtin_expect(length <= preRead, true)) {                                                            \
+            val |= ((cacheInt >> (preRead - length)) & ::search::bitcompression::CodingTables::_intMask64[length]); \
+            preRead -= length;                                                                                      \
+        } else {                                                                                                    \
+            if (__builtin_expect(preRead > 0, true)) {                                                              \
+                length -= preRead;                                                                                  \
+                val |= ((cacheInt & ::search::bitcompression::CodingTables::_intMask64[preRead]) << length);        \
+            }                                                                                                       \
+            cacheInt = EC::bswap(*valI++);                                                                          \
+            preRead = 64 - length;                                                                                  \
+            val |= cacheInt >> preRead;                                                                             \
+        }                                                                                                           \
+    } while (0)
 
-#define UC64BE_READBITS(val, valI, preRead, cacheInt, EC)        \
-  do {                                                           \
-    if (__builtin_expect(length <= preRead, true)) {             \
-      val |= ((cacheInt >> (preRead - length)) &                 \
-    ::search::bitcompression::CodingTables::_intMask64[length]); \
-      preRead -= length;                                         \
-    } else {                                                     \
-      if (__builtin_expect(preRead > 0, true)) {                 \
-    length -= preRead;                                           \
-    val |= ((cacheInt &                                          \
-      ::search::bitcompression::CodingTables::                   \
-      _intMask64[preRead]) << length);                           \
-      }                                                          \
-      cacheInt = EC::bswap(*valI++);                             \
-      preRead = 64 - length;                                     \
-      val |= cacheInt >> preRead;                                \
-    }                                                            \
-  } while (0)
+#define UC64BE_READBITS_NS(prefix, EC)                                                 \
+    UC64BE_READBITS(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, EC)
 
-#define UC64BE_READBITS_NS(prefix, EC)                      \
-  UC64BE_READBITS(prefix ## Val, prefix ## Compr,           \
-          prefix ## PreRead, prefix ## CacheInt, EC)
-
-#define UC64BE_READBITS_CTX(ctx, EC)                    \
-  UC64BE_READBITS(ctx._val, ctx._valI,                  \
-          ctx._preRead, ctx._cacheInt, EC);
-
+#define UC64BE_READBITS_CTX(ctx, EC) UC64BE_READBITS(ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, EC);
 
 #define UC64BE_SETUPBITS(bitOffset, val, valI, preRead, cacheInt, EC) \
-  do {                                                                \
-    cacheInt = EC::bswap(*valI++);                                    \
-    preRead = 64 - bitOffset;                                         \
-    val = 0;                                                          \
-    length = 64;                                                      \
-    UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
-  } while (0)
+    do {                                                              \
+        cacheInt = EC::bswap(*valI++);                                \
+        preRead = 64 - bitOffset;                                     \
+        val = 0;                                                      \
+        length = 64;                                                  \
+        UC64BE_READBITS(val, valI, preRead, cacheInt, EC);            \
+    } while (0)
 
-#define UC64BE_SETUPBITS_NS(ns, comprData, bitOffset, EC)       \
-    ns ## Compr = comprData;                                    \
-    UC64BE_SETUPBITS((bitOffset), ns ## Val, ns ## Compr,       \
-             ns ## PreRead, ns ## CacheInt, EC);
+#define UC64BE_SETUPBITS_NS(ns, comprData, bitOffset, EC)                             \
+    ns##Compr = comprData;                                                            \
+    UC64BE_SETUPBITS((bitOffset), ns##Val, ns##Compr, ns##PreRead, ns##CacheInt, EC);
 
-#define UC64BE_SETUPBITS_CTX(ctx, comprData, bitOffset, EC)     \
-    ctx._valI = comprData;                                      \
-    UC64BE_SETUPBITS((bitOffset), ctx._val, ctx._valI,          \
-             ctx._preRead, ctx._cacheInt, EC);
+#define UC64BE_SETUPBITS_CTX(ctx, comprData, bitOffset, EC)                              \
+    ctx._valI = comprData;                                                               \
+    UC64BE_SETUPBITS((bitOffset), ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, EC);
 
 #define UC64BE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)   \
-  do {                                                                \
-    length = __builtin_clzl(val);                                     \
-    unsigned int olength = length;                                    \
-    val <<= length;                                                   \
-    if (__builtin_expect(length * 2 + 1 + (k) > 64, false)) {         \
-      UC64BE_READBITS(val, valI, preRead, cacheInt, EC);              \
-      length = 0;                                                     \
-    }                                                                 \
-    val64 = (val >> (63 - olength - (k))) - (UINT64_C(1) << (k));     \
-    if (__builtin_expect(olength + 1 + (k) != 64, true)) {            \
-      val <<= olength + 1 + (k);                                      \
-    } else {                                                          \
-      val = 0;                                                        \
-    }                                                                 \
-    length += olength + 1 + (k);                                      \
-    UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
-  } while (0)
+    do {                                                              \
+        length = __builtin_clzl(val);                                 \
+        unsigned int olength = length;                                \
+        val <<= length;                                               \
+        if (__builtin_expect(length * 2 + 1 + (k) > 64, false)) {     \
+            UC64BE_READBITS(val, valI, preRead, cacheInt, EC);        \
+            length = 0;                                               \
+        }                                                             \
+        val64 = (val >> (63 - olength - (k))) - (UINT64_C(1) << (k)); \
+        if (__builtin_expect(olength + 1 + (k) != 64, true)) {        \
+            val <<= olength + 1 + (k);                                \
+        } else {                                                      \
+            val = 0;                                                  \
+        }                                                             \
+        length += olength + 1 + (k);                                  \
+        UC64BE_READBITS(val, valI, preRead, cacheInt, EC);            \
+    } while (0)
 
+#define UC64BE_DECODEEXPGOLOMB_NS(prefix, k, EC)                                                      \
+    do {                                                                                              \
+        UC64BE_DECODEEXPGOLOMB(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
 
-#define UC64BE_DECODEEXPGOLOMB_NS(prefix, k, EC)            \
-  do {                                                      \
-    UC64BE_DECODEEXPGOLOMB(prefix ## Val, prefix ## Compr,  \
-               prefix ## PreRead, prefix ## CacheInt,       \
-               k, EC);                                      \
-  } while (0)
+#define UC64BE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC) \
+    do {                                                                  \
+        length = __builtin_clzl(val);                                     \
+        val <<= length;                                                   \
+        val64 = (val >> (63 - length - (k))) - (UINT64_C(1) << (k));      \
+        val <<= length + 1 + (k);                                         \
+        length += length + 1 + (k);                                       \
+        UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
+    } while (0)
 
-#define UC64BE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, \
-                     EC)                                              \
-  do {                                                                \
-    length = __builtin_clzl(val);                                   \
-    val <<= length;                                                   \
-    val64 = (val >> (63 - length - (k))) - (UINT64_C(1) << (k));      \
-    val <<= length + 1 + (k);                                         \
-    length += length + 1 + (k);                                       \
-    UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
-  } while (0)
+#define UC64BE_DECODEEXPGOLOMB_SMALL_NS(prefix, k, EC)                                                      \
+    do {                                                                                                    \
+        UC64BE_DECODEEXPGOLOMB_SMALL(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
 
-#define UC64BE_DECODEEXPGOLOMB_SMALL_NS(prefix, k, EC)           \
-  do {                                                           \
-    UC64BE_DECODEEXPGOLOMB_SMALL(prefix ## Val, prefix ## Compr, \
-                 prefix ## PreRead, prefix ## CacheInt,          \
-                 k, EC);                                         \
-  } while (0)
+#define UC64BE_DECODEEXPGOLOMB_SMALL_CTX(ctx, k, EC)                                           \
+    do {                                                                                       \
+        UC64BE_DECODEEXPGOLOMB_SMALL(ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, k, EC); \
+    } while (0)
 
-#define UC64BE_DECODEEXPGOLOMB_SMALL_CTX(ctx, k, EC)            \
-  do {                                                          \
-    UC64BE_DECODEEXPGOLOMB_SMALL(ctx._val, ctx._valI,           \
-                 ctx._preRead, ctx._cacheInt,                   \
-                 k, EC);                                        \
-  } while (0)
+#define UC64BE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, k, EC, resop) \
+    do {                                                                               \
+        length = __builtin_clzl(val);                                                  \
+        val <<= length;                                                                \
+        resop(val >> (63 - length - (k))) - (UINT64_C(1) << (k));                      \
+        val <<= length + 1 + (k);                                                      \
+        length += length + 1 + (k);                                                    \
+        UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                             \
+    } while (0)
 
-#define UC64BE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, \
-                       k, EC, resop)                                     \
-  do {                                                                   \
-    length = __builtin_clzl(val);                                        \
-    val <<= length;                                                      \
-    resop (val >> (63 - length - (k))) - (UINT64_C(1) << (k));           \
-    val <<= length + 1 + (k);                                            \
-    length += length + 1 + (k);                                          \
-    UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                   \
-  } while (0)
+#define UC64BE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC) \
+    do {                                                          \
+        length = __builtin_clzl(val);                             \
+        unsigned int olength = length;                            \
+        val <<= length;                                           \
+        if (__builtin_expect(length * 2 + 1 + (k) > 64, false)) { \
+            UC64BE_READBITS(val, valI, preRead, cacheInt, EC);    \
+            length = 0;                                           \
+        }                                                         \
+        if (__builtin_expect(olength + 1 + (k) != 64, true)) {    \
+            val <<= olength + 1 + (k);                            \
+        } else {                                                  \
+            val = 0;                                              \
+        }                                                         \
+        length += olength + 1 + (k);                              \
+        UC64BE_READBITS(val, valI, preRead, cacheInt, EC);        \
+    } while (0)
 
+#define UC64BE_SKIPEXPGOLOMB_NS(prefix, k, EC)                                                      \
+    do {                                                                                            \
+        UC64BE_SKIPEXPGOLOMB(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
 
-#define UC64BE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)     \
-  do {                                                                \
-    length = __builtin_clzl(val);                                     \
-    unsigned int olength = length;                                    \
-    val <<= length;                                                   \
-    if (__builtin_expect(length * 2 + 1 + (k) > 64, false)) {         \
-      UC64BE_READBITS(val, valI, preRead, cacheInt, EC);              \
-      length = 0;                                                     \
-    }                                                                 \
-    if (__builtin_expect(olength + 1 + (k) != 64, true)) {            \
-      val <<= olength + 1 + (k);                                      \
-    } else {                                                          \
-      val = 0;                                                        \
-    }                                                                 \
-    length += olength + 1 + (k);                                      \
-    UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
-  } while (0)
+#define UC64BE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC) \
+    do {                                                                \
+        length = __builtin_clzl(val);                                   \
+        val <<= length;                                                 \
+        val <<= length + 1 + (k);                                       \
+        length += length + 1 + (k);                                     \
+        UC64BE_READBITS(val, valI, preRead, cacheInt, EC);              \
+    } while (0)
 
+#define UC64BE_SKIPEXPGOLOMB_SMALL_NS(prefix, k, EC)                                                      \
+    do {                                                                                                  \
+        UC64BE_SKIPEXPGOLOMB_SMALL(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
 
-#define UC64BE_SKIPEXPGOLOMB_NS(prefix, k, EC)           \
-  do {                                                   \
-    UC64BE_SKIPEXPGOLOMB(prefix ## Val, prefix ## Compr, \
-             prefix ## PreRead, prefix ## CacheInt,      \
-             k, EC);                                     \
-  } while (0)
+#define UC64BE_WRITEBITS(cacheInt, cacheFree, bufI, EC)                                                           \
+    do {                                                                                                          \
+        if (length >= cacheFree) {                                                                                \
+            cacheInt |=                                                                                           \
+                ((data >> (length - cacheFree)) & ::search::bitcompression::CodingTables::_intMask64[cacheFree]); \
+            *bufI++ = EC::bswap(cacheInt);                                                                        \
+            length -= cacheFree;                                                                                  \
+            cacheInt = 0;                                                                                         \
+            cacheFree = 64;                                                                                       \
+        }                                                                                                         \
+        if (length > 0) {                                                                                         \
+            uint64_t dataFragment = (data & ::search::bitcompression::CodingTables::_intMask64[length]);          \
+            cacheInt |= (dataFragment << (cacheFree - length));                                                   \
+            cacheFree -= length;                                                                                  \
+        }                                                                                                         \
+    } while (0)
 
-#define UC64BE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k,   \
-                   EC)                                                \
-  do {                                                                \
-    length = __builtin_clzl(val);                                     \
-    val <<= length;                                                   \
-    val <<= length + 1 + (k);                                         \
-    length += length + 1 + (k);                                       \
-    UC64BE_READBITS(val, valI, preRead, cacheInt, EC);                \
-  } while (0)
+#define UC64BE_WRITEBITS_NS(prefix, EC)                                          \
+    do {                                                                         \
+        UC64BE_WRITEBITS(prefix##CacheInt, prefix##CacheFree, prefix##BufI, EC); \
+    } while (0)
 
-#define UC64BE_SKIPEXPGOLOMB_SMALL_NS(prefix, k, EC)           \
-  do {                                                         \
-    UC64BE_SKIPEXPGOLOMB_SMALL(prefix ## Val, prefix ## Compr, \
-                   prefix ## PreRead, prefix ## CacheInt,      \
-                   k, EC);                                     \
-  } while (0)
+#define UC64BE_WRITEBITS_CTX(ctx, EC)                                   \
+    do {                                                                \
+        UC64BE_WRITEBITS(ctx##cacheInt, ctx##cacheFree, ctx##valI, EC); \
+    } while (0)
 
-#define UC64BE_WRITEBITS(cacheInt, cacheFree, bufI, EC)       \
-  do {                                                        \
-    if (length >= cacheFree) {                                \
-        cacheInt |= ((data >> (length - cacheFree)) &         \
-                     ::search::bitcompression::CodingTables:: \
-             _intMask64[cacheFree]);                          \
-        *bufI++ = EC::bswap(cacheInt);                        \
-        length -= cacheFree;                                  \
-        cacheInt = 0;                                         \
-        cacheFree = 64;                                       \
-    }                                                         \
-    if (length > 0) {                                         \
-        uint64_t dataFragment =                               \
-            (data & ::search::bitcompression::CodingTables::  \
-            _intMask64[length]);                              \
-        cacheInt |= (dataFragment << (cacheFree - length));   \
-        cacheFree -= length;                                  \
-    }                                                         \
-  } while (0)
+#define UC64LE_READBITS(val, valI, preRead, cacheInt, EC)                                                          \
+    do {                                                                                                           \
+        if (__builtin_expect(length <= preRead, true)) {                                                           \
+            val |=                                                                                                 \
+                ((cacheInt << (preRead - length)) & ::search::bitcompression::CodingTables::_intMask64le[length]); \
+            preRead -= length;                                                                                     \
+        } else {                                                                                                   \
+            if (__builtin_expect(preRead > 0, true)) {                                                             \
+                length -= preRead;                                                                                 \
+                val |= ((cacheInt & ::search::bitcompression::CodingTables::_intMask64le[preRead]) >> length);     \
+            }                                                                                                      \
+            cacheInt = EC::bswap(*valI++);                                                                         \
+            preRead = 64 - length;                                                                                 \
+            val |= cacheInt << preRead;                                                                            \
+        }                                                                                                          \
+    } while (0)
 
+#define UC64LE_READBITS_NS(prefix, EC)                                                 \
+    UC64LE_READBITS(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, EC)
 
-#define UC64BE_WRITEBITS_NS(prefix, EC)                       \
-  do {                                                        \
-    UC64BE_WRITEBITS(prefix ## CacheInt, prefix ## CacheFree, \
-                          prefix ## BufI, EC);                \
-  } while (0)
-
-#define UC64BE_WRITEBITS_CTX(ctx, EC)                   \
-  do {                                                  \
-    UC64BE_WRITEBITS(ctx ## cacheInt, ctx ## cacheFree, \
-                   ctx ## valI, EC);                    \
-  } while (0)
-
-#define UC64LE_READBITS(val, valI, preRead, cacheInt, EC)          \
-  do {                                                             \
-    if (__builtin_expect(length <= preRead, true)) {               \
-      val |= ((cacheInt << (preRead - length)) &                   \
-    ::search::bitcompression::CodingTables::_intMask64le[length]); \
-      preRead -= length;                                           \
-    } else {                                                       \
-      if (__builtin_expect(preRead > 0, true)) {                   \
-    length -= preRead;                                             \
-    val |= ((cacheInt &                                            \
-      ::search::bitcompression::CodingTables::                     \
-      _intMask64le[preRead]) >> length);                           \
-      }                                                            \
-      cacheInt = EC::bswap(*valI++);                               \
-      preRead = 64 - length;                                       \
-      val |= cacheInt << preRead;                                  \
-    }                                                              \
-  } while (0)
-
-#define UC64LE_READBITS_NS(prefix, EC)               \
-  UC64LE_READBITS(prefix ## Val, prefix ## Compr,    \
-          prefix ## PreRead, prefix ## CacheInt, EC)
-
-#define UC64LE_READBITS_CTX(ctx, EC)                 \
-  UC64LE_READBITS(ctx._val, ctx._valI,               \
-          ctx._preRead, ctx._cacheInt, EC);
-
+#define UC64LE_READBITS_CTX(ctx, EC) UC64LE_READBITS(ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, EC);
 
 #define UC64LE_SETUPBITS(bitOffset, val, valI, preRead, cacheInt, EC) \
-  do {                                                                \
-    cacheInt = EC::bswap(*valI++);                                    \
-    preRead = 64 - bitOffset;                                         \
-    val = 0;                                                          \
-    length = 64;                                                      \
-    UC64LE_READBITS(val, valI, preRead, cacheInt, EC);                \
-  } while (0)
+    do {                                                              \
+        cacheInt = EC::bswap(*valI++);                                \
+        preRead = 64 - bitOffset;                                     \
+        val = 0;                                                      \
+        length = 64;                                                  \
+        UC64LE_READBITS(val, valI, preRead, cacheInt, EC);            \
+    } while (0)
 
-#define UC64LE_SETUPBITS_NS(ns, comprData, bitOffset, EC)       \
-    ns ## Compr = comprData;                                    \
-    UC64LE_SETUPBITS((bitOffset), ns ## Val, ns ## Compr,       \
-             ns ## PreRead, ns ## CacheInt, EC);
+#define UC64LE_SETUPBITS_NS(ns, comprData, bitOffset, EC)                             \
+    ns##Compr = comprData;                                                            \
+    UC64LE_SETUPBITS((bitOffset), ns##Val, ns##Compr, ns##PreRead, ns##CacheInt, EC);
 
-#define UC64LE_SETUPBITS_CTX(ctx, comprData, bitOffset, EC)     \
-    ctx._valI = comprData;                                      \
-    UC64LE_SETUPBITS((bitOffset), ctx._val, ctx._valI,          \
-             ctx._preRead, ctx._cacheInt, EC);
+#define UC64LE_SETUPBITS_CTX(ctx, comprData, bitOffset, EC)                              \
+    ctx._valI = comprData;                                                               \
+    UC64LE_SETUPBITS((bitOffset), ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, EC);
 
-#define UC64LE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC) \
-  do {                                                              \
-    unsigned int olength = __builtin_ctzl(val);                     \
-    length = olength + 1;                                           \
-    if (__builtin_expect(length != 64, true)) {                     \
-      val >>= length;                                               \
-    } else {                                                        \
-      val = 0;                                                      \
-    }                                                               \
-    if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {      \
-      UC64LE_READBITS(val, valI, preRead, cacheInt, EC);            \
-      length = 0;                                                   \
-    }                                                               \
-    val64 = (val & ((UINT64_C(1) << (olength + (k))) - 1)) +        \
-       (UINT64_C(1) << (olength + (k))) - (UINT64_C(1) << (k));     \
-    val >>= olength + (k);                                          \
-    length += olength + (k);                                        \
-    UC64LE_READBITS(val, valI, preRead, cacheInt, EC);              \
-  } while (0)
+#define UC64LE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)                                 \
+    do {                                                                                            \
+        unsigned int olength = __builtin_ctzl(val);                                                 \
+        length = olength + 1;                                                                       \
+        if (__builtin_expect(length != 64, true)) {                                                 \
+            val >>= length;                                                                         \
+        } else {                                                                                    \
+            val = 0;                                                                                \
+        }                                                                                           \
+        if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {                                  \
+            UC64LE_READBITS(val, valI, preRead, cacheInt, EC);                                      \
+            length = 0;                                                                             \
+        }                                                                                           \
+        val64 = (val & ((UINT64_C(1) << (olength + (k))) - 1)) + (UINT64_C(1) << (olength + (k))) - \
+                (UINT64_C(1) << (k));                                                               \
+        val >>= olength + (k);                                                                      \
+        length += olength + (k);                                                                    \
+        UC64LE_READBITS(val, valI, preRead, cacheInt, EC);                                          \
+    } while (0)
 
+#define UC64LE_DECODEEXPGOLOMB_NS(prefix, k, EC)                                                      \
+    do {                                                                                              \
+        UC64LE_DECODEEXPGOLOMB(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
 
-#define UC64LE_DECODEEXPGOLOMB_NS(prefix, k, EC)            \
-  do {                                                      \
-    UC64LE_DECODEEXPGOLOMB(prefix ## Val, prefix ## Compr,  \
-               prefix ## PreRead, prefix ## CacheInt,       \
-               k, EC);                                      \
-  } while (0)
+#define UC64LE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC)                                           \
+    do {                                                                                                            \
+        length = __builtin_ctzl(val);                                                                               \
+        val >>= length + 1;                                                                                         \
+        val64 =                                                                                                     \
+            (val & ((UINT64_C(1) << (length + (k))) - 1)) + (UINT64_C(1) << (length + (k))) - (UINT64_C(1) << (k)); \
+        val >>= length + (k);                                                                                       \
+        length += length + 1 + (k);                                                                                 \
+        UC64LE_READBITS(val, valI, preRead, cacheInt, EC);                                                          \
+    } while (0)
 
-#define UC64LE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, \
-                     EC)                                              \
-  do {                                                                \
-    length = __builtin_ctzl(val);                                     \
-    val >>= length + 1;                                               \
-    val64 = (val & ((UINT64_C(1) << (length + (k))) - 1)) +           \
-       (UINT64_C(1) << (length + (k))) - (UINT64_C(1) << (k));        \
-    val >>= length + (k);                                             \
-    length += length + 1 + (k);                                       \
-    UC64LE_READBITS(val, valI, preRead, cacheInt, EC);                \
-  } while (0)
+#define UC64LE_DECODEEXPGOLOMB_SMALL_NS(prefix, k, EC)                                                      \
+    do {                                                                                                    \
+        UC64LE_DECODEEXPGOLOMB_SMALL(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
 
-#define UC64LE_DECODEEXPGOLOMB_SMALL_NS(prefix, k, EC)           \
-  do {                                                           \
-    UC64LE_DECODEEXPGOLOMB_SMALL(prefix ## Val, prefix ## Compr, \
-                 prefix ## PreRead, prefix ## CacheInt,          \
-                 k, EC);                                         \
-  } while (0)
+#define UC64LE_DECODEEXPGOLOMB_SMALL_CTX(ctx, k, EC)                                           \
+    do {                                                                                       \
+        UC64LE_DECODEEXPGOLOMB_SMALL(ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, k, EC); \
+    } while (0)
 
-#define UC64LE_DECODEEXPGOLOMB_SMALL_CTX(ctx, k, EC)             \
-  do {                                                           \
-    UC64LE_DECODEEXPGOLOMB_SMALL(ctx._val, ctx._valI,            \
-                 ctx._preRead, ctx._cacheInt,                    \
-                 k, EC);                                         \
-  } while (0)
+#define UC64LE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, k, EC, resop)                               \
+    do {                                                                                                             \
+        length = __builtin_ctzl(val);                                                                                \
+        val >>= length + 1;                                                                                          \
+        resop(val & ((UINT64_C(1) << (length + (k))) - 1)) + (UINT64_C(1) << (length + (k))) - (UINT64_C(1) << (k)); \
+        val >>= length + (k);                                                                                        \
+        length += length + 1 + (k);                                                                                  \
+        UC64LE_READBITS(val, valI, preRead, cacheInt, EC);                                                           \
+    } while (0)
 
-#define UC64LE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, \
-                       k, EC, resop)                                     \
-  do {                                                                   \
-    length = __builtin_ctzl(val);                                        \
-    val >>= length + 1;                                                  \
-    resop (val & ((UINT64_C(1) << (length + (k))) - 1)) +                \
-       (UINT64_C(1) << (length + (k))) - (UINT64_C(1) << (k));           \
-    val >>= length + (k);                                                \
-    length += length + 1 + (k);                                          \
-    UC64LE_READBITS(val, valI, preRead, cacheInt, EC);                   \
-  } while (0)
+#define UC64LE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)  \
+    do {                                                           \
+        unsigned int olength = __builtin_ctzl(val);                \
+        length = olength + 1;                                      \
+        if (__builtin_expect(length != 64, true)) {                \
+            val >>= length;                                        \
+        } else {                                                   \
+            val = 0;                                               \
+        }                                                          \
+        if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) { \
+            UC64LE_READBITS(val, valI, preRead, cacheInt, EC);     \
+            length = 0;                                            \
+        }                                                          \
+        val >>= olength + (k);                                     \
+        length += olength + (k);                                   \
+        UC64LE_READBITS(val, valI, preRead, cacheInt, EC);         \
+    } while (0)
 
+#define UC64LE_SKIPEXPGOLOMB_NS(prefix, k, EC)                                                      \
+    do {                                                                                            \
+        UC64LE_SKIPEXPGOLOMB(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
 
-#define UC64LE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC) \
-  do {                                                            \
-    unsigned int olength = __builtin_ctzl(val);                   \
-    length = olength + 1;                                         \
-    if (__builtin_expect(length != 64, true)) {                   \
-      val >>= length;                                             \
-    } else {                                                      \
-      val = 0;                                                    \
-    }                                                             \
-    if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {    \
-      UC64LE_READBITS(val, valI, preRead, cacheInt, EC);          \
-      length = 0;                                                 \
-    }                                                             \
-    val >>= olength + (k);                                        \
-    length += olength + (k);                                      \
-    UC64LE_READBITS(val, valI, preRead, cacheInt, EC);            \
-  } while (0)
+#define UC64LE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC) \
+    do {                                                                \
+        length = __builtin_ctzl(val);                                   \
+        val >>= length + 1;                                             \
+        val >>= length + (k);                                           \
+        length += length + 1 + (k);                                     \
+        UC64LE_READBITS(val, valI, preRead, cacheInt, EC);              \
+    } while (0)
 
+#define UC64LE_SKIPEXPGOLOMB_SMALL_NS(prefix, k, EC)                                                      \
+    do {                                                                                                  \
+        UC64LE_SKIPEXPGOLOMB_SMALL(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
 
-#define UC64LE_SKIPEXPGOLOMB_NS(prefix, k, EC)           \
-  do {                                                   \
-    UC64LE_SKIPEXPGOLOMB(prefix ## Val, prefix ## Compr, \
-             prefix ## PreRead, prefix ## CacheInt,      \
-             k, EC);                                     \
-  } while (0)
+#define UC64LE_WRITEBITS(cacheInt, cacheFree, bufI, EC)                                                  \
+    do {                                                                                                 \
+        if (length >= cacheFree) {                                                                       \
+            cacheInt |= (data << (64 - cacheFree));                                                      \
+            *bufI++ = EC::bswap(cacheInt);                                                               \
+            if (__builtin_expect(cacheFree != 64, true)) {                                               \
+                data >>= cacheFree;                                                                      \
+            } else {                                                                                     \
+                data = 0;                                                                                \
+            }                                                                                            \
+            length -= cacheFree;                                                                         \
+            cacheInt = 0;                                                                                \
+            cacheFree = 64;                                                                              \
+        }                                                                                                \
+        if (length > 0) {                                                                                \
+            uint64_t dataFragment = (data & ::search::bitcompression::CodingTables::_intMask64[length]); \
+            cacheInt |= (dataFragment << (64 - cacheFree));                                              \
+            cacheFree -= length;                                                                         \
+        }                                                                                                \
+    } while (0)
 
-#define UC64LE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k,  \
-                   EC)                                               \
-  do {                                                               \
-    length = __builtin_ctzl(val);                                    \
-    val >>= length + 1;                                              \
-    val >>= length + (k);                                            \
-    length += length + 1 + (k);                                      \
-    UC64LE_READBITS(val, valI, preRead, cacheInt, EC);               \
-  } while (0)
+#define UC64LE_WRITEBITS_NS(prefix, EC)                                          \
+    do {                                                                         \
+        UC64LE_WRITEBITS(prefix##CacheInt, prefix##CacheFree, prefix##BufI, EC); \
+    } while (0)
 
-#define UC64LE_SKIPEXPGOLOMB_SMALL_NS(prefix, k, EC)           \
-  do {                                                         \
-    UC64LE_SKIPEXPGOLOMB_SMALL(prefix ## Val, prefix ## Compr, \
-                   prefix ## PreRead, prefix ## CacheInt,      \
-                   k, EC);                                     \
-  } while (0)
+#define UC64LE_WRITEBITS_CTX(ctx, EC)                                   \
+    do {                                                                \
+        UC64LE_WRITEBITS(ctx##cacheInt, ctx##cacheFree, ctx##valI, EC); \
+    } while (0)
 
-#define UC64LE_WRITEBITS(cacheInt, cacheFree, bufI, EC)      \
-  do {                                                       \
-    if (length >= cacheFree) {                               \
-        cacheInt |= (data << (64 - cacheFree));              \
-        *bufI++ = EC::bswap(cacheInt);                       \
-        if (__builtin_expect(cacheFree != 64, true)) {       \
-          data >>= cacheFree;                                \
+#define UC64_READBITS(val, valI, preRead, cacheInt, EC)        \
+    do {                                                       \
+        if (bigEndian) {                                       \
+            UC64BE_READBITS(val, valI, preRead, cacheInt, EC); \
+        } else {                                               \
+            UC64LE_READBITS(val, valI, preRead, cacheInt, EC); \
+        }                                                      \
+    } while (0)
+
+#define UC64_READBITS_NS(prefix, EC) UC64_READBITS(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, EC)
+
+#define UC64_READBITS_CTX(ctx, EC) UC64_READBITS(ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, EC)
+
+#define UC64_SETUPBITS(bitOffset, val, valI, preRead, cacheInt, EC)        \
+    do {                                                                   \
+        if (bigEndian) {                                                   \
+            UC64BE_SETUPBITS(bitOffset, val, valI, preRead, cacheInt, EC); \
+        } else {                                                           \
+            UC64LE_SETUPBITS(bitOffset, val, valI, preRead, cacheInt, EC); \
+        }                                                                  \
+    } while (0)
+
+#define UC64_SETUPBITS_NS(ns, comprData, bitOffset, EC)                             \
+    ns##Compr = comprData;                                                          \
+    UC64_SETUPBITS((bitOffset), ns##Val, ns##Compr, ns##PreRead, ns##CacheInt, EC);
+
+#define UC64_SETUPBITS_CTX(ctx, comprData, bitOffset, EC)                              \
+    ctx._valI = comprData;                                                             \
+    UC64_SETUPBITS((bitOffset), ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, EC);
+
+#define UC64_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)        \
+    do {                                                                 \
+        if (bigEndian) {                                                 \
+            UC64BE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC); \
+        } else {                                                         \
+            UC64LE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC); \
+        }                                                                \
+    } while (0)
+
+#define UC64_DECODEEXPGOLOMB_NS(prefix, k, EC)                                                      \
+    do {                                                                                            \
+        UC64_DECODEEXPGOLOMB(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
+
+#define UC64_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC)        \
+    do {                                                                       \
+        if (bigEndian) {                                                       \
+            UC64BE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC); \
+        } else {                                                               \
+            UC64LE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC); \
+        }                                                                      \
+    } while (0)
+
+#define UC64_DECODEEXPGOLOMB_SMALL_NS(prefix, k, EC)                                                      \
+    do {                                                                                                  \
+        UC64_DECODEEXPGOLOMB_SMALL(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
+
+#define UC64_DECODEEXPGOLOMB_SMALL_CTX(ctx, k, EC)                                           \
+    do {                                                                                     \
+        UC64_DECODEEXPGOLOMB_SMALL(ctx._val, ctx._valI, ctx._preRead, ctx._cacheInt, k, EC); \
+    } while (0)
+
+#define UC64_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, k, EC, resop)        \
+    do {                                                                                    \
+        if (bigEndian) {                                                                    \
+            UC64BE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, k, EC, resop); \
+        } else {                                                                            \
+            UC64LE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, k, EC, resop); \
+        }                                                                                   \
+    } while (0)
+
+#define UC64_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)        \
+    do {                                                               \
+        if (bigEndian) {                                               \
+            UC64BE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC); \
+        } else {                                                       \
+            UC64LE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC); \
+        }                                                              \
+    } while (0)
+
+#define UC64_SKIPEXPGOLOMB_NS(prefix, k, EC)                                                      \
+    do {                                                                                          \
+        UC64_SKIPEXPGOLOMB(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
+
+#define UC64_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC)        \
+    do {                                                                     \
+        if (bigEndian) {                                                     \
+            UC64BE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC); \
+        } else {                                                             \
+            UC64LE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC); \
+        }                                                                    \
+    } while (0)
+
+#define UC64_SKIPEXPGOLOMB_SMALL_NS(prefix, k, EC)                                                      \
+    do {                                                                                                \
+        UC64_SKIPEXPGOLOMB_SMALL(prefix##Val, prefix##Compr, prefix##PreRead, prefix##CacheInt, k, EC); \
+    } while (0)
+
+#define UC64_WRITEBITS(cacheInt, cacheFree, bufI, EC)        \
+    do {                                                     \
+        if (bigEndian) {                                     \
+            UC64BE_WRITEBITS(cacheInt, cacheFree, bufI, EC); \
         } else {                                             \
-          data = 0;                                          \
+            UC64LE_WRITEBITS(cacheInt, cacheFree, bufI, EC); \
         }                                                    \
-        length -= cacheFree;                                 \
-        cacheInt = 0;                                        \
-        cacheFree = 64;                                      \
-    }                                                        \
-    if (length > 0) {                                        \
-        uint64_t dataFragment =                              \
-            (data & ::search::bitcompression::CodingTables:: \
-            _intMask64[length]);                             \
-        cacheInt |= (dataFragment << (64 - cacheFree));      \
-        cacheFree -= length;                                 \
-    }                                                        \
-  } while (0)
+    } while (0)
 
+#define UC64_WRITEBITS_NS(prefix, EC)                                          \
+    do {                                                                       \
+        UC64_WRITEBITS(prefix##CacheInt, prefix##CacheFree, prefix##BufI, EC); \
+    } while (0)
 
-#define UC64LE_WRITEBITS_NS(prefix, EC)                       \
-  do {                                                        \
-    UC64LE_WRITEBITS(prefix ## CacheInt, prefix ## CacheFree, \
-                          prefix ## BufI, EC);                \
-  } while (0)
-
-#define UC64LE_WRITEBITS_CTX(ctx, EC)                   \
-  do {                                                  \
-    UC64LE_WRITEBITS(ctx ## cacheInt, ctx ## cacheFree, \
-                   ctx ## valI, EC);                    \
-  } while (0)
-
-#define UC64_READBITS(val, valI, preRead, cacheInt, EC)  \
-  do {                                                   \
-    if (bigEndian) {                                     \
-      UC64BE_READBITS(val, valI, preRead, cacheInt, EC); \
-    } else {                                             \
-      UC64LE_READBITS(val, valI, preRead, cacheInt, EC); \
-    }                                                    \
-  } while (0)
-
-#define UC64_READBITS_NS(prefix, EC)                     \
-  UC64_READBITS(prefix ## Val, prefix ## Compr,          \
-          prefix ## PreRead, prefix ## CacheInt, EC)
-
-#define UC64_READBITS_CTX(ctx, EC)                       \
-  UC64_READBITS(ctx._val, ctx._valI,                     \
-          ctx._preRead, ctx._cacheInt, EC)
-
-
-#define UC64_SETUPBITS(bitOffset, val, valI, preRead, cacheInt, EC)  \
-  do {                                                               \
-    if (bigEndian) {                                                 \
-      UC64BE_SETUPBITS(bitOffset, val, valI, preRead, cacheInt, EC); \
-    } else {                                                         \
-      UC64LE_SETUPBITS(bitOffset, val, valI, preRead, cacheInt, EC); \
-    }                                                                \
-  } while (0)
-
-#define UC64_SETUPBITS_NS(ns, comprData, bitOffset, EC) \
-    ns ## Compr = comprData;                            \
-    UC64_SETUPBITS((bitOffset), ns ## Val, ns ## Compr, \
-           ns ## PreRead, ns ## CacheInt, EC);
-
-#define UC64_SETUPBITS_CTX(ctx, comprData, bitOffset, EC) \
-    ctx._valI = comprData;                                \
-    UC64_SETUPBITS((bitOffset), ctx._val, ctx._valI,      \
-           ctx._preRead, ctx._cacheInt, EC);
-
-#define UC64_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)  \
-  do {                                                             \
-    if (bigEndian) {                                               \
-      UC64BE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC); \
-    } else {                                                       \
-      UC64LE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC); \
-    }                                                              \
-  } while (0)
-
-#define UC64_DECODEEXPGOLOMB_NS(prefix, k, EC)           \
-  do {                                                   \
-    UC64_DECODEEXPGOLOMB(prefix ## Val, prefix ## Compr, \
-             prefix ## PreRead, prefix ## CacheInt,      \
-             k, EC);                                     \
-  } while (0)
-
-#define UC64_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC)  \
-  do {                                                                   \
-    if (bigEndian) {                                                     \
-      UC64BE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC); \
-    } else {                                                             \
-      UC64LE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC); \
-    }                                                                    \
-  } while (0)
-
-#define UC64_DECODEEXPGOLOMB_SMALL_NS(prefix, k, EC)           \
-  do {                                                         \
-    UC64_DECODEEXPGOLOMB_SMALL(prefix ## Val, prefix ## Compr, \
-                   prefix ## PreRead, prefix ## CacheInt,      \
-                   k, EC);                                     \
-  } while (0)
-
-#define UC64_DECODEEXPGOLOMB_SMALL_CTX(ctx, k, EC)  \
-  do {                                              \
-    UC64_DECODEEXPGOLOMB_SMALL(ctx._val, ctx._valI, \
-                   ctx._preRead, ctx._cacheInt,     \
-                   k, EC);                          \
-  } while (0)
-
-#define UC64_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, \
-                       k, EC, resop)                                   \
-  do {                                                                 \
-    if (bigEndian) {                                                   \
-      UC64BE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, \
-                     k, EC, resop);                                    \
-    } else {                                                           \
-      UC64LE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, \
-                     k, EC, resop);                                    \
-    }                                                                  \
-  } while (0)
-
-#define UC64_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)  \
-  do {                                                           \
-    if (bigEndian) {                                             \
-      UC64BE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC); \
-    } else {                                                     \
-      UC64LE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC); \
-    }                                                            \
-  } while (0)
-
-#define UC64_SKIPEXPGOLOMB_NS(prefix, k, EC)           \
-  do {                                                 \
-    UC64_SKIPEXPGOLOMB(prefix ## Val, prefix ## Compr, \
-               prefix ## PreRead, prefix ## CacheInt,  \
-               k, EC);                                 \
-  } while (0)
-
-#define UC64_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k,      \
-                 EC)                                                   \
-  do {                                                                 \
-    if (bigEndian) {                                                   \
-      UC64BE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC); \
-    } else {                                                           \
-      UC64LE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, EC); \
-    }                                                                  \
-  } while (0)
-
-#define UC64_SKIPEXPGOLOMB_SMALL_NS(prefix, k, EC)           \
-  do {                                                       \
-    UC64_SKIPEXPGOLOMB_SMALL(prefix ## Val, prefix ## Compr, \
-                 prefix ## PreRead, prefix ## CacheInt,      \
-                 k, EC);                                     \
-  } while (0)
-
-#define UC64_WRITEBITS(cacheInt, cacheFree, bufI, EC)  \
-  do {                                                 \
-    if (bigEndian) {                                   \
-      UC64BE_WRITEBITS(cacheInt, cacheFree, bufI, EC); \
-    } else {                                           \
-      UC64LE_WRITEBITS(cacheInt, cacheFree, bufI, EC); \
-    }                                                  \
-  } while (0)
-
-
-#define UC64_WRITEBITS_NS(prefix, EC)                       \
-  do {                                                      \
-    UC64_WRITEBITS(prefix ## CacheInt, prefix ## CacheFree, \
-                   prefix ## BufI, EC);                     \
-  } while (0)
-
-#define UC64_WRITEBITS_CTX(ctx, EC)                   \
-  do {                                                \
-    UC64_WRITEBITS(ctx ## cacheInt, ctx ## cacheFree, \
-                   ctx ## valI, EC);                  \
-  } while (0)
+#define UC64_WRITEBITS_CTX(ctx, EC)                                   \
+    do {                                                              \
+        UC64_WRITEBITS(ctx##cacheInt, ctx##cacheFree, ctx##valI, EC); \
+    } while (0)
 
 #define UC64_ENCODECONTEXT(prefix) \
-  uint64_t *prefix ## BufI;        \
-  uint64_t prefix ## CacheInt;     \
-  uint32_t prefix ## CacheFree;
+    uint64_t* prefix##BufI;        \
+    uint64_t  prefix##CacheInt;    \
+    uint32_t  prefix##CacheFree;
 
 #define UC64_ENCODECONTEXT_CONSTRUCTOR(prefix, ctx) \
-  uint64_t *prefix ## BufI = ctx ## valI;           \
-  uint64_t prefix ## CacheInt = ctx ## cacheInt;    \
-  uint32_t prefix ## CacheFree = ctx ## cacheFree;
+    uint64_t* prefix##BufI = ctx##valI;             \
+    uint64_t  prefix##CacheInt = ctx##cacheInt;     \
+    uint32_t  prefix##CacheFree = ctx##cacheFree;
 
 #define UC64_ENCODECONTEXT_LOAD(prefix, ctx) \
-  prefix ## BufI = ctx ## valI;              \
-  prefix ## CacheInt = ctx ## cacheInt;      \
-  prefix ## CacheFree = ctx ## cacheFree;
+    prefix##BufI = ctx##valI;                \
+    prefix##CacheInt = ctx##cacheInt;        \
+    prefix##CacheFree = ctx##cacheFree;
 
-#define UC64_ENCODECONTEXT_LOAD_PARTIAL(prefix, ctx) \
-  prefix ## BufI = ctx ## valI;
+#define UC64_ENCODECONTEXT_LOAD_PARTIAL(prefix, ctx) prefix##BufI = ctx##valI;
 
 #define UC64_ENCODECONTEXT_STORE(prefix, ctx) \
-  ctx ## valI = prefix ## BufI;               \
-  ctx ## cacheInt = prefix ## CacheInt;       \
-  ctx ## cacheFree = prefix ## CacheFree;
+    ctx##valI = prefix##BufI;                 \
+    ctx##cacheInt = prefix##CacheInt;         \
+    ctx##cacheFree = prefix##CacheFree;
 
-#define UC64_ENCODECONTEXT_STORE_PARTIAL(prefix, ctx) \
-  ctx ## valI = prefix ## BufI;
+#define UC64_ENCODECONTEXT_STORE_PARTIAL(prefix, ctx) ctx##valI = prefix##BufI;
 
-
-class EncodeContext64Base : public search::ComprFileEncodeContext
-{
+class EncodeContext64Base : public search::ComprFileEncodeContext {
 public:
-    enum Constants {
-        END_BUFFER_SAFETY = 4
-    };
+    enum Constants { END_BUFFER_SAFETY = 4 };
 
     using UnitType = uint64_t;
 
     // Pointers to compressed data
-    uint64_t *_valI;
-    const uint64_t *_valE;
+    uint64_t*       _valI;
+    const uint64_t* _valE;
 
     // Cached integers
 
@@ -695,23 +604,19 @@ public:
           _valE(nullptr),
           _cacheInt(0),
           _cacheFree(64),
-          _fileWriteBias(64)
-    { }
+          _fileWriteBias(64) {}
 
-    EncodeContext64Base(const EncodeContext64Base &other)
+    EncodeContext64Base(const EncodeContext64Base& other)
         : search::ComprFileEncodeContext(other),
           _valI(other._valI),
           _valE(other._valE),
           _cacheInt(other._cacheInt),
           _cacheFree(other._cacheFree),
-          _fileWriteBias(other._fileWriteBias)
-    { }
+          _fileWriteBias(other._fileWriteBias) {}
 
     ~EncodeContext64Base() = default;
 
-    EncodeContext64Base &
-    operator=(const EncodeContext64Base &rhs)
-    {
+    EncodeContext64Base& operator=(const EncodeContext64Base& rhs) {
         search::ComprFileEncodeContext::operator=(rhs);
         _valI = rhs._valI;
         _valE = rhs._valE;
@@ -724,45 +629,35 @@ public:
     /**
      * Get number of used units (e.g. _valI - start)
      */
-    int getUsedUnits(const uint64_t * start) override {
-        return _valI - start;
-    }
+    int getUsedUnits(const uint64_t* start) override { return _valI - start; }
 
     /**
      * Get normal full buffer size (e.g. _valE - start)
      */
-    int getNormalMaxUnits(void *start) override {
-        return _valE - static_cast<uint64_t *>(start);
-    }
+    int getNormalMaxUnits(void* start) override { return _valE - static_cast<uint64_t*>(start); }
 
     /**
      * Adjust buffer after write (e.g. _valI, _fileWriteBias)
      */
-    void
-    afterWrite(search::ComprBuffer &cbuf, uint32_t remainingUnits, uint64_t bufferStartFilePos) override {
+    void afterWrite(search::ComprBuffer& cbuf, uint32_t remainingUnits, uint64_t bufferStartFilePos) override {
         _valI = cbuf.getComprBuf() + remainingUnits;
-        _fileWriteBias = (bufferStartFilePos -
-                          reinterpret_cast<unsigned long>(cbuf.getComprBuf()) +
-                          sizeof(uint64_t)) << 3;
+        _fileWriteBias = (bufferStartFilePos - reinterpret_cast<unsigned long>(cbuf.getComprBuf()) + sizeof(uint64_t))
+                         << 3;
         adjustBufSize(cbuf);
     }
 
     /**
      * Adjust buffer size to align end of buffer.
      */
-    void adjustBufSize(search::ComprBuffer &cbuf) override {
+    void adjustBufSize(search::ComprBuffer& cbuf) override {
         uint64_t fileWriteOffset =
-            (_fileWriteBias +
-             ((reinterpret_cast<unsigned long>(cbuf.getComprBuf()) -
-               sizeof(uint64_t)) << 3)) >> 3;
+            (_fileWriteBias + ((reinterpret_cast<unsigned long>(cbuf.getComprBuf()) - sizeof(uint64_t)) << 3)) >> 3;
         _valE = cbuf.getAdjustedBuf(fileWriteOffset);
     }
 
-    uint32_t getUnitByteSize() const override {
-        return sizeof(uint64_t);
-    }
+    uint32_t getUnitByteSize() const override { return sizeof(uint64_t); }
 
-    void setupWrite(search::ComprBuffer &cbuf) {
+    void setupWrite(search::ComprBuffer& cbuf) {
         _valI = cbuf.getComprBuf();
 
         _fileWriteBias = (sizeof(uint64_t) - reinterpret_cast<unsigned long>(cbuf.getComprBuf())) << 3;
@@ -772,7 +667,7 @@ public:
         _cacheFree = 64;
     }
 
-    void reload(const EncodeContext64Base &other) {
+    void reload(const EncodeContext64Base& other) {
         _valI = other._valI;
         _valE = other._valE;
         _cacheInt = other._cacheInt;
@@ -780,7 +675,7 @@ public:
         _fileWriteBias = other._fileWriteBias;
     }
 
-    void pushBack(EncodeContext64Base &other) const {
+    void pushBack(EncodeContext64Base& other) const {
         other._valI = _valI;
         other._cacheInt = _cacheInt;
         other._cacheFree = _cacheFree;
@@ -791,9 +686,7 @@ public:
     }
 
     void defineWriteOffset(uint64_t writeOffset) {
-        _fileWriteBias = writeOffset -
-                         (reinterpret_cast<unsigned long>(_valI) << 3) +
-                         _cacheFree;
+        _fileWriteBias = writeOffset - (reinterpret_cast<unsigned long>(_valI) << 3) + _cacheFree;
     }
 
     /*
@@ -802,9 +695,7 @@ public:
      * to both decode macros (making them slower) and encoding method (making
      * it slower).
      */
-    static uint64_t maxExpGolombVal(uint32_t kValue) {
-        return static_cast<uint64_t>(- (UINT64_C(1) << kValue) - 1);
-    }
+    static uint64_t maxExpGolombVal(uint32_t kValue) { return static_cast<uint64_t>(-(UINT64_C(1) << kValue) - 1); }
 
     /*
      * Return max value that can be exp golomb encoded within maxBits
@@ -817,23 +708,15 @@ public:
             return static_cast<uint64_t>(-1);
         }
         if ((maxBits + kValue + 1) / 2 == 64) {
-            return static_cast<uint64_t>
-                (- (UINT64_C(1) << kValue) - 1);
+            return static_cast<uint64_t>(-(UINT64_C(1) << kValue) - 1);
         }
-        return static_cast<uint64_t>
-            ((UINT64_C(1) << ((maxBits + kValue + 1) / 2)) -
-             (UINT64_C(1) << kValue) - 1);
+        return static_cast<uint64_t>((UINT64_C(1) << ((maxBits + kValue + 1) / 2)) - (UINT64_C(1) << kValue) - 1);
     }
-
 };
 
-
-template <bool bigEndian>
-class EncodeContext64EBase : public EncodeContext64Base
-{
+template <bool bigEndian> class EncodeContext64EBase : public EncodeContext64Base {
 public:
-    static inline uint64_t
-    bswap(uint64_t val);
+    static inline uint64_t bswap(uint64_t val);
 
     /**
      * Write bits
@@ -870,11 +753,11 @@ public:
     }
 
     void align(uint32_t alignment) {
-        uint64_t length = (- getWriteOffset()) & (alignment - 1);
+        uint64_t length = (-getWriteOffset()) & (alignment - 1);
         padBits(length);
     }
 
-    void alignDirectIO() { align(4096*8); }
+    void alignDirectIO() { align(4096 * 8); }
 
     /*
      * Small alignment (max 64 bits alignment)
@@ -885,19 +768,11 @@ public:
     }
 };
 
-
-template <>
-inline uint64_t
-EncodeContext64EBase<true>::bswap(uint64_t val)
-{
+template <> inline uint64_t EncodeContext64EBase<true>::bswap(uint64_t val) {
     return __builtin_bswap64(val);
 }
 
-
-template <>
-inline uint64_t
-EncodeContext64EBase<false>::bswap(uint64_t val)
-{
+template <> inline uint64_t EncodeContext64EBase<false>::bswap(uint64_t val) {
     return val;
 }
 
@@ -905,10 +780,7 @@ using EncodeContext64BEBase = EncodeContext64EBase<true>;
 
 using EncodeContext64LEBase = EncodeContext64EBase<false>;
 
-
-template<bool bigEndian>
-class EncodeContext64 : public EncodeContext64EBase<bigEndian>
-{
+template <bool bigEndian> class EncodeContext64 : public EncodeContext64EBase<bigEndian> {
 public:
     using BaseClass = EncodeContext64EBase<bigEndian>;
     using BaseClass::writeBits;
@@ -916,17 +788,9 @@ public:
     /**
      * Calculate floor(log2(x))
      */
-    static inline uint32_t
-    asmlog2(uint64_t x)
-    {
-        return sizeof(uint64_t) * 8 - 1 - __builtin_clzl(x);
-    }
+    static inline uint32_t asmlog2(uint64_t x) { return sizeof(uint64_t) * 8 - 1 - __builtin_clzl(x); }
 
-    static inline uint64_t
-    ffsl(uint64_t x)
-    {
-        return __builtin_ctzl(x);
-    }
+    static inline uint64_t ffsl(uint64_t x) { return __builtin_ctzl(x); }
 
     /**
      * ExpGolomb-encode an integer
@@ -935,9 +799,7 @@ public:
      *
      * Note: This method doesn't work when x > maxExpGolombVal(k).
      */
-    void
-    encodeExpGolomb(uint64_t x, uint32_t k)
-    {
+    void encodeExpGolomb(uint64_t x, uint32_t k) {
         if (bigEndian) {
             uint32_t log2qx2 = asmlog2((x >> k) + 1) * 2;
             uint64_t expGolomb = x + (UINT64_C(1) << k);
@@ -951,8 +813,7 @@ public:
         } else {
             uint32_t log2q = asmlog2((x >> k) + 1);
             uint32_t log2qx2 = log2q * 2;
-            uint64_t expGolomb = x + (UINT64_C(1) << k) -
-                                 (UINT64_C(1) << (k + log2q));
+            uint64_t expGolomb = x + (UINT64_C(1) << k) - (UINT64_C(1) << (k + log2q));
 
             if (log2qx2 < 64 - k) {
                 writeBits(((expGolomb << 1) | 1) << log2q, k + log2qx2 + 1);
@@ -963,42 +824,32 @@ public:
         }
     }
 
-    static uint32_t
-    encodeExpGolombSpace(uint64_t x, uint32_t k)
-    {
-        return k + asmlog2((x >> k) + 1) * 2 + 1;
-    }
+    static uint32_t encodeExpGolombSpace(uint64_t x, uint32_t k) { return k + asmlog2((x >> k) + 1) * 2 + 1; }
 
-    static uint64_t
-    convertToUnsigned(int64_t val)
-    {
+    static uint64_t convertToUnsigned(int64_t val) {
         if (val < 0) {
-            return ((- val) << 1) - 1;
+            return ((-val) << 1) - 1;
         } else {
             return (val << 1);
         }
     }
 };
 
-
 using EncodeContext64BE = EncodeContext64<true>;
 
 using EncodeContext64LE = EncodeContext64<false>;
 
-class DecodeContext64Base : public search::ComprFileDecodeContext
-{
+class DecodeContext64Base : public search::ComprFileDecodeContext {
 private:
-    DecodeContext64Base(const DecodeContext64Base &);
+    DecodeContext64Base(const DecodeContext64Base&);
 
 public:
-    enum Constants {
-        END_BUFFER_SAFETY = 4
-    };
+    enum Constants { END_BUFFER_SAFETY = 4 };
 
     // Pointers to compressed data
-    const uint64_t *_valI;
-    const uint64_t *_valE;
-    const uint64_t *_realValE;
+    const uint64_t* _valI;
+    const uint64_t* _valE;
+    const uint64_t* _realValE;
 
     // Cached integers
 
@@ -1013,29 +864,22 @@ public:
 
     // File position for end of buffer minus byte address of end of buffer
     // minus sizeof uint64_t.  Then shifted left by 3 to represent bits.
-    uint64_t _fileReadBias;
-    search::ComprFileReadContext *_readContext;
+    uint64_t                      _fileReadBias;
+    search::ComprFileReadContext* _readContext;
 
     DecodeContext64Base()
         : search::ComprFileDecodeContext(),
           _valI(nullptr),
-          _valE(reinterpret_cast<const uint64_t *>(PTRDIFF_MAX)),
+          _valE(reinterpret_cast<const uint64_t*>(PTRDIFF_MAX)),
           _realValE(nullptr),
           _val(0),
           _cacheInt(0),
           _preRead(0),
           _fileReadBias(0),
-          _readContext(nullptr)
-    {
-    }
+          _readContext(nullptr) {}
 
-
-    DecodeContext64Base(const uint64_t *valI,
-                        const uint64_t *valE,
-                        const uint64_t *realValE,
-                        uint64_t val,
-                        uint64_t cacheInt,
-                        uint32_t preRead)
+    DecodeContext64Base(const uint64_t* valI, const uint64_t* valE, const uint64_t* realValE, uint64_t val,
+                        uint64_t cacheInt, uint32_t preRead)
         : search::ComprFileDecodeContext(),
           _valI(valI),
           _valE(valE),
@@ -1044,15 +888,11 @@ public:
           _cacheInt(cacheInt),
           _preRead(preRead),
           _fileReadBias(0),
-          _readContext(nullptr)
-    {
-    }
+          _readContext(nullptr) {}
 
     virtual ~DecodeContext64Base() = default;
 
-    DecodeContext64Base &
-    operator=(const DecodeContext64Base &rhs)
-    {
+    DecodeContext64Base& operator=(const DecodeContext64Base& rhs) {
         search::ComprFileDecodeContext::operator=(rhs);
         _valI = rhs._valI;
         _valE = rhs._valE;
@@ -1086,10 +926,10 @@ public:
     /**
      * Get unit ptr (e.g. _valI) from decode context.
      */
-    const void *getUnitPtr() const override { return _valI; }
+    const void* getUnitPtr() const override { return _valI; }
 
-    void afterRead(const void *start, size_t bufferUnits, uint64_t bufferEndFilePos, bool isMore) override {
-        _valI = static_cast<const uint64_t *>(start);
+    void afterRead(const void* start, size_t bufferUnits, uint64_t bufferEndFilePos, bool isMore) override {
+        _valI = static_cast<const uint64_t*>(start);
         setEnd(bufferUnits, isMore);
         _fileReadBias = (bufferEndFilePos - reinterpret_cast<unsigned long>(_realValE + 1)) << 3;
     }
@@ -1107,16 +947,12 @@ public:
     }
 
     void defineReadOffset(uint64_t readOffset) {
-        _fileReadBias  = readOffset -
-                         (reinterpret_cast<unsigned long>(_valI) << 3) +
-                         _preRead;
+        _fileReadBias = readOffset - (reinterpret_cast<unsigned long>(_valI) << 3) + _preRead;
     }
 
     uint64_t getBitPosV() const override { return getReadOffset(); }
 
-    void adjUnitPtr(int64_t newRemainingUnits) override {
-        _valI = _realValE - newRemainingUnits;
-    }
+    void adjUnitPtr(int64_t newRemainingUnits) override { _valI = _realValE - newRemainingUnits; }
 
     void emptyBuffer(uint64_t newBitPosition) override {
         _fileReadBias = newBitPosition;
@@ -1142,29 +978,21 @@ public:
         }
     }
 
-    const uint64_t *getCompr() const {
-        return (_preRead == 0) ? (_valI - 1) : (_valI - 2);
-    }
+    const uint64_t* getCompr() const { return (_preRead == 0) ? (_valI - 1) : (_valI - 2); }
 
-    int getBitOffset() const {
-        return (_preRead == 0) ? 0 : 64 - _preRead;
-    }
+    int getBitOffset() const { return (_preRead == 0) ? 0 : 64 - _preRead; }
 
     static int64_t convertToSigned(uint64_t val) {
         if ((val & 1) != 0) {
-            return - (val >> 1) - 1;
+            return -(val >> 1) - 1;
         } else {
             return (val >> 1);
         }
     }
 
-    void setReadContext(search::ComprFileReadContext *readContext) {
-        _readContext = readContext;
-    }
+    void setReadContext(search::ComprFileReadContext* readContext) { _readContext = readContext; }
 
-    void readComprBuffer() {
-        _readContext->readComprBuffer();
-    }
+    void readComprBuffer() { _readContext->readComprBuffer(); }
     void readComprBufferIfNeeded() {
         if (__builtin_expect(_valI >= _valE, false)) {
             readComprBuffer();
@@ -1173,38 +1001,31 @@ public:
     virtual uint64_t readBits(uint32_t length) = 0;
     virtual void align(uint32_t alignment) = 0;
     virtual uint64_t decode_exp_golomb(int k) = 0;
-    void readBytes(uint8_t *buf, size_t len);
-    uint32_t readHeader(vespalib::GenericHeader &header, int64_t fileSize);
+    void readBytes(uint8_t* buf, size_t len);
+    uint32_t readHeader(vespalib::GenericHeader& header, int64_t fileSize);
 
     /*
      * Check if file is padding at end for decompression readahead.
      */
     static bool is_padded_for_memory_map(uint64_t file_bit_size, uint64_t file_size) noexcept;
 
-    static uint64_t file_units(uint64_t file_size) noexcept { return (file_size + sizeof(uint64_t) - 1) / sizeof(uint64_t); }
+    static uint64_t file_units(uint64_t file_size) noexcept {
+        return (file_size + sizeof(uint64_t) - 1) / sizeof(uint64_t);
+    }
 };
 
-
-template <bool bigEndian>
-class DecodeContext64 : public DecodeContext64Base
-{
+template <bool bigEndian> class DecodeContext64 : public DecodeContext64Base {
 private:
-    DecodeContext64(const DecodeContext64 &);
+    DecodeContext64(const DecodeContext64&);
 
 public:
     using EC = EncodeContext64<bigEndian>;
 
     DecodeContext64() = default;
 
-
-    DecodeContext64(const uint64_t *compr, int bitOffset)
-        : DecodeContext64Base(compr + 1,
-                              reinterpret_cast<const uint64_t *>(PTRDIFF_MAX),
-                              nullptr,
-                              0,
-                              EC::bswap(*compr),
-                              64 - bitOffset)
-    {
+    DecodeContext64(const uint64_t* compr, int bitOffset)
+        : DecodeContext64Base(compr + 1, reinterpret_cast<const uint64_t*>(PTRDIFF_MAX), nullptr, 0,
+                              EC::bswap(*compr), 64 - bitOffset) {
         uint32_t length = 64;
         UC64_READBITS(_val, _valI, _preRead, _cacheInt, EC);
     }
@@ -1215,23 +1036,15 @@ public:
      * data beyond is available, to avoid issues when prefetching bits
      * into two registers (_val and _cacheInt).
      */
-    DecodeContext64(const uint64_t *compr, int bitOffset, uint64_t bitLength)
-        : DecodeContext64Base(compr + 1,
-                              nullptr,
-                              nullptr,
-                              0,
-                              EC::bswap(*compr),
-                              64 - bitOffset)
-    {
+    DecodeContext64(const uint64_t* compr, int bitOffset, uint64_t bitLength)
+        : DecodeContext64Base(compr + 1, nullptr, nullptr, 0, EC::bswap(*compr), 64 - bitOffset) {
         uint32_t length = 64;
         UC64_READBITS(_val, _valI, _preRead, _cacheInt, EC);
         _realValE = compr + (bitOffset + bitLength + 63) / 64;
         _valE = _realValE + END_BUFFER_SAFETY;
     }
 
-    DecodeContext64 &
-    operator=(const DecodeContext64 &rhs)
-    {
+    DecodeContext64& operator=(const DecodeContext64& rhs) {
         DecodeContext64Base::operator=(rhs);
         return *this;
     }
@@ -1245,18 +1058,13 @@ public:
      * @param preRead  Number of valid bits in cacheInt
      * @param valI     Pointer to next integer in bitstream
      */
-    static void
-    ReadBits(unsigned int length, uint64_t &val,
-             uint64_t &cacheInt, unsigned int &preRead,
-             const uint64_t * &valI)
-    {
+    static void ReadBits(unsigned int length, uint64_t& val, uint64_t& cacheInt, unsigned int& preRead,
+                         const uint64_t*& valI) {
         if (length <= preRead) {
             if (bigEndian) {
-                val |= ((cacheInt >> (preRead - length)) &
-                        CodingTables::_intMask64[length]);
+                val |= ((cacheInt >> (preRead - length)) & CodingTables::_intMask64[length]);
             } else {
-                val |= ((cacheInt << (preRead - length)) &
-                        CodingTables::_intMask64le[length]);
+                val |= ((cacheInt << (preRead - length)) & CodingTables::_intMask64le[length]);
             }
             preRead -= length;
             return;
@@ -1265,11 +1073,9 @@ public:
         if (preRead > 0) {
             length -= preRead;
             if (bigEndian) {
-                val |= ((cacheInt &
-                         CodingTables::_intMask64[preRead]) << length);
+                val |= ((cacheInt & CodingTables::_intMask64[preRead]) << length);
             } else {
-                val |= ((cacheInt &
-                         CodingTables::_intMask64le[preRead]) >> length);
+                val |= ((cacheInt & CodingTables::_intMask64le[preRead]) >> length);
             }
         }
 
@@ -1317,27 +1123,20 @@ public:
     /**
      * Used by iterators when switching from bitwise to bytewise decoding.
      */
-    const uint8_t *
-    getByteCompr() const
-    {
-        return reinterpret_cast<const uint8_t *>(getCompr()) +
-            (getBitOffset() >> 3);
+    const uint8_t* getByteCompr() const {
+        return reinterpret_cast<const uint8_t*>(getCompr()) + (getBitOffset() >> 3);
     }
 
     /**
      * Used by iterators when switching from bytewise to bitwise decoding.
      */
-    void
-    setByteCompr(const uint8_t *bCompr)
-    {
+    void setByteCompr(const uint8_t* bCompr) {
         int byteOffset = reinterpret_cast<unsigned long>(bCompr) & 7;
-        _valI = reinterpret_cast<const uint64_t *>(bCompr - byteOffset);
+        _valI = reinterpret_cast<const uint64_t*>(bCompr - byteOffset);
         setupBits(byteOffset * 8);
     }
 
-    uint64_t
-    readBits(uint32_t length) override
-    {
+    uint64_t readBits(uint32_t length) override {
         uint64_t res;
         if (length < 64) {
             if (bigEndian) {
@@ -1364,18 +1163,16 @@ public:
         return val64;
     }
 
-    void
-    align(uint32_t alignment) override
-    {
+    void align(uint32_t alignment) override {
         readComprBufferIfNeeded();
-        uint64_t pad = (- getReadOffset()) & (alignment - 1);
+        uint64_t pad = (-getReadOffset()) & (alignment - 1);
         while (pad > 64) {
-            (void) readBits(64);
+            (void)readBits(64);
             pad -= 64;
             readComprBufferIfNeeded();
         }
         if (pad > 0) {
-            (void) readBits(pad);
+            (void)readBits(pad);
         }
         readComprBufferIfNeeded();
     }
@@ -1383,12 +1180,10 @@ public:
     /*
      * Small alignment (max 64 bits alignment)
      */
-    void
-    smallAlign(uint32_t alignment)
-    {
+    void smallAlign(uint32_t alignment) {
         uint64_t pad = _preRead & (alignment - 1);
         if (pad > 0) {
-            (void) readBits(pad);
+            (void)readBits(pad);
         }
     }
 };
@@ -1397,93 +1192,74 @@ using DecodeContext64BE = DecodeContext64<true>;
 
 using DecodeContext64LE = DecodeContext64<false>;
 
-template <bool bigEndian>
-class FeatureDecodeContext : public DecodeContext64<bigEndian>
-{
+template <bool bigEndian> class FeatureDecodeContext : public DecodeContext64<bigEndian> {
 public:
     using ParentClass = DecodeContext64<bigEndian>;
     using DocIdAndFeatures = index::DocIdAndFeatures;
     using PostingListParams = index::PostingListParams;
-    using ParentClass::_val;
-    using ParentClass::_valI;
-    using ParentClass::_valE;
-    using ParentClass::_realValE;
     using ParentClass::_cacheInt;
     using ParentClass::_preRead;
-    using ParentClass::getReadOffset;
-    using ParentClass::getCompr;
+    using ParentClass::_realValE;
+    using ParentClass::_val;
+    using ParentClass::_valE;
+    using ParentClass::_valI;
     using ParentClass::getBitOffset;
+    using ParentClass::getCompr;
+    using ParentClass::getReadOffset;
     using ParentClass::readBits;
     using ParentClass::ReadBits;
+    using ParentClass::readBytes;
     using ParentClass::readComprBuffer;
     using ParentClass::readComprBufferIfNeeded;
     using ParentClass::readHeader;
-    using ParentClass::readBytes;
 
     FeatureDecodeContext() = default;
 
-    FeatureDecodeContext(const uint64_t *compr, int bitOffset)
-        : ParentClass(compr, bitOffset)
-    {
-    }
+    FeatureDecodeContext(const uint64_t* compr, int bitOffset) : ParentClass(compr, bitOffset) {}
 
-    FeatureDecodeContext(const uint64_t *compr, int bitOffset, uint64_t bitLength)
-        : ParentClass(compr, bitOffset, bitLength)
-    {
-    }
+    FeatureDecodeContext(const uint64_t* compr, int bitOffset, uint64_t bitLength)
+        : ParentClass(compr, bitOffset, bitLength) {}
 
-    virtual void readHeader(const vespalib::GenericHeader &header, const std::string &prefix);
+    virtual void readHeader(const vespalib::GenericHeader& header, const std::string& prefix);
 
-    virtual const std::string & getIdentifier() const;
-    virtual void readFeatures(DocIdAndFeatures &features);
+    virtual const std::string& getIdentifier() const;
+    virtual void readFeatures(DocIdAndFeatures& features);
     virtual void skipFeatures(unsigned int count);
-    virtual void unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData, uint32_t docId);
-    virtual void setParams(const PostingListParams &params);
-    virtual void getParams(PostingListParams &params) const;
+    virtual void unpackFeatures(const search::fef::TermFieldMatchDataArray& matchData, uint32_t docId);
+    virtual void setParams(const PostingListParams& params);
+    virtual void getParams(PostingListParams& params) const;
 };
 
 using FeatureDecodeContextBE = FeatureDecodeContext<true>;
 
 using FeatureDecodeContextLE = FeatureDecodeContext<false>;
 
-template <bool bigEndian>
-class FeatureEncodeContext : public EncodeContext64<bigEndian>
-{
+template <bool bigEndian> class FeatureEncodeContext : public EncodeContext64<bigEndian> {
 public:
-    search::ComprFileWriteContext *_writeContext;
+    search::ComprFileWriteContext* _writeContext;
     using ParentClass = EncodeContext64<bigEndian>;
     using DocIdAndFeatures = index::DocIdAndFeatures;
     using PostingListParams = index::PostingListParams;
-    using ParentClass::_cacheInt;
     using ParentClass::_cacheFree;
+    using ParentClass::_cacheInt;
     using ParentClass::smallPadBits;
 
 public:
-    FeatureEncodeContext()
-        : ParentClass(),
-          _writeContext(nullptr)
-    {
-    }
+    FeatureEncodeContext() : ParentClass(), _writeContext(nullptr) {}
 
-    FeatureEncodeContext &
-    operator=(const FeatureEncodeContext &rhs)
-    {
+    FeatureEncodeContext& operator=(const FeatureEncodeContext& rhs) {
         ParentClass::operator=(rhs);
         _writeContext = rhs._writeContext;
         return *this;
     }
 
-    void setWriteContext(search::ComprFileWriteContext *writeContext) {
-        _writeContext = writeContext;
-    }
+    void setWriteContext(search::ComprFileWriteContext* writeContext) { _writeContext = writeContext; }
 
-    using ParentClass::asmlog2;
-    using ParentClass::_valI;
     using ParentClass::_valE;
+    using ParentClass::_valI;
+    using ParentClass::asmlog2;
 
-    static int
-    calcDocIdK(uint32_t numDocs, uint32_t docIdLimit)
-    {
+    static int calcDocIdK(uint32_t numDocs, uint32_t docIdLimit) {
         uint32_t avgDelta = docIdLimit / (numDocs + 1);
         uint32_t docIdK = (avgDelta < 4) ? 1 : (asmlog2(avgDelta));
         return docIdK;
@@ -1491,11 +1267,11 @@ public:
 
     using ParentClass::writeBits;
 
-    void writeBits(const uint64_t *bits, uint32_t bitOffset, uint64_t bitLength);
+    void writeBits(const uint64_t* bits, uint32_t bitOffset, uint64_t bitLength);
     void writeBytes(std::span<const char> buf);
     void writeBytes(std::span<const unsigned char> buf);
     void writeString(std::string_view buf);
-    virtual void writeHeader(const vespalib::GenericHeader &header);
+    virtual void writeHeader(const vespalib::GenericHeader& header);
 
     void writeComprBufferIfNeeded() {
         if (_valI >= _valE) [[unlikely]] {
@@ -1503,9 +1279,7 @@ public:
         }
     }
 
-    void writeComprBuffer() {
-        _writeContext->writeComprBuffer(true);
-    }
+    void writeComprBuffer() { _writeContext->writeComprBuffer(true); }
 
     void padBits(uint32_t length) override {
         while (length > 64) {
@@ -1519,12 +1293,12 @@ public:
 
     void pad_for_memory_map_and_flush();
 
-    virtual void readHeader(const vespalib::GenericHeader &header, const std::string &prefix);
-    virtual void writeHeader(vespalib::GenericHeader &header, const std::string &prefix) const;
-    virtual const std::string &getIdentifier() const;
-    virtual void writeFeatures(const DocIdAndFeatures &features);
-    virtual void setParams(const PostingListParams &params);
-    virtual void getParams(PostingListParams &params) const;
+    virtual void readHeader(const vespalib::GenericHeader& header, const std::string& prefix);
+    virtual void writeHeader(vespalib::GenericHeader& header, const std::string& prefix) const;
+    virtual const std::string& getIdentifier() const;
+    virtual void writeFeatures(const DocIdAndFeatures& features);
+    virtual void setParams(const PostingListParams& params);
+    virtual void getParams(PostingListParams& params) const;
 };
 
 using FeatureEncodeContextBE = FeatureEncodeContext<true>;
@@ -1537,4 +1311,4 @@ extern template class FeatureDecodeContext<false>;
 extern template class FeatureEncodeContext<true>;
 extern template class FeatureEncodeContext<false>;
 
-}
+} // namespace search::bitcompression

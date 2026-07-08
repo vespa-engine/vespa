@@ -7,15 +7,19 @@
 #pragma once
 
 #include "messagehandler.h"
+
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/messagebus/trace.h>
 #include <vespa/vdslib/state/nodetype.h>
-#include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/printable.h>
-#include <map>
-#include <iosfwd>
 
-namespace vespalib { class asciistream; }
+#include <iosfwd>
+#include <map>
+
+namespace vespalib {
+class asciistream;
+}
 // The following macros are provided as a way to write storage messages simply.
 // They implement the parts of the code that can easily be automaticly
 // generated.
@@ -23,41 +27,37 @@ namespace vespalib { class asciistream; }
 /**
  * Adds a messagehandler callback and some utilities
  */
-#define DECLARE_POINTER_TYPEDEFS(message) \
-    using UP = std::unique_ptr<message>; \
-    using SP = std::shared_ptr<message>; \
+#define DECLARE_POINTER_TYPEDEFS(message)       \
+    using UP = std::unique_ptr<message>;        \
+    using SP = std::shared_ptr<message>;        \
     using CSP = std::shared_ptr<const message>;
 
-#define DECLARE_STORAGEREPLY(reply, callback) \
-public: \
-    DECLARE_POINTER_TYPEDEFS(reply) \
-private: \
-    bool callHandler(storage::api::MessageHandler& h, \
-                     const std::shared_ptr<storage::api::StorageMessage>& m) const override \
-    { \
-        return h.callback(std::static_pointer_cast<reply>(m)); \
+#define DECLARE_STORAGEREPLY(reply, callback)                                                                 \
+public:                                                                                                       \
+    DECLARE_POINTER_TYPEDEFS(reply)                                                                           \
+private:                                                                                                      \
+    bool callHandler(storage::api::MessageHandler& h, const std::shared_ptr<storage::api::StorageMessage>& m) \
+        const override {                                                                                      \
+        return h.callback(std::static_pointer_cast<reply>(m));                                                \
     }
 
 /** Commands also has a command to implement to create the reply. */
-#define DECLARE_STORAGECOMMAND(command, callback) \
-public: \
+#define DECLARE_STORAGECOMMAND(command, callback)                     \
+public:                                                               \
     std::unique_ptr<storage::api::StorageReply> makeReply() override; \
     DECLARE_STORAGEREPLY(command, callback)
 
 /** This macro implements common stuff for all storage messages. */
-#define IMPLEMENT_COMMON(message) \
+#define IMPLEMENT_COMMON(message)
 
 /** This macro is used to implement common storage reply functionality. */
-#define IMPLEMENT_REPLY(reply) \
-    IMPLEMENT_COMMON(reply) \
+#define IMPLEMENT_REPLY(reply) IMPLEMENT_COMMON(reply)
 
 /** This macro is used to implement common storage command functionality. */
-#define IMPLEMENT_COMMAND(command, reply) \
-    IMPLEMENT_COMMON(command) \
-    std::unique_ptr<storage::api::StorageReply> \
-    storage::api::command::makeReply() \
-    { \
-        return std::make_unique<reply>(*this); \
+#define IMPLEMENT_COMMAND(command, reply)                                            \
+    IMPLEMENT_COMMON(command)                                                        \
+    std::unique_ptr<storage::api::StorageReply> storage::api::command::makeReply() { \
+        return std::make_unique<reply>(*this);                                       \
     }
 
 namespace storage::api {
@@ -147,12 +147,13 @@ public:
 
 private:
     static std::map<Id, MessageType*> _codes;
-    const std::string _name;
-    Id _id;
-    MessageType *_reply;
-    const MessageType *_replyOf;
+    const std::string                 _name;
+    Id                                _id;
+    MessageType*                      _reply;
+    const MessageType*                _replyOf;
 
     MessageType(std::string_view name, Id id, const MessageType* replyOf = 0);
+
 public:
     static const MessageType DOCBLOCK;
     static const MessageType DOCBLOCK_REPLY;
@@ -223,8 +224,8 @@ public:
 
     static const MessageType& get(Id id);
 
-    MessageType(const MessageType &) = delete;
-    MessageType& operator=(const MessageType &) = delete;
+    MessageType(const MessageType&) = delete;
+    MessageType& operator=(const MessageType&) = delete;
     ~MessageType();
     Id getId() const noexcept { return _id; }
     static Id getMaxId() noexcept { return MESSAGETYPE_MAX_ID; }
@@ -251,17 +252,19 @@ public:
     enum class Protocol : uint8_t { STORAGE, DOCUMENT };
 
 private:
-    const std::string  *_cluster;
+    const std::string* _cluster;
     // Used for internal VDS addresses only
-    uint32_t                 _precomputed_storage_hash;
-    lib::NodeType::Type      _type;
-    Protocol                 _protocol;
-    uint16_t                 _index;
+    uint32_t            _precomputed_storage_hash;
+    lib::NodeType::Type _type;
+    Protocol            _protocol;
+    uint16_t            _index;
 
 public:
-    StorageMessageAddress() noexcept; // Only to be used when transient default ctor semantics are needed by containers
-    StorageMessageAddress(const std::string * cluster, const lib::NodeType& type, uint16_t index) noexcept;
-    StorageMessageAddress(const std::string * cluster, const lib::NodeType& type, uint16_t index, Protocol protocol) noexcept;
+    StorageMessageAddress() noexcept; // Only to be used when transient default ctor semantics are needed by
+                                      // containers
+    StorageMessageAddress(const std::string* cluster, const lib::NodeType& type, uint16_t index) noexcept;
+    StorageMessageAddress(const std::string* cluster, const lib::NodeType& type, uint16_t index,
+                          Protocol protocol) noexcept;
     ~StorageMessageAddress();
 
     void setProtocol(Protocol p) noexcept { _protocol = p; }
@@ -273,21 +276,22 @@ public:
     const std::string& getCluster() const noexcept { return *_cluster; }
 
     // Returns precomputed hash over <type, index> pair. Other fields not included.
-    [[nodiscard]] uint32_t internal_storage_hash() const noexcept {
-        return _precomputed_storage_hash;
-    }
+    [[nodiscard]] uint32_t internal_storage_hash() const noexcept { return _precomputed_storage_hash; }
 
     bool operator==(const StorageMessageAddress& other) const noexcept;
     std::string toString() const;
-    friend std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr);
-    static StorageMessageAddress create(const std::string * cluster, const lib::NodeType& type, uint16_t index) noexcept {
+    friend std::ostream& operator<<(std::ostream& os, const StorageMessageAddress& addr);
+    static StorageMessageAddress create(const std::string* cluster, const lib::NodeType& type,
+                                        uint16_t index) noexcept {
         return api::StorageMessageAddress(cluster, type, index);
     }
-    static StorageMessageAddress createDocApi(const std::string * cluster, const lib::NodeType& type, uint16_t index) noexcept {
+    static StorageMessageAddress createDocApi(const std::string* cluster, const lib::NodeType& type,
+                                              uint16_t index) noexcept {
         return api::StorageMessageAddress(cluster, type, index, Protocol::DOCUMENT);
     }
+
 private:
-    void print(vespalib::asciistream & out) const;
+    void print(vespalib::asciistream& out) const;
 };
 
 struct TransportContext {
@@ -312,28 +316,19 @@ std::ostream& operator<<(std::ostream&, LockingRequirements);
 // Note that the name _internal_ read consistency is intentional to lessen
 // any ambiguities on whether this is consistency in a distributed systems
 // setting (i.e. linearizability) on internally in the persistence provider.
-enum class InternalReadConsistency : uint8_t {
-    Strong = 0,
-    Weak
-};
+enum class InternalReadConsistency : uint8_t { Strong = 0, Weak };
 
 const char* to_string(InternalReadConsistency consistency) noexcept;
 std::ostream& operator<<(std::ostream&, InternalReadConsistency);
 
-class StorageMessage : public vespalib::Printable
-{
+class StorageMessage : public vespalib::Printable {
     friend class StorageMessageTest; // Used for testing only
 public:
     DECLARE_POINTER_TYPEDEFS(StorageMessage);
     using Id = uint64_t;
     using Priority = uint8_t;
 
-    enum LegacyPriorityValues {
-        LOW = 225,
-        NORMAL = 127,
-        HIGH = 50,
-        VERYHIGH = 0
-    }; // FIXME
+    enum LegacyPriorityValues { LOW = 225, NORMAL = 127, HIGH = 50, VERYHIGH = 0 }; // FIXME
 
     static const char* getPriorityString(Priority);
 
@@ -343,13 +338,13 @@ private:
     }
 
     mutable std::unique_ptr<TransportContext> _transportContext;
-    const MessageType&    _type;
-    Id                    _internal_msg_id;
-    Id                    _originator_msg_id;
-    StorageMessageAddress _address;
-    vespalib::Trace       _trace;
-    uint32_t              _approxByteSize;
-    Priority              _priority;
+    const MessageType&                        _type;
+    Id                                        _internal_msg_id;
+    Id                                        _originator_msg_id;
+    StorageMessageAddress                     _address;
+    vespalib::Trace                           _trace;
+    uint32_t                                  _approxByteSize;
+    Priority                                  _priority;
 
 protected:
     static Id generateMsgId() noexcept;
@@ -383,23 +378,19 @@ public:
     void setPriority(Priority p) noexcept { _priority = p; }
     Priority getPriority() const noexcept { return _priority; }
 
-    const StorageMessageAddress* getAddress() const noexcept { return (_address.getNodeType() != lib::NodeType::Type::UNKNOWN) ? &_address : nullptr; }
-
-    void setAddress(const StorageMessageAddress& address) noexcept {
-        _address = address;
+    const StorageMessageAddress* getAddress() const noexcept {
+        return (_address.getNodeType() != lib::NodeType::Type::UNKNOWN) ? &_address : nullptr;
     }
+
+    void setAddress(const StorageMessageAddress& address) noexcept { _address = address; }
 
     /**
      *  Returns the approximate memory footprint (in bytes) of a storage message.
      *  If unset, returns 50 bytes.
      */
-    [[nodiscard]] uint32_t getApproxByteSize() const noexcept {
-        return _approxByteSize;
-    }
+    [[nodiscard]] uint32_t getApproxByteSize() const noexcept { return _approxByteSize; }
 
-    void setApproxByteSize(uint32_t value) noexcept {
-        _approxByteSize = value;
-    }
+    void setApproxByteSize(uint32_t value) noexcept { _approxByteSize = value; }
 
     /**
      * Used by storage to remember the context in which this message was
@@ -410,13 +401,9 @@ public:
         _transportContext = std::move(context);
     }
 
-    std::unique_ptr<TransportContext> getTransportContext() const noexcept {
-        return std::move(_transportContext);
-    }
+    std::unique_ptr<TransportContext> getTransportContext() const noexcept { return std::move(_transportContext); }
 
-    bool has_transport_context() const noexcept {
-        return (_transportContext.get() != nullptr);
-    }
+    bool has_transport_context() const noexcept { return (_transportContext.get() != nullptr); }
 
     /**
      * This method is overloaded in subclasses and will call the correct
@@ -425,14 +412,14 @@ public:
     virtual bool callHandler(MessageHandler&, const StorageMessage::SP&) const = 0;
     virtual bool hasTestAndSetCondition() const noexcept { return false; }
 
-    mbus::Trace && steal_trace() noexcept { return std::move(_trace); }
+    mbus::Trace&& steal_trace() noexcept { return std::move(_trace); }
     mbus::Trace& getTrace() noexcept { return _trace; }
     const mbus::Trace& getTrace() const noexcept { return _trace; }
 
     /**
        Sets the trace object for this message.
     */
-    void setTrace(vespalib::Trace && trace) noexcept { _trace = std::move(trace); }
+    void setTrace(vespalib::Trace&& trace) noexcept { _trace = std::move(trace); }
 
     /**
      * Cheap version of tostring().
@@ -447,4 +434,4 @@ public:
     }
 };
 
-}
+} // namespace storage::api

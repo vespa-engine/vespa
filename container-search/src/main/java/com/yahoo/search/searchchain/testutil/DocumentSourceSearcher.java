@@ -111,13 +111,14 @@ public class DocumentSourceSearcher extends Searcher {
     }
 
     /**
-     * Returns a query clone which has sourcr, offset and hits set to null. This is used by access to
+     * Returns a query clone which has source, offset, hits, and summary fields set to null. This is used by access to
      * the maps using the query as key to achieve lookup independent of offset/hits value
      */
     private Query getQueryKeyClone(Query query) {
         Query key = query.clone();
         key.setWindow(0, 0);
         key.getModel().setSources("");
+        key.getPresentation().setSummaryFields("");
         return key;
     }
 

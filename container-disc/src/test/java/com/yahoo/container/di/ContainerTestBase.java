@@ -6,6 +6,7 @@ import com.yahoo.container.core.config.BundleTestUtil;
 import com.yahoo.container.core.config.TestOsgi;
 import com.yahoo.container.di.ContainerTest.ComponentTakingConfig;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
+import com.yahoo.text.Text;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.osgi.framework.Bundle;
@@ -51,11 +52,19 @@ public class ContainerTestBase {
     ComponentGraph getNewComponentGraph(Container container, ComponentGraph oldGraph) {
         Container.ComponentGraphResult result = container.waitForNextGraphGeneration(oldGraph, Guice.createInjector(), true);
         result.oldComponentsCleanupTask().run();
+        if (result.failed()) rethrow(result.failure());
         return result.newGraph();
     }
 
     ComponentGraph getNewComponentGraph(Container container) {
-        return container.waitForNextGraphGeneration(new ComponentGraph(), Guice.createInjector(), true).newGraph();
+        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(new ComponentGraph(), Guice.createInjector(), true);
+        if (result.failed()) rethrow(result.failure());
+        return result.newGraph();
+    }
+
+    static void rethrow(Throwable t) {
+        if (t instanceof RuntimeException re) throw re;
+        throw new RuntimeException(t);
     }
 
 
@@ -69,7 +78,7 @@ public class ContainerTestBase {
         for (int i = 0; i < applicationBundles.size(); i++) {
             bundles.append("bundles[" + i + "] \"" + applicationBundles.get(i) + "\"\n");
         }
-        dirConfigSource.writeConfig("application-bundles", String.format("bundles[%s]\n%s", applicationBundles.size(), bundles));
+        dirConfigSource.writeConfig("application-bundles", Text.format("bundles[%s]\n%s", applicationBundles.size(), bundles));
     }
 
     protected void writeBootstrapConfigs(ComponentEntry... componentEntries) {
@@ -80,7 +89,7 @@ public class ContainerTestBase {
             components.append(componentEntries[i].asConfig(i));
             components.append('\n');
         }
-        dirConfigSource.writeConfig("components", String.format("components[%s]\n%s", componentEntries.length, components));
+        dirConfigSource.writeConfig("components", Text.format("components[%s]\n%s", componentEntries.length, components));
     }
 
     protected void writeBootstrapConfigs(String componentId, Class<?> classId) {

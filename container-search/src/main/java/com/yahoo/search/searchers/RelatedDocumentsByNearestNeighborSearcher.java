@@ -18,6 +18,8 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.tensor.Tensor;
 
+import java.util.Optional;
+
 /**
  * Finds documents related to a given document using nearest neighbor search on embeddings.
  *
@@ -33,6 +35,8 @@ import com.yahoo.tensor.Tensor;
  *   <li><b>relatedTo.summary</b> - The summary class containing the embedding (default: same as embeddingField)</li>
  *   <li><b>relatedTo.exploreAdditionalHits</b> - Additional candidates to explore beyond hits+offset (default: 100)</li>
  *   <li><b>relatedTo.excludeSource</b> - Whether to exclude the source document from results (default: true)</li>
+ *   <li><b>relatedTo.restrict</b> - Comma-separated document type(s) to restrict the source document fetch to.
+ *       Useful when the source id is not unique across document types in the container (default: search all types)</li>
  * </ul>
  *
  * @author andreer
@@ -47,6 +51,7 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
     private static final CompoundName RELATED_TO_SUMMARY = CompoundName.from("relatedTo.summary");
     private static final CompoundName RELATED_TO_EXPLORE_ADDITIONAL_HITS = CompoundName.from("relatedTo.exploreAdditionalHits");
     private static final CompoundName RELATED_TO_EXCLUDE_SOURCE = CompoundName.from("relatedTo.excludeSource");
+    private static final CompoundName RELATED_TO_RESTRICT = CompoundName.from("relatedTo.restrict");
 
     @Override
     public Result search(Query query, Execution execution) {
@@ -70,16 +75,20 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
         String idField = query.properties().getString(RELATED_TO_ID_FIELD, "id");
         String summary = query.properties().getString(RELATED_TO_SUMMARY, embeddingField);
         int targetHits = query.getHits() + query.getOffset();
-        int exploreAdditionalHits = query.properties().getInteger(RELATED_TO_EXPLORE_ADDITIONAL_HITS, 100);
         boolean excludeSource = query.properties().getBoolean(RELATED_TO_EXCLUDE_SOURCE, true);
+        Optional<String> restrict = Optional.ofNullable(query.properties().getString(RELATED_TO_RESTRICT, null));
 
-        Tensor embedding = fetchEmbedding(sourceId, idField, embeddingField, summary, execution, query);
+        Tensor embedding = fetchEmbedding(sourceId, idField, embeddingField, summary, execution, query, restrict);
         if (embedding == null) {
             return new Result(query, ErrorMessage.createBackendCommunicationError(
                     "Could not find document with " + idField + "=" + sourceId + " or it has no " + embeddingField));
         }
 
-        addNearestNeighborItem(embedding, embeddingField, queryTensorName, targetHits, exploreAdditionalHits, query);
+        // Translate explored additional hits (deprecated) into an increased target hits
+        int exploreAdditionalHits = query.properties().getInteger(RELATED_TO_EXPLORE_ADDITIONAL_HITS, 0);
+        targetHits = Math.max(targetHits, exploreAdditionalHits);
+
+        addNearestNeighborItem(embedding, embeddingField, queryTensorName, targetHits, query);
 
         if (excludeSource) {
             excludeSourceDocument(sourceId, idField, query);
@@ -89,15 +98,19 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
     }
 
     private Tensor fetchEmbedding(String sourceId, String idField, String embeddingField, String summary,
-                                  Execution execution, Query query) {
+                                  Execution execution, Query query, Optional<String> restrict) {
         Query fetchQuery = new Query();
         query.attachContext(fetchQuery);
         fetchQuery.getPresentation().setSummary(summary);
         fetchQuery.getModel().getQueryTree().setRoot(new WordItem(sourceId, idField, true));
         fetchQuery.setHits(1);
         fetchQuery.getRanking().setProfile("unranked");
+        restrict.ifPresent(r -> fetchQuery.getModel().setRestrict(r));
 
         Result result = execution.search(fetchQuery);
+        if (result.hits().getError() != null) {
+            return null;
+        }
         execution.fill(result, summary);
 
         if (result.hits().size() < 1) {
@@ -113,13 +126,12 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
     }
 
     private void addNearestNeighborItem(Tensor embedding, String embeddingField, String queryTensorName,
-                                         int targetHits, int exploreAdditionalHits, Query query) {
+                                         int targetHits, Query query) {
         query.getRanking().getFeatures().put("query(" + queryTensorName + ")", embedding);
 
         NearestNeighborItem nnItem = new NearestNeighborItem(embeddingField, queryTensorName);
         nnItem.setAllowApproximate(true);
-        nnItem.setTargetNumHits(targetHits);
-        nnItem.setHnswExploreAdditionalHits(exploreAdditionalHits);
+        nnItem.setTargetHits(targetHits);
 
         Item root = query.getModel().getQueryTree().getRoot();
         if (root instanceof NullItem || root == null) {

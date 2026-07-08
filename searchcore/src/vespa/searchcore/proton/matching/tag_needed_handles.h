@@ -2,8 +2,12 @@
 
 #pragma once
 
-namespace search::fef { class IIndexEnvironment; }
-namespace search::query { class Node; }
+namespace search::fef {
+class IIndexEnvironment;
+}
+namespace search::query {
+class Node;
+}
 
 namespace proton::matching {
 
@@ -16,4 +20,4 @@ class HandleRecorder;
 void tag_needed_handles(search::query::Node& node, HandleRecorder& handle_recorder,
                         const search::fef::IIndexEnvironment& index_env);
 
-}
+} // namespace proton::matching

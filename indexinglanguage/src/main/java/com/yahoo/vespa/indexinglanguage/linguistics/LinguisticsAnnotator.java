@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.Locale;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -284,12 +285,13 @@ public class LinguisticsAnnotator {
         if (maxRatio >= 1 && (maxCharacters < 0 || maxCharacters == Integer.MAX_VALUE)) return false;
         var replacementCharCount = text.chars().filter(c -> c == 0xFFFD).count();
         if (replacementCharCount > maxCharacters && replacementCharCount > text.length() * maxRatio) {
-            var reason = ("Some text of length %d is classified as binary data as it contains %d Unicode replacement characters. " +
-                    "(max-replacement-character-ratio=%d%%, max-replacement-characters=%d)")
-                    .formatted(text.length(), replacementCharCount, (int)Math.round(maxRatio * 100) , maxCharacters);
-            var docIdString = (docId != null) ? "%s".formatted(docId.toString()) : "<unknown>";
+            var reason = String.format(Locale.ROOT,
+                    "Some text of length %d is classified as binary data as it contains %d Unicode replacement characters. " +
+                    "(max-replacement-character-ratio=%d%%, max-replacement-characters=%d)",
+                    text.length(), replacementCharCount, (int)Math.round(maxRatio * 100) , maxCharacters);
+            var docIdString = (docId != null) ? Text.format("%s", docId.toString()) : "<unknown>";
             if (isReindexingOperation) {
-                log.warning("Skipping tokenization of '%s' while reindexing: %s. ".formatted(docIdString, reason));
+                log.warning(Text.format("Skipping tokenization of \'%s\' while reindexing: %s. ", docIdString, reason));
                 return true;
             } else {
                 throw new InvalidInputException(reason);

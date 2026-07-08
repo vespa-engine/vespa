@@ -6,14 +6,18 @@
 #include <vespa/vespalib/datastore/datastorebase.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/datastore/i_compactable.h>
-#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/generation.h>
 
 namespace vespalib {
 struct StateExplorer;
 class nbostream;
+} // namespace vespalib
+namespace vespalib::datastore {
+struct ICompactionContext;
 }
-namespace vespalib::datastore { struct ICompactionContext; }
-namespace vespalib::eval { struct Value; }
+namespace vespalib::eval {
+struct Value;
+}
 
 namespace search::tensor {
 
@@ -26,18 +30,16 @@ class DenseTensorStore;
  * might also require corresponding changes to implemented optimized tensor
  * operations that use the serialized tensor as argument.
  */
-class TensorStore : public vespalib::datastore::ICompactable
-{
+class TensorStore : public vespalib::datastore::ICompactable {
 public:
     using EntryRef = vespalib::datastore::EntryRef;
-    using generation_t = vespalib::GenerationHandler::generation_t;
 
 protected:
     vespalib::datastore::DataStoreBase& _store;
     vespalib::datastore::CompactionSpec _compaction_spec;
 
 public:
-    TensorStore(vespalib::datastore::DataStoreBase &store);
+    TensorStore(vespalib::datastore::DataStoreBase& store);
 
     virtual ~TensorStore();
 
@@ -45,7 +47,8 @@ public:
 
     virtual vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) = 0;
 
-    virtual std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) = 0;
+    virtual std::unique_ptr<vespalib::datastore::ICompactionContext>
+    start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) = 0;
 
     virtual EntryRef store_tensor(const vespalib::eval::Value& tensor) = 0;
     virtual EntryRef store_encoded_tensor(vespalib::nbostream& encoded) = 0;
@@ -55,32 +58,20 @@ public:
     virtual DenseTensorStore* as_dense();
 
     // Inherit doc from DataStoreBase
-    void reclaim_memory(generation_t oldest_used_gen) {
-        _store.reclaim_memory(oldest_used_gen);
-    }
+    void reclaim_memory(vespalib::Generation oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
 
     // Inherit doc from DataStoreBase
-    void assign_generation(generation_t current_gen) {
-        _store.assign_generation(current_gen);
-    }
+    void assign_generation(vespalib::Generation current_gen) { _store.assign_generation(current_gen); }
 
-    void reclaim_all_memory() {
-        _store.reclaim_all_memory();
-    }
+    void reclaim_all_memory() { _store.reclaim_all_memory(); }
 
-    vespalib::MemoryUsage getMemoryUsage() const {
-        return _store.getMemoryUsage();
-    }
+    vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 
-    vespalib::AddressSpace get_address_space_usage() const {
-        return _store.getAddressSpaceUsage();
-    }
+    vespalib::AddressSpace get_address_space_usage() const { return _store.getAddressSpaceUsage(); }
 
-    bool consider_compact() const noexcept {
-        return _compaction_spec.compact() && !_store.has_held_buffers();
-    }
+    bool consider_compact() const noexcept { return _compaction_spec.compact() && !_store.has_held_buffers(); }
 
     std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const;
 };
 
-}
+} // namespace search::tensor

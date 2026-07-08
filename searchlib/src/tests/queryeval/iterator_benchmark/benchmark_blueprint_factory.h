@@ -3,9 +3,12 @@
 #pragma once
 
 #include "common.h"
+
 #include <memory>
 
-namespace search::queryeval { class Blueprint; }
+namespace search::queryeval {
+class Blueprint;
+}
 
 namespace search::queryeval::test {
 
@@ -19,9 +22,10 @@ public:
     virtual std::string get_name(Blueprint& blueprint) const = 0;
 };
 
-std::unique_ptr<BenchmarkBlueprintFactory>
-make_blueprint_factory(const FieldConfig& field_cfg, QueryOperator query_op,
-                       uint32_t num_docs, uint32_t default_values_per_document,
-                       double op_hit_ratio, uint32_t children, bool disjunct_children);
+std::unique_ptr<BenchmarkBlueprintFactory> make_blueprint_factory(const FieldConfig& field_cfg,
+                                                                  QueryOperator query_op, uint32_t num_docs,
+                                                                  uint32_t default_values_per_document,
+                                                                  double op_hit_ratio, uint32_t children,
+                                                                  bool disjunct_children);
 
-}
+} // namespace search::queryeval::test

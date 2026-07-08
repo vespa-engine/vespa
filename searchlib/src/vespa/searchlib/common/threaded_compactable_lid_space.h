@@ -3,7 +3,9 @@
 #pragma once
 
 #include "i_compactable_lid_space.h"
+
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+
 #include <memory>
 
 namespace search::common {
@@ -13,14 +15,14 @@ namespace search::common {
  * compacted and shrunk where the write operations are performed by a
  * specific thread.
  */
-class ThreadedCompactableLidSpace : public ICompactableLidSpace
-{
+class ThreadedCompactableLidSpace : public ICompactableLidSpace {
     using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
     std::shared_ptr<ICompactableLidSpace> _target;
-    ISequencedTaskExecutor               &_executor;
+    ISequencedTaskExecutor&               _executor;
     ISequencedTaskExecutor::ExecutorId    _executorId;
+
 public:
-    ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target, ISequencedTaskExecutor &executor,
+    ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target, ISequencedTaskExecutor& executor,
                                 ISequencedTaskExecutor::ExecutorId executorId);
     ~ThreadedCompactableLidSpace() override;
     void compactLidSpace(uint32_t wantedDocLidLimit) override;
@@ -29,4 +31,4 @@ public:
     void shrinkLidSpace() override;
 };
 
-}
+} // namespace search::common

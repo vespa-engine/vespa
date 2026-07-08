@@ -7,4 +7,6 @@ LOG_SETUP(".features.weighted_set_parser");
 
 namespace search::features {
 
-}
+// currently, class implementation is completely header-only.
+
+} // namespace search::features

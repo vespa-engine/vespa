@@ -4,14 +4,17 @@
 #include <vespa/storage/distributor/content_node_stats_provider.h>
 #include <vespa/storage/distributor/distributor_host_info_reporter.h>
 #include <vespa/storage/distributor/min_replica_provider.h>
-#include <tests/common/hostreporter/util.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
-#include <chrono>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <tests/common/hostreporter/util.h>
+
+#include <chrono>
 
 namespace storage::distributor {
 
@@ -24,9 +27,11 @@ using BucketSpacesStats = BucketSpacesStatsProvider::BucketSpacesStats;
 using namespace ::testing;
 
 struct DistributorHostInfoReporterTest : Test {
-    static void verifyBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const std::string& bucketSpaceName,
-                                       size_t bucketsTotal, size_t bucketsPending);
-    static void verifyBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const std::string& bucketSpaceName);
+    static void verifyBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex,
+                                       const std::string& bucketSpaceName, size_t bucketsTotal,
+                                       size_t bucketsPending);
+    static void verifyBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex,
+                                       const std::string& bucketSpaceName);
 };
 
 using ms = std::chrono::milliseconds;
@@ -38,24 +43,18 @@ struct MockedMinReplicaProvider : MinReplicaProvider {
     MinReplicaStats minReplica;
 
     ~MockedMinReplicaProvider() override;
-    MinReplicaMap getMinReplica() const override {
-        return minReplica;
-    }
+    MinReplicaMap getMinReplica() const override { return minReplica; }
 };
 
 MockedMinReplicaProvider::~MockedMinReplicaProvider() = default;
 
 struct MockedBucketSpacesStatsProvider : public BucketSpacesStatsProvider {
     PerNodeBucketSpacesStats _stats;
-    DistributorGlobalStats _global_stats;
+    DistributorGlobalStats   _global_stats;
 
     ~MockedBucketSpacesStatsProvider() override;
-    PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const override {
-        return _stats;
-    }
-    DistributorGlobalStats distributor_global_stats() const override {
-        return _global_stats;
-    }
+    PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const override { return _stats; }
+    DistributorGlobalStats distributor_global_stats() const override { return _global_stats; }
 };
 
 MockedBucketSpacesStatsProvider::~MockedBucketSpacesStatsProvider() = default;
@@ -65,34 +64,26 @@ struct MockedContentNodeStatsProvider : ContentNodeStatsProvider {
 
     ~MockedContentNodeStatsProvider() override = default;
 
-    ContentNodeMessageStatsTracker::NodeStats content_node_stats() const override {
-        return _stats;
-    }
+    ContentNodeMessageStatsTracker::NodeStats content_node_stats() const override { return _stats; }
 };
 
-const vespalib::slime::Inspector&
-getNode(const vespalib::Slime& root, uint16_t nodeIndex)
-{
-    auto& storage_nodes = root.get()["distributor"]["storage-nodes"];
+const vespalib::slime::Inspector& getNode(const vespalib::Slime& root, uint16_t nodeIndex) {
+    auto&        storage_nodes = root.get()["distributor"]["storage-nodes"];
     const size_t n = storage_nodes.entries();
     for (size_t i = 0; i < n; ++i) {
         if (storage_nodes[i]["node-index"].asLong() == nodeIndex) {
             return storage_nodes[i];
         }
     }
-    throw std::runtime_error("No node found with index "
-                             + std::to_string(nodeIndex));
+    throw std::runtime_error("No node found with index " + std::to_string(nodeIndex));
 }
 
-int
-getMinReplica(const vespalib::Slime& root, uint16_t nodeIndex)
-{
+int getMinReplica(const vespalib::Slime& root, uint16_t nodeIndex) {
     return getNode(root, nodeIndex)["min-current-replication-factor"].asLong();
 }
 
-const vespalib::slime::Inspector&
-getBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const std::string& bucketSpaceName)
-{
+const vespalib::slime::Inspector& getBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex,
+                                                      const std::string& bucketSpaceName) {
     const auto& bucketSpaces = getNode(root, nodeIndex)["bucket-spaces"];
     for (size_t i = 0; i < bucketSpaces.entries(); ++i) {
         if (bucketSpaces[i]["name"].asString().make_stringview() == bucketSpaceName) {
@@ -123,7 +114,8 @@ struct ExpectedResponseStats {
     uint64_t errors = 0; // <= responses
 };
 
-void verify_node_response_stats(const vespalib::Slime& root, uint16_t node_index, std::optional<ExpectedResponseStats> expected) {
+void verify_node_response_stats(const vespalib::Slime& root, uint16_t node_index,
+                                std::optional<ExpectedResponseStats> expected) {
     auto& inspector = getNode(root, node_index);
     if (!expected) {
         ASSERT_FALSE(inspector["response-stats"].valid());
@@ -141,40 +133,32 @@ void verify_node_response_stats(const vespalib::Slime& root, uint16_t node_index
     return ContentNodeMessageStats(fake_sent, recv_ok, net_errors, 0, 0, 0);
 }
 
-}
+} // namespace
 
-void
-DistributorHostInfoReporterTest::verifyBucketSpaceStats(const vespalib::Slime& root,
-                                                        uint16_t nodeIndex,
-                                                        const std::string& bucketSpaceName,
-                                                        size_t bucketsTotal,
-                                                        size_t bucketsPending)
-{
-    const auto &stats = getBucketSpaceStats(root, nodeIndex, bucketSpaceName);
-    const auto &buckets = stats["buckets"];
+void DistributorHostInfoReporterTest::verifyBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex,
+                                                             const std::string& bucketSpaceName, size_t bucketsTotal,
+                                                             size_t bucketsPending) {
+    const auto& stats = getBucketSpaceStats(root, nodeIndex, bucketSpaceName);
+    const auto& buckets = stats["buckets"];
     EXPECT_EQ(bucketsTotal, static_cast<size_t>(buckets["total"].asLong()));
     EXPECT_EQ(bucketsPending, static_cast<size_t>(buckets["pending"].asLong()));
 }
 
-void
-DistributorHostInfoReporterTest::verifyBucketSpaceStats(const vespalib::Slime& root,
-                                                        uint16_t nodeIndex,
-                                                        const std::string& bucketSpaceName)
-{
-    const auto &stats = getBucketSpaceStats(root, nodeIndex, bucketSpaceName);
+void DistributorHostInfoReporterTest::verifyBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex,
+                                                             const std::string& bucketSpaceName) {
+    const auto& stats = getBucketSpaceStats(root, nodeIndex, bucketSpaceName);
     EXPECT_FALSE(stats["buckets"].valid());
 }
 
 struct Fixture {
-    MockedMinReplicaProvider minReplicaProvider;
+    MockedMinReplicaProvider        minReplicaProvider;
     MockedBucketSpacesStatsProvider bucketSpacesStatsProvider;
-    MockedContentNodeStatsProvider content_node_stats_provider;
-    DistributorHostInfoReporter reporter;
+    MockedContentNodeStatsProvider  content_node_stats_provider;
+    DistributorHostInfoReporter     reporter;
     Fixture()
         : minReplicaProvider(),
           bucketSpacesStatsProvider(),
-          reporter(minReplicaProvider, bucketSpacesStatsProvider, content_node_stats_provider)
-    {}
+          reporter(minReplicaProvider, bucketSpacesStatsProvider, content_node_stats_provider) {}
     ~Fixture();
 
     [[nodiscard]] vespalib::Slime to_slime() {
@@ -196,7 +180,6 @@ struct Fixture {
         }
         minReplicaProvider.minReplica = min_replica;
     }
-
 };
 
 Fixture::~Fixture() = default;
@@ -244,13 +227,13 @@ TEST_F(DistributorHostInfoReporterTest, generate_example_json) {
 
     PerNodeBucketSpacesStats stats;
     stats[0]["default"] = BucketSpaceStats(11, 3);
-    stats[0]["global"]  = BucketSpaceStats(13, 5);
+    stats[0]["global"] = BucketSpaceStats(13, 5);
     stats[5]["default"] = BucketSpaceStats();
     f.bucketSpacesStatsProvider._stats = stats;
     f.bucketSpacesStatsProvider._global_stats = DistributorGlobalStats(1337, 456789);
 
     vespalib::asciistream json;
-    vespalib::JsonStream stream(json, true);
+    vespalib::JsonStream  stream(json, true);
 
     stream << Object();
     f.reporter.report(stream);
@@ -263,30 +246,30 @@ TEST_F(DistributorHostInfoReporterTest, generate_example_json) {
     std::string goldenString = File::readAll(path);
 
     vespalib::Memory goldenMemory(goldenString);
-    vespalib::Slime goldenSlime;
+    vespalib::Slime  goldenSlime;
     vespalib::slime::JsonFormat::decode(goldenMemory, goldenSlime);
 
     vespalib::Memory jsonMemory(jsonString);
-    vespalib::Slime jsonSlime;
+    vespalib::Slime  jsonSlime;
     vespalib::slime::JsonFormat::decode(jsonMemory, jsonSlime);
 
     EXPECT_EQ(goldenSlime, jsonSlime);
 }
 
 TEST_F(DistributorHostInfoReporterTest, bucket_spaces_stats_are_reported) {
-    Fixture f;
+    Fixture                  f;
     PerNodeBucketSpacesStats stats;
     stats[1]["default"] = BucketSpaceStats(11, 3);
-    stats[1]["global"]  = BucketSpaceStats(13, 5);
+    stats[1]["global"] = BucketSpaceStats(13, 5);
     stats[2]["default"] = BucketSpaceStats(17, 7);
-    stats[2]["global"]  = BucketSpaceStats();
+    stats[2]["global"] = BucketSpaceStats();
     stats[3]["default"] = BucketSpaceStats(19, 11);
     f.bucketSpacesStatsProvider._stats = stats;
 
     vespalib::Slime root;
     util::reporterToSlime(f.reporter, root);
     verifyBucketSpaceStats(root, 1, "default", 11, 3);
-    verifyBucketSpaceStats(root, 1, "global",  13, 5);
+    verifyBucketSpaceStats(root, 1, "global", 13, 5);
     verifyBucketSpaceStats(root, 2, "default", 17, 7);
     verifyBucketSpaceStats(root, 2, "global");
     verifyBucketSpaceStats(root, 3, "default", 19, 11);
@@ -325,26 +308,27 @@ TEST_F(DistributorHostInfoReporterTest, per_content_node_response_stats_report_s
 
     f.set_node_stats(0, make_node_recv_stats(1, 2));
     f.set_node_stats(3, make_node_recv_stats(10, 20));
-    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s*2));
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s * 2));
 
     root = f.to_slime();
-    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{1+2, 2}));
-    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, ExpectedResponseStats{10+20, 20}));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{1 + 2, 2}));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, ExpectedResponseStats{10 + 20, 20}));
 
     // Timer callbacks within the current window does not update deltas
-    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s*2 + 59s));
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s * 2 + 59s));
     root = f.to_slime();
-    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{1+2, 2}));
-    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, ExpectedResponseStats{10+20, 20}));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{1 + 2, 2}));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, ExpectedResponseStats{10 + 20, 20}));
 
     f.set_node_stats(0, make_node_recv_stats(6, 5));
     f.set_node_stats(3, make_node_recv_stats(35, 30));
 
     // A new time window _does_ update deltas
-    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s*3));
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s * 3));
     root = f.to_slime();
-    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{(6+5)   - (1+2),     5-2}));
-    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, ExpectedResponseStats{(35+30) - (10+20), 30-20}));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{(6 + 5) - (1 + 2), 5 - 2}));
+    EXPECT_NO_FATAL_FAILURE(
+        verify_node_response_stats(root, 3, ExpectedResponseStats{(35 + 30) - (10 + 20), 30 - 20}));
 }
 
 TEST_F(DistributorHostInfoReporterTest, per_content_node_response_stats_are_only_reported_when_present) {
@@ -370,7 +354,7 @@ TEST_F(DistributorHostInfoReporterTest, content_node_response_stats_not_present_
     f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s));
     f.set_node_stats(0, make_node_recv_stats(10, 10)); // unchanged
     f.set_node_stats(3, make_node_recv_stats(40, 31)); // has new errors
-    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s*2));
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s * 2));
 
     // Node 3 should be the only node present in the output
     auto root = f.to_slime();
@@ -382,13 +366,13 @@ TEST_F(DistributorHostInfoReporterTest, merge_per_node_bucket_spaces_stats) {
 
     PerNodeBucketSpacesStats stats_a;
     stats_a[3]["default"] = BucketSpaceStats(3, 2);
-    stats_a[3]["global"]  = BucketSpaceStats(5, 4);
+    stats_a[3]["global"] = BucketSpaceStats(5, 4);
     stats_a[5]["default"] = BucketSpaceStats(7, 6);
-    stats_a[5]["global"]  = BucketSpaceStats(9, 8);
+    stats_a[5]["global"] = BucketSpaceStats(9, 8);
 
     PerNodeBucketSpacesStats stats_b;
     stats_b[5]["default"] = BucketSpaceStats(11, 10);
-    stats_b[5]["global"]  = BucketSpaceStats(13, 12);
+    stats_b[5]["global"] = BucketSpaceStats(13, 12);
     stats_b[7]["default"] = BucketSpaceStats(15, 14);
 
     PerNodeBucketSpacesStats result;
@@ -397,9 +381,9 @@ TEST_F(DistributorHostInfoReporterTest, merge_per_node_bucket_spaces_stats) {
 
     PerNodeBucketSpacesStats exp;
     exp[3]["default"] = BucketSpaceStats(3, 2);
-    exp[3]["global"]  = BucketSpaceStats(5, 4);
-    exp[5]["default"] = BucketSpaceStats(7+11, 6+10);
-    exp[5]["global"]  = BucketSpaceStats(9+13, 8+12);
+    exp[3]["global"] = BucketSpaceStats(5, 4);
+    exp[5]["default"] = BucketSpaceStats(7 + 11, 6 + 10);
+    exp[5]["global"] = BucketSpaceStats(9 + 13, 8 + 12);
     exp[7]["default"] = BucketSpaceStats(15, 14);
 
     EXPECT_EQ(exp, result);
@@ -415,4 +399,4 @@ TEST_F(DistributorHostInfoReporterTest, merge_bucket_space_stats_maintains_valid
     EXPECT_EQ(3, stats_a.bucketsPending());
 }
 
-}
+} // namespace storage::distributor

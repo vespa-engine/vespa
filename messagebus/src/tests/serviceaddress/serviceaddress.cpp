@@ -1,16 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/messagebus/network/rpcservice.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/network/rpcservice.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
 #include <thread>
 
 using namespace mbus;
 
-bool
-waitSlobrok(RPCNetwork &network, const string &pattern, size_t num)
-{
+bool waitSlobrok(RPCNetwork& network, const string& pattern, size_t num) {
     for (int i = 0; i < 1000; i++) {
         slobrok::api::IMirrorAPI::SpecList res = network.getMirror().lookup(pattern);
         if (res.size() == num) {
@@ -21,38 +20,31 @@ waitSlobrok(RPCNetwork &network, const string &pattern, size_t num)
     return false;
 }
 
-bool
-testNullAddress(RPCNetwork &network, const string &pattern)
-{
-    RPCService service(network.getMirror(), pattern);
+bool testNullAddress(RPCNetwork& network, const string& pattern) {
+    RPCService            service(network.getMirror(), pattern);
     RPCServiceAddress::UP obj = service.make_address();
-    bool has_obj(obj);
+    bool                  has_obj(obj);
     EXPECT_FALSE(has_obj);
     return !has_obj;
 }
 
-bool
-testAddress(RPCNetwork &network, const string &pattern,
-            const string &expectedSpec, const string &expectedSession)
-{
-    RPCService service(network.getMirror(), pattern);
+bool testAddress(RPCNetwork& network, const string& pattern, const string& expectedSpec,
+                 const string& expectedSession) {
+    RPCService            service(network.getMirror(), pattern);
     RPCServiceAddress::UP obj = service.make_address();
-    bool has_obj(obj);
+    bool                  has_obj(obj);
     EXPECT_TRUE(has_obj);
     if (!has_obj) {
         return false;
     }
     EXPECT_EQ(expectedSpec, obj->getConnectionSpec());
     EXPECT_EQ(expectedSession, obj->getSessionName());
-    return ((expectedSpec == obj->getConnectionSpec()) &&
-            (expectedSession == obj->getSessionName()));
+    return ((expectedSpec == obj->getConnectionSpec()) && (expectedSession == obj->getSessionName()));
 }
 
-TEST(ServiceAddressTest, testAddrServiceAddress)
-{
-    Slobrok slobrok;
-    RPCNetwork network(RPCNetworkParams(slobrok.config())
-                       .setIdentity(Identity("foo")));
+TEST(ServiceAddressTest, testAddrServiceAddress) {
+    Slobrok    slobrok;
+    RPCNetwork network(RPCNetworkParams(slobrok.config()).setIdentity(Identity("foo")));
     ASSERT_TRUE(network.start());
 
     EXPECT_TRUE(testNullAddress(network, "tcp"));
@@ -69,11 +61,9 @@ TEST(ServiceAddressTest, testAddrServiceAddress)
     network.shutdown();
 }
 
-TEST(ServiceAddressTest, testNameServiceAddress)
-{
-    Slobrok slobrok;
-    RPCNetwork network(RPCNetworkParams(slobrok.config())
-                       .setIdentity(Identity("foo")));
+TEST(ServiceAddressTest, testNameServiceAddress) {
+    Slobrok    slobrok;
+    RPCNetwork network(RPCNetworkParams(slobrok.config()).setIdentity(Identity("foo")));
     ASSERT_TRUE(network.start());
 
     network.unregisterSession("session");

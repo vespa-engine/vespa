@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for NewConfigBuilder
 
-#include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using namespace document;
 using namespace document::new_config_builder;
@@ -42,9 +42,12 @@ TEST(NewConfigBuilderTest, primitive_types) {
     // Check that primitive types have been registered
     bool found_int = false, found_string = false, found_long = false;
     for (const auto& pt : config.doctype[0].primitivetype) {
-        if (pt.name == "int") found_int = true;
-        if (pt.name == "string") found_string = true;
-        if (pt.name == "long") found_long = true;
+        if (pt.name == "int")
+            found_int = true;
+        if (pt.name == "string")
+            found_string = true;
+        if (pt.name == "long")
+            found_long = true;
     }
 
     EXPECT_TRUE(found_int);
@@ -54,7 +57,7 @@ TEST(NewConfigBuilderTest, primitive_types) {
 
 TEST(NewConfigBuilderTest, document_with_primitive_fields) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     doc.addField("int_field", builder.primitiveType(DataType::T_INT));
     doc.addField("string_field", builder.primitiveType(DataType::T_STRING));
@@ -80,7 +83,7 @@ TEST(NewConfigBuilderTest, document_with_primitive_fields) {
 
 TEST(NewConfigBuilderTest, array_type) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     auto string_ref = builder.primitiveType(DataType::T_STRING);
     auto array_ref = doc.createArray(string_ref).ref();
@@ -104,7 +107,7 @@ TEST(NewConfigBuilderTest, array_type) {
 
 TEST(NewConfigBuilderTest, map_type) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     auto int_ref = builder.primitiveType(DataType::T_INT);
     auto string_ref = builder.primitiveType(DataType::T_STRING);
@@ -124,7 +127,7 @@ TEST(NewConfigBuilderTest, map_type) {
 
 TEST(NewConfigBuilderTest, wset_type) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     auto string_ref = builder.primitiveType(DataType::T_STRING);
     auto wset_ref = doc.createWset(string_ref).removeIfZero().ref();
@@ -143,14 +146,12 @@ TEST(NewConfigBuilderTest, wset_type) {
 
 TEST(NewConfigBuilderTest, struct_type) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     auto int_ref = builder.primitiveType(DataType::T_INT);
     auto string_ref = builder.primitiveType(DataType::T_STRING);
 
-    auto struct_ref = doc.createStruct("mystruct")
-           .addField("key", int_ref)
-           .addField("value", string_ref).ref();
+    auto struct_ref = doc.createStruct("mystruct").addField("key", int_ref).addField("value", string_ref).ref();
 
     doc.addField("struct_field", struct_ref);
 
@@ -173,7 +174,7 @@ TEST(NewConfigBuilderTest, struct_type) {
 
 TEST(NewConfigBuilderTest, tensor_field) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     doc.addTensorField("sparse_tensor", "tensor(x{})");
     doc.addTensorField("dense_tensor", "tensor(x[10])");
@@ -195,8 +196,8 @@ TEST(NewConfigBuilderTest, tensor_field) {
 
 TEST(NewConfigBuilderTest, document_inheritance) {
     NewConfigBuilder builder;
-    auto& parent = builder.document("parent");
-    auto& child = builder.document("child");
+    auto&            parent = builder.document("parent");
+    auto&            child = builder.document("child");
 
     child.inherit(parent.idx());
 
@@ -206,13 +207,13 @@ TEST(NewConfigBuilderTest, document_inheritance) {
     ASSERT_EQ("child", child_doc->name);
     // Should inherit from both "document" and "parent"
     ASSERT_EQ(2u, child_doc->inherits.size());
-    EXPECT_EQ(config.doctype[0].idx, child_doc->inherits[0].idx);  // base document
-    EXPECT_EQ(config.doctype[1].idx, child_doc->inherits[1].idx);  // parent
+    EXPECT_EQ(config.doctype[0].idx, child_doc->inherits[0].idx); // base document
+    EXPECT_EQ(config.doctype[1].idx, child_doc->inherits[1].idx); // parent
 }
 
 TEST(NewConfigBuilderTest, imported_field) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     doc.imported_field("my_imported_field");
     doc.imported_field("another_imported_field");
@@ -227,7 +228,7 @@ TEST(NewConfigBuilderTest, imported_field) {
 
 TEST(NewConfigBuilderTest, annotation_type) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     doc.annotationType(123, "my_annotation");
 
@@ -248,8 +249,8 @@ TEST(NewConfigBuilderTest, annotation_type) {
 
 TEST(NewConfigBuilderTest, document_reference) {
     NewConfigBuilder builder;
-    auto& target = builder.document("target");
-    auto& doc = builder.document("mytype");
+    auto&            target = builder.document("target");
+    auto&            doc = builder.document("mytype");
 
     auto ref_type = doc.referenceType(target.idx());
     doc.addField("target_ref", ref_type);
@@ -264,7 +265,7 @@ TEST(NewConfigBuilderTest, document_reference) {
 
 TEST(NewConfigBuilderTest, field_set) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     doc.addField("field1", builder.primitiveType(DataType::T_INT));
     doc.addField("field2", builder.primitiveType(DataType::T_STRING));
@@ -285,20 +286,17 @@ TEST(NewConfigBuilderTest, field_set) {
 
 TEST(NewConfigBuilderTest, complex_nested_types) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("complex");
+    auto&            doc = builder.document("complex");
 
     auto int_ref = builder.primitiveType(DataType::T_INT);
     auto string_ref = builder.primitiveType(DataType::T_STRING);
 
     // Create a struct with nested types
-    auto inner_struct_ref = doc.createStruct("inner")
-           .addField("id", int_ref)
-           .addField("name", string_ref).ref();
+    auto inner_struct_ref = doc.createStruct("inner").addField("id", int_ref).addField("name", string_ref).ref();
 
     auto struct_array_ref = doc.createArray(inner_struct_ref).ref();
 
-    auto outer_struct_ref = doc.createStruct("outer")
-           .addField("items", struct_array_ref).ref();
+    auto outer_struct_ref = doc.createStruct("outer").addField("items", struct_array_ref).ref();
 
     doc.addField("complex_field", outer_struct_ref);
 
@@ -325,7 +323,7 @@ TEST(NewConfigBuilderTest, complex_nested_types) {
 
 TEST(NewConfigBuilderTest, can_create_document_type_repo) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     doc.addField("int_field", builder.primitiveType(DataType::T_INT));
     doc.addField("string_field", builder.primitiveType(DataType::T_STRING));
@@ -354,10 +352,10 @@ TEST(NewConfigBuilderTest, valid_inheritance_works) {
 
     auto& doc = builder.document("mytype");
     doc.addField("child_field", builder.stringTypeRef());
-    doc.inherit(parent.idx());  // Should work
+    doc.inherit(parent.idx()); // Should work
 
-    const auto& config = builder.config();
-    DocumentTypeRepo repo(config);  // Should succeed
+    const auto&      config = builder.config();
+    DocumentTypeRepo repo(config); // Should succeed
 
     const DocumentType* dt = repo.getDocumentType("mytype");
     ASSERT_NE(nullptr, dt);
@@ -369,7 +367,7 @@ TEST(NewConfigBuilderTest, valid_inheritance_works) {
 
 TEST(NewConfigBuilderTest, duplicate_annotation_type_ids_fails) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     auto string_ref = builder.primitiveType(DataType::T_STRING);
     auto int_ref = builder.primitiveType(DataType::T_INT);
@@ -382,14 +380,12 @@ TEST(NewConfigBuilderTest, duplicate_annotation_type_ids_fails) {
     const auto& config = builder.config();
 
     // Creating DocumentTypeRepo should fail due to duplicate annotation type
-    EXPECT_THROW({
-        DocumentTypeRepo repo(config);
-    }, vespalib::IllegalArgumentException);
+    EXPECT_THROW({ DocumentTypeRepo repo(config); }, vespalib::IllegalArgumentException);
 }
 
 TEST(NewConfigBuilderTest, duplicate_annotation_type_ids_different_names_fails) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     auto string_ref = builder.primitiveType(DataType::T_STRING);
 
@@ -401,18 +397,16 @@ TEST(NewConfigBuilderTest, duplicate_annotation_type_ids_different_names_fails) 
     const auto& config = builder.config();
 
     // Creating DocumentTypeRepo should fail due to duplicate annotation type ID
-    EXPECT_THROW({
-        DocumentTypeRepo repo(config);
-    }, vespalib::IllegalArgumentException);
+    EXPECT_THROW({ DocumentTypeRepo repo(config); }, vespalib::IllegalArgumentException);
 }
 
 TEST(NewConfigBuilderTest, annotation_reference_to_non_existent_annotation_fails) {
     NewConfigBuilder builder;
-    auto& doc = builder.document("mytype");
+    auto&            doc = builder.document("mytype");
 
     // Try to create annotation reference without creating the annotation first
     // This should fail when creating the repo
-    auto fake_annotation_ref = TypeRef(999999);  // Non-existent annotation type idx
+    auto fake_annotation_ref = TypeRef(999999); // Non-existent annotation type idx
 
     // Manually create an annotation reference to a non-existent annotation
     // This requires manipulating the config directly since the API prevents this
@@ -448,9 +442,7 @@ TEST(NewConfigBuilderTest, document_id_collision_throws_exception) {
 
     // Try to create test_doc which would naturally hash to the same ID
     // This should throw an exception due to ID collision
-    EXPECT_THROW({
-        builder.document("test_doc");
-    }, vespalib::IllegalArgumentException);
+    EXPECT_THROW({ builder.document("test_doc"); }, vespalib::IllegalArgumentException);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

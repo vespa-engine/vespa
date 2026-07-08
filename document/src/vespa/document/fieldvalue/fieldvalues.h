@@ -15,6 +15,5 @@
 #include "rawfieldvalue.h"
 #include "shortfieldvalue.h"
 #include "stringfieldvalue.h"
-#include "weightedsetfieldvalue.h"
 #include "tensorfieldvalue.h"
-
+#include "weightedsetfieldvalue.h"

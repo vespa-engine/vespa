@@ -3,9 +3,11 @@
 #pragma once
 
 #include "ipendinglidtracker.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <mutex>
+
 #include <condition_variable>
+#include <mutex>
 
 namespace proton {
 
@@ -17,9 +19,7 @@ namespace proton {
  * while also moving the lids to WAITING. Once the snapshot goes out of scope when the commit is complete,
  * it will cleanup and move all lids from WAITING to COMPLETE.
  */
-class PendingLidTrackerBase : public IPendingLidTracker,
-                              public ILidCommitState
-{
+class PendingLidTrackerBase : public IPendingLidTracker, public ILidCommitState {
 public:
     ~PendingLidTrackerBase();
     struct Payload {
@@ -29,32 +29,33 @@ public:
     virtual Snapshot produceSnapshot() = 0;
 
     State waitState(State state, uint32_t lid) const override;
-    State waitState(State state, const LidList & lids) const override;
+    State waitState(State state, const LidList& lids) const override;
+
 protected:
     using MonitorGuard = std::unique_lock<std::mutex>;
     PendingLidTrackerBase();
-    virtual State waitFor(MonitorGuard & guard, State state, uint32_t lid) const = 0;
+    virtual State waitFor(MonitorGuard& guard, State state, uint32_t lid) const = 0;
     MonitorGuard getGuard() { return MonitorGuard(_mutex); }
-    mutable std::mutex                     _mutex;
-    mutable std::condition_variable        _cond;
+    mutable std::mutex              _mutex;
+    mutable std::condition_variable _cond;
 };
 
 /**
  * Use for tracking lids when visibility-delay is zero and commit is implicit.
  * In this case lids go directly to WAITING and the second phase is a noop.
  */
-class PendingLidTracker : public PendingLidTrackerBase
-{
+class PendingLidTracker : public PendingLidTrackerBase {
 public:
     PendingLidTracker();
     ~PendingLidTracker() override;
     Token produce(uint32_t lid) override;
     Snapshot produceSnapshot() override;
+
 private:
     void consume(uint32_t lid) override;
-    State waitFor(MonitorGuard & guard, State state, uint32_t lid) const override;
+    State waitFor(MonitorGuard& guard, State state, uint32_t lid) const override;
 
     vespalib::hash_map<uint32_t, uint32_t> _pending;
 };
 
-}
+} // namespace proton

@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include "closeable.h"
 #include "handler.h"
 #include "provider.h"
-#include "closeable.h"
+
 #include <vespa/vespalib/util/gate.h>
+
 #include <vector>
 
 namespace vbench {
@@ -18,24 +20,20 @@ namespace vbench {
  * a predefined fallback handler instead. A closed dispatcher will
  * provide nil objects and handle incoming objects by deleting them.
  **/
-template <typename T>
-class Dispatcher : public Handler<T>,
-                   public Provider<T>,
-                   public Closeable
-{
+template <typename T> class Dispatcher : public Handler<T>, public Provider<T>, public Closeable {
 private:
     struct ThreadState {
         std::unique_ptr<T> object;
-        vespalib::Gate   gate;
+        vespalib::Gate     gate;
     };
 
-    Handler<T>               &_fallback;
+    Handler<T>&               _fallback;
     mutable std::mutex        _lock;
     std::vector<ThreadState*> _threads;
     bool                      _closed;
 
 public:
-    explicit Dispatcher(Handler<T> &fallback);
+    explicit Dispatcher(Handler<T>& fallback);
     ~Dispatcher() override;
     bool waitForThreads(size_t threads, size_t pollCnt) const;
     void close() override;
@@ -46,4 +44,3 @@ public:
 } // namespace vbench
 
 #include "dispatcher.hpp"
-

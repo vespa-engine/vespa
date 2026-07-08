@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
-#include <vespa/eval/eval/llvm/compiled_function.h>
-#include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/call_nodes.h>
-#include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/operator_nodes.h>
-#include <vespa/vespalib/util/benchmark_timer.h>
-#include <vespa/eval/eval/vm_forest.h>
 #include <vespa/eval/eval/fast_forest.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
-#include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/eval/eval/operator_nodes.h>
 #include <vespa/eval/eval/param_usage.h>
+#include <vespa/eval/eval/vm_forest.h>
+#include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
 //-----------------------------------------------------------------------------
@@ -24,10 +24,10 @@ using namespace search::features::rankingexpression;
 
 //-----------------------------------------------------------------------------
 
-std::string strip_name(const std::string &name) {
-    const char *expected_ending = ".expression";
+std::string strip_name(const std::string& name) {
+    const char* expected_ending = ".expression";
     std::string tmp = name;
-    size_t pos = tmp.rfind("/");
+    size_t      pos = tmp.rfind("/");
     if (pos != tmp.npos) {
         tmp = tmp.substr(pos + 1);
     }
@@ -42,11 +42,13 @@ size_t as_percent(double value) {
     return size_t(std::round(value * 100.0));
 }
 
-const char *maybe_s(size_t n) { return (n == 1) ? "" : "s"; }
+const char* maybe_s(size_t n) {
+    return (n == 1) ? "" : "s";
+}
 
 //-----------------------------------------------------------------------------
 
-size_t count_nodes(const Node &node) {
+size_t count_nodes(const Node& node) {
     size_t count = 1;
     for (size_t i = 0; i < node.num_children(); ++i) {
         count += count_nodes(node.get_child(i));
@@ -57,30 +59,27 @@ size_t count_nodes(const Node &node) {
 //-----------------------------------------------------------------------------
 
 struct InputInfo {
-    std::string name;
+    std::string         name;
     std::vector<double> cmp_with;
-    double usage_probability;
-    double expected_usage;
+    double              usage_probability;
+    double              expected_usage;
     InputInfo(std::string_view name_in, double usage_probability_in, double expected_usage_in) noexcept
-        : name(name_in), cmp_with(), usage_probability(usage_probability_in), expected_usage(expected_usage_in)
-    {}
-    double select_value() const {
-        return cmp_with.empty() ? 0.5 : cmp_with[(cmp_with.size()-1)/2];
-    }
+        : name(name_in), cmp_with(), usage_probability(usage_probability_in), expected_usage(expected_usage_in) {}
+    double select_value() const { return cmp_with.empty() ? 0.5 : cmp_with[(cmp_with.size() - 1) / 2]; }
 };
 
 //-----------------------------------------------------------------------------
 
 struct FunctionInfo {
-    using TreeList = std::vector<const Node *>;
+    using TreeList = std::vector<const Node*>;
 
-    size_t expression_size;
-    bool root_is_forest;
-    std::vector<TreeList> forests;
+    size_t                 expression_size;
+    bool                   root_is_forest;
+    std::vector<TreeList>  forests;
     std::vector<InputInfo> inputs;
-    std::vector<double> params;
+    std::vector<double>    params;
 
-    void find_forests(const Node &node) {
+    void find_forests(const Node& node) {
         if (node.is_forest()) {
             forests.push_back(extract_trees(node));
         } else {
@@ -90,8 +89,7 @@ struct FunctionInfo {
         }
     }
 
-    template <typename T>
-    void check_cmp(const T *node) {
+    template <typename T> void check_cmp(const T* node) {
         if (node) {
             auto lhs_symbol = as<Symbol>(node->lhs());
             auto rhs_symbol = as<Symbol>(node->rhs());
@@ -104,7 +102,7 @@ struct FunctionInfo {
         }
     }
 
-    void check_in(const In *node) {
+    void check_in(const In* node) {
         if (node) {
             if (auto symbol = as<Symbol>(node->child())) {
                 for (size_t i = 0; i < node->num_entries(); ++i) {
@@ -114,7 +112,7 @@ struct FunctionInfo {
         }
     }
 
-    void analyze_inputs(const Node &node) {
+    void analyze_inputs(const Node& node) {
         for (size_t i = 0; i < node.num_children(); ++i) {
             analyze_inputs(node.get_child(i));
         }
@@ -128,13 +126,12 @@ struct FunctionInfo {
         check_in(as<In>(node));
     }
 
-    FunctionInfo(const Function &function)
+    FunctionInfo(const Function& function)
         : expression_size(count_nodes(function.root())),
           root_is_forest(function.root().is_forest()),
           forests(),
           inputs(),
-          params()
-    {
+          params() {
         auto checked_usage = check_param_usage(function);
         auto counted_usage = count_param_usage(function);
         for (size_t i = 0; i < function.num_params(); ++i) {
@@ -150,12 +147,12 @@ struct FunctionInfo {
         }
     }
 
-    size_t get_path_len(const TreeList &trees) const {
+    size_t get_path_len(const TreeList& trees) const {
         size_t path = 0;
-        for (const Node *tree: trees) {
-            InterpretedFunction ifun(FastValueBuilderFactory::get(), *tree, NodeTypes());
+        for (const Node* tree : trees) {
+            InterpretedFunction          ifun(FastValueBuilderFactory::get(), *tree, NodeTypes());
             InterpretedFunction::Context ctx(ifun);
-            SimpleParams fun_params(params);
+            SimpleParams                 fun_params(params);
             ifun.eval(ctx, fun_params);
             path += ctx.if_cnt();
         }
@@ -179,8 +176,7 @@ struct FunctionInfo {
             fprintf(stderr, "  expression root is a sum of GBD trees\n");
         }
         if (!forests.empty()) {
-            fprintf(stderr, "  expression contains %zu GBD forest%s\n",
-                    forests.size(), maybe_s(forests.size()));            
+            fprintf(stderr, "  expression contains %zu GBD forest%s\n", forests.size(), maybe_s(forests.size()));
         }
         for (size_t i = 0; i < forests.size(); ++i) {
             ForestStats forest(forests[i]);
@@ -193,9 +189,9 @@ struct FunctionInfo {
             }
             fprintf(stderr, "    largest set membership check: %zu\n", forest.max_set_size);
             fprintf(stderr, "    number of inverted checks: %zu\n", forest.total_inverted_checks);
-            for (const auto &item: forest.tree_sizes) {
-                fprintf(stderr, "    forest contains %zu GBD tree%s of size %zu\n",
-                        item.count, maybe_s(item.count), item.size);
+            for (const auto& item : forest.tree_sizes) {
+                fprintf(stderr, "    forest contains %zu GBD tree%s of size %zu\n", item.count, maybe_s(item.count),
+                        item.size);
             }
             if (forest.tree_sizes.size() > 1) {
                 fprintf(stderr, "    forest contains %zu GBD trees in total\n", forest.num_trees);
@@ -206,15 +202,15 @@ struct FunctionInfo {
 
 //-----------------------------------------------------------------------------
 
-bool none_used(const std::vector<Forest::UP> &forests) {
+bool none_used(const std::vector<Forest::UP>& forests) {
     return forests.empty();
 }
 
-bool deinline_used(const std::vector<Forest::UP> &forests) {
+bool deinline_used(const std::vector<Forest::UP>& forests) {
     if (forests.empty()) {
         return false;
     }
-    for (const Forest::UP &forest: forests) {
+    for (const Forest::UP& forest : forests) {
         if (dynamic_cast<DeinlineForest*>(forest.get()) == nullptr) {
             return false;
         }
@@ -222,11 +218,11 @@ bool deinline_used(const std::vector<Forest::UP> &forests) {
     return true;
 }
 
-bool vmforest_used(const std::vector<Forest::UP> &forests) {
+bool vmforest_used(const std::vector<Forest::UP>& forests) {
     if (forests.empty()) {
         return false;
     }
-    for (const Forest::UP &forest: forests) {
+    for (const Forest::UP& forest : forests) {
         if (dynamic_cast<VMForest*>(forest.get()) == nullptr) {
             return false;
         }
@@ -239,19 +235,19 @@ bool vmforest_used(const std::vector<Forest::UP> &forests) {
 struct State {
     using FunPtr = std::shared_ptr<Function const>;
 
-    std::string     name;
-    std::string     expression;
+    std::string          name;
+    std::string          expression;
     FunPtr               function;
     FunctionInfo         fun_info;
     CompiledFunction::UP compiled_function;
 
-    double llvm_compile_s  = 0.0;
+    double llvm_compile_s = 0.0;
     double llvm_execute_us = 0.0;
 
     std::vector<std::string> options;
-    std::vector<double> options_us;
+    std::vector<double>      options_us;
 
-    State(const std::string &file_name, std::string expression_in);
+    State(const std::string& file_name, std::string expression_in);
     ~State();
 
     void benchmark_llvm_compile() {
@@ -265,9 +261,10 @@ struct State {
         llvm_compile_s = timer.min_time();
     }
 
-    void benchmark_option(const std::string &opt_name, Optimize::Chain optimizer_chain) {
+    void benchmark_option(const std::string& opt_name, Optimize::Chain optimizer_chain) {
         options.push_back(opt_name);
-        options_us.push_back(CompiledFunction(*function, PassParams::ARRAY, optimizer_chain).estimate_cost_us(fun_info.params));
+        options_us.push_back(
+            CompiledFunction(*function, PassParams::ARRAY, optimizer_chain).estimate_cost_us(fun_info.params));
         fprintf(stderr, "  option '%s' execute time: %g us\n", opt_name.c_str(), options_us.back());
     }
 
@@ -302,8 +299,7 @@ struct State {
             double rel_speed = (llvm_execute_us / options_us[i]);
             fprintf(stdout, "[%s: %zu%%]", options[i].c_str(), as_percent(rel_speed));
             if (rel_speed >= 1.1) {
-                fprintf(stderr, "  WARNING: option '%s' faster than default choice\n",
-                        options[i].c_str());
+                fprintf(stderr, "  WARNING: option '%s' faster than default choice\n", options[i].c_str());
             }
         }
         fprintf(stdout, "[name: %s]\n", name.c_str());
@@ -311,7 +307,7 @@ struct State {
     }
 };
 
-State::State(const std::string &file_name, std::string expression_in)
+State::State(const std::string& file_name, std::string expression_in)
     : name(strip_name(file_name)),
       expression(std::move(expression_in)),
       function(Function::parse(expression, FeatureNameExtractor())),
@@ -320,55 +316,50 @@ State::State(const std::string &file_name, std::string expression_in)
       llvm_compile_s(0.0),
       llvm_execute_us(0.0),
       options(),
-      options_us()
-{
+      options_us() {
 }
 
-State::~State() {}
+State::~State() {
+}
 
 //-----------------------------------------------------------------------------
 
 struct MyApp {
-    int main(int argc, char **argv);
-    int usage(const char *self);
+    int main(int argc, char** argv);
+    int usage(const char* self);
 };
 
-int
-MyApp::usage(const char *self) {
+int MyApp::usage(const char* self) {
     fprintf(stderr, "usage: %s [-v] <expression-file>\n", self);
     fprintf(stderr, "  analyze/benchmark vespa ranking expression\n");
     fprintf(stderr, "  -v: more verbose output\n");
     return 1;
 }
 
-int
-MyApp::main(int argc, char **argv)
-{
+int MyApp::main(int argc, char** argv) {
     bool verbose = (argc == 3) && (strcmp(argv[1], "-v") == 0);
     if (!(verbose || (argc == 2))) {
         return usage(argv[0]);
     }
-    std::string file_name(verbose ? argv[2] : argv[1]);
+    std::string               file_name(verbose ? argv[2] : argv[1]);
     vespalib::MappedFileInput file(file_name);
     if (!file.valid()) {
-        fprintf(stderr, "could not read input file: '%s'\n",
-                file_name.c_str());
+        fprintf(stderr, "could not read input file: '%s'\n", file_name.c_str());
         return 1;
     }
     State state(file_name, file.get().make_string());
     if (state.function->has_error()) {
         std::string error_message = state.function->get_error();
-        fprintf(stderr, "input file (%s) contains an illegal expression:\n%s\n",
-                file_name.c_str(), error_message.c_str());
+        fprintf(stderr, "input file (%s) contains an illegal expression:\n%s\n", file_name.c_str(),
+                error_message.c_str());
         return 1;
     }
-    fprintf(stderr, "analyzing expression file: '%s'\n",
-            file_name.c_str());
+    fprintf(stderr, "analyzing expression file: '%s'\n", file_name.c_str());
     state.report(verbose);
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     MyApp my_app;
     return my_app.main(argc, argv);

@@ -3,6 +3,7 @@ package com.yahoo.search.grouping.request;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +42,7 @@ public class RawBufferTestCase {
 
     @Test
     void requireThatToStringWorks() {
-        assertToString(List.of("a".getBytes()[0], "b".getBytes()[0]), "{97,98}");
+        assertToString(List.of("a".getBytes(StandardCharsets.UTF_8)[0], "b".getBytes(StandardCharsets.UTF_8)[0]), "{97,98}");
         assertToString(List.of((byte) 2, (byte) 6), "{2,6}");
     }
 

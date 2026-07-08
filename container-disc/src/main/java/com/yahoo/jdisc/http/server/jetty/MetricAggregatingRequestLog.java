@@ -4,23 +4,28 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.ServerConfig;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.MetricSettings;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.NanoTime;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.ObjLongConsumer;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 /**
  * A {@link RequestLog} implementation that collects statistics like HTTP response types aggregated by category.
@@ -38,19 +43,25 @@ class MetricAggregatingRequestLog implements RequestLog {
     private final List<String> searchHandlerPaths;
     private final Set<String> ignoredUserAgents;
     private final boolean reporterEnabled;
+    private final Metric metric;
 
     private final ConcurrentMap<StatusCodeMetric, LongAdder> statistics = new ConcurrentHashMap<>();
 
-    MetricAggregatingRequestLog(ServerConfig.Metric cfg) {
-        this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents(), cfg.reporterEnabled());
+    MetricAggregatingRequestLog(ServerConfig.Metric config, Metric metric, MetricReceiver metricReceiver) {
+        this(config.monitoringHandlerPaths(), config.searchHandlerPaths(), config.ignoredUserAgents(), config.reporterEnabled(),
+             metric, metricReceiver);
     }
 
     MetricAggregatingRequestLog(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths,
-                                List<String> ignoredUserAgents, boolean reporterEnabled) {
+                                List<String> ignoredUserAgents, boolean reporterEnabled,
+                                Metric metric, MetricReceiver metricReceiver) {
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
         this.ignoredUserAgents = Set.copyOf(ignoredUserAgents);
         this.reporterEnabled = reporterEnabled;
+        var histogramSettings = new MetricSettings.Builder().histogram(true).build();
+        metricReceiver.declareGauge(MetricDefinitions.LATENCY, Optional.empty(), histogramSettings);
+        this.metric = metric;
     }
 
     static MetricAggregatingRequestLog getBean(JettyHttpServer server) { return getBean(server.server()); }
@@ -59,25 +70,27 @@ class MetricAggregatingRequestLog implements RequestLog {
     @Override public void log(Request req, Response resp) { onResponse(req, resp.getStatus()); }
 
     void onResponse(Request request, int status) {
-        if (shouldLogMetricsFor(request)) {
-            var metrics = StatusCodeMetric.of(request, status, monitoringHandlerPaths, searchHandlerPaths);
-            metrics.forEach(metric -> statistics.computeIfAbsent(metric, __ -> new LongAdder()).increment());
-        }
+        if (!shouldLogMetricsFor(request)) return;
+
+        Dimensions dimensions = Dimensions.of(request, status, monitoringHandlerPaths, searchHandlerPaths);
+        StatusCodeMetric.of(status, dimensions).forEach(metric -> statistics.computeIfAbsent(metric, __ -> new LongAdder()).increment());
+        metric.set(MetricDefinitions.LATENCY, NanoTime.millisSince(request.getHeadersNanoTime()), metric.createContext(dimensions.asMap()));
     }
 
+    /** For testing */
     List<StatisticsEntry> takeStatistics() {
         if (reporterEnabled)
             throw new IllegalStateException("Cannot take consistent snapshot while reporter is enabled");
-        var ret = new ArrayList<StatisticsEntry>();
-        consume((metric, value) -> ret.add(new StatisticsEntry(metric, value)));
-        return ret;
+        var statisticsList = new ArrayList<StatisticsEntry>();
+        consume((metric, value) -> statisticsList.add(new StatisticsEntry(metric, value)));
+        return statisticsList;
     }
 
     void reportSnapshot(Metric metricAggregator) {
         if (!reporterEnabled) throw new IllegalStateException("Reporter is not enabled");
         consume((metric, value) -> {
-            Metric.Context ctx = metricAggregator.createContext(metric.dimensions.asMap());
-            metricAggregator.add(metric.name, value, ctx);
+            Metric.Context context = metricAggregator.createContext(metric.dimensions.asMap());
+            metricAggregator.add(metric.name, value, context);
         });
     }
 
@@ -95,6 +108,7 @@ class MetricAggregatingRequestLog implements RequestLog {
     }
 
     static class Dimensions {
+
         final String protocol;
         final String scheme;
         final String method;
@@ -156,7 +170,7 @@ class MetricAggregatingRequestLog implements RequestLog {
         private static String requestType(Request req, List<String> monitoringHandlerPaths,
                                           List<String> searchHandlerPaths) {
             HttpRequest.RequestType requestType = (HttpRequest.RequestType)req.getAttribute(requestTypeAttribute);
-            if (requestType != null) return requestType.name().toLowerCase();
+            if (requestType != null) return requestType.name().toLowerCase(Locale.ROOT);
             // Deduce from path and method:
             String path = req.getHttpURI().getPath();
             if (path == null) return "none";
@@ -191,6 +205,7 @@ class MetricAggregatingRequestLog implements RequestLog {
     }
 
     static class StatusCodeMetric {
+
         final Dimensions dimensions;
         final String name;
 
@@ -199,10 +214,8 @@ class MetricAggregatingRequestLog implements RequestLog {
             this.name = name;
         }
 
-        static Set<StatusCodeMetric> of(Request req, int statusCode, List<String> monitoringHandlerPaths,
-                                   List<String> searchHandlerPaths) {
-            Dimensions dimensions = Dimensions.of(req, statusCode, monitoringHandlerPaths, searchHandlerPaths);
-            return metricNames(statusCode).stream()
+        static Set<StatusCodeMetric> of(int status, Dimensions dimensions) {
+            return metricNames(status).stream()
                     .map(name -> new StatusCodeMetric(dimensions, name))
                     .collect(Collectors.toSet());
         }
@@ -227,6 +240,7 @@ class MetricAggregatingRequestLog implements RequestLog {
     }
 
     static class StatisticsEntry {
+
         final Dimensions dimensions;
         final String name;
         final long value;
@@ -247,4 +261,5 @@ class MetricAggregatingRequestLog implements RequestLog {
 
         @Override public int hashCode() { return Objects.hash(dimensions, name, value); }
     }
+
 }

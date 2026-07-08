@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.mojo;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -16,6 +15,8 @@ import org.apache.maven.project.MavenProject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -61,7 +62,7 @@ public class GenerateProvidedArtifactManifestMojo extends AbstractMojo {
         }
         try {
             getLog().info("Replacing original jar with transformed jar");
-            FileUtils.copyFile(shadedJar, originalJar);
+            Files.copy(shadedJar.toPath(), originalJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new MojoExecutionException(e);
         }

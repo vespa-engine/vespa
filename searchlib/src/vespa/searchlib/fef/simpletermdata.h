@@ -5,7 +5,9 @@
 #include "handle.h"
 #include "itermdata.h"
 #include "simpletermfielddata.h"
+
 #include <vespa/searchlib/query/weight.h>
+
 #include <vector>
 
 namespace search::fef {
@@ -13,21 +15,20 @@ namespace search::fef {
 /**
  * Static match data for a single unit (term/phrase/etc).
  **/
-class SimpleTermData final : public ITermData
-{
+class SimpleTermData final : public ITermData {
 private:
-    query::Weight   _weight;
-    uint32_t        _numTerms;
-    uint32_t        _uniqueId;
-    std::optional<std::string>  _query_tensor_name;
+    query::Weight                    _weight;
+    uint32_t                         _numTerms;
+    uint32_t                         _uniqueId;
+    std::optional<std::string>       _query_tensor_name;
     std::vector<SimpleTermFieldData> _fields;
 
 public:
     SimpleTermData() noexcept;
-    SimpleTermData(const ITermData &rhs);
-    SimpleTermData(const SimpleTermData &);
-    SimpleTermData(SimpleTermData &&) noexcept;
-    SimpleTermData & operator=(SimpleTermData &&) noexcept;
+    SimpleTermData(const ITermData& rhs);
+    SimpleTermData(const SimpleTermData&);
+    SimpleTermData(SimpleTermData&&) noexcept;
+    SimpleTermData& operator=(SimpleTermData&&) noexcept;
     ~SimpleTermData() override;
 
     //----------- ITermData implementation ------------------------------------
@@ -42,13 +43,11 @@ public:
 
     [[nodiscard]] size_t numFields() const override { return _fields.size(); }
 
-    [[nodiscard]] const ITermFieldData &field(size_t i) const override {
-        return _fields[i];
-    }
+    [[nodiscard]] const ITermFieldData& field(size_t i) const override { return _fields[i]; }
 
-    [[nodiscard]] const ITermFieldData *lookupField(uint32_t fieldId) const override {
+    [[nodiscard]] const ITermFieldData* lookupField(uint32_t fieldId) const override {
         for (size_t fieldIdx(0), m(numFields()); fieldIdx < m; ++fieldIdx) {
-            const ITermFieldData &tfd = field(fieldIdx);
+            const ITermFieldData& tfd = field(fieldIdx);
             if (tfd.getFieldId() == fieldId) {
                 return &tfd;
             }
@@ -61,7 +60,7 @@ public:
     /**
      * Sets the term weight.
      **/
-    SimpleTermData &setWeight(query::Weight weight) {
+    SimpleTermData& setWeight(query::Weight weight) {
         _weight = weight;
         return *this;
     }
@@ -69,7 +68,7 @@ public:
     /**
      * Sets the number of terms represented by this term data object.
      **/
-    SimpleTermData &setPhraseLength(uint32_t numTerms) {
+    SimpleTermData& setPhraseLength(uint32_t numTerms) {
         _numTerms = numTerms;
         return *this;
     }
@@ -80,12 +79,12 @@ public:
      * @param id unique id or 0
      * @return this to allow chaining.
      **/
-    SimpleTermData &setUniqueId(uint32_t id) {
+    SimpleTermData& setUniqueId(uint32_t id) {
         _uniqueId = id;
         return *this;
     }
 
-    SimpleTermData &set_query_tensor_name(const std::string &name) {
+    SimpleTermData& set_query_tensor_name(const std::string& name) {
         _query_tensor_name = name;
         return *this;
     }
@@ -96,7 +95,7 @@ public:
      * @return the newly added field
      * @param fieldId field id of the added field
      **/
-    SimpleTermFieldData &addField(uint32_t fieldId) {
+    SimpleTermFieldData& addField(uint32_t fieldId) {
         _fields.emplace_back(fieldId);
         return _fields.back();
     }
@@ -105,9 +104,7 @@ public:
      * Direct access to data for individual fields
      * @param i local index, must have: 0 <= i < numFields()
      */
-    SimpleTermFieldData &field(size_t i) {
-        return _fields[i];
-    }
+    SimpleTermFieldData& field(size_t i) { return _fields[i]; }
 
     /**
      * Obtain information about a specific field that may be searched
@@ -116,7 +113,7 @@ public:
      *
      * @return term field data, or NULL if not found
      **/
-    SimpleTermFieldData *lookupField(uint32_t fieldId) {
+    SimpleTermFieldData* lookupField(uint32_t fieldId) {
         for (size_t fieldIdx(0), m(numFields()); fieldIdx < m; ++fieldIdx) {
             SimpleTermFieldData& tfd = field(fieldIdx);
             if (tfd.getFieldId() == fieldId) {
@@ -127,4 +124,4 @@ public:
     }
 };
 
-}
+} // namespace search::fef

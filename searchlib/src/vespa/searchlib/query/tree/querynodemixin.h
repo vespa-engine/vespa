@@ -6,20 +6,16 @@
 
 namespace search::query {
 
-template <typename T, typename Base>
-struct QueryNodeMixin : Base {
+template <typename T, typename Base> struct QueryNodeMixin : Base {
     using QueryNodeMixinType = QueryNodeMixin<T, Base>;
 
     ~QueryNodeMixin() = 0;
-    void accept(QueryVisitor &visitor) override {
-        visitor.visit(static_cast<T &>(*this));
-    }
+    void accept(QueryVisitor& visitor) override { visitor.visit(static_cast<T&>(*this)); }
 
 protected:
     using Base::Base;
 };
 
-template <typename T, typename Base>
-QueryNodeMixin<T, Base>::~QueryNodeMixin() = default;
+template <typename T, typename Base> QueryNodeMixin<T, Base>::~QueryNodeMixin() = default;
 
-}
+} // namespace search::query

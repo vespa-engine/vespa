@@ -1,15 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
 #include <vespa/messagebus/testlib/custompolicy.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace mbus;
 
@@ -50,30 +50,30 @@ TestData::TestData()
       _barSession(),
       _barHandler(),
       _bazSession(),
-      _bazHandler()
-{
+      _bazHandler() {
     _retryPolicy->setBaseDelay(0);
 }
 
 TestData::~TestData() = default;
 
-bool
-TestData::start()
-{
+bool TestData::start() {
     _srcSession = _srcServer.mb.createSourceSession(SourceSessionParams().setReplyHandler(_srcHandler));
-    if ( ! _srcSession) {
+    if (!_srcSession) {
         return false;
     }
-    _fooSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("foo").setMessageHandler(_fooHandler));
-    if ( ! _fooSession) {
+    _fooSession = _dstServer.mb.createDestinationSession(
+        DestinationSessionParams().setName("foo").setMessageHandler(_fooHandler));
+    if (!_fooSession) {
         return false;
     }
-    _barSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("bar").setMessageHandler(_barHandler));
-    if ( ! _barSession) {
+    _barSession = _dstServer.mb.createDestinationSession(
+        DestinationSessionParams().setName("bar").setMessageHandler(_barHandler));
+    if (!_barSession) {
         return false;
     }
-    _bazSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("baz").setMessageHandler(_bazHandler));
-    if ( ! _bazSession) {
+    _bazSession = _dstServer.mb.createDestinationSession(
+        DestinationSessionParams().setName("baz").setMessageHandler(_bazHandler));
+    if (!_bazSession) {
         return false;
     }
     if (!_srcServer.waitSlobrok("dst/*", 3u)) {
@@ -82,32 +82,30 @@ TestData::start()
     return true;
 }
 
-std::unique_ptr<Message>
-createMessage(const string &msg)
-{
+std::unique_ptr<Message> createMessage(const string& msg) {
     auto ret = std::make_unique<SimpleMessage>(msg);
     ret->getTrace().setLevel(9);
     return ret;
 }
 
-}
+} // namespace
 
-TEST(AdvancedRoutingTest, test_advanced)
-{
+TEST(AdvancedRoutingTest, test_advanced) {
     TestData data;
     ASSERT_TRUE(data.start());
 
     const duration TIMEOUT = 60s;
-    IProtocol::SP protocol(new SimpleProtocol());
-    auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(false, ErrorCode::NO_ADDRESS_FOR_SERVICE)));
+    IProtocol::SP  protocol(new SimpleProtocol());
+    auto&          simple = dynamic_cast<SimpleProtocol&>(*protocol);
+    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(
+                                          new CustomPolicyFactory(false, ErrorCode::NO_ADDRESS_FOR_SERVICE)));
     data._srcServer.mb.putProtocol(protocol);
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addHop(HopSpec("bar", "dst/bar"))
-                                                           .addHop(HopSpec("baz", "dst/baz"))
-                                                           .addRoute(RouteSpec("baz").addHop("baz"))));
+                                                               .addHop(HopSpec("bar", "dst/bar"))
+                                                               .addHop(HopSpec("baz", "dst/baz"))
+                                                               .addRoute(RouteSpec("baz").addHop("baz"))));
     string route = vespalib::make_string("[Custom:%s,bar,route:baz,dst/cox,?dst/unknown]",
-                                              data._fooSession->getConnectionSpec().c_str());
+                                         data._fooSession->getConnectionSpec().c_str());
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse(route)).isAccepted());
 
     // Initial send.

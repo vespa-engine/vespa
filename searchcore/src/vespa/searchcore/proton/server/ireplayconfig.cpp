@@ -7,4 +7,3 @@ namespace proton {
 IReplayConfig::~IReplayConfig() = default;
 
 } // namespace proton
-

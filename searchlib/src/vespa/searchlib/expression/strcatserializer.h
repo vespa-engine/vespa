@@ -2,20 +2,20 @@
 #pragma once
 
 #include "serializer.h"
+
 #include <vespa/vespalib/objects/asciiserializer.h>
 
 namespace search::expression {
 
 class RawResultNode;
 
-class StrCatSerializer : public vespalib::AsciiSerializer, public ResultSerializer
-{
+class StrCatSerializer : public vespalib::AsciiSerializer, public ResultSerializer {
 public:
-    StrCatSerializer(vespalib::asciistream & stream) : vespalib::AsciiSerializer(stream) { }
-    StrCatSerializer & put(const vespalib::Identifiable & value) override;
-    ResultSerializer & putResult(const ResultNodeVector & value) override;
-    ResultSerializer & putResult(const RawResultNode & value) override;
-    void proxyPut(const ResultNode & value) override;
+    StrCatSerializer(vespalib::asciistream& stream) : vespalib::AsciiSerializer(stream) {}
+    StrCatSerializer& put(const vespalib::Identifiable& value) override;
+    ResultSerializer& putResult(const ResultNodeVector& value) override;
+    ResultSerializer& putResult(const RawResultNode& value) override;
+    void proxyPut(const ResultNode& value) override;
 };
 
-}
+} // namespace search::expression

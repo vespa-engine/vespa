@@ -5,12 +5,9 @@ import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
-import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.http.config.Registry;
-import org.apache.hc.core5.http.config.RegistryBuilder;
+import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 
@@ -32,13 +29,13 @@ import static com.yahoo.security.tls.TransportSecurityUtils.isTransportSecurityE
  */
 public class VespaHttpClientBuilder {
 
-    private HttpClientConnectionManagerFactory connectionManagerFactory = PoolingHttpClientConnectionManager::new;
+    private HttpClientConnectionManagerFactory connectionManagerFactory = VespaHttpClientBuilder::defaultConnectionManager;
     private HostnameVerifier hostnameVerifier = new NoopHostnameVerifier();
     private boolean rewriteHttpToHttps = true;
     private final ConnectionConfig.Builder connectionConfigBuilder = ConnectionConfig.custom();
 
     public interface HttpClientConnectionManagerFactory {
-        PoolingHttpClientConnectionManager create(Registry<ConnectionSocketFactory> socketFactories);
+        PoolingHttpClientConnectionManager create(TlsSocketStrategy tlsSocketStrategy);
     }
 
     private VespaHttpClientBuilder() {
@@ -81,10 +78,14 @@ public class VespaHttpClientBuilder {
         connectionConfigBuilder.setValidateAfterInactivity(validateAfterInactivity);
         return this;
     }
+    public VespaHttpClientBuilder timeToLive(TimeValue timeToLive) {
+        connectionConfigBuilder.setTimeToLive(timeToLive);
+        return this;
+    }
 
     public HttpClientBuilder apacheBuilder() {
         HttpClientBuilder builder = HttpClientBuilder.create();
-        addSslSocketFactory(builder, new HttpClientConnectionManagerFactoryProxy(), hostnameVerifier);
+        addTlsStrategy(builder, new HttpClientConnectionManagerFactoryProxy(), hostnameVerifier);
         if (rewriteHttpToHttps)
             addHttpsRewritingRoutePlanner(builder);
 
@@ -101,18 +102,18 @@ public class VespaHttpClientBuilder {
 
     private class HttpClientConnectionManagerFactoryProxy implements HttpClientConnectionManagerFactory {
         @Override
-        public PoolingHttpClientConnectionManager create(Registry<ConnectionSocketFactory> socketFactories) {
-            PoolingHttpClientConnectionManager manager = connectionManagerFactory.create(socketFactories);
+        public PoolingHttpClientConnectionManager create(TlsSocketStrategy tlsSocketStrategy) {
+            PoolingHttpClientConnectionManager manager = connectionManagerFactory.create(tlsSocketStrategy);
             manager.setDefaultConnectionConfig(connectionConfigBuilder.build());
             return manager;
         }
     }
 
-    private static void addSslSocketFactory(HttpClientBuilder builder, HttpClientConnectionManagerFactory connectionManagerFactory,
-                                            HostnameVerifier hostnameVerifier) {
+    private static void addTlsStrategy(HttpClientBuilder builder, HttpClientConnectionManagerFactory connectionManagerFactory,
+                                        HostnameVerifier hostnameVerifier) {
         getSystemTlsContext().ifPresent(tlsContext -> {
-            SSLConnectionSocketFactory socketFactory = SslConnectionSocketFactory.of(tlsContext, hostnameVerifier);
-            builder.setConnectionManager(connectionManagerFactory.create(createRegistry(socketFactory)));
+            TlsSocketStrategy tlsSocketStrategy = VespaTlsStrategy.of(tlsContext, hostnameVerifier);
+            builder.setConnectionManager(connectionManagerFactory.create(tlsSocketStrategy));
             // Workaround that allows re-using https connections, see https://stackoverflow.com/a/42112034/1615280 for details.
             // Proper solution would be to add a request interceptor that adds a x500 principal as user token,
             // but certificate subject CN is not accessible through the TlsContext currently.
@@ -120,10 +121,9 @@ public class VespaHttpClientBuilder {
         });
     }
 
-    private static Registry<ConnectionSocketFactory> createRegistry(SSLConnectionSocketFactory sslSocketFactory) {
-        return RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("https", sslSocketFactory)
-                .register("http", PlainConnectionSocketFactory.getSocketFactory())
+    private static PoolingHttpClientConnectionManager defaultConnectionManager(TlsSocketStrategy tlsSocketStrategy) {
+        return PoolingHttpClientConnectionManagerBuilder.create()
+                .setTlsSocketStrategy(tlsSocketStrategy)
                 .build();
     }
 

@@ -25,7 +25,7 @@ using search::queryeval::MatchingElementsSearch;
 std::shared_ptr<AttributeVector> make_attribute(BasicType type) {
     Config cfg(type, CollectionType::WSET);
     cfg.setFastSearch(true);
-    auto result = AttributeFactory::createAttribute("field", cfg);
+    auto     result = AttributeFactory::createAttribute("field", cfg);
     uint32_t docid = 0;
     for (size_t i = 0; i < 2; ++i) {
         result->addDoc(docid);
@@ -34,14 +34,13 @@ std::shared_ptr<AttributeVector> make_attribute(BasicType type) {
     return result;
 }
 
-std::unique_ptr<MatchingElementsSearch> make_search(AttributeVector &attr, const std::vector<std::string> &terms)
-{
+std::unique_ptr<MatchingElementsSearch> make_search(AttributeVector& attr, const std::vector<std::string>& terms) {
     using LookupResult = IDirectPostingStore::LookupResult;
     auto dwa = attr.as_docid_with_weight_posting_store();
     assert(dwa != nullptr);
-    auto snapshot = dwa->get_dictionary_snapshot();
+    auto                      snapshot = dwa->get_dictionary_snapshot();
     std::vector<LookupResult> dict_entries;
-    for (const auto &term : terms) {
+    for (const auto& term : terms) {
         dict_entries.emplace_back(dwa->lookup(term, snapshot));
     }
     auto result = MatchingElementsSearch::create(attr, attr.getName(), snapshot, dict_entries);
@@ -49,43 +48,41 @@ std::unique_ptr<MatchingElementsSearch> make_search(AttributeVector &attr, const
     return result;
 }
 
-template <typename KeyType>
-class MatchingElementsSearchTest : public ::testing::Test {
+template <typename KeyType> class MatchingElementsSearchTest : public ::testing::Test {
 public:
-    static constexpr bool is_string = std::is_same_v<KeyType, const char *>;
+    static constexpr bool is_string = std::is_same_v<KeyType, const char*>;
     using Values = std::vector<std::pair<KeyType, int32_t>>;
     using MatchResult = std::map<std::conditional_t<is_string, std::string, KeyType>, int32_t>;
     using LookupTest = std::pair<std::vector<std::string>, MatchResult>;
     using LookupTests = std::vector<LookupTest>;
     using AttributeSubType = std::conditional_t<is_string, StringAttribute, IntegerAttribute>;
-    static Values _values;
-    static LookupTests _lookup_tests;
+    static Values                    _values;
+    static LookupTests               _lookup_tests;
     std::shared_ptr<AttributeVector> _attr;
-    std::conditional_t<is_string, search::attribute::WeightedStringContent, search::attribute::WeightedIntegerContent> _content;
+    std::conditional_t<is_string, search::attribute::WeightedStringContent, search::attribute::WeightedIntegerContent>
+        _content;
 
     MatchingElementsSearchTest()
-        : _attr(make_attribute(std::is_same_v<KeyType, int64_t> ? BasicType::INT64 : BasicType::STRING))
-    {
-        auto &attr = dynamic_cast<AttributeSubType &>(*_attr);
+        : _attr(make_attribute(std::is_same_v<KeyType, int64_t> ? BasicType::INT64 : BasicType::STRING)) {
+        auto&    attr = dynamic_cast<AttributeSubType&>(*_attr);
         uint32_t docid = 1;
         attr.clearDoc(docid);
-        for (const auto &value : _values) {
+        for (const auto& value : _values) {
             attr.append(docid, value.first, value.second);
         }
         attr.commit();
     }
 
-    MatchResult
-    get_matches(MatchingElementsSearch &matching_elements_search) {
+    MatchResult get_matches(MatchingElementsSearch& matching_elements_search) {
         MatchingElements matching_elements_store;
-        uint32_t docid = 1;
+        uint32_t         docid = 1;
         matching_elements_search.find_matching_elements(docid, matching_elements_store);
         auto matching_elements = matching_elements_store.get_matching_elements(docid, "field");
         _content.fill(*_attr, docid);
         MatchResult result;
-        for (auto &element_id : matching_elements) {
+        for (auto& element_id : matching_elements) {
             if (element_id < _content.size()) {
-                auto &element = _content[element_id];
+                auto& element = _content[element_id];
                 result.emplace(element.value(), element.weight());
             }
         }
@@ -93,7 +90,7 @@ public:
     }
 
     void verify_matching_elements() {
-        for (const auto &lookup_test : _lookup_tests) {
+        for (const auto& lookup_test : _lookup_tests) {
             auto search = make_search(*_attr, lookup_test.first);
             auto matches = get_matches(*search);
             EXPECT_EQ(lookup_test.second, matches);
@@ -101,25 +98,25 @@ public:
     }
 };
 
-template <> MatchingElementsSearchTest<int64_t>::Values MatchingElementsSearchTest<int64_t>::_values{{10, 5}, {20, 7}};
-template <> MatchingElementsSearchTest<const char *>::Values MatchingElementsSearchTest<const char *>::_values{{"FOO", 3}, {"bar", 7}, {"foo", 5}};
-template <> MatchingElementsSearchTest<int64_t>::LookupTests MatchingElementsSearchTest<int64_t>::_lookup_tests{
-    {{"10", "11"}, {{10, 5}}},
-    {{"11", "20"}, {{20, 7}}},
-    {{"10", "20"}, {{10, 5}, {20, 7}}}
-};
-template <> MatchingElementsSearchTest<const char *>::LookupTests MatchingElementsSearchTest<const char *>::_lookup_tests{
+template <>
+MatchingElementsSearchTest<int64_t>::Values MatchingElementsSearchTest<int64_t>::_values{{10, 5}, {20, 7}};
+template <>
+MatchingElementsSearchTest<const char*>::Values MatchingElementsSearchTest<const char*>::_values{
+    {"FOO", 3}, {"bar", 7}, {"foo", 5}};
+template <>
+MatchingElementsSearchTest<int64_t>::LookupTests MatchingElementsSearchTest<int64_t>::_lookup_tests{
+    {{"10", "11"}, {{10, 5}}}, {{"11", "20"}, {{20, 7}}}, {{"10", "20"}, {{10, 5}, {20, 7}}}};
+template <>
+MatchingElementsSearchTest<const char*>::LookupTests MatchingElementsSearchTest<const char*>::_lookup_tests{
     {{"foo", "baz"}, {{"FOO", 3}, {"foo", 5}}},
     {{"baz", "bar"}, {{"bar", 7}}},
     {{"foo", "bar"}, {{"FOO", 3}, {"foo", 5}, {"bar", 7}}},
-    {{"FOO"},        {{"FOO", 3}, {"foo", 5}}}
-};
+    {{"FOO"}, {{"FOO", 3}, {"foo", 5}}}};
 
-using MatchingElementsSearchTestTypes = ::testing::Types<int64_t, const char *>;
+using MatchingElementsSearchTestTypes = ::testing::Types<int64_t, const char*>;
 TYPED_TEST_SUITE(MatchingElementsSearchTest, MatchingElementsSearchTestTypes);
 
-TYPED_TEST(MatchingElementsSearchTest, verify_matching_elements)
-{
+TYPED_TEST(MatchingElementsSearchTest, verify_matching_elements) {
     this->verify_matching_elements();
 }
 

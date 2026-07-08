@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "fakeword.h"
 #include "fakeposting.h"
+#include "fakeword.h"
 #include "fpfactory.h"
-#include <vespa/searchlib/memoryindex/feature_store.h>
-#include <vespa/searchlib/memoryindex/field_index.h>
+
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/memoryindex/feature_store.h>
+#include <vespa/searchlib/memoryindex/field_index.h>
 
 namespace search::fakedata {
 
@@ -23,19 +24,15 @@ public:
     using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
 
     vespalib::GenerationHandler _generationHandler;
-    NodeAllocator _allocator;
+    NodeAllocator               _allocator;
 
-    std::map<const FakeWord *, uint32_t> _fw2WordIdx;
-    class PostingIdx
-    {
+    std::map<const FakeWord*, uint32_t> _fw2WordIdx;
+    class PostingIdx {
     public:
-        Tree _tree;
+        Tree           _tree;
         Tree::Iterator _iterator;
 
-        PostingIdx(NodeAllocator &allocator)
-            : _tree(),
-              _iterator(_tree.getRoot(), allocator)
-        {}
+        PostingIdx(NodeAllocator& allocator) : _tree(), _iterator(_tree.getRoot(), allocator) {}
 
         void clear() {
             _tree.clear(_iterator.getAllocator());
@@ -43,8 +40,7 @@ public:
         }
     };
 
-    class PendingOp
-    {
+    class PendingOp {
         uint32_t _wordIdx;
         uint32_t _docId;
         EntryRef _features;
@@ -53,20 +49,10 @@ public:
 
     public:
         PendingOp(uint32_t wordIdx, uint32_t docId) noexcept
-            : _wordIdx(wordIdx),
-              _docId(docId),
-              _features(),
-              _removal(true),
-              _seq(0)
-        {}
+            : _wordIdx(wordIdx), _docId(docId), _features(), _removal(true), _seq(0) {}
 
         PendingOp(uint32_t wordIdx, uint32_t docId, EntryRef features) noexcept
-            : _wordIdx(wordIdx),
-              _docId(docId),
-              _features(features),
-              _removal(false),
-              _seq(0)
-        {}
+            : _wordIdx(wordIdx), _docId(docId), _features(features), _removal(false), _seq(0) {}
 
         void setSeq(uint32_t seq) { _seq = seq; }
         uint32_t getWordIdx() const { return _wordIdx; }
@@ -74,7 +60,7 @@ public:
         EntryRef getFeatureRef() const { return _features; }
         bool getRemove() const { return _removal; }
 
-        bool operator<(const PendingOp &rhs) const noexcept {
+        bool operator<(const PendingOp& rhs) const noexcept {
             if (_wordIdx != rhs._wordIdx)
                 return _wordIdx < rhs._wordIdx;
             if (_docId != rhs.getDocId())
@@ -83,14 +69,14 @@ public:
         }
     };
 
-    std::vector<std::shared_ptr<PostingIdx> > _postingIdxs;
-    std::vector<const FakeWord *> _fakeWords;
-    std::vector<uint64_t> _featureSizes;
-    std::vector<PendingOp> _unflushed;
+    std::vector<std::shared_ptr<PostingIdx>> _postingIdxs;
+    std::vector<const FakeWord*>             _fakeWords;
+    std::vector<uint64_t>                    _featureSizes;
+    std::vector<PendingOp>                   _unflushed;
 
     FeatureStore _featureStore;
 
-    FakeMemTreeOccMgr(const Schema &schema);
+    FakeMemTreeOccMgr(const Schema& schema);
     ~FakeMemTreeOccMgr();
 
     void freeze();
@@ -98,7 +84,7 @@ public:
     void incGeneration();
     void reclaim_memory();
     void sync();
-    void add(uint32_t wordIdx, index::DocIdAndFeatures &features) override;
+    void add(uint32_t wordIdx, index::DocIdAndFeatures& features) override;
     void remove(uint32_t wordIdx, uint32_t docId) override;
     void sortUnflushed();
     void flush();
@@ -106,9 +92,7 @@ public:
     void finalize();
 };
 
-
-class FakeMemTreeOccFactory : public FPFactory
-{
+class FakeMemTreeOccFactory : public FPFactory {
 public:
     using Tree = FakeMemTreeOccMgr::Tree;
     using NodeAllocator = FakeMemTreeOccMgr::NodeAllocator;
@@ -116,56 +100,47 @@ public:
 
     FakeMemTreeOccMgr _mgr;
 
-    FakeMemTreeOccFactory(const Schema &schema);
+    FakeMemTreeOccFactory(const Schema& schema);
     ~FakeMemTreeOccFactory();
 
-    FakePosting::SP make(const FakeWord &fw) override;
-    void setup(const std::vector<const FakeWord *> &fws) override;
+    FakePosting::SP make(const FakeWord& fw) override;
+    void setup(const std::vector<const FakeWord*>& fws) override;
 };
 
-class FakeMemTreeOcc2Factory : public FakeMemTreeOccFactory
-{
+class FakeMemTreeOcc2Factory : public FakeMemTreeOccFactory {
 public:
-    FakeMemTreeOcc2Factory(const Schema &schema);
+    FakeMemTreeOcc2Factory(const Schema& schema);
     ~FakeMemTreeOcc2Factory();
 
-    FakePosting::SP make(const FakeWord &fw) override;
-    void setup(const std::vector<const FakeWord *> &fws) override;
+    FakePosting::SP make(const FakeWord& fw) override;
+    void setup(const std::vector<const FakeWord*>& fws) override;
 };
 
 /*
  * Updateable memory tree format.
  */
-class FakeMemTreeOcc : public FakePosting
-{
+class FakeMemTreeOcc : public FakePosting {
 public:
     using Tree = FakeMemTreeOccMgr::Tree;
     using NodeAllocator = FakeMemTreeOccMgr::NodeAllocator;
     using PosOccFieldsParams = FakeMemTreeOccMgr::PosOccFieldsParams;
 
-
 private:
-    NodeAllocator &_allocator;
-    Tree &_tree;
-    const PosOccFieldsParams &_fieldsParams;
-    uint32_t _packedIndex;
-    uint64_t _featureBitSize;
-    const FakeMemTreeOccMgr &_mgr;
-    unsigned int _docIdLimit;
-    unsigned int _hitDocs;
-public:
-    FakeMemTreeOcc(const FakeWord &fakeword,
-                   NodeAllocator &allocator,
-                   Tree &tree,
-                   uint64_t featureBitSize,
-                   const FakeMemTreeOccMgr &mgr);
+    NodeAllocator&            _allocator;
+    Tree&                     _tree;
+    const PosOccFieldsParams& _fieldsParams;
+    uint32_t                  _packedIndex;
+    uint64_t                  _featureBitSize;
+    const FakeMemTreeOccMgr&  _mgr;
+    unsigned int              _docIdLimit;
+    unsigned int              _hitDocs;
 
-    FakeMemTreeOcc(const FakeWord &fakeword,
-                   NodeAllocator &allocator,
-                   Tree &tree,
-                   uint64_t featureBitSize,
-                   const FakeMemTreeOccMgr &mgr,
-                   const char *suffix);
+public:
+    FakeMemTreeOcc(const FakeWord& fakeword, NodeAllocator& allocator, Tree& tree, uint64_t featureBitSize,
+                   const FakeMemTreeOccMgr& mgr);
+
+    FakeMemTreeOcc(const FakeWord& fakeword, NodeAllocator& allocator, Tree& tree, uint64_t featureBitSize,
+                   const FakeMemTreeOccMgr& mgr, const char* suffix);
 
     ~FakeMemTreeOcc();
 
@@ -174,9 +149,10 @@ public:
     bool hasWordPositions() const override;
     int lowLevelSinglePostingScan() const override;
     int lowLevelSinglePostingScanUnpack() const override;
-    int lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
-    int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
-    std::unique_ptr<queryeval::SearchIterator> createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    int lowLevelAndPairPostingScan(const FakePosting& rhs) const override;
+    int lowLevelAndPairPostingScanUnpack(const FakePosting& rhs) const override;
+    std::unique_ptr<queryeval::SearchIterator>
+    createIterator(const fef::TermFieldMatchDataArray& matchData) const override;
 };
 
-}
+} // namespace search::fakedata

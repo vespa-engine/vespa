@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author glebashnik
@@ -32,6 +33,18 @@ public class OnnxEvaluatorOptionsTest {
         assertTrue(options.modelConfigOverride().isEmpty());
     }
     
+    @Test
+    public void of_config_with_negative_gpu_device_disables_gpu() {
+        var configBuilder = new OnnxEvaluatorConfig.Builder();
+        configBuilder.gpuDevice(-1);
+        var config = configBuilder.build();
+
+        var options = OnnxEvaluatorOptions.of(config, 8);
+
+        assertEquals(-1, options.gpuDeviceNumber());
+        assertFalse(options.requestingGpu());
+    }
+
     @Test
     public void of_config_with_all_params_set() {
         var configBuilder = new OnnxEvaluatorConfig.Builder();

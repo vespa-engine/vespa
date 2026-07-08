@@ -11,16 +11,16 @@ namespace search {
  * and abstract backing buffer.  Each time backing buffer is full,
  * flush() is called to resize it or drain it to the backing store.
  */
-class BufferWriter
-{
-    char *_cur;
-    char *_end;
-    char *_start;
+class BufferWriter {
+    char* _cur;
+    char* _end;
+    char* _start;
+
 protected:
     void rewind() { _cur = _start; }
 
-    void setup(void *start, size_t len) {
-        _start = static_cast<char *>(start);
+    void setup(void* start, size_t len) {
+        _start = static_cast<char*>(start);
         _end = _start + len;
         rewind();
     }
@@ -28,13 +28,12 @@ protected:
     size_t freeLen() const { return _end - _cur; }
     size_t usedLen() const { return _cur - _start; }
 
-    void writeFast(const void *src, size_t len)
-    {
+    void writeFast(const void* src, size_t len) {
         __builtin_memcpy(_cur, src, len);
         _cur += len;
     }
 
-    void writeSlow(const void *src, size_t len);
+    void writeSlow(const void* src, size_t len);
 
 public:
     BufferWriter();
@@ -43,8 +42,7 @@ public:
 
     virtual void flush() = 0;
 
-    void write(const void *src, size_t len)
-    {
+    void write(const void* src, size_t len) {
         if (__builtin_expect(len <= freeLen(), true)) {
             writeFast(src, len);
             return;

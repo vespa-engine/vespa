@@ -42,9 +42,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.yahoo.text.Lowercase.toLowerCase;
 
 /**
  * Converts an ONNX graph to a Vespa IntermediateGraph which is the basis
@@ -76,7 +79,7 @@ class GraphImporter {
                                               String nodeName,
                                               AttributeConverter attributes,
                                               int outputIndex) {
-        switch (opType.toLowerCase()) {
+        switch (toLowerCase(opType)) {
             case "abs":         return new Map(modelName, nodeName, inputs, ScalarFunctions.abs());
             case "acos":        return new Map(modelName, nodeName, inputs, ScalarFunctions.acos());
             case "add":         return new Join(modelName, nodeName, inputs, ScalarFunctions.add());

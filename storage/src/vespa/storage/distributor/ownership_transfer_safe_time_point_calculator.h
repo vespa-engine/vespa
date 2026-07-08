@@ -27,17 +27,14 @@ namespace storage::distributor {
  */
 class OwnershipTransferSafeTimePointCalculator {
     std::chrono::seconds _max_cluster_clock_skew;
+
 public:
     explicit OwnershipTransferSafeTimePointCalculator(std::chrono::seconds max_cluster_clock_skew)
-        : _max_cluster_clock_skew(max_cluster_clock_skew)
-    {
-    }
+        : _max_cluster_clock_skew(max_cluster_clock_skew) {}
 
-    void setMaxClusterClockSkew(std::chrono::seconds sec) noexcept {
-        _max_cluster_clock_skew = sec;
-    }
+    void setMaxClusterClockSkew(std::chrono::seconds sec) noexcept { _max_cluster_clock_skew = sec; }
 
     vespalib::system_time safeTimePoint(vespalib::system_time now) const;
 };
 
-}
+} // namespace storage::distributor

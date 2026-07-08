@@ -14,13 +14,13 @@ public class OrPhraseTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     void testReplacing1() {
-        assertSemantics("OR title:\"software engineer\" (AND new york)", "software engineer new york");
+        assertSemantics("OR (AND new york) title:\"software engineer\"", "software engineer new york");
         assertSemantics("title:\"software engineer\"", "software engineer"); // Skip OR when there is nothing else
     }
 
     @Test
     void testReplacing2() {
-        assertSemantics("OR \"lord of the rings\" lotr", "lotr");
+        assertSemantics("OR lotr \"lord of the rings\"", "lotr");
     }
 
     @Test

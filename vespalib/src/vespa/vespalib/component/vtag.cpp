@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "vtag.h"
+
 #include <cstdio>
 #include <cstring>
 
@@ -32,11 +33,9 @@ char VersionTagCommitDate[] = V_TAG_COMMIT_DATE;
 
 Version Vtag::currentVersion(VersionTagComponent);
 
-void
-Vtag::printVersionNice()
-{
-    char *s = VersionTag;
-    bool needdate = true;
+void Vtag::printVersionNice() {
+    char* s = VersionTag;
+    bool  needdate = true;
     if (strncmp(VersionTag, "V_", 2) == 0) {
         s += 2;
         do {
@@ -48,11 +47,11 @@ Vtag::printVersionNice()
                 break;
             }
             if (strncmp(s, "_RC", 3) == 0) {
-                char *e = strchr(s, '-');
+                char* e = strchr(s, '-');
                 if (e == nullptr) {
                     printf("%s", s);
                 } else {
-                    printf("%.*s", (int)(e-s), s);
+                    printf("%.*s", (int)(e - s), s);
                 }
                 needdate = false;
                 break;
@@ -64,22 +63,22 @@ Vtag::printVersionNice()
             }
         } while (*s && *s != '-');
     } else {
-        char *e = strchr(s, '-');
+        char* e = strchr(s, '-');
         if (e == nullptr) {
             printf("%s", s);
         } else {
-            printf("%.*s", (int)(e-s), s);
+            printf("%.*s", (int)(e - s), s);
         }
     }
     if (needdate) {
         s = VersionTagDate;
-        char *e = strchr(s, '-');
+        char* e = strchr(s, '-');
         if (e == nullptr) {
             printf("-%s", s);
         } else {
-            printf("-%.*s", (int)(e-s), s);
+            printf("-%.*s", (int)(e - s), s);
         }
     }
 }
 
-}
+} // namespace vespalib

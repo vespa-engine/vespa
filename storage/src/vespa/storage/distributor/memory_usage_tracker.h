@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <sys/types.h>
+
 #include <algorithm>
 #include <atomic>
-#include <sys/types.h>
 
 namespace storage::distributor {
 
@@ -29,27 +30,23 @@ class alignas(cache_alignment) MemoryUsageTracker {
 
     friend class MemoryUsageToken;
 
-    void add_bytes_used(uint32_t n_bytes) noexcept {
-        sub_add_bytes_used(0, n_bytes);
-    }
-    void sub_bytes_used(uint32_t n_bytes) noexcept {
-        sub_add_bytes_used(n_bytes, 0);
-    }
+    void add_bytes_used(uint32_t n_bytes) noexcept { sub_add_bytes_used(0, n_bytes); }
+    void sub_bytes_used(uint32_t n_bytes) noexcept { sub_add_bytes_used(n_bytes, 0); }
     void sub_add_bytes_used(uint32_t old_bytes, uint32_t new_bytes) noexcept {
         const ssize_t delta = static_cast<ssize_t>(new_bytes) - static_cast<ssize_t>(old_bytes);
         const ssize_t my_before = _bytes_total.fetch_add(delta, std::memory_order_relaxed);
         const ssize_t my_after = my_before + delta;
-        ssize_t cur_max = _max_observed_bytes.load(std::memory_order_relaxed);
+        ssize_t       cur_max = _max_observed_bytes.load(std::memory_order_relaxed);
         // This will only contend if threads are observing increasing maximums, which should
         // quickly settle. In uncontended cases this is expected to be on a cache line that
         // we already hold exclusively due to the previous fetch_add.
-        while ((my_after > cur_max) &&
-               !_max_observed_bytes.compare_exchange_weak(cur_max, my_after,
-                                                          std::memory_order_relaxed, std::memory_order_relaxed))
+        while ((my_after > cur_max) && !_max_observed_bytes.compare_exchange_weak(
+                                           cur_max, my_after, std::memory_order_relaxed, std::memory_order_relaxed))
         {
             // We raced, try again
         }
     }
+
 public:
     constexpr MemoryUsageTracker() noexcept : _bytes_total(0), _max_observed_bytes(0) {}
 
@@ -76,9 +73,7 @@ public:
         return {total, adj_max};
     }
 
-    void reset_max_observed_bytes() noexcept {
-        _max_observed_bytes.store(0, std::memory_order_relaxed);
-    }
+    void reset_max_observed_bytes() noexcept { _max_observed_bytes.store(0, std::memory_order_relaxed); }
 };
 
-} // storage::distributor
+} // namespace storage::distributor

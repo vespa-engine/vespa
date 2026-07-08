@@ -3,6 +3,7 @@
 
 #include "storagemessage.h"
 #include "storageprotocol.h"
+
 #include <vespa/messagebus/message.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 
@@ -14,7 +15,7 @@ public:
 
     explicit StorageCommand(api::StorageCommand::SP);
 
-    const mbus::string & getProtocol() const override { return StorageProtocol::NAME; }
+    const mbus::string& getProtocol() const override { return StorageProtocol::NAME; }
     uint32_t getType() const override { return _cmd->getType().getId(); }
     const api::StorageCommand::SP& getCommand() { return _cmd; }
     api::StorageCommand::CSP getCommand() const { return _cmd; }
@@ -26,12 +27,10 @@ public:
 
     bool hasBucketSequence() const override { return false; }
 
-    uint8_t priority() const override {
-        return ((getInternalMessage()->getPriority()) / 255) * 16;
-    }
+    uint8_t priority() const override { return ((getInternalMessage()->getPriority()) / 255) * 16; }
 
 private:
     api::StorageCommand::SP _cmd;
 };
 
-}
+} // namespace storage::mbusprot

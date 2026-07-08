@@ -3,6 +3,7 @@ package com.yahoo.search.yql;
 
 import com.google.common.base.Charsets;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
@@ -22,12 +23,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Smoke test for first generation YQL+ integration.
@@ -127,7 +135,7 @@ public class MinimalQueryInserterTestCase {
     void testSearch() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND easilyRecognizedString)", query.getModel().getQueryTree().toString());
         assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage());
     }
 
@@ -155,7 +163,7 @@ public class MinimalQueryInserterTestCase {
         Query query = new Query("search/?userString=" + encode(japaneseWord) + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userInput(@userString)");
         execution.search(query);
         assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
-        assertEquals("AND title:madonna (WEAKAND(100) default:" + japaneseWord + ")", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND default:" + japaneseWord + ")", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -165,7 +173,7 @@ public class MinimalQueryInserterTestCase {
         Result result = execution.search(query);
         assertNull(result.hits().getError());
         assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
-        assertEquals("AND title:madonna (WEAKAND(100) " + japaneseWord + ")", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND " + japaneseWord + ")", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -175,7 +183,7 @@ public class MinimalQueryInserterTestCase {
         Result result = execution.search(query);
         assertNull(result.hits().getError());
         assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage()); // by UNKNOWN -> ENGLISH
-        assertEquals("WEAKAND(100) executions", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND executions", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -185,7 +193,7 @@ public class MinimalQueryInserterTestCase {
         Result result = execution.search(query);
         assertNull(result.hits().getError());
         assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage()); // by UNKNOWN -> ENGLISH
-        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体 (WEAKAND(100) executions)", query.getModel().getQueryTree().toString());
+        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体 (WEAKAND executions)", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -195,21 +203,21 @@ public class MinimalQueryInserterTestCase {
         Result result = execution.search(query);
         assertNull(result.hits().getError());
         assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage()); // by UNKNOWN -> ENGLISH
-        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体 (WEAKAND(100) default:executions)", query.getModel().getQueryTree().toString());
+        assertEquals("AND attribute_key:我能吞下玻璃而不伤身体 (WEAKAND default:executions)", query.getModel().getQueryTree().toString());
     }
 
     @Test
     void testUserQueryFailsWithoutArgument() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND easilyRecognizedString)", query.getModel().getQueryTree().toString());
     }
 
     @Test
     void testSearchFromAllSourcesWithUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND easilyRecognizedString)", query.getModel().getQueryTree().toString());
         assertEquals(0, query.getModel().getSources().size());
     }
 
@@ -217,7 +225,7 @@ public class MinimalQueryInserterTestCase {
     void testSearchFromAllSourcesWithoutUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND easilyRecognizedString)", query.getModel().getQueryTree().toString());
         assertEquals(0, query.getModel().getSources().size());
     }
 
@@ -225,7 +233,7 @@ public class MinimalQueryInserterTestCase {
     void testSearchFromSomeSourcesWithoutUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND easilyRecognizedString)", query.getModel().getQueryTree().toString());
         assertEquals(2, query.getModel().getSources().size());
         assertTrue(query.getModel().getSources().contains("sourceA"));
         assertTrue(query.getModel().getSources().contains("sourceB"));
@@ -235,7 +243,7 @@ public class MinimalQueryInserterTestCase {
     void testSearchFromSomeSourcesWithUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND easilyRecognizedString)", query.getModel().getQueryTree().toString());
         assertEquals(3, query.getModel().getSources().size());
         assertTrue(query.getModel().getSources().contains("sourceA"));
         assertTrue(query.getModel().getSources().contains("sourceB"));
@@ -246,7 +254,7 @@ public class MinimalQueryInserterTestCase {
     final void testSearchFromSomeSourcesWithOverlappingUserSource() {
         final Query query = new Query("search/?query=easilyRecognizedString&sources=abc,sourceA&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna (WEAKAND easilyRecognizedString)", query.getModel().getQueryTree().toString());
         assertEquals(3, query.getModel().getSources().size());
         assertTrue(query.getModel().getSources().contains("sourceA"));
         assertTrue(query.getModel().getSources().contains("sourceB"));
@@ -394,19 +402,41 @@ public class MinimalQueryInserterTestCase {
 
     @Test
     void globalMaxGroupsCannotBeSetInRequest() {
+        String yql = "select foo from bar where baz contains 'cox' | all(group(a) each(output(count())))";
+        verifyThatQueryWithGlobalMaxGroupsProducesError(makeQueryWithGlobalMaxGroupsFromGetRequest(yql));
+        verifyThatQueryWithGlobalMaxGroupsProducesError(makeQueryWithGlobalMaxGroupsFromPostRequest(yql));
+    }
+
+    void verifyThatQueryWithGlobalMaxGroupsProducesError(Query query) {
         try {
-            URIBuilder builder = new URIBuilder();
-            builder.setPath("search/");
-            builder.setParameter("yql", "select foo from bar where baz contains 'cox' " +
-                    "| all(group(a) each(output(count())))");
-            builder.setParameter("grouping.globalMaxGroups", "-1");
-            Query query = new Query(builder.toString());
             execution.search(query);
             fail();
         }
         catch (IllegalInputException e) {
             assertEquals("grouping.globalMaxGroups must be specified in a query profile.", e.getCause().getMessage());
         }
+    }
+
+    Query makeQueryWithGlobalMaxGroupsFromGetRequest(String yql) {
+        URIBuilder builder = new URIBuilder();
+        builder.setPath("search/");
+        builder.setParameter("yql", yql);
+        builder.setParameter("grouping.globalMaxGroups", "-1");
+        return new Query(builder.toString());
+    }
+
+    Query makeQueryWithGlobalMaxGroupsFromPostRequest(String yql) {
+        String data = "{ \"yql\": \"" + yql + "\", \"grouping.globalMaxGroups\": 42 }";
+        var stream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+        var request = HttpRequest.createTestRequest("/search/", com.yahoo.jdisc.http.HttpRequest.Method.POST, stream);
+
+        // SearchHandler extracts data from HTTP request and puts parameters into requestMap
+        // The point is that "grouping.globalMaxGroups" will not be a parameter of the HTTP request!
+        Map<String, String> requestMap = new HashMap<>(request.propertyMap());
+        requestMap.put("grouping.globalMaxGroups", "42");
+        requestMap.put("yql", yql);
+
+        return new Query(request, requestMap, null);
     }
 
     @Test

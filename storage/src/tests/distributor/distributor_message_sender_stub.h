@@ -3,34 +3,29 @@
 #pragma once
 
 #include "dummy_cluster_context.h"
+
 #include <vespa/storage/distributor/distributormessagesender.h>
+
 #include <tests/common/message_sender_stub.h>
+
 #include <cassert>
 #include <string>
 
 namespace storage {
 
 class DistributorMessageSenderStub : public distributor::DistributorStripeMessageSender {
-    MessageSenderStub _stub_impl;
+    MessageSenderStub                   _stub_impl;
     distributor::PendingMessageTracker* _pending_message_tracker;
-    distributor::OperationSequencer* _operation_sequencer;
-public:
+    distributor::OperationSequencer*    _operation_sequencer;
 
+public:
     DistributorMessageSenderStub();
     ~DistributorMessageSenderStub() override;
 
-    std::vector<std::shared_ptr<api::StorageCommand>>& commands() noexcept {
-        return _stub_impl.commands;
-    }
-    std::vector<std::shared_ptr<api::StorageReply>>& replies() noexcept {
-        return _stub_impl.replies;
-    }
-    const std::vector<std::shared_ptr<api::StorageCommand>>& commands() const noexcept {
-        return _stub_impl.commands;
-    }
-    const std::vector<std::shared_ptr<api::StorageReply>>& replies() const noexcept {
-        return _stub_impl.replies;
-    };
+    std::vector<std::shared_ptr<api::StorageCommand>>& commands() noexcept { return _stub_impl.commands; }
+    std::vector<std::shared_ptr<api::StorageReply>>& replies() noexcept { return _stub_impl.replies; }
+    const std::vector<std::shared_ptr<api::StorageCommand>>& commands() const noexcept { return _stub_impl.commands; }
+    const std::vector<std::shared_ptr<api::StorageReply>>& replies() const noexcept { return _stub_impl.replies; };
 
     const std::shared_ptr<api::StorageCommand>& command(size_t idx) noexcept {
         assert(idx < commands().size());
@@ -42,50 +37,31 @@ public:
         return replies()[idx];
     }
 
-    void clear() {
-        _stub_impl.clear();
-    }
+    void clear() { _stub_impl.clear(); }
 
-    void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
-        _stub_impl.sendCommand(cmd);
-    }
+    void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override { _stub_impl.sendCommand(cmd); }
 
-    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
-        _stub_impl.sendReply(reply);
-    }
+    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override { _stub_impl.sendReply(reply); }
 
-    std::string getLastCommand(bool verbose = true) const {
-        return _stub_impl.getLastCommand(verbose);
-    }
+    std::string getLastCommand(bool verbose = true) const { return _stub_impl.getLastCommand(verbose); }
 
-    std::string getCommands(bool includeAddress = false,
-                            bool verbose = false,
-                            uint32_t fromIndex = 0) const {
+    std::string getCommands(bool includeAddress = false, bool verbose = false, uint32_t fromIndex = 0) const {
         return _stub_impl.getCommands(includeAddress, verbose, fromIndex);
     }
 
-    std::string getLastReply(bool verbose = true) const {
-        return _stub_impl.getLastReply(verbose);
-    }
+    std::string getLastReply(bool verbose = true) const { return _stub_impl.getLastReply(verbose); }
 
-    std::string getReplies(bool includeAddress = false,
-                           bool verbose = false) const {
+    std::string getReplies(bool includeAddress = false, bool verbose = false) const {
         return _stub_impl.getReplies(includeAddress, verbose);
     }
 
-    std::string dumpMessage(const api::StorageMessage& msg,
-                            bool includeAddress,
-                            bool verbose) const {
+    std::string dumpMessage(const api::StorageMessage& msg, bool includeAddress, bool verbose) const {
         return _stub_impl.dumpMessage(msg, includeAddress, verbose);
     }
 
-    int getDistributorIndex() const override {
-        return 0;
-    }
+    int getDistributorIndex() const override { return 0; }
 
-    const ClusterContext& cluster_context() const override {
-        return dummy_cluster_context;
-    }
+    const ClusterContext& cluster_context() const override { return dummy_cluster_context; }
 
     distributor::PendingMessageTracker& getPendingMessageTracker() override {
         assert(_pending_message_tracker);
@@ -111,9 +87,7 @@ public:
         return *_operation_sequencer;
     }
 
-    void set_operation_sequencer(distributor::OperationSequencer& op_seq) {
-        _operation_sequencer = &op_seq;
-    }
+    void set_operation_sequencer(distributor::OperationSequencer& op_seq) { _operation_sequencer = &op_seq; }
 };
 
-}
+} // namespace storage

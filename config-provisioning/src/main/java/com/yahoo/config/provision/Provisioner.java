@@ -11,18 +11,25 @@ import java.util.List;
  */
 public interface Provisioner {
 
+    @Deprecated // Remove after June 2026
+    default List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+        return prepare(applicationId, cluster, capacity, new ProvisionContext.Builder().setLogger(logger).build());
+    }
+
     /**
      * Prepares allocation of a set of hosts with a given type, common id and the amount.
      *
      * @param applicationId the application requesting hosts
      * @param cluster the specification of the cluster to allocate nodes for
      * @param capacity the capacity requested
-     * @param logger a logger which receives messages which are returned to the requestor
+     * @param context the context this request is made in
      * @return the specification of the hosts allocated
      */
-    List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger);
+    default List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+        return prepare(applicationId, cluster, capacity, context.provisionLogger());
+    }
 
-    /** Activates the allocation of nodes to this application captured in the hosts argument. */
+    /** Activates the allocation of nodes to this application captured in the 'hosts' argument. */
     void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction);
 
     /** Transactionally remove an application under lock. */

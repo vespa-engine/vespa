@@ -2,8 +2,9 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
-#include <vector>
+
 #include <cstdint>
+#include <vector>
 
 namespace search::features::fieldmatch {
 
@@ -35,7 +36,7 @@ public:
      * @param proximityLimit The number of tokens.
      * @param This, to allow chaining.
      */
-    Params &setProximityLimit(uint32_t proximityLimit) {
+    Params& setProximityLimit(uint32_t proximityLimit) {
         _proximityLimit = proximityLimit;
         return *this;
     }
@@ -45,9 +46,7 @@ public:
      *
      * @return The number of tokens.
      */
-    uint32_t getProximityLimit() const {
-        return _proximityLimit;
-    }
+    uint32_t getProximityLimit() const { return _proximityLimit; }
 
     /**
      * Sets the proximity table deciding the importance of separations of various distances, The table must have size
@@ -57,20 +56,18 @@ public:
      * @param proximityTable The proximity table.
      * @return This, to allow chaining.
      */
-    Params &setProximityTable(const std::vector<feature_t> &proximityTable) {
+    Params& setProximityTable(const std::vector<feature_t>& proximityTable) {
         _proximityTable = proximityTable;
         return *this;
     }
 
     /**
-     * Returns the current proxmity table.  The default table is calculated by <code>1/2^(n/2)</code> on the right order
-     * side, and <code>1/2^(n/2) /3</code> on the reverse order side where n is the distance between the tokens.
+     * Returns the current proxmity table.  The default table is calculated by <code>1/2^(n/2)</code> on the right
+     * order side, and <code>1/2^(n/2) /3</code> on the reverse order side where n is the distance between the tokens.
      *
      * @return The proximity table.
      */
-    const std::vector<feature_t> &getProximityTable() const {
-        return _proximityTable;
-    }
+    const std::vector<feature_t>& getProximityTable() const { return _proximityTable; }
 
     /**
      * Returns the maximal number of <i>alternative</i> segmentations allowed in addition to the first one found.
@@ -79,9 +76,7 @@ public:
      *
      * @return The max number of alternative iterations.
      */
-    uint32_t getMaxAlternativeSegmentations() const {
-        return _maxAlternativeSegmentations;
-    }
+    uint32_t getMaxAlternativeSegmentations() const { return _maxAlternativeSegmentations; }
 
     /**
      * Sets the maximal number of alternative segmentations allowed in addition to the first one found.
@@ -89,20 +84,18 @@ public:
      * @param maxAlternativeSegmentations The max number of alternative iterations.
      * @return This, to allow chaining.
      */
-    Params &setMaxAlternativeSegmentations(uint32_t maxAlternativeSegmentations) {
+    Params& setMaxAlternativeSegmentations(uint32_t maxAlternativeSegmentations) {
         _maxAlternativeSegmentations = maxAlternativeSegmentations;
         return *this;
     }
 
     /**
-     * Returns the number of occurrences each word is normalized against.  This should be set as the number above which
-     * additional occurrences of the term has no real significance.  The default is 100.
+     * Returns the number of occurrences each word is normalized against.  This should be set as the number above
+     * which additional occurrences of the term has no real significance.  The default is 100.
      *
      * @return The max number of occurences.
      */
-    uint32_t getMaxOccurrences() const {
-        return _maxOccurrences;
-    }
+    uint32_t getMaxOccurrences() const { return _maxOccurrences; }
 
     /**
      * Sets the number occurences each word is normalized against.
@@ -110,7 +103,7 @@ public:
      * @params maxOccurences The max number of occurences.
      * @return This, to allow chaining.
      */
-    Params &setMaxOccurrences(uint32_t maxOccurrences) {
+    Params& setMaxOccurrences(uint32_t maxOccurrences) {
         _maxOccurrences = maxOccurrences;
         return *this;
     }
@@ -121,9 +114,7 @@ public:
      *
      * @return The importance of field completeness.
      */
-    feature_t getFieldCompletenessImportance() const {
-        return _fieldCompletenessImportance;
-    }
+    feature_t getFieldCompletenessImportance() const { return _fieldCompletenessImportance; }
 
     /**
      * Sets the importance of this field's completeness.
@@ -131,7 +122,7 @@ public:
      * @param fieldCompletenessImportance The importance of field completeness.
      * @return This, to allow chaining.
      */
-    Params &setFieldCompletenessImportance(feature_t fieldCompletenessImportance) {
+    Params& setFieldCompletenessImportance(feature_t fieldCompletenessImportance) {
         _fieldCompletenessImportance = fieldCompletenessImportance;
         return *this;
     }
@@ -143,9 +134,7 @@ public:
      *
      * @return The importance of proximity AND completeness.
      */
-    feature_t getProximityCompletenessImportance() const {
-        return _proximityCompletenessImportance;
-    }
+    feature_t getProximityCompletenessImportance() const { return _proximityCompletenessImportance; }
 
     /**
      * Sets the importance of this fiel's proximity AND completeness.
@@ -153,7 +142,7 @@ public:
      * @param proximityCompletenessImportance The importance of proximity AND completeness.
      * @return This, to allow chaining.
      */
-    Params &setProximityCompletenessImportance(feature_t proximityCompletenessImportance) {
+    Params& setProximityCompletenessImportance(feature_t proximityCompletenessImportance) {
         _proximityCompletenessImportance = proximityCompletenessImportance;
         return *this;
     }
@@ -164,9 +153,7 @@ public:
      *
      * @return The importance of earliness.
      */
-    feature_t getEarlinessImportance() const {
-        return _earlinessImportance;
-    }
+    feature_t getEarlinessImportance() const { return _earlinessImportance; }
 
     /**
      * Sets the importance of the match occuring early in the query.
@@ -174,7 +161,7 @@ public:
      * @param earlinessImportance The importance of earliness.
      * @return This, to allow chaining.
      */
-    Params &setEarlinessImportance(feature_t earlinessImportance) {
+    Params& setEarlinessImportance(feature_t earlinessImportance) {
         _earlinessImportance = earlinessImportance;
         return *this;
     }
@@ -185,9 +172,7 @@ public:
      *
      * @return The importance of segment proximity.
      */
-    feature_t getSegmentProximityImportance() const {
-        return _segmentProximityImportance;
-    }
+    feature_t getSegmentProximityImportance() const { return _segmentProximityImportance; }
 
     /**
      * Sets the importance of multiple segments being close to each other.
@@ -195,7 +180,7 @@ public:
      * @param segmentProximityImportance The importance of segment proximity.
      * @return This, to allow chaining.
      */
-    Params &setSegmentProximityImportance(feature_t segmentProximityImportance) {
+    Params& setSegmentProximityImportance(feature_t segmentProximityImportance) {
         _segmentProximityImportance = segmentProximityImportance;
         return *this;
     }
@@ -206,9 +191,7 @@ public:
      *
      * @return The importance of many occurences.
      */
-    feature_t getOccurrenceImportance() const {
-        return _occurrenceImportance;
-    }
+    feature_t getOccurrenceImportance() const { return _occurrenceImportance; }
 
     /**
      * Sets the importance of having many occurences of the query terms.
@@ -216,7 +199,7 @@ public:
      * @param occurenceImportance The importance of many occurences.
      * @return This, to allow chaining.
      */
-    Params &setOccurrenceImportance(feature_t occurrenceImportance) {
+    Params& setOccurrenceImportance(feature_t occurrenceImportance) {
         _occurrenceImportance = occurrenceImportance;
         return *this;
     }
@@ -226,9 +209,7 @@ public:
      *
      * @return The importance of relatedness.
      */
-    feature_t getRelatednessImportance() const {
-        return _relatednessImportance;
-    }
+    feature_t getRelatednessImportance() const { return _relatednessImportance; }
 
     /**
      * Sets the normalized importance of relatedness used in the <code>match</code> metric.
@@ -236,22 +217,22 @@ public:
      * @param relatednessImportance The importance of relatedness.
      * @return This, to allow chaining.
      */
-    Params &setRelatednessImportance(feature_t relatednessImportance) {
+    Params& setRelatednessImportance(feature_t relatednessImportance) {
         _relatednessImportance = relatednessImportance;
         return *this;
     }
 
 private:
-    uint32_t  _proximityLimit;
-    uint32_t  _maxAlternativeSegmentations;
-    uint32_t  _maxOccurrences;
-    feature_t _proximityCompletenessImportance;
-    feature_t _relatednessImportance;
-    feature_t _earlinessImportance;
-    feature_t _segmentProximityImportance;
-    feature_t _occurrenceImportance;
-    feature_t _fieldCompletenessImportance;
+    uint32_t               _proximityLimit;
+    uint32_t               _maxAlternativeSegmentations;
+    uint32_t               _maxOccurrences;
+    feature_t              _proximityCompletenessImportance;
+    feature_t              _relatednessImportance;
+    feature_t              _earlinessImportance;
+    feature_t              _segmentProximityImportance;
+    feature_t              _occurrenceImportance;
+    feature_t              _fieldCompletenessImportance;
     std::vector<feature_t> _proximityTable;
 };
 
-}
+} // namespace search::features::fieldmatch

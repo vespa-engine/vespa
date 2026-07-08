@@ -2,11 +2,13 @@
 package com.yahoo.config.application;
 
 import com.yahoo.config.application.FileSystemWrapper.FileWrapper;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.text.Utf8;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -37,6 +39,7 @@ public class XmlPreProcessor {
 
     private final FileWrapper applicationDir;
     private final Reader xmlInput;
+    private final ApplicationName application;
     private final InstanceName instance;
     private final Environment environment;
     private final RegionName region;
@@ -46,16 +49,18 @@ public class XmlPreProcessor {
 
     public XmlPreProcessor(File applicationDir,
                            File xmlInput,
+                           ApplicationName application,
                            InstanceName instance,
                            Environment environment,
                            RegionName region,
                            CloudName cloud,
                            Tags tags) throws IOException {
-        this(applicationDir, new FileReader(xmlInput), instance, environment, region, cloud, tags);
+        this(applicationDir, Utf8.createReader(xmlInput), application, instance, environment, region, cloud, tags);
     }
 
     public XmlPreProcessor(File applicationDir,
                            Reader xmlInput,
+                           ApplicationName application,
                            InstanceName instance,
                            Environment environment,
                            RegionName region,
@@ -63,6 +68,7 @@ public class XmlPreProcessor {
                            Tags tags) {
         this(FileSystemWrapper.getDefault(applicationDir.toPath()).wrap(applicationDir.toPath()),
              xmlInput,
+             application,
              instance,
              environment,
              region,
@@ -72,6 +78,7 @@ public class XmlPreProcessor {
 
     public XmlPreProcessor(FileWrapper applicationDir,
                            Reader xmlInput,
+                           ApplicationName application,
                            InstanceName instance,
                            Environment environment,
                            RegionName region,
@@ -79,6 +86,7 @@ public class XmlPreProcessor {
                            Tags tags) {
         this.applicationDir = applicationDir;
         this.xmlInput = xmlInput;
+        this.application = application;
         this.instance = instance;
         this.environment = environment;
         this.region = region;
@@ -103,7 +111,7 @@ public class XmlPreProcessor {
     private List<PreProcessor> setupChain() {
         List<PreProcessor> chain = new ArrayList<>();
         chain.add(new IncludeProcessor(applicationDir));
-        chain.add(new OverrideProcessor(instance, environment, region, cloud, tags));
+        chain.add(new OverrideProcessor(application, instance, environment, region, cloud, tags));
         chain.add(new PropertiesProcessor());
         chain.add(new ValidationProcessor()); // must be last in chain
         return chain;

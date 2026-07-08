@@ -4,6 +4,7 @@
 
 #include "blobref.h"
 #include "routable.h"
+
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/vespalib/component/version.h>
 
@@ -19,9 +20,10 @@ namespace mbus {
 class IProtocol {
 protected:
     IProtocol() = default;
+
 public:
-    IProtocol(const IProtocol &) = delete;
-    IProtocol & operator = (const IProtocol &) = delete;
+    IProtocol(const IProtocol&) = delete;
+    IProtocol& operator=(const IProtocol&) = delete;
     virtual ~IProtocol() = default;
 
     /**
@@ -39,7 +41,7 @@ public:
      *
      * @return Protocol name.
      */
-    virtual const string & getName() const = 0;
+    virtual const string& getName() const = 0;
 
     /**
      * Instantiate a routing policy based on its name and parameter. Routing
@@ -52,7 +54,7 @@ public:
      * @param param Ppolicy specific parameter.
      * @return A newly created routing policy.
      */
-    virtual IRoutingPolicy::UP createPolicy(const string &name, const string &param) const = 0;
+    virtual IRoutingPolicy::UP createPolicy(const string& name, const string& param) const = 0;
 
     /**
      * Encodes the protocol specific data of a routable into a byte array.
@@ -65,7 +67,7 @@ public:
      * @param routable The routable to encode.
      * @return The encoded data.
      */
-    virtual Blob encode(const vespalib::Version &version, const Routable &routable) const = 0; // throw()
+    virtual Blob encode(const vespalib::Version& version, const Routable& routable) const = 0; // throw()
 
     /**
      * Decodes the protocol specific data into a routable of the correct type.
@@ -78,8 +80,7 @@ public:
      * @param payload The payload to decode from.
      * @return The decoded routable.
      */
-    virtual Routable::UP decode(const vespalib::Version &version, BlobRef data) const = 0; // throw()
+    virtual Routable::UP decode(const vespalib::Version& version, BlobRef data) const = 0; // throw()
 };
 
 } // namespace mbus
-

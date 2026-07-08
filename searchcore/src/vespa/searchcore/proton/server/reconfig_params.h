@@ -14,7 +14,7 @@ private:
     const DocumentDBConfig::ComparisonResult _res;
 
 public:
-    ReconfigParams(const DocumentDBConfig::ComparisonResult &res);
+    ReconfigParams(const DocumentDBConfig::ComparisonResult& res);
     bool configHasChanged() const;
     bool shouldSchemaChange() const;
     bool shouldMatchersChange() const;
@@ -26,4 +26,4 @@ public:
     bool shouldAttributeWriterChange() const;
 };
 
-}
+} // namespace proton

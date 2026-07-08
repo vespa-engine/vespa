@@ -5,6 +5,7 @@
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/vespalib/util/ref_counted.h>
+
 #include <atomic>
 #include <future>
 #include <mutex>
@@ -18,15 +19,14 @@ class DetachedRpcRequestsOwner;
  */
 class DetachedRpcRequest {
 protected:
-    std::mutex _lock;
+    std::mutex                              _lock;
     std::weak_ptr<DetachedRpcRequestsOwner> _owner;
-    vespalib::ref_counted<FRT_RPCRequest> _req;
-    vespalib::ref_counted<FNET_Connection> _conn;
-    std::promise<void> _promise;
-    bool _detached_request_removed; // protected by owner mutex
+    vespalib::ref_counted<FRT_RPCRequest>   _req;
+    vespalib::ref_counted<FNET_Connection>  _conn;
+    std::promise<void>                      _promise;
+    bool                                    _detached_request_removed; // protected by owner mutex
 public:
-    DetachedRpcRequest(std::shared_ptr<DetachedRpcRequestsOwner> owner,
-                       vespalib::ref_counted<FRT_RPCRequest> req);
+    DetachedRpcRequest(std::shared_ptr<DetachedRpcRequestsOwner> owner, vespalib::ref_counted<FRT_RPCRequest> req);
     virtual ~DetachedRpcRequest();
     [[nodiscard]] bool add_to_owner(std::shared_ptr<DetachedRpcRequest> self);
     void remove_from_owner(std::shared_ptr<DetachedRpcRequest> self);
@@ -35,4 +35,4 @@ public:
     void set_detached_request_removed() noexcept { _detached_request_removed = true; }
 };
 
-}
+} // namespace proton

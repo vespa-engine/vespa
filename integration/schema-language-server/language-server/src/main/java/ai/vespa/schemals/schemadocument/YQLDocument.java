@@ -2,6 +2,7 @@ package ai.vespa.schemals.schemadocument;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -97,7 +98,7 @@ public class YQLDocument implements DocumentManager {
     }
 
     private static YQLPartParseResult parseYQLPart(String content, ClientLogger logger, Position offset, int charOffset) {
-        YQLPlusParser parser = new YQLPlusParser(content.toLowerCase());
+        YQLPlusParser parser = new YQLPlusParser(content.toLowerCase(Locale.ROOT));
 
         try {
             parser.statement();

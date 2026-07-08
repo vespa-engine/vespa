@@ -6,7 +6,10 @@ import org.junit.jupiter.api.Test;
 import java.text.ChoiceFormat;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -91,11 +94,11 @@ public class BucketResolverTestCase {
     @Test
     void testBucketOrder() {
         checkPushFail(List.of((ConstantValue) new LongValue(2L), new LongValue(1L)),
-                "Bucket to-value can not be less than from-value.");
+                "Bucket to-value cannot be less than from-value.");
         checkPushFail(List.of((ConstantValue) new DoubleValue(2.0), new DoubleValue(1.0)),
-                "Bucket to-value can not be less than from-value.");
+                "Bucket to-value cannot be less than from-value.");
         checkPushFail(List.of((ConstantValue) new StringValue("b"), new StringValue("a")),
-                "Bucket to-value can not be less than from-value.");
+                "Bucket to-value cannot be less than from-value.");
     }
 
     public void assertBucketRange(BucketValue expected, ConstantValue from, boolean inclusiveFrom, ConstantValue to, boolean inclusiveTo) {

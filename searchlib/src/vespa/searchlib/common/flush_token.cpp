@@ -4,23 +4,17 @@
 
 namespace search {
 
-FlushToken::FlushToken()
-    : _stop(false)
-{
+FlushToken::FlushToken() : _stop(false) {
 }
 
 FlushToken::~FlushToken() = default;
 
-bool
-FlushToken::stop_requested() const noexcept
-{
+bool FlushToken::stop_requested() const noexcept {
     return _stop.load(std::memory_order_relaxed);
 }
 
-void
-FlushToken::request_stop() noexcept
-{
+void FlushToken::request_stop() noexcept {
     _stop.store(true, std::memory_order_relaxed);
 }
 
-}
+} // namespace search

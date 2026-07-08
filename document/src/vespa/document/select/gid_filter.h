@@ -22,16 +22,13 @@ public:
     // TODO: replace with std::otional once on a C++17 stdlib.
     struct OptionalLocation {
         uint32_t _location;
-        bool _valid;
+        bool     _valid;
 
         OptionalLocation() : _location(0), _valid(false) {}
 
-        explicit OptionalLocation(uint32_t location)
-            : _location(location),
-              _valid(true)
-        {
-        }
+        explicit OptionalLocation(uint32_t location) : _location(location), _valid(true) {}
     };
+
 private:
     OptionalLocation _required_gid_location;
 
@@ -40,14 +37,12 @@ private:
      * to this constructor.
      */
     explicit GidFilter(const Node& ast_root);
+
 public:
     /**
      * No-op filter; everything matches always.
      */
-    GidFilter()
-        : _required_gid_location()
-    {
-    }
+    GidFilter() : _required_gid_location() {}
 
     /**
      * A GidFilter instance may be safely and cheaply copied. No dependencies
@@ -65,9 +60,7 @@ public:
      * Node pointed to by ast_root does not extend beyond this call; the
      * GidFilter does not store any implicit or explicit references to it.
      */
-    static GidFilter for_selection_root_node(const Node& ast_root) {
-        return GidFilter(ast_root);
-    }
+    static GidFilter for_selection_root_node(const Node& ast_root) { return GidFilter(ast_root); }
 
     /**
      * Returns false iff there exists no way that a document whose ID has the
@@ -81,9 +74,8 @@ public:
      */
     bool gid_might_match_selection(const GlobalId& gid) const {
         const uint32_t gid_location = gid.getLocationSpecificBits();
-        return (!_required_gid_location._valid
-                || (gid_location == _required_gid_location._location));
+        return (!_required_gid_location._valid || (gid_location == _required_gid_location._location));
     }
 };
 
-}
+} // namespace document::select

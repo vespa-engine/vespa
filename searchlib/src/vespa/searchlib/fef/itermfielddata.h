@@ -15,14 +15,9 @@ namespace search::fef {
  * information about the field is needed, the field id may be used to
  * consult the index environment.
  **/
-class ITermFieldData
-{
+class ITermFieldData {
 public:
-    ITermFieldData(uint32_t fieldId) noexcept
-        : _fieldId(fieldId),
-          _matching_doc_count(0),
-          _total_doc_count(1)
-    { }
+    ITermFieldData(uint32_t fieldId) noexcept : _fieldId(fieldId), _matching_doc_count(0), _total_doc_count(1) {}
     /**
      * Obtain the global field id.
      *
@@ -44,15 +39,13 @@ public:
      * Obtain the document frequency.
      *
      * @return document frequency
-    **/
-    DocumentFrequency get_doc_freq() const noexcept {
-        return { get_matching_doc_count(), get_total_doc_count() };
-    }
+     **/
+    DocumentFrequency get_doc_freq() const noexcept { return {get_matching_doc_count(), get_total_doc_count()}; }
 
     /**
      * Sets the document frequency.
      **/
-    ITermFieldData &setDocFreq(uint32_t matching_doc_count, uint32_t total_doc_count) noexcept {
+    ITermFieldData& setDocFreq(uint32_t matching_doc_count, uint32_t total_doc_count) noexcept {
         _matching_doc_count = matching_doc_count;
         _total_doc_count = total_doc_count;
         return *this;
@@ -64,9 +57,7 @@ public:
      *
      * @return match handle (or IllegalHandle)
      **/
-    TermFieldHandle getHandle() const noexcept {
-        return getHandle(MatchDataDetails::Normal);
-    }
+    TermFieldHandle getHandle() const noexcept { return getHandle(MatchDataDetails::Normal); }
 
     /**
      * Obtain the match handle for this field,
@@ -75,12 +66,14 @@ public:
      * @return match handle (or IllegalHandle)
      **/
     virtual TermFieldHandle getHandle(MatchDataDetails requested_details) const = 0;
+
 protected:
     virtual ~ITermFieldData() = default;
+
 private:
-    uint32_t    _fieldId;
-    uint32_t    _matching_doc_count;
-    uint32_t    _total_doc_count;
+    uint32_t _fieldId;
+    uint32_t _matching_doc_count;
+    uint32_t _total_doc_count;
 };
 
-}
+} // namespace search::fef

@@ -2,9 +2,13 @@
 #pragma once
 
 #include "routable.h"
+
 #include <vespa/messagebus/routing/route.h>
 
 namespace mbus {
+
+class MetadataInjector;
+class MetadataExtractor;
 
 /**
  * A Message is a question, a Reply is the answer.
@@ -15,10 +19,10 @@ public:
     using UP = std::unique_ptr<Message>;
 
     Message();
-    Message(const Message &) = delete;
-    Message(Message &&) = delete;
-    Message & operator = (const Message &) = delete;
-    Message & operator = (Message &&) = delete;
+    Message(const Message&) = delete;
+    Message(Message&&) = delete;
+    Message& operator=(const Message&) = delete;
+    Message& operator=(Message&&) = delete;
 
     /**
      * If a message is deleted with elements on the callstack, this destructor
@@ -27,7 +31,7 @@ public:
      */
     ~Message() override;
 
-    void swapState(Routable &rhs) override;
+    void swapState(Routable& rhs) override;
 
     /**
      * Returns the timestamp for when this message was last seen by message
@@ -44,7 +48,7 @@ public:
      *
      * @return This, to allow chaining.
      */
-    Message &setTimeReceivedNow();
+    Message& setTimeReceivedNow();
 
     /**
      * Returns the number of milliseconds that remain before this message times
@@ -64,7 +68,10 @@ public:
      * @param timeRemaining The number of milliseconds until expiration.
      * @return This, to allow chaining.
      */
-    Message &setTimeRemaining(duration timeRemaining) { _timeRemaining = timeRemaining; return *this; }
+    Message& setTimeRemaining(duration timeRemaining) {
+        _timeRemaining = timeRemaining;
+        return *this;
+    }
 
     /**
      * Returns the number of milliseconds that remain right now before this
@@ -85,14 +92,14 @@ public:
      *
      * @return reference to internal route object
      */
-    Route &getRoute() { return _route; }
+    Route& getRoute() { return _route; }
 
     /**
      * Access the route associated with this message.
      *
      * @return reference to internal route object
      */
-    const Route &getRoute() const { return _route; }
+    const Route& getRoute() const { return _route; }
 
     /**
      * Set a new route for this routable.
@@ -100,7 +107,10 @@ public:
      * @param route The new route.
      * @return This, to allow chaining.
      */
-    Message &setRoute(Route route) { _route = std::move(route); return *this; }
+    Message& setRoute(Route route) {
+        _route = std::move(route);
+        return *this;
+    }
 
     /**
      * Inherited from Routable. Classifies this object as 'not a reply'.
@@ -148,6 +158,38 @@ public:
     virtual uint32_t getApproxSize() const { return 1; }
 
     /**
+     * At the time of serializing a Message to the underlying transport carrier, the
+     * network subsystem will always call this method to inject any metadata key/value
+     * pairs the Message wants to propagate to the receiver.
+     *
+     * The newly materialized Message instance on the receiver side will have
+     * extractMetadata(MetadataExtractor) invoked on it with an extractor that can read
+     * the values set by the sender.
+     *
+     * The transport carrier shall guarantee that the metadata injected will not be
+     * compressed during transport.
+     *
+     * @param injector used to set metadata key/value pairs in the underlying
+     *                 message carrier.
+     */
+    virtual void injectMetadata(MetadataInjector& injector) const {
+        (void)injector; // no-op by default
+    }
+
+    /**
+     * Lets a Message subclass extract specific metadata values received via the
+     * underlying transport for this particular Message.
+     *
+     * This method is always invoked by the transport layer right after it has
+     * been decoded but _before_ it is passed to any message handlers.
+     *
+     * @param extractor used to extract values for specific keys
+     */
+    virtual void extractMetadata(const MetadataExtractor& extractor) {
+        (void)extractor; // no-op by default
+    }
+
+    /**
      * Sets whether or not this message can be resent.
      *
      * @param enabled Resendable flag.
@@ -180,14 +222,17 @@ public:
      * @param retry The retry count.
      * @return This, to allow chaining.
      */
-    Message &setRetry(uint32_t retry) { _retry = retry; return *this; }
+    Message& setRetry(uint32_t retry) {
+        _retry = retry;
+        return *this;
+    }
+
 private:
-    Route         _route;
-    time_point    _timeReceived;
-    duration      _timeRemaining;
-    bool          _retryEnabled;
-    uint32_t      _retry;
+    Route      _route;
+    time_point _timeReceived;
+    duration   _timeRemaining;
+    bool       _retryEnabled;
+    uint32_t   _retry;
 };
 
 } // namespace mbus
-

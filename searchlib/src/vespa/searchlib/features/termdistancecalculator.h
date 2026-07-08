@@ -3,12 +3,13 @@
 #pragma once
 
 #include "queryterm.h"
+
 #include <vespa/searchlib/fef/element_gap.h>
 
 namespace search::fef {
-    class TermFieldMatchData;
-    class MatchData;
-}
+class TermFieldMatchData;
+class MatchData;
+} // namespace search::fef
 
 namespace search::features {
 
@@ -50,8 +51,8 @@ public:
         /**
          * Creates a new object with the given values.
          **/
-        Result(uint32_t fd, uint32_t ftp, uint32_t rd, uint32_t rtp) :
-            forwardDist(fd), forwardTermPos(ftp), reverseDist(rd), reverseTermPos(rtp) {}
+        Result(uint32_t fd, uint32_t ftp, uint32_t rd, uint32_t rtp)
+            : forwardDist(fd), forwardTermPos(ftp), reverseDist(rd), reverseTermPos(rtp) {}
 
         /**
          * Sets all variables to the undefined value.
@@ -65,12 +66,9 @@ public:
     };
 
 private:
-    static void findBest(const fef::TermFieldMatchData *tmdX,
-                         const fef::TermFieldMatchData *tmdY,
-                         search::fef::ElementGap element_gap,
-                         uint32_t numTermsX,
-                         uint32_t & bestDist,
-                         uint32_t & bestPos);
+    static void findBest(const fef::TermFieldMatchData* tmdX, const fef::TermFieldMatchData* tmdY,
+                         search::fef::ElementGap element_gap, uint32_t numTermsX, uint32_t& bestDist,
+                         uint32_t& bestPos);
 
 public:
     /**
@@ -78,8 +76,8 @@ public:
      * match data and field id. The calculated values are stored in the given result object.
      * NB: Both query terms must have attached term fields with valid term field handles.
      **/
-    static void run(const QueryTerm &termX, const QueryTerm &termY, search::fef::ElementGap element_gap,
-                    const fef::MatchData & match, uint32_t docId, Result & r);
+    static void run(const QueryTerm& termX, const QueryTerm& termY, search::fef::ElementGap element_gap,
+                    const fef::MatchData& match, uint32_t docId, Result& r);
 };
 
-}
+} // namespace search::features

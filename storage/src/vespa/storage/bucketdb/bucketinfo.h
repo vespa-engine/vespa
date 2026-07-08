@@ -2,42 +2,33 @@
 #pragma once
 
 #include "bucketcopy.h"
+
 #include <vespa/vespalib/util/time.h>
+
 #include <span>
 #include <vector>
 
 namespace storage {
 
 namespace distributor {
-    class DistributorStripeTestUtil;
-    class TopLevelDistributorTestUtil;
-}
+class DistributorStripeTestUtil;
+class TopLevelDistributorTestUtil;
+} // namespace distributor
 
-enum class TrustedUpdate {
-    UPDATE,
-    DEFER
-};
+enum class TrustedUpdate { UPDATE, DEFER };
 
-template <typename NodeSeq>
-class BucketInfoBase
-{
+template <typename NodeSeq> class BucketInfoBase {
 protected:
-    //TODO: Should we use a chrono timepoint to ensure we are using same clock everywhere ?
+    // TODO: Should we use a chrono timepoint to ensure we are using same clock everywhere ?
     uint32_t _lastGarbageCollection;
-    NodeSeq _nodes;
+    NodeSeq  _nodes;
+
 public:
-    BucketInfoBase() noexcept
-        : _lastGarbageCollection(0),
-          _nodes()
-    {}
+    BucketInfoBase() noexcept : _lastGarbageCollection(0), _nodes() {}
     BucketInfoBase(uint32_t lastGarbageCollection, const NodeSeq& nodes) noexcept
-        : _lastGarbageCollection(lastGarbageCollection),
-          _nodes(nodes)
-    {}
+        : _lastGarbageCollection(lastGarbageCollection), _nodes(nodes) {}
     BucketInfoBase(uint32_t lastGarbageCollection, NodeSeq&& nodes) noexcept
-        : _lastGarbageCollection(lastGarbageCollection),
-          _nodes(std::move(nodes))
-    {}
+        : _lastGarbageCollection(lastGarbageCollection), _nodes(std::move(nodes)) {}
     ~BucketInfoBase() = default;
 
     BucketInfoBase(const BucketInfoBase&) = default;
@@ -69,9 +60,7 @@ public:
      */
     uint16_t getTrustedCount() const noexcept;
 
-    bool hasTrusted() const noexcept {
-        return getTrustedCount() != 0;
-    }
+    bool hasTrusted() const noexcept { return getTrustedCount() != 0; }
 
     /**
      * Check that all of the nodes have the same checksums.
@@ -104,13 +93,9 @@ public:
        array. This operation has undefined behaviour if the index given
        is not within the node count.
     */
-    const BucketCopy& getNodeRef(uint16_t idx) const noexcept {
-        return _nodes[idx];
-    }
+    const BucketCopy& getNodeRef(uint16_t idx) const noexcept { return _nodes[idx]; }
 
-    const NodeSeq& getRawNodes() const noexcept {
-        return _nodes;
-    }
+    const NodeSeq& getRawNodes() const noexcept { return _nodes; }
 
     // If there is a valid majority of replicas that have the same metadata
     // (checksum and document count), return that bucket info.
@@ -123,8 +108,8 @@ public:
     uint32_t getHighestMetaCount() const noexcept;
     uint32_t getHighestUsedFileSize() const noexcept;
     struct Highest {
-        Highest() noexcept : _documentCount(0),_totalDocumentSize(0),_metaCount(0),_usedFileSize(0) {}
-        void update(const BucketCopy & n) noexcept {
+        Highest() noexcept : _documentCount(0), _totalDocumentSize(0), _metaCount(0), _usedFileSize(0) {}
+        void update(const BucketCopy& n) noexcept {
             _documentCount = std::max(_documentCount, n.getDocumentCount());
             _totalDocumentSize = std::max(_totalDocumentSize, n.getTotalDocumentSize());
             _metaCount = std::max(_metaCount, n.getMetaCount());
@@ -140,8 +125,7 @@ public:
     bool operator==(const BucketInfoBase& other) const noexcept;
 };
 
-template <typename NodeSeq>
-std::ostream& operator<<(std::ostream& out, const BucketInfoBase<NodeSeq>& info) {
+template <typename NodeSeq> std::ostream& operator<<(std::ostream& out, const BucketInfoBase<NodeSeq>& info) {
     info.print(out, false, "");
     return out;
 }
@@ -165,9 +149,7 @@ public:
     /**
      * Sets the last time the bucket was "garbage collected".
      */
-    void setLastGarbageCollectionTime(uint32_t timestamp) noexcept {
-        _lastGarbageCollection = timestamp;
-    }
+    void setLastGarbageCollectionTime(uint32_t timestamp) noexcept { _lastGarbageCollection = timestamp; }
 
     /**
        Update trusted flags if bucket is now complete and consistent.
@@ -190,8 +172,7 @@ public:
        @param replace If replace is true, replaces old ones that may exist.
        @param update If true, will invoke updateTrusted() after replicas are added
     */
-    void addNodes(const std::vector<BucketCopy>& newCopies,
-                  const std::vector<uint16_t>& recommendedOrder,
+    void addNodes(const std::vector<BucketCopy>& newCopies, const std::vector<uint16_t>& recommendedOrder,
                   TrustedUpdate update = TrustedUpdate::UPDATE);
 
     /**
@@ -230,5 +211,4 @@ private:
 extern template class BucketInfoBase<std::vector<BucketCopy>>;
 extern template class BucketInfoBase<std::span<const BucketCopy>>;
 
-}
-
+} // namespace storage

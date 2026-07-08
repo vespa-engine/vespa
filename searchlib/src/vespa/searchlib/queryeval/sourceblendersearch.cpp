@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sourceblendersearch.h"
+
 #include "isourceselector.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/util/array.hpp>
 
@@ -10,44 +13,37 @@ namespace search::queryeval {
 
 EmptySearch SourceBlenderSearch::_emptySearch;
 
-class SourceBlenderSearchNonStrict : public SourceBlenderSearch
-{
+class SourceBlenderSearchNonStrict : public SourceBlenderSearch {
 public:
-    SourceBlenderSearchNonStrict(std::unique_ptr<Iterator> sourceSelector, const Children &children)
-        : SourceBlenderSearch(std::move(sourceSelector), children)
-    {}
+    SourceBlenderSearchNonStrict(std::unique_ptr<Iterator> sourceSelector, const Children& children)
+        : SourceBlenderSearch(std::move(sourceSelector), children) {}
     ~SourceBlenderSearchNonStrict() override;
 };
 
 SourceBlenderSearchNonStrict::~SourceBlenderSearchNonStrict() = default;
 
-class SourceBlenderSearchStrict : public SourceBlenderSearch
-{
+class SourceBlenderSearchStrict : public SourceBlenderSearch {
 public:
-    SourceBlenderSearchStrict(std::unique_ptr<Iterator> sourceSelector, const Children &children);
+    SourceBlenderSearchStrict(std::unique_ptr<Iterator> sourceSelector, const Children& children);
     ~SourceBlenderSearchStrict() override;
+
 private:
     VESPA_DLL_LOCAL void advance() __attribute__((noinline));
-    vespalib::Array<SearchIterator *>  _nextChildren;
+    vespalib::Array<SearchIterator*> _nextChildren;
 
     void doSeek(uint32_t docid) override;
     Trinary is_strict() const override { return Trinary::True; }
 };
 
-SourceBlenderSearchStrict::SourceBlenderSearchStrict(
-        std::unique_ptr<Iterator> sourceSelector,
-        const Children &children)
-    : SourceBlenderSearch(std::move(sourceSelector), children),
-      _nextChildren()
-{
+SourceBlenderSearchStrict::SourceBlenderSearchStrict(std::unique_ptr<Iterator> sourceSelector,
+                                                     const Children&           children)
+    : SourceBlenderSearch(std::move(sourceSelector), children), _nextChildren() {
     _nextChildren.reserve(children.size());
 }
 
 SourceBlenderSearchStrict::~SourceBlenderSearchStrict() = default;
 
-void
-SourceBlenderSearch::doSeek(uint32_t docid)
-{
+void SourceBlenderSearch::doSeek(uint32_t docid) {
     if (docid >= _docIdLimit) {
         setDocId(endDocId);
         return;
@@ -58,9 +54,7 @@ SourceBlenderSearch::doSeek(uint32_t docid)
     }
 }
 
-void
-SourceBlenderSearchStrict::doSeek(uint32_t docid)
-{
+void SourceBlenderSearchStrict::doSeek(uint32_t docid) {
     if (docid >= _docIdLimit) {
         setDocId(endDocId);
         return;
@@ -69,19 +63,17 @@ SourceBlenderSearchStrict::doSeek(uint32_t docid)
     if (_matchedChild->seek(docid)) {
         setDocId(docid);
     } else {
-        for (auto & child : _children) {
+        for (auto& child : _children) {
             getSearch(child)->seek(docid);
         }
         advance();
     }
 }
 
-void
-SourceBlenderSearchStrict::advance()
-{
+void SourceBlenderSearchStrict::advance() {
     for (;;) {
-        SearchIterator * search = getSearch(_children[0]);
-        uint32_t minNextId = search->getDocId();
+        SearchIterator* search = getSearch(_children[0]);
+        uint32_t        minNextId = search->getDocId();
         _nextChildren.clear();
         _nextChildren.push_back_fast(search);
         for (uint32_t i = 1; i < _children.size(); ++i) {
@@ -104,7 +96,7 @@ SourceBlenderSearchStrict::advance()
             return;
         }
         search = getSearch(_sourceSelector->getSource(minNextId));
-        for (SearchIterator * child : _nextChildren) {
+        for (SearchIterator* child : _nextChildren) {
             if (child == search) {
                 _matchedChild = search;
                 setDocId(minNextId);
@@ -115,60 +107,49 @@ SourceBlenderSearchStrict::advance()
     }
 }
 
-void
-SourceBlenderSearch::doUnpack(uint32_t docid)
-{
+void SourceBlenderSearch::doUnpack(uint32_t docid) {
     _matchedChild->doUnpack(docid);
 }
 
-SourceBlenderSearch::SourceBlenderSearch(
-        std::unique_ptr<sourceselector::Iterator> sourceSelector,
-        const Children &children) :
-    _matchedChild(nullptr),
-    _sourceSelector(std::move(sourceSelector)),
-    _children(),
-    _docIdLimit(_sourceSelector->getDocIdLimit())
-{
-    for (size_t i(0); i < sizeof(_sources)/sizeof(_sources[0]); i++) {
+SourceBlenderSearch::SourceBlenderSearch(std::unique_ptr<sourceselector::Iterator> sourceSelector,
+                                         const Children&                           children)
+    : _matchedChild(nullptr),
+      _sourceSelector(std::move(sourceSelector)),
+      _children(),
+      _docIdLimit(_sourceSelector->getDocIdLimit()) {
+    for (size_t i(0); i < sizeof(_sources) / sizeof(_sources[0]); i++) {
         _sources[i] = &_emptySearch;
     }
-    for (auto & child : children) {
+    for (auto& child : children) {
         Source sid(child.sourceId);
         _children.push_back(sid);
         _sources[sid] = child.search;
     }
 }
 
-void
-SourceBlenderSearch::initRange(uint32_t beginid, uint32_t endid)
-{
+void SourceBlenderSearch::initRange(uint32_t beginid, uint32_t endid) {
     SearchIterator::initRange(beginid, endid);
-    for (auto & child : _children) {
+    for (auto& child : _children) {
         getSearch(child)->initRange(beginid, endid);
     }
 }
 
-void
-SourceBlenderSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void SourceBlenderSearch::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visit(visitor, "children", _children);
-    for (const auto & child : _children) {
+    for (const auto& child : _children) {
         vespalib::asciistream os;
         os << "Source " << uint32_t(child);
         visit(visitor, os.str(), *getSearch(child));
     }
 }
 
-SourceBlenderSearch::~SourceBlenderSearch()
-{
-    for (auto & child : _children) {
+SourceBlenderSearch::~SourceBlenderSearch() {
+    for (auto& child : _children) {
         delete getSearch(child);
     }
 }
 
-void
-SourceBlenderSearch::transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f)
-{
+void SourceBlenderSearch::transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f) {
     for (size_t i = 0; i < _children.size(); ++i) {
         SearchIterator::UP ptr(_sources[_children[i]]);
         _sources[_children[i]] = nullptr;
@@ -177,10 +158,8 @@ SourceBlenderSearch::transform_children(std::function<SearchIterator::UP(SearchI
     }
 }
 
-SearchIterator::UP
-SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSelector,
-                            const Children &children, bool strict)
-{
+SearchIterator::UP SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSelector,
+                                               const Children& children, bool strict) {
     if (strict) {
         return std::make_unique<SourceBlenderSearchStrict>(std::move(sourceSelector), children);
     } else {
@@ -188,17 +167,13 @@ SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSele
     }
 }
 
-void
-SourceBlenderSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
-{
+void SourceBlenderSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) {
     if (seek(docid)) {
         _matchedChild->get_element_ids(docid, element_ids);
     }
 }
 
-void
-SourceBlenderSearch::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
-{
+void SourceBlenderSearch::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) {
     if (seek(docid)) {
         _matchedChild->and_element_ids_into(docid, element_ids);
     } else {
@@ -206,13 +181,12 @@ SourceBlenderSearch::and_element_ids_into(uint32_t docid, std::vector<uint32_t>&
     }
 }
 
-}
+} // namespace search::queryeval
 
-void visit(vespalib::ObjectVisitor &self, const std::string &name,
-           const search::queryeval::SourceBlenderSearch::Child &obj)
-{
+void visit(vespalib::ObjectVisitor& self, const std::string& name,
+           const search::queryeval::SourceBlenderSearch::Child& obj) {
     self.openStruct(name, "search::queryeval::SourceBlenderSearch::Child");
-    visit(self, "search",   obj.search);
+    visit(self, "search", obj.search);
     visit(self, "sourceId", obj.sourceId);
     self.closeStruct();
 }

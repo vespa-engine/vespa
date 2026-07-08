@@ -200,6 +200,7 @@ public class Document extends StructuredFieldValue {
         return content.iterator();
     }
 
+    @Override
     public String toString() {
         return "document '" + docId + "' of type '" + getDataType().getName() + "'";
     }
@@ -217,6 +218,7 @@ public class Document extends StructuredFieldValue {
     /**
      * Get XML representation of the document root and its children, contained
      * within a &lt;document&gt;&lt;/document&gt; tag.
+     *
      * @return XML representation of document
      */
     @Deprecated

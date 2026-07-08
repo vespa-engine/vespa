@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "monitoring_search_iterator.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -10,17 +11,10 @@ using vespalib::make_string;
 
 namespace search::queryeval {
 
-MonitoringSearchIterator::Stats::Stats()
-    : _numSeeks(0),
-      _numUnpacks(0),
-      _numDocIdSteps(0),
-      _numHitSkips(0)
-{
+MonitoringSearchIterator::Stats::Stats() : _numSeeks(0), _numUnpacks(0), _numDocIdSteps(0), _numHitSkips(0) {
 }
 
-void
-MonitoringSearchIterator::Dumper::addIndent()
-{
+void MonitoringSearchIterator::Dumper::addIndent() {
     int n = _currIndent;
     if (n < 0) {
         n = 0;
@@ -28,46 +22,31 @@ MonitoringSearchIterator::Dumper::addIndent()
     _str.append(std::string(n, ' '));
 }
 
-void
-MonitoringSearchIterator::Dumper::addText(std::string_view value)
-{
+void MonitoringSearchIterator::Dumper::addText(std::string_view value) {
     addIndent();
     _str.append(value);
     uint32_t extraSpaces = value.size() < _textFormatWidth ? _textFormatWidth - value.size() : 0;
     _str.append(make_string(":%s ", std::string(extraSpaces, ' ').c_str()));
 }
 
-void
-MonitoringSearchIterator::Dumper::addInt(int64_t value, const std::string &desc)
-{
-    _str.append(make_string("%*" PRId64 " %s",
-                            _intFormatWidth, value, desc.c_str()));
+void MonitoringSearchIterator::Dumper::addInt(int64_t value, const std::string& desc) {
+    _str.append(make_string("%*" PRId64 " %s", _intFormatWidth, value, desc.c_str()));
 }
 
-void
-MonitoringSearchIterator::Dumper::addFloat(double value, const std::string &desc)
-{
-    _str.append(make_string("%*.*f %s",
-                            _floatFormatWidth, _floatFormatPrecision, value, desc.c_str()));
+void MonitoringSearchIterator::Dumper::addFloat(double value, const std::string& desc) {
+    _str.append(make_string("%*.*f %s", _floatFormatWidth, _floatFormatPrecision, value, desc.c_str()));
 }
 
-void
-MonitoringSearchIterator::Dumper::openScope()
-{
+void MonitoringSearchIterator::Dumper::openScope() {
     _currIndent += _indent;
 }
 
-void
-MonitoringSearchIterator::Dumper::closeScope()
-{
+void MonitoringSearchIterator::Dumper::closeScope() {
     _currIndent -= _indent;
 }
 
-MonitoringSearchIterator::Dumper::Dumper(int indent,
-                                         uint32_t textFormatWidth,
-                                         uint32_t intFormatWidth,
-                                         uint32_t floatFormatWidth,
-                                         uint32_t floatFormatPrecision)
+MonitoringSearchIterator::Dumper::Dumper(int indent, uint32_t textFormatWidth, uint32_t intFormatWidth,
+                                         uint32_t floatFormatWidth, uint32_t floatFormatPrecision)
     : _indent(indent),
       _textFormatWidth(textFormatWidth),
       _intFormatWidth(intFormatWidth),
@@ -75,15 +54,12 @@ MonitoringSearchIterator::Dumper::Dumper(int indent,
       _floatFormatPrecision(floatFormatPrecision),
       _str(),
       _currIndent(0),
-      _stack()
-{
+      _stack() {
 }
 
 MonitoringSearchIterator::Dumper::~Dumper() = default;
 
-void
-MonitoringSearchIterator::Dumper::openStruct(std::string_view name, std::string_view type)
-{
+void MonitoringSearchIterator::Dumper::openStruct(std::string_view name, std::string_view type) {
     if (type == "search::queryeval::MonitoringSearchIterator") {
         _stack.push(ITERATOR);
     } else if (type == "MonitoringSearchIterator::Stats") {
@@ -96,9 +72,7 @@ MonitoringSearchIterator::Dumper::openStruct(std::string_view name, std::string_
     }
 }
 
-void
-MonitoringSearchIterator::Dumper::closeStruct()
-{
+void MonitoringSearchIterator::Dumper::closeStruct() {
     StructType top = _stack.top();
     _stack.pop();
     if (top == CHILDREN) {
@@ -106,16 +80,12 @@ MonitoringSearchIterator::Dumper::closeStruct()
     }
 }
 
-void
-MonitoringSearchIterator::Dumper::visitBool(std::string_view name, bool value)
-{
-    (void) name;
-    (void) value;
+void MonitoringSearchIterator::Dumper::visitBool(std::string_view name, bool value) {
+    (void)name;
+    (void)value;
 }
 
-void
-MonitoringSearchIterator::Dumper::visitInt(std::string_view name, int64_t value)
-{
+void MonitoringSearchIterator::Dumper::visitInt(std::string_view name, int64_t value) {
     if (_stack.top() == STATS) {
         if (name == "numSeeks") {
             addInt(value, "seeks, ");
@@ -125,9 +95,7 @@ MonitoringSearchIterator::Dumper::visitInt(std::string_view name, int64_t value)
     }
 }
 
-void
-MonitoringSearchIterator::Dumper::visitFloat(std::string_view name, double value)
-{
+void MonitoringSearchIterator::Dumper::visitFloat(std::string_view name, double value) {
     if (_stack.top() == STATS) {
         if (name == "avgDocIdSteps") {
             addFloat(value, "steps/seek, ");
@@ -139,9 +107,7 @@ MonitoringSearchIterator::Dumper::visitFloat(std::string_view name, double value
     }
 }
 
-void
-MonitoringSearchIterator::Dumper::visitString(std::string_view name, std::string_view value)
-{
+void MonitoringSearchIterator::Dumper::visitString(std::string_view name, std::string_view value) {
     if (_stack.top() == ITERATOR) {
         if (name == "iteratorName") {
             addText(value);
@@ -149,24 +115,17 @@ MonitoringSearchIterator::Dumper::visitString(std::string_view name, std::string
     }
 }
 
-void
-MonitoringSearchIterator::Dumper::visitNull(std::string_view name)
-{
-    (void) name;
+void MonitoringSearchIterator::Dumper::visitNull(std::string_view name) {
+    (void)name;
 }
 
-void
-MonitoringSearchIterator::Dumper::visitNotImplemented()
-{
+void MonitoringSearchIterator::Dumper::visitNotImplemented() {
 }
 
-
-uint32_t
-MonitoringSearchIterator::countHitSkips(uint32_t docId)
-{
+uint32_t MonitoringSearchIterator::countHitSkips(uint32_t docId) {
     uint32_t tmpDocId = _search->getDocId();
     uint32_t numHitSkips = 0;
-    for (; ;) {
+    for (;;) {
         _search->seek(tmpDocId + 1);
         tmpDocId = _search->getDocId();
         if (tmpDocId >= docId) {
@@ -177,21 +136,14 @@ MonitoringSearchIterator::countHitSkips(uint32_t docId)
     return numHitSkips;
 }
 
-MonitoringSearchIterator::MonitoringSearchIterator(const std::string &name,
-                                                   SearchIterator::UP search,
+MonitoringSearchIterator::MonitoringSearchIterator(const std::string& name, SearchIterator::UP search,
                                                    bool collectHitSkipStats)
-    : _name(name),
-      _search(std::move(search)),
-      _collectHitSkipStats(collectHitSkipStats),
-      _stats()
-{
+    : _name(name), _search(std::move(search)), _collectHitSkipStats(collectHitSkipStats), _stats() {
 }
 
 MonitoringSearchIterator::~MonitoringSearchIterator() = default;
 
-void
-MonitoringSearchIterator::doSeek(uint32_t docId)
-{
+void MonitoringSearchIterator::doSeek(uint32_t docId) {
     _stats.seek();
     _stats.step(docId - getDocId());
     if (_collectHitSkipStats) {
@@ -203,23 +155,17 @@ MonitoringSearchIterator::doSeek(uint32_t docId)
     setDocId(_search->getDocId());
 }
 
-void
-MonitoringSearchIterator::doUnpack(uint32_t docId)
-{
+void MonitoringSearchIterator::doUnpack(uint32_t docId) {
     LOG(debug, "%s:doUnpack(%d)", _name.c_str(), docId);
     _stats.unpack();
     _search->unpack(docId);
 }
 
-const PostingInfo *
-MonitoringSearchIterator::getPostingInfo() const
-{
+const PostingInfo* MonitoringSearchIterator::getPostingInfo() const {
     return _search->getPostingInfo();
 }
 
-void
-MonitoringSearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void MonitoringSearchIterator::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visitor.visitString("iteratorName", _name);
     visitor.visitString("iteratorType", _search->getClassName());
     {
@@ -236,18 +182,14 @@ MonitoringSearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
     _search->visitMembers(visitor);
 }
 
-void
-MonitoringSearchIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
-{
+void MonitoringSearchIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) {
     _search->get_element_ids(docid, element_ids);
     setDocId(_search->getDocId());
 }
 
-void
-MonitoringSearchIterator::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids)
-{
+void MonitoringSearchIterator::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) {
     _search->and_element_ids_into(docid, element_ids);
     setDocId(_search->getDocId());
 }
 
-}
+} // namespace search::queryeval

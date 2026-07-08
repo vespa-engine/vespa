@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include <vespa/metrics/metricset.h>
 #include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/vespalib/util/executor_stats.h>
 
 namespace proton {
 
-struct ExecutorMetrics : metrics::MetricSet
-{
+struct ExecutorMetrics : metrics::MetricSet {
     metrics::LongCountMetric   accepted;
     metrics::LongCountMetric   rejected;
     metrics::LongCountMetric   wakeupCount;
@@ -18,10 +17,9 @@ struct ExecutorMetrics : metrics::MetricSet
     metrics::DoubleValueMetric saturation;
     metrics::LongAverageMetric queueSize;
 
-    void update(const vespalib::ExecutorStats &stats);
-    ExecutorMetrics(const std::string &name, metrics::MetricSet *parent);
+    void update(const vespalib::ExecutorStats& stats);
+    ExecutorMetrics(const std::string& name, metrics::MetricSet* parent);
     ~ExecutorMetrics();
 };
 
 } // namespace proton
-

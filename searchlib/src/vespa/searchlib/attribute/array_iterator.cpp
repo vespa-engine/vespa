@@ -2,7 +2,4 @@
 
 #include "array_iterator.h"
 
-namespace search {
-
-} // namespace search
-
+namespace search {} // namespace search

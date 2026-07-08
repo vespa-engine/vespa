@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.StringTokenizer;
@@ -58,7 +60,7 @@ public class CppClassBuilder implements ClassBuilder {
     }
 
     void writeFile(File f, String content) throws IOException {
-        FileWriter fw = new FileWriter(f);
+        FileWriter fw = new FileWriter(f, StandardCharsets.UTF_8);
         fw.write(content);
         fw.close();
     }
@@ -96,11 +98,11 @@ public class CppClassBuilder implements ClassBuilder {
         String [] parts = source.split("[-_]");
         StringBuilder sb = new StringBuilder();
         for (String s : parts) {
-            sb.append(s.substring(0, 1).toUpperCase()).append(s.substring(1));
+            sb.append(s.substring(0, 1).toUpperCase(Locale.ROOT)).append(s.substring(1));
         }
         String result = sb.toString();
         if (!capitalizeFirst) {
-            result = result.substring(0,1).toLowerCase() + result.substring(1);
+            result = result.substring(0,1).toLowerCase(Locale.ROOT) + result.substring(1);
         }
         return result;
     }
@@ -217,6 +219,9 @@ public class CppClassBuilder implements ClassBuilder {
         String namespacePrint = generateCppNameSpaceString(namespaceList);
         String className = getTypeName(root, false);
         w.write(""
+                + "// ------------   D O   N O T   E D I T !   ------------\n"
+                + "// This file is generated from a config definition file.\n"
+                + "\n"
                 + "/**\n"
                 + " * @class " + namespacePrint + "::" + className + "\n"
                 + " * @ingroup config\n"
@@ -565,6 +570,9 @@ public class CppClassBuilder implements ClassBuilder {
     }
 
     void writeBodyHeader(Writer w, CNode root, String subdir) throws IOException {
+        w.write("// ------------   D O   N O T   E D I T !   ------------\n");
+        w.write("// This file is generated from a config definition file.\n");
+        w.write("\n");
         if (subdir == null) {
             w.write("#include \"" + getFileName(root, "h") + "\"");
         } else {

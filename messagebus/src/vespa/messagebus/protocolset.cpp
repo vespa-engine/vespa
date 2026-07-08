@@ -4,26 +4,19 @@
 
 namespace mbus {
 
-ProtocolSet::ProtocolSet()
-    : _vector()
-{ }
+ProtocolSet::ProtocolSet() : _vector() {
+}
 
-ProtocolSet &
-ProtocolSet::add(IProtocol::SP protocol)
-{
+ProtocolSet& ProtocolSet::add(IProtocol::SP protocol) {
     _vector.push_back(protocol);
     return *this;
 }
 
-bool
-ProtocolSet::empty() const
-{
+bool ProtocolSet::empty() const {
     return _vector.empty();
 }
 
-IProtocol::SP
-ProtocolSet::extract()
-{
+IProtocol::SP ProtocolSet::extract() {
     if (_vector.empty()) {
         return IProtocol::SP();
     }

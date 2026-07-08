@@ -9,7 +9,7 @@ source "https://rubygems.org"
 #
 #     bundle exec jekyll serve
 #
-gem "jekyll", "~> 4.3.0"
+gem "jekyll", "~> 4.4.0"
 
 # This is the default theme for new Jekyll sites. You may change this to anything you like.
 gem "minima", "~> 2.0"
@@ -21,9 +21,17 @@ gem "kramdown-parser-gfm"
 # Work-around for webrick no longer included in Ruby 3.0 (https://github.com/jekyll/jekyll/issues/8523)
 gem "webrick"
 
+# Work-around for logger,csv no longer included in Ruby 3.5/4.0 stdlib; Jekyll 4.3.3 still requires it.
+gem "csv"
+gem "logger"
+
 # Get the html-proofer to work
 gem 'rake'
 gem 'html-proofer'
 gem 'jekyll-redirect-from'
 gem 'jekyll-feed'
 
+
+gem "base64", "~> 0.3.0"
+
+gem "bigdecimal", "~> 4.1"

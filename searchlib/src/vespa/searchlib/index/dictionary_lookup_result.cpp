@@ -4,18 +4,13 @@
 
 namespace search::index {
 
-DictionaryLookupResult::DictionaryLookupResult() noexcept
-    : wordNum(0),
-      counts(),
-      bitOffset(0)
-{
+DictionaryLookupResult::DictionaryLookupResult() noexcept : wordNum(0), counts(), bitOffset(0) {
 }
 
 DictionaryLookupResult::~DictionaryLookupResult() = default;
 
-void swap(DictionaryLookupResult& a, DictionaryLookupResult& b) noexcept
-{
+void swap(DictionaryLookupResult& a, DictionaryLookupResult& b) noexcept {
     a.swap(b);
 }
 
-}
+} // namespace search::index

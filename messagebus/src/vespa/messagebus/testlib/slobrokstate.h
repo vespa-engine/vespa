@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include <vector>
 #include <vespa/messagebus/common.h>
+
+#include <vector>
 
 namespace mbus {
 
-class SlobrokState
-{
+class SlobrokState {
 public:
-    using TYPE = std::vector<std::pair<string, uint32_t> >;
+    using TYPE = std::vector<std::pair<string, uint32_t>>;
     using ITR = TYPE::const_iterator;
 
 private:
@@ -18,10 +18,9 @@ private:
 
 public:
     SlobrokState();
-    SlobrokState &add(const string &pattern, uint32_t cnt = 1);
+    SlobrokState& add(const string& pattern, uint32_t cnt = 1);
     ITR begin() const;
     ITR end() const;
 };
 
 } // namespace mbus
-

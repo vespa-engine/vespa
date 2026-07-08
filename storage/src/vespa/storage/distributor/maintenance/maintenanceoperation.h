@@ -5,8 +5,7 @@
 
 namespace storage::distributor {
 
-class MaintenanceOperation : public Operation
-{
+class MaintenanceOperation : public Operation {
 public:
     enum Type {
         DELETE_BUCKET,
@@ -23,4 +22,4 @@ public:
     virtual const std::string& getDetailedReason() const = 0;
 };
 
-} // storage::distributor
+} // namespace storage::distributor

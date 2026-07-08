@@ -2,14 +2,15 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.DataplaneProxyConfig;
-import com.yahoo.container.jdisc.DataplaneProxyConfigurator;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 import java.util.Set;
 
 public class DataplaneProxy extends SimpleComponent implements DataplaneProxyConfig.Producer {
 
-    public static final String COMPONENT_CLASS = DataplaneProxyConfigurator.class.getName();
+    public static final String COMPONENT_CLASS = "com.yahoo.vespa.cloud.tenant.dataplane.DataplaneProxyConfigurator";
 
     private final int mtlsPort;
     private final int tokenPort;
@@ -18,7 +19,7 @@ public class DataplaneProxy extends SimpleComponent implements DataplaneProxyCon
     private final Set<String> tokenEndpoints;
 
     public DataplaneProxy(int mtlsPort, int tokenPort, String serverCertificate, String serverKey, Set<String> tokenEndpoints) {
-        super(COMPONENT_CLASS);
+        super(new ComponentModel(BundleInstantiationSpecification.fromStrings(COMPONENT_CLASS, null, "cloud-tenant")));
         this.mtlsPort = mtlsPort;
         this.tokenPort = tokenPort;
         this.serverCertificate = serverCertificate;

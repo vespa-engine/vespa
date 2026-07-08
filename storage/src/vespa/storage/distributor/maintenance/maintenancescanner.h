@@ -6,13 +6,12 @@
 
 namespace storage::distributor {
 
-class MaintenanceScanner
-{
+class MaintenanceScanner {
 public:
     virtual ~MaintenanceScanner() = default;
 
     class ScanResult {
-        bool _done;
+        bool                  _done;
         document::BucketSpace _bucketSpace;
         BucketDatabase::Entry _entry;
 
@@ -28,18 +27,12 @@ public:
 
     private:
         explicit ScanResult(bool done) noexcept
-            : _done(done),
-              _bucketSpace(document::BucketSpace::invalid()),
-              _entry()
-        {}
+            : _done(done), _bucketSpace(document::BucketSpace::invalid()), _entry() {}
         ScanResult(document::BucketSpace bucketSpace, BucketDatabase::Entry e) noexcept
-            : _done(false),
-              _bucketSpace(bucketSpace),
-              _entry(std::move(e))
-        {}
+            : _done(false), _bucketSpace(bucketSpace), _entry(std::move(e)) {}
     };
 
     virtual ScanResult scanNext() = 0;
 };
 
-}
+} // namespace storage::distributor

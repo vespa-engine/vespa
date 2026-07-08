@@ -5,5 +5,3 @@
 #ifndef noinline__
 #define noinline__ __attribute__((noinline))
 #endif
-
-

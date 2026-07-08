@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperation.h>
 #include <vespa/storage/distributor/operations/cancel_scope.h>
+#include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/storageapi/messageapi/maintenancecommand.h>
-#include <vespa/document/bucket/bucketid.h>
 
 namespace storage::distributor {
 
@@ -24,8 +24,7 @@ class IdealStateManager;
    in numerical order), then BucketId, so that it can be used for scheduling by the
    @link StateChecker class.
 */
-class BucketAndNodes
-{
+class BucketAndNodes {
 public:
     /**
        Constructor for operations having only one node.
@@ -33,7 +32,7 @@ public:
        @param bucket Target bucket
        @param node Target node
     */
-    BucketAndNodes(const document::Bucket &bucket, uint16_t node);
+    BucketAndNodes(const document::Bucket& bucket, uint16_t node);
 
     /**
        Constructor for operations with multiple target nodes.
@@ -41,15 +40,14 @@ public:
        @param bucket Target bucket
        @param nodes Target nodes
     */
-    BucketAndNodes(const document::Bucket &bucket,
-                   const std::vector<uint16_t>& nodes);
+    BucketAndNodes(const document::Bucket& bucket, const std::vector<uint16_t>& nodes);
 
     /**
        Changes the target bucket.
 
        @param id The new target bucket
     */
-    void setBucketId(const document::BucketId &id);
+    void setBucketId(const document::BucketId& id);
 
     /**
        Returns the target bucket.
@@ -101,8 +99,7 @@ private:
    active state, possibly reschedule other operations in the same OperationList
    as this one, or recheck the bucket.
 */
-class IdealStateOperation : public MaintenanceOperation
-{
+class IdealStateOperation : public MaintenanceOperation {
 public:
     static const uint32_t MAINTENANCE_MESSAGE_TYPES[];
 
@@ -180,9 +177,7 @@ public:
     /**
        Set the priority we should send messages from this operation with.
     */
-    void setPriority(api::StorageMessage::Priority priority) noexcept {
-        _priority = priority;
-    }
+    void setPriority(api::StorageMessage::Priority priority) noexcept { _priority = priority; }
 
     /**
      * Returns true if we are blocked to start this operation given
@@ -195,16 +190,10 @@ public:
     */
     api::StorageMessage::Priority getPriority() const noexcept { return _priority; }
 
-    void setDetailedReason(std::string detailedReason) {
-        _detailedReason = std::move(detailedReason);
-    }
-    void setDetailedReason(std::string_view detailedReason) {
-        _detailedReason = std::string(detailedReason);
-    }
+    void setDetailedReason(std::string detailedReason) { _detailedReason = std::move(detailedReason); }
+    void setDetailedReason(std::string_view detailedReason) { _detailedReason = std::string(detailedReason); }
 
-    const std::string& getDetailedReason() const override {
-        return _detailedReason;
-    }
+    const std::string& getDetailedReason() const override { return _detailedReason; }
 
     uint32_t memorySize() const noexcept;
 
@@ -238,13 +227,10 @@ protected:
      * operations to other nodes for this bucket, these will not be part of
      * the set of messages checked.
      */
-    bool checkBlock(const document::Bucket& bucket,
-                    const DistributorStripeOperationContext& ctx,
+    bool checkBlock(const document::Bucket& bucket, const DistributorStripeOperationContext& ctx,
                     const OperationSequencer&) const;
-    bool checkBlockForAllNodes(const document::Bucket& bucket,
-                               const DistributorStripeOperationContext& ctx,
+    bool checkBlockForAllNodes(const document::Bucket& bucket, const DistributorStripeOperationContext& ctx,
                                const OperationSequencer&) const;
-
 };
 
-}
+} // namespace storage::distributor

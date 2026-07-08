@@ -6,14 +6,10 @@ using search::AttributeVector;
 
 namespace proton {
 
-InitializedAttributesResult::InitializedAttributesResult()
-    : _attributes(),
-      _lock()
-{}
+InitializedAttributesResult::InitializedAttributesResult() : _attributes(), _lock() {
+}
 
-void
-InitializedAttributesResult::add(AttributeInitializerResult attribute)
-{
+void InitializedAttributesResult::add(AttributeInitializerResult attribute) {
     std::lock_guard<std::mutex> lockGuard(_lock);
     _attributes.push_back(attribute);
 }

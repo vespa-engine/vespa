@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/storage/bucketdb/bucketdatabase.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/memoryusage.h>
+
 #include <string>
 
 namespace storage::distributor {
@@ -29,34 +30,30 @@ BucketDBMetricUpdaterTest::BucketDBMetricUpdaterTest() = default;
 namespace {
 
 void addNode(BucketInfo& info, uint16_t node, uint32_t crc) {
-    auto apiInfo = api::BucketInfo(crc, crc + 1, crc + 2);
+    auto                  apiInfo = api::BucketInfo(crc, crc + 1, crc + 2);
     std::vector<uint16_t> order;
     info.addNode(BucketCopy(1234, node, apiInfo), order);
 }
 
-BucketInfo
-makeInfo(uint32_t copy0Crc)
-{
+BucketInfo makeInfo(uint32_t copy0Crc) {
     BucketInfo info;
     addNode(info, 0, copy0Crc);
     return info;
 }
 
-BucketInfo
-makeInfo(uint32_t copy0Crc, uint32_t copy1Crc)
-{
+BucketInfo makeInfo(uint32_t copy0Crc, uint32_t copy1Crc) {
     BucketInfo info;
     addNode(info, 0, copy0Crc);
     addNode(info, 1, copy1Crc);
     return info;
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 TEST_F(BucketDBMetricUpdaterTest, doc_and_byte_counts_are_updated) {
     BucketDBMetricUpdater metricUpdater;
-    IdealStateMetricSet ims;
-    DistributorMetricSet dms;
+    IdealStateMetricSet   ims;
+    DistributorMetricSet  dms;
 
     EXPECT_FALSE(metricUpdater.hasCompletedRound());
 
@@ -94,8 +91,8 @@ TEST_F(BucketDBMetricUpdaterTest, doc_and_byte_counts_are_updated) {
 
 TEST_F(BucketDBMetricUpdaterTest, bucket_db_memory_usage_metrics_are_updated) {
     BucketDBMetricUpdater metric_updater;
-    IdealStateMetricSet ims;
-    DistributorMetricSet dms;
+    IdealStateMetricSet   ims;
+    DistributorMetricSet  dms;
 
     vespalib::MemoryUsage mem_usage;
     mem_usage.incAllocatedBytes(1000);
@@ -128,8 +125,8 @@ TEST_F(BucketDBMetricUpdaterTest, bucket_db_memory_usage_metrics_are_updated) {
 
 TEST_F(BucketDBMetricUpdaterTest, buckets_with_too_few_and_too_many_copies) {
     BucketDBMetricUpdater metricUpdater;
-    IdealStateMetricSet ims;
-    DistributorMetricSet dms;
+    IdealStateMetricSet   ims;
+    DistributorMetricSet  dms;
 
     metricUpdater.completeRound();
     metricUpdater.getLastCompleteStats().propagateMetrics(ims, dms);
@@ -176,8 +173,8 @@ TEST_F(BucketDBMetricUpdaterTest, buckets_with_too_few_and_too_many_copies) {
 
 TEST_F(BucketDBMetricUpdaterTest, buckets_with_varying_trustedness) {
     BucketDBMetricUpdater metricUpdater;
-    IdealStateMetricSet ims;
-    DistributorMetricSet dms;
+    IdealStateMetricSet   ims;
+    DistributorMetricSet  dms;
 
     metricUpdater.completeRound(false);
     metricUpdater.getLastCompleteStats().propagateMetrics(ims, dms);
@@ -212,8 +209,8 @@ TEST_F(BucketDBMetricUpdaterTest, buckets_with_varying_trustedness) {
 
 TEST_F(BucketDBMetricUpdaterTest, pick_counts_from_trusted_copy) {
     BucketDBMetricUpdater metricUpdater;
-    IdealStateMetricSet ims;
-    DistributorMetricSet dms;
+    IdealStateMetricSet   ims;
+    DistributorMetricSet  dms;
 
     // First copy added is implicitly trusted, but it is not the largest.
     BucketDatabase::Entry e(document::BucketId(16, 2), makeInfo(100, 200));
@@ -227,8 +224,8 @@ TEST_F(BucketDBMetricUpdaterTest, pick_counts_from_trusted_copy) {
 
 TEST_F(BucketDBMetricUpdaterTest, pick_largest_copy_if_no_trusted) {
     BucketDBMetricUpdater metricUpdater;
-    IdealStateMetricSet ims;
-    DistributorMetricSet dms;
+    IdealStateMetricSet   ims;
+    DistributorMetricSet  dms;
 
     // No trusted copies, so must pick second copy.
     BucketInfo info(makeInfo(100, 200));
@@ -244,8 +241,8 @@ TEST_F(BucketDBMetricUpdaterTest, pick_largest_copy_if_no_trusted) {
 
 TEST_F(BucketDBMetricUpdaterTest, complete_round_clears_working_state) {
     BucketDBMetricUpdater metricUpdater;
-    IdealStateMetricSet ims;
-    DistributorMetricSet dms;
+    IdealStateMetricSet   ims;
+    DistributorMetricSet  dms;
 
     {
         BucketDatabase::Entry e(document::BucketId(16, 1), makeInfo(10));
@@ -264,20 +261,16 @@ TEST_F(BucketDBMetricUpdaterTest, complete_round_clears_working_state) {
 }
 
 // Replicas on nodes 0 and 1.
-void
-BucketDBMetricUpdaterTest::visitBucketWith2Copies1Trusted(BucketDBMetricUpdater& metricUpdater)
-{
+void BucketDBMetricUpdaterTest::visitBucketWith2Copies1Trusted(BucketDBMetricUpdater& metricUpdater) {
     BucketInfo info;
     addNode(info, 0, 100);
-    addNode(info, 1, 101);  // Note different checksums => #trusted = 1
+    addNode(info, 1, 101); // Note different checksums => #trusted = 1
     BucketDatabase::Entry e(document::BucketId(16, 1), std::move(info));
     metricUpdater.visit(e, 2);
 }
 
 // Replicas on nodes 0 and 2.
-void
-BucketDBMetricUpdaterTest::visitBucketWith2CopiesBothTrusted(BucketDBMetricUpdater& metricUpdater)
-{
+void BucketDBMetricUpdaterTest::visitBucketWith2CopiesBothTrusted(BucketDBMetricUpdater& metricUpdater) {
     BucketInfo info;
     addNode(info, 0, 200);
     addNode(info, 2, 200);
@@ -286,9 +279,7 @@ BucketDBMetricUpdaterTest::visitBucketWith2CopiesBothTrusted(BucketDBMetricUpdat
 }
 
 // Single replica on node 2.
-void
-BucketDBMetricUpdaterTest::visitBucketWith1Copy(BucketDBMetricUpdater& metricUpdater)
-{
+void BucketDBMetricUpdaterTest::visitBucketWith1Copy(BucketDBMetricUpdater& metricUpdater) {
     BucketInfo info;
     addNode(info, 2, 100);
     BucketDatabase::Entry e(document::BucketId(16, 1), std::move(info));
@@ -296,8 +287,7 @@ BucketDBMetricUpdaterTest::visitBucketWith1Copy(BucketDBMetricUpdater& metricUpd
 }
 
 BucketDBMetricUpdaterTest::NodeToReplicasMap
-BucketDBMetricUpdaterTest::replicaStatsOf(BucketDBMetricUpdater& metricUpdater)
-{
+BucketDBMetricUpdaterTest::replicaStatsOf(BucketDBMetricUpdater& metricUpdater) {
     metricUpdater.completeRound(true);
     return metricUpdater.getLastCompleteStats()._minBucketReplica;
 }
@@ -310,8 +300,7 @@ TEST_F(BucketDBMetricUpdaterTest, min_bucket_replica_tracked_and_reported_per_no
     visitBucketWith2Copies1Trusted(metricUpdater);
     visitBucketWith2CopiesBothTrusted(metricUpdater);
 
-    EXPECT_EQ(NodeToReplicasMap({{0, 1}, {1, 1}, {2, 2}}),
-              replicaStatsOf(metricUpdater));
+    EXPECT_EQ(NodeToReplicasMap({{0, 1}, {1, 1}, {2, 2}}), replicaStatsOf(metricUpdater));
 }
 
 TEST_F(BucketDBMetricUpdaterTest, non_trusted_replicas_also_counted_in_mode_any) {
@@ -320,8 +309,7 @@ TEST_F(BucketDBMetricUpdaterTest, non_trusted_replicas_also_counted_in_mode_any)
     visitBucketWith2Copies1Trusted(metricUpdater);
     visitBucketWith2CopiesBothTrusted(metricUpdater);
 
-    EXPECT_EQ(NodeToReplicasMap({{0, 2}, {1, 2}, {2, 2}}),
-              replicaStatsOf(metricUpdater));
+    EXPECT_EQ(NodeToReplicasMap({{0, 2}, {1, 2}, {2, 2}}), replicaStatsOf(metricUpdater));
 }
 
 TEST_F(BucketDBMetricUpdaterTest, minimum_replica_count_returned_for_node_in_mode_any) {
@@ -331,8 +319,7 @@ TEST_F(BucketDBMetricUpdaterTest, minimum_replica_count_returned_for_node_in_mod
     visitBucketWith1Copy(metricUpdater);
 
     // Node 2 has a bucket with only 1 replica.
-    EXPECT_EQ(NodeToReplicasMap({{0, 2}, {2, 1}}),
-              replicaStatsOf(metricUpdater));
+    EXPECT_EQ(NodeToReplicasMap({{0, 2}, {2, 1}}), replicaStatsOf(metricUpdater));
 }
 
-} // storage::distributor
+} // namespace storage::distributor

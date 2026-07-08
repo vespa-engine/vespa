@@ -211,6 +211,7 @@
       "public boolean isDegradedByMatchPhase()",
       "public boolean isDegradedByTimeout()",
       "public boolean isDegradedByAdapativeTimeout()",
+      "public boolean isDegradedByAnnTimeout()",
       "public boolean isDegradedByNonIdealState()",
       "public boolean getFull()",
       "public int getNodes()",
@@ -232,7 +233,8 @@
       "protected com.yahoo.container.handler.Coverage$FullCoverageDefinition fullReason",
       "public static final int DEGRADED_BY_MATCH_PHASE",
       "public static final int DEGRADED_BY_TIMEOUT",
-      "public static final int DEGRADED_BY_ADAPTIVE_TIMEOUT"
+      "public static final int DEGRADED_BY_ADAPTIVE_TIMEOUT",
+      "public static final int DEGRADED_BY_ANN_TIMEOUT"
     ]
   },
   "com.yahoo.container.handler.FilterBackingRequestHandler" : {
@@ -622,66 +624,6 @@
       "public void send(java.nio.ByteBuffer)",
       "protected void send(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public long written()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.container.jdisc.DataplaneProxyConfigurator" : {
-    "superClass" : "com.yahoo.component.AbstractComponent",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(com.yahoo.cloud.config.DataplaneProxyConfig, com.yahoo.container.jdisc.DataplaneProxyService, com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials)",
-      "public void deconstruct()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.container.jdisc.DataplaneProxyService$NginxProxyCommands" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
-      "com.yahoo.container.jdisc.DataplaneProxyService$ProxyCommands"
-    ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public void start(java.nio.file.Path)",
-      "public void stop(java.nio.file.Path)",
-      "public void reload(java.nio.file.Path)",
-      "public boolean isRunning()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.container.jdisc.DataplaneProxyService$ProxyCommands" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods" : [
-      "public abstract void start(java.nio.file.Path)",
-      "public abstract void stop(java.nio.file.Path)",
-      "public abstract void reload(java.nio.file.Path)",
-      "public abstract boolean isRunning()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.container.jdisc.DataplaneProxyService" : {
-    "superClass" : "com.yahoo.component.AbstractComponent",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "final"
-    ],
-    "methods" : [
-      "public void <init>(ai.vespa.cloud.SystemInfo)",
-      "public void <init>()",
-      "public void reconfigure(com.yahoo.cloud.config.DataplaneProxyConfig, com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials)",
-      "public void deconstruct()"
     ],
     "fields" : [ ]
   },
@@ -1892,6 +1834,7 @@
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Http2)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder streamIdleTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder maxConcurrentStreams(int)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder maxRateControlEvents(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2 build()"
     ],
     "fields" : [ ]
@@ -1906,7 +1849,8 @@
     "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder)",
       "public double streamIdleTimeout()",
-      "public int maxConcurrentStreams()"
+      "public int maxConcurrentStreams()",
+      "public int maxRateControlEvents()"
     ],
     "fields" : [ ]
   },

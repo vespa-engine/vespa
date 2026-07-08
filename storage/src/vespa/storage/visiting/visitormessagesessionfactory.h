@@ -3,6 +3,7 @@
 #pragma once
 
 #include "visitormessagesession.h"
+
 #include <vespa/documentapi/messagebus/priority.h>
 
 namespace storage {
@@ -20,5 +21,4 @@ struct VisitorMessageSessionFactory {
     virtual documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const = 0;
 };
 
-} // storage
-
+} // namespace storage

@@ -6,7 +6,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.searchchain.Execution;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,13 +17,17 @@ class MockInvoker extends SearchInvoker {
     private List<Hit> hits;
     int hitsRequested;
 
-    protected MockInvoker(int key, Coverage coverage) {
-        super(Optional.of(new Node("test", key, "?", 0)));
-        this.coverage = coverage;
-    }
-
     protected MockInvoker(int key) {
         this(key, null);
+    }
+
+    protected MockInvoker(int key, Coverage coverage) {
+        this(coverage, new Node("test", key, "?", 0, true));
+    }
+
+    protected MockInvoker(Coverage coverage, Node node) {
+        super(Optional.of(node));
+        this.coverage = coverage;
     }
 
     MockInvoker setHits(List<Hit> hits) {
@@ -33,7 +36,7 @@ class MockInvoker extends SearchInvoker {
     }
 
     @Override
-    protected Object sendSearchRequest(Query query, Object context) {
+    protected Object sendSearchRequest(Query query, double contentShare, Object context) {
         this.query = query;
         hitsRequested = query.getHits();
         return context;
@@ -47,9 +50,8 @@ class MockInvoker extends SearchInvoker {
         }
         if (hits != null) {
             for (Hit h : hits) {
-                if (h instanceof FastHit) {
-                    FastHit fh = (FastHit) h;
-                    ret.getLeanHits().add(new LeanHit(fh.getRawGlobalId(), fh.getPartId(), fh.getDistributionKey(), fh.getRelevance().getScore()));
+                if (h instanceof FastHit fh) {
+                    ret.getLeanHits().add(new LeanHit(fh.getRawGlobalId(), fh.getSearchGroup(), fh.getPartId(), fh.getDistributionKey(), fh.getRelevance().getScore()));
                 } else {
                     ret.getResult().hits().add(h);
                 }

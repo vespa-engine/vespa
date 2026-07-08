@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <cstring>
 #include <cstdint>
+#include <cstring>
 
 namespace mbus {
 
@@ -13,15 +13,14 @@ namespace mbus {
  * that when a reply is obtained, it will have the same context as the
  * original message.
  **/
-struct Context
-{
+struct Context {
     /**
      * This is a region of memory that can be interpreted as either an
      * integer or a pointer.
      **/
     union {
         uint64_t UINT64;
-        void    *PTR;
+        void*    PTR;
     } value;
 
     /**
@@ -41,8 +40,7 @@ struct Context
      *
      * @param pt the pointer
      **/
-    Context(void *pt) { value.PTR = pt; }
+    Context(void* pt) { value.PTR = pt; }
 };
 
 } // namespace mbus
-

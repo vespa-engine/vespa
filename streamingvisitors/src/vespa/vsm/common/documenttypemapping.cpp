@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documenttypemapping.h"
-#include <vespa/document/repo/documenttyperepo.h>
+
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/issue.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.common.documenttypemapping");
@@ -13,39 +15,32 @@ using vespalib::Issue;
 
 namespace vsm {
 
-DocumentTypeMapping::DocumentTypeMapping() :
-    _fieldMap(),
-    _defaultDocumentTypeName(),
-    _defaultDocumentType(),
-    _documentTypeFreq()
-{ }
+DocumentTypeMapping::DocumentTypeMapping()
+    : _fieldMap(), _defaultDocumentTypeName(), _defaultDocumentType(), _documentTypeFreq() {
+}
 
-DocumentTypeMapping::~DocumentTypeMapping() { }
+DocumentTypeMapping::~DocumentTypeMapping() {
+}
 
 namespace {
 
-std::string getDocTypeId(const document::DocumentType & docType)
-{
+std::string getDocTypeId(const document::DocumentType& docType) {
     std::string typeId(docType.getName());
-    typeId += "0";  // Hardcoded version (version not supported)
+    typeId += "0"; // Hardcoded version (version not supported)
     return typeId;
 }
 
-}
+} // namespace
 
-void DocumentTypeMapping::init(const std::string & defaultDocumentType,
-                               const StringFieldIdTMapT & fieldList,
-                               const document::DocumentTypeRepo &repo)
-{
+void DocumentTypeMapping::init(const std::string& defaultDocumentType, const StringFieldIdTMapT& fieldList,
+                               const document::DocumentTypeRepo& repo) {
     _defaultDocumentType = repo.getDocumentType(defaultDocumentType);
     _defaultDocumentTypeName = getDocTypeId(*_defaultDocumentType);
-    LOG(debug, "Setting default document type to '%s'",
-        _defaultDocumentTypeName.c_str());
+    LOG(debug, "Setting default document type to '%s'", _defaultDocumentTypeName.c_str());
     buildFieldMap(_defaultDocumentType, fieldList, _defaultDocumentTypeName);
 }
 
-bool DocumentTypeMapping::prepareBaseDoc(SharedFieldPathMap & map) const
-{
+bool DocumentTypeMapping::prepareBaseDoc(SharedFieldPathMap& map) const {
     auto found = _fieldMap.find(_defaultDocumentTypeName);
     if (found != _fieldMap.end()) {
         map = std::make_shared<FieldPathMapT>(found->second);
@@ -59,19 +54,17 @@ bool DocumentTypeMapping::prepareBaseDoc(SharedFieldPathMap & map) const
     return true;
 }
 
-void DocumentTypeMapping::buildFieldMap(
-        const document::DocumentType *docTypePtr,
-        const StringFieldIdTMapT & fieldList, const std::string & typeId)
-{
-    LOG(debug, "buildFieldMap: docType = '%s', fieldList.size = '%zd', typeId = '%s'",
-        docTypePtr->getName().c_str(), fieldList.size(), typeId.c_str());
-    const document::DocumentType & docType = *docTypePtr;
-    size_t highestFNo(0);
+void DocumentTypeMapping::buildFieldMap(const document::DocumentType* docTypePtr, const StringFieldIdTMapT& fieldList,
+                                        const std::string& typeId) {
+    LOG(debug, "buildFieldMap: docType = '%s', fieldList.size = '%zd', typeId = '%s'", docTypePtr->getName().c_str(),
+        fieldList.size(), typeId.c_str());
+    const document::DocumentType& docType = *docTypePtr;
+    size_t                        highestFNo(0);
     for (const auto& elem : fieldList) {
         highestFNo = std::max(highestFNo, size_t(elem.second));
     }
     highestFNo++;
-    FieldPathMapT & fieldMap = _fieldMap[typeId];
+    FieldPathMapT& fieldMap = _fieldMap[typeId];
 
     fieldMap.resize(highestFNo);
 
@@ -80,7 +73,9 @@ void DocumentTypeMapping::buildFieldMap(
         std::string fname = elem.first;
         LOG(debug, "Handling %s -> %d", fname.c_str(), elem.second);
         try {
-            if ((elem.first[0] != '[') && (elem.first != "summaryfeatures") && (elem.first != "rankfeatures") && (elem.first != "ranklog") && (elem.first != "sddocname") && (elem.first != "documentid")) {
+            if ((elem.first[0] != '[') && (elem.first != "summaryfeatures") && (elem.first != "rankfeatures") &&
+                (elem.first != "ranklog") && (elem.first != "sddocname") && (elem.first != "documentid"))
+            {
                 FieldPath fieldPath;
                 docType.buildFieldPath(fieldPath, fname);
                 // Note: Entries are overwritten, behavior depends on
@@ -89,21 +84,19 @@ void DocumentTypeMapping::buildFieldMap(
                 validCount++;
                 LOG(spam, "Found %s -> %d in document", fname.c_str(), elem.second);
             }
-        } catch (const std::exception & e) {
-            LOG(debug, "Could not get field info for '%s' in documenttype '%s' (id = '%s') : %s",
-                    elem.first.c_str(), docType.getName().c_str(), typeId.c_str(), e.what());
+        } catch (const std::exception& e) {
+            LOG(debug, "Could not get field info for '%s' in documenttype '%s' (id = '%s') : %s", elem.first.c_str(),
+                docType.getName().c_str(), typeId.c_str(), e.what());
         }
     }
     _documentTypeFreq.insert(std::make_pair(validCount, docTypePtr));
 }
 
-const document::DocumentType & DocumentTypeMapping::getCurrentDocumentType() const
-{
+const document::DocumentType& DocumentTypeMapping::getCurrentDocumentType() const {
     if (_documentTypeFreq.empty()) {
         throw std::runtime_error("No document type registered yet.");
     }
     return *_documentTypeFreq.rbegin()->second;
 }
 
-
-}
+} // namespace vsm

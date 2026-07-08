@@ -5,14 +5,11 @@
 namespace proton {
 
 ProtonConfigSnapshot::ProtonConfigSnapshot(std::shared_ptr<BootstrapConfig> bootstrapConfig,
-                                           DocumentDBConfigs documentDBConfigs)
-    : _bootstrapConfig(std::move(bootstrapConfig)),
-      _documentDBConfigs(std::move(documentDBConfigs))
-{
+                                           DocumentDBConfigs                documentDBConfigs)
+    : _bootstrapConfig(std::move(bootstrapConfig)), _documentDBConfigs(std::move(documentDBConfigs)) {
 }
 
-ProtonConfigSnapshot::~ProtonConfigSnapshot()
-{
+ProtonConfigSnapshot::~ProtonConfigSnapshot() {
 }
 
 } // namespace proton

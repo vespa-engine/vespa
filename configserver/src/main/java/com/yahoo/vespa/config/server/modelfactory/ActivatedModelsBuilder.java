@@ -14,6 +14,7 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -33,6 +34,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.text.Text;
 
 import java.util.Comparator;
 import java.util.List;
@@ -98,7 +100,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             ApplicationId applicationId,
                                             Optional<DockerImage> wantedDockerImageRepository,
                                             Version wantedNodeVespaVersion) {
-        log.log(Level.FINE, () -> String.format("Loading model version %s for session %s application %s",
+        log.log(Level.FINE, () -> Text.format("Loading model version %s for session %s application %s",
                                                 modelFactory.version(), applicationGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId, modelFactory.version(), applicationPackage);
         Provisioned provisioned = new Provisioned();
@@ -109,7 +111,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistries(), modelFactory.version()).orElse(new MockFileRegistry()),
                 executor,
-                new ApplicationCuratorDatabase(tenant, curator).readReindexingStatus(applicationId),
+                new ApplicationCuratorDatabase(tenant, curator, configserverConfig).readReindexingStatus(applicationId),
                 createStaticProvisioner(applicationPackage, modelContextProperties.applicationId(), provisioned),
                 provisioned,
                 modelContextProperties,
@@ -153,7 +155,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                ImmutableSet.copyOf(new ContainerEndpointsCache(TenantRepository.getTenantPath(tenant), curator).read(applicationId)),
                                                false, // We may be bootstrapping, but we only know and care during prepare
                                                false, // Always false, assume no one uses it when activating
-                                               LegacyFlags.from(applicationPackage, flagSource),
+                                               LegacyFlags.from(applicationPackage, flagSource.snapshot()),
                                                new EndpointCertificateMetadataStore(curator, TenantRepository.getTenantPath(tenant))
                                                        .readEndpointCertificateMetadata(applicationId)
                                                        .flatMap(new EndpointCertificateRetriever(endpointCertificateSecretStores)::readEndpointCertificateSecrets),
@@ -163,6 +165,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zkClient.readTenantSecretStores(),
                                                zkClient.readOperatorCertificates(),
                                                zkClient.readCloudAccount(),
+                                               zkClient.readCloudResourceTags(),
                                                zkClient.readDataplaneTokens());
     }
 

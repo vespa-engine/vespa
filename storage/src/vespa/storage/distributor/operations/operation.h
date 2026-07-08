@@ -2,16 +2,17 @@
 #pragma once
 
 #include "cancel_scope.h"
-#include <vespa/vdslib/state/nodetype.h>
+
 #include <vespa/storage/distributor/distributormessagesender.h>
+#include <vespa/vdslib/state/nodetype.h>
 #include <vespa/vespalib/util/time.h>
 
 namespace storage {
 
 namespace api {
-    class StorageMessage;
-    class StorageReply;
-}
+class StorageMessage;
+class StorageReply;
+} // namespace api
 
 class StorageComponent;
 
@@ -22,8 +23,7 @@ class DistributorStripeOperationContext;
 class PendingMessageTracker;
 class OperationSequencer;
 
-class Operation
-{
+class Operation {
 public:
     using SP = std::shared_ptr<Operation>;
 
@@ -41,9 +41,7 @@ public:
        When a reply has been received, the storagelink will call receive()
        on the owner of the message that was replied to.
     */
-    virtual void receive(DistributorStripeMessageSender& sender,
-                         const std::shared_ptr<api::StorageReply> & msg)
-    {
+    virtual void receive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg) {
         onReceive(sender, msg);
     }
 
@@ -51,9 +49,7 @@ public:
 
     [[nodiscard]] virtual std::string getStatus() const;
 
-    [[nodiscard]] virtual std::string toString() const {
-        return getName();
-    }
+    [[nodiscard]] virtual std::string toString() const { return getName(); }
 
     /**
        Starts the callback, sending any messages etc. Sets _startTime to current time
@@ -100,8 +96,7 @@ public:
     /**
         Transfers message settings such as priority, timeout, etc. from one message to another.
     */
-    static void copyMessageSettings(const api::StorageCommand& source,
-                                    api::StorageCommand& target);
+    static void copyMessageSettings(const api::StorageCommand& source, api::StorageCommand& target);
 
 private:
     /**
@@ -109,8 +104,7 @@ private:
      */
     virtual void onStart(DistributorStripeMessageSender& sender) = 0;
 
-    virtual void onReceive(DistributorStripeMessageSender& sender,
-                           const std::shared_ptr<api::StorageReply> & msg) = 0;
+    virtual void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg) = 0;
 
 protected:
     virtual void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) {
@@ -124,9 +118,6 @@ protected:
     CancelScope           _cancel_scope;
 };
 
-}
+} // namespace distributor
 
-}
-
-
-
+} // namespace storage

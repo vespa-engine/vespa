@@ -1,18 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "test_io.h"
-#include <vespa/vespalib/util/require.h>
-#include <vespa/vespalib/data/slime/slime.h>
+
 #include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/size_literals.h>
+
+#include <unistd.h>
+
 #include <cctype>
 #include <filesystem>
-#include <unistd.h>
 
 using vespalib::Memory;
 using vespalib::WritableMemory;
-using vespalib::slime::JsonFormat;
 using vespalib::slime::Cursor;
+using vespalib::slime::JsonFormat;
 
 namespace fs = std::filesystem;
 
@@ -21,16 +24,14 @@ namespace vespalib::eval::test {
 //-----------------------------------------------------------------------------
 
 constexpr size_t CHUNK_SIZE = 16_Ki;
-const char *num_tests_str = "num_tests";
+const char*      num_tests_str = "num_tests";
 
 //-----------------------------------------------------------------------------
 
-Memory
-StdIn::obtain()
-{
+Memory StdIn::obtain() {
     if ((_input.get().size == 0) && !_eof) {
         WritableMemory buf = _input.reserve(CHUNK_SIZE);
-        ssize_t res = read(STDIN_FILENO, buf.data, buf.size);
+        ssize_t        res = read(STDIN_FILENO, buf.data, buf.size);
         _eof = (res == 0);
         if (res < 0) {
             throw Broken();
@@ -40,26 +41,20 @@ StdIn::obtain()
     return _input.obtain();
 }
 
-Input &
-StdIn::evict(size_t bytes)
-{
+Input& StdIn::evict(size_t bytes) {
     _input.evict(bytes);
     return *this;
 }
 
 //-----------------------------------------------------------------------------
 
-WritableMemory
-StdOut::reserve(size_t bytes)
-{
+WritableMemory StdOut::reserve(size_t bytes) {
     return _output.reserve(bytes);
 }
 
-Output &
-StdOut::commit(size_t bytes)
-{
+Output& StdOut::commit(size_t bytes) {
     _output.commit(bytes);
-    Memory buf = _output.obtain();
+    Memory  buf = _output.obtain();
     ssize_t res = write(STDOUT_FILENO, buf.data, buf.size);
     if (res > 0) {
         _output.evict(res);
@@ -72,18 +67,14 @@ StdOut::commit(size_t bytes)
 
 //-----------------------------------------------------------------------------
 
-void
-ServerCmd::maybe_close()
-{
+void ServerCmd::maybe_close() {
     if (!_closed) {
         _child.close();
         _closed = true;
     }
 }
 
-void
-ServerCmd::maybe_exit()
-{
+void ServerCmd::maybe_exit() {
     if (!_exited) {
         read_until_eof(_child);
         _exit_code = _child.join();
@@ -91,15 +82,11 @@ ServerCmd::maybe_exit()
     }
 }
 
-void
-ServerCmd::dump_string(const char *prefix, const std::string &str)
-{
+void ServerCmd::dump_string(const char* prefix, const std::string& str) {
     fprintf(stderr, "%s%s: '%s'\n", prefix, _basename.c_str(), str.c_str());
 }
 
-void
-ServerCmd::dump_message(const char *prefix, const Slime &slime)
-{
+void ServerCmd::dump_message(const char* prefix, const Slime& slime) {
     SimpleBuffer buf;
     slime::JsonFormat::encode(slime, buf, false);
     auto str = buf.get().make_string();
@@ -107,32 +94,19 @@ ServerCmd::dump_message(const char *prefix, const Slime &slime)
 }
 
 ServerCmd::ServerCmd(std::string cmd)
-  : _child(cmd),
-    _basename(fs::path(cmd).filename()),
-    _closed(false),
-    _exited(false),
-    _exit_code(31212)
-{
+    : _child(cmd), _basename(fs::path(cmd).filename()), _closed(false), _exited(false), _exit_code(31212) {
 }
 
 ServerCmd::ServerCmd(std::string cmd, capture_stderr_tag)
-  : _child(cmd, true),
-    _basename(fs::path(cmd).filename()),
-    _closed(false),
-    _exited(false),
-    _exit_code(31212)
-{
+    : _child(cmd, true), _basename(fs::path(cmd).filename()), _closed(false), _exited(false), _exit_code(31212) {
 }
 
-ServerCmd::~ServerCmd()
-{
+ServerCmd::~ServerCmd() {
     maybe_close();
     maybe_exit();
 }
 
-Slime
-ServerCmd::invoke(const Slime &req)
-{
+Slime ServerCmd::invoke(const Slime& req) {
     dump_message("request --> ", req);
     write_compact(req, _child);
     Slime reply;
@@ -141,9 +115,7 @@ ServerCmd::invoke(const Slime &req)
     return reply;
 }
 
-std::string
-ServerCmd::write_then_read_all(const std::string &input)
-{
+std::string ServerCmd::write_then_read_all(const std::string& input) {
     std::string result;
     dump_string("input --> ", input);
     memcpy(_child.reserve(input.size()).data, input.data(), input.size());
@@ -157,9 +129,7 @@ ServerCmd::write_then_read_all(const std::string &input)
     return result;
 }
 
-int
-ServerCmd::shutdown()
-{
+int ServerCmd::shutdown() {
     maybe_close();
     maybe_exit();
     return _exit_code;
@@ -167,9 +137,7 @@ ServerCmd::shutdown()
 
 //-----------------------------------------------------------------------------
 
-bool
-LineReader::read_line(std::string &line)
-{
+bool LineReader::read_line(std::string& line) {
     line.clear();
     for (auto mem = _input.obtain(); mem.size > 0; mem = _input.obtain()) {
         for (size_t i = 0; i < mem.size; ++i) {
@@ -187,7 +155,7 @@ LineReader::read_line(std::string &line)
 
 //-----------------------------------------------------------------------------
 
-bool look_for_eof(Input &input) {
+bool look_for_eof(Input& input) {
     for (auto mem = input.obtain(); mem.size > 0; mem = input.obtain()) {
         for (size_t i = 0; i < mem.size; ++i) {
             if (!std::isspace(static_cast<unsigned char>(mem.data[i]))) {
@@ -200,13 +168,13 @@ bool look_for_eof(Input &input) {
     return true;
 }
 
-void read_until_eof(Input &input) {
+void read_until_eof(Input& input) {
     for (auto mem = input.obtain(); mem.size > 0; mem = input.obtain()) {
         input.evict(mem.size);
     }
 }
 
-void write_compact(const Slime &slime, Output &out) {
+void write_compact(const Slime& slime, Output& out) {
     JsonFormat::encode(slime, out, true);
     out.reserve(1).data[0] = '\n';
     out.commit(1);
@@ -214,9 +182,7 @@ void write_compact(const Slime &slime, Output &out) {
 
 //-----------------------------------------------------------------------------
 
-void
-TestWriter::maybe_write_test()
-{
+void TestWriter::maybe_write_test() {
     if (_test.get().type().getId() != slime::NIX::ID) {
         REQUIRE(_test.get().fields() > 0u);
         REQUIRE(!_test[num_tests_str].valid());
@@ -225,35 +191,26 @@ TestWriter::maybe_write_test()
     }
 }
 
-TestWriter::TestWriter(Output &output)
-    : _out(output),
-      _test(),
-      _num_tests(0)
-{
+TestWriter::TestWriter(Output& output) : _out(output), _test(), _num_tests(0) {
 }
 
-Cursor &
-TestWriter::create()
-{
+Cursor& TestWriter::create() {
     maybe_write_test();
     _test = Slime();
     return _test.setObject();
 }
 
-TestWriter::~TestWriter()
-{
+TestWriter::~TestWriter() {
     create().setLong(num_tests_str, _num_tests);
     write_compact(_test, _out); // summary
 }
 
 //-----------------------------------------------------------------------------
 
-void for_each_test(Input &in,
-                   const std::function<void(Slime&)> &handle_test,
-                   const std::function<void(Slime&)> &handle_summary)
-{
+void for_each_test(Input& in, const std::function<void(Slime&)>& handle_test,
+                   const std::function<void(Slime&)>& handle_summary) {
     size_t num_tests = 0;
-    bool got_summary = false;
+    bool   got_summary = false;
     while (in.obtain().size > 0) {
         Slime slime;
         if (JsonFormat::decode(in, slime)) {

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "bucket_ownership_calculator.h"
+
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -13,11 +14,9 @@ uint64_t superbucket_from_id(const document::BucketId& id, uint16_t distribution
     return id.getRawId() & ~(UINT64_MAX << distribution_bits);
 }
 
-}
+} // namespace
 
-bool
-BucketOwnershipCalculator::this_distributor_owns_bucket(const document::BucketId& bucket_id) const
-{
+bool BucketOwnershipCalculator::this_distributor_owns_bucket(const document::BucketId& bucket_id) const {
     // TODO "no distributors available" case is the same for _all_ buckets; cache once in constructor.
     // TODO "too few bits used" case can be cheaply checked without needing exception
     try {
@@ -38,4 +37,4 @@ BucketOwnershipCalculator::this_distributor_owns_bucket(const document::BucketId
     return false;
 }
 
-}
+} // namespace storage::distributor

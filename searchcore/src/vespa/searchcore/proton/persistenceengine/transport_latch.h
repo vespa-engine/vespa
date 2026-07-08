@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/operationcomplete.h>
+#include <vespa/persistence/spi/result.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/vespalib/util/sequence.h>
 #include <vespa/vespalib/util/count_down_latch.h>
+#include <vespa/vespalib/util/sequence.h>
+
 #include <mutex>
 
 namespace proton {
@@ -17,14 +18,15 @@ namespace proton {
 class TransportMerger : public feedtoken::ITransport {
 public:
     using Result = storage::spi::Result;
-    static Result mergeErrorResults(const Result &lhs, const Result &rhs);
+    static Result mergeErrorResults(const Result& lhs, const Result& rhs);
+
 protected:
     TransportMerger(bool needLocking);
     ~TransportMerger() override;
     void mergeResult(ResultUP result, bool documentWasFound);
-    virtual void completeIfDone() { } // Called with lock held if necessary on every merge
+    virtual void completeIfDone() {} // Called with lock held if necessary on every merge
     virtual ResultUP merge(ResultUP accum, ResultUP incoming, bool documentWasFound);
-    ResultUP  _result;
+    ResultUP _result;
 
 private:
     void mergeWithLock(ResultUP result, bool documentWasFound);
@@ -45,14 +47,9 @@ public:
     TransportLatch(uint32_t cnt);
     ~TransportLatch() override;
     void send(ResultUP result, bool documentWasFound) override;
-    void await() {
-        _latch.await();
-    }
+    void await() { _latch.await(); }
 
-    const Result &getResult() const {
-        return *_result;
-    }
-
+    const Result& getResult() const { return *_result; }
 };
 
 /**
@@ -67,6 +64,7 @@ private:
     int                   _countDown;
     OperationComplete::UP _onComplete;
     void completeIfDone() override;
+
 public:
     AsyncTransportContext(uint32_t cnt, OperationComplete::UP);
     ~AsyncTransportContext() override;
@@ -76,8 +74,9 @@ public:
 class AsyncRemoveTransportContext : public AsyncTransportContext {
 public:
     using AsyncTransportContext::AsyncTransportContext;
+
 protected:
     ResultUP merge(ResultUP accum, ResultUP incoming, bool documentWasFound) override;
 };
 
-}
+} // namespace proton

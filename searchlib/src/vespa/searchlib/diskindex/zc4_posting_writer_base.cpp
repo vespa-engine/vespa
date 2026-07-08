@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "zc4_posting_writer_base.h"
+
 #include "features_size_flush.h"
+
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistparams.h>
+
 #include <cassert>
 
 using search::index::PostingListCounts;
@@ -21,14 +24,9 @@ protected:
     using DocIdAndFeatureSize = Zc4PostingWriterBase::DocIdAndFeatureSize;
 
 public:
-    DocIdEncoder()
-        : _doc_id(0u),
-          _doc_id_pos(0u),
-          _feature_pos(0u)
-    {
-    }
+    DocIdEncoder() : _doc_id(0u), _doc_id_pos(0u), _feature_pos(0u) {}
 
-    void write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size, bool encode_interleaved_features);
+    void write(ZcBuf& zc_buf, const DocIdAndFeatureSize& doc_id_and_feature_size, bool encode_interleaved_features);
     void set_doc_id(uint32_t doc_id) { _doc_id = doc_id; }
     uint32_t get_doc_id() const { return _doc_id; }
     uint32_t get_doc_id_pos() const { return _doc_id_pos; }
@@ -37,24 +35,19 @@ public:
 
 class L1SkipEncoder : public DocIdEncoder {
 protected:
-    uint32_t _stride_check;
-    uint32_t _l1_skip_pos;
+    uint32_t   _stride_check;
+    uint32_t   _l1_skip_pos;
     const bool _encode_features;
 
 public:
     L1SkipEncoder(bool encode_features)
-        : DocIdEncoder(),
-          _stride_check(0u),
-          _l1_skip_pos(0u),
-          _encode_features(encode_features)
-    {
-    }
+        : DocIdEncoder(), _stride_check(0u), _l1_skip_pos(0u), _encode_features(encode_features) {}
 
-    void encode_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder);
-    void write_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder);
+    void encode_skip(ZcBuf& zc_buf, const DocIdEncoder& doc_id_encoder);
+    void write_skip(ZcBuf& zc_buf, const DocIdEncoder& doc_id_encoder);
     bool should_write_skip(uint32_t stride) { return ++_stride_check >= stride; }
     void dec_stride_check() { --_stride_check; }
-    void write_partial_skip(ZcBuf &zc_buf, uint32_t doc_id);
+    void write_partial_skip(ZcBuf& zc_buf, uint32_t doc_id);
     uint32_t get_l1_skip_pos() const { return _l1_skip_pos; }
 };
 
@@ -63,14 +56,10 @@ protected:
     uint32_t _l2_skip_pos;
 
 public:
-    L2SkipEncoder(bool encode_features)
-        : L1SkipEncoder(encode_features),
-          _l2_skip_pos(0u)
-    {
-    }
+    L2SkipEncoder(bool encode_features) : L1SkipEncoder(encode_features), _l2_skip_pos(0u) {}
 
-    void encode_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip);
-    void write_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip);
+    void encode_skip(ZcBuf& zc_buf, const L1SkipEncoder& l1_skip);
+    void write_skip(ZcBuf& zc_buf, const L1SkipEncoder& l1_skip);
     uint32_t get_l2_skip_pos() const { return _l2_skip_pos; }
 };
 
@@ -79,32 +68,24 @@ protected:
     uint32_t _l3_skip_pos;
 
 public:
-    L3SkipEncoder(bool encode_features)
-        : L2SkipEncoder(encode_features),
-          _l3_skip_pos(0u)
-    {
-    }
+    L3SkipEncoder(bool encode_features) : L2SkipEncoder(encode_features), _l3_skip_pos(0u) {}
 
-    void encode_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip);
-    void write_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip);
+    void encode_skip(ZcBuf& zc_buf, const L2SkipEncoder& l2_skip);
+    void write_skip(ZcBuf& zc_buf, const L2SkipEncoder& l2_skip);
     uint32_t get_l3_skip_pos() const { return _l3_skip_pos; }
 };
 
 class L4SkipEncoder : public L3SkipEncoder {
 
 public:
-    L4SkipEncoder(bool encode_features)
-        : L3SkipEncoder(encode_features)
-    {
-    }
+    L4SkipEncoder(bool encode_features) : L3SkipEncoder(encode_features) {}
 
-    void encode_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip);
-    void write_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip);
+    void encode_skip(ZcBuf& zc_buf, const L3SkipEncoder& l3_skip);
+    void write_skip(ZcBuf& zc_buf, const L3SkipEncoder& l3_skip);
 };
 
-void
-DocIdEncoder::write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature_size, bool encode_interleaved_features)
-{
+void DocIdEncoder::write(ZcBuf& zc_buf, const DocIdAndFeatureSize& doc_id_and_feature_size,
+                         bool encode_interleaved_features) {
     _feature_pos += doc_id_and_feature_size._features_size;
     zc_buf.encode32(doc_id_and_feature_size._doc_id - _doc_id - 1);
     _doc_id = doc_id_and_feature_size._doc_id;
@@ -117,9 +98,7 @@ DocIdEncoder::write(ZcBuf &zc_buf, const DocIdAndFeatureSize &doc_id_and_feature
     _doc_id_pos = zc_buf.size();
 }
 
-void
-L1SkipEncoder::encode_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder)
-{
+void L1SkipEncoder::encode_skip(ZcBuf& zc_buf, const DocIdEncoder& doc_id_encoder) {
     _stride_check = 0;
     // doc id
     uint32_t doc_id_delta = doc_id_encoder.get_doc_id() - _doc_id;
@@ -136,71 +115,55 @@ L1SkipEncoder::encode_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder)
     }
 }
 
-void
-L1SkipEncoder::write_skip(ZcBuf &zc_buf, const DocIdEncoder &doc_id_encoder)
-{
+void L1SkipEncoder::write_skip(ZcBuf& zc_buf, const DocIdEncoder& doc_id_encoder) {
     encode_skip(zc_buf, doc_id_encoder);
     _l1_skip_pos = zc_buf.size();
 }
 
-void
-L1SkipEncoder::write_partial_skip(ZcBuf &zc_buf, uint32_t doc_id)
-{
+void L1SkipEncoder::write_partial_skip(ZcBuf& zc_buf, uint32_t doc_id) {
     if (zc_buf.size() > 0) {
         zc_buf.encode32(doc_id - _doc_id - 1);
     }
 }
 
-void
-L2SkipEncoder::encode_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip)
-{
+void L2SkipEncoder::encode_skip(ZcBuf& zc_buf, const L1SkipEncoder& l1_skip) {
     L1SkipEncoder::encode_skip(zc_buf, l1_skip);
     // L1 skip pos
     zc_buf.encode32(l1_skip.get_l1_skip_pos() - _l1_skip_pos - 1);
     _l1_skip_pos = l1_skip.get_l1_skip_pos();
 }
 
-void
-L2SkipEncoder::write_skip(ZcBuf &zc_buf, const L1SkipEncoder &l1_skip)
-{
+void L2SkipEncoder::write_skip(ZcBuf& zc_buf, const L1SkipEncoder& l1_skip) {
     encode_skip(zc_buf, l1_skip);
     _l2_skip_pos = zc_buf.size();
 }
 
-void
-L3SkipEncoder::encode_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip)
-{
+void L3SkipEncoder::encode_skip(ZcBuf& zc_buf, const L2SkipEncoder& l2_skip) {
     L2SkipEncoder::encode_skip(zc_buf, l2_skip);
     // L2 skip pos
     zc_buf.encode32(l2_skip.get_l2_skip_pos() - _l2_skip_pos - 1);
     _l2_skip_pos = l2_skip.get_l2_skip_pos();
 }
 
-void
-L3SkipEncoder::write_skip(ZcBuf &zc_buf, const L2SkipEncoder &l2_skip)
-{
+void L3SkipEncoder::write_skip(ZcBuf& zc_buf, const L2SkipEncoder& l2_skip) {
     encode_skip(zc_buf, l2_skip);
     _l3_skip_pos = zc_buf.size();
 }
 
-void
-L4SkipEncoder::encode_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip)
-{
+void L4SkipEncoder::encode_skip(ZcBuf& zc_buf, const L3SkipEncoder& l3_skip) {
     L3SkipEncoder::encode_skip(zc_buf, l3_skip);
     // L3 skip pos
     zc_buf.encode32(l3_skip.get_l3_skip_pos() - _l3_skip_pos - 1);
     _l3_skip_pos = l3_skip.get_l3_skip_pos();
 }
 
-void
-L4SkipEncoder::write_skip(ZcBuf &zc_buf, const L3SkipEncoder &l3_skip)
-{
+void L4SkipEncoder::write_skip(ZcBuf& zc_buf, const L3SkipEncoder& l3_skip) {
     encode_skip(zc_buf, l3_skip);
 }
 
-}
+} // namespace
 
-Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
+Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts& counts)
     : _minChunkDocs(1 << 30),
       _minSkipDocs(64),
       _docIdLimit(10000000),
@@ -218,8 +181,7 @@ Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
       _numWords(0),
       _counts(counts),
       _writeContext(sizeof(uint64_t)),
-      _featureWriteContext(sizeof(uint64_t))
-{
+      _featureWriteContext(sizeof(uint64_t)) {
     _featureWriteContext.allocComprBuf(64, 1);
 }
 
@@ -230,10 +192,8 @@ Zc4PostingWriterBase::~Zc4PostingWriterBase() = default;
 #define L3SKIPSTRIDE 8
 #define L4SKIPSTRIDE 8
 
-void
-Zc4PostingWriterBase::calc_skip_info(bool encode_features)
-{
-    DocIdEncoder doc_id_encoder;
+void Zc4PostingWriterBase::calc_skip_info(bool encode_features) {
+    DocIdEncoder  doc_id_encoder;
     L1SkipEncoder l1_skip_encoder(encode_features);
     L2SkipEncoder l2_skip_encoder(encode_features);
     L3SkipEncoder l3_skip_encoder(encode_features);
@@ -247,7 +207,7 @@ Zc4PostingWriterBase::calc_skip_info(bool encode_features)
         l3_skip_encoder.set_doc_id(doc_id);
         l4_skip_encoder.set_doc_id(doc_id);
     }
-    for (const auto &doc_id_and_feature_size : _docIds) {
+    for (const auto& doc_id_and_feature_size : _docIds) {
         if (l1_skip_encoder.should_write_skip(L1SKIPSTRIDE)) {
             l1_skip_encoder.write_skip(_l1Skip, doc_id_encoder);
             if (l2_skip_encoder.should_write_skip(L2SKIPSTRIDE)) {
@@ -269,9 +229,7 @@ Zc4PostingWriterBase::calc_skip_info(bool encode_features)
     l4_skip_encoder.write_partial_skip(_l4Skip, doc_id_encoder.get_doc_id());
 }
 
-void
-Zc4PostingWriterBase::clear_skip_info()
-{
+void Zc4PostingWriterBase::clear_skip_info() {
     _zcDocIds.clear();
     _l1Skip.clear();
     _l2Skip.clear();
@@ -279,9 +237,7 @@ Zc4PostingWriterBase::clear_skip_info()
     _l4Skip.clear();
 }
 
-void
-Zc4PostingWriterBase::set_posting_list_params(const PostingListParams &params)
-{
+void Zc4PostingWriterBase::set_posting_list_params(const PostingListParams& params) {
     params.get("docIdLimit", _docIdLimit);
     params.get("minChunkDocs", _minChunkDocs);
     params.get("minSkipDocs", _minSkipDocs);
@@ -289,4 +245,4 @@ Zc4PostingWriterBase::set_posting_list_params(const PostingListParams &params)
     params.get(tags::FEATURES_SIZE_FLUSH_BITS, _features_size_flush_bits);
 }
 
-}
+} // namespace search::diskindex

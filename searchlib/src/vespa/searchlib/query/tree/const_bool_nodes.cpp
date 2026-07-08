@@ -7,4 +7,4 @@ namespace search::query {
 TrueQueryNode::~TrueQueryNode() = default;
 FalseQueryNode::~FalseQueryNode() = default;
 
-}
+} // namespace search::query

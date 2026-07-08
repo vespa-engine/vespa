@@ -11,15 +11,14 @@ namespace vespalib {
  * input data itself is owned by the object implementing this
  * interface.
  **/
-struct Input
-{
+struct Input {
     /**
      * Obtain more input data. An empty Memory should be returned if
      * and only if all input data has been exhausted.
      *
      * @return the obtained input data
      **/
-    virtual Memory obtain() = 0;
+    [[nodiscard]] virtual Memory obtain() = 0;
 
     /**
      * Evict processed input data. Never evict more data than you have
@@ -28,7 +27,7 @@ struct Input
      * @return this object, for chaining
      * @param bytes the number of bytes to evict
      **/
-    virtual Input &evict(size_t bytes) = 0;
+    virtual Input& evict(size_t bytes) = 0;
 
     virtual ~Input();
 };

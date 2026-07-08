@@ -3,6 +3,7 @@
 #pragma once
 
 #include "logarithmcalculator.h"
+
 #include <vespa/searchlib/fef/blueprint.h>
 
 namespace search::features {
@@ -12,14 +13,13 @@ namespace search::features {
  */
 class FreshnessExecutor : public fef::FeatureExecutor {
 private:
-    feature_t _maxAge;
+    feature_t           _maxAge;
     LogarithmCalculator _logCalc;
 
 public:
     FreshnessExecutor(feature_t maxAge, feature_t scaleAge);
     void execute(uint32_t docId) override;
 };
-
 
 /**
  * Implements the blueprint for the freshness executor.
@@ -34,11 +34,11 @@ public:
     FreshnessBlueprint();
     ~FreshnessBlueprint() override;
 
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override;
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

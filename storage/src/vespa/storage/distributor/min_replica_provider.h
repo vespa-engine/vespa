@@ -7,8 +7,7 @@ namespace storage::distributor {
 
 using MinReplicaMap = vespalib::hash_map<uint16_t, uint32_t>;
 
-class MinReplicaProvider
-{
+class MinReplicaProvider {
 public:
     virtual ~MinReplicaProvider() = default;
 
@@ -21,7 +20,6 @@ public:
     virtual MinReplicaMap getMinReplica() const = 0;
 };
 
-void merge_min_replica_stats(MinReplicaMap & dest, const MinReplicaMap & src);
+void merge_min_replica_stats(MinReplicaMap& dest, const MinReplicaMap& src);
 
-}
-
+} // namespace storage::distributor

@@ -26,11 +26,14 @@ public class BootstrapFlagSource implements FlagSource {
 
     public BootstrapFlagSource(FileSystem fileSystem) {
         // The flags on disk is read once now and never again.
-        this.flagData = new FlagDbFile(fileSystem).read();
+        this.flagData = Map.copyOf(new FlagDbFile(fileSystem).read());
     }
 
     @Override
     public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
         return Optional.ofNullable(flagData.get(id)).flatMap(data -> data.resolve(vector));
     }
+
+    @Override
+    public FlagSource snapshot() { return this; }
 }

@@ -1,17 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "combiningfeedview.h"
+
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.combiningfeedview");
 
-using document::DocumentTypeRepo;
 using document::DocumentId;
+using document::DocumentTypeRepo;
 using vespalib::IDestructorCallback;
 using vespalib::Trinary;
 
@@ -19,10 +20,8 @@ namespace proton {
 
 namespace {
 
-std::shared_ptr<const DocumentTypeRepo>
-getRepo(const std::vector<IFeedView::SP> &views)
-{
-    for (const auto &view : views) {
+std::shared_ptr<const DocumentTypeRepo> getRepo(const std::vector<IFeedView::SP>& views) {
+    for (const auto& view : views) {
         if (view) {
             return view->getDocumentTypeRepo();
         }
@@ -30,26 +29,23 @@ getRepo(const std::vector<IFeedView::SP> &views)
     LOG_ABORT("should not be reached");
 }
 
-const char *
-toStr(Trinary v) {
+const char* toStr(Trinary v) {
     return (v == Trinary::True) ? "true" : ((v == Trinary::False) ? "false" : "undefined");
 }
 
-}
+} // namespace
 
-CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
-                                     document::BucketSpace bucketSpace,
-                                     const std::shared_ptr<IBucketStateCalculator> &calc)
+CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP>& views, document::BucketSpace bucketSpace,
+                                     const std::shared_ptr<IBucketStateCalculator>& calc)
     : _repo(getRepo(views)),
       _views(views),
       _metaStores(),
       _calc(calc),
       _clusterUp(calc && calc->clusterUp()),
       _forceReady(!_clusterUp || !hasNotReadyFeedView()),
-      _bucketSpace(bucketSpace)
-{
+      _bucketSpace(bucketSpace) {
     _metaStores.reserve(views.size());
-    for (const auto &view : views) {
+    for (const auto& view : views) {
         _metaStores.push_back(view->getDocumentMetaStorePtr());
     }
     assert(getReadyFeedView() != nullptr);
@@ -61,17 +57,13 @@ CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
 
 CombiningFeedView::~CombiningFeedView() = default;
 
-const ISimpleDocumentMetaStore *
-CombiningFeedView::getDocumentMetaStorePtr() const
-{
+const ISimpleDocumentMetaStore* CombiningFeedView::getDocumentMetaStorePtr() const {
     return nullptr;
 }
 
-void
-CombiningFeedView::findPrevDbdId(const document::GlobalId &gid, DocumentOperation &op)
-{
-    uint32_t subDbIdLim = _metaStores.size();
-    uint32_t skipSubDbId = std::numeric_limits<uint32_t>::max();
+void CombiningFeedView::findPrevDbdId(const document::GlobalId& gid, DocumentOperation& op) {
+    uint32_t     subDbIdLim = _metaStores.size();
+    uint32_t     skipSubDbId = std::numeric_limits<uint32_t>::max();
     DbDocumentId newId(op.getDbDocumentId());
     if (newId.valid()) {
         skipSubDbId = newId.getSubDbId();
@@ -79,10 +71,11 @@ CombiningFeedView::findPrevDbdId(const document::GlobalId &gid, DocumentOperatio
     for (uint32_t subDbId = 0; subDbId < subDbIdLim; ++subDbId) {
         if (subDbId == skipSubDbId)
             continue;
-        const documentmetastore::IStore *metaStore = _metaStores[subDbId];
+        const documentmetastore::IStore* metaStore = _metaStores[subDbId];
         if (metaStore == nullptr)
             continue;
-        documentmetastore::IStore::Result inspectRes(const_cast<documentmetastore::IStore *>(metaStore)->inspectExisting(gid, op.get_prepare_serial_num()));
+        documentmetastore::IStore::Result inspectRes(
+            const_cast<documentmetastore::IStore*>(metaStore)->inspectExisting(gid, op.get_prepare_serial_num()));
         if (inspectRes._found) {
             op.setPrevDbDocumentId(DbDocumentId(subDbId, inspectRes._lid));
             op.setPrevMarkedAsRemoved(subDbId == getRemFeedViewId());
@@ -92,33 +85,27 @@ CombiningFeedView::findPrevDbdId(const document::GlobalId &gid, DocumentOperatio
     }
 }
 
-const std::shared_ptr<const DocumentTypeRepo> &
-CombiningFeedView::getDocumentTypeRepo() const
-{
+const std::shared_ptr<const DocumentTypeRepo>& CombiningFeedView::getDocumentTypeRepo() const {
     return _repo;
 }
 
 /**
  * Similar to IFeedHandler and IPersistenceHandler functions.
  */
-void
-CombiningFeedView::preparePut(PutOperation &putOp)
-{
+void CombiningFeedView::preparePut(PutOperation& putOp) {
     if (shouldBeReady(putOp.getBucketId()) == Trinary::True) {
         getReadyFeedView()->preparePut(putOp);
     } else {
         getNotReadyFeedView()->preparePut(putOp);
     }
     if (!putOp.getPrevDbDocumentId().valid()) {
-        const DocumentId &docId = putOp.getDocument()->getId();
-        const document::GlobalId &gid = docId.getGlobalId();
+        const DocumentId&         docId = putOp.getDocument()->getId();
+        const document::GlobalId& gid = docId.getGlobalId();
         findPrevDbdId(gid, putOp);
     }
 }
 
-void
-CombiningFeedView::handlePut(FeedToken token, const PutOperation &putOp)
-{
+void CombiningFeedView::handlePut(FeedToken token, const PutOperation& putOp) {
     assert(putOp.getValidDbdId());
     uint32_t subDbId = putOp.getSubDbId();
     uint32_t prevSubDbId = putOp.getPrevSubDbId();
@@ -130,18 +117,14 @@ CombiningFeedView::handlePut(FeedToken token, const PutOperation &putOp)
     }
 }
 
-void
-CombiningFeedView::prepareUpdate(UpdateOperation &updOp)
-{
+void CombiningFeedView::prepareUpdate(UpdateOperation& updOp) {
     getReadyFeedView()->prepareUpdate(updOp);
     if (!updOp.getPrevDbDocumentId().valid() && hasNotReadyFeedView()) {
         getNotReadyFeedView()->prepareUpdate(updOp);
     }
 }
 
-void
-CombiningFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
-{
+void CombiningFeedView::handleUpdate(FeedToken token, const UpdateOperation& updOp) {
     assert(updOp.getValidDbdId());
     assert(updOp.getValidPrevDbdId());
     assert(!updOp.changedDbdId());
@@ -149,18 +132,14 @@ CombiningFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
     _views[subDbId]->handleUpdate(std::move(token), updOp);
 }
 
-void
-CombiningFeedView::prepareRemove(RemoveOperation &rmOp)
-{
+void CombiningFeedView::prepareRemove(RemoveOperation& rmOp) {
     getRemFeedView()->prepareRemove(rmOp);
     if (!rmOp.getPrevDbDocumentId().valid()) {
         findPrevDbdId(rmOp.getGlobalId(), rmOp);
     }
 }
 
-void
-CombiningFeedView::handleRemove(FeedToken token, const RemoveOperation &rmOp)
-{
+void CombiningFeedView::handleRemove(FeedToken token, const RemoveOperation& rmOp) {
     if (rmOp.getValidDbdId()) {
         uint32_t subDbId = rmOp.getSubDbId();
         uint32_t prevSubDbId = rmOp.getPrevSubDbId();
@@ -177,40 +156,31 @@ CombiningFeedView::handleRemove(FeedToken token, const RemoveOperation &rmOp)
     }
 }
 
-void
-CombiningFeedView::prepareDeleteBucket(DeleteBucketOperation &delOp)
-{
-    for (const auto &view : _views) {
+void CombiningFeedView::prepareDeleteBucket(DeleteBucketOperation& delOp) {
+    for (const auto& view : _views) {
         view->prepareDeleteBucket(delOp);
     }
 }
 
-void
-CombiningFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone)
-{
-    for (const auto &view : _views) {
+void CombiningFeedView::handleDeleteBucket(const DeleteBucketOperation& delOp, const DoneCallback& onDone) {
+    for (const auto& view : _views) {
         view->handleDeleteBucket(delOp, onDone);
     }
 }
 
-bool
-CombiningFeedView::isMoveStillValid(const MoveOperation & moveOp) const {
+bool CombiningFeedView::isMoveStillValid(const MoveOperation& moveOp) const {
     uint32_t subDbId = moveOp.getPrevSubDbId();
     assert(subDbId < _views.size());
-    return  _views[subDbId]->isMoveStillValid(moveOp);
+    return _views[subDbId]->isMoveStillValid(moveOp);
 }
 
-void
-CombiningFeedView::prepareMove(MoveOperation &moveOp)
-{
+void CombiningFeedView::prepareMove(MoveOperation& moveOp) {
     uint32_t subDbId = moveOp.getSubDbId();
     assert(subDbId < _views.size());
     _views[subDbId]->prepareMove(moveOp);
 }
 
-void
-CombiningFeedView::handleMove(const MoveOperation &moveOp, const DoneCallback& moveDoneCtx)
-{
+void CombiningFeedView::handleMove(const MoveOperation& moveOp, const DoneCallback& moveDoneCtx) {
     assert(moveOp.getValidDbdId());
     uint32_t subDbId = moveOp.getSubDbId();
     uint32_t prevSubDbId = moveOp.getPrevSubDbId();
@@ -223,57 +193,42 @@ CombiningFeedView::handleMove(const MoveOperation &moveOp, const DoneCallback& m
     }
 }
 
-void
-CombiningFeedView::heartBeat(search::SerialNum serialNum, const DoneCallback& onDone)
-{
-    for (const auto &view : _views) {
+void CombiningFeedView::heartBeat(search::SerialNum serialNum, const DoneCallback& onDone) {
+    for (const auto& view : _views) {
         view->heartBeat(serialNum, onDone);
     }
 }
 
-void
-CombiningFeedView::forceCommit(const CommitParam & param, const DoneCallback& onDone)
-{
-    for (const auto &view : _views) {
+void CombiningFeedView::forceCommit(const CommitParam& param, const DoneCallback& onDone) {
+    for (const auto& view : _views) {
         view->forceCommit(param, onDone);
     }
 }
 
-void
-CombiningFeedView::
-handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, const DoneCallback& onDone)
-{
+void CombiningFeedView::handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation& pruneOp,
+                                                    const DoneCallback&                   onDone) {
     getRemFeedView()->handlePruneRemovedDocuments(pruneOp, onDone);
 }
 
-void
-CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone)
-{
+void CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation& op, const DoneCallback& onDone) {
     uint32_t subDbId = op.getSubDbId();
     assert(subDbId < _views.size());
     _views[subDbId]->handleCompactLidSpace(op, onDone);
 }
 
-void
-CombiningFeedView::setCalculator(const std::shared_ptr<IBucketStateCalculator> &newCalc)
-{
+void CombiningFeedView::setCalculator(const std::shared_ptr<IBucketStateCalculator>& newCalc) {
     // Called by document db executor
     _calc = newCalc;
     _clusterUp = _calc && _calc->clusterUp();
     _forceReady = !_clusterUp || !hasNotReadyFeedView();
 }
 
-Trinary
-CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
-{
+Trinary CombiningFeedView::shouldBeReady(const document::BucketId& bucket) const {
     document::Bucket dbucket(_bucketSpace, bucket);
-    LOG(debug,
-        "shouldBeReady(%s): forceReady(%s), clusterUp(%s), calcReady(%s)",
-        bucket.toString().c_str(),
-        (_forceReady ? "true" : "false"),
-        (_clusterUp ? "true" : "false"),
+    LOG(debug, "shouldBeReady(%s): forceReady(%s), clusterUp(%s), calcReady(%s)", bucket.toString().c_str(),
+        (_forceReady ? "true" : "false"), (_clusterUp ? "true" : "false"),
         (_calc ? toStr(_calc->shouldBeReady(dbucket)) : "null"));
-    const documentmetastore::IBucketHandler *readyMetaStore = _metaStores[getReadyFeedViewId()];
+    const documentmetastore::IBucketHandler* readyMetaStore = _metaStores[getReadyFeedViewId()];
     bool isActive = readyMetaStore->getBucketDB().takeGuard()->isActiveBucket(bucket);
     return (_forceReady || isActive) ? Trinary::True : _calc->shouldBeReady(dbucket);
 }

@@ -14,7 +14,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests summary validation
@@ -463,7 +465,7 @@ public class SummaryTestCase {
         public TestValue(DocumentSummary summary, DocumentSummary parent, List<List<String>> fields) {
             this.summary = summary;
             this.parent = parent;
-            this.fields = fields.stream().flatMap(Collection::stream).toList();;
+            this.fields = fields.stream().flatMap(Collection::stream).toList();
         }
 
     }

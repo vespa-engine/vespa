@@ -9,10 +9,10 @@ class RoutingContext;
 
 /**
  * A routing policy selects who should get a message and merges the replies that are returned from those
- * recipients. Note that recipient selection is done separately for each path element. This means that a routing policy
- * is not selecting recipients directly, but rather the set of strings that should be used for the next service name
- * path element. This process is done recursively until a set of actual service names are produced. The merging process
- * is similar, but in reverse order.
+ * recipients. Note that recipient selection is done separately for each path element. This means that a routing
+ * policy is not selecting recipients directly, but rather the set of strings that should be used for the next service
+ * name path element. This process is done recursively until a set of actual service names are produced. The merging
+ * process is similar, but in reverse order.
  */
 class IRoutingPolicy {
 public:
@@ -22,8 +22,8 @@ public:
     using UP = std::unique_ptr<IRoutingPolicy>;
     using SP = std::shared_ptr<IRoutingPolicy>;
 
-    IRoutingPolicy(const IRoutingPolicy &) = delete;
-    IRoutingPolicy & operator = (const IRoutingPolicy &) = delete;
+    IRoutingPolicy(const IRoutingPolicy&) = delete;
+    IRoutingPolicy& operator=(const IRoutingPolicy&) = delete;
 
     /**
      * Destructor. Frees any allocated resources.
@@ -37,7 +37,7 @@ public:
      *
      * @param context The complete context for the invocation of this policy. Contains all available data.
      */
-    virtual void select(RoutingContext &context) = 0;
+    virtual void select(RoutingContext& context) = 0;
 
     /**
      * This function is called when all replies have arrived for some message. The implementation is responsible for
@@ -46,11 +46,10 @@ public:
      *
      * @param context The complete context for the invocation of this policy. Contains all available data.
      */
-    virtual void merge(RoutingContext &context) = 0;
+    virtual void merge(RoutingContext& context) = 0;
 
 protected:
     IRoutingPolicy() = default;
 };
 
 } // namespace mbus
-

@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
@@ -38,7 +39,7 @@ public class YamasJsonModelTest {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             YamasResponse response = new YamasResponse(200, List.of(YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build()), false);
             response.render(outputStream);
-            assertEquals(EXPECTED_JSON, outputStream.toString());
+            assertEquals(EXPECTED_JSON, outputStream.toString(StandardCharsets.UTF_8));
         }
     }
 
@@ -55,7 +56,7 @@ public class YamasJsonModelTest {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             YamasResponse response = new YamasResponse(200, List.of(YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build()), false);
             response.render(outputStream);
-            assertEquals(EXPECTED_JSON, outputStream.toString());
+            assertEquals(EXPECTED_JSON, outputStream.toString(StandardCharsets.UTF_8));
         }
     }
 
@@ -97,7 +98,7 @@ public class YamasJsonModelTest {
             assertEquals("""
                     {"timestamp":1400047900,"application":"vespa.searchnode","metrics":{"cpu":55.5555555555555,"memory_virt":22222222222,"memory_rss":5555555555},"dimensions":{"applicationName":"app","tenantName":"tenant","metrictype":"system","instance":"searchnode","applicationInstance":"default","clustername":"cluster"},"routing":{"yamas":{"namespaces":["Vespa"]}}}
                     {"timestamp":1400047900,"application":"vespa.searchnode","metrics":{"cpu":55.5555555555555,"memory_virt":22222222222,"memory_rss":5555555555},"dimensions":{"applicationName":"app","tenantName":"tenant","metrictype":"system","instance":"searchnode","applicationInstance":"default","clustername":"cluster"},"routing":{"yamas":{"namespaces":["Vespa"]}}}""",
-                    outputStream.toString());
+                    outputStream.toString(StandardCharsets.UTF_8));
         }
     }
 

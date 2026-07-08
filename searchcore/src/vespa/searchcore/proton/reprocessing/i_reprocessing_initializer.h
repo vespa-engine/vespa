@@ -9,8 +9,7 @@ namespace proton {
 /**
  * Interface for an initializer of a reprocessing handler.
  */
-struct IReprocessingInitializer
-{
+struct IReprocessingInitializer {
     using UP = std::unique_ptr<IReprocessingInitializer>;
 
     virtual ~IReprocessingInitializer() = default;
@@ -23,8 +22,7 @@ struct IReprocessingInitializer
     /**
      * Initialize the given handler by adding processing readers and/or rewriters.
      */
-    virtual void initialize(IReprocessingHandler &handler) = 0;
+    virtual void initialize(IReprocessingHandler& handler) = 0;
 };
 
 } // namespace proton
-

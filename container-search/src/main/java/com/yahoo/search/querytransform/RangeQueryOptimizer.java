@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.querytransform;
 
+import com.yahoo.component.chain.dependencies.After;
+import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
@@ -9,13 +11,12 @@ import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.QueryCanonicalizer;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
-import com.yahoo.yolean.chain.After;
-import com.yahoo.yolean.chain.Before;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -37,26 +38,28 @@ public class RangeQueryOptimizer extends Searcher {
     public Result search(Query query, Execution execution) {
         if (execution.context().getIndexFacts() == null) return execution.search(query); // this is a test query
 
-        boolean optimized = recursiveOptimize(query.getModel().getQueryTree(), execution.context().getIndexFacts().newSession(query));
+        boolean optimized = optimize(query.getModel().getQueryTree(), execution.context().getIndexFacts().newSession(query));
         if (optimized)
             query.trace("Optimized query ranges", true, 2);
         return execution.search(query);
     }
 
     /** Recursively performs the range optimization on this query tree and returns whether at least one optimization was done */
-    private boolean recursiveOptimize(Item item, IndexFacts.Session indexFacts) {
-        if ( ! (item instanceof CompositeItem)) return false;
+    private boolean optimize(Item item, IndexFacts.Session indexFacts) {
+        if ( ! (item instanceof CompositeItem composite)) return false;
 
         boolean optimized = false;
-        for (Iterator<Item> i = ((CompositeItem) item).getItemIterator(); i.hasNext(); )
-            optimized |= recursiveOptimize(i.next(), indexFacts);
+        for (Iterator<Item> i = composite.getItemIterator(); i.hasNext(); )
+            optimized |= optimize(i.next(), indexFacts);
 
-        if (item instanceof AndItem)
-            optimized |= optimizeAnd((AndItem)item, indexFacts);
+        if (item instanceof AndItem andItem)
+            optimized |= optimizeAnd(andItem, false, indexFacts);
+        if (item instanceof SameElementItem sameElementItem) // elements are and'ed
+            optimized |= optimizeAnd(sameElementItem, true, indexFacts);
         return optimized;
     }
 
-    private boolean optimizeAnd(AndItem and, IndexFacts.Session indexFacts) {
+    private boolean optimizeAnd(CompositeItem and, boolean inSameElement, IndexFacts.Session indexFacts) {
         // Find consolidated ranges by collecting a list of compatible ranges
         List<FieldRange> fieldRanges = null;
         for (Iterator<Item> i = and.getItemIterator(); i.hasNext(); ) {
@@ -64,7 +67,7 @@ public class RangeQueryOptimizer extends Searcher {
             if ( ! (item instanceof IntItem intItem)) continue;
             if (intItem.getHitLimit() != 0) continue; // each such op gets a different partial set: Cannot be optimized
             if (intItem.getFromLimit().equals(intItem.getToLimit())) continue; // don't optimize searches for single numbers
-            if (indexFacts.getIndex(intItem.getIndexName()).isMultivalue()) continue; // May match different values in each range
+            if (indexFacts.getIndex(intItem.getFieldName()).isMultivalue() && !inSameElement) continue; // May match different values in each range
 
             if (fieldRanges == null) fieldRanges = new ArrayList<>();
             Optional<FieldRange> compatibleRange = findCompatibleRange(intItem, fieldRanges);

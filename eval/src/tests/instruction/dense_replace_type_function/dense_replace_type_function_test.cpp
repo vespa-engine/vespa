@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/instruction/replace_type_function.h>
 #include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/instruction/replace_type_function.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval::tensor_function;
@@ -12,17 +12,17 @@ using namespace vespalib::eval::test;
 using namespace vespalib::eval;
 using namespace vespalib;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
 
-TypedCells getCellsRef(const Value &value) {
+TypedCells getCellsRef(const Value& value) {
     return value.cells();
 }
 
 struct ChildMock : Leaf {
     bool is_mutable;
-    ChildMock(const ValueType &type) : Leaf(type), is_mutable(true) {}
+    ChildMock(const ValueType& type) : Leaf(type), is_mutable(true) {}
     bool result_is_mutable() const override { return is_mutable; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &, Stash &) const override { abort(); }
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory&, Stash&) const override { abort(); }
 };
 
 struct Fixture {
@@ -50,8 +50,7 @@ struct Fixture {
     }
 };
 
-TEST(DenseReplaceTypeFunctionTest, require_that_ReplaceTypeFunction_works_as_expected)
-{
+TEST(DenseReplaceTypeFunctionTest, require_that_ReplaceTypeFunction_works_as_expected) {
     Fixture f1;
     ASSERT_NO_FATAL_FAILURE(f1.check());
     EXPECT_EQ(f1.my_fun.result_type(), f1.new_type);
@@ -65,13 +64,12 @@ TEST(DenseReplaceTypeFunctionTest, require_that_ReplaceTypeFunction_works_as_exp
     fprintf(stderr, "%s\n", f1.my_fun.as_string().c_str());
 }
 
-TEST(DenseReplaceTypeFunctionTest, require_that_create_compact_will_collapse_duplicate_replace_operations)
-{
-    Stash stash;
-    ValueType type = ValueType::double_type();
-    ChildMock leaf(type);
-    const ReplaceTypeFunction &a = ReplaceTypeFunction::create_compact(type, leaf, stash);
-    const ReplaceTypeFunction &b = ReplaceTypeFunction::create_compact(type, a, stash);
+TEST(DenseReplaceTypeFunctionTest, require_that_create_compact_will_collapse_duplicate_replace_operations) {
+    Stash                      stash;
+    ValueType                  type = ValueType::double_type();
+    ChildMock                  leaf(type);
+    const ReplaceTypeFunction& a = ReplaceTypeFunction::create_compact(type, leaf, stash);
+    const ReplaceTypeFunction& b = ReplaceTypeFunction::create_compact(type, a, stash);
     EXPECT_EQ(a.result_type(), type);
     EXPECT_EQ(&a.child(), &leaf);
     EXPECT_EQ(b.result_type(), type);

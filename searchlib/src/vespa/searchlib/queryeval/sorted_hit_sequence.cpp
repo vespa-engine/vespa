@@ -2,6 +2,4 @@
 
 #include "sorted_hit_sequence.h"
 
-namespace search::queryeval {
-
-}
+namespace search::queryeval {}

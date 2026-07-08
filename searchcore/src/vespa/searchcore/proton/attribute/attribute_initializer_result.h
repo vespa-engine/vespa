@@ -13,14 +13,14 @@ namespace proton {
 /**
  * Class representing an initialized attribute.
  */
-class AttributeInitializerResult
-{
+class AttributeInitializerResult {
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     AttributeVectorSP _attr;
+
 public:
-    AttributeInitializerResult(const AttributeVectorSP &attr);
+    AttributeInitializerResult(const AttributeVectorSP& attr);
     ~AttributeInitializerResult();
-    const AttributeVectorSP &getAttribute() const { return _attr; }
+    const AttributeVectorSP& getAttribute() const { return _attr; }
     operator bool() const { return static_cast<bool>(_attr); }
 };
 

@@ -2,9 +2,12 @@
 #pragma once
 
 #include <vespa/searchlib/query/query_normalization.h>
+
 #include <memory>
 
-namespace search::queryeval { class IElementGapInspector; }
+namespace search::queryeval {
+class IElementGapInspector;
+}
 
 namespace search::streaming {
 
@@ -13,26 +16,24 @@ namespace search::streaming {
   The intention is to put stuff here that are search specific. Fx to differentiate
   between streamed and indexed variants.
 */
-class QueryNodeResultBase
-{
+class QueryNodeResultBase {
 public:
     virtual ~QueryNodeResultBase() = default;
-    virtual QueryNodeResultBase * clone() const = 0;
+    virtual QueryNodeResultBase* clone() const = 0;
 };
 
 class QueryNodeResultFactory {
 public:
     virtual ~QueryNodeResultFactory() = default;
     virtual bool allow_float_terms_rewrite(std::string_view index) const noexcept {
-        (void) index;
+        (void)index;
         return false;
     }
     virtual Normalizing normalizing_mode(std::string_view index) const noexcept {
-        (void) index;
+        (void)index;
         return Normalizing::NONE;
     }
     virtual std::unique_ptr<QueryNodeResultBase> create() const { return {}; }
     virtual const search::queryeval::IElementGapInspector& get_element_gap_inspector() const noexcept;
 };
-}
-
+} // namespace search::streaming

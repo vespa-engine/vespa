@@ -4,6 +4,7 @@
 #include <vespa/documentapi/common.h>
 #include <vespa/messagebus/routing/hop.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
+
 #include <map>
 #include <mutex>
 
@@ -30,13 +31,13 @@ private:
     std::map<string, CacheEntry> _cache;
 
     /**
-     * Returns the appropriate recipient hop for the given routing context. This method provides synchronized access to
-     * the internal cache.
+     * Returns the appropriate recipient hop for the given routing context. This method provides synchronized access
+     * to the internal cache.
      *
      * @param ctx The routing context.
      * @return The recipient hop to use.
      */
-    mbus::Hop getRecipient(mbus::RoutingContext &ctx);
+    mbus::Hop getRecipient(mbus::RoutingContext& ctx);
 
     /**
      * Updates and returns the cache entry for the given routing context. This method assumes that synchronization is
@@ -45,7 +46,7 @@ private:
      * @param ctx The routing context.
      * @return The updated cache entry.
      */
-    CacheEntry &update(mbus::RoutingContext &ctx);
+    CacheEntry& update(mbus::RoutingContext& ctx);
 
     /**
      * Returns a cache key for this instance of the policy. Because behaviour is based on the hop in which the policy
@@ -54,7 +55,7 @@ private:
      * @param ctx The routing context.
      * @return The cache key.
      */
-    string getCacheKey(const mbus::RoutingContext &ctx) const;
+    string getCacheKey(const mbus::RoutingContext& ctx) const;
 
 public:
     /**
@@ -63,10 +64,10 @@ public:
      *
      * @param param The number of services to include in the set.
      */
-    SubsetServicePolicy(const string &param);
+    SubsetServicePolicy(const string& param);
     ~SubsetServicePolicy();
-    void select(mbus::RoutingContext &context) override;
-    void merge(mbus::RoutingContext &context) override;
+    void select(mbus::RoutingContext& context) override;
+    void merge(mbus::RoutingContext& context) override;
 };
 
-}
+} // namespace documentapi

@@ -2,7 +2,13 @@
 package com.yahoo.vespa.config.server.provision;
 
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionContext;
+import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.List;
 
@@ -28,22 +34,24 @@ public class StaticProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
         List<HostSpec> hostsAlreadyAllocatedToCluster = 
                 allocatedHosts.getHosts().stream()
-                                         .filter(host -> host.membership().isPresent() && matches(host.membership().get().cluster(), cluster))
+                                         .filter(host -> host.membership().isPresent() && matches(host.membership().get(), cluster))
                                          .toList();
         if ( ! hostsAlreadyAllocatedToCluster.isEmpty()) 
             return hostsAlreadyAllocatedToCluster;
         else
-            return fallback.prepare(cluster, capacity, logger);
+            return fallback.prepare(cluster, capacity, context);
     }
 
-    private boolean matches(ClusterSpec nodeCluster, ClusterSpec requestedCluster) {
-        if (requestedCluster.group().isPresent()) // we are requesting a specific group
-            return nodeCluster.equals(requestedCluster);
-        else // we are requesting nodes of all groups in this cluster
-            return nodeCluster.satisfies(requestedCluster);
+    private boolean matches(ClusterMembership nodeMembership, ClusterSpec requestedCluster) {
+        if (requestedCluster.group().isPresent()) {
+            if (requestedCluster.group().get().index() != nodeMembership.group())
+                return false;
+        }
+        return nodeMembership.id().equals(requestedCluster.id()) &&
+               nodeMembership.type().equals(requestedCluster.type());
     }
 
 }

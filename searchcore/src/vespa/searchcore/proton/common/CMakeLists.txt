@@ -13,6 +13,7 @@ vespa_add_library(searchcore_pcommon STATIC
     eventlogger.cpp
     feeddebugger.cpp
     feedtoken.cpp
+    field_path_target.cpp
     hw_info_sampler.cpp
     indexschema_inspector.cpp
     ipendinglidtracker.cpp

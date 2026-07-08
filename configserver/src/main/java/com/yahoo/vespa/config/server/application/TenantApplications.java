@@ -31,6 +31,7 @@ import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import com.yahoo.text.Text;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -71,7 +72,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
     private final TenantName tenant;
     private final ConfigActivationListener configActivationListener;
     private final ConfigResponseFactory responseFactory;
-    private final HostRegistry hostRegistry;
+    private final HostRegistry hostRegistry; // global host registry, hosts for all apps for all tenants
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
     private final Clock clock;
@@ -84,7 +85,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
                               ConfigserverConfig configserverConfig, HostRegistry hostRegistry,
                               TenantFileSystemDirs tenantFileSystemDirs, Clock clock, FlagSource flagSource) {
         this.curator = curator;
-        this.database = new ApplicationCuratorDatabase(tenant, curator);
+        this.database = new ApplicationCuratorDatabase(tenant, curator, configserverConfig);
         this.tenant = tenant;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
         this.directoryCache = database.createApplicationsPathCache(zkCacheExecutor);
@@ -208,6 +209,11 @@ public class TenantApplications implements RequestHandler, HostValidator {
         return database().lock(id);
     }
 
+    /** Returns the lock for changing the session status of the given application. */
+    public Lock lock(ApplicationId id, Duration lockTimeout) {
+        return database().lock(id, lockTimeout);
+    }
+
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
             // Note: event.getData() might return null on types not handled here (CONNECTION_*, INITIALIZED, see javadoc)
@@ -255,7 +261,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
                 return; // Application activated a new session before we got here.
 
             setActiveApp(applicationVersions);
-            configActivationListener.configActivated(applicationVersions);
         }
     }
 
@@ -271,7 +276,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
 
         if (hasApplication(applicationId)) {
             applicationMapper.remove(applicationId);
-            hostRegistry.removeHosts(applicationId);
             configActivationListenersOnRemove(applicationId);
             tenantMetricUpdater.setApplications(applicationMapper.numApplications());
             metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
@@ -306,6 +310,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
         applicationVersions.updateHostMetrics();
         tenantMetricUpdater.setApplications(applicationMapper.numApplications());
         applicationMapper.register(applicationId, applicationVersions);
+        configActivationListener.configActivated(applicationVersions);
     }
 
     @Override
@@ -374,7 +379,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
         try {
             return applicationMapper.getForVersion(appId, vespaVersion, clock.instant());
         } catch (VersionDoesNotExistException ex) {
-            throw new NotFoundException(String.format("%sNo such application (id %s): %s", TenantRepository.logPre(tenant), appId, ex.getMessage()));
+            throw new NotFoundException(Text.format("%sNo such application (id %s): %s", TenantRepository.logPre(tenant), appId, ex.getMessage()));
         }
     }
 
@@ -418,6 +423,8 @@ public class TenantApplications implements RequestHandler, HostValidator {
     public void verifyHosts(ApplicationId applicationId, Collection<String> newHosts) {
         hostRegistry.verifyHosts(applicationId, newHosts);
     }
+
+    public HostRegistry hostRegistry() { return hostRegistry; }
 
     public TenantFileSystemDirs getTenantFileSystemDirs() { return tenantFileSystemDirs; }
 

@@ -1,23 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 //
 #include "tokenizer.h"
+
 #include "juniperdebug.h"
-#include <cinttypes>
+
 #include <vespa/fastlib/text/wordfolder.h>
+
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.tokenizer");
 
 JuniperTokenizer::JuniperTokenizer(const Fast_WordFolder* wordfolder, const char* text, size_t len,
                                    ITokenProcessor* successor, const juniper::SpecialTokenRegistry* registry)
-  : _wordfolder(wordfolder),
-    _text(text),
-    _len(len),
-    _successor(successor),
-    _registry(registry),
-    _charpos(0),
-    _wordpos(0),
-    _buffer() {}
+    : _wordfolder(wordfolder),
+      _text(text),
+      _len(len),
+      _successor(successor),
+      _registry(registry),
+      _charpos(0),
+      _wordpos(0),
+      _buffer() {
+}
 
 void JuniperTokenizer::SetText(const char* text, size_t len) {
     _text = text;
@@ -49,7 +53,8 @@ void JuniperTokenizer::scan() {
                 src = tmpSrc;
             }
         }
-        if (dst[0] == 0) break;
+        if (dst[0] == 0)
+            break;
         token.curlen = result_len;
         token.token = dst;
         token.wordpos = _wordpos++;

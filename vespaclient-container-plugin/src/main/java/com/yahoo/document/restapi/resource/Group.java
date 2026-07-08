@@ -21,7 +21,7 @@ record Group(String docIdPart, String selection) {
     public static Group of(String value) {
         Text.validateTextString(value)
                 .ifPresent(codePoint -> {
-                    throw new IllegalArgumentException(String.format("Illegal code point U%04X in group", codePoint));
+                    throw new IllegalArgumentException(Text.format("Illegal code point U%04X in group", codePoint));
                 });
 
         return new Group("g=" + value, "id.group=='" + value.replaceAll("'", "\\\\'") + "'");

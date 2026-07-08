@@ -25,6 +25,10 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
+// queryAcceptHeader specifies the preferred response formats for query requests.
+// CBOR is preferred for efficiency, with JSON as fallback for backward compatibility.
+const queryAcceptHeader = "application/cbor, application/json;q=0.9"
+
 type queryOptions struct {
 	printCurl        bool
 	queryTimeoutSecs int
@@ -67,7 +71,7 @@ can be set by the syntax [parameter-name]=[value].`,
 	cmd.Flags().StringSliceVarP(&opts.headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
 	cmd.Flags().IntVarP(&opts.queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
 	cmd.Flags().BoolVarP(&opts.profile, "profile", "", false, "Enable profiling mode (Note: this feature is experimental)")
-	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "", "vespa_query_profile_result.json", "Profiling result file")
+	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "", "vespa_query_profile_result.json", "Profiling result file. Use '-' for stdout.")
 	cmd.Flags().MarkHidden("profile")
 	cmd.Flags().MarkHidden("profile-file")
 	cli.bindWaitFlag(cmd, 0, &opts.waitSecs)
@@ -94,6 +98,24 @@ func printCurl(stderr io.Writer, req *http.Request, postFile string, service *ve
 	}
 	_, err = io.WriteString(stderr, cmd.String()+"\n")
 	return err
+}
+
+// readResponseBodyAsJSON reads the response body and returns it as JSON string,
+// handling both CBOR and JSON content types appropriately.
+func readResponseBodyAsJSON(body io.Reader, contentType string) string {
+	contentType = strings.Split(contentType, ";")[0]
+	if contentType == "application/cbor" {
+		data, err := io.ReadAll(body)
+		if err != nil {
+			return fmt.Sprintf("<read error: %v>", err)
+		}
+		jsonStr, err := ioutil.CBORToJSON(data)
+		if err != nil {
+			return fmt.Sprintf("<CBOR decode error: %v>", err)
+		}
+		return jsonStr
+	}
+	return ioutil.ReaderToJSON(body)
 }
 
 func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) error {
@@ -149,6 +171,9 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 		service.TLSOptions.CertificateFile = ""
 		service.TLSOptions.PrivateKeyFile = ""
 	}
+	if header.Get("Accept") == "" {
+		header.Set("Accept", queryAcceptHeader)
+	}
 	hReq := &http.Request{Header: header, URL: url}
 	if opts.postFile != "" {
 		json, err := getJsonFrom(opts.postFile, urlQuery)
@@ -168,7 +193,6 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 			return err
 		}
 	}
-
 	response, err := service.Do(hReq, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {
 		// Hint for timeout exception in cloud
@@ -183,44 +207,56 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	case response.StatusCode == 200:
 		var output io.Writer = cli.Stdout
 		if opts.profile {
-			profileFile, err := os.Create(opts.profileFile)
-			if err != nil {
-				return fmt.Errorf("failed to create profile file %s: %w", opts.profileFile, err)
+			if opts.profileFile == "-" {
+				output = cli.Stdout
+			} else {
+				profileFile, err := os.Create(opts.profileFile)
+				if err != nil {
+					return fmt.Errorf("failed to create profile file %s: %w", opts.profileFile, err)
+				}
+				defer profileFile.Close()
+				fmt.Fprintf(cli.Stderr, "writing profiling results to: %s\n", opts.profileFile)
+				output = profileFile
 			}
-			defer profileFile.Close()
-			fmt.Fprintf(cli.Stderr, "writing profiling results to: %s\n", opts.profileFile)
-			output = profileFile
 		}
 		if err := printResponse(response.Body, response.Header.Get("Content-Type"), opts.format, output); err != nil {
 			return err
 		}
 	case response.StatusCode/100 == 4:
-		err := fmt.Errorf("invalid query: %s\n%s", response.Status, ioutil.ReaderToJSON(response.Body))
+		err := fmt.Errorf("invalid query: %s\n%s", response.Status, readResponseBodyAsJSON(response.Body, response.Header.Get("Content-Type")))
 		if response.StatusCode == 403 && authMethod == "token" {
 			return errHint(err, "Make sure the VESPA_CLI_DATA_PLANE_TOKEN environment variable is set to a valid token")
 		}
 		return err
 	default:
-		return fmt.Errorf("%s from container at %s\n%s", response.Status, color.CyanString(url.Host), ioutil.ReaderToJSON(response.Body))
+		return fmt.Errorf("%s from container at %s\n%s", response.Status, color.CyanString(url.Host), readResponseBodyAsJSON(response.Body, response.Header.Get("Content-Type")))
 	}
 	return nil
 }
 
 func printResponse(body io.Reader, contentType, format string, output io.Writer) error {
 	contentType = strings.Split(contentType, ";")[0]
-	if contentType == "text/event-stream" {
+	switch contentType {
+	case "text/event-stream":
 		return printResponseBody(body, printOptions{
 			plainStream: format == "plain",
 			tokenStream: format == "human",
 		}, output)
+	case "application/cbor":
+		return printResponseBody(body, printOptions{
+			parseCBOR: true,
+			parseJSON: format == "human",
+		}, output)
+	default:
+		return printResponseBody(body, printOptions{parseJSON: format == "human"}, output)
 	}
-	return printResponseBody(body, printOptions{parseJSON: format == "human"}, output)
 }
 
 type printOptions struct {
 	plainStream bool
 	tokenStream bool
 	parseJSON   bool
+	parseCBOR   bool
 }
 
 func printResponseBody(body io.Reader, options printOptions, output io.Writer) error {
@@ -262,6 +298,22 @@ func printResponseBody(body io.Reader, options printOptions, output io.Writer) e
 				break
 			}
 		}
+		return nil
+	case options.parseCBOR:
+		data, err := io.ReadAll(body)
+		if err != nil {
+			return err
+		}
+		var text string
+		if options.parseJSON {
+			text, err = ioutil.CBORToJSON(data)
+		} else {
+			text, err = ioutil.CBORToJSONCompact(data)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to decode CBOR response: %w", err)
+		}
+		fmt.Fprintln(output, text)
 		return nil
 	case options.parseJSON:
 		text := ioutil.ReaderToJSON(body) // Optimistic, returns body as the raw string if it cannot be parsed to JSON

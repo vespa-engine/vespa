@@ -21,7 +21,7 @@ public class LiteralTermProduction extends TermProduction {
     /**
      * Creates a new produced literal term
      *
-     * @param literal the label of the condition this should take it's value from
+     * @param literal the label of the condition this should take its value from
      */
     public LiteralTermProduction(String literal) {
         super();
@@ -31,7 +31,7 @@ public class LiteralTermProduction extends TermProduction {
     /**
      * Creates a new produced literal term
      *
-     * @param literal the label of the condition this should take it's value from
+     * @param literal the label of the condition this should take its value from
      * @param termType the type of term to produce
      */
     public LiteralTermProduction(String literal, TermType termType) {
@@ -71,8 +71,30 @@ public class LiteralTermProduction extends TermProduction {
             newItem.setWeight(getWeight());
             if (e.getTraceLevel() >= 6)
                 e.trace(6, "Adding '" + newItem + "'");
-            e.addItems(List.of(newItem), getTermType());
+            if (getTermType() == TermType.EQUIV && e.getNonreferencedMatchCount() > 0
+                    && e.getNonreferencedMatch(0).getParent() != null) {
+                addEquivItem(e, newItem);
+            }
+            else if (shouldInsertAtMatch(e)) {
+                // Add to the match's parent when it's a nested composite with default type
+                Match matched = e.getNonreferencedMatch(0);
+                insertMatch(e, matched, List.of(newItem), offset);
+            }
+            else if (e.getNonreferencedMatchCount() > 0 && parentHasCompatibleType(e.getNonreferencedMatch(0))) {
+                // Parent already has the right type (e.g., OR inside OR) - insert after match
+                Match matched = e.getNonreferencedMatch(0);
+                insertMatch(e, matched, List.of(newItem), offset + 1);
+            }
+            else {
+                // Use root-level combining for specific types (RANK, OR, etc.) and non-nested cases
+                e.addItems(List.of(newItem), getTermType());
+            }
         }
+    }
+
+    private boolean shouldInsertAtMatch(RuleEvaluation e) {
+        if (e.getNonreferencedMatchCount() == 0) return false;
+        return shouldInsertAtMatch(e.getNonreferencedMatch(0));
     }
 
     public String toInnerTermString() {

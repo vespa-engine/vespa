@@ -6,20 +6,20 @@
 
 namespace search::attribute {
 
-class BaseName : public std::string
-{
+class BaseName : public std::string {
 public:
     using string = std::string;
     BaseName(std::string_view s);
     BaseName(std::string_view base, std::string_view name);
-    BaseName & operator = (std::string_view s);
+    BaseName& operator=(std::string_view s);
     ~BaseName();
 
-    const string & getAttributeName() const { return _name; }
+    const string& getAttributeName() const { return _name; }
     string getDirName() const;
+
 private:
     static string createAttributeName(std::string_view s);
     string _name;
 };
 
-}
+} // namespace search::attribute

@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "struct_fields_resolver.h"
+
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/issue.h>
+
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -25,9 +27,8 @@ StructFieldsResolver::StructFieldsResolver(const std::string& field_name, const 
       _array_attributes(),
       _has_map_key(false),
       _has_map_value(false),
-      _error(false)
-{
-    std::vector<const search::attribute::IAttributeVector *> attrs;
+      _error(false) {
+    std::vector<const search::attribute::IAttributeVector*> attrs;
     attr_ctx.getAttributeList(attrs);
     std::string prefix = field_name + ".";
     _map_key_attribute = prefix + "key";
@@ -67,10 +68,12 @@ StructFieldsResolver::StructFieldsResolver(const std::string& field_name, const 
 
         if (require_all_struct_fields_as_attribute && !_map_value_fields.empty()) {
             if (!_has_map_key) {
-                Issue::report("StructFieldsResolver: Missing key attribute '%s', have value attributes for map", _map_key_attribute.c_str());
+                Issue::report("StructFieldsResolver: Missing key attribute '%s', have value attributes for map",
+                              _map_key_attribute.c_str());
                 _error = true;
             } else if (_array_fields.size() != 1u) {
-                Issue::report("StructFieldsResolver: Could not determine if field '%s' is array or map of struct", field_name.c_str());
+                Issue::report("StructFieldsResolver: Could not determine if field '%s' is array or map of struct",
+                              field_name.c_str());
                 _error = true;
             }
         }
@@ -79,5 +82,4 @@ StructFieldsResolver::StructFieldsResolver(const std::string& field_name, const 
 
 StructFieldsResolver::~StructFieldsResolver() = default;
 
-}
-
+} // namespace search::docsummary

@@ -1,31 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "forcecommitdonetask.h"
+
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 
 namespace proton {
 
-ForceCommitDoneTask::ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore, std::unique_ptr<IPendingGidToLidChanges> pending_gid_to_lid_changes)
+ForceCommitDoneTask::ForceCommitDoneTask(IDocumentMetaStore&                      documentMetaStore,
+                                         std::unique_ptr<IPendingGidToLidChanges> pending_gid_to_lid_changes)
     : _lidsToReuse(),
       _holdUnblockShrinkLidSpace(false),
       _documentMetaStore(documentMetaStore),
-      _pending_gid_to_lid_changes(std::move(pending_gid_to_lid_changes))
-{
+      _pending_gid_to_lid_changes(std::move(pending_gid_to_lid_changes)) {
 }
 
 ForceCommitDoneTask::~ForceCommitDoneTask() = default;
 
-void
-ForceCommitDoneTask::reuseLids(std::vector<uint32_t> &&lids)
-{
+void ForceCommitDoneTask::reuseLids(std::vector<uint32_t>&& lids) {
     assert(_lidsToReuse.empty());
     _lidsToReuse = std::move(lids);
 }
 
-void
-ForceCommitDoneTask::run()
-{
+void ForceCommitDoneTask::run() {
     if (_pending_gid_to_lid_changes) {
         _pending_gid_to_lid_changes->notify_done();
     }
@@ -37,4 +34,4 @@ ForceCommitDoneTask::run()
     }
 }
 
-}  // namespace proton
+} // namespace proton

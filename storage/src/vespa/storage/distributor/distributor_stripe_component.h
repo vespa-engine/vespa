@@ -7,19 +7,17 @@
 #include "document_selection_parser.h"
 #include "operationowner.h"
 #include "statechecker.h"
+
 #include <vespa/storage/common/distributorcomponent.h>
-#include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
+#include <vespa/storageapi/messageapi/storagecommand.h>
 
 namespace storage::distributor {
 
 class DistributorBucketSpaceRepo;
 
 struct DatabaseUpdate {
-    enum UpdateFlags {
-        CREATE_IF_NONEXISTING = 1,
-        RESET_TRUSTED = 2
-    };  
+    enum UpdateFlags { CREATE_IF_NONEXISTING = 1, RESET_TRUSTED = 2 };
 };
 
 /**
@@ -30,14 +28,11 @@ struct DatabaseUpdate {
 class DistributorStripeComponent : public storage::DistributorComponent,
                                    public DistributorNodeContext,
                                    public DistributorStripeOperationContext,
-                                   public DocumentSelectionParser
-{
+                                   public DocumentSelectionParser {
 public:
-    DistributorStripeComponent(DistributorStripeInterface& distributor,
-                               DistributorBucketSpaceRepo& bucketSpaceRepo,
-                               DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                               DistributorComponentRegister& compReg,
-                               const std::string& name);
+    DistributorStripeComponent(DistributorStripeInterface& distributor, DistributorBucketSpaceRepo& bucketSpaceRepo,
+                               DistributorBucketSpaceRepo&   readOnlyBucketSpaceRepo,
+                               DistributorComponentRegister& compReg, const std::string& name);
 
     ~DistributorStripeComponent() override;
 
@@ -46,13 +41,11 @@ public:
 
     DistributorStripeInterface& getDistributor() { return _distributor; }
 
-    const DistributorStripeInterface& getDistributor() const {
-        return _distributor;
-    }
+    const DistributorStripeInterface& getDistributor() const { return _distributor; }
 
     // Implements DistributorNodeContext
     const framework::Clock& clock() const noexcept override { return getClock(); }
-    const std::string * cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
+    const std::string* cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
     const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
     uint16_t node_index() const noexcept override { return getIndex(); }
 
@@ -67,11 +60,13 @@ public:
     /**
      * Simple API for the common case of modifying a single node.
      */
-    void update_bucket_database(const document::Bucket& bucket, const BucketCopy& changed_node, uint32_t update_flags) override;
+    void update_bucket_database(const document::Bucket& bucket, const BucketCopy& changed_node,
+                                uint32_t update_flags) override;
     /**
      * Adds the given copies to the bucket database.
      */
-    void update_bucket_database(const document::Bucket& bucket, const std::vector<BucketCopy>& changed_nodes, uint32_t update_flags) override;
+    void update_bucket_database(const document::Bucket& bucket, const std::vector<BucketCopy>& changed_nodes,
+                                uint32_t update_flags) override;
 
     /**
      * Removes a copy from the given bucket from the bucket database.
@@ -85,20 +80,15 @@ public:
      * If the resulting bucket is empty afterwards, removes the entire
      * bucket entry from the bucket database.
      */
-    void remove_nodes_from_bucket_database(const document::Bucket& bucket, const std::vector<uint16_t>& nodes) override;
+    void remove_nodes_from_bucket_database(const document::Bucket&      bucket,
+                                           const std::vector<uint16_t>& nodes) override;
 
-    const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept override {
-        return _bucketSpaceRepo;
-    }
-    DistributorBucketSpaceRepo& bucket_space_repo() noexcept override {
-        return _bucketSpaceRepo;
-    }
+    const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept override { return _bucketSpaceRepo; }
+    DistributorBucketSpaceRepo& bucket_space_repo() noexcept override { return _bucketSpaceRepo; }
     const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept override {
         return _readOnlyBucketSpaceRepo;
     }
-    DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept override {
-        return _readOnlyBucketSpaceRepo;
-    }
+    DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept override { return _readOnlyBucketSpaceRepo; }
     document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId& doc_id) const override;
 
     /**
@@ -116,7 +106,8 @@ public:
     const DistributorConfiguration& distributor_config() const noexcept override {
         return getDistributor().getConfig();
     }
-    void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space, const BucketDatabase::Entry& entry, uint8_t pri) override {
+    void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space, const BucketDatabase::Entry& entry,
+                                               uint8_t pri) override {
         getDistributor().checkBucketForSplit(bucket_space, entry, pri);
     }
     OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket& bucket) const override {
@@ -128,7 +119,8 @@ public:
     const PendingMessageTracker& pending_message_tracker() const noexcept override {
         return getDistributor().getPendingMessageTracker();
     }
-    bool has_pending_message(uint16_t node_index, const document::Bucket& bucket, uint32_t message_type) const override;
+    bool has_pending_message(uint16_t node_index, const document::Bucket& bucket,
+                             uint32_t message_type) const override;
     const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const override {
         return getDistributor().pendingClusterStateOrNull(bucket_space);
     }
@@ -161,4 +153,4 @@ private:
     DistributorBucketSpaceRepo& _readOnlyBucketSpaceRepo;
 };
 
-}
+} // namespace storage::distributor

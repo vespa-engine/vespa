@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "state_reporter.h"
+
 #include <vespa/vespalib/metrics/simple_metrics_manager.h>
 
 #include <vespa/log/log.h>
@@ -8,8 +9,8 @@ LOG_SETUP("");
 
 namespace logdemon {
 
-using vespalib::metrics::SimpleMetricsManager;
 using vespalib::metrics::SimpleManagerConfig;
+using vespalib::metrics::SimpleMetricsManager;
 
 StateReporter::StateReporter()
     : _port(-1),
@@ -17,15 +18,12 @@ StateReporter::StateReporter()
       _components(),
       _metrics(SimpleMetricsManager::create(SimpleManagerConfig())),
       _producer(_metrics),
-      _server()
-{
+      _server() {
 }
 
 StateReporter::~StateReporter() = default;
 
-void
-StateReporter::setStatePort(int statePort)
-{
+void StateReporter::setStatePort(int statePort) {
     if (statePort != _port) {
         _port = statePort;
         _server.reset(new vespalib::StateServer(_port, _health, _producer, _components));
@@ -33,11 +31,9 @@ StateReporter::setStatePort(int statePort)
     }
 }
 
-void
-StateReporter::gotConf(size_t generation)
-{
+void StateReporter::gotConf(size_t generation) {
     vespalib::ComponentConfigProducer::Config conf("logd", generation);
     _components.addConfig(conf);
 }
 
-} // namespace
+} // namespace logdemon

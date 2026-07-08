@@ -1,35 +1,35 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitoroperation.h"
+
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storage/common/reindexing_constants.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/bucketownership.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/visitormetricsset.h>
-#include <vespa/document/base/exceptions.h>
+#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <sstream>
+
 #include <optional>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operations.external.visitor");
 
 namespace storage::distributor {
 
-void
-VisitorOperation::BucketInfo::print(vespalib::asciistream & out) const
-{
+void VisitorOperation::BucketInfo::print(vespalib::asciistream& out) const {
     out << "BucketInfo("
         << "done=" << done << ", "
-        << "activeNode=" << activeNode <<  ", "
+        << "activeNode=" << activeNode << ", "
         << "failedCount=" << failedCount << ", "
         << "triedNodes=";
     for (uint32_t i = 0; i < triedNodes.size(); i++) {
         out << triedNodes[i];
-        if (i != triedNodes.size()-1) {
+        if (i != triedNodes.size() - 1) {
             out << " ";
         }
     }
@@ -38,9 +38,7 @@ VisitorOperation::BucketInfo::print(vespalib::asciistream & out) const
 
 VisitorOperation::BucketInfo::~BucketInfo() = default;
 
-std::string
-VisitorOperation::BucketInfo::toString() const
-{
+std::string VisitorOperation::BucketInfo::toString() const {
     vespalib::asciistream ost;
     print(ost);
     return ost.str();
@@ -50,9 +48,7 @@ VisitorOperation::SuperBucketInfo::~SuperBucketInfo() = default;
 
 namespace {
 
-[[nodiscard]] bool
-matches_visitor_library(std::string_view input, std::string_view expected)
-{
+[[nodiscard]] bool matches_visitor_library(std::string_view input, std::string_view expected) {
     if (input.size() != expected.size()) {
         return false;
     }
@@ -64,15 +60,11 @@ matches_visitor_library(std::string_view input, std::string_view expected)
     return true;
 }
 
-}
+} // namespace
 
-VisitorOperation::VisitorOperation(
-        const DistributorNodeContext& node_ctx,
-        DistributorStripeOperationContext& op_ctx,
-        DistributorBucketSpace &bucketSpace,
-        const api::CreateVisitorCommand::SP& m,
-        const Config& config,
-        VisitorMetricSet& metrics)
+VisitorOperation::VisitorOperation(const DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx,
+                                   DistributorBucketSpace& bucketSpace, const api::CreateVisitorCommand::SP& m,
+                                   const Config& config, VisitorMetricSet& metrics)
     : Operation(),
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
@@ -85,8 +77,7 @@ VisitorOperation::VisitorOperation(
       _bucket_lock(), // Initially no lock is held
       _sentReply(false),
       _verified_and_expanded(false),
-      _is_read_for_write(matches_visitor_library(_msg->getLibraryName(), "reindexingvisitor"))
-{
+      _is_read_for_write(matches_visitor_library(_msg->getLibraryName(), "reindexingvisitor")) {
     const std::vector<document::BucketId>& buckets = m->getBuckets();
 
     if (!buckets.empty()) {
@@ -111,15 +102,12 @@ VisitorOperation::VisitorOperation(
 
 VisitorOperation::~VisitorOperation() = default;
 
-document::BucketId
-VisitorOperation::getLastBucketVisited()
-{
+document::BucketId VisitorOperation::getLastBucketVisited() {
     document::BucketId newLastBucket = _lastBucket;
-    bool foundNotDone = false;
-    bool foundDone = false;
+    bool               foundNotDone = false;
+    bool               foundDone = false;
 
-    LOG(spam, "getLastBucketVisited(): Sub bucket count: %zu",
-        _superBucket.subBucketsVisitOrder.size());
+    LOG(spam, "getLastBucketVisited(): Sub bucket count: %zu", _superBucket.subBucketsVisitOrder.size());
     for (const auto& sub_bucket : _superBucket.subBucketsVisitOrder) {
         auto found = _superBucket.subBuckets.find(sub_bucket);
         assert(found != _superBucket.subBuckets.end());
@@ -139,9 +127,7 @@ VisitorOperation::getLastBucketVisited()
 
     if (_superBucket.subBucketsCompletelyExpanded) {
         LOG(spam, "Sub buckets were completely expanded");
-        if (_superBucket.subBucketsVisitOrder.empty()
-            || (foundDone && !foundNotDone))
-        {
+        if (_superBucket.subBucketsVisitOrder.empty() || (foundDone && !foundNotDone)) {
             newLastBucket = document::BucketId(INT_MAX);
         }
     }
@@ -150,14 +136,11 @@ VisitorOperation::getLastBucketVisited()
     return newLastBucket;
 }
 
-vespalib::duration
-VisitorOperation::timeLeft() const noexcept
-{
+vespalib::duration VisitorOperation::timeLeft() const noexcept {
     const auto elapsed = _operationTimer.getElapsedTime();
 
     LOG(spam, "Checking if visitor has timed out: elapsed=%" PRId64 " ms, timeout=%" PRId64 " ms",
-        vespalib::count_ms(elapsed),
-        vespalib::count_ms(_msg->getTimeout()));
+        vespalib::count_ms(elapsed), vespalib::count_ms(_msg->getTimeout()));
 
     if (elapsed >= _msg->getTimeout()) {
         return vespalib::duration::zero();
@@ -166,10 +149,7 @@ VisitorOperation::timeLeft() const noexcept
     }
 }
 
-void
-VisitorOperation::markCompleted(const document::BucketId& bid,
-                                const api::ReturnCode& code)
-{
+void VisitorOperation::markCompleted(const document::BucketId& bid, const api::ReturnCode& code) {
     auto found = _superBucket.subBuckets.find(bid);
     assert(found != _superBucket.subBuckets.end());
 
@@ -181,23 +161,14 @@ VisitorOperation::markCompleted(const document::BucketId& bid,
     }
 }
 
-void
-VisitorOperation::markOperationAsFailedDueToNodeError(
-        const api::ReturnCode& result,
-        uint16_t fromFailingNodeIndex)
-{
-    _storageError = api::ReturnCode(
-            result.getResult(),
-            vespalib::make_string("[from content node %u] %s",
-                                  fromFailingNodeIndex,
-                                  std::string(result.getMessage()).c_str()));
+void VisitorOperation::markOperationAsFailedDueToNodeError(const api::ReturnCode& result,
+                                                           uint16_t               fromFailingNodeIndex) {
+    _storageError =
+        api::ReturnCode(result.getResult(), vespalib::make_string("[from content node %u] %s", fromFailingNodeIndex,
+                                                                  std::string(result.getMessage()).c_str()));
 }
 
-void
-VisitorOperation::onReceive(
-        DistributorStripeMessageSender& sender,
-        const api::StorageReply::SP& r)
-{
+void VisitorOperation::onReceive(DistributorStripeMessageSender& sender, const api::StorageReply::SP& r) {
     auto& reply = dynamic_cast<api::CreateVisitorReply&>(*r);
 
     _trace.add(reply.steal_trace());
@@ -213,15 +184,13 @@ VisitorOperation::onReceive(
     api::ReturnCode result = reply.getResult();
     if (result.success()) {
         _visitorStatistics = _visitorStatistics + reply.getVisitorStatistics();
-        LOG(spam, "Client stats %s for visitor %s. New stats is %s",
-            reply.getVisitorStatistics().toString().c_str(),
-            _msg->getInstanceId().c_str(),
-            _visitorStatistics.toString().c_str());
+        LOG(spam, "Client stats %s for visitor %s. New stats is %s", reply.getVisitorStatistics().toString().c_str(),
+            _msg->getInstanceId().c_str(), _visitorStatistics.toString().c_str());
     } else if (result.isCriticalForVisitorDispatcher()) {
         // If an error code is critical, we don't bother to do a "worst-of"
         // comparison with the existing code since it's assumed either one is
         // sufficiently bad to tell the client about it.
-         markOperationAsFailedDueToNodeError(result, contentNodeIndex);
+        markOperationAsFailedDueToNodeError(result, contentNodeIndex);
     }
     // else: will lose code for non-critical events, degenerates to "not found".
 
@@ -237,71 +206,47 @@ namespace {
 
 class VisitorVerificationException {
 public:
-    VisitorVerificationException(api::ReturnCode::Result result,
-                                 std::string_view message)
-        : _code(result, message)
-    {}
+    VisitorVerificationException(api::ReturnCode::Result result, std::string_view message) : _code(result, message) {}
 
-    const api::ReturnCode& getReturnCode() const noexcept {
-        return _code;
-    }
+    const api::ReturnCode& getReturnCode() const noexcept { return _code; }
 
 private:
     api::ReturnCode _code;
 };
 
-}
+} // namespace
 
-void
-VisitorOperation::verifyDistributorsAreAvailable()
-{
+void VisitorOperation::verifyDistributorsAreAvailable() {
     const lib::ClusterState& clusterState = _bucketSpace.getClusterState();
     if (clusterState.getNodeCount(lib::NodeType::DISTRIBUTOR) == 0) {
-        std::string err(vespalib::make_string(
-            "No distributors available when processing visitor '%s'",
-            _msg->getInstanceId().c_str()));
+        std::string err(vespalib::make_string("No distributors available when processing visitor '%s'",
+                                              _msg->getInstanceId().c_str()));
         LOG(debug, "%s", err.c_str());
         throw VisitorVerificationException(api::ReturnCode::NOT_READY, err);
     }
 }
 
-void
-VisitorOperation::verifyVisitorDistributionBitCount(
-        const document::BucketId& bid)
-{
+void VisitorOperation::verifyVisitorDistributionBitCount(const document::BucketId& bid) {
     const lib::ClusterState& clusterState = _bucketSpace.getClusterState();
-    if (_msg->getDocumentSelection().empty()
-        && bid.getUsedBits() != clusterState.getDistributionBitCount())
-    {
+    if (_msg->getDocumentSelection().empty() && bid.getUsedBits() != clusterState.getDistributionBitCount()) {
         LOG(debug,
             "Got message with wrong distribution bits (%d != %d), bucketid %s, "
             "sending back system state '%s'",
-            bid.getUsedBits(),
-            clusterState.getDistributionBitCount(),
-            bid.toString().c_str(),
+            bid.getUsedBits(), clusterState.getDistributionBitCount(), bid.toString().c_str(),
             clusterState.toString().c_str());
-        throw VisitorVerificationException(
-                api::ReturnCode::WRONG_DISTRIBUTION,
-                clusterState.toString());
+        throw VisitorVerificationException(api::ReturnCode::WRONG_DISTRIBUTION, clusterState.toString());
     }
 }
 
-void
-VisitorOperation::verifyDistributorIsNotDown(const lib::ClusterState& state)
-{
-    const lib::NodeState& ownState(
-            state.getNodeState(
-                lib::Node(lib::NodeType::DISTRIBUTOR, _node_ctx.node_index())));
+void VisitorOperation::verifyDistributorIsNotDown(const lib::ClusterState& state) {
+    const lib::NodeState& ownState(state.getNodeState(lib::Node(lib::NodeType::DISTRIBUTOR, _node_ctx.node_index())));
     if (!ownState.getState().oneOf("ui")) {
-        throw VisitorVerificationException(
-                api::ReturnCode::ABORTED, "Distributor is shutting down");
+        throw VisitorVerificationException(api::ReturnCode::ABORTED, "Distributor is shutting down");
     }
 }
 
-void
-VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
-{
-    auto &bucket_space(_op_ctx.bucket_space_repo().get(_msg->getBucketSpace()));
+void VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid) {
+    auto&           bucket_space(_op_ctx.bucket_space_repo().get(_msg->getBucketSpace()));
     BucketOwnership bo(bucket_space.check_ownership_in_pending_and_current_state(bid));
     if (!bo.isOwned()) {
         verifyDistributorIsNotDown(bo.getNonOwnedState());
@@ -309,61 +254,44 @@ VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
         LOG(debug,
             "Bucket %s is not owned by distributor %d, "
             "sending back system state '%s'",
-            bid.toString().c_str(),
-            _node_ctx.node_index(),
-            bo.getNonOwnedState().toString().c_str());
-        throw VisitorVerificationException(
-                api::ReturnCode::WRONG_DISTRIBUTION,
-                bo.getNonOwnedState().toString());
+            bid.toString().c_str(), _node_ctx.node_index(), bo.getNonOwnedState().toString().c_str());
+        throw VisitorVerificationException(api::ReturnCode::WRONG_DISTRIBUTION, bo.getNonOwnedState().toString());
     }
 }
 
-void
-VisitorOperation::verifyOperationContainsBuckets()
-{
+void VisitorOperation::verifyOperationContainsBuckets() {
     size_t bucketCount = _msg->getBuckets().size();
     if (bucketCount == 0) {
-        std::string errorMsg = vespalib::make_string(
-                "No buckets in CreateVisitorCommand for visitor '%s'",
-                _msg->getInstanceId().c_str());
+        std::string errorMsg = vespalib::make_string("No buckets in CreateVisitorCommand for visitor '%s'",
+                                                     _msg->getInstanceId().c_str());
         throw VisitorVerificationException(api::ReturnCode::ILLEGAL_PARAMETERS, errorMsg);
     }
 }
 
-void
-VisitorOperation::verifyOperationHasSuperbucketAndProgress()
-{
+void VisitorOperation::verifyOperationHasSuperbucketAndProgress() {
     size_t bucketCount = _msg->getBuckets().size();
     if (bucketCount != 2) {
         std::string errorMsg = vespalib::make_string(
-                "CreateVisitorCommand does not contain 2 buckets for visitor '%s'",
-                _msg->getInstanceId().c_str());
+            "CreateVisitorCommand does not contain 2 buckets for visitor '%s'", _msg->getInstanceId().c_str());
         throw VisitorVerificationException(api::ReturnCode::ILLEGAL_PARAMETERS, errorMsg);
     }
 }
 
-void
-VisitorOperation::verifyOperationSentToCorrectDistributor()
-{
+void VisitorOperation::verifyOperationSentToCorrectDistributor() {
     verifyDistributorsAreAvailable();
     verifyVisitorDistributionBitCount(_superBucket.bid);
     verifyDistributorOwnsBucket(_superBucket.bid);
 }
 
-void
-VisitorOperation::verify_fieldset_makes_sense_for_visiting()
-{
+void VisitorOperation::verify_fieldset_makes_sense_for_visiting() {
     if (_msg->getFieldSet() == document::NoFields::NAME) {
-        throw VisitorVerificationException(
-                api::ReturnCode::ILLEGAL_PARAMETERS,
-                "Field set '[none]' is not supported for external visitor operations. "
-                "Use '[id]' to return documents with no fields set.");
+        throw VisitorVerificationException(api::ReturnCode::ILLEGAL_PARAMETERS,
+                                           "Field set '[none]' is not supported for external visitor operations. "
+                                           "Use '[id]' to return documents with no fields set.");
     }
 }
 
-bool
-VisitorOperation::verifyCreateVisitorCommand(DistributorStripeMessageSender& sender)
-{
+bool VisitorOperation::verifyCreateVisitorCommand(DistributorStripeMessageSender& sender) {
     try {
         verifyOperationContainsBuckets();
         verifyOperationHasSuperbucketAndProgress();
@@ -372,23 +300,19 @@ VisitorOperation::verifyCreateVisitorCommand(DistributorStripeMessageSender& sen
         // TODO wrap and test
         if (is_read_for_write() && (_msg->getMaxBucketsPerVisitor() != 1)) {
             throw VisitorVerificationException(
-                    api::ReturnCode::ILLEGAL_PARAMETERS,
-                    vespalib::make_string("Read-for-write visitors can only have 1 max pending bucket, was %u",
-                                          _msg->getMaxBucketsPerVisitor()));
+                api::ReturnCode::ILLEGAL_PARAMETERS,
+                vespalib::make_string("Read-for-write visitors can only have 1 max pending bucket, was %u",
+                                      _msg->getMaxBucketsPerVisitor()));
         }
         return true;
     } catch (const VisitorVerificationException& e) {
-        LOG(debug,
-            "Visitor verification failed; replying with %s",
-            e.getReturnCode().toString().c_str());
+        LOG(debug, "Visitor verification failed; replying with %s", e.getReturnCode().toString().c_str());
         sendReply(e.getReturnCode(), sender);
         return false;
     }
 }
 
-bool
-VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& buckets)
-{
+bool VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& buckets) {
     uint32_t maxBuckets = _msg->getMaxBucketsPerVisitor();
 
     std::vector<document::BucketId> bucketVisitOrder;
@@ -401,7 +325,7 @@ VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& b
     std::sort(bucketVisitOrder.begin(), bucketVisitOrder.end(), bucketLessThan);
 
     auto iter = bucketVisitOrder.begin();
-    auto end  = bucketVisitOrder.end();
+    auto end = bucketVisitOrder.end();
     for (; iter != end; ++iter) {
         if (bucketLessThan(*iter, _lastBucket) || *iter == _lastBucket) {
             LOG(spam, "Skipping bucket %s because it is lower than or equal to progress bucket %s",
@@ -421,9 +345,7 @@ VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& b
     return doneExpand;
 }
 
-bool
-VisitorOperation::expandBucketContaining()
-{
+bool VisitorOperation::expandBucketContaining() {
     std::vector<BucketDatabase::Entry> entries;
     _bucketSpace.getBucketDatabase().getParents(_superBucket.bid, entries);
     return pickBucketsToVisit(entries);
@@ -432,13 +354,11 @@ VisitorOperation::expandBucketContaining()
 namespace {
 
 struct NextEntryFinder : public BucketDatabase::EntryProcessor {
-    bool _first;
-    document::BucketId _last;
+    bool                              _first;
+    document::BucketId                _last;
     std::optional<document::BucketId> _next;
 
-    explicit NextEntryFinder(const document::BucketId& id) noexcept
-        : _first(true), _last(id), _next()
-    {}
+    explicit NextEntryFinder(const document::BucketId& id) noexcept : _first(true), _last(id), _next() {}
 
     bool process(const BucketDatabase::ConstEntryRef& e) override {
         document::BucketId bucket(e.getBucketId());
@@ -453,12 +373,8 @@ struct NextEntryFinder : public BucketDatabase::EntryProcessor {
     }
 };
 
-
-std::optional<document::BucketId>
-getBucketIdAndLast(BucketDatabase& database,
-                   const document::BucketId& super,
-                   const document::BucketId& last)
-{
+std::optional<document::BucketId> getBucketIdAndLast(BucketDatabase& database, const document::BucketId& super,
+                                                     const document::BucketId& last) {
     if (!super.contains(last)) {
         NextEntryFinder proc(super);
         database.for_each_upper_bound(proc, super);
@@ -470,23 +386,17 @@ getBucketIdAndLast(BucketDatabase& database,
     }
 }
 
-}
+} // namespace
 
-bool
-VisitorOperation::expandBucketContained()
-{
+bool VisitorOperation::expandBucketContained() {
     uint32_t maxBuckets = _msg->getMaxBucketsPerVisitor();
 
-    std::optional<document::BucketId> bid = getBucketIdAndLast(
-            _bucketSpace.getBucketDatabase(),
-            _superBucket.bid,
-            _lastBucket);
+    std::optional<document::BucketId> bid =
+        getBucketIdAndLast(_bucketSpace.getBucketDatabase(), _superBucket.bid, _lastBucket);
 
     while (bid.has_value() && _superBucket.subBuckets.size() < maxBuckets) {
         if (!_superBucket.bid.contains(*bid)) {
-            LOG(spam,
-                "Iterating: Found bucket %s is not contained in bucket %s",
-                bid->toString().c_str(),
+            LOG(spam, "Iterating: Found bucket %s is not contained in bucket %s", bid->toString().c_str(),
                 _superBucket.bid.toString().c_str());
             break;
         }
@@ -502,19 +412,15 @@ VisitorOperation::expandBucketContained()
     return doneExpand;
 }
 
-void
-VisitorOperation::expandBucket()
-{
+void VisitorOperation::expandBucket() {
     bool doneExpandBuckets = false;
     bool doneExpandContainingBuckets = true;
     if (!_superBucket.bid.contains(_lastBucket)) {
-        LOG(spam, "Bucket %s does not contain progress bucket %s",
-            _superBucket.bid.toString().c_str(),
+        LOG(spam, "Bucket %s does not contain progress bucket %s", _superBucket.bid.toString().c_str(),
             _lastBucket.toString().c_str());
         doneExpandContainingBuckets = expandBucketContaining();
     } else {
-        LOG(spam, "Bucket %s contains progress bucket %s",
-            _superBucket.bid.toString().c_str(),
+        LOG(spam, "Bucket %s contains progress bucket %s", _superBucket.bid.toString().c_str(),
             _lastBucket.toString().c_str());
     }
 
@@ -525,13 +431,9 @@ VisitorOperation::expandBucket()
 
     if (doneExpandBuckets) {
         _superBucket.subBucketsCompletelyExpanded = true;
-        LOG(spam,
-            "Sub buckets completely expanded for super bucket %s",
-            _superBucket.bid.toString().c_str());
+        LOG(spam, "Sub buckets completely expanded for super bucket %s", _superBucket.bid.toString().c_str());
     } else {
-        LOG(spam,
-            "Sub buckets NOT completely expanded for super bucket %s",
-            _superBucket.bid.toString().c_str());
+        LOG(spam, "Sub buckets NOT completely expanded for super bucket %s", _superBucket.bid.toString().c_str());
     }
 }
 
@@ -541,14 +443,11 @@ namespace {
     return std::find(triedNodes.begin(), triedNodes.end(), node) != triedNodes.end();
 }
 
-int
-findNodeWithMostDocuments(const std::vector<BucketCopy>& potentialNodes)
-{
+int findNodeWithMostDocuments(const std::vector<BucketCopy>& potentialNodes) {
     int indexWithMostDocs = -1;
     for (uint32_t i = 0; i < potentialNodes.size(); i++) {
         if (indexWithMostDocs == -1 ||
-            potentialNodes[i].getDocumentCount() >
-            potentialNodes[indexWithMostDocs].getDocumentCount())
+            potentialNodes[i].getDocumentCount() > potentialNodes[indexWithMostDocs].getDocumentCount())
         {
             indexWithMostDocs = i;
         }
@@ -556,13 +455,9 @@ findNodeWithMostDocuments(const std::vector<BucketCopy>& potentialNodes)
     return potentialNodes[indexWithMostDocs].getNode();
 }
 
-}
+} // namespace
 
-int
-VisitorOperation::pickTargetNode(
-        const BucketDatabase::Entry& entry,
-        const std::vector<uint16_t>& triedNodes)
-{
+int VisitorOperation::pickTargetNode(const BucketDatabase::Entry& entry, const std::vector<uint16_t>& triedNodes) {
     std::vector<BucketCopy> potentialNodes;
 
     // Figure out if there are any trusted nodes. If there are,
@@ -585,14 +480,12 @@ VisitorOperation::pickTargetNode(
     if (!entry->validAndConsistent()) {
         return findNodeWithMostDocuments(potentialNodes);
     }
-    
+
     assert(!potentialNodes.empty());
     return potentialNodes.front().getNode();
 }
 
-void
-VisitorOperation::onStart(DistributorStripeMessageSender& sender)
-{
+void VisitorOperation::onStart(DistributorStripeMessageSender& sender) {
     if (!_verified_and_expanded) {
         if (!verify_command_and_expand_buckets(sender)) {
             return;
@@ -601,9 +494,7 @@ VisitorOperation::onStart(DistributorStripeMessageSender& sender)
     startNewVisitors(sender);
 }
 
-bool
-VisitorOperation::verify_command_and_expand_buckets(DistributorStripeMessageSender& sender)
-{
+bool VisitorOperation::verify_command_and_expand_buckets(DistributorStripeMessageSender& sender) {
     assert(!_verified_and_expanded);
     _verified_and_expanded = true;
     if (!verifyCreateVisitorCommand(sender)) {
@@ -613,15 +504,11 @@ VisitorOperation::verify_command_and_expand_buckets(DistributorStripeMessageSend
     return true;
 }
 
-bool
-VisitorOperation::shouldAbortDueToTimeout() const noexcept
-{
+bool VisitorOperation::shouldAbortDueToTimeout() const noexcept {
     return timeLeft() <= vespalib::duration::zero();
 }
 
-void
-VisitorOperation::markOperationAsFailed(const api::ReturnCode& result)
-{
+void VisitorOperation::markOperationAsFailed(const api::ReturnCode& result) {
     // Error codes are ordered so that increasing numbers approximate
     // increasing severity. In particular, transient errors < fatal errors.
     // In case of same error code, don't overwrite initial error.
@@ -630,42 +517,30 @@ VisitorOperation::markOperationAsFailed(const api::ReturnCode& result)
     }
 }
 
-bool
-VisitorOperation::maySendNewStorageVisitors() const noexcept
-{
+bool VisitorOperation::maySendNewStorageVisitors() const noexcept {
     // If we've already failed, don't bother sending any more visitors.
     // We rather want to get all currently pending visitors done so
     // we can send a timely reply back to the visiting client.
     return _storageError.success();
 }
 
-void
-VisitorOperation::startNewVisitors(DistributorStripeMessageSender& sender)
-{
-    LOG(spam,
-        "Starting new visitors: Superbucket: %s, last subbucket: %s",
-        _superBucket.bid.toString().c_str(),
+void VisitorOperation::startNewVisitors(DistributorStripeMessageSender& sender) {
+    LOG(spam, "Starting new visitors: Superbucket: %s, last subbucket: %s", _superBucket.bid.toString().c_str(),
         _lastBucket.toString().c_str());
 
     initializeActiveNodes();
 
     NodeToBucketsMap nodeToBucketsMap;
-    if (!assignBucketsToNodes(nodeToBucketsMap)
-        && !allowInconsistencies()
-        && _storageError.success())
-    {
+    if (!assignBucketsToNodes(nodeToBucketsMap) && !allowInconsistencies() && _storageError.success()) {
         // We do not allow "not found" to override any other errors.
         // Furthermore, we do not fail with not found if we're visiting with
         // inconsistencies allowed.
-        markOperationAsFailed(
-                api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
+        markOperationAsFailed(api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
     }
     if (shouldAbortDueToTimeout()) {
-        markOperationAsFailed(
-                api::ReturnCode(api::ReturnCode::ABORTED,
-                                vespalib::make_string(
-                                    "Timeout of %" PRId64 " ms is running out",
-                                    vespalib::count_ms(_msg->getTimeout()))));
+        markOperationAsFailed(api::ReturnCode(api::ReturnCode::ABORTED,
+                                              vespalib::make_string("Timeout of %" PRId64 " ms is running out",
+                                                                    vespalib::count_ms(_msg->getTimeout()))));
     }
 
     if (maySendNewStorageVisitors()) {
@@ -677,9 +552,7 @@ VisitorOperation::startNewVisitors(DistributorStripeMessageSender& sender)
     }
 }
 
-void
-VisitorOperation::initializeActiveNodes()
-{
+void VisitorOperation::initializeActiveNodes() {
     const lib::ClusterState& clusterState(_bucketSpace.getClusterState());
 
     uint32_t storageNodeCount = clusterState.getNodeCount(lib::NodeType::STORAGE);
@@ -688,17 +561,11 @@ VisitorOperation::initializeActiveNodes()
     }
 }
 
-bool
-VisitorOperation::shouldSkipBucket(const BucketInfo& bucketInfo) const
-{
-    return (bucketInfo.done ||
-            bucketInfo.activeNode != -1 ||
-            bucketInfo.failedCount > 0);
+bool VisitorOperation::shouldSkipBucket(const BucketInfo& bucketInfo) const {
+    return (bucketInfo.done || bucketInfo.activeNode != -1 || bucketInfo.failedCount > 0);
 }
 
-bool
-VisitorOperation::bucketIsValidAndConsistent(const BucketDatabase::Entry& entry) const
-{
+bool VisitorOperation::bucketIsValidAndConsistent(const BucketDatabase::Entry& entry) const {
     if (!entry.valid()) {
         LOG(debug, "Bucket %s does not exist anymore", entry.toString().c_str());
         return false;
@@ -709,31 +576,26 @@ VisitorOperation::bucketIsValidAndConsistent(const BucketDatabase::Entry& entry)
         LOG(spam,
             "Failing visitor because %s is currently inconsistent. "
             "Bucket contents: %s",
-            entry.getBucketId().toString().c_str(),
-            entry->toString().c_str());
+            entry.getBucketId().toString().c_str(), entry->toString().c_str());
         return false;
     }
 
     return true;
 }
 
-bool
-VisitorOperation::allowInconsistencies() const noexcept
-{
+bool VisitorOperation::allowInconsistencies() const noexcept {
     return _msg->visitInconsistentBuckets();
 }
 
-bool
-VisitorOperation::assignBucketsToNodes(NodeToBucketsMap& nodeToBucketsMap)
-{
+bool VisitorOperation::assignBucketsToNodes(NodeToBucketsMap& nodeToBucketsMap) {
     for (const auto& subBucket : _superBucket.subBucketsVisitOrder) {
         auto subIter(_superBucket.subBuckets.find(subBucket));
         assert(subIter != _superBucket.subBuckets.end());
 
         BucketInfo& bucketInfo(subIter->second);
         if (shouldSkipBucket(bucketInfo)) {
-            LOG(spam, "Skipping subbucket %s because it is done/active/failed: %s",
-                subBucket.toString().c_str(), bucketInfo.toString().c_str());
+            LOG(spam, "Skipping subbucket %s because it is done/active/failed: %s", subBucket.toString().c_str(),
+                bucketInfo.toString().c_str());
             continue;
         }
 
@@ -754,34 +616,32 @@ VisitorOperation::assignBucketsToNodes(NodeToBucketsMap& nodeToBucketsMap)
     return true;
 }
 
-int
-VisitorOperation::getNumVisitorsToSendForNode(uint16_t node, uint32_t totalBucketsOnNode) const
-{
-    int visitorCountAvailable(std::max(1, static_cast<int>(_config.maxVisitorsPerNodePerVisitor - _activeNodes[node])));
-    int visitorCountMinBucketsPerVisitor(std::max(1, static_cast<int>(totalBucketsOnNode / _config.minBucketsPerVisitor)));
+int VisitorOperation::getNumVisitorsToSendForNode(uint16_t node, uint32_t totalBucketsOnNode) const {
+    int visitorCountAvailable(
+        std::max(1, static_cast<int>(_config.maxVisitorsPerNodePerVisitor - _activeNodes[node])));
+    int visitorCountMinBucketsPerVisitor(
+        std::max(1, static_cast<int>(totalBucketsOnNode / _config.minBucketsPerVisitor)));
     int visitorCount(std::min(visitorCountAvailable, visitorCountMinBucketsPerVisitor));
-    LOG(spam, "Will send %d visitors to node %d (available=%d, buckets restricted=%d)",
-        visitorCount, node, visitorCountAvailable, visitorCountMinBucketsPerVisitor);
+    LOG(spam, "Will send %d visitors to node %d (available=%d, buckets restricted=%d)", visitorCount, node,
+        visitorCountAvailable, visitorCountMinBucketsPerVisitor);
 
     return visitorCount;
 }
 
-bool
-VisitorOperation::sendStorageVisitors(const NodeToBucketsMap& nodeToBucketsMap,
-                                      DistributorStripeMessageSender& sender)
-{
+bool VisitorOperation::sendStorageVisitors(const NodeToBucketsMap&         nodeToBucketsMap,
+                                           DistributorStripeMessageSender& sender) {
     bool visitorsSent = false;
-    for (const auto & entry : nodeToBucketsMap ) {
+    for (const auto& entry : nodeToBucketsMap) {
         if (entry.second.size() > 0) {
             int visitorCount(getNumVisitorsToSendForNode(entry.first, entry.second.size()));
 
-            std::vector<std::vector<document::BucketId> > bucketsVector(visitorCount);
+            std::vector<std::vector<document::BucketId>> bucketsVector(visitorCount);
             for (unsigned int i = 0; i < entry.second.size(); i++) {
                 bucketsVector[i % visitorCount].push_back(entry.second[i]);
             }
             for (int i = 0; i < visitorCount; i++) {
-                LOG(spam, "Send visitor to node %d with %u buckets",
-                    entry.first, (unsigned int)bucketsVector[i].size());
+                LOG(spam, "Send visitor to node %d with %u buckets", entry.first,
+                    (unsigned int)bucketsVector[i].size());
 
                 sendStorageVisitor(entry.first, bucketsVector[i], _msg->getMaximumPendingReplyCount(), sender);
 
@@ -794,18 +654,12 @@ VisitorOperation::sendStorageVisitors(const NodeToBucketsMap& nodeToBucketsMap,
     return visitorsSent;
 }
 
-vespalib::duration
-VisitorOperation::computeVisitorQueueTimeoutMs() const noexcept
-{
+vespalib::duration VisitorOperation::computeVisitorQueueTimeoutMs() const noexcept {
     return timeLeft() / 2;
 }
 
-void
-VisitorOperation::sendStorageVisitor(uint16_t node,
-                                     const std::vector<document::BucketId>& buckets,
-                                     uint32_t pending,
-                                     DistributorStripeMessageSender& sender)
-{
+void VisitorOperation::sendStorageVisitor(uint16_t node, const std::vector<document::BucketId>& buckets,
+                                          uint32_t pending, DistributorStripeMessageSender& sender) {
     // TODO rewrite to not use copy ctor and remove wonky StorageCommand copy ctor impl
     auto cmd = std::make_shared<api::CreateVisitorCommand>(*_msg);
     cmd->getBuckets() = buckets;
@@ -815,8 +669,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
     cmd->setToTime(_toTime);
 
     vespalib::asciistream os;
-    os << _msg->getInstanceId() << '-'
-       << _node_ctx.node_index() << '-' << cmd->getMsgId();
+    os << _msg->getInstanceId() << '-' << _node_ctx.node_index() << '-' << cmd->getMsgId();
 
     std::string storageInstanceId(os.view());
     cmd->setInstanceId(storageInstanceId);
@@ -833,18 +686,14 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
     }
 
     LOG(spam, "Priority is %d", cmd->getPriority());
-    LOG(debug, "Sending CreateVisitor command %" PRIu64 " for storage visitor '%s' to %s",
-        cmd->getMsgId(),
-        storageInstanceId.c_str(),
-        cmd->getAddress()->toString().c_str());
+    LOG(debug, "Sending CreateVisitor command %" PRIu64 " for storage visitor '%s' to %s", cmd->getMsgId(),
+        storageInstanceId.c_str(), cmd->getAddress()->toString().c_str());
 
     _activeNodes[node]++;
     sender.sendCommand(cmd);
 }
 
-void
-VisitorOperation::sendReply(const api::ReturnCode& code, DistributorStripeMessageSender& sender)
-{
+void VisitorOperation::sendReply(const api::ReturnCode& code, DistributorStripeMessageSender& sender) {
     if (!_sentReply) {
         // Send create visitor reply
         auto reply = std::make_shared<api::CreateVisitorReply>(*_msg);
@@ -856,9 +705,7 @@ VisitorOperation::sendReply(const api::ReturnCode& code, DistributorStripeMessag
         LOG(debug,
             "Sending CreateVisitor reply %" PRIu64 " with return code '%s' for visitor "
             "'%s', msg id '%" PRIu64 "' back to client",
-            reply->getMsgId(),
-            code.toString().c_str(),
-            _msg->getInstanceId().c_str(), _msg->getMsgId());
+            reply->getMsgId(), code.toString().c_str(), _msg->getInstanceId().c_str(), _msg->getMsgId());
 
         updateReplyMetrics(code);
         sender.sendReply(reply);
@@ -867,9 +714,7 @@ VisitorOperation::sendReply(const api::ReturnCode& code, DistributorStripeMessag
     }
 }
 
-void
-VisitorOperation::updateReplyMetrics(const api::ReturnCode& result)
-{
+void VisitorOperation::updateReplyMetrics(const api::ReturnCode& result) {
     _metrics.updateFromResult(result);
     // WrongDistributionReply happens as a normal and expected part of a visitor
     // session's lifetime. If we pollute the metrics with measurements taken
@@ -883,45 +728,33 @@ VisitorOperation::updateReplyMetrics(const api::ReturnCode& result)
     _metrics.bytes_per_visitor.addValue(_visitorStatistics.getBytesVisited());
 }
 
-void
-VisitorOperation::onClose(DistributorStripeMessageSender& sender)
-{
+void VisitorOperation::onClose(DistributorStripeMessageSender& sender) {
     sendReply(api::ReturnCode(api::ReturnCode::ABORTED, "Operation has been aborted"), sender);
 }
 
-void
-VisitorOperation::fail_with_bucket_already_locked(DistributorStripeMessageSender& sender)
-{
+void VisitorOperation::fail_with_bucket_already_locked(DistributorStripeMessageSender& sender) {
     assert(is_read_for_write());
     sendReply(api::ReturnCode(api::ReturnCode::BUSY, "This bucket is already locked by another operation"), sender);
 }
 
-void
-VisitorOperation::fail_with_merge_pending(DistributorStripeMessageSender& sender)
-{
+void VisitorOperation::fail_with_merge_pending(DistributorStripeMessageSender& sender) {
     assert(is_read_for_write());
     sendReply(api::ReturnCode(api::ReturnCode::BUSY, "A merge operation is pending for this bucket"), sender);
 }
 
-std::optional<document::Bucket>
-VisitorOperation::first_bucket_to_visit() const
-{
+std::optional<document::Bucket> VisitorOperation::first_bucket_to_visit() const {
     if (_superBucket.subBuckets.empty()) {
         return {};
     }
     return {document::Bucket(_msg->getBucketSpace(), _superBucket.subBuckets.begin()->first)};
 }
 
-void
-VisitorOperation::assign_bucket_lock_handle(SequencingHandle handle)
-{
+void VisitorOperation::assign_bucket_lock_handle(SequencingHandle handle) {
     _bucket_lock = std::move(handle);
 }
 
-void
-VisitorOperation::assign_put_lock_access_token(const std::string& token)
-{
+void VisitorOperation::assign_put_lock_access_token(const std::string& token) {
     _put_lock_token = token;
 }
 
-}
+} // namespace storage::distributor

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
+
 #include <map>
 
 namespace search::features {
@@ -15,18 +16,21 @@ namespace search::features {
  * matching the field. The dimension and cell type are passed as extra parameters to the inner blueprint and calls to
  * prepareSharedState() and createExecutor() are proxied to the inner blueprint.
  *
- * Inner feature name and dimension name are mandatory arguments. Cell type is optional with 'double' as default value.
- * e.g. both elementwise(bm25(i),x,double) and elementwise(bm25(i),x) will pass (i,x,double) to the inner elementwise
- * bm25 ranking feature blueprint and rank property keys used for tuning must always contain the cell type name.
+ * Inner feature name and dimension name are mandatory arguments. Cell type is optional with 'double' as default
+ * value. e.g. both elementwise(bm25(i),x,double) and elementwise(bm25(i),x) will pass (i,x,double) to the inner
+ * elementwise bm25 ranking feature blueprint and rank property keys used for tuning must always contain the cell type
+ * name.
  */
 class ElementwiseBlueprint : public fef::Blueprint {
 public:
     using NestedBlueprints = std::shared_ptr<std::map<std::string, std::shared_ptr<fef::Blueprint>>>;
+
 private:
     std::unique_ptr<fef::Blueprint> _inner_blueprint;
-    NestedBlueprints                _nested_blueprints; // known blueprints that can be first argument to elementwise blueprint
+    NestedBlueprints _nested_blueprints; // known blueprints that can be first argument to elementwise blueprint
 
     static NestedBlueprints make_default_nested_blueprints();
+
 public:
     ElementwiseBlueprint();
     ElementwiseBlueprint(NestedBlueprints nested_blueprints);
@@ -39,4 +43,4 @@ public:
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

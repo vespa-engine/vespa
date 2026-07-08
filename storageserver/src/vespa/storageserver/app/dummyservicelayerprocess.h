@@ -15,15 +15,12 @@ class DummyServiceLayerProcess : public ServiceLayerProcess {
     std::unique_ptr<spi::PersistenceProvider> _provider;
 
 public:
-    explicit DummyServiceLayerProcess(const config::ConfigUri & configUri);
-    ~DummyServiceLayerProcess() override {
-        DummyServiceLayerProcess::shutdown();
-    }
+    explicit DummyServiceLayerProcess(const config::ConfigUri& configUri);
+    ~DummyServiceLayerProcess() override { DummyServiceLayerProcess::shutdown(); }
 
     void shutdown() override;
     void setupProvider() override;
     spi::PersistenceProvider& getProvider() override { return *_provider; }
 };
 
-} // storage
-
+} // namespace storage

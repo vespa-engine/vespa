@@ -1,33 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_inverter_context.h"
+
 #include <cassert>
 #include <optional>
 
 namespace search::memoryindex {
 
-using vespalib::ISequencedTaskExecutor;
 using index::SchemaIndexFields;
+using vespalib::ISequencedTaskExecutor;
 
 namespace {
 
 template <typename Context>
-void make_contexts(const index::Schema& schema, const SchemaIndexFields& schema_index_fields, ISequencedTaskExecutor& executor, std::vector<Context>& contexts)
-{
+void make_contexts(const index::Schema& schema, const SchemaIndexFields& schema_index_fields,
+                   ISequencedTaskExecutor& executor, std::vector<Context>& contexts) {
     using ExecutorId = ISequencedTaskExecutor::ExecutorId;
     using IdMapping = std::vector<std::tuple<ExecutorId, bool, uint32_t, uint32_t>>;
     IdMapping map;
     for (uint32_t field_id : schema_index_fields._textFields) {
         // TODO: Add bias when sharing sequenced task executor between document types
         auto& name = schema.getIndexField(field_id).getName();
-        auto id = executor.getExecutorIdFromName(name);
+        auto  id = executor.getExecutorIdFromName(name);
         map.emplace_back(id, false, field_id, 0);
     }
     uint32_t uri_field_id = 0;
     for (auto& uri_field : schema_index_fields._uriFields) {
         // TODO: Add bias when sharing sequenced task executor between document types
         auto& name = schema.getIndexField(uri_field._all).getName();
-        auto id = executor.getExecutorIdFromName(name);
+        auto  id = executor.getExecutorIdFromName(name);
         map.emplace_back(id, true, uri_field_id, uri_field._all);
         ++uri_field_id;
     }
@@ -46,8 +47,7 @@ void make_contexts(const index::Schema& schema, const SchemaIndexFields& schema_
     }
 }
 
-void switch_to_alternate_ids(ISequencedTaskExecutor& executor, std::vector<PushContext>& contexts, uint32_t bias)
-{
+void switch_to_alternate_ids(ISequencedTaskExecutor& executor, std::vector<PushContext>& contexts, uint32_t bias) {
     for (auto& context : contexts) {
         context.set_id(executor.get_alternate_executor_id(context.get_id(), bias));
     }
@@ -55,6 +55,7 @@ void switch_to_alternate_ids(ISequencedTaskExecutor& executor, std::vector<PushC
 
 class PusherMapping {
     std::vector<std::optional<uint32_t>> _pushers;
+
 public:
     PusherMapping(size_t size);
     ~PusherMapping();
@@ -78,9 +79,7 @@ public:
     }
 };
 
-PusherMapping::PusherMapping(size_t size)
-    : _pushers(size)
-{
+PusherMapping::PusherMapping(size_t size) : _pushers(size) {
 }
 
 PusherMapping::~PusherMapping() = default;
@@ -94,14 +93,11 @@ PusherMapping::~PusherMapping() = default;
  * task executor and drop double buffering then we can simplify this
  * to a 1:1 mapping.
  */
-void connect_contexts(std::vector<InvertContext>& invert_contexts,
-                      const std::vector<PushContext>& push_contexts,
-                      uint32_t num_fields,
-                      uint32_t num_uri_fields)
-{
+void connect_contexts(std::vector<InvertContext>& invert_contexts, const std::vector<PushContext>& push_contexts,
+                      uint32_t num_fields, uint32_t num_uri_fields) {
     PusherMapping field_to_pusher(num_fields);
     PusherMapping uri_field_to_pusher(num_uri_fields);
-    uint32_t pusher_id = 0;
+    uint32_t      pusher_id = 0;
     for (auto& push_context : push_contexts) {
         field_to_pusher.add_mapping(push_context.get_fields(), pusher_id);
         uri_field_to_pusher.add_mapping(push_context.get_uri_fields(), pusher_id);
@@ -121,36 +117,33 @@ void connect_contexts(std::vector<InvertContext>& invert_contexts,
     }
 }
 
-}
+} // namespace
 
-DocumentInverterContext::DocumentInverterContext(const index::Schema& schema,
-                                                 ISequencedTaskExecutor &invert_threads,
-                                                 ISequencedTaskExecutor &push_threads,
-                                                 IFieldIndexCollection& field_indexes)
+DocumentInverterContext::DocumentInverterContext(const index::Schema& schema, ISequencedTaskExecutor& invert_threads,
+                                                 ISequencedTaskExecutor& push_threads,
+                                                 IFieldIndexCollection&  field_indexes)
     : _schema(schema),
       _schema_index_fields(),
       _invert_threads(invert_threads),
       _push_threads(push_threads),
       _field_indexes(field_indexes),
       _invert_contexts(),
-      _push_contexts()
-{
+      _push_contexts() {
     _schema_index_fields.setup(schema);
     setup_contexts();
 }
 
 DocumentInverterContext::~DocumentInverterContext() = default;
 
-void
-DocumentInverterContext::setup_contexts()
-{
+void DocumentInverterContext::setup_contexts() {
     make_contexts(_schema, _schema_index_fields, _invert_threads, _invert_contexts);
     make_contexts(_schema, _schema_index_fields, _push_threads, _push_contexts);
     if (&_invert_threads == &_push_threads) {
         uint32_t bias = _schema_index_fields._textFields.size() + _schema_index_fields._uriFields.size();
         switch_to_alternate_ids(_push_threads, _push_contexts, bias);
     }
-    connect_contexts(_invert_contexts, _push_contexts, _schema.getNumIndexFields(), _schema_index_fields._uriFields.size());
+    connect_contexts(_invert_contexts, _push_contexts, _schema.getNumIndexFields(),
+                     _schema_index_fields._uriFields.size());
 }
 
-}
+} // namespace search::memoryindex

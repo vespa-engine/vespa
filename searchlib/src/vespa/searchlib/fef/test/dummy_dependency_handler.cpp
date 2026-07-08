@@ -6,7 +6,7 @@ namespace search {
 namespace fef {
 namespace test {
 
-DummyDependencyHandler::DummyDependencyHandler(Blueprint &blueprint_in)
+DummyDependencyHandler::DummyDependencyHandler(Blueprint& blueprint_in)
     : blueprint(blueprint_in),
       object_type_map(),
       accept_type_mismatch(false),
@@ -14,25 +14,20 @@ DummyDependencyHandler::DummyDependencyHandler(Blueprint &blueprint_in)
       accept_input(),
       output(),
       output_type(),
-      fail_msg()
-{
+      fail_msg() {
     blueprint.attach_dependency_handler(*this);
 }
 
-DummyDependencyHandler::~DummyDependencyHandler()
-{
+DummyDependencyHandler::~DummyDependencyHandler() {
     blueprint.detach_dependency_handler();
 }
 
-void
-DummyDependencyHandler::define_object_input(const std::string &name, const vespalib::eval::ValueType &type)
-{
+void DummyDependencyHandler::define_object_input(const std::string& name, const vespalib::eval::ValueType& type) {
     object_type_map.emplace(name, FeatureType::object(type));
 }
 
-std::optional<FeatureType>
-DummyDependencyHandler::resolve_input(const std::string &feature_name, Blueprint::AcceptInput accept_type)
-{
+std::optional<FeatureType> DummyDependencyHandler::resolve_input(const std::string&     feature_name,
+                                                                 Blueprint::AcceptInput accept_type) {
     input.push_back(feature_name);
     accept_input.push_back(accept_type);
     auto pos = object_type_map.find(feature_name);
@@ -50,19 +45,15 @@ DummyDependencyHandler::resolve_input(const std::string &feature_name, Blueprint
     return pos->second;
 }
 
-void
-DummyDependencyHandler::define_output(const std::string &output_name, FeatureType type)
-{
+void DummyDependencyHandler::define_output(const std::string& output_name, FeatureType type) {
     output.push_back(output_name);
     output_type.push_back(std::move(type));
 }
 
-void
-DummyDependencyHandler::fail(const std::string &msg)
-{
+void DummyDependencyHandler::fail(const std::string& msg) {
     fail_msg = msg;
 }
 
-} // namespace search::fef::test
-} // namespace search::fef
+} // namespace test
+} // namespace fef
 } // namespace search

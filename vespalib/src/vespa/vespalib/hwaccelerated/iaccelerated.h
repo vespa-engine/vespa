@@ -3,14 +3,18 @@
 #pragma once
 
 #include "target_info.h"
+
 #include <vespa/vespalib/util/bfloat16.h>
-#include <memory>
+
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace vespalib::hwaccelerated {
 
-namespace dispatch { struct FnTable; }
+namespace dispatch {
+struct FnTable;
+}
 
 class TargetInfo;
 
@@ -36,4 +40,4 @@ public:
     static std::vector<std::unique_ptr<IAccelerated>> create_supported_auto_vectorized_targets();
 };
 
-}
+} // namespace vespalib::hwaccelerated

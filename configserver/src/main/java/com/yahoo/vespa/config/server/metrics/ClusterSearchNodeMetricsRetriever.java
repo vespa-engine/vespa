@@ -56,7 +56,7 @@ public class ClusterSearchNodeMetricsRetriever {
         }
 
         log.log(Level.FINE, () ->
-                String.format("Proton metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
+                Text.format("Proton metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
         );*/
 
         return clusterMetricsMap;

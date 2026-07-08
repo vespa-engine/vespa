@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors.tracing;
 
+import com.yahoo.text.Text;
 import java.util.logging.Level;
-
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -17,7 +17,7 @@ public class LoggingTraceExporter implements TraceExporter {
     public void maybeExport(Supplier<TraceDescription> traceDescriptionSupplier) {
         var traceDescription = traceDescriptionSupplier.get();
         if (traceDescription.getTrace() != null) {
-            log.log(Level.WARNING, String.format("%s: %s", traceDescription.getDescription(),
+            log.log(Level.WARNING, Text.format("%s: %s", traceDescription.getDescription(),
                     traceDescription.getTrace().toString()));
         }
     }

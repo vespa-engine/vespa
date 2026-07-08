@@ -12,8 +12,7 @@ namespace storage::bucketdb {
  * Key type is in the standard u64 "reversed bucket ID bits" form.
  * Value type is always a (possibly wrapped) const reference to the entry itself.
  */
-template <typename ConstRefT>
-class ConstIterator {
+template <typename ConstRefT> class ConstIterator {
 public:
     virtual ~ConstIterator() = default;
     virtual void next() noexcept = 0;
@@ -22,4 +21,4 @@ public:
     [[nodiscard]] virtual ConstRefT value() const = 0;
 };
 
-}
+} // namespace storage::bucketdb

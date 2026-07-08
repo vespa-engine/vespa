@@ -7,7 +7,16 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
-import com.yahoo.document.annotation.*;
+import com.yahoo.document.annotation.AlternateSpanList;
+import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.annotation.AnnotationReference;
+import com.yahoo.document.annotation.AnnotationReferenceDataType;
+import com.yahoo.document.annotation.AnnotationType;
+import com.yahoo.document.annotation.AnnotationTypeRegistry;
+import com.yahoo.document.annotation.Span;
+import com.yahoo.document.annotation.SpanList;
+import com.yahoo.document.annotation.SpanNode;
+import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.DoubleFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
@@ -26,7 +35,9 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests that serialization of annotations from Java generates the

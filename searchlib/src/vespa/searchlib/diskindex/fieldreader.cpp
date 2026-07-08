@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldreader.h"
-#include "zcposocc.h"
+
 #include "extposocc.h"
-#include "pagedict4file.h"
 #include "field_length_scanner.h"
+#include "pagedict4file.h"
+#include "zcposocc.h"
+
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -17,15 +19,17 @@ namespace {
 std::string PosOccIdCooked = "PosOcc.3.Cooked";
 std::string interleaved_features("interleaved_features");
 
-uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())); }
-
+uint16_t cap_u16(uint32_t val) {
+    return std::min(val, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max()));
 }
 
+} // namespace
+
+using search::bitcompression::PosOccFieldParams;
+using search::bitcompression::PosOccFieldsParams;
 using search::index::FieldLengthInfo;
 using search::index::Schema;
 using search::index::SchemaUtil;
-using search::bitcompression::PosOccFieldParams;
-using search::bitcompression::PosOccFieldsParams;
 namespace fs = std::filesystem;
 
 namespace search::diskindex {
@@ -40,17 +44,12 @@ FieldReader::FieldReader()
       _oldWordNum(noWordNumHigh()),
       _residue(0u),
       _docIdLimit(0u),
-      _word()
-{
+      _word() {
 }
-
 
 FieldReader::~FieldReader() = default;
 
-
-void
-FieldReader::readCounts()
-{
+void FieldReader::readCounts() {
     PostingListCounts counts;
     _dictFile->readWord(_word, _oldWordNum, counts);
     _oldposoccfile->read_word_and_counts(_word, counts);
@@ -63,18 +62,12 @@ FieldReader::readCounts()
         _wordNum = _oldWordNum;
 }
 
-
-void
-FieldReader::readDocIdAndFeatures()
-{
+void FieldReader::readDocIdAndFeatures() {
     _oldposoccfile->readDocIdAndFeatures(_docIdAndFeatures);
     _docIdAndFeatures.set_doc_id(_docIdMapper.mapDocId(_docIdAndFeatures.doc_id()));
 }
 
-
-void
-FieldReader::read()
-{
+void FieldReader::read() {
     for (;;) {
         while (_residue == 0) {
             readCounts();
@@ -92,37 +85,23 @@ FieldReader::read()
     }
 }
 
-
-bool
-FieldReader::allowRawFeatures()
-{
+bool FieldReader::allowRawFeatures() {
     return true;
 }
 
-bool
-FieldReader::need_regenerate_interleaved_features_scan()
-{
+bool FieldReader::need_regenerate_interleaved_features_scan() {
     return false;
 }
 
-void
-FieldReader::scan_element_lengths(uint32_t)
-{
+void FieldReader::scan_element_lengths(uint32_t) {
 }
 
-void
-FieldReader::setup(const WordNumMapping &wordNumMapping,
-                   const DocIdMapping &docIdMapping)
-{
+void FieldReader::setup(const WordNumMapping& wordNumMapping, const DocIdMapping& docIdMapping) {
     _wordNumMapper.setup(wordNumMapping);
     _docIdMapper.setup(docIdMapping);
 }
 
-
-bool
-FieldReader::open(const std::string &prefix,
-                  const TuneFileSeqRead &tuneFileRead)
-{
+bool FieldReader::open(const std::string& prefix, const TuneFileSeqRead& tuneFileRead) {
     std::string name = prefix + "posocc.dat.compressed";
 
     if (!fs::exists(fs::path(name))) {
@@ -153,9 +132,7 @@ FieldReader::open(const std::string &prefix,
     return true;
 }
 
-bool
-FieldReader::close()
-{
+bool FieldReader::close() {
     bool ret = true;
 
     if (_oldposoccfile) {
@@ -178,36 +155,25 @@ FieldReader::close()
     return ret;
 }
 
-
-void
-FieldReader::setFeatureParams(const PostingListParams &params)
-{
+void FieldReader::setFeatureParams(const PostingListParams& params) {
     _oldposoccfile->setFeatureParams(params);
 }
 
-
-void
-FieldReader::getFeatureParams(PostingListParams &params)
-{
+void FieldReader::getFeatureParams(PostingListParams& params) {
     _oldposoccfile->getFeatureParams(params);
 }
 
-const FieldLengthInfo &
-FieldReader::get_field_length_info() const
-{
+const FieldLengthInfo& FieldReader::get_field_length_info() const {
     return _oldposoccfile->get_field_length_info();
 }
 
-std::unique_ptr<FieldReader>
-FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
-                              const Schema &oldSchema,
-                              std::shared_ptr<FieldLengthScanner> field_length_scanner)
-{
+std::unique_ptr<FieldReader> FieldReader::allocFieldReader(const SchemaUtil::IndexIterator&    index,
+                                                           const Schema&                       oldSchema,
+                                                           std::shared_ptr<FieldLengthScanner> field_length_scanner) {
     assert(index.isValid());
     if (index.hasMatchingOldFields(oldSchema)) {
-        if (!index.use_interleaved_features() ||
-            index.has_matching_use_interleaved_features(oldSchema)) {
-            return std::make_unique<FieldReader>();      // The common case
+        if (!index.use_interleaved_features() || index.has_matching_use_interleaved_features(oldSchema)) {
+            return std::make_unique<FieldReader>(); // The common case
         }
     }
     if (!index.hasOldFields(oldSchema)) {
@@ -215,67 +181,51 @@ FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
     }
     // field exists in old schema with different collection type setting
     // or old field is missing wanted interleaved features.
-    return std::make_unique<FieldReaderStripInfo>(index, field_length_scanner);   // degraded
+    return std::make_unique<FieldReaderStripInfo>(index, field_length_scanner); // degraded
 }
 
-
-FieldReaderEmpty::FieldReaderEmpty(const IndexIterator &index)
-    : _index(index)
-{
+FieldReaderEmpty::FieldReaderEmpty(const IndexIterator& index) : _index(index) {
 }
 
-
-bool
-FieldReaderEmpty::open(const std::string &prefix,
-                       const TuneFileSeqRead &tuneFileRead)
-{
-    (void) prefix;
-    (void) tuneFileRead;
+bool FieldReaderEmpty::open(const std::string& prefix, const TuneFileSeqRead& tuneFileRead) {
+    (void)prefix;
+    (void)tuneFileRead;
     return true;
 }
 
-
-void
-FieldReaderEmpty::getFeatureParams(PostingListParams &params)
-{
+void FieldReaderEmpty::getFeatureParams(PostingListParams& params) {
     PosOccFieldsParams fieldsParams;
     fieldsParams.setSchemaParams(_index.getSchema(), _index.getIndex());
     params.clear();
     fieldsParams.getParams(params);
 }
 
-
-FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner> field_length_scanner)
+FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator&                index,
+                                           std::shared_ptr<FieldLengthScanner> field_length_scanner)
     : _hasElements(false),
       _hasElementWeights(false),
       _want_interleaved_features(index.use_interleaved_features()),
       _regenerate_interleaved_features(false),
-      _field_length_scanner(std::move(field_length_scanner))
-{
+      _field_length_scanner(std::move(field_length_scanner)) {
     PosOccFieldsParams fieldsParams;
     fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
     assert(fieldsParams.getNumFields() > 0);
-    const PosOccFieldParams &fieldParams = fieldsParams.getFieldParams()[0];
+    const PosOccFieldParams& fieldParams = fieldsParams.getFieldParams()[0];
     _hasElements = fieldParams._hasElements;
     _hasElementWeights = fieldParams._hasElementWeights;
 }
 
-
-bool
-FieldReaderStripInfo::allowRawFeatures()
-{
+bool FieldReaderStripInfo::allowRawFeatures() {
     return false;
 }
 
-bool
-FieldReaderStripInfo::open(const std::string &prefix, const TuneFileSeqRead &tuneFileRead)
-{
+bool FieldReaderStripInfo::open(const std::string& prefix, const TuneFileSeqRead& tuneFileRead) {
     if (!FieldReader::open(prefix, tuneFileRead)) {
         return false;
     }
     if (_want_interleaved_features) {
         PostingListParams params;
-        bool decode_interleaved_features = false;
+        bool              decode_interleaved_features = false;
         _oldposoccfile->getParams(params);
         params.get(interleaved_features, decode_interleaved_features);
         if (!decode_interleaved_features) {
@@ -288,15 +238,11 @@ FieldReaderStripInfo::open(const std::string &prefix, const TuneFileSeqRead &tun
     return true;
 }
 
-bool
-FieldReaderStripInfo::need_regenerate_interleaved_features_scan()
-{
+bool FieldReaderStripInfo::need_regenerate_interleaved_features_scan() {
     return (_regenerate_interleaved_features && _hasElements && _field_length_scanner);
 }
 
-void
-FieldReaderStripInfo::scan_element_lengths(uint32_t scan_chunk)
-{
+void FieldReaderStripInfo::scan_element_lengths(uint32_t scan_chunk) {
     if (!isValid()) {
         return;
     }
@@ -305,19 +251,17 @@ FieldReaderStripInfo::scan_element_lengths(uint32_t scan_chunk)
         if (!isValid()) {
             break;
         }
-        DocIdAndFeatures &features = _docIdAndFeatures;
+        DocIdAndFeatures& features = _docIdAndFeatures;
         assert(!features.has_raw_data());
         _field_length_scanner->scan_features(features);
         --scan_chunk;
     }
 }
 
-void
-FieldReaderStripInfo::read()
-{
+void FieldReaderStripInfo::read() {
     for (;;) {
         FieldReader::read();
-        DocIdAndFeatures &features = _docIdAndFeatures;
+        DocIdAndFeatures& features = _docIdAndFeatures;
         if (_wordNum == noWordNumHigh()) {
             return;
         }
@@ -334,7 +278,7 @@ FieldReaderStripInfo::read()
             }
         } else {
             if (element->getElementId() != 0) {
-                continue;   // Drop this entry, try to read new entry
+                continue; // Drop this entry, try to read new entry
             }
             element->setWeight(1);
             features.word_positions().resize(element->getNumOccs());
@@ -346,10 +290,10 @@ FieldReaderStripInfo::read()
     }
     if (_regenerate_interleaved_features) {
         // Regenerate interleaved featues from normal features.
-        uint32_t field_length = 0;
-        uint32_t num_occs = 0;
-        DocIdAndFeatures &features = _docIdAndFeatures;
-        for (const auto &element : features.elements()) {
+        uint32_t          field_length = 0;
+        uint32_t          num_occs = 0;
+        DocIdAndFeatures& features = _docIdAndFeatures;
+        for (const auto& element : features.elements()) {
             field_length += element.getElementLen();
             num_occs += element.getNumOccs();
         }
@@ -362,10 +306,7 @@ FieldReaderStripInfo::read()
     }
 }
 
-
-void
-FieldReaderStripInfo::getFeatureParams(PostingListParams &params)
-{
+void FieldReaderStripInfo::getFeatureParams(PostingListParams& params) {
     FieldReader::getFeatureParams(params);
     std::string paramsPrefix = PosOccFieldParams::getParamsPrefix(0);
     std::string collStr = paramsPrefix + ".collectionType";
@@ -380,4 +321,4 @@ FieldReaderStripInfo::getFeatureParams(PostingListParams &params)
     params.erase("encoding");
 }
 
-}
+} // namespace search::diskindex

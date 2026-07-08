@@ -5,11 +5,10 @@
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/instruction/dense_hamming_distance.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <vespa/vespalib/util/require.h>
-#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("dense_hamming_distance_function_test");
@@ -18,23 +17,21 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
 
 struct FunInfo {
     using LookFor = DenseHammingDistance;
-    void verify(const LookFor &fun) const {
-        EXPECT_TRUE(fun.result_is_mutable());
-    }
+    void verify(const LookFor& fun) const { EXPECT_TRUE(fun.result_is_mutable()); }
 };
 
-void assertOptimized(const std::string &expr) {
+void assertOptimized(const std::string& expr) {
     CellTypeSpace just_int8({CellType::INT8}, 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo{}}, just_int8);
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);
 }
 
-void assertNotOptimized(const std::string &expr) {
+void assertNotOptimized(const std::string& expr) {
     CellTypeSpace just_int8({CellType::INT8}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_int8);
 }
@@ -88,4 +85,3 @@ TEST(DenseHammingDistanceOptimizer, result_must_be_double_to_trigger_optimizatio
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

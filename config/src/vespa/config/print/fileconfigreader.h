@@ -5,13 +5,12 @@
 
 namespace config {
 
-template <typename ConfigType>
-class FileConfigReader : public ConfigReader<ConfigType> {
+template <typename ConfigType> class FileConfigReader : public ConfigReader<ConfigType> {
 public:
-    FileConfigReader(const std::string & fileName);
+    FileConfigReader(const std::string& fileName);
 
     // Implements ConfigReader
-    std::unique_ptr<ConfigType> read(const ConfigFormatter & formatter) override;
+    std::unique_ptr<ConfigType> read(const ConfigFormatter& formatter) override;
 
     /**
      * Read config from this file using old config format.
@@ -19,6 +18,7 @@ public:
      * @return An instance of the correct type.
      */
     std::unique_ptr<ConfigType> read();
+
 private:
     const std::string _fileName;
 };

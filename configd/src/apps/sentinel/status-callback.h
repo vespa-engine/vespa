@@ -7,8 +7,9 @@ namespace config::sentinel {
 /** very simple callback API with "ok" or "not ok" status only */
 struct StatusCallback {
     virtual void returnStatus(bool ok) = 0;
+
 protected:
     ~StatusCallback() = default;
 };
 
-}
+} // namespace config::sentinel

@@ -21,6 +21,7 @@ import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -145,8 +146,8 @@ public class ConfiguratorTest {
         assertEquals(originalConfig.size(), dynamicConfig.size() + staticConfig.size());
         File dynFile = folder.newFile();
         staticConfig.put("dynamicConfigFile", dynFile.getAbsolutePath());
-        Files.write(cfgFile.toPath(), Configurator.transformConfigToString(staticConfig).getBytes());
-        Files.write(dynFile.toPath(), Configurator.transformConfigToString(dynamicConfig).getBytes());
+        Files.write(cfgFile.toPath(), Configurator.transformConfigToString(staticConfig).getBytes(StandardCharsets.UTF_8));
+        Files.write(dynFile.toPath(), Configurator.transformConfigToString(dynamicConfig).getBytes(StandardCharsets.UTF_8));
 
         configurator.writeConfigToDisk(VespaTlsConfig.tlsDisabled());
         // Next generation of config should not mark this as a joiner either.

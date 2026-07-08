@@ -6,8 +6,8 @@
 namespace mbus {
 
 /**
- * This class represents a verbatim match within a {@link Hop}'s selector. This is nothing more than a string that will
- * be used as-is when performing service name lookups.
+ * This class represents a verbatim match within a {@link Hop}'s selector. This is nothing more than a string that
+ * will be used as-is when performing service name lookups.
  *
  * @author Simon Thoresen Hult
  * @version $Id$
@@ -30,13 +30,12 @@ public:
      *
      * @return The image.
      */
-    const string &getImage() const { return _image; }
+    const string& getImage() const { return _image; }
 
     Type getType() const override { return TYPE_VERBATIM; }
-    bool matches(const IHopDirective &dir) const override;
+    bool matches(const IHopDirective& dir) const override;
     string toString() const override;
     string toDebugString() const override;
 };
 
-} // mbus
-
+} // namespace mbus

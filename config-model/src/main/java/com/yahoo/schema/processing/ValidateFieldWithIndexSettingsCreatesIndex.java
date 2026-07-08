@@ -32,10 +32,10 @@ public class ValidateFieldWithIndexSettingsCreatesIndex extends Processor {
 
             if ( ! field.getRanking().equals(defaultRanking))
                 fail(schema, field,
-                     "Fields which are not creating an index or attribute can not contain rank settings.");
+                     "Fields which are not creating an index or attribute cannot contain rank settings.");
             if ( ! field.getMatching().equals(defaultMatching))
                 fail(schema, field,
-                     "Fields which are not creating an index or attribute can not contain match settings.");
+                     "Fields which are not creating an index or attribute cannot contain match settings.");
         }
     }
 

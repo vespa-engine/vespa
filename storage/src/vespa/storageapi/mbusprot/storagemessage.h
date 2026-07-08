@@ -13,8 +13,6 @@ public:
 
     virtual api::StorageMessage::SP getInternalMessage() = 0;
     virtual api::StorageMessage::CSP getInternalMessage() const = 0;
-
 };
 
-}
-
+} // namespace storage::mbusprot

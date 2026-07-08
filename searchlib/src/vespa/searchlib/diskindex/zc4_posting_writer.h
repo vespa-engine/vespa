@@ -4,7 +4,9 @@
 
 #include "zc4_posting_writer_base.h"
 
-namespace search::index { class DocIdAndFeatures; }
+namespace search::index {
+class DocIdAndFeatures;
+}
 
 namespace search::diskindex {
 
@@ -19,38 +21,37 @@ namespace search::diskindex {
  * Rare words do not have skip info, and docid deltas and features are
  * interleaved.
  */
-template <bool bigEndian>
-class Zc4PostingWriter : public Zc4PostingWriterBase
-{
+template <bool bigEndian> class Zc4PostingWriter : public Zc4PostingWriterBase {
     using EncodeContext = bitcompression::FeatureEncodeContext<bigEndian>;
 
     EncodeContext _encode_context;
     // Buffer up features in memory
-    EncodeContext *_encode_features;
+    EncodeContext* _encode_features;
 
     void write_zc_view(std::span<const uint8_t> view);
+
 public:
-    Zc4PostingWriter(const Zc4PostingWriter &) = delete;
-    Zc4PostingWriter(Zc4PostingWriter &&) = delete;
-    Zc4PostingWriter &operator=(const Zc4PostingWriter &) = delete;
-    Zc4PostingWriter &operator=(Zc4PostingWriter &&) = delete;
-    Zc4PostingWriter(index::PostingListCounts &counts);
+    Zc4PostingWriter(const Zc4PostingWriter&) = delete;
+    Zc4PostingWriter(Zc4PostingWriter&&) = delete;
+    Zc4PostingWriter& operator=(const Zc4PostingWriter&) = delete;
+    Zc4PostingWriter& operator=(Zc4PostingWriter&&) = delete;
+    Zc4PostingWriter(index::PostingListCounts& counts);
     ~Zc4PostingWriter();
 
     void reset_chunk();
     void flush_word_with_skip(bool hasMore);
     void flush_word_no_skip();
     void flush_word();
-    void write_docid_and_features(const index::DocIdAndFeatures &features);
-    void set_encode_features(EncodeContext *encode_features);
+    void write_docid_and_features(const index::DocIdAndFeatures& features);
+    void set_encode_features(EncodeContext* encode_features);
     void on_open();
     void on_close();
 
-    EncodeContext &get_encode_features() { return *_encode_features; }
-    EncodeContext &get_encode_context() { return _encode_context; }
+    EncodeContext& get_encode_features() { return *_encode_features; }
+    EncodeContext& get_encode_context() { return _encode_context; }
 };
 
 extern template class Zc4PostingWriter<false>;
 extern template class Zc4PostingWriter<true>;
 
-}
+} // namespace search::diskindex

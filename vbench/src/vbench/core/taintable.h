@@ -10,12 +10,10 @@ namespace vbench {
  * Interface used to report what went wrong. Implementing this
  * interface indicates that something could go wrong.
  **/
-struct Taintable
-{
-    static const Taintable &nil();
-    virtual const Taint &tainted() const = 0;
+struct Taintable {
+    static const Taintable& nil();
+    virtual const Taint& tainted() const = 0;
     virtual ~Taintable() = default;
 };
 
 } // namespace vbench
-

@@ -4,7 +4,9 @@
 
 #include <memory>
 
-namespace storage::spi { class Bucket; }
+namespace storage::spi {
+class Bucket;
+}
 
 namespace storage {
 
@@ -20,4 +22,4 @@ public:
     virtual void schedule_delayed_delete(std::unique_ptr<ApplyBucketDiffState> state) const = 0;
 };
 
-}
+} // namespace storage

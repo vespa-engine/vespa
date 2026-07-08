@@ -24,7 +24,10 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -62,7 +65,7 @@ public class IndexedBackendTestCase {
     @Test
     void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         IndexedBackend fastSearcher = new IndexedBackend(CLUSTER_PARAMS,
-                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))));
+                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0, true))));
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
@@ -81,7 +84,7 @@ public class IndexedBackendTestCase {
     @Test
     void testRankProfileValidation() {
         IndexedBackend fastSearcher = new IndexedBackend(CLUSTER_PARAMS,
-                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))));
+                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0, true))));
         assertFalse(searchError("?query=q", fastSearcher).contains("does not contain requested rank profile"));
         assertFalse(searchError("?query=q&ranking.profile=default", fastSearcher).contains("does not contain requested rank profile"));
         assertTrue(searchError("?query=q&ranking.profile=nosuch", fastSearcher).contains("does not contain requested rank profile"));
@@ -97,7 +100,7 @@ public class IndexedBackendTestCase {
         var backend = new IndexedBackend(new ClusterParams(CLUSTER_PARAMS.getSearcherName(), CLUSTER_PARAMS.getServerId(),
                                                            CLUSTER_PARAMS.getDefaultSummary(), CLUSTER_PARAMS.getDocumentdbInfoConfig(),
                                                            new SchemaInfo(List.of(schema.build()), List.of())),
-                                         MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))));
+                                         MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0, true))));
         Query q = new Query("?query=foo");
         Result result = doSearch(backend, q, 0, 10);
         assertFalse(backend.summaryNeedsQuery(q));
@@ -110,7 +113,7 @@ public class IndexedBackendTestCase {
 
     @Test
     void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
-        MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0), new Node(CLUSTER, 2, "host1", 0)));
+        MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0, true), new Node(CLUSTER, 2, "host1", 0, true)));
 
         IndexedBackend fastSearcher = new IndexedBackend(CLUSTER_PARAMS, dispatcher);
         Query q = new Query("?query=foo");
@@ -147,7 +150,7 @@ public class IndexedBackendTestCase {
         searchClusterB.name(clusterName);
         b.searchcluster(searchClusterB);
         VipStatus vipStatus = new VipStatus(b.build());
-        List<Node> nodes_1 = List.of(new Node(CLUSTER, 0, "host0", 0));
+        List<Node> nodes_1 = List.of(new Node(CLUSTER, 0, "host0", 0, true));
         RpcResourcePool rpcPool_1 = new RpcResourcePool(MockDispatcher.toDispatchConfig(), MockDispatcher.toNodesConfig(nodes_1));
         MockDispatcher dispatch_1 = MockDispatcher.create(nodes_1, rpcPool_1, vipStatus);
         dispatch_1.clusterMonitor.shutdown();

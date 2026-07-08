@@ -181,7 +181,7 @@ public class URI implements Cloneable, Comparable<URI> {
      * the uri complete if needed. After normalizing, the scheme,
      * host, port and rest of this uri is set if defined.
      *
-     * @throws IllegalArgumentException if this uri can not be normalized into a legal uri
+     * @throws IllegalArgumentException if this uri cannot be normalized into a legal uri
      */
     private void normalizeHierarchical() {
         complete();

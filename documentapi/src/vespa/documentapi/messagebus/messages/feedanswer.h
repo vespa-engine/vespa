@@ -46,9 +46,7 @@ public:
      * @param recipient The name of the RTC node.
      * @param moreInfo Arbitrary additional info.
      */
-    FeedAnswer(int answerCode, int wantedIncrement,
-               const string& recipient,
-               const string& moreInfo);
+    FeedAnswer(int answerCode, int wantedIncrement, const string& recipient, const string& moreInfo);
 
     /**
      * Destructor. Frees any allocated resources.
@@ -85,12 +83,10 @@ public:
     const string& getMoreInfo() const;
 
 private:
-    int _answerCode;        // The code of this answer.
-    int _wantedIncrement;   // The increment of the current feed.
-    string _recipient; // The name of the RTC node.
-    string _moreInfo;  // Any additional data.
+    int    _answerCode;      // The code of this answer.
+    int    _wantedIncrement; // The increment of the current feed.
+    string _recipient;       // The name of the RTC node.
+    string _moreInfo;        // Any additional data.
 };
 
-}
-
-
+} // namespace documentapi

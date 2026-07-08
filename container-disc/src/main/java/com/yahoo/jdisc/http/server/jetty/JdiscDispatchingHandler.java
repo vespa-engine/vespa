@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.Locale;
 
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.SUPPORTED_METHODS;
@@ -81,7 +82,7 @@ class JdiscDispatchingHandler extends Handler.Abstract.NonBlocking {
         var accessLogEntry = new AccessLogEntry();
         jettyRequest.setAttribute(ATTRIBUTE_NAME_ACCESS_LOG_ENTRY, accessLogEntry);
 
-        if (!SUPPORTED_METHODS.contains(jettyRequest.getMethod().toUpperCase())) {
+        if (!SUPPORTED_METHODS.contains(jettyRequest.getMethod().toUpperCase(Locale.ROOT))) {
             Response.writeError(jettyRequest, jettyResponse, callback, HttpStatus.METHOD_NOT_ALLOWED_405);
             return;
         }

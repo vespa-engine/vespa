@@ -22,4 +22,4 @@ TEST(OwnershipTransferSafeTimePointCalculatorTest, zero_clock_skew_returns_epoch
     EXPECT_EQ(TimePoint(0s), CalcType(0s).safeTimePoint(TimePoint(4001ms)));
 }
 
-}
+} // namespace storage::distributor

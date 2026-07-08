@@ -10,8 +10,7 @@ namespace vbench {
  * Dumps the textual representation of a request to standard
  * output. Intended for debugging purposes.
  **/
-class RequestDumper : public Analyzer
-{
+class RequestDumper : public Analyzer {
 public:
     RequestDumper();
     void handle(Request::UP request) override;

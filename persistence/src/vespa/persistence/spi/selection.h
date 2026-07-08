@@ -9,6 +9,7 @@
 #pragma once
 
 #include "documentselection.h"
+
 #include <vespa/persistence/spi/types.h>
 
 namespace storage::spi {
@@ -16,6 +17,7 @@ namespace storage::spi {
 class Selection {
 public:
     using TimestampSubset = std::vector<Timestamp>;
+
 private:
     DocumentSelection _documentSelection;
     Timestamp         _fromTimestamp;
@@ -26,9 +28,7 @@ public:
     Selection(const DocumentSelection& docSel);
     ~Selection();
 
-    const DocumentSelection& getDocumentSelection() const {
-        return _documentSelection;
-    }
+    const DocumentSelection& getDocumentSelection() const { return _documentSelection; }
 
     /**
      * All the timestamp stuff will disappear when we rewrite selection.
@@ -37,16 +37,12 @@ public:
      * Specifies that only documents with a timestamp newer than or equal
      * to the given value shall be included in the result.
      */
-    void setFromTimestamp(Timestamp fromTimestamp) {
-        _fromTimestamp = fromTimestamp;
-    }
+    void setFromTimestamp(Timestamp fromTimestamp) { _fromTimestamp = fromTimestamp; }
     /**
      * Specifies that only documents with a timestamp older than or equal
      * to the given value shall be included in the result.
      */
-    void setToTimestamp(Timestamp toTimestamp) {
-        _toTimestamp = toTimestamp;
-    }
+    void setToTimestamp(Timestamp toTimestamp) { _toTimestamp = toTimestamp; }
 
     /**
      * Assign an explicit subset of timestamps to iterate over.
@@ -54,15 +50,11 @@ public:
      * will be ignored; all specified entries are returned if they exist.
      * Timestamps MUST be in strictly increasing order.
      */
-    void setTimestampSubset(const TimestampSubset& timestampSubset) {
-        _timestampSubset = timestampSubset;
-    }
-    const TimestampSubset& getTimestampSubset() const {
-        return _timestampSubset;
-    }
+    void setTimestampSubset(const TimestampSubset& timestampSubset) { _timestampSubset = timestampSubset; }
+    const TimestampSubset& getTimestampSubset() const { return _timestampSubset; }
 
     Timestamp getFromTimestamp() const { return _fromTimestamp; }
     Timestamp getToTimestamp() const { return _toTimestamp; }
 };
 
-}
+} // namespace storage::spi

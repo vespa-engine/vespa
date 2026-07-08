@@ -55,11 +55,7 @@ public class ClusterResources {
 
     /** Returns the total resources of this, that is the number of nodes times the node resources */
     public NodeResources totalResources() {
-        // XXX no GPU here?
-        return nodeResources.withVcpu(nodeResources.vcpu() * nodes)
-                            .withMemoryGiB(nodeResources.memoryGiB() * nodes)
-                            .withDiskGb(nodeResources.diskGb() * nodes)
-                            .withBandwidthGbps(nodeResources.bandwidthGbps() * nodes);
+        return nodeResources.multipliedBy(nodes);
     }
 
     public ClusterResources justNumbers() {

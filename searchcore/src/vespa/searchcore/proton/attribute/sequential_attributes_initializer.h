@@ -9,8 +9,7 @@ namespace proton {
 /**
  * Class that initializes and loads a set of attribute vectors in sequence.
  */
-class SequentialAttributesInitializer : public AttributesInitializerBase
-{
+class SequentialAttributesInitializer : public AttributesInitializerBase {
 private:
     uint32_t _docIdLimit;
 

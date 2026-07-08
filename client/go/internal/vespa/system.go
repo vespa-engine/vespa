@@ -1,7 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package vespa
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 // PublicSystem represents the main Vespa Cloud system.
 var PublicSystem = System{
@@ -17,7 +20,7 @@ var PublicSystem = System{
 var PublicCDSystem = System{
 	Name:           "publiccd",
 	URL:            "https://api-ctl.cd.vespa-cloud.com:4443",
-	ConsoleURL:     "https://console.cd.vespa-cloud.com",
+	ConsoleURL:     "https://console.publiccd.cd-vespa-cloud.com",
 	DefaultZone:    ZoneID{Environment: "dev", Region: "aws-us-east-1c"},
 	EndpointDomain: "cd.vespa-app.cloud",
 	TargetType:     TargetCloud,
@@ -80,6 +83,12 @@ func (s System) SubmitURL(deployment Deployment) string {
 	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/submit", s.URL, deployment.Application.Tenant, deployment.Application.Application)
 }
 
+// BuildStatusURL returns the API URL for the build status of a submitted production build.
+func (s System) BuildStatusURL(deployment Deployment, build int64) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/build-status/%d",
+		s.URL, deployment.Application.Tenant, deployment.Application.Application, build)
+}
+
 // DeploymentURL returns the API URL of given deployment.
 func (s System) DeploymentURL(deployment Deployment) string {
 	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
@@ -105,6 +114,82 @@ func (s System) RunsURL(deployment Deployment) string {
 		s.URL,
 		deployment.Application.Tenant, deployment.Application.Application, deployment.Application.Instance,
 		jobName(deployment.Zone))
+}
+
+// EndpointType identifies different API endpoints in the control plane.
+type EndpointType int
+
+const (
+	EndpointLogs EndpointType = iota
+	EndpointPrivateServices
+	EndpointJobPackage
+	EndpointApplicationPackage
+	EndpointTenant
+	EndpointApplication
+)
+
+// API path templates for the control plane endpoints.
+var apiV4Paths = map[EndpointType]struct {
+	template string
+	name     string
+}{
+	EndpointLogs:               {"/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s/logs", "logs"},
+	EndpointPrivateServices:    {"/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s/private-services", "private services"},
+	EndpointJobPackage:         {"/application/v4/tenant/%s/application/%s/instance/%s/job/%s/package", "job package"},
+	EndpointApplicationPackage: {"/application/v4/tenant/%s/application/%s/package", "application package"},
+	EndpointTenant:             {"/application/v4/tenant/%s", "tenant"},
+	EndpointApplication:        {"/application/v4/tenant/%s/application/%s", "application"},
+}
+
+// apiURL constructs and parses a URL for the given endpoint type and arguments.
+// It panics if the constructed URL is invalid, which indicates a programming error.
+func (s System) apiURL(endpoint EndpointType, args ...interface{}) *url.URL {
+	pathInfo := apiV4Paths[endpoint]
+	allArgs := make([]interface{}, 0, len(args)+1)
+	allArgs = append(allArgs, s.URL)
+	allArgs = append(allArgs, args...)
+	urlStr := fmt.Sprintf("%s"+pathInfo.template, allArgs...)
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		panic(fmt.Sprintf("invalid %s URL constructed: %s: %v", pathInfo.name, urlStr, err))
+	}
+	return u
+}
+
+// LogsURL returns the API URL for logs of given deployment.
+func (s System) LogsURL(deployment Deployment) *url.URL {
+	return s.apiURL(EndpointLogs,
+		deployment.Application.Tenant, deployment.Application.Application, deployment.Application.Instance,
+		deployment.Zone.Environment, deployment.Zone.Region)
+}
+
+// PrivateServicesURL returns the API URL for private services of given deployment.
+func (s System) PrivateServicesURL(deployment Deployment) *url.URL {
+	return s.apiURL(EndpointPrivateServices,
+		deployment.Application.Tenant, deployment.Application.Application, deployment.Application.Instance,
+		deployment.Zone.Environment, deployment.Zone.Region)
+}
+
+// JobPackageURL returns the API URL for fetching the application package for a dev/perf deployment job.
+func (s System) JobPackageURL(deployment Deployment) *url.URL {
+	return s.apiURL(EndpointJobPackage,
+		deployment.Application.Tenant, deployment.Application.Application, deployment.Application.Instance,
+		jobName(deployment.Zone))
+}
+
+// ApplicationPackageURL returns the API URL for fetching the application package for production deployment.
+func (s System) ApplicationPackageURL(app ApplicationID) *url.URL {
+	return s.apiURL(EndpointApplicationPackage, app.Tenant, app.Application)
+}
+
+// TenantURL returns the API URL for information about a tenant.
+func (s System) TenantURL(tenant string) *url.URL {
+	return s.apiURL(EndpointTenant, tenant)
+}
+
+// ApplicationURL returns the API URL for information about an application.
+func (s System) ApplicationURL(id ApplicationID) *url.URL {
+	return s.apiURL(EndpointApplication, id.Tenant, id.Application)
 }
 
 // ConsoleRunURL returns the console URL for a deployment job run in this system.

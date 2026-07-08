@@ -58,38 +58,32 @@ public:
           _attr_ctx(),
           _index_env(),
           _query_env(&_index_env),
-          _request_ctx(_doom, _thread_bundle, _attr_ctx, _query_env, _query_env.getObjectStore(), CreateBlueprintParams(), nullptr),
-          _query_tensor(SimpleValue::from_spec(TensorSpec("tensor(x[2])")
-                                               .add({{"x", 0}}, 3).add({{"x", 1}}, 5)))
-    {
+          _request_ctx(_doom, _thread_bundle, _attr_ctx, _query_env, _query_env.getObjectStore(),
+                       CreateBlueprintParams(), nullptr),
+          _query_tensor(SimpleValue::from_spec(TensorSpec("tensor(x[2])").add({{"x", 0}}, 3).add({{"x", 1}}, 5))) {
         type::QueryFeature::set(_index_env.getProperties(), "my_tensor", "tensor(x[2])");
         insert_tensor_in_properties("my_tensor", *_query_tensor);
         _query_env.getProperties().add("my_string", "foo bar");
     }
-    TensorSpec expected_query_tensor() const {
-        return spec_from_value(*_query_tensor);
-    }
+    TensorSpec expected_query_tensor() const { return spec_from_value(*_query_tensor); }
     const Value* get_query_tensor(const std::string& tensor_name) const {
         return _request_ctx.get_query_tensor(tensor_name);
     }
 };
 
-TEST_F(RequestContextTest, query_tensor_can_be_retrieved)
-{
+TEST_F(RequestContextTest, query_tensor_can_be_retrieved) {
     auto tensor = get_query_tensor("my_tensor");
     ASSERT_TRUE(tensor);
     EXPECT_TRUE(tensor->type().has_dimensions());
     EXPECT_EQ(expected_query_tensor(), spec_from_value(*tensor));
 }
 
-TEST_F(RequestContextTest, non_existing_query_tensor_returns_nullptr)
-{
+TEST_F(RequestContextTest, non_existing_query_tensor_returns_nullptr) {
     auto tensor = get_query_tensor("non_existing");
     EXPECT_FALSE(tensor);
 }
 
-TEST_F(RequestContextTest, rank_property_of_non_tensor_type_returns_nullptr)
-{
+TEST_F(RequestContextTest, rank_property_of_non_tensor_type_returns_nullptr) {
     auto tensor = get_query_tensor("my_string");
     EXPECT_FALSE(tensor);
 }

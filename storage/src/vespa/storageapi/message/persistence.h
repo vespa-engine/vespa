@@ -1,19 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
-  * Persistence related commands, like put, get & remove
+ * Persistence related commands, like put, get & remove
  */
 #pragma once
 
-#include <vespa/storageapi/messageapi/bucketinforeply.h>
-#include <vespa/storageapi/defs.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
+#include <vespa/storageapi/defs.h>
+#include <vespa/storageapi/messageapi/bucketinforeply.h>
+
 #include <optional>
 
 namespace document {
-    class DocumentUpdate;
-    class Document;
-}
+class DocumentUpdate;
+class Document;
+} // namespace document
 namespace storage::api {
 
 using documentapi::TestAndSetCondition;
@@ -21,21 +22,22 @@ using DocumentSP = std::shared_ptr<document::Document>;
 
 class TestAndSetCommand : public BucketInfoCommand {
     TestAndSetCondition _condition;
+
 public:
-    TestAndSetCommand(const MessageType & messageType, const document::Bucket &bucket);
+    TestAndSetCommand(const MessageType& messageType, const document::Bucket& bucket);
     ~TestAndSetCommand() override;
 
-    void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
+    void setCondition(const TestAndSetCondition& condition) { _condition = condition; }
     void clear_condition() { _condition = TestAndSetCondition(); }
-    const TestAndSetCondition & getCondition() const { return _condition; }
+    const TestAndSetCondition& getCondition() const { return _condition; }
     bool hasTestAndSetCondition() const noexcept override { return _condition.isPresent(); }
 
     /**
      * Uniform interface to get document id
      * Used by test and set to retrieve already existing document
      */
-    virtual const document::DocumentId & getDocumentId() const = 0;
-    virtual const document::DocumentType * getDocumentType() const { return nullptr; }
+    virtual const document::DocumentId& getDocumentId() const = 0;
+    virtual const document::DocumentType* getDocumentType() const { return nullptr; }
 };
 
 /**
@@ -48,9 +50,10 @@ class PutCommand : public TestAndSetCommand {
     DocumentSP _doc;
     Timestamp  _timestamp;
     Timestamp  _updateTimestamp;
-    bool _create_if_non_existent = false;
+    bool       _create_if_non_existent = false;
+
 public:
-    PutCommand(const document::Bucket &bucket, const DocumentSP&, Timestamp);
+    PutCommand(const document::Bucket& bucket, const DocumentSP&, Timestamp);
     ~PutCommand() override;
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
@@ -66,7 +69,7 @@ public:
     const DocumentSP& getDocument() const { return _doc; }
     const document::DocumentId& getDocumentId() const override;
     Timestamp getTimestamp() const { return _timestamp; }
-    const document::DocumentType * getDocumentType() const override;
+    const document::DocumentType* getDocumentType() const override;
     void set_create_if_non_existent(bool value) noexcept { _create_if_non_existent = value; }
     bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }
 
@@ -84,10 +87,10 @@ public:
  */
 class PutReply : public BucketInfoReply {
     document::DocumentId _docId;
-    DocumentSP _document; // Not serialized
-    Timestamp _timestamp;
-    Timestamp _updateTimestamp;
-    bool _wasFound;
+    DocumentSP           _document; // Not serialized
+    Timestamp            _timestamp;
+    Timestamp            _updateTimestamp;
+    bool                 _wasFound;
 
 public:
     explicit PutReply(const PutCommand& cmd, bool wasFound = true);
@@ -114,25 +117,20 @@ public:
  */
 class UpdateCommand : public TestAndSetCommand {
     std::shared_ptr<document::DocumentUpdate> _update;
-    Timestamp _timestamp;
-    Timestamp _oldTimestamp;
+    Timestamp                                 _timestamp;
+    Timestamp                                 _oldTimestamp;
     std::optional<bool> _create_if_missing; // caches the value held (possibly lazily deserialized) in _update
 
 public:
-    UpdateCommand(const document::Bucket &bucket,
-                  const std::shared_ptr<document::DocumentUpdate>&, Timestamp);
+    UpdateCommand(const document::Bucket& bucket, const std::shared_ptr<document::DocumentUpdate>&, Timestamp);
     ~UpdateCommand() override;
 
     void setTimestamp(Timestamp ts) noexcept { _timestamp = ts; }
     void setOldTimestamp(Timestamp ts) noexcept { _oldTimestamp = ts; }
 
-    [[nodiscard]] bool has_cached_create_if_missing() const noexcept {
-        return _create_if_missing.has_value();
-    }
+    [[nodiscard]] bool has_cached_create_if_missing() const noexcept { return _create_if_missing.has_value(); }
     // It is the caller's responsibility to ensure this value matches that of _update->getCreateIfNonExisting()
-    void set_cached_create_if_missing(bool create) noexcept {
-        _create_if_missing = create;
-    }
+    void set_cached_create_if_missing(bool create) noexcept { _create_if_missing = create; }
 
     const std::shared_ptr<document::DocumentUpdate>& getUpdate() const { return _update; }
     const document::DocumentId& getDocumentId() const override;
@@ -142,7 +140,7 @@ public:
     // May throw iff has_cached_create_if_missing() == false, otherwise noexcept.
     [[nodiscard]] bool create_if_missing() const;
 
-    const document::DocumentType * getDocumentType() const override;
+    const document::DocumentType* getDocumentType() const override;
     std::string getSummary() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -158,9 +156,9 @@ public:
  */
 class UpdateReply : public BucketInfoReply {
     document::DocumentId _docId;
-    Timestamp _timestamp;
-    Timestamp _oldTimestamp;
-    uint16_t _consistentNode;
+    Timestamp            _timestamp;
+    Timestamp            _oldTimestamp;
+    uint16_t             _consistentNode;
 
 public:
     UpdateReply(const UpdateCommand& cmd, Timestamp oldTimestamp = 0);
@@ -187,7 +185,6 @@ public:
     DECLARE_STORAGEREPLY(UpdateReply, onUpdateReply)
 };
 
-
 /**
  * @class GetCommand
  * @ingroup message
@@ -201,13 +198,14 @@ public:
 class GetCommand : public BucketInfoCommand {
     document::DocumentId    _docId;
     Timestamp               _beforeTimestamp;
-    std::string        _fieldSet;
+    std::string             _fieldSet;
     TestAndSetCondition     _condition;
     InternalReadConsistency _internal_read_consistency;
     std::optional<uint16_t> _debug_replica_node_id;
+
 public:
-    GetCommand(const document::Bucket &bucket, const document::DocumentId&,
-               std::string_view fieldSet, Timestamp before = MAX_TIMESTAMP);
+    GetCommand(const document::Bucket& bucket, const document::DocumentId&, std::string_view fieldSet,
+               Timestamp before = MAX_TIMESTAMP);
     ~GetCommand() override;
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
     const document::DocumentId& getDocumentId() const { return _docId; }
@@ -217,9 +215,7 @@ public:
     [[nodiscard]] bool has_condition() const noexcept { return _condition.isPresent(); }
     [[nodiscard]] const TestAndSetCondition& condition() const noexcept { return _condition; }
     void set_condition(TestAndSetCondition cond) { _condition = std::move(cond); }
-    InternalReadConsistency internal_read_consistency() const noexcept {
-        return _internal_read_consistency;
-    }
+    InternalReadConsistency internal_read_consistency() const noexcept { return _internal_read_consistency; }
     void set_internal_read_consistency(InternalReadConsistency consistency) noexcept {
         _internal_read_consistency = consistency;
     }
@@ -246,19 +242,17 @@ public:
  */
 class GetReply : public BucketInfoReply {
     document::DocumentId _docId; // In case of not found, we want id still
-    std::string _fieldSet;
-    DocumentSP _doc; // Null pointer if not found
-    Timestamp _beforeTimestamp;
-    Timestamp _lastModifiedTime;
-    bool _had_consistent_replicas;
-    bool _is_tombstone;
-    bool _condition_matched;
+    std::string          _fieldSet;
+    DocumentSP           _doc; // Null pointer if not found
+    Timestamp            _beforeTimestamp;
+    Timestamp            _lastModifiedTime;
+    bool                 _had_consistent_replicas;
+    bool                 _is_tombstone;
+    bool                 _condition_matched;
+
 public:
-    explicit GetReply(const GetCommand& cmd,
-                      const DocumentSP& doc = DocumentSP(),
-                      Timestamp lastModified = 0,
-                      bool had_consistent_replicas = false,
-                      bool is_tombstone = false,
+    explicit GetReply(const GetCommand& cmd, const DocumentSP& doc = DocumentSP(), Timestamp lastModified = 0,
+                      bool had_consistent_replicas = false, bool is_tombstone = false,
                       bool condition_matched = false);
 
     ~GetReply() override;
@@ -287,10 +281,10 @@ public:
  */
 class RemoveCommand : public TestAndSetCommand {
     document::DocumentId _docId;
-    Timestamp _timestamp;
+    Timestamp            _timestamp;
 
 public:
-    RemoveCommand(const document::Bucket &bucket, const document::DocumentId& docId, Timestamp timestamp);
+    RemoveCommand(const document::Bucket& bucket, const document::DocumentId& docId, Timestamp timestamp);
     ~RemoveCommand() override;
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
@@ -309,8 +303,9 @@ public:
  */
 class RemoveReply : public BucketInfoReply {
     document::DocumentId _docId;
-    Timestamp _timestamp;
-    Timestamp _oldTimestamp;
+    Timestamp            _timestamp;
+    Timestamp            _oldTimestamp;
+
 public:
     explicit RemoveReply(const RemoveCommand& cmd, Timestamp oldTimestamp = 0);
     ~RemoveReply() override;
@@ -324,4 +319,4 @@ public:
     DECLARE_STORAGEREPLY(RemoveReply, onRemoveReply)
 };
 
-}
+} // namespace storage::api

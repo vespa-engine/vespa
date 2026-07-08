@@ -2,8 +2,9 @@
 #pragma once
 
 #include "visitor.h"
-#include <vespa/vdslib/container/searchresult.h>
+
 #include <vespa/vdslib/container/documentsummary.h>
+#include <vespa/vdslib/container/searchresult.h>
 
 namespace storage {
 namespace api {
@@ -20,10 +21,10 @@ public:
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    const vdslib::SearchResult & getSearchResult() const { return _searchResult; }
-    vdslib::SearchResult & getSearchResult() { return _searchResult; }
-    const vdslib::DocumentSummary & getDocumentSummary() const { return _summary; }
-    vdslib::DocumentSummary & getDocumentSummary() { return _summary; }
+    const vdslib::SearchResult& getSearchResult() const { return _searchResult; }
+    vdslib::SearchResult& getSearchResult() { return _searchResult; }
+    const vdslib::DocumentSummary& getDocumentSummary() const { return _summary; }
+    vdslib::DocumentSummary& getDocumentSummary() { return _summary; }
 
     DECLARE_STORAGECOMMAND(QueryResultCommand, onQueryResult)
 private:
@@ -44,5 +45,5 @@ public:
     DECLARE_STORAGEREPLY(QueryResultReply, onQueryResultReply)
 };
 
-} // api
-} // storage
+} // namespace api
+} // namespace storage

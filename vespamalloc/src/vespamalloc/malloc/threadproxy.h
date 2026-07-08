@@ -5,7 +5,6 @@
 
 namespace vespamalloc {
 
-void setAllocatorForThreads(IAllocator * allocator);
+void setAllocatorForThreads(IAllocator* allocator);
 
 }
-

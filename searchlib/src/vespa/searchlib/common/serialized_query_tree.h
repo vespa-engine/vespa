@@ -3,11 +3,14 @@
 #pragma once
 
 #include <vespa/searchlib/query/query_stack_iterator.h>
+
 #include <memory>
 #include <string_view>
 #include <vector>
 
-namespace searchlib::searchprotocol::protobuf { class QueryTree; }
+namespace searchlib::searchprotocol::protobuf {
+class QueryTree;
+}
 
 namespace search {
 
@@ -19,6 +22,7 @@ using SerializedQueryTreeSP = std::shared_ptr<const SerializedQueryTree>;
 class SerializedQueryTree : public std::enable_shared_from_this<SerializedQueryTree> {
 private:
     struct ctor_tag {};
+
 public:
     using ProtobufQueryTree = ::searchlib::searchprotocol::protobuf::QueryTree;
 
@@ -27,11 +31,10 @@ public:
     static SerializedQueryTreeSP fromProtobuf(std::unique_ptr<ProtobufQueryTree> protoQueryTree);
     std::unique_ptr<QueryStackIterator> makeIterator() const;
     // use for testing only:
-    std::string_view getStackRef() const noexcept {
-        return std::string_view(_stackDump.data(), _stackDump.size());
-    }
+    std::string_view getStackRef() const noexcept { return std::string_view(_stackDump.data(), _stackDump.size()); }
 
-    SerializedQueryTree(std::vector<char> stackDump, std::unique_ptr<ProtobufQueryTree> protoQueryTree, ctor_tag tag) noexcept;
+    SerializedQueryTree(std::vector<char> stackDump, std::unique_ptr<ProtobufQueryTree> protoQueryTree,
+                        ctor_tag tag) noexcept;
     ~SerializedQueryTree();
     static const SerializedQueryTree& empty();
 
@@ -43,8 +46,9 @@ public:
             return mapper.fromIterator(*iterator);
         }
     }
+
 private:
-    std::vector<char> _stackDump;
+    std::vector<char>                  _stackDump;
     std::unique_ptr<ProtobufQueryTree> _protoQueryTree;
 };
 

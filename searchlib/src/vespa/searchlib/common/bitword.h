@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 
 namespace search {
@@ -12,10 +12,14 @@ class BitWord {
 public:
     using Word = uint64_t;
     using Index = uint32_t;
-    static constexpr Word startBits(Index index) noexcept { return ~(std::numeric_limits<Word>::max() << bitNum(index)); }
-    static constexpr size_t WordLen = sizeof(Word)*8;
+    static constexpr Word startBits(Index index) noexcept {
+        return ~(std::numeric_limits<Word>::max() << bitNum(index));
+    }
+    static constexpr size_t WordLen = sizeof(Word) * 8;
     static constexpr uint8_t bitNum(Index idx) noexcept { return (idx % WordLen); }
-    static constexpr Word endBits(Index index) noexcept { return (std::numeric_limits<Word>::max() - 1) << bitNum(index); }
+    static constexpr Word endBits(Index index) noexcept {
+        return (std::numeric_limits<Word>::max() - 1) << bitNum(index);
+    }
     static constexpr Word allBits() noexcept { return std::numeric_limits<Word>::max(); }
     static constexpr Index wordNum(Index idx) noexcept { return idx >> numWordBits(); }
     static constexpr Word mask(Index idx) noexcept { return Word(1) << bitNum(idx); }
@@ -23,4 +27,4 @@ public:
     static constexpr uint8_t numWordBits() noexcept { return size_bits(WordLen); }
 };
 
-}
+} // namespace search

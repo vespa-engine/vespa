@@ -1,18 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/messagebus/errorcode.h>
-#include <vespa/storage/persistence/processallhandler.h>
 #include <vespa/storage/persistence/asynchandler.h>
 #include <vespa/storage/persistence/messages.h>
+#include <vespa/storage/persistence/processallhandler.h>
+
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/persistence/persistencetestutils.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
 
-using document::test::makeDocumentBucket;
 using document::DocumentId;
+using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage {
@@ -41,9 +42,10 @@ TEST_F(ProcessAllHandlerTest, legacy_remove_location) {
     doPut(4, spi::Timestamp(2345));
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::RemoveLocationCommand>("id.user == 4", bucket);
-    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, _bucketIdFactory);
-    auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
+    auto             cmd = std::make_shared<api::RemoveLocationCommand>("id.user == 4", bucket);
+    AsyncHandler     handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor,
+                             _bucketIdFactory);
+    auto             tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
 
     std::shared_ptr<api::StorageMessage> msg;
     ASSERT_TRUE(_replySender.queue.getNext(msg, 60s));
@@ -59,7 +61,8 @@ TEST_F(ProcessAllHandlerTest, legacy_remove_location) {
 
 TEST_F(ProcessAllHandlerTest, legacy_remove_location_document_subset) {
     document::BucketId bucketId(16, 4);
-    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, _bucketIdFactory);
+    AsyncHandler       handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor,
+                               _bucketIdFactory);
 
     document::TestDocMan docMan;
     for (int i = 0; i < 10; ++i) {
@@ -69,8 +72,8 @@ TEST_F(ProcessAllHandlerTest, legacy_remove_location_document_subset) {
     }
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::RemoveLocationCommand>("testdoctype1.headerval % 2 == 0", bucket);
-    auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
+    auto             cmd = std::make_shared<api::RemoveLocationCommand>("testdoctype1.headerval % 2 == 0", bucket);
+    auto             tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
 
     std::shared_ptr<api::StorageMessage> msg;
     ASSERT_TRUE(_replySender.queue.getNext(msg, 60s));
@@ -94,8 +97,8 @@ TEST_F(ProcessAllHandlerTest, legacy_remove_location_document_subset) {
 
 TEST_F(ProcessAllHandlerTest, remove_location_with_enumerate_only_returns_match_set_only) {
     document::BucketId bucketId(16, 4);
-    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier,
-                         *_sequenceTaskExecutor, _bucketIdFactory);
+    AsyncHandler       handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor,
+                               _bucketIdFactory);
 
     document::TestDocMan docMan;
     for (int i = 0; i < 10; ++i) {
@@ -105,7 +108,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_with_enumerate_only_returns_match_
     }
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::RemoveLocationCommand>("testdoctype1.headerval % 2 == 0", bucket);
+    auto             cmd = std::make_shared<api::RemoveLocationCommand>("testdoctype1.headerval % 2 == 0", bucket);
     cmd->set_only_enumerate_docs(true);
     auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
     // Enumeration is synchronous, so we get the reply in the _tracker_, not on the reply queue.
@@ -128,7 +131,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_with_enumerate_only_returns_match_
               dumpBucket(bucketId));
 
     std::vector<spi::IdAndTimestamp> expected = {
-        {DocumentId("id:mail:testdoctype1:n=4:3619.html"),  spi::Timestamp(100)},
+        {DocumentId("id:mail:testdoctype1:n=4:3619.html"), spi::Timestamp(100)},
         {DocumentId("id:mail:testdoctype1:n=4:62608.html"), spi::Timestamp(102)},
         {DocumentId("id:mail:testdoctype1:n=4:56061.html"), spi::Timestamp(104)},
         {DocumentId("id:mail:testdoctype1:n=4:49514.html"), spi::Timestamp(106)},
@@ -139,8 +142,8 @@ TEST_F(ProcessAllHandlerTest, remove_location_with_enumerate_only_returns_match_
 
 TEST_F(ProcessAllHandlerTest, remove_location_with_remove_set_only_removes_listed_docs) {
     document::BucketId bucketId(16, 4);
-    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier,
-                         *_sequenceTaskExecutor, _bucketIdFactory);
+    AsyncHandler       handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor,
+                               _bucketIdFactory);
 
     document::TestDocMan docMan;
     for (int i = 0; i < 10; ++i) {
@@ -151,7 +154,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_with_remove_set_only_removes_liste
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
     // Use a selection that, if naively used, removes everything.
-    auto cmd = std::make_shared<api::RemoveLocationCommand>("true", bucket);
+    auto                             cmd = std::make_shared<api::RemoveLocationCommand>("true", bucket);
     std::vector<spi::IdAndTimestamp> to_remove = {
         {DocumentId("id:mail:testdoctype1:n=4:62608.html"), spi::Timestamp(102)},
         {DocumentId("id:mail:testdoctype1:n=4:49514.html"), spi::Timestamp(106)},
@@ -182,15 +185,15 @@ TEST_F(ProcessAllHandlerTest, remove_location_with_remove_set_only_removes_liste
 }
 
 TEST_F(ProcessAllHandlerTest, remove_location_with_remove_set_observes_provider_error) {
-    document::BucketId bucketId(16, 4);
+    document::BucketId         bucketId(16, 4);
     PersistenceProviderWrapper failing_provider(getPersistenceProvider());
-    AsyncHandler handler(getEnv(), failing_provider, _bucketOwnershipNotifier,
-                         *_sequenceTaskExecutor, _bucketIdFactory);
+    AsyncHandler               handler(getEnv(), failing_provider, _bucketOwnershipNotifier, *_sequenceTaskExecutor,
+                                       _bucketIdFactory);
     failing_provider.setResult(spi::Result(spi::Result::ErrorType::PERMANENT_ERROR, "oh no, oh dear"));
     failing_provider.setFailureMask(PersistenceProviderWrapper::FAIL_REMOVE);
 
-    document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::RemoveLocationCommand>("true", bucket);
+    document::Bucket                 bucket = makeDocumentBucket(bucketId);
+    auto                             cmd = std::make_shared<api::RemoveLocationCommand>("true", bucket);
     std::vector<spi::IdAndTimestamp> to_remove = {
         {DocumentId("id:mail:testdoctype1:n=4:62608.html"), spi::Timestamp(102)},
         {DocumentId("id:mail:testdoctype1:n=4:49514.html"), spi::Timestamp(106)},
@@ -207,7 +210,9 @@ TEST_F(ProcessAllHandlerTest, remove_location_with_remove_set_observes_provider_
     ASSERT_TRUE(reply);
     // Error code enum wrangling is a bit awkward due to historical use of mbus "stacked" protocol errors.
     // This is technically wrong (enum-wise), but is how it's done already. Reconsider When Possible(tm).
-    EXPECT_EQ(reply->getResult(), api::ReturnCode(static_cast<api::ReturnCode::Result>(mbus::ErrorCode::APP_FATAL_ERROR), "oh no, oh dear"));
+    EXPECT_EQ(
+        reply->getResult(),
+        api::ReturnCode(static_cast<api::ReturnCode::Result>(mbus::ErrorCode::APP_FATAL_ERROR), "oh no, oh dear"));
 }
 
 TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_unknown_doc_type) {
@@ -215,13 +220,13 @@ TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_unknown_doc_ty
     doPut(4, spi::Timestamp(1234));
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::RemoveLocationCommand>("unknowndoctype.headerval % 2 == 0", bucket);
+    auto             cmd = std::make_shared<api::RemoveLocationCommand>("unknowndoctype.headerval % 2 == 0", bucket);
 
-    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, _bucketIdFactory);
+    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor,
+                         _bucketIdFactory);
     ASSERT_THROW(handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket)), std::exception);
 
-    EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n",
-              dumpBucket(bucketId));
+    EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n", dumpBucket(bucketId));
 }
 
 TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_bogus_selection) {
@@ -229,18 +234,18 @@ TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_bogus_selectio
     doPut(4, spi::Timestamp(1234));
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::RemoveLocationCommand>("id.bogus != badgers", bucket);
+    auto             cmd = std::make_shared<api::RemoveLocationCommand>("id.bogus != badgers", bucket);
 
-    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, _bucketIdFactory);
+    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor,
+                         _bucketIdFactory);
     ASSERT_THROW(handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket)), std::exception);
 
-    EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n",
-              dumpBucket(bucketId));
+    EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n", dumpBucket(bucketId));
 }
 
 TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matching_selection) {
     document::BucketId bucketId(16, 4);
-    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    ProcessAllHandler  handler(getEnv(), getPersistenceProvider());
 
     document::TestDocMan docMan;
     for (int i = 0; i < 10; ++i) {
@@ -249,8 +254,8 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matc
         doPut(doc, bucketId, spi::Timestamp(100 + i));
     }
 
-    document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::StatBucketCommand>(bucket, "testdoctype1.headerval % 2 == 0");
+    document::Bucket   bucket = makeDocumentBucket(bucketId);
+    auto               cmd = std::make_shared<api::StatBucketCommand>(bucket, "testdoctype1.headerval % 2 == 0");
     MessageTracker::UP tracker = handler.handleStatBucket(*cmd, createTracker(cmd, bucket));
 
     ASSERT_TRUE(tracker->hasReply());
@@ -270,21 +275,18 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_returns_document_metadata_matc
 
 TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) {
     document::BucketId bucketId(16, 4);
-    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    ProcessAllHandler  handler(getEnv(), getPersistenceProvider());
 
     document::TestDocMan docMan;
     for (int i = 0; i < 10; ++i) {
         document::Document::SP doc(docMan.createRandomDocumentAtLocation(4, 1234 + i));
         doc->setValue(doc->getField("headerval"), document::IntFieldValue(i));
         doPut(doc, bucketId, spi::Timestamp(100 + i));
-        doRemove(bucketId,
-                 doc->getId(),
-                 spi::Timestamp(200 + i),
-                 true);
+        doRemove(bucketId, doc->getId(), spi::Timestamp(200 + i), true);
     }
 
-    document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::StatBucketCommand>(bucket, "true");
+    document::Bucket   bucket = makeDocumentBucket(bucketId);
+    auto               cmd = std::make_shared<api::StatBucketCommand>(bucket, "true");
     MessageTracker::UP tracker = handler.handleStatBucket(*cmd, createTracker(cmd, bucket));
 
     ASSERT_TRUE(tracker->hasReply());
@@ -320,7 +322,7 @@ TEST_F(ProcessAllHandlerTest, stat_bucket_request_can_returned_removed_entries) 
 // TODO is this test neccessary? Seems to not test anything more than the above tests
 TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_bucket) {
     document::BucketId bucketId(16, 4);
-    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    ProcessAllHandler  handler(getEnv(), getPersistenceProvider());
 
     document::TestDocMan docMan;
     for (int i = 0; i < 10; ++i) {
@@ -329,8 +331,8 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_
         doPut(doc, bucketId, spi::Timestamp(100 + i));
     }
 
-    document::Bucket bucket = makeDocumentBucket(bucketId);
-    auto cmd = std::make_shared<api::StatBucketCommand>(bucket, "true");
+    document::Bucket   bucket = makeDocumentBucket(bucketId);
+    auto               cmd = std::make_shared<api::StatBucketCommand>(bucket, "true");
     MessageTracker::UP tracker = handler.handleStatBucket(*cmd, createTracker(cmd, bucket));
 
     ASSERT_TRUE(tracker->hasReply());
@@ -353,4 +355,4 @@ TEST_F(ProcessAllHandlerTest, bucket_stat_request_can_return_all_put_entries_in_
     EXPECT_EQ(expected, reply.getResults());
 }
 
-}
+} // namespace storage

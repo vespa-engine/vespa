@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <iosfwd>
 #include <string>
 #include <vector>
-#include <iosfwd>
 
 namespace vespalib::net::tls {
 
@@ -29,4 +29,4 @@ struct PeerCredentials {
 
 std::ostream& operator<<(std::ostream&, const PeerCredentials&);
 
-}
+} // namespace vespalib::net::tls

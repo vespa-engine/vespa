@@ -18,31 +18,27 @@ class BucketDeltaPair;
  * also removes empty source bucket after split.
  *
  */
-class SplitBucketSession : public BucketSessionBase
-{
+class SplitBucketSession : public BucketSessionBase {
 private:
     BucketState _target1Delta;
     BucketState _target2Delta;
-    bool _sourceActive;
-    bool _adjustTarget1ActiveLids;
-    bool _adjustTarget2ActiveLids;
-    BucketId _source;
-    BucketId _target1;
-    BucketId _target2;
+    bool        _sourceActive;
+    bool        _adjustTarget1ActiveLids;
+    bool        _adjustTarget2ActiveLids;
+    BucketId    _source;
+    BucketId    _target1;
+    BucketId    _target2;
 
-    void applyDelta(const BucketState &delta, BucketState *src, BucketId &dstBucket);
+    void applyDelta(const BucketState& delta, BucketState* src, BucketId& dstBucket);
 
 public:
-    SplitBucketSession(BucketDBOwner &bucketDB,
-                       IBucketCreateNotifier &bucketCreateNotifier,
-                       const BucketId &source,
-                       const BucketId &target1,
-                       const BucketId &target2);
+    SplitBucketSession(BucketDBOwner& bucketDB, IBucketCreateNotifier& bucketCreateNotifier, const BucketId& source,
+                       const BucketId& target1, const BucketId& target2);
 
     /*
      * Reflect move of documents to target1 and target2 in bucket states
      */
-    void applyDeltas(const BucketDeltaPair &deltas);
+    void applyDeltas(const BucketDeltaPair& deltas);
     bool getSourceActive() const { return _sourceActive; }
 
     /*
@@ -61,9 +57,9 @@ public:
 
     void setup();
     void finish();
-    const BucketId &getSource() const { return _source; }
-    const BucketId &getTarget1() const { return _target1; }
-    const BucketId &getTarget2() const { return _target2; }
+    const BucketId& getSource() const { return _source; }
+    const BucketId& getTarget1() const { return _target1; }
+    const BucketId& getTarget2() const { return _target2; }
 };
 
-}
+} // namespace proton::bucketdb

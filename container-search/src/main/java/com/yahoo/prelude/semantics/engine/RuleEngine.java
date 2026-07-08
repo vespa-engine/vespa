@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.engine;
 
+import com.yahoo.prelude.semantics.rule.ReplacingProductionRule;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.semantics.RuleBase;
@@ -62,8 +63,7 @@ public class RuleEngine {
          // Test if it is a removal rule, if so iterate backwards so that precalculated
          // replacement positions do not become invalid as the query shrink
         boolean removalRule = false;
-        if ( (rule instanceof com.yahoo.prelude.semantics.rule.ReplacingProductionRule) &&
-             (rule.getProduction().toString().length() == 0) ) { // empty replacement
+        if (rule instanceof ReplacingProductionRule && rule.getProduction().toString().isEmpty()) { // empty replacement
             removalRule = true;
             evaluation.setToLast();
         }

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdb_job_trackers.h"
+
 #include "job_tracked_flush_target.h"
 
 #include <vespa/log/log.h>
@@ -24,28 +25,22 @@ DocumentDBJobTrackers::DocumentDBJobTrackers()
       _documentStoreCompact(std::make_shared<JobTracker>(_now, _lock)),
       _bucketMove(std::make_shared<JobTracker>(_now, _lock)),
       _lidSpaceCompact(std::make_shared<JobTracker>(_now, _lock)),
-      _removedDocumentsPrune(std::make_shared<JobTracker>(_now, _lock))
-{
+      _removedDocumentsPrune(std::make_shared<JobTracker>(_now, _lock)) {
 }
 
 DocumentDBJobTrackers::~DocumentDBJobTrackers() = default;
 
 namespace {
 
-IFlushTarget::SP
-trackFlushTarget(std::shared_ptr<IJobTracker> tracker,
-                 std::shared_ptr<IFlushTarget> target)
-{
+IFlushTarget::SP trackFlushTarget(std::shared_ptr<IJobTracker> tracker, std::shared_ptr<IFlushTarget> target) {
     return std::make_shared<JobTrackedFlushTarget>(std::move(tracker), std::move(target));
 }
 
-}
+} // namespace
 
-IFlushTarget::List
-DocumentDBJobTrackers::trackFlushTargets(const IFlushTarget::List &flushTargets)
-{
+IFlushTarget::List DocumentDBJobTrackers::trackFlushTargets(const IFlushTarget::List& flushTargets) {
     IFlushTarget::List retval;
-    for (const auto &ft : flushTargets) {
+    for (const auto& ft : flushTargets) {
         if (ft->getComponent() == FTC::ATTRIBUTE && ft->getType() == FTT::SYNC) {
             retval.push_back(trackFlushTarget(_attributeFlush, ft));
         } else if (ft->getComponent() == FTC::ATTRIBUTE && ft->getType() == FTT::GC) {
@@ -59,10 +54,10 @@ DocumentDBJobTrackers::trackFlushTargets(const IFlushTarget::List &flushTargets)
         } else if (ft->getComponent() == FTC::DOCUMENT_STORE && ft->getType() == FTT::GC) {
             retval.push_back(trackFlushTarget(_documentStoreCompact, ft));
         } else {
-            LOG(warning, "trackFlushTargets(): Flush target '%s' with type '%d' and component '%d' "
-                    "is not known and will not be tracked",
-                    ft->getName().c_str(), static_cast<int>(ft->getType()),
-                    static_cast<int>(ft->getComponent()));
+            LOG(warning,
+                "trackFlushTargets(): Flush target '%s' with type '%d' and component '%d' "
+                "is not known and will not be tracked",
+                ft->getName().c_str(), static_cast<int>(ft->getType()), static_cast<int>(ft->getComponent()));
             retval.push_back(ft);
         }
     }
@@ -71,22 +66,16 @@ DocumentDBJobTrackers::trackFlushTargets(const IFlushTarget::List &flushTargets)
 
 namespace {
 
-double
-updateMetric(metrics::DoubleAverageMetric &metric,
-             JobTracker &tracker,
-             time_point now,
-             const std::lock_guard<std::mutex> &guard)
-{
+double updateMetric(metrics::DoubleAverageMetric& metric, JobTracker& tracker, time_point now,
+                    const std::lock_guard<std::mutex>& guard) {
     double load = tracker.sampleLoad(now, guard);
     metric.addValue(load);
     return load;
 }
 
-}
+} // namespace
 
-void
-DocumentDBJobTrackers::updateMetrics(DocumentDBTaggedMetrics::JobMetrics &metrics)
-{
+void DocumentDBJobTrackers::updateMetrics(DocumentDBTaggedMetrics::JobMetrics& metrics) {
     std::lock_guard<std::mutex> guard(_lock);
     _now = std::chrono::steady_clock::now();
     double load = 0.0;

@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
-void checkMemory(const std::string &expect, const Memory &mem) {
+void checkMemory(const std::string& expect, const Memory& mem) {
     EXPECT_EQ(expect, mem.make_stringview());
 }
 
-void checkBuffer(const std::string &expect, const SimpleBuffer &buf) {
+void checkBuffer(const std::string& expect, const SimpleBuffer& buf) {
     GTEST_DO(checkMemory(expect, buf.get()));
 }
 

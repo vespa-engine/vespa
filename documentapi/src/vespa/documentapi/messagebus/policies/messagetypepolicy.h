@@ -1,23 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/config-messagetyperouteselectorpolicy.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/documentapi/common.h>
+#include <vespa/messagebus/routing/iroutingpolicy.h>
+#include <vespa/vespalib/util/ptrholder.h>
 
 namespace config {
-    class ConfigUri;
-    class ConfigFetcher;
-}
+class ConfigUri;
+class ConfigFetcher;
+} // namespace config
 namespace mbus {
-    class RoutingContext;
-    class Route;
-}
+class RoutingContext;
+class Route;
+} // namespace mbus
 namespace documentapi {
 
-namespace policy { class MessageTypeMap; }
+namespace policy {
+class MessageTypeMap;
+}
 /**
  * This policy is responsible for selecting among the given recipient routes
  * according to the configured document selection properties. To factilitate
@@ -25,15 +27,15 @@ namespace policy { class MessageTypeMap; }
  * names to a document selector and a feed name of every search cluster. This
  * can very well be extended to include storage at a later time.
  */
-class MessageTypePolicy : public mbus::IRoutingPolicy,
-                          public config::IFetcherCallback<vespa::config::content::MessagetyperouteselectorpolicyConfig>
-{
+class MessageTypePolicy
+    : public mbus::IRoutingPolicy,
+      public config::IFetcherCallback<vespa::config::content::MessagetyperouteselectorpolicyConfig> {
 private:
     using MessageTypeHolder = vespalib::PtrHolder<policy::MessageTypeMap>;
     using RouteHolder = vespalib::PtrHolder<mbus::Route>;
 
-    MessageTypeHolder     _map;
-    RouteHolder           _defaultRoute;
+    MessageTypeHolder                      _map;
+    RouteHolder                            _defaultRoute;
     std::unique_ptr<config::ConfigFetcher> _fetcher;
 
 public:
@@ -44,11 +46,11 @@ public:
      *
      * @param configUri The configuration uri to subscribe with.
      */
-    MessageTypePolicy(const config::ConfigUri & configUri);
+    MessageTypePolicy(const config::ConfigUri& configUri);
     ~MessageTypePolicy();
     void configure(std::unique_ptr<vespa::config::content::MessagetyperouteselectorpolicyConfig> cfg) override;
-    void select(mbus::RoutingContext &context) override;
-    void merge(mbus::RoutingContext &context) override;
+    void select(mbus::RoutingContext& context) override;
+    void merge(mbus::RoutingContext& context) override;
 };
 
-}
+} // namespace documentapi

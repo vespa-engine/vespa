@@ -17,8 +17,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -63,6 +65,7 @@ class CliArguments {
     private static final String COMPRESSION = "compression";
     private static final String LOG_CONFIG_OPTION = "log-config";
     private static final String INITIAL_INFLIGHT_FACTOR_OPTION = "initial-inflight-factor";
+    private static final String EXIT_ON_FEED_ERRORS_OPTION = "exit-on-feed-errors";
 
     private final CommandLine arguments;
 
@@ -88,23 +91,23 @@ class CliArguments {
             if (args.hasOption(SPEED_TEST_OPTION)) {
                 if (   args.hasOption(FILE_OPTION) && (args.hasOption(STDIN_OPTION) || args.hasOption(TEST_PAYLOAD_SIZE_OPTION))
                     || args.hasOption(STDIN_OPTION) && args.hasOption(TEST_PAYLOAD_SIZE_OPTION)) {
-                    throw new CliArgumentsException(String.format("At most one of '%s', '%s' and '%s' may be specified", FILE_OPTION, STDIN_OPTION, TEST_PAYLOAD_SIZE_OPTION));
+                    throw new CliArgumentsException(String.format(Locale.ROOT, "At most one of '%s', '%s' and '%s' may be specified", FILE_OPTION, STDIN_OPTION, TEST_PAYLOAD_SIZE_OPTION));
                 }
             }
             else {
                 if (args.hasOption(FILE_OPTION) == args.hasOption(STDIN_OPTION)) {
-                    throw new CliArgumentsException(String.format("Exactly one of '%s' and '%s' must be specified", FILE_OPTION, STDIN_OPTION));
+                    throw new CliArgumentsException(String.format(Locale.ROOT, "Exactly one of '%s' and '%s' must be specified", FILE_OPTION, STDIN_OPTION));
                 }
                 if (args.hasOption(TEST_PAYLOAD_SIZE_OPTION)) {
-                    throw new CliArgumentsException(String.format("Option '%s' can only be specified together with '%s'", TEST_PAYLOAD_SIZE_OPTION, SPEED_TEST_OPTION));
+                    throw new CliArgumentsException(String.format(Locale.ROOT, "Option '%s' can only be specified together with '%s'", TEST_PAYLOAD_SIZE_OPTION, SPEED_TEST_OPTION));
                 }
             }
             if (args.hasOption(CERTIFICATE_OPTION) != args.hasOption(PRIVATE_KEY_OPTION)) {
                 throw new CliArgumentsException(
-                        String.format("Both '%s' and '%s' must be specified together", CERTIFICATE_OPTION, PRIVATE_KEY_OPTION));
+                        String.format(Locale.ROOT, "Both '%s' and '%s' must be specified together", CERTIFICATE_OPTION, PRIVATE_KEY_OPTION));
             }
         } else if (args.hasOption(HELP_OPTION) && args.hasOption(VERSION_OPTION)) {
-            throw new CliArgumentsException(String.format("Cannot specify both '%s' and '%s'", HELP_OPTION, VERSION_OPTION));
+            throw new CliArgumentsException(String.format(Locale.ROOT, "Cannot specify both '%s' and '%s'", HELP_OPTION, VERSION_OPTION));
         }
     }
 
@@ -230,6 +233,8 @@ class CliArguments {
 
     OptionalInt initialInflightFactor() throws CliArgumentsException { return intValue(INITIAL_INFLIGHT_FACTOR_OPTION); }
 
+    boolean exitOnFeedErrorsEnabled() { return has(EXIT_ON_FEED_ERRORS_OPTION); }
+
     private Optional<String> stringValue(String option) { return Optional.ofNullable(arguments.getOptionValue(option)); }
 
     private OptionalDouble doubleValue(String option) throws CliArgumentsException {
@@ -244,9 +249,10 @@ class CliArguments {
     private boolean has(String option) { return arguments.hasOption(option); }
 
     private static CliArgumentsException newInvalidValueException(String option, ParseException cause) {
-        return new CliArgumentsException(String.format("Invalid value for '%s': %s", option, cause.getMessage()), cause);
+        return new CliArgumentsException(String.format(Locale.ROOT, "Invalid value for '%s': %s", option, cause.getMessage()), cause);
     }
 
+    @SuppressWarnings("deprecation") // Option.Builder.build() deprecated in commons-cli 1.10+ (use get())
     private static Options createOptions() {
         return new Options()
                 .addOption(Option.builder()
@@ -393,12 +399,17 @@ class CliArguments {
                         .desc("Multiplier for minInflight to determine the initial targetInflight")
                         .hasArg()
                         .type(Number.class)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(EXIT_ON_FEED_ERRORS_OPTION)
+                        .desc("Exit with non-zero exit code if any feed operation fails")
                         .build());
     }
 
+    @SuppressWarnings("deprecation") // HelpFormatter moved to org.apache.commons.cli.help in 1.10+
     void printHelp(OutputStream out) {
         HelpFormatter formatter = new HelpFormatter();
-        PrintWriter writer = new PrintWriter(out);
+        PrintWriter writer = new PrintWriter(out, true, StandardCharsets.UTF_8);
         formatter.printHelp(
                 writer,
                 formatter.getWidth(),

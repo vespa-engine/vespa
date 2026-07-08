@@ -6,7 +6,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.Presentation;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Arne Bergene Fossaa
@@ -21,7 +23,7 @@ public class PresentationTestCase {
         Highlight h = new Highlight();
         h.addHighlightTerm("date", "today");
         p.setHighlight(h);
-        Presentation pc = (Presentation) p.clone();
+        Presentation pc = p.clone();
         h.addHighlightTerm("title", "Hello");
         assertTrue(pc.getBolding());
         pc.getHighlight().getHighlightItems();

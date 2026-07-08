@@ -12,8 +12,9 @@
  */
 #pragma once
 
-#include <atomic>
 #include <vespa/vespalib/util/cpu_usage.h>
+
+#include <atomic>
 #include <optional>
 #include <vector>
 
@@ -31,12 +32,11 @@ struct ThreadVisitor {
 struct ThreadPool {
     virtual ~ThreadPool() = default;
 
-    virtual std::unique_ptr<Thread>
-    startThread(Runnable&, std::string_view id, vespalib::duration waitTime,
-                vespalib::duration maxProcessTime, int ticksBeforeWait,
-                std::optional<vespalib::CpuUsage::Category> cpu_category) = 0;
+    virtual std::unique_ptr<Thread> startThread(Runnable&, std::string_view id, vespalib::duration waitTime,
+                                                vespalib::duration maxProcessTime, int ticksBeforeWait,
+                                                std::optional<vespalib::CpuUsage::Category> cpu_category) = 0;
 
     virtual void visitThreads(ThreadVisitor&) const = 0;
 };
 
-}
+} // namespace storage::framework

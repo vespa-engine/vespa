@@ -95,7 +95,7 @@ TEST(IndexMetaInfoTest, indexmetainfo_test) {
         EXPECT_TRUE(!info.load("bogus10.txt"));
     }
     { // save/load/save/load/save/load test
-        std::string file("test-save.txt");
+        std::string   file("test-save.txt");
         IndexMetaInfo a(".");
         IndexMetaInfo b(".");
         EXPECT_TRUE(a.addSnapshot(Snap(true, 50, "foo")));

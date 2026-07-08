@@ -3,9 +3,10 @@
 #pragma once
 
 #include <vespa/vespalib/util/priority_queue.h>
-#include <mutex>
-#include <limits>
+
 #include <atomic>
+#include <limits>
+#include <mutex>
 
 namespace search::queryeval {
 
@@ -14,23 +15,20 @@ namespace search::queryeval {
  **/
 class NearestNeighborDistanceHeap {
 private:
-    std::mutex _lock;
-    size_t _size;
-    std::atomic<double> _distance_threshold;
+    std::mutex                                            _lock;
+    size_t                                                _size;
+    std::atomic<double>                                   _distance_threshold;
     vespalib::PriorityQueue<double, std::greater<double>> _priQ;
+
 public:
     explicit NearestNeighborDistanceHeap(size_t maxSize)
-      : _size(maxSize), _distance_threshold(std::numeric_limits<double>::max()),
-        _priQ()
-    {
+        : _size(maxSize), _distance_threshold(std::numeric_limits<double>::max()), _priQ() {
         _priQ.reserve(maxSize);
     }
     void set_distance_threshold(double distance_threshold) {
         _distance_threshold.store(distance_threshold, std::memory_order_relaxed);
     }
-    double distanceLimit() {
-        return _distance_threshold.load(std::memory_order_relaxed);
-    }
+    double distanceLimit() { return _distance_threshold.load(std::memory_order_relaxed); }
     void used(double distance) {
         std::lock_guard<std::mutex> guard(_lock);
         if (_priQ.size() < _size) {
@@ -47,4 +45,4 @@ public:
     }
 };
 
-}
+} // namespace search::queryeval

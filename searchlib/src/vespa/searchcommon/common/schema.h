@@ -3,18 +3,20 @@
 #pragma once
 
 #include "datatype.h"
+
 #include <vespa/config/common/types.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 namespace search::index {
 
 /**
  * Schema class used to give a high-level description of the content
  * of an index.
  **/
-class Schema
-{
+class Schema {
 public:
     using UP = std::unique_ptr<Schema>;
 
@@ -26,12 +28,11 @@ public:
      * type. Various aspects (index/attribute) may have
      * limitations on what types are supported in the back-end.
      **/
-    class Field
-    {
-        std::string  _name;
-        DataType          _dataType;
-        CollectionType    _collectionType;
-        std::string  _tensor_spec;
+    class Field {
+        std::string    _name;
+        DataType       _dataType;
+        CollectionType _collectionType;
+        std::string    _tensor_spec;
 
     public:
         Field(std::string_view n, DataType dt) noexcept;
@@ -41,30 +42,28 @@ public:
         /**
          * Create this field based on the given config lines.
          **/
-        Field(const config::StringVector & lines);
-        Field(const Field &) noexcept;
-        Field & operator = (const Field &) noexcept;
-        Field(Field &&) noexcept;
-        Field & operator = (Field &&) noexcept;
+        Field(const config::StringVector& lines);
+        Field(const Field&) noexcept;
+        Field& operator=(const Field&) noexcept;
+        Field(Field&&) noexcept;
+        Field& operator=(Field&&) noexcept;
 
         virtual ~Field();
 
-        virtual void write(vespalib::asciistream & os, std::string_view prefix) const;
+        virtual void write(vespalib::asciistream& os, std::string_view prefix) const;
 
-        const std::string &getName() const noexcept { return _name; }
+        const std::string& getName() const noexcept { return _name; }
         DataType getDataType() const noexcept { return _dataType; }
         CollectionType getCollectionType() const noexcept { return _collectionType; }
         const std::string& get_tensor_spec() const noexcept { return _tensor_spec; }
 
-        bool matchingTypes(const Field &rhs) const noexcept {
-            return getDataType() == rhs.getDataType() &&
-             getCollectionType() == rhs.getCollectionType();
+        bool matchingTypes(const Field& rhs) const noexcept {
+            return getDataType() == rhs.getDataType() && getCollectionType() == rhs.getCollectionType();
         }
 
-        bool operator==(const Field &rhs) const noexcept;
-        bool operator!=(const Field &rhs) const noexcept;
+        bool operator==(const Field& rhs) const noexcept;
+        bool operator!=(const Field& rhs) const noexcept;
     };
-
 
     /**
      * A representation of an index field with extra information on
@@ -73,34 +72,36 @@ public:
     class IndexField : public Field {
     private:
         uint32_t _avgElemLen;
-        bool _interleaved_features;
+        bool     _interleaved_features;
 
     public:
         IndexField(std::string_view name, DataType dt) noexcept;
         IndexField(std::string_view name, DataType dt, CollectionType ct) noexcept;
-        IndexField(const IndexField &) noexcept;
-        IndexField & operator = (const IndexField &) noexcept;
-        IndexField(IndexField &&) noexcept;
-        IndexField & operator = (IndexField &&) noexcept;
+        IndexField(const IndexField&) noexcept;
+        IndexField& operator=(const IndexField&) noexcept;
+        IndexField(IndexField&&) noexcept;
+        IndexField& operator=(IndexField&&) noexcept;
         /**
          * Create this index field based on the given config lines.
          **/
-        explicit IndexField(const config::StringVector &lines);
+        explicit IndexField(const config::StringVector& lines);
 
-        IndexField &setAvgElemLen(uint32_t avgElemLen) noexcept { _avgElemLen = avgElemLen; return *this; }
-        IndexField &set_interleaved_features(bool value) noexcept {
+        IndexField& setAvgElemLen(uint32_t avgElemLen) noexcept {
+            _avgElemLen = avgElemLen;
+            return *this;
+        }
+        IndexField& set_interleaved_features(bool value) noexcept {
             _interleaved_features = value;
             return *this;
         }
 
-        void write(vespalib::asciistream &os,
-                   std::string_view prefix) const override;
+        void write(vespalib::asciistream& os, std::string_view prefix) const override;
 
         uint32_t getAvgElemLen() const noexcept { return _avgElemLen; }
         bool use_interleaved_features() const noexcept { return _interleaved_features; }
 
-        bool operator==(const IndexField &rhs) const noexcept;
-        bool operator!=(const IndexField &rhs) const noexcept;
+        bool operator==(const IndexField& rhs) const noexcept;
+        bool operator!=(const IndexField& rhs) const noexcept;
     };
 
     using AttributeField = Field;
@@ -110,43 +111,42 @@ public:
      * A field collection has a name and a list of index field names,
      * and is a named physical view over the list of index fields.
      **/
-    class FieldSet
-    {
-        std::string _name;
+    class FieldSet {
+        std::string              _name;
         std::vector<std::string> _fields;
 
     public:
         explicit FieldSet(std::string_view n) noexcept : _name(n), _fields() {}
-        FieldSet(const FieldSet &);
-        FieldSet & operator =(const FieldSet &);
-        FieldSet(FieldSet &&) noexcept = default;
-        FieldSet & operator =(FieldSet &&) noexcept = default;
+        FieldSet(const FieldSet&);
+        FieldSet& operator=(const FieldSet&);
+        FieldSet(FieldSet&&) noexcept = default;
+        FieldSet& operator=(FieldSet&&) noexcept = default;
 
         /**
          * Create this field collection based on the given config lines.
          **/
-        explicit FieldSet(const config::StringVector & lines);
+        explicit FieldSet(const config::StringVector& lines);
 
         ~FieldSet();
 
-        FieldSet &addField(std::string_view fieldName) {
+        FieldSet& addField(std::string_view fieldName) {
             _fields.emplace_back(fieldName);
             return *this;
         }
 
-        const std::string &getName() const noexcept { return _name; }
-        const std::vector<std::string> &getFields() const noexcept { return _fields; }
+        const std::string& getName() const noexcept { return _name; }
+        const std::vector<std::string>& getFields() const noexcept { return _fields; }
 
-        bool operator==(const FieldSet &rhs) const noexcept;
-        bool operator!=(const FieldSet &rhs) const noexcept;
+        bool operator==(const FieldSet& rhs) const noexcept;
+        bool operator!=(const FieldSet& rhs) const noexcept;
     };
 
     static const uint32_t UNKNOWN_FIELD_ID;
 
 private:
-    std::vector<IndexField>      _indexFields;
-    std::vector<AttributeField>  _attributeFields;
-    std::vector<FieldSet> _fieldSets;
+    std::vector<IndexField>             _indexFields;
+    std::vector<AttributeField>         _attributeFields;
+    std::vector<FieldSet>               _fieldSets;
     std::vector<ImportedAttributeField> _importedAttributeFields;
     using Name2IdMap = vespalib::hash_map<std::string, uint32_t>;
     Name2IdMap _indexIds;
@@ -154,17 +154,17 @@ private:
     Name2IdMap _fieldSetIds;
     Name2IdMap _importedAttributeIds;
 
-    void writeToStream(vespalib::asciistream &os, bool saveToDisk) const;
+    void writeToStream(vespalib::asciistream& os, bool saveToDisk) const;
 
 public:
     /**
      * Create an initially empty schema
      **/
     Schema();
-    Schema(const Schema & rhs);
-    Schema & operator=(const Schema & rhs);
-    Schema(Schema && rhs) noexcept;
-    Schema & operator=(Schema && rhs) noexcept;
+    Schema(const Schema& rhs);
+    Schema& operator=(const Schema& rhs);
+    Schema(Schema&& rhs) noexcept;
+    Schema& operator=(Schema&& rhs) noexcept;
     ~Schema();
 
     /**
@@ -173,7 +173,7 @@ public:
      * @param fileName the name of the file.
      * @return true if the schema could be loaded.
      **/
-    [[nodiscard]] bool loadFromFile(const std::string & fileName);
+    [[nodiscard]] bool loadFromFile(const std::string& fileName);
 
     /**
      * Save this schema to the file with the given name.
@@ -181,7 +181,7 @@ public:
      * @param fileName the name of the file.
      * @return true if the schema could be saved.
      **/
-    [[nodiscard]] bool saveToFile(const std::string & fileName) const;
+    [[nodiscard]] bool saveToFile(const std::string& fileName) const;
 
     std::string toString() const;
 
@@ -190,26 +190,26 @@ public:
      *
      * @param field the field to add
      **/
-    Schema & addIndexField(const IndexField &field);
+    Schema& addIndexField(const IndexField& field);
 
     // Only used by tests.
-    Schema & addUriIndexFields(const IndexField &field);
+    Schema& addUriIndexFields(const IndexField& field);
 
     /**
      * Add an attribute field to this schema
      *
      * @param field the field to add
      **/
-    Schema & addAttributeField(const AttributeField &field);
+    Schema& addAttributeField(const AttributeField& field);
 
     /**
      * Add a field set to this schema.
      *
      * @param collection the field set to add.
      **/
-    Schema & addFieldSet(const FieldSet &collection);
+    Schema& addFieldSet(const FieldSet& collection);
 
-    Schema &addImportedAttributeField(const ImportedAttributeField &field);
+    Schema& addImportedAttributeField(const ImportedAttributeField& field);
 
     /**
      * Obtain the number of index fields in this schema.
@@ -240,12 +240,12 @@ public:
      * @return the field
      * @param idx an index in the range [0, size - 1].
      **/
-    const IndexField & getIndexField(uint32_t fieldId) const noexcept { return _indexFields[fieldId]; }
+    const IndexField& getIndexField(uint32_t fieldId) const noexcept { return _indexFields[fieldId]; }
 
     /**
      * Returns const view of the index fields.
      */
-    const std::vector<IndexField> &getIndexFields() const noexcept { return _indexFields; }
+    const std::vector<IndexField>& getIndexFields() const noexcept { return _indexFields; }
 
     /**
      * Get the field id for the index field with the given name.
@@ -277,12 +277,12 @@ public:
      * @return the field
      * @param idx an index in the range [0, size - 1].
      **/
-    const AttributeField & getAttributeField(uint32_t fieldId) const noexcept { return _attributeFields[fieldId]; }
+    const AttributeField& getAttributeField(uint32_t fieldId) const noexcept { return _attributeFields[fieldId]; }
 
     /**
      * Returns const view of the attribute fields.
      */
-    const std::vector<AttributeField> &getAttributeFields() const noexcept { return _attributeFields; }
+    const std::vector<AttributeField>& getAttributeFields() const noexcept { return _attributeFields; }
 
     /**
      * Get the field id for the attribute field with the given name.
@@ -298,7 +298,7 @@ public:
      * @return the field set.
      * @param idx an index in the range [0, size - 1].
      **/
-    const FieldSet & getFieldSet(uint32_t idx) const noexcept { return _fieldSets[idx]; }
+    const FieldSet& getFieldSet(uint32_t idx) const noexcept { return _fieldSets[idx]; }
 
     /**
      * Get the field id for the field set with the given name.
@@ -308,21 +308,21 @@ public:
      **/
     uint32_t getFieldSetId(std::string_view name) const noexcept;
 
-    const std::vector<ImportedAttributeField> &getImportedAttributeFields() const noexcept {
+    const std::vector<ImportedAttributeField>& getImportedAttributeFields() const noexcept {
         return _importedAttributeFields;
     }
 
-    void swap(Schema &rhs);
+    void swap(Schema& rhs);
     void clear();
 
-    static Schema::UP intersect(const Schema &lhs, const Schema &rhs);
-    static Schema::UP make_union(const Schema &lhs, const Schema &rhs);
-    static Schema::UP set_difference(const Schema &lhs, const Schema &rhs);
+    static Schema::UP intersect(const Schema& lhs, const Schema& rhs);
+    static Schema::UP make_union(const Schema& lhs, const Schema& rhs);
+    static Schema::UP set_difference(const Schema& lhs, const Schema& rhs);
 
-    bool operator==(const Schema &rhs) const noexcept ;
-    bool operator!=(const Schema &rhs) const noexcept;
+    bool operator==(const Schema& rhs) const noexcept;
+    bool operator!=(const Schema& rhs) const noexcept;
 
     [[nodiscard]] bool empty() const noexcept;
 };
 
-}
+} // namespace search::index

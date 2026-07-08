@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
-#include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/bitcompression/posocccompression.h>
-#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/bitcompression/compression.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/searchlib/bitcompression/posocccompression.h>
 
+#include <vector>
 
-namespace vespalib { class Rand48; }
+namespace vespalib {
+class Rand48;
+}
 
 namespace search::fakedata {
 
@@ -32,58 +34,40 @@ public:
     };
 
 private:
-    std::vector<FakeWordVector> _words;
-    Schema _schema;
+    std::vector<FakeWordVector>     _words;
+    Schema                          _schema;
     std::vector<PosOccFieldsParams> _fieldsParams;
-    uint32_t _numDocs;
+    uint32_t                        _numDocs;
 
 public:
     FakeWordSet();
 
-    FakeWordSet(bool hasElements,
-                bool hasElementWeights);
+    FakeWordSet(bool hasElements, bool hasElementWeights);
 
     ~FakeWordSet();
 
-    void setupParams(bool hasElements,
-                     bool hasElementWeights);
+    void setupParams(bool hasElements, bool hasElementWeights);
 
-    void setupWords(vespalib::Rand48 &rnd,
-                    uint32_t numDocs,
-                    uint32_t commonDocFreq,
-                    uint32_t numWordsPerWordClass);
+    void setupWords(vespalib::Rand48& rnd, uint32_t numDocs, uint32_t commonDocFreq, uint32_t numWordsPerWordClass);
 
-    void setupWords(vespalib::Rand48 &rnd,
-                    uint32_t numDocs,
-                    uint32_t commonDocFreq,
-                    uint32_t mediumDocFreq,
-                    uint32_t rareDocFreq,
-                    uint32_t numWordsPerWordClass);
+    void setupWords(vespalib::Rand48& rnd, uint32_t numDocs, uint32_t commonDocFreq, uint32_t mediumDocFreq,
+                    uint32_t rareDocFreq, uint32_t numWordsPerWordClass);
 
     const std::vector<FakeWordVector>& words() const { return _words; }
 
     int getNumWords() const;
 
-    const PosOccFieldsParams& getFieldsParams() const {
-        return _fieldsParams.back();
-    }
+    const PosOccFieldsParams& getFieldsParams() const { return _fieldsParams.back(); }
 
-    uint32_t getPackedIndex() const {
-        return _fieldsParams.size() - 1;
-    }
+    uint32_t getPackedIndex() const { return _fieldsParams.size() - 1; }
 
-    const std::vector<PosOccFieldsParams>& getAllFieldsParams() const {
-        return _fieldsParams;
-    }
+    const std::vector<PosOccFieldsParams>& getAllFieldsParams() const { return _fieldsParams; }
 
-    const Schema& getSchema() const {
-        return _schema;
-    }
+    const Schema& getSchema() const { return _schema; }
 
     uint32_t numDocs() const { return _numDocs; }
 
     void addDocIdBias(uint32_t docIdBias);
 };
 
-}
-
+} // namespace search::fakedata

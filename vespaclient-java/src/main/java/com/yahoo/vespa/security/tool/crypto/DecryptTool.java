@@ -5,6 +5,7 @@ import com.yahoo.security.SealedSharedKey;
 import com.yahoo.security.SecretSharedKey;
 import com.yahoo.security.SharedKeyGenerator;
 import com.yahoo.security.SharedKeyResealingSession;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.security.tool.CliUtils;
 import com.yahoo.vespa.security.tool.Tool;
 import com.yahoo.vespa.security.tool.ToolDescription;
@@ -14,6 +15,7 @@ import org.apache.commons.cli.Option;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +31,7 @@ import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_FILE_OP
  *
  * @author vekterli
  */
+@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build()
 public class DecryptTool implements Tool {
 
     static final String OUTPUT_FILE_OPTION      = "output-file";
@@ -152,10 +155,10 @@ public class DecryptTool implements Tool {
         var session = SharedKeyResealingSession.newEphemeralSession();
         var req     = session.resealingRequestFor(sealedSharedKey);
 
-        invocation.stdOut().format("\nInteractive token resealing request:\n\n%s\n\n", req.toSerializedString());
-        invocation.stdOut().format("Paste response and hit return: ");
+        invocation.stdOut().print(Text.format("\nInteractive token resealing request:\n\n%s\n\n", req.toSerializedString()));
+        invocation.stdOut().print(Text.format("Paste response and hit return: "));
 
-        try (var reader = new BufferedReader(new InputStreamReader(invocation.stdIn()))) {
+        try (var reader = new BufferedReader(new InputStreamReader(invocation.stdIn(), StandardCharsets.UTF_8))) {
             var serializedRes = reader.readLine().strip();
             if (serializedRes.isEmpty()) {
                 throw new IllegalArgumentException("Empty response; aborting");

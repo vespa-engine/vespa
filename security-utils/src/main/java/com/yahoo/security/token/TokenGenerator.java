@@ -4,6 +4,7 @@ package com.yahoo.security.token;
 import com.yahoo.security.Base62;
 
 import java.security.SecureRandom;
+import java.util.Locale;
 
 /**
  * <p>
@@ -33,7 +34,7 @@ public class TokenGenerator {
         }
         byte[] tokenRand = new byte[nRandomBytes];
         CSPRNG.nextBytes(tokenRand);
-        return new Token(domain, "%s%s".formatted(prefix, Base62.codec().encode(tokenRand)));
+        return new Token(domain, String.format(Locale.ROOT, "%s%s", prefix, Base62.codec().encode(tokenRand)));
     }
 
 }

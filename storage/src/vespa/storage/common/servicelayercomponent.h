@@ -26,6 +26,7 @@
 #pragma once
 
 #include "storagecomponent.h"
+
 #include <vespa/document/bucket/bucket.h>
 
 namespace storage {
@@ -34,50 +35,37 @@ class ContentBucketSpaceRepo;
 class MinimumUsedBitsTracker;
 class StorBucketDatabase;
 
-struct ServiceLayerManagedComponent
-{
+struct ServiceLayerManagedComponent {
     virtual ~ServiceLayerManagedComponent() = default;
 
     virtual void setBucketSpaceRepo(ContentBucketSpaceRepo&) = 0;
     virtual void setMinUsedBitsTracker(MinimumUsedBitsTracker&) = 0;
 };
 
-struct ServiceLayerComponentRegister : public virtual StorageComponentRegister
-{
+struct ServiceLayerComponentRegister : public virtual StorageComponentRegister {
     virtual void registerServiceLayerComponent(ServiceLayerManagedComponent&) = 0;
 };
 
-class ServiceLayerComponent : public StorageComponent,
-                              private ServiceLayerManagedComponent
-{
+class ServiceLayerComponent : public StorageComponent, private ServiceLayerManagedComponent {
     ContentBucketSpaceRepo* _bucketSpaceRepo;
     MinimumUsedBitsTracker* _minUsedBitsTracker;
 
     // ServiceLayerManagedComponent implementation
     void setBucketSpaceRepo(ContentBucketSpaceRepo& repo) override { _bucketSpaceRepo = &repo; }
-    void setMinUsedBitsTracker(MinimumUsedBitsTracker& tracker) override {
-        _minUsedBitsTracker = &tracker;
-    }
+    void setMinUsedBitsTracker(MinimumUsedBitsTracker& tracker) override { _minUsedBitsTracker = &tracker; }
+
 public:
     using UP = std::unique_ptr<ServiceLayerComponent>;
 
-    ServiceLayerComponent(ServiceLayerComponentRegister& compReg,
-                          std::string_view name)
-        : StorageComponent(compReg, name),
-          _bucketSpaceRepo(nullptr),
-          _minUsedBitsTracker(nullptr)
-    {
+    ServiceLayerComponent(ServiceLayerComponentRegister& compReg, std::string_view name)
+        : StorageComponent(compReg, name), _bucketSpaceRepo(nullptr), _minUsedBitsTracker(nullptr) {
         compReg.registerServiceLayerComponent(*this);
     }
 
-    const ContentBucketSpaceRepo &getBucketSpaceRepo() const;
+    const ContentBucketSpaceRepo& getBucketSpaceRepo() const;
     StorBucketDatabase& getBucketDatabase(document::BucketSpace bucketSpace) const;
-    MinimumUsedBitsTracker& getMinUsedBitsTracker() {
-        return *_minUsedBitsTracker;
-    }
-    const MinimumUsedBitsTracker& getMinUsedBitsTracker() const {
-        return *_minUsedBitsTracker;
-    }
+    MinimumUsedBitsTracker& getMinUsedBitsTracker() { return *_minUsedBitsTracker; }
+    const MinimumUsedBitsTracker& getMinUsedBitsTracker() const { return *_minUsedBitsTracker; }
 };
 
-} // storage
+} // namespace storage

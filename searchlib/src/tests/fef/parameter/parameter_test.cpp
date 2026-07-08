@@ -16,7 +16,10 @@ namespace search::fef {
 
 class StringList : public std::vector<std::string> {
 public:
-    StringList & add(const std::string & str) { push_back(str); return *this; }
+    StringList& add(const std::string& str) {
+        push_back(str);
+        return *this;
+    }
 };
 
 class ParameterTest : public ::testing::Test {
@@ -29,22 +32,17 @@ protected:
 
     ParameterTest();
     ~ParameterTest() override;
-    bool assertParameter(const Parameter & exp, const Parameter & act);
-    bool validate(const IIndexEnvironment & env,
-                  const std::vector<std::string> & params,
-                  const ParameterDescriptions & descs);
-    bool validate(const IIndexEnvironment & env,
-                  const std::vector<std::string> & params,
-                  const ParameterDescriptions & descs,
-                  const ParameterValidator::Result & result);
+    bool assertParameter(const Parameter& exp, const Parameter& act);
+    bool validate(const IIndexEnvironment& env, const std::vector<std::string>& params,
+                  const ParameterDescriptions& descs);
+    bool validate(const IIndexEnvironment& env, const std::vector<std::string>& params,
+                  const ParameterDescriptions& descs, const ParameterValidator::Result& result);
 };
 
 ParameterTest::ParameterTest() = default;
 ParameterTest::~ParameterTest() = default;
 
-bool
-ParameterTest::assertParameter(const Parameter & exp, const Parameter & act)
-{
+bool ParameterTest::assertParameter(const Parameter& exp, const Parameter& act) {
     bool retval = true;
     EXPECT_EQ(exp.getType(), act.getType()) << (retval = false, "");
     EXPECT_EQ(exp.getValue(), act.getValue()) << (retval = false, "");
@@ -54,27 +52,21 @@ ParameterTest::assertParameter(const Parameter & exp, const Parameter & act)
     return retval;
 }
 
-bool
-ParameterTest::validate(const IIndexEnvironment & env,
-                        const std::vector<std::string> & params,
-                        const ParameterDescriptions & descs)
-{
-    ParameterValidator pv(env, params, descs);
+bool ParameterTest::validate(const IIndexEnvironment& env, const std::vector<std::string>& params,
+                             const ParameterDescriptions& descs) {
+    ParameterValidator         pv(env, params, descs);
     ParameterValidator::Result result = pv.validate();
     LOG(info, "validate(%s)", result.getError().c_str());
     return result.valid();
 }
 
-bool
-ParameterTest::validate(const IIndexEnvironment & env,
-                        const std::vector<std::string> & params,
-                        const ParameterDescriptions & descs,
-                        const ParameterValidator::Result & result)
-{
-    if (!validate(env, params, descs)) return false;
-    ParameterValidator pv(env, params, descs);
+bool ParameterTest::validate(const IIndexEnvironment& env, const std::vector<std::string>& params,
+                             const ParameterDescriptions& descs, const ParameterValidator::Result& result) {
+    if (!validate(env, params, descs))
+        return false;
+    ParameterValidator         pv(env, params, descs);
     ParameterValidator::Result actual = pv.validate();
-    bool failed = false;
+    bool                       failed = false;
     EXPECT_EQ(result.getTag(), actual.getTag()) << (failed = true, "");
     if (failed) {
         return false;
@@ -85,18 +77,31 @@ ParameterTest::validate(const IIndexEnvironment & env,
     }
     bool retval = true;
     for (size_t i = 0; i < result.getParameters().size(); ++i) {
-        if (!assertParameter(result.getParameters()[i], actual.getParameters()[i])) retval = false;
+        if (!assertParameter(result.getParameters()[i], actual.getParameters()[i]))
+            retval = false;
     }
     return retval;
 }
 
-TEST_F(ParameterTest, test_descriptions)
-{
-    PDS descs = PDS().
-        desc().indexField(ParameterCollection::SINGLE).indexField(ParameterCollection::ARRAY).indexField(ParameterCollection::WEIGHTEDSET).attribute(ParameterCollection::ANY).attributeField(ParameterCollection::ANY).field().
-        desc(5).feature().number().string().attribute(ParameterCollection::ANY).
-        desc().string().number().repeat(2);
-    const PDS::DescriptionVector & v = descs.getDescriptions();
+TEST_F(ParameterTest, test_descriptions) {
+    PDS descs = PDS()
+                    .desc()
+                    .indexField(ParameterCollection::SINGLE)
+                    .indexField(ParameterCollection::ARRAY)
+                    .indexField(ParameterCollection::WEIGHTEDSET)
+                    .attribute(ParameterCollection::ANY)
+                    .attributeField(ParameterCollection::ANY)
+                    .field()
+                    .desc(5)
+                    .feature()
+                    .number()
+                    .string()
+                    .attribute(ParameterCollection::ANY)
+                    .desc()
+                    .string()
+                    .number()
+                    .repeat(2);
+    const PDS::DescriptionVector& v = descs.getDescriptions();
     EXPECT_EQ(v.size(), 3u);
     EXPECT_EQ(v[0].getTag(), 0u);
     EXPECT_TRUE(!v[0].hasRepeat());
@@ -133,9 +138,8 @@ TEST_F(ParameterTest, test_descriptions)
     EXPECT_EQ(v[2].getParam(5).type, ParameterType::NUMBER);
 }
 
-TEST_F(ParameterTest, test_validator)
-{
-    IndexEnvironment env;
+TEST_F(ParameterTest, test_validator) {
+    IndexEnvironment        env;
     IndexEnvironmentBuilder builder(env);
     builder.addField(FieldType::INDEX, CollectionType::SINGLE, "foo")
         .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar")
@@ -163,8 +167,11 @@ TEST_F(ParameterTest, test_validator)
     EXPECT_TRUE(validate(env, SL().add("baz"), PDS().desc().feature()));
     EXPECT_TRUE(validate(env, SL().add("123"), PDS().desc().number()));
     EXPECT_TRUE(validate(env, SL().add("baz"), PDS().desc().string()));
-    EXPECT_TRUE(validate(env, SL().add("sbar"), PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
-    EXPECT_TRUE(validate(env, SL().add("sbar"), PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_TRUE(
+        validate(env, SL().add("sbar"),
+                 PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_TRUE(validate(env, SL().add("sbar"),
+                         PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
     EXPECT_TRUE(validate(env, SL().add("tbar"), PDS().desc().attributeField(ParameterCollection::ANY)));
     EXPECT_TRUE(validate(env, SL().add("tbar"), PDS().desc().attribute(ParameterCollection::ANY)));
     // first fail but second pass
@@ -191,12 +198,23 @@ TEST_F(ParameterTest, test_validator)
     EXPECT_FALSE(validate(env, SL().add("hybrid"), PDS().desc().attributeField(ParameterCollection::ANY)));
     EXPECT_FALSE(validate(env, SL().add("12a"), PDS().desc().number()));
     EXPECT_FALSE(validate(env, SL().add("a12"), PDS().desc().number()));
-    EXPECT_FALSE(validate(env, SL().add("sbar"), PDS().desc().attributeField(ParameterDataTypeSet::numericTypeSet(), ParameterCollection::ANY)));
-    EXPECT_FALSE(validate(env, SL().add("sbar"), PDS().desc().attribute(ParameterDataTypeSet::numericTypeSet(), ParameterCollection::ANY)));
-    EXPECT_FALSE(validate(env, SL().add("rbar"), PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
-    EXPECT_FALSE(validate(env, SL().add("rbar"), PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
-    EXPECT_FALSE(validate(env, SL().add("tbar"), PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
-    EXPECT_FALSE(validate(env, SL().add("tbar"), PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(
+        validate(env, SL().add("sbar"),
+                 PDS().desc().attributeField(ParameterDataTypeSet::numericTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(validate(env, SL().add("sbar"),
+                          PDS().desc().attribute(ParameterDataTypeSet::numericTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(
+        validate(env, SL().add("rbar"),
+                 PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(
+        validate(env, SL().add("rbar"),
+                 PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(
+        validate(env, SL().add("tbar"),
+                 PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(
+        validate(env, SL().add("tbar"),
+                 PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
 
     // test repeat
     PDS d1 = PDS().desc().field().repeat();
@@ -204,7 +222,8 @@ TEST_F(ParameterTest, test_validator)
     EXPECT_TRUE(validate(env, SL().add("foo"), d1));
     EXPECT_TRUE(validate(env, SL().add("foo").add("bar"), d1));
     EXPECT_TRUE(!validate(env, SL().add("foo").add("bar").add("baz"), d1));
-    PDS d2 = PDS().desc().string().attribute(ParameterCollection::ANY).indexField(ParameterCollection::SINGLE).repeat(2);
+    PDS d2 =
+        PDS().desc().string().attribute(ParameterCollection::ANY).indexField(ParameterCollection::SINGLE).repeat(2);
     EXPECT_TRUE(validate(env, SL().add("str"), d2));
     EXPECT_TRUE(validate(env, SL().add("str").add("bar").add("foo"), d2));
     EXPECT_TRUE(validate(env, SL().add("str").add("bar").add("foo").add("bar").add("foo"), d2));
@@ -212,58 +231,58 @@ TEST_F(ParameterTest, test_validator)
     EXPECT_TRUE(!validate(env, SL().add("str").add("bar").add("foo").add("bar"), d2));
 }
 
-TEST_F(ParameterTest, test_parameters)
-{
-    IndexEnvironment env;
+TEST_F(ParameterTest, test_parameters) {
+    IndexEnvironment        env;
     IndexEnvironmentBuilder builder(env);
     builder.addField(FieldType::INDEX, CollectionType::SINGLE, "foo")
         .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar")
         .addField(FieldType::INDEX, CollectionType::ARRAY, "afoo")
         .addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wfoo");
 
-    const FieldInfo * foo = env.getFieldByName("foo");
-    const FieldInfo * bar = env.getFieldByName("bar");
-    const FieldInfo * afoo = env.getFieldByName("afoo");
-    const FieldInfo * wfoo = env.getFieldByName("wfoo");
+    const FieldInfo* foo = env.getFieldByName("foo");
+    const FieldInfo* bar = env.getFieldByName("bar");
+    const FieldInfo* afoo = env.getFieldByName("afoo");
+    const FieldInfo* wfoo = env.getFieldByName("wfoo");
 
     EXPECT_TRUE(validate(env, SL().add("foo"), PDS().desc().field(),
-                        PVR().addParameter(P(PT::FIELD, "foo").setField(foo)))); // field
+                         PVR().addParameter(P(PT::FIELD, "foo").setField(foo)))); // field
     EXPECT_TRUE(validate(env, SL().add("foo"), PDS().desc().indexField(ParameterCollection::SINGLE),
-                        PVR().addParameter(P(PT::INDEX_FIELD, "foo").setField(foo)))); // index field
+                         PVR().addParameter(P(PT::INDEX_FIELD, "foo").setField(foo)))); // index field
     EXPECT_TRUE(validate(env, SL().add("foo"), PDS().desc().indexField(ParameterCollection::ANY),
-                        PVR().addParameter(P(PT::INDEX_FIELD, "foo").setField(foo)))); // index field
+                         PVR().addParameter(P(PT::INDEX_FIELD, "foo").setField(foo)))); // index field
     EXPECT_TRUE(validate(env, SL().add("afoo"), PDS().desc().indexField(ParameterCollection::ARRAY),
-                        PVR().addParameter(P(PT::INDEX_FIELD, "afoo").setField(afoo)))); // index field
+                         PVR().addParameter(P(PT::INDEX_FIELD, "afoo").setField(afoo)))); // index field
     EXPECT_TRUE(validate(env, SL().add("afoo"), PDS().desc().indexField(ParameterCollection::ANY),
-                        PVR().addParameter(P(PT::INDEX_FIELD, "afoo").setField(afoo)))); // index field
+                         PVR().addParameter(P(PT::INDEX_FIELD, "afoo").setField(afoo)))); // index field
     EXPECT_TRUE(validate(env, SL().add("wfoo"), PDS().desc().indexField(ParameterCollection::WEIGHTEDSET),
-                        PVR().addParameter(P(PT::INDEX_FIELD, "wfoo").setField(wfoo)))); // index field
+                         PVR().addParameter(P(PT::INDEX_FIELD, "wfoo").setField(wfoo)))); // index field
     EXPECT_TRUE(validate(env, SL().add("wfoo"), PDS().desc().indexField(ParameterCollection::ANY),
-                        PVR().addParameter(P(PT::INDEX_FIELD, "wfoo").setField(wfoo)))); // index field
+                         PVR().addParameter(P(PT::INDEX_FIELD, "wfoo").setField(wfoo)))); // index field
     EXPECT_TRUE(validate(env, SL().add("bar"), PDS().desc().attribute(ParameterCollection::ANY),
-                        PVR().addParameter(P(PT::ATTRIBUTE, "bar").setField(bar)))); // attribute field
+                         PVR().addParameter(P(PT::ATTRIBUTE, "bar").setField(bar)))); // attribute field
     EXPECT_TRUE(validate(env, SL().add("feature"), PDS().desc().feature(),
-                        PVR().addParameter(P(PT::FEATURE, "feature")))); // feature
+                         PVR().addParameter(P(PT::FEATURE, "feature")))); // feature
     EXPECT_TRUE(validate(env, SL().add("string"), PDS().desc().string(),
-                        PVR().addParameter(P(PT::STRING, "string")))); // string
+                         PVR().addParameter(P(PT::STRING, "string")))); // string
 
     // numbers
     EXPECT_TRUE(validate(env, SL().add("-100"), PDS().desc().number(),
-               PVR().addParameter(P(PT::NUMBER, "-100").setDouble(-100).setInteger(-100))));
+                         PVR().addParameter(P(PT::NUMBER, "-100").setDouble(-100).setInteger(-100))));
     EXPECT_TRUE(validate(env, SL().add("100"), PDS().desc().number(),
-               PVR().addParameter(P(PT::NUMBER, "100").setDouble(100).setInteger(100))));
+                         PVR().addParameter(P(PT::NUMBER, "100").setDouble(100).setInteger(100))));
     EXPECT_TRUE(validate(env, SL().add("100.16"), PDS().desc().number(),
-               PVR().addParameter(P(PT::NUMBER, "100.16").setDouble(100.16).setInteger(100))));
+                         PVR().addParameter(P(PT::NUMBER, "100.16").setDouble(100.16).setInteger(100))));
 
     EXPECT_TRUE(validate(env, SL(), PDS().desc(), PVR())); // no param
-    EXPECT_TRUE(validate(env, SL().add("foo").add("bar"), PDS().desc().string().string(),
-                        PVR().addParameter(P(PT::STRING, "foo")).addParameter(P(PT::STRING, "bar")))); // multiple params
+    EXPECT_TRUE(
+        validate(env, SL().add("foo").add("bar"), PDS().desc().string().string(),
+                 PVR().addParameter(P(PT::STRING, "foo")).addParameter(P(PT::STRING, "bar")))); // multiple params
     EXPECT_TRUE(validate(env, SL().add("foo").add("bar"), PDS().desc().string().repeat(),
-                        PVR().addParameter(P(PT::STRING, "foo")).addParameter(P(PT::STRING, "bar")))); // repeat
+                         PVR().addParameter(P(PT::STRING, "foo")).addParameter(P(PT::STRING, "bar")))); // repeat
     EXPECT_TRUE(validate(env, SL().add("baz"), PDS().desc(10).field().desc(20).string(),
-                        PVR(20).addParameter(P(PT::STRING, "baz")))); // second desc matching
+                         PVR(20).addParameter(P(PT::STRING, "baz")))); // second desc matching
 }
 
-}
+} // namespace search::fef
 
 GTEST_MAIN_RUN_ALL_TESTS()

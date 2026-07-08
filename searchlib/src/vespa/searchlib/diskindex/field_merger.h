@@ -10,7 +10,7 @@
 namespace search {
 class IFlushToken;
 template <class Reader, class Writer> class PostingPriorityQueueMerger;
-}
+} // namespace search
 
 namespace search::diskindex {
 
@@ -25,8 +25,7 @@ class WordNumMapping;
 /*
  * Class for merging posting lists for a single field during fusion.
  */
-class FieldMerger
-{
+class FieldMerger {
     using WordNumMappingList = std::vector<WordNumMapping>;
 
     enum class State {
@@ -41,23 +40,23 @@ class FieldMerger
         MERGE_DONE
     };
 
-    const uint32_t                 _id;
-    const std::string         _field_name;
-    const std::string         _field_dir;
-    const FusionOutputIndex      & _fusion_out_index;
-    std::shared_ptr<IFlushToken>   _flush_token;
-    std::vector<std::unique_ptr<DictionaryWordReader>> _word_readers;
+    const uint32_t                                                                    _id;
+    const std::string                                                                 _field_name;
+    const std::string                                                                 _field_dir;
+    const FusionOutputIndex&                                                          _fusion_out_index;
+    std::shared_ptr<IFlushToken>                                                      _flush_token;
+    std::vector<std::unique_ptr<DictionaryWordReader>>                                _word_readers;
     std::unique_ptr<PostingPriorityQueueMerger<DictionaryWordReader, WordAggregator>> _word_heap;
-    std::unique_ptr<WordAggregator> _word_aggregator;
-    WordNumMappingList _word_num_mappings;
-    uint64_t _num_word_ids;
-    std::vector<std::unique_ptr<FieldReader>> _readers;
-    std::unique_ptr<PostingPriorityQueueMerger<FieldReader, FieldWriter>> _heap;
-    std::unique_ptr<FieldWriter> _writer;
-    std::shared_ptr<FieldLengthScanner> _field_length_scanner;
-    uint32_t _open_reader_idx;
-    State _state;
-    bool _failed;
+    std::unique_ptr<WordAggregator>                                                   _word_aggregator;
+    WordNumMappingList                                                                _word_num_mappings;
+    uint64_t                                                                          _num_word_ids;
+    std::vector<std::unique_ptr<FieldReader>>                                         _readers;
+    std::unique_ptr<PostingPriorityQueueMerger<FieldReader, FieldWriter>>             _heap;
+    std::unique_ptr<FieldWriter>                                                      _writer;
+    std::shared_ptr<FieldLengthScanner>                                               _field_length_scanner;
+    uint32_t                                                                          _open_reader_idx;
+    State                                                                             _state;
+    bool                                                                              _failed;
 
     void make_tmp_dirs();
     bool clean_tmp_dirs();
@@ -79,6 +78,7 @@ class FieldMerger
     void merge_postings_main();
     bool merge_postings_finish();
     void merge_postings_failed();
+
 public:
     FieldMerger(uint32_t id, const FusionOutputIndex& fusion_out_index, std::shared_ptr<IFlushToken> flush_token);
     ~FieldMerger();
@@ -90,4 +90,4 @@ public:
     bool failed() const noexcept { return _failed; }
 };
 
-}
+} // namespace search::diskindex

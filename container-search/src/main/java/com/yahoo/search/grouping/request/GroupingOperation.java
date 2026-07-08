@@ -123,7 +123,7 @@ public abstract class GroupingOperation extends GroupingNode {
 
     /**
      * Returns the alias associated with the given name. If no alias can be found in this node, this method queries its
-     * parent grouping node. If the alias still can not be found, this method returns null.
+     * parent grouping node. If the alias still cannot be found, this method returns null.
      *
      * @param id the id of the alias to return
      * @return the expression associated with the id
@@ -224,7 +224,7 @@ public abstract class GroupingOperation extends GroupingNode {
     /** Assigns an {@link FilterExpression} as the filter-by clause of this operation. */
     @Beta
     public GroupingOperation setFilterBy(FilterExpression exp) {
-        filterBy = Objects.requireNonNull(exp, "Filter expression can not be null");
+        filterBy = Objects.requireNonNull(exp, "Filter expression cannot be null");
         return this;
     }
 
@@ -257,7 +257,7 @@ public abstract class GroupingOperation extends GroupingNode {
     public void resolveLevel(int level) {
         if (groupBy != null) {
             if (level == 0) {
-                throw new IllegalArgumentException("Operation '" + this + "' can not group " +
+                throw new IllegalArgumentException("Operation '" + this + "' cannot group " +
                                                    getLevelDesc(level) + ".");
             }
             groupBy.resolveLevel(level - 1);
@@ -265,7 +265,7 @@ public abstract class GroupingOperation extends GroupingNode {
         }
         if (hasMax()) {
             if (level == 0) {
-                throw new IllegalArgumentException("Operation '" + this + "' can not apply max to " +
+                throw new IllegalArgumentException("Operation '" + this + "' cannot apply max to " +
                                                    getLevelDesc(level) + ".");
             }
         }
@@ -275,7 +275,7 @@ public abstract class GroupingOperation extends GroupingNode {
         }
         if (!orderBy.isEmpty()) {
             if (level == 0) {
-                throw new IllegalArgumentException("Operation '" + this + "' can not order " +
+                throw new IllegalArgumentException("Operation '" + this + "' cannot order " +
                                                    getLevelDesc(level) + ".");
             }
             for (GroupingExpression exp : orderBy) {

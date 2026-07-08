@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
@@ -72,14 +73,17 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
-    private int contentLayerMetadataFeatureLevel = 0;
     private boolean logserverOtelCol = false;
+    private boolean tokenAuthForDeploy = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
-    private int searchCoreMaxOutstandingMoveOps = 100;
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
-    private boolean useNewPrepareForRestart = true;
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
+    private OptionalInt metricsProxyHeapSizeInMib = OptionalInt.empty();
+    private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
+    private boolean ignoreConnectivityChecksAtStartup = false;
+    private double searchNodeReservedMemoryFactor = 0.0;
+    private boolean failWhenConfiguringIndexedMapOfArray = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -91,6 +95,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String athenzDnsSuffix() { return null; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
+    @SuppressWarnings("removal")
     @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId) { return jvmGCOptions; }
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return firstTimeDeployment; }
@@ -113,7 +118,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double resourceLimitAddressSpace() { return resourceLimitAddressSpace; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-    @Override public boolean useV8GeoPositions() { return true; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
     @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
@@ -121,7 +125,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
     @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
     @Override public int rpcNumTargets() { return rpc_num_targets; }
-    @Override public int heapSizePercentage() { return heapSizePercentage(Optional.empty()); }
     @Override public int heapSizePercentage(Optional<String> clusterId) {
         return heapSizePercentage.getOrDefault(clusterId.orElse(""), defaultHeapSizePercentageOfAvailableMemory);
     }
@@ -129,15 +132,21 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
-    @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
+    @Override public boolean tokenAuthForDeploy() { return tokenAuthForDeploy; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
-    @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
-    @Override public boolean useTriton() { return useTriton; }
+    @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return () -> useTriton; }
+    @Override public OptionalInt metricsProxyHeapSizeInMib() { return metricsProxyHeapSizeInMib; }
+    @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> metricsProxyHeapSizeInMib.orElse(0); }
+    @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
+    @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
+    @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
+    @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
+
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -308,13 +317,13 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setContentLayerMetadataFeatureLevel(int level) {
-        this.contentLayerMetadataFeatureLevel = level;
+    public TestProperties setLogserverOtelCol(boolean logserverOtelCol) {
+        this.logserverOtelCol = logserverOtelCol;
         return this;
     }
 
-    public TestProperties setLogserverOtelCol(boolean logserverOtelCol) {
-        this.logserverOtelCol = logserverOtelCol;
+    public TestProperties setTokenAuthForDeploy(boolean tokenAuthForDeploy) {
+        this.tokenAuthForDeploy = tokenAuthForDeploy;
         return this;
     }
 
@@ -328,18 +337,18 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setSearchCoreMaxOutstandingMoveOps(int value) {
-        this.searchCoreMaxOutstandingMoveOps = value;
+    public TestProperties setMetricsProxyHeapSizeInMib(int value) {
+        this.metricsProxyHeapSizeInMib = OptionalInt.of(value);
+        return this;
+    }
+
+    public TestProperties setMetricsProxyAdminNodeHeapSizeInMib(int value) {
+        this.metricsProxyAdminNodeHeapSizeInMib = OptionalInt.of(value);
         return this;
     }
 
     public TestProperties setMallocImpl(ClusterSpec.Type clusterType, String mallocImpl) {
         this.mallocImpl.put(clusterType, mallocImpl);
-        return this;
-    }
-
-    public TestProperties useNewPrepareForRestart(boolean value) {
-        this.useNewPrepareForRestart = value;
         return this;
     }
 
@@ -350,6 +359,21 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseTriton(boolean value) {
         this.useTriton = value;
+        return this;
+    }
+
+    public TestProperties setIgnoreConnectivityChecksAtStartup(boolean value) {
+        this.ignoreConnectivityChecksAtStartup = value;
+        return this;
+    }
+
+    public TestProperties setSearchNodeReservedMemoryFactor(double value) {
+        this.searchNodeReservedMemoryFactor = value;
+        return this;
+    }
+
+    public TestProperties failWhenConfiguringIndexedMapOfArray(boolean value) {
+        this.failWhenConfiguringIndexedMapOfArray = value;
         return this;
     }
 

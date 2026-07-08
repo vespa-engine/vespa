@@ -3,19 +3,27 @@
 #pragma once
 
 #include "hit_estimate.h"
+
 #include <vespa/searchcommon/common/range.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace search::fef { class TermFieldMatchData; }
-namespace search::queryeval {
-    class SearchIterator;
-    class ExecuteInfo;
+namespace search::fef {
+class TermFieldMatchData;
 }
-namespace search { class QueryTermUCS4; }
+namespace search::queryeval {
+class SearchIterator;
+class ExecuteInfo;
+} // namespace search::queryeval
+namespace search {
+class QueryTermUCS4;
+}
 
 namespace search::attribute {
+
+class ArrayBoolSearchContext;
 
 class ISearchContext {
 public:
@@ -23,7 +31,7 @@ public:
     using DocId = uint32_t;
 
 private:
-    virtual int32_t onFind(DocId docId, int32_t elementId, int32_t &weight) const = 0;
+    virtual int32_t onFind(DocId docId, int32_t elementId, int32_t& weight) const = 0;
     virtual int32_t onFind(DocId docId, int32_t elementId) const = 0;
 
 public:
@@ -49,25 +57,24 @@ public:
      *
      * @param strict whether the iterator should be strict or not
      **/
-    virtual std::unique_ptr<queryeval::SearchIterator>
-    createIterator(fef::TermFieldMatchData *matchData, bool strict) = 0;
+    virtual std::unique_ptr<queryeval::SearchIterator> createIterator(fef::TermFieldMatchData* matchData,
+                                                                      bool                     strict) = 0;
 
     /*
      * Create temporary posting lists.
      * Should be called before createIterator() is called.
      */
-    virtual void fetchPostings(const queryeval::ExecuteInfo &execInfo, bool strict) = 0;
+    virtual void fetchPostings(const queryeval::ExecuteInfo& execInfo, bool strict) = 0;
 
     virtual bool valid() const = 0;
     virtual Int64Range getAsIntegerTerm() const = 0;
     virtual DoubleRange getAsDoubleTerm() const = 0;
-    virtual const QueryTermUCS4 * queryTerm() const = 0;
-    virtual const std::string &attributeName() const = 0;
+    virtual const QueryTermUCS4* queryTerm() const = 0;
+    virtual const std::string& attributeName() const = 0;
 
-    int32_t find(DocId docId, int32_t elementId, int32_t &weight) const { return onFind(docId, elementId, weight); }
+    int32_t find(DocId docId, int32_t elementId, int32_t& weight) const { return onFind(docId, elementId, weight); }
     int32_t find(DocId docId, int32_t elementId) const { return onFind(docId, elementId); }
-    template<typename SC>
-    static bool matches(const SC & sc, DocId docId, int32_t &weight) {
+    template <typename SC> static bool matches(const SC& sc, DocId docId, int32_t& weight) {
         weight = 0;
         int32_t oneWeight(0);
         int32_t firstId = sc.find(docId, 0, oneWeight);
@@ -76,7 +83,7 @@ public:
         }
         return firstId >= 0;
     }
-    bool matches(DocId docId, int32_t &weight) const { return matches(*this, docId, weight); }
+    bool matches(DocId docId, int32_t& weight) const { return matches(*this, docId, weight); }
     bool matches(DocId doc) const { return find(doc, 0) >= 0; }
 
     /*
@@ -88,6 +95,8 @@ public:
     // Get element ids. Might call unpack. Assumes element_ids is cleared by caller.
     virtual void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) const;
     virtual void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) const;
+
+    virtual const ArrayBoolSearchContext* as_array_bool_search_context() const { return nullptr; }
 };
 
-}
+} // namespace search::attribute

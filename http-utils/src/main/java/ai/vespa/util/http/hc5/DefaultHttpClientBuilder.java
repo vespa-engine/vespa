@@ -29,11 +29,11 @@ public class DefaultHttpClientBuilder {
     /** Creates an HTTP client builder with the given SSL context, and using the provided timeouts for requests where config is not overridden. */
     public static HttpClientBuilder create(Supplier<SSLContext> sslContext, HostnameVerifier verifier, String userAgent) {
         SSLContext ctx = sslContext.get();
-        var factory = ctx == null ? SslConnectionSocketFactory.of(verifier) : SslConnectionSocketFactory.of(ctx, verifier);
+        var tlsStrategy = ctx == null ? VespaTlsStrategy.of(verifier) : VespaTlsStrategy.of(ctx, verifier);
         return HttpClientBuilder.create()
                                 .setConnectionManager(PoolingHttpClientConnectionManagerBuilder
                                                               .create()
-                                                              .setSSLSocketFactory(factory)
+                                                              .setTlsSocketStrategy(tlsStrategy)
                                                               .build())
                                 .setUserAgent(userAgent)
                                 .disableCookieManagement()

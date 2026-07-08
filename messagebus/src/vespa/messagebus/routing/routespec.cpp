@@ -1,45 +1,39 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "routingspec.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 
 namespace mbus {
 
-RouteSpec::RouteSpec(const string &name) noexcept :
-    _name(name),
-    _hops()
-{ }
+RouteSpec::RouteSpec(const string& name) noexcept : _name(name), _hops() {
+}
 
-RouteSpec::RouteSpec(const RouteSpec &) = default;
-RouteSpec & RouteSpec::operator = (const RouteSpec &) = default;
-RouteSpec::RouteSpec(RouteSpec &&) noexcept = default;
-RouteSpec & RouteSpec::operator = (RouteSpec &&) noexcept = default;
+RouteSpec::RouteSpec(const RouteSpec&) = default;
+RouteSpec& RouteSpec::operator=(const RouteSpec&) = default;
+RouteSpec::RouteSpec(RouteSpec&&) noexcept = default;
+RouteSpec& RouteSpec::operator=(RouteSpec&&) noexcept = default;
 
 RouteSpec::~RouteSpec() = default;
 
-RouteSpec &
-RouteSpec::addHop(const string &hop) & {
+RouteSpec& RouteSpec::addHop(const string& hop) & {
     _hops.push_back(hop);
     return *this;
 }
 
-RouteSpec &&
-RouteSpec::addHop(const string &hop) && {
+RouteSpec&& RouteSpec::addHop(const string& hop) && {
     _hops.push_back(hop);
     return std::move(*this);
 }
 
-RouteSpec &
-RouteSpec::setHop(uint32_t i, const string &hop) {
+RouteSpec& RouteSpec::setHop(uint32_t i, const string& hop) {
     _hops[i] = hop;
     return *this;
 }
 
-void
-RouteSpec::toConfig(string &cfg, const string &prefix) const
-{
+void RouteSpec::toConfig(string& cfg, const string& prefix) const {
     cfg.append(prefix).append("name ").append(RoutingSpec::toConfigString(_name)).append("\n");
     uint32_t numHops = _hops.size();
     if (numHops > 0) {
@@ -51,17 +45,13 @@ RouteSpec::toConfig(string &cfg, const string &prefix) const
     }
 }
 
-string
-RouteSpec::toString() const
-{
+string RouteSpec::toString() const {
     string ret = "";
     toConfig(ret, "");
     return ret;
 }
 
-bool
-RouteSpec::operator==(const RouteSpec &rhs) const
-{
+bool RouteSpec::operator==(const RouteSpec& rhs) const {
     if (_name != rhs._name) {
         return false;
     }

@@ -4,13 +4,14 @@
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/persistence/spi/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
+
 #include <cassert>
 #include <unordered_map>
 
 namespace storage::lib {
-    class ClusterState;
-    class Distribution;
-}
+class ClusterState;
+class Distribution;
+} // namespace storage::lib
 
 namespace storage::distributor {
 
@@ -48,7 +49,8 @@ public:
  */
 class BucketSpaceStateMap {
 private:
-    using StateMap = std::unordered_map<document::BucketSpace, std::unique_ptr<BucketSpaceState>, document::BucketSpace::hash>;
+    using StateMap =
+        std::unordered_map<document::BucketSpace, std::unique_ptr<BucketSpaceState>, document::BucketSpace::hash>;
 
     StateMap _map;
 
@@ -73,4 +75,4 @@ public:
     const lib::Distribution& get_distribution(document::BucketSpace space) const;
 };
 
-}
+} // namespace storage::distributor

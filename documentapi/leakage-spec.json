@@ -1,0 +1,103 @@
+{
+  "com.yahoo.documentapi.DocumentAccess" : [
+    "com.yahoo.document.select.parser.ParseException"
+  ],
+  "com.yahoo.documentapi.DocumentAccessParams" : [
+    "com.yahoo.document.config.DocumentmanagerConfig"
+  ],
+  "com.yahoo.documentapi.VisitorControlHandler" : [
+    "com.yahoo.vdslib.VisitorStatistics"
+  ],
+  "com.yahoo.documentapi.VisitorIterator" : [
+    "com.yahoo.document.select.parser.ParseException"
+  ],
+  "com.yahoo.documentapi.VisitorParameters" : [
+    "com.yahoo.messagebus.routing.Route"
+  ],
+  "com.yahoo.documentapi.local.LocalDocumentAccess" : [
+    "com.yahoo.document.select.parser.ParseException"
+  ],
+  "com.yahoo.documentapi.local.LocalVisitorSession" : [
+    "com.yahoo.document.select.parser.ParseException"
+  ],
+  "com.yahoo.documentapi.messagebus.MessageBusDocumentAccess" : [
+    "com.yahoo.document.select.parser.ParseException",
+    "com.yahoo.messagebus.network.Network"
+  ],
+  "com.yahoo.documentapi.messagebus.MessageBusParams" : [
+    "com.yahoo.messagebus.network.rpc.RPCNetworkParams",
+    "com.yahoo.vespa.config.content.DistributionConfig"
+  ],
+  "com.yahoo.documentapi.messagebus.MessageBusVisitorSession" : [
+    "com.yahoo.document.select.parser.ParseException",
+    "com.yahoo.messagebus.routing.RoutingTable"
+  ],
+  "com.yahoo.documentapi.messagebus.ScheduledEventQueue" : [
+    "com.yahoo.concurrent.Timer"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.ANDPolicy" : [
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy" : [
+    "com.yahoo.messagebus.routing.RoutingContext",
+    "com.yahoo.vespa.config.content.DistributionConfig"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$HostFetcher" : [
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$Parameters" : [
+    "com.yahoo.vdslib.distribution.Distribution",
+    "com.yahoo.vespa.config.content.DistributionConfig"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostFetcher" : [
+    "com.yahoo.jrt.slobrok.api.IMirror",
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply" : [
+    "com.yahoo.vdslib.VisitorStatistics"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocol" : [
+    "com.yahoo.messagebus.routing.RoutingContext",
+    "com.yahoo.messagebus.routing.RoutingPolicy",
+    "com.yahoo.vespa.config.content.DistributionConfig"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy" : [
+    "com.yahoo.messagebus.routing.RoutingPolicy"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.DocumentRouteSelectorPolicy" : [
+    "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber",
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.ErrorPolicy" : [
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.ExternPolicy" : [
+    "com.yahoo.jrt.slobrok.api.Mirror",
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.LoadBalancerPolicy" : [
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.LocalServicePolicy" : [
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.MessageTypePolicy" : [
+    "com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber",
+    "com.yahoo.messagebus.routing.RoutingContext",
+    "com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.QueryResultMessage" : [
+    "com.yahoo.vdslib.DocumentSummary",
+    "com.yahoo.vdslib.SearchResult"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.RoundRobinPolicy" : [
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy" : [
+    "com.yahoo.jrt.slobrok.api.Mirror$Entry",
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ],
+  "com.yahoo.documentapi.messagebus.protocol.SubsetServicePolicy" : [
+    "com.yahoo.messagebus.routing.RoutingContext"
+  ]
+}

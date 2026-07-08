@@ -37,23 +37,23 @@ public class RpcInvokerTest {
     }
 
     protected void assertCorrectArguments(String argString) {
-        RpcInvoker invoker=new RpcInvoker();
-        List<String> args=toList(argString);
-        Request request=invoker.createRequest("testmethod",args);
-        for (int i=0; i<args.size(); i++) {
+        RpcInvoker invoker = new RpcInvoker();
+        List<String> args = toList(argString);
+        Request request = invoker.createRequest("testmethod", args);
+        for (int i = 0; i < args.size(); i++) {
             // Strip type here if present
-            String arg=args.get(i);
-            if (arg.length()>=1 && arg.charAt(1)==':')
-                arg=arg.substring(2);
-            assertEquals(arg,request.parameters().get(i).toString());
+            String arg = args.get(i);
+            if (arg.length() >= 1 && arg.charAt(1) == ':')
+                arg = arg.substring(2);
+            assertEquals(arg, request.parameters().get(i).toString());
         }
     }
 
     private List<String> toList(String argsString) {
-        List<String> argsList=new ArrayList<String>();
-        String[] argsArray=argsString.split(" ");
+        List<String> argsList = new ArrayList<String>();
+        String[] argsArray = argsString.split(" ");
         for (String arg : argsArray) {
-            if (arg.trim().length()==0) continue;
+            if (arg.trim().length() == 0) continue;
             argsList.add(arg);
         }
         return argsList;

@@ -25,4 +25,4 @@ public:
     virtual long write(uint32_t docid, void* buf, long available) = 0;
 };
 
-}
+} // namespace search::attribute

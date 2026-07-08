@@ -7,17 +7,13 @@ using search::fef::ElementGap;
 namespace search::queryeval::test {
 
 MockElementGapInspector::MockElementGapInspector(ElementGap element_gap)
-    : IElementGapInspector(),
-      _element_gap(element_gap)
-{
+    : IElementGapInspector(), _element_gap(element_gap) {
 }
 
 MockElementGapInspector::~MockElementGapInspector() = default;
 
-ElementGap
-MockElementGapInspector::get_element_gap(uint32_t) const noexcept
-{
+ElementGap MockElementGapInspector::get_element_gap(uint32_t) const noexcept {
     return _element_gap;
 }
 
-}
+} // namespace search::queryeval::test

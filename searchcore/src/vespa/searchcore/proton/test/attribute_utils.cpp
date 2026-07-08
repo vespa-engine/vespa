@@ -1,20 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_utils.h"
-#include <vespa/vespalib/util/hdr_abort.h>
+
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/vespalib/util/hdr_abort.h>
 
-using search::attribute::Config;
+using search::CommitParam;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
-using search::CommitParam;
+using search::attribute::Config;
 
 namespace proton::test {
 
-void
-AttributeUtils::fillAttribute(search::AttributeVector & attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken) {
-    search::IntegerAttribute &ia = static_cast<search::IntegerAttribute &>(attr);
+void AttributeUtils::fillAttribute(search::AttributeVector& attr, uint32_t numDocs, int64_t value,
+                                   uint64_t lastSyncToken) {
+    search::IntegerAttribute& ia = static_cast<search::IntegerAttribute&>(attr);
     ia.addDocs(numDocs);
     for (uint32_t i = 1; i < ia.getNumDocs(); ++i) {
         ia.update(i, value);
@@ -22,12 +23,14 @@ AttributeUtils::fillAttribute(search::AttributeVector & attr, uint32_t numDocs, 
     ia.commit(search::CommitParam(lastSyncToken, CommitParam::UpdateStats::SKIP));
 }
 
-void
-AttributeUtils::fillAttribute(search::AttributeVector & attr, uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken) {
-    search::IntegerAttribute &ia = static_cast<search::IntegerAttribute &>(attr);
+void AttributeUtils::fillAttribute(search::AttributeVector& attr, uint32_t from, uint32_t to, int64_t value,
+                                   uint64_t lastSyncToken) {
+    search::IntegerAttribute& ia = static_cast<search::IntegerAttribute&>(attr);
     while (ia.getNumDocs() < to) {
         uint32_t docId;
-        if (!ia.addDoc(docId)) { HDR_ABORT("should not be reached"); }
+        if (!ia.addDoc(docId)) {
+            HDR_ABORT("should not be reached");
+        }
     }
     for (uint32_t i = from; i < to; ++i) {
         ia.update(i, value);
@@ -35,26 +38,22 @@ AttributeUtils::fillAttribute(search::AttributeVector & attr, uint32_t from, uin
     ia.commit(search::CommitParam(lastSyncToken, CommitParam::UpdateStats::SKIP));
 }
 
-const Config &
-AttributeUtils::getInt32Config() {
+const Config& AttributeUtils::getInt32Config() {
     static Config cfg(BasicType::INT32);
     return cfg;
 }
 
-const Config &
-AttributeUtils::getInt32ArrayConfig() {
+const Config& AttributeUtils::getInt32ArrayConfig() {
     static Config cfg(BasicType::INT32, CollectionType::ARRAY);
     return cfg;
 }
 
-const Config &
-AttributeUtils::getStringConfig() {
+const Config& AttributeUtils::getStringConfig() {
     static Config cfg(BasicType::STRING);
     return cfg;
 }
 
-const Config &
-AttributeUtils::getPredicateConfig() {
+const Config& AttributeUtils::getPredicateConfig() {
     static Config cfg(BasicType::PREDICATE);
     return cfg;
 }
@@ -65,19 +64,16 @@ Config tensorConfig() {
     return Config(BasicType::TENSOR).setTensorType(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
 }
 
-}
+} // namespace
 
-const Config &
-AttributeUtils::getTensorConfig() {
+const Config& AttributeUtils::getTensorConfig() {
     static Config cfg = tensorConfig();
     return cfg;
 }
 
-const Config&
-AttributeUtils::get_bool_config() {
+const Config& AttributeUtils::get_bool_config() {
     static Config cfg(BasicType::BOOL);
     return cfg;
 }
 
-}
-
+} // namespace proton::test

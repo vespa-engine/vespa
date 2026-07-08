@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "slime_cluster_state_bundle_codec.h"
+
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/configgen/configpayload.h>
@@ -15,14 +16,14 @@
 #include <vespa/vespalib/util/size_literals.h>
 
 using document::FixedBucketSpaces;
-using vespalib::slime::Cursor;
-using vespalib::slime::BinaryFormat;
-using vespalib::DataBuffer;
 using vespalib::ConstBufferRef;
+using vespalib::DataBuffer;
+using vespalib::Memory;
+using vespalib::compression::compress;
 using vespalib::compression::CompressionConfig;
 using vespalib::compression::decompress;
-using vespalib::compression::compress;
-using vespalib::Memory;
+using vespalib::slime::BinaryFormat;
+using vespalib::slime::Cursor;
 using DistributionConfigBuilder = storage::lib::Distribution::DistributionConfigBuilder;
 using namespace vespalib::slime;
 
@@ -32,15 +33,16 @@ namespace storage::rpc {
 namespace {
 class OutputBuf : public vespalib::Output {
 public:
-    explicit OutputBuf(size_t estimatedSize) : _buf(estimatedSize) { }
+    explicit OutputBuf(size_t estimatedSize) : _buf(estimatedSize) {}
     ~OutputBuf() override;
-    vespalib::DataBuffer & getBuf() { return _buf; }
+    vespalib::DataBuffer& getBuf() { return _buf; }
+
 private:
     vespalib::WritableMemory reserve(size_t bytes) override {
         _buf.ensureFree(bytes);
         return {_buf.getFree(), _buf.getFreeLen()};
     }
-    Output &commit(size_t bytes) override {
+    Output& commit(size_t bytes) override {
         _buf.moveFreeToData(bytes);
         return *this;
     }
@@ -71,11 +73,11 @@ void convert_struct(const Inspector& in, Cursor& out);
 
 struct ConfigArrayConverter : ArrayTraverser {
     Cursor& _out;
-    explicit ConfigArrayConverter(Cursor& out) noexcept: _out(out) {}
+    explicit ConfigArrayConverter(Cursor& out) noexcept : _out(out) {}
 
     void entry([[maybe_unused]] size_t idx, const Inspector& in) override {
         assert(in.type().getId() == OBJECT::ID);
-        auto type = in["type"].asString();
+        auto  type = in["type"].asString();
         auto& value = in["value"];
         assert(value.valid());
         if (type == "int") {
@@ -101,11 +103,11 @@ struct ConfigArrayConverter : ArrayTraverser {
 
 struct ConfigObjectConverter : ObjectTraverser {
     Cursor& _out;
-    explicit ConfigObjectConverter(Cursor& out) noexcept: _out(out) {}
+    explicit ConfigObjectConverter(Cursor& out) noexcept : _out(out) {}
 
     void field(const Memory& name, const Inspector& in) override {
         assert(in.type().getId() == OBJECT::ID);
-        auto type = in["type"].asString();
+        auto  type = in["type"].asString();
         auto& value = in["value"];
         assert(value.valid());
         if (type == "int") {
@@ -138,13 +140,13 @@ void convert_to_config_payload(const Inspector& in, Cursor& out) {
     convert_struct(in["configPayload"], out);
 }
 
-} // anon ns
+} // namespace
 
 // Only used from unit tests; the cluster controller encodes all bundles
 // we decode in practice.
 EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(const lib::ClusterStateBundle& bundle) const {
     vespalib::Slime slime;
-    Cursor& root = slime.setObject();
+    Cursor&         root = slime.setObject();
     if (bundle.deferredActivation()) {
         root.setBool(DeferredActivationField, bundle.deferredActivation());
     }
@@ -162,7 +164,7 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(const lib::Cluste
     }
 
     if (bundle.has_distribution_config()) {
-        Cursor& distr_root = root.setObject(DistributionConfigField);
+        Cursor&                    distr_root = root.setObject(DistributionConfigField);
         ::config::ConfigDataBuffer buf;
         bundle.distribution_config_bundle()->config().serialize(buf);
         // There is no way in C++ to directly serialize to the actual payload format we expect to
@@ -173,8 +175,8 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(const lib::Cluste
     OutputBuf out_buf(4_Ki);
     BinaryFormat::encode(slime, out_buf);
     ConstBufferRef to_compress(out_buf.getBuf().getData(), out_buf.getBuf().getDataLen());
-    auto buf = std::make_unique<DataBuffer>(vespalib::roundUp2inN(out_buf.getBuf().getDataLen()));
-    auto actual_type = compress(CompressionConfig::LZ4, to_compress, *buf, false);
+    auto           buf = std::make_unique<DataBuffer>(vespalib::roundUp2inN(out_buf.getBuf().getDataLen()));
+    auto           actual_type = compress(CompressionConfig::LZ4, to_compress, *buf, false);
 
     EncodedClusterStateBundle encoded_bundle;
     encoded_bundle._compression_type = actual_type;
@@ -185,7 +187,6 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(const lib::Cluste
 }
 
 namespace {
-
 
 struct StateInserter : vespalib::slime::ObjectTraverser {
     lib::ClusterStateBundle::BucketSpaceStateMapping& _space_states;
@@ -199,36 +200,33 @@ struct StateInserter : vespalib::slime::ObjectTraverser {
     }
 };
 
-}
+} // namespace
 
-std::shared_ptr<const lib::ClusterStateBundle> SlimeClusterStateBundleCodec::decode(
-        const EncodedClusterStateBundle& encoded_bundle) const
-{
+std::shared_ptr<const lib::ClusterStateBundle>
+SlimeClusterStateBundleCodec::decode(const EncodedClusterStateBundle& encoded_bundle) const {
     ConstBufferRef blob(encoded_bundle._buffer->getData(), encoded_bundle._buffer->getDataLen());
-    DataBuffer uncompressed;
-    decompress(encoded_bundle._compression_type, encoded_bundle._uncompressed_length,
-               blob, uncompressed, false);
+    DataBuffer     uncompressed;
+    decompress(encoded_bundle._compression_type, encoded_bundle._uncompressed_length, blob, uncompressed, false);
     if (encoded_bundle._uncompressed_length != uncompressed.getDataLen()) {
         throw std::range_error(vespalib::make_string("ClusterStateBundle indicated uncompressed size (%u) is "
                                                      "not equal to actual uncompressed size (%zu)",
-                                                     encoded_bundle._uncompressed_length,
-                                                     uncompressed.getDataLen()));
+                                                     encoded_bundle._uncompressed_length, uncompressed.getDataLen()));
     }
 
     vespalib::Slime slime;
     BinaryFormat::decode(Memory(uncompressed.getData(), uncompressed.getDataLen()), slime);
     Inspector& root = slime.get();
     Inspector& states = root[StatesField];
-    auto baseline = std::make_shared<lib::ClusterState>(states[BaselineField].asString().make_string());
+    auto       baseline = std::make_shared<lib::ClusterState>(states[BaselineField].asString().make_string());
 
-    Inspector& spaces = states[SpacesField];
+    Inspector&                                       spaces = states[SpacesField];
     lib::ClusterStateBundle::BucketSpaceStateMapping space_states;
-    StateInserter inserter(space_states);
+    StateInserter                                    inserter(space_states);
     spaces.traverse(inserter);
 
     const bool deferred_activation = root[DeferredActivationField].asBool(); // Defaults to false if not set.
     std::shared_ptr<const lib::DistributionConfigBundle> distribution_config;
-    std::optional<lib::ClusterStateBundle::FeedBlock> feed_block;
+    std::optional<lib::ClusterStateBundle::FeedBlock>    feed_block;
 
     Inspector& fb = root[FeedBlockField];
     if (fb.valid()) {
@@ -240,8 +238,9 @@ std::shared_ptr<const lib::ClusterStateBundle> SlimeClusterStateBundleCodec::dec
         auto raw_cfg = std::make_unique<DistributionConfigBuilder>(::config::ConfigPayload(dc));
         distribution_config = lib::DistributionConfigBundle::of(std::move(raw_cfg));
     }
-    return std::make_shared<lib::ClusterStateBundle>(std::move(baseline), std::move(space_states), std::move(feed_block),
-                                                     std::move(distribution_config), deferred_activation);
+    return std::make_shared<lib::ClusterStateBundle>(std::move(baseline), std::move(space_states),
+                                                     std::move(feed_block), std::move(distribution_config),
+                                                     deferred_activation);
 }
 
-}
+} // namespace storage::rpc

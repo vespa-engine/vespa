@@ -7,6 +7,7 @@
 #pragma once
 
 #include "attrvector.h"
+
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 
 namespace search {
@@ -30,25 +31,24 @@ template <> struct AttributeTemplate<double> {
 
 template <typename T>
 class SingleExtAttribute
-    : public NumericDirectAttrVector<AttrVector::Features<false>,
-                                     typename AttributeTemplate<T>::Type>,
-      public IExtendAttribute
-{
+    : public NumericDirectAttrVector<AttrVector::Features<false>, typename AttributeTemplate<T>::Type>,
+      public IExtendAttribute {
     using Super = typename SingleExtAttribute<T>::NumDirectAttrVec;
-    using Config =  typename Super::Config;
+    using Config = typename Super::Config;
     using BasicType = typename Super::BasicType;
     using QueryTermSimpleUP = typename Super::QueryTermSimpleUP;
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
-    IExtendAttribute * getExtendInterface() override { return this; }
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
+    IExtendAttribute* getExtendInterface() override { return this; }
+
 public:
-    SingleExtAttribute(const std::string &name);
+    SingleExtAttribute(const std::string& name);
     ~SingleExtAttribute() override;
 
-    bool addDoc(typename Super::DocId &docId) override;
+    bool addDoc(typename Super::DocId& docId) override;
     bool add(typename AddValueType<T>::Type v, int32_t = 1) override;
-    bool onLoad(vespalib::Executor *) override {
+    bool onLoad(vespalib::Executor*) override {
         return false; // Emulate that this attribute is never loaded
     }
     void onAddDocs(typename Super::DocId lidLimit) override;
@@ -61,20 +61,18 @@ using SingleInt64ExtAttribute = SingleExtAttribute<int64_t>;
 using SingleFloatExtAttribute = SingleExtAttribute<double>;
 using SingleIntegerExtAttribute = SingleInt64ExtAttribute;
 
-class SingleStringExtAttribute
-    : public StringDirectAttrVector< AttrVector::Features<false> >,
-      public IExtendAttribute
-{
-    IExtendAttribute * getExtendInterface() override { return this; }
+class SingleStringExtAttribute : public StringDirectAttrVector<AttrVector::Features<false>>, public IExtendAttribute {
+    IExtendAttribute* getExtendInterface() override { return this; }
+
 public:
-    SingleStringExtAttribute(const std::string & name);
+    SingleStringExtAttribute(const std::string& name);
     ~SingleStringExtAttribute() override;
-    bool addDoc(DocId & docId) override;
-    bool add(const char * v, int32_t w = 1) override;
-    bool onLoad(vespalib::Executor *) override {
+    bool addDoc(DocId& docId) override;
+    bool add(const char* v, int32_t w = 1) override;
+    bool onLoad(vespalib::Executor*) override {
         return false; // Emulate that this attribute is never loaded
     }
-    void onAddDocs(DocId ) override { }
+    void onAddDocs(DocId) override {}
 };
 
 //******************** CollectionType::ARRAY ********************//
@@ -83,35 +81,37 @@ template <typename T>
 class MultiExtAttribute
     : public NumericDirectAttrVector<AttrVector::Features<true>, typename AttributeTemplate<T>::Type>,
       public IExtendAttribute,
-      public attribute::IMultiValueAttribute
-{
+      public attribute::IMultiValueAttribute {
 protected:
     using Super = typename MultiExtAttribute<T>::NumDirectAttrVec;
     using Config = typename Super::Config;
     using BasicType = typename Super::BasicType;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
-    MultiExtAttribute(const std::string &name, const attribute::CollectionType &ctype);
+    MultiExtAttribute(const std::string& name, const attribute::CollectionType& ctype);
+
 private:
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
-    IExtendAttribute * getExtendInterface() override { return this; }
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
+    IExtendAttribute* getExtendInterface() override { return this; }
 
 public:
-    MultiExtAttribute(const std::string &name);
+    MultiExtAttribute(const std::string& name);
     ~MultiExtAttribute() override;
 
-    bool addDoc(typename Super::DocId &docId) override;
+    bool addDoc(typename Super::DocId& docId) override;
     bool add(typename AddValueType<T>::Type v, int32_t = 1) override;
-    bool onLoad(vespalib::Executor *) override {
+    bool onLoad(vespalib::Executor*) override {
         return false; // Emulate that this attribute is never loaded
     }
     void onAddDocs(uint32_t lidLimit) override;
     const attribute::IMultiValueAttribute* as_multi_value_attribute() const override;
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>, vespalib::Stash& stash) const override;
-    const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>,
+                                                       vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>,
+                                                             vespalib::Stash& stash) const override;
 };
 
 using MultiInt8ExtAttribute = MultiExtAttribute<int8_t>;
@@ -121,35 +121,34 @@ using MultiInt64ExtAttribute = MultiExtAttribute<int64_t>;
 using MultiFloatExtAttribute = MultiExtAttribute<double>;
 using MultiIntegerExtAttribute = MultiInt64ExtAttribute;
 
-class MultiStringExtAttribute :
-    public StringDirectAttrVector< AttrVector::Features<true> >,
-    public IExtendAttribute,
-    public attribute::IMultiValueAttribute
-{
-    IExtendAttribute * getExtendInterface() override { return this; }
+class MultiStringExtAttribute : public StringDirectAttrVector<AttrVector::Features<true>>,
+                                public IExtendAttribute,
+                                public attribute::IMultiValueAttribute {
+    IExtendAttribute* getExtendInterface() override { return this; }
+
 protected:
-    MultiStringExtAttribute(const std::string & name, const attribute::CollectionType & ctype);
+    MultiStringExtAttribute(const std::string& name, const attribute::CollectionType& ctype);
 
 public:
-    MultiStringExtAttribute(const std::string & name);
-    bool addDoc(DocId & docId) override;
-    bool add(const char * v, int32_t w = 1) override;
-    bool onLoad(vespalib::Executor *) override {
+    MultiStringExtAttribute(const std::string& name);
+    bool addDoc(DocId& docId) override;
+    bool add(const char* v, int32_t w = 1) override;
+    bool onLoad(vespalib::Executor*) override {
         return false; // Emulate that this attribute is never loaded
     }
-    void onAddDocs(DocId ) override { }
+    void onAddDocs(DocId) override {}
     const attribute::IMultiValueAttribute* as_multi_value_attribute() const override;
     // Implements attribute::IMultiValueAttribute
-    const attribute::IArrayReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<const char*>, vespalib::Stash& stash) const override;
-    const attribute::IWeightedSetReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<const char*>*
+    make_read_view(attribute::IMultiValueAttribute::ArrayTag<const char*>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<const char*>*
+    make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>,
+                   vespalib::Stash& stash) const override;
 };
-
 
 //******************** CollectionType::WSET ********************//
 
-template <typename B>
-class WeightedSetExtAttributeBase : public B
-{
+template <typename B> class WeightedSetExtAttributeBase : public B {
 private:
     std::vector<int32_t> _weights;
 
@@ -158,49 +157,43 @@ protected:
     int32_t getWeightHelper(AttributeVector::DocId docId, uint32_t idx) const {
         return _weights[this->_idx[docId] + idx];
     }
-    WeightedSetExtAttributeBase(const std::string & name);
+    WeightedSetExtAttributeBase(const std::string& name);
     ~WeightedSetExtAttributeBase();
     const std::vector<int32_t>& get_weights() const noexcept { return _weights; }
 };
 
-class WeightedSetIntegerExtAttribute
-    : public WeightedSetExtAttributeBase<MultiIntegerExtAttribute>
-{
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+class WeightedSetIntegerExtAttribute : public WeightedSetExtAttributeBase<MultiIntegerExtAttribute> {
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
+
 public:
-    WeightedSetIntegerExtAttribute(const std::string & name);
+    WeightedSetIntegerExtAttribute(const std::string& name);
     ~WeightedSetIntegerExtAttribute();
     bool add(int64_t v, int32_t w = 1) override;
-    uint32_t get(DocId doc, AttributeVector::WeightedInt * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, AttributeVector::WeightedInt* v, uint32_t sz) const override;
     // Implements attribute::IMultiValueAttribute
-    const attribute::IWeightedSetReadView<int64_t>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<int64_t>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<int64_t>*
+    make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<int64_t>, vespalib::Stash& stash) const override;
 };
 
-class WeightedSetFloatExtAttribute
-    : public WeightedSetExtAttributeBase<MultiFloatExtAttribute>
-{
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+class WeightedSetFloatExtAttribute : public WeightedSetExtAttributeBase<MultiFloatExtAttribute> {
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
+
 public:
-    WeightedSetFloatExtAttribute(const std::string & name);
+    WeightedSetFloatExtAttribute(const std::string& name);
     ~WeightedSetFloatExtAttribute();
     bool add(double v, int32_t w = 1) override;
-    uint32_t get(DocId doc, AttributeVector::WeightedFloat * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, AttributeVector::WeightedFloat* v, uint32_t sz) const override;
     // Implements attribute::IMultiValueAttribute
-    const attribute::IWeightedSetReadView<double>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<double>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<double>*
+    make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<double>, vespalib::Stash& stash) const override;
 };
 
-class WeightedSetStringExtAttribute
-    : public WeightedSetExtAttributeBase<MultiStringExtAttribute>
-{
+class WeightedSetStringExtAttribute : public WeightedSetExtAttributeBase<MultiStringExtAttribute> {
 private:
-    const char * getHelper(DocId doc, int idx) const {
-        return &_buffer[_offsets[_idx[doc] + idx]];
-    }
-    template <typename T>
-    uint32_t getAllHelper(DocId doc, T * v, uint32_t sz) const
-    {
+    const char* getHelper(DocId doc, int idx) const { return &_buffer[_offsets[_idx[doc] + idx]]; }
+    template <typename T> uint32_t getAllHelper(DocId doc, T* v, uint32_t sz) const {
         uint32_t valueCount = _idx[doc + 1] - _idx[doc];
         uint32_t num2Read = std::min(valueCount, sz);
         for (uint32_t i = 0; i < num2Read; ++i) {
@@ -210,14 +203,15 @@ private:
     }
 
 public:
-    WeightedSetStringExtAttribute(const std::string & name);
+    WeightedSetStringExtAttribute(const std::string& name);
     ~WeightedSetStringExtAttribute();
-    bool add(const char * v, int32_t w = 1) override;
-    uint32_t get(DocId doc, AttributeVector::WeightedString * v, uint32_t sz) const override;
-    uint32_t get(DocId doc, AttributeVector::WeightedConstChar * v, uint32_t sz) const override;
+    bool add(const char* v, int32_t w = 1) override;
+    uint32_t get(DocId doc, AttributeVector::WeightedString* v, uint32_t sz) const override;
+    uint32_t get(DocId doc, AttributeVector::WeightedConstChar* v, uint32_t sz) const override;
     // Implements attribute::IMultiValueAttribute
-    const attribute::IWeightedSetReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<const char*>*
+    make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>,
+                   vespalib::Stash& stash) const override;
 };
 
-}  // namespace search
-
+} // namespace search

@@ -36,8 +36,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
 
 import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -118,7 +118,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
 
             @Override
             protected Iterable<ByteBuffer> responseContent() {
-                return Collections.singleton(buildContent(request.getUri(), input));
+                return Collections.singleton(buildContent(request.getUri()));
             }
         };
         return new MyContentChannel(input, () -> { respDisp.dispatch(handler); });
@@ -134,12 +134,14 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         }
     }
 
-    private ByteBuffer buildContent(URI requestUri, List<ByteBuffer> input) {
+    private ByteBuffer buildContent(URI requestUri) {
         try {
             String suffix = resolvePath(requestUri);
             return switch (suffix) {
                 case "" -> ByteBuffer.wrap(apiLinks(requestUri));
-                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config, vespaContainer.applyOnRestart())));
+                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config,
+                                                                                              vespaContainer.applyOnRestart(),
+                                                                                              vespaContainer.configStatus())));
                 case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
                 case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix, requestUri.getQuery()));
                 case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
@@ -186,14 +188,18 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
 
     /**
      * @param applyOnRestart {@link com.yahoo.container.di.config.Subscriber#applyOnRestart()}
+     * @param configStatus status and a failure message if not ok, the error message is from the most recent failed graph construction
      */
-    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, boolean applyOnRestart) {
-        return jsonMapper.createObjectNode()
-                .set(CONFIG_GENERATION_PATH, jsonMapper.createObjectNode()
-                        .put("generation", config.generation())
-                        .put("applyOnRestart", applyOnRestart)
-                        .set("container", jsonMapper.createObjectNode()
-                                .put("generation", config.generation())));
+    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, boolean applyOnRestart, Container.ConfigStatus configStatus) {
+        ObjectNode configNode = jsonMapper.createObjectNode();
+        configNode.put("generation", config.generation());
+        configNode.put("applyOnRestart", applyOnRestart);
+        configNode.set("container", jsonMapper.createObjectNode().put("generation", config.generation()));
+
+        configNode.put("wantedGeneration", configStatus.generation());
+        if (configStatus.isFailed()) configNode.put("message", configStatus.message());
+
+        return jsonMapper.createObjectNode().set(CONFIG_GENERATION_PATH, configNode);
     }
 
     private static byte[] buildVersionOutput() throws JsonProcessingException {
@@ -211,7 +217,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     private byte[] buildHistogramsOutput() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         if (snapshotProvider != null) {
-            snapshotProvider.histogram(new PrintStream(baos));
+            snapshotProvider.histogram(new PrintStream(baos, false, StandardCharsets.UTF_8));
         }
         return baos.toByteArray();
     }
@@ -346,7 +352,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         Tuple latencySeconds = new Tuple(NULL_DIMENSIONS, "latencySeconds", null);
         for (Map.Entry<MetricDimensions, MetricSet> entry : snapshot) {
             MetricSet metricSet = entry.getValue();
-            MetricValue val = metricSet.get(ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY.baseName());
+            MetricValue val = metricSet.get(ContainerMetrics.JDISC_HTTP_LATENCY.baseName());
             if (val instanceof GaugeMetric gauge) {
                 latencySeconds.add(GaugeMetric.newInstance(gauge.getLast() / 1000,
                                                            gauge.getMax() / 1000,
@@ -426,7 +432,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     private static byte[] toPrettyString(JsonNode resources) throws JsonProcessingException {
         return jsonMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(resources)
-                .getBytes();
+                .getBytes(StandardCharsets.UTF_8);
     }
 
     static class Tuple {

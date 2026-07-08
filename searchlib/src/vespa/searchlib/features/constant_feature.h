@@ -4,7 +4,11 @@
 
 #include <vespa/searchlib/fef/blueprint.h>
 
-namespace vespalib { namespace eval { struct ConstantValue; } }
+namespace vespalib {
+namespace eval {
+struct ConstantValue;
+}
+} // namespace vespalib
 
 namespace search::features {
 
@@ -16,7 +20,7 @@ namespace search::features {
  */
 class ConstantBlueprint : public fef::Blueprint {
 private:
-    std::string _key;  // 'foo'
+    std::string                                    _key; // 'foo'
     std::unique_ptr<vespalib::eval::ConstantValue> _value;
 
 public:
@@ -27,7 +31,7 @@ public:
 
     ~ConstantBlueprint() override;
 
-    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
 
     fef::Blueprint::UP createInstance() const override;
 
@@ -35,9 +39,9 @@ public:
         return fef::ParameterDescriptions().desc().string();
     }
 
-    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
 
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

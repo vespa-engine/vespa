@@ -1,18 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "query_value.h"
+
 #include "iindexenvironment.h"
 #include "indexproperties.h"
 #include "iqueryenvironment.h"
-#include <vespa/searchlib/features/utils.h>
+
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchlib/features/utils.h>
 #include <vespa/vespalib/locale/c.h>
-#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/issue.h>
+
 #include <cerrno>
 
 using document::TensorDataType;
@@ -34,14 +37,14 @@ using ValueWrapper = AnyWrapper<Value::UP>;
 
 InvalidValueTypeException::InvalidValueTypeException(const std::string& query_key, const std::string& type_str_in)
     : vespalib::Exception("Invalid type '" + type_str_in + "' for query value '" + query_key + "'"),
-      _type_str(type_str_in)
-{
+      _type_str(type_str_in) {
 }
 
-InvalidTensorValueException::InvalidTensorValueException(const vespalib::eval::ValueType& type, const std::string& expr_in)
-    : vespalib::Exception("Could not create tensor value of type '" + type.to_spec() + "' from the expression '" + expr_in + "'"),
-      _expr(expr_in)
-{
+InvalidTensorValueException::InvalidTensorValueException(const vespalib::eval::ValueType& type,
+                                                         const std::string&               expr_in)
+    : vespalib::Exception("Could not create tensor value of type '" + type.to_spec() + "' from the expression '" +
+                          expr_in + "'"),
+      _expr(expr_in) {
 }
 
 namespace {
@@ -53,14 +56,12 @@ namespace {
  * converted directly, it will be hashed, after stripping the leading
  * "'" if it exists.
  */
-feature_t
-as_feature(const std::string& str)
-{
-    char *end;
+feature_t as_feature(const std::string& str) {
+    char* end;
     errno = 0;
     double val = vespalib::locale::c::strtod(str.c_str(), &end);
     if (errno != 0 || *end != '\0') { // not happy
-        if ( ! str.empty() && str[0] == '\'') {
+        if (!str.empty() && str[0] == '\'') {
             val = features::util::getAsFeature(std::string_view(str.substr(1)));
         } else {
             val = features::util::getAsFeature(std::string_view(str));
@@ -70,25 +71,21 @@ as_feature(const std::string& str)
 }
 
 // Create an empty tensor of the given type.
-std::unique_ptr<Value>
-empty_tensor(const ValueType& type)
-{
+std::unique_ptr<Value> empty_tensor(const ValueType& type) {
     const auto& factory = vespalib::eval::FastValueBuilderFactory::get();
     return vespalib::eval::value_from_spec(TensorSpec(type.to_spec()), factory);
 }
 
 // Create a tensor value by evaluating a self-contained expression.
-std::unique_ptr<Value>
-as_tensor(const std::string& expr, const ValueType& wanted_type)
-{
+std::unique_ptr<Value> as_tensor(const std::string& expr, const ValueType& wanted_type) {
     const auto& factory = vespalib::eval::FastValueBuilderFactory::get();
-    auto fun = Function::parse(expr);
+    auto        fun = Function::parse(expr);
     if (!fun->has_error() && (fun->num_params() == 0)) {
-        NodeTypes types = NodeTypes(*fun, {});
-        const ValueType & res_type = types.get_type(fun->root());
+        NodeTypes        types = NodeTypes(*fun, {});
+        const ValueType& res_type = types.get_type(fun->root());
         if (res_type == wanted_type) {
-            SimpleObjectParams params({});
-            InterpretedFunction ifun(factory, *fun, types);
+            SimpleObjectParams           params({});
+            InterpretedFunction          ifun(factory, *fun, types);
             InterpretedFunction::Context ctx(ifun);
             return factory.copy(ifun.eval(ctx, params));
         }
@@ -96,11 +93,9 @@ as_tensor(const std::string& expr, const ValueType& wanted_type)
     return {};
 }
 
-std::unique_ptr<Value>
-decode_tensor_value(Property prop, const ValueType& value_type)
-{
+std::unique_ptr<Value> decode_tensor_value(Property prop, const ValueType& value_type) {
     if (prop.found() && !prop.get().empty()) {
-        const std::string& value = prop.get();
+        const std::string&  value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
         try {
             auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
@@ -117,24 +112,20 @@ decode_tensor_value(Property prop, const ValueType& value_type)
     return {};
 }
 
-}
+} // namespace
 
-Property
-QueryValue::config_lookup(const IIndexEnvironment& env) const
-{
+Property QueryValue::config_lookup(const IIndexEnvironment& env) const {
     const auto& props = env.getProperties();
-    auto res = props.lookup(_name); // query(foo)
+    auto        res = props.lookup(_name); // query(foo)
     if (!res.found()) {
         res = props.lookup(_old_key); // $foo
     }
     return res;
 }
 
-Property
-QueryValue::request_lookup(const IQueryEnvironment& env) const
-{
+Property QueryValue::request_lookup(const IQueryEnvironment& env) const {
     const auto& props = env.getProperties();
-    auto res = props.lookup(_name); // query(foo)
+    auto        res = props.lookup(_name); // query(foo)
     if (!res.found()) {
         res = props.lookup(_key); // foo
     }
@@ -144,13 +135,7 @@ QueryValue::request_lookup(const IQueryEnvironment& env) const
     return res;
 }
 
-QueryValue::QueryValue()
-    : _key(),
-      _name(),
-      _old_key(),
-      _stored_value_key(),
-      _type(ValueType::double_type())
-{
+QueryValue::QueryValue() : _key(), _name(), _old_key(), _stored_value_key(), _type(ValueType::double_type()) {
 }
 
 QueryValue::QueryValue(const std::string& key, vespalib::eval::ValueType type)
@@ -158,26 +143,21 @@ QueryValue::QueryValue(const std::string& key, vespalib::eval::ValueType type)
       _name("query(" + key + ")"),
       _old_key("$" + key),
       _stored_value_key("query.value." + key),
-      _type(std::move(type))
-{
+      _type(std::move(type)) {
 }
 
 QueryValue::~QueryValue() = default;
 
-QueryValue
-QueryValue::from_config(const std::string& key, const IIndexEnvironment& env)
-{
+QueryValue QueryValue::from_config(const std::string& key, const IIndexEnvironment& env) {
     std::string type_str = type::QueryFeature::lookup(env.getProperties(), key);
-    ValueType type = type_str.empty() ? ValueType::double_type() : ValueType::from_spec(type_str);
+    ValueType   type = type_str.empty() ? ValueType::double_type() : ValueType::from_spec(type_str);
     if (type.is_error()) {
         throw InvalidValueTypeException(key, type_str);
     }
     return {key, std::move(type)};
 }
 
-std::unique_ptr<Value>
-QueryValue::make_default_value(const IIndexEnvironment& env) const
-{
+std::unique_ptr<Value> QueryValue::make_default_value(const IIndexEnvironment& env) const {
     Property p = config_lookup(env);
     if (_type.is_double()) {
         if (p.found()) {
@@ -188,7 +168,7 @@ QueryValue::make_default_value(const IIndexEnvironment& env) const
     } else {
         if (p.found()) {
             auto tensor = as_tensor(p.get(), _type);
-            if ( ! tensor) {
+            if (!tensor) {
                 throw InvalidTensorValueException(_type, p.get().c_str());
             }
             return tensor;
@@ -198,9 +178,7 @@ QueryValue::make_default_value(const IIndexEnvironment& env) const
     }
 }
 
-void
-QueryValue::prepare_shared_state(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const
-{
+void QueryValue::prepare_shared_state(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const {
     if (!_stored_value_key.empty() && _type.has_dimensions() && (store.get(_stored_value_key) == nullptr)) {
         if (auto value = decode_tensor_value(request_lookup(env), _type)) {
             store.add(_stored_value_key, std::make_unique<ValueWrapper>(std::move(value)));
@@ -208,18 +186,14 @@ QueryValue::prepare_shared_state(const fef::IQueryEnvironment& env, fef::IObject
     }
 }
 
-const Value*
-QueryValue::lookup_value(const fef::IObjectStore& store) const
-{
+const Value* QueryValue::lookup_value(const fef::IObjectStore& store) const {
     if (const Anything* wrapped_value = store.get(_stored_value_key)) {
         return ValueWrapper::getValue(*wrapped_value).get();
     }
     return nullptr;
 }
 
-double
-QueryValue::lookup_number(const fef::IQueryEnvironment& env, double default_value) const
-{
+double QueryValue::lookup_number(const fef::IQueryEnvironment& env, double default_value) const {
     assert(!_type.has_dimensions());
     auto p = request_lookup(env);
     if (p.found()) {
@@ -228,5 +202,4 @@ QueryValue::lookup_number(const fef::IQueryEnvironment& env, double default_valu
     return default_value;
 }
 
-}
-
+} // namespace search::fef

@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "iattributesavetarget.h"
 #include "attributefilewriter.h"
+#include "iattributesavetarget.h"
+
 #include <vespa/vespalib/stllike/hash_fun.h>
+
 #include <unordered_map>
 
 namespace search {
@@ -17,16 +19,16 @@ private:
     using FileWriterUP = std::unique_ptr<AttributeFileWriter>;
     using WriterMap = std::unordered_map<std::string, FileWriterUP, vespalib::hash<std::string>>;
 
-    const TuneFileAttributes& _tune_file;
+    const TuneFileAttributes&                _tune_file;
     const search::common::FileHeaderContext& _file_header_ctx;
-    AttributeFileWriter _datWriter;
-    AttributeFileWriter _idxWriter;
-    AttributeFileWriter _weightWriter;
-    AttributeFileWriter _udatWriter;
-    WriterMap           _writers;
+    AttributeFileWriter                      _datWriter;
+    AttributeFileWriter                      _idxWriter;
+    AttributeFileWriter                      _weightWriter;
+    AttributeFileWriter                      _udatWriter;
+    WriterMap                                _writers;
 
 public:
-    AttributeFileSaveTarget(const TuneFileAttributes& tune_file,
+    AttributeFileSaveTarget(const TuneFileAttributes&                tune_file,
                             const search::common::FileHeaderContext& file_header_ctx);
     ~AttributeFileSaveTarget() override;
 
@@ -37,16 +39,14 @@ public:
     /** Closes the files used **/
     void close() override;
 
-    IAttributeFileWriter &datWriter() override;
-    IAttributeFileWriter &idxWriter() override;
-    IAttributeFileWriter &weightWriter() override;
-    IAttributeFileWriter &udatWriter() override;
+    IAttributeFileWriter& datWriter() override;
+    IAttributeFileWriter& idxWriter() override;
+    IAttributeFileWriter& weightWriter() override;
+    IAttributeFileWriter& udatWriter() override;
 
-    bool setup_writer(const std::string& file_suffix,
-                      const std::string& desc) override;
+    bool setup_writer(const std::string& file_suffix, const std::string& desc) override;
     IAttributeFileWriter& get_writer(const std::string& file_suffix) override;
     uint64_t size_on_disk() const noexcept override;
 };
 
 } // namespace search
-

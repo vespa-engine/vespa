@@ -22,7 +22,11 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
-import ai.vespa.schemals.testutils.*;
+import ai.vespa.schemals.testutils.TestLogger;
+import ai.vespa.schemals.testutils.TestSchemaDiagnosticsHandler;
+import ai.vespa.schemals.testutils.TestSchemaMessageHandler;
+import ai.vespa.schemals.testutils.TestSchemaProgressHandler;
+import ai.vespa.schemals.testutils.Utils;
 
 public class SchemaParserTest {
 
@@ -238,6 +242,7 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/defaultdefault.sd",
             "src/test/sdfiles/single/elementwise.sd",
             "src/test/sdfiles/single/embed.sd",
+            "src/test/sdfiles/single/foreach.sd",
             "src/test/sdfiles/single/rankprofilebuiltin.sd",
             "src/test/sdfiles/single/structinfieldset.sd",
             "src/test/sdfiles/single/subqueries.sd",
@@ -276,6 +281,7 @@ public class SchemaParserTest {
              */
             "src/test/sdfiles/multi/types/",
             "src/test/sdfiles/multi/bookandmusic/",
+            "src/test/sdfiles/multi/documentid/",
         };
 
         return Arrays.stream(directories)
@@ -309,7 +315,7 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/rankingexpressionfunction/rankingexpressionfunction.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/rankpropvars.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/stemmingresolver.sd", 1),
-            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 41),
+            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 44),
             new BadFileTestCase("../../../config-model/src/test/derived/renamedfeatures/foo.sd", 4),
 
             new BadFileTestCase("../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd", 1), // only throws a warning during vespa deploy, but it is an unresolved reference case.
@@ -319,6 +325,7 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
             new BadFileTestCase("src/test/sdfiles/single/featuresinheritance.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/foreachbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 6),
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),

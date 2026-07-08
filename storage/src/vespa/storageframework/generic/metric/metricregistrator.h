@@ -13,7 +13,7 @@
 #include <vespa/vespalib/util/time.h>
 
 namespace metrics {
-    class Metric;
+class Metric;
 }
 
 namespace storage::framework {
@@ -24,8 +24,8 @@ struct MetricRegistrator {
     virtual ~MetricRegistrator() = default;
 
     virtual void registerMetric(metrics::Metric&) = 0;
-    virtual void registerUpdateHook(std::string_view name, MetricUpdateHook& hook, vespalib::system_time::duration period) = 0;
+    virtual void registerUpdateHook(std::string_view name, MetricUpdateHook& hook,
+                                    vespalib::system_time::duration period) = 0;
 };
 
-}
-
+} // namespace storage::framework

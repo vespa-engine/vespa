@@ -9,13 +9,12 @@ class IClusterStateChangedHandler;
 /**
  * Interface used to request notification when cluster state has changed.
  */
-class IClusterStateChangedNotifier
-{
+class IClusterStateChangedNotifier {
 public:
     virtual ~IClusterStateChangedNotifier() = default;
 
-    virtual void addClusterStateChangedHandler(IClusterStateChangedHandler *handler) = 0;
-    virtual void removeClusterStateChangedHandler(IClusterStateChangedHandler *handler) = 0;
+    virtual void addClusterStateChangedHandler(IClusterStateChangedHandler* handler) = 0;
+    virtual void removeClusterStateChangedHandler(IClusterStateChangedHandler* handler) = 0;
 };
 
-}
+} // namespace proton

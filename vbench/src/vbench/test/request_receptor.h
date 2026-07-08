@@ -15,4 +15,3 @@ struct RequestReceptor : public Handler<Request> {
 };
 
 } // namespace vbench
-

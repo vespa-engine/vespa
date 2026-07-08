@@ -2,6 +2,7 @@ package ai.vespa.schemals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -97,13 +98,13 @@ public class SchemaTextDocumentService implements TextDocumentService {
             try {
 
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                PrintStream errorLogger = new PrintStream(outputStream);
+                PrintStream errorLogger = new PrintStream(outputStream, true, StandardCharsets.UTF_8);
                 Either<List<CompletionItem>, CompletionList> result =
                     Either.forLeft(CommonCompletion.getCompletionItems(eventContextCreator.createContext(completionParams), errorLogger));
 
                 if (outputStream.size() > 0) {
-                    schemaMessageHandler.logMessage(MessageType.Error, 
-                        "Completion failed with errors: " + outputStream.toString() 
+                    schemaMessageHandler.logMessage(MessageType.Error,
+                        "Completion failed with errors: " + outputStream.toString(StandardCharsets.UTF_8)
                     );
                 }
                 return result;

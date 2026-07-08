@@ -28,7 +28,7 @@ public class AttributeNode extends FunctionNode {
      */
     public AttributeNode(String attribute) {
         if (attribute == null) {
-            throw new IllegalArgumentException("Attribute name can not be null.");
+            throw new IllegalArgumentException("Attribute name cannot be null.");
         }
         this.attribute = attribute;
     }
@@ -49,7 +49,7 @@ public class AttributeNode extends FunctionNode {
      */
     final void setAttributeName(String attribute) {
         if (attribute == null) {
-            throw new IllegalArgumentException("Attribute name can not be null.");
+            throw new IllegalArgumentException("Attribute name cannot be null.");
         }
         this.attribute = attribute;
     }

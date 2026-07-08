@@ -1,3 +1,8 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Suppressions file for ThreadSanitizer false positives.
+#
+
 # There is an explicit (and documented) mutex order inversion in the MergeThrottler component
 # that cannot cause a deadlock in practice due to separately maintained invariants for when the
 # mutexes can be locked. Of course, TSan is not able to infer this by itself, so silence this
@@ -36,6 +41,7 @@ race:llvm::sys::SmartMutex<false>::lock
 race:llvm::sys::SmartMutex<true>::lock
 race:llvm::sys::DynamicLibrary::getPermanentLibrary
 race:(anonymous namespace)::GDBJITRegistrationListener::notifyObjectLoaded
+mutex:llvm::RTDyldMemoryManager::registerEHFrames
 
 # This is external code that we do not control. Complains that mutex
 # creation and locking are not strictly ordered.
@@ -52,3 +58,6 @@ race:re2::DFA::DFA
 # (acquire-load in double-checked locking etc).
 race:ASN1_STRING_cmp
 race:ASN1_STRING_set
+
+# libgcc_s (unwinder / EH frame registration). Often triggers TSAN reports via lock-free FDE registry.
+called_from_lib:libgcc_s.so

@@ -2,21 +2,20 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/i_ranking_assets_repo.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/tablemanager.h>
-#include <vespa/searchcommon/common/schema.h>
-#include <vespa/eval/eval/value_cache/constant_value.h>
 
 namespace proton::matching {
 
 /**
  * Index environment implementation for the proton matching pipeline.
  **/
-class IndexEnvironment : public search::fef::IIndexEnvironment
-{
+class IndexEnvironment : public search::fef::IIndexEnvironment {
 private:
     using FieldNameMap = vespalib::hash_map<string, uint32_t>;
     search::fef::TableManager              _tableManager;
@@ -27,13 +26,12 @@ private:
     const search::fef::IRankingAssetsRepo& _rankingAssetsRepo;
     uint32_t                               _distributionKey;
 
-
     /**
      * Extract field information from the given schema and populate
      * this index environment.
      **/
-    void extractFields(const search::index::Schema &schema);
-    void insertField(const search::fef::FieldInfo &field);
+    void extractFields(const search::index::Schema& schema);
+    void insertField(const search::fef::FieldInfo& field);
 
 public:
     /**
@@ -47,32 +45,29 @@ public:
      * @param rankingExpressions processed config about ranking expressions
      * @param onnxModels processed config about onnx models
      **/
-    IndexEnvironment(uint32_t distributionKey,
-                     const search::index::Schema &schema,
-                     search::fef::Properties props,
+    IndexEnvironment(uint32_t distributionKey, const search::index::Schema& schema, search::fef::Properties props,
                      const search::fef::IRankingAssetsRepo& constantValueRepo);
     ~IndexEnvironment() override;
 
-
-    const search::fef::Properties &getProperties() const override;
+    const search::fef::Properties& getProperties() const override;
     uint32_t getNumFields() const override;
-    const search::fef::FieldInfo *getField(uint32_t id) const override;
-    const search::fef::FieldInfo *getFieldByName(const string &name) const override;
-    const search::fef::ITableManager &getTableManager() const override;
+    const search::fef::FieldInfo* getField(uint32_t id) const override;
+    const search::fef::FieldInfo* getFieldByName(const string& name) const override;
+    const search::fef::ITableManager& getTableManager() const override;
     FeatureMotivation getFeatureMotivation() const override;
     void hintFeatureMotivation(FeatureMotivation motivation) const override;
     uint32_t getDistributionKey() const override { return _distributionKey; }
 
-    vespalib::eval::ConstantValue::UP getConstantValue(const std::string &name) const override {
+    vespalib::eval::ConstantValue::UP getConstantValue(const std::string& name) const override {
         return _rankingAssetsRepo.getConstant(name);
     }
-    std::string getRankingExpression(const std::string &name) const override {
+    std::string getRankingExpression(const std::string& name) const override {
         return _rankingAssetsRepo.getExpression(name);
     }
 
-    const search::fef::OnnxModel *getOnnxModel(const std::string &name) const override {
+    const search::fef::OnnxModel* getOnnxModel(const std::string& name) const override {
         return _rankingAssetsRepo.getOnnxModel(name);
     }
 };
 
-}
+} // namespace proton::matching

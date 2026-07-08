@@ -1,0 +1,15 @@
+# Copyright Vespa.ai. All rights reserved.
+schema disk {
+  documentid: from-disk
+  document disk {
+    field some_field type int {
+        indexing: attribute | summary
+    }
+  }
+  document-summary empty-summary {
+    summary documentid {
+      source: documentid
+    }
+    from-disk
+  }
+}

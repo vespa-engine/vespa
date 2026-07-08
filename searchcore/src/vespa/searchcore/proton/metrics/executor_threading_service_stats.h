@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstddef>
 #include <vespa/vespalib/util/executor_stats.h>
+
+#include <cstddef>
 
 namespace proton {
 
@@ -16,15 +17,14 @@ private:
     Stats _masterExecutorStats;
     Stats _indexExecutorStats;
     Stats _summaryExecutorStats;
+
 public:
-    ExecutorThreadingServiceStats(Stats masterExecutorStats,
-                                  Stats indexExecutorStats,
-                                  Stats summaryExecutorStats);
+    ExecutorThreadingServiceStats(Stats masterExecutorStats, Stats indexExecutorStats, Stats summaryExecutorStats);
     ~ExecutorThreadingServiceStats();
 
-    const Stats &getMasterExecutorStats() const { return _masterExecutorStats; }
-    const Stats &getIndexExecutorStats() const { return _indexExecutorStats; }
-    const Stats &getSummaryExecutorStats() const { return _summaryExecutorStats; }
+    const Stats& getMasterExecutorStats() const { return _masterExecutorStats; }
+    const Stats& getIndexExecutorStats() const { return _indexExecutorStats; }
+    const Stats& getSummaryExecutorStats() const { return _summaryExecutorStats; }
 };
 
-}
+} // namespace proton

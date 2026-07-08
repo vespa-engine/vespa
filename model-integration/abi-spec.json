@@ -301,6 +301,7 @@
       "public ai.vespa.llm.clients.TritonConfig$Builder target(java.lang.String)",
       "public ai.vespa.llm.clients.TritonConfig$Builder modelRepositoryPath(java.lang.String)",
       "public ai.vespa.llm.clients.TritonConfig$Builder modelControlMode(ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum)",
+      "public ai.vespa.llm.clients.TritonConfig$Builder timeout(long)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -375,7 +376,8 @@
       "public void <init>(ai.vespa.llm.clients.TritonConfig$Builder)",
       "public java.lang.String target()",
       "public java.lang.String modelRepositoryPath()",
-      "public ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum modelControlMode()"
+      "public ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum modelControlMode()",
+      "public long timeout()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
@@ -414,6 +416,7 @@
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder promptTemplate(java.lang.String)",
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder promptTemplateFile(java.util.Optional)",
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder responseFormatType(ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$ResponseFormatType$Enum)",
+      "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder responseJsonSchema(java.lang.String)",
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder invalidResponseFormatPolicy(ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
@@ -524,6 +527,7 @@
       "public java.lang.String promptTemplate()",
       "public java.util.Optional promptTemplateFile()",
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$ResponseFormatType$Enum responseFormatType()",
+      "public java.lang.String responseJsonSchema()",
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum invalidResponseFormatPolicy()"
     ],
     "fields" : [

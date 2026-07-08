@@ -8,31 +8,33 @@
 #include "communicationmanagermetrics.h"
 #include "documentapiconverter.h"
 #include "message_dispatcher.h"
-#include <vespa/storage/common/storagelink.h>
-#include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storage/config/config-stor-communicationmanager.h>
-#include <vespa/storageframework/generic/metric/metricupdatehook.h>
-#include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/storageapi/mbusprot/storagecommand.h>
-#include <vespa/storageapi/mbusprot/storagereply.h>
-#include <vespa/messagebus/imessagehandler.h>
-#include <vespa/messagebus/ireplyhandler.h>
+
+#include <vespa/config-bucketspaces.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/subscription/configuri.h>
-#include <vespa/config-bucketspaces.h>
-#include <map>
-#include <queue>
+#include <vespa/messagebus/imessagehandler.h>
+#include <vespa/messagebus/ireplyhandler.h>
+#include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/config/config-stor-communicationmanager.h>
+#include <vespa/storageapi/mbusprot/storagecommand.h>
+#include <vespa/storageapi/mbusprot/storagereply.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
+
 #include <atomic>
+#include <map>
 #include <mutex>
+#include <queue>
 
 namespace config {
-    class ConfigFetcher;
+class ConfigFetcher;
 }
 namespace mbus {
-    class RPCMessageBus;
-    class SourceSession;
-    class DestinationSession;
-}
+class RPCMessageBus;
+class SourceSession;
+class DestinationSession;
+} // namespace mbus
 namespace storage {
 
 namespace rpc {
@@ -40,7 +42,7 @@ class ClusterControllerApiRpcService;
 class MessageCodecProvider;
 class SharedRpcResources;
 class StorageApiRpcService;
-}
+} // namespace rpc
 
 struct BucketResolver;
 class Visitor;
@@ -57,24 +59,22 @@ public:
     std::unique_ptr<RPCRequestWrapper>            _request;
 };
 
-class CommunicationManager final
-    : public StorageLink,
-      public framework::Runnable,
-      public mbus::IMessageHandler,
-      public mbus::IReplyHandler,
-      private framework::MetricUpdateHook,
-      public MessageDispatcher
-{
+class CommunicationManager final : public StorageLink,
+                                   public framework::Runnable,
+                                   public mbus::IMessageHandler,
+                                   public mbus::IReplyHandler,
+                                   private framework::MetricUpdateHook,
+                                   public MessageDispatcher {
 private:
-    StorageComponent _component;
+    StorageComponent            _component;
     CommunicationManagerMetrics _metrics;
 
-    std::unique_ptr<rpc::SharedRpcResources> _shared_rpc_resources;
-    std::unique_ptr<rpc::StorageApiRpcService> _storage_api_rpc_service;
+    std::unique_ptr<rpc::SharedRpcResources>             _shared_rpc_resources;
+    std::unique_ptr<rpc::StorageApiRpcService>           _storage_api_rpc_service;
     std::unique_ptr<rpc::ClusterControllerApiRpcService> _cc_rpc_service;
-    std::unique_ptr<rpc::MessageCodecProvider> _message_codec_provider;
-    Queue _eventQueue;
-    using EarlierProtocol = std::pair<vespalib::steady_time , mbus::IProtocol::SP>;
+    std::unique_ptr<rpc::MessageCodecProvider>           _message_codec_provider;
+    Queue                                                _eventQueue;
+    using EarlierProtocol = std::pair<vespalib::steady_time, mbus::IProtocol::SP>;
     using EarlierProtocols = std::vector<EarlierProtocol>;
     std::mutex       _earlierGenerationsLock;
     EarlierProtocols _earlierGenerations;
@@ -91,26 +91,26 @@ private:
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
     void receiveStorageReply(const std::shared_ptr<api::StorageReply>&);
     void fail_with_unresolvable_bucket_space(std::unique_ptr<documentapi::DocumentMessage> msg,
-                                             const std::string& error_message);
+                                             const std::string&                            error_message);
 
     void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription) const;
 
     static const uint64_t FORWARDED_MESSAGE = 0;
 
     std::unique_ptr<CommunicationManagerConfig> _bootstrap_config;
-    std::unique_ptr<mbus::RPCMessageBus> _mbus;
-    std::unique_ptr<mbus::DestinationSession> _messageBusSession;
-    std::unique_ptr<mbus::SourceSession> _sourceSession;
+    std::unique_ptr<mbus::RPCMessageBus>        _mbus;
+    std::unique_ptr<mbus::DestinationSession>   _messageBusSession;
+    std::unique_ptr<mbus::SourceSession>        _sourceSession;
 
-    std::mutex _messageBusSentLock;
-    std::map<api::StorageMessage::Id, std::shared_ptr<api::StorageCommand> > _messageBusSent;
+    std::mutex                                                              _messageBusSentLock;
+    std::map<api::StorageMessage::Id, std::shared_ptr<api::StorageCommand>> _messageBusSent;
 
-    config::ConfigUri     _configUri;
-    std::atomic<bool>     _closed;
-    DocumentApiConverter  _docApiConverter;
+    config::ConfigUri                  _configUri;
+    std::atomic<bool>                  _closed;
+    DocumentApiConverter               _docApiConverter;
     std::unique_ptr<framework::Thread> _thread;
 
-    void updateMetrics(const MetricLockGuard &) override;
+    void updateMetrics(const MetricLockGuard&) override;
 
     // Test needs access to configure() for live reconfig testing.
     friend struct CommunicationManagerTest;
@@ -118,8 +118,7 @@ private:
 public:
     CommunicationManager(const CommunicationManager&) = delete;
     CommunicationManager& operator=(const CommunicationManager&) = delete;
-    CommunicationManager(StorageComponentRegister& compReg,
-                         const config::ConfigUri& configUri,
+    CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri& configUri,
                          const CommunicationManagerConfig& bootstrap_config);
     ~CommunicationManager() override;
 
@@ -151,7 +150,7 @@ public:
                                std::unique_ptr<mbus::Message> mbusMsg, const mbus::Route& route);
 
     void handleReply(std::unique_ptr<mbus::Reply> msg) override;
-    void updateMessagebusProtocol(const std::shared_ptr<const document::DocumentTypeRepo> &repo);
+    void updateMessagebusProtocol(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
     void updateBucketSpacesConfig(const BucketspacesConfig&);
 
     const CommunicationManagerMetrics& metrics() const noexcept { return _metrics; }
@@ -161,4 +160,4 @@ public:
     [[nodiscard]] bool address_visible_in_slobrok(const api::StorageMessageAddress& addr) const noexcept;
 };
 
-} // storage
+} // namespace storage

@@ -37,9 +37,7 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -111,7 +109,6 @@ public class TenantRepository {
     private final FileDistributionFactory fileDistributionFactory;
     private final ExecutorService deployHelperExecutor;
     private final FlagSource flagSource;
-    private final BooleanFlag softDeleteTenantFlag;
     private final HostProvisionerProvider hostProvisionerProvider;
     private final ConfigserverConfig configserverConfig;
     private final ConfigServerDB configServerDB;
@@ -202,7 +199,6 @@ public class TenantRepository {
         this.zkSessionWatcherExecutor = zkSessionWatcherExecutor;
         this.fileDistributionFactory = fileDistributionFactory;
         this.flagSource = flagSource;
-        this.softDeleteTenantFlag = Flags.SOFT_DELETE_TENANT.bindTo(flagSource);
         this.hostProvisionerProvider = hostProvisionerProvider;
         this.configServerDB = configServerDB;
         this.zone = zone;
@@ -218,11 +214,11 @@ public class TenantRepository {
         this.onnxModelCost = onnxModelCost;
         this.inheritableApplications = inheritableApplications;
 
-        curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
+        // THE BELOW CODE MAY INVOKE METHODS THAT REFER TO THE ABOVE FIELDS
 
+        curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
         createPaths();
         createSystemTenants(configserverConfig);
-
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
@@ -264,8 +260,12 @@ public class TenantRepository {
     }
 
     private TenantMetaData createMetaData(Tenant tenant) {
-        Instant deployTime = tenant.getSessionRepository().clock().instant();
-        Instant createdTime = getTenantMetaData(tenant).createdTimestamp();
+        Instant now = tenant.getSessionRepository().clock().instant();
+        TenantMetaData metadata = getTenantMetaData(tenant);
+        Instant deployTime = metadata.lastDeployTimestamp();
+        if (deployTime.equals(Instant.EPOCH))
+            deployTime = now;
+        Instant createdTime = metadata.createdTimestamp();
         if (createdTime.equals(Instant.EPOCH))
             createdTime = deployTime;
         return new TenantMetaData(tenant.getName(), deployTime, createdTime);
@@ -480,25 +480,19 @@ public class TenantRepository {
             if (tenant == null)
                 throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
 
-            log.log(Level.INFO, "Closing tenant '" + name + "'");
             notifyRemovedTenant(name);
             tenant.close();
-            if (softDeleteTenantFlag.with(name).value()) {
-                // Because each config server has a PathDirectoryCache on the `sessions` and `applications` children:
-                //  1. Once the first config server (say cfg1) reaches this point, the caches on cfg2-3 will recreate
-                //    `sessions` and `applications` immediately after they are deleted by this tryDelete(), likely
-                //    failing this deletion.
-                //  2. Once the next config server (say cfg2) also reaches this point, the caches on cfg3 will recreate
-                //     `sessions` and `applications`, possibly failing this deletion.
-                //  3. Once the last config server (cfg3) reaches this point, the delete should succeed.
-                if (curator.tryDelete(tenant.getPath())) {
-                    log.log(Level.INFO, "Deleted tenant '" + name + "'");
-                } else {
-                    log.log(Level.INFO, "Deleted tenant '" + name + "' (" + tenant.getPath() + " to be removed by other cfgs)");
-                }
+            // Because each config server has a PathDirectoryCache on the `sessions` and `applications` children:
+            //  1. Once the first config server (say cfg1) reaches this point, the caches on cfg2-3 will recreate
+            //    `sessions` and `applications` immediately after they are deleted by this tryDelete(), likely
+            //    failing this deletion.
+            //  2. Once the next config server (say cfg2) also reaches this point, the caches on cfg3 will recreate
+            //     `sessions` and `applications`, possibly failing this deletion.
+            //  3. Once the last config server (cfg3) reaches this point, the delete should succeed.
+            if (curator.tryDelete(tenant.getPath())) {
+                log.log(Level.INFO, "Deleted tenant " + name);
             } else {
-                curator.delete(tenant.getPath());
-                log.log(Level.INFO, "Deleted tenant '" + name + "'");
+                log.log(Level.INFO, "Deleted tenant " + name + " (" + tenant.getPath() + " to be removed by other cfgs)");
             }
         }
     }

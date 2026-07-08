@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -131,7 +132,7 @@ public class AssembleFatJarMojo extends AbstractMojo {
     }
 
     private static String filename(Artifact a) {
-        return a.getGroupId().equals("com.yahoo.vespa") ? "%s-jar-with-dependencies.jar".formatted(a.getArtifactId()) : a.getFile().getName();
+        return a.getGroupId().equals("com.yahoo.vespa") ? String.format(Locale.ROOT, "%s-jar-with-dependencies.jar", a.getArtifactId()) : a.getFile().getName();
     }
 
     private File outputFile() {
@@ -151,7 +152,7 @@ public class AssembleFatJarMojo extends AbstractMojo {
             var project = session.getAllProjects().stream()
                     .filter(p -> p.getGroupId().equals(installedDepsProject[0]) && p.getArtifactId().equals(installedDepsProject[1]))
                     .findAny().orElseThrow(() -> new IllegalStateException(
-                            "Cannot find %s. Build from project root with 'mvn install -pl :%s'".formatted(projectDefiningInstalledDependencies, this.project.getArtifactId())));
+                            String.format(Locale.ROOT, "Cannot find %s. Build from project root with 'mvn install -pl :%s'", projectDefiningInstalledDependencies, this.project.getArtifactId())));
             var req = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
             req.setProject(project);
             var root = dependencyGraphBuilder.buildDependencyGraph(req, null);

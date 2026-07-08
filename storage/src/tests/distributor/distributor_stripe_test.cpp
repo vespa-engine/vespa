@@ -1,24 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/bucket_spaces_stats_provider.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
-#include <vespa/storage/config/distributorconfiguration.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <gmock/gmock.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 
 using document::Bucket;
 using document::BucketId;
@@ -44,9 +45,7 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         _bucketSpaces = getBucketSpaces();
     };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     // Simple type aliases to make interfacing with certain utility functions
     // easier. Note that this is only for readability and does not provide any
@@ -60,7 +59,7 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         return _stripe->_bucketDBMetricUpdater.getMinimumReplicaCountingMode();
     }
 
-    std::string testOp(const std::shared_ptr<api::StorageMessage> & msg) {
+    std::string testOp(const std::shared_ptr<api::StorageMessage>& msg) {
         _stripe->handleMessage(msg);
 
         std::string tmp = _sender.getCommands();
@@ -76,13 +75,12 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
 
     using ResetTrusted = bool;
 
-    std::string updateBucketDB(const std::string& firstState,
-                               const std::string& secondState,
+    std::string updateBucketDB(const std::string& firstState, const std::string& secondState,
                                bool resetTrusted = false) {
         std::vector<std::string> states(toVector<std::string>(firstState, secondState));
 
         for (uint32_t i = 0; i < states.size(); ++i) {
-            std::vector<uint16_t> removedNodes;
+            std::vector<uint16_t>   removedNodes;
             std::vector<BucketCopy> changedNodes;
 
             vespalib::StringTokenizer tokenizer(states[i], ",");
@@ -99,16 +97,19 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
                     removedNodes.push_back(node);
                 } else {
                     uint32_t checksum = atoi(tokenizer2[1].data());
-                    changedNodes.emplace_back(i + 1, node, api::BucketInfo(checksum, checksum / 2, checksum / 4)).setTrusted(trusted);
+                    changedNodes.emplace_back(i + 1, node, api::BucketInfo(checksum, checksum / 2, checksum / 4))
+                        .setTrusted(trusted);
                 }
             }
 
-            operation_context().remove_nodes_from_bucket_database(makeDocumentBucket(document::BucketId(16, 1)), removedNodes);
+            operation_context().remove_nodes_from_bucket_database(makeDocumentBucket(document::BucketId(16, 1)),
+                                                                  removedNodes);
 
-            uint32_t flags(DatabaseUpdate::CREATE_IF_NONEXISTING
-                           | (resetTrusted ? DatabaseUpdate::RESET_TRUSTED : 0));
+            uint32_t flags(DatabaseUpdate::CREATE_IF_NONEXISTING |
+                           (resetTrusted ? DatabaseUpdate::RESET_TRUSTED : 0));
 
-            operation_context().update_bucket_database(makeDocumentBucket(document::BucketId(16, 1)), changedNodes, flags);
+            operation_context().update_bucket_database(makeDocumentBucket(document::BucketId(16, 1)), changedNodes,
+                                                       flags);
         }
 
         std::string retVal = dumpBucket(document::BucketId(16, 1));
@@ -116,7 +117,8 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         return retVal;
     }
 
-    static void assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node, const std::string& bucketSpace,
+    static void assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node,
+                                       const std::string&                                         bucketSpace,
                                        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats);
 
     SimpleMaintenanceScanner::PendingMaintenanceStats stripe_maintenance_stats() {
@@ -127,56 +129,41 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         return _stripe->per_node_bucket_spaces_stats();
     }
 
-    DistributorGlobalStats stripe_distributor_global_stats() {
-        return _stripe->distributor_global_stats();
-    }
+    DistributorGlobalStats stripe_distributor_global_stats() { return _stripe->distributor_global_stats(); }
 
     bool stripe_handle_message(const std::shared_ptr<api::StorageMessage>& msg) {
         // TODO: Avoid using private DistributorStripe functions
         return _stripe->handleMessage(msg);
     }
 
-    template <typename Func>
-    void configure_stripe_with(Func f) {
+    template <typename Func> void configure_stripe_with(Func f) {
         ConfigBuilder builder;
         f(builder);
         configure_stripe(builder);
     }
 
     void configure_stale_reads_enabled(bool enabled) {
-        configure_stripe_with([&](auto& builder) {
-            builder.allowStaleReadsDuringClusterStateTransitions = enabled;
-        });
+        configure_stripe_with([&](auto& builder) { builder.allowStaleReadsDuringClusterStateTransitions = enabled; });
     }
 
     void configure_merge_operations_disabled(bool disabled) {
-        configure_stripe_with([&](auto& builder) {
-            builder.mergeOperationsDisabled = disabled;
-        });
+        configure_stripe_with([&](auto& builder) { builder.mergeOperationsDisabled = disabled; });
     }
 
     void configure_use_weak_internal_read_consistency(bool use_weak) {
-        configure_stripe_with([&](auto& builder) {
-            builder.useWeakInternalReadConsistencyForClientGets = use_weak;
-        });
+        configure_stripe_with([&](auto& builder) { builder.useWeakInternalReadConsistencyForClientGets = use_weak; });
     }
 
     void configure_max_activation_inhibited_out_of_sync_groups(uint32_t n_groups) {
-        configure_stripe_with([&](auto& builder) {
-            builder.maxActivationInhibitedOutOfSyncGroups = n_groups;
-        });
+        configure_stripe_with([&](auto& builder) { builder.maxActivationInhibitedOutOfSyncGroups = n_groups; });
     }
 
     void configure_enable_operation_cancellation(bool enable_cancellation) {
-        configure_stripe_with([&](auto& builder) {
-            builder.enableOperationCancellation = enable_cancellation;
-        });
+        configure_stripe_with([&](auto& builder) { builder.enableOperationCancellation = enable_cancellation; });
     }
 
     void configure_max_document_operation_message_size(int32_t max_size_bytes) {
-        configure_stripe_with([&](auto& builder) {
-            builder.maxDocumentOperationMessageSizeBytes = max_size_bytes;
-        });
+        configure_stripe_with([&](auto& builder) { builder.maxDocumentOperationMessageSizeBytes = max_size_bytes; });
     }
 
     [[nodiscard]] bool distributor_owns_bucket_in_current_and_pending_states(document::BucketId bucket_id) const {
@@ -205,18 +192,12 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
     void do_test_not_cancelled_pending_op_without_bucket_ownership_change(bool clear_pending_state);
 };
 
-DistributorStripeTest::DistributorStripeTest()
-    : Test(),
-      DistributorStripeTestUtil(),
-      _bucketSpaces()
-{
+DistributorStripeTest::DistributorStripeTest() : Test(), DistributorStripeTestUtil(), _bucketSpaces() {
 }
 
 DistributorStripeTest::~DistributorStripeTest() = default;
 
-void
-DistributorStripeTest::simulate_cluster_state_transition(const std::string& state_str, bool clear_pending)
-{
+void DistributorStripeTest::simulate_cluster_state_transition(const std::string& state_str, bool clear_pending) {
     simulate_set_pending_cluster_state(state_str);
     if (clear_pending) {
         enable_cluster_state(state_str);
@@ -225,10 +206,10 @@ DistributorStripeTest::simulate_cluster_state_transition(const std::string& stat
 }
 
 std::shared_ptr<api::RemoveReply>
-DistributorStripeTest::make_remove_reply_with_bucket_remap(api::StorageCommand& originator_cmd)
-{
+DistributorStripeTest::make_remove_reply_with_bucket_remap(api::StorageCommand& originator_cmd) {
     auto& cmd_as_remove = dynamic_cast<api::RemoveCommand&>(originator_cmd);
-    auto reply = std::dynamic_pointer_cast<api::RemoveReply>(std::shared_ptr<api::StorageReply>(cmd_as_remove.makeReply()));
+    auto  reply =
+        std::dynamic_pointer_cast<api::RemoveReply>(std::shared_ptr<api::StorageReply>(cmd_as_remove.makeReply()));
     reply->setOldTimestamp(100);
     // Including a bucket remapping as part of the response is a pragmatic way to avoid false
     // negatives when testing whether cancelled operations may mutate the DB. This is because
@@ -242,17 +223,15 @@ DistributorStripeTest::make_remove_reply_with_bucket_remap(api::StorageCommand& 
     return reply;
 }
 
-TEST_F(DistributorStripeTest, operation_generation)
-{
+TEST_F(DistributorStripeTest, operation_generation) {
     setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     document::BucketId bid;
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
 
-    EXPECT_EQ("Remove", testOp(std::make_shared<api::RemoveCommand>(
-            makeDocumentBucket(bid),
-            document::DocumentId("id:m:test:n=1:foo"),
-            api::Timestamp(1234))));
+    EXPECT_EQ("Remove",
+              testOp(std::make_shared<api::RemoveCommand>(
+                  makeDocumentBucket(bid), document::DocumentId("id:m:test:n=1:foo"), api::Timestamp(1234))));
 
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "foo", "bar", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 1));
@@ -261,8 +240,7 @@ TEST_F(DistributorStripeTest, operation_generation)
     EXPECT_EQ("Visitor Create", testOp(cmd));
 }
 
-TEST_F(DistributorStripeTest, operations_generated_and_started_without_duplicates)
-{
+TEST_F(DistributorStripeTest, operations_generated_and_started_without_duplicates) {
     setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     for (uint32_t i = 0; i < 6; ++i) {
@@ -276,8 +254,7 @@ TEST_F(DistributorStripeTest, operations_generated_and_started_without_duplicate
     ASSERT_EQ(6, _sender.commands().size());
 }
 
-TEST_F(DistributorStripeTest, maintenance_scheduling_inhibited_if_cluster_state_is_pending)
-{
+TEST_F(DistributorStripeTest, maintenance_scheduling_inhibited_if_cluster_state_is_pending) {
     setup_stripe(Redundancy(2), NodeCount(4), "storage:3 distributor:1");
     simulate_set_pending_cluster_state("storage:4 distributor:1");
 
@@ -295,14 +272,14 @@ TEST_F(DistributorStripeTest, maintenance_scheduling_inhibited_if_cluster_state_
     ASSERT_EQ(0, _sender.commands().size());
 }
 
-TEST_F(DistributorStripeTest, non_activation_maintenance_inhibited_if_explicitly_toggled)
-{
+TEST_F(DistributorStripeTest, non_activation_maintenance_inhibited_if_explicitly_toggled) {
     setup_stripe(Redundancy(2), NodeCount(4), "storage:3 distributor:1");
     tickDistributorNTimes(1);
     ASSERT_FALSE(stripe_is_in_recovery_mode());
 
     for (uint32_t i = 0; i < 3; ++i) {
-        addNodesToBucketDB(document::BucketId(16, i), "0=2/3/4/t/a"); // Needs merging, but not activation (already active)
+        addNodesToBucketDB(document::BucketId(16, i),
+                           "0=2/3/4/t/a"); // Needs merging, but not activation (already active)
     }
     _stripe->inhibit_non_activation_maintenance_operations(true);
     tickDistributorNTimes(10);
@@ -311,8 +288,7 @@ TEST_F(DistributorStripeTest, non_activation_maintenance_inhibited_if_explicitly
     ASSERT_EQ("", _sender.getCommands());
 }
 
-TEST_F(DistributorStripeTest, activation_maintenance_not_inhibited_even_if_explicitly_toggled)
-{
+TEST_F(DistributorStripeTest, activation_maintenance_not_inhibited_even_if_explicitly_toggled) {
     setup_stripe(Redundancy(2), NodeCount(4), "storage:3 distributor:1");
     tickDistributorNTimes(1);
     ASSERT_FALSE(stripe_is_in_recovery_mode());
@@ -326,10 +302,8 @@ TEST_F(DistributorStripeTest, activation_maintenance_not_inhibited_even_if_expli
     ASSERT_EQ("SetBucketState,SetBucketState,SetBucketState", _sender.getCommands());
 }
 
-TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change)
-{
-    setup_stripe(Redundancy(1), NodeCount(2),
-                 "storage:1 .0.s:d distributor:1");
+TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change) {
+    setup_stripe(Redundancy(1), NodeCount(2), "storage:1 .0.s:d distributor:1");
     enable_cluster_state("storage:1 distributor:1");
 
     EXPECT_TRUE(stripe_is_in_recovery_mode());
@@ -348,8 +322,7 @@ TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change)
 }
 
 // TODO STRIPE how to throttle across stripes?
-TEST_F(DistributorStripeTest, operations_are_throttled)
-{
+TEST_F(DistributorStripeTest, operations_are_throttled) {
     setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     auto config = make_config();
     config->setMinPendingMaintenanceOps(1);
@@ -363,8 +336,7 @@ TEST_F(DistributorStripeTest, operations_are_throttled)
     ASSERT_EQ(1, _sender.commands().size());
 }
 
-TEST_F(DistributorStripeTest, handle_unknown_maintenance_reply)
-{
+TEST_F(DistributorStripeTest, handle_unknown_maintenance_reply) {
     setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     {
@@ -376,15 +348,14 @@ TEST_F(DistributorStripeTest, handle_unknown_maintenance_reply)
     {
         // RemoveLocationReply must be treated as a maintenance reply since
         // it's what GC is currently built around.
-        auto cmd = std::make_shared<api::RemoveLocationCommand>(
-                "false", makeDocumentBucket(document::BucketId(30, 1234)));
+        auto cmd =
+            std::make_shared<api::RemoveLocationCommand>("false", makeDocumentBucket(document::BucketId(30, 1234)));
         auto reply = std::shared_ptr<api::StorageReply>(cmd->makeReply());
         ASSERT_TRUE(_stripe->handleReply(reply));
     }
 }
 
-TEST_F(DistributorStripeTest, update_bucket_database)
-{
+TEST_F(DistributorStripeTest, update_bucket_database) {
     enable_cluster_state("distributor:1 storage:3");
 
     EXPECT_EQ("BucketId(0x4000000000000001) : "
@@ -446,8 +417,7 @@ TEST_F(DistributorStripeTest, no_db_resurrection_for_bucket_not_owned_in_pending
     EXPECT_EQ("NONEXISTING", dumpBucket(nonOwnedBucket));
 }
 
-TEST_F(DistributorStripeTest, added_db_buckets_without_gc_timestamp_implicitly_get_current_time)
-{
+TEST_F(DistributorStripeTest, added_db_buckets_without_gc_timestamp_implicitly_get_current_time) {
     setup_stripe(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     getClock().setAbsoluteTimeInSeconds(101234);
     document::BucketId bucket(16, 7654);
@@ -460,8 +430,7 @@ TEST_F(DistributorStripeTest, added_db_buckets_without_gc_timestamp_implicitly_g
     EXPECT_EQ(101234, e->getLastGarbageCollectionTime());
 }
 
-TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iteration)
-{
+TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iteration) {
     setup_stripe(Redundancy(2), NodeCount(3), "storage:3 distributor:1");
     // Copies out of sync. Not possible for stripe to _reliably_ tell
     // which direction(s) data will flow, so for simplicity assume that we
@@ -516,11 +485,9 @@ TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iterat
     EXPECT_EQ(stats.perNodeStats.total_replica_stats().syncing, 2);
 }
 
-void
-DistributorStripeTest::assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node,
-                                              const std::string& bucketSpace,
-                                              const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats)
-{
+void DistributorStripeTest::assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node,
+                                                   const std::string& bucketSpace,
+                                                   const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats) {
     auto nodeItr = stats.find(node);
     ASSERT_TRUE(nodeItr != stats.end());
     ASSERT_EQ(1, nodeItr->second.size());
@@ -537,8 +504,7 @@ DistributorStripeTest::assertBucketSpaceStats(size_t expBucketPending, size_t ex
  * their state checkers at all, we won't get any statistics from any other
  * operations for the bucket.
  */
-TEST_F(DistributorStripeTest, stats_generated_for_preempted_operations)
-{
+TEST_F(DistributorStripeTest, stats_generated_for_preempted_operations) {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // For this test it suffices to have a single bucket with multiple aspects
     // wrong about it. In this case, let a bucket be both out of sync _and_
@@ -562,14 +528,12 @@ TEST_F(DistributorStripeTest, stats_generated_for_preempted_operations)
     }
 }
 
-TEST_F(DistributorStripeTest, replica_counting_mode_is_configured_to_trusted_by_default)
-{
+TEST_F(DistributorStripeTest, replica_counting_mode_is_configured_to_trusted_by_default) {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_EQ(ReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
 }
 
-TEST_F(DistributorStripeTest, replica_counting_mode_config_is_propagated_to_metric_updater)
-{
+TEST_F(DistributorStripeTest, replica_counting_mode_config_is_propagated_to_metric_updater) {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
     builder.minimumReplicaCountingMode = ConfigBuilder::MinimumReplicaCountingMode::ANY;
@@ -577,8 +541,7 @@ TEST_F(DistributorStripeTest, replica_counting_mode_config_is_propagated_to_metr
     EXPECT_EQ(ReplicaCountingMode::ANY, currentReplicaCountingMode());
 }
 
-TEST_F(DistributorStripeTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config)
-{
+TEST_F(DistributorStripeTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config) {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
     builder.maxConsecutivelyInhibitedMaintenanceTicks = 123;
@@ -586,14 +549,12 @@ TEST_F(DistributorStripeTest, max_consecutively_inhibited_maintenance_ticks_conf
     EXPECT_EQ(getConfig().max_consecutively_inhibited_maintenance_ticks(), 123);
 }
 
-TEST_F(DistributorStripeTest, bucket_activation_is_enabled_by_default)
-{
+TEST_F(DistributorStripeTest, bucket_activation_is_enabled_by_default) {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_FALSE(getConfig().isBucketActivationDisabled());
 }
 
-TEST_F(DistributorStripeTest, bucket_activation_config_is_propagated_to_distributor_configuration)
-{
+TEST_F(DistributorStripeTest, bucket_activation_config_is_propagated_to_distributor_configuration) {
     using namespace vespa::config::content::core;
 
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
@@ -605,16 +566,13 @@ TEST_F(DistributorStripeTest, bucket_activation_config_is_propagated_to_distribu
     EXPECT_TRUE(getConfig().isBucketActivationDisabled());
 }
 
-void
-DistributorStripeTest::configureMaxClusterClockSkew(int seconds)
-{
+void DistributorStripeTest::configureMaxClusterClockSkew(int seconds) {
     ConfigBuilder builder;
     builder.maxClusterClockSkewSec = seconds;
     configure_stripe(builder);
 }
 
-TEST_F(DistributorStripeTest, max_clock_skew_config_is_propagated_to_distributor_config)
-{
+TEST_F(DistributorStripeTest, max_clock_skew_config_is_propagated_to_distributor_config) {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     configureMaxClusterClockSkew(5);
@@ -624,32 +582,27 @@ TEST_F(DistributorStripeTest, max_clock_skew_config_is_propagated_to_distributor
 namespace {
 
 auto makeDummyRemoveCommand() {
-    return std::make_shared<api::RemoveCommand>(
-            makeDocumentBucket(document::BucketId(0)),
-            document::DocumentId("id:foo:testdoctype1:n=1:foo"),
-            api::Timestamp(0));
+    return std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)),
+                                                document::DocumentId("id:foo:testdoctype1:n=1:foo"),
+                                                api::Timestamp(0));
 }
 
-}
+} // namespace
 
-void
-DistributorStripeTest::configure_merge_busy_inhibit_duration(int seconds)
-{
+void DistributorStripeTest::configure_merge_busy_inhibit_duration(int seconds) {
     ConfigBuilder builder;
     builder.inhibitMergeSendingOnBusyNodeDurationSec = seconds;
     configure_stripe(builder);
 }
 
-TEST_F(DistributorStripeTest, merge_busy_inhibit_duration_config_is_propagated_to_distributor_config)
-{
+TEST_F(DistributorStripeTest, merge_busy_inhibit_duration_config_is_propagated_to_distributor_config) {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     configure_merge_busy_inhibit_duration(7);
     EXPECT_EQ(getConfig().getInhibitMergesOnBusyNodeDuration(), std::chrono::seconds(7));
 }
 
-TEST_F(DistributorStripeTest, merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker)
-{
+TEST_F(DistributorStripeTest, merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker) {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
 
@@ -661,7 +614,7 @@ TEST_F(DistributorStripeTest, merge_busy_inhibit_duration_is_propagated_to_pendi
     ASSERT_EQ(1, _sender.commands().size());
     ASSERT_EQ(api::MessageType::REMOVE, _sender.command(0)->getType());
     auto& fwd_cmd = dynamic_cast<api::RemoveCommand&>(*_sender.command(0));
-    auto reply = fwd_cmd.makeReply();
+    auto  reply = fwd_cmd.makeReply();
     reply->setResult(api::ReturnCode(api::ReturnCode::BUSY));
     _stripe->handleReply(std::shared_ptr<api::StorageReply>(std::move(reply)));
 
@@ -674,14 +627,13 @@ TEST_F(DistributorStripeTest, merge_busy_inhibit_duration_is_propagated_to_pendi
     EXPECT_FALSE(node_info.isBusy(0));
 }
 
-TEST_F(DistributorStripeTest, external_client_requests_are_handled_individually_in_priority_order)
-{
+TEST_F(DistributorStripeTest, external_client_requests_are_handled_individually_in_priority_order) {
     setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
 
     std::vector<api::StorageMessage::Priority> priorities({50, 255, 10, 40, 0});
-    document::DocumentId id("id:foo:testdoctype1:n=1:foo");
-    std::string_view field_set = "";
+    document::DocumentId                       id("id:foo:testdoctype1:n=1:foo");
+    std::string_view                           field_set = "";
     for (auto pri : priorities) {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId()), id, field_set);
         cmd->setPriority(pri);
@@ -702,8 +654,7 @@ TEST_F(DistributorStripeTest, external_client_requests_are_handled_individually_
     EXPECT_THAT(actual, ContainerEq(expected));
 }
 
-TEST_F(DistributorStripeTest, internal_messages_are_started_in_fifo_order_batch)
-{
+TEST_F(DistributorStripeTest, internal_messages_are_started_in_fifo_order_batch) {
     // To test internal request ordering, we use NotifyBucketChangeCommand
     // for the reason that it explicitly updates the bucket database for
     // each individual invocation.
@@ -714,7 +665,7 @@ TEST_F(DistributorStripeTest, internal_messages_are_started_in_fifo_order_batch)
     std::vector<api::StorageMessage::Priority> priorities({50, 255, 10, 40, 1});
     for (auto pri : priorities) {
         api::BucketInfo fake_info(pri, pri, pri);
-        auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), fake_info);
+        auto            cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), fake_info);
         cmd->setSourceIndex(0);
         cmd->setPriority(pri);
         _stripe->handle_or_enqueue_message(cmd);
@@ -732,14 +683,13 @@ TEST_F(DistributorStripeTest, internal_messages_are_started_in_fifo_order_batch)
 }
 
 // TODO STRIPE also test that closing distributor closes stripes
-TEST_F(DistributorStripeTest, closing_aborts_priority_queued_client_requests)
-{
+TEST_F(DistributorStripeTest, closing_aborts_priority_queued_client_requests) {
     setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     document::BucketId bucket(16, 1);
     addNodesToBucketDB(bucket, "0=1/1/1/t");
 
     document::DocumentId id("id:foo:testdoctype1:n=1:foo");
-    std::string_view field_set = "";
+    std::string_view     field_set = "";
     for (int i = 0; i < 10; ++i) {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId()), id, field_set);
         _stripe->handle_or_enqueue_message(cmd);
@@ -755,9 +705,8 @@ TEST_F(DistributorStripeTest, closing_aborts_priority_queued_client_requests)
 
 namespace {
 
-void assert_invalid_stats_for_all_spaces(
-        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats,
-        uint16_t node_index) {
+void assert_invalid_stats_for_all_spaces(const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats,
+                                         uint16_t                                                   node_index) {
     auto stats_iter = stats.find(node_index);
     ASSERT_TRUE(stats_iter != stats.cend());
     ASSERT_EQ(2, stats_iter->second.size());
@@ -769,10 +718,9 @@ void assert_invalid_stats_for_all_spaces(
     ASSERT_FALSE(space_iter->second.valid());
 }
 
-}
+} // namespace
 
-TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats)
-{
+TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats) {
     // Set up a cluster state + DB contents which implies merge maintenance ops
     setup_stripe(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
@@ -796,8 +744,7 @@ TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats)
     EXPECT_FALSE(g_stats.valid());
 }
 
-TEST_F(DistributorStripeTest, stale_reads_config_is_propagated_to_external_operation_handler)
-{
+TEST_F(DistributorStripeTest, stale_reads_config_is_propagated_to_external_operation_handler) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_stale_reads_enabled(true);
@@ -807,15 +754,13 @@ TEST_F(DistributorStripeTest, stale_reads_config_is_propagated_to_external_opera
     EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
 }
 
-TEST_F(DistributorStripeTest, fast_path_on_consistent_gets_config_is_propagated_to_internal_config)
-{
+TEST_F(DistributorStripeTest, fast_path_on_consistent_gets_config_is_propagated_to_internal_config) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     EXPECT_TRUE(getConfig().update_fast_path_restart_enabled()); // Enabled by default
 }
 
-TEST_F(DistributorStripeTest, merge_disabling_config_is_propagated_to_internal_config)
-{
+TEST_F(DistributorStripeTest, merge_disabling_config_is_propagated_to_internal_config) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_merge_operations_disabled(true);
@@ -825,14 +770,12 @@ TEST_F(DistributorStripeTest, merge_disabling_config_is_propagated_to_internal_c
     EXPECT_FALSE(getConfig().merge_operations_disabled());
 }
 
-TEST_F(DistributorStripeTest, metadata_update_phase_config_is_propagated_to_internal_config)
-{
+TEST_F(DistributorStripeTest, metadata_update_phase_config_is_propagated_to_internal_config) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
     EXPECT_TRUE(getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates());
 }
 
-TEST_F(DistributorStripeTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs)
-{
+TEST_F(DistributorStripeTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_use_weak_internal_read_consistency(true);
@@ -844,8 +787,7 @@ TEST_F(DistributorStripeTest, weak_internal_read_consistency_config_is_propagate
     EXPECT_FALSE(getExternalOperationHandler().use_weak_internal_read_consistency_for_gets());
 }
 
-TEST_F(DistributorStripeTest, max_activation_inhibited_out_of_sync_groups_config_is_propagated_to_internal_config)
-{
+TEST_F(DistributorStripeTest, max_activation_inhibited_out_of_sync_groups_config_is_propagated_to_internal_config) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     configure_max_activation_inhibited_out_of_sync_groups(3);
@@ -855,8 +797,7 @@ TEST_F(DistributorStripeTest, max_activation_inhibited_out_of_sync_groups_config
     EXPECT_EQ(getConfig().max_activation_inhibited_out_of_sync_groups(), 0);
 }
 
-TEST_F(DistributorStripeTest, wanted_split_bit_count_is_lower_bounded)
-{
+TEST_F(DistributorStripeTest, wanted_split_bit_count_is_lower_bounded) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
     ConfigBuilder builder;
@@ -869,17 +810,14 @@ TEST_F(DistributorStripeTest, wanted_split_bit_count_is_lower_bounded)
 namespace {
 
 auto make_dummy_get_command_for_bucket_1() {
-    return std::make_shared<api::GetCommand>(
-            makeDocumentBucket(document::BucketId(0)),
-            document::DocumentId("id:foo:testdoctype1:n=1:foo"),
-            document::AllFields::NAME);
+    return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
+                                             document::DocumentId("id:foo:testdoctype1:n=1:foo"),
+                                             document::AllFields::NAME);
 }
 
-}
+} // namespace
 
-void
-DistributorStripeTest::set_up_and_start_get_op_with_stale_reads_enabled(bool enabled)
-{
+void DistributorStripeTest::set_up_and_start_get_op_with_stale_reads_enabled(bool enabled) {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
     configure_stale_reads_enabled(enabled);
 
@@ -888,8 +826,7 @@ DistributorStripeTest::set_up_and_start_get_op_with_stale_reads_enabled(bool ena
     _stripe->handle_or_enqueue_message(make_dummy_get_command_for_bucket_1());
 }
 
-TEST_F(DistributorStripeTest, gets_are_started_outside_main_stripe_logic_if_stale_reads_enabled)
-{
+TEST_F(DistributorStripeTest, gets_are_started_outside_main_stripe_logic_if_stale_reads_enabled) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     ASSERT_THAT(_sender.commands(), SizeIs(1));
     EXPECT_THAT(_sender.replies(), SizeIs(0));
@@ -901,8 +838,7 @@ TEST_F(DistributorStripeTest, gets_are_started_outside_main_stripe_logic_if_stal
     EXPECT_THAT(_sender.replies(), SizeIs(1));
 }
 
-TEST_F(DistributorStripeTest, gets_are_not_started_outside_main_stripe_logic_if_stale_reads_disabled)
-{
+TEST_F(DistributorStripeTest, gets_are_not_started_outside_main_stripe_logic_if_stale_reads_disabled) {
     set_up_and_start_get_op_with_stale_reads_enabled(false);
     // Get has been placed into distributor queue, so no external messages are produced.
     EXPECT_THAT(_sender.commands(), SizeIs(0));
@@ -912,16 +848,13 @@ TEST_F(DistributorStripeTest, gets_are_not_started_outside_main_stripe_logic_if_
 // There's no need or desire to track "lockfree" Gets in the main pending message tracker,
 // as we only have to track mutations to inhibit maintenance ops safely. Furthermore,
 // the message tracker is a multi-index and therefore has some runtime cost.
-TEST_F(DistributorStripeTest, gets_started_outside_stripe_thread_are_not_tracked_by_pending_message_tracker)
-{
+TEST_F(DistributorStripeTest, gets_started_outside_stripe_thread_are_not_tracked_by_pending_message_tracker) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     Bucket bucket(FixedBucketSpaces::default_space(), BucketId(16, 1));
-    EXPECT_FALSE(pending_message_tracker().hasPendingMessage(
-            0, bucket, api::MessageType::GET_ID));
+    EXPECT_FALSE(pending_message_tracker().hasPendingMessage(0, bucket, api::MessageType::GET_ID));
 }
 
-TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_stripe_thread)
-{
+TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_stripe_thread) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     _stripe->flush_and_close();
     ASSERT_EQ(1, _sender.replies().size());
@@ -994,9 +927,7 @@ TEST_F(DistributorStripeTest, distribution_config_change_edge_cancels_pending_op
 
 void DistributorStripeTest::set_up_for_bucket_ownership_cancellation(uint32_t superbucket_idx) {
     setup_stripe(Redundancy(1), NodeCount(10), "version:1 distributor:2 storage:2");
-    configure_stripe_with([](auto& builder) {
-        builder.enableOperationCancellation = true;
-    });
+    configure_stripe_with([](auto& builder) { builder.enableOperationCancellation = true; });
 
     NodeSupportedFeatures features;
     features.document_condition_probe = true;
@@ -1011,18 +942,18 @@ namespace {
 
 std::shared_ptr<api::RemoveCommand> make_conditional_remove_request(uint32_t superbucket_idx) {
     auto client_remove = std::make_shared<api::RemoveCommand>(
-            makeDocumentBucket(document::BucketId(0)),
-            document::DocumentId(vespalib::make_string("id:foo:testdoctype1:n=%u:foo", superbucket_idx)),
-            api::Timestamp(0));
+        makeDocumentBucket(document::BucketId(0)),
+        document::DocumentId(vespalib::make_string("id:foo:testdoctype1:n=%u:foo", superbucket_idx)),
+        api::Timestamp(0));
     client_remove->setCondition(documentapi::TestAndSetCondition("foo.bar==baz"));
     return client_remove;
 }
 
-}
+} // namespace
 
 void DistributorStripeTest::do_test_cancelled_pending_op_with_bucket_ownership_change(bool clear_pending_state) {
     constexpr uint32_t superbucket_idx = 3;
-    const BucketId bucket_id(16, superbucket_idx);
+    const BucketId     bucket_id(16, superbucket_idx);
     set_up_for_bucket_ownership_cancellation(superbucket_idx);
     // To actually check if cancellation is happening, we need to trigger a code path that
     // is only covered by cancellation and not the legacy "check buckets at DB insert time"
@@ -1051,13 +982,15 @@ TEST_F(DistributorStripeTest, bucket_ownership_change_cancels_pending_operations
     do_test_cancelled_pending_op_with_bucket_ownership_change(false);
 }
 
-TEST_F(DistributorStripeTest, bucket_ownership_change_cancels_pending_operations_for_non_owned_buckets_not_pending_case) {
+TEST_F(DistributorStripeTest,
+       bucket_ownership_change_cancels_pending_operations_for_non_owned_buckets_not_pending_case) {
     do_test_cancelled_pending_op_with_bucket_ownership_change(true);
 }
 
-void DistributorStripeTest::do_test_not_cancelled_pending_op_without_bucket_ownership_change(bool clear_pending_state) {
+void DistributorStripeTest::do_test_not_cancelled_pending_op_without_bucket_ownership_change(
+    bool clear_pending_state) {
     constexpr uint32_t superbucket_idx = 14;
-    const BucketId bucket_id(16, superbucket_idx);
+    const BucketId     bucket_id(16, superbucket_idx);
     set_up_for_bucket_ownership_cancellation(superbucket_idx);
 
     stripe_handle_message(make_conditional_remove_request(superbucket_idx));
@@ -1077,11 +1010,13 @@ void DistributorStripeTest::do_test_not_cancelled_pending_op_without_bucket_owne
     ASSERT_EQ(_sender.getCommands(true, false, 2), "Remove => 0,Remove => 1");
 }
 
-TEST_F(DistributorStripeTest, bucket_ownership_change_does_not_cancel_pending_operations_for_owned_buckets_pending_case) {
+TEST_F(DistributorStripeTest,
+       bucket_ownership_change_does_not_cancel_pending_operations_for_owned_buckets_pending_case) {
     do_test_not_cancelled_pending_op_without_bucket_ownership_change(false);
 }
 
-TEST_F(DistributorStripeTest, bucket_ownership_change_does_not_cancel_pending_operations_for_owned_buckets_not_pending_case) {
+TEST_F(DistributorStripeTest,
+       bucket_ownership_change_does_not_cancel_pending_operations_for_owned_buckets_not_pending_case) {
     do_test_not_cancelled_pending_op_without_bucket_ownership_change(true);
 }
 
@@ -1096,7 +1031,8 @@ TEST_F(DistributorStripeTest, maintenance_operation_cancellation_does_not_invoke
     // Node 1 takes a nosedive; the pending SetBucketState operation is cancelled internally.
     simulate_cluster_state_transition("version:2 distributor:1 storage:2 .1.s:d", true);
 
-    auto reply = std::make_shared<api::SetBucketStateReply>(dynamic_cast<api::SetBucketStateCommand&>(*_sender.command(0)));
+    auto reply =
+        std::make_shared<api::SetBucketStateReply>(dynamic_cast<api::SetBucketStateCommand&>(*_sender.command(0)));
     _stripe->handleReply(reply);
     // If we have gotten this far without exploding with an invariant check failure, all is well.
     EXPECT_EQ("BucketId(0x4000000000000001) : "
@@ -1122,4 +1058,4 @@ TEST_F(DistributorStripeTest, max_document_operation_message_size_config_is_prop
     EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), INT32_MAX);
 }
 
-}
+} // namespace storage::distributor

@@ -16,9 +16,9 @@ namespace mbus {
 class EmptyReply : public Reply {
 public:
     EmptyReply();
-    const string & getProtocol() const override;
+    const string& getProtocol() const override;
     uint32_t getType() const override;
     uint8_t priority() const override { return 8; }
 };
 
-}
+} // namespace mbus

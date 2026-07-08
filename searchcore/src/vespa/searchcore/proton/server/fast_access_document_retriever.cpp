@@ -4,17 +4,15 @@
 
 namespace proton {
 
-FastAccessDocumentRetriever::FastAccessDocumentRetriever(FastAccessFeedView::SP feedView, IAttributeManager::SP attrMgr) noexcept
-    : DocumentRetriever(feedView->getPersistentParams()._docTypeName,
-                        *feedView->getDocumentTypeRepo(),
-                        *feedView->getSchema(),
-                        *feedView->getDocumentMetaStore(),
-                        *attrMgr,
+FastAccessDocumentRetriever::FastAccessDocumentRetriever(FastAccessFeedView::SP feedView,
+                                                         IAttributeManager::SP  attrMgr) noexcept
+    : DocumentRetriever(feedView->getPersistentParams()._docTypeName, *feedView->getDocumentTypeRepo(),
+                        *feedView->getSchema(), *feedView->getDocumentMetaStore(), *attrMgr,
                         feedView->getDocumentStore()),
       _feedView(std::move(feedView)),
-      _attrMgr(std::move(attrMgr))
-{ }
+      _attrMgr(std::move(attrMgr)) {
+}
 
 FastAccessDocumentRetriever::~FastAccessDocumentRetriever() = default;
 
-}
+} // namespace proton

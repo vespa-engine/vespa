@@ -11,4 +11,4 @@ template class SingleNumericEnumSearchContext<int64_t>;
 template class SingleNumericEnumSearchContext<float>;
 template class SingleNumericEnumSearchContext<double>;
 
-}
+} // namespace search::attribute

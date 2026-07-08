@@ -18,8 +18,8 @@ namespace proton {
  */
 class OperationRateTracker {
 private:
-    vespalib::duration _time_budget_per_op;
-    vespalib::duration _time_budget_window;
+    vespalib::duration    _time_budget_per_op;
+    vespalib::duration    _time_budget_window;
     vespalib::steady_time _threshold_time;
 
 public:
@@ -35,4 +35,4 @@ public:
     void reset(vespalib::steady_time now);
 };
 
-}
+} // namespace proton

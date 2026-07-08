@@ -15,11 +15,12 @@
 #pragma once
 
 #include "testnodestateupdater.h"
+
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/persistence/spi/types.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
@@ -29,30 +30,32 @@
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+
 #include <atomic>
 
-namespace config { class ConfigUri; }
+namespace config {
+class ConfigUri;
+}
 
 namespace storage {
 
-namespace spi { struct PersistenceProvider; }
+namespace spi {
+struct PersistenceProvider;
+}
 
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, NodeIndex);
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, NodeCount);
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, Redundancy);
 
-class TestStorageApp
-        : public framework::defaultimplementation::TestComponentRegister,
-          public DoneInitializeHandler
-{
+class TestStorageApp : public framework::defaultimplementation::TestComponentRegister, public DoneInitializeHandler {
     StorageComponentRegisterImpl& _compReg;
 
 protected:
     document::TestDocMan _docMan;
     TestNodeStateUpdater _nodeStateUpdater;
-    std::string _configId;
-    NodeIdentity _node_identity;
-    std::atomic<bool> _initialized;
+    std::string          _configId;
+    NodeIdentity         _node_identity;
+    std::atomic<bool>    _initialized;
 
 public:
     /**
@@ -64,8 +67,7 @@ public:
      * override config, but be careful with this, as components may fetch index
      * from config themselves.
      */
-    TestStorageApp(StorageComponentRegisterImpl::UP compReg,
-                   const lib::NodeType&, NodeIndex index,
+    TestStorageApp(StorageComponentRegisterImpl::UP compReg, const lib::NodeType&, NodeIndex index,
                    const config::ConfigUri& config_uri);
     ~TestStorageApp() override;
 
@@ -101,13 +103,12 @@ private:
     virtual BucketDatabase& getBucketDatabase() { abort(); }
 };
 
-class TestServiceLayerApp : public TestStorageApp
-{
+class TestServiceLayerApp : public TestStorageApp {
     using PersistenceProviderUP = std::unique_ptr<spi::PersistenceProvider>;
-    ServiceLayerComponentRegisterImpl& _compReg;
-    PersistenceProviderUP _persistenceProvider;
+    ServiceLayerComponentRegisterImpl&                _compReg;
+    PersistenceProviderUP                             _persistenceProvider;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _executor;
-    HostInfo _host_info;
+    HostInfo                                          _host_info;
 
 public:
     TestServiceLayerApp(NodeIndex node_index, const config::ConfigUri& config_uri);
@@ -118,7 +119,7 @@ public:
     void setPersistenceProvider(PersistenceProviderUP);
 
     ServiceLayerComponentRegisterImpl& getComponentRegister() override { return _compReg; }
-    HostInfo &get_host_info() noexcept { return _host_info; }
+    HostInfo& get_host_info() noexcept { return _host_info; }
 
     spi::PersistenceProvider& getPersistenceProvider();
 
@@ -129,16 +130,14 @@ public:
     StorBucketDatabase& getStorageBucketDatabase() override {
         return _compReg.getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space()).bucketDatabase();
     }
-    vespalib::ISequencedTaskExecutor & executor() { return *_executor; }
+    vespalib::ISequencedTaskExecutor& executor() { return *_executor; }
 };
 
-class TestDistributorApp : public TestStorageApp,
-                           public UniqueTimeCalculator
-{
+class TestDistributorApp : public TestStorageApp, public UniqueTimeCalculator {
     DistributorComponentRegisterImpl& _compReg;
-    std::mutex _accessLock;
-    uint64_t _lastUniqueTimestampRequested;
-    uint32_t _uniqueTimestampCounter;
+    std::mutex                        _accessLock;
+    uint64_t                          _lastUniqueTimestampRequested;
+    uint32_t                          _uniqueTimestampCounter;
 
     void configure(const config::ConfigUri& config_uri);
 
@@ -147,11 +146,9 @@ public:
     explicit TestDistributorApp(const config::ConfigUri& config_uri);
     ~TestDistributorApp() override;
 
-    DistributorComponentRegisterImpl& getComponentRegister() override {
-        return _compReg;
-    }
+    DistributorComponentRegisterImpl& getComponentRegister() override { return _compReg; }
 
     api::Timestamp generate_unique_timestamp() override;
 };
 
-} // storageo
+} // namespace storage

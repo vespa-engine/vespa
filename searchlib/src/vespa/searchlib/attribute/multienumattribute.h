@@ -6,6 +6,7 @@
 #include "loadedenumvalue.h"
 #include "multivalueattribute.h"
 #include "no_loaded_vector.h"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search {
@@ -19,9 +20,7 @@ class ReaderBase;
  * B: EnumAttribute<BaseClass>
  * M: MultiValueType
  */
-template <typename B, typename M>
-class MultiValueEnumAttribute : public MultiValueAttribute<B, M>
-{
+template <typename B, typename M> class MultiValueEnumAttribute : public MultiValueAttribute<B, M> {
 protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using Change = typename B::BaseClass::Change;
@@ -30,7 +29,6 @@ protected:
     using LoadedVector = typename B::BaseClass::LoadedVector;
     using ValueModifier = typename B::BaseClass::ValueModifier;
     using WeightedEnum = typename B::BaseClass::WeightedEnum;
-    using generation_t = typename B::BaseClass::generation_t;
 
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
     using EnumIndex = IEnumStore::Index;
@@ -43,30 +41,30 @@ protected:
     using WeightedIndexVector = typename MultiValueAttribute<B, M>::ValueVector;
 
     // from MultiValueAttribute
-    bool extractChangeData(const Change & c, EnumIndex & idx) override; // EnumIndex is ValueType. Use EnumStore
+    bool extractChangeData(const Change& c, EnumIndex& idx) override; // EnumIndex is ValueType. Use EnumStore
 
     // from EnumAttribute
-    void considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) override; // same for both string and numeric
+    void considerAttributeChange(const Change&          c,
+                                 EnumStoreBatchUpdater& inserter) override; // same for both string and numeric
 
     virtual void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater);
 
-    virtual void freezeEnumDictionary() {
-        this->getEnumStore().freeze_dictionary();
-    }
+    virtual void freezeEnumDictionary() { this->getEnumStore().freeze_dictionary(); }
 
-    void fillValues(LoadedVector & loaded) override;
-    void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedPostingsLoader& loader, size_t num_values) override;
+    void fillValues(LoadedVector& loaded) override;
+    void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedPostingsLoader& loader,
+                              size_t num_values) override;
     void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedLoader& loader) override;
-    virtual void mergeMemoryStats(vespalib::MemoryUsage & total) { (void) total; }
+    virtual void mergeMemoryStats(vespalib::MemoryUsage& total) { (void)total; }
 
 public:
-    MultiValueEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
+    MultiValueEnumAttribute(const std::string& baseFileName, const AttributeVector::Config& cfg);
 
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
 
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
 
     //-----------------------------------------------------------------------------------------------------------------
     // Attribute read API
@@ -80,19 +78,20 @@ public:
         }
     }
 
-    uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
+    uint32_t get(DocId doc, EnumHandle* e, uint32_t sz) const override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
-        uint32_t valueCount = indices.size();
+        uint32_t              valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
             e[i] = multivalue::get_value_ref(indices[i]).load_acquire().ref();
         }
         return valueCount;
     }
-     uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const override {
+    uint32_t get(DocId doc, WeightedEnum* e, uint32_t sz) const override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
-        uint32_t valueCount = indices.size();
+        uint32_t              valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            e[i] = WeightedEnum(multivalue::get_value_ref(indices[i]).load_acquire().ref(), multivalue::get_weight(indices[i]));
+            e[i] = WeightedEnum(multivalue::get_value_ref(indices[i]).load_acquire().ref(),
+                                multivalue::get_weight(indices[i]));
         }
         return valueCount;
     }
@@ -101,4 +100,3 @@ public:
 };
 
 } // namespace search
-

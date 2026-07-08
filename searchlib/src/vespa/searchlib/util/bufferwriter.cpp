@@ -4,20 +4,14 @@
 
 namespace search {
 
-BufferWriter::BufferWriter()
-    : _cur(nullptr),
-      _end(nullptr),
-      _start(nullptr)
-{
+BufferWriter::BufferWriter() : _cur(nullptr), _end(nullptr), _start(nullptr) {
 }
 
 BufferWriter::~BufferWriter() = default;
 
-void
-BufferWriter::writeSlow(const void *src, size_t len)
-{
-    size_t residue = len;
-    const char *csrc = static_cast<const char *>(src);
+void BufferWriter::writeSlow(const void* src, size_t len) {
+    size_t      residue = len;
+    const char* csrc = static_cast<const char*>(src);
     for (;;) {
         size_t maxLen = freeLen();
         if (residue <= maxLen) {

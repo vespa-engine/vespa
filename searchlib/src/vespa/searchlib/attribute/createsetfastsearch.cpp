@@ -6,6 +6,7 @@
 #include "integerbase.h"
 #include "multinumericpostattribute.h"
 #include "multistringpostattribute.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
@@ -15,20 +16,19 @@ namespace search {
 
 using attribute::BasicType;
 
-#define INTSET(T)   MultiValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>), WEIGHTED_MULTIVALUE_ENUM_ARG >
-#define FLOATSET(T) MultiValueNumericPostingAttribute< ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>), WEIGHTED_MULTIVALUE_ENUM_ARG >
+#define INTSET(T)                                                                                                \
+    MultiValueNumericPostingAttribute<ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>), WEIGHTED_MULTIVALUE_ENUM_ARG>
+#define FLOATSET(T) \
+    MultiValueNumericPostingAttribute<ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>), WEIGHTED_MULTIVALUE_ENUM_ARG>
 
-#define CREATEINTSET(T, fname, info) static_cast<AttributeVector *>(new INTSET(T)(fname, info))
-#define CREATEFLOATSET(T, fname, info) static_cast<AttributeVector *>(new FLOATSET(T)(fname, info))
+#define CREATEINTSET(T, fname, info) static_cast<AttributeVector*>(new INTSET(T)(fname, info))
+#define CREATEFLOATSET(T, fname, info) static_cast<AttributeVector*>(new FLOATSET(T)(fname, info))
 
-
-AttributeVector::SP
-AttributeFactory::createSetFastSearch(std::string name, const Config & info)
-{
+AttributeVector::SP AttributeFactory::createSetFastSearch(std::string name, const Config& info) {
     assert(info.collectionType().type() == attribute::CollectionType::WSET);
     assert(info.fastSearch());
     AttributeVector::SP ret;
-    switch(info.basicType().type()) {
+    switch (info.basicType().type()) {
     case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
@@ -52,7 +52,7 @@ AttributeFactory::createSetFastSearch(std::string name, const Config & info)
         ret.reset(CREATEFLOATSET(double, name, info));
         break;
     case BasicType::STRING:
-        ret.reset(static_cast<AttributeVector *>(new WeightedSetStringPostingAttribute(name, info)));
+        ret.reset(static_cast<AttributeVector*>(new WeightedSetStringPostingAttribute(name, info)));
         break;
     default:
         break;
@@ -60,4 +60,4 @@ AttributeFactory::createSetFastSearch(std::string name, const Config & info)
     return ret;
 }
 
-}
+} // namespace search

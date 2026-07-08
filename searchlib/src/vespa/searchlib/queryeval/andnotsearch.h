@@ -3,6 +3,7 @@
 #pragma once
 
 #include "multisearch.h"
+
 #include <vespa/searchlib/attribute/attributeiterators.h>
 #include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 
@@ -11,8 +12,7 @@ namespace search::queryeval {
 /**
  * A simple implementation of the AndNot search operation.
  **/
-class AndNotSearch : public MultiSearch
-{
+class AndNotSearch : public MultiSearch {
 protected:
     bool _elementwise;
 
@@ -34,25 +34,22 @@ public:
     static std::unique_ptr<SearchIterator> create(ChildrenIterators children, bool elementwise, bool strict);
 
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id) override;
-    void or_hits_into(BitVector &result, uint32_t begin_id) override;
+    void or_hits_into(BitVector& result, uint32_t begin_id) override;
     void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 
 private:
     bool isAndNot() const override { return true; }
-    bool needUnpack(size_t index) const override {
-        return index == 0;
-    }
+    bool needUnpack(size_t index) const override { return index == 0; }
 };
 
-class AndNotSearchStrictBase : public AndNotSearch
-{
+class AndNotSearchStrictBase : public AndNotSearch {
 protected:
     explicit AndNotSearchStrictBase(Children children, bool elementwise)
-        : AndNotSearch(std::move(children), elementwise)
-    { }
+        : AndNotSearch(std::move(children), elementwise) {}
+
 private:
     Trinary is_strict() const override { return Trinary::True; }
     UP andWith(UP filter, uint32_t estimate) override;
 };
 
-}
+} // namespace search::queryeval

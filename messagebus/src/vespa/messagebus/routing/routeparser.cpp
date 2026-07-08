@@ -1,31 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "routeparser.h"
+
 #include "errordirective.h"
 #include "policydirective.h"
 #include "routedirective.h"
-#include "routeparser.h"
 #include "tcpdirective.h"
 #include "verbatimdirective.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 using std::string_view;
 
 namespace mbus {
 
-bool
-RouteParser::isWhitespace(char c)
-{
+bool RouteParser::isWhitespace(char c) {
     return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t';
 }
 
-IHopDirective::SP
-RouteParser::createRouteDirective(string_view str)
-{
+IHopDirective::SP RouteParser::createRouteDirective(string_view str) {
     return IHopDirective::SP(new RouteDirective(str));
 }
 
-IHopDirective::SP
-RouteParser::createTcpDirective(string_view str)
-{
+IHopDirective::SP RouteParser::createTcpDirective(string_view str) {
     size_t posP = str.find(":");
     if (posP == string::npos || posP == 0) {
         return IHopDirective::SP(); // no host
@@ -35,14 +31,11 @@ RouteParser::createTcpDirective(string_view str)
         return IHopDirective::SP(); // no port
     }
     // FIXME C++17 range-safe from_chars() instead of atoi()
-    return IHopDirective::SP(new TcpDirective(str.substr(0, posP),
-                                              atoi(str.substr(posP + 1, posS - 1).data()),
-                                              str.substr(posS + 1)));
+    return IHopDirective::SP(
+        new TcpDirective(str.substr(0, posP), atoi(str.substr(posP + 1, posS - 1).data()), str.substr(posS + 1)));
 }
 
-IHopDirective::SP
-RouteParser::createPolicyDirective(string_view str)
-{
+IHopDirective::SP RouteParser::createPolicyDirective(string_view str) {
     size_t pos = str.find(":");
     if (pos == string::npos) {
         return IHopDirective::SP(new PolicyDirective(str, ""));
@@ -50,30 +43,22 @@ RouteParser::createPolicyDirective(string_view str)
     return IHopDirective::SP(new PolicyDirective(str.substr(0, pos), str.substr(pos + 1)));
 }
 
-IHopDirective::SP
-RouteParser::createVerbatimDirective(string_view str)
-{
+IHopDirective::SP RouteParser::createVerbatimDirective(string_view str) {
     return IHopDirective::SP(new VerbatimDirective(str));
 }
 
-IHopDirective::SP
-RouteParser::createErrorDirective(string_view str)
-{
+IHopDirective::SP RouteParser::createErrorDirective(string_view str) {
     return IHopDirective::SP(new ErrorDirective(str));
 }
 
-IHopDirective::SP
-RouteParser::createDirective(string_view str)
-{
+IHopDirective::SP RouteParser::createDirective(string_view str) {
     if (str.size() > 2 && str[0] == '[') {
         return createPolicyDirective(str.substr(1, str.size() - 2));
     }
     return createVerbatimDirective(str);
 }
 
-Hop
-RouteParser::createHop(string_view str)
-{
+Hop RouteParser::createHop(string_view str) {
     if (str.empty()) {
         return Hop().addDirective(createErrorDirective("Failed to parse empty string."));
     }
@@ -96,22 +81,18 @@ RouteParser::createHop(string_view str)
     for (size_t from = 0, at = 0, depth = 0; at <= len; ++at) {
         if (at == len || (depth == 0 && str[at] == '/')) {
             if (depth > 0) {
-                return Hop().addDirective(createErrorDirective(
-                                "Unexpected token '': syntax error"));
+                return Hop().addDirective(createErrorDirective("Unexpected token '': syntax error"));
             }
             ret.addDirective(createDirective(str.substr(from, at - from)));
             from = at + 1;
         } else if (isWhitespace(str[at]) && depth == 0) {
             return Hop().addDirective(createErrorDirective(
-                            vespalib::make_string(
-                                    "Failed to completely parse '%s'.",
-                                    std::string(str).c_str())));
+                vespalib::make_string("Failed to completely parse '%s'.", std::string(str).c_str())));
         } else if (str[at] == '[') {
             ++depth;
         } else if (str[at] == ']') {
             if (depth == 0) {
-                return Hop().addDirective(createErrorDirective(
-                                "Unexpected token ']': syntax error"));
+                return Hop().addDirective(createErrorDirective("Unexpected token ']': syntax error"));
             }
             --depth;
         }
@@ -119,17 +100,13 @@ RouteParser::createHop(string_view str)
     return ret;
 }
 
-Route
-RouteParser::createRoute(string_view str)
-{
+Route RouteParser::createRoute(string_view str) {
     Route ret;
     for (size_t from = 0, at = 0, depth = 0; at <= str.size(); ++at) {
         if (at == str.size() || (depth == 0 && isWhitespace(str[at]))) {
             if (from < at - 1) {
                 Hop hop = createHop(str.substr(from, at - from));
-                if (hop.hasDirectives() &&
-                    hop.getDirective(0).getType() == IHopDirective::TYPE_ERROR)
-                {
+                if (hop.hasDirectives() && hop.getDirective(0).getType() == IHopDirective::TYPE_ERROR) {
                     return std::move(Route().addHop(std::move(hop)));
                 }
                 ret.addHop(std::move(hop));
@@ -144,4 +121,4 @@ RouteParser::createRoute(string_view str)
     return ret;
 }
 
-} // mbus
+} // namespace mbus

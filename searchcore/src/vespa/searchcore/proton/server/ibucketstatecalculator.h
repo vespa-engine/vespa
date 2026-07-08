@@ -4,13 +4,14 @@
 
 #include <vespa/vespalib/util/trinary.h>
 
-namespace document { class Bucket; }
+namespace document {
+class Bucket;
+}
 
 namespace proton {
 
-struct IBucketStateCalculator
-{
-    virtual vespalib::Trinary shouldBeReady(const document::Bucket &bucket) const = 0;
+struct IBucketStateCalculator {
+    virtual vespalib::Trinary shouldBeReady(const document::Bucket& bucket) const = 0;
     virtual bool clusterUp() const = 0;
     virtual bool nodeUp() const = 0;
     virtual bool nodeInitializing() const = 0;

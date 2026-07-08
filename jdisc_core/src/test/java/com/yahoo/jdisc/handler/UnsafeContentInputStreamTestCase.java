@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -181,7 +182,7 @@ public class UnsafeContentInputStreamTestCase {
     }
 
     private static BufferedReader asBufferedReader(BufferedContentChannel channel) {
-        return new BufferedReader(new InputStreamReader(asInputStream(channel)));
+        return new BufferedReader(new InputStreamReader(asInputStream(channel), StandardCharsets.UTF_8));
     }
 
     private static UnsafeContentInputStream asInputStream(BufferedContentChannel channel) {

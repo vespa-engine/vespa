@@ -12,19 +12,17 @@ namespace storage::distributor {
  */
 class BucketOwnershipFlags {
     uint8_t _flags;
-    
+
     static constexpr uint8_t owned_in_current_state_flag = 0x1;
     static constexpr uint8_t owned_in_pending_state_flag = 0x2;
-    
+
 public:
-    constexpr BucketOwnershipFlags() noexcept
-        : _flags(0)
-    { }
+    constexpr BucketOwnershipFlags() noexcept : _flags(0) {}
 
     constexpr bool owned_in_current_state() const noexcept { return ((_flags & owned_in_current_state_flag) != 0); }
-    constexpr bool owned_in_pending_state() const noexcept {  return ((_flags & owned_in_pending_state_flag) != 0); }
+    constexpr bool owned_in_pending_state() const noexcept { return ((_flags & owned_in_pending_state_flag) != 0); }
     constexpr void set_owned_in_current_state() noexcept { _flags |= owned_in_current_state_flag; }
     constexpr void set_owned_in_pending_state() noexcept { _flags |= owned_in_pending_state_flag; }
 };
 
-}
+} // namespace storage::distributor

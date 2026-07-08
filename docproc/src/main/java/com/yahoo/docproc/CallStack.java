@@ -149,7 +149,7 @@ public class CallStack {
 
     /**
      * Adds an element just before the first occurence of some other element on
-     * the stack. This can not be called during an iteration.
+     * the stack. This cannot be called during an iteration.
      *
      * @param before
      *            the call to add this before. If this call is not present (the
@@ -170,7 +170,7 @@ public class CallStack {
 
     /**
      * Adds an element just before the first occurence of some element on the
-     * stack. This can not be called during an iteration.
+     * stack. This cannot be called during an iteration.
      *
      * @param before
      *            the call to add this before. If this call is not present (the
@@ -185,7 +185,7 @@ public class CallStack {
 
     /**
      * Adds multiple elements just before the first occurence of some element on
-     * the stack. This can not be called during an iteration.
+     * the stack. This cannot be called during an iteration.
      *
      * @param before the call to add this before. If this call is not present (the
      *               same object instance), the new processor is added as the last element
@@ -204,7 +204,7 @@ public class CallStack {
 
     /**
      * Adds an element just after the first occurence of some other element on
-     * the stack. This can not be called during an iteration.
+     * the stack. This cannot be called during an iteration.
      *
      * @param after
      *            the call to add this before. If this call is not present, (the
@@ -226,7 +226,7 @@ public class CallStack {
 
     /**
      * Adds an element just after the first occurence of some other element on
-     * the stack. This can not be called during an iteration.
+     * the stack. This cannot be called during an iteration.
      *
      * @param after the call to add this after. If this call is not present, (the
      *              same object instance), the new processor is added as the last element
@@ -239,7 +239,7 @@ public class CallStack {
 
     /**
      * Adds multiple elements just after another given element on the stack.
-     * This can not be called during an iteration.
+     * This cannot be called during an iteration.
      *
      * @param after the call to add this before. If this call is not present, (the
      *              same object instance), the new processor is added as the last element

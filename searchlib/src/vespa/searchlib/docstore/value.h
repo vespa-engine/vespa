@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 
 namespace search::docstore {
 
@@ -21,10 +21,10 @@ public:
     Value();
     Value(uint64_t syncToken);
 
-    Value(Value &&rhs) = default;
-    Value &operator=(Value &&rhs) = default;
+    Value(Value&& rhs) = default;
+    Value& operator=(Value&& rhs) = default;
 
-    Value(const Value &rhs);
+    Value(const Value& rhs);
     Value& operator=(const Value&);
     ~Value();
 
@@ -36,17 +36,18 @@ public:
      * Compress buffer into temporary buffer and copy temporary buffer to
      * value along with compression config.
      */
-    void set(vespalib::DataBuffer &&buf, ssize_t len, CompressionConfig compression);
+    void set(vespalib::DataBuffer&& buf, ssize_t len, CompressionConfig compression);
     // Keep buffer uncompressed
-    void set(vespalib::DataBuffer &&buf, ssize_t len);
+    void set(vespalib::DataBuffer&& buf, ssize_t len);
 
     Result decompressed() const;
 
     size_t size() const { return _compressedSize; }
     size_t capacity() const { return _buf ? _buf->size() : 0; }
     bool empty() const { return size() == 0; }
-    operator const void *() const { return get(); }
-    const void *get() const;
+    operator const void*() const { return get(); }
+    const void* get() const;
+
 private:
     uint64_t                _syncToken;
     uint64_t                _uncompressedCrc;
@@ -56,4 +57,4 @@ private:
     CompressionConfig::Type _compression;
 };
 
-}
+} // namespace search::docstore

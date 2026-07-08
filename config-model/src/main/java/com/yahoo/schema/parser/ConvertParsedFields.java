@@ -78,6 +78,10 @@ public class ConvertParsedFields {
     }
 
     void convertAttribute(Schema schema, SDField field, ParsedAttribute parsed) {
+        if (GeoPos.isAnyPos(field.getDataType())) {
+            convertPositionAttribute(schema, field, parsed);
+            return;
+        }
         String name = parsed.name();
         String fieldName = field.getName();
         Attribute attribute = null;
@@ -115,6 +119,45 @@ public class ConvertParsedFields {
         if (sorting.isPresent()) {
             convertSorting(schema, field, sorting.get(), name);
         }
+    }
+
+    private void convertPositionAttribute(Schema schema, SDField field, ParsedAttribute parsed) {
+        String fieldName = field.getName();
+
+        // Attribute settings on a position field only make sense if the field actually does attributing
+        if (!field.doesAttributing()) {
+            throw new IllegalArgumentException("For schema '" + schema.getName() +
+                "', field '" + fieldName + "': attribute properties require 'attribute' in the indexing statement");
+        }
+
+        // Reject renamed attributes — position fields only support the default attribute block
+        if (!parsed.name().equals(fieldName)) {
+            throw new IllegalArgumentException("For schema '" + schema.getName() +
+                "', field '" + fieldName + "': position fields do not support named attribute '" + parsed.name() + "'");
+        }
+
+        // Reject settings that are nonsensical or unsupported for position fields
+        if (parsed.getFastRank() || parsed.getMutable() || parsed.getEnableOnlyBitVector()
+                || parsed.getDistanceMetric().isPresent() || parsed.getSorting().isPresent()
+                || !parsed.getAliases().isEmpty()) {
+            throw new IllegalArgumentException("For schema '" + schema.getName() +
+                "', field '" + fieldName + "': position fields only support 'fast-search', 'fast-access', and 'paged' attribute settings");
+        }
+
+        // If only fast-search or empty: no-op. CreatePositionZCurve already sets fast-search on the zcurve attribute.
+        // Avoid creating an Attribute here so AttributesImplicitWord (which runs before CreatePositionZCurve) does not
+        // see a non-empty attributes map and flip this field to WORD matching.
+        if (!parsed.getFastAccess() && !parsed.getPaged()) {
+            return;
+        }
+
+        // Create a temporary Attribute to carry fast-access/paged to CreatePositionZCurve
+        boolean isArray = GeoPos.isPosArray(field.getDataType());
+        Attribute attribute = new Attribute(fieldName, Attribute.Type.LONG,
+            isArray ? Attribute.CollectionType.ARRAY : Attribute.CollectionType.SINGLE);
+        attribute.setFastAccess(parsed.getFastAccess());
+        attribute.setPaged(parsed.getPaged());
+        field.addAttribute(attribute);
     }
 
     private void convertRankType(SDField field, String indexName, String rankType) {

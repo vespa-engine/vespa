@@ -2,26 +2,27 @@
 #pragma once
 
 #include "externslobrokpolicy.h"
-#include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
-#include <vespa/vdslib/distribution/distribution.h>
+
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/messagebus/routing/hop.h>
+#include <vespa/vdslib/distribution/distribution.h>
+
 #include <shared_mutex>
 
 namespace config {
-    class ICallback;
-    class ConfigFetcher;
-}
+class ICallback;
+class ConfigFetcher;
+} // namespace config
 
 namespace storage::lib {
-    class Distribution;
-    class ClusterState;
-}
+class Distribution;
+class ClusterState;
+} // namespace storage::lib
 
 namespace documentapi {
 
-class ContentPolicy : public ExternSlobrokPolicy
-{
+class ContentPolicy : public ExternSlobrokPolicy {
 private:
     document::BucketIdFactory                         _bucketIdFactory;
     mutable std::shared_mutex                         _rw_lock;
@@ -47,8 +48,8 @@ private:
 public:
     explicit ContentPolicy(const string& param);
     ~ContentPolicy() override;
-    void doSelect(mbus::RoutingContext &context) override;
-    void merge(mbus::RoutingContext &context) override;
+    void doSelect(mbus::RoutingContext& context) override;
+    void merge(mbus::RoutingContext& context) override;
 
     /**
      * @return a pointer to the system state registered with this policy. If
@@ -60,8 +61,8 @@ public:
     string init() override;
 
 private:
-    static string createConfigId(const string & clusterName);
-    static string createPattern(const string & clusterName, int distributor);
+    static string createConfigId(const string& clusterName);
+    static string createPattern(const string& clusterName, int distributor);
 };
 
-}
+} // namespace documentapi

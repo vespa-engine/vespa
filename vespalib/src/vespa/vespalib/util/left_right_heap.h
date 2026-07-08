@@ -21,10 +21,10 @@ namespace vespalib {
  **/
 struct LeftHeap {
     static void require_left_heap() {} // for compile-time checks
-    template <typename T> static T &front(T *begin, T *) { return *begin; }
-    template <typename T, typename C> static void push(T *begin, T *end, C cmp);
-    template <typename T, typename C> static void pop(T *begin, T *end, C cmp);
-    template <typename T, typename C> static void adjust(T *begin, T *end, C cmp);
+    template <typename T> static T& front(T* begin, T*) { return *begin; }
+    template <typename T, typename C> static void push(T* begin, T* end, C cmp);
+    template <typename T, typename C> static void pop(T* begin, T* end, C cmp);
+    template <typename T, typename C> static void adjust(T* begin, T* end, C cmp);
 };
 
 /**
@@ -40,10 +40,10 @@ struct LeftHeap {
  **/
 struct RightHeap {
     static void require_right_heap() {} // for compile-time checks
-    template <typename T> static T &front(T *, T *end) { return *(end - 1); }
-    template <typename T, typename C> static void push(T *begin, T *end, C cmp);
-    template <typename T, typename C> static void pop(T *begin, T *end, C cmp);
-    template <typename T, typename C> static void adjust(T *begin, T *end, C cmp);
+    template <typename T> static T& front(T*, T* end) { return *(end - 1); }
+    template <typename T, typename C> static void push(T* begin, T* end, C cmp);
+    template <typename T, typename C> static void pop(T* begin, T* end, C cmp);
+    template <typename T, typename C> static void adjust(T* begin, T* end, C cmp);
 };
 
 /**
@@ -53,12 +53,10 @@ struct RightHeap {
  **/
 struct LeftArrayHeap {
     static void require_left_heap() {} // for compile-time checks
-    template <typename T> static T &front(T *, T *end) { return *(end - 1); }
-    template <typename T, typename C> static void push(T *begin, T *end, C cmp);
-    template <typename T, typename C> static void pop(T *, T *, C) {}
-    template <typename T, typename C> static void adjust(T *begin, T *end, C cmp) {
-        push(begin, end, cmp);
-    }
+    template <typename T> static T& front(T*, T* end) { return *(end - 1); }
+    template <typename T, typename C> static void push(T* begin, T* end, C cmp);
+    template <typename T, typename C> static void pop(T*, T*, C) {}
+    template <typename T, typename C> static void adjust(T* begin, T* end, C cmp) { push(begin, end, cmp); }
 };
 
 /**
@@ -68,12 +66,10 @@ struct LeftArrayHeap {
  **/
 struct RightArrayHeap {
     static void require_right_heap() {} // for compile-time checks
-    template <typename T> static T &front(T *begin, T *) { return *begin; }
-    template <typename T, typename C> static void push(T *begin, T *end, C cmp);
-    template <typename T, typename C> static void pop(T *, T *, C) {}
-    template <typename T, typename C> static void adjust(T *begin, T *end, C cmp) {
-        push(begin, end, cmp);
-    }
+    template <typename T> static T& front(T* begin, T*) { return *begin; }
+    template <typename T, typename C> static void push(T* begin, T* end, C cmp);
+    template <typename T, typename C> static void pop(T*, T*, C) {}
+    template <typename T, typename C> static void adjust(T* begin, T* end, C cmp) { push(begin, end, cmp); }
 };
 
 /**
@@ -83,10 +79,10 @@ struct RightArrayHeap {
  **/
 struct LeftStdHeap {
     static void require_left_heap() {} // for compile-time checks
-    template <typename T> static T &front(T *begin, T *) { return *begin; }
-    template <typename T, typename C> static void push(T *begin, T *end, C cmp);
-    template <typename T, typename C> static void pop(T *begin, T *end, C cmp);
-    template <typename T, typename C> static void adjust(T *begin, T *end, C cmp);
+    template <typename T> static T& front(T* begin, T*) { return *begin; }
+    template <typename T, typename C> static void push(T* begin, T* end, C cmp);
+    template <typename T, typename C> static void pop(T* begin, T* end, C cmp);
+    template <typename T, typename C> static void adjust(T* begin, T* end, C cmp);
 };
 
 } // namespace vespalib

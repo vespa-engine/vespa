@@ -8,19 +8,18 @@
 namespace storage {
 
 namespace framework {
-    struct Clock;
-    class Component;
-    class Thread;
-}
+struct Clock;
+class Component;
+class Thread;
+} // namespace framework
 
 class PersistenceHandler;
 class FileStorHandler;
 
-class PersistenceThread final : public DiskThread, public Types
-{
+class PersistenceThread final : public DiskThread, public Types {
 public:
-    PersistenceThread(PersistenceHandler & handler, FileStorHandler & fileStorHandler,
-                      uint32_t stripeId, framework::Component & component);
+    PersistenceThread(PersistenceHandler& handler, FileStorHandler& fileStorHandler, uint32_t stripeId,
+                      framework::Component& component);
     ~PersistenceThread() override;
 
     /** Waits for current operation to be finished. */
@@ -37,4 +36,4 @@ private:
     void run(framework::ThreadHandle&) override;
 };
 
-} // storage
+} // namespace storage

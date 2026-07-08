@@ -6,22 +6,25 @@
 #include "servicelayernodecontext.h"
 #include "storagenode.h"
 #include "vespa/vespalib/util/jsonstream.h"
+
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
 #include <vespa/vespalib/util/hw_info.h>
 
 namespace vespa::config::content::internal {
-    class InternalStorFilestorType;
-    class InternalPersistenceType;
-}
+class InternalStorFilestorType;
+class InternalPersistenceType;
+} // namespace vespa::config::content::internal
 namespace vespa::config::content::core::internal {
-    class InternalStorVisitorType;
+class InternalStorVisitorType;
 }
 
 namespace storage {
 
-namespace spi { struct PersistenceProvider; }
+namespace spi {
+struct PersistenceProvider;
+}
 
 class Bouncer;
 class BucketManager;
@@ -31,16 +34,16 @@ class MergeThrottler;
 class ModifiedBucketChecker;
 class VisitorManager;
 
-class ServiceLayerNode
-        : public StorageNode,
-          private VisitorMessageSessionFactory,
-          private NodeStateReporter
+class ServiceLayerNode : public StorageNode,
+                         private VisitorMessageSessionFactory,
+                         private NodeStateReporter
 
 {
 public:
-    using PersistenceConfig  = vespa::config::content::internal::InternalPersistenceType;
-    using StorVisitorConfig  = vespa::config::content::core::internal::InternalStorVisitorType;
+    using PersistenceConfig = vespa::config::content::internal::InternalPersistenceType;
+    using StorVisitorConfig = vespa::config::content::core::internal::InternalStorVisitorType;
     using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
+
 private:
     ServiceLayerNodeContext&            _context;
     spi::PersistenceProvider&           _persistenceProvider;
@@ -62,7 +65,7 @@ public:
     using UP = std::unique_ptr<ServiceLayerNode>;
 
     struct ServiceLayerBootstrapConfigs {
-        BootstrapConfigs storage_bootstrap_configs;
+        BootstrapConfigs                    storage_bootstrap_configs;
         std::unique_ptr<PersistenceConfig>  persistence_cfg;
         std::unique_ptr<StorVisitorConfig>  visitor_cfg;
         std::unique_ptr<StorFilestorConfig> filestor_cfg;
@@ -73,12 +76,9 @@ public:
         ServiceLayerBootstrapConfigs& operator=(ServiceLayerBootstrapConfigs&&) noexcept;
     };
 
-    ServiceLayerNode(const config::ConfigUri& configUri,
-                     ServiceLayerNodeContext& context,
-                     const vespalib::HwInfo& hw_info,
-                     ServiceLayerBootstrapConfigs bootstrap_configs,
-                     ApplicationGenerationFetcher& generationFetcher,
-                     spi::PersistenceProvider& persistenceProvider,
+    ServiceLayerNode(const config::ConfigUri& configUri, ServiceLayerNodeContext& context,
+                     const vespalib::HwInfo& hw_info, ServiceLayerBootstrapConfigs bootstrap_configs,
+                     ApplicationGenerationFetcher& generationFetcher, spi::PersistenceProvider& persistenceProvider,
                      const VisitorFactory::Map& externalVisitors);
     ~ServiceLayerNode() override;
     /**
@@ -96,14 +96,14 @@ public:
     ResumeGuard pause() override;
 
 private:
-    void report(vespalib::JsonStream &writer) const override;
+    void report(vespalib::JsonStream& writer) const override;
     void initializeNodeSpecific() override;
     void perform_post_chain_creation_init_steps() override;
-    void handleLiveConfigUpdate(const InitialGuard & initGuard) override;
+    void handleLiveConfigUpdate(const InitialGuard& initGuard) override;
     VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) override;
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;
-    void createChain(IStorageChainBuilder &builder) override;
+    void createChain(IStorageChainBuilder& builder) override;
     void on_bouncer_config_changed() override;
 };
 
-} // storage
+} // namespace storage

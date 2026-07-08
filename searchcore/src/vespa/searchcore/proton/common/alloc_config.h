@@ -10,11 +10,10 @@ enum class SubDbType;
 
 /*
  * Class representing allocation config for proton which can be used
- * to make an allocation strategy for large data structures owned by a 
+ * to make an allocation strategy for large data structures owned by a
  * document sub db (e.g. attribute vectors, document meta store).
  */
-class AllocConfig
-{
+class AllocConfig {
     AllocStrategy  _alloc_strategy; // baseline before adjusting for redundancy / searchable copies
     const uint32_t _redundancy;
     const uint32_t _searchable_copies;
@@ -23,12 +22,10 @@ public:
     AllocConfig(const AllocStrategy& alloc_strategy, uint32_t redundancy, uint32_t searchable_copies);
     ~AllocConfig();
 
-    bool operator==(const AllocConfig &rhs) const noexcept;
-    bool operator!=(const AllocConfig &rhs) const noexcept {
-        return !operator==(rhs);
-    }
+    bool operator==(const AllocConfig& rhs) const noexcept;
+    bool operator!=(const AllocConfig& rhs) const noexcept { return !operator==(rhs); }
     AllocStrategy make_alloc_strategy(SubDbType sub_db_type) const;
     static AllocConfig makeDefault() { return AllocConfig(AllocStrategy(), 1, 1); }
 };
 
-}
+} // namespace proton

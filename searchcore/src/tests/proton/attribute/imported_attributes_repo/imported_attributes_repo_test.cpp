@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <algorithm>
 
 using proton::ImportedAttributesRepo;
@@ -17,15 +18,10 @@ using search::attribute::ImportedAttributeVector;
 using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 
-ImportedAttributeVector::SP
-createAttr(const std::string &name)
-{
-    return ImportedAttributeVectorFactory::create(name,
-                                                  ReferenceAttribute::SP(),
-                                                  std::shared_ptr<search::IDocumentMetaStoreContext>(),
-                                                  AttributeVector::SP(),
-                                                  std::shared_ptr<const search::IDocumentMetaStoreContext>(),
-                                                  false);
+ImportedAttributeVector::SP createAttr(const std::string& name) {
+    return ImportedAttributeVectorFactory::create(
+        name, ReferenceAttribute::SP(), std::shared_ptr<search::IDocumentMetaStoreContext>(), AttributeVector::SP(),
+        std::shared_ptr<const search::IDocumentMetaStoreContext>(), false);
 }
 
 class ImportedAttributesRepoTest : public ::testing::Test {
@@ -33,24 +29,16 @@ protected:
     ImportedAttributesRepo repo;
     ImportedAttributesRepoTest();
     ~ImportedAttributesRepoTest() override;
-    void add(ImportedAttributeVector::SP attr) {
-        repo.add(attr->getName(), attr);
-    }
-    ImportedAttributeVector::SP get(const std::string &name) const {
-        return repo.get(name);
-    }
+    void add(ImportedAttributeVector::SP attr) { repo.add(attr->getName(), attr); }
+    ImportedAttributeVector::SP get(const std::string& name) const { return repo.get(name); }
 };
 
-ImportedAttributesRepoTest::ImportedAttributesRepoTest()
-    : ::testing::Test(),
-      repo()
-{
+ImportedAttributesRepoTest::ImportedAttributesRepoTest() : ::testing::Test(), repo() {
 }
 
 ImportedAttributesRepoTest::~ImportedAttributesRepoTest() = default;
 
-TEST_F(ImportedAttributesRepoTest, require_that_attributes_can_be_added_and_retrieved)
-{
+TEST_F(ImportedAttributesRepoTest, require_that_attributes_can_be_added_and_retrieved) {
     ImportedAttributeVector::SP fooAttr = createAttr("foo");
     ImportedAttributeVector::SP barAttr = createAttr("bar");
     add(fooAttr);
@@ -60,8 +48,7 @@ TEST_F(ImportedAttributesRepoTest, require_that_attributes_can_be_added_and_retr
     EXPECT_EQ(get("bar").get(), barAttr.get());
 }
 
-TEST_F(ImportedAttributesRepoTest, require_that_attribute_can_be_replaced)
-{
+TEST_F(ImportedAttributesRepoTest, require_that_attribute_can_be_replaced) {
     ImportedAttributeVector::SP attr1 = createAttr("foo");
     ImportedAttributeVector::SP attr2 = createAttr("foo");
     add(attr1);
@@ -70,23 +57,19 @@ TEST_F(ImportedAttributesRepoTest, require_that_attribute_can_be_replaced)
     EXPECT_EQ(get("foo").get(), attr2.get());
 }
 
-TEST_F(ImportedAttributesRepoTest, require_that_not_found_attribute_returns_nullptr)
-{
-    ImportedAttributeVector *notFound = nullptr;
+TEST_F(ImportedAttributesRepoTest, require_that_not_found_attribute_returns_nullptr) {
+    ImportedAttributeVector* notFound = nullptr;
     EXPECT_EQ(get("not_found").get(), notFound);
 }
 
-TEST_F(ImportedAttributesRepoTest, require_that_all_attributes_can_be_retrieved)
-{
+TEST_F(ImportedAttributesRepoTest, require_that_all_attributes_can_be_retrieved) {
     add(createAttr("foo"));
     add(createAttr("bar"));
     std::vector<ImportedAttributeVector::SP> list;
     repo.getAll(list);
     EXPECT_EQ(2u, list.size());
     // Don't depend on internal (unspecified) ordering
-    std::sort(list.begin(), list.end(), [](auto& lhs, auto& rhs){
-        return lhs->getName() < rhs->getName();
-    });
+    std::sort(list.begin(), list.end(), [](auto& lhs, auto& rhs) { return lhs->getName() < rhs->getName(); });
     EXPECT_EQ("bar", list[0]->getName());
     EXPECT_EQ("foo", list[1]->getName());
 }

@@ -97,13 +97,29 @@ func (c *CurlWriter) print(request *http.Request, tlsOptions TLSOptions, timeout
 	return err
 }
 
+// AllowedUrn represents an allowed URN for private service access.
+type AllowedUrn struct {
+	Type string `json:"type"`
+	Urn  string `json:"urn"`
+}
+
+// PrivateServiceInfo contains information about private service configuration.
+type PrivateServiceInfo struct {
+	ServiceID   string       `json:"serviceId,omitempty"`
+	Type        string       `json:"type,omitempty"`
+	AllowedUrns []AllowedUrn `json:"allowedUrns,omitempty"`
+	AuthMethods []string     `json:"authMethods,omitempty"`
+	Endpoints   []string     `json:"endpoints,omitempty"`
+}
+
 // Service represents a Vespa service.
 type Service struct {
-	BaseURL    string
-	Name       string
-	AuthMethod string
-	TLSOptions TLSOptions
-	CurlWriter CurlWriter
+	BaseURL        string
+	Name           string
+	AuthMethod     string
+	TLSOptions     TLSOptions
+	CurlWriter     CurlWriter
+	PrivateService *PrivateServiceInfo
 
 	deployAPI     bool
 	auth          Authenticator
@@ -227,28 +243,48 @@ func (s *Service) Wait(timeout time.Duration) error {
 	return nil
 }
 
-func (s *Service) Description() string {
+// Type returns the type of this service (either "container" or "deploy API").
+func (s *Service) Type() string {
 	if s.deployAPI {
 		return "deploy API"
 	}
-	if s.Name == "" {
-		return "container"
-	}
-	return "container " + s.Name
+	return "container"
 }
 
-// FindService returns the service of given name, found among services, if any.
+// ServiceName returns the name of this service, which may be empty.
+func (s *Service) ServiceName() string {
+	return s.Name
+}
+
+// Description returns a human-readable description of this service.
+func (s *Service) Description() string {
+	if s.Name == "" {
+		return s.Type()
+	}
+	return s.Type() + " " + s.Name
+}
+
+// FindService returns the service matching name and authMethod from services,
+// with fallbacks if no exact match was found.
 func FindService(name string, authMethod string, services []*Service) (*Service, error) {
+	// First pass: exact match on both name and authMethod
 	applicableServices := make([]*Service, 0, len(services))
 	for _, s := range services {
+		if name == s.Name && s.AuthMethod == authMethod {
+			return s, nil
+		}
 		if s.AuthMethod == authMethod || s.AuthMethod == "" {
 			applicableServices = append(applicableServices, s)
 		}
 	}
-	if name == "" && len(applicableServices) == 1 {
-		return applicableServices[0], nil
+	// Second pass: match by name among services with compatible authMethod
+	for _, s := range applicableServices {
+		if name == "" || name == s.Name {
+			return s, nil
+		}
 	}
 	names := make([]string, 0, len(services))
+	// Third pass: match by name among all services, or generate error message
 	for _, s := range services {
 		if name == s.Name {
 			return s, nil

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "documentreply.h"
+
 #include <vespa/messagebus/message.h>
 
 namespace documentapi {
@@ -57,12 +58,9 @@ public:
 
     [[nodiscard]] uint32_t getApproxSize() const override;
 
-    void setApproxSize(uint32_t approxSize) {
-        _approxSize = approxSize;
-    }
+    void setApproxSize(uint32_t approxSize) { _approxSize = approxSize; }
 
     const mbus::string& getProtocol() const override;
 };
 
-}
-
+} // namespace documentapi

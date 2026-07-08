@@ -4,18 +4,12 @@
 
 namespace search::test {
 DocIdIterator::DocIdIterator(const std::vector<uint32_t>& docIds, bool strict)
-    : search::queryeval::SearchIterator(),
-      _strict(strict),
-      _currIndex(0),
-      _docIds(docIds)
-{
+    : search::queryeval::SearchIterator(), _strict(strict), _currIndex(0), _docIds(docIds) {
 }
 
 DocIdIterator::~DocIdIterator() = default;
 
-void
-DocIdIterator::initRange(uint32_t beginId, uint32_t endId)
-{
+void DocIdIterator::initRange(uint32_t beginId, uint32_t endId) {
     SearchIterator::initRange(beginId, endId);
     _currIndex = 0;
     if (_strict) {
@@ -23,9 +17,7 @@ DocIdIterator::initRange(uint32_t beginId, uint32_t endId)
     }
 }
 
-void
-DocIdIterator::doSeek(uint32_t docId)
-{
+void DocIdIterator::doSeek(uint32_t docId) {
     while ((_currIndex < _docIds.size()) && (_docIds[_currIndex] < docId)) {
         _currIndex++;
     }
@@ -38,16 +30,12 @@ DocIdIterator::doSeek(uint32_t docId)
     }
 }
 
-void
-DocIdIterator::doUnpack(uint32_t docid)
-{
-    (void) docid;
+void DocIdIterator::doUnpack(uint32_t docid) {
+    (void)docid;
 }
 
-vespalib::Trinary
-DocIdIterator::is_strict() const
-{
+vespalib::Trinary DocIdIterator::is_strict() const {
     return _strict ? vespalib::Trinary::True : vespalib::Trinary::False;
 }
 
-}
+} // namespace search::test

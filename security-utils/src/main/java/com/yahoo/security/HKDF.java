@@ -6,6 +6,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -80,10 +81,10 @@ public final class HKDF {
         Objects.requireNonNull(salt);
         Objects.requireNonNull(ikm);
         if (ikm.length == 0) {
-            throw new IllegalArgumentException("HKDF extraction IKM array can not be empty");
+            throw new IllegalArgumentException("HKDF extraction IKM array cannot be empty");
         }
         if (salt.length == 0) {
-            throw new IllegalArgumentException("HKDF extraction salt array can not be empty");
+            throw new IllegalArgumentException("HKDF extraction salt array cannot be empty");
         }
     }
 
@@ -179,8 +180,7 @@ public final class HKDF {
             throw new IllegalArgumentException("Requested negative or zero number of HKDF output bytes");
         }
         if (wantedBytes > MAX_OUTPUT_SIZE) {
-            throw new IllegalArgumentException("Too many requested HKDF output bytes (max %d, got %d)"
-                                               .formatted(MAX_OUTPUT_SIZE, wantedBytes));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Too many requested HKDF output bytes (max %d, got %d)", MAX_OUTPUT_SIZE, wantedBytes));
         }
     }
 

@@ -6,19 +6,15 @@
 namespace search {
 namespace expression {
 
-class BinaryFunctionNode : public MultiArgFunctionNode
-{
+class BinaryFunctionNode : public MultiArgFunctionNode {
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(BinaryFunctionNode);
-    BinaryFunctionNode() { }
-    BinaryFunctionNode(ExpressionNode::UP arg1, ExpressionNode::UP arg2) :
-        MultiArgFunctionNode()
-    {
+    BinaryFunctionNode() {}
+    BinaryFunctionNode(ExpressionNode::UP arg1, ExpressionNode::UP arg2) : MultiArgFunctionNode() {
         appendArg(std::move(arg1));
         appendArg(std::move(arg2));
     }
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -24,11 +25,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ApplicationCuratorDatabaseTest {
 
     private final MockCurator curator = new MockCurator();
+    private final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
 
     @Test
     public void testReindexingStatusSerialization() {
         ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator, configserverConfig);
 
         assertEquals(Optional.empty(), db.readReindexingStatus(id));
 
@@ -47,7 +49,7 @@ public class ApplicationCuratorDatabaseTest {
     @Test
     public void testPendingRestartsSerialization() {
         ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator, configserverConfig);
 
         assertEquals(Map.of(), db.readPendingRestarts(id).generationsForRestarts());
 
@@ -73,11 +75,10 @@ public class ApplicationCuratorDatabaseTest {
     @Test
     public void testReadingAndWritingApplicationData() {
         ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator, configserverConfig);
 
         assertEquals(Optional.empty(), db.applicationData(id));
 
-        db.createApplicationInOldFormat(id);
         assertEquals(Optional.empty(), db.applicationData(id)); // still empty, as no data has been written to node
         deleteApplication(db, id);
 
@@ -90,23 +91,23 @@ public class ApplicationCuratorDatabaseTest {
         assertFalse(applicationData.get().lastDeployedSession().isPresent());
 
         // Prepare session 2, no active session
-        prepareSessionOldFormat(db, id, 2, OptionalLong.empty());
-        // Activate session 2, last deployed session not present (not writing json)
-        activateSessionOldFormat(db, id, 2);
+        prepareSession(db, id, 2, OptionalLong.empty());
+        // Activate session 2
+        activateSession(db, id, 2);
         // Can be read as session id only
         applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
         assertEquals(id, applicationData.get().applicationId());
         assertTrue(applicationData.get().activeSession().isPresent());
         assertEquals(2, applicationData.get().activeSession().get().longValue());
-        assertFalse(applicationData.get().lastDeployedSession().isPresent());
+        assertTrue(applicationData.get().lastDeployedSession().isPresent());
         // Can be read as session data as well
         applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
         assertEquals(id, applicationData.get().applicationId());
         assertTrue(applicationData.get().activeSession().isPresent());
         assertEquals(2, applicationData.get().activeSession().get().longValue());
-        assertFalse(applicationData.get().lastDeployedSession().isPresent());
+        assertTrue(applicationData.get().lastDeployedSession().isPresent());
 
         // Prepare session 3, last deployed session is still 2
         prepareSession(db, id, 3, OptionalLong.of(2));
@@ -157,18 +158,8 @@ public class ApplicationCuratorDatabaseTest {
         }
     }
 
-    private void prepareSessionOldFormat(ApplicationCuratorDatabase db, ApplicationId applicationId, long sessionId, OptionalLong activesSessionId) {
-        return; // Nothing to do, just return
-    }
-
     private void activateSession(ApplicationCuratorDatabase db, ApplicationId applicationId, long sessionId) {
         try (var t = db.createWriteActiveTransaction(new CuratorTransaction(curator), applicationId, sessionId)) {
-            t.commit();
-        }
-    }
-
-    private void activateSessionOldFormat(ApplicationCuratorDatabase db, ApplicationId applicationId, long sessionId) {
-        try (var t = db.createWriteActiveTransactionInOldFormat(new CuratorTransaction(curator), applicationId, sessionId)) {
             t.commit();
         }
     }

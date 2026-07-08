@@ -7,7 +7,7 @@ package com.yahoo.concurrent;
  */
 public class ManualTimer implements Timer {
 
-    private long millis = 0;
+    private volatile long millis = 0;
     public void set(long ms) { millis = ms; }
     public void advance(long ms) { millis += ms; }
 

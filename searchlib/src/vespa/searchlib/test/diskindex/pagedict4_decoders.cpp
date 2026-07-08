@@ -4,11 +4,7 @@
 
 namespace search::diskindex::test {
 
-PageDict4Decoders::PageDict4Decoders(uint32_t chunkSize, uint64_t numWordIds)
-    : ssd(),
-      spd(),
-      pd()
-{
+PageDict4Decoders::PageDict4Decoders(uint32_t chunkSize, uint64_t numWordIds) : ssd(), spd(), pd() {
     ssd._minChunkDocs = chunkSize;
     ssd._numWordIds = numWordIds;
     spd.copyParams(ssd);
@@ -17,4 +13,4 @@ PageDict4Decoders::PageDict4Decoders(uint32_t chunkSize, uint64_t numWordIds)
 
 PageDict4Decoders::~PageDict4Decoders() = default;
 
-}
+} // namespace search::diskindex::test

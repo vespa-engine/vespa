@@ -55,9 +55,9 @@ vespa_define_module(
     src/tests/proton/attribute/attribute_aspect_delayer
     src/tests/proton/attribute/attribute_directory
     src/tests/proton/attribute/attribute_initializer
+    src/tests/proton/attribute/attribute_load_memory_calculator
     src/tests/proton/attribute/attribute_manager
     src/tests/proton/attribute/attribute_populator
-    src/tests/proton/attribute/attribute_transient_memory_calculator
     src/tests/proton/attribute/attribute_usage_filter
     src/tests/proton/attribute/attribute_usage_notifier
     src/tests/proton/attribute/attribute_usage_stats

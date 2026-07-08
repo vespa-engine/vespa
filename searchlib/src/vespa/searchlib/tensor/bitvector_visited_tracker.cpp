@@ -4,11 +4,9 @@
 
 namespace search::tensor {
 
-BitVectorVisitedTracker::BitVectorVisitedTracker(uint32_t nodeid_limit, uint32_t)
-    : _visited(nodeid_limit)
-{
+BitVectorVisitedTracker::BitVectorVisitedTracker(uint32_t nodeid_limit, uint32_t) : _visited(nodeid_limit) {
 }
 
 BitVectorVisitedTracker::~BitVectorVisitedTracker() = default;
 
-}
+} // namespace search::tensor

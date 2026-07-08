@@ -10,6 +10,7 @@ import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
@@ -44,7 +45,7 @@ public class InvokeSyncTest {
 
     @After
     public void tearDown() {
-        System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
+        System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8));
         target.close();
         acceptor.shutdown().join();
         client.transport().shutdown().join();
@@ -78,15 +79,15 @@ public class InvokeSyncTest {
     @org.junit.Test
     public void testRpcInvoker() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(baos));
+        System.setOut(new PrintStream(baos, true, StandardCharsets.UTF_8));
         RpcInvoker.main(new String[] {"-h", "localhost:"+acceptor.port(), "concat", "s:foo", "s:bar"});
         baos.flush();
-        assertEquals(baos.toString(), "foobar\n");
+        assertEquals(baos.toString(StandardCharsets.UTF_8), "foobar\n");
         baos.reset();
-        System.setOut(new PrintStream(baos));
+        System.setOut(new PrintStream(baos, true, StandardCharsets.UTF_8));
         RpcInvoker.main(new String[] {"-h", "localhost:"+acceptor.port(), "alltypes", "b:1", "h:2", "i:3", "l:4", "f:5.0", "d:6.0", "s:baz"});
         baos.flush();
-        assertEquals(baos.toString(), "This was alltypes. The string param was: baz\n");
+        assertEquals(baos.toString(StandardCharsets.UTF_8), "This was alltypes. The string param was: baz\n");
     }
 
     @org.junit.Test

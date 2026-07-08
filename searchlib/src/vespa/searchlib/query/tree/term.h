@@ -2,8 +2,10 @@
 #pragma once
 
 #include "node.h"
+
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
+
 #include <string>
 
 namespace search::query {
@@ -12,8 +14,7 @@ namespace search::query {
  * This is a leaf in the Query tree. Sort of. Phrases are both terms
  * and intermediate nodes.
  */
-class Term
-{
+class Term {
     std::string _view;
     int32_t     _id;
     Weight      _weight;
@@ -32,7 +33,7 @@ public:
 
     void setStateFrom(const Term& other);
 
-    const std::string & getView() const noexcept { return _view; }
+    const std::string& getView() const noexcept { return _view; }
     Weight getWeight() const noexcept { return _weight; }
     int32_t getId() const noexcept { return _id; }
     [[nodiscard]] bool isRanked() const noexcept { return _ranked; }
@@ -46,38 +47,34 @@ public:
     virtual queryeval::FieldSpec inner_field_spec(const queryeval::FieldSpec& parentSpec) const;
 
 protected:
-    Term(const std::string & view, int32_t id, Weight weight);
+    Term(const std::string& view, int32_t id, Weight weight);
 };
 
 class TermNode : public Node, public Term {
 protected:
-    TermNode(const std::string & view, int32_t id, Weight weight) : Term(view, id, weight) {}
+    TermNode(const std::string& view, int32_t id, Weight weight) : Term(view, id, weight) {}
 };
 /**
  * Generic functionality for most of Term's derived classes.
  */
-template <typename T>
-class TermBase : public TermNode {
+template <typename T> class TermBase : public TermNode {
     T _term;
 
 public:
     using Type = T;
 
     ~TermBase() override = 0;
-    const T &getTerm() const { return _term; }
+    const T& getTerm() const { return _term; }
 
 protected:
-    TermBase(T term, const std::string & view, int32_t id, Weight weight);
+    TermBase(T term, const std::string& view, int32_t id, Weight weight);
 };
 
-
 template <typename T>
-TermBase<T>::TermBase(T term, const std::string & view, int32_t id, Weight weight)
-    : TermNode(view, id, weight),
-       _term(std::move(term))
-{}
-
-template <typename T>
-TermBase<T>::~TermBase() = default;
-
+TermBase<T>::TermBase(T term, const std::string& view, int32_t id, Weight weight)
+    : TermNode(view, id, weight), _term(std::move(term)) {
 }
+
+template <typename T> TermBase<T>::~TermBase() = default;
+
+} // namespace search::query

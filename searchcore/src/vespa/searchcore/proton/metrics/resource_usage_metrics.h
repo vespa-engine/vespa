@@ -10,8 +10,7 @@ namespace proton {
 /**
  * Usage metrics for various resources in this search engine.
  */
-struct ResourceUsageMetrics : metrics::MetricSet
-{
+struct ResourceUsageMetrics : metrics::MetricSet {
     struct CpuUtilMetrics : metrics::MetricSet {
         metrics::DoubleValueMetric setup;
         metrics::DoubleValueMetric read;
@@ -19,7 +18,7 @@ struct ResourceUsageMetrics : metrics::MetricSet
         metrics::DoubleValueMetric compact;
         metrics::DoubleValueMetric other;
 
-        CpuUtilMetrics(metrics::MetricSet *parent);
+        CpuUtilMetrics(metrics::MetricSet* parent);
         ~CpuUtilMetrics();
     };
 
@@ -27,28 +26,23 @@ struct ResourceUsageMetrics : metrics::MetricSet
         metrics::DoubleValueMetric total;
         metrics::DoubleValueMetric total_util;
         metrics::DoubleValueMetric transient;
+        metrics::DoubleValueMetric reserved;
+        metrics::DoubleValueMetric used_and_reserved; // transient memory/disk space not included
 
         DetailedResourceMetrics(const std::string& resource_type, metrics::MetricSet* parent);
         ~DetailedResourceMetrics();
     };
 
-    struct DetailedDiskResourceMetrics : public DetailedResourceMetrics {
-        metrics::DoubleValueMetric reserved;
-        metrics::DoubleValueMetric used_and_reserved; // transient disk space not included
-        DetailedDiskResourceMetrics(metrics::MetricSet* parent);
-        ~DetailedDiskResourceMetrics();
-    };
+    metrics::DoubleValueMetric disk;
+    metrics::DoubleValueMetric memory;
+    DetailedResourceMetrics    disk_usage;
+    DetailedResourceMetrics    memory_usage;
+    metrics::LongValueMetric   openFileDescriptors;
+    metrics::LongValueMetric   feedingBlocked;
+    metrics::LongValueMetric   mallocArena;
+    CpuUtilMetrics             cpu_util;
 
-    metrics::DoubleValueMetric  disk;
-    metrics::DoubleValueMetric  memory;
-    DetailedDiskResourceMetrics disk_usage;
-    DetailedResourceMetrics     memory_usage;
-    metrics::LongValueMetric    openFileDescriptors;
-    metrics::LongValueMetric    feedingBlocked;
-    metrics::LongValueMetric    mallocArena;
-    CpuUtilMetrics              cpu_util;
-
-    ResourceUsageMetrics(metrics::MetricSet *parent);
+    ResourceUsageMetrics(metrics::MetricSet* parent);
     ~ResourceUsageMetrics();
 };
 

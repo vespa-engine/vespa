@@ -177,7 +177,7 @@ public class VdsVisitTestCase {
         assertTrue(params.visitInconsistentBuckets());
         assertEquals("fnord", params.getVisitorLibrary());
         // TODO: FIXME? multiple library params doesn't work
-        assertArrayEquals("rargh".getBytes(), params.getLibraryParameters().get("asdf"));
+        assertArrayEquals("rargh".getBytes(StandardCharsets.UTF_8), params.getLibraryParameters().get("asdf"));
         //assertTrue(Arrays.equals("pie".getBytes(), params.getLibraryParameters().get("pinkie")));
         assertEquals(555, allParams.getProcessTime());
         assertEquals(2002, params.getMaxTotalHits());
@@ -190,7 +190,7 @@ public class VdsVisitTestCase {
         assertEquals(5, params.getSliceId());
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(outputStream);
+        PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
         VdsVisit.verbosePrintParameters(allParams, printStream);
         printStream.flush();
         String nl = System.getProperty("line.separator"); // the joys of running tests on windows

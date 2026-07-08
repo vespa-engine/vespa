@@ -17,36 +17,29 @@ class FNET_IExecutable;
  * packet class because a single packet may occur in many contexts at
  * the same time (broadcast/multicast).
  **/
-class FNET_Context
-{
+class FNET_Context {
 public:
-    FNET_Context() : _value()                    { _value.VOIDP   = nullptr;  }
-    FNET_Context(uint32_t value) : _value()      { _value.INT     = value; }
-    FNET_Context(void *value) : _value()         { _value.VOIDP   = value; }
-    FNET_Context(FNET_Channel *value) : _value() { _value.CHANNEL = value; }
+    FNET_Context() : _value() { _value.VOIDP = nullptr; }
+    FNET_Context(uint32_t value) : _value() { _value.INT = value; }
+    FNET_Context(void* value) : _value() { _value.VOIDP = value; }
+    FNET_Context(FNET_Channel* value) : _value() { _value.CHANNEL = value; }
 
-    FNET_Context(FNET_IOComponent *value) : _value()
-    { _value.IOC = value; }
-    FNET_Context(FNET_Connector *value) : _value()
-    { _value.CONNECTOR = value; }
-    FNET_Context(FNET_Connection *value) : _value()
-    { _value.CONNECTION = value; }
-    FNET_Context(FNET_IServerAdapter *value) : _value()
-    { _value.SERVER_ADAPTER = value; }
-    FNET_Context(FNET_IExecutable *value) : _value()
-    { _value.EXECUTABLE = value; }
+    FNET_Context(FNET_IOComponent* value) : _value() { _value.IOC = value; }
+    FNET_Context(FNET_Connector* value) : _value() { _value.CONNECTOR = value; }
+    FNET_Context(FNET_Connection* value) : _value() { _value.CONNECTION = value; }
+    FNET_Context(FNET_IServerAdapter* value) : _value() { _value.SERVER_ADAPTER = value; }
+    FNET_Context(FNET_IExecutable* value) : _value() { _value.EXECUTABLE = value; }
 
     union {
         uint32_t             INT;
-        void                *VOIDP;
-        FNET_Channel        *CHANNEL;
-        FNET_IOComponent    *IOC;
-        FNET_Connector      *CONNECTOR;
-        FNET_Connection     *CONNECTION;
-        FNET_IServerAdapter *SERVER_ADAPTER;
-        FNET_IExecutable    *EXECUTABLE;
+        void*                VOIDP;
+        FNET_Channel*        CHANNEL;
+        FNET_IOComponent*    IOC;
+        FNET_Connector*      CONNECTOR;
+        FNET_Connection*     CONNECTION;
+        FNET_IServerAdapter* SERVER_ADAPTER;
+        FNET_IExecutable*    EXECUTABLE;
     } _value;
 
     void Print(uint32_t indent = 0);
 };
-

@@ -8,7 +8,6 @@ import com.yahoo.language.tools.Embed;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.Segmenter;
-import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -32,7 +31,7 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
 
     private final Map<Language, Model> models;
 
-    private final Tokenizer tokenizer;
+    private final SimpleLinguistics linguistics;
 
     @Inject
     public WordPieceEmbedder(WordPieceConfig config) {
@@ -41,7 +40,7 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
 
     private WordPieceEmbedder(Builder builder) {
         super();
-        this.tokenizer = new SimpleLinguistics().getTokenizer(); // always just split on spaces etc. and lowercase
+        this.linguistics = new SimpleLinguistics(); // always just split on spaces etc. and lowercase
         models = builder.getModels().entrySet()
                         .stream()
                         .map(e -> new Model(builder.getSubwordPrefix(), e.getKey(), e.getValue()))
@@ -58,7 +57,7 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
      */
     @Override
     public List<String> segment(String text, LinguisticsParameters parameters) {
-        return resolveModelFrom(parameters.language()).segment(text, tokenizer, parameters);
+        return resolveModelFrom(parameters.language()).segment(text, linguistics.getTokenizer(), parameters);
     }
 
     /**
@@ -70,7 +69,7 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
      */
     @Override
     public List<Integer> embed(String text, Context context) {
-        return resolveModelFrom(context.getLanguage()).embed(text, tokenizer,
+        return resolveModelFrom(context.getLanguage()).embed(text, linguistics.getTokenizer(),
                                                              new LinguisticsParameters(null,
                                                                                        context.getLanguage(),
                                                                                        StemMode.ALL, true, true));

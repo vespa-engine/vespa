@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "verification_result.h"
 #include "peer_credentials.h"
+#include "verification_result.h"
 
 namespace vespalib::net::tls {
 
@@ -26,4 +26,4 @@ struct AcceptAllPreVerifiedCertificates : CertificateVerificationCallback {
     }
 };
 
-}
+} // namespace vespalib::net::tls

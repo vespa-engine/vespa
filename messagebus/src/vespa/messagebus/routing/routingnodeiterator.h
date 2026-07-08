@@ -22,7 +22,7 @@ public:
      *
      * @param children The list to iterate through.
      */
-    explicit RoutingNodeIterator(std::vector<RoutingNode*> &children);
+    explicit RoutingNodeIterator(std::vector<RoutingNode*>& children);
 
     /**
      * Returns whether or not this iterator is valid.
@@ -36,7 +36,7 @@ public:
      *
      * @return This, to allow chaining.
      */
-    RoutingNodeIterator &next();
+    RoutingNodeIterator& next();
 
     /**
      * Skips the given number of children.
@@ -44,14 +44,14 @@ public:
      * @param num The number of children to skip.
      * @return This, to allow chaining.
      */
-    RoutingNodeIterator &skip(uint32_t num);
+    RoutingNodeIterator& skip(uint32_t num);
 
     /**
      * Returns the route of the current child.
      *
      * @return The route.
      */
-    [[nodiscard]] const Route &getRoute() const;
+    [[nodiscard]] const Route& getRoute() const;
 
     /**
      * Removes and returns the reply of the current child. This is the correct way of reusing a reply of a
@@ -66,8 +66,7 @@ public:
      *
      * @return The reply.
      */
-    [[nodiscard]] const Reply &getReplyRef() const;
+    [[nodiscard]] const Reply& getReplyRef() const;
 };
 
-} // mbus
-
+} // namespace mbus

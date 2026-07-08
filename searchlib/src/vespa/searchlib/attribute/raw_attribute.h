@@ -9,8 +9,7 @@ namespace search::attribute {
 /**
  * Base class for all raw attributes.
  */
-class RawAttribute : public NotImplementedAttribute
-{
+class RawAttribute : public NotImplementedAttribute {
 public:
     RawAttribute(const std::string& name, const Config& config);
     ~RawAttribute() override;
@@ -21,4 +20,4 @@ public:
                                                            std::string_view missing_value) const override;
 };
 
-}
+} // namespace search::attribute

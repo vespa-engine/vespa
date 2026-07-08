@@ -6,6 +6,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.document.NumericDataType;
@@ -38,6 +39,9 @@ public class AttributesImplicitWord extends Processor {
     }
 
     private void processField(ImmutableSDField field) {
+        // Position fields may carry a temporary attribute for forwarding fast-access/paged to the zcurve attribute;
+        // they should never get implicit WORD matching.
+        if (GeoPos.isAnyPos(field.getDataType())) return;
         if (fieldImplicitlyWordMatch(field)) {
             field.getMatching().setType(MatchType.WORD);
         }

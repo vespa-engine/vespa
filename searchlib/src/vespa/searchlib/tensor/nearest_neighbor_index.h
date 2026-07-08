@@ -6,29 +6,39 @@
 #include "distance_function_factory.h"
 #include "prepare_result.h"
 #include "vector_bundle.h"
-#include <vespa/vespalib/util/generationhandler.h>
+
+#include <vespa/vespalib/util/generation_guard.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <cstdint>
 #include <memory>
 #include <vector>
 
 class FastOS_FileInterface;
 
-namespace vespalib { class Doom; }
 namespace vespalib {
+class Deadline;
 class GenericHeader;
 struct StateExplorer;
-}
+} // namespace vespalib
 namespace vespalib::datastore {
 class CompactionSpec;
 class CompactionStrategy;
+} // namespace vespalib::datastore
+namespace vespalib::slime {
+struct Inserter;
 }
-namespace vespalib::slime { struct Inserter; }
 
-namespace search::fileutil { class LoadedBuffer; }
+namespace search::fileutil {
+class LoadedBuffer;
+}
 
-namespace search { class AddressSpaceUsage; }
-namespace search::queryeval { class GlobalFilter; }
+namespace search {
+class AddressSpaceUsage;
+}
+namespace search::queryeval {
+class GlobalFilter;
+}
 
 namespace search::tensor {
 
@@ -51,7 +61,11 @@ public:
         size_t _nodes_visited;
 
     public:
-        Stats() : _distances_computed(0), _nodes_visited(0) {}
+        Stats() { reset(); }
+        void reset() {
+            _distances_computed = 0;
+            _nodes_visited = 0;
+        }
         size_t distances_computed() const { return _distances_computed; }
         void count_computed_distance() { ++_distances_computed; }
         size_t nodes_visited() const { return _nodes_visited; }
@@ -61,17 +75,12 @@ public:
     using GlobalFilter = search::queryeval::GlobalFilter;
     using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
-    using generation_t = vespalib::GenerationHandler::generation_t;
     struct Neighbor {
         uint32_t docid;
-        double distance;
-        Neighbor(uint32_t id, double dist) noexcept
-          : docid(id), distance(dist)
-        {}
+        double   distance;
+        Neighbor(uint32_t id, double dist) noexcept : docid(id), distance(dist) {}
         Neighbor() noexcept : docid(0), distance(0.0) {}
-        bool operator==(const Neighbor& rhs) const {
-            return docid == rhs.docid && distance == rhs.distance;
-        }
+        bool operator==(const Neighbor& rhs) const { return docid == rhs.docid && distance == rhs.distance; }
     };
     virtual ~NearestNeighborIndex() = default;
     virtual void add_document(uint32_t docid) = 0;
@@ -80,13 +89,12 @@ public:
      * Performs the prepare step in a two-phase operation to add a document to the index.
      *
      * This function can be called by any thread.
-     * The document to add is represented by the given vector as it is _not_ stored in the enclosing tensor attribute at this point in time.
-     * It should return the result of the costly and non-modifying part of this operation.
-     * The given read guard must be kept in the result.
+     * The document to add is represented by the given vector as it is _not_ stored in the enclosing tensor attribute
+     * at this point in time. It should return the result of the costly and non-modifying part of this operation. The
+     * given read guard must be kept in the result.
      */
-    virtual std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
-                                                                VectorBundle vectors,
-                                                                vespalib::GenerationHandler::Guard read_guard) const = 0;
+    virtual std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid, VectorBundle vectors,
+                                                                vespalib::GenerationGuard read_guard) const = 0;
     /**
      * Performs the complete step in a two-phase operation to add a document to the index.
      *
@@ -96,8 +104,11 @@ public:
     virtual void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) = 0;
 
     virtual void remove_document(uint32_t docid) = 0;
-    virtual void assign_generation(generation_t current_gen) = 0;
-    virtual void reclaim_memory(generation_t first_used_gen) = 0;
+    virtual void assign_generation(vespalib::Generation current_gen) = 0;
+    virtual void reclaim_memory(vespalib::Generation first_used_gen) = 0;
+    virtual vespalib::GenerationGuard make_generation_read_guard() const = 0;
+    virtual void inc_generation() = 0;
+    virtual void reclaim_unused_memory() = 0;
     virtual bool consider_compact(const CompactionStrategy& compaction_strategy) = 0;
     virtual vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) = 0;
     virtual vespalib::MemoryUsage memory_usage() const = 0;
@@ -118,29 +129,22 @@ public:
      *
      * This might throw std::runtime_error.
      */
-    virtual std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file, const vespalib::GenericHeader& header) = 0;
+    virtual std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface&          file,
+                                                                    const vespalib::GenericHeader& header) = 0;
 
-    virtual std::vector<Neighbor> find_top_k(Stats &stats,
-                                             uint32_t k,
-                                             const BoundDistanceFunction &df,
-                                             uint32_t explore_k,
-                                             double exploration_slack,
-                                             const vespalib::Doom& doom,
-                                             double distance_threshold) const = 0;
+    virtual std::vector<Neighbor> find_top_k(Stats& stats, uint32_t k, const BoundDistanceFunction& df,
+                                             uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
+                                             const vespalib::Deadline& doom, double distance_threshold) const = 0;
 
     // only return neighbors where the corresponding filter bit is set
-    virtual std::vector<Neighbor> find_top_k_with_filter(Stats &stats,
-                                                         uint32_t k,
-                                                         const BoundDistanceFunction &df,
-                                                         const GlobalFilter &filter,
-                                                         bool low_hit_ratio,
-                                                         double exploration,
-                                                         uint32_t explore_k,
-                                                         double exploration_slack,
-                                                         const vespalib::Doom& doom,
-                                                         double distance_threshold) const = 0;
+    virtual std::vector<Neighbor> find_top_k_with_filter(Stats& stats, uint32_t k, const BoundDistanceFunction& df,
+                                                         const GlobalFilter& filter, bool low_hit_ratio,
+                                                         double exploration, uint32_t explore_k,
+                                                         double exploration_slack, bool prefetch_tensors,
+                                                         const vespalib::Deadline& doom,
+                                                         double                    distance_threshold) const = 0;
 
-    virtual DistanceFunctionFactory &distance_function_factory() const = 0;
+    virtual DistanceFunctionFactory& distance_function_factory() const = 0;
 
     /*
      * Used when checking consistency during load.
@@ -149,4 +153,4 @@ public:
     virtual uint32_t check_consistency(uint32_t docid_limit) const noexcept = 0;
 };
 
-}
+} // namespace search::tensor

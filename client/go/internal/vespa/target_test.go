@@ -3,6 +3,8 @@ package vespa
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -18,7 +20,7 @@ import (
 func TestLocalTarget(t *testing.T) {
 	// Local target uses discovery
 	client := &mock.HTTPClient{}
-	lt := LocalTarget(client, TLSOptions{}, 0)
+	lt := LocalTarget(client, TLSOptions{}, 0, DefaultDeployment)
 	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
 	for range 2 {
 		response := `
@@ -68,17 +70,17 @@ func TestLocalTarget(t *testing.T) {
 
 func TestCustomTarget(t *testing.T) {
 	// Custom target always uses URL directly, without discovery
-	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{}, 0)
+	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
 	assertServiceURL(t, "http://192.0.2.42", ct, "deploy")
 	assertServiceURL(t, "http://192.0.2.42", ct, "")
-	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{}, 0)
+	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{}, 0, DefaultDeployment)
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "")
 }
 
 func TestCustomTargetWait(t *testing.T) {
 	client := &mock.HTTPClient{}
-	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
 	// Fails once
 	client.NextStatus(500)
 	assertService(t, true, target, "", 0)
@@ -94,7 +96,7 @@ func TestCustomTargetWait(t *testing.T) {
 
 func TestCustomTargetAwaitDeployment(t *testing.T) {
 	client := &mock.HTTPClient{}
-	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
 
 	// Not converged initially
 	_, err := target.AwaitDeployment(42, 0)
@@ -117,9 +119,37 @@ func TestCustomTargetAwaitDeployment(t *testing.T) {
 	assert.Equal(t, int64(42), convergedID)
 }
 
+func TestCustomTargetCustomApplicationAwaitDeployment(t *testing.T) {
+	client := &mock.HTTPClient{}
+	deployment := DefaultDeployment
+	deployment.Application.Application = "a1"
+	deployment.Application.Instance = "i1"
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, deployment)
+
+	// Not converged initially
+	_, err := target.AwaitDeployment(43, 0)
+	assert.NotNil(t, err)
+
+	// Not converged on this generation
+	response := mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/serviceconverge",
+		Status: 200,
+		Body:   []byte(`{"currentGeneration": 43}`),
+	}
+	client.NextResponse(response)
+	_, err = target.AwaitDeployment(42, 0)
+	assert.NotNil(t, err)
+
+	// Converged
+	client.NextResponse(response)
+	convergedID, err := target.AwaitDeployment(43, 0)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(43), convergedID)
+}
+
 func TestCustomTargetCompatibleWith(t *testing.T) {
 	client := &mock.HTTPClient{}
-	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, DefaultDeployment)
 	for range 3 {
 		client.NextResponse(mock.HTTPResponse{
 			URI:    "/state/v1/version",
@@ -227,12 +257,52 @@ func TestCloudTargetAwaitDeployment(t *testing.T) {
 	convergedID, err = target.AwaitDeployment(LatestDeployment, time.Second)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(1337), convergedID)
+
+	// Deployment fails with warning in log
+	logWriter.Reset()
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=-1",
+		Status: 200,
+		Body: []byte(`{"active": false, "status": "deploymentFailed", "lastId": 1,
+                       "log": {"deployReal": [
+                           {"at": 1631707708431, "type": "info", "message": "Deploying platform version 7.465.17 and application version 1.0.2 ..."},
+                           {"at": 1631707708432, "type": "warning", "message": "Deployment failed: File in application package with unknown extension: schemas/doc.sd~"}
+                       ]},
+                       "steps": {"deployReal": {"status": "failed"}}}`),
+	})
+	_, err = target.AwaitDeployment(int64(42), time.Second)
+	assert.Equal(t, "deployment failed: File in application package with unknown extension: schemas/doc.sd~", err.Error())
+	assert.Contains(t, logWriter.String(), "Deploying platform version 7.465.17 and application version 1.0.2 ...")
+	assert.NotContains(t, logWriter.String(), "unknown extension")
 }
 
 func TestLog(t *testing.T) {
 	target, client := createCloudTarget(t, io.Discard)
 	client.NextResponse(mock.HTTPResponse{
 		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/logs?from=-62135596800000",
+		Status: 200,
+		Body: []byte(`1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532
+1632738698.600189	host1a.dev.aws-us-east-1c	1723/33590	config-sentinel	sentinel.sentinel.config-owner	config	Sentinel got 3 service elements [tenant(vespa-team), application(music), instance(mpolden)] for config generation 52532
+`),
+	})
+	var buf bytes.Buffer
+	if err := target.PrintLog(LogOptions{Writer: &buf, Level: 3}); err != nil {
+		t.Fatal(err)
+	}
+	expected := "[2021-09-27 10:31:30.905535] host1a.dev.aws-us-east-1c info    logserver-container Container.com.yahoo.container.jdisc.ConfiguredApplication\tSwitching to the latest deployed set of configurations and components. Application config generation: 52532\n" +
+		"[2021-09-27 10:31:38.600189] host1a.dev.aws-us-east-1c config  config-sentinel  sentinel.sentinel.config-owner\tSentinel got 3 service elements [tenant(vespa-team), application(music), instance(mpolden)] for config generation 52532\n"
+	assert.Equal(t, expected, buf.String())
+}
+
+func TestCustomTargetLog(t *testing.T) {
+	client := &mock.HTTPClient{}
+	deployment := DefaultDeployment
+	deployment.Application.Application = "a1"
+	deployment.Application.Instance = "i1"
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0, deployment)
+
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/a1/environment/prod/region/default/instance/i1/logs?from=-62135596800000",
 		Status: 200,
 		Body: []byte(`1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532
 1632738698.600189	host1a.dev.aws-us-east-1c	1723/33590	config-sentinel	sentinel.sentinel.config-owner	config	Sentinel got 3 service elements [tenant(vespa-team), application(music), instance(mpolden)] for config generation 52532
@@ -257,6 +327,311 @@ func TestCloudCompatibleWith(t *testing.T) {
 	assert.NotNil(t, target.CompatibleWith(version.MustParse("7.0.0")))
 }
 
+func TestCloudTargetWithPrivateServices(t *testing.T) {
+	var logWriter bytes.Buffer
+	target, client := createCloudTarget(t, &logWriter)
+
+	// Mock endpoints response
+	endpointsResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1",
+		Status: 200,
+		Body: []byte(`{
+			"endpoints": [
+				{"url": "http://a.example.com","scope": "zone", "cluster": "default", "authMethod": "mtls"},
+				{"url": "http://b.example.com","scope": "zone", "cluster": "feed", "authMethod": "mtls"}
+			]
+		}`),
+	}
+
+	// Mock private services response with configured private service
+	privateServicesResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/private-services",
+		Status: 200,
+		Body: []byte(`{
+			"privateServices": [
+				{
+					"cluster": "default",
+					"serviceId": "com.amazonaws.vpce.us-east-1.vpce-svc-1a2b3c4d5e6f7g8h9",
+					"type": "aws-private-link",
+					"allowedUrns": [
+						{
+							"type": "aws-private-link",
+							"urn": "arn:aws:iam::123456789012:root"
+						}
+					],
+					"authMethods": ["mtls"],
+					"endpoints": []
+				},
+				{
+					"cluster": "feed"
+				}
+			]
+		}`),
+	}
+
+	client.NextResponse(endpointsResponse)
+	client.NextResponse(privateServicesResponse)
+	services, err := target.ContainerServices(time.Millisecond)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(services))
+
+	// Verify the default cluster has private service info
+	var defaultService *Service
+	for _, s := range services {
+		if s.Name == "default" && s.AuthMethod == "mtls" {
+			defaultService = s
+			break
+		}
+	}
+	assert.NotNil(t, defaultService, "Should find default cluster with mtls")
+	assert.NotNil(t, defaultService.PrivateService, "Default cluster should have private service info")
+	assert.Equal(t, "com.amazonaws.vpce.us-east-1.vpce-svc-1a2b3c4d5e6f7g8h9", defaultService.PrivateService.ServiceID)
+	assert.Equal(t, "aws-private-link", defaultService.PrivateService.Type)
+	assert.Equal(t, 1, len(defaultService.PrivateService.AllowedUrns))
+	assert.Equal(t, "aws-private-link", defaultService.PrivateService.AllowedUrns[0].Type)
+	assert.Equal(t, "arn:aws:iam::123456789012:root", defaultService.PrivateService.AllowedUrns[0].Urn)
+	assert.Equal(t, []string{"mtls"}, defaultService.PrivateService.AuthMethods)
+
+	// Verify the feed cluster does not have private service info (only cluster name in response)
+	var feedService *Service
+	for _, s := range services {
+		if s.Name == "feed" && s.AuthMethod == "mtls" {
+			feedService = s
+			break
+		}
+	}
+	assert.NotNil(t, feedService, "Should find feed cluster with mtls")
+	assert.Nil(t, feedService.PrivateService, "Feed cluster should not have private service info")
+}
+
+func TestCloudTargetWithoutPrivateServices(t *testing.T) {
+	var logWriter bytes.Buffer
+	target, client := createCloudTarget(t, &logWriter)
+
+	// Mock endpoints response
+	endpointsResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1",
+		Status: 200,
+		Body: []byte(`{
+			"endpoints": [
+				{"url": "http://a.example.com","scope": "zone", "cluster": "default", "authMethod": "mtls"}
+			]
+		}`),
+	}
+
+	// Mock private services response with no configured private services
+	privateServicesResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/private-services",
+		Status: 200,
+		Body: []byte(`{
+			"privateServices": [
+				{
+					"cluster": "default"
+				}
+			]
+		}`),
+	}
+
+	client.NextResponse(endpointsResponse)
+	client.NextResponse(privateServicesResponse)
+	services, err := target.ContainerServices(time.Millisecond)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(services))
+
+	// Verify the service does not have private service info
+	assert.Equal(t, "default", services[0].Name)
+	assert.Nil(t, services[0].PrivateService, "Should not have private service info when only cluster name is returned")
+}
+
+func TestCloudTargetPrivateServicesError(t *testing.T) {
+	var logWriter bytes.Buffer
+	target, client := createCloudTarget(t, &logWriter)
+
+	// Mock endpoints response
+	endpointsResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1",
+		Status: 200,
+		Body: []byte(`{
+			"endpoints": [
+				{"url": "http://a.example.com","scope": "zone", "cluster": "default", "authMethod": "mtls"}
+			]
+		}`),
+	}
+
+	// Mock private services endpoint returning error (should be ignored)
+	privateServicesError := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/private-services",
+		Status: 404,
+	}
+
+	client.NextResponse(endpointsResponse)
+	client.NextResponse(privateServicesError)
+	services, err := target.ContainerServices(time.Millisecond)
+	// Should still succeed even if private-services endpoint fails
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(services))
+	assert.Nil(t, services[0].PrivateService, "Should not have private service info when endpoint fails")
+}
+
+func TestAwaitBuild(t *testing.T) {
+	target, client := createCloudTarget(t, io.Discard)
+	buildStatusURI := "/application/v4/tenant/t1/application/a1/build-status/42"
+
+	// Deployed successfully
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"deployed": true, "status": "done", "jobs": []}`),
+	})
+	skipped, skipReason, err := AwaitBuild(target, 42, time.Second, nil)
+	assert.Nil(t, err)
+	assert.False(t, skipped)
+	assert.Equal(t, "", skipReason)
+
+	// Skipped due to no changes
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"skipReason": "no changes detected"}`),
+	})
+	skipped, skipReason, err = AwaitBuild(target, 42, time.Second, nil)
+	assert.Nil(t, err)
+	assert.True(t, skipped)
+	assert.Equal(t, "no changes detected", skipReason)
+
+	// Build failed (no jobs with runs)
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"hasFailed": true, "jobs": []}`),
+	})
+	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	require.NotNil(t, err)
+	assert.True(t, errors.Is(err, ErrDeployment))
+
+	// Production job failure
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"hasFailed": true, "jobs": [{"jobName": "production-aws-us-east-1c", "runStatus": "deploymentFailed", "runId": 1, "instance": "default"}]}`),
+	})
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/default/job/production-aws-us-east-1c/run/1?after=-1",
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "deploymentFailed"}`),
+	})
+	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	require.NotNil(t, err)
+	assert.True(t, errors.Is(err, ErrDeployment))
+	assert.Contains(t, err.Error(), "production-aws-us-east-1c")
+
+	// Test job failure (system-test job name)
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"hasFailed": true, "jobs": [{"jobName": "system-test.aws-us-east-1c", "runStatus": "testFailure", "runId": 1, "instance": "i1"}]}`),
+	})
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/system-test.aws-us-east-1c/run/1?after=-1",
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "testFailure"}`),
+	})
+	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	require.NotNil(t, err)
+	assert.True(t, errors.Is(err, ErrDeployment))
+	assert.Contains(t, err.Error(), "system-test.aws-us-east-1c")
+
+	// Absorbed into another build
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"absorbedIntoBuild": 99, "deployed": false, "hasFailed": false, "jobs": [], "status": "done"}`),
+	})
+	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	require.NotNil(t, err)
+	assert.Contains(t, err.Error(), "99")
+
+	// Timeout
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"deployed": false, "status": "deploying"}`),
+	})
+	_, _, err = AwaitBuild(target, 42, time.Millisecond, nil)
+	assert.True(t, errors.Is(err, ErrWaitTimeout))
+}
+
+func TestStreamBuildJobLogs(t *testing.T) {
+	target, client := createCloudTarget(t, io.Discard)
+	job := buildStatusJob{JobName: "production-aws-us-east-1c", RunID: 100, Instance: "i1"}
+	runURI := "/application/v4/tenant/t1/application/a1/instance/i1/job/production-aws-us-east-1c/run/100?after=-1"
+
+	// Happy path: log is written and job succeeds
+	var buf bytes.Buffer
+	client.NextResponse(mock.HTTPResponse{
+		URI:    runURI,
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "success", "lastId": 10, "log": {"step": [{"at": 1631707708431, "type": "info", "message": "Deploying"}]}}`),
+	})
+	err := streamBuildJobLogs(target, job, time.Second, &buf, 0)
+	assert.Nil(t, err)
+	assert.Contains(t, buf.String(), "[production-aws-us-east-1c]")
+	assert.Contains(t, buf.String(), "Deploying")
+
+	// Job failure is reported as ErrDeployment
+	client.NextResponse(mock.HTTPResponse{
+		URI:    runURI,
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "error", "lastId": 5}`),
+	})
+	err = streamBuildJobLogs(target, job, time.Second, io.Discard, 0)
+	require.NotNil(t, err)
+	assert.True(t, errors.Is(err, ErrDeployment))
+	assert.Contains(t, err.Error(), "production-aws-us-east-1c")
+}
+
+func TestPrintBuildJobLog(t *testing.T) {
+	// Empty response (LastID == 0): returns last unchanged, no output
+	var buf bytes.Buffer
+	last := printBuildJobLog(runResponse{}, 10, &buf, "[job] ")
+	assert.Equal(t, int64(10), last)
+	assert.Empty(t, buf.String())
+
+	// Messages sorted by timestamp and formatted with prefix
+	resp := runResponse{
+		LastID: 7,
+		Log: map[string][]logMessage{
+			"step": {
+				{At: 1631707708432, Type: "warning", Message: "second"},
+				{At: 1631707708431, Type: "info", Message: "first"},
+			},
+		},
+	}
+	last = printBuildJobLog(resp, -1, &buf, "[job] ")
+	assert.Equal(t, int64(7), last)
+	tm1 := time.Unix(1631707708, 431000)
+	tm2 := time.Unix(1631707708, 432000)
+	expected := fmt.Sprintf("[job] [%s] %-7s %s\n[job] [%s] %-7s %s\n",
+		tm1.Format("15:04:05"), "info", "first",
+		tm2.Format("15:04:05"), "warning", "second")
+	assert.Equal(t, expected, buf.String())
+
+	// Debug messages are filtered out
+	buf.Reset()
+	resp = runResponse{
+		LastID: 8,
+		Log: map[string][]logMessage{
+			"step": {
+				{At: 1631707708431, Type: "debug", Message: "should be filtered"},
+				{At: 1631707708432, Type: "info", Message: "visible"},
+			},
+		},
+	}
+	printBuildJobLog(resp, -1, &buf, "")
+	assert.NotContains(t, buf.String(), "should be filtered")
+	assert.Contains(t, buf.String(), "visible")
+}
+
 func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPClient) {
 	apiKey, err := CreateAPIKey()
 	require.Nil(t, err)
@@ -267,6 +642,28 @@ func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPCli
 		auth,
 		auth,
 		APIOptions{APIKey: apiKey, System: PublicSystem},
+		CloudDeploymentOptions{
+			Deployment: Deployment{
+				Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
+				Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
+				System:      PublicSystem,
+			},
+		},
+		LogOptions{Writer: logWriter},
+		0,
+	)
+	require.Nil(t, err)
+	return target, client
+}
+
+func createCloudTargetControlPlane(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPClient) {
+	auth := &mockAuthenticator{}
+	client := &mock.HTTPClient{}
+	target, err := CloudTarget(
+		client,
+		auth,
+		auth,
+		APIOptions{System: PublicSystem},
 		CloudDeploymentOptions{
 			Deployment: Deployment{
 				Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
@@ -313,3 +710,29 @@ func assertService(t *testing.T, fail bool, target Target, serviceName string, t
 type mockAuthenticator struct{}
 
 func (a *mockAuthenticator) Authenticate(request *http.Request) error { return nil }
+
+func TestServiceDescription(t *testing.T) {
+	// Container with name
+	s := &Service{Name: "foo", deployAPI: false}
+	assert.Equal(t, "container", s.Type())
+	assert.Equal(t, "foo", s.ServiceName())
+	assert.Equal(t, "container foo", s.Description())
+
+	// Container without name
+	s = &Service{Name: "", deployAPI: false}
+	assert.Equal(t, "container", s.Type())
+	assert.Equal(t, "", s.ServiceName())
+	assert.Equal(t, "container", s.Description())
+
+	// Deploy API
+	s = &Service{Name: "", deployAPI: true}
+	assert.Equal(t, "deploy API", s.Type())
+	assert.Equal(t, "", s.ServiceName())
+	assert.Equal(t, "deploy API", s.Description())
+
+	// Deploy API with name (shouldn't happen in practice, but test the logic)
+	s = &Service{Name: "ignored", deployAPI: true}
+	assert.Equal(t, "deploy API", s.Type())
+	assert.Equal(t, "ignored", s.ServiceName())
+	assert.Equal(t, "deploy API ignored", s.Description())
+}

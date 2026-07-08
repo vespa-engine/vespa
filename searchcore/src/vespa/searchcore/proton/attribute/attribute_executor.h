@@ -6,7 +6,9 @@
 #include <memory>
 #include <string>
 
-namespace search { class AttributeVector; }
+namespace search {
+class AttributeVector;
+}
 
 namespace proton {
 
@@ -15,15 +17,13 @@ struct IAttributeManager;
 /*
  * Class for executing task in attribute vector write thread.
  */
-class AttributeExecutor
-{
+class AttributeExecutor {
 private:
-    std::shared_ptr<IAttributeManager>           _mgr;
-    std::shared_ptr<search::AttributeVector>     _attr;
+    std::shared_ptr<IAttributeManager>       _mgr;
+    std::shared_ptr<search::AttributeVector> _attr;
 
 public:
-    AttributeExecutor(std::shared_ptr<IAttributeManager> mgr,
-                      std::shared_ptr<search::AttributeVector> attr);
+    AttributeExecutor(std::shared_ptr<IAttributeManager> mgr, std::shared_ptr<search::AttributeVector> attr);
     ~AttributeExecutor();
     void run_sync(std::function<void()> task) const;
     const search::AttributeVector& get_attr() const noexcept { return *_attr; }

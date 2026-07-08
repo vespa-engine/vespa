@@ -4,16 +4,11 @@
 
 namespace proton {
 
-HeartBeatJob::HeartBeatJob(IHeartBeatHandler &handler,
-                           const DocumentDBHeartBeatConfig &config)
-    : IMaintenanceJob("heart_beat", config.getInterval(), config.getInterval()),
-      _handler(handler)
-{
+HeartBeatJob::HeartBeatJob(IHeartBeatHandler& handler, const DocumentDBHeartBeatConfig& config)
+    : IMaintenanceJob("heart_beat", config.getInterval(), config.getInterval()), _handler(handler) {
 }
 
-bool
-HeartBeatJob::run()
-{
+bool HeartBeatJob::run() {
     _handler.heartBeat();
     return true;
 }

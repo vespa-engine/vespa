@@ -2,8 +2,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP("forcelink_test");
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/searchlib/expression/forcelink.hpp>
+
 #include <vespa/searchlib/aggregation/forcelink.hpp>
+#include <vespa/searchlib/expression/forcelink.hpp>
 
 TEST(ForcelinkTest, forcelink_expression_and_aggregation) {
     forcelink_searchlib_expression();

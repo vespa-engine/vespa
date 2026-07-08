@@ -7,6 +7,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -80,7 +81,7 @@ public class CapabilitySet implements ToCapabilitySet {
             var capability = Capability.fromName(name).orElse(null);
             if (capability != null) caps.add(capability);
             else if (predefinedSet != null) caps.addAll(predefinedSet.caps);
-            else log.warning("Cannot find capability or capability set with name '%s'".formatted(name));
+            else log.warning(String.format(Locale.ROOT, "Cannot find capability or capability set with name '%s'", name));
         }
         return new CapabilitySet(caps);
     }

@@ -65,7 +65,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
     }
 
     /**
-     * This is a safety mechanism to allow the constructor to fail and signal that it can not be used.
+     * This is a safety mechanism to allow the constructor to fail and signal that it cannot be used.
      *
      * @return The error string, or null if no error.
      */

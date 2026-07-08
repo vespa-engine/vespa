@@ -35,6 +35,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
+import com.yahoo.vespa.config.server.http.v2.PrepareAndActivateResult;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -58,6 +59,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -145,10 +147,10 @@ public class ApplicationRepositoryTest {
         Duration duration = Duration.ofHours(1);
         clock.advance(duration);
         long deployTime = clock.instant().toEpochMilli();
-        PrepareResult result = prepareAndActivate(testApp);
-        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
-        assertTrue(result.configChangeActions().getReindexActions().isEmpty());
-        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+        var result = prepareAndActivate(testApp);
+        assertTrue(result.prepareResult().configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.prepareResult().configChangeActions().getReindexActions().isEmpty());
+        assertTrue(result.prepareResult().configChangeActions().getRestartActions().isEmpty());
 
         applicationRepository.getActiveLocalSession(tenant(), applicationId()).get().getAllocatedHosts();
 
@@ -174,9 +176,9 @@ public class ApplicationRepositoryTest {
                 .build();
 
         prepareAndActivate(testAppJdiscOnly);
-        PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
-        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
-        assertFalse(result.configChangeActions().getRestartActions().isEmpty());
+        var result = prepareAndActivate(testAppJdiscOnlyRestart);
+        assertTrue(result.prepareResult().configChangeActions().getRefeedActions().isEmpty());
+        assertFalse(result.prepareResult().configChangeActions().getRestartActions().isEmpty());
     }
 
     @Test
@@ -186,23 +188,23 @@ public class ApplicationRepositoryTest {
                 .build();
 
         prepareAndActivate(testAppJdiscOnly);
-        PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
-        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
-        assertFalse(result.configChangeActions().getRestartActions().isEmpty());
+        var result = prepareAndActivate(testAppJdiscOnlyRestart);
+        assertTrue(result.prepareResult().configChangeActions().getRefeedActions().isEmpty());
+        assertFalse(result.prepareResult().configChangeActions().getRestartActions().isEmpty());
     }
 
     @Test
     public void createAndPrepareAndActivate() {
-        PrepareResult result = deployApp(testApp);
-        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
-        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+        var result = prepareAndActivateApp(testApp);
+        assertTrue(result.prepareResult().configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.prepareResult().configChangeActions().getRestartActions().isEmpty());
     }
 
     @Test
     public void redeploy() {
-        long firstSessionId = deployApp(testApp).sessionId();
+        long firstSessionId = prepareAndActivateApp(testApp).prepareResult().sessionId();
 
-        long secondSessionId = deployApp(testApp).sessionId();
+        long secondSessionId = prepareAndActivateApp(testApp).prepareResult().sessionId();
         assertNotEquals(firstSessionId, secondSessionId);
 
         Session session = applicationRepository.getActiveLocalSession(tenant(), applicationId()).get();
@@ -211,7 +213,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void applicationData() {
-        long firstSessionId = deployApp(testApp).sessionId();
+        long firstSessionId = prepareAndActivateApp(testApp).prepareResult().sessionId();
         assertApplicationData(firstSessionId, firstSessionId);
         assertEquals(firstSessionId, applicationRepository.getActiveSession(applicationId()).get().getSessionId());
 
@@ -231,7 +233,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void createFromActiveSession() {
-        long originalSessionId = deployApp(testApp).sessionId();
+        long originalSessionId = prepareAndActivateApp(testApp).prepareResult().sessionId();
 
         long sessionId = createSessionFromExisting(applicationId(), timeoutBudget);
         ApplicationMetaData originalApplicationMetaData = getApplicationMetaData(applicationId(), originalSessionId);
@@ -246,7 +248,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogs() throws IOException {
-        deployApp(testAppLogServerWithContainer);
+        prepareAndActivateApp(testAppLogServerWithContainer);
         assertCorrectLogserverUri(applicationId(), 19103);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.empty(), Query.empty());
         assertEquals(200, response.getStatus());
@@ -306,6 +308,35 @@ public class ApplicationRepositoryTest {
         assertTrue(filereferenceDirNewest.exists());
     }
 
+    @Test
+    public void deleteUnusedFileReferencesWithConcurrentlyDeletedFileReference() throws IOException {
+        File fileReferencesDir = new File(configserverConfig.fileReferencesDir());
+
+        // Create 20 old file references (more than the limit of 20 to be returned by sortedUnusedFileReferences)
+        IntStream.range(0, 20).forEach(i -> {
+            createFileReferenceOnDisk(new File(fileReferencesDir, "ref" + i));
+            clock.advance(Duration.ofSeconds(1));
+        });
+        clock.advance(Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes()));
+
+        // Create a broken symlink to simulate a file reference that was concurrently deleted:
+        // it appears in the directory listing but throws UncheckedIOException when lastModified is called.
+        // With the fix (clock.instant()), this sorts as the newest entry and does not take a deletion slot.
+        // Without the fix (Instant.EPOCH), it sorts first and displaces one old file reference.
+        Files.createSymbolicLink(fileReferencesDir.toPath().resolve("concurrently-deleted"),
+                                 java.nio.file.Path.of("/nonexistent/target"));
+
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withClock(clock)
+                .withConfigserverConfig(configserverConfig)
+                .build();
+
+        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory);
+        assertEquals(20, deleted.size());
+        IntStream.range(0, 20).forEach(i -> assertFalse(new File(fileReferencesDir, "ref" + i).exists()));
+    }
+
     private File createFileReferenceOnDisk(File filereference) {
         File fileReferenceDir = filereference.getParentFile();
         fileReferenceDir.mkdir();
@@ -318,8 +349,8 @@ public class ApplicationRepositoryTest {
     public void delete() {
         SessionRepository sessionRepository = tenant().getSessionRepository();
         {
-            PrepareResult result = deployApp(testApp);
-            long sessionId = result.sessionId();
+            var result = prepareAndActivateApp(testApp);
+            long sessionId = result.prepareResult().sessionId();
             Session applicationData = sessionRepository.getLocalSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
@@ -344,14 +375,14 @@ public class ApplicationRepositoryTest {
         }
 
         {
-            deployApp(testApp);
+            prepareAndActivateApp(testApp);
             assertTrue(applicationRepository.delete(applicationId()));
-            deployApp(testApp);
+            prepareAndActivateApp(testApp);
 
             // Deploy another app (with id fooId)
             ApplicationId fooId = applicationId("fooId");
             PrepareParams prepareParams2 = new PrepareParams.Builder().applicationId(fooId).build();
-            deployApp(testAppJdiscOnly, prepareParams2);
+            prepareAndActivateApp(testAppJdiscOnly, prepareParams2);
             assertNotNull(applicationRepository.getActiveSession(fooId));
 
             // Delete app with id fooId, should not affect original app
@@ -370,7 +401,7 @@ public class ApplicationRepositoryTest {
                 .withMetric(actual)
                 .withClock(new ManualClock())
                 .build();
-        deployApp(testAppLogServerWithContainer);
+        prepareAndActivateApp(testAppLogServerWithContainer);
         Map<String, ?> context = Map.of("applicationId", "test1.testapp.default",
                                         "tenantName", "test1",
                                         "app", "testapp.default",
@@ -425,8 +456,8 @@ public class ApplicationRepositoryTest {
     @Test
     public void testActivationOfUnpreparedSession() {
         // Needed so we can test that the original active session is still active after a failed activation
-        PrepareResult result = deployApp(testApp);
-        long firstSession = result.sessionId();
+        var result = prepareAndActivateApp(testApp);
+        long firstSession = result.prepareResult().sessionId();
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
         long sessionId = createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
@@ -442,12 +473,12 @@ public class ApplicationRepositoryTest {
     @Test
     public void testActivationTimesOut() {
         // Needed so we can test that the original active session is still active after a failed activation
-        long firstSession = deployApp(testAppJdiscOnly).sessionId();
+        long firstSession = prepareAndActivateApp(testAppJdiscOnly).prepareResult().sessionId();
 
         long sessionId = createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         applicationRepository.prepare(sessionId, prepareParams());
         exceptionRule.expect(RuntimeException.class);
-        exceptionRule.expectMessage("Timeout exceeded when trying to activate 'test1.testapp'");
+        exceptionRule.expectMessage("Timeout exceeded when trying to activate 'test1.testapp.default'");
         activate(applicationId(), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)));
 
         Session activeSession = applicationRepository.getActiveSession(applicationId()).get();
@@ -459,11 +490,11 @@ public class ApplicationRepositoryTest {
     public void testActivationOfSessionCreatedFromNoLongerActiveSessionFails() {
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
 
-        deployApp(testAppJdiscOnly);
+        prepareAndActivateApp(testAppJdiscOnly);
 
         long sessionId2 = createSessionFromExisting(applicationId(), timeoutBudget);
         // Deploy and activate another session
-        deployApp(testAppJdiscOnly);
+        prepareAndActivateApp(testAppJdiscOnly);
 
         applicationRepository.prepare(sessionId2, prepareParams());
         exceptionRule.expect(ActivationConflictException.class);
@@ -473,8 +504,8 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testPrepareAndActivateAlreadyActivatedSession() {
-        PrepareResult result = deployApp(testAppJdiscOnly);
-        long sessionId = result.sessionId();
+        var result = prepareAndActivateApp(testAppJdiscOnly);
+        long sessionId = result.prepareResult().sessionId();
 
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("Session 2 for 'test1' is active");
@@ -487,10 +518,10 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testThatPreviousSessionIsDeactivated() {
-        deployApp(testAppJdiscOnly);
+        prepareAndActivateApp(testAppJdiscOnly);
         Session firstSession = applicationRepository.getActiveSession(applicationId()).get();
 
-        deployApp(testAppJdiscOnly);
+        prepareAndActivateApp(testAppJdiscOnly);
 
         assertEquals(DEACTIVATE, firstSession.getStatus());
     }
@@ -498,7 +529,7 @@ public class ApplicationRepositoryTest {
     @Test
     public void testResolveForAppId() {
         Version vespaVersion = VespaModelFactory.createTestFactory().version();
-        applicationRepository.deploy(app1, new PrepareParams.Builder()
+        applicationRepository.prepareAndActivate(app1, new PrepareParams.Builder()
                 .applicationId(applicationId())
                 .vespaVersion(vespaVersion)
                 .build());
@@ -510,7 +541,7 @@ public class ApplicationRepositoryTest {
     @Test
     public void testResolveConfigForMultipleApps() {
         Version vespaVersion = VespaModelFactory.createTestFactory().version();
-        applicationRepository.deploy(app1, new PrepareParams.Builder()
+        applicationRepository.prepareAndActivate(app1, new PrepareParams.Builder()
                 .applicationId(applicationId())
                 .vespaVersion(vespaVersion)
                 .build());
@@ -520,7 +551,7 @@ public class ApplicationRepositoryTest {
                 .applicationName("myapp2")
                 .instanceName("default")
                 .build();
-        applicationRepository.deploy(app2, new PrepareParams.Builder()
+        applicationRepository.prepareAndActivate(app2, new PrepareParams.Builder()
                 .applicationId(appId2)
                 .vespaVersion(vespaVersion)
                 .build());
@@ -541,7 +572,7 @@ public class ApplicationRepositoryTest {
     @Test
     public void testResolveMultipleVersions() {
         Version vespaVersion = VespaModelFactory.createTestFactory().version();
-        applicationRepository.deploy(app1, new PrepareParams.Builder()
+        applicationRepository.prepareAndActivate(app1, new PrepareParams.Builder()
                 .applicationId(applicationId())
                 .vespaVersion(vespaVersion)
                 .build());
@@ -557,7 +588,7 @@ public class ApplicationRepositoryTest {
     @Test
     public void testResolveForDeletedApp() {
         Version vespaVersion = VespaModelFactory.createTestFactory().version();
-        applicationRepository.deploy(app1, new PrepareParams.Builder()
+        applicationRepository.prepareAndActivate(app1, new PrepareParams.Builder()
                 .applicationId(applicationId())
                 .vespaVersion(vespaVersion)
                 .build());
@@ -572,20 +603,20 @@ public class ApplicationRepositoryTest {
         resolve(applicationId(), vespaVersion);
     }
 
-    private PrepareResult prepareAndActivate(File application) {
-        return applicationRepository.deploy(application, prepareParams());
+    private PrepareAndActivateResult prepareAndActivate(File application) {
+        return applicationRepository.prepareAndActivate(application, prepareParams());
     }
 
     private void prepare(long sessionId) {
         applicationRepository.prepare(sessionId, prepareParams());
     }
 
-    private PrepareResult deployApp(File applicationPackage) {
-        return deployApp(applicationPackage, prepareParams());
+    private PrepareAndActivateResult prepareAndActivateApp(File applicationPackage) {
+        return prepareAndActivateApp(applicationPackage, prepareParams());
     }
 
-    private PrepareResult deployApp(File applicationPackage, PrepareParams prepareParams) {
-        return applicationRepository.deploy(applicationPackage, prepareParams);
+    private PrepareAndActivateResult prepareAndActivateApp(File applicationPackage, PrepareParams prepareParams) {
+        return applicationRepository.prepareAndActivate(applicationPackage, prepareParams);
     }
 
     private PrepareParams prepareParams() {

@@ -12,17 +12,15 @@ class ResourceUsageTracker;
 /**
  * Class used to explore the resource usage of proton.
  */
-class ResourceUsageExplorer : public vespalib::StateExplorer
-{
+class ResourceUsageExplorer : public vespalib::StateExplorer {
 private:
     const ResourceUsageNotifier& _usage_notifier;
-    const ResourceUsageTracker& _usage_tracker;
+    const ResourceUsageTracker&  _usage_tracker;
 
 public:
-    ResourceUsageExplorer(const ResourceUsageNotifier& usage_notifier,
-                          const ResourceUsageTracker& usage_tracker);
+    ResourceUsageExplorer(const ResourceUsageNotifier& usage_notifier, const ResourceUsageTracker& usage_tracker);
 
-    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
 } // namespace proton

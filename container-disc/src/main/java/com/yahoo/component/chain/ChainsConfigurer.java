@@ -39,10 +39,8 @@ public class ChainsConfigurer {
         }
     }
 
-    private static <COMPONENT extends ChainedComponent> COMPONENT getComponentOrThrow(
-            ComponentRegistry<COMPONENT> registry,
-            ComponentSpecification specification) {
-
+    private static <COMPONENT extends ChainedComponent> COMPONENT getComponentOrThrow(ComponentRegistry<COMPONENT> registry,
+                                                                                      ComponentSpecification specification) {
         COMPONENT component = registry.getComponent(specification);
         if (component == null) {
             throw new ConfigurationRuntimeException("No such component '" + specification + "'");
@@ -59,8 +57,8 @@ public class ChainsConfigurer {
         for (ChainSpecification chain : model.allChainsFlattened()) {
             try {
                 Chain<COMPONENT> componentChain = new Chain<>(chain.componentId,
-                        resolveComponents(chain.componentReferences, allComponents),
-                        chain.phases());
+                                                              resolveComponents(chain.componentReferences, allComponents),
+                                                              chain.phases());
                 chainRegistry.register(chain.componentId, componentChain);
             } catch (Exception e) {
                 throw new ConfigurationRuntimeException("Invalid chain '" + chain.componentId + "'", e);
@@ -68,9 +66,8 @@ public class ChainsConfigurer {
         }
     }
 
-    private static <T extends ChainedComponent> List<T> resolveComponents(
-            Set<ComponentSpecification> componentSpecifications,
-            ComponentRegistry<T> allComponents) {
+    private static <T extends ChainedComponent> List<T> resolveComponents(Set<ComponentSpecification> componentSpecifications,
+                                                                          ComponentRegistry<T> allComponents) {
 
         List<T> components = new ArrayList<>(componentSpecifications.size());
         for (ComponentSpecification componentSpec : componentSpecifications) {

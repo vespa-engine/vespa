@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/bfloat16.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/bfloat16.h>
+
 #include <stdio.h>
+
 #include <cmath>
 #include <cstring>
 #include <vector>
@@ -12,20 +14,18 @@ using namespace vespalib;
 
 using Limits = std::numeric_limits<BFloat16>;
 
-static std::vector<float> simple_values = {
-    0.0, 1.0, -1.0, -0.0, 1.75, 0x1.02p20, -0x1.02p-20, 0x3.0p-100, 0x7.0p100
-};
+static std::vector<float> simple_values = {0.0, 1.0, -1.0, -0.0, 1.75, 0x1.02p20, -0x1.02p-20, 0x3.0p-100, 0x7.0p100};
 
 TEST(BFloat16Test, normal_usage) {
     EXPECT_EQ(sizeof(float), 4);
     EXPECT_EQ(sizeof(BFloat16), 2);
     BFloat16 answer = 42;
-    double fortytwo = answer;
+    double   fortytwo = answer;
     EXPECT_EQ(fortytwo, 42);
     std::vector<BFloat16> vec;
     for (float value : simple_values) {
         BFloat16 b = value;
-        float recover = b;
+        float    recover = b;
         EXPECT_EQ(value, recover);
     }
     BFloat16 b1 = 0x101;
@@ -37,11 +37,11 @@ TEST(BFloat16Test, normal_usage) {
 TEST(BFloat16Test, has_range_of_int_8) {
     for (int i = -128; i < 128; ++i) {
         int8_t byte = i;
-        float flt = byte;
+        float  flt = byte;
         EXPECT_EQ(byte, i);
         EXPECT_EQ(flt, i);
         BFloat16 value = flt;
-        float recover = value;
+        float    recover = value;
         EXPECT_EQ(recover, flt);
     }
 }
@@ -59,61 +59,61 @@ TEST(BFloat16Test, with_nbostream) {
 }
 
 TEST(BFloat16Test, constants_check) {
-	EXPECT_EQ(0x1.0p-7, (1.0/128.0));
+    EXPECT_EQ(0x1.0p-7, (1.0 / 128.0));
 
-	float n_min = Limits::min();
-	float d_min = Limits::denorm_min();
-	float eps = Limits::epsilon();
-	float big = Limits::max();
-	float low = Limits::lowest();
+    float n_min = Limits::min();
+    float d_min = Limits::denorm_min();
+    float eps = Limits::epsilon();
+    float big = Limits::max();
+    float low = Limits::lowest();
 
-	EXPECT_EQ(n_min, 0x1.0p-126);
-	EXPECT_EQ(d_min, 0x1.0p-133);
-	EXPECT_EQ(eps, 0x1.0p-7);
-	EXPECT_EQ(big, 0x1.FEp127);
-	EXPECT_EQ(low, -big);
+    EXPECT_EQ(n_min, 0x1.0p-126);
+    EXPECT_EQ(d_min, 0x1.0p-133);
+    EXPECT_EQ(eps, 0x1.0p-7);
+    EXPECT_EQ(big, 0x1.FEp127);
+    EXPECT_EQ(low, -big);
 
-	EXPECT_EQ(n_min, std::numeric_limits<float>::min());
-	EXPECT_EQ(d_min, n_min / 128.0);
-	EXPECT_GT(eps, std::numeric_limits<float>::epsilon());
+    EXPECT_EQ(n_min, std::numeric_limits<float>::min());
+    EXPECT_EQ(d_min, n_min / 128.0);
+    EXPECT_GT(eps, std::numeric_limits<float>::epsilon());
 
-	BFloat16 try_epsilon = 1.0f + eps;
-	EXPECT_GT(try_epsilon.to_float(), 1.0f);
-	BFloat16 try_half_epsilon = 1.0f + (0.5f * eps);
-	EXPECT_EQ(try_half_epsilon.to_float(), 1.0f);
+    BFloat16 try_epsilon = 1.0f + eps;
+    EXPECT_GT(try_epsilon.to_float(), 1.0f);
+    BFloat16 try_half_epsilon = 1.0f + (0.5f * eps);
+    EXPECT_EQ(try_half_epsilon.to_float(), 1.0f);
 
-	EXPECT_LT(big, std::numeric_limits<float>::max());
-	EXPECT_GT(big, 0.5 * std::numeric_limits<float>::max());
-	EXPECT_GT(low, std::numeric_limits<float>::lowest());
-	EXPECT_EQ(low, -big);
+    EXPECT_LT(big, std::numeric_limits<float>::max());
+    EXPECT_GT(big, 0.5 * std::numeric_limits<float>::max());
+    EXPECT_GT(low, std::numeric_limits<float>::lowest());
+    EXPECT_EQ(low, -big);
 
-	printf("bfloat16 epsilon: %a (float has %a)\n", eps, std::numeric_limits<float>::epsilon());
-	printf("bfloat16 norm_min: %a (float has %a)\n", n_min, std::numeric_limits<float>::min());
-	printf("bfloat16 denorm_min: %a (float has %a)\n", d_min, std::numeric_limits<float>::denorm_min());
-	printf("bfloat16 max: %a (float has %a)\n", big, std::numeric_limits<float>::max());
-	printf("bfloat16 lowest: %a (float has %a)\n", low, std::numeric_limits<float>::lowest());
+    printf("bfloat16 epsilon: %a (float has %a)\n", eps, std::numeric_limits<float>::epsilon());
+    printf("bfloat16 norm_min: %a (float has %a)\n", n_min, std::numeric_limits<float>::min());
+    printf("bfloat16 denorm_min: %a (float has %a)\n", d_min, std::numeric_limits<float>::denorm_min());
+    printf("bfloat16 max: %a (float has %a)\n", big, std::numeric_limits<float>::max());
+    printf("bfloat16 lowest: %a (float has %a)\n", low, std::numeric_limits<float>::lowest());
 }
 
 TEST(BFloat16Test, traits_check) {
-        EXPECT_TRUE(std::is_trivially_constructible<BFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_move_constructible<BFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_default_constructible<BFloat16>::value);
-        EXPECT_TRUE((std::is_trivially_assignable<BFloat16,BFloat16>::value));
-        EXPECT_TRUE(std::is_trivially_move_assignable<BFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_copy_assignable<BFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_copyable<BFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_destructible<BFloat16>::value);
-        EXPECT_TRUE(std::is_trivial<BFloat16>::value);
-        EXPECT_TRUE(std::is_swappable<BFloat16>::value);
-        EXPECT_TRUE(std::has_unique_object_representations<BFloat16>::value);
+    EXPECT_TRUE(std::is_trivially_constructible<BFloat16>::value);
+    EXPECT_TRUE(std::is_trivially_move_constructible<BFloat16>::value);
+    EXPECT_TRUE(std::is_trivially_default_constructible<BFloat16>::value);
+    EXPECT_TRUE((std::is_trivially_assignable<BFloat16, BFloat16>::value));
+    EXPECT_TRUE(std::is_trivially_move_assignable<BFloat16>::value);
+    EXPECT_TRUE(std::is_trivially_copy_assignable<BFloat16>::value);
+    EXPECT_TRUE(std::is_trivially_copyable<BFloat16>::value);
+    EXPECT_TRUE(std::is_trivially_destructible<BFloat16>::value);
+    EXPECT_TRUE(std::is_trivial<BFloat16>::value);
+    EXPECT_TRUE(std::is_swappable<BFloat16>::value);
+    EXPECT_TRUE(std::has_unique_object_representations<BFloat16>::value);
 }
 
 TEST(BFloat16Test, conversion_is_constexpr) {
-    static_assert(BFloat16(10).get_bits()  == 16672u);
+    static_assert(BFloat16(10).get_bits() == 16672u);
     static_assert(BFloat16(123).get_bits() == 17142u);
 }
 
-static std::string hexdump(const void *p, size_t sz) {
+static std::string hexdump(const void* p, size_t sz) {
     char tmpbuf[10];
     if (sz == 2) {
         uint16_t bits;
@@ -137,10 +137,10 @@ TEST(BFloat16Test, check_special_values) {
     EXPECT_TRUE(std::numeric_limits<BFloat16>::has_quiet_NaN);
     EXPECT_TRUE(std::numeric_limits<BFloat16>::has_signaling_NaN);
     EXPECT_TRUE(std::numeric_limits<BFloat16>::has_infinity);
-    float f_inf = std::numeric_limits<float>::infinity();
-    float f_neg = -f_inf;
-    float f_qnan = std::numeric_limits<float>::quiet_NaN();
-    float f_snan = std::numeric_limits<float>::signaling_NaN();
+    float    f_inf = std::numeric_limits<float>::infinity();
+    float    f_neg = -f_inf;
+    float    f_qnan = std::numeric_limits<float>::quiet_NaN();
+    float    f_snan = std::numeric_limits<float>::signaling_NaN();
     BFloat16 b_inf = std::numeric_limits<BFloat16>::infinity();
     BFloat16 b_qnan = std::numeric_limits<BFloat16>::quiet_NaN();
     BFloat16 b_snan = std::numeric_limits<BFloat16>::signaling_NaN();
@@ -180,8 +180,8 @@ TEST(OnnxBFloat16Test, has_same_encoding) {
     EXPECT_EQ(sizeof(vespalib::BFloat16), sizeof(uint16_t));
     EXPECT_EQ(sizeof(Ort::BFloat16_t), sizeof(uint16_t));
     vespalib::BFloat16 our_value;
-    uint32_t ok_count = 0;
-    uint32_t nan_count = 0;
+    uint32_t           ok_count = 0;
+    uint32_t           nan_count = 0;
     for (uint32_t i = 0; i < (1u << 16u); ++i) {
         uint16_t bits = i;
         our_value.assign_bits(bits);
@@ -210,15 +210,16 @@ TEST(OnnxBFloat16Test, has_same_encoding) {
         if (std::isnan(our_float) && std::isnan(their_float)) {
             ++nan_count;
             continue;
-        } 
+        }
         if (our_float != their_float) {
-            printf("bits %04x as float differs: vespalib %a != %a onnx\n", bits, our_value.to_float(), their_value.ToFloat());
+            printf("bits %04x as float differs: vespalib %a != %a onnx\n", bits, our_value.to_float(),
+                   their_value.ToFloat());
         } else {
             ++ok_count;
         }
         EXPECT_EQ(our_float, their_float);
         vespalib::BFloat16 our_back(our_float);
-        Ort::BFloat16_t their_back(their_float);
+        Ort::BFloat16_t    their_back(their_float);
         EXPECT_EQ(our_back.get_bits(), their_back.val);
     }
     printf("normal floats behave equally OK in both vespalib and onnx: %d (0x%04x)\n", ok_count, ok_count);

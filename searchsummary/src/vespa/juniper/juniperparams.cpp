@@ -1,17 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "juniperparams.h"
+
 #include <cstring>
 
 // DocsumParams implementation:
 // ---------------------------------------------------------------
 
 DocsumParams::DocsumParams()
-  : _enabled(false),
-    _length(256),
-    _min_length(128),
-    _max_matches(3),
-    _surround_max(80),
-    _fallback(FALLBACK_NONE) {}
+    : _enabled(false), _length(256), _min_length(128), _max_matches(3), _surround_max(80), _fallback(FALLBACK_NONE) {
+}
 
 DocsumParams& DocsumParams::SetEnabled(bool en) {
     _enabled = en;
@@ -70,13 +67,14 @@ int DocsumParams::Fallback() const {
 // ---------------------------------------------------------------
 
 MatcherParams::MatcherParams()
-  : _match_winsize(200),
-    _match_winsize_fallback_multiplier(10.0),
-    _max_match_candidates(1000),
-    _stem_min(0),
-    _stem_extend(0),
-    _wordfolder(nullptr),
-    _proximity_factor(1.0) {}
+    : _match_winsize(200),
+      _match_winsize_fallback_multiplier(10.0),
+      _max_match_candidates(1000),
+      _stem_min(0),
+      _stem_extend(0),
+      _wordfolder(nullptr),
+      _proximity_factor(1.0) {
+}
 
 MatcherParams& MatcherParams::SetMatchWindowSize(size_t winsize) {
     _match_winsize = winsize;

@@ -50,20 +50,19 @@ TestData::TestData()
       _dstServer(MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()),
                  RPCNetworkParams(_slobrok.config()).setIdentity(Identity("dst"))),
       _dstSession(),
-      _dstHandler()
-{ }
+      _dstHandler() {
+}
 
 TestData::~TestData() = default;
 
-bool
-TestData::start()
-{
+bool TestData::start() {
     _srcSession = _srcServer.mb.createSourceSession(SourceSessionParams().setReplyHandler(_srcHandler));
-    if ( ! _srcSession) {
+    if (!_srcSession) {
         return false;
     }
-    _dstSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("session").setMessageHandler(_dstHandler));
-    if ( ! _dstSession) {
+    _dstSession = _dstServer.mb.createDestinationSession(
+        DestinationSessionParams().setName("session").setMessageHandler(_dstHandler));
+    if (!_dstSession) {
         return false;
     }
     if (!_srcServer.waitSlobrok("dst/session", 1u)) {
@@ -72,17 +71,13 @@ TestData::start()
     return true;
 }
 
-std::unique_ptr<Message>
-createMessage(const string &msg)
-{
+std::unique_ptr<Message> createMessage(const string& msg) {
     Message::UP ret(new SimpleMessage(msg));
     ret->getTrace().setLevel(9);
     return ret;
 }
 
-void
-replyFromDestination(TestData &data, Message::UP msg, uint32_t errorCode, double retryDelay)
-{
+void replyFromDestination(TestData& data, Message::UP msg, uint32_t errorCode, double retryDelay) {
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     if (errorCode != ErrorCode::NONE) {
@@ -92,7 +87,7 @@ replyFromDestination(TestData &data, Message::UP msg, uint32_t errorCode, double
     data._dstSession->reply(std::move(reply));
 }
 
-}
+} // namespace
 
 class ResenderTest : public testing::Test {
 protected:
@@ -108,16 +103,12 @@ std::shared_ptr<TestData> ResenderTest::_data;
 ResenderTest::ResenderTest() = default;
 ResenderTest::~ResenderTest() = default;
 
-void
-ResenderTest::SetUpTestSuite()
-{
+void ResenderTest::SetUpTestSuite() {
     _data = std::make_shared<TestData>();
     ASSERT_TRUE(_data->start());
 }
 
-void
-ResenderTest::TearDownTestSuite()
-{
+void ResenderTest::TearDownTestSuite() {
     _data.reset();
 }
 
@@ -127,8 +118,7 @@ ResenderTest::TearDownTestSuite()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-TEST_F(ResenderTest, test_retry_tag)
-{
+TEST_F(ResenderTest, test_retry_tag) {
     auto& data = *_data;
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
@@ -150,8 +140,7 @@ TEST_F(ResenderTest, test_retry_tag)
     printf("%s", reply->getTrace().toString().c_str());
 }
 
-TEST_F(ResenderTest, test_retry_enabled_tag)
-{
+TEST_F(ResenderTest, test_retry_enabled_tag) {
     auto& data = *_data;
     data._retryPolicy->setEnabled(true);
     Message::UP msg = createMessage("msg");
@@ -169,8 +158,7 @@ TEST_F(ResenderTest, test_retry_enabled_tag)
     printf("%s", reply->getTrace().toString().c_str());
 }
 
-TEST_F(ResenderTest, test_transient_error)
-{
+TEST_F(ResenderTest, test_transient_error) {
     auto& data = *_data;
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
@@ -188,8 +176,7 @@ TEST_F(ResenderTest, test_transient_error)
     printf("%s", reply->getTrace().toString().c_str());
 }
 
-TEST_F(ResenderTest, test_fatal_error)
-{
+TEST_F(ResenderTest, test_fatal_error) {
     auto& data = *_data;
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
@@ -204,8 +191,7 @@ TEST_F(ResenderTest, test_fatal_error)
     printf("%s", reply->getTrace().toString().c_str());
 }
 
-TEST_F(ResenderTest, test_disable_retry)
-{
+TEST_F(ResenderTest, test_disable_retry) {
     auto& data = *_data;
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
@@ -221,8 +207,7 @@ TEST_F(ResenderTest, test_disable_retry)
     printf("%s", reply->getTrace().toString().c_str());
 }
 
-TEST_F(ResenderTest, test_retry_delay)
-{
+TEST_F(ResenderTest, test_retry_delay) {
     auto& data = *_data;
     data._retryPolicy->setEnabled(true);
     data._retryPolicy->setBaseDelay(0.01);
@@ -250,8 +235,7 @@ TEST_F(ResenderTest, test_retry_delay)
     EXPECT_TRUE(trace.find("retry 5 in 0.160") != string::npos);
 }
 
-TEST_F(ResenderTest, test_request_retry_delay)
-{
+TEST_F(ResenderTest, test_request_retry_delay) {
     auto& data = *_data;
     data._retryPolicy->setEnabled(true);
     data._retryPolicy->setBaseDelay(1);

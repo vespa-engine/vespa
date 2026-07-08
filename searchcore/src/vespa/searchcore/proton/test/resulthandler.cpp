@@ -6,22 +6,19 @@ namespace proton::test {
 
 GenericResultHandler::~GenericResultHandler() = default;
 
-void
-GenericResultHandler::handle(const storage::spi::Result &result) {
+void GenericResultHandler::handle(const storage::spi::Result& result) {
     _result = std::make_unique<storage::spi::Result>(result);
 }
 
 BucketInfoResultHandler::~BucketInfoResultHandler() = default;
-void
-BucketInfoResultHandler::handle(const storage::spi::BucketInfoResult &result) {
+void BucketInfoResultHandler::handle(const storage::spi::BucketInfoResult& result) {
     _result = std::make_unique<storage::spi::BucketInfoResult>(result);
 }
 
 BucketIdListResultHandler::~BucketIdListResultHandler() = default;
 
-void
-BucketIdListResultHandler::handle(storage::spi::BucketIdListResult result) {
+void BucketIdListResultHandler::handle(storage::spi::BucketIdListResult result) {
     _result = std::make_unique<storage::spi::BucketIdListResult>(std::move(result));
 }
 
-}
+} // namespace proton::test

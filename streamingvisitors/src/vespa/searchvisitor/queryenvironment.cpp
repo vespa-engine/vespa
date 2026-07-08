@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryenvironment.h"
+
 #include <vespa/searchlib/common/geo_location.h>
-#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
+#include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
@@ -20,17 +21,15 @@ namespace streaming {
 
 namespace {
 
-std::vector<GeoLocationSpec>
-parseLocation(const string & location_str)
-{
+std::vector<GeoLocationSpec> parseLocation(const string& location_str) {
     std::vector<GeoLocationSpec> fefLocations;
     if (location_str.empty()) {
         return fefLocations;
     }
     GeoLocationParser locationParser;
     if (!locationParser.parseWithField(location_str)) {
-        Issue::report("Location parse error (location: '%s'): %s. Location ignored.",
-                      location_str.c_str(), locationParser.getParseError());
+        Issue::report("Location parse error (location: '%s'): %s. Location ignored.", location_str.c_str(),
+                      locationParser.getParseError());
         return fefLocations;
     }
     auto loc = locationParser.getGeoLocation();
@@ -40,27 +39,25 @@ parseLocation(const string & location_str)
     return fefLocations;
 }
 
+} // namespace
+
+QueryEnvironment::QueryEnvironment(const string& location_str, const IndexEnvironment& indexEnv,
+                                   const Properties& properties, const IAttributeManager* attrMgr)
+    : _indexEnv(indexEnv),
+      _properties(properties),
+      _attrCtx(std::make_unique<AttributeAccessRecorder>(attrMgr->createContext())),
+      _queryTerms(),
+      _locations(parseLocation(location_str)) {
 }
 
-QueryEnvironment::QueryEnvironment(const string & location_str,
-                                   const IndexEnvironment & indexEnv,
-                                   const Properties & properties,
-                                   const IAttributeManager * attrMgr) :
-    _indexEnv(indexEnv),
-    _properties(properties),
-    _attrCtx(std::make_unique<AttributeAccessRecorder>(attrMgr->createContext())),
-    _queryTerms(),
-    _locations(parseLocation(location_str))
-{
+QueryEnvironment::~QueryEnvironment() {
 }
 
-QueryEnvironment::~QueryEnvironment() {}
-
-void QueryEnvironment::addGeoLocation(const std::string &field, const std::string &location_str) {
+void QueryEnvironment::addGeoLocation(const std::string& field, const std::string& location_str) {
     GeoLocationParser locationParser;
-    if (! locationParser.parseNoField(location_str)) {
-        Issue::report("Location parse error (location: '%s'): %s. Location ignored.",
-                      location_str.c_str(), locationParser.getParseError());
+    if (!locationParser.parseNoField(location_str)) {
+        Issue::report("Location parse error (location: '%s'): %s. Location ignored.", location_str.c_str(),
+                      locationParser.getParseError());
         return;
     }
     auto loc = locationParser.getGeoLocation();
@@ -69,15 +66,12 @@ void QueryEnvironment::addGeoLocation(const std::string &field, const std::strin
     }
 }
 
-QueryEnvironment::GeoLocationSpecPtrs
-QueryEnvironment::getAllLocations() const
-{
+QueryEnvironment::GeoLocationSpecPtrs QueryEnvironment::getAllLocations() const {
     GeoLocationSpecPtrs retval;
-    for (const auto & loc : _locations) {
+    for (const auto& loc : _locations) {
         retval.push_back(&loc);
     }
     return retval;
 }
 
 } // namespace streaming
-

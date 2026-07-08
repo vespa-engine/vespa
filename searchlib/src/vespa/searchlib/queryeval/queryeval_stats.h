@@ -2,38 +2,96 @@
 
 #pragma once
 
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/time.h>
+
 #include <atomic>
 #include <memory>
 
 namespace search::queryeval {
 
 /**
- * Class for collecting statistics within blueprints and search iterators.
- * Thread-safe such that search iterators from different threads can write their collected statistics here.
+ * Class for collecting statistics from query setup.
+ * Not thread safe.
+ **/
+class QuerySetupStats {
+private:
+    size_t             _approximate_nns_distances_computed;
+    size_t             _approximate_nns_nodes_visited;
+    size_t             _approximate_nns_searches_performed;
+    vespalib::duration _approximate_nns_time_used;
+    size_t             _approximate_nns_timeouts_hit;
+
+public:
+    QuerySetupStats() noexcept
+        : _approximate_nns_distances_computed(0),
+          _approximate_nns_nodes_visited(0),
+          _approximate_nns_searches_performed(0),
+          _approximate_nns_time_used(vespalib::duration::zero()),
+          _approximate_nns_timeouts_hit(0) {}
+
+    size_t approximate_nns_distances_computed() const noexcept { return _approximate_nns_distances_computed; }
+    void add_to_approximate_nns_distances_computed(size_t value) noexcept {
+        _approximate_nns_distances_computed += value;
+    }
+
+    size_t approximate_nns_nodes_visited() const noexcept { return _approximate_nns_nodes_visited; }
+    void add_to_approximate_nns_nodes_visited(size_t value) noexcept { _approximate_nns_nodes_visited += value; }
+
+    size_t approximate_nns_searches_performed() const noexcept { return _approximate_nns_searches_performed; }
+    void add_to_approximate_nns_searches_performed(size_t value) noexcept {
+        _approximate_nns_searches_performed += value;
+    }
+
+    vespalib::duration approximate_nns_time_used() const noexcept { return _approximate_nns_time_used; }
+    void add_to_approximate_nns_time_used(vespalib::duration ann_time) noexcept {
+        _approximate_nns_time_used += ann_time;
+    }
+
+    size_t approximate_nns_timeouts_hit() const noexcept { return _approximate_nns_timeouts_hit; }
+    void add_to_approximate_nns_timeouts_hit(size_t value) noexcept { _approximate_nns_timeouts_hit += value; }
+
+    vespalib::slime::Cursor& as_slime(const vespalib::slime::Inserter& inserter) const {
+        vespalib::slime::Cursor& cursor = inserter.insertObject();
+        cursor.setLong("approximate_nns_distances_computed", approximate_nns_distances_computed());
+        cursor.setLong("approximate_nns_nodes_visited", approximate_nns_nodes_visited());
+        cursor.setLong("approximate_nns_searches_performed", approximate_nns_searches_performed());
+        cursor.setDouble("approximate_nns_time_used_ms", vespalib::count_ns(approximate_nns_time_used()) / 1000000.0);
+        cursor.setLong("approximate_nns_timeouts_hit", approximate_nns_timeouts_hit());
+        return cursor;
+    }
+};
+
+/**
+ * Class for collecting statistics from query evaluation.
+ * Its methods are thread-safe so that search iterators from different threads
+ * can write their collected statistics here.
  **/
 class QueryEvalStats : public std::enable_shared_from_this<QueryEvalStats> {
 private:
-    struct Private { explicit Private() = default; };
+    struct Private {
+        explicit Private() = default;
+    };
     std::atomic<size_t> _exact_nns_distances_computed;
-    std::atomic<size_t> _approximate_nns_distances_computed;
-    std::atomic<size_t> _approximate_nns_nodes_visited;
+
 public:
     // Constructor is only usable by this class
-    QueryEvalStats(Private) noexcept
-        : _exact_nns_distances_computed(0),
-          _approximate_nns_distances_computed(0),
-          _approximate_nns_nodes_visited(0) {}
+    QueryEvalStats(Private) noexcept : _exact_nns_distances_computed(0) {}
     // This factory function has to be used to create objects, meaning that all such objects will be in a shared_ptr
     static std::shared_ptr<QueryEvalStats> create() { return std::make_shared<QueryEvalStats>(Private()); }
 
-    size_t exact_nns_distances_computed() const noexcept { return _exact_nns_distances_computed.load(std::memory_order_relaxed); }
-    void add_to_exact_nns_distances_computed(size_t value) noexcept { _exact_nns_distances_computed.fetch_add(value, std::memory_order_relaxed); }
+    size_t exact_nns_distances_computed() const noexcept {
+        return _exact_nns_distances_computed.load(std::memory_order_relaxed);
+    }
+    void add_to_exact_nns_distances_computed(size_t value) noexcept {
+        _exact_nns_distances_computed.fetch_add(value, std::memory_order_relaxed);
+    }
 
-    size_t approximate_nns_distances_computed() const noexcept { return _approximate_nns_distances_computed.load(std::memory_order_relaxed); }
-    void add_to_approximate_nns_distances_computed(size_t value) noexcept { _approximate_nns_distances_computed.fetch_add(value, std::memory_order_relaxed); }
-
-    size_t approximate_nns_nodes_visited() const noexcept { return _approximate_nns_nodes_visited.load(std::memory_order_relaxed); }
-    void add_to_approximate_nns_nodes_visited(size_t value) noexcept { _approximate_nns_nodes_visited.fetch_add(value, std::memory_order_relaxed); }
+    vespalib::slime::Cursor& as_slime(const vespalib::slime::Inserter& inserter) const {
+        vespalib::slime::Cursor& cursor = inserter.insertObject();
+        cursor.setLong("exact_nns_distances_computed", exact_nns_distances_computed());
+        return cursor;
+    }
 };
 
-}
+} // namespace search::queryeval

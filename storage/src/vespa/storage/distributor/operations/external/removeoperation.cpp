@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "removeoperation.h"
-#include <vespa/storageapi/message/persistence.h>
+
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/clusterstate.h>
+
 #include <string>
 
 #include <vespa/log/log.h>
@@ -12,13 +14,11 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
-                                 DistributorStripeOperationContext& op_ctx,
-                                 DistributorBucketSpace& bucketSpace,
-                                 std::shared_ptr<api::RemoveCommand> msg,
+RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx,
+                                 DistributorBucketSpace& bucketSpace, std::shared_ptr<api::RemoveCommand> msg,
                                  PersistenceOperationMetricSet& metric,
                                  PersistenceOperationMetricSet& condition_probe_metrics,
-                                 SequencingHandle sequencingHandle)
+                                 SequencingHandle               sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
       _tracker(metric, std::make_shared<api::RemoveReply>(*msg), node_ctx, op_ctx, _cancel_scope),
       _msg(std::move(msg)),
@@ -27,8 +27,7 @@ RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
       _op_ctx(op_ctx),
       _condition_probe_metrics(condition_probe_metrics),
       _bucket_space(bucketSpace),
-      _check_condition()
-{
+      _check_condition() {
 }
 
 RemoveOperation::~RemoveOperation() = default;
@@ -45,9 +44,9 @@ void RemoveOperation::onStart(DistributorStripeMessageSender& sender) {
 
 void RemoveOperation::start_conditional_remove(DistributorStripeMessageSender& sender) {
     document::Bucket bucket(_msg->getBucket().getBucketSpace(), _doc_id_bucket_id);
-    _check_condition = CheckCondition::create_if_inconsistent_replicas(bucket, _bucket_space, _msg->getDocumentId(),
-                                                                       _msg->getCondition(), _node_ctx, _op_ctx,
-                                                                       _condition_probe_metrics, _msg->getTrace().getLevel());
+    _check_condition = CheckCondition::create_if_inconsistent_replicas(
+        bucket, _bucket_space, _msg->getDocumentId(), _msg->getCondition(), _node_ctx, _op_ctx,
+        _condition_probe_metrics, _msg->getTrace().getLevel());
     if (!_check_condition) {
         start_direct_remove_dispatch(sender);
     } else {
@@ -74,8 +73,9 @@ void RemoveOperation::start_direct_remove_dispatch(DistributorStripeMessageSende
         std::vector<MessageTracker::ToSend> messages;
         messages.reserve(e->getNodeCount());
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
-            auto command = std::make_shared<api::RemoveCommand>(document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()),
-                                                                _msg->getDocumentId(), _msg->getTimestamp());
+            auto command = std::make_shared<api::RemoveCommand>(
+                document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()), _msg->getDocumentId(),
+                _msg->getTimestamp());
 
             copyMessageSettings(*_msg, *command);
             command->getTrace().setLevel(_msg->getTrace().getLevel());
@@ -92,8 +92,7 @@ void RemoveOperation::start_direct_remove_dispatch(DistributorStripeMessageSende
         LOG(debug,
             "Remove document %s failed since no available nodes found. "
             "System state is %s",
-            _msg->getDocumentId().toString().c_str(),
-            _bucket_space.getClusterState().toString().c_str());
+            _msg->getDocumentId().toString().c_str(), _bucket_space.getClusterState().toString().c_str());
 
         _tracker.fail(sender, api::ReturnCode(api::ReturnCode::OK));
     } else {
@@ -101,9 +100,8 @@ void RemoveOperation::start_direct_remove_dispatch(DistributorStripeMessageSende
     }
 };
 
-void
-RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
-{
+void RemoveOperation::onReceive(DistributorStripeMessageSender&           sender,
+                                const std::shared_ptr<api::StorageReply>& msg) {
     if (_check_condition) {
         _check_condition->handle_reply(sender, msg);
         auto& outcome = _check_condition->maybe_outcome();
@@ -116,8 +114,7 @@ RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::sh
     auto& reply = static_cast<api::RemoveReply&>(*msg);
 
     if (_tracker.getReply().get()) {
-        api::RemoveReply& replyToSend =
-            static_cast<api::RemoveReply&>(*_tracker.getReply());
+        api::RemoveReply& replyToSend = static_cast<api::RemoveReply&>(*_tracker.getReply());
 
         if (reply.getOldTimestamp() > replyToSend.getOldTimestamp()) {
             replyToSend.setOldTimestamp(reply.getOldTimestamp());
@@ -127,9 +124,8 @@ RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::sh
     _tracker.receiveReply(sender, reply);
 }
 
-void RemoveOperation::on_completed_check_condition(CheckCondition::Outcome& outcome,
-                                                   DistributorStripeMessageSender& sender)
-{
+void RemoveOperation::on_completed_check_condition(CheckCondition::Outcome&        outcome,
+                                                   DistributorStripeMessageSender& sender) {
     if (!outcome.trace().isEmpty()) {
         _tracker.add_trace_tree_to_reply(outcome.steal_trace());
     }
@@ -138,11 +134,12 @@ void RemoveOperation::on_completed_check_condition(CheckCondition::Outcome& outc
         start_direct_remove_dispatch(sender);
     } else if (outcome.not_found()) {
         // TODO "not found" not a TaS error...
-        _tracker.fail(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
-                                              "Document does not exist"));
+        _tracker.fail(sender,
+                      api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, "Document does not exist"));
     } else if (outcome.failed()) {
         api::ReturnCode wrapped_error(outcome.error_code().getResult(),
-                                      "Failed during write repair condition probe step. Reason: " + std::string(outcome.error_code().getMessage()));
+                                      "Failed during write repair condition probe step. Reason: " +
+                                          std::string(outcome.error_code().getMessage()));
         _tracker.fail(sender, wrapped_error);
     } else {
         _tracker.fail(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
@@ -151,18 +148,14 @@ void RemoveOperation::on_completed_check_condition(CheckCondition::Outcome& outc
     _check_condition.reset();
 }
 
-void
-RemoveOperation::onClose(DistributorStripeMessageSender& sender)
-{
+void RemoveOperation::onClose(DistributorStripeMessageSender& sender) {
     if (_check_condition) {
         _check_condition->close(sender);
     }
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
 }
 
-void
-RemoveOperation::on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope)
-{
+void RemoveOperation::on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) {
     if (_check_condition) {
         _check_condition->cancel(sender, cancel_scope);
     }
@@ -172,4 +165,4 @@ bool RemoveOperation::has_condition() const noexcept {
     return _msg->hasTestAndSetCondition();
 }
 
-}
+} // namespace storage::distributor

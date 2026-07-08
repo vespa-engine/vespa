@@ -3,16 +3,21 @@
 
 #include "bucket.h"
 #include "bucketinfo.h"
+#include "clusterstate.h"
 #include "context.h"
 #include "id_and_timestamp.h"
+#include "operationcomplete.h"
 #include "result.h"
 #include "selection.h"
-#include "clusterstate.h"
-#include "operationcomplete.h"
+
 #include <vespa/document/base/documentid.h>
 
-namespace document { class FieldSet; }
-namespace vespalib { class IDestructorCallback; }
+namespace document {
+class FieldSet;
+}
+namespace vespalib {
+class IDestructorCallback;
+}
 
 namespace storage::spi {
 
@@ -53,8 +58,7 @@ struct DocTypeGidAndTimestamp;
  * state.
  * <p/>
  */
-struct PersistenceProvider
-{
+struct PersistenceProvider {
     using BucketSpace = document::BucketSpace;
     using FieldSetSP = std::shared_ptr<document::FieldSet>;
     using TimeStampAndDocumentId = std::pair<Timestamp, DocumentId>;
@@ -99,7 +103,7 @@ struct PersistenceProvider
      * other buckets may be deactivated, so the node must be able to serve
      * the data from its secondary index or get reduced coverage.
      */
-    virtual void setActiveStateAsync(const Bucket &, BucketInfo::ActiveState, OperationComplete::UP ) = 0;
+    virtual void setActiveStateAsync(const Bucket&, BucketInfo::ActiveState, OperationComplete::UP) = 0;
 
     /**
      * Retrieve metadata for a bucket, previously returned in listBuckets(),
@@ -111,7 +115,7 @@ struct PersistenceProvider
     /**
      * Store the given document at the given microsecond time.
      */
-    virtual void putAsync(const Bucket &, Timestamp , DocumentSP, OperationComplete::UP ) = 0;
+    virtual void putAsync(const Bucket&, Timestamp, DocumentSP, OperationComplete::UP) = 0;
 
     /**
      * This remove function assumes that there exist something to be removed.
@@ -179,7 +183,8 @@ struct PersistenceProvider
      * (don't keep track of the removed document). This operation is typically
      * used as part of removing documents in a bucket that will be deleted.
      */
-    virtual void removeByGidAsync(const Bucket&, std::vector<DocTypeGidAndTimestamp> ids, std::unique_ptr<OperationComplete>) = 0;
+    virtual void removeByGidAsync(const Bucket&, std::vector<DocTypeGidAndTimestamp> ids,
+                                  std::unique_ptr<OperationComplete>) = 0;
 
     /**
      * @see remove()
@@ -197,7 +202,8 @@ struct PersistenceProvider
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
      */
-    virtual void removeIfFoundAsync(const Bucket&, Timestamp timestamp, const DocumentId& id, OperationComplete::UP) = 0;
+    virtual void removeIfFoundAsync(const Bucket&, Timestamp timestamp, const DocumentId& id,
+                                    OperationComplete::UP) = 0;
 
     /**
      * Remove any trace of the entry with the given timestamp. (Be it a document
@@ -229,7 +235,8 @@ struct PersistenceProvider
      * @param fieldSet A set of fields that should be retrieved.
      * @param id The document id to retrieve.
      */
-    virtual GetResult get(const Bucket&, const document::FieldSet& fieldSet, const DocumentId& id, Context&) const = 0;
+    virtual GetResult get(const Bucket&, const document::FieldSet& fieldSet, const DocumentId& id,
+                          Context&) const = 0;
 
     /**
      * Create an iterator for a given bucket and selection criteria, returning
@@ -260,9 +267,8 @@ struct PersistenceProvider
      *   error. Identifier must be non-zero, as zero is used internally to
      *   signify an invalid iterator ID.
      */
-    virtual CreateIteratorResult
-    createIterator(const Bucket &bucket, FieldSetSP fieldSet, const Selection &selection,
-                   IncludedVersions versions, Context &context) = 0;
+    virtual CreateIteratorResult createIterator(const Bucket& bucket, FieldSetSP fieldSet, const Selection& selection,
+                                                IncludedVersions versions, Context& context) = 0;
 
     /**
      * Iterate over a bucket's document space using a valid iterator id
@@ -395,13 +401,15 @@ struct PersistenceProvider
      * Register a listener for updates to resource usage.
      * The listener is deregistered when the returned object is destroyed.
      */
-    [[nodiscard]] virtual std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) = 0;
+    [[nodiscard]] virtual std::unique_ptr<vespalib::IDestructorCallback>
+    register_resource_usage_listener(IResourceUsageListener& listener) = 0;
 
     /**
-     * Provides an execute interface that can be used by the provider to execute tasks while bucket guarantees are upheld.
-     * When the returned object goes out of scope the executor is deregistered.
+     * Provides an execute interface that can be used by the provider to execute tasks while bucket guarantees are
+     * upheld. When the returned object goes out of scope the executor is deregistered.
      */
-    [[nodiscard]] virtual std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor> executor) = 0;
+    [[nodiscard]] virtual std::unique_ptr<vespalib::IDestructorCallback>
+    register_executor(std::shared_ptr<BucketExecutor> executor) = 0;
 };
 
-}
+} // namespace storage::spi

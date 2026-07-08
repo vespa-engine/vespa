@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_NAME;
@@ -49,6 +50,8 @@ public class MetricsProxyContainer extends Container implements
     private final MetricsProxyContainerCluster cluster;
     private final ApplicationId applicationId;
     private final Zone zone;
+    private final OptionalInt metricsProxyHeapSizeInMib;
+    private final OptionalInt metricsProxyAdminNodeHeapSizeInMib;
 
     public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
         super(cluster, host.getHostname(), index, deployState);
@@ -57,6 +60,15 @@ public class MetricsProxyContainer extends Container implements
         this.cluster = cluster;
         this.applicationId = deployState.getApplicationPackage().getApplicationId();
         this.zone = deployState.zone();
+        int metricsProxyHeapSizeInMibFromFlag = clusterMembership
+                .map(membership -> deployState.featureFlags().metricsProxyHeapSizeInMibFlag()
+                        .withClusterType(membership.type())
+                        .withClusterId(membership.id())
+                        .value())
+                .orElse(0);
+        this.metricsProxyHeapSizeInMib = metricsProxyHeapSizeInMibFromFlag > 0 ? OptionalInt.of(
+                metricsProxyHeapSizeInMibFromFlag) : OptionalInt.empty();
+        this.metricsProxyAdminNodeHeapSizeInMib = deployState.featureFlags().metricsProxyAdminNodeHeapSizeInMib();
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
@@ -137,11 +149,11 @@ public class MetricsProxyContainer extends Container implements
     public void getConfig(NodeDimensionsConfig.Builder builder) {
         Map<String, String> dimensions = new LinkedHashMap<>();
         if (isHostedVespa) {
-            getHostResource().spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
+            getHostResource().spec().membership().ifPresent(cluster -> {
                 dimensions.put(PublicDimensions.DEPLOYMENT_CLUSTER, getDeploymentCluster(cluster));
                 dimensions.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, cluster.type().name());
                 dimensions.put(PublicDimensions.INTERNAL_CLUSTER_ID, cluster.id().value());
-                cluster.group().ifPresent(group -> dimensions.put(PublicDimensions.GROUP_ID, group.toString()));
+                dimensions.put(PublicDimensions.GROUP_ID, String.valueOf(cluster.group()));
             });
 
             builder.dimensions(dimensions);
@@ -158,8 +170,8 @@ public class MetricsProxyContainer extends Container implements
     public void getConfig(QrStartConfig.Builder builder) {
         cluster.getConfig(builder);
         if (clusterMembership.isPresent()) {
-            boolean adminCluster = clusterMembership.get().cluster().type() == ClusterSpec.Type.admin;
-            int heapSize = adminCluster ? 96 : 320;
+            boolean adminCluster = clusterMembership.get().type() == ClusterSpec.Type.admin;
+            int heapSize = calculateHeapSize(adminCluster);
             builder.jvm.heapsize(heapSize);
             builder.jvm.minHeapsize(heapSize);
             builder.jvm.compressedClassSpaceSize(0);
@@ -167,6 +179,21 @@ public class MetricsProxyContainer extends Container implements
             builder.jvm.availableProcessors(2);
         }
     }
+
+    private int calculateHeapSize(boolean adminCluster) {
+        if (adminCluster) {
+            if (metricsProxyAdminNodeHeapSizeInMib.isPresent())
+                return metricsProxyAdminNodeHeapSizeInMib.getAsInt();
+            else
+                return 96;
+        }
+
+        if (metricsProxyHeapSizeInMib.isPresent())
+            return metricsProxyHeapSizeInMib.getAsInt();
+        else
+            return 320;
+    }
+
 
     private String getNodeRole() {
         String hostConfigId = getHost().getHost().getConfigId();
@@ -180,8 +207,8 @@ public class MetricsProxyContainer extends Container implements
         addSimpleComponent(componentClass.getName(), null, METRICS_PROXY_BUNDLE_NAME);
     }
 
-    private String getDeploymentCluster(ClusterSpec cluster) {
-        return String.join(".", applicationId.toFullString(), zone.environment().value(), zone.region().value(), cluster.id().value());
+    private String getDeploymentCluster(ClusterMembership membership) {
+        return String.join(".", applicationId.toFullString(), zone.environment().value(), zone.region().value(), membership.id().value());
     }
 
     @Override

@@ -7,6 +7,7 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.service.VespaService;
 import ai.vespa.metricsproxy.service.VespaServices;
 
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -41,6 +43,7 @@ public class MetricsManager {
     private final NodeDimensions nodeDimensions;
 
     private volatile Map<DimensionId, String> extraDimensions = new HashMap<>();
+    private volatile Map<DimensionId, String> extraHostDimensions = new HashMap<>();
     private volatile Instant externalMetricsUpdateTime = Instant.now();
     private static final Duration EXTERNAL_METRICS_TTL = Duration.ofMinutes(10);
 
@@ -173,12 +176,24 @@ public class MetricsManager {
     public void setExtraMetrics(List<MetricsPacket.Builder> packets) {
         externalMetricsUpdateTime = Instant.now();
         extraDimensions = extractConfigserverDimensions(packets);
+        extraHostDimensions = externalMetrics.extractHostDimensions(packets);
         externalMetrics.setExtraMetrics(packets);
     }
 
     public Map<DimensionId, String> getExtraDimensions() {
         purgeStaleMetrics();
         return this.extraDimensions;
+    }
+
+    /** Host-level dimensions (host, parentHostname, osVersion) for the given service, filtered by the metric-to-dimension mapping. */
+    public Map<DimensionId, String> getExtraHostDimensions(ServiceId serviceId) {
+        purgeStaleMetrics();
+        Set<DimensionId> allowed = externalMetrics.allowedHostDimensions(serviceId);
+        Map<DimensionId, String> result = new LinkedHashMap<>();
+        extraHostDimensions.forEach((id, value) -> {
+            if (allowed.contains(id)) result.put(id, value);
+        });
+        return result;
     }
 
     private void purgeStaleMetrics() {
@@ -189,6 +204,7 @@ public class MetricsManager {
 
     public void purgeExtraMetrics() {
         extraDimensions = new HashMap<>();
+        extraHostDimensions = new HashMap<>();
         externalMetrics.setExtraMetrics(List.of());
     }
 

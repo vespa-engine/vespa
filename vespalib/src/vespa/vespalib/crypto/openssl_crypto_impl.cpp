@@ -1,44 +1,39 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "openssl_crypto_impl.h"
+
 #include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/util/casts.h>
-#include <cassert>
+
 #include <openssl/bn.h>
 #include <openssl/rand.h>
 #include <openssl/x509v3.h>
+
+#include <cassert>
 
 namespace vespalib::crypto::openssl_impl {
 
 namespace {
 
 struct EvpPkeyCtxDeleter {
-    void operator()(::EVP_PKEY_CTX* ctx) const noexcept {
-        ::EVP_PKEY_CTX_free(ctx);
-    }
+    void operator()(::EVP_PKEY_CTX* ctx) const noexcept { ::EVP_PKEY_CTX_free(ctx); }
 };
 
 using EvpPkeyCtxPtr = std::unique_ptr<::EVP_PKEY_CTX, EvpPkeyCtxDeleter>;
 
 struct BignumDeleter {
-    void operator()(::BIGNUM* bn) const noexcept {
-        ::BN_free(bn);
-    }
+    void operator()(::BIGNUM* bn) const noexcept { ::BN_free(bn); }
 };
 
 using BignumPtr = std::unique_ptr<::BIGNUM, BignumDeleter>;
 
 struct Asn1IntegerDeleter {
-    void operator()(::ASN1_INTEGER* i) const noexcept {
-        ::ASN1_INTEGER_free(i);
-    }
+    void operator()(::ASN1_INTEGER* i) const noexcept { ::ASN1_INTEGER_free(i); }
 };
 
 using Asn1IntegerPtr = std::unique_ptr<::ASN1_INTEGER, Asn1IntegerDeleter>;
 
 struct X509ExtensionDeleter {
-    void operator()(X509_EXTENSION* ext) const noexcept {
-        ::X509_EXTENSION_free(ext);
-    }
+    void operator()(X509_EXTENSION* ext) const noexcept { ::X509_EXTENSION_free(ext); }
 };
 
 using X509ExtensionPtr = std::unique_ptr<::X509_EXTENSION, X509ExtensionDeleter>;
@@ -63,20 +58,17 @@ BioPtr new_memory_bio() {
 
 } // anonymous namespace
 
-std::string
-PrivateKeyImpl::private_to_pem() const {
+std::string PrivateKeyImpl::private_to_pem() const {
     BioPtr bio = new_memory_bio();
     // TODO this API is const-broken even on 1.1.1, revisit in the future...
     auto* mutable_pkey = const_cast<::EVP_PKEY*>(_pkey.get());
-    if (::PEM_write_bio_PrivateKey(bio.get(), mutable_pkey, nullptr, nullptr,
-                                   0, nullptr, nullptr) != 1) {
+    if (::PEM_write_bio_PrivateKey(bio.get(), mutable_pkey, nullptr, nullptr, 0, nullptr, nullptr) != 1) {
         throw CryptoException("PEM_write_bio_PrivateKey");
     }
     return bio_to_string(*bio);
 }
 
-std::shared_ptr<PrivateKeyImpl>
-PrivateKeyImpl::generate_openssl_p256_ec_key() {
+std::shared_ptr<PrivateKeyImpl> PrivateKeyImpl::generate_openssl_p256_ec_key() {
     // We first have to generate an EVP context for the keygen _parameters_...
     EvpPkeyCtxPtr params_ctx(::EVP_PKEY_CTX_new_id(EVP_PKEY_EC, nullptr));
     if (!params_ctx) {
@@ -177,25 +169,23 @@ void set_certificate_expires_from_now(::X509& cert, std::chrono::seconds valid_f
     }
 }
 
-void
-set_name_entry_if_non_empty(::X509_NAME& name, const char* field, std::string_view entry) {
+void set_name_entry_if_non_empty(::X509_NAME& name, const char* field, std::string_view entry) {
     if (entry.empty()) {
         return;
     }
     assert(entry.size() <= INT_MAX);
     auto* entry_buf = char_p_cast<unsigned char>(entry.data());
-    auto entry_len  = static_cast<int>(entry.size());
+    auto  entry_len = static_cast<int>(entry.size());
     if (::X509_NAME_add_entry_by_txt(&name, field, MBSTRING_UTF8, entry_buf, entry_len, -1, 0) != 1) {
         throw CryptoException("X509_NAME_add_entry_by_txt");
     }
 }
 
-void
-assign_subject_distinguished_name(::X509_NAME& name, const X509Certificate::DistinguishedName& dn) {
-    set_name_entry_if_non_empty(name, "C",  dn._country);
+void assign_subject_distinguished_name(::X509_NAME& name, const X509Certificate::DistinguishedName& dn) {
+    set_name_entry_if_non_empty(name, "C", dn._country);
     set_name_entry_if_non_empty(name, "ST", dn._state);
-    set_name_entry_if_non_empty(name, "L",  dn._locality);
-    set_name_entry_if_non_empty(name, "O",  dn._organization);
+    set_name_entry_if_non_empty(name, "L", dn._locality);
+    set_name_entry_if_non_empty(name, "O", dn._organization);
     set_name_entry_if_non_empty(name, "OU", dn._organizational_unit);
     for (auto& cn : dn._common_names) {
         set_name_entry_if_non_empty(name, "CN", cn);
@@ -205,15 +195,15 @@ assign_subject_distinguished_name(::X509_NAME& name, const X509Certificate::Dist
 // `value` string is taken by value since X509V3_EXT_conf_nid takes in a mutable char*
 // and who knows what terrible things it might do to it (we must also ensure null
 // termination of the string).
-void
-add_v3_ext(::X509& subject, ::X509& issuer, int nid, std::string value) {
+void add_v3_ext(::X509& subject, ::X509& issuer, int nid, std::string value) {
     // We are now reaching a point where the API we need to use is not properly documented.
-    // This functionality is inferred from https://opensource.apple.com/source/OpenSSL/OpenSSL-22/openssl/demos/x509/mkcert.c
+    // This functionality is inferred from
+    // https://opensource.apple.com/source/OpenSSL/OpenSSL-22/openssl/demos/x509/mkcert.c
     ::X509V3_CTX ctx;
     X509V3_set_ctx_nodb(&ctx);
     // Need to set the certificate(s) so that e.g. subjectKeyIdentifier can find
     // the correct public key to hash.
-    ::X509V3_set_ctx(&ctx, &issuer, &subject, /*CSR*/nullptr, /*CRL*/nullptr, /*flags*/0);
+    ::X509V3_set_ctx(&ctx, &issuer, &subject, /*CSR*/ nullptr, /*CRL*/ nullptr, /*flags*/ 0);
     X509ExtensionPtr ext(::X509V3_EXT_conf_nid(nullptr, &ctx, nid, &value[0]));
     if (!ext) {
         throw CryptoException("X509V3_EXT_conf_nid");
@@ -225,9 +215,7 @@ add_v3_ext(::X509& subject, ::X509& issuer, int nid, std::string value) {
     }
 }
 
-void
-add_any_subject_alternate_names(::X509& subject, ::X509& issuer,
-                                     const std::vector<std::string>& sans) {
+void add_any_subject_alternate_names(::X509& subject, ::X509& issuer, const std::vector<std::string>& sans) {
     // There can only be 1 SAN entry in a valid cert, but it can have multiple
     // logical entries separated by commas in a single string.
     std::string san_csv;
@@ -249,8 +237,7 @@ X509CertificateImpl::~X509CertificateImpl() = default;
 // Some references:
 // https://stackoverflow.com/questions/256405/programmatically-create-x509-certificate-using-openssl
 // https://opensource.apple.com/source/OpenSSL/OpenSSL-22/openssl/demos/x509/mkcert.c
-std::shared_ptr<X509CertificateImpl>
-X509CertificateImpl::generate_openssl_x509_from(Params params) {
+std::shared_ptr<X509CertificateImpl> X509CertificateImpl::generate_openssl_x509_from(Params params) {
     X509Ptr cert(::X509_new());
     if (!cert) {
         throw CryptoException("X509_new");
@@ -274,18 +261,16 @@ X509CertificateImpl::generate_openssl_x509_from(Params params) {
     // If we _do_ have an issuer, we'll record its Subject name as our Issuer name.
     // Note that it's legal to have a self-signed non-CA certificate, though it obviously
     // cannot be used to sign any subordinate certificates.
-    auto* issuer_cert_impl = dynamic_cast<X509CertificateImpl*>(params.issuer.get()); // May be nullptr.
-    ::X509_NAME* issuer_name = (issuer_cert_impl
-                                ? ::X509_get_subject_name(issuer_cert_impl->native_cert())
-                                : subj_name);
+    auto*        issuer_cert_impl = dynamic_cast<X509CertificateImpl*>(params.issuer.get()); // May be nullptr.
+    ::X509_NAME* issuer_name =
+        (issuer_cert_impl ? ::X509_get_subject_name(issuer_cert_impl->native_cert()) : subj_name);
     if (::X509_set_issuer_name(cert.get(), issuer_name) != 1) { // Makes internal copy
         throw CryptoException("X509_set_issuer_name");
     }
     ::X509& issuer_cert = issuer_cert_impl ? *issuer_cert_impl->native_cert() : *cert;
 
     const char* basic_constraints = params.is_ca ? "critical,CA:TRUE" : "critical,CA:FALSE";
-    const char* key_usage = params.is_ca ? "critical,keyCertSign,digitalSignature"
-                                         : "critical,digitalSignature";
+    const char* key_usage = params.is_ca ? "critical,keyCertSign,digitalSignature" : "critical,digitalSignature";
 
     add_v3_ext(*cert, issuer_cert, NID_basic_constraints, basic_constraints);
     add_v3_ext(*cert, issuer_cert, NID_key_usage, key_usage);
@@ -301,8 +286,7 @@ X509CertificateImpl::generate_openssl_x509_from(Params params) {
     return std::make_shared<X509CertificateImpl>(std::move(cert));
 }
 
-std::string
-X509CertificateImpl::to_pem() const {
+std::string X509CertificateImpl::to_pem() const {
     BioPtr bio = new_memory_bio();
     // TODO this API is const-broken, revisit in the future...
     auto* mutable_cert = const_cast<::X509*>(_cert.get());
@@ -312,5 +296,4 @@ X509CertificateImpl::to_pem() const {
     return bio_to_string(*bio);
 }
 
-
-}
+} // namespace vespalib::crypto::openssl_impl

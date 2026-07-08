@@ -4,49 +4,39 @@
 
 namespace search::attribute {
 
-BaseName::BaseName(std::string_view base, std::string_view name)
-    : string(base),
-      _name(name)
-{
+BaseName::BaseName(std::string_view base, std::string_view name) : string(base), _name(name) {
     if (!empty()) {
         push_back('/');
     }
     append(name);
 }
 
-BaseName::BaseName(std::string_view s)
-    : string(s),
-      _name(createAttributeName(s))
-{ }
-BaseName &
-BaseName::operator = (std::string_view s) {
-        BaseName n(s);
-        std::swap(*this, n);
-        return *this;
-    }
+BaseName::BaseName(std::string_view s) : string(s), _name(createAttributeName(s)) {
+}
+BaseName& BaseName::operator=(std::string_view s) {
+    BaseName n(s);
+    std::swap(*this, n);
+    return *this;
+}
 
 BaseName::~BaseName() = default;
 
-std::string
-BaseName::createAttributeName(std::string_view s)
-{
+std::string BaseName::createAttributeName(std::string_view s) {
     size_t p(s.rfind('/'));
     if (p == string::npos) {
-       return std::string(s);
+        return std::string(s);
     } else {
-        return std::string(s.substr(p+1));
+        return std::string(s.substr(p + 1));
     }
 }
 
-std::string
-BaseName::getDirName() const
-{
+std::string BaseName::getDirName() const {
     size_t p = rfind('/');
     if (p == string::npos) {
-       return "";
+        return "";
     } else {
         return substr(0, p);
     }
 }
 
-}
+} // namespace search::attribute

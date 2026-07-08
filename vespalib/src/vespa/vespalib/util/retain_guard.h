@@ -13,33 +13,26 @@ namespace vespalib {
  */
 class RetainGuard {
 public:
-    RetainGuard(MonitoredRefCount & refCount) noexcept
-        : _refCount(&refCount)
-    {
-        _refCount->retain();
-    }
-    RetainGuard(const RetainGuard & rhs) = delete;
-    RetainGuard & operator=(const RetainGuard & rhs) = delete;
-    RetainGuard(RetainGuard && rhs) noexcept
-        : _refCount(rhs._refCount)
-    {
-        rhs._refCount = nullptr;
-    }
-    RetainGuard & operator=(RetainGuard && rhs) noexcept {
+    RetainGuard(MonitoredRefCount& refCount) noexcept : _refCount(&refCount) { _refCount->retain(); }
+    RetainGuard(const RetainGuard& rhs) = delete;
+    RetainGuard& operator=(const RetainGuard& rhs) = delete;
+    RetainGuard(RetainGuard&& rhs) noexcept : _refCount(rhs._refCount) { rhs._refCount = nullptr; }
+    RetainGuard& operator=(RetainGuard&& rhs) noexcept {
         release();
         _refCount = rhs._refCount;
         rhs._refCount = nullptr;
         return *this;
     }
     ~RetainGuard() { release(); }
+
 private:
-    void release() noexcept{
+    void release() noexcept {
         if (_refCount != nullptr) {
             _refCount->release();
             _refCount = nullptr;
         }
     }
-    MonitoredRefCount * _refCount;
+    MonitoredRefCount* _refCount;
 };
 
-}
+} // namespace vespalib

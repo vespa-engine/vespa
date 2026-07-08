@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "invert_context.h"
+
 #include "document_inverter_context.h"
+
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/index/schema_index_fields.h>
@@ -17,47 +19,34 @@ using document::Field;
 
 namespace {
 
-std::unique_ptr<document::Field>
-get_field(const DocumentType& doc_type, const std::string& name)
-{
+std::unique_ptr<document::Field> get_field(const DocumentType& doc_type, const std::string& name) {
     std::unique_ptr<Field> fp;
-    if ( ! doc_type.hasField(name)) {
+    if (!doc_type.hasField(name)) {
         LOG(error,
             "Mismatch between documentdefinition and schema. "
             "No field named '%s' from schema in document type '%s'",
-            name.c_str(),
-            doc_type.getName().c_str());
+            name.c_str(), doc_type.getName().c_str());
     } else {
         fp = std::make_unique<Field>(doc_type.getField(name));
     }
     return fp;
 }
 
-}
-
+} // namespace
 
 InvertContext::InvertContext(vespalib::ISequencedTaskExecutor::ExecutorId id)
-    : BundledFieldsContext(id),
-      _pushers(),
-      _document_fields(),
-      _document_uri_fields(),
-      _data_type(nullptr)
-{
+    : BundledFieldsContext(id), _pushers(), _document_fields(), _document_uri_fields(), _data_type(nullptr) {
 }
 
 InvertContext::~InvertContext() = default;
 
 InvertContext::InvertContext(InvertContext&&) = default;
 
-void
-InvertContext::add_pusher(uint32_t pusher_id)
-{
+void InvertContext::add_pusher(uint32_t pusher_id) {
     _pushers.emplace_back(pusher_id);
 }
 
-void
-InvertContext::set_data_type(const DocumentInverterContext &doc_inv_context, const Document& doc) const
-{
+void InvertContext::set_data_type(const DocumentInverterContext& doc_inv_context, const Document& doc) const {
     auto data_type(doc.getDataType());
     if (_data_type == data_type) {
         return;
@@ -78,4 +67,4 @@ InvertContext::set_data_type(const DocumentInverterContext &doc_inv_context, con
     _data_type = data_type;
 }
 
-}
+} // namespace search::memoryindex

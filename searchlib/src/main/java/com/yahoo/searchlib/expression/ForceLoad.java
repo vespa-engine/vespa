@@ -78,7 +78,8 @@ public class ForceLoad {
                 "ZCurveFunctionNode",
                 "XorBitFunctionNode",
                 "MultiArgFunctionNode",
-                "DebugWaitFunctionNode"
+                "DebugWaitFunctionNode",
+                "PositionDocumentFieldNode"
         };
         com.yahoo.system.ForceLoad.forceLoad(pkg, classes,
                                              ForceLoad.class.getClassLoader());

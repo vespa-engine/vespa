@@ -2,7 +2,9 @@
 #pragma once
 
 #include "i_move_operation_limiter.h"
+
 #include <vespa/vespalib/util/idestructorcallback.h>
+
 #include <memory>
 #include <mutex>
 
@@ -14,35 +16,35 @@ class IBlockableMaintenanceJob;
  * Class used to limit the number of outstanding move operations a blockable maintenance job can have.
  *
  * When crossing the boundary of max outstanding operations the job is blocked/unblocked.
- * Create a destructor callback with beginOperation() and pass this to the component(s) responsible for handling the move operation.
- * When this object is destructed (in any thread) the limiter is signaled and the job can be unblocked (if blocked).
+ * Create a destructor callback with beginOperation() and pass this to the component(s) responsible for handling the
+ * move operation. When this object is destructed (in any thread) the limiter is signaled and the job can be unblocked
+ * (if blocked).
  */
-class MoveOperationLimiter : public IMoveOperationLimiter,
-                             public std::enable_shared_from_this<MoveOperationLimiter> {
+class MoveOperationLimiter : public IMoveOperationLimiter, public std::enable_shared_from_this<MoveOperationLimiter> {
 private:
     using LockGuard = std::lock_guard<std::mutex>;
 
     struct Callback;
 
     mutable std::mutex        _mutex;
-    IBlockableMaintenanceJob *_job;
+    IBlockableMaintenanceJob* _job;
     uint32_t                  _outstandingOps;
     const uint32_t            _maxOutstandingOps;
     bool                      _draining;
 
-    bool isOnLimit(const LockGuard &guard) const;
+    bool isOnLimit(const LockGuard& guard) const;
     void endOperation();
 
 public:
     using SP = std::shared_ptr<MoveOperationLimiter>;
-    MoveOperationLimiter(IBlockableMaintenanceJob *job, uint32_t maxOutstandingOps);
+    MoveOperationLimiter(IBlockableMaintenanceJob* job, uint32_t maxOutstandingOps);
     ~MoveOperationLimiter() override;
     void clearJob();
     bool isAboveLimit() const { return numPending() >= _maxOutstandingOps; }
-    bool hasPending() const { return numPending() > 0;}
+    bool hasPending() const { return numPending() > 0; }
     std::shared_ptr<vespalib::IDestructorCallback> beginOperation() override;
     size_t numPending() const override;
     bool drain() noexcept override;
 };
 
-}
+} // namespace proton

@@ -50,7 +50,7 @@ public final class DocumentFieldNode extends DocumentAccessorNode {
      */
     void setDocumentFieldName(String fieldName) {
         if (fieldName == null) {
-            throw new IllegalArgumentException("Field name can not be null.");
+            throw new IllegalArgumentException("Field name cannot be null.");
         }
         this.fieldName = fieldName;
     }

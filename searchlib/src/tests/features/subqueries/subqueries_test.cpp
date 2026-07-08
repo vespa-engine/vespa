@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
-#include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/features/subqueries_feature.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
+#include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
+#include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -18,16 +18,12 @@ using CollectionType = FieldInfo::CollectionType;
 
 struct BlueprintFactoryFixture {
     BlueprintFactory factory;
-    BlueprintFactoryFixture() : factory()
-    {
-        setup_search_features(factory);
-    }
+    BlueprintFactoryFixture() : factory() { setup_search_features(factory); }
 };
 
 struct IndexFixture {
     IndexEnvironment indexEnv;
-    IndexFixture() : indexEnv()
-    {
+    IndexFixture() : indexEnv() {
         IndexEnvironmentBuilder builder(indexEnv);
         builder.addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
         builder.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
@@ -35,9 +31,7 @@ struct IndexFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    void visitDumpFeature(const std::string &) override {
-        FAIL() << "no features should be dumped";
-    }
+    void visitDumpFeature(const std::string&) override { FAIL() << "no features should be dumped"; }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
     ~FeatureDumpFixture() override;
 };
@@ -45,18 +39,21 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
 FeatureDumpFixture::~FeatureDumpFixture() = default;
 
 struct RankFixture : BlueprintFactoryFixture, IndexFixture {
-    QueryEnvironment         queryEnv;
-    RankSetup                rankSetup;
-    MatchDataLayout          mdl;
-    MatchData::UP            match_data;
-    RankProgram::UP          rankProgram;
+    QueryEnvironment             queryEnv;
+    RankSetup                    rankSetup;
+    MatchDataLayout              mdl;
+    MatchData::UP                match_data;
+    RankProgram::UP              rankProgram;
     std::vector<TermFieldHandle> fooHandles;
     std::vector<TermFieldHandle> barHandles;
-    RankFixture(size_t fooCnt, size_t barCnt,
-                std::string featureName = "subqueries(foo)")
-        : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
-          mdl(), match_data(), rankProgram(), fooHandles(), barHandles()
-    {
+    RankFixture(size_t fooCnt, size_t barCnt, std::string featureName = "subqueries(foo)")
+        : queryEnv(&indexEnv),
+          rankSetup(factory, indexEnv),
+          mdl(),
+          match_data(),
+          rankProgram(),
+          fooHandles(),
+          barHandles() {
         fooHandles = addFields(fooCnt, indexEnv.getFieldByName("foo")->id());
         barHandles = addFields(barCnt, indexEnv.getFieldByName("bar")->id());
         rankSetup.setFirstPhaseRank(featureName);
@@ -77,11 +74,8 @@ struct RankFixture : BlueprintFactoryFixture, IndexFixture {
         }
         return handles;
     }
-    feature_t getSubqueries(uint32_t docId) {
-        return Utils::getScoreFeature(*rankProgram, docId);
-    }
-    void setSubqueries(TermFieldHandle handle, uint32_t docId,
-                       uint64_t subqueries) {
+    feature_t getSubqueries(uint32_t docId) { return Utils::getScoreFeature(*rankProgram, docId); }
+    void setSubqueries(TermFieldHandle handle, uint32_t docId, uint64_t subqueries) {
         match_data->resolveTermField(handle)->setSubqueries(docId, subqueries);
     }
     void setFooSubqueries(uint32_t i, uint32_t docId, uint64_t subqueries) {
@@ -98,37 +92,37 @@ RankFixture::~RankFixture() = default;
 
 TEST(SubQueriesTest, require_that_blueprint_can_be_created_from_factory) {
     BlueprintFactoryFixture f;
-    Blueprint::SP bp = f.factory.createBlueprint("subqueries");
+    Blueprint::SP           bp = f.factory.createBlueprint("subqueries");
     EXPECT_TRUE(bp.get() != nullptr);
     EXPECT_TRUE(dynamic_cast<SubqueriesBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST(SubQueriesTest, require_that_no_features_are_dumped) {
     SubqueriesBlueprint f1;
-    IndexFixture f2;
-    FeatureDumpFixture f3;
+    IndexFixture        f2;
+    FeatureDumpFixture  f3;
     f1.visitDumpFeatures(f2.indexEnv, f3);
 }
 
 TEST(SubQueriesTest, require_that_setup_can_be_done_on_index_field) {
-    SubqueriesBlueprint f1;
-    IndexFixture f2;
+    SubqueriesBlueprint    f1;
+    IndexFixture           f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(foo)", f1.getBaseName().c_str()));
     EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, {"foo"}));
 }
 
 TEST(SubQueriesTest, require_that_setup_can_be_done_on_attribute_field) {
-    SubqueriesBlueprint f1;
-    IndexFixture f2;
+    SubqueriesBlueprint    f1;
+    IndexFixture           f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(bar)", f1.getBaseName().c_str()));
     EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, {"bar"}));
 }
 
 TEST(SubQueriesTest, require_that_setup_fails_for_unknown_field) {
-    SubqueriesBlueprint f1;
-    IndexFixture f2;
+    SubqueriesBlueprint    f1;
+    IndexFixture           f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(unknown)", f1.getBaseName().c_str()));
     EXPECT_FALSE(((Blueprint&)f1).setup(f2.indexEnv, {"unknown"}));

@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/nexus.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/vespalib/util/size_literals.h>
+
 #include <random>
 #include <thread>
 
@@ -23,19 +24,19 @@ using vespalib::test::Nexus;
 // -----------------------------------------------------------------------------
 
 duration budget = duration::zero();
-size_t expr_size = 1;
+size_t   expr_size = 1;
 
 //-----------------------------------------------------------------------------
 
 struct Opts {
-    char **arg;
-    char **end;
-    Opts(int argc, char **argv) : arg(argv), end(arg + argc) {
+    char** arg;
+    char** end;
+    Opts(int argc, char** argv) : arg(argv), end(arg + argc) {
         if (arg != end) {
             ++arg; // skip self
         }
     }
-    int get_int(const char *name, int fallback) {
+    int get_int(const char* name, int fallback) {
         int value = fallback;
         if (arg != end) {
             value = atoi(*arg);
@@ -64,7 +65,7 @@ struct Rnd {
     }
 };
 
-std::string make_expr(size_t size, Rnd &rnd) {
+std::string make_expr(size_t size, Rnd& rnd) {
     if (size < 2) {
         auto x = rnd.get_int(0, 99);
         if (x < 2) {
@@ -77,7 +78,7 @@ std::string make_expr(size_t size, Rnd &rnd) {
             return "1.25";
         } else {
             static std::string params("abcdefghijk");
-            auto idx = rnd.get_int(0, params.size() - 1);
+            auto               idx = rnd.get_int(0, params.size() - 1);
             return params.substr(idx, 1);
         }
     } else {
@@ -103,25 +104,25 @@ std::string make_expr(size_t size, Rnd &rnd) {
 
 TEST(LLVMStressTest, stress_test_llvm_compilation) {
     size_t num_threads = 64;
-    Done f1(budget);
-    auto task = [&](Nexus &ctx){
-                    auto thread_id = ctx.thread_id();
-                    size_t my_seed = 5489u + (123 * thread_id);
-                    Rnd rnd(my_seed);
-                    const auto &done = f1;
-                    auto my_expr = make_expr(expr_size, rnd);
-                    if ((thread_id == 0) && (my_expr.size() < 128)) {
-                        fprintf(stderr, "example expression: %s\n", my_expr.c_str());
-                    }
-                    auto my_fun = Function::parse(my_expr);
-                    ASSERT_TRUE(!my_fun->has_error());
-                    while (!done()) {
-                        CompiledFunction arr_cf(*my_fun, PassParams::ARRAY);
-                        CompiledFunction lazy_cf(*my_fun, PassParams::LAZY);
-                        std::thread([my_fun]{ CompiledFunction my_arr_cf(*my_fun, PassParams::ARRAY); }).join();
-                        std::thread([my_fun]{ CompiledFunction my_lazy_cf(*my_fun, PassParams::LAZY); }).join();
-                    }
-                };
+    Done   f1(budget);
+    auto   task = [&](Nexus& ctx) {
+        auto        thread_id = ctx.thread_id();
+        size_t      my_seed = 5489u + (123 * thread_id);
+        Rnd         rnd(my_seed);
+        const auto& done = f1;
+        auto        my_expr = make_expr(expr_size, rnd);
+        if ((thread_id == 0) && (my_expr.size() < 128)) {
+            fprintf(stderr, "example expression: %s\n", my_expr.c_str());
+        }
+        auto my_fun = Function::parse(my_expr);
+        ASSERT_TRUE(!my_fun->has_error());
+        while (!done()) {
+            CompiledFunction arr_cf(*my_fun, PassParams::ARRAY);
+            CompiledFunction lazy_cf(*my_fun, PassParams::LAZY);
+            std::thread([my_fun] { CompiledFunction my_arr_cf(*my_fun, PassParams::ARRAY); }).join();
+            std::thread([my_fun] { CompiledFunction my_lazy_cf(*my_fun, PassParams::LAZY); }).join();
+        }
+    };
     Nexus::run(num_threads, task);
 }
 

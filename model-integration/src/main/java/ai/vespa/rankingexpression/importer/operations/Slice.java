@@ -16,10 +16,12 @@ import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.TensorFunction;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode.wrapScalar;
@@ -138,7 +140,7 @@ public class Slice extends IntermediateOperation {
     }
 
     private void addDimension(int dimensionIndex, long size, OrderedTensorType.Builder typeBuilder) {
-        String name = String.format("%s_%d", vespaName(), dimensionIndex);
+        String name = Text.format("%s_%d", vespaName(), dimensionIndex);
         typeBuilder.add(TensorType.Dimension.indexed(name, size));
     }
 

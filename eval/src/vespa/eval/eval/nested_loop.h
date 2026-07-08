@@ -21,7 +21,7 @@ namespace nested_loop {
 
 //-----------------------------------------------------------------------------
 
-template <typename F, size_t N> void execute_few(size_t idx, const size_t *loop, const size_t *stride, const F &f) {
+template <typename F, size_t N> void execute_few(size_t idx, const size_t* loop, const size_t* stride, const F& f) {
     if constexpr (N == 0) {
         f(idx);
     } else {
@@ -31,7 +31,8 @@ template <typename F, size_t N> void execute_few(size_t idx, const size_t *loop,
     }
 }
 
-template <typename F> void execute_many(size_t idx, const size_t *loop, const size_t *stride, size_t levels, const F &f) {
+template <typename F>
+void execute_many(size_t idx, const size_t* loop, const size_t* stride, size_t levels, const F& f) {
     for (size_t i = 0; i < *loop; ++i, idx += *stride) {
         if ((levels - 1) == 3) {
             execute_few<F, 3>(idx, loop + 1, stride + 1, f);
@@ -43,7 +44,9 @@ template <typename F> void execute_many(size_t idx, const size_t *loop, const si
 
 //-----------------------------------------------------------------------------
 
-template <typename F, size_t N> void execute_few(size_t idx1, size_t idx2, const size_t *loop, const size_t *stride1, const size_t *stride2, const F &f) {
+template <typename F, size_t N>
+void execute_few(size_t idx1, size_t idx2, const size_t* loop, const size_t* stride1, const size_t* stride2,
+                 const F& f) {
     if constexpr (N == 0) {
         f(idx1, idx2);
     } else {
@@ -53,7 +56,9 @@ template <typename F, size_t N> void execute_few(size_t idx1, size_t idx2, const
     }
 }
 
-template <typename F> void execute_many(size_t idx1, size_t idx2, const size_t *loop, const size_t *stride1, const size_t *stride2, size_t levels, const F &f) {
+template <typename F>
+void execute_many(size_t idx1, size_t idx2, const size_t* loop, const size_t* stride1, const size_t* stride2,
+                  size_t levels, const F& f) {
     for (size_t i = 0; i < *loop; ++i, idx1 += *stride1, idx2 += *stride2) {
         if ((levels - 1) == 3) {
             execute_few<F, 3>(idx1, idx2, loop + 1, stride1 + 1, stride2 + 1, f);
@@ -65,9 +70,11 @@ template <typename F> void execute_many(size_t idx1, size_t idx2, const size_t *
 
 //-----------------------------------------------------------------------------
 
-template <typename F, size_t N> void execute_few(size_t idx1, size_t idx2, size_t idx3, const size_t *loop, const size_t *stride1, const size_t *stride2, const size_t *stride3, const F &f) {
+template <typename F, size_t N>
+void execute_few(size_t idx1, size_t idx2, size_t idx3, const size_t* loop, const size_t* stride1,
+                 const size_t* stride2, const size_t* stride3, const F& f) {
     if constexpr (N == 0) {
-            f(idx1, idx2, idx3);
+        f(idx1, idx2, idx3);
     } else {
         for (size_t i = 0; i < *loop; ++i, idx1 += *stride1, idx2 += *stride2, idx3 += *stride3) {
             execute_few<F, N - 1>(idx1, idx2, idx3, loop + 1, stride1 + 1, stride2 + 1, stride3 + 1, f);
@@ -75,7 +82,9 @@ template <typename F, size_t N> void execute_few(size_t idx1, size_t idx2, size_
     }
 }
 
-template <typename F> void execute_many(size_t idx1, size_t idx2, size_t idx3, const size_t *loop, const size_t *stride1, const size_t *stride2, const size_t *stride3, size_t levels, const F &f) {
+template <typename F>
+void execute_many(size_t idx1, size_t idx2, size_t idx3, const size_t* loop, const size_t* stride1,
+                  const size_t* stride2, const size_t* stride3, size_t levels, const F& f) {
     for (size_t i = 0; i < *loop; ++i, idx1 += *stride1, idx2 += *stride2, idx3 += *stride3) {
         if ((levels - 1) == 3) {
             execute_few<F, 3>(idx1, idx2, idx3, loop + 1, stride1 + 1, stride2 + 1, stride3 + 1, f);
@@ -87,18 +96,22 @@ template <typename F> void execute_many(size_t idx1, size_t idx2, size_t idx3, c
 
 //-----------------------------------------------------------------------------
 
-} // implementation details
+} // namespace nested_loop
 
 // Run a nested loop and pass indexes to 'f'
-template <typename F, typename V>
-void run_nested_loop(size_t idx, const V &loop, const V &stride, const F &f) {
+template <typename F, typename V> void run_nested_loop(size_t idx, const V& loop, const V& stride, const F& f) {
     size_t levels = loop.size();
-    switch(levels) {
-    case 0: return f(idx);
-    case 1: return nested_loop::execute_few<F, 1>(idx, &loop[0], &stride[0], f);
-    case 2: return nested_loop::execute_few<F, 2>(idx, &loop[0], &stride[0], f);
-    case 3: return nested_loop::execute_few<F, 3>(idx, &loop[0], &stride[0], f);
-    default: return nested_loop::execute_many<F>(idx, &loop[0], &stride[0], levels, f);
+    switch (levels) {
+    case 0:
+        return f(idx);
+    case 1:
+        return nested_loop::execute_few<F, 1>(idx, &loop[0], &stride[0], f);
+    case 2:
+        return nested_loop::execute_few<F, 2>(idx, &loop[0], &stride[0], f);
+    case 3:
+        return nested_loop::execute_few<F, 3>(idx, &loop[0], &stride[0], f);
+    default:
+        return nested_loop::execute_many<F>(idx, &loop[0], &stride[0], levels, f);
     }
 }
 
@@ -106,14 +119,19 @@ void run_nested_loop(size_t idx, const V &loop, const V &stride, const F &f) {
 // that 'loop' is shared, which means that only individual strides may
 // differ between the two loops.
 template <typename F, typename V>
-void run_nested_loop(size_t idx1, size_t idx2, const V &loop, const V &stride1, const V &stride2, const F &f) {
+void run_nested_loop(size_t idx1, size_t idx2, const V& loop, const V& stride1, const V& stride2, const F& f) {
     size_t levels = loop.size();
-    switch(levels) {
-    case 0: return f(idx1, idx2);
-    case 1: return nested_loop::execute_few<F, 1>(idx1, idx2, &loop[0], &stride1[0], &stride2[0], f);
-    case 2: return nested_loop::execute_few<F, 2>(idx1, idx2, &loop[0], &stride1[0], &stride2[0], f);
-    case 3: return nested_loop::execute_few<F, 3>(idx1, idx2, &loop[0], &stride1[0], &stride2[0], f);
-    default: return nested_loop::execute_many<F>(idx1, idx2, &loop[0], &stride1[0], &stride2[0], levels, f);
+    switch (levels) {
+    case 0:
+        return f(idx1, idx2);
+    case 1:
+        return nested_loop::execute_few<F, 1>(idx1, idx2, &loop[0], &stride1[0], &stride2[0], f);
+    case 2:
+        return nested_loop::execute_few<F, 2>(idx1, idx2, &loop[0], &stride1[0], &stride2[0], f);
+    case 3:
+        return nested_loop::execute_few<F, 3>(idx1, idx2, &loop[0], &stride1[0], &stride2[0], f);
+    default:
+        return nested_loop::execute_many<F>(idx1, idx2, &loop[0], &stride1[0], &stride2[0], levels, f);
     }
 }
 
@@ -121,15 +139,22 @@ void run_nested_loop(size_t idx1, size_t idx2, const V &loop, const V &stride1, 
 // 'f'. Note that 'loop' is shared, which means that only individual
 // strides may differ between the three loops.
 template <typename F, typename V>
-void run_nested_loop(size_t idx1, size_t idx2, size_t idx3, const V &loop, const V &stride1, const V &stride2, const V &stride3, const F &f) {
+void run_nested_loop(size_t idx1, size_t idx2, size_t idx3, const V& loop, const V& stride1, const V& stride2,
+                     const V& stride3, const F& f) {
     size_t levels = loop.size();
-    switch(levels) {
-    case 0: return f(idx1, idx2, idx3);
-    case 1: return nested_loop::execute_few<F, 1>(idx1, idx2, idx3, &loop[0], &stride1[0], &stride2[0], &stride3[0], f);
-    case 2: return nested_loop::execute_few<F, 2>(idx1, idx2, idx3, &loop[0], &stride1[0], &stride2[0], &stride3[0], f);
-    case 3: return nested_loop::execute_few<F, 3>(idx1, idx2, idx3, &loop[0], &stride1[0], &stride2[0], &stride3[0], f);
-    default: return nested_loop::execute_many<F>(idx1, idx2, idx3, &loop[0], &stride1[0], &stride2[0], &stride3[0], levels, f);
+    switch (levels) {
+    case 0:
+        return f(idx1, idx2, idx3);
+    case 1:
+        return nested_loop::execute_few<F, 1>(idx1, idx2, idx3, &loop[0], &stride1[0], &stride2[0], &stride3[0], f);
+    case 2:
+        return nested_loop::execute_few<F, 2>(idx1, idx2, idx3, &loop[0], &stride1[0], &stride2[0], &stride3[0], f);
+    case 3:
+        return nested_loop::execute_few<F, 3>(idx1, idx2, idx3, &loop[0], &stride1[0], &stride2[0], &stride3[0], f);
+    default:
+        return nested_loop::execute_many<F>(idx1, idx2, idx3, &loop[0], &stride1[0], &stride2[0], &stride3[0], levels,
+                                            f);
     }
 }
 
-} // namespace
+} // namespace vespalib::eval

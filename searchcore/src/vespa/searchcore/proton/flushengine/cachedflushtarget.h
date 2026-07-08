@@ -14,17 +14,19 @@ class CachedFlushTarget : public searchcorespi::IFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
     using IFlushTarget = searchcorespi::IFlushTarget;
-    IFlushTarget::SP  _target;
-    SerialNum         _flushedSerialNum;
-    Time              _lastFlushTime;
-    MemoryGain        _memoryGain;
-    DiskGain          _diskGain;
-    uint64_t          _approxBytesToWriteToDisk;
-    uint64_t          _approx_bytes_to_read_from_disk;
-    double            _replay_operation_cost;
-    bool              _needUrgentFlush;
-    Priority          _priority;
+    IFlushTarget::SP                    _target;
+    SerialNum                           _flushedSerialNum;
+    Time                                _lastFlushTime;
+    MemoryGain                          _memoryGain;
+    DiskGain                            _diskGain;
+    uint64_t                            _approxBytesToWriteToDisk;
+    uint64_t                            _approx_bytes_to_read_from_disk;
+    size_t                              _reserved_memory_for_flush;
+    double                              _replay_operation_cost;
+    bool                                _needUrgentFlush;
+    Priority                            _priority;
     std::chrono::steady_clock::duration _last_flush_duration;
+    std::chrono::steady_clock::duration _estimated_flush_duration;
 
 public:
     /**
@@ -34,7 +36,7 @@ public:
      *
      * @param target The target to decorate.
      */
-    CachedFlushTarget(const IFlushTarget::SP &target);
+    CachedFlushTarget(const IFlushTarget::SP& target);
     ~CachedFlushTarget() override;
 
     /**
@@ -44,26 +46,28 @@ public:
      *
      * @return The decorated flush target.
      */
-    const IFlushTarget::SP & getFlushTarget() { return _target; }
+    const IFlushTarget::SP& getFlushTarget() { return _target; }
 
     // Implements IFlushTarget.
     MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
-    DiskGain   getApproxDiskGain() const override { return _diskGain; }
+    DiskGain getApproxDiskGain() const override { return _diskGain; }
     SerialNum getFlushedSerialNum() const override { return _flushedSerialNum; }
-    Time    getLastFlushTime() const override { return _lastFlushTime; }
-    bool     needUrgentFlush() const override { return _needUrgentFlush; }
+    Time getLastFlushTime() const override { return _lastFlushTime; }
+    bool needUrgentFlush() const override { return _needUrgentFlush; }
     Priority getPriority() const override { return _priority; }
     double get_replay_operation_cost() const override { return _replay_operation_cost; }
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override {
         return _target->initFlush(currentSerial, std::move(flush_token));
     }
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 
     uint64_t getApproxBytesToWriteToDisk() const override { return _approxBytesToWriteToDisk; }
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
 } // namespace proton
-

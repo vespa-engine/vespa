@@ -1,28 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "utils.h"
+
 #include "rank_program.h"
+
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vector>
+
 #include <cassert>
+#include <vector>
 
 using vespalib::FeatureSet;
 
 namespace search::fef {
 
-feature_t
-Utils::getScoreFeature(const RankProgram &rankProgram, uint32_t docid)
-{
+feature_t Utils::getScoreFeature(const RankProgram& rankProgram, uint32_t docid) {
     FeatureResolver resolver(rankProgram.get_seeds(false));
     assert(resolver.num_features() == 1u);
     assert(!resolver.is_object(0));
     return resolver.resolve(0).as_number(docid);
 }
 
-vespalib::eval::Value::CREF
-Utils::getObjectFeature(const RankProgram &rankProgram, uint32_t docid)
-{
+vespalib::eval::Value::CREF Utils::getObjectFeature(const RankProgram& rankProgram, uint32_t docid) {
     FeatureResolver resolver(rankProgram.get_seeds(false));
     assert(resolver.num_features() == 1u);
     assert(resolver.is_object(0));
@@ -31,43 +30,36 @@ Utils::getObjectFeature(const RankProgram &rankProgram, uint32_t docid)
 
 namespace {
 
-std::map<std::string, feature_t>
-resolveFeatures(const FeatureResolver &resolver, uint32_t docid)
-{
+std::map<std::string, feature_t> resolveFeatures(const FeatureResolver& resolver, uint32_t docid) {
     std::map<std::string, feature_t> result;
-    size_t numFeatures = resolver.num_features();
+    size_t                           numFeatures = resolver.num_features();
     for (size_t i = 0; i < numFeatures; ++i) {
-        const std::string &name = resolver.name_of(i);
-        feature_t value = resolver.resolve(i).as_number(docid);
+        const std::string& name = resolver.name_of(i);
+        feature_t          value = resolver.resolve(i).as_number(docid);
         result.insert(std::make_pair(name, value));
     }
     return result;
 }
 
-}
+} // namespace
 
-std::map<std::string, feature_t>
-Utils::getSeedFeatures(const RankProgram &rankProgram, uint32_t docid)
-{
+std::map<std::string, feature_t> Utils::getSeedFeatures(const RankProgram& rankProgram, uint32_t docid) {
     FeatureResolver resolver(rankProgram.get_seeds());
     return resolveFeatures(resolver, docid);
 }
 
-std::map<std::string, feature_t>
-Utils::getAllFeatures(const RankProgram &rankProgram, uint32_t docid)
-{
+std::map<std::string, feature_t> Utils::getAllFeatures(const RankProgram& rankProgram, uint32_t docid) {
     FeatureResolver resolver(rankProgram.get_all_features());
     return resolveFeatures(resolver, docid);
 }
 
-std::vector<std::string>
-Utils::extract_feature_names(const FeatureResolver& resolver, const StringStringMap& renames)
-{
+std::vector<std::string> Utils::extract_feature_names(const FeatureResolver& resolver,
+                                                      const StringStringMap& renames) {
     std::vector<std::string> result;
     result.reserve(resolver.num_features());
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         std::string name = resolver.name_of(i);
-        auto iter = renames.find(name);
+        auto        iter = renames.find(name);
         if (iter != renames.end()) {
             name = iter->second;
         }
@@ -76,9 +68,7 @@ Utils::extract_feature_names(const FeatureResolver& resolver, const StringString
     return result;
 }
 
-void
-Utils::extract_feature_values(const FeatureResolver& resolver, uint32_t docid, FeatureSet::Value* dst)
-{
+void Utils::extract_feature_values(const FeatureResolver& resolver, uint32_t docid, FeatureSet::Value* dst) {
     for (uint32_t i = 0; i < resolver.num_features(); ++i) {
         if (resolver.is_object(i)) {
             auto obj = resolver.resolve(i).as_object(docid);
@@ -95,4 +85,4 @@ Utils::extract_feature_values(const FeatureResolver& resolver, uint32_t docid, F
     }
 }
 
-}
+} // namespace search::fef

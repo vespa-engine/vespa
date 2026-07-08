@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalDouble;
 
 import static com.yahoo.vespa.flags.custom.Validation.requireNonNegative;
@@ -20,10 +21,10 @@ import static com.yahoo.vespa.flags.custom.Validation.validateEnum;
 /**
  * @author freva
  */
-// @Immutable
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class ClusterCapacity {
+    private final boolean hosts;
     private final int count;
     private final OptionalDouble vcpu;
     private final OptionalDouble memoryGb;
@@ -33,9 +34,12 @@ public class ClusterCapacity {
     private final String storageType;
     private final String architecture;
     private final String clusterType;
+    private final Optional<String> cloudAccount;
+    private final Optional<String> tenant;
 
     @JsonCreator
-    public ClusterCapacity(@JsonProperty("count") Integer count,
+    public ClusterCapacity(@JsonProperty("hosts") Boolean hosts,
+                           @JsonProperty("count") Integer count,
                            @JsonProperty("vcpu") Double vcpu,
                            @JsonProperty("memoryGb") Double memoryGb,
                            @JsonProperty("diskGb") Double diskGb,
@@ -43,7 +47,10 @@ public class ClusterCapacity {
                            @JsonProperty("diskSpeed") String diskSpeed,
                            @JsonProperty("storageType") String storageType,
                            @JsonProperty("architecture") String architecture,
-                           @JsonProperty("clusterType") String clusterType) {
+                           @JsonProperty("clusterType") String clusterType,
+                           @JsonProperty("cloudAccount") String cloudAccount,
+                           @JsonProperty("tenant") String tenant) {
+        this.hosts = hosts == null ? false : hosts.booleanValue();
         this.count = count == null ? 1 : (int) requireNonNegative("count", count);
         this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
         this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
@@ -52,14 +59,23 @@ public class ClusterCapacity {
         this.diskSpeed = validateEnum("diskSpeed", validDiskSpeeds, diskSpeed == null ? "fast" : diskSpeed);
         this.storageType = validateEnum("storageType", validStorageTypes, storageType == null ? "any" : storageType);
         this.architecture = validateEnum("architecture", validArchitectures, architecture == null ? "x86_64" : architecture);
-        this.clusterType = clusterType == null ? null : validateEnum("clusterType", validClusterTypes, clusterType);
+        this.clusterType = validateEnum("clusterType", validClusterTypes, clusterType);
+        this.cloudAccount = Optional.ofNullable(cloudAccount);
+        this.tenant = Optional.ofNullable(tenant);
+        validate(this.tenant, this.cloudAccount);
     }
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
     public ClusterCapacity withCount(int count) {
-        return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
-                                   diskSpeed, storageType, architecture, clusterType);
+        return new ClusterCapacity(hosts, count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
+                                   diskSpeed, storageType, architecture, clusterType, cloudAccountOrNull(), tenantOrNull());
     }
+
+    /**
+     * Returns true if this should preprovision *hosts* with the given resources. Otherwise, this will
+     * just ensure the specified capacity is available somehow (when sharing is allowed).
+     */
+    @JsonGetter("hosts") public boolean hosts() { return hosts; }
 
     @JsonGetter("count") public int count() { return count; }
     @JsonGetter("vcpu") public Double vcpuOrNull() {
@@ -78,25 +94,32 @@ public class ClusterCapacity {
     @JsonGetter("storageType") public String storageType() { return storageType; }
     @JsonGetter("architecture") public String architecture() { return architecture; }
     @JsonGetter("clusterType") public String clusterType() { return clusterType; }
+    @JsonGetter("cloudAccount") public String cloudAccountOrNull() { return cloudAccount.orElse(null); }
+    @JsonGetter("tenant") public String tenantOrNull() { return tenant.orElse(null); }
 
     @JsonIgnore public Double vcpu() { return vcpu.orElse(0.0); }
     @JsonIgnore public Double memoryGb() { return memoryGb.orElse(0.0); }
     @JsonIgnore public Double diskGb() { return diskGb.orElse(0.0); }
     @JsonIgnore public double bandwidthGbps() { return bandwidthGbps.orElse(1.0); }
+    @JsonIgnore public Optional<String> cloudAccount() { return cloudAccount; }
+    @JsonIgnore public Optional<String> tenant() { return tenant; }
 
     @Override
     public String toString() {
         return "ClusterCapacity{" +
-                "count=" + count +
-                ", vcpu=" + vcpu +
-                ", memoryGb=" + memoryGb +
-                ", diskGb=" + diskGb +
-                ", bandwidthGbps=" + bandwidthGbps +
-                ", diskSpeed=" + diskSpeed +
-                ", storageType=" + storageType +
-                ", architecture=" + architecture +
-                ", clusterType=" + clusterType +
-                '}';
+               "hosts=" + hosts +
+               ", count=" + count +
+               ", vcpu=" + vcpu +
+               ", memoryGb=" + memoryGb +
+               ", diskGb=" + diskGb +
+               ", bandwidthGbps=" + bandwidthGbps +
+               ", diskSpeed=" + diskSpeed +
+               ", storageType=" + storageType +
+               ", architecture=" + architecture +
+               ", clusterType=" + clusterType +
+               (cloudAccount.isPresent() ? ", cloudAccount=" + cloudAccount : "") +
+               (tenant.isPresent() ? ", tenant=" + tenant : "") +
+               '}';
     }
 
     @Override
@@ -104,20 +127,29 @@ public class ClusterCapacity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ClusterCapacity that = (ClusterCapacity) o;
-        return count == that.count &&
-                vcpu.equals(that.vcpu) &&
-                memoryGb.equals(that.memoryGb) &&
-                diskGb.equals(that.diskGb) &&
-                bandwidthGbps.equals(that.bandwidthGbps) &&
-                diskSpeed.equals(that.diskSpeed) &&
-                storageType.equals(that.storageType) &&
-                architecture.equals(that.architecture) &&
-                clusterType.equals(that.clusterType);
+        return hosts == that.hosts &&
+               count == that.count &&
+               vcpu.equals(that.vcpu) &&
+               memoryGb.equals(that.memoryGb) &&
+               diskGb.equals(that.diskGb) &&
+               bandwidthGbps.equals(that.bandwidthGbps) &&
+               diskSpeed.equals(that.diskSpeed) &&
+               storageType.equals(that.storageType) &&
+               architecture.equals(that.architecture) &&
+               clusterType.equals(that.clusterType) &&
+               cloudAccount.equals(that.cloudAccount) &&
+               tenant.equals(that.tenant);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType);
+        return Objects.hash(hosts, count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType, cloudAccount, tenant);
+    }
+
+    private static void validate(Optional<String> tenant, Optional<String> cloudAccount) {
+        if (tenant.isPresent() && cloudAccount.isEmpty() || tenant.isEmpty() && cloudAccount.isPresent()) {
+            throw new IllegalArgumentException("tenant and cloudAccount must both be present or both be empty");
+        }
     }
 
 }

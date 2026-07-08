@@ -13,17 +13,15 @@ using proton::IReplayProgressProducer;
 using proton::ProtonInitializationStatus;
 
 class DummyReplayProgressProducer : public proton::IReplayProgressProducer {
-    float getProgress() const override {
-        return 0.23f;
-    }
+    float getProgress() const override { return 0.23f; }
 };
 
 class ProtonInitializationStatusTest : public ::testing::Test {
 protected:
     std::shared_ptr<DummyReplayProgressProducer> _producer;
-    std::shared_ptr<DDBState> _db_state1;
-    std::shared_ptr<DDBState> _db_state2;
-    std::shared_ptr<DDBState> _db_state3;
+    std::shared_ptr<DDBState>                    _db_state1;
+    std::shared_ptr<DDBState>                    _db_state2;
+    std::shared_ptr<DDBState>                    _db_state3;
 
     std::shared_ptr<DocumentDBInitializationStatus> _db_status1;
     std::shared_ptr<DocumentDBInitializationStatus> _db_status2;
@@ -42,12 +40,12 @@ protected:
         _db_status1->set_replay_progress_producer(_producer);
         _db_status2->set_replay_progress_producer(_producer);
         _db_status3->set_replay_progress_producer(_producer);
-
     }
-    ~ProtonInitializationStatusTest() override __attribute__((noinline)) = default; // Avoid warning about inline-unit-growth limit
+    ~ProtonInitializationStatusTest() override
+        __attribute__((noinline)) = default; // Avoid warning about inline-unit-growth limit
 
     void expect_db_counts(size_t load, size_t replay, size_t online) const {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         _status.report_initialization_status(inserter);
 
@@ -57,22 +55,19 @@ protected:
     }
 };
 
-TEST_F(ProtonInitializationStatusTest, test_state_to_string)
-{
+TEST_F(ProtonInitializationStatusTest, test_state_to_string) {
     EXPECT_EQ("initializing", ProtonInitializationStatus::state_to_string(ProtonInitializationStatus::INITIALIZING));
     EXPECT_EQ("ready", ProtonInitializationStatus::state_to_string(ProtonInitializationStatus::READY));
 }
 
-TEST_F(ProtonInitializationStatusTest, test_states)
-{
+TEST_F(ProtonInitializationStatusTest, test_states) {
     _status.start_initialization();
     EXPECT_EQ(ProtonInitializationStatus::State::INITIALIZING, _status.get_state());
     _status.end_initialization();
     EXPECT_EQ(ProtonInitializationStatus::State::READY, _status.get_state());
 }
 
-TEST_F(ProtonInitializationStatusTest, test_timestamps)
-{
+TEST_F(ProtonInitializationStatusTest, test_timestamps) {
     ProtonInitializationStatus::time_point zero;
 
     _status.start_initialization();
@@ -90,7 +85,7 @@ TEST_F(ProtonInitializationStatusTest, test_timestamps)
 TEST_F(ProtonInitializationStatusTest, test_reporting_initializing_no_dbs) {
     _status.start_initialization();
 
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     _status.report_initialization_status(inserter);
 
@@ -112,7 +107,7 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_ready_no_dbs) {
     _status.start_initialization();
     _status.end_initialization();
 
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     _status.report_initialization_status(inserter);
 
@@ -141,7 +136,7 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs) {
     _db_state2->enterLoadState();
 
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         _status.report_initialization_status(inserter);
 
@@ -174,7 +169,7 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs) {
     _status.end_initialization();
 
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         _status.report_initialization_status(inserter);
 
@@ -219,7 +214,7 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs_when_removing_and
 
     _status.removeDocumentDBInitializationStatus(_db_status1);
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         _status.report_initialization_status(inserter);
 
@@ -236,7 +231,7 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs_when_removing_and
 
     _status.addDocumentDBInitializationStatus(_db_status3);
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         _status.report_initialization_status(inserter);
 
@@ -259,7 +254,7 @@ TEST_F(ProtonInitializationStatusTest, test_reporting_with_dbs_when_removing_and
     _db_state3->enterOnlineState();
 
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         _status.report_initialization_status(inserter);
 

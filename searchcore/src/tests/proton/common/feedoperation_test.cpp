@@ -1,7 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for feedoperation.
 
-
+#include <vespa/document/base/documentid.h>
+#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/document/serialization/vespadocumentserializer.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/joinbucketsoperation.h>
@@ -14,29 +23,19 @@
 #include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchlib/query/base.h>
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+using document::AssignValueUpdate;
 using document::BucketId;
 using document::DataType;
 using document::Document;
-using document::DocumentType;
 using document::DocumentId;
-using document::DocumentUpdate;
+using document::DocumentType;
 using document::DocumentTypeRepo;
+using document::DocumentUpdate;
+using document::FieldUpdate;
 using document::GlobalId;
 using document::StringFieldValue;
-using document::AssignValueUpdate;
-using document::FieldUpdate;
 using document::new_config_builder::NewConfigBuilder;
 using search::DocumentIdT;
 using namespace proton;
@@ -45,27 +44,24 @@ namespace {
 
 struct MyStreamHandler : NewConfigOperation::IStreamHandler {
     using SerialNum = NewConfigOperation::SerialNum;
-    void serializeConfig(SerialNum, vespalib::nbostream &) override {}
-    void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
+    void serializeConfig(SerialNum, vespalib::nbostream&) override {}
+    void deserializeConfig(SerialNum, vespalib::nbostream&) override {}
 };
 
-
-const int32_t doc_type_id = 787121340;
+const int32_t     doc_type_id = 787121340;
 const std::string type_name = "test";
 
 const DocumentOperation::Timestamp TS_10(10);
 
 const document::DocumentId docId("id::test::1");
 
-BucketId toBucket(const GlobalId &gid)
-{
+BucketId toBucket(const GlobalId& gid) {
     BucketId bucket(gid.convertToBucketId());
     bucket.setUsedBits(8);
     return bucket;
 }
 
-uint32_t getDocSize(const Document &doc)
-{
+uint32_t getDocSize(const Document& doc) {
     vespalib::nbostream tstream;
     doc.serialize(tstream);
     uint32_t docSize = tstream.size();
@@ -73,8 +69,7 @@ uint32_t getDocSize(const Document &doc)
     return docSize;
 }
 
-uint32_t get_update_size(const DocumentUpdate &update)
-{
+uint32_t get_update_size(const DocumentUpdate& update) {
     vespalib::nbostream stream;
     update.serializeHEAD(stream);
     uint32_t upd_size = stream.size();
@@ -82,13 +77,11 @@ uint32_t get_update_size(const DocumentUpdate &update)
     return upd_size;
 }
 
-uint32_t getDocIdSize(const DocumentId &doc_id)
-{
+uint32_t getDocIdSize(const DocumentId& doc_id) {
     return doc_id.toString().size() + 1;
 }
 
-void assertDocumentOperation(DocumentOperation &op, BucketId expBucket, uint32_t expDocSize)
-{
+void assertDocumentOperation(DocumentOperation& op, BucketId expBucket, uint32_t expDocSize) {
     EXPECT_EQ(expBucket, op.getBucketId());
     EXPECT_EQ(10u, op.getTimestamp());
     EXPECT_EQ(expDocSize, op.getSerializedDocSize());
@@ -98,43 +91,33 @@ void assertDocumentOperation(DocumentOperation &op, BucketId expBucket, uint32_t
     EXPECT_EQ(4u, op.getPrevLid());
 }
 
-std::unique_ptr<const DocumentTypeRepo>
-makeDocTypeRepo()
-{
+std::unique_ptr<const DocumentTypeRepo> makeDocTypeRepo() {
     NewConfigBuilder builder;
-    auto& doc = builder.document(type_name, doc_type_id);
+    auto&            doc = builder.document(type_name, doc_type_id);
 
-    auto pair_struct = doc.createStruct("pair")
-           .addField("x", builder.stringTypeRef())
-           .addField("y", builder.stringTypeRef()).ref();
+    auto pair_struct =
+        doc.createStruct("pair").addField("x", builder.stringTypeRef()).addField("y", builder.stringTypeRef()).ref();
 
-    auto string_string_map = doc.createMap(builder.stringTypeRef(),
-                                           builder.stringTypeRef()).ref();
+    auto string_string_map = doc.createMap(builder.stringTypeRef(), builder.stringTypeRef()).ref();
 
     doc.addField("string", builder.stringTypeRef())
-       .addField("struct", pair_struct)
-       .addField("map", string_string_map);
+        .addField("struct", pair_struct)
+        .addField("map", string_string_map);
 
     return std::make_unique<const DocumentTypeRepo>(builder.config());
 }
 
-
-struct Fixture
-{
+struct Fixture {
     std::shared_ptr<const DocumentTypeRepo> _repo;
-    const DocumentType &_docType;
+    const DocumentType&                     _docType;
 
 public:
-    Fixture()
-        : _repo(makeDocTypeRepo()),
-          _docType(*_repo->getDocumentType(type_name))
-    {
-    }
+    Fixture() : _repo(makeDocTypeRepo()), _docType(*_repo->getDocumentType(type_name)) {}
 
     auto makeUpdate() {
         auto upd(std::make_shared<DocumentUpdate>(*_repo, _docType, docId));
-        upd->addUpdate(FieldUpdate(upd->getType().getField("string")).
-                       addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue::make("newval"))));
+        upd->addUpdate(FieldUpdate(upd->getType().getField("string"))
+                           .addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue::make("newval"))));
         return upd;
     }
     auto makeDoc() {
@@ -144,23 +127,21 @@ public:
     }
 };
 
-TEST(FeedOperationTest, require_that_toString_on_derived_classes_are_meaningful)
-{
-    DocumentTypeRepo repo;
-    BucketId bucket_id1(42);
-    BucketId bucket_id2(43);
-    BucketId bucket_id3(44);
+TEST(FeedOperationTest, require_that_toString_on_derived_classes_are_meaningful) {
+    DocumentTypeRepo             repo;
+    BucketId                     bucket_id1(42);
+    BucketId                     bucket_id2(43);
+    BucketId                     bucket_id3(44);
     DocumentOperation::Timestamp timestamp(10);
-    Document::SP doc(new Document);
-    DbDocumentId db_doc_id;
-    uint32_t sub_db_id = 1;
-    MyStreamHandler stream_handler;
-    DocumentIdT doc_id_limit = 15;
-    DocumentId doc_id("id:ns:foo:::bar");
-    auto update = std::make_shared<DocumentUpdate>(repo, *DataType::DOCUMENT, doc_id);
+    Document::SP                 doc(new Document);
+    DbDocumentId                 db_doc_id;
+    uint32_t                     sub_db_id = 1;
+    MyStreamHandler              stream_handler;
+    DocumentIdT                  doc_id_limit = 15;
+    DocumentId                   doc_id("id:ns:foo:::bar");
+    auto                         update = std::make_shared<DocumentUpdate>(repo, *DataType::DOCUMENT, doc_id);
 
-    EXPECT_EQ("DeleteBucket(BucketId(0x0000000000000000), serialNum=0)",
-              DeleteBucketOperation().toString());
+    EXPECT_EQ("DeleteBucket(BucketId(0x0000000000000000), serialNum=0)", DeleteBucketOperation().toString());
     EXPECT_EQ("DeleteBucket(BucketId(0x000000000000002a), serialNum=0)",
               DeleteBucketOperation(bucket_id1).toString());
 
@@ -173,19 +154,16 @@ TEST(FeedOperationTest, require_that_toString_on_derived_classes_are_meaningful)
               "source1=BucketId(0x000000000000002a), "
               "source2=BucketId(0x000000000000002b), "
               "target=BucketId(0x000000000000002c), serialNum=0)",
-              JoinBucketsOperation(bucket_id1, bucket_id2, bucket_id3)
-              .toString());
+              JoinBucketsOperation(bucket_id1, bucket_id2, bucket_id3).toString());
 
     EXPECT_EQ("Move(NULL, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
               "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
               MoveOperation().toString());
     EXPECT_EQ("Move(id::::, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=1, lid=0), "
               "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
-              MoveOperation(bucket_id1, timestamp, doc,
-                  db_doc_id, sub_db_id).toString());
+              MoveOperation(bucket_id1, timestamp, doc, db_doc_id, sub_db_id).toString());
 
-    EXPECT_EQ("NewConfig(serialNum=64)",
-              NewConfigOperation(64, stream_handler).toString());
+    EXPECT_EQ("NewConfig(serialNum=64)", NewConfigOperation(64, stream_handler).toString());
 
     EXPECT_EQ("Noop(serialNum=32)", NoopOperation(32).toString());
 
@@ -194,8 +172,7 @@ TEST(FeedOperationTest, require_that_toString_on_derived_classes_are_meaningful)
               PruneRemovedDocumentsOperation().toString());
     EXPECT_EQ("PruneRemovedDocuments(limitLid=15, subDbId=1, "
               "serialNum=0)",
-              PruneRemovedDocumentsOperation(
-                  doc_id_limit, sub_db_id).toString());
+              PruneRemovedDocumentsOperation(doc_id_limit, sub_db_id).toString());
 
     EXPECT_EQ("Put(NULL, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
               "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
@@ -220,8 +197,7 @@ TEST(FeedOperationTest, require_that_toString_on_derived_classes_are_meaningful)
               "source=BucketId(0x000000000000002a), "
               "target1=BucketId(0x000000000000002b), "
               "target2=BucketId(0x000000000000002c), serialNum=0)",
-              SplitBucketOperation(bucket_id1, bucket_id2, bucket_id3)
-              .toString());
+              SplitBucketOperation(bucket_id1, bucket_id2, bucket_id3).toString());
     EXPECT_EQ("Update(NULL, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
               "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
               UpdateOperation().toString());
@@ -229,12 +205,10 @@ TEST(FeedOperationTest, require_that_toString_on_derived_classes_are_meaningful)
               "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
               UpdateOperation(bucket_id1, timestamp, update).toString());
 
-    EXPECT_EQ("CompactLidSpace(subDbId=2, lidLimit=99, serialNum=0)",
-              CompactLidSpaceOperation(2, 99).toString());
+    EXPECT_EQ("CompactLidSpace(subDbId=2, lidLimit=99, serialNum=0)", CompactLidSpaceOperation(2, 99).toString());
 }
 
-TEST(FeedOperationTest, require_that_serialize_and_deserialize_works_for_CompactLidSpaceOperation)
-{
+TEST(FeedOperationTest, require_that_serialize_and_deserialize_works_for_CompactLidSpaceOperation) {
     vespalib::nbostream stream;
     {
         CompactLidSpaceOperation op(2, 99);
@@ -245,7 +219,7 @@ TEST(FeedOperationTest, require_that_serialize_and_deserialize_works_for_Compact
     }
     {
         const document::DocumentTypeRepo repo;
-        CompactLidSpaceOperation op;
+        CompactLidSpaceOperation         op;
         op.deserialize(stream, repo);
         EXPECT_EQ(FeedOperation::COMPACT_LID_SPACE, op.getType());
         EXPECT_EQ(2u, op.getSubDbId());
@@ -253,13 +227,12 @@ TEST(FeedOperationTest, require_that_serialize_and_deserialize_works_for_Compact
     }
 }
 
-TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_update_operations)
-{
-    Fixture f;
+TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_update_operations) {
+    Fixture             f;
     vespalib::nbostream stream;
-    BucketId bucket(toBucket(docId.getGlobalId()));
-    auto upd(f.makeUpdate());
-    uint32_t exp_serialized_size = get_update_size(*upd);
+    BucketId            bucket(toBucket(docId.getGlobalId()));
+    auto                upd(f.makeUpdate());
+    uint32_t            exp_serialized_size = get_update_size(*upd);
     {
         UpdateOperation op(bucket, 10, upd);
         op.serialize(stream);
@@ -275,13 +248,12 @@ TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_update_ope
     }
 }
 
-TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_put_operations)
-{
-    Fixture f;
+TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_put_operations) {
+    Fixture             f;
     vespalib::nbostream stream;
-    BucketId bucket(toBucket(docId.getGlobalId()));
-    auto doc(f.makeDoc());
-    uint32_t expSerializedDocSize = getDocSize(*doc);
+    BucketId            bucket(toBucket(docId.getGlobalId()));
+    auto                doc(f.makeDoc());
+    uint32_t            expSerializedDocSize = getDocSize(*doc);
     EXPECT_NE(0u, expSerializedDocSize);
     {
         PutOperation op(bucket, 10, doc);
@@ -299,13 +271,12 @@ TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_put_operat
     }
 }
 
-TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_move_operations)
-{
-    Fixture f;
+TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_move_operations) {
+    Fixture             f;
     vespalib::nbostream stream;
-    BucketId bucket(toBucket(docId.getGlobalId()));
-    auto doc(f.makeDoc());
-    uint32_t expSerializedDocSize = getDocSize(*doc);
+    BucketId            bucket(toBucket(docId.getGlobalId()));
+    auto                doc(f.makeDoc());
+    uint32_t            expSerializedDocSize = getDocSize(*doc);
     EXPECT_NE(0u, expSerializedDocSize);
     {
         MoveOperation op(bucket, TS_10, doc, {3, 4}, 1);
@@ -322,12 +293,11 @@ TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_move_opera
     }
 }
 
-TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_remove_operations)
-{
-    Fixture f;
+TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_remove_operations) {
+    Fixture             f;
     vespalib::nbostream stream;
-    BucketId bucket(toBucket(docId.getGlobalId()));
-    uint32_t expSerializedDocSize = getDocIdSize(docId);
+    BucketId            bucket(toBucket(docId.getGlobalId()));
+    uint32_t            expSerializedDocSize = getDocIdSize(docId);
     EXPECT_NE(0u, expSerializedDocSize);
     {
         RemoveOperationWithDocId op(bucket, TS_10, docId);
@@ -345,14 +315,13 @@ TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_remove_ope
     }
 }
 
-TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_remove_by_gid_operations)
-{
-    Fixture f;
+TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_remove_by_gid_operations) {
+    Fixture             f;
     vespalib::nbostream stream;
-    GlobalId gid = docId.getGlobalId();
-    BucketId bucket(toBucket(gid));
-    uint32_t expSerializedDocSize = 25;
-    std::string expDocType = "testdoc_type";
+    GlobalId            gid = docId.getGlobalId();
+    BucketId            bucket(toBucket(gid));
+    uint32_t            expSerializedDocSize = 25;
+    std::string         expDocType = "testdoc_type";
     EXPECT_NE(0u, expSerializedDocSize);
     {
         RemoveOperationWithGid op(bucket, TS_10, gid, expDocType);
@@ -376,4 +345,4 @@ TEST(FeedOperationTest, require_that_we_can_serialize_and_deserialize_remove_by_
     }
 }
 
-}
+} // namespace

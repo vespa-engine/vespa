@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/queryeval/searchiterator.h>
-
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
@@ -18,19 +17,18 @@ namespace search::fakedata {
 /*
  * Base class for faked posting list formats.
  */
-class FakePosting
-{
+class FakePosting {
 private:
-    FakePosting(const FakePosting &);
+    FakePosting(const FakePosting&);
 
-    FakePosting &
-    operator=(const FakePosting &);
+    FakePosting& operator=(const FakePosting&);
 
     std::string _name;
+
 public:
     using SP = std::shared_ptr<FakePosting>;
 
-    FakePosting(const std::string &name);
+    FakePosting(const std::string& name);
 
     virtual ~FakePosting();
 
@@ -61,24 +59,20 @@ public:
     /*
      * Two posting lists performance (same format) without feature unpack.
      */
-    virtual int lowLevelAndPairPostingScan(const FakePosting &rhs) const = 0;
+    virtual int lowLevelAndPairPostingScan(const FakePosting& rhs) const = 0;
 
     /*
      * Two posting lists performance (same format) with feature unpack.
      */
-    virtual int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const = 0;
-
+    virtual int lowLevelAndPairPostingScanUnpack(const FakePosting& rhs) const = 0;
 
     /*
      * Iterator factory, for current query evaluation framework.
      */
     virtual std::unique_ptr<search::queryeval::SearchIterator>
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const = 0;
+    createIterator(const fef::TermFieldMatchDataArray& matchData) const = 0;
 
-    const std::string &getName() const
-    {
-        return _name;
-    }
+    const std::string& getName() const { return _name; }
 };
 
-}
+} // namespace search::fakedata

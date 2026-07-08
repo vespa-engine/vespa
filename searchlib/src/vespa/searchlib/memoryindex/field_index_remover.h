@@ -20,45 +20,37 @@ class FieldIndexRemover : public IFieldIndexInsertListener {
 private:
     struct WordFieldDocTuple {
         vespalib::datastore::EntryRef _wordRef;
-        uint32_t _docId;
+        uint32_t                      _docId;
 
-        WordFieldDocTuple() noexcept :
-            _wordRef(0),
-            _docId(0)
-        { }
-        WordFieldDocTuple(vespalib::datastore::EntryRef wordRef, uint32_t docId) noexcept :
-            _wordRef(wordRef),
-            _docId(docId)
-        { }
-        bool operator<(const WordFieldDocTuple &rhs) const {
+        WordFieldDocTuple() noexcept : _wordRef(0), _docId(0) {}
+        WordFieldDocTuple(vespalib::datastore::EntryRef wordRef, uint32_t docId) noexcept
+            : _wordRef(wordRef), _docId(docId) {}
+        bool operator<(const WordFieldDocTuple& rhs) const {
             if (_docId != rhs._docId) {
                 return _docId < rhs._docId;
             }
             return _wordRef < rhs._wordRef;
         }
         struct Radix {
-            uint32_t operator () (const WordFieldDocTuple & wft) const {
-               return wft._docId;
-            }
+            uint32_t operator()(const WordFieldDocTuple& wft) const { return wft._docId; }
         };
     };
 
     CompactWordsStore              _store;
     CompactWordsStore::Builder::UP _builder;
     std::vector<WordFieldDocTuple> _wordFieldDocTuples;
-    const WordStore &_wordStore;
+    const WordStore&               _wordStore;
 
 public:
-    FieldIndexRemover(const WordStore &wordStore);
+    FieldIndexRemover(const WordStore& wordStore);
     ~FieldIndexRemover() override;
-    void remove(uint32_t docId, IFieldIndexRemoveListener &inverter);
-    CompactWordsStore &getStore() { return _store; }
-    const CompactWordsStore &getStore() const { return _store; }
+    void remove(uint32_t docId, IFieldIndexRemoveListener& inverter);
+    CompactWordsStore& getStore() { return _store; }
+    const CompactWordsStore& getStore() const { return _store; }
 
     // Implements IFieldIndexInsertListener
     void insert(vespalib::datastore::EntryRef wordRef, uint32_t docId) override;
     void flush() override;
 };
 
-}
-
+} // namespace search::memoryindex

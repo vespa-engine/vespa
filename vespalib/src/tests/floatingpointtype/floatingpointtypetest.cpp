@@ -3,8 +3,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
 
-TEST(FloatingPointTypeTest, test_floating_point)
-{
+TEST(FloatingPointTypeTest, test_floating_point) {
     vespalib::Double d1(1.0);
     vespalib::Double d2(1.000000000000001);
     vespalib::Double d3(-1.00000000000001);

@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <memory>
+
 #include <map>
+#include <memory>
 
 #pragma once
 
@@ -20,19 +21,17 @@ class AttributeMap;
  */
 class MockAttributeContext : public attribute::IAttributeContext {
     const AttributeMap& _attributes;
+
 public:
     using IAttributeVector = attribute::IAttributeVector;
 
-    explicit MockAttributeContext(const AttributeMap& attributes)
-        : _attributes(attributes)
-    {
-    }
+    explicit MockAttributeContext(const AttributeMap& attributes) : _attributes(attributes) {}
 
-    const IAttributeVector * getAttribute(std::string_view name) const override;
-    const IAttributeVector * getAttributeStableEnum(std::string_view name) const override;
-    void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
+    const IAttributeVector* getAttribute(std::string_view name) const override;
+    const IAttributeVector* getAttributeStableEnum(std::string_view name) const override;
+    void getAttributeList(std::vector<const IAttributeVector*>& list) const override;
 
     void asyncForAttribute(std::string_view name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
 };
 
-}
+} // namespace search::fef::test

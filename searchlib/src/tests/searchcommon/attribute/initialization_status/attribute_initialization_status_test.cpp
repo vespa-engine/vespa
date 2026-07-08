@@ -6,30 +6,27 @@
 
 using search::attribute::AttributeInitializationStatus;
 
-TEST(AttributeInitializationStatusTest, test_get_name)
-{
+TEST(AttributeInitializationStatusTest, test_get_name) {
     AttributeInitializationStatus status("testAttribute");
     EXPECT_EQ("testAttribute", status.get_name());
 }
 
-TEST(AttributeInitializationStatusTest, test_reprocessing_percentage)
-{
+TEST(AttributeInitializationStatusTest, test_reprocessing_percentage) {
     AttributeInitializationStatus status("testAttribute");
-    float percentage = 0.42f;
+    float                         percentage = 0.42f;
     status.set_reprocessing_percentage(percentage);
     EXPECT_EQ(percentage, status.get_reprocessing_percentage());
 }
 
-TEST(AttributeInitializationStatusTest, test_state_to_string)
-{
+TEST(AttributeInitializationStatusTest, test_state_to_string) {
     EXPECT_EQ("queued", AttributeInitializationStatus::state_to_string(AttributeInitializationStatus::QUEUED));
     EXPECT_EQ("loading", AttributeInitializationStatus::state_to_string(AttributeInitializationStatus::LOADING));
-    EXPECT_EQ("reprocessing", AttributeInitializationStatus::state_to_string(AttributeInitializationStatus::REPROCESSING));
+    EXPECT_EQ("reprocessing",
+              AttributeInitializationStatus::state_to_string(AttributeInitializationStatus::REPROCESSING));
     EXPECT_EQ("loaded", AttributeInitializationStatus::state_to_string(AttributeInitializationStatus::LOADED));
 }
 
-TEST(AttributeInitializationStatusTest, test_states)
-{
+TEST(AttributeInitializationStatusTest, test_states) {
     AttributeInitializationStatus status("testAttribute");
     EXPECT_EQ(AttributeInitializationStatus::State::QUEUED, status.get_state());
     status.start_loading();
@@ -38,8 +35,7 @@ TEST(AttributeInitializationStatusTest, test_states)
     EXPECT_EQ(AttributeInitializationStatus::State::LOADED, status.get_state());
 }
 
-TEST(AttributeInitializationStatusTest, test_states_with_reprocessing)
-{
+TEST(AttributeInitializationStatusTest, test_states_with_reprocessing) {
     AttributeInitializationStatus status("testAttribute");
     EXPECT_EQ(AttributeInitializationStatus::State::QUEUED, status.get_state());
     status.start_loading();
@@ -52,8 +48,7 @@ TEST(AttributeInitializationStatusTest, test_states_with_reprocessing)
     EXPECT_EQ(AttributeInitializationStatus::State::LOADED, status.get_state());
 }
 
-TEST(AttributeInitializationStatusTest, test_was_reprocessed)
-{
+TEST(AttributeInitializationStatusTest, test_was_reprocessed) {
     AttributeInitializationStatus status("testAttribute");
     EXPECT_FALSE(status.was_reprocessed());
     status.start_loading();
@@ -73,8 +68,7 @@ TEST(AttributeInitializationStatusTest, test_was_reprocessed)
     EXPECT_TRUE(status2.was_reprocessed());
 }
 
-TEST(AttributeInitializationStatusTest, test_timestamps)
-{
+TEST(AttributeInitializationStatusTest, test_timestamps) {
     AttributeInitializationStatus::time_point zero;
 
     AttributeInitializationStatus status("testAttribute");
@@ -104,7 +98,7 @@ TEST(AttributeInitializationStatusTest, test_timestamps)
 }
 
 TEST(AttributeInitializationStatusTest, test_reporting_queued) {
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
 
     AttributeInitializationStatus status("testAttribute");
@@ -116,7 +110,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_queued) {
 }
 
 TEST(AttributeInitializationStatusTest, test_reporting_loading) {
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
 
     AttributeInitializationStatus status("testAttribute");
@@ -131,7 +125,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_loading) {
 }
 
 TEST(AttributeInitializationStatusTest, test_reporting_loaded) {
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
 
     AttributeInitializationStatus status("testAttribute");
@@ -149,7 +143,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_loaded) {
 }
 
 TEST(AttributeInitializationStatusTest, test_reporting_reprocessing) {
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
 
     AttributeInitializationStatus status("testAttribute");
@@ -169,7 +163,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_reprocessing) {
 }
 
 TEST(AttributeInitializationStatusTest, test_reporting_reprocessing_loading) {
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
 
     AttributeInitializationStatus status("testAttribute");
@@ -192,7 +186,7 @@ TEST(AttributeInitializationStatusTest, test_reporting_reprocessing_loading) {
 }
 
 TEST(AttributeInitializationStatusTest, test_reporting_reprocessing_loaded) {
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
 
     AttributeInitializationStatus status("testAttribute");

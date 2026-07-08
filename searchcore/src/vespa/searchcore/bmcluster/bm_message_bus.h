@@ -5,8 +5,12 @@
 #include <cstdint>
 #include <memory>
 
-namespace config      { class ConfigUri; }
-namespace document    { class DocumentTypeRepo; }
+namespace config {
+class ConfigUri;
+}
+namespace document {
+class DocumentTypeRepo;
+}
 
 namespace mbus {
 
@@ -15,7 +19,7 @@ class RPCMessageBus;
 class Route;
 class SourceSession;
 
-}
+} // namespace mbus
 
 namespace search::bmcluster {
 
@@ -24,18 +28,18 @@ class PendingTracker;
 /*
  * Message bus for benchmark cluster.
  */
-class BmMessageBus
-{
+class BmMessageBus {
     class ReplyHandler;
     std::unique_ptr<ReplyHandler>        _reply_handler;
     std::unique_ptr<mbus::RPCMessageBus> _message_bus;
     std::unique_ptr<mbus::SourceSession> _session;
+
 public:
-    BmMessageBus(const config::ConfigUri& config_uri,
+    BmMessageBus(const config::ConfigUri&                          config_uri,
                  std::shared_ptr<const document::DocumentTypeRepo> document_type_repo);
     ~BmMessageBus();
     uint32_t get_error_count() const;
-    void send_msg(std::unique_ptr<mbus::Message> msg, const mbus::Route &route, PendingTracker &tracker);
+    void send_msg(std::unique_ptr<mbus::Message> msg, const mbus::Route& route, PendingTracker& tracker);
 };
 
-}
+} // namespace search::bmcluster

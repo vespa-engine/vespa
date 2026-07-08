@@ -4,19 +4,19 @@
 
 namespace search::tensor {
 
-std::vector<NearestNeighborIndex::Neighbor>
-HnswSingleBestNeighbors::get_neighbors(uint32_t k, double distance_threshold)
-{
+std::vector<NearestNeighborIndex::Neighbor> HnswSingleBestNeighbors::get_neighbors(uint32_t k,
+                                                                                   double   distance_threshold) {
     while (_candidates.size() > k) {
         _candidates.pop();
     }
     std::vector<NearestNeighborIndex::Neighbor> result;
     result.reserve(_candidates.size());
-    for (const HnswCandidate & hit : _candidates.peek()) {
-        if (hit.distance > distance_threshold) continue;
+    for (const HnswCandidate& hit : _candidates.peek()) {
+        if (hit.distance > distance_threshold)
+            continue;
         result.emplace_back(hit.docid, hit.distance);
     }
     return result;
 }
 
-}
+} // namespace search::tensor

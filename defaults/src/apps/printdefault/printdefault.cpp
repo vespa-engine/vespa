@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/defaults.h>
+
 #include <stdio.h>
 #include <string.h>
 
@@ -29,7 +30,7 @@ void dumpAllVars() {
     printf("vespa version = '%s'\n", V_TAG_COMPONENT);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc != 2) {
         fprintf(stderr, "usage: %s <variable>\n", argv[0]);
         fprintf(stderr, "  variable names are: home, user, hostname, portbase, configservers,\n");
@@ -58,7 +59,8 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "configservers_rpc") == 0) {
         size_t count = 0;
         for (std::string v : vespa::Defaults::vespaConfigServerRpcAddrs()) {
-            if (count++ > 0) printf(",");
+            if (count++ > 0)
+                printf(",");
             printf("%s", v.c_str());
         }
         printf("\n");
@@ -69,7 +71,8 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "configsources") == 0) {
         size_t count = 0;
         for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
-            if (count++ > 0) printf(",");
+            if (count++ > 0)
+                printf(",");
             printf("%s", v.c_str());
         }
         printf("\n");

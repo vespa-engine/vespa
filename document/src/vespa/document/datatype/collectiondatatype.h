@@ -14,11 +14,11 @@
 namespace document {
 
 class CollectionDataType : public DataType {
-    const DataType *_nestedType;
+    const DataType* _nestedType;
 
 protected:
-    CollectionDataType(std::string_view name, const DataType &nestedType) noexcept;
-    CollectionDataType(std::string_view name, const DataType &nestedType, int32_t id) noexcept;
+    CollectionDataType(std::string_view name, const DataType& nestedType) noexcept;
+    CollectionDataType(std::string_view name, const DataType& nestedType, int32_t id) noexcept;
 
 public:
     CollectionDataType(const CollectionDataType&) = delete;
@@ -26,10 +26,8 @@ public:
     ~CollectionDataType() override;
 
     bool equals(const DataType&) const noexcept override;
-    const DataType &getNestedType() const noexcept { return *_nestedType; }
-    const CollectionDataType * cast_collection() const noexcept override { return this; }
+    const DataType& getNestedType() const noexcept { return *_nestedType; }
+    const CollectionDataType* cast_collection() const noexcept override { return this; }
 };
 
-} // document
-
-
+} // namespace document

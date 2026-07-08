@@ -3,9 +3,12 @@
 #pragma once
 
 #include <vespa/searchcommon/common/range.h>
+
 #include <cstddef>
 
-namespace search { class QueryTermSimple; }
+namespace search {
+class QueryTermSimple;
+}
 
 namespace search::attribute {
 
@@ -13,35 +16,29 @@ namespace search::attribute {
  * Class used to determine if an attribute vector value is a match for
  * the query range.
  */
-template<typename T>
-class NumericRangeMatcher
-{
+template <typename T> class NumericRangeMatcher {
 protected:
     T _low;
     T _high;
+
 private:
-    bool _valid;
-    int _limit;
+    bool   _valid;
+    int    _limit;
     size_t _max_per_group;
+
 public:
     NumericRangeMatcher(const QueryTermSimple& queryTerm) : NumericRangeMatcher(queryTerm, false) {}
     NumericRangeMatcher(const QueryTermSimple& queryTerm, bool avoidUndefinedInRange);
+
 protected:
-    Int64Range getRange() const {
-        return {static_cast<int64_t>(_low), static_cast<int64_t>(_high)};
-    }
-    DoubleRange getDoubleRange() const {
-        return {static_cast<double>(_low), static_cast<double>(_high)};
-    }
+    Int64Range getRange() const { return {static_cast<int64_t>(_low), static_cast<int64_t>(_high)}; }
+    DoubleRange getDoubleRange() const { return {static_cast<double>(_low), static_cast<double>(_high)}; }
     bool isValid() const { return _valid; }
     bool match(T v) const { return (_low <= v) && (v <= _high); }
     int getRangeLimit() const { return _limit; }
     size_t getMaxPerGroup() const { return _max_per_group; }
 
-    template <typename BaseType>
-    search::Range<BaseType>
-    cappedRange(bool isFloat)
-    {
+    template <typename BaseType> search::Range<BaseType> cappedRange(bool isFloat) {
         auto low = static_cast<BaseType>(_low);
         auto high = static_cast<BaseType>(_high);
 
@@ -65,4 +62,4 @@ protected:
     }
 };
 
-}
+} // namespace search::attribute

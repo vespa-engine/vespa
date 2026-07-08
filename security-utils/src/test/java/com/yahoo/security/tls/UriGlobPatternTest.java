@@ -3,6 +3,8 @@ package com.yahoo.security.tls;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Locale;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,12 +28,12 @@ class UriGlobPatternTest {
 
     private void assertMatches(String pattern, String value) {
         assertTrue(new UriGlobPattern(pattern).matches(value),
-                () -> String.format("Expected '%s' to match '%s'", pattern, value));
+                () -> String.format(Locale.ROOT, "Expected '%s' to match '%s'", pattern, value));
     }
 
     private void assertNotMatches(String pattern, String value) {
         assertFalse(new UriGlobPattern(pattern).matches(value),
-                () -> String.format("Expected '%s' to not match '%s'", pattern, value));
+                () -> String.format(Locale.ROOT, "Expected '%s' to not match '%s'", pattern, value));
     }
 
 }

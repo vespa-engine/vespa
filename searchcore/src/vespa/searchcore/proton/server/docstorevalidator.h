@@ -1,40 +1,53 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
-#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 
-namespace search { class BitVector; }
+namespace search {
+class BitVector;
+}
+
+namespace searchcorespi {
+class IFlushTarget;
+}
+
 namespace proton {
 
 class FeedHandler;
 class LidVectorContext;
 
-class DocStoreValidator : public search::IDocumentStoreReadVisitor
-{
-    IDocumentMetaStore                 &_dms;
-    uint32_t                            _docIdLimit;
-    std::unique_ptr<search::BitVector>  _invalid;
-    std::unique_ptr<search::BitVector>  _orphans;
-    uint32_t                            _visitCount;
-    uint32_t                            _visitEmptyCount;
+class DocStoreValidator : public search::IDocumentStoreReadVisitor {
+    IDocumentMetaStore&                          _dms;
+    std::shared_ptr<searchcorespi::IFlushTarget> _dms_flush_target;
+    uint32_t                                     _docIdLimit;
+    std::unique_ptr<search::BitVector>           _invalid;
+    std::unique_ptr<search::BitVector>           _orphans;
+    uint32_t                                     _visitCount;
+    uint32_t                                     _visitEmptyCount;
+    bool                                         _updated_doc_id;
 
 public:
-    DocStoreValidator(IDocumentMetaStore &dms);
+    DocStoreValidator(IDocumentMetaStore& dms, std::shared_ptr<searchcorespi::IFlushTarget> dms_flush_target);
     ~DocStoreValidator() override;
 
-    void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
+    void visit(uint32_t lid, const std::shared_ptr<document::Document>& doc, size_t sz) override;
     void visit(uint32_t lid) override;
 
     void visitDone();
-    void killOrphans(search::IDocumentStore &store, search::SerialNum serialNum);
+    void killOrphans(search::IDocumentStore& store, search::SerialNum serialNum);
     uint32_t getInvalidCount() const;
     uint32_t getOrphanCount() const;
     uint32_t getVisitCount() const { return _visitCount; }
     uint32_t getVisitEmptyCount() const { return _visitEmptyCount; }
     std::shared_ptr<LidVectorContext> getInvalidLids() const;
-    void performRemoves(FeedHandler & feedHandler, const search::IDocumentStore &store, const document::DocumentTypeRepo & repo) const;
+    void performRemoves(FeedHandler& feedHandler, const search::IDocumentStore& store,
+                        const document::DocumentTypeRepo& repo) const;
+    void flush_adjusted_document_metastore(search::SerialNum serial_num) const;
+    // If the validation updated a document id string, calling this method adds a noop
+    // operation to the feed handler to increase its serial number.
+    void increase_serial_number_if_necessary(FeedHandler& feedHandler) const;
 };
 
 } // namespace proton

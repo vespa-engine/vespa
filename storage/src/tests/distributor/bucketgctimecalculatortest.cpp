@@ -1,20 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <chrono>
 #include <vespa/storage/distributor/bucketgctimecalculator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <chrono>
 
 using namespace ::testing;
 
 namespace storage::distributor {
 
-struct MockBucketIdHasher : public BucketGcTimeCalculator::BucketIdHasher
-{
-    size_t nextGeneratedHash {0};
+struct MockBucketIdHasher : public BucketGcTimeCalculator::BucketIdHasher {
+    size_t nextGeneratedHash{0};
 
-    size_t doHash(const document::BucketId&) const noexcept override {
-        return nextGeneratedHash;
-    }
+    size_t doHash(const document::BucketId&) const noexcept override { return nextGeneratedHash; }
 };
 
 struct BucketGcTimeCalculatorTest : Test {
@@ -24,17 +22,14 @@ struct BucketGcTimeCalculatorTest : Test {
     using CurrentTime = std::chrono::seconds;
     using LastRunAt = std::chrono::seconds;
 
-    MockBucketIdHasher hasher;
-    std::chrono::seconds checkInterval;
+    MockBucketIdHasher     hasher;
+    std::chrono::seconds   checkInterval;
     BucketGcTimeCalculator calc;
-    document::BucketId b;
+    document::BucketId     b;
 };
 
 BucketGcTimeCalculatorTest::BucketGcTimeCalculatorTest()
-    : checkInterval(1000),
-      calc(hasher, checkInterval),
-      b(16, 1)
-{
+    : checkInterval(1000), calc(hasher, checkInterval), b(16, 1) {
     hasher.nextGeneratedHash = 500;
 }
 
@@ -76,9 +71,9 @@ TEST_F(BucketGcTimeCalculatorTest, no_gc_if_check_interval_is_zero) {
 
 TEST_F(BucketGcTimeCalculatorTest, identity_hasher_returns_bucket_id) {
     BucketGcTimeCalculator::BucketIdIdentityHasher hasher2;
-    document::BucketId bucket(36, 1234);
+    document::BucketId                             bucket(36, 1234);
 
     EXPECT_EQ(bucket.getId(), static_cast<uint64_t>(hasher2.hash(bucket)));
 }
 
-} // storage::distributor
+} // namespace storage::distributor

@@ -1,14 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "messagebus.h"
-#include "messenger.h"
+
 #include "emptyreply.h"
 #include "errorcode.h"
-#include "sendproxy.h"
+#include "messenger.h"
 #include "protocolrepository.h"
+#include "sendproxy.h"
+
 #include <vespa/messagebus/network/inetwork.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -26,18 +29,14 @@ namespace {
  */
 class ResenderTask : public mbus::Messenger::ITask {
 private:
-    mbus::Resender *_resender;
+    mbus::Resender* _resender;
 
 public:
-    explicit ResenderTask(mbus::Resender &resender) noexcept : _resender(&resender) { }
+    explicit ResenderTask(mbus::Resender& resender) noexcept : _resender(&resender) {}
 
-    void run() override {
-        _resender->resendScheduled();
-    }
+    void run() override { _resender->resendScheduled(); }
 
-    [[nodiscard]] uint8_t priority() const override {
-        return 255;
-    }
+    [[nodiscard]] uint8_t priority() const override { return 255; }
 };
 
 /**
@@ -47,51 +46,41 @@ public:
  */
 class ShutdownTask : public mbus::Messenger::ITask {
 private:
-    mbus::INetwork  &_net;
-    mbus::Messenger &_msn;
-    bool            &_done;
-    vespalib::Gate  &_gate;
+    mbus::INetwork&  _net;
+    mbus::Messenger& _msn;
+    bool&            _done;
+    vespalib::Gate&  _gate;
 
 public:
-    ShutdownTask(mbus::INetwork &net, mbus::Messenger &msn,
-                 bool &done, vespalib::Gate &gate) noexcept
-        : _net(net),
-          _msn(msn),
-          _done(done),
-          _gate(gate)
-    { }
+    ShutdownTask(mbus::INetwork& net, mbus::Messenger& msn, bool& done, vespalib::Gate& gate) noexcept
+        : _net(net), _msn(msn), _done(done), _gate(gate) {}
 
-    ~ShutdownTask() override {
-        _gate.countDown();
-    }
+    ~ShutdownTask() override { _gate.countDown(); }
 
     void run() override {
         _net.postShutdownHook();
         _done = _msn.isEmpty();
     }
 
-    [[nodiscard]] uint8_t priority() const override {
-        return 255;
-    }
+    [[nodiscard]] uint8_t priority() const override { return 255; }
 };
 
-} // anonymous
+} // namespace
 
 namespace mbus {
 
-MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
-    _network(net),
-    _lock(),
-    _routingTables(),
-    _sessions(),
-    _protocolRepository(std::make_unique<ProtocolRepository>()),
-    _msn(std::make_unique<Messenger>()),
-    _resender(),
-    _maxPendingCount(0),
-    _maxPendingSize(0),
-    _pendingCount(0),
-    _pendingSize(0)
-{
+MessageBus::MessageBus(INetwork& net, ProtocolSet protocols)
+    : _network(net),
+      _lock(),
+      _routingTables(),
+      _sessions(),
+      _protocolRepository(std::make_unique<ProtocolRepository>()),
+      _msn(std::make_unique<Messenger>()),
+      _resender(),
+      _maxPendingCount(0),
+      _maxPendingSize(0),
+      _pendingCount(0),
+      _pendingSize(0) {
     MessageBusParams params;
     while (!protocols.empty()) {
         IProtocol::SP protocol = protocols.extract();
@@ -102,28 +91,26 @@ MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
     setup(params);
 }
 
-MessageBus::MessageBus(INetwork &net, const MessageBusParams &params) :
-    _network(net),
-    _lock(),
-    _routingTables(),
-    _sessions(),
-    _protocolRepository(std::make_unique<ProtocolRepository>()),
-    _msn(std::make_unique<Messenger>()),
-    _resender(),
-    _maxPendingCount(params.getMaxPendingCount()),
-    _maxPendingSize(params.getMaxPendingSize()),
-    _pendingCount(0),
-    _pendingSize(0)
-{
+MessageBus::MessageBus(INetwork& net, const MessageBusParams& params)
+    : _network(net),
+      _lock(),
+      _routingTables(),
+      _sessions(),
+      _protocolRepository(std::make_unique<ProtocolRepository>()),
+      _msn(std::make_unique<Messenger>()),
+      _resender(),
+      _maxPendingCount(params.getMaxPendingCount()),
+      _maxPendingSize(params.getMaxPendingSize()),
+      _pendingCount(0),
+      _pendingSize(0) {
     setup(params);
 }
 
-MessageBus::~MessageBus()
-{
+MessageBus::~MessageBus() {
     // all sessions must have been destroyed prior to this,
     // so no more traffic from clients
     _msn->discardRecurrentTasks(); // no more traffic from recurrent tasks
-    _network.shutdown(); // no more traffic from network
+    _network.shutdown();           // no more traffic from network
 
     bool done = false;
     while (!done) {
@@ -133,9 +120,7 @@ MessageBus::~MessageBus()
     }
 }
 
-void
-MessageBus::setup(const MessageBusParams &params)
-{
+void MessageBus::setup(const MessageBusParams& params) {
     // Add all known protocols to the repository.
     for (uint32_t i = 0, len = params.getNumProtocols(); i < len; ++i) {
         _protocolRepository->putProtocol(params.getProtocol(i));
@@ -162,41 +147,30 @@ MessageBus::setup(const MessageBusParams &params)
     }
 }
 
-SourceSession::UP
-MessageBus::createSourceSession(IReplyHandler &handler)
-{
+SourceSession::UP MessageBus::createSourceSession(IReplyHandler& handler) {
     return createSourceSession(SourceSessionParams().setReplyHandler(handler));
 }
 
-SourceSession::UP
-MessageBus::createSourceSession(IReplyHandler &handler, const SourceSessionParams &params)
-{
+SourceSession::UP MessageBus::createSourceSession(IReplyHandler& handler, const SourceSessionParams& params) {
     return createSourceSession(SourceSessionParams(params).setReplyHandler(handler));
 }
 
-SourceSession::UP
-MessageBus::createSourceSession(const SourceSessionParams &params)
-{
+SourceSession::UP MessageBus::createSourceSession(const SourceSessionParams& params) {
     return SourceSession::UP(new SourceSession(*this, params));
 }
 
-IntermediateSession::UP
-MessageBus::createIntermediateSession(const string &name,
-                                      bool broadcastName,
-                                      IMessageHandler &msgHandler,
-                                      IReplyHandler &replyHandler)
-{
+IntermediateSession::UP MessageBus::createIntermediateSession(const string& name, bool broadcastName,
+                                                              IMessageHandler& msgHandler,
+                                                              IReplyHandler&   replyHandler) {
     return createIntermediateSession(IntermediateSessionParams()
-                                     .setName(name)
-                                     .setBroadcastName(broadcastName)
-                                     .setMessageHandler(msgHandler)
-                                     .setReplyHandler(replyHandler));
+                                         .setName(name)
+                                         .setBroadcastName(broadcastName)
+                                         .setMessageHandler(msgHandler)
+                                         .setReplyHandler(replyHandler));
 }
 
-IntermediateSession::UP
-MessageBus::createIntermediateSession(const IntermediateSessionParams &params)
-{
-    std::lock_guard guard(_lock);
+IntermediateSession::UP MessageBus::createIntermediateSession(const IntermediateSessionParams& params) {
+    std::lock_guard         guard(_lock);
     IntermediateSession::UP ret(new IntermediateSession(*this, params));
     _sessions[params.getName()] = ret.get();
     if (params.getBroadcastName()) {
@@ -205,21 +179,14 @@ MessageBus::createIntermediateSession(const IntermediateSessionParams &params)
     return ret;
 }
 
-DestinationSession::UP
-MessageBus::createDestinationSession(const string &name,
-                                     bool broadcastName,
-                                     IMessageHandler &handler)
-{
-    return createDestinationSession(DestinationSessionParams()
-                                    .setName(name)
-                                    .setBroadcastName(broadcastName)
-                                    .setMessageHandler(handler));
+DestinationSession::UP MessageBus::createDestinationSession(const string& name, bool broadcastName,
+                                                            IMessageHandler& handler) {
+    return createDestinationSession(
+        DestinationSessionParams().setName(name).setBroadcastName(broadcastName).setMessageHandler(handler));
 }
 
-DestinationSession::UP
-MessageBus::createDestinationSession(const DestinationSessionParams &params)
-{
-    std::lock_guard guard(_lock);
+DestinationSession::UP MessageBus::createDestinationSession(const DestinationSessionParams& params) {
+    std::lock_guard        guard(_lock);
     DestinationSession::UP ret(new DestinationSession(*this, params));
     if (!params.defer_registration()) {
         _sessions[params.getName()] = ret.get();
@@ -230,9 +197,7 @@ MessageBus::createDestinationSession(const DestinationSessionParams &params)
     return ret;
 }
 
-void
-MessageBus::register_session(IMessageHandler& session, const string& session_name, bool broadcast_name)
-{
+void MessageBus::register_session(IMessageHandler& session, const string& session_name, bool broadcast_name) {
     std::lock_guard guard(_lock);
     assert(!_sessions.contains(session_name));
     _sessions[session_name] = &session;
@@ -241,56 +206,45 @@ MessageBus::register_session(IMessageHandler& session, const string& session_nam
     }
 }
 
-void
-MessageBus::unregisterSession(const string &sessionName)
-{
+void MessageBus::unregisterSession(const string& sessionName) {
     std::lock_guard guard(_lock);
     _network.unregisterSession(sessionName);
     _sessions.erase(sessionName);
 }
 
-RoutingTable::SP
-MessageBus::getRoutingTable(const string &protocol)
-{
+RoutingTable::SP MessageBus::getRoutingTable(const string& protocol) {
     std::lock_guard guard(_lock);
-    auto itr = _routingTables.find(protocol);
+    auto            itr = _routingTables.find(protocol);
     if (itr == _routingTables.end()) {
         return {}; // not found
     }
     return itr->second;
 }
 
-IRoutingPolicy::SP
-MessageBus::getRoutingPolicy(const string &protocolName, const string &policyName, const string &policyParam)
-{
+IRoutingPolicy::SP MessageBus::getRoutingPolicy(const string& protocolName, const string& policyName,
+                                                const string& policyParam) {
     return _protocolRepository->getRoutingPolicy(protocolName, policyName, policyParam);
 }
 
-void
-MessageBus::sync()
-{
+void MessageBus::sync() {
     _msn->sync();
     _network.sync(); // should not be necessary, as msn is intermediate
 }
 
-void
-MessageBus::handleMessage(Message::UP msg)
-{
+void MessageBus::handleMessage(Message::UP msg) {
     if (_resender && msg->hasBucketSequence()) {
         deliverError(std::move(msg), ErrorCode::SEQUENCE_ERROR,
                      "Bucket sequences not supported when resender is enabled.");
         return;
     }
-    SendProxy &proxy = *(new SendProxy(*this, _network, _resender.get())); // deletes self
+    SendProxy& proxy = *(new SendProxy(*this, _network, _resender.get())); // deletes self
     _msn->deliverMessage(std::move(msg), proxy);
 }
 
-bool
-MessageBus::setupRouting(RoutingSpec spec)
-{
+bool MessageBus::setupRouting(RoutingSpec spec) {
     vespalib::hash_map<string, RoutingTable::SP> rtm;
     for (uint32_t i = 0; i < spec.getNumTables(); ++i) {
-        const RoutingTableSpec &cfg = spec.getTable(i);
+        const RoutingTableSpec& cfg = spec.getTable(i);
         if (getProtocol(cfg.getProtocol()) == nullptr) { // protocol not found
             LOG(info, "Protocol '%s' is not supported, ignoring routing table.", cfg.getProtocol().c_str());
             continue;
@@ -305,23 +259,17 @@ MessageBus::setupRouting(RoutingSpec spec)
     return true;
 }
 
-IProtocol *
-MessageBus::getProtocol(std::string_view name)
-{
+IProtocol* MessageBus::getProtocol(std::string_view name) {
     return _protocolRepository->getProtocol(name);
 }
 
-IProtocol::SP
-MessageBus::putProtocol(const IProtocol::SP & protocol)
-{
+IProtocol::SP MessageBus::putProtocol(const IProtocol::SP& protocol) {
     return _protocolRepository->putProtocol(protocol);
 }
 
-bool
-MessageBus::checkPending(Message &msg)
-{
+bool MessageBus::checkPending(Message& msg) {
     constexpr auto relaxed = std::memory_order_relaxed;
-    bool busy = false;
+    bool           busy = false;
     const uint32_t size = msg.getApproxSize();
     {
         const size_t maxCount = _maxPendingCount.load(relaxed);
@@ -340,29 +288,23 @@ MessageBus::checkPending(Message &msg)
     return true;
 }
 
-void
-MessageBus::handleReply(Reply::UP reply)
-{
+void MessageBus::handleReply(Reply::UP reply) {
     _pendingCount.fetch_sub(1, std::memory_order_relaxed);
     _pendingSize.fetch_sub(reply->getContext().value.UINT64, std::memory_order_relaxed);
-    IReplyHandler &handler = reply->getCallStack().pop(*reply);
+    IReplyHandler& handler = reply->getCallStack().pop(*reply);
     deliverReply(std::move(reply), handler);
 }
 
-void
-MessageBus::handleDiscard(Context ctx)
-{
+void MessageBus::handleDiscard(Context ctx) {
     _pendingCount.fetch_sub(1, std::memory_order_relaxed);
     _pendingSize.fetch_sub(ctx.value.UINT64, std::memory_order_relaxed);
 }
 
-void
-MessageBus::deliverMessage(Message::UP msg, std::string_view session)
-{
-    IMessageHandler *msgHandler = nullptr;
+void MessageBus::deliverMessage(Message::UP msg, std::string_view session) {
+    IMessageHandler* msgHandler = nullptr;
     {
         std::lock_guard guard(_lock);
-        auto it = _sessions.find(session);
+        auto            it = _sessions.find(session);
         if (it != _sessions.end()) {
             msgHandler = it->second;
         }
@@ -378,42 +320,32 @@ MessageBus::deliverMessage(Message::UP msg, std::string_view session)
     }
 }
 
-void
-MessageBus::deliverError(Message::UP msg, uint32_t errCode, const string &errMsg)
-{
+void MessageBus::deliverError(Message::UP msg, uint32_t errCode, const string& errMsg) {
     auto reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(errCode, errMsg));
 
-    IReplyHandler &replyHandler = reply->getCallStack().pop(*reply);
+    IReplyHandler& replyHandler = reply->getCallStack().pop(*reply);
     deliverReply(std::move(reply), replyHandler);
 }
 
-void
-MessageBus::deliverReply(Reply::UP reply, IReplyHandler &handler)
-{
+void MessageBus::deliverReply(Reply::UP reply, IReplyHandler& handler) {
     _msn->deliverReply(std::move(reply), handler);
 }
 
-string
-MessageBus::getConnectionSpec() const
-{
+string MessageBus::getConnectionSpec() const {
     return _network.getConnectionSpec();
 }
 
-void
-MessageBus::setMaxPendingCount(size_t maxCount)
-{
+void MessageBus::setMaxPendingCount(size_t maxCount) {
     _maxPendingCount.store(maxCount, std::memory_order_relaxed);
 }
 
-void
-MessageBus::setMaxPendingSize(size_t maxSize)
-{
+void MessageBus::setMaxPendingSize(size_t maxSize) {
     _maxPendingSize.store(maxSize, std::memory_order_relaxed);
 }
 
 } // namespace mbus
 
 VESPALIB_HASH_MAP_INSTANTIATE(std::string, std::shared_ptr<mbus::RoutingTable>);
-VESPALIB_HASH_MAP_INSTANTIATE(std::string, mbus::IMessageHandler *);
+VESPALIB_HASH_MAP_INSTANTIATE(std::string, mbus::IMessageHandler*);

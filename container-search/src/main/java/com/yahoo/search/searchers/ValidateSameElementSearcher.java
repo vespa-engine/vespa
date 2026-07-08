@@ -28,6 +28,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
+@SuppressWarnings("removal")
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateSameElementSearcher extends Searcher {
 
@@ -67,16 +68,6 @@ public class ValidateSameElementSearcher extends Searcher {
         public void onExit(Item item) {
             if (item instanceof SameElementItem)
                 inSameElement = false;
-        }
-
-
-            /** Returns an error message if it is invalid, null if valid. */
-        private String valid(SameElementItem sameItem) {
-            for (Item child : sameItem.items()) {
-                if ( ! isValidSameItemChild(child))
-                    return "SameElementItem cannot contain '" + child + "'";
-            }
-            return null;
         }
 
         private boolean isValidSameItemChild(Item child) {

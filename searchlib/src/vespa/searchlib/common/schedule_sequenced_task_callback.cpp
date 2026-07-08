@@ -4,19 +4,14 @@
 
 namespace search {
 
-ScheduleSequencedTaskCallback::ScheduleSequencedTaskCallback(vespalib::ISequencedTaskExecutor& executor,
+ScheduleSequencedTaskCallback::ScheduleSequencedTaskCallback(vespalib::ISequencedTaskExecutor&            executor,
                                                              vespalib::ISequencedTaskExecutor::ExecutorId id,
                                                              std::unique_ptr<vespalib::Executor::Task> task) noexcept
-    : _executor(executor),
-      _id(id),
-      _task(std::move(task))
-{
+    : _executor(executor), _id(id), _task(std::move(task)) {
 }
 
-
-ScheduleSequencedTaskCallback::~ScheduleSequencedTaskCallback()
-{
+ScheduleSequencedTaskCallback::~ScheduleSequencedTaskCallback() {
     _executor.executeTask(_id, std::move(_task));
 }
 
-}
+} // namespace search

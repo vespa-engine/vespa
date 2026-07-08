@@ -63,9 +63,10 @@ public class Schema implements ImmutableSchema {
     /** True if this doesn't define a search, just a document type */
     private final boolean documentsOnly;
 
+    private Boolean documentIdAttribute = null;
+
     private Boolean rawAsBase64 = null;
 
-    /** The stemming setting of this schema. Default is BEST. */
     private Stemming stemming = null;
 
     private final FieldSets fieldSets = new FieldSets(Optional.of(this));
@@ -178,6 +179,19 @@ public class Schema implements ImmutableSchema {
     }
 
     /**
+     * Returns true if document ids should be stored in an implicit attribute
+     *
+     * @return true if document ids should be stored in an implicit attribute
+     */
+    public boolean documentIdAttributeEnabled() {
+        if (documentIdAttribute != null) return documentIdAttribute;
+        if (inherited.isEmpty()) return false;
+        return requireInherited().documentIdAttributeEnabled();
+    }
+
+    public void enableDocumentIdAttribute(boolean value) { documentIdAttribute = value; }
+
+    /**
      * Returns true if 'raw' fields shall be presented as base64 in summary
      * Note that this is temporary and will disappear on Vespa 8 as it will become default, and only option.
      *
@@ -204,7 +218,7 @@ public class Schema implements ImmutableSchema {
     /** Returns whether fields should be stemmed by default or not. Default is BEST. This is never null. */
     public Stemming getStemming() {
         if (stemming != null) return stemming;
-        if (inherited.isEmpty()) return Stemming.BEST;
+        if (inherited.isEmpty()) return Stemming.BEST; // TODO Vespa 9: Change default to multiple
         return requireInherited().getStemming();
     }
 

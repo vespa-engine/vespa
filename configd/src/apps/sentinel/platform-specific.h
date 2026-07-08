@@ -13,4 +13,4 @@ namespace config::platform_specific {
  */
 void pledge_no_new_privileges_if_env_configured();
 
-}
+} // namespace config::platform_specific

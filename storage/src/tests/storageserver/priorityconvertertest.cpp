@@ -10,15 +10,12 @@ namespace storage {
 struct PriorityConverterTest : Test {
     std::unique_ptr<PriorityConverter> _converter;
 
-    void SetUp() override {
-        _converter = std::make_unique<PriorityConverter>();
-    };
+    void SetUp() override { _converter = std::make_unique<PriorityConverter>(); };
 };
 
 TEST_F(PriorityConverterTest, normal_usage) {
     for (int p = 0; p < 16; ++p) {
-        EXPECT_EQ((50 + p * 10),
-                  _converter->toStoragePriority(static_cast<documentapi::Priority::Value>(p)));
+        EXPECT_EQ((50 + p * 10), _converter->toStoragePriority(static_cast<documentapi::Priority::Value>(p)));
     }
     for (int i = 0; i < 256; ++i) {
         uint8_t p = i;
@@ -61,8 +58,7 @@ TEST_F(PriorityConverterTest, normal_usage) {
 }
 
 TEST_F(PriorityConverterTest, lowest_priority_is_returned_for_unknown_code) {
-    EXPECT_EQ(255, static_cast<int>(_converter->toStoragePriority(
-            static_cast<documentapi::Priority::Value>(123))));
+    EXPECT_EQ(255, static_cast<int>(_converter->toStoragePriority(static_cast<documentapi::Priority::Value>(123))));
 }
 
-}
+} // namespace storage

@@ -13,6 +13,7 @@ import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.defaults.Defaults;
 import inference.ModelConfigOuterClass;
 
@@ -24,6 +25,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -120,10 +122,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             var isTritonHealthy = tritonClient.isHealthy();
             
             if (!isTritonHealthy) {
-                processTerminator.logAndDie("Die because Triton server is not healthy at %s".formatted(config.target()));
+                processTerminator.logAndDie(Text.format("Die because Triton server is not healthy at %s", config.target()));
             }
         } catch (TritonOnnxClient.TritonException e) {
-            processTerminator.logAndDie("Die because Triton server can't be reached at %s".formatted(config.target()));
+            processTerminator.logAndDie(Text.format("Die because Triton server can't be reached at %s", config.target()));
         }
 
         var modelName = generateModelName(modelPath, options);

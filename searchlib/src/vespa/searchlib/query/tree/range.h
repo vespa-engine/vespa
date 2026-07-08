@@ -1,10 +1,13 @@
 #pragma once
 
 #include <vespa/searchlib/query/numeric_range_spec.h>
+
 #include <memory>
 #include <string>
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 
 namespace search::query {
 
@@ -26,8 +29,8 @@ public:
     std::string getRangeString() const;
 };
 
-bool operator==(const Range &r1, const Range &r2);
+bool operator==(const Range& r1, const Range& r2);
 
-vespalib::asciistream &operator<<(vespalib::asciistream &out, const Range &range);
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const Range& range);
 
-}
+} // namespace search::query

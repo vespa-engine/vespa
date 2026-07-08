@@ -1,20 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testenv.h"
+
+#include <vespa/fastos/file.h>
+#include <vespa/juniper/juniper_separators.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/casts.h>
-#include <map>
+
 #include <cctype>
-#include <vespa/fastos/file.h>
-#include <vespa/juniper/juniper_separators.h>
+#include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".auxtest");
 
 // Using separator definitions only from here:
 
-#define COLOR_HIGH_ON  "\e[1;31m"
+#define COLOR_HIGH_ON "\e[1;31m"
 #define COLOR_HIGH_OFF "\e[0m"
 
 static int debug_level = 0;
@@ -191,7 +193,8 @@ TEST(AuxTest, testPropertyMap) {
 TEST(AuxTest, testRerase) {
     std::list<int> ls;
 
-    for (int i = 0; i < 10; i++) ls.push_back(i);
+    for (int i = 0; i < 10; i++)
+        ls.push_back(i);
 
     for (std::list<int>::reverse_iterator rit = ls.rbegin(); rit != ls.rend();) {
         if (*rit == 5 || *rit == 6) {
@@ -203,7 +206,8 @@ TEST(AuxTest, testRerase) {
     }
 
     std::string s;
-    for (std::list<int>::iterator it = ls.begin(); it != ls.end(); ++it) s += ('0' + *it);
+    for (std::list<int>::iterator it = ls.begin(); it != ls.end(); ++it)
+        s += ('0' + *it);
     EXPECT_TRUE(s == std::string("01234789"));
 }
 
@@ -219,17 +223,19 @@ void test_dump(const char* s, unsigned int len) {
                 printf("%c", s[i]);
             }
             i++;
-            if (!(i % 100)) break;
+            if (!(i % 100))
+                break;
         }
         printf("\n");
         i = start + 10;
-        for (; i < len && i % 100; i += 10) printf("%7s%3d", "", i);
+        for (; i < len && i % 100; i += 10)
+            printf("%7s%3d", "", i);
         printf("\n");
     }
 }
 
 void TestUTF8(unsigned int size) {
-    const char* s = u8"åpent søkæøåæøåæøå"_C;
+    const char*          s = u8"åpent søkæøåæøåæøå"_C;
     const unsigned char* p = (const unsigned char*)s;
 
     int moved = 0;
@@ -276,7 +282,8 @@ void TestUTF8(unsigned int size) {
         bool                 utf8res = Fast_UnicodeUtil::IsWordChar(u);
         bool                 asciires = std::isalnum(c);
         EXPECT_TRUE(utf8res == asciires);
-        if (utf8res != asciires) fprintf(stderr, ":%c:%d != :%c:%d\n", u, utf8res, c, asciires);
+        if (utf8res != asciires)
+            fprintf(stderr, ":%c:%d != :%c:%d\n", u, utf8res, c, asciires);
     }
 }
 
@@ -290,8 +297,8 @@ TEST(AuxTest, testUTF812) {
     TestUTF8(12);
 }
 
-void test_summary(Matcher& m, const char* content, size_t content_len, int size, int matches,
-                           int surround, size_t& charsize) {
+void test_summary(Matcher& m, const char* content, size_t content_len, int size, int matches, int surround,
+                  size_t& charsize) {
     SummaryDesc* sum = m.CreateSummaryDesc(size, size, matches, surround);
     EXPECT_TRUE(sum != nullptr);
     if (!sum) {
@@ -424,7 +431,8 @@ TEST(AuxTest, testJapanese) {
 
         SummaryDesc* sumdesc = m.CreateSummaryDesc(256, 256, 4, 80);
         EXPECT_TRUE(sumdesc != nullptr);
-        if (!sumdesc) return;
+        if (!sumdesc)
+            return;
         std::string sum = BuildSummary(content, content_len, sumdesc, _sumconf, charsize);
 
         switch (i) {
@@ -457,7 +465,8 @@ TEST(AuxTest, testJapanese) {
             EXPECT_TRUE(sum.size() == 103 && charsize == 86);
             // printf("sz %d charsz %d :%s:\n", sum.size(), charsize, sum.c_str());
             break;
-        default: break;
+        default:
+            break;
         }
         DeleteSummaryDesc(sumdesc);
         DeleteSummaryConfig(_sumconf);
@@ -514,7 +523,8 @@ TEST(AuxTest, testJuniperStack) {
     EXPECT_TRUE(strcmp(s.c_str(), "Hepp:100") == 0);
     delete q;
 
-    if (::testing::Test::HasFailure()) fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
+    if (::testing::Test::HasFailure())
+        fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
 
     q = new QueryNode(2, 0, 0);
     q->_arity = 0;
@@ -522,7 +532,8 @@ TEST(AuxTest, testJuniperStack) {
     std::string s1;
     EXPECT_TRUE(q == nullptr);
 
-    if (::testing::Test::HasFailure()) fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
+    if (::testing::Test::HasFailure())
+        fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
 }
 
 class TokenProcessor : public ITokenProcessor {
@@ -560,7 +571,8 @@ struct QB {
     QB(QB& rhs) : q(std::move(rhs.q)) {}
     QB& add(const char* t, bool st = true) {
         QueryTerm* qt = new QueryTerm(t, 0, 100);
-        if (st) qt->_options |= X_SPECIALTOKEN;
+        if (st)
+            qt->_options |= X_SPECIALTOKEN;
         q->AddChild(qt);
         return *this;
     }
@@ -577,12 +589,7 @@ struct Ctx {
 };
 
 Ctx::Ctx(const std::string& text_, QB& qb_)
-  : text(text_),
-    qb(qb_),
-    str(qb.q.get()),
-    wf(),
-    tp(text),
-    jt(&wf, text.c_str(), text.size(), &tp, &str) {
+    : text(text_), qb(qb_), str(qb.q.get()), wf(), tp(text), jt(&wf, text.c_str(), text.size(), &tp, &str) {
     jt.scan();
 }
 Ctx::~Ctx() = default;
@@ -771,7 +778,7 @@ TEST(AuxTest, testWhiteSpacePreserved) {
     EXPECT_TRUE(actual == expected);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     juniper::TestEnv te(argc, argv, TEST_PATH("testclient.rc").c_str());
     return RUN_ALL_TESTS();

@@ -3,22 +3,23 @@
 #pragma once
 
 #include "simplemessage.h"
+
 #include <vespa/messagebus/reply.h>
 
 namespace mbus {
 
-class SimpleReply : public Reply
-{
+class SimpleReply : public Reply {
 private:
     string _value;
-    SimpleReply &operator=(const SimpleReply &);
+    SimpleReply& operator=(const SimpleReply&);
+
 public:
     using UP = std::unique_ptr<SimpleReply>;
-    SimpleReply(const string &str);
+    SimpleReply(const string& str);
     virtual ~SimpleReply();
-    void setValue(const string &value);
-    const string &getValue() const;
-    const string & getProtocol() const override;
+    void setValue(const string& value);
+    const string& getValue() const;
+    const string& getProtocol() const override;
     uint32_t getType() const override;
 
     uint8_t priority() const override { return 8; }

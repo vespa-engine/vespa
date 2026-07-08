@@ -7,19 +7,15 @@ using searchcorespi::FlushTask;
 namespace proton {
 
 JobTrackedFlushTask::JobTrackedFlushTask(std::shared_ptr<IJobTracker> tracker, FlushTask::UP task)
-    : _tracker(std::move(tracker)),
-      _task(std::move(task))
-{
+    : _tracker(std::move(tracker)), _task(std::move(task)) {
 }
 
 JobTrackedFlushTask::~JobTrackedFlushTask() = default;
 
-void
-JobTrackedFlushTask::run()
-{
+void JobTrackedFlushTask::run() {
     _tracker->start();
     _task->run();
     _tracker->end();
 }
 
-}
+} // namespace proton

@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "foldedstringcompare.h"
-#include <vespa/vespalib/text/utf8.h>
+
 #include <vespa/vespalib/text/lowercase.h>
+#include <vespa/vespalib/text/utf8.h>
+
 #include <cstring>
 
 using vespalib::LowerCase;
@@ -18,12 +20,9 @@ class Utf32Reader {
 
     Iterator _cur;
     Iterator _end;
+
 public:
-    Utf32Reader(const std::vector<uint32_t>& key)
-        : _cur(key.begin()),
-          _end(key.end())
-    {
-    }
+    Utf32Reader(const std::vector<uint32_t>& key) : _cur(key.begin()), _end(key.end()) {}
 
     bool hasMore() const noexcept { return _cur != _end; }
     uint32_t getChar() noexcept { return *_cur++; }
@@ -31,36 +30,27 @@ public:
 
 template <typename T> class FoldableStringHelper;
 
-template <> class FoldableStringHelper<const char*>
-{
+template <> class FoldableStringHelper<const char*> {
 public:
     using Reader = Utf8ReaderForZTS;
 };
 
-template <> class FoldableStringHelper<Utf32VectorRef>
-{
+template <> class FoldableStringHelper<Utf32VectorRef> {
 public:
     using Reader = Utf32Reader;
 };
 
-}
+} // namespace foldedstringcompare
 
-template <typename KeyType>
-using Reader = typename foldedstringcompare::FoldableStringHelper<KeyType>::Reader;
+template <typename KeyType> using Reader = typename foldedstringcompare::FoldableStringHelper<KeyType>::Reader;
 
-size_t
-FoldedStringCompare::
-size(const char *key) noexcept
-{
+size_t FoldedStringCompare::size(const char* key) noexcept {
     return Utf8ReaderForZTS::countChars(key);
 }
 
 template <bool fold_lhs, bool fold_rhs, detail::FoldableString KeyType, detail::FoldableString OKeyType>
-int
-FoldedStringCompare::
-compareFolded(KeyType key, OKeyType okey) noexcept
-{
-    Reader<KeyType> kreader(key);
+int FoldedStringCompare::compareFolded(KeyType key, OKeyType okey) noexcept {
+    Reader<KeyType>  kreader(key);
     Reader<OKeyType> oreader(okey);
 
     for (;;) {
@@ -83,14 +73,11 @@ compareFolded(KeyType key, OKeyType okey) noexcept
 }
 
 template <bool fold_lhs, bool fold_rhs>
-int
-FoldedStringCompare::
-compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen) noexcept
-{
+int FoldedStringCompare::compareFoldedPrefix(const char* key, const char* okey, size_t prefixLen) noexcept {
     Utf8ReaderForZTS kreader(key);
     Utf8ReaderForZTS oreader(okey);
 
-    for (size_t j = 0; j < prefixLen; ++j ) {
+    for (size_t j = 0; j < prefixLen; ++j) {
         uint32_t kval = fold_lhs ? LowerCase::convert(kreader.getChar()) : kreader.getChar();
         uint32_t oval = fold_rhs ? LowerCase::convert(oreader.getChar()) : oreader.getChar();
 
@@ -109,10 +96,7 @@ compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen) noexcep
     return 0;
 }
 
-int
-FoldedStringCompare::
-comparePrefix(const char *key, const char *okey, size_t prefixLen) noexcept
-{
+int FoldedStringCompare::comparePrefix(const char* key, const char* okey, size_t prefixLen) noexcept {
     int res = compareFoldedPrefix<true, true>(key, okey, prefixLen);
     if (res != 0) {
         return res;
@@ -120,11 +104,7 @@ comparePrefix(const char *key, const char *okey, size_t prefixLen) noexcept
     return compareFoldedPrefix<false, false>(key, okey, prefixLen);
 }
 
-
-int
-FoldedStringCompare::
-compare(const char *key, const char *okey) noexcept
-{
+int FoldedStringCompare::compare(const char* key, const char* okey) noexcept {
     int res = compareFolded<true, true>(key, okey);
     if (res != 0) {
         return res;
@@ -142,10 +122,13 @@ template int FoldedStringCompare::compareFolded<false, true>(const char* key, co
 template int FoldedStringCompare::compareFolded<true, false>(const char* key, const char* okey);
 template int FoldedStringCompare::compareFolded<true, true>(const char* key, const char* okey);
 
-template int FoldedStringCompare::compareFoldedPrefix<false, false>(const char* key, const char* okey, size_t prefixLen);
-template int FoldedStringCompare::compareFoldedPrefix<false, true>(const char* key, const char* okey, size_t prefixLen);
-template int FoldedStringCompare::compareFoldedPrefix<true, false>(const char* key, const char* okey, size_t prefixLen);
-template int FoldedStringCompare::compareFoldedPrefix<true, true>(const char* key, const char* okey, size_t prefixLen);
+template int FoldedStringCompare::compareFoldedPrefix<false, false>(const char* key, const char* okey,
+                                                                    size_t prefixLen);
+template int FoldedStringCompare::compareFoldedPrefix<false, true>(const char* key, const char* okey,
+                                                                   size_t prefixLen);
+template int FoldedStringCompare::compareFoldedPrefix<true, false>(const char* key, const char* okey,
+                                                                   size_t prefixLen);
+template int FoldedStringCompare::compareFoldedPrefix<true, true>(const char* key, const char* okey,
+                                                                  size_t prefixLen);
 
 } // namespace search
-

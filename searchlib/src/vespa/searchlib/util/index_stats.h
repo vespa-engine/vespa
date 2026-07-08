@@ -2,6 +2,7 @@
 #pragma once
 
 #include "field_index_stats.h"
+
 #include <map>
 
 namespace search {
@@ -11,42 +12,34 @@ namespace search {
  *
  * E.g. used for internal aggregation before inserting numbers into the metrics framework.
  **/
-class IndexStats
-{
+class IndexStats {
 private:
-    vespalib::MemoryUsage _memoryUsage;
-    size_t _docsInMemory;
-    size_t _sizeOnDisk; // in bytes
-    size_t _fusion_size_on_disk; // in bytes
-    uint32_t _disk_indexes;
-    uint32_t _memory_indexes;
+    vespalib::MemoryUsage                  _memoryUsage;
+    size_t                                 _docsInMemory;
+    size_t                                 _sizeOnDisk; // in bytes
+    uint32_t                               _disk_indexes;
+    uint32_t                               _memory_indexes;
     std::map<std::string, FieldIndexStats> _field_stats;
 
 public:
     IndexStats();
     ~IndexStats();
-    IndexStats &memoryUsage(const vespalib::MemoryUsage &usage) {
+    IndexStats& memoryUsage(const vespalib::MemoryUsage& usage) {
         _memoryUsage = usage;
         return *this;
     }
-    const vespalib::MemoryUsage &memoryUsage() const { return _memoryUsage; }
-    IndexStats &docsInMemory(size_t value) {
+    const vespalib::MemoryUsage& memoryUsage() const { return _memoryUsage; }
+    IndexStats& docsInMemory(size_t value) {
         _docsInMemory = value;
         return *this;
     }
     size_t docsInMemory() const { return _docsInMemory; }
-    IndexStats &sizeOnDisk(size_t value) {
+    IndexStats& sizeOnDisk(size_t value) {
         _sizeOnDisk = value;
         return *this;
     }
     size_t sizeOnDisk() const { return _sizeOnDisk; }
-    IndexStats& fusion_size_on_disk(size_t value) {
-        _fusion_size_on_disk = value;
-        return *this;
-    }
-    size_t fusion_size_on_disk() const { return _fusion_size_on_disk; }
-    IndexStats& disk_indexes(uint32_t value) noexcept
-    {
+    IndexStats& disk_indexes(uint32_t value) noexcept {
         _disk_indexes = value;
         return *this;
     }
@@ -65,4 +58,4 @@ public:
 
 std::ostream& operator<<(std::ostream& os, const IndexStats& stats);
 
-}
+} // namespace search

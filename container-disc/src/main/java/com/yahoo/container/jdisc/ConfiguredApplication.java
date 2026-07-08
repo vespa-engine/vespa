@@ -15,11 +15,13 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.CloudSubscriberFactory;
+import com.yahoo.container.di.Container.ComponentGraphResult;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.container.jdisc.component.Deconstructor;
 import com.yahoo.container.jdisc.metric.DisableGuiceMetric;
+import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.application.BindingRepository;
@@ -46,6 +48,7 @@ import com.yahoo.messagebus.jdisc.MbusServer;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.security.tls.Capability;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
@@ -364,14 +367,21 @@ public final class ConfiguredApplication implements Application {
                 ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                 // Block until new config arrives, and it should be applied
-                Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
-                initializeAndActivateContainer(builder, cleanupTask);
+                ComponentGraphResult result = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
+                if (result.failed()) {
+                    tryReportFailedComponentGraphConstructionMetric(configurer, result.failure());
+                    log.log(Level.SEVERE,
+                            "Reconfiguration failed, your application package must be fixed, unless this is a " +
+                            "JNI reload issue: " + Exceptions.toMessageString(result.failure()), result.failure());
+                    continue;
+                }
+                initializeAndActivateContainer(builder, result.oldComponentsCleanupTask());
                 var metric = configurer.getComponent(Metric.class);
                 metric.set(JDISC_APPLICATION_COMPONENT_GRAPH_CREATION_TIME_MILLIS.baseName(), Duration.between(start, Instant.now()).toMillis(), null);
                 metric.add(JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS.baseName(), 1L, null);
             } catch (UncheckedInterruptedException | SubscriberClosedException | ConfigInterruptedException e) {
                 break;
-            } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
+            } catch (Exception | LinkageError e) { // Unexpected failures from container activation
                 tryReportFailedComponentGraphConstructionMetric(configurer, e);
                 log.log(Level.SEVERE,
                         "Reconfiguration failed, your application package must be fixed, unless this is a " +
@@ -407,7 +417,7 @@ public final class ConfiguredApplication implements Application {
                 }
             }
             if ( ! serversToClose.isEmpty()) {
-                log.info(String.format("Closing %d server instances", serversToClose.size()));
+                log.info(Text.format("Closing %d server instances", serversToClose.size()));
                 for (ServerProvider server : ordered(serversToClose, JettyHttpServer.class, MbusServer.class)) {
                     server.close();
                     startedServers.remove(server);
@@ -498,7 +508,7 @@ public final class ConfiguredApplication implements Application {
         configurer.shutdownConfigRetriever();
         try {
             reconfigurerThread.join();
-            log.info(String.format(
+            log.info(Text.format(
                     "Reconfiguration thread shutdown completed in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
         } catch (InterruptedException e) {
             String message = "Interrupted while waiting for reconfiguration shutdown";

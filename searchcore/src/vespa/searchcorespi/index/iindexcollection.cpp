@@ -1,20 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "iindexcollection.h"
+
 #include "idiskindex.h"
-#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <vespa/searchlib/queryeval/isourceselector.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace searchcorespi {
 
 using index::IDiskIndex;
 
-std::string IIndexCollection::toString() const
-{
+std::string IIndexCollection::toString() const {
     vespalib::asciistream s;
     s << "selector : " << &getSourceSelector() << "(baseId=" << getSourceSelector().getBaseId()
-                                               << ", docidlimit=" << getSourceSelector().getDocIdLimit()
-                                               << ", defaultsource=" << uint32_t(getSourceSelector().getDefaultSource())
-                                               << ")\n";
+      << ", docidlimit=" << getSourceSelector().getDocIdLimit()
+      << ", defaultsource=" << uint32_t(getSourceSelector().getDefaultSource()) << ")\n";
 #if 0
     search::queryeval::ISourceSelector::Iterator::UP it = getSourceSelector().createIterator();
     s << "{";
@@ -29,10 +29,10 @@ std::string IIndexCollection::toString() const
             if (i != 0) {
                 s << ", ";
             }
-            const IndexSearchable & is(getSearchable(i));
+            const IndexSearchable& is(getSearchable(i));
             s << getSourceId(i) << " : " << &is << "(";
-            if (dynamic_cast<const IDiskIndex *>(&is) != nullptr) {
-                s << dynamic_cast<const IDiskIndex &>(is).getIndexDir().c_str();
+            if (dynamic_cast<const IDiskIndex*>(&is) != nullptr) {
+                s << dynamic_cast<const IDiskIndex&>(is).getIndexDir().c_str();
             } else {
                 s << typeid(is).name();
             }
@@ -43,4 +43,4 @@ std::string IIndexCollection::toString() const
     return s.str();
 }
 
-}
+} // namespace searchcorespi

@@ -2,12 +2,17 @@
 
 #pragma once
 
-#include "lid_gid_key_comparator.h"
 #include "i_store.h"
-#include <vespa/vespalib/btree/btreeiterator.h>
+#include "lid_gid_key_comparator.h"
+
 #include <vespa/searchlib/attribute/attributesaver.h>
+#include <vespa/vespalib/btree/btreeiterator.h>
+
+#include <memory>
 
 namespace proton {
+
+class DocumentIdSaver;
 
 /*
  * Class holding the necessary context for saving a document meta
@@ -17,31 +22,32 @@ namespace proton {
  * document meta store was logically saved.  Thus it is important to
  * replay the same operations at startup.
  */
-class DocumentMetaStoreSaver : public search::AttributeSaver
-{
+class DocumentMetaStoreSaver : public search::AttributeSaver {
 public:
     using KeyComp = documentmetastore::LidGidKeyComparator;
     using DocId = documentmetastore::IStore::DocId;
-    using GidIterator = vespalib::btree::BTreeConstIterator<
-        documentmetastore::GidToLidMapKey,
-        vespalib::btree::BTreeNoLeafData,
-        vespalib::btree::NoAggregated,
-        const KeyComp &>;
-    using MetaDataView = std::span<const RawDocumentMetaData>;
+    using GidIterator =
+        vespalib::btree::BTreeConstIterator<documentmetastore::GidToLidMapKey, vespalib::btree::BTreeNoLeafData,
+                                            vespalib::btree::NoAggregated, const KeyComp&>;
+    using MetadataView = std::span<const RawDocumentMetadata>;
 
 private:
-    GidIterator _gidIterator; // iterator over frozen tree
-    MetaDataView _metaDataView;
-    bool _writeDocSize;
+    GidIterator                      _gidIterator; // iterator over frozen tree
+    MetadataView                     _metadataView;
+    bool                             _writeDocSize;
+    bool                             _write_doc_size32;
+    std::unique_ptr<DocumentIdSaver> _docid_saver;
 
-    bool onSave(search::IAttributeSaveTarget &saveTarget) override;
+    bool onSave(search::IAttributeSaveTarget& saveTarget) override;
+
 public:
-    DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
-                           const search::attribute::AttributeHeader &header,
-                           const GidIterator &gidIterator,
-                           MetaDataView metaDataView);
+    DocumentMetaStoreSaver(vespalib::GenerationGuard&& guard, const search::attribute::AttributeHeader& header,
+                           const GidIterator& gidIterator, MetadataView metadataView,
+                           std::unique_ptr<DocumentIdSaver> _docid_saver);
 
     ~DocumentMetaStoreSaver() override;
+
+    static std::string docid_file_suffix();
 };
 
 } // namespace proton

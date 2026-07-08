@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -77,14 +78,14 @@ public class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTrans
         for (DependencyOverride override : overrides) {
             for (Artifact dependent : dependencyTrailOf(dependency, otherArtifacts)) {
                 if (override.isForArtifact(dependent)) {
-                    log.fine(() -> String.format(
+                    log.fine(() -> String.format(Locale.ROOT,
                             "Overriding scope of '%s'; scope '%s' overridden to '%s'",
                             dependency.getId(), oldScope, override.scope));
                     return override.scope;
                 }
             }
         }
-        log.fine(() -> String.format(
+        log.fine(() -> String.format(Locale.ROOT,
                 "Using default scope translation for '%s'; scope 'test' translated to 'compile'",
                 dependency.getId()));
         return Artifact.SCOPE_COMPILE;

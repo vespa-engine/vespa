@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <optional>
 
 namespace proton::flushengine {
@@ -28,5 +29,4 @@ public:
     OptionalTime oldest_start_time(const std::string& handler_name) const;
 };
 
-}
-
+} // namespace proton::flushengine

@@ -1,18 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/defaults.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/process/process.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/assert.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <sys/stat.h>
 #include <unistd.h>
-#include <vespa/defaults.h>
+
 #include <filesystem>
 
 using namespace vespalib;
 
 TEST(AssertTest, that_it_borks_the_first_time) {
     std::string assertName;
-    const char * assertDir = "var/db/vespa/tmp";
+    const char* assertDir = "var/db/vespa/tmp";
     std::filesystem::remove_all(std::filesystem::path("var"));
     ASSERT_TRUE(std::filesystem::create_directories(std::filesystem::path(assertDir)));
     {

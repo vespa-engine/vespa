@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_index_builder.h"
+
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
+
 #include <filesystem>
 
 using search::diskindex::DiskIndex;
@@ -17,7 +19,8 @@ namespace search::queryeval::test {
 
 constexpr search::queryeval::Source default_source = 0;
 
-DiskIndexBuilder::DiskIndexBuilder(const Schema& schema, std::string_view index_dir, uint32_t docid_limit, uint64_t num_words)
+DiskIndexBuilder::DiskIndexBuilder(const Schema& schema, std::string_view index_dir, uint32_t docid_limit,
+                                   uint64_t num_words)
     : _schema(schema),
       _field_length_inspector(),
       _tune_file_indexing(),
@@ -26,18 +29,16 @@ DiskIndexBuilder::DiskIndexBuilder(const Schema& schema, std::string_view index_
       _file_header_ctx(),
       _index_dir(index_dir),
       _selector(default_source, _index_dir + "/selector", docid_limit),
-      _builder(_schema, index_dir, docid_limit, num_words, _field_length_inspector, _tune_file_indexing, _file_header_ctx),
-      _field_builder(_builder.startField(0))
-{
+      _builder(_schema, index_dir, docid_limit, num_words, _field_length_inspector, _tune_file_indexing,
+               _file_header_ctx),
+      _field_builder(_builder.startField(0)) {
     // Mark all documents as being part of this disk index.
     for (uint32_t docid = 0; docid < docid_limit; ++docid) {
         _selector.setSource(docid, default_source);
     }
 }
 
-void
-DiskIndexBuilder::add_word(std::string_view word, search::BitVector& docids, uint32_t num_occs)
-{
+void DiskIndexBuilder::add_word(std::string_view word, search::BitVector& docids, uint32_t num_occs) {
     DocIdAndPosOccFeatures diaf;
     diaf.word_positions().reserve(num_occs);
     for (uint32_t word_pos = 0; word_pos < num_occs; ++word_pos) {
@@ -62,28 +63,24 @@ private:
 public:
     DiskIndexSearchable(std::unique_ptr<DiskIndex> index) : _index(std::move(index)) {}
     ~DiskIndexSearchable() override;
-    std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field,
-                                                const search::query::Node& term) override {
-        FakeRequestContext req_ctx;
+    std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field, const search::query::Node& term) override {
+        FakeRequestContext           req_ctx;
         search::fef::MatchDataLayout mdl;
-        auto bp = _index->createBlueprint(req_ctx, field, term, mdl);
+        auto                         bp = _index->createBlueprint(req_ctx, field, term, mdl);
         assert(mdl.empty());
         return bp;
     }
 };
 
-DiskIndexSearchable::~DiskIndexSearchable()
-{
+DiskIndexSearchable::~DiskIndexSearchable() {
     std::string index_dir = _index->getIndexDir();
     _index.reset();
     std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
 
-}
+} // namespace
 
-std::unique_ptr<BenchmarkSearchable>
-DiskIndexBuilder::build()
-{
+std::unique_ptr<BenchmarkSearchable> DiskIndexBuilder::build() {
     _field_builder.reset();
     _selector.extractSaveInfo(_index_dir + "/selector")->save(_tune_file_attributes, _file_header_ctx);
     auto index = std::make_unique<DiskIndex>(_index_dir, std::shared_ptr<search::diskindex::IPostingListCache>());
@@ -92,4 +89,4 @@ DiskIndexBuilder::build()
     return std::make_unique<DiskIndexSearchable>(std::move(index));
 }
 
-}
+} // namespace search::queryeval::test

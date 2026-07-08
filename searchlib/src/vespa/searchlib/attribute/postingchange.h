@@ -4,9 +4,12 @@
 
 #include "i_enum_store.h"
 #include "postingdata.h"
+
 #include <vespa/vespalib/util/array.h>
 
-namespace vespalib::datastore { class EntryComparator; }
+namespace vespalib::datastore {
+class EntryComparator;
+}
 
 namespace search {
 
@@ -15,9 +18,7 @@ class GrowableBitVector;
 /**
  * Class representing changes to a posting list for a single value.
  */
-template <typename P>
-class PostingChange
-{
+template <typename P> class PostingChange {
 public:
     using A = vespalib::Array<P>;
     using R = std::vector<uint32_t>;
@@ -28,7 +29,7 @@ public:
     ~PostingChange();
     inline void add(uint32_t docId, int32_t weight);
 
-    PostingChange & remove(uint32_t docId) {
+    PostingChange& remove(uint32_t docId) {
         _removals.push_back(docId);
         return *this;
     }
@@ -45,44 +46,30 @@ public:
     void removeDups();
 };
 
-class EnumIndexMapper
-{
+class EnumIndexMapper {
 public:
     virtual ~EnumIndexMapper() = default;
     virtual IEnumStore::Index map(IEnumStore::Index original) const;
     virtual bool hasFold() const { return false; }
 };
 
-template <typename WeightedIndex, typename PostingMap>
-class PostingChangeComputerT
-{
+template <typename WeightedIndex, typename PostingMap> class PostingChangeComputerT {
 private:
     using DocIndices = std::vector<std::pair<uint32_t, std::vector<WeightedIndex>>>;
+
 public:
     template <typename MultivalueMapping>
-    static PostingMap compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
-                              const vespalib::datastore::EntryComparator & compare, const EnumIndexMapper & mapper);
+    static PostingMap compute(const MultivalueMapping& mvm, const DocIndices& docIndices,
+                              const vespalib::datastore::EntryComparator& compare, const EnumIndexMapper& mapper);
 };
 
-template <>
-inline void
-PostingChange<AttributePosting>::add(uint32_t docId, int32_t weight)
-{
-    (void) weight;
-    _additions.push_back(AttributePosting(docId,
-                                 vespalib::btree::BTreeNoLeafData()));
+template <> inline void PostingChange<AttributePosting>::add(uint32_t docId, int32_t weight) {
+    (void)weight;
+    _additions.push_back(AttributePosting(docId, vespalib::btree::BTreeNoLeafData()));
 }
 
-
-template <>
-inline void
-PostingChange<AttributeWeightPosting>::add(uint32_t docId, int32_t weight)
-{
+template <> inline void PostingChange<AttributeWeightPosting>::add(uint32_t docId, int32_t weight) {
     _additions.push_back(AttributeWeightPosting(docId, weight));
 }
 
 } // namespace search
-
-
-
-

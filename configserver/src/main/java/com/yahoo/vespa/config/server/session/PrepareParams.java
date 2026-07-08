@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
@@ -21,6 +22,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.tenant.CloudAccountSerializer;
+import com.yahoo.vespa.config.server.tenant.CloudResourceTagsSerializer;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 import com.yahoo.vespa.config.server.tenant.DataplaneTokenSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
@@ -60,6 +62,7 @@ public final class PrepareParams {
     static final String WAIT_FOR_RESOURCES_IN_PREPARE = "waitForResourcesInPrepare";
     static final String OPERATOR_CERTIFICATES = "operatorCertificates";
     static final String CLOUD_ACCOUNT = "cloudAccount";
+    static final String CLOUD_RESOURCE_TAGS = "cloudResourceTags";
     static final String DATAPLANE_TOKENS = "dataplaneTokens";
 
     private final ApplicationId applicationId;
@@ -82,6 +85,7 @@ public final class PrepareParams {
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
     private final Optional<CloudAccount> cloudAccount;
+    private final CloudResourceTags cloudResourceTags;
     private final List<DataplaneToken> dataplaneTokens;
 
     private PrepareParams(ApplicationId applicationId,
@@ -104,6 +108,7 @@ public final class PrepareParams {
                           boolean waitForResourcesInPrepare,
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount,
+                          CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = Objects.requireNonNull(applicationId);
@@ -125,6 +130,7 @@ public final class PrepareParams {
         this.waitForResourcesInPrepare = waitForResourcesInPrepare;
         this.operatorCertificates = operatorCertificates;
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
         this.dataplaneTokens = dataplaneTokens;
     }
 
@@ -150,6 +156,7 @@ public final class PrepareParams {
         private List<TenantSecretStore> tenantSecretStores = List.of();
         private List<X509Certificate> operatorCertificates = List.of();
         private Optional<CloudAccount> cloudAccount = Optional.empty();
+        private CloudResourceTags cloudResourceTags = CloudResourceTags.empty();
         private List<DataplaneToken> dataplaneTokens = List.of();
 
         public Builder() { }
@@ -318,6 +325,11 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder cloudResourceTags(CloudResourceTags cloudResourceTags) {
+            this.cloudResourceTags = cloudResourceTags != null ? cloudResourceTags : CloudResourceTags.empty();
+            return this;
+        }
+
         public Builder dataplaneTokens(List<DataplaneToken> dataplaneTokens) {
             this.dataplaneTokens = List.copyOf(dataplaneTokens);
             return this;
@@ -344,6 +356,7 @@ public final class PrepareParams {
                                      waitForResourcesInPrepare,
                                      operatorCertificates,
                                      cloudAccount,
+                                     cloudResourceTags,
                                      dataplaneTokens);
         }
 
@@ -396,6 +409,7 @@ public final class PrepareParams {
                 .waitForResourcesInPrepare(booleanValue(params, WAIT_FOR_RESOURCES_IN_PREPARE))
                 .operatorCertificates(deserialize(params.field(OPERATOR_CERTIFICATES), PrepareParams::readOperatorCertificates, List.of()))
                 .cloudAccount(deserialize(params.field(CLOUD_ACCOUNT), CloudAccountSerializer::fromSlime, null))
+                .cloudResourceTags(deserialize(params.field(CLOUD_RESOURCE_TAGS), CloudResourceTagsSerializer::fromSlime, CloudResourceTags.empty()))
                 .dataplaneTokens(deserialize(params.field(DATAPLANE_TOKENS), DataplaneTokenSerializer::fromSlime, List.of()))
                 .build();
     }
@@ -521,6 +535,10 @@ public final class PrepareParams {
 
     public Optional<CloudAccount> cloudAccount() {
         return cloudAccount;
+    }
+
+    public CloudResourceTags cloudResourceTags() {
+        return cloudResourceTags;
     }
 
     public List<DataplaneToken> dataplaneTokens() {

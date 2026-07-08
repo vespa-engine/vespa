@@ -9,43 +9,39 @@ namespace search::features {
 
 //-----------------------------------------------------------------------------
 
-class TextSimilarityExecutor : public fef::FeatureExecutor
-{
+class TextSimilarityExecutor : public fef::FeatureExecutor {
 private:
     std::vector<fef::TermFieldHandle> _handles;
     std::vector<int>                  _weights;
     int                               _total_term_weight;
 
     struct Item {
-        uint32_t idx;
+        uint32_t                                   idx;
         fef::TermFieldMatchData::PositionsIterator pos;
         fef::TermFieldMatchData::PositionsIterator end;
-        Item(uint32_t idx_in,
-             fef::TermFieldMatchData::PositionsIterator pos_in,
+        Item(uint32_t idx_in, fef::TermFieldMatchData::PositionsIterator pos_in,
              fef::TermFieldMatchData::PositionsIterator end_in)
             : idx(idx_in), pos(pos_in), end(end_in) {}
-        bool operator<(const Item &other) const {
-            return (pos->getPosition() == other.pos->getPosition())
-                ? (idx < other.idx)
-                : (pos->getPosition() < other.pos->getPosition());
+        bool operator<(const Item& other) const {
+            return (pos->getPosition() == other.pos->getPosition()) ? (idx < other.idx)
+                                                                    : (pos->getPosition() < other.pos->getPosition());
         }
     };
 
     vespalib::PriorityQueue<Item> _queue;
-    const fef::MatchData         *_md;
+    const fef::MatchData*         _md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData& md) override;
 
 public:
-    TextSimilarityExecutor(const fef::IQueryEnvironment &env, uint32_t field_id);
+    TextSimilarityExecutor(const fef::IQueryEnvironment& env, uint32_t field_id);
     bool isPure() override { return _handles.empty(); }
     void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
 
-class TextSimilarityBlueprint : public fef::Blueprint
-{
+class TextSimilarityBlueprint : public fef::Blueprint {
 private:
     static const std::string score_output;
     static const std::string proximity_output;
@@ -58,13 +54,13 @@ private:
 public:
     TextSimilarityBlueprint();
     ~TextSimilarityBlueprint() override;
-    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE);
     }
-    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

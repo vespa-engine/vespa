@@ -2,6 +2,8 @@
 
 package com.yahoo.container.logging;
 
+import com.yahoo.text.Text;
+
 /**
  * @author mortent
  */
@@ -13,10 +15,10 @@ class ConnectionLogHandler {
         logFileHandler = new LogFileHandler<>(
                 LogFileHandler.Compression.ZSTD,
                 bufferSize,
-                useClusterIdInFileName ? String.format("logs/vespa/%s/ConnectionLog.%s.%s", logDirectoryName, clusterName, "%Y%m%d%H%M%S") :
-                                          String.format("logs/vespa/%s/ConnectionLog.%s", logDirectoryName, "%Y%m%d%H%M%S"),
+                useClusterIdInFileName ? Text.format("logs/vespa/%s/ConnectionLog.%s.%s", logDirectoryName, clusterName, "%Y%m%d%H%M%S") :
+                                          Text.format("logs/vespa/%s/ConnectionLog.%s", logDirectoryName, "%Y%m%d%H%M%S"),
                 "0 60 ...",
-                useClusterIdInFileName ? String.format("ConnectionLog.%s", clusterName) :
+                useClusterIdInFileName ? Text.format("ConnectionLog.%s", clusterName) :
                                           "ConnectionLog",
                 queueSize,
                 "connection-logger",

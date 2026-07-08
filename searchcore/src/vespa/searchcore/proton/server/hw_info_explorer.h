@@ -10,8 +10,7 @@ namespace proton {
 /**
  * Class used to explore the hardware information on the machine on which proton runs.
  */
-class HwInfoExplorer : public vespalib::StateExplorer
-{
+class HwInfoExplorer : public vespalib::StateExplorer {
 private:
     vespalib::HwInfo _info;
 
@@ -21,4 +20,4 @@ public:
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
-}
+} // namespace proton

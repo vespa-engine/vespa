@@ -11,11 +11,10 @@ class ResourceUsage;
 /*
  * Interface class for listening to resource usage updates.
  */
-class IResourceUsageListener
-{
+class IResourceUsageListener {
 public:
     virtual ~IResourceUsageListener() = default;
     virtual void update_resource_usage(const ResourceUsage& resource_usage) = 0;
 };
 
-}
+} // namespace storage::spi

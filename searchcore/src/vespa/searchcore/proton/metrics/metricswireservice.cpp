@@ -8,4 +8,4 @@ MetricsWireService::MetricsWireService() = default;
 
 MetricsWireService::~MetricsWireService() = default;
 
-}
+} // namespace proton

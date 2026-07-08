@@ -77,14 +77,16 @@ public class X509CertificateBuilder {
             PublicKey publicKey = new JcaPKCS10CertificationRequest(bcCsr)
                     .setProvider(BouncyCastleProviderHolder.getInstance())
                     .getPublicKey();
-            return new X509CertificateBuilder(caIssuer,
-                                              new X500Principal(bcCsr.getSubject().getEncoded()),
-                                              notBefore,
-                                              notAfter,
-                                              publicKey,
-                                              caPrivateKey,
-                                              signingAlgorithm,
-                                              serialNumber);
+            var builder = new X509CertificateBuilder(caIssuer,
+                                                      new X500Principal(bcCsr.getSubject().getEncoded()),
+                                                      notBefore,
+                                                      notAfter,
+                                                      publicKey,
+                                                      caPrivateKey,
+                                                      signingAlgorithm,
+                                                      serialNumber);
+            csr.getSubjectAlternativeNames().forEach(builder::addSubjectAlternativeName);
+            return builder;
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {

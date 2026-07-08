@@ -31,6 +31,7 @@ public class Container {
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
     private volatile UrlDownloader urlDownloader;
+    public volatile ConfigStatus configStatus = ConfigStatus.ok(0);
 
     /**
      * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
@@ -152,4 +153,23 @@ public class Container {
     public boolean applyOnRestart() {
         return applyOnRestart;
     }
+
+    public ConfigStatus configStatus() { return configStatus; }
+    public void setConfigStatus(long generation, String message) { configStatus = ConfigStatus.failed(generation, message); }
+    public void setConfigStatusOk(long generation) { configStatus = ConfigStatus.ok(generation); }
+
+    public record ConfigStatus(long generation, Status status, String message) {
+        public enum Status {
+            OK, FAILED;
+            @Override public String toString() { return name().toLowerCase(); }
+        }
+        public static ConfigStatus ok(long generation) {
+            return new ConfigStatus(generation, Status.OK, null);
+        }
+        public static ConfigStatus failed(long generation, String message) {
+            return new ConfigStatus(generation, Status.FAILED, message);
+        }
+        public boolean isFailed() { return status == Status.FAILED; }
+    }
+
 }

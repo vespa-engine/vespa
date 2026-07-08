@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fixedsourceselector.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
@@ -10,11 +11,11 @@ namespace search {
 
 namespace {
 
-attribute::Config getConfig() { return attribute::Config(attribute::BasicType::INT8); }
+attribute::Config getConfig() {
+    return attribute::Config(attribute::BasicType::INT8);
+}
 
-uint32_t
-capSelector(queryeval::sourceselector::Iterator::SourceStore &store, queryeval::Source defaultSource)
-{
+uint32_t capSelector(queryeval::sourceselector::Iterator::SourceStore& store, queryeval::Source defaultSource) {
     uint32_t committedDocIdLimit = store.getCommittedDocIdLimit();
     uint32_t cappedSources = 0;
     for (uint32_t docId = 0; docId < committedDocIdLimit; ++docId) {
@@ -27,19 +28,16 @@ capSelector(queryeval::sourceselector::Iterator::SourceStore &store, queryeval::
     return cappedSources;
 }
 
+} // namespace
+
+FixedSourceSelector::Iterator::Iterator(const FixedSourceSelector& sourceSelector)
+    : IIterator(sourceSelector._source), _attributeGuard(sourceSelector._realSource) {
 }
 
-FixedSourceSelector::Iterator::Iterator(const FixedSourceSelector & sourceSelector) :
-    IIterator(sourceSelector._source),
-    _attributeGuard(sourceSelector._realSource)
-{ }
-
-FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource,
-                                         const std::string & attrBaseFileName,
-                                         uint32_t initialNumDocs) :
-    SourceSelector(defaultSource, std::make_shared<SourceStore>(attrBaseFileName, getConfig())),
-    _source(static_cast<SourceStore &>(*_realSource))
-{
+FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource, const std::string& attrBaseFileName,
+                                         uint32_t initialNumDocs)
+    : SourceSelector(defaultSource, std::make_shared<SourceStore>(attrBaseFileName, getConfig())),
+      _source(static_cast<SourceStore&>(*_realSource)) {
     if (initialNumDocs != std::numeric_limits<uint32_t>::max()) {
         reserve(initialNumDocs);
         _source.commit();
@@ -48,11 +46,9 @@ FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource,
 
 FixedSourceSelector::~FixedSourceSelector() = default;
 
-FixedSourceSelector::UP
-FixedSourceSelector::cloneAndSubtract(const std::string & attrBaseFileName, uint32_t diff)
-{
+FixedSourceSelector::UP FixedSourceSelector::cloneAndSubtract(const std::string& attrBaseFileName, uint32_t diff) {
     queryeval::Source newDefault = getNewSource(getDefaultSource(), diff);
-    auto selector = std::make_unique< FixedSourceSelector>(newDefault, attrBaseFileName, _source.getNumDocs()-1);
+    auto selector = std::make_unique<FixedSourceSelector>(newDefault, attrBaseFileName, _source.getNumDocs() - 1);
     for (uint32_t docId = 0; docId < _source.getNumDocs(); ++docId) {
         queryeval::Source src = _source.get(docId);
         src = getNewSource(src, diff);
@@ -65,20 +61,16 @@ FixedSourceSelector::cloneAndSubtract(const std::string & attrBaseFileName, uint
     return selector;
 }
 
-FixedSourceSelector::UP
-FixedSourceSelector::load(const std::string & baseFileName, uint32_t currentId)
-{
+FixedSourceSelector::UP FixedSourceSelector::load(const std::string& baseFileName, uint32_t currentId) {
     LoadInfo::UP info = extractLoadInfo(baseFileName);
     info->load();
     uint32_t defaultSource = currentId - info->header()._baseId;
     assert(defaultSource < SOURCE_LIMIT);
     if (defaultSource != info->header()._defaultSource) {
         LOG(info, "Default source mismatch: header says %u, should be %u selector %s",
-            (uint32_t) info->header()._defaultSource, defaultSource,
-            baseFileName.c_str());
+            (uint32_t)info->header()._defaultSource, defaultSource, baseFileName.c_str());
     }
-    auto selector = std::make_unique<FixedSourceSelector>(defaultSource,
-                                                          info->header()._baseFileName,
+    auto selector = std::make_unique<FixedSourceSelector>(defaultSource, info->header()._baseFileName,
                                                           std::numeric_limits<uint32_t>::max());
     selector->setBaseId(info->header()._baseId);
     selector->_source.load();
@@ -89,36 +81,32 @@ FixedSourceSelector::load(const std::string & baseFileName, uint32_t currentId)
     return selector;
 }
 
-void FixedSourceSelector::reserve(uint32_t numDocs)
-{
+void FixedSourceSelector::reserve(uint32_t numDocs) {
     const uint32_t maxDoc(_source.getNumDocs());
     const uint32_t newMaxDocIdPlussOne(numDocs + 1);
     if (newMaxDocIdPlussOne > maxDoc) {
         uint32_t newDocId(0);
-        for (_source.addDoc(newDocId); newDocId < numDocs; _source.addDoc(newDocId));
+        for (_source.addDoc(newDocId); newDocId < numDocs; _source.addDoc(newDocId))
+            ;
     }
     for (uint32_t i = _source.getCommittedDocIdLimit(); i < newMaxDocIdPlussOne; ++i) {
         _source.set(i, getDefaultSource());
     }
 }
 
-void
-FixedSourceSelector::setSource(uint32_t docId, queryeval::Source source)
-{
+void FixedSourceSelector::setSource(uint32_t docId, queryeval::Source source) {
     assert(source < SOURCE_LIMIT);
     /**
      * Due to matchingloop advancing 1 past end, we need to initialize data that
      * far too.
      **/
-    reserve(docId+1);
+    reserve(docId + 1);
     _source.update(docId, source);
     _source.updateUncommittedDocIdLimit(docId + 1);
     _source.commit();
 }
 
-void
-FixedSourceSelector::compactLidSpace(uint32_t lidLimit)
-{
+void FixedSourceSelector::compactLidSpace(uint32_t lidLimit) {
     if (lidLimit < _source.getCommittedDocIdLimit()) {
         _source.compactLidSpace(lidLimit + 1);
     }

@@ -7,10 +7,9 @@ namespace storage {
 ActiveOperationsMetrics::ActiveOperationsMetrics(metrics::MetricSet* parent)
     : MetricSet("active_operations", {}, "metrics for active operations at service layer", parent),
       size("size", {}, "Number of concurrent active operations", this),
-      latency("latency", {}, "Latency (in ms) for active operations", this)
-{
+      latency("latency", {}, "Latency (in ms) for active operations", this) {
 }
 
 ActiveOperationsMetrics::~ActiveOperationsMetrics() = default;
 
-}
+} // namespace storage

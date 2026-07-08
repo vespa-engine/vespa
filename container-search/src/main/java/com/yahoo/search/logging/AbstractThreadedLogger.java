@@ -3,6 +3,7 @@
 package com.yahoo.search.logging;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.text.Text;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -74,7 +75,7 @@ abstract class AbstractThreadedLogger extends AbstractComponent implements Logge
             try {
                 super.run();
             } catch (Exception e) {
-                log.log(Level.SEVERE, String.format("Error while sending logger entry: %s", e), e);
+                log.log(Level.SEVERE, Text.format("Error while sending logger entry: %s", e), e);
             }
         }
 

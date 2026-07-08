@@ -1,25 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_function.h"
-#include "value.h"
+
 #include "operation.h"
-#include "visit_stuff.h"
 #include "string_stuff.h"
+#include "value.h"
 #include "value_type_spec.h"
+#include "visit_stuff.h"
+
 #include <vespa/eval/instruction/generic_cell_cast.h>
 #include <vespa/eval/instruction/generic_cell_order.h>
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_create.h>
+#include <vespa/eval/instruction/generic_filter_subspaces.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_lambda.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_map_subspaces.h>
-#include <vespa/eval/instruction/generic_filter_subspaces.h>
 #include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/instruction/generic_peek.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/vespalib/objects/objectdumper.h>
+
 #include <vespa/vespalib/objects/visit.hpp>
 
 #include <vespa/log/log.h>
@@ -28,24 +31,18 @@ LOG_SETUP(".eval.eval.tensor_function");
 namespace vespalib {
 namespace eval {
 
-std::string
-TensorFunction::as_string() const
-{
+std::string TensorFunction::as_string() const {
     ObjectDumper dumper;
     ::visit(dumper, "", *this);
     return dumper.toString();
 }
 
-void
-TensorFunction::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void TensorFunction::visit_self(vespalib::ObjectVisitor& visitor) const {
     visitor.visitString("result_type", result_type().to_spec());
     visitor.visitBool("result_is_mutable", result_is_mutable());
 }
 
-void
-TensorFunction::visit_children(vespalib::ObjectVisitor &visitor) const
-{
+void TensorFunction::visit_children(vespalib::ObjectVisitor& visitor) const {
     std::vector<vespalib::eval::TensorFunction::Child::CREF> children;
     push_children(children);
     for (size_t i = 0; i < children.size(); ++i) {
@@ -63,62 +60,48 @@ using Instruction = InterpretedFunction::Instruction;
 
 //-----------------------------------------------------------------------------
 
-void op_load_const(State &state, uint64_t param) {
+void op_load_const(State& state, uint64_t param) {
     state.stack.push_back(unwrap_param<Value>(param));
 }
 
 //-----------------------------------------------------------------------------
 
-} // namespace vespalib::eval::tensor_function::<unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-void
-Leaf::push_children(std::vector<Child::CREF> &) const
-{
+void Leaf::push_children(std::vector<Child::CREF>&) const {
 }
 
 //-----------------------------------------------------------------------------
 
-void
-Op1::push_children(std::vector<Child::CREF> &children) const
-{
+void Op1::push_children(std::vector<Child::CREF>& children) const {
     children.emplace_back(_child);
 }
 
-void
-Op1::visit_children(vespalib::ObjectVisitor &visitor) const
-{
+void Op1::visit_children(vespalib::ObjectVisitor& visitor) const {
     ::visit(visitor, "child", _child.get());
 }
 
 //-----------------------------------------------------------------------------
 
-void
-Op2::push_children(std::vector<Child::CREF> &children) const
-{
+void Op2::push_children(std::vector<Child::CREF>& children) const {
     children.emplace_back(_lhs);
     children.emplace_back(_rhs);
 }
 
-void
-Op2::visit_children(vespalib::ObjectVisitor &visitor) const
-{
+void Op2::visit_children(vespalib::ObjectVisitor& visitor) const {
     ::visit(visitor, "lhs", _lhs.get());
     ::visit(visitor, "rhs", _rhs.get());
 }
 
 //-----------------------------------------------------------------------------
 
-Instruction
-ConstValue::compile_self(const ValueBuilderFactory &, Stash &) const
-{
+Instruction ConstValue::compile_self(const ValueBuilderFactory&, Stash&) const {
     return Instruction(op_load_const, wrap_param<Value>(_value));
 }
 
-void
-ConstValue::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void ConstValue::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     if (result_type().is_double()) {
         visitor.visitFloat("value", _value.as_double());
@@ -129,30 +112,23 @@ ConstValue::visit_self(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
-Instruction
-Inject::compile_self(const ValueBuilderFactory &, Stash &) const
-{
+Instruction Inject::compile_self(const ValueBuilderFactory&, Stash&) const {
     return Instruction::fetch_param(_param_idx);
 }
 
-void
-Inject::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void Inject::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     visitor.visitInt("param_idx", _param_idx);
 }
 
 //-----------------------------------------------------------------------------
 
-Instruction
-Reduce::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
-    return instruction::GenericReduce::make_instruction(result_type(), child().result_type(), aggr(), dimensions(), factory, stash);
+Instruction Reduce::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
+    return instruction::GenericReduce::make_instruction(result_type(), child().result_type(), aggr(), dimensions(),
+                                                        factory, stash);
 }
 
-void
-Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void Reduce::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     ::visit(visitor, "aggr", _aggr);
     ::visit(visitor, "dimensions", visit::DimList(_dimensions));
@@ -160,153 +136,118 @@ Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
-Instruction
-Map::compile_self(const ValueBuilderFactory &, Stash &stash) const
-{
+Instruction Map::compile_self(const ValueBuilderFactory&, Stash& stash) const {
     return instruction::GenericMap::make_instruction(result_type(), child().result_type(), _function, stash);
 }
 
-void
-Map::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void Map::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     ::visit(visitor, "function", _function);
 }
 
 //-----------------------------------------------------------------------------
 
-InterpretedFunction::Instruction
-MapSubspaces::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
+InterpretedFunction::Instruction MapSubspaces::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
     return instruction::GenericMapSubspaces::make_instruction(*this, factory, stash);
 }
 
-void
-MapSubspaces::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void MapSubspaces::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
 }
 
 //-----------------------------------------------------------------------------
 
-InterpretedFunction::Instruction
-FilterSubspaces::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
-    return instruction::GenericFilterSubspaces::make_instruction(result_type(), inner_type(), lambda(), types(), factory, stash);
+InterpretedFunction::Instruction FilterSubspaces::compile_self(const ValueBuilderFactory& factory,
+                                                               Stash&                     stash) const {
+    return instruction::GenericFilterSubspaces::make_instruction(result_type(), inner_type(), lambda(), types(),
+                                                                 factory, stash);
 }
 
-void
-FilterSubspaces::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void FilterSubspaces::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
 }
 
 //-----------------------------------------------------------------------------
 
-Instruction
-Join::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
-    return instruction::GenericJoin::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), factory, stash);
+Instruction Join::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
+    return instruction::GenericJoin::make_instruction(result_type(), lhs().result_type(), rhs().result_type(),
+                                                      function(), factory, stash);
 }
 
-void
-Join::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void Join::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     ::visit(visitor, "function", _function);
 }
 
 //-----------------------------------------------------------------------------
 
-Instruction
-Merge::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
-    return instruction::GenericMerge::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), factory, stash);
+Instruction Merge::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
+    return instruction::GenericMerge::make_instruction(result_type(), lhs().result_type(), rhs().result_type(),
+                                                       function(), factory, stash);
 }
 
-void
-Merge::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void Merge::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     ::visit(visitor, "function", _function);
 }
 
 //-----------------------------------------------------------------------------
 
-Instruction
-Concat::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
-    return instruction::GenericConcat::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), dimension(), factory, stash);
+Instruction Concat::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
+    return instruction::GenericConcat::make_instruction(result_type(), lhs().result_type(), rhs().result_type(),
+                                                        dimension(), factory, stash);
 }
 
-void
-Concat::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void Concat::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     visitor.visitString("dimension", _dimension);
 }
 
 //-----------------------------------------------------------------------------
 
-InterpretedFunction::Instruction
-CellCast::compile_self(const ValueBuilderFactory &, Stash &stash) const
-{
+InterpretedFunction::Instruction CellCast::compile_self(const ValueBuilderFactory&, Stash& stash) const {
     return instruction::GenericCellCast::make_instruction(result_type(), child().result_type(), cell_type(), stash);
 }
 
-void
-CellCast::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void CellCast::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     visitor.visitString("cell_type", value_type::cell_type_to_name(cell_type()));
 }
 
 //-----------------------------------------------------------------------------
 
-InterpretedFunction::Instruction
-CellOrder::compile_self(const ValueBuilderFactory &, Stash &stash) const
-{
+InterpretedFunction::Instruction CellOrder::compile_self(const ValueBuilderFactory&, Stash& stash) const {
     return instruction::GenericCellOrder::make_instruction(result_type(), child().result_type(), cell_order(), stash);
 }
 
-void
-CellOrder::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void CellOrder::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     visitor.visitString("cell_order", eval::as_string(cell_order()));
 }
 
 //-----------------------------------------------------------------------------
 
-void
-Create::push_children(std::vector<Child::CREF> &children) const
-{
-    for (const auto &cell: _map) {
+void Create::push_children(std::vector<Child::CREF>& children) const {
+    for (const auto& cell : _map) {
         children.emplace_back(cell.second);
     }
 }
 
-Create::Spec
-Create::make_spec() const
-{
-    Spec generic_spec;
+Create::Spec Create::make_spec() const {
+    Spec   generic_spec;
     size_t child_idx = 0;
-    for (const auto & kv : map()) {
+    for (const auto& kv : map()) {
         generic_spec[kv.first] = child_idx++;
     }
     return generic_spec;
 }
 
-Instruction
-Create::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
+Instruction Create::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
     return instruction::GenericCreate::make_instruction(result_type(), make_spec(), factory, stash);
 }
 
-void
-Create::visit_children(vespalib::ObjectVisitor &visitor) const
-{
-    for (const auto &cell: _map) {
+void Create::visit_children(vespalib::ObjectVisitor& visitor) const {
+    for (const auto& cell : _map) {
         ::visit(visitor, ::vespalib::eval::as_string(cell.first), cell.second.get());
     }
 }
@@ -315,8 +256,8 @@ Create::visit_children(vespalib::ObjectVisitor &visitor) const
 
 namespace {
 
-bool step_labels(std::vector<size_t> &labels, const ValueType &type) {
-    for (size_t idx = labels.size(); idx-- > 0; ) {
+bool step_labels(std::vector<size_t>& labels, const ValueType& type) {
+    for (size_t idx = labels.size(); idx-- > 0;) {
         if (++labels[idx] < type.dimensions()[idx].size) {
             return true;
         } else {
@@ -327,12 +268,13 @@ bool step_labels(std::vector<size_t> &labels, const ValueType &type) {
 }
 
 struct ParamProxy : public LazyParams {
-    const std::vector<size_t> &labels;
-    const LazyParams          &params;
-    const std::vector<size_t> &bindings;
-    ParamProxy(const std::vector<size_t> &labels_in, const LazyParams &params_in, const std::vector<size_t> &bindings_in)
+    const std::vector<size_t>& labels;
+    const LazyParams&          params;
+    const std::vector<size_t>& bindings;
+    ParamProxy(const std::vector<size_t>& labels_in, const LazyParams& params_in,
+               const std::vector<size_t>& bindings_in)
         : labels(labels_in), params(params_in), bindings(bindings_in) {}
-    const Value &resolve(size_t idx, Stash &stash) const override {
+    const Value& resolve(size_t idx, Stash& stash) const override {
         if (idx < labels.size()) {
             return stash.create<DoubleValue>(labels[idx]);
         }
@@ -340,15 +282,14 @@ struct ParamProxy : public LazyParams {
     }
 };
 
-}
+} // namespace
 
-TensorSpec
-Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const std::vector<size_t> &bind, const InterpretedFunction &fun)
-{
-    std::vector<size_t> labels(type.dimensions().size(), 0);
-    ParamProxy param_proxy(labels, params, bind);
+TensorSpec Lambda::create_spec_impl(const ValueType& type, const LazyParams& params, const std::vector<size_t>& bind,
+                                    const InterpretedFunction& fun) {
+    std::vector<size_t>          labels(type.dimensions().size(), 0);
+    ParamProxy                   param_proxy(labels, params, bind);
     InterpretedFunction::Context ctx(fun);
-    TensorSpec spec(type.to_spec());
+    TensorSpec                   spec(type.to_spec());
     do {
         TensorSpec::Address address;
         for (size_t i = 0; i < labels.size(); ++i) {
@@ -359,119 +300,89 @@ Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const 
     return spec;
 }
 
-InterpretedFunction::Instruction
-Lambda::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
+InterpretedFunction::Instruction Lambda::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
     return instruction::GenericLambda::make_instruction(*this, factory, stash);
 }
 
-void
-Lambda::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void Lambda::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     ::visit(visitor, "bindings", _bindings);
 }
 
 //-----------------------------------------------------------------------------
 
-void
-Peek::push_children(std::vector<Child::CREF> &children) const
-{
+void Peek::push_children(std::vector<Child::CREF>& children) const {
     children.emplace_back(_param);
-    for (const auto &dim: _map) {
-        std::visit(vespalib::overload
-                   {
-                       [&](const Child &child) {
-                           children.emplace_back(child);
-                       },
-                       [](const TensorSpec::Label &) noexcept {}
-                   }, dim.second);
+    for (const auto& dim : _map) {
+        std::visit(vespalib::overload{[&](const Child& child) { children.emplace_back(child); },
+                                      [](const TensorSpec::Label&) noexcept {}},
+                   dim.second);
     }
 }
 
-Peek::Spec
-Peek::make_spec() const
-{
+Peek::Spec Peek::make_spec() const {
     Spec generic_spec;
     // the value peeked is child 0, so
     // children (for label computation) in spec start at 1:
     size_t child_idx = 1;
-    for (const auto & [outer_dim_name, label_or_child] : map()) {
-        std::visit(vespalib::overload {
-                [&,&dim_name = outer_dim_name](const TensorSpec::Label &label) {
-                    generic_spec.emplace(dim_name, label);
-                },
-                [&,&dim_name = outer_dim_name](const TensorFunction::Child &) {
-                    generic_spec.emplace(dim_name, child_idx++);
-                }
-            }, label_or_child);
+    for (const auto& [outer_dim_name, label_or_child] : map()) {
+        std::visit(vespalib::overload{[&, &dim_name = outer_dim_name](const TensorSpec::Label& label) {
+                                          generic_spec.emplace(dim_name, label);
+                                      },
+                                      [&, &dim_name = outer_dim_name](const TensorFunction::Child&) {
+                                          generic_spec.emplace(dim_name, child_idx++);
+                                      }},
+                   label_or_child);
     }
     return generic_spec;
 }
 
-Instruction
-Peek::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
+Instruction Peek::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
     return instruction::GenericPeek::make_instruction(result_type(), param_type(), make_spec(), factory, stash);
 }
 
-void
-Peek::visit_children(vespalib::ObjectVisitor &visitor) const
-{
+void Peek::visit_children(vespalib::ObjectVisitor& visitor) const {
     ::visit(visitor, "param", _param.get());
-    for (const auto &dim: _map) {
-        std::visit(vespalib::overload
-                   {
-                       [&](const TensorSpec::Label &label) {
-                           if (label.is_mapped()) {
-                               ::visit(visitor, dim.first, label.name);
-                           } else {
-                               ::visit(visitor, dim.first, static_cast<int64_t>(label.index));
-                           }
-                       },
-                       [&](const Child &child) {
-                           ::visit(visitor, dim.first, child.get());
-                       }
-                   }, dim.second);
+    for (const auto& dim : _map) {
+        std::visit(vespalib::overload{[&](const TensorSpec::Label& label) {
+                                          if (label.is_mapped()) {
+                                              ::visit(visitor, dim.first, label.name);
+                                          } else {
+                                              ::visit(visitor, dim.first, static_cast<int64_t>(label.index));
+                                          }
+                                      },
+                                      [&](const Child& child) { ::visit(visitor, dim.first, child.get()); }},
+                   dim.second);
     }
 }
 
 //-----------------------------------------------------------------------------
 
-Instruction
-Rename::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
-{
-    return instruction::GenericRename::make_instruction(result_type(), child().result_type(), from(), to(), factory, stash);
+Instruction Rename::compile_self(const ValueBuilderFactory& factory, Stash& stash) const {
+    return instruction::GenericRename::make_instruction(result_type(), child().result_type(), from(), to(), factory,
+                                                        stash);
 }
 
-void
-Rename::visit_self(vespalib::ObjectVisitor &visitor) const
-{
+void Rename::visit_self(vespalib::ObjectVisitor& visitor) const {
     Super::visit_self(visitor);
     ::visit(visitor, "from_to", visit::FromTo(_from, _to));
 }
 
 //-----------------------------------------------------------------------------
 
-void
-If::push_children(std::vector<Child::CREF> &children) const
-{
+void If::push_children(std::vector<Child::CREF>& children) const {
     children.emplace_back(_cond);
     children.emplace_back(_true_child);
     children.emplace_back(_false_child);
 }
 
-Instruction
-If::compile_self(const ValueBuilderFactory &, Stash &) const
-{
+Instruction If::compile_self(const ValueBuilderFactory&, Stash&) const {
     // 'if' is handled directly by compile_tensor_function to enable
     // lazy-evaluation of true/false sub-expressions.
     LOG_ABORT("should not be reached");
 }
 
-void
-If::visit_children(vespalib::ObjectVisitor &visitor) const
-{
+void If::visit_children(vespalib::ObjectVisitor& visitor) const {
     ::visit(visitor, "cond", _cond.get());
     ::visit(visitor, "true_child", _true_child.get());
     ::visit(visitor, "false_child", _false_child.get());
@@ -479,15 +390,16 @@ If::visit_children(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
-const TensorFunction &const_value(const Value &value, Stash &stash) {
+const TensorFunction& const_value(const Value& value, Stash& stash) {
     return stash.create<ConstValue>(value);
 }
 
-const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &stash) {
+const TensorFunction& inject(const ValueType& type, size_t param_idx, Stash& stash) {
     return stash.create<Inject>(type, param_idx);
 }
 
-const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<std::string> &dimensions, Stash &stash) {
+const TensorFunction& reduce(const TensorFunction& child, Aggr aggr, const std::vector<std::string>& dimensions,
+                             Stash& stash) {
     ValueType result_type = child.result_type().reduce(dimensions);
     if (dimensions.empty()) { // expand dimension list for full reduce
         return stash.create<Reduce>(result_type, child, aggr, child.result_type().dimension_names());
@@ -496,57 +408,64 @@ const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::
     }
 }
 
-const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash) {
+const TensorFunction& map(const TensorFunction& child, map_fun_t function, Stash& stash) {
     ValueType result_type = child.result_type().map();
     return stash.create<Map>(result_type, child, function);
 }
 
-const TensorFunction &map_subspaces(const TensorFunction &child, const Function &function, NodeTypes node_types, Stash &stash) {
+const TensorFunction& map_subspaces(const TensorFunction& child, const Function& function, NodeTypes node_types,
+                                    Stash& stash) {
     auto result_type = child.result_type().strip_indexed_dimensions().wrap(node_types.get_type(function.root()));
     return stash.create<MapSubspaces>(result_type, child, function, std::move(node_types));
 }
 
-const TensorFunction &filter_subspaces(const TensorFunction &child, const Function &function, NodeTypes node_types, Stash &stash) {
+const TensorFunction& filter_subspaces(const TensorFunction& child, const Function& function, NodeTypes node_types,
+                                       Stash& stash) {
     auto result_type = child.result_type();
     return stash.create<FilterSubspaces>(result_type, child, function, std::move(node_types));
 }
 
-const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash) {
+const TensorFunction& join(const TensorFunction& lhs, const TensorFunction& rhs, join_fun_t function, Stash& stash) {
     ValueType result_type = ValueType::join(lhs.result_type(), rhs.result_type());
     return stash.create<Join>(result_type, lhs, rhs, function);
 }
 
-const TensorFunction &merge(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash) {
+const TensorFunction& merge(const TensorFunction& lhs, const TensorFunction& rhs, join_fun_t function, Stash& stash) {
     ValueType result_type = ValueType::merge(lhs.result_type(), rhs.result_type());
     return stash.create<Merge>(result_type, lhs, rhs, function);
 }
 
-const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const std::string &dimension, Stash &stash) {
+const TensorFunction& concat(const TensorFunction& lhs, const TensorFunction& rhs, const std::string& dimension,
+                             Stash& stash) {
     ValueType result_type = ValueType::concat(lhs.result_type(), rhs.result_type(), dimension);
     return stash.create<Concat>(result_type, lhs, rhs, dimension);
 }
 
-const TensorFunction &create(const ValueType &type, const std::map<TensorSpec::Address,TensorFunction::CREF> &spec, Stash &stash) {
+const TensorFunction& create(const ValueType& type, const std::map<TensorSpec::Address, TensorFunction::CREF>& spec,
+                             Stash& stash) {
     return stash.create<Create>(type, spec);
 }
 
-const TensorFunction &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash) {
+const TensorFunction& lambda(const ValueType& type, const std::vector<size_t>& bindings, const Function& function,
+                             NodeTypes node_types, Stash& stash) {
     return stash.create<Lambda>(type, bindings, function, std::move(node_types));
 }
 
-const TensorFunction &cell_cast(const TensorFunction &child, CellType cell_type, Stash &stash) {
+const TensorFunction& cell_cast(const TensorFunction& child, CellType cell_type, Stash& stash) {
     ValueType result_type = child.result_type().cell_cast(cell_type);
     return stash.create<CellCast>(result_type, child, cell_type);
 }
 
-const TensorFunction &cell_order(const TensorFunction &child, eval::CellOrder cell_order, Stash &stash) {
+const TensorFunction& cell_order(const TensorFunction& child, eval::CellOrder cell_order, Stash& stash) {
     ValueType result_type = child.result_type().map(); // use decayed child type for order tensor
     return stash.create<CellOrder>(result_type, child, cell_order);
 }
 
-const TensorFunction &peek(const TensorFunction &param, const std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash) {
+const TensorFunction& peek(const TensorFunction&                                                               param,
+                           const std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>>& spec,
+                           Stash& stash) {
     std::vector<std::string> dimensions;
-    for (const auto &dim_spec: spec) {
+    for (const auto& dim_spec : spec) {
         dimensions.push_back(dim_spec.first);
     }
     assert(!dimensions.empty());
@@ -554,16 +473,18 @@ const TensorFunction &peek(const TensorFunction &param, const std::map<std::stri
     return stash.create<Peek>(result_type, param, spec);
 }
 
-const TensorFunction &rename(const TensorFunction &child, const std::vector<std::string> &from, const std::vector<std::string> &to, Stash &stash) {
+const TensorFunction& rename(const TensorFunction& child, const std::vector<std::string>& from,
+                             const std::vector<std::string>& to, Stash& stash) {
     ValueType result_type = child.result_type().rename(from, to);
     return stash.create<Rename>(result_type, child, from, to);
 }
 
-const TensorFunction &if_node(const TensorFunction &cond, const TensorFunction &true_child, const TensorFunction &false_child, Stash &stash) {
+const TensorFunction& if_node(const TensorFunction& cond, const TensorFunction& true_child,
+                              const TensorFunction& false_child, Stash& stash) {
     ValueType result_type = ValueType::either(true_child.result_type(), false_child.result_type());
     return stash.create<If>(result_type, cond, true_child, false_child);
 }
 
-} // namespace vespalib::eval::tensor_function
-} // namespace vespalib::eval
+} // namespace tensor_function
+} // namespace eval
 } // namespace vespalib

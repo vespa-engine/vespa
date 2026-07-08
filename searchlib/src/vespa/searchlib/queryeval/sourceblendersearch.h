@@ -2,13 +2,16 @@
 
 #pragma once
 
-#include "searchiterator.h"
 #include "emptysearch.h"
+#include "searchiterator.h"
+
 #include <vector>
 
 namespace search::queryeval {
 
-    namespace sourceselector { class Iterator; }
+namespace sourceselector {
+class Iterator;
+}
 /**
  * A simple implementation of the source blender operation. This class
  * is used to blend results from multiple sources. Each source is
@@ -18,42 +21,43 @@ namespace search::queryeval {
  * unpack requests to one of the sources below, enabling them to use
  * the same target location for detailed match data unpacking.
  **/
-class SourceBlenderSearch : public SearchIterator
-{
+class SourceBlenderSearch : public SearchIterator {
 public:
     /**
      * Small wrapper used to specify the underlying searches to be
      * blended.
      **/
     struct Child {
-        SearchIterator *search;
-        uint32_t    sourceId;
-        Child() : search(nullptr), sourceId(0) { }
-        Child(SearchIterator *s, uint32_t id) noexcept : search(s), sourceId(id) {}
+        SearchIterator* search;
+        uint32_t        sourceId;
+        Child() : search(nullptr), sourceId(0) {}
+        Child(SearchIterator* s, uint32_t id) noexcept : search(s), sourceId(id) {}
     };
     using Children = std::vector<Child>;
 
 private:
-    SourceBlenderSearch(const SourceBlenderSearch &);
-    SourceBlenderSearch &operator=(const SourceBlenderSearch &);
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    SourceBlenderSearch(const SourceBlenderSearch&);
+    SourceBlenderSearch& operator=(const SourceBlenderSearch&);
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool isSourceBlender() const override { return true; }
     static EmptySearch _emptySearch;
+
 protected:
     using Iterator = sourceselector::Iterator;
     using Source = uint8_t;
     using SourceIndex = std::vector<Source>;
-    SearchIterator            * _matchedChild;
-    std::unique_ptr<Iterator>   _sourceSelector;
-    SourceIndex                 _children;
-    uint32_t                    _docIdLimit;
-    SearchIterator            * _sources[256];
+    SearchIterator*           _matchedChild;
+    std::unique_ptr<Iterator> _sourceSelector;
+    SourceIndex               _children;
+    uint32_t                  _docIdLimit;
+    SearchIterator*           _sources[256];
 
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
     Trinary is_strict() const override { return Trinary::False; }
-    SourceBlenderSearch(std::unique_ptr<Iterator> sourceSelector, const Children &children);
-    SearchIterator * getSearch(Source source) const { return _sources[source]; }
+    SourceBlenderSearch(std::unique_ptr<Iterator> sourceSelector, const Children& children);
+    SearchIterator* getSearch(Source source) const { return _sources[source]; }
+
 public:
     /**
      * Create a new SourceBlender Search with the given children and
@@ -68,9 +72,7 @@ public:
      * @param strict whether this search is strict
      * (a strict search will locate its next hit when seeking fails)
      **/
-    static SearchIterator::UP create(std::unique_ptr<Iterator> sourceSelector,
-                                     const Children &children,
-                                     bool strict);
+    static SearchIterator::UP create(std::unique_ptr<Iterator> sourceSelector, const Children& children, bool strict);
     ~SourceBlenderSearch() override;
     void transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f) override;
     void initRange(uint32_t beginId, uint32_t endId) override;
@@ -78,8 +80,7 @@ public:
     void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 };
 
-}
+} // namespace search::queryeval
 
-void visit(vespalib::ObjectVisitor &self, const std::string &name,
-           const search::queryeval::SourceBlenderSearch::Child &obj);
-
+void visit(vespalib::ObjectVisitor& self, const std::string& name,
+           const search::queryeval::SourceBlenderSearch::Child& obj);

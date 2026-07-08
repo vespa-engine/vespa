@@ -8,12 +8,10 @@ EmptyDFW::EmptyDFW() = default;
 
 EmptyDFW::~EmptyDFW() = default;
 
-void
-EmptyDFW::insertField(uint32_t, GetDocsumsState&, vespalib::slime::Inserter &target) const
-{
+void EmptyDFW::insertField(uint32_t, GetDocsumsState&, vespalib::slime::Inserter& target) const {
     // insert explicitly-empty field?
     // target.insertNix();
     (void)target;
 }
 
-}
+} // namespace search::docsummary

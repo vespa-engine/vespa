@@ -6,6 +6,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BertEmbedder;
@@ -14,6 +15,8 @@ import com.yahoo.vespa.model.container.component.SpladeEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
+import com.yahoo.vespa.model.container.component.MistralEmbedder;
+import com.yahoo.vespa.model.container.component.OpenAIEmbedder;
 import com.yahoo.vespa.model.container.component.VoyageAIEmbedder;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
@@ -47,14 +50,17 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
             Element spec, DeployState state, TreeConfigProducer<AnyConfigProducer> ancestor) {
         if (spec.hasAttribute("type")) {
             var type = spec.getAttribute("type");
+            var cluster = (ApplicationContainerCluster) ancestor;
             return switch (type) {
-                case "hugging-face-embedder" -> new HuggingFaceEmbedder((ApplicationContainerCluster)ancestor, spec, state);
+                case "hugging-face-embedder" -> new HuggingFaceEmbedder(cluster, spec, state);
                 case "hugging-face-tokenizer" -> new HuggingFaceTokenizer(spec, state);
-                case "colbert-embedder" -> new ColBertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
-                case "bert-embedder" -> new BertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
-                case "splade-embedder" -> new SpladeEmbedder((ApplicationContainerCluster)ancestor, spec, state);
-                case "voyage-ai-embedder" -> new VoyageAIEmbedder((ApplicationContainerCluster)ancestor, spec, state);
-                default -> throw new IllegalArgumentException("Unknown component type '%s'".formatted(type));
+                case "colbert-embedder" -> new ColBertEmbedder(cluster, spec, state);
+                case "bert-embedder" -> new BertEmbedder(cluster, spec, state);
+                case "splade-embedder" -> new SpladeEmbedder(cluster, spec, state);
+                case "openai-embedder" -> new OpenAIEmbedder(cluster, spec, state);
+                case "mistral-embedder" -> new MistralEmbedder(cluster, spec, state);
+                case "voyage-ai-embedder" -> new VoyageAIEmbedder(cluster, spec, state);
+                default -> throw new IllegalArgumentException(Text.format("Unknown component type '%s'", type));
             };
         } else {
             var bundleSpec = BundleInstantiationSpecificationBuilder.build(spec).nestInNamespace(namespace);

@@ -3,7 +3,9 @@
 
 #include "rpcserviceaddress.h"
 #include "rpctarget.h"
+
 #include <vespa/messagebus/itimer.h>
+
 #include <map>
 
 class FRT_Supervisor;
@@ -25,9 +27,10 @@ private:
     class Entry {
     public:
         Entry(std::vector<RPCTarget::SP> targets, uint64_t lastUse);
-        RPCTarget::SP getTarget(const LockGuard & guard, uint64_t now);
+        RPCTarget::SP getTarget(const LockGuard& guard, uint64_t now);
         uint64_t lastUse() const { return _lastUse; }
-        bool inUse(const LockGuard & guard) const;
+        bool inUse(const LockGuard& guard) const;
+
     private:
         std::vector<RPCTarget::SP> _targets;
         uint64_t                   _lastUse;
@@ -35,15 +38,15 @@ private:
     };
     using TargetMap = std::map<string, Entry>;
 
-    std::mutex     _lock;
-    TargetMap      _targets;
-    ITimer::UP     _timer;
-    uint64_t       _expireMillis;
-    size_t         _numTargetsPerSpec;
+    std::mutex _lock;
+    TargetMap  _targets;
+    ITimer::UP _timer;
+    uint64_t   _expireMillis;
+    size_t     _numTargetsPerSpec;
 
 public:
-    RPCTargetPool(const RPCTargetPool &) = delete;
-    RPCTargetPool & operator = (const RPCTargetPool &) = delete;
+    RPCTargetPool(const RPCTargetPool&) = delete;
+    RPCTargetPool& operator=(const RPCTargetPool&) = delete;
     /**
      * Constructs a new instance of this class, and registers the {@link
      * SystemTimer} for detecting and closing connections that have expired
@@ -80,7 +83,7 @@ public:
      * @param address The address to resolve to a target.
      * @return A target for the given address.
      */
-    RPCTarget::SP getTarget(FRT_Supervisor &orb, const RPCServiceAddress &address);
+    RPCTarget::SP getTarget(FRT_Supervisor& orb, const RPCServiceAddress& address);
 
     /**
      * Closes all unused target connections. Unless the force argument is true,
@@ -101,4 +104,3 @@ public:
 };
 
 } // namespace mbus
-

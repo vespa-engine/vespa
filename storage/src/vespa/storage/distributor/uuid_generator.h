@@ -16,4 +16,4 @@ public:
     virtual std::string generate_uuid() const = 0;
 };
 
-}
+} // namespace storage::distributor

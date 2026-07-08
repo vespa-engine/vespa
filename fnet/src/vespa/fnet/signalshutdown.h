@@ -9,13 +9,12 @@ class FNET_Transport;
  * Utility class that will shut down a transport when the process gets
  * either INT or TERM.
  **/
-class FNET_SignalShutDown : FNET_Task
-{
+class FNET_SignalShutDown : FNET_Task {
 private:
-    FNET_Transport &_transport;
+    FNET_Transport& _transport;
 
 public:
-    FNET_SignalShutDown(FNET_Transport &t);
+    FNET_SignalShutDown(FNET_Transport& t);
     void PerformTask() override;
 
     /**
@@ -23,4 +22,3 @@ public:
      **/
     static void hookSignals();
 };
-

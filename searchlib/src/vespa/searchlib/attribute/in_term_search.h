@@ -18,4 +18,4 @@ public:
     static constexpr bool filter_search = true;
 };
 
-}
+} // namespace search::attribute

@@ -1,7 +1,7 @@
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm") version "1.9.24"
-  id("org.jetbrains.intellij.platform") version "2.1.0"
+  id("org.jetbrains.intellij.platform") version "2.13.0"
 }
 
 group = "ai.vespa.schemals"
@@ -42,19 +42,18 @@ dependencies {
   implementation("com.yahoo.vespa:config-model-api:8-SNAPSHOT")
   implementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
   implementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
-  implementation("org.jsoup:jsoup:1.17.2")
+  implementation("org.jsoup:jsoup:1.22.2")
   implementation("com.vladsch.flexmark:flexmark-html2md-converter:0.64.8")
 
   // Note: its quite important we ignore lsp4j, as the classes would collide
   //       with the lsp4ij plugins classes.
-  implementation("org.eclipse.lemminx:org.eclipse.lemminx:0.28.0") {
+  implementation("org.eclipse.lemminx:org.eclipse.lemminx:0.31.1") {
     exclude(group = "org.eclipse.lsp4j")
     exclude(group = "com.google.code.gson")
   }
 
   intellijPlatform {
     intellijIdeaCommunity("2024.2")
-    instrumentationTools()
     plugin("com.redhat.devtools.lsp4ij:0.7.0")
   }
 }

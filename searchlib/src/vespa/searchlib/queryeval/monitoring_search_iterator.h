@@ -2,7 +2,9 @@
 #pragma once
 
 #include "searchiterator.h"
+
 #include <vespa/vespalib/objects/objectvisitor.h>
+
 #include <stack>
 
 namespace search::queryeval {
@@ -16,19 +18,16 @@ namespace search::queryeval {
  *  - average hit skip size
  *  - number of seeks per hit
  */
-class MonitoringSearchIterator : public SearchIterator
-{
+class MonitoringSearchIterator : public SearchIterator {
 public:
-    class Stats
-    {
+    class Stats {
     private:
         uint32_t _numSeeks;
         uint32_t _numUnpacks;
         uint64_t _numDocIdSteps;
         uint64_t _numHitSkips;
-        double divide(double dividend, double divisor) const {
-            return divisor > 0.0 ? dividend / divisor : 0.0;
-        }
+        double divide(double dividend, double divisor) const { return divisor > 0.0 ? dividend / divisor : 0.0; }
+
     public:
         Stats();
         void seek() { ++_numSeeks; }
@@ -44,38 +43,29 @@ public:
         double getAvgHitSkips() const { return divide(getNumHitSkips(), getNumSeeks()); }
     };
 
-    class Dumper : public vespalib::ObjectVisitor
-    {
+    class Dumper : public vespalib::ObjectVisitor {
     private:
-        enum StructType {
-            ITERATOR,
-            STATS,
-            CHILDREN,
-            UNKNOWN
-        };
+        enum StructType { ITERATOR, STATS, CHILDREN, UNKNOWN };
 
         int                    _indent;
         uint32_t               _textFormatWidth;
         uint32_t               _intFormatWidth;
         uint32_t               _floatFormatWidth;
         uint32_t               _floatFormatPrecision;
-        std::string       _str;
+        std::string            _str;
         int                    _currIndent;
         std::stack<StructType> _stack;
 
         void addIndent();
         void addText(std::string_view value);
-        void addInt(int64_t value, const std::string &desc);
-        void addFloat(double value, const std::string &desc);
+        void addInt(int64_t value, const std::string& desc);
+        void addFloat(double value, const std::string& desc);
         void openScope();
         void closeScope();
 
     public:
-        explicit Dumper(int indent = 4,
-               uint32_t textFormatWidth = 1,
-               uint32_t intFormatWidth = 1,
-               uint32_t floatFormatWidth = 1,
-               uint32_t floatFormatPrecision = 2);
+        explicit Dumper(int indent = 4, uint32_t textFormatWidth = 1, uint32_t intFormatWidth = 1,
+                        uint32_t floatFormatWidth = 1, uint32_t floatFormatPrecision = 2);
         ~Dumper() override;
 
         std::string toString() const { return _str; }
@@ -93,7 +83,7 @@ public:
     using UP = std::unique_ptr<MonitoringSearchIterator>;
 
 private:
-    const std::string   _name;
+    const std::string        _name;
     const SearchIterator::UP _search;
     const bool               _collectHitSkipStats;
     Stats                    _stats;
@@ -101,9 +91,7 @@ private:
     uint32_t countHitSkips(uint32_t docId);
 
 public:
-    MonitoringSearchIterator(const std::string &name,
-                             SearchIterator::UP search,
-                             bool collectHitSkipStats);
+    MonitoringSearchIterator(const std::string& name, SearchIterator::UP search, bool collectHitSkipStats);
     ~MonitoringSearchIterator() override;
 
     // Overrides SearchIterator
@@ -111,16 +99,16 @@ public:
     void doUnpack(uint32_t docId) override;
     void initRange(uint32_t beginid, uint32_t endid) override {
         _search->initRange(beginid, endid);
-        SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
+        SearchIterator::initRange(_search->getDocId() + 1, _search->getEndId());
     }
     Trinary is_strict() const override { return _search->is_strict(); }
-    const PostingInfo *getPostingInfo() const override;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    const PostingInfo* getPostingInfo() const override;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
     void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 
-    const SearchIterator &getIterator() const { return *_search; }
-    const Stats &getStats() const { return _stats; }
+    const SearchIterator& getIterator() const { return *_search; }
+    const Stats& getStats() const { return _stats; }
 };
 
-}
+} // namespace search::queryeval

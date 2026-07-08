@@ -7,22 +7,26 @@
 #include "isummaryadapter.h"
 #include "replaypacketdispatcher.h"
 #include "searchcontext.h"
-#include <vespa/searchcore/proton/common/pendinglidtracker.h>
+
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/query/base.h>
-#include <vespa/searchcore/proton/feedoperation/operations.h>
-#include <vespa/vespalib/util/threadstackexecutorbase.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/threadstackexecutorbase.h>
+
 #include <future>
 
-namespace vespalib { class IDestructorCallback; }
+namespace vespalib {
+class IDestructorCallback;
+}
 
 namespace proton {
 
@@ -41,11 +45,10 @@ class DocumentOperation;
  *
  * Handles inserting/updating/removing of documents to the underlying document store.
  */
-class StoreOnlyFeedView : public IFeedView,
-                          protected FeedDebugger
-{
+class StoreOnlyFeedView : public IFeedView, protected FeedDebugger {
 protected:
     using Packet = search::transactionlog::Packet;
+
 public:
     using UP = std::unique_ptr<StoreOnlyFeedView>;
     using SP = std::shared_ptr<StoreOnlyFeedView>;
@@ -68,81 +71,71 @@ public:
 
     using Lid = search::DocumentIdT;
 
-    struct Context
-    {
-        ISummaryAdapter::SP                                _summaryAdapter;
-        std::shared_ptr<const search::index::Schema>       _schema;
-        IDocumentMetaStoreContext::SP                      _documentMetaStoreContext;
-        std::shared_ptr<const document::DocumentTypeRepo>  _repo;
-        std::shared_ptr<PendingLidTrackerBase>             _pendingLidsForCommit;
-        IGidToLidChangeHandler                            &_gidToLidChangeHandler;
-        searchcorespi::index::IThreadingService           &_writeService;
+    struct Context {
+        ISummaryAdapter::SP                               _summaryAdapter;
+        std::shared_ptr<const search::index::Schema>      _schema;
+        IDocumentMetaStoreContext::SP                     _documentMetaStoreContext;
+        std::shared_ptr<const document::DocumentTypeRepo> _repo;
+        std::shared_ptr<PendingLidTrackerBase>            _pendingLidsForCommit;
+        IGidToLidChangeHandler&                           _gidToLidChangeHandler;
+        searchcorespi::index::IThreadingService&          _writeService;
 
-        Context(ISummaryAdapter::SP summaryAdapter,
-                std::shared_ptr<const search::index::Schema> schema,
-                IDocumentMetaStoreContext::SP documentMetaStoreContext,
+        Context(ISummaryAdapter::SP summaryAdapter, std::shared_ptr<const search::index::Schema> schema,
+                IDocumentMetaStoreContext::SP                     documentMetaStoreContext,
                 std::shared_ptr<const document::DocumentTypeRepo> repo,
-                std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
-                IGidToLidChangeHandler &gidToLidChangeHandler,
-                searchcorespi::index::IThreadingService &writeService)
+                std::shared_ptr<PendingLidTrackerBase>            pendingLidsForCommit,
+                IGidToLidChangeHandler& gidToLidChangeHandler, searchcorespi::index::IThreadingService& writeService)
             : _summaryAdapter(std::move(summaryAdapter)),
               _schema(std::move(schema)),
               _documentMetaStoreContext(std::move(documentMetaStoreContext)),
               _repo(std::move(repo)),
               _pendingLidsForCommit(std::move(pendingLidsForCommit)),
               _gidToLidChangeHandler(gidToLidChangeHandler),
-              _writeService(writeService)
-        {}
-        Context(Context &&) noexcept;
+              _writeService(writeService) {}
+        Context(Context&&) noexcept;
         ~Context();
     };
 
-    struct PersistentParams
-    {
-        const SerialNum        _flushedDocumentMetaStoreSerialNum;
-        const SerialNum        _flushedDocumentStoreSerialNum;
-        const DocTypeName      _docTypeName;
-        const uint32_t         _subDbId;
-        const SubDbType        _subDbType;
+    struct PersistentParams {
+        const SerialNum   _flushedDocumentMetaStoreSerialNum;
+        const SerialNum   _flushedDocumentStoreSerialNum;
+        const DocTypeName _docTypeName;
+        const uint32_t    _subDbId;
+        const SubDbType   _subDbType;
 
-        PersistentParams(SerialNum flushedDocumentMetaStoreSerialNum,
-                         SerialNum flushedDocumentStoreSerialNum,
-                         const DocTypeName &docTypeName,
-                         uint32_t subDbId,
-                         SubDbType subDbType)
+        PersistentParams(SerialNum flushedDocumentMetaStoreSerialNum, SerialNum flushedDocumentStoreSerialNum,
+                         const DocTypeName& docTypeName, uint32_t subDbId, SubDbType subDbType)
             : _flushedDocumentMetaStoreSerialNum(flushedDocumentMetaStoreSerialNum),
               _flushedDocumentStoreSerialNum(flushedDocumentStoreSerialNum),
               _docTypeName(docTypeName),
               _subDbId(subDbId),
-              _subDbType(subDbType)
-        {}
+              _subDbType(subDbType) {}
     };
 
 private:
-    const ISummaryAdapter::SP                                _summaryAdapter;
-    const IDocumentMetaStoreContext::SP                      _documentMetaStoreContext;
-    const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
-    const document::DocumentType                            *_docType;
-    LidReuseDelayer                                          _lidReuseDelayer;
-    PendingLidTracker                                        _pendingLidsForDocStore;
-    std::shared_ptr<PendingLidTrackerBase>                   _pendingLidsForCommit;
-    const std::shared_ptr<const search::index::Schema>       _schema;
-    vespalib::hash_set<int32_t>                              _indexedFields;
+    const ISummaryAdapter::SP                               _summaryAdapter;
+    const IDocumentMetaStoreContext::SP                     _documentMetaStoreContext;
+    const std::shared_ptr<const document::DocumentTypeRepo> _repo;
+    const document::DocumentType*                           _docType;
+    LidReuseDelayer                                         _lidReuseDelayer;
+    PendingLidTracker                                       _pendingLidsForDocStore;
+    std::shared_ptr<PendingLidTrackerBase>                  _pendingLidsForCommit;
+    const std::shared_ptr<const search::index::Schema>      _schema;
+    vespalib::hash_set<int32_t>                             _indexedFields;
+
 protected:
-    searchcorespi::index::IThreadingService &_writeService;
+    searchcorespi::index::IThreadingService& _writeService;
     PersistentParams                         _params;
-    IDocumentMetaStore                      &_metaStore;
-    IGidToLidChangeHandler                  &_gidToLidChangeHandler;
+    IDocumentMetaStore&                      _metaStore;
+    IGidToLidChangeHandler&                  _gidToLidChangeHandler;
 
 private:
-    vespalib::Executor & summaryExecutor() {
-        return _writeService.summary();
-    }
+    vespalib::Executor& summaryExecutor() { return _writeService.summary(); }
     void putSummary(SerialNum serialNum, Lid lid, FutureStream doc, const OnOperationDoneType& onDone);
     void putSummaryNoop(FutureStream doc, const OnOperationDoneType& onDone);
     void putSummary(SerialNum serialNum, Lid lid, DocumentSP doc, const OnOperationDoneType& onDone);
     void removeSummary(SerialNum serialNum, Lid lid, const OnWriteDoneType& onDone);
-    void removeSummaries(SerialNum serialNum, const LidVector & lids, const OnWriteDoneType& onDone);
+    void removeSummaries(SerialNum serialNum, const LidVector& lids, const OnWriteDoneType& onDone);
     void heartBeatSummary(SerialNum serialNum, const DoneCallback& onDone);
 
     bool useDocumentStore(SerialNum replaySerialNum) const {
@@ -152,74 +145,83 @@ private:
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
     }
 
-    void adjustMetaStore(const DocumentOperation &op, const document::GlobalId & gid, const document::DocumentId &docId);
-    void internalPut(FeedToken token, const PutOperation &putOp);
-    void internalUpdate(FeedToken token, const UpdateOperation &updOp);
+    void adjustMetaStore(const DocumentOperation& op, const document::GlobalId& gid,
+                         const document::DocumentId& docId);
+    void internalPut(FeedToken token, const PutOperation& putOp);
+    void internalUpdate(FeedToken token, const UpdateOperation& updOp);
 
-    bool lookupDocId(const document::DocumentId &docId, Lid & lid) const;
-    void internalRemove(FeedToken token, const RemoveOperationWithDocId &rmOp);
-    void internalRemove(FeedToken token, const RemoveOperationWithGid &rmOp);
+    bool lookupDocId(const document::DocumentId& docId, Lid& lid) const;
+    void internalRemove(FeedToken token, const RemoveOperationWithDocId& rmOp);
+    void internalRemove(FeedToken token, const RemoveOperationWithGid& rmOp);
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
-    size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields, const DoneCallback& onDone);
+    size_t removeDocuments(const RemoveDocumentsOperation& op, bool remove_index_and_attribute_fields,
+                           const DoneCallback& onDone);
 
-    void internalRemove(FeedToken token, std::shared_ptr<vespalib::IDestructorCallback> done_callback,IPendingLidTracker::Token uncommitted, SerialNum serialNum, Lid lid);
+    void internalRemove(FeedToken token, std::shared_ptr<vespalib::IDestructorCallback> done_callback,
+                        IPendingLidTracker::Token uncommitted, SerialNum serialNum, Lid lid);
 
-    IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);
+    IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation& op);
 
-    void makeUpdatedDocument(bool useDocStore, Lid lid, const DocumentUpdate & update, bool is_replay,
+    void makeUpdatedDocument(bool useDocStore, Lid lid, const DocumentUpdate& update, bool is_replay,
                              PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:
-    virtual void internalDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone);
+    virtual void internalDeleteBucket(const DeleteBucketOperation& delOp, const DoneCallback& onDone);
     virtual void heartBeatIndexedFields(SerialNum serialNum, const DoneCallback& onDone);
     virtual void heartBeatAttributes(SerialNum serialNum, const DoneCallback& onDone);
 
 private:
-    virtual void putAttributes(SerialNum serialNum, Lid lid, const Document &doc, const OnPutDoneType& onWriteDone);
-    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const DocumentSP &newDoc, const OnOperationDoneType& onWriteDone);
+    virtual void putAttributes(SerialNum serialNum, Lid lid, const Document& doc, const OnPutDoneType& onWriteDone);
+    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const DocumentSP& newDoc,
+                                  const OnOperationDoneType& onWriteDone);
 
-    virtual void updateAttributes(SerialNum serialNum, Lid lid, const DocumentUpdate &upd,
-                                  const OnOperationDoneType& onWriteDone, IFieldUpdateCallback & onUpdate);
+    virtual void updateAttributes(SerialNum serialNum, Lid lid, const DocumentUpdate& upd,
+                                  const OnOperationDoneType& onWriteDone, IFieldUpdateCallback& onUpdate);
 
-    virtual void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc, const OnOperationDoneType& onWriteDone);
-    virtual void updateIndexedFields(SerialNum serialNum, Lid lid, FutureDoc doc, const OnOperationDoneType& onWriteDone);
+    virtual void updateAttributes(SerialNum serialNum, Lid lid, FutureDoc doc,
+                                  const OnOperationDoneType& onWriteDone);
+    virtual void updateIndexedFields(SerialNum serialNum, Lid lid, FutureDoc doc,
+                                     const OnOperationDoneType& onWriteDone);
     virtual void removeAttributes(SerialNum serialNum, Lid lid, const OnRemoveDoneType& onWriteDone);
     virtual void removeIndexedFields(SerialNum serialNum, Lid lid, const OnRemoveDoneType& onWriteDone);
 
 protected:
-    virtual void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, const OnWriteDoneType& onWriteDone);
-    virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, const OnWriteDoneType& onWriteDone);
-    virtual void internalForceCommit(const CommitParam & param, const OnForceCommitDoneType& onCommitDone);
+    virtual void removeAttributes(SerialNum serialNum, const LidVector& lidsToRemove,
+                                  const OnWriteDoneType& onWriteDone);
+    virtual void removeIndexedFields(SerialNum serialNum, const LidVector& lidsToRemove,
+                                     const OnWriteDoneType& onWriteDone);
+    virtual void internalForceCommit(const CommitParam& param, const OnForceCommitDoneType& onCommitDone);
+
 public:
-    StoreOnlyFeedView(Context ctx, const PersistentParams &params);
+    StoreOnlyFeedView(Context ctx, const PersistentParams& params);
     ~StoreOnlyFeedView() override;
 
-    const ISummaryAdapter::SP &getSummaryAdapter() const { return _summaryAdapter; }
-    const std::shared_ptr<const search::index::Schema> &getSchema() const noexcept { return _schema; }
-    const PersistentParams &getPersistentParams() const { return _params; }
-    const search::IDocumentStore &getDocumentStore() const { return _summaryAdapter->getDocumentStore(); }
-    const IDocumentMetaStoreContext::SP &getDocumentMetaStore() const { return _documentMetaStoreContext; }
-    searchcorespi::index::IThreadingService &getWriteService() { return _writeService; }
-    IGidToLidChangeHandler &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
+    const ISummaryAdapter::SP& getSummaryAdapter() const { return _summaryAdapter; }
+    const std::shared_ptr<const search::index::Schema>& getSchema() const noexcept { return _schema; }
+    const PersistentParams& getPersistentParams() const { return _params; }
+    const search::IDocumentStore& getDocumentStore() const { return _summaryAdapter->getDocumentStore(); }
+    const IDocumentMetaStoreContext::SP& getDocumentMetaStore() const { return _documentMetaStoreContext; }
+    searchcorespi::index::IThreadingService& getWriteService() { return _writeService; }
+    IGidToLidChangeHandler& getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
 
-    const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const override { return _repo; }
-    const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override;
+    const std::shared_ptr<const document::DocumentTypeRepo>& getDocumentTypeRepo() const override { return _repo; }
+    const ISimpleDocumentMetaStore* getDocumentMetaStorePtr() const override;
 
-    void preparePut(PutOperation &putOp) override;
-    void handlePut(FeedToken token, const PutOperation &putOp) override;
-    void prepareUpdate(UpdateOperation &updOp) override;
-    void handleUpdate(FeedToken token, const UpdateOperation &updOp) override;
-    void prepareRemove(RemoveOperation &rmOp) override;
-    void handleRemove(FeedToken token, const RemoveOperation &rmOp) override;
-    void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
-    void handleDeleteBucket(const DeleteBucketOperation &delOp, const DoneCallback& onDone) override;
-    bool isMoveStillValid(const MoveOperation & moveOp) const override;
-    void prepareMove(MoveOperation &putOp) override;
-    void handleMove(const MoveOperation &putOp, const DoneCallback& doneCtx) override;
+    void preparePut(PutOperation& putOp) override;
+    void handlePut(FeedToken token, const PutOperation& putOp) override;
+    void prepareUpdate(UpdateOperation& updOp) override;
+    void handleUpdate(FeedToken token, const UpdateOperation& updOp) override;
+    void prepareRemove(RemoveOperation& rmOp) override;
+    void handleRemove(FeedToken token, const RemoveOperation& rmOp) override;
+    void prepareDeleteBucket(DeleteBucketOperation& delOp) override;
+    void handleDeleteBucket(const DeleteBucketOperation& delOp, const DoneCallback& onDone) override;
+    bool isMoveStillValid(const MoveOperation& moveOp) const override;
+    void prepareMove(MoveOperation& putOp) override;
+    void handleMove(const MoveOperation& putOp, const DoneCallback& doneCtx) override;
     void heartBeat(search::SerialNum serialNum, const DoneCallback& onDone) override;
-    void forceCommit(const CommitParam & param, const DoneCallback& onDone) override;
+    void forceCommit(const CommitParam& param, const DoneCallback& onDone) override;
 
     /**
      * Prune lids present in operation.  Caller must call doneSegment()
@@ -227,9 +229,10 @@ public:
      *
      * Called by writer thread.
      */
-    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, const DoneCallback& onDone) override;
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone) override;
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation& pruneOp,
+                                     const DoneCallback&                   onDone) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation& op, const DoneCallback& onDone) override;
     std::shared_ptr<PendingLidTrackerBase> getUncommittedLidTracker() { return _pendingLidsForCommit; }
 };
 
-}
+} // namespace proton

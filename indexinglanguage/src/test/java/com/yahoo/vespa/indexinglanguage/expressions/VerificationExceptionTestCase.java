@@ -3,7 +3,8 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
 )
@@ -61,6 +62,9 @@ type Context struct {
 	timing              *timing
 	showMedianNode      bool
 	showDispatchedQuery bool
+	showNnsDetails      bool
+	showCostAnalysis    bool
+	showNodeFollowUps   bool
 	makePrompt          bool
 	showQueryNodes      []int
 }
@@ -71,6 +75,18 @@ func (ctx *Context) ShowMedianNode() {
 
 func (ctx *Context) ShowDispatchedQuery() {
 	ctx.showDispatchedQuery = true
+}
+
+func (ctx *Context) ShowNnsDetails() {
+	ctx.showNnsDetails = true
+}
+
+func (ctx *Context) ShowCostAnalysis() {
+	ctx.showCostAnalysis = true
+}
+
+func (ctx *Context) ShowNodeFollowUps() {
+	ctx.showNodeFollowUps = true
 }
 
 func (ctx *Context) MakePrompt() {
@@ -125,14 +141,25 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 	out.fmt("looking into node %s\n", trace.desc())
 	protonTimelinePrompt(ctx, out)
 	trace.timeline().render(out)
-	if ann := newAnnProbe(trace); ann.useful() {
-		annQueryDetailsPrompt(ctx, out)
-		ann.render(out)
+	if ctx.showNnsDetails {
+		if decision := newGlobalFilterDecision(trace); decision.useful() {
+			globalFilterDecisionPrompt(ctx, out)
+			decision.render(out)
+		}
 	}
 	if globalFilterPerf := trace.globalFilterPerf(); globalFilterPerf.impact() != 0.0 {
 		out.fmt("global filter profiling\n")
 		globalFilterProfilingPrompt(ctx, out)
 		globalFilterPerf.render(out)
+	}
+	if ann := newAnnProbe(trace); ann.useful() {
+		annQueryDetailsPrompt(ctx, out)
+		ann.render(out, ctx.showNnsDetails)
+	}
+	if setupPerf := trace.setupPerf(); setupPerf.hasSelfTimeAbove(1.0) {
+		out.fmt("query setup notable costs (>1ms)\n")
+		setupProfilingPrompt(ctx, out)
+		setupPerf.renderSelfTimeAbove(out, 1.0)
 	}
 	threads := trace.findThreadTraces()
 	cnt := len(threads)
@@ -147,8 +174,41 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 		}
 		ctx.analyzeThread(trace, *worst, median, out)
 	}
+	if ctx.showCostAnalysis {
+		if ca := newCostAnalysis(trace); ca.useful() {
+			out.fmt("query plan cost vs measured time (used %d of %d samples)\n", ca.usedSamples, ca.foundSamples)
+			costAnalysisPrompt(ctx, out)
+			ca.render(out)
+		} else {
+			out.fmt("cost analysis requested by user but no cost information found\n")
+		}
+	}
 	if len(ctx.showQueryNodes) > 0 {
 		renderQueryNodes(trace.extractQuery(), ctx.showQueryNodes, out)
+	}
+	if ctx.showNnsDetails {
+		if stats := newApproximateNnsStats(trace); stats.useful() {
+			approximateNnsStatsPrompt(ctx, out)
+			stats.render(out)
+		}
+		if stats := newExactNnsStats(trace); stats.useful() {
+			exactNnsStatsPrompt(ctx, out)
+			stats.render(out)
+		}
+	}
+	if durations := trace.followUpDurationsMs(); len(durations) > 0 {
+		parts := make([]string, len(durations))
+		for i, ms := range durations {
+			parts[i] = fmt.Sprintf("%.3f ms", ms)
+		}
+		out.fmt("node %s had %d follow-up back-end request%s: %s\n",
+			trace.desc(), len(durations), suffix(len(durations), "s"), strings.Join(parts, ", "))
+		if ctx.showNodeFollowUps {
+			for i, followUp := range trace.followUps {
+				out.fmt("looking into node %s follow-up #%d\n", trace.desc(), i+1)
+				ctx.analyzeProtonTrace(followUp, nil, out)
+			}
+		}
 	}
 }
 

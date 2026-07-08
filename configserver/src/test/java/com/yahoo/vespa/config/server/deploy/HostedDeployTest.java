@@ -14,8 +14,10 @@ import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.HostedConfigModelRegistry;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -24,15 +26,17 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
-import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.maintenance.PendingRestartsMaintainer;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
@@ -42,7 +46,6 @@ import org.junit.rules.TemporaryFolder;
 import java.nio.file.Files;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +71,7 @@ public class HostedDeployTest {
 
     private final Zone prodZone = new Zone(Environment.prod, RegionName.defaultName());
     private final Zone devZone = new Zone(Environment.dev, RegionName.defaultName());
+    private final ManualClock clock = new ManualClock("2026-02-01T00:00:00");
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -76,7 +80,7 @@ public class HostedDeployTest {
     public void testRedeployWithVersion() {
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .hostedConfigserverConfig(Zone.defaultZone())
-                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), clock))
                 .build();
         tester.deployApp("src/test/apps/hosted/", "4.5.6");
 
@@ -90,7 +94,7 @@ public class HostedDeployTest {
     public void testRedeploy() {
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .hostedConfigserverConfig(Zone.defaultZone())
-                .modelFactory(createHostedModelFactory())
+                .modelFactory(createHostedModelFactory(clock))
                 .build();
         ApplicationId appId = tester.applicationId();
         tester.deployApp("src/test/apps/hosted/");
@@ -106,7 +110,7 @@ public class HostedDeployTest {
     public void testReDeployWithWantedDockerImageRepositoryAndAthenzDomain() {
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .hostedConfigserverConfig(Zone.defaultZone())
-                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), clock))
                 .build();
         String dockerImageRepository = "docker.foo.com:4443/bar/baz";
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
@@ -124,7 +128,7 @@ public class HostedDeployTest {
 
     @Test
     public void testDeployOnUnknownVersion() {
-        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("1.0.0")));
+        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("1.0.0"), clock));
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                                               .hostedConfigserverConfig(Zone.defaultZone())
                                               .modelFactories(modelFactories)
@@ -152,9 +156,9 @@ public class HostedDeployTest {
 
     @Test
     public void testDeployMultipleVersions() {
-        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.1.0")),
-                                                    createHostedModelFactory(Version.fromString("6.2.0")),
-                                                    createHostedModelFactory(Version.fromString("7.0.0")));
+        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.1.0"), clock),
+                                                    createHostedModelFactory(Version.fromString("6.2.0"), clock),
+                                                    createHostedModelFactory(Version.fromString("7.0.0"), clock));
         DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactories(modelFactories)
                                                                        .hostedConfigserverConfig(Zone.defaultZone())
                                                                        .build();
@@ -163,10 +167,10 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testDeployMultipleVersionsSpecifyingWhicVersionToBuildFirst() {
-        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("8.1.0")),
-                                                    createHostedModelFactory(Version.fromString("8.2.0")),
-                                                    createHostedModelFactory(Version.fromString("8.3.0")));
+    public void testDeployMultipleVersionsSpecifyingWhichVersionToBuildFirst() {
+        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("8.1.0"), clock),
+                                                    createHostedModelFactory(Version.fromString("8.2.0"), clock),
+                                                    createHostedModelFactory(Version.fromString("8.3.0"), clock));
         var tester = new DeployTester.Builder(temporaryFolder)
                 .hostedConfigserverConfig(Zone.defaultZone())
                 .modelFactories(modelFactories)
@@ -196,12 +200,12 @@ public class HostedDeployTest {
     public void testCreateOnlyNeededModelVersions() {
         List<Host> hosts = createHosts(9, "6.0.0", "6.1.0", null, "6.1.0"); // Use a host without a version as well.
 
-        CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"));
-        CountingModelFactory factory610 = createHostedModelFactory(Version.fromString("6.1.0"));
-        CountingModelFactory factory620 = createHostedModelFactory(Version.fromString("6.2.0"));
-        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"));
-        CountingModelFactory factory710 = createHostedModelFactory(Version.fromString("7.1.0"));
-        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"));
+        CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"), clock);
+        CountingModelFactory factory610 = createHostedModelFactory(Version.fromString("6.1.0"), clock);
+        CountingModelFactory factory620 = createHostedModelFactory(Version.fromString("6.2.0"), clock);
+        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"), clock);
+        CountingModelFactory factory710 = createHostedModelFactory(Version.fromString("7.1.0"), clock);
+        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"), clock);
         List<ModelFactory> modelFactories = List.of(factory600, factory610, factory620,
                                                     factory700, factory710, factory720);
 
@@ -227,10 +231,10 @@ public class HostedDeployTest {
     public void testCreateOnlyNeededModelVersionsNewNodes() {
         List<Host> hosts = createHosts(9, (String) null);
 
-        CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"));
-        CountingModelFactory factory610 = createHostedModelFactory(Version.fromString("6.1.0"));
-        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"));
-        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"));
+        CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"), clock);
+        CountingModelFactory factory610 = createHostedModelFactory(Version.fromString("6.1.0"), clock);
+        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"), clock);
+        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"), clock);
         List<ModelFactory> modelFactories = List.of(factory600, factory610, factory700, factory720);
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
@@ -303,7 +307,7 @@ public class HostedDeployTest {
         Version oldVersion = new Version(oldMajor, 2, 3);
         List<Host> hosts = createHosts(9, oldVersion.toFullString());
 
-        CountingModelFactory oldFactory = createHostedModelFactory(oldVersion);
+        CountingModelFactory oldFactory = createHostedModelFactory(oldVersion, clock);
         ModelFactory newFactory = createFailingModelFactory(wantedVersion);
         List<ModelFactory> modelFactories = List.of(oldFactory, newFactory);
 
@@ -354,8 +358,8 @@ public class HostedDeployTest {
         String newestOnNewMajorVersion = newestMajorVersion + ".2.0";
         List<Host> hosts = createHosts(9, oldestVersion, newestOnOldMajorVersion);
 
-        CountingModelFactory factory1 = createHostedModelFactory(Version.fromString(oldestVersion));
-        CountingModelFactory factory2 = createHostedModelFactory(Version.fromString(newestOnOldMajorVersion));
+        CountingModelFactory factory1 = createHostedModelFactory(Version.fromString(oldestVersion), clock);
+        CountingModelFactory factory2 = createHostedModelFactory(Version.fromString(newestOnOldMajorVersion), clock);
         ModelFactory factory3 = createFailingModelFactory(Version.fromString(newestOnNewMajorVersion));
         List<ModelFactory> modelFactories = List.of(factory1, factory2, factory3);
 
@@ -377,7 +381,7 @@ public class HostedDeployTest {
         List<Host> hosts = createHosts(7, "7.0.0");
 
         List<ModelFactory> modelFactories = List.of(createFailingModelFactory(Version.fromString("7.0.0")),
-                                                    createHostedModelFactory(Version.fromString("7.1.0")));
+                                                    createHostedModelFactory(Version.fromString("7.1.0"), clock));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         tester.deployApp("src/test/apps/hosted/", "7.1.0");
@@ -390,8 +394,9 @@ public class HostedDeployTest {
      */
     @Test
     public void testCreateOnlyNeededModelVersionsWhenNoHostsAllocated() {
-        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"));
-        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"));
+        ManualClock clock = new ManualClock("2026-02-01T00:00:00");
+        CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"), clock);
+        CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"), clock);
         List<ModelFactory> modelFactories = List.of(factory700, factory720);
 
         DeployTester tester = createTester(createHosts(1, (String) null), modelFactories, prodZone);
@@ -405,9 +410,9 @@ public class HostedDeployTest {
         // Provisioner does not reuse hosts, so need twice as many hosts as app requires
         List<Host> hosts = createHosts(18, "6.0.0");
 
-        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.0.0")),
-                                                    createHostedModelFactory(Version.fromString("6.1.0")),
-                                                    createHostedModelFactory(Version.fromString("6.2.0")));
+        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.0.0"), clock),
+                                                    createHostedModelFactory(Version.fromString("6.1.0"), clock),
+                                                    createHostedModelFactory(Version.fromString("6.2.0"), clock));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone, Clock.systemUTC());
         ApplicationId applicationId = tester.applicationId();
@@ -466,8 +471,10 @@ public class HostedDeployTest {
 
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
+                                                    clock,
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)),
                 new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"),
+                                                    clock,
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "other change", services)));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
@@ -483,16 +490,22 @@ public class HostedDeployTest {
 
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"),
-                        new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
+                                                    clock,
+                                                    new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
         List<ServiceInfo> mutableServices = new ArrayList<>(services);
-        DeployTester tester = createTester(hosts,
-                                           modelFactories,
-                                           prodZone,
-                                           Clock.systemUTC(),
-                                           new MockConfigConvergenceChecker(2L, mutableServices));
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .modelFactories(modelFactories)
+                .clock(clock)
+                .zone(prodZone)
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
+                .configConvergenceChecker(new MockConfigConvergenceChecker(2L, mutableServices))
+                .hostedConfigserverConfig(prodZone)
+                // Set flag so we still use PendingRestartsMaintainer
+                .flagSource(new InMemoryFlagSource().withBooleanFlag(Flags.RESTART_ON_DEPLOY_MAINTAINER.id(), false))
+                .build();
         var result = tester.deployApp("src/test/apps/hosted/", "6.2.0");
-        DeployHandlerLogger deployLogger = result.deployLogger();
+        DeployHandlerLogger deployLogger = result.prepareResult().deployLogger();
 
         assertLogContainsMessage(deployLogger, "Scheduled service restart of 1 nodes: hostName0");
         assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).restartsReadyAt(1));
@@ -526,9 +539,10 @@ public class HostedDeployTest {
         List<ServiceInfo> searchServices = List.of(new ServiceInfo("proton", "searchnode", null, Map.of("clustername", "music"), "configid", "host"));
         List<ServiceInfo> containerServices = List.of(new ServiceInfo("jdisc", "container", null, Map.of("clustername", "container"), "configid", "host"));
 
-        ManualClock clock = new ManualClock(Instant.EPOCH);
+        ManualClock clock = new ManualClock("2026-02-01T00:00:00");
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
+                                                    clock,
                                                     VespaReindexAction.of(ClusterSpec.Id.from("music"), ValidationId.indexModeChange,
                                                                           "reindex please", searchServices, "music"),
                                                     new VespaRestartAction(ClusterSpec.Id.from("container"), "change", containerServices)));
@@ -541,7 +555,7 @@ public class HostedDeployTest {
                 .configConvergenceChecker(new MockConfigConvergenceChecker(2))
                 .hostedConfigserverConfig(prodZone)
                 .build();
-        PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0");
+        var prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0").prepareResult();
 
         assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
         assertTrue(prepareResult.configChangeActions().getRestartActions().isEmpty()); // Handled by deployment.
@@ -559,6 +573,7 @@ public class HostedDeployTest {
         var modelFactories = List.<ModelFactory>of(
                 new ConfigChangeActionsModelFactory(
                         Version.fromString("7.0.0"),
+                        clock,
                         new VespaRestartAction(
                                 ClusterSpec.Id.from("default"),
                                 "Dataplane proxy change requires restart",
@@ -601,7 +616,7 @@ public class HostedDeployTest {
         CloudAccount cloudAccount = CloudAccount.from("012345678912");
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .hostedConfigserverConfig(Zone.defaultZone())
-                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), clock))
                 .build();
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
@@ -610,6 +625,75 @@ public class HostedDeployTest {
         assertTrue(deployment.isPresent());
         deployment.get().activate();
         assertEquals(cloudAccount, ((Deployment) deployment.get()).session().getCloudAccount().get());
+    }
+
+    @Test
+    public void testRedeployWithCloudResourceTags() {
+        CloudResourceTags tags = CloudResourceTags.from(Map.of("env", "prod", "team", "search"));
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(Zone.defaultZone())
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), clock))
+                .build();
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
+                .vespaVersion("4.5.6")
+                .cloudResourceTags(tags));
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
+        assertTrue(deployment.isPresent());
+        deployment.get().activate();
+        assertEquals(tags, ((Deployment) deployment.get()).session().getCloudResourceTags());
+    }
+
+    @Test
+    public void testHostsXmlIsIgnoredInHostedVespa() {
+        ManualClock clock = new ManualClock("2026-02-01T00:00:00");
+        // Application package contains a hosts.xml file with duplicate hostnames.
+        // In hosted Vespa, hosts.xml should be ignored since the node repository manages hosts.
+        // The hosts.xml file is only valid for self-hosted Vespa deployments.
+        // This test verifies that deployment succeeds even when hosts.xml is present and contains
+        // invalid content that would fail if parsed (duplicate hostnames).
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(Zone.defaultZone())
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), clock))
+                .build();
+
+        // This should succeed - hosts.xml should be ignored in hosted Vespa
+        tester.deployApp("src/test/apps/hosted-with-duplicated-hosts-in-hosts-xml/", "4.5.6");
+
+        // Verify the deployment was successful by checking that we can get allocated hosts
+        // (which are provisioned by the node repository, not from hosts.xml)
+        AllocatedHosts allocatedHosts = tester.getAllocatedHostsOf(tester.applicationId());
+        assertFalse("Should have allocated hosts from node repository", allocatedHosts.getHosts().isEmpty());
+    }
+
+    @Test
+    public void testAvailabilityZones() {
+        var zone1 = new Zone(Environment.prod, RegionName.from("region1"));
+        var provisionerRegion1 = new InMemoryProvisioner(10, false);
+        DeployTester testerRegion1 = new DeployTester.Builder(temporaryFolder)
+                                             .hostedConfigserverConfig(zone1)
+                                             .zone(zone1)
+                                             .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), zone1))
+                                             .provisioner(new MockProvisioner().hostProvisioner(provisionerRegion1))
+                                             .build();
+        testerRegion1.deployApp("src/test/apps/availability-zones/", new PrepareParams.Builder().vespaVersion("4.5.6"));
+        assertEquals("[az1, az2]", provisionerRegion1.provisioned().clusters()
+                                                     .get(ClusterSpec.Id.from("container")).availabilityZones().toString());
+        assertEquals("[az1, az2]", provisionerRegion1.provisioned().clusters()
+                                                     .get(ClusterSpec.Id.from("test")).availabilityZones().toString());
+
+        var zone2 = new Zone(Environment.prod, RegionName.from("region2"));
+        var provisionerRegion2 = new InMemoryProvisioner(10, false);
+        DeployTester testerRegion2 = new DeployTester.Builder(temporaryFolder)
+                                             .hostedConfigserverConfig(zone2)
+                                             .zone(zone2)
+                                             .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), zone2))
+                                             .provisioner(new MockProvisioner().hostProvisioner(provisionerRegion2))
+                                             .build();
+        testerRegion2.deployApp("src/test/apps/availability-zones/", new PrepareParams.Builder().vespaVersion("4.5.6"));
+        assertEquals("[az3]", provisionerRegion2.provisioned().clusters()
+                                                .get(ClusterSpec.Id.from("container")).availabilityZones().toString());
+        assertEquals("[az3]", provisionerRegion2.provisioned().clusters()
+                                                .get(ClusterSpec.Id.from("test")).availabilityZones().toString());
     }
 
     /** Create the given number of hosts using the supplied versions--the last version is repeated as needed. */
@@ -666,6 +750,11 @@ public class HostedDeployTest {
 
         ConfigChangeActionsModelFactory(Version vespaVersion, ConfigChangeAction... actions) {
             super(HostedConfigModelRegistry.create(), vespaVersion);
+            this.actions = List.of(actions);
+        }
+
+        ConfigChangeActionsModelFactory(Version vespaVersion, Clock clock, ConfigChangeAction... actions) {
+            super(HostedConfigModelRegistry.create(), vespaVersion, clock);
             this.actions = List.of(actions);
         }
 

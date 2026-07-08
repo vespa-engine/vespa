@@ -1,44 +1,48 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_iterator.h"
+
 #include "ipersistencehandler.h"
+
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/select/gid_filter.h>
+#include <vespa/document/select/node.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/searchcore/proton/common/cachedselect.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/selectcontext.h>
-#include <vespa/document/select/gid_filter.h>
-#include <vespa/document/select/node.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.document_iterator");
 
-using storage::spi::IterateResult;
-using storage::spi::DocEntry;
-using storage::spi::Timestamp;
 using document::Document;
 using document::DocumentId;
 using document::GlobalId;
+using storage::spi::DocEntry;
 using storage::spi::DocumentMetaEnum;
+using storage::spi::IterateResult;
+using storage::spi::Timestamp;
 
 namespace proton {
 
 namespace {
 
-std::unique_ptr<DocEntry>
-createDocEntry(Timestamp timestamp, bool removed) {
+std::unique_ptr<DocEntry> createDocEntry(Timestamp timestamp, bool removed) {
     return DocEntry::create(timestamp, removed ? DocumentMetaEnum::REMOVE_ENTRY : DocumentMetaEnum::NONE);
 }
 
-std::unique_ptr<DocEntry>
-createDocEntry(Timestamp timestamp, bool removed, std::string_view doc_type, const GlobalId &gid) {
-    return DocEntry::create(timestamp, (removed ? DocumentMetaEnum::REMOVE_ENTRY : DocumentMetaEnum::NONE), doc_type, gid);
+std::unique_ptr<DocEntry> createDocEntry(Timestamp timestamp, bool removed, std::string_view doc_type,
+                                         const GlobalId& gid) {
+    return DocEntry::create(timestamp, (removed ? DocumentMetaEnum::REMOVE_ENTRY : DocumentMetaEnum::NONE), doc_type,
+                            gid);
 }
 
-std::unique_ptr<DocEntry>
-createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ssize_t defaultSerializedSize) {
+std::unique_ptr<DocEntry> createDocEntry(Timestamp timestamp, bool removed, Document::UP doc,
+                                         ssize_t defaultSerializedSize) {
     if (doc) {
         if (removed) {
             return DocEntry::create(timestamp, DocumentMetaEnum::REMOVE_ENTRY, doc->getId());
@@ -51,22 +55,17 @@ createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ssize_t defa
     }
 }
 
-} // namespace proton::<unnamed>
+} // namespace
 
-bool
-DocumentIterator::checkMeta(const search::DocumentMetaData &meta) const
-{
+bool DocumentIterator::checkMeta(const search::DocumentMetadata& meta) const {
     if (!meta.valid()) {
         return false;
     }
     if (!_selection.getTimestampSubset().empty()) {
-        return (std::binary_search(_selection.getTimestampSubset().begin(),
-                                   _selection.getTimestampSubset().end(),
+        return (std::binary_search(_selection.getTimestampSubset().begin(), _selection.getTimestampSubset().end(),
                                    Timestamp(meta.timestamp)));
     }
-    if ((meta.timestamp < _selection.getFromTimestamp()) ||
-        (meta.timestamp > _selection.getToTimestamp()))
-    {
+    if ((meta.timestamp < _selection.getFromTimestamp()) || (meta.timestamp > _selection.getToTimestamp())) {
         return false;
     }
     if ((_versions == storage::spi::NEWEST_DOCUMENT_ONLY) && meta.removed) {
@@ -75,12 +74,9 @@ DocumentIterator::checkMeta(const search::DocumentMetaData &meta) const
     return true;
 }
 
-DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
-                                   document::FieldSet::SP fields,
-                                   const storage::spi::Selection &selection,
-                                   storage::spi::IncludedVersions versions,
-                                   ssize_t defaultSerializedSize,
-                                   bool ignoreMaxBytes,
+DocumentIterator::DocumentIterator(const storage::spi::Bucket& bucket, document::FieldSet::SP fields,
+                                   const storage::spi::Selection& selection, storage::spi::IncludedVersions versions,
+                                   ssize_t defaultSerializedSize, bool ignoreMaxBytes,
                                    ReadConsistency readConsistency)
     : _bucket(bucket),
       _selection(selection),
@@ -93,34 +89,29 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
       _fetchedData(false),
       _sources(),
       _nextItem(0),
-      _list()
-{
+      _list() {
 }
 
 DocumentIterator::~DocumentIterator() = default;
 
-void
-DocumentIterator::add(const DocTypeName &doc_type_name, IDocumentRetriever::SP retriever)
-{
+void DocumentIterator::add(const DocTypeName& doc_type_name, IDocumentRetriever::SP retriever) {
+    assert(doc_type_name.getName() == retriever->get_doc_type_name().getName());
     _sources.emplace_back(doc_type_name, std::move(retriever));
 }
 
-void
-DocumentIterator::add(IDocumentRetriever::SP retriever)
-{
-    add(DocTypeName(), std::move(retriever));
+void DocumentIterator::add(IDocumentRetriever::SP retriever) {
+    auto& name = retriever->get_doc_type_name();
+    add(name, std::move(retriever));
 }
 
-IterateResult
-DocumentIterator::iterate(size_t maxBytes)
-{
-    if ( ! _fetchedData ) {
-        for (const auto & source : _sources) {
+IterateResult DocumentIterator::iterate(size_t maxBytes) {
+    if (!_fetchedData) {
+        for (const auto& source : _sources) {
             fetchCompleteSource(source.first, *source.second, _list);
         }
         _fetchedData = true;
     }
-    if ( _ignoreMaxBytes ) {
+    if (_ignoreMaxBytes) {
         return IterateResult(std::move(_list), true);
     } else {
         IterateResult::List results;
@@ -137,143 +128,176 @@ namespace {
 
 class Matcher {
 public:
-    Matcher(const IDocumentRetriever &source, bool metaOnly, const std::string &selection) :
-        _dscTrue(true),
-        _metaOnly(metaOnly),
-        _willAlwaysFail(false),
-        _docidLimit(source.getDocIdLimit())
-    {
+    Matcher(const IDocumentRetriever& source, bool metaOnly, bool populate_document_metadata_docids,
+            const std::string& selection)
+        : _document_selection_always_true(true),
+          _metaOnly(metaOnly),
+          _needs_document(false),
+          _willAlwaysFail(false),
+          _populate_document_metadata_docids(populate_document_metadata_docids),
+          _docidLimit(source.getDocIdLimit()) {
         if (!(_metaOnly || selection.empty())) {
             LOG(spam, "ParseSelect: %s", selection.c_str());
             _cachedSelect = source.parseSelect(selection);
-            _dscTrue = _cachedSelect->allTrue();
-            if (_cachedSelect->allFalse() || _cachedSelect->allInvalid()) {
-                assert(!_dscTrue);
+            _needs_document = _cachedSelect->needs_document();
+            _document_selection_always_true = _cachedSelect->is_always_true();
+            if (_cachedSelect->is_always_false() || _cachedSelect->is_always_invalid()) {
+                assert(!_document_selection_always_true);
                 LOG(debug, "Nothing will ever match cs.allFalse = '%d', cs.allInvalid = '%d'",
-                    _cachedSelect->allFalse(), _cachedSelect->allInvalid());
+                    _cachedSelect->is_always_false(), _cachedSelect->is_always_invalid());
                 _willAlwaysFail = true;
             } else {
                 _selectSession = _cachedSelect->createSession();
                 using document::select::GidFilter;
                 _gidFilter = GidFilter::for_selection_root_node(_selectSession->selectNode());
-                _selectCxt = std::make_unique<SelectContext>(*_cachedSelect);
-                _selectCxt->getAttributeGuards();
+                _select_ctx = std::make_unique<SelectContext>(*_cachedSelect);
+                _select_ctx->getAttributeGuards();
             }
         } else {
-            _dscTrue = true;
+            _document_selection_always_true = true;
         }
     }
-    
+
     ~Matcher() {
-        if (_selectCxt) {
-            _selectCxt->dropAttributeGuards();
+        if (_select_ctx) {
+            _select_ctx->dropAttributeGuards();
         }
     }
 
     [[nodiscard]] bool willAlwaysFail() const noexcept { return _willAlwaysFail; }
+    [[nodiscard]] bool needs_document() const noexcept { return _needs_document; }
 
-    [[nodiscard]] bool match(const search::DocumentMetaData & meta) const {
+    /*
+     * Check if the document select expression might contain the document without fetching  the document from
+     * backing store.
+     */
+    [[nodiscard]] bool match(const search::DocumentMetadata& meta) const {
         if (meta.lid >= _docidLimit) {
             return false;
         }
-        if (_dscTrue || _metaOnly) {
+        if (_document_selection_always_true || _metaOnly) {
             return true;
         }
         if (!_gidFilter.gid_might_match_selection(meta.gid)) {
             return false;
         }
-        assert(_selectCxt);
-        _selectCxt->_docId = meta.lid;
-        _selectCxt->_doc = nullptr;
-        return _selectSession->contains_pre_doc(*_selectCxt);
+        // Provide the information we have to the document select context.
+        assert(_select_ctx);
+        _select_ctx->_lid = meta.lid;
+        _select_ctx->_doc = nullptr;
+        if (_populate_document_metadata_docids) {
+            _select_ctx->_document_id_copy.set(meta.docid);
+            _select_ctx->_docId = &_select_ctx->_document_id_copy;
+        }
+        /*
+         * Evaluate a version of the document select expression that doesn't access the document
+         * (uses attribute vectors and document id from document meta store instead when possible).
+         */
+        bool result = _selectSession->contains_pre_doc(*_select_ctx);
+        // Cleanup
+        if (_populate_document_metadata_docids) {
+            _select_ctx->_docId = nullptr;
+        }
+        return result;
     }
-    [[nodiscard]] bool match(const search::DocumentMetaData & meta, const Document * doc) const {
-        if (_dscTrue || _metaOnly) {
+    /*
+     * Check if the document select expression contains the document after fetching the document from backing store.
+     */
+    [[nodiscard]] bool match(const search::DocumentMetadata& meta, const Document* doc) const {
+        if (_document_selection_always_true) {
             return true;
         }
-        assert(_selectCxt);
-        _selectCxt->_docId = meta.lid;
-        _selectCxt->_doc = doc;
-        return (doc && (doc->getId().getGlobalId() == meta.gid) && _selectSession->contains_doc(*_selectCxt));
+        // Fail selection if document was not available from backing store or if the global id doesn't match.
+        if (!doc || doc->getId().getGlobalId() != meta.gid) {
+            return false;
+        }
+        // Provide the information we have to the document select context.
+        assert(_select_ctx);
+        _select_ctx->_lid = meta.lid;
+        _select_ctx->_doc = doc;
+        // Evaluate a version of the document select expression that might access the document.
+        return _selectSession->contains_doc(*_select_ctx);
     }
+
 private:
-    bool                           _dscTrue;
-    bool                           _metaOnly;
-    bool                           _willAlwaysFail;
-    uint32_t                       _docidLimit;
-    CachedSelect::SP               _cachedSelect;
+    bool                                   _document_selection_always_true;
+    bool                                   _metaOnly;
+    bool                                   _needs_document;
+    bool                                   _willAlwaysFail;
+    bool                                   _populate_document_metadata_docids;
+    uint32_t                               _docidLimit;
+    CachedSelect::SP                       _cachedSelect;
     std::unique_ptr<CachedSelect::Session> _selectSession;
-    document::select::GidFilter    _gidFilter;
-    std::unique_ptr<SelectContext> _selectCxt;
+    document::select::GidFilter            _gidFilter;
+    std::unique_ptr<SelectContext>         _select_ctx;
 };
 
 using LidIndexMap = vespalib::hash_map<uint32_t, uint32_t>;
 
-class MatchVisitor : public search::IDocumentVisitor
-{
+class MatchVisitor : public search::IDocumentVisitor {
 public:
-    MatchVisitor(const Matcher &matcher, const search::DocumentMetaData::Vector &metaData,
-                 const LidIndexMap &lidIndexMap, const document::FieldSet *fields, IterateResult::List &list,
-                 ssize_t defaultSerializedSize) :
-        _matcher(matcher),
-        _metaData(metaData),
-        _lidIndexMap(lidIndexMap),
-        _fields(fields),
-        _list(list),
-        _defaultSerializedSize(defaultSerializedSize),
-        _allowVisitCaching(false)
-    { }
-    MatchVisitor & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
+    MatchVisitor(const Matcher& matcher, const search::DocumentMetadata::Vector& metadata,
+                 const LidIndexMap& lidIndexMap, const document::FieldSet* fields, IterateResult::List& list,
+                 ssize_t defaultSerializedSize)
+        : _matcher(matcher),
+          _metadata(metadata),
+          _lidIndexMap(lidIndexMap),
+          _fields(fields),
+          _list(list),
+          _defaultSerializedSize(defaultSerializedSize),
+          _allowVisitCaching(false) {}
+    MatchVisitor& allowVisitCaching(bool allow) {
+        _allowVisitCaching = allow;
+        return *this;
+    }
     void visit(uint32_t lid, document::Document::UP doc) override {
-        const search::DocumentMetaData & meta = _metaData[_lidIndexMap[lid]];
+        const search::DocumentMetadata& meta = _metadata[_lidIndexMap[lid]];
         assert(lid == meta.lid);
         if (_matcher.match(meta, doc.get())) {
             if (doc && _fields) {
                 document::FieldSet::stripFields(*doc, *_fields);
             }
-            _list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed, std::move(doc), _defaultSerializedSize));
+            _list.push_back(
+                createDocEntry(Timestamp(meta.timestamp), meta.removed, std::move(doc), _defaultSerializedSize));
         }
     }
 
-    bool allowVisitCaching() const override {
-        return _allowVisitCaching;
-    }
+    bool allowVisitCaching() const override { return _allowVisitCaching; }
 
 private:
-    const Matcher                          & _matcher;
-    const search::DocumentMetaData::Vector & _metaData;
-    const LidIndexMap                      & _lidIndexMap;
-    const document::FieldSet               * _fields;
-    IterateResult::List                    & _list;
-    size_t                                   _defaultSerializedSize;
-    bool                                     _allowVisitCaching;
+    const Matcher&                          _matcher;
+    const search::DocumentMetadata::Vector& _metadata;
+    const LidIndexMap&                      _lidIndexMap;
+    const document::FieldSet*               _fields;
+    IterateResult::List&                    _list;
+    size_t                                  _defaultSerializedSize;
+    bool                                    _allowVisitCaching;
 };
 
-}
+} // namespace
 
-void
-DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
-                                      const IDocumentRetriever & source,
-                                      IterateResult::List & list)
-{
-    IDocumentRetriever::ReadGuard sourceReadGuard(source.getReadGuard());
-    search::DocumentMetaData::Vector metaData;
-    source.getBucketMetaData(_bucket, metaData);
-    if (metaData.empty()) {
+void DocumentIterator::fetchCompleteSource(const DocTypeName& doc_type_name, const IDocumentRetriever& source,
+                                           IterateResult::List& list) {
+    IDocumentRetriever::ReadGuard    sourceReadGuard(source.getReadGuard());
+    search::DocumentMetadata::Vector metadata;
+    bool populate_document_metadata_docids = !_metaOnly && source.can_populate_document_metadata_docid();
+    source.getBucketMetadata(_bucket, metadata, populate_document_metadata_docids);
+    if (metadata.empty()) {
         return;
     }
-    LOG(debug, "metadata count before filtering: %zu", metaData.size());
+    LOG(debug, "metadata count before filtering: %zu", metadata.size());
 
-    Matcher matcher(source, _metaOnly, _selection.getDocumentSelection().getDocumentSelection());
+    Matcher matcher(source, _metaOnly, populate_document_metadata_docids,
+                    _selection.getDocumentSelection().getDocumentSelection());
     if (matcher.willAlwaysFail()) {
         return;
     }
 
-    LidIndexMap lidIndexMap(3*metaData.size());
+    LidIndexMap                   lidIndexMap(3 * metadata.size());
     IDocumentRetriever::LidVector lidsToFetch;
-    lidsToFetch.reserve(metaData.size());
-    for (size_t i(0); i < metaData.size(); i++) {
-        const search::DocumentMetaData & meta = metaData[i];
+    lidsToFetch.reserve(metadata.size());
+    for (size_t i(0); i < metadata.size(); i++) {
+        const search::DocumentMetadata& meta = metadata[i];
         if (checkMeta(meta)) {
             if (matcher.match(meta)) {
                 lidsToFetch.emplace_back(meta.lid);
@@ -284,18 +308,34 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
     LOG(debug, "metadata count after filtering: %zu", lidsToFetch.size());
 
     list.reserve(lidsToFetch.size());
-    if ( _metaOnly ) {
+    if (_metaOnly) {
         for (uint32_t lid : lidsToFetch) {
-            const search::DocumentMetaData & meta = metaData[lidIndexMap[lid]];
+            const search::DocumentMetadata& meta = metadata[lidIndexMap[lid]];
             assert(lid == meta.lid);
-            list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed, doc_type_name.getName(), meta.gid));
+            list.push_back(
+                createDocEntry(Timestamp(meta.timestamp), meta.removed, doc_type_name.getName(), meta.gid));
+        }
+    } else if (populate_document_metadata_docids && !matcher.needs_document() &&
+               !source.need_fetch_from_doc_store(*_fields))
+    {
+        for (uint32_t lid : lidsToFetch) {
+            const search::DocumentMetadata& meta = metadata[lidIndexMap[lid]];
+            assert(lid == meta.lid);
+            DocumentId docid(meta.docid);
+            assert(docid.getGlobalId() == meta.gid);
+            if (meta.removed) {
+                list.push_back(DocEntry::create(Timestamp(meta.timestamp), DocumentMetaEnum::REMOVE_ENTRY, docid));
+            } else {
+                auto doc = source.getPartialDocument(meta.lid, docid, *_fields);
+                list.push_back(
+                    createDocEntry(Timestamp(meta.timestamp), false, std::move(doc), _defaultSerializedSize));
+            }
         }
     } else {
-        MatchVisitor visitor(matcher, metaData, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
+        MatchVisitor visitor(matcher, metadata, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
         visitor.allowVisitCaching(isWeakRead());
         source.visitDocuments(lidsToFetch, visitor, _readConsistency);
     }
-
 }
 
-}
+} // namespace proton

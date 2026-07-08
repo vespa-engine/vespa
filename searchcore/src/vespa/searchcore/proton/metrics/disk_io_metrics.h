@@ -5,7 +5,9 @@
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 
-namespace search { class FieldIndexIoStats; }
+namespace search {
+class FieldIndexIoStats;
+}
 
 namespace proton {
 
@@ -17,6 +19,7 @@ class DiskIoMetrics : public metrics::MetricSet {
     class SearchMetrics : public metrics::MetricSet {
         metrics::LongValueMetric _read_bytes;
         metrics::LongValueMetric _cached_read_bytes;
+
     public:
         explicit SearchMetrics(metrics::MetricSet* parent);
         ~SearchMetrics() override;
@@ -31,4 +34,4 @@ public:
     void update(const search::FieldIndexIoStats& io_stats) { _search.update(io_stats); }
 };
 
-}
+} // namespace proton

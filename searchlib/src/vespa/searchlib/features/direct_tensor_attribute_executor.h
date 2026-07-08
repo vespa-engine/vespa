@@ -4,17 +4,19 @@
 
 #include <vespa/searchlib/fef/featureexecutor.h>
 
-namespace search::tensor { class ITensorAttribute; }
+namespace search::tensor {
+class ITensorAttribute;
+}
 namespace search::features {
 
-class DirectTensorAttributeExecutor : public fef::FeatureExecutor
-{
+class DirectTensorAttributeExecutor : public fef::FeatureExecutor {
 public:
     using ITensorAttribute = search::tensor::ITensorAttribute;
-    DirectTensorAttributeExecutor(const ITensorAttribute &attribute);
+    DirectTensorAttributeExecutor(const ITensorAttribute& attribute);
     void execute(uint32_t docId) override;
+
 private:
-    const ITensorAttribute &_attribute;
+    const ITensorAttribute& _attribute;
 };
 
-}
+} // namespace search::features

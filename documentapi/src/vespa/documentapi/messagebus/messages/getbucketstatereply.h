@@ -22,7 +22,7 @@ public:
      *
      * @param state The state to swap.
      */
-    GetBucketStateReply(std::vector<DocumentState> &state);
+    GetBucketStateReply(std::vector<DocumentState>& state);
     ~GetBucketStateReply();
 
     /**
@@ -30,24 +30,23 @@ public:
      *
      * @param state The state to swap.
      */
-    void setBucketState(std::vector<DocumentState> &state) { _state.swap(state); }
+    void setBucketState(std::vector<DocumentState>& state) { _state.swap(state); }
 
     /**
      * Returns the bucket state contained in this.
      *
      * @return The state object.
      */
-    std::vector<DocumentState> &getBucketState() { return _state; }
+    std::vector<DocumentState>& getBucketState() { return _state; }
 
     /**
      * Returns the bucket state contained in this.
      *
      * @return The state object.
      */
-    const std::vector<DocumentState> &getBucketState() const { return _state; }
+    const std::vector<DocumentState>& getBucketState() const { return _state; }
 
     string toString() const override { return "getbucketstatereply"; }
 };
 
-} // documentapi
-
+} // namespace documentapi

@@ -1,18 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcore/bmcluster/avg_sampler.h>
 #include <vespa/searchcore/bmcluster/bm_cluster.h>
 #include <vespa/searchcore/bmcluster/bm_cluster_controller.h>
 #include <vespa/searchcore/bmcluster/bm_cluster_params.h>
 #include <vespa/searchcore/bmcluster/bm_distribution.h>
 #include <vespa/searchcore/bmcluster/bm_feed.h>
-#include <vespa/searchcore/bmcluster/bm_feeder.h>
 #include <vespa/searchcore/bmcluster/bm_feed_params.h>
+#include <vespa/searchcore/bmcluster/bm_feeder.h>
 #include <vespa/searchcore/bmcluster/bm_node.h>
 #include <vespa/searchcore/bmcluster/bm_node_stats.h>
 #include <vespa/searchcore/bmcluster/bm_node_stats_reporter.h>
@@ -23,8 +22,11 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <getopt.h>
+
 #include <filesystem>
 #include <iostream>
 #include <thread>
@@ -38,49 +40,36 @@ using namespace std::chrono_literals;
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
 using search::bmcluster::AvgSampler;
-using search::bmcluster::BmClusterController;
-using search::bmcluster::IBmFeedHandler;
-using search::bmcluster::BmClusterParams;
 using search::bmcluster::BmCluster;
+using search::bmcluster::BmClusterController;
+using search::bmcluster::BmClusterParams;
 using search::bmcluster::BmFeed;
-using search::bmcluster::BmFeedParams;
 using search::bmcluster::BmFeeder;
+using search::bmcluster::BmFeedParams;
 using search::bmcluster::BmNode;
 using search::bmcluster::BmNodeStatsReporter;
 using search::bmcluster::BmRange;
 using search::bmcluster::BucketSelector;
+using search::bmcluster::IBmFeedHandler;
 using search::index::DummyFileHeaderContext;
 using storage::lib::State;
 using vespalib::makeLambdaTask;
 
 namespace {
 
-std::string base_dir = "testdb";
+std::string   base_dir = "testdb";
 constexpr int base_port = 9017;
 
 std::shared_ptr<DocumenttypesConfig> make_document_types() {
     document::new_config_builder::NewConfigBuilder builder;
-    auto& doc = builder.document("test", 42);
+    auto&                                          doc = builder.document("test", 42);
     doc.addField("int", builder.intTypeRef());
     return std::make_shared<DocumenttypesConfig>(builder.config());
 }
 
-enum class Mode {
-    GROW,
-    SHRINK,
-    PERM_CRASH,
-    TEMP_CRASH,
-    REPLACE,
-    BAD
-};
+enum class Mode { GROW, SHRINK, PERM_CRASH, TEMP_CRASH, REPLACE, BAD };
 
-std::vector<std::string> mode_names = {
-    "grow",
-    "shrink",
-    "perm-crash",
-    "temp-crash",
-    "replace"
-};
+std::vector<std::string> mode_names = {"grow", "shrink", "perm-crash", "temp-crash", "replace"};
 
 std::string bad_mode_name("bad");
 
@@ -98,18 +87,9 @@ std::string& get_mode_name(Mode mode) {
     return (i < mode_names.size()) ? mode_names[i] : bad_mode_name;
 }
 
-enum ReFeedMode {
-    NONE,
-    PUT,
-    UPDATE,
-    BAD
-};
+enum ReFeedMode { NONE, PUT, UPDATE, BAD };
 
-std::vector<std::string> refeed_mode_names = {
-    "none",
-    "put",
-    "update"
-};
+std::vector<std::string> refeed_mode_names = {"none", "put", "update"};
 
 ReFeedMode get_refeed_mode(const std::string& refeed_mode_name) {
     for (uint32_t i = 0; i < refeed_mode_names.size(); ++i) {
@@ -120,13 +100,12 @@ ReFeedMode get_refeed_mode(const std::string& refeed_mode_name) {
     return ReFeedMode::BAD;
 }
 
-class BMParams : public BmClusterParams,
-                 public BmFeedParams
-{
-    uint32_t _flip_nodes;
-    Mode     _mode;
+class BMParams : public BmClusterParams, public BmFeedParams {
+    uint32_t   _flip_nodes;
+    Mode       _mode;
     ReFeedMode _refeed_mode;
-    bool     _use_feed_settle;
+    bool       _use_feed_settle;
+
 public:
     BMParams();
     uint32_t get_flip_nodes() const noexcept { return _flip_nodes; }
@@ -141,23 +120,19 @@ public:
 };
 
 BMParams::BMParams()
-        : BmClusterParams(),
-          BmFeedParams(),
-          _flip_nodes(1u),
-          _mode(Mode::GROW),
-          _refeed_mode(ReFeedMode::NONE),
-          _use_feed_settle(false)
-{
+    : BmClusterParams(),
+      BmFeedParams(),
+      _flip_nodes(1u),
+      _mode(Mode::GROW),
+      _refeed_mode(ReFeedMode::NONE),
+      _use_feed_settle(false) {
     set_enable_service_layer(true);
     set_enable_distributor(true);
     set_use_document_api(true);
     set_nodes_per_group(4);
 }
 
-
-bool
-BMParams::check() const
-{
+bool BMParams::check() const {
     if (!BmClusterParams::check()) {
         return false;
     }
@@ -170,12 +145,14 @@ BMParams::check() const
     }
     if (_mode == Mode::REPLACE) {
         if (_flip_nodes * 2 > get_num_nodes()) {
-            std::cerr << "Too many flip nodes (" << _flip_nodes << ") with " << get_num_nodes() << " nodes (replace mode)" << std::endl;
+            std::cerr << "Too many flip nodes (" << _flip_nodes << ") with " << get_num_nodes()
+                      << " nodes (replace mode)" << std::endl;
             return false;
         }
     } else {
         if (_flip_nodes >= get_num_nodes()) {
-            std::cerr << "Too many flip nodes (" << _flip_nodes << ") with " << get_num_nodes() << " nodes (" << get_mode_name(_mode) << " mode)" << std::endl;
+            std::cerr << "Too many flip nodes (" << _flip_nodes << ") with " << get_num_nodes() << " nodes ("
+                      << get_mode_name(_mode) << " mode)" << std::endl;
             return false;
         }
     }
@@ -194,44 +171,43 @@ class ReFeed {
     vespalib::ThreadStackExecutor           _top_executor;
     vespalib::ThreadStackExecutor           _executor;
     BmFeeder                                _feeder;
-    const std::string                  _op_name;
+    const std::string                       _op_name;
     const BMParams&                         _params;
     int64_t&                                _time_bias;
     const std::vector<vespalib::nbostream>& _feed;
 
     void run();
+
 public:
-    ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const std::string& op_name);
+    ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler,
+           int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const std::string& op_name);
     ~ReFeed();
 };
 
-ReFeed::ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const std::string& op_name)
+ReFeed::ReFeed(const BMParams& params, std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler& feed_handler,
+               int64_t& time_bias, const std::vector<vespalib::nbostream>& feed, const std::string& op_name)
     : _top_executor(1),
       _executor(params.get_client_threads()),
       _feeder(repo, feed_handler, _executor),
       _op_name(op_name),
       _params(params),
       _time_bias(time_bias),
-      _feed(feed)
-{
+      _feed(feed) {
     _top_executor.execute(makeLambdaTask([this]() { run(); }));
 }
 
-ReFeed::~ReFeed()
-{
+ReFeed::~ReFeed() {
     _feeder.stop();
     _top_executor.sync();
     _top_executor.shutdown();
 }
 
-void
-ReFeed::run()
-{
+void ReFeed::run() {
     std::this_thread::sleep_for(2s);
     _feeder.run_feed_tasks_loop(_time_bias, _feed, _params, _op_name);
 }
 
-}
+} // namespace
 
 class Benchmark {
     BMParams                                   _params;
@@ -264,16 +240,15 @@ Benchmark::Benchmark(const BMParams& params)
       _feed(_repo),
       _put_feed(),
       _update_feed(),
-      _time_bias(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - 24h).count())
-{
+      _time_bias(std::chrono::duration_cast<std::chrono::microseconds>(
+                     std::chrono::system_clock::now().time_since_epoch() - 24h)
+                     .count()) {
     _cluster->make_nodes();
 }
 
 Benchmark::~Benchmark() = default;
 
-void
-Benchmark::adjust_cluster_state_before_feed()
-{
+void Benchmark::adjust_cluster_state_before_feed() {
     auto& dist = _cluster->get_real_distribution();
     auto& mode_name = get_mode_name(_params.get_mode());
     switch (_params.get_mode()) {
@@ -290,9 +265,7 @@ Benchmark::adjust_cluster_state_before_feed()
     dist.commit_cluster_state_change();
 }
 
-void
-Benchmark::adjust_cluster_state_after_feed()
-{
+void Benchmark::adjust_cluster_state_after_feed() {
     auto& dist = _cluster->get_real_distribution();
     auto& mode_name = get_mode_name(_params.get_mode());
     switch (_params.get_mode()) {
@@ -322,7 +295,8 @@ Benchmark::adjust_cluster_state_after_feed()
         for (uint32_t i = 0; i < _params.get_flip_nodes(); ++i) {
             dist.set_node_state(i + _params.get_flip_nodes(), State::RETIRED);
         }
-        LOG(info, "Mode %s: Taking up %u node(s) and retiring %u node(s)", mode_name.c_str(), _params.get_flip_nodes(), _params.get_flip_nodes());
+        LOG(info, "Mode %s: Taking up %u node(s) and retiring %u node(s)", mode_name.c_str(),
+            _params.get_flip_nodes(), _params.get_flip_nodes());
         break;
     default:
         LOG(info, "Mode %s: No cluster state adjust after feed", mode_name.c_str());
@@ -330,9 +304,7 @@ Benchmark::adjust_cluster_state_after_feed()
     dist.commit_cluster_state_change();
 }
 
-void
-Benchmark::adjust_cluster_state_after_first_redistribution()
-{
+void Benchmark::adjust_cluster_state_after_first_redistribution() {
     auto& dist = _cluster->get_real_distribution();
     auto& mode_name = get_mode_name(_params.get_mode());
     switch (_params.get_mode()) {
@@ -348,22 +320,26 @@ Benchmark::adjust_cluster_state_after_first_redistribution()
     dist.commit_cluster_state_change();
 }
 
-void
-Benchmark::make_feed()
-{
+void Benchmark::make_feed() {
     vespalib::ThreadStackExecutor executor(_params.get_client_threads());
-    _put_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_put_feed(range, bucket_selector); }, _feed.num_buckets(), "put");
+    _put_feed = _feed.make_feed(
+        executor, _params,
+        [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_put_feed(range, bucket_selector); },
+        _feed.num_buckets(), "put");
     if (_params.get_refeed_mode() == ReFeedMode::UPDATE) {
-        _update_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_update_feed(range, bucket_selector); }, _feed.num_buckets(), "update");
+        _update_feed = _feed.make_feed(
+            executor, _params,
+            [this](BmRange range, BucketSelector bucket_selector) {
+                return _feed.make_update_feed(range, bucket_selector);
+            },
+            _feed.num_buckets(), "update");
     }
 }
 
-void
-Benchmark::feed()
-{
+void Benchmark::feed() {
     vespalib::ThreadStackExecutor executor(_params.get_client_threads());
-    BmFeeder feeder(_repo, *_cluster->get_feed_handler(), executor);
-    BmNodeStatsReporter reporter(*_cluster, false);
+    BmFeeder                      feeder(_repo, *_cluster->get_feed_handler(), executor);
+    BmNodeStatsReporter           reporter(*_cluster, false);
     reporter.start(500ms);
     LOG(info, "Feed handler is '%s'", feeder.get_feed_handler().get_name().c_str());
     AvgSampler sampler;
@@ -376,25 +352,23 @@ Benchmark::feed()
     }
 }
 
-
-std::chrono::duration<double>
-Benchmark::redistribute()
-{
+std::chrono::duration<double> Benchmark::redistribute() {
     BmNodeStatsReporter reporter(*_cluster, true);
-    auto before = std::chrono::steady_clock::now();
+    auto                before = std::chrono::steady_clock::now();
     reporter.start(500ms);
     _cluster->propagate_cluster_state();
     reporter.report_now();
     std::unique_ptr<ReFeed> refeed;
     switch (_params.get_refeed_mode()) {
     case ReFeedMode::PUT:
-        refeed = std::make_unique<ReFeed>(_params, _repo, *_cluster->get_feed_handler(), _time_bias, _put_feed, "put");
+        refeed =
+            std::make_unique<ReFeed>(_params, _repo, *_cluster->get_feed_handler(), _time_bias, _put_feed, "put");
         break;
     case ReFeedMode::UPDATE:
-        refeed = std::make_unique<ReFeed>(_params, _repo, *_cluster->get_feed_handler(), _time_bias, _update_feed, "update");
+        refeed = std::make_unique<ReFeed>(_params, _repo, *_cluster->get_feed_handler(), _time_bias, _update_feed,
+                                          "update");
         break;
-    default:
-        ;
+    default:;
     }
     for (;;) {
         auto duration = std::chrono::steady_clock::now() - reporter.get_change_time();
@@ -407,9 +381,7 @@ Benchmark::redistribute()
     return reporter.get_change_time() - before;
 }
 
-void
-Benchmark::run()
-{
+void Benchmark::run() {
     adjust_cluster_state_before_feed();
     _cluster->start(_feed);
     make_feed();
@@ -417,11 +389,12 @@ Benchmark::run()
     LOG(info, "--------------------------------");
     auto old_snapshot = _cluster->get_bucket_db_snapshots();
     adjust_cluster_state_after_feed();
-    auto elapsed = redistribute();
-    auto new_snapshot = _cluster->get_bucket_db_snapshots();
+    auto     elapsed = redistribute();
+    auto     new_snapshot = _cluster->get_bucket_db_snapshots();
     uint32_t moved_docs = new_snapshot.count_moved_documents(old_snapshot);
     uint32_t lost_unique_docs = new_snapshot.count_lost_unique_documents(old_snapshot);
-    LOG(info, "Redistributed %u docs in %5.3f seconds, %4.2f docs/s, %u lost unique docs", moved_docs, elapsed.count(), moved_docs / elapsed.count(), lost_unique_docs);
+    LOG(info, "Redistributed %u docs in %5.3f seconds, %4.2f docs/s, %u lost unique docs", moved_docs,
+        elapsed.count(), moved_docs / elapsed.count(), lost_unique_docs);
     if (_params.get_mode() == Mode::TEMP_CRASH) {
         if (_params.get_use_feed_settle()) {
             LOG(info, "Settling redistribution");
@@ -429,98 +402,90 @@ Benchmark::run()
         }
         adjust_cluster_state_after_first_redistribution();
         elapsed = redistribute();
-        LOG(info, "Cleanup of %u docs in %5.3f seconds, %4.2f docs/s, %u refound unique docs", moved_docs, elapsed.count(), moved_docs / elapsed.count(), lost_unique_docs);
+        LOG(info, "Cleanup of %u docs in %5.3f seconds, %4.2f docs/s, %u refound unique docs", moved_docs,
+            elapsed.count(), moved_docs / elapsed.count(), lost_unique_docs);
     }
     _cluster->stop();
 }
 
-class App
-{
+class App {
     BMParams _bm_params;
+
 public:
     App();
     ~App();
     void usage();
-    bool get_options(int argc, char **argv);
-    int main(int argc, char **argv);
+    bool get_options(int argc, char** argv);
+    int main(int argc, char** argv);
 };
 
-App::App()
-    : _bm_params()
-{
+App::App() : _bm_params() {
 }
 
 App::~App() = default;
 
-void
-App::usage()
-{
-    std::cerr <<
-        "vespa-redistribute-bm version 0.0\n"
-        "\n"
-        "USAGE:\n";
-    std::cerr <<
-        "vespa-redistribute-bm\n"
-        "[--bucket-db-stripe-bits bits]\n"
-        "[--client-threads threads]\n"
-        "[--distributor-merge-busy-wait distributor-merge-busy-wait]\n"
-        "[--distributor-stripes stripes]\n"
-        "[--doc-store-chunk-compression-level level]\n"
-        "[--doc-store-chunk-maxbytes maxbytes]\n"
-        "[--documents documents]\n"
-        "[--flip-nodes flip-nodes]\n"
-        "[--groups groups]\n"
-        "[--ignore-merge-queue-limit]\n"
-        "[--indexing-sequencer [latency,throughput,adaptive]]\n"
-        "[--max-merges-per-node max-merges-per-node]\n"
-        "[--max-merge-queue-size max-merge-queue-size]\n"
-        "[--max-pending max-pending]\n"
-        "[--max-pending-idealstate-operations max-pending-idealstate-operations]\n"
-        "[--mbus-distributor-node-max-pending-count count]\n"
-        "[--mode [grow, shrink, perm-crash, temp-crash, replace]\n"
-        "[--nodes-per-group nodes-per-group]\n"
-        "[--redundancy redundancy]\n"
-        "[--refeed-mode [none, put, update]\n"
-        "[--rpc-events-before-wakeup events]\n"
-        "[--rpc-network-threads threads]\n"
-        "[--rpc-targets-per-node targets]\n"
-        "[--response-threads threads]\n"
-        "[--use-async-message-handling]\n"
-        "[--use-feed-settle]" << std::endl;
+void App::usage() {
+    std::cerr << "vespa-redistribute-bm version 0.0\n"
+                 "\n"
+                 "USAGE:\n";
+    std::cerr << "vespa-redistribute-bm\n"
+                 "[--bucket-db-stripe-bits bits]\n"
+                 "[--client-threads threads]\n"
+                 "[--distributor-merge-busy-wait distributor-merge-busy-wait]\n"
+                 "[--distributor-stripes stripes]\n"
+                 "[--doc-store-chunk-compression-level level]\n"
+                 "[--doc-store-chunk-maxbytes maxbytes]\n"
+                 "[--documents documents]\n"
+                 "[--flip-nodes flip-nodes]\n"
+                 "[--groups groups]\n"
+                 "[--ignore-merge-queue-limit]\n"
+                 "[--indexing-sequencer [latency,throughput,adaptive]]\n"
+                 "[--max-merges-per-node max-merges-per-node]\n"
+                 "[--max-merge-queue-size max-merge-queue-size]\n"
+                 "[--max-pending max-pending]\n"
+                 "[--max-pending-idealstate-operations max-pending-idealstate-operations]\n"
+                 "[--mbus-distributor-node-max-pending-count count]\n"
+                 "[--mode [grow, shrink, perm-crash, temp-crash, replace]\n"
+                 "[--nodes-per-group nodes-per-group]\n"
+                 "[--redundancy redundancy]\n"
+                 "[--refeed-mode [none, put, update]\n"
+                 "[--rpc-events-before-wakeup events]\n"
+                 "[--rpc-network-threads threads]\n"
+                 "[--rpc-targets-per-node targets]\n"
+                 "[--response-threads threads]\n"
+                 "[--use-async-message-handling]\n"
+                 "[--use-feed-settle]"
+              << std::endl;
 }
 
-bool
-App::get_options(int argc, char **argv)
-{
-    int c;
-    int long_opt_index = 0;
-    static struct option long_opts[] = {
-        { "bucket-db-stripe-bits", 1, nullptr, 0 },
-        { "client-threads", 1, nullptr, 0 },
-        { "distributor-merge-busy-wait", 1, nullptr, 0 },
-        { "distributor-stripes", 1, nullptr, 0 },
-        { "doc-store-chunk-compression-level", 1, nullptr, 0 },
-        { "doc-store-chunk-maxbytes", 1, nullptr, 0 },
-        { "documents", 1, nullptr, 0 },
-        { "flip-nodes", 1, nullptr, 0 },
-        { "groups", 1, nullptr, 0 },
-        { "indexing-sequencer", 1, nullptr, 0 },
-        { "max-merges-per-node", 1, nullptr, 0 },
-        { "max-merge-queue-size", 1, nullptr, 0 },
-        { "max-pending", 1, nullptr, 0 },
-        { "mbus-distributor-node-max-pending-count", 1, nullptr, 0 },
-        { "mode", 1, nullptr, 0 },
-        { "nodes-per-group", 1, nullptr, 0 },
-        { "redundancy", 1, nullptr, 0 },
-        { "refeed-mode", 1, nullptr, 0 },
-        { "response-threads", 1, nullptr, 0 },
-        { "rpc-events-before-wakeup", 1, nullptr, 0 },
-        { "rpc-network-threads", 1, nullptr, 0 },
-        { "rpc-targets-per-node", 1, nullptr, 0 },
-        { "use-async-message-handling", 0, nullptr, 0 },
-        { "use-feed-settle", 0, nullptr, 0 },
-        { nullptr, 0, nullptr, 0 }
-    };
+bool App::get_options(int argc, char** argv) {
+    int                  c;
+    int                  long_opt_index = 0;
+    static struct option long_opts[] = {{"bucket-db-stripe-bits", 1, nullptr, 0},
+                                        {"client-threads", 1, nullptr, 0},
+                                        {"distributor-merge-busy-wait", 1, nullptr, 0},
+                                        {"distributor-stripes", 1, nullptr, 0},
+                                        {"doc-store-chunk-compression-level", 1, nullptr, 0},
+                                        {"doc-store-chunk-maxbytes", 1, nullptr, 0},
+                                        {"documents", 1, nullptr, 0},
+                                        {"flip-nodes", 1, nullptr, 0},
+                                        {"groups", 1, nullptr, 0},
+                                        {"indexing-sequencer", 1, nullptr, 0},
+                                        {"max-merges-per-node", 1, nullptr, 0},
+                                        {"max-merge-queue-size", 1, nullptr, 0},
+                                        {"max-pending", 1, nullptr, 0},
+                                        {"mbus-distributor-node-max-pending-count", 1, nullptr, 0},
+                                        {"mode", 1, nullptr, 0},
+                                        {"nodes-per-group", 1, nullptr, 0},
+                                        {"redundancy", 1, nullptr, 0},
+                                        {"refeed-mode", 1, nullptr, 0},
+                                        {"response-threads", 1, nullptr, 0},
+                                        {"rpc-events-before-wakeup", 1, nullptr, 0},
+                                        {"rpc-network-threads", 1, nullptr, 0},
+                                        {"rpc-targets-per-node", 1, nullptr, 0},
+                                        {"use-async-message-handling", 0, nullptr, 0},
+                                        {"use-feed-settle", 0, nullptr, 0},
+                                        {nullptr, 0, nullptr, 0}};
     enum longopts_enum {
         LONGOPT_BUCKET_DB_STRIPE_BITS,
         LONGOPT_CLIENT_THREADS,
@@ -551,7 +516,7 @@ App::get_options(int argc, char **argv)
     while ((c = getopt_long(argc, argv, "", long_opts, &long_opt_index)) != -1) {
         switch (c) {
         case 0:
-            switch(long_opt_index) {
+            switch (long_opt_index) {
             case LONGOPT_BUCKET_DB_STRIPE_BITS:
                 _bm_params.set_bucket_db_stripe_bits(atoi(optarg));
                 break;
@@ -641,9 +606,7 @@ App::get_options(int argc, char **argv)
     return _bm_params.check();
 }
 
-int
-App::main(int argc, char **argv)
-{
+int App::main(int argc, char** argv) {
     if (!get_options(argc, argv)) {
         usage();
         return 1;
@@ -654,10 +617,10 @@ App::main(int argc, char **argv)
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     DummyFileHeaderContext::setCreator("vespa-redistribute-bm");
-    App app;
+    App  app;
     auto exit_value = app.main(argc, argv);
     std::filesystem::remove_all(std::filesystem::path(base_dir));
     return exit_value;

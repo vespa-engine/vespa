@@ -8,11 +8,12 @@
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
-#include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
+#include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <iomanip>
 #include <sstream>
 
@@ -28,8 +29,7 @@ const double EPS = 10e-4;
 
 namespace search::features {
 
-class NativeRankTest : public ::testing::Test,
-                       public FtTestAppBase {
+class NativeRankTest : public ::testing::Test, public FtTestAppBase {
 protected:
     BlueprintFactory _factory;
 
@@ -37,33 +37,31 @@ protected:
     ~NativeRankTest() override;
 
     struct ANAM {
-        int32_t  attributeWeight;
+        int32_t               attributeWeight;
         search::query::Weight termWeight;
-        uint32_t fieldWeight;
-        uint32_t docId;
-        ANAM(int32_t aw, uint32_t tw = 100, uint32_t fw = 100, uint32_t id = 1) :
-            attributeWeight(aw), termWeight(tw), fieldWeight(fw), docId(id) {}
+        uint32_t              fieldWeight;
+        uint32_t              docId;
+        ANAM(int32_t aw, uint32_t tw = 100, uint32_t fw = 100, uint32_t id = 1)
+            : attributeWeight(aw), termWeight(tw), fieldWeight(fw), docId(id) {}
         std::string toString() const {
-            return vespalib::make_string("aw(%d), tw(%u), fw(%u), id(%u)",
-                                         attributeWeight, termWeight.percent(), fieldWeight, docId);
+            return vespalib::make_string("aw(%d), tw(%u), fw(%u), id(%u)", attributeWeight, termWeight.percent(),
+                                         fieldWeight, docId);
         }
     };
 
-    bool assertNativeFieldMatch(feature_t score, const std::string & query, const std::string & field,
-                                const Properties & props = Properties(), uint32_t docId = 1);
-    bool assertNativeAttributeMatch(feature_t score, const ANAM & t1, const ANAM & t2,
-                                    const Properties & props = Properties());
-    bool assertNativeProximity(feature_t score, const std::string & query, const std::string & field,
-                               const Properties & props = Properties(), uint32_t docId = 1);
-    bool assertNativeProximity(feature_t score, const std::string & query, const std::vector<std::string> & field,
-                               const Properties & props, std::optional<ElementGap>, uint32_t docId = 1);
-    bool assertNativeRank(feature_t score, feature_t fieldMatchWeight, feature_t attributeMatchWeight, feature_t proximityWeight);
+    bool assertNativeFieldMatch(feature_t score, const std::string& query, const std::string& field,
+                                const Properties& props = Properties(), uint32_t docId = 1);
+    bool assertNativeAttributeMatch(feature_t score, const ANAM& t1, const ANAM& t2,
+                                    const Properties& props = Properties());
+    bool assertNativeProximity(feature_t score, const std::string& query, const std::string& field,
+                               const Properties& props = Properties(), uint32_t docId = 1);
+    bool assertNativeProximity(feature_t score, const std::string& query, const std::vector<std::string>& field,
+                               const Properties& props, std::optional<ElementGap>, uint32_t docId = 1);
+    bool assertNativeRank(feature_t score, feature_t fieldMatchWeight, feature_t attributeMatchWeight,
+                          feature_t proximityWeight);
 };
 
-NativeRankTest::NativeRankTest()
-    : ::testing::Test(),
-      FtTestAppBase()
-{
+NativeRankTest::NativeRankTest() : ::testing::Test(), FtTestAppBase() {
     // Configure factory with all known blueprints.
     setup_fef_test_plugin(_factory);
     setup_search_features(_factory);
@@ -71,8 +69,7 @@ NativeRankTest::NativeRankTest()
 
 NativeRankTest::~NativeRankTest() = default;
 
-TEST_F(NativeRankTest, test_native_field_match)
-{
+TEST_F(NativeRankTest, test_native_field_match) {
     { // test blueprint
         NativeFieldMatchBlueprint pt;
 
@@ -88,21 +85,21 @@ TEST_F(NativeRankTest, test_native_field_match)
         FT_SETUP_FAIL(pt, params.add("baz")); // field 'baz' not found
         params.clear();
 
-        Properties & p = ft.getIndexEnv().getProperties();
+        Properties& p = ft.getIndexEnv().getProperties();
         p.add("nativeFieldMatch.firstOccurrenceTable", "a");
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // table 'a' not found
         p.clear().add("nativeFieldMatch.occurrenceCountTable", "b");
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // table 'b' not found
 
-        const TableManager & tm = ft.getIndexEnv().getTableManager();
+        const TableManager& tm = ft.getIndexEnv().getTableManager();
         {
             p.clear();
             p.add("nativeRank.useTableNormalization", "false");
             FT_SETUP_OK(pt, params, in, out.add("score"));
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeFieldMatchParams & pas = (dynamic_cast<NativeFieldMatchBlueprint *>(bp.get()))->getParams();
+            const NativeFieldMatchParams& pas = (dynamic_cast<NativeFieldMatchBlueprint*>(bp.get()))->getParams();
             ASSERT_TRUE(pas.vector.size() == 3);
             EXPECT_TRUE(pas.vector[0].firstOccTable == tm.getTable("expdecay(8000,12.50)"));
             EXPECT_TRUE(pas.vector[1].firstOccTable == tm.getTable("expdecay(8000,12.50)"));
@@ -123,25 +120,25 @@ TEST_F(NativeRankTest, test_native_field_match)
         }
         {
             p.clear();
-            p.add("nativeFieldMatch.firstOccurrenceTable",     "linear(0,1)");
+            p.add("nativeFieldMatch.firstOccurrenceTable", "linear(0,1)");
             p.add("nativeFieldMatch.firstOccurrenceTable.foo", "linear(0,2)");
-            p.add("nativeFieldMatch.occurrenceCountTable",     "linear(0,3)");
+            p.add("nativeFieldMatch.occurrenceCountTable", "linear(0,3)");
             p.add("nativeFieldMatch.occurrenceCountTable.baz", "linear(0,4)");
             p.add("vespa.fieldweight.foo", "200");
             p.add("vespa.fieldweight.baz", "0");
             p.add("nativeFieldMatch.averageFieldLength.foo", "400");
             p.add("nativeFieldMatch.averageFieldLength.baz", "500");
-            p.add("nativeFieldMatch.minFieldLength",  "12");
+            p.add("nativeFieldMatch.minFieldLength", "12");
             p.add("nativeFieldMatch.firstOccurrenceImportance", "0.8");
             p.add("nativeFieldMatch.firstOccurrenceImportance.foo", "0.6");
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "baz");
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "quux");
             ft.getIndexEnv().getFields()[4].setFilter(true);
             FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("foo").add("baz").add("quux"), in, out);
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeFieldMatchParams & pas = (dynamic_cast<NativeFieldMatchBlueprint *>(bp.get()))->getParams();
+            const NativeFieldMatchParams& pas = (dynamic_cast<NativeFieldMatchBlueprint*>(bp.get()))->getParams();
             ASSERT_TRUE(pas.vector.size() == 5);
             EXPECT_TRUE(pas.vector[0].firstOccTable == tm.getTable("linear(0,2)"));
             EXPECT_TRUE(pas.vector[3].firstOccTable == tm.getTable("linear(0,1)"));
@@ -156,7 +153,7 @@ TEST_F(NativeRankTest, test_native_field_match)
             EXPECT_EQ(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
             EXPECT_EQ(pas.vector[2].field, false); // 'qux' is an attribute
             EXPECT_EQ(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
-            EXPECT_EQ(pas.vector[4].field, false);  // filter field
+            EXPECT_EQ(pas.vector[4].field, false); // filter field
             EXPECT_EQ(pas.vector[0].averageFieldLength, 400u);
             EXPECT_EQ(pas.vector[3].averageFieldLength, 500u);
             EXPECT_EQ(pas.minFieldLength, 12u);
@@ -170,16 +167,16 @@ TEST_F(NativeRankTest, test_native_field_match)
     }
 
     { // test helper functions
-        FtFeatureTest ft(_factory, "");
+        FtFeatureTest          ft(_factory, "");
         NativeFieldMatchParams p;
-        NativeFieldMatchParam f;
-        Table t;
+        NativeFieldMatchParam  f;
+        Table                  t;
         t.add(0).add(1).add(2).add(3).add(4).add(5).add(6).add(7);
         f.firstOccTable = &t;
         f.numOccTable = &t;
         p.vector.push_back(f);
         NativeFieldMatchExecutorSharedState nfmess(ft.getQueryEnv(), p);
-        NativeFieldMatchExecutor nfme(nfmess);
+        NativeFieldMatchExecutor            nfme(nfmess);
         EXPECT_EQ(p.minFieldLength, 6u);
         EXPECT_EQ(nfme.getFirstOccBoost(0, 0, 4), 0);
         EXPECT_EQ(nfme.getFirstOccBoost(0, 1, 4), 1);
@@ -229,7 +226,7 @@ TEST_F(NativeRankTest, test_native_field_match)
         EXPECT_TRUE(assertNativeFieldMatch(45, "a b", "a x x x b"));
         EXPECT_TRUE(assertNativeFieldMatch(50, "a!600 b!200", "a x x x b"));
         EXPECT_TRUE(assertNativeFieldMatch(40, "a!200 b!600", "a x x x b"));
-        EXPECT_TRUE(assertNativeFieldMatch(55, "a!200 b!0",   "a x x x b"));
+        EXPECT_TRUE(assertNativeFieldMatch(55, "a!200 b!0", "a x x x b"));
 
         // change significance
         EXPECT_TRUE(assertNativeFieldMatch(46, "a%0.4 b%0.1", "x a x x x b"));
@@ -245,8 +242,8 @@ TEST_F(NativeRankTest, test_native_field_match)
         // use table normalization
         p.clear().add("nativeRank.useTableNormalization", "true");
         // norm factor = (100*0.5 + 60*0.5) = 80
-        EXPECT_TRUE(assertNativeFieldMatch(0.6875, "a", "a", p));           // (55/80)
-        EXPECT_TRUE(assertNativeFieldMatch(1,      "a", "a a a a a a", p)); // (80/80)
+        EXPECT_TRUE(assertNativeFieldMatch(0.6875, "a", "a", p));      // (55/80)
+        EXPECT_TRUE(assertNativeFieldMatch(1, "a", "a a a a a a", p)); // (80/80)
         p.add("nativeFieldMatch.firstOccurrenceTable", "linear(0,0)");
         p.add("nativeFieldMatch.occurrenceCountTable", "linear(0,0)");
         EXPECT_TRUE(assertNativeFieldMatch(0, "a", "a", p));
@@ -266,27 +263,24 @@ TEST_F(NativeRankTest, test_native_field_match)
     }
 }
 
-bool
-NativeRankTest::assertNativeFieldMatch(feature_t score,
-                                       const std::string & query,
-                                       const std::string & field,
-                                       const Properties & props,
-                                       uint32_t docId)
-{
+bool NativeRankTest::assertNativeFieldMatch(feature_t score, const std::string& query, const std::string& field,
+                                            const Properties& props, uint32_t docId) {
     LOG(info, "assertNativeFieldMatch(%f, '%s', '%s')", score, query.c_str(), field.c_str());
 
     // Setup feature test.
-    std::string feature = "nativeFieldMatch";
+    std::string   feature = "nativeFieldMatch";
     FtFeatureTest ft(_factory, feature);
 
     StringVectorMap index;
     index["foo"] = FtUtil::tokenize(field);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
     ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(256)));
-    ft.getIndexEnv().getProperties().add("nativeFieldMatch.firstOccurrenceTable",
-                                         vespalib::make_string("linear(-10,100,%zu)", std::max((size_t)6, index["foo"].size())));
-    ft.getIndexEnv().getProperties().add("nativeFieldMatch.occurrenceCountTable",
-                                         vespalib::make_string("linear(10,0,%zu)", std::max((size_t)6, index["foo"].size()) + 1));
+    ft.getIndexEnv().getProperties().add(
+        "nativeFieldMatch.firstOccurrenceTable",
+        vespalib::make_string("linear(-10,100,%zu)", std::max((size_t)6, index["foo"].size())));
+    ft.getIndexEnv().getProperties().add(
+        "nativeFieldMatch.occurrenceCountTable",
+        vespalib::make_string("linear(10,0,%zu)", std::max((size_t)6, index["foo"].size()) + 1));
     ft.getIndexEnv().getProperties().add("nativeRank.useTableNormalization", "false"); // make it easier to test
     ft.getIndexEnv().getProperties().import(props);
     FT_SETUP(ft, FtUtil::toQuery(query), index, 1);
@@ -297,8 +291,7 @@ NativeRankTest::assertNativeFieldMatch(feature_t score,
     return !failure;
 }
 
-TEST_F(NativeRankTest, test_native_attribute_match)
-{
+TEST_F(NativeRankTest, test_native_attribute_match) {
     { // test blueprint
         NativeAttributeMatchBlueprint pt;
 
@@ -314,22 +307,23 @@ TEST_F(NativeRankTest, test_native_attribute_match)
         FT_SETUP_FAIL(pt, params.add("baz")); // field 'baz' not found
         params.clear();
 
-        Properties & p = ft.getIndexEnv().getProperties();
+        Properties& p = ft.getIndexEnv().getProperties();
         p.add("nativeAttributeMatch.weightTable", "a");
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // table 'a' not found
 
-//        const TableManager & tm = ft.getIndexEnv().getTableManager();
+        //        const TableManager & tm = ft.getIndexEnv().getTableManager();
         {
             p.clear();
             p.add("nativeRank.useTableNormalization", "false");
             FT_SETUP_OK(pt, params, in, out.add("score"));
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeAttributeMatchParams & pas = (dynamic_cast<NativeAttributeMatchBlueprint *>(bp.get()))->getParams();
+            const NativeAttributeMatchParams& pas =
+                (dynamic_cast<NativeAttributeMatchBlueprint*>(bp.get()))->getParams();
             ASSERT_TRUE(pas.vector.size() == 3);
-//            EXPECT_TRUE(pas.vector[0].weightBoostTable == tm.getTable("linear(1,0)"));
-//            EXPECT_TRUE(pas.vector[1].weightBoostTable == tm.getTable("linear(1,0)"));
+            //            EXPECT_TRUE(pas.vector[0].weightBoostTable == tm.getTable("linear(1,0)"));
+            //            EXPECT_TRUE(pas.vector[1].weightBoostTable == tm.getTable("linear(1,0)"));
             EXPECT_EQ(pas.vector[0].maxTableSum, 1);
             EXPECT_EQ(pas.vector[1].maxTableSum, 1);
             EXPECT_EQ(pas.vector[0].fieldWeight, 100u);
@@ -340,19 +334,20 @@ TEST_F(NativeRankTest, test_native_attribute_match)
         }
         {
             p.clear();
-            p.add("nativeAttributeMatch.weightTable",     "linear(0,3)");
+            p.add("nativeAttributeMatch.weightTable", "linear(0,3)");
             p.add("nativeAttributeMatch.weightTable.foo", "linear(0,2)");
             p.add("vespa.fieldweight.foo", "200");
             p.add("vespa.fieldweight.baz", "0");
             ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "baz");
             FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("foo").add("baz"), in, out);
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeAttributeMatchParams & pas = (dynamic_cast<NativeAttributeMatchBlueprint *>(bp.get()))->getParams();
+            const NativeAttributeMatchParams& pas =
+                (dynamic_cast<NativeAttributeMatchBlueprint*>(bp.get()))->getParams();
             ASSERT_TRUE(pas.vector.size() == 4);
-//            EXPECT_TRUE(pas.vector[0].weightBoostTable == tm.getTable("linear(0,2)"));
-//            EXPECT_TRUE(pas.vector[3].weightBoostTable == tm.getTable("linear(0,3)"));
+            //            EXPECT_TRUE(pas.vector[0].weightBoostTable == tm.getTable("linear(0,2)"));
+            //            EXPECT_TRUE(pas.vector[3].weightBoostTable == tm.getTable("linear(0,3)"));
             EXPECT_EQ(pas.vector[0].maxTableSum, 2);
             EXPECT_EQ(pas.vector[3].maxTableSum, 3);
             EXPECT_EQ(pas.vector[0].fieldWeight, 200u);
@@ -371,15 +366,17 @@ TEST_F(NativeRankTest, test_native_attribute_match)
     }
     { // test executor
 
-        EXPECT_TRUE(assertNativeAttributeMatch(15, ANAM(10), ANAM(10)));  // basic
-        EXPECT_TRUE(assertNativeAttributeMatch(5, ANAM(-10), ANAM(10))); // negative weight
-        EXPECT_TRUE(assertNativeAttributeMatch(12.5, ANAM(10, 600), ANAM(10, 200))); // change term weights
-        EXPECT_TRUE(assertNativeAttributeMatch(10,   ANAM(10, 600), ANAM(10, 0)));   // change term weights
+        EXPECT_TRUE(assertNativeAttributeMatch(15, ANAM(10), ANAM(10)));                     // basic
+        EXPECT_TRUE(assertNativeAttributeMatch(5, ANAM(-10), ANAM(10)));                     // negative weight
+        EXPECT_TRUE(assertNativeAttributeMatch(12.5, ANAM(10, 600), ANAM(10, 200)));         // change term weights
+        EXPECT_TRUE(assertNativeAttributeMatch(10, ANAM(10, 600), ANAM(10, 0)));             // change term weights
         EXPECT_TRUE(assertNativeAttributeMatch(18, ANAM(10, 100, 200), ANAM(10, 100, 800))); // change field weights
-        EXPECT_TRUE(assertNativeAttributeMatch(0,  ANAM(10, 100, 0), ANAM(10, 100, 0)));   // change field weights
-        EXPECT_TRUE(assertNativeAttributeMatch(10, ANAM(10, 100, 100, 2), ANAM(10, 100, 100))); // change docId to give 1 hit
-        EXPECT_TRUE(assertNativeAttributeMatch(0, ANAM(10, 100, 100, 2), ANAM(10, 100, 100, 2))); // change docId to give 0 hits
-        { // use table normalization
+        EXPECT_TRUE(assertNativeAttributeMatch(0, ANAM(10, 100, 0), ANAM(10, 100, 0)));      // change field weights
+        EXPECT_TRUE(
+            assertNativeAttributeMatch(10, ANAM(10, 100, 100, 2), ANAM(10, 100, 100))); // change docId to give 1 hit
+        EXPECT_TRUE(assertNativeAttributeMatch(0, ANAM(10, 100, 100, 2),
+                                               ANAM(10, 100, 100, 2))); // change docId to give 0 hits
+        {                                                               // use table normalization
             // foo: max table value: 255
             // bar: max table value: 510
             Properties p;
@@ -393,11 +390,10 @@ TEST_F(NativeRankTest, test_native_attribute_match)
     }
 }
 
-bool
-NativeRankTest::assertNativeAttributeMatch(feature_t score, const ANAM & t1, const ANAM & t2, const Properties & props)
-{
+bool NativeRankTest::assertNativeAttributeMatch(feature_t score, const ANAM& t1, const ANAM& t2,
+                                                const Properties& props) {
     LOG(info, "assertNativeAttributeMatch(%f, '%s', '%s')", score, t1.toString().c_str(), t2.toString().c_str());
-    std::string feature = "nativeAttributeMatch";
+    std::string   feature = "nativeAttributeMatch";
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "foo");
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "bar");
@@ -426,14 +422,14 @@ NativeRankTest::assertNativeAttributeMatch(feature_t score, const ANAM & t1, con
 
     MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
     {
-        TermFieldMatchData *tfmd = mdb->getTermFieldMatchData(0, 0);
+        TermFieldMatchData* tfmd = mdb->getTermFieldMatchData(0, 0);
         tfmd->reset(t1.docId);
         TermFieldMatchDataPosition pos;
         pos.setElementWeight(t1.attributeWeight);
         tfmd->appendPosition(pos);
     }
     {
-        TermFieldMatchData *tfmd = mdb->getTermFieldMatchData(1, 1);
+        TermFieldMatchData* tfmd = mdb->getTermFieldMatchData(1, 1);
         tfmd->reset(t2.docId);
         TermFieldMatchDataPosition pos;
         pos.setElementWeight(t2.attributeWeight);
@@ -446,8 +442,7 @@ NativeRankTest::assertNativeAttributeMatch(feature_t score, const ANAM & t1, con
     return true;
 }
 
-TEST_F(NativeRankTest, test_native_proximity)
-{
+TEST_F(NativeRankTest, test_native_proximity) {
     { // test blueprint
         NativeProximityBlueprint pt;
 
@@ -463,21 +458,21 @@ TEST_F(NativeRankTest, test_native_proximity)
         FT_SETUP_FAIL(pt, params.add("baz")); // field 'baz' not found
         params.clear();
 
-        Properties & p = ft.getIndexEnv().getProperties();
+        Properties& p = ft.getIndexEnv().getProperties();
         p.add("nativeProximity.proximityTable", "a");
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // table 'a' not found
         p.clear().add("nativeProximity.reverseProximityTable", "b");
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // table 'b' not found
 
-        const TableManager & tm = ft.getIndexEnv().getTableManager();
+        const TableManager& tm = ft.getIndexEnv().getTableManager();
         {
             p.clear();
             p.add("nativeRank.useTableNormalization", "false");
             FT_SETUP_OK(pt, params, in, out.add("score"));
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeProximityParams & pas = (dynamic_cast<NativeProximityBlueprint *>(bp.get()))->getParams();
+            const NativeProximityParams& pas = (dynamic_cast<NativeProximityBlueprint*>(bp.get()))->getParams();
             ASSERT_TRUE(pas.vector.size() == 3);
             EXPECT_TRUE(pas.vector[0].proximityTable == tm.getTable("expdecay(500,3)"));
             EXPECT_TRUE(pas.vector[1].proximityTable == tm.getTable("expdecay(500,3)"));
@@ -496,9 +491,9 @@ TEST_F(NativeRankTest, test_native_proximity)
         }
         {
             p.clear();
-            p.add("nativeProximity.proximityTable",     "linear(0,1)");
+            p.add("nativeProximity.proximityTable", "linear(0,1)");
             p.add("nativeProximity.proximityTable.foo", "linear(0,2)");
-            p.add("nativeProximity.reverseProximityTable",     "linear(0,3)");
+            p.add("nativeProximity.reverseProximityTable", "linear(0,3)");
             p.add("nativeProximity.reverseProximityTable.baz", "linear(0,4)");
             p.add("vespa.fieldweight.foo", "200");
             p.add("vespa.fieldweight.baz", "0");
@@ -509,10 +504,10 @@ TEST_F(NativeRankTest, test_native_proximity)
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "quux");
             ft.getIndexEnv().getFields()[4].setFilter(true);
             FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("foo").add("baz"), in, out);
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeProximityParams & pas = (dynamic_cast<NativeProximityBlueprint *>(bp.get()))->getParams();
+            const NativeProximityParams& pas = (dynamic_cast<NativeProximityBlueprint*>(bp.get()))->getParams();
             ASSERT_TRUE(pas.vector.size() == 5);
             EXPECT_TRUE(pas.vector[0].proximityTable == tm.getTable("linear(0,2)"));
             EXPECT_TRUE(pas.vector[3].proximityTable == tm.getTable("linear(0,1)"));
@@ -541,7 +536,7 @@ TEST_F(NativeRankTest, test_native_proximity)
 
     { // test NativeProximityExecutor::generateTermPairs()
         QueryTermVector terms;
-        SimpleTermData a, b, c;
+        SimpleTermData  a, b, c;
         a.setWeight(search::query::Weight(100));
         a.setUniqueId(0);
         b.setWeight(search::query::Weight(200));
@@ -551,15 +546,15 @@ TEST_F(NativeRankTest, test_native_proximity)
         terms.push_back(QueryTerm(&a, 0.1));
         terms.push_back(QueryTerm(&b, 0.2));
         terms.push_back(QueryTerm(&c, 0.3));
-        FtFeatureTest ft(_factory, "nativeProximity");
-        FtQueryEnvironment & env = ft.getQueryEnv();
+        FtFeatureTest       ft(_factory, "nativeProximity");
+        FtQueryEnvironment& env = ft.getQueryEnv();
         env.getProperties().add("vespa.term.1.connexity", "0");
         env.getProperties().add("vespa.term.1.connexity", "0.8");
         env.getProperties().add("vespa.term.2.connexity", "1");
         env.getProperties().add("vespa.term.2.connexity", "0.6");
         {
-            NativeProximityExecutor::FieldSetup setup(0);
-            NativeProximityExecutorSharedState::TermPairVector & pairs = setup.pairs;
+            NativeProximityExecutor::FieldSetup                 setup(0);
+            NativeProximityExecutorSharedState::TermPairVector& pairs = setup.pairs;
             NativeProximityExecutorSharedState::generateTermPairs(env, terms, 0, setup);
             EXPECT_EQ(pairs.size(), 0u);
             NativeProximityExecutorSharedState::generateTermPairs(env, terms, 1, setup);
@@ -606,7 +601,7 @@ TEST_F(NativeRankTest, test_native_proximity)
 
     { // test executor
         // 1 pair (only forward)
-        EXPECT_TRUE(assertNativeProximity(0, "a",   "a"));
+        EXPECT_TRUE(assertNativeProximity(0, "a", "a"));
         EXPECT_TRUE(assertNativeProximity(0, "a b", "a"));
         EXPECT_TRUE(assertNativeProximity(5, "a b", "a b"));
         EXPECT_TRUE(assertNativeProximity(1, "a b", "a x x x x b"));
@@ -618,29 +613,29 @@ TEST_F(NativeRankTest, test_native_proximity)
         // 1 pair (both forward and backward)
         EXPECT_TRUE(assertNativeProximity(10, "a b", "a b a"));
         EXPECT_TRUE(assertNativeProximity(10, "b a", "a b a"));
-        EXPECT_TRUE(assertNativeProximity(10, "a a", "a a"));     // term distance 1
-        EXPECT_TRUE(assertNativeProximity(6,  "a a", "a x x a")); // term distance 3
-        EXPECT_TRUE(assertNativeProximity(9,  "a b", "a x x x x x b x x x x a x x x b x x a x b a"));
-        EXPECT_TRUE(assertNativeProximity(9,  "b a", "a x x x x x b x x x x a x x x b x x a x b a"));
+        EXPECT_TRUE(assertNativeProximity(10, "a a", "a a"));    // term distance 1
+        EXPECT_TRUE(assertNativeProximity(6, "a a", "a x x a")); // term distance 3
+        EXPECT_TRUE(assertNativeProximity(9, "a b", "a x x x x x b x x x x a x x x b x x a x b a"));
+        EXPECT_TRUE(assertNativeProximity(9, "b a", "a x x x x x b x x x x a x x x b x x a x b a"));
 
         // 2 pairs ((ab),(bc))
-        EXPECT_TRUE(assertNativeProximity(5,  "a b c", "a b c"));
+        EXPECT_TRUE(assertNativeProximity(5, "a b c", "a b c"));
         EXPECT_TRUE(assertNativeProximity(10, "a b c", "a b c b a"));
 
         // change weight
-        EXPECT_TRUE(assertNativeProximity(4,   "a b c",     "a b x x c"));
+        EXPECT_TRUE(assertNativeProximity(4, "a b c", "a b x x c"));
         EXPECT_TRUE(assertNativeProximity(4.2, "a!200 b c", "a b x x c"));
         EXPECT_TRUE(assertNativeProximity(3.8, "a b c!200", "a b x x c"));
-        EXPECT_TRUE(assertNativeProximity(4.333, "a b c!0",   "a b x x c")); // ((100+100)*5 + (100+0)*3) / 300
-        EXPECT_TRUE(assertNativeProximity(5, "a b!0 c!0",   "a b x x c")); // ((100+0)*5 + (0+0)*3) / 100
-        EXPECT_TRUE(assertNativeProximity(0, "a!0 b!0",   "a b"));
+        EXPECT_TRUE(assertNativeProximity(4.333, "a b c!0", "a b x x c")); // ((100+100)*5 + (100+0)*3) / 300
+        EXPECT_TRUE(assertNativeProximity(5, "a b!0 c!0", "a b x x c"));   // ((100+0)*5 + (0+0)*3) / 100
+        EXPECT_TRUE(assertNativeProximity(0, "a!0 b!0", "a b"));
 
         // change significance
         EXPECT_TRUE(assertNativeProximity(4.692, "a%1 b%0.1 c%0.1", "a b x x c"));
         EXPECT_TRUE(assertNativeProximity(3.308, "a%0.1 b%0.1 c%1", "a b x x c"));
 
         // change connectedness
-        EXPECT_TRUE(assertNativeProximity(4,     "a 1:b 1:c",   "a b x x c"));
+        EXPECT_TRUE(assertNativeProximity(4, "a 1:b 1:c", "a b x x c"));
         EXPECT_TRUE(assertNativeProximity(3.667, "a 0.5:b 1:c", "a b x x c")); // (5*0.5 + 3*1) / (0.5 + 1)
 
         // change proximityImportance
@@ -653,13 +648,13 @@ TEST_F(NativeRankTest, test_native_proximity)
         // use table normalization
         p.clear().add("nativeRank.useTableNormalization", "true");
         // norm factor = (10*0.5 + 10*0.5) = 10
-        EXPECT_TRUE(assertNativeProximity(0.5, "a b",   "a b", p));
+        EXPECT_TRUE(assertNativeProximity(0.5, "a b", "a b", p));
         EXPECT_TRUE(assertNativeProximity(0.5, "a b c", "a b c", p));
-        EXPECT_TRUE(assertNativeProximity(1,   "a b",   "a b a", p));
-        EXPECT_TRUE(assertNativeProximity(1,   "a b c", "a b c b a", p));
+        EXPECT_TRUE(assertNativeProximity(1, "a b", "a b a", p));
+        EXPECT_TRUE(assertNativeProximity(1, "a b c", "a b c b a", p));
         p.add("nativeProximity.proximityTable", "linear(0,0)");
         p.add("nativeProximity.reverseProximityTable", "linear(0,0)");
-        EXPECT_TRUE(assertNativeProximity(0, "a b",   "a b", p));
+        EXPECT_TRUE(assertNativeProximity(0, "a b", "a b", p));
 
         // change field weight
         p.clear().add("vespa.fieldweight.foo", "0");
@@ -688,28 +683,19 @@ TEST_F(NativeRankTest, test_native_proximity)
     }
 }
 
-bool
-NativeRankTest::assertNativeProximity(feature_t score,
-                                      const std::string & query,
-                                      const std::string & field,
-                                      const Properties & props,
-                                      uint32_t docId)
-{
+bool NativeRankTest::assertNativeProximity(feature_t score, const std::string& query, const std::string& field,
+                                           const Properties& props, uint32_t docId) {
     std::vector<std::string> mv_field;
     mv_field.emplace_back(field);
     return assertNativeProximity(score, query, mv_field, props, std::nullopt, docId);
 }
 
-bool
-NativeRankTest::assertNativeProximity(feature_t score,
-                                      const std::string & query,
-                                      const std::vector<std::string> & field,
-                                      const Properties & props,
-                                      std::optional<ElementGap> element_gap,
-                                      uint32_t docId)
-{
+bool NativeRankTest::assertNativeProximity(feature_t score, const std::string& query,
+                                           const std::vector<std::string>& field, const Properties& props,
+                                           std::optional<ElementGap> element_gap, uint32_t docId) {
     std::ostringstream os;
-    os << "assertNativeProximity(" << score << ", " << std::quoted(query) << ", " << testing::PrintToString(field) << ")";
+    os << "assertNativeProximity(" << score << ", " << std::quoted(query) << ", " << testing::PrintToString(field)
+       << ")";
     if (element_gap.has_value()) {
         if (element_gap.value().has_value()) {
             os << ", element_gap=" << element_gap.value().value();
@@ -725,10 +711,11 @@ NativeRankTest::assertNativeProximity(feature_t score,
     LOG(info, "%s", os.str().c_str());
 
     // Setup feature test.
-    std::string feature = "nativeProximity";
+    std::string   feature = "nativeProximity";
     FtFeatureTest ft(_factory, feature);
 
-    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, DataType::STRING, element_gap, "foo");
+    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, DataType::STRING, element_gap,
+                                           "foo");
     ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(6)));
     ft.getIndexEnv().getProperties().add("nativeProximity.proximityTable", "linear(-2,10)");
     ft.getIndexEnv().getProperties().add("nativeProximity.reverseProximityTable", "linear(-2,10)");
@@ -751,8 +738,7 @@ NativeRankTest::assertNativeProximity(feature_t score,
     return true;
 }
 
-TEST_F(NativeRankTest, test_native_rank)
-{
+TEST_F(NativeRankTest, test_native_rank) {
     { // test blueprint
         NativeRankBlueprint pt;
 
@@ -767,43 +753,43 @@ TEST_F(NativeRankTest, test_native_rank)
         {
             FT_SETUP_OK(pt, params, in.add("nativeFieldMatch").add("nativeProximity").add("nativeAttributeMatch"),
                         out.add("score"));
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeRankParams & pas = (dynamic_cast<NativeRankBlueprint *>(bp.get()))->getParams();
-            EXPECT_EQ(pas.fieldMatchWeight,     100u);
+            const NativeRankParams& pas = (dynamic_cast<NativeRankBlueprint*>(bp.get()))->getParams();
+            EXPECT_EQ(pas.fieldMatchWeight, 100u);
             EXPECT_EQ(pas.attributeMatchWeight, 100u);
-            EXPECT_EQ(pas.proximityWeight,      25u);
+            EXPECT_EQ(pas.proximityWeight, 25u);
         }
         {
-            Properties & p = ft.getIndexEnv().getProperties();
+            Properties& p = ft.getIndexEnv().getProperties();
             p.add("nativeRank.useTableNormalization", "false");
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeRankParams & pas = (dynamic_cast<NativeRankBlueprint *>(bp.get()))->getParams();
+            const NativeRankParams& pas = (dynamic_cast<NativeRankBlueprint*>(bp.get()))->getParams();
             EXPECT_EQ(pas.proximityWeight, 100u);
             p.clear();
         }
         {
-            Properties & p = ft.getIndexEnv().getProperties();
-            p.add("nativeRank.fieldMatchWeight",     "200");
+            Properties& p = ft.getIndexEnv().getProperties();
+            p.add("nativeRank.fieldMatchWeight", "200");
             p.add("nativeRank.attributeMatchWeight", "300");
-            p.add("nativeRank.proximityWeight",      "400");
+            p.add("nativeRank.proximityWeight", "400");
             FT_SETUP_OK(pt, params, in, out);
-            Blueprint::UP bp = pt.createInstance();
+            Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
-            const NativeRankParams & pas = (dynamic_cast<NativeRankBlueprint *>(bp.get()))->getParams();
-            EXPECT_EQ(pas.fieldMatchWeight,     200u);
+            const NativeRankParams& pas = (dynamic_cast<NativeRankBlueprint*>(bp.get()))->getParams();
+            EXPECT_EQ(pas.fieldMatchWeight, 200u);
             EXPECT_EQ(pas.attributeMatchWeight, 300u);
-            EXPECT_EQ(pas.proximityWeight,      400u);
+            EXPECT_EQ(pas.proximityWeight, 400u);
         }
 
         FT_DUMP(_factory, "nativeRank", ft.getIndexEnv(), StringList().add("nativeRank"));
 
         { // test optimizations when weight == 0
-            Properties & p = ft.getIndexEnv().getProperties();
+            Properties& p = ft.getIndexEnv().getProperties();
             p.clear();
             p.add("nativeRank.fieldMatchWeight", "0");
             FT_SETUP_OK(pt, ft.getIndexEnv(), params,
@@ -812,7 +798,8 @@ TEST_F(NativeRankTest, test_native_rank)
             FT_SETUP_OK(pt, ft.getIndexEnv(), params,
                         in.clear().add("value(0)").add("value(0)").add("nativeAttributeMatch"), out);
             p.add("nativeRank.attributeMatchWeight", "0");
-            FT_SETUP_OK(pt, ft.getIndexEnv(), params, in.clear().add("value(0)").add("value(0)").add("value(0)"), out);
+            FT_SETUP_OK(pt, ft.getIndexEnv(), params, in.clear().add("value(0)").add("value(0)").add("value(0)"),
+                        out);
         }
         { // nativeRank for a subset of fields
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
@@ -820,44 +807,42 @@ TEST_F(NativeRankTest, test_native_rank)
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "baz");
             FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("foo").add("bar"), in, out);
             ft.getIndexEnv().getProperties().clear();
-            FT_SETUP_OK(pt, ft.getIndexEnv(), params,
-                        in.clear().add("nativeFieldMatch(foo)").add("nativeProximity(foo)").add("nativeAttributeMatch(bar)"), out);
+            FT_SETUP_OK(
+                pt, ft.getIndexEnv(), params,
+                in.clear().add("nativeFieldMatch(foo)").add("nativeProximity(foo)").add("nativeAttributeMatch(bar)"),
+                out);
             FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("foo").add("baz"),
-                        in.clear().add("nativeFieldMatch(foo,baz)").add("nativeProximity(foo,baz)").add("value(0)"), out);
+                        in.clear().add("nativeFieldMatch(foo,baz)").add("nativeProximity(foo,baz)").add("value(0)"),
+                        out);
             FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("bar"),
                         in.clear().add("value(0)").add("value(0)").add("nativeAttributeMatch(bar)"), out);
         }
     }
 
     { // test executor
-        assertNativeRank(60,   1, 1, 1);
-        assertNativeRank(72,   3, 1, 1);
+        assertNativeRank(60, 1, 1, 1);
+        assertNativeRank(72, 3, 1, 1);
         assertNativeRank(37.5, 0, 1, 3);
     }
 }
 
-bool
-NativeRankTest::assertNativeRank(feature_t score,
-                                 feature_t fieldMatchWeight,
-                                 feature_t attributeMatchWeight,
-                                 feature_t proximityWeight)
-{
+bool NativeRankTest::assertNativeRank(feature_t score, feature_t fieldMatchWeight, feature_t attributeMatchWeight,
+                                      feature_t proximityWeight) {
     LOG(info, "assertNativeRank(%f, %f, %f, %f)", score, fieldMatchWeight, attributeMatchWeight, proximityWeight);
 
     // Setup feature test.
-    std::string feature = "nativeRank";
+    std::string   feature = "nativeRank";
     FtFeatureTest ft(_factory, feature);
 
     ft.getIndexEnv().getProperties().add("nativeRank.fieldMatchWeight",
                                          vespalib::make_string("%f", fieldMatchWeight));
     ft.getIndexEnv().getProperties().add("nativeRank.attributeMatchWeight",
                                          vespalib::make_string("%f", attributeMatchWeight));
-    ft.getIndexEnv().getProperties().add("nativeRank.proximityWeight",
-                                         vespalib::make_string("%f", proximityWeight));
+    ft.getIndexEnv().getProperties().add("nativeRank.proximityWeight", vespalib::make_string("%f", proximityWeight));
 
-    ft.getOverrides().add("nativeFieldMatch",     "90");
+    ft.getOverrides().add("nativeFieldMatch", "90");
     ft.getOverrides().add("nativeAttributeMatch", "60");
-    ft.getOverrides().add("nativeProximity",      "30");
+    ft.getOverrides().add("nativeProximity", "30");
 
     bool failure = false;
     EXPECT_TRUE(ft.setup()) << (failure = true, "");
@@ -873,6 +858,6 @@ NativeRankTest::assertNativeRank(feature_t score,
     return true;
 }
 
-}
+} // namespace search::features
 
 GTEST_MAIN_RUN_ALL_TESTS()

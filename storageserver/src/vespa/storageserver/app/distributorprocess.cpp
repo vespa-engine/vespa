@@ -1,13 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributorprocess.h"
-#include <vespa/config/helper/configgetter.hpp>
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/config/config-stor-visitordispatcher.h>
+
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -15,59 +18,53 @@ LOG_SETUP(".process.distributor");
 
 namespace storage {
 
-DistributorProcess::DistributorProcess(const config::ConfigUri & configUri)
+DistributorProcess::DistributorProcess(const config::ConfigUri& configUri)
     : Process(configUri),
       _context(std::make_unique<framework::defaultimplementation::RealClock>()),
       _num_distributor_stripes(0), // TODO STRIPE: change default when legacy single stripe mode is removed
       _node(),
       _distributorConfigHandler(),
       _visitDispatcherConfigHandler(),
-      _storage_chain_builder()
-{
+      _storage_chain_builder() {
 }
 
 DistributorProcess::~DistributorProcess() {
     shutdown();
 }
 
-void
-DistributorProcess::shutdown()
-{
+void DistributorProcess::shutdown() {
     Process::shutdown();
     _node.reset();
 }
 
 namespace {
 
-uint32_t
-adjusted_num_distributor_stripes(int32_t cfg_n_stripes)
-{
+uint32_t adjusted_num_distributor_stripes(int32_t cfg_n_stripes) {
     if (cfg_n_stripes <= 0) {
         uint32_t cpu_cores = std::thread::hardware_concurrency();
         return storage::tune_num_stripes_based_on_cpu_cores(cpu_cores);
     } else {
         uint32_t adjusted_n_stripes = storage::adjusted_num_stripes(cfg_n_stripes);
         if (adjusted_n_stripes != static_cast<uint32_t>(cfg_n_stripes)) {
-            LOG(warning, "Configured number of distributor stripes (%d) is not valid. Adjusting to a valid value (%u)",
+            LOG(warning,
+                "Configured number of distributor stripes (%d) is not valid. Adjusting to a valid value (%u)",
                 cfg_n_stripes, adjusted_n_stripes);
         }
         return adjusted_n_stripes;
     }
 }
 
-}
+} // namespace
 
-void
-DistributorProcess::setupConfig(vespalib::duration subscribeTimeout)
-{
-    _distributorConfigHandler = _configSubscriber.subscribe<DistributorManagerConfig>(_configUri.getConfigId(), subscribeTimeout);
-    _visitDispatcherConfigHandler = _configSubscriber.subscribe<VisitorDispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
+void DistributorProcess::setupConfig(vespalib::duration subscribeTimeout) {
+    _distributorConfigHandler =
+        _configSubscriber.subscribe<DistributorManagerConfig>(_configUri.getConfigId(), subscribeTimeout);
+    _visitDispatcherConfigHandler =
+        _configSubscriber.subscribe<VisitorDispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
     Process::setupConfig(subscribeTimeout);
 }
 
-void
-DistributorProcess::updateConfig()
-{
+void DistributorProcess::updateConfig() {
     Process::updateConfig();
     if (_distributorConfigHandler->isChanged()) {
         _node->handleConfigChange(*_distributorConfigHandler->getConfig());
@@ -77,9 +74,7 @@ DistributorProcess::updateConfig()
     }
 }
 
-bool
-DistributorProcess::configUpdated()
-{
+bool DistributorProcess::configUpdated() {
     bool changed = Process::configUpdated();
     if (_distributorConfigHandler->isChanged()) {
         LOG(info, "Distributor manager config detected changed");
@@ -92,9 +87,7 @@ DistributorProcess::configUpdated()
     return changed;
 }
 
-void
-DistributorProcess::createNode()
-{
+void DistributorProcess::createNode() {
     auto distributor_config = _distributorConfigHandler->getConfig();
     _num_distributor_stripes = adjusted_num_distributor_stripes(distributor_config->numDistributorStripes);
     // TODO dedupe, consolidate
@@ -111,10 +104,8 @@ DistributorProcess::createNode()
     _node->handleConfigChange(*_visitDispatcherConfigHandler->getConfig());
 }
 
-void
-DistributorProcess::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder)
-{
+void DistributorProcess::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder) {
     _storage_chain_builder = std::move(builder);
 }
 
-} // storage
+} // namespace storage

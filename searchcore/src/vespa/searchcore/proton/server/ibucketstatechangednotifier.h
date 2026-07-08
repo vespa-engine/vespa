@@ -9,13 +9,12 @@ class IBucketStateChangedHandler;
 /**
  * Interface used to request notification when bucket state has changed.
  */
-class IBucketStateChangedNotifier
-{
+class IBucketStateChangedNotifier {
 public:
-    virtual void addBucketStateChangedHandler(IBucketStateChangedHandler *handler) = 0;
-    virtual void removeBucketStateChangedHandler(IBucketStateChangedHandler *handler) = 0;
-    
+    virtual void addBucketStateChangedHandler(IBucketStateChangedHandler* handler) = 0;
+    virtual void removeBucketStateChangedHandler(IBucketStateChangedHandler* handler) = 0;
+
     virtual ~IBucketStateChangedNotifier() = default;
 };
 
-}
+} // namespace proton

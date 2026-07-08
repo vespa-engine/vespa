@@ -7,22 +7,21 @@
 #include "singleboolattribute.h"
 #include "singlenumericpostattribute.h"
 #include "singlestringpostattribute.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 
-#define INTPOSTING(T)   SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>) >
-#define FLOATPOSTING(T) SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>) >
+#define INTPOSTING(T) SingleValueNumericPostingAttribute<ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>)>
+#define FLOATPOSTING(T) SingleValueNumericPostingAttribute<ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>)>
 
 namespace search {
 
 using attribute::BasicType;
 
-AttributeVector::SP
-AttributeFactory::createSingleFastSearch(std::string name, const Config & info)
-{
+AttributeVector::SP AttributeFactory::createSingleFastSearch(std::string name, const Config& info) {
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
     assert(info.fastSearch());
-    switch(info.basicType().type()) {
+    switch (info.basicType().type()) {
     case BasicType::BOOL:
         return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());
     case BasicType::UINT2:
@@ -53,4 +52,4 @@ AttributeFactory::createSingleFastSearch(std::string name, const Config & info)
     return AttributeVector::SP();
 }
 
-}
+} // namespace search

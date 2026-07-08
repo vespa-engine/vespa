@@ -235,12 +235,13 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void test_out_of_capacity_response() throws IOException {
         long sessionId = createSession(applicationId());
         String exceptionMessage = "Node allocation failure";
+        // Retryable exception, so should return something else than 400. 500 is not ideal, but nothing else fits
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testContext(),
                                                                                 applicationRepository,
                                                                                 configserverConfig,
                                                                                 new NodeAllocationException(exceptionMessage, true));
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
-        assertEquals(400, response.getStatus());
+        assertEquals(500, response.getStatus());
         Slime data = getData(response);
         assertEquals(HttpErrorResponse.ErrorCode.NODE_ALLOCATION_FAILURE.name(), data.get().field("error-code").asString());
         assertEquals(exceptionMessage, data.get().field("message").asString());
@@ -262,6 +263,21 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     @Test
+    public void test_that_unchecked_timeout_exception_gives_request_timeout() throws IOException {
+        long sessionId = createSession(applicationId());
+        String exceptionMessage = "prepare timed out after build models step";
+        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testContext(),
+                                                                                applicationRepository,
+                                                                                configserverConfig,
+                                                                                new UncheckedTimeoutException(exceptionMessage));
+        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
+        assertEquals(408, response.getStatus());
+        Slime data = getData(response);
+        assertEquals(HttpErrorResponse.ErrorCode.REQUEST_TIMEOUT.name(), data.get().field("error-code").asString());
+        assertEquals(exceptionMessage, data.get().field("message").asString());
+    }
+
+    @Test
     public void test_application_lock_failure() throws IOException {
         String exceptionMessage = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
         long sessionId = createSession(applicationId());
@@ -270,7 +286,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                                                                                 configserverConfig,
                                                                                 new ApplicationLockException(new UncheckedTimeoutException(exceptionMessage)));
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
-        assertEquals(500, response.getStatus());
+        assertEquals(409, response.getStatus());
         Slime data = getData(response);
         assertEquals(HttpErrorResponse.ErrorCode.APPLICATION_LOCK_FAILURE.name(), data.get().field("error-code").asString());
         assertEquals(exceptionMessage, data.get().field("message").asString());

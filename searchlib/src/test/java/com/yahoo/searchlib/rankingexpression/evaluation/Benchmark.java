@@ -7,13 +7,16 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.text.Utf8;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Simon Thoresen Hult
@@ -31,7 +34,7 @@ public final class Benchmark {
         }
         List<Result> res = new ArrayList<Result>();
         try {
-            BufferedReader in = new BufferedReader(new FileReader(args[0]));
+            BufferedReader in = new BufferedReader(Utf8.createReader(args[0]));
             StringBuilder str = new StringBuilder();
             String line;
             while ((line = in.readLine()) != null) {
@@ -56,7 +59,7 @@ public final class Benchmark {
                     System.exit(1);
                 }
             }
-            System.out.format("%1$-16s : %2$8.04f ms (%3$-6.04f)\n",
+            System.out.format(Locale.ROOT, "%1$-16s : %2$8.04f ms (%3$-6.04f)\n",
                               lhs.name, lhs.millis, res.get(0).millis / lhs.millis);
         }
     }

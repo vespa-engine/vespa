@@ -12,14 +12,13 @@ namespace proton {
  * If 1 job runs during a complete interval the sampled load is 1.0,
  * if 2 jobs run for 0.7 intervals each the load is 1.4.
  */
-class JobLoadSampler
-{
+class JobLoadSampler {
 private:
     using time_point = std::chrono::time_point<std::chrono::steady_clock>;
     time_point _lastSampleTime;
     time_point _lastUpdateTime;
-    uint32_t _currJobCnt;
-    double _loadIntegral;
+    uint32_t   _currJobCnt;
+    double     _loadIntegral;
 
     void updateIntegral(time_point now, uint32_t jobCnt);
 
@@ -46,4 +45,3 @@ public:
 };
 
 } // namespace proton
-

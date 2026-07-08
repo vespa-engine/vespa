@@ -3,14 +3,20 @@ package ai.vespa.metricsproxy.http.metrics;
 
 import ai.vespa.metricsproxy.metric.model.json.GenericApplicationModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
+import ai.vespa.metricsproxy.metric.model.json.GenericService;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Test;
 
+import java.io.IOException;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.http.metrics.MetricsV2Handler.V2_PATH;
 import static ai.vespa.metricsproxy.http.metrics.MetricsV2Handler.VALUES_PATH;
+import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv

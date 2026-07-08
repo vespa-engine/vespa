@@ -23,6 +23,7 @@ func newCurlCmd(cli *CLI) *cobra.Command {
 		Long: `Access Vespa directly using curl.
 
 Execute curl with the appropriate URL, certificate and private key for your application.
+Assumes MTLS authentication.
 
 For a more high-level interface to query and feeding, see the 'query' and 'document' commands.
 `,
@@ -38,7 +39,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 				return err
 			}
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			service, err := waiter.Service(target, cli.config.cluster())
+			service, err := waiter.ServiceWithAuthMethod(target, cli.config.cluster(), "mtls")
 			if err != nil {
 				return err
 			}

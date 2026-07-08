@@ -4,6 +4,7 @@
 #include "agefeature.h"
 #include "attributefeature.h"
 #include "attributematchfeature.h"
+#include "average_field_length_feature.h"
 #include "bm25_feature.h"
 #include "closenessfeature.h"
 #include "closest_feature.h"
@@ -11,7 +12,6 @@
 #include "debug_attribute_wait.h"
 #include "debug_wait.h"
 #include "distancefeature.h"
-#include "great_circle_distance_feature.h"
 #include "distancetopathfeature.h"
 #include "dotproductfeature.h"
 #include "element_completeness_feature.h"
@@ -22,23 +22,27 @@
 #include "fieldlengthfeature.h"
 #include "fieldmatchfeature.h"
 #include "fieldtermmatchfeature.h"
-#include "firstphasefeature.h"
+#include "first_phase_max_feature.h"
 #include "first_phase_rank_feature.h"
+#include "firstphasefeature.h"
 #include "flow_completeness_feature.h"
 #include "foreachfeature.h"
 #include "freshnessfeature.h"
 #include "global_sequence_feature.h"
+#include "great_circle_distance_feature.h"
 #include "item_raw_score_feature.h"
 #include "jarowinklerdistancefeature.h"
 #include "matchcountfeature.h"
 #include "matchesfeature.h"
 #include "matchfeature.h"
+#include "max_reduce_prod_join_replacer.h"
 #include "native_dot_product_feature.h"
 #include "nativeattributematchfeature.h"
 #include "nativefieldmatchfeature.h"
 #include "nativeproximityfeature.h"
 #include "nativerankfeature.h"
 #include "nowfeature.h"
+#include "num_docs_indexed_feature.h"
 #include "onnx_feature.h"
 #include "proximityfeature.h"
 #include "querycompletenessfeature.h"
@@ -53,6 +57,7 @@
 #include "second_phase_feature.h"
 #include "subqueries_feature.h"
 #include "tensor_from_labels_feature.h"
+#include "tensor_from_labels_with_offset_feature.h"
 #include "tensor_from_structs_feature.h"
 #include "tensor_from_weighted_set_feature.h"
 #include "term_field_md_feature.h"
@@ -63,21 +68,20 @@
 #include "text_similarity_feature.h"
 #include "valuefeature.h"
 
-#include "max_reduce_prod_join_replacer.h"
 #include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
 
-using search::fef::Blueprint;
-using search::features::rankingexpression::ListExpressionReplacer;
 using search::features::MaxReduceProdJoinReplacer;
+using search::features::rankingexpression::ListExpressionReplacer;
+using search::fef::Blueprint;
 
 namespace search::features {
 
-void setup_search_features(fef::IBlueprintRegistry & registry)
-{
+void setup_search_features(fef::IBlueprintRegistry& registry) {
     // Prod features.
     registry.addPrototype(std::make_shared<AgeBlueprint>());
     registry.addPrototype(std::make_shared<AttributeBlueprint>());
     registry.addPrototype(std::make_shared<AttributeMatchBlueprint>());
+    registry.addPrototype(std::make_shared<AverageFieldLengthBlueprint>());
     registry.addPrototype(std::make_shared<Bm25Blueprint>());
     registry.addPrototype(std::make_shared<ClosenessBlueprint>());
     registry.addPrototype(std::make_shared<ClosestBlueprint>());
@@ -95,6 +99,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<FieldMatchBlueprint>());
     registry.addPrototype(std::make_shared<FieldTermMatchBlueprint>());
     registry.addPrototype(std::make_shared<FirstPhaseBlueprint>());
+    registry.addPrototype(std::make_shared<FirstPhaseMaxBlueprint>());
     registry.addPrototype(std::make_shared<FirstPhaseRankBlueprint>());
     registry.addPrototype(std::make_shared<FlowCompletenessBlueprint>());
     registry.addPrototype(std::make_shared<ForeachBlueprint>());
@@ -109,6 +114,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<NativeProximityBlueprint>());
     registry.addPrototype(std::make_shared<NativeRankBlueprint>());
     registry.addPrototype(std::make_shared<NowBlueprint>());
+    registry.addPrototype(std::make_shared<NumDocsIndexedBlueprint>());
     registry.addPrototype(std::make_shared<QueryBlueprint>());
     registry.addPrototype(std::make_shared<QueryTermCountBlueprint>());
     registry.addPrototype(std::make_shared<RandomBlueprint>());
@@ -118,6 +124,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<SecondPhaseBlueprint>());
     registry.addPrototype(std::make_shared<SubqueriesBlueprint>());
     registry.addPrototype(std::make_shared<TensorFromLabelsBlueprint>());
+    registry.addPrototype(std::make_shared<TensorFromLabelsWithOffsetBlueprint>());
     registry.addPrototype(std::make_shared<TensorFromStructsBlueprint>());
     registry.addPrototype(std::make_shared<TensorFromWeightedSetBlueprint>());
     registry.addPrototype(std::make_shared<TermBlueprint>());
@@ -145,4 +152,4 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<RankingExpressionBlueprint>(std::move(replacers)));
 }
 
-}
+} // namespace search::features

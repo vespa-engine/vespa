@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Locale;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -114,7 +115,7 @@ public class BundleTest {
 
         var expected = List.of("ai.vespa.lib.public_api", "com.yahoo.lib.public_api", "com.yahoo.test");
         assertEquals(expected.size(), publicApi.size());
-        expected.forEach(pkg -> assertTrue(publicApi.contains(pkg), "Public api did not contain %s".formatted(pkg)));
+        expected.forEach(pkg -> assertTrue(publicApi.contains(pkg), String.format(Locale.ENGLISH, "Public api did not contain %s", pkg)));
     }
 
     @Test
@@ -125,7 +126,7 @@ public class BundleTest {
 
         var expected = List.of("ai.vespa.internal", "ai.vespa.lib.non_public", "com.yahoo.lib.non_public", "com.yahoo.non_public");
         assertEquals(expected.size(), nonPublicApi.size());
-        expected.forEach(pkg -> assertTrue(nonPublicApi.contains(pkg), "Non-public api did not contain %s".formatted(pkg)));
+        expected.forEach(pkg -> assertTrue(nonPublicApi.contains(pkg), String.format(Locale.ENGLISH, "Non-public api did not contain %s", pkg)));
    }
 
     @Test

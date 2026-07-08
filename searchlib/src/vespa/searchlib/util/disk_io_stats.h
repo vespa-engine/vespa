@@ -17,12 +17,7 @@ class DiskIoStats {
     uint64_t _read_bytes_max;
 
 public:
-    DiskIoStats() noexcept
-        : _read_operations(0),
-          _read_bytes_total(0),
-          _read_bytes_min(0),
-          _read_bytes_max(0)
-    {}
+    DiskIoStats() noexcept : _read_operations(0), _read_bytes_total(0), _read_bytes_min(0), _read_bytes_max(0) {}
 
     void add_read_operation(uint64_t bytes) noexcept {
         if (++_read_operations == 1) {
@@ -48,10 +43,8 @@ public:
         }
     }
     bool operator==(const DiskIoStats& rhs) const noexcept {
-        return _read_operations == rhs._read_operations &&
-               _read_bytes_total == rhs._read_bytes_total &&
-               _read_bytes_min == rhs._read_bytes_min &&
-               _read_bytes_max == rhs._read_bytes_max;
+        return _read_operations == rhs._read_operations && _read_bytes_total == rhs._read_bytes_total &&
+               _read_bytes_min == rhs._read_bytes_min && _read_bytes_max == rhs._read_bytes_max;
     }
     void clear() noexcept {
         _read_operations = 0;
@@ -59,12 +52,28 @@ public:
         _read_bytes_min = 0;
         _read_bytes_max = 0;
     }
-    DiskIoStats read_and_clear() noexcept { auto result = *this; clear(); return result; }
+    DiskIoStats read_and_clear() noexcept {
+        auto result = *this;
+        clear();
+        return result;
+    }
 
-    DiskIoStats& read_operations(uint64_t value) { _read_operations = value; return *this; }
-    DiskIoStats& read_bytes_total(uint64_t value) { _read_bytes_total = value; return *this; }
-    DiskIoStats& read_bytes_min(uint64_t value) { _read_bytes_min = value; return *this; }
-    DiskIoStats& read_bytes_max(uint64_t value) { _read_bytes_max = value; return *this; }
+    DiskIoStats& read_operations(uint64_t value) {
+        _read_operations = value;
+        return *this;
+    }
+    DiskIoStats& read_bytes_total(uint64_t value) {
+        _read_bytes_total = value;
+        return *this;
+    }
+    DiskIoStats& read_bytes_min(uint64_t value) {
+        _read_bytes_min = value;
+        return *this;
+    }
+    DiskIoStats& read_bytes_max(uint64_t value) {
+        _read_bytes_max = value;
+        return *this;
+    }
     uint64_t read_operations() const noexcept { return _read_operations; }
     uint64_t read_bytes_total() const noexcept { return _read_bytes_total; }
     uint64_t read_bytes_min() const noexcept { return _read_bytes_min; }
@@ -73,4 +82,4 @@ public:
 
 std::ostream& operator<<(std::ostream& os, const DiskIoStats& stats);
 
-}
+} // namespace search

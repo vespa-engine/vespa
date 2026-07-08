@@ -9,20 +9,18 @@ namespace search {
 namespace fef {
 namespace test {
 
-class QueryBlueprint : public Blueprint
-{
+class QueryBlueprint : public Blueprint {
 private:
     std::string _key;
 
 public:
     QueryBlueprint();
-    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
+    void visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const override {}
     Blueprint::UP createInstance() const override { return Blueprint::UP(new QueryBlueprint()); }
-    bool setup(const IIndexEnvironment &indexEnv, const StringVector &params) override;
-    FeatureExecutor &createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
+    bool setup(const IIndexEnvironment& indexEnv, const StringVector& params) override;
+    FeatureExecutor& createExecutor(const IQueryEnvironment& queryEnv, vespalib::Stash& stash) const override;
 };
 
 } // namespace test
 } // namespace fef
 } // namespace search
-

@@ -9,7 +9,9 @@
 
 #include <mutex>
 
-namespace metrics { class MetricLockGuard; }
+namespace metrics {
+class MetricLockGuard;
+}
 
 namespace storage::framework {
 
@@ -17,7 +19,7 @@ struct MetricUpdateHook {
     using MetricLockGuard = metrics::MetricLockGuard;
     virtual ~MetricUpdateHook() = default;
 
-    virtual void updateMetrics(const MetricLockGuard &) = 0;
+    virtual void updateMetrics(const MetricLockGuard&) = 0;
 };
 
-}
+} // namespace storage::framework

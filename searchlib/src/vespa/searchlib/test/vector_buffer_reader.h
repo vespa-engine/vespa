@@ -7,8 +7,7 @@
 #include <cstring>
 #include <vector>
 
-namespace search::test
-{
+namespace search::test {
 
 /*
  * Class used by hnsw graph/index unit tests to load hnsw index from a
@@ -17,7 +16,7 @@ namespace search::test
 class VectorBufferReader {
 private:
     const std::vector<char>& _data;
-    size_t _pos;
+    size_t                   _pos;
 
 public:
     VectorBufferReader(const std::vector<char>& data) : _data(data), _pos(0) {}
@@ -36,4 +35,4 @@ public:
     }
 };
 
-}
+} // namespace search::test

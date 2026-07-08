@@ -7,14 +7,23 @@ import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.test.TestFileUtil;
 import com.yahoo.messagebus.Routable;
+import com.yahoo.text.Text;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -130,9 +139,9 @@ public abstract class MessagesTestBase {
         assertTrue(data.length > 0);
         try {
             if (fileContentIsUnchanged(path, data)) {
-                System.out.println(String.format("Serialization for '%s' is unchanged; not overwriting it", path));
+                System.out.println(Text.format("Serialization for '%s' is unchanged; not overwriting it", path));
             } else {
-                System.out.println(String.format("Serializing to '%s'..", path));
+                System.out.println(Text.format("Serializing to '%s'..", path));
                 // This only happens when protocol encoding has changed and takes place
                 // during local development, not regular test runs.
                 TestFileUtil.writeToFile(path, data);

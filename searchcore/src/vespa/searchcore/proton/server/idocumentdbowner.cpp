@@ -4,10 +4,7 @@
 
 namespace proton {
 
-IDocumentDBOwner::~IDocumentDBOwner()
-{
+IDocumentDBOwner::~IDocumentDBOwner() {
 }
 
-
 } // namespace proton
-

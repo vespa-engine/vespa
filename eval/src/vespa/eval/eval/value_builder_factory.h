@@ -19,8 +19,7 @@ struct ValueBuilderBase {
  * time. Enables decoupling of what the value should contain from how
  * to store the value.
  **/
-template <typename T>
-struct ValueBuilder : ValueBuilderBase {
+template <typename T> struct ValueBuilder : ValueBuilderBase {
     // add a dense subspace for the given address (label for all
     // mapped dimensions in canonical order). Note that previously
     // returned subspaces will be invalidated when new subspaces are
@@ -54,38 +53,40 @@ struct ValueBuilder : ValueBuilderBase {
 struct ValueBuilderFactory {
 private:
     template <typename T>
-    std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType &type, bool transient,
-            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const
-    {
+    std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType& type, bool transient,
+                                                          size_t num_mapped_dims_in, size_t subspace_size_in,
+                                                          size_t expected_subspaces) const {
         assert(check_cell_type<T>(type.cell_type()));
-        auto base = create_value_builder_base(type, transient, num_mapped_dims_in, subspace_size_in, expected_subspaces);
-        auto *builder = static_cast<ValueBuilder<T>*>(base.get());
+        auto base =
+            create_value_builder_base(type, transient, num_mapped_dims_in, subspace_size_in, expected_subspaces);
+        auto* builder = static_cast<ValueBuilder<T>*>(base.get());
         base.release();
         return std::unique_ptr<ValueBuilder<T>>(builder);
     }
+
 public:
     template <typename T>
-    std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType &type,
-            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const
-    {
+    std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType& type, size_t num_mapped_dims_in,
+                                                          size_t subspace_size_in, size_t expected_subspaces) const {
         return create_value_builder<T>(type, false, num_mapped_dims_in, subspace_size_in, expected_subspaces);
     }
     template <typename T>
-    std::unique_ptr<ValueBuilder<T>> create_transient_value_builder(const ValueType &type,
-            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const
-    {
+    std::unique_ptr<ValueBuilder<T>> create_transient_value_builder(const ValueType& type, size_t num_mapped_dims_in,
+                                                                    size_t subspace_size_in,
+                                                                    size_t expected_subspaces) const {
         return create_value_builder<T>(type, true, num_mapped_dims_in, subspace_size_in, expected_subspaces);
     }
-    template <typename T>
-    std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType &type) const
-    {
+    template <typename T> std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType& type) const {
         return create_value_builder<T>(type, false, type.count_mapped_dimensions(), type.dense_subspace_size(), 1);
     }
-    std::unique_ptr<Value> copy(const Value &value) const;
+    std::unique_ptr<Value> copy(const Value& value) const;
     virtual ~ValueBuilderFactory() = default;
+
 protected:
-    virtual std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type, bool transient,
-            size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces) const = 0;
+    virtual std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType& type, bool transient,
+                                                                        size_t num_mapped_dims_in,
+                                                                        size_t subspace_size_in,
+                                                                        size_t expected_subspaces) const = 0;
 };
 
-}
+} // namespace vespalib::eval

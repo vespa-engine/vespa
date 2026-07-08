@@ -1,26 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
-
 #include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/multinumericpostattribute.h>
+#include <vespa/searchlib/attribute/multistringpostattribute.h>
 #include <vespa/searchlib/attribute/postinglistattribute.h>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
-#include <vespa/searchlib/attribute/multinumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
-#include <vespa/searchlib/attribute/multistringpostattribute.h>
 #include <vespa/searchlib/common/growablebitvector.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <string>
 #include <vespa/vespalib/util/compress.h>
+
 #include <vespa/searchlib/attribute/enumstore.hpp>
+
 #include <filesystem>
 #include <iostream>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("postinglistattribute_test");
@@ -35,11 +36,11 @@ using std::shared_ptr;
 
 namespace search {
 
-using attribute::CollectionType;
 using attribute::BasicType;
+using attribute::CollectionType;
 using attribute::Config;
-using queryeval::PostingInfo;
 using queryeval::MinMaxPostingInfo;
+using queryeval::PostingInfo;
 using search::attribute::SearchContext;
 using search::fef::TermFieldMatchData;
 using search::queryeval::SearchIterator;
@@ -47,13 +48,11 @@ using search::queryeval::SearchIterator;
 using SearchContextPtr = std::unique_ptr<SearchContext>;
 using SearchBasePtr = std::unique_ptr<search::queryeval::SearchIterator>;
 
-void
-toStr(std::stringstream &ss, SearchIterator &it, TermFieldMatchData *md)
-{
+void toStr(std::stringstream& ss, SearchIterator& it, TermFieldMatchData* md) {
     it.initFullRange();
     it.seek(1u);
     bool first = true;
-    while ( !it.isAtEnd()) {
+    while (!it.isAtEnd()) {
         if (first) {
             first = false;
         } else {
@@ -68,11 +67,7 @@ toStr(std::stringstream &ss, SearchIterator &it, TermFieldMatchData *md)
     }
 }
 
-
-bool
-assertIterator(const std::string &exp, SearchIterator &it,
-               TermFieldMatchData *md = nullptr)
-{
+bool assertIterator(const std::string& exp, SearchIterator& it, TermFieldMatchData* md = nullptr) {
     std::stringstream ss;
     toStr(ss, it, md);
     bool retval = true;
@@ -82,63 +77,60 @@ assertIterator(const std::string &exp, SearchIterator &it,
 
 using AttributePtr = AttributeVector::SP;
 
-class PostingListAttributeTest : public ::testing::Test
-{
+class PostingListAttributeTest : public ::testing::Test {
 protected:
     using largeint_t = IntegerAttribute::largeint_t;
     using DocSet = std::set<AttributeVector::DocId>;
 
-    using Int32PostingListAttribute = SingleValueNumericPostingAttribute<
-        EnumAttribute<IntegerAttributeTemplate<int32_t> > >;
-    using Int32ArrayPostingListAttribute = MultiValueNumericPostingAttribute<
-        EnumAttribute<IntegerAttributeTemplate<int32_t> >,
-        IEnumStore::AtomicIndex>;
-    using Int32WsetPostingListAttribute = MultiValueNumericPostingAttribute<
-        EnumAttribute<IntegerAttributeTemplate<int32_t> >,
-        multivalue::WeightedValue<IEnumStore::AtomicIndex> >;
+    using Int32PostingListAttribute =
+        SingleValueNumericPostingAttribute<EnumAttribute<IntegerAttributeTemplate<int32_t>>>;
+    using Int32ArrayPostingListAttribute =
+        MultiValueNumericPostingAttribute<EnumAttribute<IntegerAttributeTemplate<int32_t>>, IEnumStore::AtomicIndex>;
+    using Int32WsetPostingListAttribute =
+        MultiValueNumericPostingAttribute<EnumAttribute<IntegerAttributeTemplate<int32_t>>,
+                                          multivalue::WeightedValue<IEnumStore::AtomicIndex>>;
 
-    using FloatPostingListAttribute = SingleValueNumericPostingAttribute<
-        EnumAttribute<FloatingPointAttributeTemplate<float> > >;
-    using FloatArrayPostingListAttribute = MultiValueNumericPostingAttribute<
-        EnumAttribute<FloatingPointAttributeTemplate<float> >,
-        IEnumStore::AtomicIndex>;
-    using FloatWsetPostingListAttribute = MultiValueNumericPostingAttribute<
-        EnumAttribute<FloatingPointAttributeTemplate<float> >,
-        multivalue::WeightedValue<IEnumStore::AtomicIndex> >;
+    using FloatPostingListAttribute =
+        SingleValueNumericPostingAttribute<EnumAttribute<FloatingPointAttributeTemplate<float>>>;
+    using FloatArrayPostingListAttribute =
+        MultiValueNumericPostingAttribute<EnumAttribute<FloatingPointAttributeTemplate<float>>,
+                                          IEnumStore::AtomicIndex>;
+    using FloatWsetPostingListAttribute =
+        MultiValueNumericPostingAttribute<EnumAttribute<FloatingPointAttributeTemplate<float>>,
+                                          multivalue::WeightedValue<IEnumStore::AtomicIndex>>;
 
     using StringPostingListAttribute = SingleValueStringPostingAttribute;
     using StringArrayPostingListAttribute = ArrayStringPostingAttribute;
     using StringWsetPostingListAttribute = WeightedSetStringPostingAttribute;
 
-    template <typename VectorType>
-    void populate(VectorType &v);
+    template <typename VectorType> void populate(VectorType& v);
 
-    template <typename VectorType>
-    VectorType & as(AttributePtr &v);
+    template <typename VectorType> VectorType& as(AttributePtr& v);
 
-    IntegerAttribute & asInt(AttributePtr &v);
-    StringAttribute & asString(AttributePtr &v);
-    void buildTermQuery(std::vector<char> & buffer, const std::string & index, const std::string & term, bool prefix);
+    IntegerAttribute& asInt(AttributePtr& v);
+    StringAttribute& asString(AttributePtr& v);
+    void buildTermQuery(std::vector<char>& buffer, const std::string& index, const std::string& term, bool prefix);
 
     template <typename V, typename T>
-    SearchContextPtr getSearch(const V & vec, const T & term, bool prefix, const attribute::SearchContextParams & params=attribute::SearchContextParams());
+    SearchContextPtr getSearch(const V& vec, const T& term, bool prefix,
+                               const attribute::SearchContextParams& params = attribute::SearchContextParams());
 
-    template <typename V>
-    SearchContextPtr getSearch(const V & vec);
+    template <typename V> SearchContextPtr getSearch(const V& vec);
 
-    template <typename V>
-    SearchContextPtr getSearch2(const V & vec);
+    template <typename V> SearchContextPtr getSearch2(const V& vec);
 
-    bool assertSearch(const std::string &exp, StringAttribute &sa);
-    bool assertSearch(const std::string &exp, StringAttribute &v, const std::string &key);
-    bool assertSearch(const std::string &exp, IntegerAttribute &v, int32_t key);
-    void addDocs(const AttributePtr & ptr, uint32_t numDocs);
+    bool assertSearch(const std::string& exp, StringAttribute& sa);
+    bool assertSearch(const std::string& exp, StringAttribute& v, const std::string& key);
+    bool assertSearch(const std::string& exp, IntegerAttribute& v, int32_t key);
+    void addDocs(const AttributePtr& ptr, uint32_t numDocs);
 
     template <typename VectorType, typename BufferType, typename Range>
-    void checkPostingList(const VectorType & vec, const std::vector<BufferType> & values, const Range & range);
+    void checkPostingList(const VectorType& vec, const std::vector<BufferType>& values, const Range& range);
 
     template <typename BufferType>
-    void checkSearch(bool useBitVector, bool need_unpack, bool has_btree, bool has_bitvector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd);
+    void checkSearch(bool useBitVector, bool need_unpack, bool has_btree, bool has_bitvector,
+                     const AttributeVector& vec, const BufferType& term, uint32_t numHits, uint32_t docBegin,
+                     uint32_t docEnd);
 
     template <typename VectorType, typename BufferType>
     void testPostingList(const AttributePtr& ptr1, uint32_t numDocs, const std::vector<BufferType>& values);
@@ -147,22 +139,19 @@ protected:
     void testPostingList(bool enable_only_bitvector, uint32_t numDocs, uint32_t numUniqueValues);
 
     template <typename AttributeType, typename ValueType>
-    void checkPostingList(AttributeType & vec, ValueType value, DocSet expected);
+    void checkPostingList(AttributeType& vec, ValueType value, DocSet expected);
     template <typename AttributeType, typename ValueType>
-    void checkNonExistantPostingList(AttributeType & vec, ValueType value);
-    template <typename AttributeType, typename ValueType>
-    void testArithmeticValueUpdate(const AttributePtr & ptr);
+    void checkNonExistantPostingList(AttributeType& vec, ValueType value);
+    template <typename AttributeType, typename ValueType> void testArithmeticValueUpdate(const AttributePtr& ptr);
     void testArithmeticValueUpdate();
 
     template <typename VectorType, typename ValueType>
-    void testReload(const AttributePtr & ptr1, const AttributePtr & ptr2, const ValueType & value);
+    void testReload(const AttributePtr& ptr1, const AttributePtr& ptr2, const ValueType& value);
     void testReload();
 
-    template <typename VectorType>
-    void testMinMax(AttributePtr &ptr1, uint32_t trimmed);
+    template <typename VectorType> void testMinMax(AttributePtr& ptr1, uint32_t trimmed);
 
-    template <typename VectorType>
-    void testMinMax(AttributePtr &ptr1, AttributePtr &ptr2);
+    template <typename VectorType> void testMinMax(AttributePtr& ptr1, AttributePtr& ptr2);
 
     void testMinMax();
     void testStringFold();
@@ -170,11 +159,8 @@ protected:
     void testDupValuesInStringArray();
 };
 
-template <>
-void
-PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute &v)
-{
-    for(size_t i(0), m(v.getNumDocs()); i < m; i++) {
+template <> void PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute& v) {
+    for (size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
         if (i == 0)
             continue;
@@ -186,7 +172,7 @@ PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute &v)
                 v.append(i, -43, 14);
                 v.append(i, -42, -3);
             } else {
-                EXPECT_TRUE( v.update(i, -43) );
+                EXPECT_TRUE(v.update(i, -43));
             }
             v.commit();
             continue;
@@ -197,7 +183,7 @@ PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute &v)
                 v.append(i, -43, 14);
                 v.append(i, -42, -3);
             } else {
-                EXPECT_TRUE( v.update(i, -43) );
+                EXPECT_TRUE(v.update(i, -43));
             }
             v.commit();
             continue;
@@ -208,7 +194,7 @@ PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute &v)
                 v.append(i, -43, 12);
                 v.append(i, -42, -3);
             } else {
-                EXPECT_TRUE( v.update(i, -43) );
+                EXPECT_TRUE(v.update(i, -43));
             }
             v.commit();
             continue;
@@ -223,11 +209,8 @@ PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute &v)
     v.commit();
 }
 
-template <>
-void
-PostingListAttributeTest::populate<StringAttribute>(StringAttribute &v)
-{
-    for(size_t i(0), m(v.getNumDocs()); i < m; i++) {
+template <> void PostingListAttributeTest::populate<StringAttribute>(StringAttribute& v) {
+    for (size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
         if (i == 0)
             continue;
@@ -239,7 +222,7 @@ PostingListAttributeTest::populate<StringAttribute>(StringAttribute &v)
                 v.append(i, "bar", 14);
                 v.append(i, "foo", -3);
             } else {
-                EXPECT_TRUE( v.update(i, "bar") );
+                EXPECT_TRUE(v.update(i, "bar"));
             }
             v.commit();
             continue;
@@ -250,7 +233,7 @@ PostingListAttributeTest::populate<StringAttribute>(StringAttribute &v)
                 v.append(i, "bar", 14);
                 v.append(i, "foo", -3);
             } else {
-                EXPECT_TRUE( v.update(i, "bar") );
+                EXPECT_TRUE(v.update(i, "bar"));
             }
             v.commit();
             continue;
@@ -261,7 +244,7 @@ PostingListAttributeTest::populate<StringAttribute>(StringAttribute &v)
                 v.append(i, "bar", 12);
                 v.append(i, "foo", -3);
             } else {
-                EXPECT_TRUE( v.update(i, "bar") );
+                EXPECT_TRUE(v.update(i, "bar"));
             }
             v.commit();
             continue;
@@ -275,37 +258,22 @@ PostingListAttributeTest::populate<StringAttribute>(StringAttribute &v)
     }
 }
 
-
-template <typename VectorType>
-VectorType &
-PostingListAttributeTest::as(AttributePtr &v)
-{
-    VectorType *res = dynamic_cast<VectorType *>(v.get());
+template <typename VectorType> VectorType& PostingListAttributeTest::as(AttributePtr& v) {
+    VectorType* res = dynamic_cast<VectorType*>(v.get());
     assert(res != nullptr);
     return *res;
 }
 
-
-IntegerAttribute &
-PostingListAttributeTest::asInt(AttributePtr &v)
-{
+IntegerAttribute& PostingListAttributeTest::asInt(AttributePtr& v) {
     return as<IntegerAttribute>(v);
 }
 
-
-StringAttribute &
-PostingListAttributeTest::asString(AttributePtr &v)
-{
+StringAttribute& PostingListAttributeTest::asString(AttributePtr& v) {
     return as<StringAttribute>(v);
 }
 
-
-void
-PostingListAttributeTest::buildTermQuery(std::vector<char> &buffer,
-                                   const std::string &index,
-                                   const std::string &term,
-                                   bool prefix)
-{
+void PostingListAttributeTest::buildTermQuery(std::vector<char>& buffer, const std::string& index,
+                                              const std::string& term, bool prefix) {
     uint32_t indexLen = index.size();
     uint32_t termLen = term.size();
     uint32_t queryPacketSize = 1 + 2 * 4 + indexLen + termLen;
@@ -321,93 +289,64 @@ PostingListAttributeTest::buildTermQuery(std::vector<char> &buffer,
     buffer.resize(p);
 }
 
-
 template <typename V, typename T>
-SearchContextPtr
-PostingListAttributeTest::getSearch(const V &vec, const T &term, bool prefix, const attribute::SearchContextParams & params)
-{
-    std::vector<char> query;
+SearchContextPtr PostingListAttributeTest::getSearch(const V& vec, const T& term, bool prefix,
+                                                     const attribute::SearchContextParams& params) {
+    std::vector<char>     query;
     vespalib::asciistream ss;
     ss << term;
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
-    return (static_cast<const AttributeVector &>(vec)).getSearch(std::string_view(&query[0], query.size()), params);
+    return (static_cast<const AttributeVector&>(vec)).getSearch(std::string_view(&query[0], query.size()), params);
 }
 
-
-template <>
-SearchContextPtr
-PostingListAttributeTest::getSearch<IntegerAttribute>(const IntegerAttribute &v)
-{
+template <> SearchContextPtr PostingListAttributeTest::getSearch<IntegerAttribute>(const IntegerAttribute& v) {
     return getSearch<IntegerAttribute>(v, "[-42;-42]", false);
 }
 
-
-template <>
-SearchContextPtr
-PostingListAttributeTest::getSearch<StringAttribute>(const StringAttribute &v)
-{
-    return getSearch<StringAttribute, const std::string &>(v, "foo", false);
+template <> SearchContextPtr PostingListAttributeTest::getSearch<StringAttribute>(const StringAttribute& v) {
+    return getSearch<StringAttribute, const std::string&>(v, "foo", false);
 }
 
-
-template <>
-SearchContextPtr
-PostingListAttributeTest::getSearch2<IntegerAttribute>(const IntegerAttribute &v)
-{
+template <> SearchContextPtr PostingListAttributeTest::getSearch2<IntegerAttribute>(const IntegerAttribute& v) {
     return getSearch<IntegerAttribute>(v, "[-43;-43]", false);
 }
 
-
-template <>
-SearchContextPtr
-PostingListAttributeTest::getSearch2<StringAttribute>(const StringAttribute &v)
-{
-    return getSearch<StringAttribute, const std::string &>(v, "bar", false);
+template <> SearchContextPtr PostingListAttributeTest::getSearch2<StringAttribute>(const StringAttribute& v) {
+    return getSearch<StringAttribute, const std::string&>(v, "bar", false);
 }
 
-
-bool
-PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &sa)
-{
+bool PostingListAttributeTest::assertSearch(const std::string& exp, StringAttribute& sa) {
     TermFieldMatchData md;
-    SearchContextPtr sc = getSearch<StringAttribute>(sa);
+    SearchContextPtr   sc = getSearch<StringAttribute>(sa);
     sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
-    bool retval = true;
+    bool          retval = true;
     EXPECT_TRUE(assertIterator(exp, *sb)) << (retval = false, "");
     return retval;
 }
 
-
-bool
-PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &sa, const std::string &key)
-{
+bool PostingListAttributeTest::assertSearch(const std::string& exp, StringAttribute& sa, const std::string& key) {
     TermFieldMatchData md;
-    SearchContextPtr sc = getSearch<StringAttribute, std::string>(sa, key, false);
+    SearchContextPtr   sc = getSearch<StringAttribute, std::string>(sa, key, false);
     sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
-    bool retval = true;
+    bool          retval = true;
     EXPECT_TRUE(assertIterator(exp, *sb, &md)) << (retval = false, "");
     return retval;
 }
 
-bool
-PostingListAttributeTest::assertSearch(const std::string &exp, IntegerAttribute &ia, int32_t key)
-{
+bool PostingListAttributeTest::assertSearch(const std::string& exp, IntegerAttribute& ia, int32_t key) {
     TermFieldMatchData md;
-    SearchContextPtr sc = getSearch<IntegerAttribute, int32_t>(ia, key, false);
+    SearchContextPtr   sc = getSearch<IntegerAttribute, int32_t>(ia, key, false);
     sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
-    bool retval = true;
+    bool          retval = true;
     EXPECT_TRUE(assertIterator(exp, *sb, &md)) << (retval = false, "");
     return retval;
 }
 
-
-void
-PostingListAttributeTest::addDocs(const AttributePtr & ptr, uint32_t numDocs)
-{
+void PostingListAttributeTest::addDocs(const AttributePtr& ptr, uint32_t numDocs) {
     for (uint32_t i = 0; i < numDocs; ++i) {
         uint32_t doc;
         ASSERT_TRUE(ptr->addDoc(doc));
@@ -420,8 +359,9 @@ PostingListAttributeTest::addDocs(const AttributePtr & ptr, uint32_t numDocs)
 class RangeAlpha {
 private:
     uint32_t _part;
+
 public:
-    RangeAlpha(uint32_t part) : _part(part) { }
+    RangeAlpha(uint32_t part) : _part(part) {}
     uint32_t getBegin(uint32_t i) const { return i * _part; }
     uint32_t getEnd(uint32_t i) const { return (i + 1) * _part; }
 };
@@ -430,20 +370,19 @@ class RangeBeta {
 private:
     uint32_t _part;
     uint32_t _numValues;
+
 public:
-    RangeBeta(uint32_t part, uint32_t numValues) : _part(part), _numValues(numValues) { }
+    RangeBeta(uint32_t part, uint32_t numValues) : _part(part), _numValues(numValues) {}
     uint32_t getBegin(uint32_t i) const { return (_numValues - 1 - i) * _part; }
     uint32_t getEnd(uint32_t i) const { return (_numValues - i) * _part; }
 };
 
 template <typename VectorType, typename BufferType, typename RangeGenerator>
-void
-PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::vector<BufferType> & values,
-                                           const RangeGenerator & range)
-{
-    const typename VectorType::EnumStore & enumStore = vec.getEnumStore();
-    auto& dict = enumStore.get_dictionary();
-    const auto& posting_store = vec.get_posting_store();
+void PostingListAttributeTest::checkPostingList(const VectorType& vec, const std::vector<BufferType>& values,
+                                                const RangeGenerator& range) {
+    const typename VectorType::EnumStore& enumStore = vec.getEnumStore();
+    auto&                                 dict = enumStore.get_dictionary();
+    const auto&                           posting_store = vec.get_posting_store();
 
     for (size_t i = 0; i < values.size(); ++i) {
         const uint32_t docBegin = range.getBegin(i);
@@ -453,9 +392,9 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
         ASSERT_TRUE(find_result.first.valid());
         bool has_bitvector = VectorType::PostingStore::isBitVector(posting_store.getTypeId(find_result.second));
 
-        auto postings = posting_store.begin(find_result.second);
+        auto     postings = posting_store.begin(find_result.second);
         uint32_t numHits(0);
-        bool has_btree = postings.valid();
+        bool     has_btree = postings.valid();
         if (postings.valid()) {
             uint32_t doc = docBegin;
             for (; postings.valid(); ++postings) {
@@ -470,7 +409,7 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
         if (has_bitvector) {
             uint32_t doc = docBegin;
             uint32_t bv_num_hits = 0;
-            auto& bv = posting_store.getBitVectorEntry(find_result.second)->_bv->reader();
+            auto&    bv = posting_store.getBitVectorEntry(find_result.second)->_bv->reader();
             for (auto lid = bv.getFirstTrueBit(); lid < bv.size(); lid = bv.getNextTrueBit(lid + 1)) {
                 EXPECT_EQ(doc++, lid);
                 ++bv_num_hits;
@@ -484,15 +423,14 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
     }
 }
 
-
 template <typename BufferType>
-void
-PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool has_btree, bool has_bitvector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd)
-{
+void PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool has_btree, bool has_bitvector,
+                                           const AttributeVector& vec, const BufferType& term, uint32_t numHits,
+                                           uint32_t docBegin, uint32_t docEnd) {
     SearchContextPtr sc = getSearch(vec, term, false, attribute::SearchContextParams().useBitVector(useBitVector));
-    EXPECT_FALSE( ! sc );
+    EXPECT_FALSE(!sc);
     sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
-    auto est = sc->calc_hit_estimate();
+    auto     est = sc->calc_hit_estimate();
     uint32_t est_hits = est.est_hits();
     EXPECT_FALSE(est.is_unknown());
     EXPECT_EQ(numHits, est_hits);
@@ -511,39 +449,32 @@ PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool 
     it->initFullRange();
     EXPECT_TRUE(it->seekFirst(docBegin));
     EXPECT_EQ(docBegin, it->getDocId());
-    size_t hits(0);
+    size_t   hits(0);
     uint32_t lastDocId = it->getDocId();
-    while (! it->isAtEnd()) {
+    while (!it->isAtEnd()) {
         lastDocId = it->getDocId();
-        it->seek(lastDocId+1);
+        it->seek(lastDocId + 1);
         hits++;
     }
     EXPECT_EQ(numHits, hits);
     EXPECT_GE(est_hits, hits);
-    EXPECT_EQ(docEnd, lastDocId+1);
+    EXPECT_EQ(docEnd, lastDocId + 1);
 }
 
-
-AttributePtr
-create_attribute(const std::string_view name, const Config& cfg)
-{
+AttributePtr create_attribute(const std::string_view name, const Config& cfg) {
     return AttributeFactory::createAttribute(tmp_dir + "/" + std::string(name), cfg);
 }
 
-AttributePtr
-create_as(const AttributeVector& attr, const std::string& name_suffix)
-{
+AttributePtr create_as(const AttributeVector& attr, const std::string& name_suffix) {
     return create_attribute(attr.getName() + name_suffix, attr.getConfig());
 }
 
 template <typename VectorType, typename BufferType>
-void
-PostingListAttributeTest::testPostingList(const AttributePtr& ptr1, uint32_t numDocs,
-                                          const std::vector<BufferType>& values)
-{
+void PostingListAttributeTest::testPostingList(const AttributePtr& ptr1, uint32_t numDocs,
+                                               const std::vector<BufferType>& values) {
     LOG(info, "testPostingList: vector '%s'", ptr1->getName().c_str());
 
-    auto& vec1 = dynamic_cast<VectorType &>(*ptr1);
+    auto& vec1 = dynamic_cast<VectorType&>(*ptr1);
     addDocs(ptr1, numDocs);
 
     uint32_t part = numDocs / values.size();
@@ -581,23 +512,18 @@ PostingListAttributeTest::testPostingList(const AttributePtr& ptr1, uint32_t num
     checkPostingList(static_cast<VectorType&>(*ptr3.get()), values, RangeBeta(part, values.size()));
 }
 
-void
-PostingListAttributeTest::testPostingList()
-{
+void PostingListAttributeTest::testPostingList() {
     testPostingList(false);
     testPostingList(true);
 }
 
-void
-PostingListAttributeTest::testPostingList(bool enable_only_bitvector)
-{
+void PostingListAttributeTest::testPostingList(bool enable_only_bitvector) {
     testPostingList(enable_only_bitvector, 1000, 50);
     testPostingList(enable_only_bitvector, 2000, 10); // This should force bitvector
 }
 
-void
-PostingListAttributeTest::testPostingList(bool enable_only_bitvector, uint32_t numDocs, uint32_t numUniqueValues)
-{
+void PostingListAttributeTest::testPostingList(bool enable_only_bitvector, uint32_t numDocs,
+                                               uint32_t numUniqueValues) {
 
     { // IntegerAttribute
         std::vector<largeint_t> values;
@@ -657,7 +583,7 @@ PostingListAttributeTest::testPostingList(bool enable_only_bitvector, uint32_t n
 
     { // StringAttribute
         std::vector<std::string> values;
-        std::vector<const char *> charValues;
+        std::vector<const char*> charValues;
         values.reserve(numUniqueValues);
         charValues.reserve(numUniqueValues);
         for (uint32_t i = 0; i < numUniqueValues; ++i) {
@@ -691,12 +617,10 @@ PostingListAttributeTest::testPostingList(bool enable_only_bitvector, uint32_t n
 }
 
 template <typename AttributeType, typename ValueType>
-void
-PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value, DocSet expected)
-{
-    const typename AttributeType::EnumStore & enumStore = vec.getEnumStore();
-    auto& dict = enumStore.get_dictionary();
-    const auto& posting_store = vec.get_posting_store();
+void PostingListAttributeTest::checkPostingList(AttributeType& vec, ValueType value, DocSet expected) {
+    const typename AttributeType::EnumStore& enumStore = vec.getEnumStore();
+    auto&                                    dict = enumStore.get_dictionary();
+    const auto&                              posting_store = vec.get_posting_store();
     auto find_result = dict.find_posting_list(vec.getEnumStore().make_comparator(value), dict.get_frozen_root());
     ASSERT_TRUE(find_result.first.valid());
 
@@ -711,22 +635,18 @@ PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value,
 }
 
 template <typename AttributeType, typename ValueType>
-void
-PostingListAttributeTest::checkNonExistantPostingList(AttributeType & vec, ValueType value)
-{
+void PostingListAttributeTest::checkNonExistantPostingList(AttributeType& vec, ValueType value) {
     auto& dict = vec.getEnumStore().get_dictionary();
-    auto find_result = dict.find_posting_list(vec.getEnumStore().make_comparator(value), dict.get_frozen_root());
+    auto  find_result = dict.find_posting_list(vec.getEnumStore().make_comparator(value), dict.get_frozen_root());
     EXPECT_TRUE(!find_result.first.valid());
 }
 
 template <typename AttributeType, typename ValueType>
-void
-PostingListAttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
-{
+void PostingListAttributeTest::testArithmeticValueUpdate(const AttributePtr& ptr) {
     LOG(info, "testArithmeticValueUpdate: vector '%s'", ptr->getName().c_str());
 
     using Arith = document::ArithmeticValueUpdate;
-    AttributeType & vec = static_cast<AttributeType &>(*ptr.get());
+    AttributeType& vec = static_cast<AttributeType&>(*ptr.get());
 
     addDocs(ptr, 4);
 
@@ -763,7 +683,6 @@ PostingListAttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
         uint32_t docs[] = {3};
         checkPostingList<AttributeType, ValueType>(vec, 10, DocSet(docs, docs + 1));
     }
-
 
     // several inside a single commit
     for (uint32_t doc = 0; doc < 4; ++doc) {
@@ -807,9 +726,7 @@ PostingListAttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
     checkNonExistantPostingList<AttributeType, ValueType>(vec, 200);
 }
 
-void
-PostingListAttributeTest::testArithmeticValueUpdate()
-{
+void PostingListAttributeTest::testArithmeticValueUpdate() {
     { // IntegerAttribute
         Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
         cfg.setFastSearch(true);
@@ -825,14 +742,12 @@ PostingListAttributeTest::testArithmeticValueUpdate()
     }
 }
 
-
 template <typename VectorType, typename ValueType>
-void
-PostingListAttributeTest::testReload(const AttributePtr & ptr1, const AttributePtr & ptr2, const ValueType & value)
-{
+void PostingListAttributeTest::testReload(const AttributePtr& ptr1, const AttributePtr& ptr2,
+                                          const ValueType& value) {
     LOG(info, "testReload: vector '%s'", ptr1->getName().c_str());
 
-    VectorType & vec1 = static_cast<VectorType &>(*ptr1.get());
+    VectorType& vec1 = static_cast<VectorType&>(*ptr1.get());
 
     addDocs(ptr1, 5);
     for (uint32_t doc = 0; doc < 5; ++doc) {
@@ -851,9 +766,7 @@ PostingListAttributeTest::testReload(const AttributePtr & ptr1, const AttributeP
     }
 }
 
-void
-PostingListAttributeTest::testReload()
-{
+void PostingListAttributeTest::testReload() {
     { // IntegerAttribute
         Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
         cfg.setFastSearch(true);
@@ -900,19 +813,16 @@ PostingListAttributeTest::testReload()
     }
 }
 
-template <typename VectorType>
-void
-PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
-{
+template <typename VectorType> void PostingListAttributeTest::testMinMax(AttributePtr& ptr1, uint32_t trimmed) {
     TermFieldMatchData md;
-    SearchContextPtr sc = getSearch<VectorType>(as<VectorType>(ptr1));
+    SearchContextPtr   sc = getSearch<VectorType>(as<VectorType>(ptr1));
     sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     sb->initFullRange();
 
-    const PostingInfo *pi = sb->getPostingInfo();
+    const PostingInfo* pi = sb->getPostingInfo();
     ASSERT_TRUE(pi != nullptr);
-    const MinMaxPostingInfo *mmpi = dynamic_cast<const MinMaxPostingInfo *>(pi);
+    const MinMaxPostingInfo* mmpi = dynamic_cast<const MinMaxPostingInfo*>(pi);
     ASSERT_TRUE(mmpi != nullptr);
 
     if (ptr1->hasMultiValue()) {
@@ -940,7 +850,7 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
         ASSERT_TRUE(pi == nullptr);
     } else {
         ASSERT_TRUE(pi != nullptr);
-        mmpi = dynamic_cast<const MinMaxPostingInfo *>(pi);
+        mmpi = dynamic_cast<const MinMaxPostingInfo*>(pi);
         ASSERT_TRUE(mmpi != nullptr);
 
         if (ptr1->hasMultiValue()) {
@@ -964,14 +874,11 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
     }
 }
 
-template <typename VectorType>
-void
-PostingListAttributeTest::testMinMax(AttributePtr &ptr1, AttributePtr &ptr2)
-{
+template <typename VectorType> void PostingListAttributeTest::testMinMax(AttributePtr& ptr1, AttributePtr& ptr2) {
     uint32_t numDocs = 100;
     addDocs(ptr1, numDocs);
     populate(as<VectorType>(ptr1));
-    
+
     {
         SCOPED_TRACE("after populate");
         testMinMax<VectorType>(ptr1, 0u);
@@ -995,12 +902,9 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, AttributePtr &ptr2)
     ptr2->commit();
     SCOPED_TRACE("after 2 trim rounds");
     testMinMax<VectorType>(ptr2, 2u);
-    
 }
 
-void
-PostingListAttributeTest::testMinMax()
-{
+void PostingListAttributeTest::testMinMax() {
     {
         Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
         cfg.setFastSearch(true);
@@ -1031,18 +935,15 @@ PostingListAttributeTest::testMinMax()
     }
 }
 
-
-void
-PostingListAttributeTest::testStringFold()
-{
+void PostingListAttributeTest::testStringFold() {
     Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
     cfg.setFastSearch(true);
     AttributePtr ptr1 = create_attribute("sstr_1", cfg);
 
     addDocs(ptr1, 6);
 
-    StringAttribute &sa(asString(ptr1));
-    
+    StringAttribute& sa(asString(ptr1));
+
     sa.update(1, "a");
     sa.commit();
     sa.update(3, "FOo");
@@ -1075,15 +976,13 @@ PostingListAttributeTest::testStringFold()
     EXPECT_TRUE(assertSearch("", sa));
 }
 
-void
-PostingListAttributeTest::testDupValuesInIntArray()
-{
+void PostingListAttributeTest::testDupValuesInIntArray() {
     Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
     cfg.setFastSearch(true);
     AttributePtr ptr1 = create_attribute("aint32_3", cfg);
     addDocs(ptr1, 6);
 
-    IntegerAttribute &ia(asInt(ptr1));
+    IntegerAttribute& ia(asInt(ptr1));
 
     ia.append(1, 1, 1);
     ia.append(1, 1, 1);
@@ -1100,15 +999,13 @@ PostingListAttributeTest::testDupValuesInIntArray()
     EXPECT_TRUE(assertSearch("1[w=1],2[w=2]", ia, 1));
 }
 
-void
-PostingListAttributeTest::testDupValuesInStringArray()
-{
+void PostingListAttributeTest::testDupValuesInStringArray() {
     Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
     cfg.setFastSearch(true);
     AttributePtr ptr1 = create_attribute("astr_3", cfg);
     addDocs(ptr1, 6);
 
-    StringAttribute &sa(asString(ptr1));
+    StringAttribute& sa(asString(ptr1));
 
     sa.append(1, "foo", 1);
     sa.append(1, "foo", 1);
@@ -1135,47 +1032,37 @@ PostingListAttributeTest::testDupValuesInStringArray()
     EXPECT_TRUE(assertSearch("3[w=1],4[w=2]", sa, "bar"));
 }
 
-
-TEST_F(PostingListAttributeTest, test_posting_list)
-{
+TEST_F(PostingListAttributeTest, test_posting_list) {
     testPostingList();
 }
 
-TEST_F(PostingListAttributeTest, test_arithmetic_value_update)
-{
+TEST_F(PostingListAttributeTest, test_arithmetic_value_update) {
     testArithmeticValueUpdate();
 }
 
-TEST_F(PostingListAttributeTest, test_reload)
-{
+TEST_F(PostingListAttributeTest, test_reload) {
     testReload();
 }
 
-TEST_F(PostingListAttributeTest, test_min_max)
-{
+TEST_F(PostingListAttributeTest, test_min_max) {
     testMinMax();
 }
 
-TEST_F(PostingListAttributeTest, test_string_fold)
-{
+TEST_F(PostingListAttributeTest, test_string_fold) {
     testStringFold();
 }
 
-TEST_F(PostingListAttributeTest, test_dup_values_in_int_array)
-{
+TEST_F(PostingListAttributeTest, test_dup_values_in_int_array) {
     testDupValuesInIntArray();
 }
 
-TEST_F(PostingListAttributeTest, test_dup_values_in_string_array)
-{
+TEST_F(PostingListAttributeTest, test_dup_values_in_string_array) {
     testDupValuesInStringArray();
 }
 
-}
+} // namespace search
 
-int
-main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     std::filesystem::remove_all(std::filesystem::path(tmp_dir));
     std::filesystem::create_directories(std::filesystem::path(tmp_dir));

@@ -22,6 +22,7 @@ class DocumentInverterCollection {
     std::unique_ptr<DocumentInverter>              _active_inverter;
     uint32_t                                       _num_inverters;
     uint32_t                                       _max_inverters;
+
 public:
     DocumentInverterCollection(DocumentInverterContext& context, uint32_t max_inverters);
     ~DocumentInverterCollection();
@@ -31,4 +32,4 @@ public:
     uint32_t get_max_inverters() const noexcept { return _max_inverters; }
 };
 
-}
+} // namespace search::memoryindex

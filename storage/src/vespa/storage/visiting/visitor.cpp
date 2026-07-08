@@ -1,24 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitor.h"
+
 #include "visitormetrics.h"
-#include <vespa/document/select/node.h>
+
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/select/node.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/persistence/spi/docentry.h>
+#include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageframework/generic/clock/timer.h>
-#include <vespa/storage/persistence/messages.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <format>
-#include <unordered_map>
-#include <sstream>
+
 #include <cassert>
+#include <format>
+#include <sstream>
+#include <unordered_map>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.visitor");
@@ -27,35 +30,25 @@ using document::BucketSpace;
 
 namespace storage {
 
-Visitor::HitCounter::HitCounter()
-    : _doc_hits(0),
-      _doc_bytes(0)
-{
+Visitor::HitCounter::HitCounter() : _doc_hits(0), _doc_bytes(0) {
 }
 
-void
-Visitor::HitCounter::addHit(const document::DocumentId& , uint32_t size)
-{
+void Visitor::HitCounter::addHit(const document::DocumentId&, uint32_t size) {
     _doc_hits++;
     _doc_bytes += size;
 }
 
-void
-Visitor::HitCounter::updateVisitorStatistics(vdslib::VisitorStatistics& statistics) const
-{
+void Visitor::HitCounter::updateVisitorStatistics(vdslib::VisitorStatistics& statistics) const {
     statistics.setDocumentsReturned(statistics.getDocumentsReturned() + _doc_hits);
     statistics.setBytesReturned(statistics.getBytesReturned() + _doc_bytes);
 }
 
-Visitor::VisitorTarget::MessageMeta::MessageMeta(
-        uint64_t msgId,
-        std::unique_ptr<documentapi::DocumentMessage> msg)
+Visitor::VisitorTarget::MessageMeta::MessageMeta(uint64_t msgId, std::unique_ptr<documentapi::DocumentMessage> msg)
     : messageId(msgId),
       retryCount(0),
       memoryUsage(msg->getApproxSize()),
       message(std::move(msg)),
-      messageText(message->toString())
-{
+      messageText(message->toString()) {
 }
 
 Visitor::VisitorTarget::MessageMeta::MessageMeta(Visitor::VisitorTarget::MessageMeta&& rhs) noexcept
@@ -63,16 +56,13 @@ Visitor::VisitorTarget::MessageMeta::MessageMeta(Visitor::VisitorTarget::Message
       retryCount(rhs.retryCount),
       memoryUsage(rhs.memoryUsage),
       message(std::move(rhs.message)),
-      messageText(std::move(rhs.messageText))
-{
+      messageText(std::move(rhs.messageText)) {
 }
 
 Visitor::VisitorTarget::MessageMeta::~MessageMeta() = default;
 
 Visitor::VisitorTarget::MessageMeta&
-Visitor::VisitorTarget::MessageMeta::operator=(
-        Visitor::VisitorTarget::MessageMeta&& rhs) noexcept
-{
+Visitor::VisitorTarget::MessageMeta::operator=(Visitor::VisitorTarget::MessageMeta&& rhs) noexcept {
     messageId = rhs.messageId;
     retryCount = rhs.retryCount;
     memoryUsage = rhs.memoryUsage;
@@ -82,21 +72,17 @@ Visitor::VisitorTarget::MessageMeta::operator=(
 }
 
 Visitor::VisitorTarget::MessageMeta&
-Visitor::VisitorTarget::insertMessage(
-        std::unique_ptr<documentapi::DocumentMessage> msg)
-{
+Visitor::VisitorTarget::insertMessage(std::unique_ptr<documentapi::DocumentMessage> msg) {
     ++_pendingMessageId;
     const uint64_t id = _pendingMessageId;
-    MessageMeta value(id, std::move(msg));
+    MessageMeta    value(id, std::move(msg));
     _memoryUsage += value.memoryUsage;
     auto inserted = _messageMeta.insert(std::make_pair(id, std::move(value)));
     assert(inserted.second);
     return inserted.first->second;
 }
 
-Visitor::VisitorTarget::MessageMeta
-Visitor::VisitorTarget::releaseMetaForMessageId(uint64_t msgId)
-{
+Visitor::VisitorTarget::MessageMeta Visitor::VisitorTarget::releaseMetaForMessageId(uint64_t msgId) {
     auto iter = _messageMeta.find(msgId);
     assert(iter != _messageMeta.end());
     MessageMeta meta = std::move(iter->second);
@@ -106,45 +92,36 @@ Visitor::VisitorTarget::releaseMetaForMessageId(uint64_t msgId)
     return meta;
 }
 
-void
-Visitor::VisitorTarget::reinsertMeta(MessageMeta meta)
-{
+void Visitor::VisitorTarget::reinsertMeta(MessageMeta meta) {
     _memoryUsage += meta.memoryUsage;
-    auto inserted = _messageMeta.insert(
-            std::make_pair(meta.messageId, std::move(meta)));
-    (void) inserted;
+    auto inserted = _messageMeta.insert(std::make_pair(meta.messageId, std::move(meta)));
+    (void)inserted;
     assert(inserted.second);
 }
 
-Visitor::VisitorTarget::MessageMeta&
-Visitor::VisitorTarget::metaForMessageId(uint64_t msgId)
-{
+Visitor::VisitorTarget::MessageMeta& Visitor::VisitorTarget::metaForMessageId(uint64_t msgId) {
     return _messageMeta.find(msgId)->second;
 }
 
-void
-Visitor::VisitorTarget::discardQueuedMessages()
-{
-    for (const auto & entry : _queuedMessages) {
+void Visitor::VisitorTarget::discardQueuedMessages() {
+    for (const auto& entry : _queuedMessages) {
         LOG(spam, "Erasing queued message with id %" PRIu64, entry.second);
         releaseMetaForMessageId(entry.second);
     }
     _queuedMessages.clear();
 }
 
-Visitor::BucketIterationState::~BucketIterationState()
-{
+Visitor::BucketIterationState::~BucketIterationState() {
     if (_iteratorId != 0) {
         // Making the assumption that this is effectively nothrow.
         auto cmd = std::make_shared<DestroyIteratorCommand>(_iteratorId);
         cmd->getTrace().setLevel(_visitor._traceLevel);
         cmd->setPriority(0);
 
-        LOG(debug, "Visitor '%s' sending DestroyIteratorCommand for %s, "
+        LOG(debug,
+            "Visitor '%s' sending DestroyIteratorCommand for %s, "
             "iterator id %" PRIu64 ".",
-            _visitor._id.c_str(),
-            _bucket.getBucketId().toString().c_str(),
-            uint64_t(_iteratorId));
+            _visitor._id.c_str(), _bucket.getBucketId().toString().c_str(), uint64_t(_iteratorId));
         _messageHandler.send(cmd, _visitor);
     }
 }
@@ -156,14 +133,10 @@ Visitor::VisitorOptions::VisitorOptions()
       _maxParallelOneBucket(2),
       _maxPending(1),
       _fieldSet(document::AllFields::NAME),
-      _visitRemoves(false)
-{
+      _visitRemoves(false) {
 }
 
-Visitor::VisitorTarget::VisitorTarget()
-    : _pendingMessageId(0),
-      _memoryUsage(0)
-{
+Visitor::VisitorTarget::VisitorTarget() : _pendingMessageId(0), _memoryUsage(0) {
 }
 
 Visitor::VisitorTarget::~VisitorTarget() = default;
@@ -201,20 +174,17 @@ Visitor::Visitor(StorageComponent& component)
       _id(),
       _controlDestination(),
       _dataDestination(),
-      _documentSelection()
-{
+      _documentSelection() {
 }
 
-Visitor::~Visitor()
-{
+Visitor::~Visitor() {
     assert(_bucketStates.empty());
 }
 
-void
-Visitor::sendMessage(documentapi::DocumentMessage::UP cmd)
-{
+void Visitor::sendMessage(documentapi::DocumentMessage::UP cmd) {
     assert(cmd);
-    if (!isRunning()) return;
+    if (!isRunning())
+        return;
     cmd->setRoute(*_dataDestination);
 
     cmd->setPriority(_documentPriority);
@@ -232,30 +202,28 @@ Visitor::sendMessage(documentapi::DocumentMessage::UP cmd)
     sendDocumentApiMessage(msgMeta);
 }
 
-void
-Visitor::sendDocumentApiMessage(VisitorTarget::MessageMeta& msgMeta) {
+void Visitor::sendDocumentApiMessage(VisitorTarget::MessageMeta& msgMeta) {
     documentapi::DocumentMessage& cmd(*msgMeta.message);
     // Just enqueue if it's not time to send this message yet
-    if (_messageSession->pending() >= _visitorOptions._maxPending
-        && cmd.getType() != documentapi::DocumentProtocol::MESSAGE_VISITORINFO)
+    if (_messageSession->pending() >= _visitorOptions._maxPending &&
+        cmd.getType() != documentapi::DocumentProtocol::MESSAGE_VISITORINFO)
     {
         MBUS_TRACE(cmd.getTrace(), 5,
                    vespalib::make_string("Enqueueing message because the visitor already had %d pending messages",
                                          _visitorOptions._maxPending));
 
-        LOG(spam, "Visitor '%s' enqueueing message with id %" PRIu64,
-            _id.c_str(), msgMeta.messageId);
+        LOG(spam, "Visitor '%s' enqueueing message with id %" PRIu64, _id.c_str(), msgMeta.messageId);
         _visitorTarget._queuedMessages.insert(std::make_pair(vespalib::steady_time::min(), msgMeta.messageId));
     } else {
-        LOG(spam, "Visitor '%s' immediately sending message '%s' with id %" PRIu64,
-            _id.c_str(), cmd.toString().c_str(), msgMeta.messageId);
+        LOG(spam, "Visitor '%s' immediately sending message '%s' with id %" PRIu64, _id.c_str(),
+            cmd.toString().c_str(), msgMeta.messageId);
         cmd.setContext(msgMeta.messageId);
         mbus::Result res(_messageSession->send(std::move(msgMeta.message)));
         if (res.isAccepted()) {
             _visitorTarget._pendingMessages.insert(msgMeta.messageId);
         } else {
-            LOG(warning, "Visitor '%s' failed to send DocumentAPI message: %s",
-                _id.c_str(), res.getError().toString().c_str());
+            LOG(warning, "Visitor '%s' failed to send DocumentAPI message: %s", _id.c_str(),
+                res.getError().toString().c_str());
             api::ReturnCode returnCode(static_cast<api::ReturnCode::Result>(res.getError().getCode()),
                                        res.getError().getMessage());
             fail(returnCode, true);
@@ -264,11 +232,10 @@ Visitor::sendDocumentApiMessage(VisitorTarget::MessageMeta& msgMeta) {
     }
 }
 
-void
-Visitor::sendInfoMessage(documentapi::VisitorInfoMessage::UP cmd)
-{
+void Visitor::sendInfoMessage(documentapi::VisitorInfoMessage::UP cmd) {
     assert(cmd);
-    if (!isRunning()) return;
+    if (!isRunning())
+        return;
 
     if (!_controlDestination->toString().empty()) {
         cmd->setRoute(*_controlDestination);
@@ -279,18 +246,14 @@ Visitor::sendInfoMessage(documentapi::VisitorInfoMessage::UP cmd)
     }
 }
 
-void
-Visitor::close()
-{
+void Visitor::close() {
     if (_state != STATE_COMPLETED) {
         transitionTo(STATE_CLOSING);
     }
     sendReplyOnce();
 }
 
-const char*
-Visitor::getStateName(VisitorState s)
-{
+const char* Visitor::getStateName(VisitorState s) {
     switch (s) {
     case STATE_NOT_STARTED:
         return "NOT_STARTED";
@@ -306,29 +269,20 @@ Visitor::getStateName(VisitorState s)
     }
 }
 
-Visitor::VisitorState
-Visitor::transitionTo(VisitorState newState)
-{
+Visitor::VisitorState Visitor::transitionTo(VisitorState newState) {
     LOG(debug, "Visitor '%s' state transition %s -> %s", _id.c_str(), getStateName(_state), getStateName(newState));
     VisitorState oldState = _state;
     _state = newState;
     return oldState;
 }
 
-bool
-Visitor::mayTransitionToCompleted() const
-{
-    return (!isRunning()
-            && !hasPendingIterators()
-            && _visitorTarget._pendingMessages.empty()
-            && _visitorTarget._queuedMessages.empty()
-            && _messageSession->pending() == 0);
+bool Visitor::mayTransitionToCompleted() const {
+    return (!isRunning() && !hasPendingIterators() && _visitorTarget._pendingMessages.empty() &&
+            _visitorTarget._queuedMessages.empty() && _messageSession->pending() == 0);
 }
 
-void
-Visitor::forceClose()
-{
-    for (auto * state : _bucketStates) {
+void Visitor::forceClose() {
+    for (auto* state : _bucketStates) {
         // Reset iterator id so no destroy iterator will be sent
         state->setIteratorId(spi::IteratorId(0));
         delete state;
@@ -337,9 +291,7 @@ Visitor::forceClose()
     transitionTo(STATE_COMPLETED);
 }
 
-void
-Visitor::sendReplyOnce()
-{
+void Visitor::sendReplyOnce() {
     assert(_initiatingCmd);
     if (!_hasSentReply) {
         std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
@@ -356,9 +308,7 @@ Visitor::sendReplyOnce()
     }
 }
 
-void
-Visitor::finalize()
-{
+void Visitor::finalize() {
     if (_state != STATE_COMPLETED) {
         LOG(error, "Attempting to finalize non-completed visitor %s", _id.c_str());
         assert(false);
@@ -371,7 +321,8 @@ Visitor::finalize()
             try {
                 abortedVisiting();
             } catch (std::exception& e) {
-                LOG(warning, "Visitor %s had a problem in abortVisiting(). As "
+                LOG(warning,
+                    "Visitor %s had a problem in abortVisiting(). As "
                     "visitor is already complete, this has been ignored: %s",
                     _id.c_str(), e.what());
             }
@@ -386,14 +337,12 @@ Visitor::finalize()
  * we can safely discard it when a visitor fails. No need to push
  * more traffic to the persistence layer.
  */
-void
-Visitor::discardAllNoPendingBucketStates()
-{
-    for (auto it = _bucketStates.begin(); it !=_bucketStates.end();) {
+void Visitor::discardAllNoPendingBucketStates() {
+    for (auto it = _bucketStates.begin(); it != _bucketStates.end();) {
         BucketIterationState& bstate(**it);
         if (bstate.hasPendingControlCommand() || bstate.hasPendingIterators()) {
-            LOG(debug, "Visitor '%s' not discarding bucket state %s since it has pending operations",
-                _id.c_str(), bstate.toString().c_str());
+            LOG(debug, "Visitor '%s' not discarding bucket state %s since it has pending operations", _id.c_str(),
+                bstate.toString().c_str());
             ++it;
             continue;
         }
@@ -403,47 +352,39 @@ Visitor::discardAllNoPendingBucketStates()
     }
 }
 
-void
-Visitor::fail(const api::ReturnCode& reason, bool overrideExistingError)
-{
+void Visitor::fail(const api::ReturnCode& reason, bool overrideExistingError) {
     assert(_state != STATE_COMPLETED);
     if (_result.getResult() < reason.getResult() || overrideExistingError) {
         LOG(debug, "Setting result of visitor '%s' to %s", _id.c_str(), reason.toString().c_str());
         _result = reason;
     }
     if (_visitorTarget.hasQueuedMessages()) {
-        LOG(debug, "Visitor '%s' dropping %zu queued messages bound to %s since visitor has failed",
-            _id.c_str(), _visitorTarget._queuedMessages.size(), _controlDestination->toString().c_str());
+        LOG(debug, "Visitor '%s' dropping %zu queued messages bound to %s since visitor has failed", _id.c_str(),
+            _visitorTarget._queuedMessages.size(), _controlDestination->toString().c_str());
         _visitorTarget.discardQueuedMessages();
     }
     discardAllNoPendingBucketStates();
     transitionTo(STATE_CLOSING);
 }
 
-bool
-Visitor::shouldReportProblemToClient(const api::ReturnCode& code, size_t retryCount)
-{
+bool Visitor::shouldReportProblemToClient(const api::ReturnCode& code, size_t retryCount) {
     // Report _once_ per message if we reach a certain retry threshold.
     if (retryCount == TRANSIENT_ERROR_RETRIES_BEFORE_NOTIFY) {
         return true;
     }
-    return !(code.isBucketDisappearance()
-             || code.isBusy()
-             || code == api::ReturnCode::WRONG_DISTRIBUTION);
+    return !(code.isBucketDisappearance() || code.isBusy() || code == api::ReturnCode::WRONG_DISTRIBUTION);
 }
 
-void
-Visitor::reportProblem(const std::string& problem)
-{
+void Visitor::reportProblem(const std::string& problem) {
     vespalib::steady_time now = _component.getClock().getMonotonicTime();
-    auto it = _recentlySentErrorMessages.find(problem);
-        // Ignore errors already reported last minute
+    auto                  it = _recentlySentErrorMessages.find(problem);
+    // Ignore errors already reported last minute
     if ((it != _recentlySentErrorMessages.end()) && ((it->second + 60s) > now)) {
         return;
     }
 
-    LOG(debug, "Visitor '%s' sending VisitorInfo with message \"%s\" to %s",
-        _id.c_str(), problem.c_str(), _controlDestination->toString().c_str());
+    LOG(debug, "Visitor '%s' sending VisitorInfo with message \"%s\" to %s", _id.c_str(), problem.c_str(),
+        _controlDestination->toString().c_str());
     _recentlySentErrorMessages[problem] = now;
     auto cmd = std::make_unique<documentapi::VisitorInfoMessage>();
     cmd->setErrorMessage(problem);
@@ -455,28 +396,18 @@ Visitor::reportProblem(const std::string& problem)
     }
 }
 
-void
-Visitor::reportProblem(const api::ReturnCode& problemCode)
-{
+void Visitor::reportProblem(const api::ReturnCode& problemCode) {
     vespalib::asciistream os;
     os << "[From content node " << _ownNodeIndex << "] ";
-    os << api::ReturnCode::getResultString(problemCode.getResult())
-       << ": " << problemCode.getMessage();
+    os << api::ReturnCode::getResultString(problemCode.getResult()) << ": " << problemCode.getMessage();
     reportProblem(std::string(os.view()));
 }
 
-void
-Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
-               const std::string& name,
-               const std::vector<document::BucketId>& buckets,
-               framework::MicroSecTime fromTimestamp,
-               framework::MicroSecTime toTimestamp,
-               std::unique_ptr<document::select::Node> docSelection,
-               const std::string& docSelectionString,
-               VisitorMessageHandler& handler,
-               VisitorMessageSession::UP messageSession,
-               documentapi::Priority::Value documentPriority)
-{
+void Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId, const std::string& name,
+                    const std::vector<document::BucketId>& buckets, framework::MicroSecTime fromTimestamp,
+                    framework::MicroSecTime toTimestamp, std::unique_ptr<document::select::Node> docSelection,
+                    const std::string& docSelectionString, VisitorMessageHandler& handler,
+                    VisitorMessageSession::UP messageSession, documentapi::Priority::Value documentPriority) {
     assert(_state == STATE_NOT_STARTED);
     _visitorId = id;
     _visitorCmdId = cmdId;
@@ -494,37 +425,26 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
 
     _state = STATE_RUNNING;
 
-    LOG(debug, "Starting visitor '%s' for %zu buckets from %" PRIu64 " to "
-               "%" PRIu64 ". First is %s. Max pending replies: %u, include "
-               "removes: %s, field set: %s.",
-        _id.c_str(),
-        _buckets.size(),
-        _visitorOptions._fromTime.getTime(),
-        _visitorOptions._toTime.getTime(),
-        (!buckets.empty() ? _buckets[0].toString().c_str() : ""),
-        _visitorOptions._maxPending,
-        (_visitorOptions._visitRemoves ? "true" : "false"),
-        _visitorOptions._fieldSet.c_str());
+    LOG(debug,
+        "Starting visitor '%s' for %zu buckets from %" PRIu64 " to "
+        "%" PRIu64 ". First is %s. Max pending replies: %u, include "
+        "removes: %s, field set: %s.",
+        _id.c_str(), _buckets.size(), _visitorOptions._fromTime.getTime(), _visitorOptions._toTime.getTime(),
+        (!buckets.empty() ? _buckets[0].toString().c_str() : ""), _visitorOptions._maxPending,
+        (_visitorOptions._visitRemoves ? "true" : "false"), _visitorOptions._fieldSet.c_str());
 }
 
 namespace {
 
-vespalib::steady_time
-capped_future(vespalib::steady_time time, vespalib::duration duration) {
+vespalib::steady_time capped_future(vespalib::steady_time time, vespalib::duration duration) {
     vespalib::steady_time future = time + duration;
-    return (future < time)
-        ? vespalib::steady_time::max()
-        : future;
+    return (future < time) ? vespalib::steady_time::max() : future;
 }
 
-}
+} // namespace
 
-void
-Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
-                const mbus::Route& controlAddress,
-                const mbus::Route& dataAddress,
-                vespalib::duration timeout)
-{
+void Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd, const mbus::Route& controlAddress,
+                     const mbus::Route& dataAddress, vespalib::duration timeout) {
     _priority = initiatingCmd->getPriority();
     _timeToDie = capped_future(_component.getClock().getMonotonicTime(), timeout);
     if (_initiatingCmd) {
@@ -539,11 +459,11 @@ Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
         _controlDestination = std::make_unique<mbus::Route>(controlAddress);
         _dataDestination = std::make_unique<mbus::Route>(dataAddress);
     }
-    LOG(debug, "Visitor '%s' has control destination %s and data destination %s.",
-        _id.c_str(), _controlDestination->toString().c_str(), _dataDestination->toString().c_str());
+    LOG(debug, "Visitor '%s' has control destination %s and data destination %s.", _id.c_str(),
+        _controlDestination->toString().c_str(), _dataDestination->toString().c_str());
     if (!_calledStartingVisitor) {
         _calledStartingVisitor = true;
-        try{
+        try {
             startingVisitor(_buckets);
         } catch (std::exception& e) {
             std::ostringstream ost;
@@ -556,60 +476,56 @@ Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
     // In case there was no messages to resend we need to call
     // continueVisitor to provoke it to resume.
     for (uint32_t i = 0; i < _visitorOptions._maxParallelOneBucket; ++i) {
-        if (!continueVisitor()) return;
+        if (!continueVisitor())
+            return;
     }
 }
 
-bool
-Visitor::addBoundedTrace(uint32_t level, const std::string &message) {
+bool Visitor::addBoundedTrace(uint32_t level, const std::string& message) {
     mbus::Trace tempTrace;
     tempTrace.trace(level, message);
     return _trace.add(std::move(tempTrace));
 }
 
-const vdslib::Parameters&
-Visitor::visitor_parameters() const noexcept {
+const vdslib::Parameters& Visitor::visitor_parameters() const noexcept {
     assert(_initiatingCmd);
     return _initiatingCmd->getParameters();
 }
 
-bool
-Visitor::remap_docapi_message_error_code(api::ReturnCode& in_out_code) {
+bool Visitor::remap_docapi_message_error_code(api::ReturnCode& in_out_code) {
     return in_out_code.isCriticalForVisitor();
 }
 
 namespace {
 
-std::string
-make_doc_id_suffix(const document::DocumentId& id)
-{
+std::string make_doc_id_suffix(const document::DocumentId& id) {
     return std::format(" [document id was '{}']", id.toString());
 }
 
-}
+} // namespace
 
-void
-Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics)
-{
+void Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics) {
     if (shouldAddMbusTrace()) {
         _trace.add(reply->steal_trace());
     }
 
     mbus::Message::UP message = reply->getMessage();
-    uint64_t messageId = reply->getContext().value.UINT64;
-    uint32_t removed = _visitorTarget._pendingMessages.erase(messageId);
+    uint64_t          messageId = reply->getContext().value.UINT64;
+    uint32_t          removed = _visitorTarget._pendingMessages.erase(messageId);
 
     LOG(spam, "Visitor '%s' reply %s for message ID %" PRIu64, _id.c_str(), reply->toString().c_str(), messageId);
 
     assert(removed == 1);
-    (void) removed;
+    (void)removed;
     // Always remove message from target mapping. We will reinsert it if the
     // message needs to be retried.
     auto meta = _visitorTarget.releaseMetaForMessageId(messageId);
 
     if (!reply->hasErrors()) {
-        metrics.averageMessageSendTime.addValue(vespalib::to_s(message->getTimeRemaining() - message->getTimeRemainingNow()));
-        LOG(debug, "Visitor '%s' reply %s for message ID %" PRIu64 " was OK", _id.c_str(), reply->toString().c_str(), messageId);
+        metrics.averageMessageSendTime.addValue(
+            vespalib::to_s(message->getTimeRemaining() - message->getTimeRemainingNow()));
+        LOG(debug, "Visitor '%s' reply %s for message ID %" PRIu64 " was OK", _id.c_str(), reply->toString().c_str(),
+            messageId);
         continueVisitor();
         return;
     }
@@ -627,7 +543,7 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
 
     api::ReturnCode returnCode(static_cast<api::ReturnCode::Result>(reply->getError(0).getCode()),
                                reply->getError(0).getMessage());
-    const bool should_fail = remap_docapi_message_error_code(returnCode);
+    const bool      should_fail = remap_docapi_message_error_code(returnCode);
     if (should_fail) {
         std::string error_message = reply->getError(0).getMessage();
         if (const auto* put = dynamic_cast<const documentapi::PutDocumentMessage*>(message.get())) {
@@ -666,16 +582,14 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
     // Max delay is then 40 seconds. At which time, retrying should not
     // use up that much resources.
     // 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960
-    LOG(debug, "Failed to send message from visitor '%s', due to %s. Resending in %" PRIu64 " ms",
-        _id.c_str(), returnCode.toString().c_str(), vespalib::count_ms(delay));
+    LOG(debug, "Failed to send message from visitor '%s', due to %s. Resending in %" PRIu64 " ms", _id.c_str(),
+        returnCode.toString().c_str(), vespalib::count_ms(delay));
 }
 
-void
-Visitor::onCreateIteratorReply(const std::shared_ptr<CreateIteratorReply>& reply, VisitorThreadMetrics&)
-{
+void Visitor::onCreateIteratorReply(const std::shared_ptr<CreateIteratorReply>& reply, VisitorThreadMetrics&) {
     auto it = _bucketStates.rbegin();
 
-    document::Bucket bucket(reply->getBucket());
+    document::Bucket   bucket(reply->getBucket());
     document::BucketId bucketId(bucket.getBucketId());
     for (; it != _bucketStates.rend(); ++it) {
         if ((*it)->getBucketId() == bucketId) {
@@ -686,8 +600,8 @@ Visitor::onCreateIteratorReply(const std::shared_ptr<CreateIteratorReply>& reply
     BucketIterationState& bucketState(**it);
 
     if (reply->getResult().failed()) {
-        LOG(debug, "Failed to create iterator for bucket %s: %s",
-            bucketId.toString().c_str(), reply->getResult().toString().c_str());
+        LOG(debug, "Failed to create iterator for bucket %s: %s", bucketId.toString().c_str(),
+            reply->getResult().toString().c_str());
         fail(reply->getResult());
         delete *it;
         _bucketStates.erase((++it).base());
@@ -695,8 +609,8 @@ Visitor::onCreateIteratorReply(const std::shared_ptr<CreateIteratorReply>& reply
     }
     bucketState.setIteratorId(reply->getIteratorId());
     if (failed()) {
-        LOG(debug, "Create iterator for bucket %s is OK, but visitor has failed: %s",
-            bucketId.toString().c_str(), _result.toString().c_str());
+        LOG(debug, "Create iterator for bucket %s is OK, but visitor has failed: %s", bucketId.toString().c_str(),
+            _result.toString().c_str());
         delete *it;
         _bucketStates.erase((++it).base());
         return;
@@ -710,11 +624,9 @@ Visitor::onCreateIteratorReply(const std::shared_ptr<CreateIteratorReply>& reply
     _messageHandler->send(cmd, *this);
 }
 
-void
-Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThreadMetrics& metrics)
-{
-    LOG(debug, "Visitor '%s' got get iter reply for bucket %s: %s",
-               _id.c_str(), reply->getBucketId().toString().c_str(), reply->getResult().toString().c_str());
+void Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThreadMetrics& metrics) {
+    LOG(debug, "Visitor '%s' got get iter reply for bucket %s: %s", _id.c_str(),
+        reply->getBucketId().toString().c_str(), reply->getResult().toString().c_str());
     auto it = _bucketStates.rbegin();
 
     // New requests will be pushed on end of list.. So searching
@@ -730,8 +642,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThrea
         // Don't log warnings for BUCKET_NOT_FOUND and BUCKET_DELETED,
         // since this can happen during normal splits.
         // Don't log for ABORT, due to storage shutdown.
-        if (!reply->getResult().success() &&
-            !reply->getResult().isShutdownRelated() &&
+        if (!reply->getResult().success() && !reply->getResult().isShutdownRelated() &&
             !reply->getResult().isBucketDisappearance())
         {
             LOG(warning, "Failed to talk to persistence layer for bucket %s. Aborting visitor '%s': %s",
@@ -757,8 +668,8 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThrea
         // that visitor may process several things at once.
         if (isRunning()) {
             MBUS_TRACE(reply->getTrace(), 5,
-                       vespalib::make_string("Visitor %s handling block of %zu documents.",
-                                             _id.c_str(), reply->getEntries().size()));
+                       vespalib::make_string("Visitor %s handling block of %zu documents.", _id.c_str(),
+                                             reply->getEntries().size()));
             LOG(debug, "Visitor %s handling block of %zu documents.", _id.c_str(), reply->getEntries().size());
             try {
                 framework::MilliSecTimer processingTimer(_component.getClock());
@@ -772,8 +683,8 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThrea
                     size += entry->getSize();
                 }
 
-                _visitorStatistics.setDocumentsVisited(
-                        _visitorStatistics.getDocumentsVisited() + reply->getEntries().size());
+                _visitorStatistics.setDocumentsVisited(_visitorStatistics.getDocumentsVisited() +
+                                                       reply->getEntries().size());
                 _visitorStatistics.setBytesVisited(_visitorStatistics.getBytesVisited() + size);
             } catch (std::exception& e) {
                 LOG(warning, "handleDocuments threw exception %s", e.what());
@@ -781,8 +692,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThrea
             }
         }
     } else {
-        LOG(debug, "No documents to process in handle given for bucket %s.",
-            reply->getBucketId().toString().c_str());
+        LOG(debug, "No documents to process in handle given for bucket %s.", reply->getBucketId().toString().c_str());
     }
 
     if (shouldAddMbusTrace()) {
@@ -793,13 +703,11 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThrea
     continueVisitor();
 }
 
-void
-Visitor::sendDueQueuedMessages(vespalib::steady_time timeNow)
-{
+void Visitor::sendDueQueuedMessages(vespalib::steady_time timeNow) {
     // Assuming few messages in sent queue, so cheap to go through all.
-    while (!_visitorTarget._queuedMessages.empty()
-           && (_visitorTarget._pendingMessages.size()
-               < _visitorOptions._maxPending)) {
+    while (!_visitorTarget._queuedMessages.empty() &&
+           (_visitorTarget._pendingMessages.size() < _visitorOptions._maxPending))
+    {
         auto it = _visitorTarget._queuedMessages.begin();
         if (it->first < timeNow) {
             auto& msgMeta = _visitorTarget.metaForMessageId(it->second);
@@ -811,14 +719,12 @@ Visitor::sendDueQueuedMessages(vespalib::steady_time timeNow)
     }
 }
 
-bool
-Visitor::continueVisitor()
-{
+bool Visitor::continueVisitor() {
     if (mayTransitionToCompleted()) {
         transitionTo(STATE_COMPLETED);
         return false;
     }
-    vespalib::steady_time now =_component.getClock().getMonotonicTime();
+    vespalib::steady_time now = _component.getClock().getMonotonicTime();
     if (now > _timeToDie) { // If we have timed out, just shut down.
         if (isRunning()) {
             LOG(debug, "Visitor %s timed out. Closing it.", _id.c_str());
@@ -833,7 +739,8 @@ Visitor::continueVisitor()
     // No need to do more work if we already have maximum pending towards data handler
     if (_messageSession->pending() + _visitorTarget._queuedMessages.size() >= _visitorOptions._maxPending) {
         LOG(spam, "Number of pending messages (%zu pending, %zu queued) already >= max pending (%u)",
-            _visitorTarget._pendingMessages.size(), _visitorTarget._queuedMessages.size(), _visitorOptions._maxPending);
+            _visitorTarget._pendingMessages.size(), _visitorTarget._queuedMessages.size(),
+            _visitorOptions._maxPending);
         return false;
     }
 
@@ -852,12 +759,14 @@ Visitor::continueVisitor()
                 if (!_calledCompletedVisitor) {
                     VISITOR_TRACE(7, "Visitor marked as complete, calling completedVisiting()");
                     _calledCompletedVisitor = true;
-                    try{
+                    try {
                         completedVisiting(*_hitCounter);
                     } catch (std::exception& e) {
-                        LOG(warning, "Visitor %s failed in completedVisiting() "
+                        LOG(warning,
+                            "Visitor %s failed in completedVisiting() "
                             "callback.  As visitor is already complete, this "
-                            "has been ignored: %s", _id.c_str(), e.what());
+                            "has been ignored: %s",
+                            _id.c_str(), e.what());
                     }
                     VISITOR_TRACE(7, "completedVisiting() has finished");
 
@@ -871,8 +780,8 @@ Visitor::continueVisitor()
             LOG(debug, "No pending messages, tagging visitor '%s' complete", _id.c_str());
             transitionTo(STATE_COMPLETED);
         } else {
-            LOG(debug, "Visitor %s waiting for all commands to be replied to (pending=%zu, queued=%zu)",
-                _id.c_str(), _visitorTarget._pendingMessages.size(), _visitorTarget._queuedMessages.size());
+            LOG(debug, "Visitor %s waiting for all commands to be replied to (pending=%zu, queued=%zu)", _id.c_str(),
+                _visitorTarget._pendingMessages.size(), _visitorTarget._queuedMessages.size());
         }
         return false;
     } else {
@@ -880,9 +789,7 @@ Visitor::continueVisitor()
     }
 }
 
-void
-Visitor::getStatus(std::ostream& out, bool verbose) const
-{
+void Visitor::getStatus(std::ostream& out, bool verbose) const {
     using vespalib::xml_content_escaped;
 
     out << "<table border=\"1\"><tr><td>Property</td><td>Value</td></tr>\n";
@@ -890,8 +797,7 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
     out << "<tr><td>Visitor id</td><td>" << _visitorId << "</td></tr>\n";
     out << "<tr><td>Visitor name</td><td>" << xml_content_escaped(_id) << "</td></tr>\n";
 
-    out << "<tr><td>Number of buckets to visit</td><td>" << _buckets.size()
-        << "</td></tr>\n";
+    out << "<tr><td>Number of buckets to visit</td><td>" << _buckets.size() << "</td></tr>\n";
     out << "<tr><td>Next bucket to visit</td><td>"
         << "#" << _currentBucket << ": ";
     if (_currentBucket >= _buckets.size()) {
@@ -901,35 +807,23 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
     }
     out << "</td></tr>\n";
 
-    out << "<tr><td>State</td><td>\n"
-        << getStateName(_state)
-        << "</td></tr>\n";
+    out << "<tr><td>State</td><td>\n" << getStateName(_state) << "</td></tr>\n";
 
-    out << "<tr><td>Current status</td><td>"
-        << xml_content_escaped(_result.toString()) << "</td></tr>\n";
+    out << "<tr><td>Current status</td><td>" << xml_content_escaped(_result.toString()) << "</td></tr>\n";
 
-    out << "<tr><td>Failed</td><td>" << (failed() ? "true" : "false")
-        << "</td></tr>\n";
+    out << "<tr><td>Failed</td><td>" << (failed() ? "true" : "false") << "</td></tr>\n";
 
     if (verbose) {
-        out << "<tr><td>Max messages pending to client</td><td>"
-            << _visitorOptions._maxPending
-            << "</td></tr>\n";
-        out << "<tr><td>Max parallel buckets visited</td><td>"
-            << _visitorOptions._maxParallel
-            << "</td></tr>\n";
+        out << "<tr><td>Max messages pending to client</td><td>" << _visitorOptions._maxPending << "</td></tr>\n";
+        out << "<tr><td>Max parallel buckets visited</td><td>" << _visitorOptions._maxParallel << "</td></tr>\n";
         out << "<tr><td>Max parallel getiter requests per bucket visited"
-            << "</td><td>" << _visitorOptions._maxParallelOneBucket
+            << "</td><td>" << _visitorOptions._maxParallelOneBucket << "</td></tr>\n";
+        out << "<tr><td>Called starting visitor</td><td>" << (_calledStartingVisitor ? "true" : "false")
             << "</td></tr>\n";
-        out << "<tr><td>Called starting visitor</td><td>"
-            << (_calledStartingVisitor ? "true" : "false") << "</td></tr>\n";
-        out << "<tr><td>Called completed visitor</td><td>"
-            << (_calledCompletedVisitor ? "true" : "false") << "</td></tr>\n";
-        out << "<tr><td>Visiting fields</td><td>"
-            << xml_content_escaped(_visitorOptions._fieldSet)
+        out << "<tr><td>Called completed visitor</td><td>" << (_calledCompletedVisitor ? "true" : "false")
             << "</td></tr>\n";
-        out << "<tr><td>Visiting removes</td><td>"
-            << (_visitorOptions._visitRemoves ? "true" : "false")
+        out << "<tr><td>Visiting fields</td><td>" << xml_content_escaped(_visitorOptions._fieldSet) << "</td></tr>\n";
+        out << "<tr><td>Visiting removes</td><td>" << (_visitorOptions._visitRemoves ? "true" : "false")
             << "</td></tr>\n";
         out << "<tr><td>Control destination</td><td>";
         if (_controlDestination) {
@@ -953,18 +847,12 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
         }
         out << "</td></tr>\n";
 
-        out << "<tr><td>Time period(" << _visitorOptions._fromTime << ", "
-            << _visitorOptions._toTime << "):<br>\n";
-        out << "<tr><td>Message id of create visitor command</td><td>"
-            << _visitorCmdId << "</td></tr>\n";
-        out << "<tr><td>Doc block timeout</td><td>"
-            << _docBlockTimeout << "</td></tr>\n";
-        out << "<tr><td>Visitor info timeout</td><td>"
-            << _visitorInfoTimeout << "</td></tr>\n";
-        out << "<tr><td>Visitor priority</td><td>"
-            << static_cast<uint32_t>(_priority) << "</td></tr>\n";
-        out << "<tr><td>Trace level</td><td>"
-            << _traceLevel << "</td></tr>\n";
+        out << "<tr><td>Time period(" << _visitorOptions._fromTime << ", " << _visitorOptions._toTime << "):<br>\n";
+        out << "<tr><td>Message id of create visitor command</td><td>" << _visitorCmdId << "</td></tr>\n";
+        out << "<tr><td>Doc block timeout</td><td>" << _docBlockTimeout << "</td></tr>\n";
+        out << "<tr><td>Visitor info timeout</td><td>" << _visitorInfoTimeout << "</td></tr>\n";
+        out << "<tr><td>Visitor priority</td><td>" << static_cast<uint32_t>(_priority) << "</td></tr>\n";
+        out << "<tr><td>Trace level</td><td>" << _traceLevel << "</td></tr>\n";
 
         vespalib::steady_time time = _component.getClock().getMonotonicTime();
 
@@ -972,9 +860,7 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
         if (time <= _timeToDie) {
             out << vespalib::count_ms(_timeToDie - time) << " ms";
         } else {
-            out << "(expired "
-                << vespalib::count_ms(time - _timeToDie)
-                << " ms ago)";
+            out << "(expired " << vespalib::count_ms(time - _timeToDie) << " ms ago)";
         }
         out << "</td></tr>\n";
     }
@@ -999,19 +885,14 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
     }
 
     out << "<h4>Messages being sent to client</h4>\n";
-    out << "<p>Estimated memory usage: "
-        << _visitorTarget.getMemoryUsage()
-        << "</p>\n";
+    out << "<p>Estimated memory usage: " << _visitorTarget.getMemoryUsage() << "</p>\n";
     for (auto& idAndMeta : _visitorTarget._messageMeta) {
         const VisitorTarget::MessageMeta& meta(idAndMeta.second);
-        out << "Message #" << idAndMeta.first << " <b>"
-            << xml_content_escaped(meta.messageText) << "</b> ";
+        out << "Message #" << idAndMeta.first << " <b>" << xml_content_escaped(meta.messageText) << "</b> ";
         if (meta.retryCount > 0) {
             out << "Retried " << meta.retryCount << " times. ";
         }
-        if (_visitorTarget._pendingMessages.find(idAndMeta.first)
-            != _visitorTarget._pendingMessages.end())
-        {
+        if (_visitorTarget._pendingMessages.find(idAndMeta.first) != _visitorTarget._pendingMessages.end()) {
             out << "<i>pending</i>";
         }
         auto queued = idToSendTime.find(idAndMeta.first);
@@ -1026,11 +907,9 @@ Visitor::getStatus(std::ostream& out, bool verbose) const
     out << "\n";
 }
 
-bool
-Visitor::getIterators()
-{
-    LOG(debug, "getIterators, visitor %s, _buckets = %zu , _bucketStates = %zu, _currentBucket = %d",
-        _id.c_str(), _buckets.size(), _bucketStates.size(), _currentBucket);
+bool Visitor::getIterators() {
+    LOG(debug, "getIterators, visitor %s, _buckets = %zu , _bucketStates = %zu, _currentBucket = %d", _id.c_str(),
+        _buckets.size(), _bucketStates.size(), _currentBucket);
 
     // Don't send any further GetIters if we're closing
     if (!isRunning()) {
@@ -1044,11 +923,11 @@ Visitor::getIterators()
 
     // Go through buckets found. Take the first that doesn't have requested
     // state and request a new piece.
-    for (auto it = _bucketStates.begin();it != _bucketStates.end();) {
+    for (auto it = _bucketStates.begin(); it != _bucketStates.end();) {
         assert(*it);
         BucketIterationState& bucketState(**it);
-        if ((bucketState._pendingIterators >= _visitorOptions._maxParallelOneBucket)
-            || bucketState.hasPendingControlCommand())
+        if ((bucketState._pendingIterators >= _visitorOptions._maxParallelOneBucket) ||
+            bucketState.hasPendingControlCommand())
         {
             ++it;
             continue;
@@ -1060,7 +939,7 @@ Visitor::getIterators()
                 ++it;
                 continue;
             }
-            try{
+            try {
                 completedBucket(bucketState.getBucketId(), *_hitCounter);
                 _visitorStatistics.setBucketsVisited(_visitorStatistics.getBucketsVisited() + 1);
             } catch (std::exception& e) {
@@ -1072,7 +951,8 @@ Visitor::getIterators()
             it = _bucketStates.erase(it);
             continue;
         }
-        auto cmd = std::make_shared<GetIterCommand>(bucketState.getBucket(), bucketState.getIteratorId(), _docBlockSize);
+        auto cmd =
+            std::make_shared<GetIterCommand>(bucketState.getBucket(), bucketState.getIteratorId(), _docBlockSize);
         cmd->getTrace().setLevel(_traceLevel);
         cmd->setPriority(_priority);
         _messageHandler->send(cmd, *this);
@@ -1094,22 +974,20 @@ Visitor::getIterators()
     // start iterating a new bucket
     uint32_t sentCount = 0;
     while (_bucketStates.size() < _visitorOptions._maxParallel &&
-           _bucketStates.size() < _visitorOptions._maxPending &&
-           _currentBucket < _buckets.size())
+           _bucketStates.size() < _visitorOptions._maxPending && _currentBucket < _buckets.size())
     {
         document::Bucket bucket(_bucketSpace, _buckets[_currentBucket]);
-        auto newBucketState = std::make_unique<BucketIterationState>(*this, *_messageHandler, bucket);
-        LOG(debug, "Visitor '%s': Sending create iterator for bucket %s.",
-                   _id.c_str(), bucket.getBucketId().toString().c_str());
+        auto             newBucketState = std::make_unique<BucketIterationState>(*this, *_messageHandler, bucket);
+        LOG(debug, "Visitor '%s': Sending create iterator for bucket %s.", _id.c_str(),
+            bucket.getBucketId().toString().c_str());
 
         spi::Selection selection = spi::Selection(spi::DocumentSelection(_documentSelectionString));
         selection.setFromTimestamp(spi::Timestamp(_visitorOptions._fromTime.getTime()));
         selection.setToTimestamp(spi::Timestamp(_visitorOptions._toTime.getTime()));
 
-        auto cmd = std::make_shared<CreateIteratorCommand>(bucket, selection,_visitorOptions._fieldSet,
-                                                           _visitorOptions._visitRemoves
-                                                               ? spi::NEWEST_DOCUMENT_OR_REMOVE
-                                                               : spi::NEWEST_DOCUMENT_ONLY);
+        auto cmd = std::make_shared<CreateIteratorCommand>(
+            bucket, selection, _visitorOptions._fieldSet,
+            _visitorOptions._visitRemoves ? spi::NEWEST_DOCUMENT_OR_REMOVE : spi::NEWEST_DOCUMENT_ONLY);
 
         cmd->getTrace().setLevel(_traceLevel);
         cmd->setPriority(_initiatingCmd->getPriority());
@@ -1131,4 +1009,4 @@ Visitor::getIterators()
     return true;
 }
 
-} // storage
+} // namespace storage

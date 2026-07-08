@@ -3,6 +3,7 @@
 
 #include <vespa/documentapi/common.h>
 #include <vespa/slobrok/imirrorapi.h>
+
 #include <mutex>
 
 namespace documentapi {
@@ -22,28 +23,28 @@ public:
     std::pair<string, int> getRecipient(const slobrok::api::IMirrorAPI::SpecList& choices);
 
     void received(uint32_t nodeIndex, bool busy);
+
 private:
     using lock_guard = std::lock_guard<std::mutex>;
-    std::pair<string, int> getRecipient(const lock_guard & guard, const slobrok::api::IMirrorAPI::SpecList& choices);
-    void normalizeWeights(const lock_guard & guard);
+    std::pair<string, int> getRecipient(const lock_guard& guard, const slobrok::api::IMirrorAPI::SpecList& choices);
+    void normalizeWeights(const lock_guard& guard);
     uint32_t getIndex(const string& name) const;
 
     class NodeInfo {
     public:
         NodeInfo() noexcept : weight(1.0), sent(0), busy(0), valid(false), lastSpec() {}
 
-        double weight;
+        double   weight;
         uint32_t sent;
         uint32_t busy;
-        bool valid;
-        string lastSpec;
+        bool     valid;
+        string   lastSpec;
     };
-    mutable std::mutex _mutex;
+    mutable std::mutex    _mutex;
     std::vector<NodeInfo> _nodeInfo;
-    string _cluster;
-    string _session;
-    double _position;
+    string                _cluster;
+    string                _session;
+    double                _position;
 };
 
-}
-
+} // namespace documentapi

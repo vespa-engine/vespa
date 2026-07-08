@@ -18,19 +18,16 @@ class Bucket {
 
 public:
     Bucket() noexcept : _bucket(document::BucketSpace::invalid(), document::BucketId(0)) {}
-    explicit Bucket(const document::Bucket& b) noexcept
-        : _bucket(b) {}
+    explicit Bucket(const document::Bucket& b) noexcept : _bucket(b) {}
 
-    const document::Bucket &getBucket() const noexcept { return _bucket; }
+    const document::Bucket& getBucket() const noexcept { return _bucket; }
     document::BucketId getBucketId() const noexcept { return _bucket.getBucketId(); }
     document::BucketSpace getBucketSpace() const noexcept { return _bucket.getBucketSpace(); }
 
     /** Convert easily to a document bucket id to make class easy to use. */
     operator document::BucketId() const noexcept { return _bucket.getBucketId(); }
 
-    bool operator==(const Bucket& o) const noexcept {
-        return (_bucket == o._bucket);
-    }
+    bool operator==(const Bucket& o) const noexcept { return (_bucket == o._bucket); }
 
     std::string toString() const;
 };
@@ -38,4 +35,4 @@ public:
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const Bucket& bucket);
 std::ostream& operator<<(std::ostream& out, const Bucket& bucket);
 
-}
+} // namespace storage::spi

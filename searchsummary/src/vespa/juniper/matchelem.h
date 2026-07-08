@@ -4,6 +4,7 @@
 #pragma once
 
 #include "querynode.h"
+
 #include <set>
 #include <string>
 
@@ -21,14 +22,14 @@ class MatchElement {
 public:
     MatchElement(off_t startpos, off_t starttoken);
     virtual ~MatchElement() = default;
-    virtual void   set_valid() = 0; // Mark this element and its subelements as valid
-    virtual void   add_to_keylist(keylist& kl) = 0;
-    virtual void   dump(std::string& s) = 0;
+    virtual void set_valid() = 0; // Mark this element and its subelements as valid
+    virtual void add_to_keylist(keylist& kl) = 0;
+    virtual void dump(std::string& s) = 0;
     virtual size_t length() const = 0;
     virtual size_t word_length() const = 0;
-    virtual bool   complete() = 0;
-    virtual off_t  endpos() const = 0;
-    virtual off_t  endtoken() const = 0;
+    virtual bool complete() = 0;
+    virtual off_t endpos() const = 0;
+    virtual off_t endtoken() const = 0;
 
     // Word/token position of the first token in this match element
     inline off_t starttoken() const { return _starttoken; }

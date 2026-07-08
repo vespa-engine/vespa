@@ -5,7 +5,6 @@
 #include "bucket_spaces_stats_provider.h"
 #include "cluster_state_bundle_activation_listener.h"
 #include "content_node_stats_provider.h"
-#include "top_level_bucket_db_updater.h"
 #include "distributor_component.h"
 #include "distributor_host_info_reporter.h"
 #include "distributor_interface.h"
@@ -19,6 +18,8 @@
 #include "statusreporterdelegate.h"
 #include "stripe_bucket_db_updater.h" // TODO this is temporary
 #include "stripe_host_info_notifier.h"
+#include "top_level_bucket_db_updater.h"
+
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
@@ -30,14 +31,15 @@
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <vespa/vdslib/state/random.h>
+
 #include <chrono>
 #include <queue>
 #include <unordered_map>
 
 namespace storage {
-    struct DoneInitializeHandler;
-    class HostInfo;
-}
+struct DoneInitializeHandler;
+class HostInfo;
+} // namespace storage
 
 namespace storage::distributor {
 
@@ -56,26 +58,20 @@ class SimpleMaintenanceScanner;
 class StatsTrackingSender;
 class ThrottlingOperationStarter;
 
-class TopLevelDistributor final
-    : public StorageLink,
-      public DistributorInterface,
-      public StatusDelegator,
-      public framework::StatusReporter,
-      public framework::TickingThread,
-      public MinReplicaProvider,
-      public BucketSpacesStatsProvider,
-      public ContentNodeStatsProvider,
-      public StripeHostInfoNotifier,
-      public ClusterStateBundleActivationListener
-{
+class TopLevelDistributor final : public StorageLink,
+                                  public DistributorInterface,
+                                  public StatusDelegator,
+                                  public framework::StatusReporter,
+                                  public framework::TickingThread,
+                                  public MinReplicaProvider,
+                                  public BucketSpacesStatsProvider,
+                                  public ContentNodeStatsProvider,
+                                  public StripeHostInfoNotifier,
+                                  public ClusterStateBundleActivationListener {
 public:
-    TopLevelDistributor(DistributorComponentRegister&,
-                        const NodeIdentity& node_identity,
-                        framework::TickingThreadPool&,
-                        DistributorStripePool& stripe_pool,
-                        DoneInitializeHandler&,
-                        uint32_t num_distributor_stripes,
-                        HostInfo& hostInfoReporterRegistrar,
+    TopLevelDistributor(DistributorComponentRegister&, const NodeIdentity&    node_identity,
+                        framework::TickingThreadPool&, DistributorStripePool& stripe_pool, DoneInitializeHandler&,
+                        uint32_t num_distributor_stripes, HostInfo& hostInfoReporterRegistrar,
                         ChainedMessageSender* = nullptr);
 
     ~TopLevelDistributor() override;
@@ -125,14 +121,9 @@ public:
 
     class MetricUpdateHook : public framework::MetricUpdateHook {
     public:
-        explicit MetricUpdateHook(TopLevelDistributor& self)
-            : _self(self)
-        {
-        }
+        explicit MetricUpdateHook(TopLevelDistributor& self) : _self(self) {}
 
-        void updateMetrics(const MetricLockGuard&) override {
-            _self.update_top_level_metrics();
-        }
+        void updateMetrics(const MetricLockGuard&) override { _self.update_top_level_metrics(); }
 
     private:
         TopLevelDistributor& _self;
@@ -182,7 +173,7 @@ private:
 
     // ClusterStateBundleActivationListener impl:
     void on_cluster_state_bundle_activated(const lib::ClusterStateBundle& new_bundle,
-                                           bool has_bucket_ownership_transfer) override;
+                                           bool                           has_bucket_ownership_transfer) override;
 
     struct StripeScanStats {
         bool wants_to_send_host_info = false;
@@ -191,50 +182,50 @@ private:
 
     using MessageQueue = std::vector<std::shared_ptr<api::StorageMessage>>;
 
-    const NodeIdentity                    _node_identity;
-    DistributorComponentRegister&         _comp_reg;
-    DoneInitializeHandler&                _done_init_handler;
-    MemoryUsageTracker                    _shared_memory_usage_tracker;
-    bool                                  _done_initializing;
-    bool                                  _cc_is_distribution_source_of_truth;
-    std::shared_ptr<DistributorTotalMetrics> _total_metrics;
-    std::shared_ptr<IdealStateTotalMetrics> _ideal_state_total_metrics;
-    ChainedMessageSender*                 _messageSender;
-    uint8_t                               _n_stripe_bits;
-    DistributorStripePool&                _stripe_pool;
-    std::vector<std::unique_ptr<DistributorStripe>> _stripes;
-    std::unique_ptr<StripeAccessor>      _stripe_accessor;
-    lib::RandomGen                       _random_stripe_gen;
-    std::mutex                           _random_stripe_gen_mutex;
-    MessageQueue                         _message_queue; // Queue for top-level ops
-    MessageQueue                         _fetched_messages;
-    DistributorComponent                 _component;
-    storage::DistributorComponent        _ideal_state_component;
-    std::shared_ptr<const DistributorConfiguration> _total_config;
-    std::unique_ptr<StatsTrackingSender> _stats_tracking_sender;
-    std::unique_ptr<TopLevelBucketDBUpdater>     _bucket_db_updater;
-    StatusReporterDelegate               _distributorStatusDelegate;
-    std::unique_ptr<StatusReporterDelegate> _bucket_db_status_delegate;
-    framework::TickingThreadPool&        _threadPool;
+    const NodeIdentity                                      _node_identity;
+    DistributorComponentRegister&                           _comp_reg;
+    DoneInitializeHandler&                                  _done_init_handler;
+    MemoryUsageTracker                                      _shared_memory_usage_tracker;
+    bool                                                    _done_initializing;
+    bool                                                    _cc_is_distribution_source_of_truth;
+    std::shared_ptr<DistributorTotalMetrics>                _total_metrics;
+    std::shared_ptr<IdealStateTotalMetrics>                 _ideal_state_total_metrics;
+    ChainedMessageSender*                                   _messageSender;
+    uint8_t                                                 _n_stripe_bits;
+    DistributorStripePool&                                  _stripe_pool;
+    std::vector<std::unique_ptr<DistributorStripe>>         _stripes;
+    std::unique_ptr<StripeAccessor>                         _stripe_accessor;
+    lib::RandomGen                                          _random_stripe_gen;
+    std::mutex                                              _random_stripe_gen_mutex;
+    MessageQueue                                            _message_queue; // Queue for top-level ops
+    MessageQueue                                            _fetched_messages;
+    DistributorComponent                                    _component;
+    storage::DistributorComponent                           _ideal_state_component;
+    std::shared_ptr<const DistributorConfiguration>         _total_config;
+    std::unique_ptr<StatsTrackingSender>                    _stats_tracking_sender;
+    std::unique_ptr<TopLevelBucketDBUpdater>                _bucket_db_updater;
+    StatusReporterDelegate                                  _distributorStatusDelegate;
+    std::unique_ptr<StatusReporterDelegate>                 _bucket_db_status_delegate;
+    framework::TickingThreadPool&                           _threadPool;
     mutable std::vector<std::shared_ptr<DistributorStatus>> _status_to_do;
     mutable std::vector<std::shared_ptr<DistributorStatus>> _fetched_status_requests;
-    mutable std::mutex                   _stripe_scan_notify_mutex;
-    std::vector<StripeScanStats>         _stripe_scan_stats; // Indices are 1-1 with _stripes entries
-    vespalib::steady_time                _last_host_info_send_time;
-    vespalib::duration                   _host_info_send_delay;
+    mutable std::mutex                                      _stripe_scan_notify_mutex;
+    std::vector<StripeScanStats> _stripe_scan_stats; // Indices are 1-1 with _stripes entries
+    vespalib::steady_time        _last_host_info_send_time;
+    vespalib::duration           _host_info_send_delay;
     // Ideally this would use steady_clock, but for now let's use the same semantics as
     // feed blocking during safe time periods.
-    vespalib::system_time                _maintenance_safe_time_point;
-    std::chrono::seconds                 _maintenance_safe_time_delay;
-    framework::ThreadWaitInfo            _tickResult;
-    MetricUpdateHook                     _metricUpdateHook;
-    DistributorHostInfoReporter          _hostInfoReporter;
+    vespalib::system_time       _maintenance_safe_time_point;
+    std::chrono::seconds        _maintenance_safe_time_delay;
+    framework::ThreadWaitInfo   _tickResult;
+    MetricUpdateHook            _metricUpdateHook;
+    DistributorHostInfoReporter _hostInfoReporter;
 
-    mutable std::mutex                   _distribution_mutex;
+    mutable std::mutex                       _distribution_mutex;
     std::shared_ptr<const lib::Distribution> _distribution;
     std::shared_ptr<const lib::Distribution> _next_distribution;
 
-    uint64_t                             _current_internal_config_generation;
+    uint64_t _current_internal_config_generation;
 };
 
-}
+} // namespace storage::distributor

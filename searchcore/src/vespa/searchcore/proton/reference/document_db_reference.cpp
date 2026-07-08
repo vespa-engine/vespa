@@ -1,32 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_db_reference.h"
-#include "gid_to_lid_mapper_factory.h"
+
 #include "gid_to_lid_change_registrator.h"
+#include "gid_to_lid_mapper_factory.h"
+
+#include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
-#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 
 namespace proton {
 
-DocumentDBReference::DocumentDBReference(std::shared_ptr<IAttributeManager> attrMgr,
+DocumentDBReference::DocumentDBReference(std::shared_ptr<IAttributeManager>                       attrMgr,
                                          std::shared_ptr<const search::IDocumentMetaStoreContext> dmsContext,
                                          std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler)
     : _attrMgr(std::move(attrMgr)),
       _dmsContext(std::move(dmsContext)),
-      _gidToLidChangeHandler(std::move(gidToLidChangeHandler))
-{
+      _gidToLidChangeHandler(std::move(gidToLidChangeHandler)) {
 }
 
-DocumentDBReference::~DocumentDBReference()
-{
+DocumentDBReference::~DocumentDBReference() {
 }
 
-std::shared_ptr<search::attribute::ReadableAttributeVector>
-DocumentDBReference::getAttribute(std::string_view name)
-{
+std::shared_ptr<search::attribute::ReadableAttributeVector> DocumentDBReference::getAttribute(std::string_view name) {
     search::AttributeGuard::UP guard = _attrMgr->getAttribute(name);
     if (guard && guard->valid()) {
         return guard->getSP();
@@ -39,21 +37,16 @@ DocumentDBReference::getAttribute(std::string_view name)
     }
 }
 
-std::shared_ptr<const search::IDocumentMetaStoreContext>
-DocumentDBReference::getDocumentMetaStore() const
-{
+std::shared_ptr<const search::IDocumentMetaStoreContext> DocumentDBReference::getDocumentMetaStore() const {
     return _dmsContext;
 }
 
-std::shared_ptr<search::IGidToLidMapperFactory>
-DocumentDBReference::getGidToLidMapperFactory()
-{
+std::shared_ptr<search::IGidToLidMapperFactory> DocumentDBReference::getGidToLidMapperFactory() {
     return std::make_shared<GidToLidMapperFactory>(_dmsContext);
 }
 
 std::unique_ptr<GidToLidChangeRegistrator>
-DocumentDBReference::makeGidToLidChangeRegistrator(const std::string &docTypeName)
-{
+DocumentDBReference::makeGidToLidChangeRegistrator(const std::string& docTypeName) {
     return std::make_unique<GidToLidChangeRegistrator>(_gidToLidChangeHandler, docTypeName);
 }
 

@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
 #include <cstdint>
+#include <memory>
 
 namespace storage::lib {
-    class Distribution;
-    class ClusterState;
+class Distribution;
+class ClusterState;
+} // namespace storage::lib
+namespace document {
+class BucketId;
 }
-namespace document { class BucketId; }
 namespace storage::distributor {
 
 /**
@@ -24,7 +26,8 @@ class BucketSpaceDistributionContext {
     std::shared_ptr<const lib::ClusterState> _default_active_cluster_state;
     std::shared_ptr<const lib::ClusterState> _pending_cluster_state; // May be null if no state is pending
     std::shared_ptr<const lib::Distribution> _distribution; // TODO ideally should have a pending distribution as well
-    uint16_t _this_node_index;
+    uint16_t                                 _this_node_index;
+
 public:
     BucketSpaceDistributionContext() = delete;
     // Public due to make_shared, prefer factory functions to instantiate instead.
@@ -32,20 +35,18 @@ public:
                                    std::shared_ptr<const lib::ClusterState> default_active_cluster_state,
                                    std::shared_ptr<const lib::ClusterState> pending_cluster_state,
                                    std::shared_ptr<const lib::Distribution> distribution,
-                                   uint16_t this_node_index) noexcept;
+                                   uint16_t                                 this_node_index) noexcept;
     ~BucketSpaceDistributionContext();
 
-    static std::shared_ptr<BucketSpaceDistributionContext> make_state_transition(
-            std::shared_ptr<const lib::ClusterState> active_cluster_state,
-            std::shared_ptr<const lib::ClusterState> default_active_cluster_state,
-            std::shared_ptr<const lib::ClusterState> pending_cluster_state,
-            std::shared_ptr<const lib::Distribution> distribution,
-            uint16_t this_node_index);
-    static std::shared_ptr<BucketSpaceDistributionContext> make_stable_state(
-            std::shared_ptr<const lib::ClusterState> active_cluster_state,
-            std::shared_ptr<const lib::ClusterState> default_active_cluster_state,
-            std::shared_ptr<const lib::Distribution> distribution,
-            uint16_t this_node_index);
+    static std::shared_ptr<BucketSpaceDistributionContext>
+    make_state_transition(std::shared_ptr<const lib::ClusterState> active_cluster_state,
+                          std::shared_ptr<const lib::ClusterState> default_active_cluster_state,
+                          std::shared_ptr<const lib::ClusterState> pending_cluster_state,
+                          std::shared_ptr<const lib::Distribution> distribution, uint16_t this_node_index);
+    static std::shared_ptr<BucketSpaceDistributionContext>
+    make_stable_state(std::shared_ptr<const lib::ClusterState> active_cluster_state,
+                      std::shared_ptr<const lib::ClusterState> default_active_cluster_state,
+                      std::shared_ptr<const lib::Distribution> distribution, uint16_t this_node_index);
     static std::shared_ptr<BucketSpaceDistributionContext> make_not_yet_initialized(uint16_t this_node_index);
 
     const std::shared_ptr<const lib::ClusterState>& active_cluster_state() const noexcept {
@@ -55,9 +56,7 @@ public:
     const std::shared_ptr<const lib::ClusterState>& default_active_cluster_state() const noexcept {
         return _default_active_cluster_state;
     }
-    bool has_pending_state_transition() const noexcept {
-        return (_pending_cluster_state.get() != nullptr);
-    }
+    bool has_pending_state_transition() const noexcept { return (_pending_cluster_state.get() != nullptr); }
     // Returned shared_ptr is nullptr iff has_pending_state_transition() == false.
     const std::shared_ptr<const lib::ClusterState>& pending_cluster_state() const noexcept {
         return _pending_cluster_state;
@@ -70,4 +69,4 @@ public:
     uint16_t this_node_index() const noexcept { return _this_node_index; }
 };
 
-}
+} // namespace storage::distributor

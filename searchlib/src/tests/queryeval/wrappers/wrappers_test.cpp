@@ -1,11 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/queryeval/filter_wrapper.h>
-#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/vespalib/gtest/gtest.h>
-
+#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
@@ -21,10 +20,11 @@ class WrapperTest : public ::testing::Test {
 public:
     class DummyItr : public SearchIterator {
     private:
-        ObservedData &_data;
-        TermFieldMatchData *_match;
+        ObservedData&       _data;
+        TermFieldMatchData* _match;
+
     public:
-        DummyItr(ObservedData &data, TermFieldMatchData *m) : _data(data), _match(m) {}
+        DummyItr(ObservedData& data, TermFieldMatchData* m) : _data(data), _match(m) {}
         ~DummyItr() override;
         void doSeek(uint32_t docid) override {
             ++_data.seekCnt;
@@ -43,7 +43,8 @@ public:
             }
         }
     };
-    WrapperTest() : _data{0,0,0,0} {}
+    WrapperTest() : _data{0, 0, 0, 0} {}
+
 protected:
     ObservedData _data;
 
@@ -78,17 +79,15 @@ protected:
     }
 };
 
-WrapperTest::DummyItr::~DummyItr()
-{
+WrapperTest::DummyItr::~DummyItr() {
     ++_data.dtorCnt;
 }
 
-TEST_F(WrapperTest, filter_wrapper)
-{
+TEST_F(WrapperTest, filter_wrapper) {
     verify_unwrapped();
 
     // with FilterWrapper
-    TermFieldMatchData match;
+    TermFieldMatchData      match;
     TermFieldMatchDataArray tfmda;
     tfmda.add(&match);
     _data.unpackedDocId = 0;
@@ -116,11 +115,10 @@ TEST_F(WrapperTest, filter_wrapper)
     EXPECT_EQ(_data.dtorCnt, 2u);
 }
 
-TEST_F(WrapperTest, boolean_match_iterator_wrapper)
-{
+TEST_F(WrapperTest, boolean_match_iterator_wrapper) {
     verify_unwrapped();
     { // with wrapper
-        TermFieldMatchData match;
+        TermFieldMatchData      match;
         TermFieldMatchDataArray tfmda;
         tfmda.add(&match);
         _data.unpackedDocId = 0;
@@ -177,8 +175,7 @@ public:
 
 FilterWrapperVerifier::~FilterWrapperVerifier() = default;
 
-TEST(FilterWrapperTest, adheres_to_search_iterator_requirements)
-{
+TEST(FilterWrapperTest, adheres_to_search_iterator_requirements) {
     FilterWrapperVerifier verifier;
     verifier.verify();
 }
@@ -189,14 +186,14 @@ public:
         return std::make_unique<BooleanMatchIteratorWrapper>(createIterator(getExpectedDocIds(), strict), _tfmda);
     }
     ~BooleanMatchIteratorWrapperVerifier() override;
+
 private:
     mutable TermFieldMatchDataArray _tfmda;
 };
 
 BooleanMatchIteratorWrapperVerifier::~BooleanMatchIteratorWrapperVerifier() = default;
 
-TEST(BooleanMatchIteratorWrapperWrapperTest, adheres_to_search_iterator_requirements)
-{
+TEST(BooleanMatchIteratorWrapperWrapperTest, adheres_to_search_iterator_requirements) {
     BooleanMatchIteratorWrapperVerifier verifier;
     verifier.verify();
 }

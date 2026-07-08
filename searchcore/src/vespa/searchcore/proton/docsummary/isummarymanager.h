@@ -8,21 +8,24 @@
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 
-namespace document { class DocumentTypeRepo; }
-namespace search::index { class Schema; }
+namespace document {
+class DocumentTypeRepo;
+}
+namespace search::index {
+class Schema;
+}
 
 namespace proton {
 
 /**
  * Interface for a summary manager.
  */
-class ISummaryManager
-{
+class ISummaryManager {
 public:
     using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     using JuniperrcConfig = const vespa::config::search::summary::internal::InternalJuniperrcType;
-    ISummaryManager(const ISummaryManager &) = delete;
-    ISummaryManager & operator = (const ISummaryManager &) = delete;
+    ISummaryManager(const ISummaryManager&) = delete;
+    ISummaryManager& operator=(const ISummaryManager&) = delete;
     /**
      * Interface for a summary setup.
      */
@@ -33,8 +36,8 @@ public:
 
         ~ISummarySetup() override = default;
 
-        virtual search::docsummary::IDocsumWriter &getDocsumWriter() const = 0;
-        virtual const search::docsummary::ResultConfig &getResultConfig() = 0;
+        virtual search::docsummary::IDocsumWriter& getDocsumWriter() const = 0;
+        virtual const search::docsummary::ResultConfig& getResultConfig() = 0;
         virtual search::docsummary::IDocsumStore::UP createDocsumStore() = 0;
     };
 
@@ -43,17 +46,15 @@ public:
 
     virtual ~ISummaryManager() = default;
 
-    virtual ISummarySetup::SP
-    createSummarySetup(const SummaryConfig &summaryCfg,
-                       const JuniperrcConfig &juniperCfg,
-                       const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                       const std::shared_ptr<search::IAttributeManager> &attributeMgr,
-                       const search::index::Schema& schema) = 0;
+    virtual ISummarySetup::SP createSummarySetup(const SummaryConfig& summaryCfg, const JuniperrcConfig& juniperCfg,
+                                                 const std::shared_ptr<const document::DocumentTypeRepo>& repo,
+                                                 const std::shared_ptr<search::IAttributeManager>& attributeMgr,
+                                                 const search::index::Schema&                      schema) = 0;
 
-    virtual search::IDocumentStore &getBackingStore() = 0;
+    virtual search::IDocumentStore& getBackingStore() = 0;
+
 protected:
     ISummaryManager() = default;
 };
 
 } // namespace proton
-

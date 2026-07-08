@@ -1,17 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bitvectordictionary.h"
+
+#include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadertags.h>
 #include <vespa/searchlib/common/read_stats.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/error.h>
-#include <vespa/fastos/file.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.bitvectordictionary");
 
+using search::common::CreateAndFreezeTimes;
 using search::index::BitVectorDictionaryLookupResult;
 using search::index::PostingListFileRange;
 
@@ -25,16 +28,14 @@ BitVectorDictionary::BitVectorDictionary()
       _vectorSize(0u),
       _datFile(),
       _datHeaderLen(0u),
-      _memory_mapped(false)
-{ }
+      _memory_mapped(false),
+      _create_and_freeze_times() {
+}
 
 BitVectorDictionary::~BitVectorDictionary() = default;
 
-bool
-BitVectorDictionary::open(const std::string &pathPrefix,
-                          const TuneFileRandRead &tuneFileRead,
-                          BitVectorKeyScope scope)
-{
+bool BitVectorDictionary::open(const std::string& pathPrefix, const TuneFileRandRead& tuneFileRead,
+                               BitVectorKeyScope scope) {
     {
         std::string booloccIdxName = pathPrefix + "boolocc" + getBitVectorKeyScopeSuffix(scope);
         FastOS_File idxFile;
@@ -46,7 +47,7 @@ BitVectorDictionary::open(const std::string &pathPrefix,
         }
 
         vespalib::FileHeader idxHeader;
-        uint32_t idxHeaderLen = idxHeader.readFile(idxFile);
+        uint32_t             idxHeaderLen = idxHeader.readFile(idxFile);
         idxFile.SetPosition(idxHeaderLen);
         assert(idxHeader.hasTag(FROZEN));
         assert(idxHeader.hasTag(DOCID_LIMIT));
@@ -61,6 +62,7 @@ BitVectorDictionary::open(const std::string &pathPrefix,
             BitVector::Index bytes = BitVector::legacy_num_bytes_with_single_guard_bit(_docIdLimit);
             _vectorSize = bytes + (-bytes & (LEGACY_ALIGNMENT - 1));
         }
+        _create_and_freeze_times = CreateAndFreezeTimes(idxHeader);
 
         _entries.resize(numEntries);
         size_t bufSize = sizeof(WordSingleKey) * numEntries;
@@ -90,11 +92,11 @@ BitVectorDictionary::open(const std::string &pathPrefix,
     _datHeaderLen = datHeader.readFile(*_datFile);
     assert(_datFile->getSize() >= static_cast<int64_t>(_vectorSize * _entries.size() + _datHeaderLen));
     _memory_mapped = (_datFile->MemoryMapPtr(0) != nullptr);
+    _create_and_freeze_times.merge(CreateAndFreezeTimes(datHeader));
     return true;
 }
 
-BitVectorDictionaryLookupResult
-BitVectorDictionary::lookup(uint64_t wordNum) {
+BitVectorDictionaryLookupResult BitVectorDictionary::lookup(uint64_t wordNum) {
     WordSingleKey key;
     key._wordNum = wordNum;
     auto itr = std::lower_bound(_entries.begin(), _entries.end(), key);
@@ -104,31 +106,28 @@ BitVectorDictionary::lookup(uint64_t wordNum) {
     return BitVectorDictionaryLookupResult(itr - _entries.begin());
 }
 
-std::unique_ptr<const BitVector>
-BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result, ReadStats& read_stats)
-{
+std::unique_ptr<const BitVector> BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result,
+                                                                     ReadStats&                      read_stats) {
     if (!lookup_result.valid()) {
         return {};
     }
-    int64_t offset = ((int64_t) _vectorSize) * lookup_result.idx + _datHeaderLen;
-    return BitVector::create(_docIdLimit, *_datFile, offset, _vectorSize, _entries[lookup_result.idx]._numDocs, read_stats);
+    int64_t offset = ((int64_t)_vectorSize) * lookup_result.idx + _datHeaderLen;
+    return BitVector::create(_docIdLimit, *_datFile, offset, _vectorSize, _entries[lookup_result.idx]._numDocs,
+                             read_stats);
 }
 
-std::unique_ptr<const BitVector>
-BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result)
-{
+std::unique_ptr<const BitVector> BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result) {
     ReadStats read_stats;
     return read_bitvector(lookup_result, read_stats);
 }
 
 PostingListFileRange
-BitVectorDictionary::get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const
-{
+BitVectorDictionary::get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const {
     if (!lookup_result.valid()) {
         return {0, 0};
     }
-    uint64_t offset = ((uint64_t) _vectorSize) * lookup_result.idx + _datHeaderLen;
+    uint64_t offset = ((uint64_t)_vectorSize) * lookup_result.idx + _datHeaderLen;
     return {offset, offset + _vectorSize};
 }
 
-}
+} // namespace search::diskindex

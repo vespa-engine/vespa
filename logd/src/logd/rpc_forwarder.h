@@ -4,8 +4,10 @@
 
 #include "forwarder.h"
 #include "proto_converter.h"
-#include <vespa/log/log_message.h>
+
 #include <vespa/fnet/frt/target.h>
+#include <vespa/log/log_message.h>
+
 #include <memory>
 #include <vector>
 
@@ -16,9 +18,7 @@ namespace logdemon {
 struct Metrics;
 
 struct RpcTargetSubRef {
-    void operator()(FRT_Target* target) const noexcept {
-        target->internal_subref();
-    }
+    void operator()(FRT_Target* target) const noexcept { target->internal_subref(); }
 };
 using RpcTargetGuard = std::unique_ptr<FRT_Target, RpcTargetSubRef>;
 
@@ -27,21 +27,21 @@ using RpcTargetGuard = std::unique_ptr<FRT_Target, RpcTargetSubRef>;
  */
 class RpcForwarder : public Forwarder {
 private:
-    Metrics& _metrics;
-    std::string _connection_spec;
-    double _rpc_timeout_secs;
-    size_t _max_messages_per_request;
-    RpcTargetGuard _target;
+    Metrics&                        _metrics;
+    std::string                     _connection_spec;
+    double                          _rpc_timeout_secs;
+    size_t                          _max_messages_per_request;
+    RpcTargetGuard                  _target;
     std::vector<ns_log::LogMessage> _messages;
-    int _bad_lines;
-    ForwardMap _forward_filter;
+    int                             _bad_lines;
+    ForwardMap                      _forward_filter;
 
     void ping_logserver();
 
 public:
     RpcForwarder(Metrics& metrics, const ForwardMap& forward_filter, FRT_Supervisor& supervisor,
-                 const std::string& logserver_host, int logserver_rpc_port,
-                 double rpc_timeout_secs, size_t max_messages_per_request);
+                 const std::string& logserver_host, int logserver_rpc_port, double rpc_timeout_secs,
+                 size_t max_messages_per_request);
     ~RpcForwarder() override;
 
     // Implements Forwarder
@@ -51,5 +51,4 @@ public:
     void resetBadLines() override;
 };
 
-}
-
+} // namespace logdemon

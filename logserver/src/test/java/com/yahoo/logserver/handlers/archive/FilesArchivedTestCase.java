@@ -9,6 +9,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class FilesArchivedTestCase {
     private void makeLogfile(String name, long hours) throws IOException {
         File f = new File(tmpDir, name);
         f.getParentFile().mkdirs();
-        new FileWriter(f).write("foo bar baz\n");
+        new FileWriter(f, StandardCharsets.UTF_8).write("foo bar baz\n");
         long now = System.currentTimeMillis();
         f.setLastModified(now - (hours * 3600 * 1000));
     }

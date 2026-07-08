@@ -12,8 +12,7 @@
 
 namespace storage::distributor {
 
-class OperationTarget : public vespalib::AsciiPrintable
-{
+class OperationTarget : public vespalib::AsciiPrintable {
     document::Bucket _bucket;
     lib::Node        _node;
     bool             _newCopy;
@@ -31,9 +30,7 @@ public:
     bool operator==(const OperationTarget& o) const noexcept {
         return (_bucket == o._bucket && _node == o._node && _newCopy == o._newCopy);
     }
-    bool operator!=(const OperationTarget& o) const noexcept {
-        return !(operator==(o));
-    }
+    bool operator!=(const OperationTarget& o) const noexcept { return !(operator==(o)); }
 
     void print(vespalib::asciistream& out, const PrintProperties&) const override;
 };
@@ -41,14 +38,16 @@ public:
 class OperationTargetList : public std::vector<OperationTarget> {
 public:
     bool hasAnyNewCopies() const noexcept {
-        for (size_t i=0; i<size(); ++i) {
-            if (operator[](i).isNewCopy()) return true;
+        for (size_t i = 0; i < size(); ++i) {
+            if (operator[](i).isNewCopy())
+                return true;
         }
         return false;
     }
     bool hasAnyExistingCopies() const noexcept {
-        for (size_t i=0; i<size(); ++i) {
-            if (!operator[](i).isNewCopy()) return true;
+        for (size_t i = 0; i < size(); ++i) {
+            if (!operator[](i).isNewCopy())
+                return true;
         }
         return false;
     }
@@ -59,11 +58,9 @@ public:
     virtual ~OperationTargetResolver() = default;
 
     // Sadly all operations but put currently implement this by themselves.
-    enum OperationType {
-        PUT
-    };
-    
+    enum OperationType { PUT };
+
     virtual OperationTargetList getTargets(OperationType type, const document::BucketId& id) = 0;
 };
 
-}
+} // namespace storage::distributor

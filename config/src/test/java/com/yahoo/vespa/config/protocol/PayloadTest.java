@@ -63,7 +63,7 @@ public class PayloadTest {
 
         LZ4PayloadCompressor compressor = new LZ4PayloadCompressor();
         CompressionInfo info = CompressionInfo.create(CompressionType.LZ4, foo2.length());
-        Utf8Array compressed = new Utf8Array(compressor.compress(foo2.getBytes()));
+        Utf8Array compressed = new Utf8Array(compressor.compress(foo2.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 
         Payload i = Payload.from(compressed, info);
         Payload j = Payload.from(compressed, info);

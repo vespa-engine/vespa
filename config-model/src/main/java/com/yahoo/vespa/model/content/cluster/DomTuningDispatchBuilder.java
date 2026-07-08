@@ -27,7 +27,14 @@ public class DomTuningDispatchBuilder {
         var policy = dispatchElement.childAsString("dispatch-policy");
         // TODO: Remove support for 'random' on Vespa 9 (already removed from doc)
         if (policy != null && policy.equalsIgnoreCase("random")) {
-            logger.logApplicationPackage(WARNING, "'dispatch-policy' is set to 'random', this is deprecated and 'adaptive' will be used instead");
+            logger.logApplicationPackage(WARNING, "'dispatch-policy' is set to 'random', this policy is deprecated and 'adaptive' will be used instead");
+        }
+        // TODO: Remove support for 'latency-amortized-over-' on Vespa 9 (already removed from doc)
+        //       latency-amortized-over-requests  is a synonym of 'adaptive', mapped in Dispatcher when applying the config
+        //       latency-amortized-over-time is *not* a synonym, so the warning below lies. However, this option has probably never been documented.
+        if (policy != null && policy.toLowerCase().startsWith("latency-amortized-over-")) {
+            logger.logApplicationPackage(WARNING, "'dispatch-policy' is set to " + policy.toLowerCase() +
+                                                  "', this policy is deprecated and 'adaptive' will be used instead");
         }
         builder.setDispatchPolicy(dispatchElement.childAsString("dispatch-policy"));
 

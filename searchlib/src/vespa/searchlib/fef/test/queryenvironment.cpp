@@ -4,15 +4,17 @@
 
 namespace search::fef::test {
 
-QueryEnvironment::QueryEnvironment(IndexEnvironment *env)
+QueryEnvironment::QueryEnvironment(IndexEnvironment* env)
     : _indexEnv(env),
       _terms(),
       _properties(),
       _locations(),
-      _attrCtx((env == nullptr) ? attribute::IAttributeContext::UP() : env->getAttributeMap().createContext())
-{
+      _attrCtx((env == nullptr) ? attribute::IAttributeContext::UP() : env->getAttributeMap().createContext()),
+      _field_length_info(),
+      _num_docs(1) {
 }
 
-QueryEnvironment::~QueryEnvironment() { }
-
+QueryEnvironment::~QueryEnvironment() {
 }
+
+} // namespace search::fef::test

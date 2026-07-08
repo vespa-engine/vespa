@@ -11,43 +11,43 @@
 
 // Normalize compiler-specific sanitizer definitions
 #ifndef __SANITIZE_ADDRESS__
-#  if defined(__has_feature)
-#    if __has_feature(address_sanitizer)
-#      define __SANITIZE_ADDRESS__
-#    endif
-#  endif
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define __SANITIZE_ADDRESS__
+#endif
+#endif
 #endif
 
 #ifndef __SANITIZE_THREAD__
-#  if defined(__has_feature)
-#    if __has_feature(thread_sanitizer)
-#      define __SANITIZE_THREAD__
-#    endif
-#  endif
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+#define __SANITIZE_THREAD__
+#endif
+#endif
 #endif
 
 #ifndef __SANITIZE_UNDEFINED__
-#  if defined(__has_feature)
-#    if __has_feature(undefined_sanitizer)
-#      define __SANITIZE_UNDEFINED__
-#    endif
-#  endif
+#if defined(__has_feature)
+#if __has_feature(undefined_sanitizer)
+#define __SANITIZE_UNDEFINED__
+#endif
+#endif
 #endif
 
 #ifdef __SANITIZE_ADDRESS__
-#  define VESPA_USE_SANITIZER 1
-#  define VESPA_USE_ADDRESS_SANITIZER 1
-#  define VESPA_SANITIZER_NAME "address"
+#define VESPA_USE_SANITIZER 1
+#define VESPA_USE_ADDRESS_SANITIZER 1
+#define VESPA_SANITIZER_NAME "address"
 #endif
 
 #ifdef __SANITIZE_THREAD__
-#  define VESPA_USE_SANITIZER 1
-#  define VESPA_USE_THREAD_SANITIZER 1
-#  define VESPA_SANITIZER_NAME "thread"
+#define VESPA_USE_SANITIZER 1
+#define VESPA_USE_THREAD_SANITIZER 1
+#define VESPA_SANITIZER_NAME "thread"
 #endif
 
 #ifdef __SANITIZE_UNDEFINED__
-#  define VESPA_USE_SANITIZER 1
-#  define VESPA_USE_UNDEFINED_SANITIZER 1
-#  define VESPA_SANITIZER_NAME "undefined"
+#define VESPA_USE_SANITIZER 1
+#define VESPA_USE_UNDEFINED_SANITIZER 1
+#define VESPA_SANITIZER_NAME "undefined"
 #endif

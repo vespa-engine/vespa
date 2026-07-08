@@ -75,16 +75,19 @@ public class ParsedRankingConverter {
         parsed.getFilterFirstThreshold().ifPresent(profile::setFilterFirstThreshold);
         parsed.getFilterFirstExploration().ifPresent(profile::setFilterFirstExploration);
         parsed.getExplorationSlack().ifPresent(profile::setExplorationSlack);
+        parsed.getPrefetchTensors().ifPresent(profile::setPrefetchTensors);
         parsed.getTargetHitsMaxAdjustmentFactor().ifPresent(profile::setTargetHitsMaxAdjustmentFactor);
         parsed.getWeakandStopwordLimit().ifPresent(profile::setWeakandStopwordLimit);
         parsed.getWeakandAllowDropAll().ifPresent(profile::setWeakandAllowDropAll);
         parsed.getWeakandAdjustTarget().ifPresent(profile::setWeakandAdjustTarget);
         parsed.getFilterThreshold().ifPresent(profile::setFilterThreshold);
         parsed.getKeepRankCount().ifPresent(profile::setKeepRankCount);
+        parsed.getTotalKeepRankCount().ifPresent(profile::setTotalKeepRankCount);
         parsed.getMinHitsPerThread().ifPresent(profile::setMinHitsPerThread);
         parsed.getNumSearchPartitions().ifPresent(profile::setNumSearchPartitions);
         parsed.getNumThreadsPerSearch().ifPresent(profile::setNumThreadsPerSearch);
-        parsed.getReRankCount().ifPresent(profile::setRerankCount);
+        parsed.getRerankCount().ifPresent(profile::setRerankCount);
+        parsed.getTotalRerankCount().ifPresent(profile::setTotalRerankCount);
 
         parsed.getMatchPhase().ifPresent(profile::setMatchPhase);
         parsed.getDiversity().ifPresent(profile::setDiversity);

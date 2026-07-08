@@ -39,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * The config model from a content tag in services.
@@ -104,6 +105,26 @@ public class Content extends ConfigModel {
         }
 
         containerCluster.getDocprocChains().add(new IndexingDocprocChain());
+    }
+
+    private static boolean inheritsFromIndexing(DocprocChain chain) {
+        for (ComponentSpecification inherited : chain.getChainSpecification().inheritance.chainSpecifications) {
+            if (IndexingDocprocChain.NAME.equals(inherited.getName())) return true;
+        }
+        return false;
+    }
+
+    private static void addIndexingChainToContainersInheritingFromIt(Collection<ContainerModel> containers) {
+        for (ContainerModel containerModel : containers) {
+            ContainerCluster<?> cluster = containerModel.getCluster();
+            if (cluster.getDocproc() == null) continue;
+            for (DocprocChain chain : cluster.getDocprocChains().allChains().allComponents()) {
+                if (inheritsFromIndexing(chain)) {
+                    addIndexingChain(cluster);
+                    break;
+                }
+            }
+        }
     }
 
     private static ContainerCluster<?> getContainerWithSearch(Collection<ContainerModel> containers) {
@@ -211,6 +232,7 @@ public class Content extends ConfigModel {
             content.cluster = new ContentCluster.Builder(admin).build(modelContext, xml);
             buildIndexingClusters(content, modelContext,
                                   (ApplicationConfigProducerRoot)modelContext.getParentProducer());
+            addIndexingChainToContainersInheritingFromIt(content.containers);
         }
 
         /** Select/creates and initializes the indexing cluster coupled to this */
@@ -221,6 +243,14 @@ public class Content extends ConfigModel {
             if (indexingDocproc.hasExplicitCluster()) {
                 setExistingIndexingCluster(content, indexingDocproc, content.containers);
             } else {
+                if (content.containers.size() > 1) {
+                    String message = "Content cluster '" + content.getCluster().getName() + "' does not have an explicit " +
+                                     "document-processing cluster configured. Add '<document-processing cluster=\"<name>\"/>' " +
+                                     "in <content> to ensure deterministic indexing cluster selection.";
+                    if (modelContext.getDeployState().featureFlags().requireExplicitDocprocCluster())
+                        throw new IllegalArgumentException(message);
+                    modelContext.getDeployState().getDeployLogger().logApplicationPackage(Level.WARNING, message);
+                }
                 setContainerAsIndexingCluster(search.getSearchNodes(), indexingDocproc, content, modelContext, root);
             }
         }

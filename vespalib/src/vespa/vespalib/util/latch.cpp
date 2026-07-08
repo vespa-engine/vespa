@@ -2,6 +2,4 @@
 
 #include "latch.h"
 
-namespace vespalib {
-
-} // namespace vespalib
+namespace vespalib {} // namespace vespalib

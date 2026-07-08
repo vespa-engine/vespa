@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.xgboost;
 
+import com.yahoo.text.Utf8;
 import com.devsmart.ubjson.UBArray;
 import com.devsmart.ubjson.UBObject;
 import com.devsmart.ubjson.UBReader;
@@ -369,7 +370,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
 
         try {
             List<String> featureNames = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new FileReader(featuresFilePath))) {
+            try (BufferedReader reader = new BufferedReader(Utf8.createReader(featuresFilePath))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();
@@ -462,6 +463,22 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         return treesValue.asArray();
     }
 
+    // Because XGBoost operates with floats, but the input data will often have
+    // higher precision, there is the risk that Vespa (treating the input data
+    // as double) will think (x < x') where x' is the split created by converting
+    // x to float.  But XGBoost predictions will of course be computed with
+    // (x == x') instead.
+    // Adjust splits to the next float (1 epsilon) down (negative direction)
+    // to alleviate this and give the same results as XGBoost predicts.
+    private static float[] adjustSplitConditions(float[] splitConditions) {
+        for (int i = 0; i < splitConditions.length; i++) {
+            float f = splitConditions[i];
+            float adjusted = Math.nextAfter(f, -Float.MAX_VALUE);
+            splitConditions[i] = adjusted;
+        }
+        return splitConditions;
+    }
+
     /**
      * Converts a UBJ tree (flat array format) to the root XGBoostTree node (hierarchical format).
      *
@@ -477,6 +494,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         float[] baseWeights = treeObj.get("base_weights").asFloat32Array();
         byte[] defaultLeftBytes = extractDefaultLeft(treeObj.get("default_left"));
 
+        splitConditions = adjustSplitConditions(splitConditions);
         // Convert from flat arrays to hierarchical tree structure, starting at root (node 0, depth 0)
         return buildTreeFromArrays(0, 0, leftChildren, rightChildren, splitConditions,
                 splitIndices, baseWeights, defaultLeftBytes);

@@ -22,4 +22,4 @@ namespace search::queryeval {
  **/
 SearchIterator::UP make_termwise(SearchIterator::UP search, bool strict);
 
-}
+} // namespace search::queryeval

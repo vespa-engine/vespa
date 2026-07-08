@@ -26,14 +26,14 @@ class IndexSearchableVisitor;
  * that let the components access a per query attribute context that expose
  * attribute vectors that can be utilized during query evaluation.
  **/
-class IndexSearchable : public search::queryeval::Searchable,
-                        public search::index::IFieldLengthInspector {
+class IndexSearchable : public search::queryeval::Searchable, public search::index::IFieldLengthInspector {
 protected:
     using IRequestContext = search::queryeval::IRequestContext;
     using FieldSpec = search::queryeval::FieldSpec;
     using FieldSpecList = search::queryeval::FieldSpecList;
     using Node = search::query::Node;
     using IAttributeContext = search::attribute::IAttributeContext;
+
 public:
     using SP = std::shared_ptr<IndexSearchable>;
 
@@ -51,7 +51,7 @@ public:
      * Calls visitor with properly downcasted argument to differentiate
      * between different types of indexes (disk index or memory index).
      */
-    virtual void accept(IndexSearchableVisitor &visitor) const = 0;
+    virtual void accept(IndexSearchableVisitor& visitor) const = 0;
 };
 
 } // namespace searchcorespi

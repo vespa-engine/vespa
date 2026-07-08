@@ -1,0 +1,16 @@
+{
+  "ai.vespa.models.evaluation.ModelsEvaluator" : [
+    "ai.vespa.modelintegration.evaluator.OnnxRuntime",
+    "com.yahoo.vespa.config.search.RankProfilesConfig",
+    "com.yahoo.vespa.config.search.core.OnnxModelsConfig",
+    "com.yahoo.vespa.config.search.core.RankingConstantsConfig",
+    "com.yahoo.vespa.config.search.core.RankingExpressionsConfig"
+  ],
+  "ai.vespa.models.evaluation.RankProfilesConfigImporter" : [
+    "ai.vespa.modelintegration.evaluator.OnnxRuntime",
+    "com.yahoo.vespa.config.search.RankProfilesConfig",
+    "com.yahoo.vespa.config.search.core.OnnxModelsConfig",
+    "com.yahoo.vespa.config.search.core.RankingConstantsConfig",
+    "com.yahoo.vespa.config.search.core.RankingExpressionsConfig"
+  ]
+}

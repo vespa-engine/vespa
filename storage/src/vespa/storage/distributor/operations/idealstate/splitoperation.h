@@ -2,16 +2,15 @@
 #pragma once
 
 #include "idealstateoperation.h"
+
 #include <vespa/storage/distributor/messagetracker.h>
 
 namespace storage::distributor {
 
-class SplitOperation : public IdealStateOperation
-{
+class SplitOperation : public IdealStateOperation {
 public:
-    SplitOperation(const ClusterContext& cluster_ctx,
-                   const BucketAndNodes& nodes,
-                   uint32_t maxBits, uint32_t splitCount, uint32_t splitSize);
+    SplitOperation(const ClusterContext& cluster_ctx, const BucketAndNodes& nodes, uint32_t maxBits,
+                   uint32_t splitCount, uint32_t splitSize);
     SplitOperation(const SplitOperation&) = delete;
     SplitOperation& operator=(const SplitOperation&) = delete;
     ~SplitOperation() override;
@@ -22,6 +21,7 @@ public:
     Type getType() const noexcept override { return SPLIT_BUCKET; }
     bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override;
     bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
+
 protected:
     MessageTracker _tracker;
 
@@ -30,4 +30,4 @@ protected:
     uint32_t _splitSize;
 };
 
-}
+} // namespace storage::distributor

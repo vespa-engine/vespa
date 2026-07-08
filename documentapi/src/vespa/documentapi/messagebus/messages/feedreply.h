@@ -30,22 +30,21 @@ public:
      * @param type        The type to assign to this.
      * @param feedAnswers The list of answers given by the search nodes.
      */
-    FeedReply(uint32_t type, const std::vector<FeedAnswer> &feedAnswers);
+    FeedReply(uint32_t type, const std::vector<FeedAnswer>& feedAnswers);
 
     /**
      * Returns the list of answers given by the search nodes.
      *
      * @return The list of answers.
      */
-    std::vector<FeedAnswer> &getFeedAnswers() { return _feedAnswers; }
+    std::vector<FeedAnswer>& getFeedAnswers() { return _feedAnswers; }
 
     /**
      * Returns the list of answers given by the search nodes.
      *
      * @return The list of answers.
      */
-    const std::vector<FeedAnswer> &getFeedAnswers() const { return _feedAnswers; }
+    const std::vector<FeedAnswer>& getFeedAnswers() const { return _feedAnswers; }
 };
 
-}
-
+} // namespace documentapi

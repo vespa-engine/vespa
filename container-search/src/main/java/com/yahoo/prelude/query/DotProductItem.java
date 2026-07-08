@@ -21,7 +21,7 @@ public class DotProductItem extends WeightedSetItem {
     public ItemType getItemType() { return ItemType.DOTPRODUCT; }
 
     @Override
-    SearchProtocol.QueryTreeItem toProtobuf() {
+    SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         if (hasOnlyLongs()) {
             var builder = SearchProtocol.ItemDotProductOfLong.newBuilder();
             builder.setProperties(ToProtobuf.buildTermProperties(this, getIndexName()));

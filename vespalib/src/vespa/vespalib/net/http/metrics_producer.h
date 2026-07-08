@@ -7,13 +7,10 @@
 namespace vespalib {
 
 struct MetricsProducer {
-    enum class ExpositionFormat {
-        JSON,
-        Prometheus
-    };
+    enum class ExpositionFormat { JSON, Prometheus };
 
-    virtual std::string getMetrics(const std::string &consumer, ExpositionFormat format) = 0;
-    virtual std::string getTotalMetrics(const std::string &consumer, ExpositionFormat format) = 0;
+    virtual std::string getMetrics(const std::string& consumer, ExpositionFormat format) = 0;
+    virtual std::string getTotalMetrics(const std::string& consumer, ExpositionFormat format) = 0;
     virtual ~MetricsProducer() = default;
 };
 

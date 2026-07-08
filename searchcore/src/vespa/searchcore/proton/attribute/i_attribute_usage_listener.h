@@ -2,16 +2,17 @@
 
 #pragma once
 
+#include "attribute_usage_stats.h"
+
 namespace proton {
 
 /*
  * Interface class for listening to attribute usage changes.
  */
-class IAttributeUsageListener
-{
+class IAttributeUsageListener {
 public:
     virtual ~IAttributeUsageListener() = default;
-    virtual void notify_attribute_usage(const AttributeUsageStats &attribute_usage) = 0;
+    virtual void notify_attribute_usage(const AttributeUsageStats& attribute_usage) = 0;
 };
 
-}
+} // namespace proton

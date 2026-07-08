@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchlib/fef/blueprint.h>
 
 namespace search::features {
 
@@ -13,10 +13,11 @@ namespace search::features {
  **/
 class AgeExecutor : public fef::FeatureExecutor {
 private:
-    const attribute::IAttributeVector *_attribute;
-    attribute::IntegerContent _buf;
+    const attribute::IAttributeVector* _attribute;
+    attribute::IntegerContent          _buf;
+
 public:
-    AgeExecutor(const attribute::IAttributeVector *attribute);
+    AgeExecutor(const attribute::IAttributeVector* attribute);
     void execute(uint32_t docId) override;
 };
 
@@ -32,11 +33,11 @@ public:
     AgeBlueprint();
     ~AgeBlueprint() override;
 
-    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor&) const override;
     fef::Blueprint::UP createInstance() const override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
     fef::ParameterDescriptions getDescriptions() const override;
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
 };
 
-}
+} // namespace search::features

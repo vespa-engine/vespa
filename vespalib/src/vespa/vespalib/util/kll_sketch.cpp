@@ -9,9 +9,7 @@ struct KLLSketch::Impl {
     datasketches::kll_sketch<double> _sketch;
 };
 
-KLLSketch::KLLSketch()
-    : _impl(std::make_unique<Impl>())
-{
+KLLSketch::KLLSketch() : _impl(std::make_unique<Impl>()) {
 }
 
 KLLSketch::~KLLSketch() = default;
@@ -57,4 +55,4 @@ KLLSketch KLLSketch::deserialize(const std::vector<uint8_t>& buffer) {
     return out;
 }
 
-}
+} // namespace vespalib

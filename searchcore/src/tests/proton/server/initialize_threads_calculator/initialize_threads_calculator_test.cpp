@@ -14,10 +14,8 @@ public:
     InitializeThreadsCalculatorTest() : DirectoryHandler("tmp") {}
 };
 
-void
-expect_successful_init(uint32_t exp_threads)
-{
-    constexpr uint32_t cfg_threads = 9;
+void expect_successful_init(uint32_t exp_threads) {
+    constexpr uint32_t          cfg_threads = 9;
     InitializeThreadsCalculator i(HwInfo::Cpu(cfg_threads), "tmp", cfg_threads);
     EXPECT_EQ(exp_threads, i.num_threads());
     EXPECT_TRUE(i.threads().get() != nullptr);
@@ -26,25 +24,21 @@ expect_successful_init(uint32_t exp_threads)
     EXPECT_TRUE(i.threads().get() == nullptr);
 }
 
-void
-expect_aborted_init(uint32_t exp_threads, uint32_t cfg_threads = 9)
-{
+void expect_aborted_init(uint32_t exp_threads, uint32_t cfg_threads = 9) {
     InitializeThreadsCalculator i(HwInfo::Cpu(cfg_threads), "tmp", cfg_threads);
     EXPECT_EQ(exp_threads, i.num_threads());
     EXPECT_TRUE(i.threads().get() != nullptr);
     EXPECT_EQ(exp_threads, dynamic_cast<const ThreadStackExecutor&>(*i.threads()).getNumThreads());
 }
 
-TEST_F(InitializeThreadsCalculatorTest, initialize_threads_unchanged_when_init_is_successful)
-{
+TEST_F(InitializeThreadsCalculatorTest, initialize_threads_unchanged_when_init_is_successful) {
     expect_successful_init(9);
     // The previous init was successful,
     // so we still use the configured number of initialize threads.
     expect_successful_init(9);
 }
 
-TEST_F(InitializeThreadsCalculatorTest, initialize_threads_cut_in_half_when_init_is_aborted)
-{
+TEST_F(InitializeThreadsCalculatorTest, initialize_threads_cut_in_half_when_init_is_aborted) {
     expect_aborted_init(9);
     expect_aborted_init(4);
     expect_aborted_init(2);
@@ -52,8 +46,7 @@ TEST_F(InitializeThreadsCalculatorTest, initialize_threads_cut_in_half_when_init
     expect_aborted_init(1);
 }
 
-TEST_F(InitializeThreadsCalculatorTest, zero_initialize_threads_is_special)
-{
+TEST_F(InitializeThreadsCalculatorTest, zero_initialize_threads_is_special) {
     {
         InitializeThreadsCalculator i(HwInfo::Cpu(10), "tmp", 0);
         EXPECT_EQ(0, i.num_threads());
@@ -63,15 +56,13 @@ TEST_F(InitializeThreadsCalculatorTest, zero_initialize_threads_is_special)
     expect_aborted_init(1, 0);
 }
 
-void
-expect_lower(uint32_t cores, uint32_t configured) {
+void expect_lower(uint32_t cores, uint32_t configured) {
     InitializeThreadsCalculator i(HwInfo::Cpu(cores), "tmp", configured);
     EXPECT_EQ(std::min(cores, configured), i.num_threads());
     i.init_done();
 }
 
-TEST_F(InitializeThreadsCalculatorTest, lower_of_wanted_and_cores)
-{
+TEST_F(InitializeThreadsCalculatorTest, lower_of_wanted_and_cores) {
     expect_lower(1, 7);
     expect_lower(6, 7);
     expect_lower(7, 7);

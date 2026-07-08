@@ -98,4 +98,4 @@ concept DfaMatcher = requires(T a, std::string u8str, std::vector<uint32_t> u32s
     { a.emit_exact_match_suffix(typename T::StateType{}, u32str) } -> std::same_as<void>;
 };
 
-}
+} // namespace vespalib::fuzzy

@@ -3,6 +3,7 @@ package com.yahoo.config.provision.serialization;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
@@ -93,12 +94,22 @@ public class AllocatedHostsSerializerTest {
                                arm64Node,
                                arm64Node,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.empty()),
+                                                      Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(),
+                                                      List.of(AzName.from("az1"), AzName.from("az"))),
                                Optional.empty(),
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                       new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
                                Optional.empty()));
-
+        hosts.add(new HostSpec("with-profile",
+                               smallSlowDiskSpeedNode,
+                               bigSlowDiskSpeedNode,
+                               anyDiskSpeedNode,
+                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                      Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), List.of(),
+                                                      Optional.of("large-storage")),
+                               Optional.empty(),
+                               Optional.empty(),
+                               Optional.empty()));
         hosts.add(new HostSpec("with-sidecars",
                 smallSlowDiskSpeedNode,
                 bigSlowDiskSpeedNode,
@@ -110,6 +121,7 @@ public class AllocatedHostsSerializerTest {
                                         .id(0)
                                         .name("sidecar1")
                                         .image(DockerImage.fromString("registry1/namespace1/repo1:tag1"))
+                                        .hasImageMirror(true)
                                         .maxCpu(2)
                                         .minCpu(1)
                                         .memoryGiB(1)
@@ -123,6 +135,7 @@ public class AllocatedHostsSerializerTest {
                                         .id(1)
                                         .name("sidecar2")
                                         .image(DockerImage.fromString("registry2/namespace2/repo2:tag2"))
+                                        .hasImageMirror(true)
                                         .maxCpu(4)
                                         .minCpu(2)
                                         .memoryGiB(2)
@@ -148,6 +161,7 @@ public class AllocatedHostsSerializerTest {
             HostSpec deserializedHost = requireHost(expectedHost.hostname(), deserializedHosts);
             assertEquals(expectedHost.hostname(), deserializedHost.hostname());
             assertEquals(expectedHost.membership(), deserializedHost.membership());
+            assertEquals(expectedHost.membership().map(m -> m.cluster().profile()), deserializedHost.membership().map(m -> m.cluster().profile()));
             assertEquals(expectedHost.realResources(), deserializedHost.realResources());
             assertEquals(expectedHost.advertisedResources(), deserializedHost.advertisedResources());
             assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
@@ -165,11 +179,25 @@ public class AllocatedHostsSerializerTest {
     }
 
     @Test
+    void testProfileRoundTrip() throws IOException {
+        var membership = ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), List.of(),
+                                                Optional.of("large-storage"));
+        var host = new HostSpec("with-profile",
+                                smallSlowDiskSpeedNode, bigSlowDiskSpeedNode, anyDiskSpeedNode,
+                                membership, Optional.empty(), Optional.empty(), Optional.empty());
+        AllocatedHosts deserialized = fromJson(toJson(AllocatedHosts.withHosts(Set.of(host))));
+        assertEquals(Optional.of("large-storage"),
+                     requireHost("with-profile", deserialized).membership().get().cluster().profile());
+    }
+
+    @Test
     void testSidecarWithExecProbe() throws IOException {
         var sidecarWithExecProbe = SidecarSpec.builder()
                 .id(0)
                 .name("sidecar-with-exec-probe")
                 .image(DockerImage.fromString("registry/namespace/repo:tag"))
+                .hasImageMirror(true)
                 .maxCpu(1)
                 .minCpu(0.5)
                 .memoryGiB(1)

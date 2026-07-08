@@ -15,23 +15,20 @@ namespace nodes {
 
 template <typename... TYPES> struct CheckTypeVisitor;
 
-template <>
-struct CheckTypeVisitor<> : EmptyNodeVisitor {
+template <> struct CheckTypeVisitor<> : EmptyNodeVisitor {
     bool result = false;
 };
 
-template <typename HEAD, typename... TAIL>
-struct CheckTypeVisitor<HEAD, TAIL...> : CheckTypeVisitor<TAIL...> {
-    void visit(const HEAD &) override { this->result = true; }
+template <typename HEAD, typename... TAIL> struct CheckTypeVisitor<HEAD, TAIL...> : CheckTypeVisitor<TAIL...> {
+    void visit(const HEAD&) override { this->result = true; }
 };
 
-template <typename... TYPES>
-bool check_type(const nodes::Node &node) {
+template <typename... TYPES> bool check_type(const nodes::Node& node) {
     CheckTypeVisitor<TYPES...> check;
     node.accept(check);
     return check.result;
 }
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
+} // namespace nodes
+} // namespace eval
 } // namespace vespalib

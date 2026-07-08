@@ -5,15 +5,11 @@
 namespace proton {
 
 CommitTimeTracker::CommitTimeTracker(vespalib::duration visibilityDelay)
-    : _visibilityDelay(visibilityDelay),
-      _nextCommit(vespalib::steady_clock::now())
-{
+    : _visibilityDelay(visibilityDelay), _nextCommit(vespalib::steady_clock::now()) {
     _nextCommit = _nextCommit + visibilityDelay;
 }
 
-bool
-CommitTimeTracker::needCommit() const
-{
+bool CommitTimeTracker::needCommit() const {
     if (hasVisibilityDelay()) {
         vespalib::steady_time now(vespalib::steady_clock::now());
         if (now > _nextCommit) {
@@ -25,4 +21,4 @@ CommitTimeTracker::needCommit() const
     return false;
 }
 
-}
+} // namespace proton

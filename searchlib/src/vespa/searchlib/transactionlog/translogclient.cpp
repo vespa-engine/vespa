@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogclient.h"
+
 #include "common.h"
-#include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
-
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".translogclient");
@@ -20,15 +21,15 @@ VESPA_THREAD_STACK_TAG(translogclient_rpc_callback)
 namespace search::transactionlog::client {
 
 namespace {
-    const double NEVER(-1.0);
+const double NEVER(-1.0);
 }
 
 namespace {
 
 struct RpcTask : public vespalib::Executor::Task {
-    FRT_RPCRequest *req;
-    std::function<void(FRT_RPCRequest *req)> fun;
-    RpcTask(FRT_RPCRequest *req_in, std::function<void(FRT_RPCRequest *req)> &&fun_in)
+    FRT_RPCRequest*                          req;
+    std::function<void(FRT_RPCRequest* req)> fun;
+    RpcTask(FRT_RPCRequest* req_in, std::function<void(FRT_RPCRequest* req)>&& fun_in)
         : req(req_in), fun(std::move(fun_in)) {}
     void run() override {
         fun(req);
@@ -43,51 +44,42 @@ struct RpcTask : public vespalib::Executor::Task {
     }
 };
 
-}
+} // namespace
 
-TransLogClient::TransLogClient(FNET_Transport & transport, const std::string & rpcTarget) :
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, translogclient_rpc_callback)),
-    _rpcTarget(rpcTarget),
-    _sessions(),
-    _supervisor(std::make_unique<FRT_Supervisor>(&transport)),
-    _target(nullptr)
-{
+TransLogClient::TransLogClient(FNET_Transport& transport, const std::string& rpcTarget)
+    : _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, translogclient_rpc_callback)),
+      _rpcTarget(rpcTarget),
+      _sessions(),
+      _supervisor(std::make_unique<FRT_Supervisor>(&transport)),
+      _target(nullptr) {
     reconnect();
     exportRPC(*_supervisor);
 }
 
-TransLogClient::~TransLogClient()
-{
+TransLogClient::~TransLogClient() {
     disconnect();
     _executor->shutdown().sync();
     _supervisor->GetTransport()->sync();
 }
 
-bool
-TransLogClient::reconnect()
-{
+bool TransLogClient::reconnect() {
     disconnect();
     _target = _supervisor->Get2WayTarget(_rpcTarget.c_str());
     return isConnected();
 }
 
-bool
-TransLogClient::isConnected() const {
+bool TransLogClient::isConnected() const {
     return (_target != nullptr) && _target->IsValid();
 }
 
-void
-TransLogClient::disconnect()
-{
+void TransLogClient::disconnect() {
     if (_target) {
         _target->internal_subref();
     }
 }
 
-bool
-TransLogClient::create(const std::string & domain)
-{
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+bool TransLogClient::create(const std::string& domain) {
+    FRT_RPCRequest* req = _supervisor->AllocRPCRequest();
     req->SetMethodName("createDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
@@ -95,10 +87,8 @@ TransLogClient::create(const std::string & domain)
     return (retval == 0);
 }
 
-bool
-TransLogClient::remove(const std::string & domain)
-{
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+bool TransLogClient::remove(const std::string& domain) {
+    FRT_RPCRequest* req = _supervisor->AllocRPCRequest();
     req->SetMethodName("deleteDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
@@ -106,10 +96,8 @@ TransLogClient::remove(const std::string & domain)
     return (retval == 0);
 }
 
-std::unique_ptr<Session>
-TransLogClient::open(const std::string & domain)
-{
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+std::unique_ptr<Session> TransLogClient::open(const std::string& domain) {
+    FRT_RPCRequest* req = _supervisor->AllocRPCRequest();
     req->SetMethodName("openDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
@@ -120,21 +108,17 @@ TransLogClient::open(const std::string & domain)
     return std::unique_ptr<Session>();
 }
 
-std::unique_ptr<Visitor>
-TransLogClient::createVisitor(const std::string & domain, Callback & callBack)
-{
+std::unique_ptr<Visitor> TransLogClient::createVisitor(const std::string& domain, Callback& callBack) {
     return std::make_unique<Visitor>(domain, *this, callBack);
 }
 
-bool
-TransLogClient::listDomains(std::vector<std::string> & dir)
-{
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+bool TransLogClient::listDomains(std::vector<std::string>& dir) {
+    FRT_RPCRequest* req = _supervisor->AllocRPCRequest();
     req->SetMethodName("listDomains");
     int32_t retval(rpc(req));
     if (retval == 0) {
-        char * s = req->GetReturn()->GetValue(1)._string._str;
-        for (const char * d(strsep(&s, "\n")); d && (*d != '\0'); d = strsep(&s, "\n")) {
+        char* s = req->GetReturn()->GetValue(1)._string._str;
+        for (const char* d(strsep(&s, "\n")); d && (*d != '\0'); d = strsep(&s, "\n")) {
             dir.push_back(d);
         }
     }
@@ -142,9 +126,7 @@ TransLogClient::listDomains(std::vector<std::string> & dir)
     return (retval == 0);
 }
 
-int32_t
-TransLogClient::rpc(FRT_RPCRequest * req)
-{
+int32_t TransLogClient::rpc(FRT_RPCRequest* req) {
     int32_t retval(-7);
     if (_target) {
         _target->InvokeSync(req, NEVER);
@@ -160,19 +142,15 @@ TransLogClient::rpc(FRT_RPCRequest * req)
     return retval;
 }
 
-Session *
-TransLogClient::findSession(const std::string & domainName, int sessionId)
-{
+Session* TransLogClient::findSession(const std::string& domainName, int sessionId) {
     SessionKey key(domainName, sessionId);
-    auto found = _sessions.find(key);
-    Session * session((found != _sessions.end()) ? found->second : nullptr);
+    auto       found = _sessions.find(key);
+    Session*   session((found != _sessions.end()) ? found->second : nullptr);
     return session;
 }
 
-void
-TransLogClient::exportRPC(FRT_Supervisor & supervisor)
-{
-    FRT_ReflectionBuilder rb( & supervisor);
+void TransLogClient::exportRPC(FRT_Supervisor& supervisor) {
+    FRT_ReflectionBuilder rb(&supervisor);
 
     //-- Visit Callbacks -----------------------------------------------------------
     rb.DefineMethod("visitCallback", "six", "i", FRT_METHOD(TransLogClient::visitCallbackRPC_hook), this);
@@ -190,17 +168,14 @@ TransLogClient::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Non zero number indicates error.");
 }
 
-
-void
-TransLogClient::do_visitCallbackRPC(FRT_RPCRequest *req)
-{
+void TransLogClient::do_visitCallbackRPC(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
-    int32_t sessionId(params[1]._intval32);
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
+    const char* domainName = params[0]._string._str;
+    int32_t     sessionId(params[1]._intval32);
     LOG(spam, "visitCallback(%s, %d)(%d)", domainName, sessionId, params[2]._data._len);
-    Session * session(findSession(domainName, sessionId));
+    Session* session(findSession(domainName, sessionId));
     if (session != nullptr) {
         Packet packet(params[2]._data._buf, params[2]._data._len);
         retval = session->visit(packet);
@@ -209,16 +184,14 @@ TransLogClient::do_visitCallbackRPC(FRT_RPCRequest *req)
     LOG(debug, "visitCallback(%s, %d)=%d done", domainName, sessionId, retval);
 }
 
-void
-TransLogClient::do_eofCallbackRPC(FRT_RPCRequest *req)
-{
+void TransLogClient::do_eofCallbackRPC(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
-    int32_t sessionId(params[1]._intval32);
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
+    const char* domainName = params[0]._string._str;
+    int32_t     sessionId(params[1]._intval32);
     LOG(debug, "eofCallback(%s, %d)", domainName, sessionId);
-    Session * session(findSession(domainName, sessionId));
+    Session* session(findSession(domainName, sessionId));
     if (session != nullptr) {
         session->eof();
         retval = 0;
@@ -227,16 +200,13 @@ TransLogClient::do_eofCallbackRPC(FRT_RPCRequest *req)
     LOG(debug, "eofCallback(%s, %d)=%d done", domainName, sessionId, retval);
 }
 
-void
-TransLogClient::visitCallbackRPC_hook(FRT_RPCRequest *req)
-{
-    _executor->execute(std::make_unique<RpcTask>(req->Detach(), [this](FRT_RPCRequest *x){ do_visitCallbackRPC(x); }));
+void TransLogClient::visitCallbackRPC_hook(FRT_RPCRequest* req) {
+    _executor->execute(
+        std::make_unique<RpcTask>(req->Detach(), [this](FRT_RPCRequest* x) { do_visitCallbackRPC(x); }));
 }
 
-void
-TransLogClient::eofCallbackRPC_hook(FRT_RPCRequest *req)
-{
-    _executor->execute(std::make_unique<RpcTask>(req->Detach(), [this](FRT_RPCRequest *x){ do_eofCallbackRPC(x); }));
+void TransLogClient::eofCallbackRPC_hook(FRT_RPCRequest* req) {
+    _executor->execute(std::make_unique<RpcTask>(req->Detach(), [this](FRT_RPCRequest* x) { do_eofCallbackRPC(x); }));
 }
 
-}
+} // namespace search::transactionlog::client

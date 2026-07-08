@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stackdumpiterator.h"
+
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
-#include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>
+#include <vespa/vespalib/util/compress.h>
+
 #include <cassert>
 #include <cstring>
 
@@ -16,28 +18,21 @@ using search::query::StringTermVector;
 namespace search {
 
 SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(std::string_view buf)
-    : _buf(buf.begin()),
-      _bufEnd(buf.end()),
-      _currPos(0),
-      _currEnd(0)
-{
+    : _buf(buf.begin()), _bufEnd(buf.end()), _currPos(0), _currEnd(0) {
 }
 
 SimpleQueryStackDumpIterator::~SimpleQueryStackDumpIterator() = default;
 
-std::string_view
-SimpleQueryStackDumpIterator::read_string_view(const char *&p)
-{
+std::string_view SimpleQueryStackDumpIterator::read_string_view(const char*& p) {
     uint64_t len = readCompressedPositiveInt(p);
-    if ((p + len) > _bufEnd) throw false;
+    if ((p + len) > _bufEnd)
+        throw false;
     std::string_view result(p, len);
     p += len;
     return result;
 }
 
-uint64_t
-SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char *&p)
-{
+uint64_t SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char*& p) {
     if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_space(p, _bufEnd - p)) {
         throw false;
     }
@@ -47,9 +42,7 @@ SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char *&p)
     return tmp;
 }
 
-int64_t
-SimpleQueryStackDumpIterator::readCompressedInt(const char *&p)
-{
+int64_t SimpleQueryStackDumpIterator::readCompressedInt(const char*& p) {
     if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_positive_space(p, _bufEnd - p)) {
         throw false;
     }
@@ -59,10 +52,7 @@ SimpleQueryStackDumpIterator::readCompressedInt(const char *&p)
     return tmp;
 }
 
-template <typename T>
-T
-SimpleQueryStackDumpIterator::read_value(const char *&p)
-{
+template <typename T> T SimpleQueryStackDumpIterator::read_value(const char*& p) {
     T value;
     if (p + sizeof(value) > _bufEnd) {
         throw false;
@@ -72,8 +62,7 @@ SimpleQueryStackDumpIterator::read_value(const char *&p)
     return vespalib::nbo::n2h(value);
 }
 
-bool
-SimpleQueryStackDumpIterator::next() {
+bool SimpleQueryStackDumpIterator::next() {
     try {
         return readNext();
     } catch (...) {
@@ -90,14 +79,14 @@ bool SimpleQueryStackDumpIterator::readNext() {
     _currPos = _currEnd;
 
     // Find an item at the current position
-    const char *p = _buf + _currPos;
-    uint8_t typefield = *p++;
-    uint8_t type_code = typefield & ParseItem::item_type_mask;
+    const char* p = _buf + _currPos;
+    uint8_t     typefield = *p++;
+    uint8_t     type_code = typefield & ParseItem::item_type_mask;
     if (type_code == ParseItem::item_type_extension_mark) {
-        if (p >= _bufEnd || ((uint8_t) *p) >= 0x80) {
+        if (p >= _bufEnd || ((uint8_t)*p) >= 0x80) {
             return false;
         }
-        type_code += (uint8_t) *p++;
+        type_code += (uint8_t)*p++;
     }
     _d.itemType = static_cast<ParseItem::ItemType>(type_code);
 
@@ -115,7 +104,8 @@ bool SimpleQueryStackDumpIterator::readNext() {
     /** flags of the current item **/
     uint8_t currFlags = 0;
     if (__builtin_expect(ParseItem::getFeature_Flags(typefield), false)) {
-        if ((p + sizeof(uint8_t)) > _bufEnd) return false;
+        if ((p + sizeof(uint8_t)) > _bufEnd)
+            return false;
         currFlags = (uint8_t)*p++;
     }
     _d.noRankFlag = (currFlags & ParseItem::ItemFlags::IFLAG_NORANK) != 0;
@@ -214,8 +204,7 @@ bool SimpleQueryStackDumpIterator::readNext() {
     return (p <= _bufEnd);
 }
 
-void
-SimpleQueryStackDumpIterator::readPredicate(const char *&p) {
+void SimpleQueryStackDumpIterator::readPredicate(const char*& p) {
     _d.index_view = read_string_view(p);
     _d.predicateQueryTerm = std::make_unique<PredicateQueryTerm>();
 
@@ -223,24 +212,23 @@ SimpleQueryStackDumpIterator::readPredicate(const char *&p) {
     for (size_t i = 0; i < count; ++i) {
         std::string_view key = read_string_view(p);
         std::string_view value = read_string_view(p);
-        uint64_t sub_queries = read_value<uint64_t>(p);
+        uint64_t         sub_queries = read_value<uint64_t>(p);
         _d.predicateQueryTerm->addFeature(std::string(key), std::string(value), sub_queries);
     }
     count = readCompressedPositiveInt(p);
     for (size_t i = 0; i < count; ++i) {
         std::string_view key = read_string_view(p);
-        uint64_t value = read_value<uint64_t>(p);
-        uint64_t sub_queries = read_value<uint64_t>(p);
+        uint64_t         value = read_value<uint64_t>(p);
+        uint64_t         sub_queries = read_value<uint64_t>(p);
         _d.predicateQueryTerm->addRangeFeature(std::string(key), value, sub_queries);
     }
 }
 
-void
-SimpleQueryStackDumpIterator::readNN(const char *& p) {
+void SimpleQueryStackDumpIterator::readNN(const char*& p) {
     _d.index_view = read_string_view(p);
-    _d.term_view = read_string_view(p); // query_tensor_name
+    _d.term_view = read_string_view(p);           // query_tensor_name
     _d.targetHits = readCompressedPositiveInt(p); // targetNumHits
-    uint32_t tmp = readCompressedPositiveInt(p); // allow_approximate
+    uint32_t tmp = readCompressedPositiveInt(p);  // allow_approximate
     // XXX: remove later when QRS doesn't send this extra flag
     _d.allowApproximateFlag = ((tmp & ~0x40) != 0);
     _d.exploreAdditionalHits = readCompressedPositiveInt(p); // explore_additional_hits
@@ -249,29 +237,25 @@ SimpleQueryStackDumpIterator::readNN(const char *& p) {
     _d.arity = 0;
 }
 
-void
-SimpleQueryStackDumpIterator::readComplexTerm(const char *& p) {
+void SimpleQueryStackDumpIterator::readComplexTerm(const char*& p) {
     _d.arity = readCompressedPositiveInt(p);
     _d.index_view = read_string_view(p);
     if (getType() == ParseItem::ITEM_WAND) {
-        _d.targetHits = readCompressedPositiveInt(p); // targetNumHits
-        _d.scoreThreshold = read_value<double>(p); // scoreThreshold
+        _d.targetHits = readCompressedPositiveInt(p);    // targetNumHits
+        _d.scoreThreshold = read_value<double>(p);       // scoreThreshold
         _d.thresholdBoostFactor = read_value<double>(p); // thresholdBoostFactor
     }
 }
 
-void
-SimpleQueryStackDumpIterator::readFuzzy(const char *&p) {
+void SimpleQueryStackDumpIterator::readFuzzy(const char*& p) {
     _d.index_view = read_string_view(p);
-    _d.term_view = read_string_view(p); // fuzzy term
-    _d.fuzzy_max_edit_distance = readCompressedPositiveInt(p); // maxEditDistance
+    _d.term_view = read_string_view(p);                         // fuzzy term
+    _d.fuzzy_max_edit_distance = readCompressedPositiveInt(p);  // maxEditDistance
     _d.fuzzy_prefix_lock_length = readCompressedPositiveInt(p); // prefixLength
     _d.arity = 0;
 }
 
-void
-SimpleQueryStackDumpIterator::read_string_in(const char*& p)
-{
+void SimpleQueryStackDumpIterator::read_string_in(const char*& p) {
     uint32_t num_terms = readCompressedPositiveInt(p);
     _d.arity = 0;
     _d.index_view = read_string_view(p);
@@ -282,9 +266,7 @@ SimpleQueryStackDumpIterator::read_string_in(const char*& p)
     _d.termVector = std::move(terms);
 }
 
-void
-SimpleQueryStackDumpIterator::read_numeric_in(const char*& p)
-{
+void SimpleQueryStackDumpIterator::read_numeric_in(const char*& p) {
     uint32_t num_terms = readCompressedPositiveInt(p);
     _d.arity = 0;
     _d.index_view = read_string_view(p);
@@ -295,4 +277,4 @@ SimpleQueryStackDumpIterator::read_numeric_in(const char*& p)
     _d.termVector = std::move(terms);
 }
 
-}
+} // namespace search

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/document/repo/fixedtyperepo.h>
+
 #include <memory>
 #include <string>
 
@@ -11,7 +12,7 @@ class SpanList;
 struct SpanNode;
 class SpanTree;
 class StringFieldValue;
-}
+} // namespace document
 
 namespace search::test {
 
@@ -21,14 +22,15 @@ class DocBuilder;
  * Helper class to build annotated string field.
  */
 class StringFieldBuilder {
-    std::string    _value;
-    size_t              _span_start;
-    document::SpanList* _span_list;  // owned by _span_tree
+    std::string                         _value;
+    size_t                              _span_start;
+    document::SpanList*                 _span_list; // owned by _span_tree
     std::unique_ptr<document::SpanTree> _span_tree;
-    const document::SpanNode* _last_span;
-    const document::FixedTypeRepo _repo;
+    const document::SpanNode*           _last_span;
+    const document::FixedTypeRepo       _repo;
     void start_annotate();
     void add_span();
+
 public:
     StringFieldBuilder(const DocBuilder& doc_builder);
     ~StringFieldBuilder();
@@ -40,4 +42,4 @@ public:
     document::StringFieldValue build();
 };
 
-}
+} // namespace search::test

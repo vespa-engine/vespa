@@ -14,8 +14,7 @@
 
 namespace document::select {
 
-class InvalidConstant : public Node
-{
+class InvalidConstant : public Node {
 public:
     explicit InvalidConstant(std::string_view value);
 
@@ -25,7 +24,6 @@ public:
     void visit(Visitor& v) const override;
 
     Node::UP clone() const override { return wrapParens(new InvalidConstant(_name)); }
-
 };
 
-}
+} // namespace document::select

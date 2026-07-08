@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/vespalib/data/memory.h>
+
+#include <memory>
 
 namespace vespalib::slime {
 

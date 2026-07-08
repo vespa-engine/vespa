@@ -12,7 +12,7 @@ std::string binary = module_build_path + "src/apps/analyze_onnx_model/vespa-anal
 std::string probe_cmd = binary + " --probe-types";
 
 std::string get_source_dir() {
-    const char *dir = getenv("SOURCE_DIRECTORY");
+    const char* dir = getenv("SOURCE_DIRECTORY");
     return (dir ? dir : ".");
 }
 std::string source_dir = get_source_dir();
@@ -22,10 +22,9 @@ std::string dynamic_model = source_dir + "/../../tensor/onnx_wrapper/dynamic.onn
 
 //-----------------------------------------------------------------------------
 
-TEST(AnalyzeOnnxModelTest, require_that_output_types_can_be_probed)
-{
+TEST(AnalyzeOnnxModelTest, require_that_output_types_can_be_probed) {
     ServerCmd f1(probe_cmd);
-    Slime params;
+    Slime     params;
     params.setObject();
     params.get().setString("model", probe_model);
     params.get().setObject("inputs");
@@ -41,18 +40,16 @@ TEST(AnalyzeOnnxModelTest, require_that_output_types_can_be_probed)
 
 //-----------------------------------------------------------------------------
 
-TEST(AnalyzeOnnxModelTest, test_error_invalid_json)
-{
+TEST(AnalyzeOnnxModelTest, test_error_invalid_json) {
     ServerCmd f1(probe_cmd);
-    auto out = f1.write_then_read_all("this is not valid json...\n");
+    auto      out = f1.write_then_read_all("this is not valid json...\n");
     EXPECT_TRUE(out.find("invalid json") < out.size());
     EXPECT_EQ(f1.shutdown(), 3);
 }
 
-TEST(AnalyzeOnnxModelTest, test_error_missing_input_type)
-{
+TEST(AnalyzeOnnxModelTest, test_error_missing_input_type) {
     ServerCmd f1(probe_cmd);
-    Slime params;
+    Slime     params;
     params.setObject();
     params.get().setString("model", simple_model);
     params.get().setObject("inputs");
@@ -61,10 +58,9 @@ TEST(AnalyzeOnnxModelTest, test_error_missing_input_type)
     EXPECT_EQ(f1.shutdown(), 3);
 }
 
-TEST(AnalyzeOnnxModelTest, test_error_invalid_input_type)
-{
+TEST(AnalyzeOnnxModelTest, test_error_invalid_input_type) {
     ServerCmd f1(probe_cmd);
-    Slime params;
+    Slime     params;
     params.setObject();
     params.get().setString("model", simple_model);
     params.get().setObject("inputs");
@@ -76,10 +72,9 @@ TEST(AnalyzeOnnxModelTest, test_error_invalid_input_type)
     EXPECT_EQ(f1.shutdown(), 3);
 }
 
-TEST(AnalyzeOnnxModelTest, test_error_incompatible_input_type)
-{
+TEST(AnalyzeOnnxModelTest, test_error_incompatible_input_type) {
     ServerCmd f1(probe_cmd);
-    Slime params;
+    Slime     params;
     params.setObject();
     params.get().setString("model", simple_model);
     params.get().setObject("inputs");
@@ -91,10 +86,9 @@ TEST(AnalyzeOnnxModelTest, test_error_incompatible_input_type)
     EXPECT_EQ(f1.shutdown(), 3);
 }
 
-TEST(AnalyzeOnnxModelTest, test_error_symbolic_size_mismatch)
-{
+TEST(AnalyzeOnnxModelTest, test_error_symbolic_size_mismatch) {
     ServerCmd f1(probe_cmd);
-    Slime params;
+    Slime     params;
     params.setObject();
     params.get().setString("model", dynamic_model);
     params.get().setObject("inputs");

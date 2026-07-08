@@ -11,22 +11,21 @@ namespace search::docsummary {
  * containing the tokens. The string values are not split but they are
  * lowercased if the string attribute vector uses uncased matching.
  */
-class AttributeTokensDFW : public DocsumFieldWriter
-{
+class AttributeTokensDFW : public DocsumFieldWriter {
 private:
-    std::string            _input_field_name;
-    uint32_t _state_index; // index into _fieldWriterStates in GetDocsumsState
+    std::string _input_field_name;
+    uint32_t    _state_index; // index into _fieldWriterStates in GetDocsumsState
 
 protected:
-    const std::string & getAttributeName() const override;
+    const std::string& getAttributeName() const override;
+
 public:
     AttributeTokensDFW(const std::string& input_field_name);
     ~AttributeTokensDFW() override;
     bool isGenerated() const override;
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      search::common::ElementIds selected_elements,
-                      vespalib::slime::Inserter& target) const override;
+                      search::common::ElementIds selected_elements, vespalib::slime::Inserter& target) const override;
 };
 
-}
+} // namespace search::docsummary

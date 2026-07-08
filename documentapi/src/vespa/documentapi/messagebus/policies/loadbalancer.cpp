@@ -5,43 +5,34 @@
 namespace documentapi {
 
 LoadBalancer::LoadBalancer(const string& cluster, const string& session)
-    : _mutex(),
-      _nodeInfo(),
-      _cluster(cluster),
-      _session(session),
-      _position(0)
-{}
+    : _mutex(), _nodeInfo(), _cluster(cluster), _session(session), _position(0) {
+}
 
 LoadBalancer::~LoadBalancer() = default;
 
-uint32_t
-LoadBalancer::getIndex(const string& name) const
-{
+uint32_t LoadBalancer::getIndex(const string& name) const {
     size_t lastSlash = name.find('/');
     string idx = name.substr(_cluster.length() + 1, lastSlash);
     return atoi(idx.c_str());
 }
 
-string
-LoadBalancer::getLastSpec(size_t target) const {
+string LoadBalancer::getLastSpec(size_t target) const {
     lock_guard guard(_mutex);
     return _nodeInfo[target].lastSpec;
 }
 
-double
-LoadBalancer::getWeight(size_t target) const {
+double LoadBalancer::getWeight(size_t target) const {
     lock_guard guard(_mutex);
     return _nodeInfo[target].weight;
 }
 
-std::pair<string, int>
-LoadBalancer::getRecipient(const slobrok::api::IMirrorAPI::SpecList& choices) {
+std::pair<string, int> LoadBalancer::getRecipient(const slobrok::api::IMirrorAPI::SpecList& choices) {
     lock_guard guard(_mutex);
     return getRecipient(guard, choices);
 }
 
-std::pair<string, int>
-LoadBalancer::getRecipient(const lock_guard & guard, const slobrok::api::IMirrorAPI::SpecList& choices) {
+std::pair<string, int> LoadBalancer::getRecipient(const lock_guard&                         guard,
+                                                  const slobrok::api::IMirrorAPI::SpecList& choices) {
     std::pair<string, int> retVal("", -1);
 
     if (choices.size() == 0) {
@@ -81,8 +72,7 @@ LoadBalancer::getRecipient(const lock_guard & guard, const slobrok::api::IMirror
     return retVal;
 }
 
-void
-LoadBalancer::normalizeWeights(const lock_guard &) {
+void LoadBalancer::normalizeWeights(const lock_guard&) {
     double lowest = -1.0;
 
     for (uint32_t i = 0; i < _nodeInfo.size(); i++) {
@@ -104,15 +94,14 @@ LoadBalancer::normalizeWeights(const lock_guard &) {
     }
 }
 
-void
-LoadBalancer::received(uint32_t nodeIndex, bool busy) {
+void LoadBalancer::received(uint32_t nodeIndex, bool busy) {
     if (busy) {
         lock_guard guard(_mutex);
-        NodeInfo& info = _nodeInfo[nodeIndex];
+        NodeInfo&  info = _nodeInfo[nodeIndex];
 
         info.weight = info.weight - 0.01;
         normalizeWeights(guard);
     }
 }
 
-}
+} // namespace documentapi

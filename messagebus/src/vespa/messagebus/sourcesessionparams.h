@@ -15,9 +15,9 @@ namespace mbus {
  */
 class SourceSessionParams {
 private:
-    IReplyHandler      *_replyHandler;
+    IReplyHandler*      _replyHandler;
     IThrottlePolicy::SP _throttlePolicy;
-    duration             _timeout;
+    duration            _timeout;
 
 public:
     /**
@@ -38,7 +38,7 @@ public:
      * @param throttlePolicy The policy to set.
      * @return This, to allow chaining.
      */
-    SourceSessionParams &setThrottlePolicy(IThrottlePolicy::SP throttlePolicy);
+    SourceSessionParams& setThrottlePolicy(IThrottlePolicy::SP throttlePolicy);
 
     /**
      * Returns the total timeout parameter.
@@ -52,7 +52,7 @@ public:
      *
      * @return The timeout in seconds.
      */
-    SourceSessionParams &setTimeout(duration timeout);
+    SourceSessionParams& setTimeout(duration timeout);
 
     /**
      * Returns whether or not a reply handler has been assigned to this.
@@ -67,7 +67,7 @@ public:
      *
      * @return The handler.
      */
-    IReplyHandler &getReplyHandler() const;
+    IReplyHandler& getReplyHandler() const;
 
     /**
      * Sets the handler to receive incoming replies.
@@ -75,8 +75,7 @@ public:
      * @param handler The handler to set.
      * @return This, to allow chaining.
      */
-    SourceSessionParams &setReplyHandler(IReplyHandler &handler);
+    SourceSessionParams& setReplyHandler(IReplyHandler& handler);
 };
 
 } // namespace mbus
-

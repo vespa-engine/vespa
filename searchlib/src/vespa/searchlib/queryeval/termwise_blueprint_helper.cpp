@@ -1,18 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "termwise_blueprint_helper.h"
+
 #include "termwise_search.h"
 
 namespace search::queryeval {
 
-TermwiseBlueprintHelper::TermwiseBlueprintHelper(const IntermediateBlueprint &self,
-                                                 MultiSearch::Children subSearches,
-                                                 UnpackInfo &unpackInfo)
-    : termwise_ch(),
-      other_ch(),
-      first_termwise(subSearches.size()),
-      termwise_unpack()
-{
+TermwiseBlueprintHelper::TermwiseBlueprintHelper(const IntermediateBlueprint& self, MultiSearch::Children subSearches,
+                                                 UnpackInfo& unpackInfo)
+    : termwise_ch(), other_ch(), first_termwise(subSearches.size()), termwise_unpack() {
     other_ch.reserve(subSearches.size());
     termwise_ch.reserve(subSearches.size());
     for (size_t i = 0; i < subSearches.size(); ++i) {
@@ -33,11 +29,9 @@ TermwiseBlueprintHelper::TermwiseBlueprintHelper(const IntermediateBlueprint &se
 
 TermwiseBlueprintHelper::~TermwiseBlueprintHelper() = default;
 
-void
-TermwiseBlueprintHelper::insert_termwise(SearchIterator::UP search, bool strict)
-{
+void TermwiseBlueprintHelper::insert_termwise(SearchIterator::UP search, bool strict) {
     auto termwise_search = make_termwise(std::move(search), strict);
     other_ch.insert(other_ch.begin() + first_termwise, std::move(termwise_search));
 }
 
-}
+} // namespace search::queryeval

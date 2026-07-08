@@ -20,6 +20,7 @@ import org.w3c.dom.Element;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -34,8 +35,20 @@ public class SecretsTest extends ContainerModelBuilderTestBase {
     void testCloudSecretsNeedHosted() {
         createModel(root, containerXml());
         ApplicationContainerCluster container = getContainerCluster("container");
-        Component<?, ?> component = container.getComponentsMap().get(ComponentId.fromString(SECRETS_IMPL_ID));
-        assertNull(component);
+        assertNull(container.getComponentsMap().get(ComponentId.fromString(SECRETS_IMPL_ID)));
+        assertNull(container.getComponentsMap().get(ComponentId.fromString(CloudAsmSecrets.CLASS)));
+    }
+
+    @Test
+    void cloud_asm_secrets_always_installed_in_hosted() {
+        DeployState state = new DeployState.Builder()
+                .properties(new TestProperties().setHostedVespa(true))
+                .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
+                .build();
+        createModel(root, state, null, containerXmlWithoutSecrets());
+        ApplicationContainerCluster container = getContainerCluster("container");
+        assertNotNull(container.getComponentsMap().get(ComponentId.fromString(CloudAsmSecrets.CLASS)));
+        assertNull(container.getComponentsMap().get(ComponentId.fromString(SECRETS_IMPL_ID)));
     }
 
     @Test
@@ -117,6 +130,10 @@ public class SecretsTest extends ContainerModelBuilderTestBase {
                 "    <openAiApiKey vault='prod' name='openai-apikey' />",
                 "  </secrets>",
                 "</container>");
+    }
+
+    private static Element containerXmlWithoutSecrets() {
+        return DomBuilderTest.parse("<container version='1.0' />");
     }
 
 }

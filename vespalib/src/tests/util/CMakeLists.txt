@@ -6,17 +6,22 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     SOURCES
     gtest_runner.cpp
     bfloat16_test.cpp
+    bit_packer_test.cpp
+    bit_span_test.cpp
     bits_test.cpp
     casts_test.cpp
     cgroup_resource_limits_test.cpp
     crc_test.cpp
     crypto_test.cpp
+    deadline_test.cpp
     defer_test.cpp
     eventbarrier.cpp
+    fast_range_test.cpp
     file_area_freelist_test.cpp
     generation_hold_list_test.cpp
     generationhandler_test.cpp
     json.cpp
+    logic_test.cpp
     issue_test.cpp
     memory_trap_test.cpp
     mmap_file_allocator_factory_test.cpp
@@ -33,14 +38,33 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     size_literals_test.cpp
     small_vector_test.cpp
     static_string_test.cpp
+    stride_test.cpp
     string_escape_test.cpp
     time_test.cpp
+    transient_memory_tracker_test.cpp
+    typed_data_layout_test.cpp
     typify_test.cpp
+    unordered_u32_set_test.cpp
     xmlserializabletest.cpp
+    xoshiro_test.cpp
     DEPENDS
     vespalib
     onnxruntime
     GTest::gtest
+    GTest::gmock
 )
 
 vespa_add_test( NAME vespalib_util_gtest_runner_test_app COMMAND vespalib_util_gtest_runner_test_app)
+
+vespa_add_executable(vespalib_util_unordered_u32_set_benchmark_app TEST
+    SOURCES
+    unordered_u32_set_benchmark.cpp
+    DEPENDS
+    vespalib
+)
+vespa_add_target_external_dependency(vespalib_util_unordered_u32_set_benchmark_app benchmark)
+vespa_add_test(
+    NAME    vespalib_util_unordered_u32_set_benchmark_app
+    COMMAND vespalib_util_unordered_u32_set_benchmark_app
+    BENCHMARK
+)

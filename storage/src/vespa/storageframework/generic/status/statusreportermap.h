@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include <string_view>
 #include <vector>
 
 namespace storage::framework {
@@ -21,4 +22,4 @@ struct StatusReporterMap {
     virtual std::vector<const StatusReporter*> getStatusReporters() = 0;
 };
 
-} // storage::framework
+} // namespace storage::framework

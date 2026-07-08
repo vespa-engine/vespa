@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/eval/eval/tensor_spec.h>
+
 #include <map>
 #include <set>
 
@@ -10,17 +11,14 @@ struct TestBuilder {
     bool full;
     TestBuilder(bool full_in) : full(full_in) {}
     using TensorSpec = vespalib::eval::TensorSpec;
-    virtual void add(const std::string &expression,
-                     const std::map<std::string,TensorSpec> &inputs,
-                     const std::set<std::string> &ignore) = 0;
-    void add(const std::string &expression,
-             const std::map<std::string,TensorSpec> &inputs)
-    {
+    virtual void add(const std::string& expression, const std::map<std::string, TensorSpec>& inputs,
+                     const std::set<std::string>& ignore) = 0;
+    void add(const std::string& expression, const std::map<std::string, TensorSpec>& inputs) {
         add(expression, inputs, {});
     }
     virtual ~TestBuilder() = default;
 };
 
 struct Generator {
-    static void generate(TestBuilder &out);
+    static void generate(TestBuilder& out);
 };

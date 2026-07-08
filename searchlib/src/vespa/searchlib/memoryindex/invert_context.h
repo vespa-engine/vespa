@@ -8,12 +8,12 @@ namespace document {
 class DataType;
 class Document;
 class Field;
-}
+} // namespace document
 
 namespace search::index {
 class Schema;
 class SchemaIndexFields;
-}
+} // namespace search::index
 
 namespace search::memoryindex {
 
@@ -28,14 +28,14 @@ class DocumentInverterContext;
  * PushTask at the proper time (i.e. when all related InvertTask /
  * RemoveTask operations have completed).
  */
-class InvertContext : public BundledFieldsContext
-{
+class InvertContext : public BundledFieldsContext {
     using IndexedFields = std::vector<std::unique_ptr<const document::Field>>;
-    std::vector<uint32_t> _pushers;
-    std::string      _document_field_names;
-    mutable IndexedFields _document_fields;
-    mutable IndexedFields _document_uri_fields;
+    std::vector<uint32_t>             _pushers;
+    std::string                       _document_field_names;
+    mutable IndexedFields             _document_fields;
+    mutable IndexedFields             _document_uri_fields;
     mutable const document::DataType* _data_type;
+
 public:
     void add_pusher(uint32_t pusher_id);
     InvertContext(vespalib::ISequencedTaskExecutor::ExecutorId id);
@@ -47,4 +47,4 @@ public:
     const IndexedFields& get_document_uri_fields() const noexcept { return _document_uri_fields; }
 };
 
-}
+} // namespace search::memoryindex

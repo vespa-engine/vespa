@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
-namespace searchcorespi::index { struct IThreadingService; }
+namespace searchcorespi::index {
+struct IThreadingService;
+}
 
 namespace proton::documentmetastore {
 
@@ -22,18 +24,17 @@ struct IStore;
  *
  * Currently only works correctly when visibility delay is 0.
  */
-class LidReuseDelayer
-{
-    searchcorespi::index::IThreadingService &_writeService;
-    IStore &_documentMetaStore;
-    std::vector<uint32_t> _pendingLids; // lids waiting for commit
+class LidReuseDelayer {
+    searchcorespi::index::IThreadingService& _writeService;
+    IStore&                                  _documentMetaStore;
+    std::vector<uint32_t>                    _pendingLids; // lids waiting for commit
 
 public:
-    LidReuseDelayer(searchcorespi::index::IThreadingService &writeService, IStore &documentMetaStore);
+    LidReuseDelayer(searchcorespi::index::IThreadingService& writeService, IStore& documentMetaStore);
     ~LidReuseDelayer();
     void delayReuse(uint32_t lid);
-    void delayReuse(const std::vector<uint32_t> &lids);
+    void delayReuse(const std::vector<uint32_t>& lids);
     std::vector<uint32_t> getReuseLids();
 };
 
-}
+} // namespace proton::documentmetastore

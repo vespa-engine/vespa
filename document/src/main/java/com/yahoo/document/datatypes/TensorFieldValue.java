@@ -106,9 +106,15 @@ public class TensorFieldValue extends FieldValue {
             this.dataType = Optional.of(new TensorDataType(newType));
         }
         TensorType curType = dataType.get().getTensorType();
-        if (! newType.isAssignableTo(curType)) {
+        if (!newType.isAssignableTo(curType) && !canCastFloatToBFloat16(newType, curType)) {
             throw new IllegalArgumentException("Type mismatch: Cannot assign tensor of type " + newType + " to field of type " + curType);
         }
+    }
+
+    private static boolean canCastFloatToBFloat16(TensorType source, TensorType target) {
+        return source.valueType() == TensorType.Value.FLOAT &&
+               target.valueType() == TensorType.Value.BFLOAT16 &&
+               source.dimensions().equals(target.dimensions());
     }
 
     @Override
@@ -119,6 +125,14 @@ public class TensorFieldValue extends FieldValue {
             assignTensor(Optional.of((Tensor)o));
         } else if (o instanceof TensorFieldValue) {
             var tfv = (TensorFieldValue)o;
+            if (dataType.isPresent() && tfv.getTensorType().isPresent()) {
+                TensorType sourceType = tfv.getTensorType().get();
+                TensorType targetType = dataType.get().getTensorType();
+                if (canCastFloatToBFloat16(sourceType, targetType)) {
+                    assignTensor(tfv.getTensor().map(t -> t.cellCast(targetType.valueType())));
+                    return;
+                }
+            }
             assignTypeFrom(tfv.tensor);
             this.serializedTensor = tfv.serializedTensor;
             this.tensor = tfv.tensor;

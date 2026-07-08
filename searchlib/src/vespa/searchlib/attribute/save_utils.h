@@ -4,13 +4,12 @@
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include <vector>
+#include <vespa/vespalib/util/transient_vector_snapshot.h>
 
 namespace search::attribute {
 
-using EntryRefVector = std::vector<vespalib::datastore::EntryRef, vespalib::allocator_large<vespalib::datastore::EntryRef>>;
+using EntryRefVectorSnapshot = vespalib::TransientVectorSnapshot<vespalib::datastore::EntryRef>;
 
 /*
  * Create a vector of entry refs from an rcu vector containing atomic
@@ -20,6 +19,8 @@ using EntryRefVector = std::vector<vespalib::datastore::EntryRef, vespalib::allo
  *
  * The function must be called from the attribute write thread.
  */
-EntryRefVector make_entry_ref_vector_snapshot(const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector, uint32_t size);
+EntryRefVectorSnapshot
+make_entry_ref_vector_snapshot(const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
+                               uint32_t                                                            size);
 
-}
+} // namespace search::attribute

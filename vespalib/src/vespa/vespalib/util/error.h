@@ -10,4 +10,4 @@ std::string getErrorString(const int osError);
 
 std::string getLastErrorString();
 
-}
+} // namespace vespalib

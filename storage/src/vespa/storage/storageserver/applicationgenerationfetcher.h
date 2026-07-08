@@ -22,5 +22,4 @@ public:
     virtual std::string getComponentName() const = 0;
 };
 
-} // storage
-
+} // namespace storage

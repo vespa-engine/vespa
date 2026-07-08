@@ -28,4 +28,10 @@ public class OrderedFlagSource implements FlagSource {
                 .map(Optional::get)
                 .findFirst();
     }
+
+    @Override
+    public FlagSource snapshot() {
+        var snapshotted = sources.stream().map(FlagSource::snapshot).toArray(FlagSource[]::new);
+        return new OrderedFlagSource(snapshotted);
+    }
 }

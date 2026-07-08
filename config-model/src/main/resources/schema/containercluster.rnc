@@ -119,6 +119,7 @@ ModelEvaluation = element model-evaluation {
                 element intraop-threads { xsd:nonNegativeInteger }? &
                 element interop-threads { xsd:nonNegativeInteger }? &
                 element execution-mode { string "sequential" | string "parallel" }? &
+                element optimize-model { xsd:boolean }? &
                 element gpu-device {
                   xsd:nonNegativeInteger
                 }?
@@ -295,6 +296,7 @@ DocumentApi = element document-api {
    element route { text }? &
    element maxpendingdocs { xsd:positiveInteger }? &
    element maxpendingbytes { xsd:positiveInteger }? &
+   element max-document-size { xsd:string }? &
    element retrydelay { xsd:double { minInclusive = "0.0" } }? &
    element timeout { xsd:double { minInclusive = "0.0" } }? &
    element tracelevel { xsd:positiveInteger }? &
@@ -335,6 +337,7 @@ ContainerNodes = element nodes {
       |
       (
         attribute count { xsd:positiveInteger | xsd:string  }? &
+        attribute profile { xsd:string }? &
         attribute flavor { xsd:string }? &
         attribute required { xsd:boolean }? &
         attribute exclusive { xsd:boolean }? &

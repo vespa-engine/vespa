@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "allocatedbitvector.h"
-#include <cstring>
+
 #include <cassert>
+#include <cstring>
 
 namespace search {
 
@@ -16,14 +17,12 @@ size_t computeCapacity(size_t capacity, size_t allocatedBytes) {
 
 // This is to ensure that we only read size and capacity once during copy
 // to ensure that they do not change unexpectedly under our feet due to resizing in different thread.
-std::pair<BitVector::Index, BitVector::Index>
-extract_size_size(const BitVector & bv) {
+std::pair<BitVector::Index, BitVector::Index> extract_size_size(const BitVector& bv) {
     BitVector::Index size = bv.size();
     return std::pair<BitVector::Index, BitVector::Index>(size, size);
 }
 
-std::pair<BitVector::Index, BitVector::Index>
-extract_size_capacity(const AllocatedBitVector & bv) {
+std::pair<BitVector::Index, BitVector::Index> extract_size_capacity(const AllocatedBitVector& bv) {
     BitVector::Index size = bv.size();
     BitVector::Index capacity = bv.capacity();
     while (capacity < size) {
@@ -36,13 +35,10 @@ extract_size_capacity(const AllocatedBitVector & bv) {
     return std::pair<BitVector::Index, BitVector::Index>(size, capacity);
 }
 
-}
+} // namespace
 
 AllocatedBitVector::AllocatedBitVector(Index numberOfElements)
-    : BitVector(),
-      _capacityBits(numberOfElements),
-      _alloc(allocatePaddedAndAligned(numberOfElements))
-{
+    : BitVector(), _capacityBits(numberOfElements), _alloc(allocatePaddedAndAligned(numberOfElements)) {
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, numberOfElements);
     clear();
@@ -50,10 +46,9 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements)
 
 AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, size_t offset, size_t entry_size,
                                        Index true_bits)
-    : BitVector(static_cast<char *>(buffer.get()) + offset, numberOfElements),
+    : BitVector(static_cast<char*>(buffer.get()) + offset, numberOfElements),
       _capacityBits(numberOfElements),
-      _alloc(std::move(buffer))
-{
+      _alloc(std::move(buffer)) {
     setTrueBits(true_bits);
     size_t vectorsize = getFileBytes(numberOfElements);
     if (vectorsize > entry_size) {
@@ -65,7 +60,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
             setGuardBit();
             // Loss of data bits only occurs in bitvector unit test.
             if (num_bytes_plain(size()) > entry_size) {
-               updateCount();
+                updateCount();
             }
         }
     }
@@ -75,8 +70,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
                                        const Alloc* init_alloc, bool dynamic_guard_bits)
     : BitVector(),
       _capacityBits(capacityBits),
-      _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits, init_alloc))
-{
+      _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits, init_alloc)) {
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, numberOfElements);
     if (org != nullptr) {
@@ -93,19 +87,17 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
     }
 }
 
-AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector & rhs)
-    : AllocatedBitVector(rhs, extract_size_capacity(rhs))
-{ }
+AllocatedBitVector::AllocatedBitVector(const AllocatedBitVector& rhs)
+    : AllocatedBitVector(rhs, extract_size_capacity(rhs)) {
+}
 
-AllocatedBitVector::AllocatedBitVector(const BitVector & rhs)
-    : AllocatedBitVector(rhs, extract_size_size(rhs))
-{ }
+AllocatedBitVector::AllocatedBitVector(const BitVector& rhs) : AllocatedBitVector(rhs, extract_size_size(rhs)) {
+}
 
-AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, std::pair<Index, Index> size_capacity)
+AllocatedBitVector::AllocatedBitVector(const BitVector& rhs, std::pair<Index, Index> size_capacity)
     : BitVector(),
       _capacityBits(size_capacity.second),
-      _alloc(allocatePaddedAndAligned(0, size_capacity.first, size_capacity.second))
-{
+      _alloc(allocatePaddedAndAligned(0, size_capacity.first, size_capacity.second)) {
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, size_capacity.first);
     initialize_from(rhs);
@@ -118,24 +110,18 @@ AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, std::pair<Index, I
 //////////////////////////////////////////////////////////////////////
 AllocatedBitVector::~AllocatedBitVector() = default;
 
-void
-AllocatedBitVector::resize(Index newLength)
-{
+void AllocatedBitVector::resize(Index newLength) {
     _alloc = allocatePaddedAndAligned(0, newLength, newLength, &_alloc);
     _capacityBits = computeCapacity(newLength, _alloc.size());
     init(_alloc.get(), 0, newLength);
     clear();
 }
 
-void
-AllocatedBitVector::fixup_after_load()
-{
+void AllocatedBitVector::fixup_after_load() {
     setGuardBit();
 }
 
-size_t
-AllocatedBitVector::get_allocated_bytes(bool include_self) const noexcept
-{
+size_t AllocatedBitVector::get_allocated_bytes(bool include_self) const noexcept {
     size_t result = extraByteSize();
     if (include_self) {
         result += sizeof(AllocatedBitVector);

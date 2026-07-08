@@ -2,13 +2,21 @@
 #pragma once
 
 #include "indexsearchable.h"
+
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcorespi/flush/flushstats.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/serialnum.h>
 
-namespace vespalib { class IDestructorCallback; }
-namespace document { class Document; }
+namespace searchcorespi::common {
+class ResourceUsage;
+}
+namespace vespalib {
+class IDestructorCallback;
+}
+namespace document {
+class Document;
+}
 
 namespace searchcorespi {
 
@@ -34,6 +42,7 @@ protected:
     using SerialNum = search::SerialNum;
     using Schema = search::index::Schema;
     using LidVector = std::vector<uint32_t>;
+
 public:
     using OnWriteDoneType = std::shared_ptr<vespalib::IDestructorCallback>;
 
@@ -41,24 +50,17 @@ public:
         virtual ~Configure() = default;
         virtual bool configure() = 0;
     };
-    template <class FunctionType>
-    class LambdaConfigure : public Configure {
+    template <class FunctionType> class LambdaConfigure : public Configure {
         FunctionType _func;
 
     public:
-        LambdaConfigure(FunctionType &&func)
-            : _func(std::move(func))
-        {}
+        LambdaConfigure(FunctionType&& func) : _func(std::move(func)) {}
         ~LambdaConfigure() override = default;
         bool configure() override { return _func(); }
     };
 
-    template <class FunctionType>
-    static std::unique_ptr<Configure>
-    makeLambdaConfigure(FunctionType &&function)
-    {
-        return std::make_unique<LambdaConfigure<std::decay_t<FunctionType>>>
-                (std::forward<FunctionType>(function));
+    template <class FunctionType> static std::unique_ptr<Configure> makeLambdaConfigure(FunctionType&& function) {
+        return std::make_unique<LambdaConfigure<std::decay_t<FunctionType>>>(std::forward<FunctionType>(function));
     }
 
     /**
@@ -97,7 +99,8 @@ public:
      * @param on_write_done   shared object that notifies write done when
      *                        destructed.
      **/
-    virtual void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done) = 0;
+    virtual void putDocument(uint32_t lid, const Document& doc, SerialNum serialNum,
+                             const OnWriteDoneType& on_write_done) = 0;
 
     /**
      * Removes the given document from the index. This method is
@@ -110,7 +113,7 @@ public:
      * @param serialNum       The unique monotoninc increasing serial number
      *                        for this operation.
      **/
-    void removeDocument(uint32_t lid, SerialNum serialNum) { 
+    void removeDocument(uint32_t lid, SerialNum serialNum) {
         LidVector lids;
         lids.push_back(lid);
         removeDocuments(std::move(lids), serialNum);
@@ -165,7 +168,7 @@ public:
 
     /**
      * Returns the searchable that will give the correct search view of the index manager.
-     * Normally switched everytime underlying index structures are changed in a way that can not be
+     * Normally switched everytime underlying index structures are changed in a way that cannot be
      * handled in a thread safe way without locking. For instance flushing of memory index or
      * starting using a new schema.
      *
@@ -180,6 +183,7 @@ public:
      */
     virtual search::IndexStats get_index_stats(bool clear_disk_io_stats) const = 0;
 
+    virtual searchcorespi::common::ResourceUsage get_resource_usage() const = 0;
     /**
      * Returns the list of all flush targets contained in this index manager.
      *
@@ -192,7 +196,7 @@ public:
      *
      * @param schema The new schema to start using.
      **/
-    virtual void setSchema(const Schema &schema, SerialNum serialNum) = 0;
+    virtual void setSchema(const Schema& schema, SerialNum serialNum) = 0;
 
     /*
      * Sets the max number of flushed indexes before fusion is urgent.
@@ -212,4 +216,3 @@ public:
 };
 
 } // namespace searchcorespi
-

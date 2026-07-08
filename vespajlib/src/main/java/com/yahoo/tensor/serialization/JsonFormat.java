@@ -18,6 +18,7 @@ import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import java.util.Locale;
 import com.yahoo.tensor.TensorType;
 import java.util.Iterator;
 import java.util.function.Function;
@@ -339,9 +340,9 @@ public class JsonFormat {
         if ( ! (builder instanceof IndexedTensor.BoundBuilder indexedBuilder))
             throw new IllegalArgumentException("An array of values can only be used with a dense tensor. Use a map instead");
         if (values.type() == Type.STRING) {
-            double[] decoded = decodeHexString(values.asString(), builder.type().valueType());
-            if (decoded.length == 0)
+            if (values.asString().isEmpty())
                 throw new IllegalArgumentException("The values string does not contain any values");
+            double[] decoded = HexEncoding.decodeHex(values.asString(), indexedBuilder.type());
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
@@ -412,81 +413,6 @@ public class JsonFormat {
                            decodeValuesInBlock(value, mixedBuilder));
     }
 
-    private static byte decodeHex(String input, int index) {
-        int d = Character.digit(input.charAt(index), 16);
-        if (d < 0) {
-            throw new IllegalArgumentException("Invalid digit '"+input.charAt(index)+"' at index "+index+" in input "+input);
-        }
-        return (byte)d;
-    }
-
-    private static double[] decodeHexStringAsBytes(String input) {
-        int l = input.length() / 2;
-        double[] result = new double[l];
-        int idx = 0;
-        for (int i = 0; i < l; i++) {
-            byte v = decodeHex(input, idx++);
-            v <<= 4;
-            v += decodeHex(input, idx++);
-            result[i] = v;
-        }
-        return result;
-    }
-
-    private static double[] decodeHexStringAsBFloat16s(String input) {
-        int l = input.length() / 4;
-        double[] result = new double[l];
-        int idx = 0;
-        for (int i = 0; i < l; i++) {
-            int v = decodeHex(input, idx++);
-            v <<= 4; v += decodeHex(input, idx++);
-            v <<= 4; v += decodeHex(input, idx++);
-            v <<= 4; v += decodeHex(input, idx++);
-            v <<= 16;
-            result[i] = Float.intBitsToFloat(v);
-        }
-        return result;
-    }
-
-    private static double[] decodeHexStringAsFloats(String input) {
-        int l = input.length() / 8;
-        double[] result = new double[l];
-        int idx = 0;
-        for (int i = 0; i < l; i++) {
-            int v = 0;
-            for (int j = 0; j < 8; j++) {
-                v <<= 4;
-                v += decodeHex(input, idx++);
-            }
-            result[i] = Float.intBitsToFloat(v);
-        }
-        return result;
-    }
-
-    private static double[] decodeHexStringAsDoubles(String input) {
-        int l = input.length() / 16;
-        double[] result = new double[l];
-        int idx = 0;
-        for (int i = 0; i < l; i++) {
-            long v = 0;
-            for (int j = 0; j < 16; j++) {
-                v <<= 4;
-                v += decodeHex(input, idx++);
-            }
-            result[i] = Double.longBitsToDouble(v);
-        }
-        return result;
-    }
-
-    public static double[] decodeHexString(String input, TensorType.Value valueType) {
-        return switch (valueType) {
-            case INT8 -> decodeHexStringAsBytes(input);
-            case BFLOAT16 -> decodeHexStringAsBFloat16s(input);
-            case FLOAT -> decodeHexStringAsFloats(input);
-            case DOUBLE -> decodeHexStringAsDoubles(input);
-        };
-    }
-
     private static void decodeMaybeNestedValuesInBlock(Inspector arrayField, double[] target, MutableInteger index) {
         if (arrayField.entries() == 0) {
             throw new IllegalArgumentException("The block value array does not contain any values");
@@ -505,11 +431,11 @@ public class JsonFormat {
         if (valuesField.type() == Type.ARRAY) {
             decodeMaybeNestedValuesInBlock(valuesField, values, new MutableInteger(0));
         } else if (valuesField.type() == Type.STRING) {
-            double[] decoded = decodeHexString(valuesField.asString(), mixedBuilder.type().valueType());
-            if (decoded.length == 0) {
+            if (valuesField.asString().isEmpty()) {
                 throw new IllegalArgumentException("The block value string does not contain any values");
             }
-            System.arraycopy(decoded, 0, values, 0, decoded.length);
+            double[] decoded = HexEncoding.decodeHex(valuesField.asString(), mixedBuilder.type());
+            System.arraycopy(decoded, 0, values, 0, values.length);
         } else {
             throw new IllegalArgumentException("Expected a block to contain an array of values");
         }
@@ -544,7 +470,7 @@ public class JsonFormat {
     }
 
     public static double decodeNumberString(String input) {
-        String s = input.toLowerCase();
+        String s = input.toLowerCase(Locale.ROOT);
         if (s.equals("infinity") || s.equals("+infinity") || s.equals("inf") || s.equals("+inf")) {
             return Double.POSITIVE_INFINITY;
         }

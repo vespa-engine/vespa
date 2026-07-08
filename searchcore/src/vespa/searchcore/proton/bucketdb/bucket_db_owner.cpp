@@ -4,21 +4,13 @@
 
 namespace proton::bucketdb {
 
-Guard::Guard(BucketDB *bucketDB, std::mutex &mutex)
-    : _bucketDB(bucketDB),
-      _guard(mutex)
-{ }
+Guard::Guard(BucketDB* bucketDB, std::mutex& mutex) : _bucketDB(bucketDB), _guard(mutex) {
+}
 
+Guard::Guard(Guard&& rhs) : _bucketDB(rhs._bucketDB), _guard(std::move(rhs._guard)) {
+}
 
-Guard::Guard(Guard &&rhs)
-    : _bucketDB(rhs._bucketDB),
-      _guard(std::move(rhs._guard))
-{ }
+BucketDBOwner::BucketDBOwner() : _bucketDB(), _mutex() {
+}
 
-
-BucketDBOwner::BucketDBOwner()
-    : _bucketDB(),
-      _mutex()
-{ }
-
-} // namespace proton
+} // namespace proton::bucketdb

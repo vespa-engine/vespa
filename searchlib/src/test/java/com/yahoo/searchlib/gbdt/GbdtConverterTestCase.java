@@ -91,7 +91,7 @@ public class GbdtConverterTestCase {
     private static void assertConvert(String gbdtModelFile, String expectedExpression)
             throws ParseException, UnsupportedEncodingException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(out));
+        System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
         GbdtConverter.main(new String[] { gbdtModelFile });
         String actualExpression = out.toString(StandardCharsets.UTF_8);
         assertEquals(expectedExpression, actualExpression);
@@ -100,7 +100,7 @@ public class GbdtConverterTestCase {
 
     private static void assertError(String expected, String[] args) throws UnsupportedEncodingException {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
-        System.setErr(new PrintStream(err));
+        System.setErr(new PrintStream(err, true, StandardCharsets.UTF_8));
         try {
             GbdtConverter.main(args);
             fail();

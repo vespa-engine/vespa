@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "Matcher.h"
+
 #include "config.h"
 #include "juniperdebug.h"
 #include "juniperparams.h"
 #include "query.h"
 #include "result.h"
 #include "sumdesc.h"
+
 #include <algorithm>
 #include <cinttypes>
 #include <sstream>
@@ -20,24 +22,24 @@ unsigned debug_level = 0;
 #define KEY_OCC_RESERVED 10
 
 Matcher::Matcher(Result* result)
-  : _result(result),
-    _qhandle(result->_qhandle),
-    _mo(_qhandle->MatchObj()),
-    _match_iter(_mo, result),
-    _winsize(600),
-    _winsizeFallback(_winsize * 10),
-    _max_match_candidates(1000),
-    _proximity_noconstraint_offset(PROXIMITYBOOST_NOCONSTRAINT_OFFSET),
-    _proximity_factor(1.0),
-    _need_complete_cnt(3),
-    _endpos(0),
-    _nontermcnt(_mo->NontermCount()),
-    _occ(),
-    _wrk_set(nullptr),
-    _matches(),
-    _ctxt_start(0),
-    _log_mask(0),
-    _log_text("") {
+    : _result(result),
+      _qhandle(result->_qhandle),
+      _mo(_qhandle->MatchObj()),
+      _match_iter(_mo, result),
+      _winsize(600),
+      _winsizeFallback(_winsize * 10),
+      _max_match_candidates(1000),
+      _proximity_noconstraint_offset(PROXIMITYBOOST_NOCONSTRAINT_OFFSET),
+      _proximity_factor(1.0),
+      _need_complete_cnt(3),
+      _endpos(0),
+      _nontermcnt(_mo->NontermCount()),
+      _occ(),
+      _wrk_set(nullptr),
+      _matches(),
+      _ctxt_start(0),
+      _log_mask(0),
+      _log_text("") {
     _occ.reserve(KEY_OCC_RESERVED);
     const DocsumParams& dsp = _result->_config->_docsumparams;
     _winsize = _result->WinSize();
@@ -62,7 +64,8 @@ MatchCandidate* Matcher::NewCandidate(QueryExpr* query) {
 }
 
 MatchCandidate* Matcher::RefCandidate(MatchCandidate* m) {
-    if (!m) return nullptr;
+    if (!m)
+        return nullptr;
     m->ref();
     if (LOG_WOULD_LOG(spam)) {
         std::string s;
@@ -73,22 +76,27 @@ MatchCandidate* Matcher::RefCandidate(MatchCandidate* m) {
 }
 
 void Matcher::DerefCandidate(MatchCandidate* m) {
-    if (!m) return;
+    if (!m)
+        return;
     if (LOG_WOULD_LOG(spam)) {
         std::string s;
         m->dump(s);
         LOG(spam, "DerefCandidate: %s", s.c_str());
     }
-    if (m->deref()) return;
+    if (m->deref())
+        return;
     // Dereference all the complex (MatchCandidate) children of m:
     for (int i = 0; i < m->elem_store_sz(); i++) {
-        if (m->element[i]) DerefCandidate(m->element[i]->Complex());
+        if (m->element[i])
+            DerefCandidate(m->element[i]->Complex());
     }
     delete m;
 }
 
 Matcher& Matcher::SetProximityFactor(float proximity_factor) {
-    if (proximity_factor != 1) { LOG(debug, "Proximity factor %.1f", proximity_factor); }
+    if (proximity_factor != 1) {
+        LOG(debug, "Proximity factor %.1f", proximity_factor);
+    }
     _proximity_factor = proximity_factor;
     return *this;
 }
@@ -104,7 +112,8 @@ void Matcher::reset_document() {
 
 void Matcher::reset_matches() {
     LOG(debug, "reset_matches");
-    for (match_candidate_set::iterator it = _matches.begin(); it != _matches.end(); ++it) DerefCandidate(*it);
+    for (match_candidate_set::iterator it = _matches.begin(); it != _matches.end(); ++it)
+        DerefCandidate(*it);
     _matches.clear();
     _ctxt_start = 0;
 }
@@ -142,7 +151,8 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len) {
 
     // Add new occurrence to sequence of all occurrences
     auto smart_k = std::make_unique<key_occ>(mexp->term(), pos, tpos, len);
-    if (!smart_k) return false;
+    if (!smart_k)
+        return false;
 
     auto k = smart_k.get();
     _occ.emplace_back(std::move(smart_k));
@@ -156,7 +166,8 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len) {
             match_sequence& ws = _wrk_set[nodeno];
             for (match_sequence::iterator it = ws.begin(); it != ws.end();) {
                 MatchCandidate* m = (*it);
-                if ((k->startpos() - m->startpos()) < static_cast<int>(_winsize)) break;
+                if ((k->startpos() - m->startpos()) < static_cast<int>(_winsize))
+                    break;
                 it = ws.erase(it); // This moves the iterator forward
                 if (m->partial_ok())
                     update_match(m);
@@ -174,7 +185,8 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len) {
         MatchCandidate* nm = NewCandidate(pexp);
         if (!nm || nm->elems() < 0) {
             LOG(error, "Matcher could not allocate memory for candidate - bailing out");
-            if (nm) DerefCandidate(nm);
+            if (nm)
+                DerefCandidate(nm);
             return false;
         }
         match_sequence& cs = _wrk_set[pexp->_node_idx];
@@ -208,7 +220,8 @@ void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mex
 
         // If a candidate already has this keyword, then all earlier
         // candidates also has the keyword
-        if (as == MatchCandidate::M_EXISTS) break;
+        if (as == MatchCandidate::M_EXISTS)
+            break;
 
         // Just accepted this candidate into another higher level
         if (as != MatchCandidate::M_OVERLAP) {
@@ -218,7 +231,8 @@ void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mex
 
         // we should allow a slighly larger winsize here because we have not found all matches yet.
         if ((as == MatchCandidate::M_EXPIRED) ||
-            ((k->startpos() - m->startpos()) >= static_cast<int>(_winsizeFallback))) {
+            ((k->startpos() - m->startpos()) >= static_cast<int>(_winsizeFallback)))
+        {
             // remove from current pos and delete - can never be satisfied
             match_sequence::reverse_iterator new_rit(ws.erase((++rit).base()));
             rit = new_rit;
@@ -232,7 +246,9 @@ void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mex
                 rit = new_rit;
 
                 if (m->matches_limit()) {
-                    if (_need_complete_cnt > 0) { _need_complete_cnt--; }
+                    if (_need_complete_cnt > 0) {
+                        _need_complete_cnt--;
+                    }
                     update_match(m);
                 } else {
                     DerefCandidate(m);
@@ -318,7 +334,8 @@ void Matcher::dump_matches(int printcount, bool best) {
     oss << "dump_matches(" << m.size() << "):\n";
     i = 0;
     for (match_candidate_set::iterator it = m.begin(); it != m.end(); ++it) {
-        if (i >= printcount) break;
+        if (i >= printcount)
+            break;
         //    if ((*it)->distance() == 0) break;
         std::string s;
         (*it)->dump(s);
@@ -355,7 +372,8 @@ void Matcher::log_matches(int printcount) {
         _log_text.append("<td align=right>distance</td><td align=right>rank</td></tr>\n");
         i = 0;
         for (match_candidate_set::iterator it = m.begin(); it != m.end(); ++it) {
-            if (i >= printcount) break;
+            if (i >= printcount)
+                break;
             _log_text.append("<tr class=shade>");
             (*it)->log(_log_text);
             _log_text.append("</tr>");
@@ -427,7 +445,8 @@ std::string Matcher::GetLog() {
 
 SummaryDesc* Matcher::CreateSummaryDesc(size_t length, size_t min_length, int max_matches, int surround_len) {
     // No point in processing this document if no keywords found at all:
-    if (TotalHits() <= 0) return nullptr;
+    if (TotalHits() <= 0)
+        return nullptr;
 
     LOG(debug,
         "Matcher: sum.desc (length %lu, min_length %lu, max matches %d, "
@@ -440,11 +459,13 @@ SummaryDesc* Matcher::CreateSummaryDesc(size_t length, size_t min_length, int ma
 long Matcher::GlobalRank() {
     // Proximity ranking only applies to multi term queries, return a constant
     // in all other cases:
-    if (QueryTerms() <= 1) return _proximity_noconstraint_offset;
+    if (QueryTerms() <= 1)
+        return _proximity_noconstraint_offset;
 
     match_candidate_set::iterator it = _matches.begin();
 #ifdef JUNIPER_1_0_RANK
-    if (it == _matches.end()) return 0;
+    if (it == _matches.end())
+        return 0;
 
     // Rank is computed as the rank of the best match within the document
     // boosted with the total number of found occurrences of any of the words in the query
@@ -471,7 +492,8 @@ long Matcher::GlobalRank() {
     // Return negative weight of no hits and any of the explicit limits in effect
     // Eg. NEAR/WITHIN but make exception for PHRASE since that is better
     // handled by the index in the cases where there are more information at that stage:
-    if (!rank_val && _mo->HasConstraints()) return 0;
+    if (!rank_val && _mo->HasConstraints())
+        return 0;
 
     // shift down to a more suitable range for fsearch. Multiply by configured boost
     // Add configured offset

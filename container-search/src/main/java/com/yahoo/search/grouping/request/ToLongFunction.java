@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * This class represents a tolong-function in a {@link GroupingExpression}. It converts the result of the argument to a
- * long. If the argument can not be converted, this function returns 0.
+ * long. If the argument cannot be converted, this function returns 0.
  *
  * @author baldersheim
  * @author bratseth

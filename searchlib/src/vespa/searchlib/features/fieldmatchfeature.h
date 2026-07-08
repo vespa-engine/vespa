@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/features/fieldmatch/params.h>
+#include <vespa/searchlib/fef/blueprint.h>
 
 namespace search::features {
 
@@ -12,23 +12,23 @@ namespace search::features {
  */
 class FieldMatchBlueprint : public fef::Blueprint {
 private:
-    const fef::FieldInfo * _field;
-    std::string _shared_state_key;
-    fieldmatch::Params _params;
+    const fef::FieldInfo* _field;
+    std::string           _shared_state_key;
+    fieldmatch::Params    _params;
 
 public:
     FieldMatchBlueprint();
     ~FieldMatchBlueprint();
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE);
     }
 
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 
-    void prepareSharedState(const fef::IQueryEnvironment &queryEnv, fef::IObjectStore &objectStore) const override;
+    void prepareSharedState(const fef::IQueryEnvironment& queryEnv, fef::IObjectStore& objectStore) const override;
 };
 
-}
+} // namespace search::features

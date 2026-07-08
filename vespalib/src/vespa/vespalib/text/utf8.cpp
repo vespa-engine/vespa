@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "utf8.h"
-#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -10,21 +12,19 @@ LOG_SETUP(".vespalib.utf8");
 
 namespace vespalib {
 
-void Utf8::throwX(const char *msg, unsigned int number)
-{
+void Utf8::throwX(const char* msg, unsigned int number) {
     std::string what = make_string("%s: \\x%02X", msg, number);
     throw IllegalArgumentException(what);
 }
 
-uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback) noexcept
-{
+uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback) noexcept {
     if (_pos == size()) {
         // this shouldn't happen ...
         LOG(warning, "last byte %02X of Utf8Reader block was incomplete UTF-8", firstbyte);
         return fallback;
     }
     assert(hasMore()); // should never fall out of range
-    if (! Utf8::validFirstByte(firstbyte)) {
+    if (!Utf8::validFirstByte(firstbyte)) {
         LOG(debug, "invalid first byte %02X in Utf8Reader data block", firstbyte);
         return fallback;
     }
@@ -51,10 +51,8 @@ uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback) 
 
     if (need == 2) {
         unsigned char contbyte1 = (*this)[_pos];
-        unsigned char contbyte2 = (*this)[_pos+1];
-        if (Utf8::validContByte(contbyte1) &&
-            Utf8::validContByte(contbyte2))
-        {
+        unsigned char contbyte2 = (*this)[_pos + 1];
+        if (Utf8::validContByte(contbyte1) && Utf8::validContByte(contbyte2)) {
             _pos += 2;
             uint32_t r = decode3(firstbyte, contbyte1, contbyte2);
             if (r >= first_high_surrogate && r <= last_low_surrogate) {
@@ -70,27 +68,21 @@ uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback) 
     }
 
     unsigned char contbyte1 = (*this)[_pos];
-    unsigned char contbyte2 = (*this)[_pos+1];
-    unsigned char contbyte3 = (*this)[_pos+2];
-    if (Utf8::validContByte(contbyte1) &&
-        Utf8::validContByte(contbyte2) &&
-        Utf8::validContByte(contbyte3))
-    {
+    unsigned char contbyte2 = (*this)[_pos + 1];
+    unsigned char contbyte3 = (*this)[_pos + 2];
+    if (Utf8::validContByte(contbyte1) && Utf8::validContByte(contbyte2) && Utf8::validContByte(contbyte3)) {
         _pos += 3;
         // check > 0xFFFF?
         return decode4(firstbyte, contbyte1, contbyte2, contbyte3);
     } else {
-        LOG(debug, "invalid continuation bytes %02X/%02X/%02X in Utf8Reader data block",
-            contbyte1, contbyte2, contbyte3);
+        LOG(debug, "invalid continuation bytes %02X/%02X/%02X in Utf8Reader data block", contbyte1, contbyte2,
+            contbyte3);
         return fallback;
     }
 }
 
-
-uint32_t
-Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback) noexcept
-{
-    if (! Utf8::validFirstByte(firstbyte)) {
+uint32_t Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback) noexcept {
+    if (!Utf8::validFirstByte(firstbyte)) {
         LOG(debug, "invalid first byte %02X in Utf8Reader data block", firstbyte);
         return fallback;
     }
@@ -120,9 +112,7 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback) noe
         }
         unsigned char contbyte1 = _p[0];
         unsigned char contbyte2 = _p[1];
-        if (Utf8::validContByte(contbyte1) &&
-            Utf8::validContByte(contbyte2))
-        {
+        if (Utf8::validContByte(contbyte1) && Utf8::validContByte(contbyte2)) {
             _p += 2;
             uint32_t r = decode3(firstbyte, contbyte1, contbyte2);
             if (r >= first_high_surrogate && r <= last_low_surrogate) {
@@ -144,24 +134,18 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback) noe
     unsigned char contbyte1 = _p[0];
     unsigned char contbyte2 = _p[1];
     unsigned char contbyte3 = _p[2];
-    if (Utf8::validContByte(contbyte1) &&
-        Utf8::validContByte(contbyte2) &&
-        Utf8::validContByte(contbyte3))
-    {
+    if (Utf8::validContByte(contbyte1) && Utf8::validContByte(contbyte2) && Utf8::validContByte(contbyte3)) {
         _p += 3;
         // check > 0xFFFF?
         return decode4(firstbyte, contbyte1, contbyte2, contbyte3);
     } else {
-        LOG(debug, "invalid continuation bytes %02X/%02X/%02X in Utf8Reader data block", contbyte1, contbyte2, contbyte3);
+        LOG(debug, "invalid continuation bytes %02X/%02X/%02X in Utf8Reader data block", contbyte1, contbyte2,
+            contbyte3);
         return fallback;
     }
 }
 
-
-template <typename Target>
-Utf8Writer<Target>&
-Utf8Writer<Target>::putChar(uint32_t codepoint)
-{
+template <typename Target> Utf8Writer<Target>& Utf8Writer<Target>::putChar(uint32_t codepoint) {
     if (codepoint < 0x80) {
         _target.push_back((char)codepoint);
     } else if (codepoint < 0x800) {
@@ -215,10 +199,8 @@ Utf8Writer<Target>::putChar(uint32_t codepoint)
 
 template class Utf8Writer<std::string>;
 
-template <typename T>
-T Utf8::filter_invalid_sequences(const T& input) noexcept
-{
-    T retval;
+template <typename T> T Utf8::filter_invalid_sequences(const T& input) noexcept {
+    T          retval;
     Utf8Reader reader(input.c_str(), input.size());
     Utf8Writer writer(retval);
     while (reader.hasMore()) {
@@ -230,4 +212,4 @@ T Utf8::filter_invalid_sequences(const T& input) noexcept
 
 template std::string Utf8::filter_invalid_sequences(const std::string&);
 
-} // namespace
+} // namespace vespalib

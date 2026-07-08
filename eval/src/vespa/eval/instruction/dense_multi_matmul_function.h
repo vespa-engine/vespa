@@ -11,9 +11,9 @@ namespace vespalib::eval {
  * an extension to normal matrix multiplication where the tensors
  * combined may have more than 2 dimensions.
  **/
-class DenseMultiMatMulFunction : public tensor_function::Op2
-{
+class DenseMultiMatMulFunction : public tensor_function::Op2 {
     using Super = tensor_function::Op2;
+
 private:
     size_t _lhs_size;
     size_t _common_size;
@@ -23,15 +23,9 @@ private:
     bool   _rhs_common_inner;
 
 public:
-    DenseMultiMatMulFunction(const ValueType &result_type,
-                             const TensorFunction &lhs_in,
-                             const TensorFunction &rhs_in,
-                             size_t lhs_size,
-                             size_t common_size,
-                             size_t rhs_size,
-                             size_t matmul_cnt,
-                             bool lhs_common_inner,
-                             bool rhs_common_inner);
+    DenseMultiMatMulFunction(const ValueType& result_type, const TensorFunction& lhs_in, const TensorFunction& rhs_in,
+                             size_t lhs_size, size_t common_size, size_t rhs_size, size_t matmul_cnt,
+                             bool lhs_common_inner, bool rhs_common_inner);
     ~DenseMultiMatMulFunction() override;
 
     bool result_is_mutable() const override { return true; }
@@ -43,9 +37,9 @@ public:
     bool lhs_common_inner() const { return _lhs_common_inner; }
     bool rhs_common_inner() const { return _rhs_common_inner; }
 
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
-    void visit_self(vespalib::ObjectVisitor &visitor) const override;
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
+    void visit_self(vespalib::ObjectVisitor& visitor) const override;
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval

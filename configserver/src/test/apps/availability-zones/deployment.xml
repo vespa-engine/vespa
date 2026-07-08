@@ -1,0 +1,12 @@
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<deployment version='1.0'>
+    <prod>
+        <region name="region1">
+            <availability-zone>az1</availability-zone>
+            <availability-zone>az2</availability-zone>
+        </region>
+        <region name="region2">
+            <availability-zone>az3</availability-zone>
+        </region>
+    </prod>
+</deployment>

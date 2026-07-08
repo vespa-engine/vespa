@@ -2,8 +2,8 @@
 
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 using namespace search;
 using namespace search::attribute;
@@ -12,32 +12,26 @@ using BitVectorSP = BitVectorSearchCache::BitVectorSP;
 using Entry = BitVectorSearchCache::Entry;
 using EntrySP = std::shared_ptr<Entry>;
 
-EntrySP
-makeEntry()
-{
+EntrySP makeEntry() {
     return std::make_shared<Entry>(IDocumentMetaStoreContext::IReadGuard::SP(), BitVector::create(5), 10);
 }
 
 class BitVectorSearchCacheTest : public ::testing::Test {
 protected:
     BitVectorSearchCache cache;
-    EntrySP entry1;
-    EntrySP entry2;
+    EntrySP              entry1;
+    EntrySP              entry2;
     BitVectorSearchCacheTest();
     ~BitVectorSearchCacheTest() override;
 };
 
 BitVectorSearchCacheTest::BitVectorSearchCacheTest()
-    : ::testing::Test(),
-      cache(),
-      entry1(makeEntry()),
-      entry2(makeEntry()) {
+    : ::testing::Test(), cache(), entry1(makeEntry()), entry2(makeEntry()) {
 }
 
 BitVectorSearchCacheTest::~BitVectorSearchCacheTest() = default;
 
-TEST_F(BitVectorSearchCacheTest, require_that_bit_vectors_can_be_inserted_and_retrieved)
-{
+TEST_F(BitVectorSearchCacheTest, require_that_bit_vectors_can_be_inserted_and_retrieved) {
     EXPECT_EQ(0u, cache.size());
     auto old_mem_usage = cache.get_memory_usage();
     cache.insert("foo", entry1);
@@ -52,8 +46,7 @@ TEST_F(BitVectorSearchCacheTest, require_that_bit_vectors_can_be_inserted_and_re
     EXPECT_TRUE(cache.find("baz").get() == nullptr);
 }
 
-TEST_F(BitVectorSearchCacheTest, require_that_insert_doesnt_replace_existing_bit_vector)
-{
+TEST_F(BitVectorSearchCacheTest, require_that_insert_doesnt_replace_existing_bit_vector) {
     cache.insert("foo", entry1);
     auto old_mem_usage = cache.get_memory_usage();
     cache.insert("foo", entry2);
@@ -64,8 +57,7 @@ TEST_F(BitVectorSearchCacheTest, require_that_insert_doesnt_replace_existing_bit
     EXPECT_EQ(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
 }
 
-TEST_F(BitVectorSearchCacheTest, require_that_cache_can_be_cleared)
-{
+TEST_F(BitVectorSearchCacheTest, require_that_cache_can_be_cleared) {
     cache.insert("foo", entry1);
     cache.insert("bar", entry2);
     EXPECT_EQ(2u, cache.size());

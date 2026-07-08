@@ -10,17 +10,14 @@ namespace search::attribute {
  *  Utility for reading an attribute data file where
  *  the format is a sequence of blobs (size, byte[size]).
  **/
-class BlobSequenceReader : public ReaderBase
-{
+class BlobSequenceReader : public ReaderBase {
 private:
     FileReader<uint32_t> _sizeReader;
+
 public:
-    BlobSequenceReader(AttributeVector &attr)
-        : ReaderBase(attr),
-          _sizeReader(&_datFile.file())
-    { }
+    BlobSequenceReader(AttributeVector& attr) : ReaderBase(attr), _sizeReader(&_datFile.file()) {}
     uint32_t getNextSize() { return _sizeReader.readHostOrder(); }
-    void readBlob(void *buf, size_t len);
+    void readBlob(void* buf, size_t len);
 };
 
-} // namespace
+} // namespace search::attribute

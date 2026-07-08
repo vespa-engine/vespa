@@ -4,8 +4,8 @@
 
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/nodestate.h>
 
 namespace storage::api {
 
@@ -23,7 +23,7 @@ public:
 
 class GetNodeStateReply : public StorageReply {
     lib::NodeState::UP _state;
-    std::string _nodeInfo;
+    std::string        _nodeInfo;
 
 public:
     GetNodeStateReply(const GetNodeStateCommand&); // Only used on makeReply()
@@ -50,8 +50,8 @@ class SetSystemStateCommand : public StorageCommand {
 
 public:
     explicit SetSystemStateCommand(std::shared_ptr<const lib::ClusterStateBundle> state);
-    explicit SetSystemStateCommand(const lib::ClusterStateBundle &state);
-    explicit SetSystemStateCommand(const lib::ClusterState &state);
+    explicit SetSystemStateCommand(const lib::ClusterStateBundle& state);
+    explicit SetSystemStateCommand(const lib::ClusterState& state);
     ~SetSystemStateCommand() override;
 
     [[nodiscard]] const lib::ClusterState& getSystemState() const { return *_state->getBaselineClusterState(); }
@@ -80,6 +80,7 @@ public:
 
 class ActivateClusterStateVersionCommand : public StorageCommand {
     uint32_t _version;
+
 public:
     explicit ActivateClusterStateVersionCommand(uint32_t version);
     uint32_t version() const noexcept { return _version; }
@@ -91,6 +92,7 @@ public:
 class ActivateClusterStateVersionReply : public StorageReply {
     uint32_t _activateVersion;
     uint32_t _actualVersion;
+
 public:
     explicit ActivateClusterStateVersionReply(const ActivateClusterStateVersionCommand&);
     uint32_t activateVersion() const noexcept { return _activateVersion; }
@@ -101,4 +103,4 @@ public:
     DECLARE_STORAGEREPLY(ActivateClusterStateVersionReply, onActivateClusterStateVersionReply);
 };
 
-}
+} // namespace storage::api

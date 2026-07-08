@@ -2,4 +2,4 @@
 
 #pragma once
 
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+#define VESPA_DLL_LOCAL __attribute__((visibility("hidden")))

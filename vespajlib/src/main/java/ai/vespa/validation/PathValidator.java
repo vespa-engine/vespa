@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.validation;
 
+import com.yahoo.text.Text;
 import java.nio.file.Path;
+import java.util.Locale;
 
 /**
  * Path validations
@@ -18,7 +20,7 @@ public class PathValidator {
      */
     public static void validateChildOf(Path root, Path path) {
         if (!path.normalize().startsWith(root)) {
-            throw new IllegalArgumentException("Invalid path %s".formatted(path));
+            throw new IllegalArgumentException(Text.format("Invalid path %s", path));
         }
     }
 

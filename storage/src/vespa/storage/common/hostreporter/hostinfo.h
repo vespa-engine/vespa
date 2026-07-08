@@ -3,6 +3,7 @@
 #pragma once
 
 #include "versionreporter.h"
+
 #include <vespa/vespalib/util/jsonstream.h>
 
 namespace storage {
@@ -24,8 +25,7 @@ public:
 
 private:
     std::vector<HostReporter*> customReporters;
-    VersionReporter versionReporter;
+    VersionReporter            versionReporter;
 };
 
-}
-
+} // namespace storage

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
@@ -35,14 +36,6 @@ public class TensorType {
         // Types added must also be added to TensorTypeParser.parseValueTypeSpec, serialization, and largestOf below
         DOUBLE("double"), FLOAT("float"), BFLOAT16("bfloat16"), INT8("int8");
 
-        int sizeOfCell() {
-            return switch (this) {
-                case DOUBLE -> 8;
-                case FLOAT -> 4;
-                case BFLOAT16 -> 2;
-                case INT8 -> 1;
-            };
-        }
         private final String id;
 
         Value(String id) { this.id = id; }
@@ -74,7 +67,7 @@ public class TensorType {
         }
 
         @Override
-        public String toString() { return name().toLowerCase(); }
+        public String toString() { return name().toLowerCase(Locale.ROOT); }
 
         public static Value fromId(String valueTypeString) {
             for (Value value : values()) {
@@ -658,7 +651,7 @@ public class TensorType {
             switch (type) {
                 case mapped -> mapped(name);
                 case indexedUnbound -> indexed(name);
-                default -> throw new IllegalArgumentException("This can not create a dimension of type " + type);
+                default -> throw new IllegalArgumentException("This cannot create a dimension of type " + type);
             }
             return this;
         }

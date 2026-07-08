@@ -68,7 +68,9 @@
 #pragma once
 
 #include "managedcomponent.h"
+
 #include <vespa/vespalib/util/cpu_usage.h>
+
 #include <atomic>
 #include <optional>
 
@@ -78,16 +80,15 @@ struct ComponentRegister;
 struct Runnable;
 class Thread;
 
-class Component : private ManagedComponent
-{
-    ComponentRegister* _componentRegister;
-    std::string _name;
-    const StatusReporter* _status;
-    metrics::Metric* _metric;
-    ThreadPool* _threadPool;
-    MetricRegistrator* _metricReg;
+class Component : private ManagedComponent {
+    ComponentRegister*                                            _componentRegister;
+    std::string                                                   _name;
+    const StatusReporter*                                         _status;
+    metrics::Metric*                                              _metric;
+    ThreadPool*                                                   _threadPool;
+    MetricRegistrator*                                            _metricReg;
     std::pair<MetricUpdateHook*, vespalib::system_time::duration> _metricUpdateHook;
-    const Clock* _clock;
+    const Clock*                                                  _clock;
 
     // ManagedComponent implementation
     metrics::Metric* getMetric() override { return _metric; }
@@ -151,14 +152,12 @@ public:
      * If max process time is not set, deadlock detector cannot detect deadlocks
      * in this thread. (Thus one is not required to call registerTick())
      */
-    std::unique_ptr<Thread> startThread(Runnable&,
-                                        vespalib::duration maxProcessTime = vespalib::duration::zero(),
-                                        vespalib::duration waitTime = vespalib::duration::zero(),
-                                        int ticksBeforeWait = 1,
-                                        std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt) const;
+    std::unique_ptr<Thread>
+    startThread(Runnable&, vespalib::duration maxProcessTime = vespalib::duration::zero(),
+                vespalib::duration waitTime = vespalib::duration::zero(), int ticksBeforeWait = 1,
+                std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt) const;
 
     void requestShutdown(std::string_view reason);
-
 };
 
-}
+} // namespace storage::framework

@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <thread>
 
 using namespace proton;
@@ -16,47 +17,52 @@ constexpr double EPS = 0.000001;
 using FTT = IFlushTarget::Type;
 using FTC = IFlushTarget::Component;
 
-struct MFT : public test::DummyFlushTarget
-{
+struct MFT : public test::DummyFlushTarget {
     MFT(FTT type, FTC component) noexcept : test::DummyFlushTarget("", type, component) {}
 };
 
-struct AttributeFlush : public MFT { AttributeFlush() noexcept : MFT(FTT::SYNC, FTC::ATTRIBUTE) {} };
-struct AttributeShrink : public MFT { AttributeShrink() noexcept : MFT(FTT::GC, FTC::ATTRIBUTE) {} };
-struct MemoryIndexFlush : public MFT { MemoryIndexFlush() noexcept : MFT(FTT::FLUSH, FTC::INDEX) {} };
-struct DiskIndexFusion : public MFT { DiskIndexFusion() noexcept : MFT(FTT::GC, FTC::INDEX) {} };
-struct DocStoreFlush : public MFT { DocStoreFlush() noexcept : MFT(FTT::SYNC, FTC::DOCUMENT_STORE) {} };
-struct DocStoreCompaction : public MFT { DocStoreCompaction() noexcept : MFT(FTT::GC, FTC::DOCUMENT_STORE) {} };
-struct OtherFlush : public MFT { OtherFlush() noexcept : MFT(FTT::FLUSH, FTC::OTHER) {} };
+struct AttributeFlush : public MFT {
+    AttributeFlush() noexcept : MFT(FTT::SYNC, FTC::ATTRIBUTE) {}
+};
+struct AttributeShrink : public MFT {
+    AttributeShrink() noexcept : MFT(FTT::GC, FTC::ATTRIBUTE) {}
+};
+struct MemoryIndexFlush : public MFT {
+    MemoryIndexFlush() noexcept : MFT(FTT::FLUSH, FTC::INDEX) {}
+};
+struct DiskIndexFusion : public MFT {
+    DiskIndexFusion() noexcept : MFT(FTT::GC, FTC::INDEX) {}
+};
+struct DocStoreFlush : public MFT {
+    DocStoreFlush() noexcept : MFT(FTT::SYNC, FTC::DOCUMENT_STORE) {}
+};
+struct DocStoreCompaction : public MFT {
+    DocStoreCompaction() noexcept : MFT(FTT::GC, FTC::DOCUMENT_STORE) {}
+};
+struct OtherFlush : public MFT {
+    OtherFlush() noexcept : MFT(FTT::FLUSH, FTC::OTHER) {}
+};
 
-class DocumentDBJobTrackersTest : public ::testing::Test
-{
+class DocumentDBJobTrackersTest : public ::testing::Test {
 protected:
-    DocumentDBJobTrackers _trackers;
+    DocumentDBJobTrackers               _trackers;
     DocumentDBTaggedMetrics::JobMetrics _metrics;
     DocumentDBJobTrackersTest();
     ~DocumentDBJobTrackersTest() override;
 };
 
-DocumentDBJobTrackersTest::DocumentDBJobTrackersTest()
-    : ::testing::Test(),
-      _trackers(),
-      _metrics(nullptr)
-{
+DocumentDBJobTrackersTest::DocumentDBJobTrackersTest() : ::testing::Test(), _trackers(), _metrics(nullptr) {
 }
 
 DocumentDBJobTrackersTest::~DocumentDBJobTrackersTest() = default;
 
-void
-startJobs(IJobTracker &tracker, uint32_t numJobs)
-{
+void startJobs(IJobTracker& tracker, uint32_t numJobs) {
     for (uint32_t i = 0; i < numJobs; ++i) {
         tracker.start();
     }
 }
 
-TEST_F(DocumentDBJobTrackersTest, require_that_job_metrics_are_updated)
-{
+TEST_F(DocumentDBJobTrackersTest, require_that_job_metrics_are_updated) {
     startJobs(_trackers.getAttributeFlush(), 1);
     startJobs(_trackers.getMemoryIndexFlush(), 2);
     startJobs(_trackers.getDiskIndexFusion(), 3);
@@ -83,11 +89,9 @@ TEST_F(DocumentDBJobTrackersTest, require_that_job_metrics_are_updated)
     EXPECT_NEAR(36.0, _metrics.total.getLast(), EPS);
 }
 
-bool
-assertFlushTarget(const IJobTracker &tracker, const IFlushTarget &target)
-{
-    const auto *tracked = dynamic_cast<const JobTrackedFlushTarget *>(&target);
-    bool failed = false;
+bool assertFlushTarget(const IJobTracker& tracker, const IFlushTarget& target) {
+    const auto* tracked = dynamic_cast<const JobTrackedFlushTarget*>(&target);
+    bool        failed = false;
     EXPECT_TRUE(tracked != nullptr) << (failed = true, "");
     if (failed) {
         return false;
@@ -96,8 +100,7 @@ assertFlushTarget(const IJobTracker &tracker, const IFlushTarget &target)
     return !failed;
 }
 
-TEST_F(DocumentDBJobTrackersTest, require_that_known_flush_targets_are_tracked)
-{
+TEST_F(DocumentDBJobTrackersTest, require_that_known_flush_targets_are_tracked) {
     IFlushTarget::List input;
     input.emplace_back(std::make_shared<AttributeFlush>());
     input.emplace_back(std::make_shared<MemoryIndexFlush>());
@@ -116,8 +119,7 @@ TEST_F(DocumentDBJobTrackersTest, require_that_known_flush_targets_are_tracked)
     EXPECT_TRUE(assertFlushTarget(_trackers.getAttributeFlush(), *output[5]));
 }
 
-TEST_F(DocumentDBJobTrackersTest, require_that_unknown_flush_targets_are_not_tracked)
-{
+TEST_F(DocumentDBJobTrackersTest, require_that_unknown_flush_targets_are_not_tracked) {
     IFlushTarget::List input;
     input.emplace_back(std::make_shared<OtherFlush>());
 
@@ -126,4 +128,4 @@ TEST_F(DocumentDBJobTrackersTest, require_that_unknown_flush_targets_are_not_tra
     EXPECT_EQ(&*output[0].get(), &*input[0]);
 }
 
-}
+} // namespace documentdb_job_trackers_test

@@ -74,7 +74,7 @@ public class NodeMetricsClient {
         httpClient.execute(SimpleRequestBuilder.get(metricsUri).build(),
                 new FutureCallback<>() {
                     @Override public void completed(SimpleHttpResponse result) {
-                        handleResponse(metricsUri, consumer, result.getBodyText());
+                        handleResponse(node, metricsUri, consumer, result.getBodyText());
                         onDone.complete(null);
                     }
                     @Override public void failed(Exception ex) { onDone.completeExceptionally(ex); }
@@ -83,11 +83,12 @@ public class NodeMetricsClient {
         return onDone;
     }
 
-    void handleResponse(String metricsUri, ConsumerId consumer, String respons) {
-        var metrics = processAndBuild(GenericJsonUtil.toMetricsPackets(respons),
+    void handleResponse(Node node, String metricsUri, ConsumerId consumer, String response) {
+        var metrics = processAndBuild(GenericJsonUtil.toMetricsPackets(response),
                 new ServiceIdDimensionProcessor(),
                 new ClusterIdDimensionProcessor(),
-                new PublicDimensionsProcessor());
+                new PublicDimensionsProcessor(),
+                new HostnameDimensionProcessor(node.hostname));
         snapshotsRetrieved.incrementAndGet();
         log.log(FINE, () -> "Successfully retrieved " + metrics.size() + " metrics packets from " + metricsUri);
         snapshots.put(consumer, new Snapshot(Instant.now(clock), metrics));

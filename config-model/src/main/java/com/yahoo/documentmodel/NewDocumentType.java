@@ -39,7 +39,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     private final StructDataType contentStruct;
     private final Set<FieldSet> fieldSets = new LinkedHashSet<>();
     private final Set<Name> documentReferences;
-    // Imported fields are virtual and therefore exist outside of the SD's document field definition
+    // Imported fields are virtual and therefore exist outside the SD's document field definition
     // block itself. But for features like imported fields in a non-search context (e.g. GC selections)
     // it is necessary to know that certain identifiers refer to imported fields instead of being unknown
     // document fields. To achieve this, we track the names of imported fields as part of the document

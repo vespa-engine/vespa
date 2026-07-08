@@ -9,7 +9,12 @@ import com.yahoo.search.schema.Schema;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author arnej
@@ -38,6 +43,14 @@ public class PartialSummaryHandlerTestCase {
         assertTrue(hit1.isFilled(null));
         assertTrue(hit1.isFilled("default"));
         assertEquals(1, result.hits().getFilled().size());
+        assertTrue(result.hits().isFilled(null));
+        assertFalse(result.hits().isFilled("foobar"));
+        hit2.setUnfillable();
+        assertTrue(result.hits().isFilled("default"));
+        assertTrue(result.hits().isFilled(null));
+        assertFalse(result.hits().isFilled("foobar"));
+        hit1.setUnfillable();
+        assertTrue(result.hits().isFilled("foobar"));
     }
 
     @Test

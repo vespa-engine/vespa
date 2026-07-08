@@ -23,6 +23,10 @@ promptTemplateFile path optional
 # TEXT - text output, useful for LLMs that have poor support for structured output, e.g. when using tiny (and dumb) LLMs for testing.
 responseFormatType enum {JSON, TEXT} default=JSON
 
+# JSON schema for structured output.
+# Overrides the schema auto-generated from the target field type.
+responseJsonSchema string default=""
+
 # Defines what to do when the response is not in the expected format.
 # DISCARD - discard the response and return null.
 # WARN - discard the response, return null and log a warning.

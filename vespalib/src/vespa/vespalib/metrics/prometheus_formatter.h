@@ -2,10 +2,13 @@
 #pragma once
 
 #include "snapshots.h"
+
 #include <cstdint>
 #include <string>
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 
 namespace vespalib::metrics {
 
@@ -20,11 +23,13 @@ namespace vespalib::metrics {
 class PrometheusFormatter {
     const Snapshot& _snapshot;
     std::string     _timestamp_str;
+
 public:
     explicit PrometheusFormatter(const Snapshot& snapshot);
     ~PrometheusFormatter();
 
     [[nodiscard]] std::string as_text_formatted() const;
+
 private:
     enum SubMetric { Count, Sum, Min, Max };
     constexpr static uint32_t NumSubMetrics = 4; // Must match the enum cardinality of SubMetric
@@ -37,4 +42,4 @@ private:
     void emit_gauges(vespalib::asciistream& out) const;
 };
 
-}
+} // namespace vespalib::metrics

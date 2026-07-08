@@ -5,23 +5,16 @@
 namespace vespalib {
 
 SimpleMetricSnapshot::SimpleMetricSnapshot(uint32_t prevTime, uint32_t currTime)
-    : _data(),
-      _metrics(_data.setObject()),
-      _values(_metrics.setArray("values")),
-      _snapLen(currTime - prevTime)
-{
+    : _data(), _metrics(_data.setObject()), _values(_metrics.setArray("values")), _snapLen(currTime - prevTime) {
     vespalib::slime::Cursor& snapshot = _metrics.setObject("snapshot");
     snapshot.setLong("from", prevTime);
-    snapshot.setLong("to",   currTime);
+    snapshot.setLong("to", currTime);
     if (_snapLen < 1.0) {
         _snapLen = 1.0;
     }
 }
 
-
-void
-SimpleMetricSnapshot::addCount(const char *name, const char *desc, uint32_t count)
-{
+void SimpleMetricSnapshot::addCount(const char* name, const char* desc, uint32_t count) {
     using namespace vespalib::slime::convenience;
     Cursor& value = _values.addObject();
     value.setString("name", name);
@@ -31,9 +24,7 @@ SimpleMetricSnapshot::addCount(const char *name, const char *desc, uint32_t coun
     inner.setDouble("rate", count / _snapLen);
 }
 
-void
-SimpleMetricSnapshot::addGauge(const char *name, const char *desc, long gauge)
-{
+void SimpleMetricSnapshot::addGauge(const char* name, const char* desc, long gauge) {
     using namespace vespalib::slime::convenience;
     Cursor& value = _values.addObject();
     value.setString("name", name);

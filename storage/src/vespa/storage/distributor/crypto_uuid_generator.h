@@ -15,4 +15,4 @@ public:
     std::string generate_uuid() const override;
 };
 
-}
+} // namespace storage::distributor

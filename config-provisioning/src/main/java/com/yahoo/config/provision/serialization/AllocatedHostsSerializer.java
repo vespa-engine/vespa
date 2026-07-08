@@ -3,6 +3,7 @@ package com.yahoo.config.provision.serialization;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
@@ -29,9 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The hosts allocated to an application.
- * This can be serialized to/from JSON.
- * This is immutable.
+ * Serialization of the hosts allocated to an application.
  *
  * @author Ulf Lilleengen
  * @author bratseth
@@ -81,8 +80,9 @@ public class AllocatedHostsSerializer {
     /** Current version */
     private static final String hostSpecCurrentVespaVersionKey = "currentVespaVersion";
     private static final String hostSpecNetworkPortsKey = "ports";
-
     private static final String sidecarsKey = "sidecars";
+    private static final String availabilityZonesKey = "azs";
+    private static final String profileKey = "profile";
 
     public static byte[] toJson(AllocatedHosts allocatedHosts) throws IOException {
         Slime slime = new Slime();
@@ -106,9 +106,11 @@ public class AllocatedHostsSerializer {
             membership.cluster().dockerImageRepo().ifPresent(repo -> object.setString(hostSpecDockerImageRepoKey, repo.untagged()));
             
             var sidecars = membership.cluster().sidecars();
-            if (!sidecars.isEmpty()) {
+            if (!sidecars.isEmpty())
                 sidecarsToSlime(sidecars, object.setArray(sidecarsKey));
-            }
+
+            availabilityZonesToSlime(membership.cluster().availabilityZones(), object.setArray(availabilityZonesKey));
+            membership.cluster().profile().ifPresent(profile -> object.setString(profileKey, profile));
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));
         toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
@@ -130,33 +132,6 @@ public class AllocatedHostsSerializer {
             gpuObject.setString(gpuTypeKey, resources.gpuResources().type().toString());
             gpuObject.setLong(gpuCountKey, resources.gpuResources().count());
             gpuObject.setDouble(gpuMemoryKey, resources.gpuResources().memoryGiB());
-        }
-    }
-
-    private static void sidecarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {
-        for (var sidecar : sidecars) {
-            var cursor = arrayCursor.addObject();
-            cursor.setLong("id", sidecar.id());
-            cursor.setString("name", sidecar.name());
-            cursor.setString("image", sidecar.image().asString());
-
-            var resourcesCursor = cursor.setObject("resources");
-            var resources = sidecar.resources();
-            resourcesCursor.setDouble("maxCpu", resources.maxCpu());
-            resourcesCursor.setDouble("minCpu", resources.minCpu());
-            resourcesCursor.setDouble("memoryGiB", resources.memoryGiB());
-            resourcesCursor.setBool("hasGpu", resources.hasGpu());
-
-            var volumeMountsCursor = cursor.setArray("volumeMounts");
-            sidecar.volumeMounts().forEach(volumeMountsCursor::addString);
-
-            var envsCursor = cursor.setObject("envs");
-            sidecar.envs().forEach(envsCursor::setString);
-
-            var commandCursor = cursor.setArray("command");
-            sidecar.command().forEach(commandCursor::addString);
-
-            sidecar.livenessProbe().ifPresent(probe -> sidecarProbeToSlime(probe, cursor.setObject("livenessProbe")));
         }
     }
 
@@ -271,8 +246,42 @@ public class AllocatedHostsSerializer {
                                       object.field(hostSpecDockerImageRepoKey).valid()
                                       ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
                                       : Optional.empty(),
-                                      zoneEndpoint(object.field(loadBalancerSettingsKey)), 
-                                      sidecarsFromSlime(object.field(sidecarsKey)));
+                                      zoneEndpoint(object.field(loadBalancerSettingsKey)),
+                                      sidecars(object.field(sidecarsKey)),
+                                      availabilityZones(object.field(availabilityZonesKey)),
+                                      object.field(profileKey).valid() ? Optional.of(object.field(profileKey).asString()) : Optional.empty());
+    }
+
+    private static void sidecarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {
+        for (var sidecar : sidecars) {
+            var cursor = arrayCursor.addObject();
+            cursor.setLong("id", sidecar.id());
+            cursor.setString("name", sidecar.name());
+            cursor.setString("image", sidecar.image().asString());
+            cursor.setBool("hasImageMirror", sidecar.hasImageMirror());
+
+            var resourcesCursor = cursor.setObject("resources");
+            var resources = sidecar.resources();
+            resourcesCursor.setDouble("maxCpu", resources.maxCpu());
+            resourcesCursor.setDouble("minCpu", resources.minCpu());
+            resourcesCursor.setDouble("memoryGiB", resources.memoryGiB());
+            resourcesCursor.setBool("hasGpu", resources.hasGpu());
+
+            var volumeMountsCursor = cursor.setArray("volumeMounts");
+            sidecar.volumeMounts().forEach(volumeMountsCursor::addString);
+
+            var envsCursor = cursor.setObject("envs");
+            sidecar.envs().forEach(envsCursor::setString);
+
+            var commandCursor = cursor.setArray("command");
+            sidecar.command().forEach(commandCursor::addString);
+
+            sidecar.livenessProbe().ifPresent(probe -> sidecarProbeToSlime(probe, cursor.setObject("livenessProbe")));
+        }
+    }
+
+    private static void availabilityZonesToSlime(List<AzName> availabilityZones, Cursor arrayCursor) {
+        availabilityZones.forEach(az -> arrayCursor.addString(az.value()));
     }
 
     private static void toSlime(Cursor settingsObject, ZoneEndpoint settings) {
@@ -315,17 +324,12 @@ public class AllocatedHostsSerializer {
                                           .toList());
     }
 
-    private static Optional<String> optionalString(Inspector inspector) {
-        if ( ! inspector.valid()) return Optional.empty();
-        return Optional.of(inspector.asString());
-    }
-
     private static Optional<DockerImage> optionalDockerImage(Inspector inspector) {
         if ( ! inspector.valid()) return Optional.empty();
         return Optional.of(DockerImage.fromString(inspector.asString()));
     }
 
-    private static List<SidecarSpec> sidecarsFromSlime(Inspector arrayInspector) {
+    private static List<SidecarSpec> sidecars(Inspector arrayInspector) {
         var sidecars = new ArrayList<SidecarSpec>();
 
         arrayInspector.traverse((ArrayTraverser) (specIdx, specInspector) -> {
@@ -350,6 +354,8 @@ public class AllocatedHostsSerializer {
             var command = new ArrayList<String>();
             specInspector.field("command").traverse((ArrayTraverser) (idx, elem) -> command.add(elem.asString()));
 
+            var hasImageMirror = specInspector.field("hasImageMirror").asBool();
+
             var builder = SidecarSpec.builder()
                     .id(id)
                     .name(name)
@@ -360,7 +366,8 @@ public class AllocatedHostsSerializer {
                     .hasGpu(hasGpu)
                     .volumeMounts(volumeMounts)
                     .envs(envs)
-                    .command(command);
+                    .command(command)
+                    .hasImageMirror(hasImageMirror);
 
             var livenessProbeInspector = specInspector.field("livenessProbe");
             if (livenessProbeInspector.valid()) {
@@ -373,6 +380,17 @@ public class AllocatedHostsSerializer {
         });
 
         return sidecars;
+    }
+
+    private static List<AzName> availabilityZones(Inspector arrayInspector) {
+        List<AzName> availabilityZones = new ArrayList<>();
+        arrayInspector.traverse((ArrayTraverser) (index, az)-> availabilityZones.add(AzName.from(az.asString())));
+        return availabilityZones;
+    }
+
+    private static Optional<String> optionalString(Inspector inspector) {
+        if ( ! inspector.valid()) return Optional.empty();
+        return Optional.of(inspector.asString());
     }
 
     private static void sidecarProbeToSlime(SidecarProbe probe, Cursor cursor) {
@@ -421,4 +439,5 @@ public class AllocatedHostsSerializer {
 
         return new SidecarProbe(action, initialDelaySeconds, periodSeconds, timeoutSeconds, failureThreshold);
     }
+
 }

@@ -13,7 +13,10 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -21,11 +24,12 @@ import static org.junit.jupiter.api.Assertions.*;
 public class StateHandlerTest extends StateHandlerTestBase {
 
     private static final String V1_URI = URI_BASE + "/state/v1/";
-    private static StateHandler stateHandler;
+    private Container container;
 
     @BeforeEach
     public void setupHandler() {
-        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, new Container());
+        container = new Container();
+        var stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, container);
         testDriver = new RequestHandlerTestDriver(stateHandler);
     }
 
@@ -180,17 +184,10 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
         JsonNode json = requestAsJson(V1_URI + "health");
         assertEquals("up", json.get("status").get("code").asText(), json.toString());
-        assertEquals(2, json.get("metrics").get("values").size(), json.toString());
-        assertEquals("requestsPerSecond",
-                json.get("metrics").get("values").get(0).get("name").asText(),
-                json.toString());
-        assertEquals(6,
-                json.get("metrics").get("values").get(0).get("values").get("count").asDouble(), 0.001, json.toString());
-        assertEquals("latencySeconds",
-                json.get("metrics").get("values").get(1).get("name").asText(),
-                json.toString());
-        assertEquals(0.03,
-                json.get("metrics").get("values").get(1).get("values").get("average").asDouble(), 0.001, json.toString());
+        var values = json.get("metrics").get("values");
+        assertEquals(1, values.size(), json.toString());
+        assertEquals("requestsPerSecond", values.get(0).get("name").asText(), json.toString());
+        assertEquals(6, values.get(0).get("values").get("count").asDouble(), 0.001, json.toString());
     }
 
     @Test
@@ -200,6 +197,23 @@ public class StateHandlerTest extends StateHandlerTestBase {
         JsonNode config = root.get("config");
         JsonNode container = config.get("container");
         assertEquals(META_GENERATION, container.get("generation").asLong());
+    }
+
+    @Test
+    void config_status_is_ok_by_default() throws Exception {
+        JsonNode config = requestAsJson(V1_URI + "config").get("config");
+        assertEquals(0, config.get("wantedGeneration").asLong());
+        assertNull(config.get("message"));
+    }
+
+    @Test
+    void config_status_error() throws Exception {
+        String errorMessage = "Some error message";
+        container.setConfigStatus(META_GENERATION, errorMessage);
+
+        JsonNode config = requestAsJson(V1_URI + "config").get("config");
+        assertEquals(META_GENERATION, config.get("wantedGeneration").asLong());
+        assertEquals(errorMessage, config.get("message").asText());
     }
 
     @Test

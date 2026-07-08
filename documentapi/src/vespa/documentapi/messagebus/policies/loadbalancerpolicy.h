@@ -1,16 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "loadbalancer.h"
 #include "externslobrokpolicy.h"
+#include "loadbalancer.h"
 
 namespace documentapi {
 
-class LoadBalancerPolicy : public ExternSlobrokPolicy
-{
+class LoadBalancerPolicy : public ExternSlobrokPolicy {
 public:
     LoadBalancerPolicy(const string& param);
-    void doSelect(mbus::RoutingContext &context) override;
+    void doSelect(mbus::RoutingContext& context) override;
 
     /**
        Finds the TCP address of the target docproc.
@@ -21,14 +20,13 @@ public:
         return _loadBalancer->getRecipient(lookup(context, _pattern));
     }
 
-    void merge(mbus::RoutingContext &context) override;
+    void merge(mbus::RoutingContext& context) override;
 
 private:
-    string _pattern;
-    string _cluster;
-    string _session;
+    string                        _pattern;
+    string                        _cluster;
+    string                        _session;
     std::unique_ptr<LoadBalancer> _loadBalancer;
 };
 
-}
-
+} // namespace documentapi

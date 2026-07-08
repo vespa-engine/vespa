@@ -4,10 +4,9 @@
 namespace metrics {
 
 template struct ValueMetricValues<int64_t, int64_t>;
-template std::ostream & operator << (std::ostream & os, const ValueMetricValues<int64_t, int64_t> & v);
+template std::ostream& operator<<(std::ostream& os, const ValueMetricValues<int64_t, int64_t>& v);
 
 template struct ValueMetricValues<double, double>;
-template std::ostream & operator << (std::ostream & os, const ValueMetricValues<double, double> & v);
+template std::ostream& operator<<(std::ostream& os, const ValueMetricValues<double, double>& v);
 
-} // metrics
-
+} // namespace metrics

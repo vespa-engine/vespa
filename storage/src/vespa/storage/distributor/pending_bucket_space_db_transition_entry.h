@@ -7,22 +7,16 @@
 namespace storage::distributor::dbtransition {
 
 struct Entry {
-    Entry(const document::BucketId& bid,
-          const BucketCopy& copy_) noexcept
-        : bucket_key(bid.toKey()),
-          copy(copy_)
-    {}
+    Entry(const document::BucketId& bid, const BucketCopy& copy_) noexcept : bucket_key(bid.toKey()), copy(copy_) {}
 
-    uint64_t bucket_key;
+    uint64_t   bucket_key;
     BucketCopy copy;
 
     document::BucketId bucket_id() const noexcept {
         return document::BucketId(document::BucketId::keyToBucketId(bucket_key));
     }
 
-    bool operator<(const Entry& other) const noexcept {
-        return bucket_key < other.bucket_key;
-    }
+    bool operator<(const Entry& other) const noexcept { return bucket_key < other.bucket_key; }
 };
 
-}
+} // namespace storage::distributor::dbtransition

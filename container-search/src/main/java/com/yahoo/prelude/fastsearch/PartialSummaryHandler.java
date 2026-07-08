@@ -9,15 +9,13 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -254,22 +252,23 @@ public class PartialSummaryHandler {
         }
     }
 
-    public void validateSummaryClass(String summaryClass, Query query) {
+    public Optional<String> validateSummaryClass(String summaryClass, Query query) {
         if (isFieldListRequest(summaryClass)) {
             var fieldSet = parseFieldList(summaryClass);
             if (fieldSet.isEmpty()) {
-                throw new IllegalArgumentException("invalid fill() with empty fieldset=" + summaryClass);
+                return Optional.of("Invalid fill() request with empty fieldset for summary '" + summaryClass + "'");
             }
         } else if (isPresentationRequest(summaryClass)) {
             String wantClass = query.getPresentation().getSummary();
             if (! ensureKnownClass(wantClass)) {
-                throw new IllegalInputException("invalid presentation.summary=" + wantClass);
+                return Optional.of("Summary '" + wantClass + "' does not exist");
             }
         } else if (summaryClass != null) {
             if (! ensureKnownClass(summaryClass)) {
-                throw new IllegalArgumentException("invalid fill() with summaryClass=" + summaryClass);
+                return Optional.of("Invalid fill() request for non-existing summary '" + summaryClass + "'");
             }
         }
+        return Optional.empty();
     }
 
     private void computeEffectiveDocsumDef() {

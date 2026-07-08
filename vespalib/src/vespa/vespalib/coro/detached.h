@@ -29,4 +29,4 @@ struct Detached {
     };
 };
 
-}
+} // namespace vespalib::coro

@@ -1,41 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "route.h"
+
 #include "routeparser.h"
 
 namespace mbus {
 
 Route::Route() = default;
 
-Route::Route(std::vector<Hop> lst) :
-    _hops(std::move(lst))
-{ }
+Route::Route(std::vector<Hop> lst) : _hops(std::move(lst)) {
+}
 
 Route::~Route() = default;
 
-Route &
-Route::addHop(Hop hop)
-{
+Route& Route::addHop(Hop hop) {
     _hops.emplace_back(std::move(hop));
     return *this;
 }
 
-Route &
-Route::setHop(uint32_t i, Hop hop)
-{
+Route& Route::setHop(uint32_t i, Hop hop) {
     _hops[i] = std::move(hop);
     return *this;
 }
 
-Hop
-Route::removeHop(uint32_t i)
-{
+Hop Route::removeHop(uint32_t i) {
     Hop ret = std::move(_hops[i]);
     _hops.erase(_hops.begin() + i);
     return ret;
 }
 
-string
-Route::toString() const {
+string Route::toString() const {
     string ret = "";
     for (uint32_t i = 0; i < _hops.size(); ++i) {
         ret.append(_hops[i].toString());
@@ -46,8 +39,7 @@ Route::toString() const {
     return ret;
 }
 
-string
-Route::toDebugString() const {
+string Route::toDebugString() const {
     string ret = "Route(hops = { ";
     for (uint32_t i = 0; i < _hops.size(); ++i) {
         ret.append(_hops[i].toDebugString());
@@ -59,9 +51,7 @@ Route::toDebugString() const {
     return ret;
 }
 
-Route
-Route::parse(std::string_view route)
-{
+Route Route::parse(std::string_view route) {
     return RouteParser::createRoute(route);
 }
 

@@ -2,33 +2,27 @@
 
 #include "initializer_task.h"
 
+#include "load_memory_usage.h"
+
 namespace proton::initializer {
 
-InitializerTask::InitializerTask()
-    : _state(State::BLOCKED),
-      _dependencies()
-{
+InitializerTask::InitializerTask() noexcept : _state(State::BLOCKED), _dependencies() {
 }
 
 InitializerTask::~InitializerTask() = default;
 
-void
-InitializerTask::addDependency(SP dependency)
-{
+void InitializerTask::addDependency(SP dependency) {
     _dependencies.emplace_back(std::move(dependency));
 }
 
-size_t
-InitializerTask::get_transient_memory_usage() const
-{
-    return 0u;
+LoadMemoryUsage InitializerTask::get_load_memory_usage() const noexcept {
+    return LoadMemoryUsage();
 }
 
-void
-InitializerTask::accept_visitor(InitializerTaskVisitor &visitor) {
-    for (auto &task : _dependencies) {
+void InitializerTask::accept_visitor(InitializerTaskVisitor& visitor) {
+    for (auto& task : _dependencies) {
         task->accept_visitor(visitor);
     }
 }
 
-}
+} // namespace proton::initializer

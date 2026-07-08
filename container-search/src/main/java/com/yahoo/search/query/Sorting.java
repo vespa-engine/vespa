@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
+import java.util.Locale;
 
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
@@ -149,7 +150,7 @@ public class Sorting implements Cloneable {
     private static MissingPolicy decodeMissingPolicy(Tokenizer tokenizer) {
         var policyName = tokenizer.token();
         try {
-            return MissingPolicy.valueOf(policyName.toUpperCase());
+            return MissingPolicy.valueOf(policyName.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new IllegalInputException("Unknown missing policy '" + policyName +"' at " + tokenizer.spec());
         }

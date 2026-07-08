@@ -17,4 +17,4 @@ public:
     virtual void notify_remove() = 0;
 };
 
-}
+} // namespace proton::documentmetastore

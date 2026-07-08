@@ -2,6 +2,7 @@
 #pragma once
 
 #include "vespa/vespalib/util/idestructorcallback.h"
+
 #include <vespa/vespalib/util/executor.h>
 
 namespace search {
@@ -13,19 +14,14 @@ namespace search {
  * shared pointer, triggering the callback when all worker threads
  * have completed.
  */
-class ScheduleTaskCallback : public vespalib::IDestructorCallback
-{
-    vespalib::Executor &_executor;
+class ScheduleTaskCallback : public vespalib::IDestructorCallback {
+    vespalib::Executor&          _executor;
     vespalib::Executor::Task::UP _task;
+
 public:
-    ScheduleTaskCallback(vespalib::Executor &executor,
-                         vespalib::Executor::Task::UP task) noexcept
-        : _executor(executor),
-          _task(std::move(task))
-    {}
-    ~ScheduleTaskCallback() override {
-        _executor.execute(std::move(_task));
-    }
+    ScheduleTaskCallback(vespalib::Executor& executor, vespalib::Executor::Task::UP task) noexcept
+        : _executor(executor), _task(std::move(task)) {}
+    ~ScheduleTaskCallback() override { _executor.execute(std::move(_task)); }
 };
 
 } // namespace search

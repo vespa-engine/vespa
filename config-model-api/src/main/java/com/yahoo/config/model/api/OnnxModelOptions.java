@@ -22,7 +22,8 @@ public record OnnxModelOptions(
         Optional<Duration> batchingMaxDelay,
         Optional<String> concurrencyFactorType,
         Optional<Double> concurrencyFactor,
-        Optional<FileReference> modelConfigOverride) {
+        Optional<FileReference> modelConfigOverride,
+        Optional<Boolean> optimizeModel) {
     public OnnxModelOptions(
             Optional<String> executionMode,
             Optional<Integer> interOpThreads,
@@ -53,7 +54,8 @@ public record OnnxModelOptions(
                 builder.batchingMaxDelay,
                 builder.concurrencyFactorType,
                 builder.concurrencyFactor,
-                builder.modelConfigOverride);
+                builder.modelConfigOverride,
+                builder.optimizeModel);
     }
 
     public static OnnxModelOptions empty() {
@@ -96,6 +98,10 @@ public record OnnxModelOptions(
         return toBuilder().modelConfigOverride(modelConfigOverride).build();
     }
 
+    public OnnxModelOptions withOptimizeModel(Boolean optimizeModel) {
+        return toBuilder().optimizeModel(optimizeModel).build();
+    }
+
     private Builder toBuilder() {
         return new Builder(this);
     }
@@ -110,6 +116,7 @@ public record OnnxModelOptions(
         private Optional<String> concurrencyFactorType = Optional.empty();
         private Optional<Double> concurrencyFactor = Optional.empty();
         private Optional<FileReference> modelConfigOverride = Optional.empty();
+        private Optional<Boolean> optimizeModel = Optional.empty();
 
         Builder() {}
 
@@ -123,6 +130,7 @@ public record OnnxModelOptions(
             this.concurrencyFactorType = options.concurrencyFactorType;
             this.concurrencyFactor = options.concurrencyFactor;
             this.modelConfigOverride = options.modelConfigOverride;
+            this.optimizeModel = options.optimizeModel;
         }
 
         Builder executionMode(String executionMode) {
@@ -170,6 +178,11 @@ public record OnnxModelOptions(
             return this;
         }
 
+        Builder optimizeModel(Boolean optimizeModel) {
+            this.optimizeModel = Optional.ofNullable(optimizeModel);
+            return this;
+        }
+
         OnnxModelOptions build() {
             return new OnnxModelOptions(this);
         }
@@ -177,8 +190,8 @@ public record OnnxModelOptions(
 
     public record GpuDevice(int deviceNumber, boolean required) {
         public GpuDevice {
-            if (deviceNumber < 0) {
-                throw new IllegalArgumentException("deviceNumber cannot be negative, got " + deviceNumber);
+            if (deviceNumber < -1) {
+                throw new IllegalArgumentException("deviceNumber cannot be less than -1, got " + deviceNumber);
             }
         }
 

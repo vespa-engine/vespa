@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/datastore/datastore.h>
+
 #include <string>
 
 namespace search::memoryindex {
@@ -16,23 +17,21 @@ public:
     using Aligner = vespalib::datastore::Aligner<buffer_array_size>;
 
 private:
-    DataStoreType           _store;
-    uint32_t                _numWords;
+    DataStoreType                         _store;
+    uint32_t                              _numWords;
     vespalib::datastore::BufferType<char> _type;
-    const uint32_t          _typeId;
+    const uint32_t                        _typeId;
 
 public:
     WordStore();
     ~WordStore();
     vespalib::datastore::EntryRef addWord(const std::string_view word);
-    const char *getWord(vespalib::datastore::EntryRef ref) const {
+    const char* getWord(vespalib::datastore::EntryRef ref) const {
         RefType internalRef(ref);
         return _store.getEntryArray<char>(internalRef, buffer_array_size);
     }
 
-    vespalib::MemoryUsage getMemoryUsage() const {
-        return _store.getMemoryUsage();
-    }
+    vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 };
 
-}
+} // namespace search::memoryindex

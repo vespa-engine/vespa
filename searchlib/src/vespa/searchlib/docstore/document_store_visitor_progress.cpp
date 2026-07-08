@@ -5,21 +5,15 @@
 namespace search {
 
 DocumentStoreVisitorProgress::DocumentStoreVisitorProgress()
-    : search::IDocumentStoreVisitorProgress(),
-      _progress(0.0)
-{
+    : search::IDocumentStoreVisitorProgress(), _progress(0.0) {
 }
 
-void
-DocumentStoreVisitorProgress::updateProgress(double progress)
-{
+void DocumentStoreVisitorProgress::updateProgress(double progress) {
     _progress = progress;
 }
 
-double
-DocumentStoreVisitorProgress::getProgress() const
-{
+double DocumentStoreVisitorProgress::getProgress() const {
     return _progress;
 }
 
-}
+} // namespace search

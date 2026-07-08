@@ -2,16 +2,12 @@
 
 #include "attribute_initializer_result.h"
 
-
 namespace proton {
 
-AttributeInitializerResult::AttributeInitializerResult(const AttributeVectorSP &attr)
-    : _attr(attr)
-{
+AttributeInitializerResult::AttributeInitializerResult(const AttributeVectorSP& attr) : _attr(attr) {
 }
 
-AttributeInitializerResult::~AttributeInitializerResult()
-{
+AttributeInitializerResult::~AttributeInitializerResult() {
 }
 
 } // namespace proton

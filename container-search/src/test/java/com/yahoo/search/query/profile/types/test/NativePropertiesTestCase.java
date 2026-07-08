@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests that properties can not be set even if they are native, if declared not settable in the query profile
+ * Tests that properties cannot be set even if they are native, if declared not settable in the query profile
  *
  * @author bratseth
  */

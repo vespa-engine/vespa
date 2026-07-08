@@ -4,19 +4,22 @@
 
 #include "i_resource_usage_listener.h"
 #include "resource_usage.h"
+
 #include <memory>
 
-namespace vespalib { class IDestructorCallback; }
+namespace vespalib {
+class IDestructorCallback;
+}
 
 namespace storage::spi {
 
 /*
  * Class for listening to resource usage updates.
  */
-class ResourceUsageListener : public IResourceUsageListener
-{
-    ResourceUsage _usage;
+class ResourceUsageListener : public IResourceUsageListener {
+    ResourceUsage                                  _usage;
     std::unique_ptr<vespalib::IDestructorCallback> _register_guard;
+
 public:
     ResourceUsageListener();
     ~ResourceUsageListener() override;
@@ -26,4 +29,4 @@ public:
     void reset();
 };
 
-}
+} // namespace storage::spi

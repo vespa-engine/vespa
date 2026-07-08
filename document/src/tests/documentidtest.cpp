@@ -1,27 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/vespalib/util/md5.h>
+#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+#include <vespa/vespalib/util/md5.h>
 
 namespace document {
 
 namespace {
-    void writeGlobalIdBucketId(std::ostream& out, const std::string& id) {
-        BucketIdFactory factory;
-        out << id << " - " << DocumentId(id).getGlobalId()
-            << " - " << factory.getBucketId(DocumentId(id)).toString()
-            << "\n";
-    }
+void writeGlobalIdBucketId(std::ostream& out, const std::string& id) {
+    BucketIdFactory factory;
+    out << id << " - " << DocumentId(id).getGlobalId() << " - " << factory.getBucketId(DocumentId(id)).toString()
+        << "\n";
 }
+} // namespace
 
-TEST(DocumentIdTest, generateJavaComplianceFile)
-{
-    {  // Generate file with globalids and bucket ID of various document ids,
-       // which java will use to ensure equal implementations.
+TEST(DocumentIdTest, generateJavaComplianceFile) {
+    { // Generate file with globalids and bucket ID of various document ids,
+      // which java will use to ensure equal implementations.
         std::ostringstream ost;
         writeGlobalIdBucketId(ost, "id:ns:type::specific");
         writeGlobalIdBucketId(ost, "id:another:type::specific");
@@ -40,26 +38,21 @@ TEST(DocumentIdTest, generateJavaComplianceFile)
     }
 }
 
-
-TEST(DocumentIdTest, testOutput)
-{
-    DocumentId id("id:ns:news::crawler:http://www.yahoo.com");
+TEST(DocumentIdTest, testOutput) {
+    DocumentId  id("id:ns:news::crawler:http://www.yahoo.com");
     std::string expected("id:ns:news::crawler:http://www.yahoo.com");
     EXPECT_EQ(expected, id.toString());
 }
 
 namespace {
-    template<class T>
-    std::string getNotEqualMessage(const T& t1, const T& t2) {
-        std::ostringstream ost;
-        ost << "Expected instances to be different. This was not the case:\n"
-            << t1 << "\n" << t2 << "\n";
-        return ost.str();
-    }
+template <class T> std::string getNotEqualMessage(const T& t1, const T& t2) {
+    std::ostringstream ost;
+    ost << "Expected instances to be different. This was not the case:\n" << t1 << "\n" << t2 << "\n";
+    return ost.str();
 }
+} // namespace
 
-TEST(DocumentIdTest, testEqualityOperator)
-{
+TEST(DocumentIdTest, testEqualityOperator) {
     std::string uri("id:ns:news::crawler:http://www.yahoo.com");
 
     DocumentId id1(uri);
@@ -70,8 +63,7 @@ TEST(DocumentIdTest, testEqualityOperator)
     EXPECT_NE(id1, id3);
 }
 
-TEST(DocumentIdTest, testCopying)
-{
+TEST(DocumentIdTest, testCopying) {
     std::string uri("id:crawler:news::http://www.yahoo.com");
 
     DocumentId id1(uri);
@@ -83,20 +75,14 @@ TEST(DocumentIdTest, testCopying)
     EXPECT_EQ(id1, id3);
 }
 
-TEST(DocumentIdTest, checkNtnuGlobalId)
-{
+TEST(DocumentIdTest, checkNtnuGlobalId) {
     DocumentId id("id:ns:news::crawler:http://www.ntnu.no/");
     EXPECT_EQ(std::string("gid(0x1e9d7fc69ac6c1da44dd87e0)"), id.getGlobalId().toString());
 }
 
-TEST(DocumentIdTest, freestandingLocationFromGroupNameFuncMatchesIdLocation)
-{
-    EXPECT_EQ(
-            DocumentId("id::foo:g=zoid:bar").getScheme().getLocation(),
-            IdString::makeLocation("zoid"));
-    EXPECT_EQ(
-            DocumentId("id::bar:g=doink:baz").getScheme().getLocation(),
-            IdString::makeLocation("doink"));
+TEST(DocumentIdTest, freestandingLocationFromGroupNameFuncMatchesIdLocation) {
+    EXPECT_EQ(DocumentId("id::foo:g=zoid:bar").getScheme().getLocation(), IdString::makeLocation("zoid"));
+    EXPECT_EQ(DocumentId("id::bar:g=doink:baz").getScheme().getLocation(), IdString::makeLocation("doink"));
 }
 
-} // document
+} // namespace document

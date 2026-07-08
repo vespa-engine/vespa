@@ -51,6 +51,7 @@ class MaintainerTester {
                 .withConfigserverConfig(configserverConfig)
                 .withConfigserverConfig(configserverConfig)
                 .withModelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
+                .withFlagSource(flagSource)
                 .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
@@ -62,7 +63,7 @@ class MaintainerTester {
     }
 
     void deployApp(File applicationPath, PrepareParams.Builder prepareParams) {
-        applicationRepository.deploy(applicationPath, prepareParams.ignoreValidationErrors(true).build());
+        applicationRepository.prepareAndActivate(applicationPath, prepareParams.ignoreValidationErrors(true).build());
     }
 
     Curator curator() { return curator; }

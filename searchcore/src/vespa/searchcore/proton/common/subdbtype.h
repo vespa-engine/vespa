@@ -12,7 +12,7 @@ enum class SubDbType {
     READY = 0,
     REMOVED = 1,
     NOTREADY = 2,
-    COUNT = 3/* number of valid subdb types, this value by itself is invalid */
+    COUNT = 3 /* number of valid subdb types, this value by itself is invalid */
 };
 
-}
+} // namespace proton

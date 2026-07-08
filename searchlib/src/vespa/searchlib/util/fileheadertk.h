@@ -16,8 +16,7 @@ public:
      *
      * @param header The header to add tags to.
      */
-    static void addVersionTags(vespalib::GenericHeader &header);
+    static void addVersionTags(vespalib::GenericHeader& header);
 };
 
-}
-
+} // namespace search

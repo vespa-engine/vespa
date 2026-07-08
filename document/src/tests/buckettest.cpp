@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/document/bucket/bucketspace.h>
 #include <vespa/document/bucket/bucket.h>
+#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/bucket/bucketspace.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/random.h>
 
@@ -21,8 +21,7 @@ inline std::ostream& operator<<(std::ostream& out, const Hex& h) {
     return out;
 }
 
-TEST(BucketTest, testBucketId)
-{
+TEST(BucketTest, testBucketId) {
     // Test empty (invalid) buckets
     BucketId id1;
     BucketId id2;
@@ -30,8 +29,7 @@ TEST(BucketTest, testBucketId)
     EXPECT_TRUE(!(id1 < id2) && !(id2 < id1));
     EXPECT_EQ(Hex(0), Hex(id1.getId()));
     EXPECT_EQ(Hex(0), Hex(id1.getRawId()));
-    EXPECT_EQ(std::string("BucketId(0x0000000000000000)"),
-                         id1.toString());
+    EXPECT_EQ(std::string("BucketId(0x0000000000000000)"), id1.toString());
     EXPECT_EQ(0u, id1.getUsedBits());
 
     // Test bucket with a value
@@ -40,8 +38,7 @@ TEST(BucketTest, testBucketId)
     EXPECT_TRUE((id1 < id2) && !(id2 < id1));
     EXPECT_EQ(Hex(0x4000000000000123ull), Hex(id2.getId()));
     EXPECT_EQ(Hex(0x4000000000000123ull), Hex(id2.getRawId()));
-    EXPECT_EQ(std::string("BucketId(0x4000000000000123)"),
-              id2.toString());
+    EXPECT_EQ(std::string("BucketId(0x4000000000000123)"), id2.toString());
     EXPECT_EQ(16u, id2.getUsedBits());
 
     // Test copy constructor and operator=
@@ -53,8 +50,7 @@ TEST(BucketTest, testBucketId)
     EXPECT_EQ(id2, id3);
 }
 
-TEST(BucketTest, testGetBit)
-{
+TEST(BucketTest, testGetBit) {
     for (uint32_t i = 0; i < 58; ++i) {
         EXPECT_EQ(0, (int)document::BucketId(16, 0).getBit(i));
     }
@@ -76,19 +72,18 @@ TEST(BucketTest, testGetBit)
     }
 }
 
-TEST(BucketTest, testBucketGeneration)
-{
+TEST(BucketTest, testBucketGeneration) {
     BucketIdFactory factory;
-    DocumentId doc1("id:ns:type::1");
-    DocumentId doc2("id:ns2:type::1");
-    DocumentId doc3("id:ns:type2::1");
-    DocumentId doc4("id:ns:type::2");
-    DocumentId userDoc1("id:ns:mytype:n=18:spec");
-    DocumentId userDoc2("id:ns2:mytype:n=18:spec2");
-    DocumentId userDoc3("id:ns:mytype:n=19:spec");
-    DocumentId groupDoc1("id:ns:mytype:g=yahoo.com:spec");
-    DocumentId groupDoc2("id:ns2:mytype:g=yahoo.com:spec2");
-    DocumentId groupDoc3("id:ns:mytype:g=yahoo:spec");
+    DocumentId      doc1("id:ns:type::1");
+    DocumentId      doc2("id:ns2:type::1");
+    DocumentId      doc3("id:ns:type2::1");
+    DocumentId      doc4("id:ns:type::2");
+    DocumentId      userDoc1("id:ns:mytype:n=18:spec");
+    DocumentId      userDoc2("id:ns2:mytype:n=18:spec2");
+    DocumentId      userDoc3("id:ns:mytype:n=19:spec");
+    DocumentId      groupDoc1("id:ns:mytype:g=yahoo.com:spec");
+    DocumentId      groupDoc2("id:ns2:mytype:g=yahoo.com:spec2");
+    DocumentId      groupDoc3("id:ns:mytype:g=yahoo:spec");
 
     BucketId docBucket1 = factory.getBucketId(doc1);
     BucketId docBucket2 = factory.getBucketId(doc2);
@@ -138,17 +133,16 @@ TEST(BucketTest, testBucketGeneration)
     EXPECT_EQ(Hex(0x4000000000001ec8ull), Hex(docBucket4.getId()));
 }
 
-TEST(BucketTest, testBucketSerialization)
-{
+TEST(BucketTest, testBucketSerialization) {
     BucketIdFactory factory;
-    DocumentId doc("id:ns:test::1");
-    BucketId bucket(factory.getBucketId(doc));
+    DocumentId      doc("id:ns:test::1");
+    BucketId        bucket(factory.getBucketId(doc));
 
     std::ostringstream ost;
     ost << bucket.getRawId();
     EXPECT_EQ(std::string("16910189189155441348"), ost.str());
 
-    BucketId::Type id;
+    BucketId::Type     id;
     std::istringstream ist(ost.str());
     ist >> id;
     BucketId bucket2(id);
@@ -156,8 +150,7 @@ TEST(BucketTest, testBucketSerialization)
     EXPECT_EQ(bucket, bucket2);
 }
 
-TEST(BucketTest, testReverseBucket)
-{
+TEST(BucketTest, testReverseBucket) {
     {
         BucketId id(0x3000000000000012ull);
         EXPECT_EQ(Hex(0x480000000000000cull), Hex(id.toKey()));
@@ -210,8 +203,7 @@ TEST(BucketTest, testReverseBucket)
     }
 }
 
-TEST(BucketTest, testContains)
-{
+TEST(BucketTest, testContains) {
     BucketId id(18, 0x123456789ULL);
     EXPECT_TRUE(id.contains(BucketId(20, 0x123456789ULL)));
     EXPECT_TRUE(id.contains(BucketId(18, 0x888f56789ULL)));
@@ -220,18 +212,15 @@ TEST(BucketTest, testContains)
     EXPECT_TRUE(!id.contains(BucketId(16, 0x123456789ULL)));
 }
 
-TEST(BucketTest, testToString)
-{
+TEST(BucketTest, testToString) {
     BucketSpace bucketSpace(0x123450006789ULL);
     EXPECT_EQ(std::string("BucketSpace(0x0000123450006789)"), bucketSpace.toString());
     Bucket bucket(bucketSpace, BucketId(0x123456789ULL));
-    EXPECT_EQ(
-            std::string("Bucket(BucketSpace(0x0000123450006789), BucketId(0x0000000123456789))"),
-            bucket.toString());
+    EXPECT_EQ(std::string("Bucket(BucketSpace(0x0000123450006789), BucketId(0x0000000123456789))"),
+              bucket.toString());
 }
 
-TEST(BucketTest, testOperators)
-{
+TEST(BucketTest, testOperators) {
     EXPECT_TRUE(BucketSpace(0x1) == BucketSpace(0x1));
     EXPECT_TRUE(BucketSpace(0x1) != BucketSpace(0x2));
     EXPECT_TRUE(BucketSpace(0x1) < BucketSpace(0x2));
@@ -248,4 +237,4 @@ TEST(BucketTest, testOperators)
                 Bucket(BucketSpace(0x2), BucketId(0x123456789ULL)));
 }
 
-} // document
+} // namespace document

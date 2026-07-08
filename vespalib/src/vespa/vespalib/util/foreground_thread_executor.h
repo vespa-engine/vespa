@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/threadexecutor.h>
+
 #include <atomic>
 
 namespace vespalib {
@@ -15,7 +16,7 @@ private:
     std::atomic<size_t> _accepted;
 
 public:
-    ForegroundThreadExecutor() : _accepted(0) { }
+    ForegroundThreadExecutor() : _accepted(0) {}
     Task::UP execute(Task::UP task) override {
         task->run();
         ++_accepted;
@@ -25,9 +26,9 @@ public:
     ExecutorStats getStats() override {
         return ExecutorStats(ExecutorStats::QueueSizeT(), _accepted.load(std::memory_order_relaxed), 0, 0);
     }
-    void setTaskLimit(uint32_t taskLimit) override { (void) taskLimit; }
+    void setTaskLimit(uint32_t taskLimit) override { (void)taskLimit; }
     uint32_t getTaskLimit() const override { return std::numeric_limits<uint32_t>::max(); }
-    void wakeup() override { }
+    void wakeup() override {}
 };
 
-}
+} // namespace vespalib

@@ -3,14 +3,14 @@
 #include <vespa/searchcore/proton/matching/partial_result.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/box.h>
+
 #include <sstream>
 
 using proton::matching::PartialResult;
 using namespace vespalib;
 
-void checkMerge(const std::vector<double> &a, const std::vector<double> &b,
-                size_t maxHits, const std::vector<double> &expect)
-{
+void checkMerge(const std::vector<double>& a, const std::vector<double>& b, size_t maxHits,
+                const std::vector<double>& expect) {
     std::ostringstream os;
     os << "checkMerge " << ::testing::PrintToString(a) << ", " << ::testing::PrintToString(b) << ", " << maxHits;
     SCOPED_TRACE(os.str());
@@ -32,13 +32,12 @@ void checkMerge(const std::vector<double> &a, const std::vector<double> &b,
     }
 }
 
-void checkMerge(const std::vector<std::string> &a, const std::vector<std::string> &b,
-                size_t maxHits, const std::vector<std::string> &expect)
-{
+void checkMerge(const std::vector<std::string>& a, const std::vector<std::string>& b, size_t maxHits,
+                const std::vector<std::string>& expect) {
     std::ostringstream os;
     os << "checkMerge " << ::testing::PrintToString(a) << ", " << ::testing::PrintToString(b) << ", " << maxHits;
     SCOPED_TRACE(os.str());
-    size_t len = 0;
+    size_t        len = 0;
     PartialResult res_a(maxHits, true);
     PartialResult res_b(maxHits, true);
     len = 0;
@@ -85,8 +84,8 @@ TEST(PartialResultTest, require_that_partial_results_can_be_created_without_sort
 }
 
 TEST(PartialResultTest, require_that_partial_results_can_be_created_with_sort_data) {
-    std::string str1("aaa");
-    std::string str2("bbb");
+    std::string   str1("aaa");
+    std::string   str2("bbb");
     PartialResult res(100, true);
     EXPECT_EQ(0u, res.size());
     EXPECT_EQ(100u, res.maxSize());
@@ -121,8 +120,10 @@ TEST(PartialResultTest, require_that_partial_results_without_sort_data_are_merge
 }
 
 TEST(PartialResultTest, require_that_partial_results_with_sort_data_are_merged_correctly) {
-    checkMerge(make_box<std::string>("a", "c", "e"), make_box<std::string>("b", "d"), 3, make_box<std::string>("a", "b", "c"));
-    checkMerge(make_box<std::string>("b", "d"), make_box<std::string>("a", "c", "e"), 3, make_box<std::string>("a", "b", "c"));
+    checkMerge(make_box<std::string>("a", "c", "e"), make_box<std::string>("b", "d"), 3,
+               make_box<std::string>("a", "b", "c"));
+    checkMerge(make_box<std::string>("b", "d"), make_box<std::string>("a", "c", "e"), 3,
+               make_box<std::string>("a", "b", "c"));
     checkMerge(make_box<std::string>("a"), make_box<std::string>("aa"), 10, make_box<std::string>("a", "aa"));
     checkMerge(make_box<std::string>("aa"), make_box<std::string>("a"), 10, make_box<std::string>("a", "aa"));
     checkMerge(std::vector<std::string>(), make_box<std::string>("a"), 10, make_box<std::string>("a"));
@@ -148,7 +149,7 @@ TEST(PartialResultTest, require_that_lower_docid_is_preferred_when_sorting_on_ra
 }
 
 TEST(PartialResultTest, require_that_lower_docid_is_preferred_when_using_sortspec) {
-    std::string foo("foo");
+    std::string   foo("foo");
     PartialResult res_a(1, true);
     PartialResult res_b(1, true);
     PartialResult res_c(1, true);

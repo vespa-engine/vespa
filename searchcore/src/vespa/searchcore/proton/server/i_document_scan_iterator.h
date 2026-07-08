@@ -10,8 +10,7 @@ namespace proton {
  * Iterator for scanning all documents in a document sub db to find candidates
  * for moving as part of lid space compaction.
  */
-struct IDocumentScanIterator
-{
+struct IDocumentScanIterator {
     using UP = std::unique_ptr<IDocumentScanIterator>;
 
     virtual ~IDocumentScanIterator() = default;
@@ -28,8 +27,7 @@ struct IDocumentScanIterator
      *
      * @param compactLidLimit The returned document must have lid larger than this limit.
      */
-    virtual search::DocumentMetaData next(uint32_t compactLidLimit) = 0;
+    virtual search::DocumentMetadata next(uint32_t compactLidLimit) = 0;
 };
 
 } // namespace proton
-

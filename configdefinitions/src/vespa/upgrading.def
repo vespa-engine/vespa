@@ -4,7 +4,7 @@ namespace=vespa.config.content
 ## Config specifying cluster global parameters for a storage cluster.
 
 ## Set to true when there exist nodes of previous major version in cluster.
-## This will enable major version backward compability mode in the cluster.
+## This will enable major version backward compatibility mode in the cluster.
 upgrading_major_to bool default=false
 
 ## Set to true when there exist nodes of the next major version in the

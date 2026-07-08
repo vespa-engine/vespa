@@ -7,19 +7,16 @@ using vespalib::datastore::AtomicEntryRef;
 namespace search::attribute {
 
 template <typename MultiValueType>
-ImportedMultiValueReadView<MultiValueType>::ImportedMultiValueReadView(TargetLids target_lids, const IMultiValueReadView<MultiValueType>* target_read_view)
-    : _target_lids(target_lids),
-      _target_read_view(target_read_view)
-{
+ImportedMultiValueReadView<MultiValueType>::ImportedMultiValueReadView(
+    TargetLids target_lids, const IMultiValueReadView<MultiValueType>* target_read_view)
+    : _target_lids(target_lids), _target_read_view(target_read_view) {
 }
 
 template <typename MultiValueType>
 ImportedMultiValueReadView<MultiValueType>::~ImportedMultiValueReadView() = default;
 
 template <typename MultiValueType>
-std::span<const MultiValueType>
-ImportedMultiValueReadView<MultiValueType>::get_values(uint32_t docid) const
-{
+std::span<const MultiValueType> ImportedMultiValueReadView<MultiValueType>::get_values(uint32_t docid) const {
     auto target_lid = get_target_lid(docid);
     return _target_read_view->get_values(target_lid);
 }
@@ -44,4 +41,4 @@ template class ImportedMultiValueReadView<WeightedValue<double>>;
 template class ImportedMultiValueReadView<WeightedValue<AtomicEntryRef>>;
 template class ImportedMultiValueReadView<WeightedValue<const char*>>;
 
-}
+} // namespace search::attribute

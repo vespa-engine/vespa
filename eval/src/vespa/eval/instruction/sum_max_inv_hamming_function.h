@@ -29,19 +29,17 @@ namespace vespalib::eval {
  * against all document vectors and select the maximum result. Sum
  * these partial results into the final result value.
  **/
-class SumMaxInvHammingFunction : public tensor_function::Op2
-{
+class SumMaxInvHammingFunction : public tensor_function::Op2 {
 private:
     size_t _vec_size;
+
 public:
-    SumMaxInvHammingFunction(const ValueType &res_type_in,
-                             const TensorFunction &query,
-                             const TensorFunction &document,
-                             size_t vec_size);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    SumMaxInvHammingFunction(const ValueType& res_type_in, const TensorFunction& query,
+                             const TensorFunction& document, size_t vec_size);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     size_t vec_size() const { return _vec_size; }
     bool result_is_mutable() const override { return true; }
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval

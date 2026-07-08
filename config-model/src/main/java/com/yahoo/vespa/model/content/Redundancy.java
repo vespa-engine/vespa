@@ -24,7 +24,7 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     public Redundancy(Integer initialRedundancy, int finalRedundancy, int readyCopies, int groups, int totalNodes) {
         if (readyCopies > finalRedundancy)
             throw new IllegalArgumentException("Number of searchable copies (" + readyCopies +
-                                               ") can not be higher than final redundancy (" + finalRedundancy + ")");
+                                               ") cannot be higher than final redundancy (" + finalRedundancy + ")");
         this.initialRedundancy = initialRedundancy != null ? initialRedundancy : finalRedundancy;
         this.finalRedundancy = finalRedundancy;
         this.readyCopies = readyCopies;

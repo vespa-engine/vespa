@@ -6,7 +6,6 @@
 
 namespace search::fef::test {
 
-void setup_fef_test_plugin(IBlueprintRegistry & registry);
+void setup_fef_test_plugin(IBlueprintRegistry& registry);
 
 }
-

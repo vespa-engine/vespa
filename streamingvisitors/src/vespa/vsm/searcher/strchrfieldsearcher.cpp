@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "strchrfieldsearcher.h"
+
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 
 using search::streaming::QueryTerm;
@@ -7,26 +8,21 @@ using search::streaming::QueryTermList;
 
 namespace vsm {
 
-void StrChrFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
-                                  const SharedSearcherBuf& buf,
-                                  const vsm::FieldPathMapT& field_paths,
-                                  search::fef::IQueryEnvironment& query_env)
-{
+void StrChrFieldSearcher::prepare(search::streaming::QueryTermList& qtl, const SharedSearcherBuf& buf,
+                                  const vsm::FieldPathMapT& field_paths, search::fef::IQueryEnvironment& query_env) {
     FieldSearcher::prepare(qtl, buf, field_paths, query_env);
 }
 
-void StrChrFieldSearcher::onValue(const document::FieldValue & fv)
-{
-    const auto & sfv = static_cast<const document::LiteralFieldValueB &>(fv);
+void StrChrFieldSearcher::onValue(const document::FieldValue& fv) {
+    const auto&      sfv = static_cast<const document::LiteralFieldValueB&>(fv);
     std::string_view val = sfv.getValueRef();
-    FieldRef fr(val.data(), std::min(maxFieldLength(), val.size()));
+    FieldRef         fr(val.data(), std::min(maxFieldLength(), val.size()));
     matchDoc(fr);
 }
 
-bool StrChrFieldSearcher::matchDoc(const FieldRef & fieldRef)
-{
+bool StrChrFieldSearcher::matchDoc(const FieldRef& fieldRef) {
     size_t element_length = 0;
-    bool need_count_words = false;
+    bool   need_count_words = false;
     if (_qtl.size() > 1) {
         size_t mintsz = shortestTerm();
         if (fieldRef.size() >= mintsz) {
@@ -50,11 +46,10 @@ bool StrChrFieldSearcher::matchDoc(const FieldRef & fieldRef)
     return true;
 }
 
-size_t StrChrFieldSearcher::shortestTerm() const
-{
+size_t StrChrFieldSearcher::shortestTerm() const {
     size_t mintsz(_qtl.front()->termLen());
-    for (auto it=_qtl.begin()+1, mt=_qtl.end(); it != mt; it++) {
-        const QueryTerm & qt = **it;
+    for (auto it = _qtl.begin() + 1, mt = _qtl.end(); it != mt; it++) {
+        const QueryTerm& qt = **it;
         if (qt.isRegex() || qt.isFuzzy()) {
             return 0; // Must avoid "too short query term" optimization when using regex or fuzzy
         }
@@ -63,4 +58,4 @@ size_t StrChrFieldSearcher::shortestTerm() const
     return mintsz;
 }
 
-}
+} // namespace vsm

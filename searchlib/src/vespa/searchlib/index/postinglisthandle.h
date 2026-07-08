@@ -2,6 +2,7 @@
 #pragma once
 
 #include "postinglistcounts.h"
+
 #include <cstdlib>
 #include <memory>
 
@@ -14,21 +15,15 @@ namespace search::index {
  */
 class PostingListHandle {
 public:
-    uint64_t _bitOffsetMem; // _mem relative to start of file
-    const void *_mem;       // Memory backing posting list after read/mmap
-    std::shared_ptr<void> _allocMem; // Allocated memory for posting list
-    size_t _allocSize;      // Size of allocated memory
-    uint64_t _read_bytes;   // Bytes read from disk (used by disk io stats)
+    uint64_t              _bitOffsetMem; // _mem relative to start of file
+    const void*           _mem;          // Memory backing posting list after read/mmap
+    std::shared_ptr<void> _allocMem;     // Allocated memory for posting list
+    size_t                _allocSize;    // Size of allocated memory
+    uint64_t              _read_bytes;   // Bytes read from disk (used by disk io stats)
 
-    PostingListHandle()
-    : _bitOffsetMem(0),
-      _mem(nullptr),
-      _allocMem(),
-      _allocSize(0),
-      _read_bytes(0)
-    { }
+    PostingListHandle() : _bitOffsetMem(0), _mem(nullptr), _allocMem(), _allocSize(0), _read_bytes(0) {}
 
     ~PostingListHandle();
 };
 
-}
+} // namespace search::index

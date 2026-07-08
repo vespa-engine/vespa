@@ -4,11 +4,18 @@ package com.yahoo.text;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
@@ -500,7 +507,7 @@ public class Utf8TestCase {
     @Test
     @Ignore
     public void benchmarkDecoding() {
-        byte[] ascii = "This is just sort of random mix.".getBytes();
+        byte[] ascii = "This is just sort of random mix.".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         byte[] unicode = "This is just sort of random mix. \u5370\u57df\u60c5\u5831\u53EF\u4EE5\u6709x\u00e9\u00e8".getBytes(StandardCharsets.UTF_8);
         int iterations = 100_000; // Use 100_000+ for benchmarking
 
@@ -544,7 +551,7 @@ public class Utf8TestCase {
         String res = null;
         for (int i = 0; i < iterations; i++) {
             // Append counter to avoid String cache
-            byte[] counter = String.valueOf(i).getBytes();
+            byte[] counter = String.valueOf(i).getBytes(java.nio.charset.StandardCharsets.UTF_8);
             byte[] result = new byte[b.length + counter.length];
             System.arraycopy(b, 0, result, 0, b.length);
             System.arraycopy(counter, 0, result, b.length, counter.length);
@@ -559,6 +566,100 @@ public class Utf8TestCase {
         r.run();
         long end = System.currentTimeMillis();
         return end - start;
+    }
+
+    @Test
+    public void testCreateReaderWithFile() throws IOException {
+        File tempFile = File.createTempFile("utf8test", ".txt");
+        try {
+            String testContent = "Test UTF-8: \u5370\u57df\u60c5\u5831 \u00e9\u00e8";
+            Files.writeString(tempFile.toPath(), testContent, StandardCharsets.UTF_8);
+
+            FileReader reader = Utf8.createReader(tempFile);
+            BufferedReader br = new BufferedReader(reader);
+            String readContent = br.readLine();
+            br.close();
+
+            assertEquals(testContent, readContent);
+        } finally {
+            tempFile.delete();
+        }
+    }
+
+    @Test
+    public void testCreateReaderWithString() throws IOException {
+        File tempFile = File.createTempFile("utf8test", ".txt");
+        try {
+            String testContent = "Test UTF-8: \u5370\u57df\u60c5\u5831 \u00e9\u00e8";
+            Files.writeString(tempFile.toPath(), testContent, StandardCharsets.UTF_8);
+
+            FileReader reader = Utf8.createReader(tempFile.getAbsolutePath());
+            BufferedReader br = new BufferedReader(reader);
+            String readContent = br.readLine();
+            br.close();
+
+            assertEquals(testContent, readContent);
+        } finally {
+            tempFile.delete();
+        }
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void testCreateReaderWithNonExistentFile() throws FileNotFoundException {
+        File nonExistent = new File("/tmp/this-file-should-not-exist-" + System.nanoTime() + ".txt");
+        Utf8.createReader(nonExistent);
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void testCreateReaderWithNonExistentString() throws FileNotFoundException {
+        String nonExistent = "/tmp/this-file-should-not-exist-" + System.nanoTime() + ".txt";
+        Utf8.createReader(nonExistent);
+    }
+
+    @Test
+    public void testCreateWriterWithFile() throws IOException {
+        File tempFile = File.createTempFile("utf8test", ".txt");
+        try {
+            String testContent = "Test UTF-8: \u5370\u57df\u60c5\u5831 \u00e9\u00e8";
+
+            FileWriter writer = Utf8.createWriter(tempFile);
+            BufferedWriter bw = new BufferedWriter(writer);
+            bw.write(testContent);
+            bw.close();
+
+            String readContent = Files.readString(tempFile.toPath(), StandardCharsets.UTF_8);
+            assertEquals(testContent, readContent);
+        } finally {
+            tempFile.delete();
+        }
+    }
+
+    @Test
+    public void testCreateWriterWithString() throws IOException {
+        File tempFile = File.createTempFile("utf8test", ".txt");
+        try {
+            String testContent = "Test UTF-8: \u5370\u57df\u60c5\u5831 \u00e9\u00e8";
+
+            FileWriter writer = Utf8.createWriter(tempFile.getAbsolutePath());
+            BufferedWriter bw = new BufferedWriter(writer);
+            bw.write(testContent);
+            bw.close();
+
+            String readContent = Files.readString(tempFile.toPath(), StandardCharsets.UTF_8);
+            assertEquals(testContent, readContent);
+        } finally {
+            tempFile.delete();
+        }
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateWriterWithDirectory() throws IOException {
+        File tempDir = Files.createTempDirectory("utf8test").toFile();
+        try {
+            Utf8.createWriter(tempDir);
+        } finally {
+            tempDir.delete();
+        }
     }
 
 }

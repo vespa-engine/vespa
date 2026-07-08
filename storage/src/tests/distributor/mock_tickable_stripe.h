@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/storage/distributor/tickable_stripe.h>
+
 #include <cstdlib>
 
 namespace storage::distributor {
@@ -15,17 +16,13 @@ struct MockTickableStripe : TickableStripe {
     void clear_pending_cluster_state_bundle() override { abort(); }
     void enable_cluster_state_bundle(const lib::ClusterStateBundle&, bool) override { abort(); }
     void notify_distribution_change_enabled() override { abort(); }
-    PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace, const lib::ClusterState&, bool) override {
+    PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace, const lib::ClusterState&,
+                                                       bool) override {
         abort();
     }
-    void merge_entries_into_db(document::BucketSpace,
-                               api::Timestamp,
-                               const lib::Distribution&,
-                               const lib::ClusterState&,
-                               const char*,
-                               const OutdatedNodes &,
-                               const std::vector<dbtransition::Entry>&) override
-    {
+    void merge_entries_into_db(document::BucketSpace, api::Timestamp, const lib::Distribution&,
+                               const lib::ClusterState&, const char*, const OutdatedNodes&,
+                               const std::vector<dbtransition::Entry>&) override {
         abort();
     }
     void update_read_snapshot_before_db_pruning() override { abort(); }
@@ -33,9 +30,7 @@ struct MockTickableStripe : TickableStripe {
     void update_read_snapshot_after_activation(const lib::ClusterStateBundle&) override { abort(); }
     void clear_read_only_bucket_repo_databases() override { abort(); }
 
-    void update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo>) override {
-        abort();
-    }
+    void update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo>) override { abort(); }
 
     void report_bucket_db_status(document::BucketSpace, std::ostream&) const override { abort(); }
     StripeAccessGuard::PendingOperationStats pending_operation_stats() const override { abort(); }
@@ -43,4 +38,4 @@ struct MockTickableStripe : TickableStripe {
     void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream&) const override { abort(); }
 };
 
-}
+} // namespace storage::distributor

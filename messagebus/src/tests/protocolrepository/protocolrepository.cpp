@@ -10,30 +10,21 @@ private:
     const string _name;
 
 public:
+    TestProtocol(const string& name) noexcept : _name(name) {}
 
-    TestProtocol(const string &name) noexcept
-        : _name(name)
-    { }
+    const string& getName() const override { return _name; }
 
-    const string & getName() const override { return _name; }
+    IRoutingPolicy::UP createPolicy(const string&, const string&) const override { throw std::exception(); }
 
-    IRoutingPolicy::UP createPolicy(const string &, const string &) const override {
-        throw std::exception();
-    }
+    Blob encode(const vespalib::Version&, const Routable&) const override { throw std::exception(); }
 
-    Blob encode(const vespalib::Version &, const Routable &) const override {
-        throw std::exception();
-    }
-
-    Routable::UP decode(const vespalib::Version &, BlobRef ) const override {
-        throw std::exception();
-    }
+    Routable::UP decode(const vespalib::Version&, BlobRef) const override { throw std::exception(); }
 };
 
 TEST(ProtocolRepositoryTest, protocolrepository_test) {
 
     ProtocolRepository repo;
-    IProtocol::SP prev;
+    IProtocol::SP      prev;
     prev = repo.putProtocol(std::make_shared<TestProtocol>("foo"));
     ASSERT_FALSE(prev);
 

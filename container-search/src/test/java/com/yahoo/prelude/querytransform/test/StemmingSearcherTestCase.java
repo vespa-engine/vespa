@@ -19,7 +19,17 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexFactsFactory;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.DocumentFrequency;
+import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.StemmingSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -35,6 +45,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,13 +62,13 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testStemOnlySomeTerms() {
-        assertStemmed("WEAKAND(100) hole in cvs and subversion nostem:Found",
+        assertStemmed("WEAKAND hole in cvs and subversion nostem:Found",
                       "/search?query=Holes in CVS and Subversion nostem:Found");
     }
 
     @Test
     void testStemmingCanPreserveCase() {
-        assertStemmed("WEAKAND(100) cased:Holes cased:hole cased:CVS",
+        assertStemmed("WEAKAND cased:Holes cased:hole cased:CVS",
                       "/search?query=cased:Holes cased:holes cased:CVS");
     }
 
@@ -102,7 +113,103 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testDontStemPrefixes() {
-        assertStemmed("WEAKAND(100) ist*", "/search?query=ist*&language=de");
+        assertStemmed("WEAKAND ist*", "/search?query=ist*&language=de");
+    }
+
+    @Test
+    void testQueryAndDropsTermsWithEmptyStems() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexFacts = new IndexFacts(createDefaultIndexModelWithStemming());
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        AndItem root = new AndItem();
+        root.addItem(new WordItem("dropme", "default", true));
+        root.addItem(new WordItem("document", "default", true));
+        query.getModel().getQueryTree().setRoot(root);
+
+        executeStemming(query, linguistics, indexFacts);
+
+        AndItem transformedRoot = (AndItem) query.getModel().getQueryTree().getRoot();
+        assertEquals(1, transformedRoot.getItemCount());
+        assertEquals("document", ((WordItem) transformedRoot.getItem(0)).getWord());
+    }
+
+    @Test
+    void testQueryAndDoesNotCollapseToEmpty() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexFacts = new IndexFacts(createDefaultIndexModelWithStemming());
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        AndItem root = new AndItem();
+        root.addItem(new WordItem("dropme", "default", true));
+        query.getModel().getQueryTree().setRoot(root);
+
+        executeStemming(query, linguistics, indexFacts);
+
+        assertTrue(query.getModel().getQueryTree().toString().contains("dropme"));
+    }
+
+    @Test
+    void testUserInputDropsTermsWithEmptyStems() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexModel = createDefaultIndexModelWithStemming();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("dropme document"));
+
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+
+        var tree = query.getModel().getQueryTree().toString();
+        assertTrue(tree.contains("document"), "Expected remaining term after stopword removal: " + tree);
+        assertFalse(tree.contains("dropme"), "Expected stopword to be removed from query tree: " + tree);
+    }
+
+    @Test
+    void testUserInputDoesNotCollapseToEmpty() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexModel = createDefaultIndexModelWithStemming();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("dropme"));
+
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+
+        assertTrue(query.getModel().getQueryTree().toString().contains("dropme"));
+    }
+
+    @Test
+    void testPhraseTermsAreKeptWhenStemIsEmpty() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexFacts = new IndexFacts(createDefaultIndexModelWithStemming());
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        PhraseItem phrase = new PhraseItem();
+        phrase.addItem(new WordItem("dropme", "default", true));
+        phrase.addItem(new WordItem("document", "default", true));
+        query.getModel().getQueryTree().setRoot(phrase);
+
+        executeStemming(query, linguistics, indexFacts);
+
+        String tree = query.getModel().getQueryTree().toString();
+        assertTrue(tree.contains("dropme"), "Phrase terms should remain untouched: " + tree);
+        assertTrue(tree.contains("document"), "Phrase terms should remain untouched: " + tree);
+    }
+
+    @Test
+    void testNonTextOperatorsAreUnchangedWhenStemIsEmpty() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexFacts = new IndexFacts(createDefaultIndexModelWithStemming());
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        query.getModel().getQueryTree().setRoot(new PrefixItem("dropme", "default"));
+
+        executeStemming(query, linguistics, indexFacts);
+
+        assertEquals("default:dropme*", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -114,8 +221,8 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testNounStemming() {
-        assertStemmed("WEAKAND(100) noun:tower noun:tower noun:tow", "/search?query=noun:towers noun:tower noun:tow");
-        assertStemmed("WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow", "/search?query=notnoun:towers notnoun:tower notnoun:tow");
+        assertStemmed("WEAKAND noun:tower noun:tower noun:tow", "/search?query=noun:towers noun:tower noun:tow");
+        assertStemmed("WEAKAND notnoun:tower notnoun:tower notnoun:tow", "/search?query=notnoun:towers notnoun:tower notnoun:tow");
     }
 
     @SuppressWarnings("deprecation")
@@ -130,7 +237,7 @@ public class StemmingSearcherTestCase {
         Query q = new Query(QueryTestCase.httpEncode("?query=cars"));
         new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
                 Execution.Context.createContextStub(indexFacts, linguistics)).search(q);
-        assertEquals("WEAKAND(100) cars", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND cars", q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -155,7 +262,7 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testMultipleStemming() {
-        assertStemmed("WEAKAND(100) WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
+        assertStemmed("WEAKAND WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
                       "foobar:\"" + (
                               "WORD_ALTERNATIVES foobar:[ noun(0.7) nouns(1.0) ] " +
                               "WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]\" " ) +
@@ -168,9 +275,9 @@ public class StemmingSearcherTestCase {
     void testEmojiStemming() {
         String emoji1 = "\uD83C\uDF49"; // 🍉
         String emoji2 = "\uD83D\uDE00"; // 😀
-        assertStemmed("WEAKAND(100) " + emoji1, "/search?query=" + emoji1);
-        assertStemmed("WEAKAND(100) (AND " + emoji1 + " " + emoji2 + ")", "/search?query=" + emoji1 + emoji2);
-        assertStemmed("WEAKAND(100) (AND " + emoji1 + " foo " + emoji2 + ")", "/search?query=" + emoji1 + "foo" + emoji2);
+        assertStemmed("WEAKAND " + emoji1, "/search?query=" + emoji1);
+        assertStemmed("WEAKAND (AND " + emoji1 + " " + emoji2 + ")", "/search?query=" + emoji1 + emoji2);
+        assertStemmed("WEAKAND (AND " + emoji1 + " foo " + emoji2 + ")", "/search?query=" + emoji1 + "foo" + emoji2);
     }
 
     @Test
@@ -245,6 +352,14 @@ public class StemmingSearcherTestCase {
 
     }
 
+    private IndexModel createDefaultIndexModelWithStemming() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        return new IndexModel(schema);
+    }
+
     private static Optional<WordItem> getFirstWord(Query query) {
         var item = query.getModel().getQueryTree().getRoot();
         if (item instanceof WeakAndItem weakAndItem) {
@@ -268,10 +383,209 @@ public class StemmingSearcherTestCase {
         new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)), newExecutionContext()).search(query);
     }
 
+    private void executeStemming(Query query, Linguistics linguistics, IndexFacts indexFacts) {
+        new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(query);
+    }
+
     private void assertStemmed(String expectedQueryTree, String queryString) {
         Query query = new Query(QueryTestCase.httpEncode(queryString));
         executeStemming(query);
         assertEquals(expectedQueryTree, query.getModel().getQueryTree().getRoot().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageFrenchFirstEnglishSecond() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'en', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // French stems "machine" to "machin", English keeps "machine"
+        assertEquals("OR default:machin default:machine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageThreeLanguages() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'de', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'en', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machines"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        var tree = query.getModel().getQueryTree().toString();
+        // Each branch should be stemmed independently; at minimum FR and EN should differ
+        // German: "machines" -> "machin", French: "machines" -> "machin", English: "machines" -> "machine"
+        assertTrue(tree.startsWith("OR "), "Expected OR with three branches: " + tree);
+        assertTrue(tree.contains("default:machine"), "Expected English stem 'machine' in: " + tree);
+    }
+
+    @Test
+    void testPerClauseLanguageEnglishFirstFrenchSecond() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'en', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // English keeps "machine", French stems to "machin"
+        assertEquals("OR default:machine default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageSingleFrench() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where ({language: 'fr', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        assertEquals("default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageNoAnnotation() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // No language annotation: defaults to English, "machine" stays "machine"
+        assertEquals("default:machine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageQueryLevelGerman() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("machine") +
+                              "&language=de");
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // Query-level language=de: stems in German
+        assertEquals("default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageOneBranchExplicitOneDefault() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        // French branch stems to "machin", default branch uses query-level language (French, set by first userInput)
+        // Both branches get French stemming since the model language becomes French from first userInput
+        assertEquals("OR default:machin default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testPerClauseLanguageSameLanguageBothBranches() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        var indexModel = new IndexModel(schema);
+        var linguistics = new OpenNlpLinguistics();
+        var yql = "select * from sources * where " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query)) or " +
+                  "({language: 'fr', grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) + "&query=" + QueryTestCase.httpEncode("machine"));
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+        assertEquals("OR default:machin default:machin", query.getModel().getQueryTree().toString());
+    }
+
+    /** Creates index facts where top-level "x" is indexed with stemming, but struct-field "myArray.x" is an attribute. */
+    private IndexFacts createIndexFactsWithFieldNameCollision() {
+        var schema = new SearchDefinition("test");
+        var topLevelX = new Index("x");
+        topLevelX.setStemMode("BEST");
+        schema.addIndex(topLevelX);
+        var structFieldX = new Index("myArray.x");
+        structFieldX.setString(true);
+        schema.addIndex(structFieldX);
+        return new IndexFacts(new IndexModel(schema));
+    }
+
+    @Test
+    void testSameElementStructFieldIsNotStemmed() {
+        var indexFacts = createIndexFactsWithFieldNameCollision();
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        SameElementItem sameElement = new SameElementItem("myArray");
+        sameElement.addItem(new WordItem("trees", "x", true));
+        query.getModel().getQueryTree().setRoot(sameElement);
+
+        new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(query);
+
+        SameElementItem result = (SameElementItem) query.getModel().getQueryTree().getRoot();
+        WordItem resultWord = (WordItem) result.getItem(0);
+        assertEquals("trees", resultWord.getWord(), "Struct-field should not be stemmed since myArray.x is an attribute");
+    }
+
+    @Test
+    void testTopLevelFieldIsStemmedDespiteStructField() {
+        var indexFacts = createIndexFactsWithFieldNameCollision();
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        query.getModel().getQueryTree().setRoot(new WordItem("trees", "x", true));
+
+        new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(query);
+
+        assertNotEquals("trees", query.getModel().getQueryTree().getRoot().toString(),
+                        "Top-level field x should be stemmed");
     }
 
     private static class MockLinguistics extends SimpleLinguistics {
@@ -292,6 +606,37 @@ public class StemmingSearcherTestCase {
             @Override
             public List<StemList> stem(String input, LinguisticsParameters parameters) {
                 lastLinguisticsProfile = parameters.profile();
+                return super.stem(input, parameters);
+            }
+
+        }
+
+    }
+
+    private static class StopwordDroppingLinguistics extends SimpleLinguistics {
+
+        private final String stopword;
+
+        StopwordDroppingLinguistics(String stopword) {
+            this.stopword = stopword;
+        }
+
+        @Override
+        public Stemmer getStemmer() {
+            return new StopwordDroppingStemmer(getTokenizer());
+        }
+
+        private class StopwordDroppingStemmer extends StemmerImpl {
+
+            StopwordDroppingStemmer(Tokenizer tokenizer) {
+                super(tokenizer);
+            }
+
+            @Override
+            public List<StemList> stem(String input, LinguisticsParameters parameters) {
+                if (input.equalsIgnoreCase(stopword)) {
+                    return List.of(new StemList(""));
+                }
                 return super.stem(input, parameters);
             }
 

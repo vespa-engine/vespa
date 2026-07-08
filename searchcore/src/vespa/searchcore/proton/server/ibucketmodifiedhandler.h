@@ -2,15 +2,16 @@
 
 #pragma once
 
-namespace document { class BucketId;}
+namespace document {
+class BucketId;
+}
 
 namespace proton {
 
-class IBucketModifiedHandler
-{
+class IBucketModifiedHandler {
 public:
-    virtual void notifyBucketModified(const document::BucketId &bucket) = 0;
+    virtual void notifyBucketModified(const document::BucketId& bucket) = 0;
     virtual ~IBucketModifiedHandler() = default;
 };
 
-}
+} // namespace proton

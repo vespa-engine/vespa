@@ -75,6 +75,7 @@ public class IncludeProcessorTest {
                         <component bundle="foobundle" class="TestBar" deploy:environment="dev" id="bar"/>
                         <component bundle="foobundle" class="ProdBar" deploy:environment="prod" id="bar"/>
                         <component bundle="foobundle" class="ProdBaz" deploy:environment="prod" id="baz"/>
+                        <component bundle="foobundle" class="ProdXyzzyInAws" deploy:cloud="aws" id="xyzzy"/>
                         <nodes>
                             <node baseport="${qrs.port}" hostalias="node0"/>
                         </nodes>

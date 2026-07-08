@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributor_bucket_space_repo.h"
+
 #include "distributor_bucket_space.h"
+
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/backtrace.h>
+
 #include <cassert>
 #include <cinttypes>
 
@@ -17,38 +20,33 @@ using document::FixedBucketSpaces;
 
 namespace storage::distributor {
 
-DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(uint16_t node_index)
-    : _map()
-{
+DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(uint16_t node_index) : _map() {
     add(FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>(node_index));
     add(FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>(node_index));
 }
 
 DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() = default;
 
-void
-DistributorBucketSpaceRepo::add(document::BucketSpace bucketSpace, std::unique_ptr<DistributorBucketSpace> distributorBucketSpace)
-{
+void DistributorBucketSpaceRepo::add(document::BucketSpace                   bucketSpace,
+                                     std::unique_ptr<DistributorBucketSpace> distributorBucketSpace) {
     _map.emplace(bucketSpace, std::move(distributorBucketSpace));
 }
 
-DistributorBucketSpace &
-DistributorBucketSpaceRepo::get(BucketSpace bucketSpace)
-{
+DistributorBucketSpace& DistributorBucketSpaceRepo::get(BucketSpace bucketSpace) {
     auto itr = _map.find(bucketSpace);
     if (itr == _map.end()) [[unlikely]] {
-        LOG(error, "Bucket space %" PRIu64 " does not have a valid mapping. %s", bucketSpace.getId(), vespalib::getStackTrace(0).c_str());
+        LOG(error, "Bucket space %" PRIu64 " does not have a valid mapping. %s", bucketSpace.getId(),
+            vespalib::getStackTrace(0).c_str());
         abort();
     }
     return *itr->second;
 }
 
-const DistributorBucketSpace &
-DistributorBucketSpaceRepo::get(BucketSpace bucketSpace) const
-{
+const DistributorBucketSpace& DistributorBucketSpaceRepo::get(BucketSpace bucketSpace) const {
     auto itr = _map.find(bucketSpace);
     if (itr == _map.end()) [[unlikely]] {
-        LOG(error, "Bucket space %" PRIu64 " does not have a valid mapping. %s", bucketSpace.getId(), vespalib::getStackTrace(0).c_str());
+        LOG(error, "Bucket space %" PRIu64 " does not have a valid mapping. %s", bucketSpace.getId(),
+            vespalib::getStackTrace(0).c_str());
         abort();
     }
     return *itr->second;
@@ -69,7 +67,7 @@ bool content_node_is_in_maintenance(const lib::ClusterState& state, uint16_t ind
 // bucket space state.
 bool bundle_implies_global_merging_active(const lib::ClusterStateBundle& bundle) noexcept {
     auto& default_cs = bundle.getDerivedClusterState(FixedBucketSpaces::default_space());
-    auto& global_cs  = bundle.getDerivedClusterState(FixedBucketSpaces::global_space());
+    auto& global_cs = bundle.getDerivedClusterState(FixedBucketSpaces::global_space());
     if (default_cs.get() == global_cs.get()) {
         return false;
     }
@@ -82,34 +80,29 @@ bool bundle_implies_global_merging_active(const lib::ClusterStateBundle& bundle)
     return false;
 }
 
-}
+} // namespace
 
-void
-DistributorBucketSpaceRepo::enable_cluster_state_bundle(const lib::ClusterStateBundle& cluster_state_bundle)
-{
+void DistributorBucketSpaceRepo::enable_cluster_state_bundle(const lib::ClusterStateBundle& cluster_state_bundle) {
     for (auto& entry : _map) {
         entry.second->setClusterState(cluster_state_bundle.getDerivedClusterState(entry.first));
     }
-    get(FixedBucketSpaces::default_space()).set_merges_inhibited(
-            bundle_implies_global_merging_active(cluster_state_bundle));
+    get(FixedBucketSpaces::default_space())
+        .set_merges_inhibited(bundle_implies_global_merging_active(cluster_state_bundle));
 }
 
-void
-DistributorBucketSpaceRepo::set_pending_cluster_state_bundle(const lib::ClusterStateBundle& cluster_state_bundle)
-{
+void DistributorBucketSpaceRepo::set_pending_cluster_state_bundle(
+    const lib::ClusterStateBundle& cluster_state_bundle) {
     for (auto& entry : _map) {
         entry.second->set_pending_cluster_state(cluster_state_bundle.getDerivedClusterState(entry.first));
     }
-    get(FixedBucketSpaces::default_space()).set_merges_inhibited(
-            bundle_implies_global_merging_active(cluster_state_bundle));
+    get(FixedBucketSpaces::default_space())
+        .set_merges_inhibited(bundle_implies_global_merging_active(cluster_state_bundle));
 }
 
-void
-DistributorBucketSpaceRepo::clear_pending_cluster_state_bundle()
-{
+void DistributorBucketSpaceRepo::clear_pending_cluster_state_bundle() {
     for (auto& entry : _map) {
         entry.second->set_pending_cluster_state({});
     }
 }
 
-}
+} // namespace storage::distributor

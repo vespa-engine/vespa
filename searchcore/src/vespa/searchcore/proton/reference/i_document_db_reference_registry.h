@@ -11,8 +11,7 @@ class IDocumentDBReference;
 /*
  * Interface class for a registry of named IDocumentDBReferences.
  */
-class IDocumentDBReferenceRegistry
-{
+class IDocumentDBReferenceRegistry {
 public:
     virtual ~IDocumentDBReferenceRegistry() = default;
 

@@ -5,21 +5,17 @@
 namespace vbench {
 
 namespace {
-void stripCR(string &dst) {
+void stripCR(string& dst) {
     if (!dst.empty() && dst[dst.size() - 1] == '\r') {
         dst.resize(dst.size() - 1);
     }
 }
-} // namespace vbench::<unnamed>
+} // namespace
 
-LineReader::LineReader(Input &input)
-    : _input(input)
-{
+LineReader::LineReader(Input& input) : _input(input) {
 }
 
-bool
-LineReader::readLine(string &dst)
-{
+bool LineReader::readLine(string& dst) {
     dst.clear();
     for (char c = _input.read(); !_input.failed(); c = _input.read()) {
         if (c != '\n') {

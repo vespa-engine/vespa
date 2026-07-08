@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.expression;
 
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Identifiable;
@@ -9,6 +10,7 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -148,6 +150,20 @@ public class ExpressionTestCase {
     public void testZCurveFunctionNode() {
         assertMultiArgFunctionNode(
                 new ZCurveFunctionNode(new ConstantNode(new IntegerResultNode(7)), ZCurveFunctionNode.Dimension.Y));
+    }
+
+    @Test
+    public void testGeoDistanceFunctionNode() {
+        assertMultiArgFunctionNode(
+                new GeoDistanceFunctionNode(new AttributeNode("pos"),
+                        new ConstantNode(new FloatResultNode(63.0)),
+                        new ConstantNode(new FloatResultNode(10.0)),
+                        GeoDistanceFunctionNode.Unit.KM));
+        assertMultiArgFunctionNode(
+                new GeoDistanceFunctionNode(new AttributeNode("location"),
+                        new ConstantNode(new FloatResultNode(63.0)),
+                        new ConstantNode(new FloatResultNode(10.0)),
+                        GeoDistanceFunctionNode.Unit.MILES));
     }
 
     @Test
@@ -708,7 +724,7 @@ public class ExpressionTestCase {
     private void compareAllPairwise(ResultNode... orderedNodes) {
         for (int i = 0; i < orderedNodes.length; ++i) {
             for (int j = 0; j < orderedNodes.length; ++j) {
-                var ctx = String.format("lhs(i=%d): %s, rhs(j=%d): %s", i, orderedNodes[i], j, orderedNodes[j]);
+                var ctx = Text.format("lhs(i=%d): %s, rhs(j=%d): %s", i, orderedNodes[i], j, orderedNodes[j]);
                 if (j < i) {
                     assertTrue(ctx, orderedNodes[i].compareTo(orderedNodes[j]) > 0);
                 } else if (j > i) {
@@ -923,6 +939,19 @@ public class ExpressionTestCase {
         assertMultiply(i1, i2, 3006427292488851361l, 3006427292488851361l);
         assertMultiply(i1, f2, 17515926039l, 1793253241.0 * 9.767681239);
         assertMultiply(f1, f2, 11, 10.8517727372816364);
+    }
+
+    @Test
+    public void testPositionDocumentFieldNode() {
+        PositionDocumentFieldNode a = new PositionDocumentFieldNode("mypos");
+        PositionDocumentFieldNode b = (PositionDocumentFieldNode) assertSerialize(a);
+        assertEquals("mypos", b.getFieldName());
+
+        PositionDocumentFieldNode c = new PositionDocumentFieldNode("mypos");
+        assertEquals(b, c);
+
+        c = new PositionDocumentFieldNode("other");
+        assertNotEquals(b, c);
     }
 
     // --------------------------------------------------------------------------------

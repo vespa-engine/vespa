@@ -10,8 +10,7 @@ namespace storage {
 /*
  * Stats for active operations at service layer
  */
-class ActiveOperationsStats
-{
+class ActiveOperationsStats {
     uint64_t                _size_samples;
     uint64_t                _total_size;
     uint32_t                _active_size;
@@ -23,6 +22,7 @@ class ActiveOperationsStats
     std::optional<double>   _max_latency;
 
     void update_size() noexcept;
+
 public:
     ActiveOperationsStats() noexcept;
     ~ActiveOperationsStats();
@@ -42,4 +42,4 @@ public:
     const std::optional<double>& get_max_latency() const noexcept { return _max_latency; }
 };
 
-}
+} // namespace storage

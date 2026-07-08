@@ -24,9 +24,9 @@ import java.util.Set;
 
 
 /**
- * <p>A document definition is a list of fields. Documents may inherit other documents,
- * implicitly acquiring their fields as it's own. If a document is not set to inherit
- * any document, it will always inherit the document "document.0".</p>
+ * A document definition is a list of fields. Documents may inherit other documents,
+ * implicitly acquiring their fields as its own. If a document is not set to inherit
+ * any document, it will always inherit the document "document".
  *
  * @author Thomas Gundersen
  * @author bratseth

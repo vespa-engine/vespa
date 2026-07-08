@@ -2,8 +2,8 @@
 
 #include <vespa/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/process/process.h>
+#include <vespa/vespalib/util/exception.h>
 
 using namespace vespalib;
 

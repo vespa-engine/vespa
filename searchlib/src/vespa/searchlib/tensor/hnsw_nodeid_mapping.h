@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/generation_hold_list.h>
 #include <vespa/vespalib/util/growstrategy.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -26,18 +27,17 @@ class HnswNode;
  */
 class HnswNodeidMapping {
 private:
-    using generation_t = vespalib::GenerationHandler::generation_t;
     using NodeidStore = vespalib::datastore::ArrayStore<uint32_t>;
     using NodeidHoldList = vespalib::GenerationHoldList<uint32_t, false, true>;
     using NodeidFreeList = std::vector<uint32_t>;
 
     // Maps from docid to EntryRef used to get the array of nodeids from the NodeidStore.
     std::vector<vespalib::datastore::EntryRef> _refs;
-    vespalib::GrowStrategy _grow_strategy;
-    uint32_t _nodeid_limit;
-    NodeidStore _nodeids;
-    NodeidHoldList _hold_list;
-    NodeidFreeList _free_list;
+    vespalib::GrowStrategy                     _grow_strategy;
+    uint32_t                                   _nodeid_limit;
+    NodeidStore                                _nodeids;
+    NodeidHoldList                             _hold_list;
+    NodeidFreeList                             _free_list;
 
     void ensure_refs_size(uint32_t docid);
     uint32_t allocate_id();
@@ -52,8 +52,8 @@ public:
     std::span<const uint32_t> get_ids(uint32_t docid) const;
     void free_ids(uint32_t docid);
 
-    void assign_generation(generation_t current_gen);
-    void reclaim_memory(generation_t oldest_used_gen);
+    void assign_generation(vespalib::Generation current_gen);
+    void reclaim_memory(vespalib::Generation oldest_used_gen);
     void on_load(std::span<const HnswNode> nodes);
     vespalib::AddressSpace address_space_usage() const { return _nodeids.addressSpaceUsage(); }
     vespalib::MemoryUsage memory_usage() const;
@@ -63,8 +63,8 @@ public:
     std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const;
 };
 
-}
+} // namespace search::tensor
 
 namespace vespalib {
-    extern template class GenerationHoldList<uint32_t, false, true>;
+extern template class GenerationHoldList<uint32_t, false, true>;
 }

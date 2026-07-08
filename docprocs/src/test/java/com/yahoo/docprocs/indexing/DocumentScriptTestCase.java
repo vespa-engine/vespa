@@ -25,6 +25,7 @@ import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import org.junit.Test;
@@ -332,7 +333,7 @@ public class DocumentScriptTestCase {
         try {
             execute(document);
             fail();
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidInputException e) {
             assertEquals(expectedException, e.getMessage());
         }
     }
@@ -341,7 +342,7 @@ public class DocumentScriptTestCase {
         try {
             execute(update);
             fail();
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidInputException e) {
             assertEquals(expectedException, e.getMessage());
         }
     }

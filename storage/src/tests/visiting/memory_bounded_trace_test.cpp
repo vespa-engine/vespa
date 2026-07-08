@@ -22,7 +22,7 @@ TEST(MemoryBoundedTraceTest, memory_used_is_string_length_for_leaf_node) {
 
 TEST(MemoryBoundedTraceTest, memory_used_is_accumulated_recursively_for_non_leaf_nodes) {
     MemoryBoundedTrace trace(100);
-    mbus::TraceNode innerNode;
+    mbus::TraceNode    innerNode;
     innerNode.addChild("hello world");
     innerNode.addChild("goodbye moon");
     EXPECT_TRUE(trace.add(innerNode));
@@ -36,7 +36,7 @@ TEST(MemoryBoundedTraceTest, trace_nodes_can_be_moved_and_implicitly_cleared) {
     trace.moveTraceTo(target);
     EXPECT_EQ(1, target.getNumChildren());
     EXPECT_EQ(0, trace.getApproxMemoryUsed());
-    
+
     mbus::Trace emptinessCheck;
     trace.moveTraceTo(emptinessCheck);
     EXPECT_EQ(0, emptinessCheck.getNumChildren());
@@ -66,7 +66,8 @@ TEST(MemoryBoundedTraceTest, can_not_add_more_nodes_when_memory_used_exceeds_upp
     EXPECT_EQ(11, trace.getApproxMemoryUsed());
 
     EXPECT_FALSE(trace.add(mbus::TraceNode("the quick red fox runs across "
-                                           "the freeway", epoch)));
+                                           "the freeway",
+                                           epoch)));
     EXPECT_EQ(11, trace.getApproxMemoryUsed());
 
     mbus::Trace target;
@@ -87,8 +88,8 @@ TEST(MemoryBoundedTraceTest, moved_tree_includes_stats_node_when_nodes_omitted) 
     EXPECT_EQ(1, target.getNumChildren());
     EXPECT_EQ(2, target.getChild(0).getNumChildren());
     std::string expected("Trace too large; omitted 1 subsequent trace "
-                              "trees containing a total of 9 bytes");
+                         "trees containing a total of 9 bytes");
     EXPECT_EQ(expected, target.getChild(0).getChild(1).getNote());
 }
 
-} // storage
+} // namespace storage

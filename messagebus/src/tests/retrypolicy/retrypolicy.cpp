@@ -7,13 +7,13 @@
 using namespace mbus;
 
 TEST(RetryPolicyTest, retrypolicy_test) {
-    constexpr double DELAY(0.001);
+    constexpr double           DELAY(0.001);
     RetryTransientErrorsPolicy policy;
     policy.setBaseDelay(DELAY);
     EXPECT_EQ(0.0, policy.getRetryDelay(0));
     EXPECT_EQ(0.0, policy.getRetryDelay(1));
     for (uint32_t j = 2; j < 15; ++j) {
-        EXPECT_EQ(DELAY*(1 << (j-1)), policy.getRetryDelay(j));
+        EXPECT_EQ(DELAY * (1 << (j - 1)), policy.getRetryDelay(j));
     }
     EXPECT_EQ(10.0, policy.getRetryDelay(15));
     EXPECT_EQ(10.0, policy.getRetryDelay(20));

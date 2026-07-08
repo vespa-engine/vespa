@@ -1,20 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/maintenance/node_maintenance_stats_tracker.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage::distributor {
 
-using document::test::makeBucketSpace;
 using document::BucketSpace;
+using document::test::makeBucketSpace;
 using namespace ::testing;
 
 struct NodeMaintenanceStatsTrackerTest : Test {
     void assertEmptyBucketStats(BucketSpace bucketSpace, const NodeMaintenanceStatsTracker& tracker);
-    void assertBucketStats(uint64_t expMovingOut, uint64_t expSyncing, uint64_t expCopyingIn, uint64_t expCopyingOut, uint64_t expTotal,
-                           BucketSpace bucketSpace, const NodeMaintenanceStatsTracker& tracker);
+    void assertBucketStats(uint64_t expMovingOut, uint64_t expSyncing, uint64_t expCopyingIn, uint64_t expCopyingOut,
+                           uint64_t expTotal, BucketSpace bucketSpace, const NodeMaintenanceStatsTracker& tracker);
 };
 
 TEST_F(NodeMaintenanceStatsTrackerTest, empty_stats_instances_are_equal) {
@@ -50,14 +50,14 @@ TEST_F(NodeMaintenanceStatsTrackerTest, stats_fields_affect_equality_comparison)
 
 TEST_F(NodeMaintenanceStatsTrackerTest, requesting_non_existing_node_gives_empty_stats) {
     NodeMaintenanceStatsTracker tracker;
-    NodeMaintenanceStats wanted;
+    NodeMaintenanceStats        wanted;
     EXPECT_EQ(wanted, tracker.forNode(0, makeBucketSpace()));
 }
 
-TEST_F(NodeMaintenanceStatsTrackerTest, stats_are_tracked_per_node){
+TEST_F(NodeMaintenanceStatsTrackerTest, stats_are_tracked_per_node) {
     NodeMaintenanceStatsTracker tracker;
-    NodeMaintenanceStats wanted;
-    BucketSpace space(1);
+    NodeMaintenanceStats        wanted;
+    BucketSpace                 space(1);
 
     tracker.incMovingOut(0, space);
     wanted.movingOut = 1;
@@ -84,8 +84,8 @@ TEST_F(NodeMaintenanceStatsTrackerTest, stats_are_tracked_per_node){
 
 TEST_F(NodeMaintenanceStatsTrackerTest, statsAreTrackedPerBucketSpace) {
     NodeMaintenanceStatsTracker tracker;
-    BucketSpace fooSpace(3);
-    BucketSpace barSpace(5);
+    BucketSpace                 fooSpace(3);
+    BucketSpace                 barSpace(5);
 
     tracker.incTotal(0, fooSpace);
     tracker.incMovingOut(0, fooSpace);
@@ -113,26 +113,18 @@ TEST_F(NodeMaintenanceStatsTrackerTest, statsAreTrackedPerBucketSpace) {
     assertBucketStats(1, 0, 0, 0, 1, barSpace, tracker);
 }
 
-void
-NodeMaintenanceStatsTrackerTest::assertEmptyBucketStats(BucketSpace bucketSpace,
-                                                        const NodeMaintenanceStatsTracker& tracker)
-{
+void NodeMaintenanceStatsTrackerTest::assertEmptyBucketStats(BucketSpace                        bucketSpace,
+                                                             const NodeMaintenanceStatsTracker& tracker) {
     NodeMaintenanceStats expStats;
     EXPECT_EQ(expStats, tracker.forNode(0, bucketSpace));
 }
 
-void
-NodeMaintenanceStatsTrackerTest::assertBucketStats(uint64_t expMovingOut,
-                                                   uint64_t expSyncing,
-                                                   uint64_t expCopyingIn,
-                                                   uint64_t expCopyingOut,
-                                                   uint64_t expTotal,
-                                                   BucketSpace bucketSpace,
-                                                   const NodeMaintenanceStatsTracker& tracker)
-{
+void NodeMaintenanceStatsTrackerTest::assertBucketStats(uint64_t expMovingOut, uint64_t expSyncing,
+                                                        uint64_t expCopyingIn, uint64_t expCopyingOut,
+                                                        uint64_t expTotal, BucketSpace bucketSpace,
+                                                        const NodeMaintenanceStatsTracker& tracker) {
     NodeMaintenanceStats expStats(expMovingOut, expSyncing, expCopyingIn, expCopyingOut, expTotal);
     EXPECT_EQ(expStats, tracker.forNode(0, bucketSpace));
 }
 
-}
-
+} // namespace storage::distributor

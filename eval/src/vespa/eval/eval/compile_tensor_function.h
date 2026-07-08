@@ -3,9 +3,12 @@
 #pragma once
 
 #include "interpreted_function.h"
+
 #include <vector>
 
-namespace vespalib { class Stash; }
+namespace vespalib {
+class Stash;
+}
 
 namespace vespalib::eval {
 
@@ -27,19 +30,16 @@ struct CTFMetaData {
     struct Step {
         std::string class_name;
         std::string symbol_name;
-        Step(std::string &&class_name_in,
-             std::string &&symbol_name_in) noexcept
-            : class_name(std::move(class_name_in)),
-              symbol_name(std::move(symbol_name_in))
-        {
-        }
+        Step(std::string&& class_name_in, std::string&& symbol_name_in) noexcept
+            : class_name(std::move(class_name_in)), symbol_name(std::move(symbol_name_in)) {}
         ~Step();
     };
     std::vector<Step> steps;
     ~CTFMetaData();
 };
 
-std::vector<InterpretedFunction::Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash,
-                                                                      CTFMetaData *meta);
+std::vector<InterpretedFunction::Instruction> compile_tensor_function(const ValueBuilderFactory& factory,
+                                                                      const TensorFunction& function, Stash& stash,
+                                                                      CTFMetaData* meta);
 
 } // namespace vespalib::eval

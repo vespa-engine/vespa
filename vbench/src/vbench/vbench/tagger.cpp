@@ -2,6 +2,4 @@
 
 #include "tagger.h"
 
-namespace vbench {
-
-} // namespace vbench
+namespace vbench {} // namespace vbench

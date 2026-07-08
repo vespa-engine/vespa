@@ -5,16 +5,13 @@
 
 namespace proton::test {
 
-struct DummySummaryManager : public ISummaryManager
-{
-    ISummarySetup::SP
-    createSummarySetup(const SummaryConfig &,
-                       const JuniperrcConfig &,
-                       const std::shared_ptr<const document::DocumentTypeRepo> &,
-                       const std::shared_ptr<search::IAttributeManager> &,
-                       const search::index::Schema&) override {
+struct DummySummaryManager : public ISummaryManager {
+    ISummarySetup::SP createSummarySetup(const SummaryConfig&, const JuniperrcConfig&,
+                                         const std::shared_ptr<const document::DocumentTypeRepo>&,
+                                         const std::shared_ptr<search::IAttributeManager>&,
+                                         const search::index::Schema&) override {
         return {};
     }
 };
 
-}
+} // namespace proton::test

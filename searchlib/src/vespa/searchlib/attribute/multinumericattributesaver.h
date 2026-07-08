@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "multivalueattributesaver.h"
 #include "multi_value_mapping.h"
+#include "multivalueattributesaver.h"
+
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
 
 namespace search {
@@ -14,25 +15,21 @@ namespace search {
  * Template argument MultiValueT is either ValueType or
  * multivalue::WeightedValue<ValueType>
  */
-template <typename MultiValueT>
-class MultiValueNumericAttributeSaver : public MultiValueAttributeSaver
-{
+template <typename MultiValueT> class MultiValueNumericAttributeSaver : public MultiValueAttributeSaver {
     using Parent = MultiValueAttributeSaver;
     using MultiValueType = MultiValueT;
     using ValueType = multivalue::ValueType_t<MultiValueType>;
-    using GenerationHandler = vespalib::GenerationHandler;
-    using Parent::_frozenIndices;
+    using Parent::_indices_snapshot;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
 
-    const MultiValueMapping &_mvMapping;
+    const MultiValueMapping& _mvMapping;
+
 public:
-    bool onSave(IAttributeSaveTarget &saveTarget) override;
-    MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
-                                    const attribute::AttributeHeader &header,
-                                    const MultiValueMapping &mvMapping);
+    bool onSave(IAttributeSaveTarget& saveTarget) override;
+    MultiValueNumericAttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header,
+                                    const MultiValueMapping& mvMapping);
 
     ~MultiValueNumericAttributeSaver() override;
 };
-
 
 } // namespace search

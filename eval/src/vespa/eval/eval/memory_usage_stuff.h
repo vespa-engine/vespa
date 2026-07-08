@@ -3,15 +3,16 @@
 #pragma once
 
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <vector>
 
 namespace vespalib::eval {
 
-template <typename T>
-MemoryUsage self_memory_usage() { return MemoryUsage(sizeof(T), sizeof(T), 0, 0); }
+template <typename T> MemoryUsage self_memory_usage() {
+    return MemoryUsage(sizeof(T), sizeof(T), 0, 0);
+}
 
-template <typename V>
-MemoryUsage vector_extra_memory_usage(const V &vec) {
+template <typename V> MemoryUsage vector_extra_memory_usage(const V& vec) {
     using T = typename V::value_type;
     MemoryUsage usage;
     usage.incAllocatedBytes(sizeof(T) * vec.capacity());
@@ -19,4 +20,4 @@ MemoryUsage vector_extra_memory_usage(const V &vec) {
     return usage;
 }
 
-}
+} // namespace vespalib::eval

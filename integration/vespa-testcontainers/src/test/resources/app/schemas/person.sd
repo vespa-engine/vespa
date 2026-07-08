@@ -1,0 +1,11 @@
+schema person {
+    document person {
+        field name type string{
+            indexing: summary
+        }
+
+        field age type int{
+            indexing: summary
+        }
+    }
+}

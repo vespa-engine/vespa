@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,11 +35,11 @@ public class FeederParamsTest {
     public void requireThatAccessorsWork() {
         FeederParams params = new FeederParams();
 
-        PrintStream stdErr = new PrintStream(new ByteArrayOutputStream());
+        PrintStream stdErr = new PrintStream(new ByteArrayOutputStream(), false, StandardCharsets.UTF_8);
         params.setStdErr(stdErr);
         assertSame(stdErr, params.getStdErr());
 
-        PrintStream stdOut = new PrintStream(new ByteArrayOutputStream());
+        PrintStream stdOut = new PrintStream(new ByteArrayOutputStream(), false, StandardCharsets.UTF_8);
         params.setStdOut(stdOut);
         assertSame(stdOut, params.getStdOut());
 

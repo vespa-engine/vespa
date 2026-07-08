@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "closest_feature.h"
+
 #include "constant_tensor_executor.h"
 #include "distance_calculator_bundle.h"
 #include "valuefeature.h"
+
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/common/schema.h>
@@ -27,38 +29,36 @@ using search::tensor::FastValueView;
 using search::tensor::ITensorAttribute;
 using search::tensor::SubspaceType;
 using search::tensor::VectorBundle;
+using vespalib::string_id;
+using vespalib::typify_invoke;
 using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TypedCells;
 using vespalib::eval::TypifyCellType;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::string_id;
-using vespalib::typify_invoke;
 
 using namespace search::fef::indexproperties;
 
 namespace {
 
 struct SetIdentity {
-    template <typename T>
-    static void invoke(void *space, size_t size) {
+    template <typename T> static void invoke(void* space, size_t size) {
         assert(size == sizeof(T));
-        *(T *) space = 1.0;
+        *(T*)space = 1.0;
     }
 };
 
-void setup_identity_cells(const ValueType& type, std::vector<char>& space, TypedCells& cells)
-{
+void setup_identity_cells(const ValueType& type, std::vector<char>& space, TypedCells& cells) {
     if (type.is_double()) {
         return;
     }
     space.resize(vespalib::eval::CellTypeUtils::mem_size(type.cell_type(), 1));
     cells = TypedCells(space.data(), type.cell_type(), 1);
-    typify_invoke<1,TypifyCellType,SetIdentity>(type.cell_type(), space.data(), space.size());
+    typify_invoke<1, TypifyCellType, SetIdentity>(type.cell_type(), space.data(), space.size());
 }
 
-}
+} // namespace
 
 namespace search::features {
 
@@ -69,10 +69,13 @@ protected:
     TypedCells               _identity;
     const ITensorAttribute&  _attr;
     std::unique_ptr<Value>   _output;
+
 public:
-    ClosestExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr);
+    ClosestExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity,
+                    const ITensorAttribute& attr);
     ~ClosestExecutor() override;
-    static fef::FeatureExecutor& make(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr, vespalib::Stash& stash);
+    static fef::FeatureExecutor& make(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity,
+                                      const ITensorAttribute& attr, vespalib::Stash& stash);
 };
 
 /**
@@ -80,7 +83,8 @@ public:
  */
 class ClosestSerializedExecutor : public ClosestExecutor {
 public:
-    ClosestSerializedExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr);
+    ClosestSerializedExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity,
+                              const ITensorAttribute& attr);
     ~ClosestSerializedExecutor() override;
     void execute(uint32_t docId) override;
 };
@@ -92,26 +96,24 @@ class ClosestDirectExecutor : public ClosestExecutor {
     SubspaceType            _subspace_type;
     std::vector<string_id>  _labels;
     std::vector<string_id*> _label_ptrs;
+
 public:
-    ClosestDirectExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr);
+    ClosestDirectExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity,
+                          const ITensorAttribute& attr);
     ~ClosestDirectExecutor() override;
     void execute(uint32_t docId) override;
 };
 
-ClosestExecutor::ClosestExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr)
-    : _bundle(std::move(bundle)),
-      _empty_output(empty_output),
-      _identity(identity),
-      _attr(attr),
-      _output()
-{
+ClosestExecutor::ClosestExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity,
+                                 const ITensorAttribute& attr)
+    : _bundle(std::move(bundle)), _empty_output(empty_output), _identity(identity), _attr(attr), _output() {
 }
 
 ClosestExecutor::~ClosestExecutor() = default;
 
-fef::FeatureExecutor&
-ClosestExecutor::make(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr, vespalib::Stash& stash)
-{
+fef::FeatureExecutor& ClosestExecutor::make(DistanceCalculatorBundle&& bundle, Value& empty_output,
+                                            TypedCells identity, const ITensorAttribute& attr,
+                                            vespalib::Stash& stash) {
     if (attr.supports_get_serialized_tensor_ref()) {
         return stash.create<ClosestSerializedExecutor>(std::move(bundle), empty_output, identity, attr);
     } else if (attr.supports_get_tensor_ref()) {
@@ -121,19 +123,17 @@ ClosestExecutor::make(DistanceCalculatorBundle&& bundle, Value& empty_output, Ty
     }
 }
 
-ClosestSerializedExecutor::ClosestSerializedExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr)
-    : ClosestExecutor(std::move(bundle), empty_output, identity, attr)
-{
+ClosestSerializedExecutor::ClosestSerializedExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output,
+                                                     TypedCells identity, const ITensorAttribute& attr)
+    : ClosestExecutor(std::move(bundle), empty_output, identity, attr) {
 }
 
 ClosestSerializedExecutor::~ClosestSerializedExecutor() = default;
 
-void
-ClosestSerializedExecutor::execute(uint32_t docId)
-{
-    double best_distance = 0.0;
+void ClosestSerializedExecutor::execute(uint32_t docId) {
+    double                  best_distance = 0.0;
     std::optional<uint32_t> closest_subspace;
-    auto ref = _attr.get_serialized_tensor_ref(docId);
+    auto                    ref = _attr.get_serialized_tensor_ref(docId);
     for (const auto& elem : _bundle.elements()) {
         elem.calc->calc_closest_subspace(ref.get_vectors(), closest_subspace, best_distance);
     }
@@ -146,12 +146,12 @@ ClosestSerializedExecutor::execute(uint32_t docId)
     }
 }
 
-ClosestDirectExecutor::ClosestDirectExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr)
+ClosestDirectExecutor::ClosestDirectExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output,
+                                             TypedCells identity, const ITensorAttribute& attr)
     : ClosestExecutor(std::move(bundle), empty_output, identity, attr),
       _subspace_type(attr.getTensorType()),
       _labels(attr.getTensorType().count_mapped_dimensions()),
-      _label_ptrs(_labels.size())
-{
+      _label_ptrs(_labels.size()) {
     for (size_t i = 0; i < _labels.size(); ++i) {
         _label_ptrs[i] = &_labels[i];
     }
@@ -159,23 +159,22 @@ ClosestDirectExecutor::ClosestDirectExecutor(DistanceCalculatorBundle&& bundle, 
 
 ClosestDirectExecutor::~ClosestDirectExecutor() = default;
 
-void
-ClosestDirectExecutor::execute(uint32_t docId)
-{
-    double best_distance = 0.0;
+void ClosestDirectExecutor::execute(uint32_t docId) {
+    double                  best_distance = 0.0;
     std::optional<uint32_t> closest_subspace;
-    auto& tensor = _attr.get_tensor_ref(docId);
-    VectorBundle vectors(tensor.cells().data, tensor.index().size(), _subspace_type);
+    auto&                   tensor = _attr.get_tensor_ref(docId);
+    VectorBundle            vectors(tensor.cells().data, tensor.index().size(), _subspace_type);
     for (const auto& elem : _bundle.elements()) {
         elem.calc->calc_closest_subspace(vectors, closest_subspace, best_distance);
     }
     if (closest_subspace.has_value()) {
         size_t subspace_id = 0;
-        auto view = tensor.index().create_view({});
+        auto   view = tensor.index().create_view({});
         view->lookup({});
         while (view->next_result(_label_ptrs, subspace_id)) {
             if (subspace_id == closest_subspace.value()) {
-                _output = std::make_unique<FastValueView>(_empty_output.type(), _labels, _identity, _labels.size(), 1);
+                _output =
+                    std::make_unique<FastValueView>(_empty_output.type(), _labels, _identity, _labels.size(), 1);
                 outputs().set_object(0, *_output);
                 return;
             }
@@ -193,37 +192,31 @@ ClosestBlueprint::ClosestBlueprint()
       _item_label(),
       _empty_output(),
       _identity_space(),
-      _identity_cells()
-{
+      _identity_cells() {
 }
 
 ClosestBlueprint::~ClosestBlueprint() = default;
 
-void
-ClosestBlueprint::visitDumpFeatures(const fef::IIndexEnvironment&, fef::IDumpFeatureVisitor&) const
-{
+void ClosestBlueprint::visitDumpFeatures(const fef::IIndexEnvironment&, fef::IDumpFeatureVisitor&) const {
 }
 
-std::unique_ptr<fef::Blueprint>
-ClosestBlueprint::createInstance() const
-{
+std::unique_ptr<fef::Blueprint> ClosestBlueprint::createInstance() const {
     return std::make_unique<ClosestBlueprint>();
 }
 
-fef::ParameterDescriptions
-ClosestBlueprint::getDescriptions() const
-{
+fef::ParameterDescriptions ClosestBlueprint::getDescriptions() const {
     auto data_type_set = ParameterDataTypeSet::tensor_type_set();
-    return fef::ParameterDescriptions().
-        desc().attribute(data_type_set, fef::ParameterCollection::SINGLE).
-        desc().attribute(data_type_set, fef::ParameterCollection::SINGLE).string();
+    return fef::ParameterDescriptions()
+        .desc()
+        .attribute(data_type_set, fef::ParameterCollection::SINGLE)
+        .desc()
+        .attribute(data_type_set, fef::ParameterCollection::SINGLE)
+        .string();
 }
 
-bool
-ClosestBlueprint::setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params)
-{
+bool ClosestBlueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) {
     if (params.size() < 1 || params.size() > 2) {
-        LOG(error, "%s: Wrong number of parameters, was %d, must be 1 or 2", getName().c_str(), (int) params.size());
+        LOG(error, "%s: Wrong number of parameters, was %d, must be 1 or 2", getName().c_str(), (int)params.size());
         return false;
     }
     _field_name = params[0].getValue();
@@ -238,11 +231,15 @@ ClosestBlueprint::setup(const fef::IIndexEnvironment & env, const fef::Parameter
         return false;
     }
     _field_tensor_type = ValueType::from_spec(attr_type_spec);
-    if (_field_tensor_type.is_error() || _field_tensor_type.is_double() || _field_tensor_type.count_mapped_dimensions() < 1 || _field_tensor_type.count_indexed_dimensions() != 1) {
-        LOG(error, "%s: Field %s has invalid type: '%s'", getName().c_str(), _field_name.c_str(), attr_type_spec.c_str());
+    if (_field_tensor_type.is_error() || _field_tensor_type.is_double() ||
+        _field_tensor_type.count_mapped_dimensions() < 1 || _field_tensor_type.count_indexed_dimensions() != 1)
+    {
+        LOG(error, "%s: Field %s has invalid type: '%s'", getName().c_str(), _field_name.c_str(),
+            attr_type_spec.c_str());
         return false;
     }
-    _output_tensor_type = ValueType::make_type(_field_tensor_type.cell_type(), _field_tensor_type.mapped_dimensions());
+    _output_tensor_type =
+        ValueType::make_type(_field_tensor_type.cell_type(), _field_tensor_type.mapped_dimensions());
     assert(!_output_tensor_type.is_double());
     FeatureType output_type = FeatureType::object(_output_tensor_type);
     describeOutput("out", "The closest tensor subspace.", output_type);
@@ -252,9 +249,7 @@ ClosestBlueprint::setup(const fef::IIndexEnvironment & env, const fef::Parameter
     return true;
 }
 
-void
-ClosestBlueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const
-{
+void ClosestBlueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const {
     if (_item_label.has_value()) {
         DistanceCalculatorBundle::prepare_shared_state(env, store, _item_label.value(), "closest");
     } else {
@@ -262,10 +257,10 @@ ClosestBlueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IOb
     }
 }
 
-fef::FeatureExecutor&
-ClosestBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
-{
-    auto bundle = _item_label.has_value() ? DistanceCalculatorBundle(env, _field_id, _item_label.value(), "closest") : DistanceCalculatorBundle(env, _field_id, "closest");
+fef::FeatureExecutor& ClosestBlueprint::createExecutor(const fef::IQueryEnvironment& env,
+                                                       vespalib::Stash&              stash) const {
+    auto bundle = _item_label.has_value() ? DistanceCalculatorBundle(env, _field_id, _item_label.value(), "closest")
+                                          : DistanceCalculatorBundle(env, _field_id, "closest");
     if (bundle.elements().empty()) {
         return ConstantTensorExecutor::createEmpty(_output_tensor_type, stash);
     } else {
@@ -279,4 +274,4 @@ ClosestBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::St
     }
 }
 
-}
+} // namespace search::features

@@ -3,10 +3,12 @@
  * Author: Knut Omang
  */
 
-#include "testenv.h"
 #include "fakerewriter.h"
+#include "testenv.h"
+
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
 #include <map>
 
 /**
@@ -121,9 +123,9 @@ TEST(MatchObjectTest, testMatch) {
         juniper::Summary* sum = res1.GetTeaser(nullptr);
         std::string       s(sum->Text());
         EXPECT_EQ(s, "A simple document with an <b>extremelylongwordhit</b> in the middle"
-                       " of it that islong enough to allow...triggered "
-                       "<b>extremelylongwordhit</b>.A simple document with an "
-                       "<b>extremelylongwordhit</b> in the middle of it that islong enough to allow...");
+                     " of it that islong enough to allow...triggered "
+                     "<b>extremelylongwordhit</b>.A simple document with an "
+                     "<b>extremelylongwordhit</b> in the middle of it that islong enough to allow...");
     }
 }
 
@@ -145,12 +147,12 @@ TEST(MatchObjectTest, testMatchAnnotated) {
     std::string       s(sum->Text());
 
     EXPECT_EQ(s, "A <b>big</b> and ugly teaser about <b>"
-                   "\xEF\xBF\xB9"
-                   "buying"
-                   "\xEF\xBF\xBA"
-                   "buy"
-                   "\xEF\xBF\xBB"
-                   "</b> stuff");
+                 "\xEF\xBF\xB9"
+                 "buying"
+                 "\xEF\xBF\xBA"
+                 "buy"
+                 "\xEF\xBF\xBB"
+                 "</b> stuff");
 }
 
 /** Test parameter input via options
@@ -198,7 +200,7 @@ TEST(MatchObjectTest, testParams) {
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     juniper::TestEnv te(argc, argv, TEST_PATH("testclient.rc").c_str());
     return RUN_ALL_TESTS();

@@ -5,8 +5,7 @@
 
 namespace proton {
 
-class PutOperation : public DocumentOperation
-{
+class PutOperation : public DocumentOperation {
     using DocumentSP = std::shared_ptr<document::Document>;
     DocumentSP _doc;
 
@@ -14,13 +13,12 @@ public:
     PutOperation();
     PutOperation(document::BucketId bucketId, Timestamp timestamp, DocumentSP doc);
     ~PutOperation() override;
-    const DocumentSP &getDocument() const { return _doc; }
+    const DocumentSP& getDocument() const { return _doc; }
     void assertValid() const;
-    void serialize(vespalib::nbostream &os) const override;
-    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
-    void deserializeDocument(const document::DocumentTypeRepo &repo);
+    void serialize(vespalib::nbostream& os) const override;
+    void deserialize(vespalib::nbostream& is, const document::DocumentTypeRepo& repo) override;
+    void deserializeDocument(const document::DocumentTypeRepo& repo);
     std::string toString() const override;
 };
 
 } // namespace proton
-

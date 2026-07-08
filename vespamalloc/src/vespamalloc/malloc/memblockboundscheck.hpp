@@ -6,13 +6,12 @@
 namespace vespamalloc {
 
 template <size_t MaxSizeClassMultiAllocC, size_t StackTraceLen>
-void MemBlockBoundsCheckBaseT<MaxSizeClassMultiAllocC, StackTraceLen>::info(FILE * os, unsigned level) const
-{
+void MemBlockBoundsCheckBaseT<MaxSizeClassMultiAllocC, StackTraceLen>::info(FILE* os, unsigned level) const {
     if (validCommon()) {
         if (level & 0x02) {
             fprintf(os, "{ %8p(%ld, %u) ", ptr(), size(), threadId());
-            const Stack * cStack = callStack();
-            for (int i=0; i<int(StackTraceLen);i++) {
+            const Stack* cStack = callStack();
+            for (int i = 0; i < int(StackTraceLen); i++) {
                 if (cStack[i].valid()) {
                     cStack[i].info(os);
                     fprintf(os, " ");
@@ -30,4 +29,3 @@ void MemBlockBoundsCheckBaseT<MaxSizeClassMultiAllocC, StackTraceLen>::info(FILE
 }
 
 } // namespace vespamalloc
-

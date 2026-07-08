@@ -37,7 +37,7 @@ public class Choicepoint {
     /** Returns the condition which created this choice point */
     public Condition getCondition() { return condition; }
 
-    /** Returns wether there are (or may be) open choices to explore at this choicepoint yet */
+    /** Returns whether there are (or may be) open choices to explore at this choicepoint yet */
     public boolean isOpen() { return open; }
 
     /** Marks this choice point as closed (!open) - there are no further choices to explore */

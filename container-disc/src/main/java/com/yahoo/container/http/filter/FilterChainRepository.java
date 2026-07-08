@@ -22,6 +22,7 @@ import com.yahoo.jdisc.http.filter.SecurityResponseFilterChain;
 import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
 import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
 import com.yahoo.processing.execution.chain.ChainRegistry;
+import com.yahoo.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -144,7 +145,7 @@ public class FilterChainRepository extends AbstractComponent {
                 .collect(toSet());
         if (!requestFilters.isEmpty() && !responseFilters.isEmpty()) {
             throw new IllegalArgumentException(
-                    String.format(
+                    Text.format(
                             "Can't mix request and response filters in chain %s: request filters: %s, response filters: %s.",
                             chain.getId(), requestFilters, responseFilters));
         }

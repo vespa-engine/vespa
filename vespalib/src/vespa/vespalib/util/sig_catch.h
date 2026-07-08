@@ -8,8 +8,7 @@ namespace vespalib {
  * @brief Use this class for simple common-case signal handling.
  **/
 
-class SigCatch
-{
+class SigCatch {
 public:
     /**
      * Constructor installs signal handlers.

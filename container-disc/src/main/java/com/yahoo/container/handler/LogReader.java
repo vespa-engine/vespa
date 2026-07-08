@@ -35,13 +35,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import java.nio.charset.StandardCharsets;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author olaaun
- * @author freva
- * @author jonmv
+ * @author Valerij Fredriksen
+ * @author Jon Marius Venstad
  */
 class LogReader {
 
@@ -64,7 +65,7 @@ class LogReader {
         double fromSeconds = from.getEpochSecond() + from.getNano() / 1e9;
         double toSeconds = to.getEpochSecond() + to.getNano() / 1e9;
         long linesWritten = 0;
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
         for (List<Path> logs : getMatchingFiles(from, to)) {
             List<LogLineIterator> logLineIterators = new ArrayList<>();
             try {
@@ -173,8 +174,10 @@ class LogReader {
         }
 
         private LineWithTimestamp readNext() {
+            String lastLine = null;
             try {
                 for (String line; (line = reader.readLine()) != null; ) {
+                    lastLine = line;
                     String[] parts = line.split("\t");
                     if (parts.length != 7)
                         continue;
@@ -193,6 +196,9 @@ class LogReader {
             }
             catch (IOException e) {
                 throw new UncheckedIOException(e);
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Unable to parse log line: " + lastLine, e);
             }
         }
 

@@ -7,6 +7,10 @@
 #include <mutex>
 #include <string>
 
+namespace searchcorespi::common {
+class ResourceUsage;
+}
+
 namespace searchcorespi::index {
 
 class IndexDiskDir;
@@ -27,24 +31,50 @@ class IndexDiskLayout;
  */
 class DiskIndexes {
     std::map<IndexDiskDir, IndexDiskDirState> _active;
-    uint64_t _sum_size_on_disk;
-    uint64_t _sum_stale_size_on_disk;
-    mutable std::mutex _lock;
+    uint64_t                                  _sum_size_on_disk;
+    uint64_t                                  _sum_stale_size_on_disk;
+    std::chrono::steady_clock::duration       _sum_flush_duration;
+    std::chrono::steady_clock::duration       _last_fusion_flush_duration;
+    std::chrono::steady_clock::duration       _last_flush_duration;
+    mutable std::mutex                        _lock;
 
     void remove_from_sum(const IndexDiskDirState& state);
+
 public:
-    using SP = std::shared_ptr<DiskIndexes>;
+    class FusionStats {
+        uint64_t                            _estimated_size_on_disk;
+        std::chrono::steady_clock::duration _last_flush_duration;
+        std::chrono::steady_clock::duration _estimated_flush_duration;
+
+    public:
+        FusionStats(uint64_t estimated_size_on_disk_, std::chrono::steady_clock::duration last_flush_duration_,
+                    std::chrono::steady_clock::duration estimated_flush_duration_)
+            : _estimated_size_on_disk(estimated_size_on_disk_),
+              _last_flush_duration(last_flush_duration_),
+              _estimated_flush_duration(estimated_flush_duration_) {}
+        [[nodiscard]] int64_t estimated_size_on_disk() const noexcept { return _estimated_size_on_disk; }
+        [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept {
+            return _last_flush_duration;
+        }
+        [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept {
+            return _estimated_flush_duration;
+        }
+    };
     DiskIndexes();
     ~DiskIndexes();
-    DiskIndexes(const DiskIndexes &) = delete;
-    DiskIndexes & operator = (const DiskIndexes &) = delete;
-    void setActive(const std::string & index, uint64_t size_on_disk);
-    void notActive(const std::string & index);
-    bool isActive(const std::string & index) const;
+    DiskIndexes(const DiskIndexes&) = delete;
+    DiskIndexes& operator=(const DiskIndexes&) = delete;
+    void setActive(const std::string& index, uint64_t size_on_disk,
+                   std::chrono::steady_clock::duration flush_duration);
+    void notActive(const std::string& index);
+    bool isActive(const std::string& index) const;
     void add_not_active(IndexDiskDir index_disk_dir);
     bool remove(IndexDiskDir index_disk_dir);
-    uint64_t get_transient_size(const IndexDiskLayout& layout) const;
+    common::ResourceUsage get_resource_usage(const IndexDiskLayout& layout) const;
     uint64_t get_size_on_disk(bool include_stale) const;
+    [[nodiscard]] FusionStats calc_fusion_stats() const;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const;
+    static uint64_t get_size_on_disk_overhead() noexcept;
 };
 
-}
+} // namespace searchcorespi::index

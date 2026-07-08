@@ -13,9 +13,9 @@ class DocumentDBDirectoryHolder;
  * directory holder exists until the document db instance is
  * destroyed.
  */
-class DocumentDBConfigOwner : public IDocumentDBConfigOwner
-{
+class DocumentDBConfigOwner : public IDocumentDBConfigOwner {
     std::shared_ptr<DocumentDBDirectoryHolder> _holder;
+
 public:
     DocumentDBConfigOwner();
     ~DocumentDBConfigOwner() override;

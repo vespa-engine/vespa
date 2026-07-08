@@ -2,6 +2,7 @@
 #pragma once
 
 #include "indexmaintainer.h"
+
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
 namespace searchcorespi::index {
@@ -11,24 +12,28 @@ namespace searchcorespi::index {
  **/
 class IndexFusionTarget : public LeafFlushTarget {
 private:
-    IndexMaintainer &_indexMaintainer;
+    IndexMaintainer&             _indexMaintainer;
     IndexMaintainer::FusionStats _fusionStats;
-    FlushStats _lastStats;
+    FlushStats                   _lastStats;
 
 public:
-    IndexFusionTarget(IndexMaintainer &indexMaintainer);
+    IndexFusionTarget(IndexMaintainer& indexMaintainer);
     ~IndexFusionTarget() override;
 
     // Implements IFlushTarget
     MemoryGain getApproxMemoryGain() const override;
-    DiskGain   getApproxDiskGain() const override;
+    DiskGain getApproxDiskGain() const override;
     SerialNum getFlushedSerialNum() const override;
-    Time    getLastFlushTime() const override;
-    bool           needUrgentFlush() const override;
+    Time getLastFlushTime() const override;
+    bool needUrgentFlush() const override;
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override;
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
 };
 
-}
+} // namespace searchcorespi::index

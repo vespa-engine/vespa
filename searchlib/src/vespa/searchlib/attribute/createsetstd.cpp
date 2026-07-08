@@ -12,18 +12,15 @@ namespace search {
 
 using attribute::BasicType;
 
-#define INTSET(T)   MultiValueNumericAttribute< IntegerAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T) >
-#define FLOATSET(T) MultiValueNumericAttribute< FloatingPointAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T) >
-#define CREATEINTSET(T, fname, info) static_cast<AttributeVector *>(new INTSET(T)(fname, info))
-#define CREATEFLOATSET(T, fname, info) static_cast<AttributeVector *>(new FLOATSET(T)(fname, info))
+#define INTSET(T) MultiValueNumericAttribute<IntegerAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T)>
+#define FLOATSET(T) MultiValueNumericAttribute<FloatingPointAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T)>
+#define CREATEINTSET(T, fname, info) static_cast<AttributeVector*>(new INTSET(T)(fname, info))
+#define CREATEFLOATSET(T, fname, info) static_cast<AttributeVector*>(new FLOATSET(T)(fname, info))
 
-
-AttributeVector::SP
-AttributeFactory::createSetStd(std::string name, const Config & info)
-{
+AttributeVector::SP AttributeFactory::createSetStd(std::string name, const Config& info) {
     assert(info.collectionType().type() == attribute::CollectionType::WSET);
     AttributeVector::SP ret;
-    switch(info.basicType().type()) {
+    switch (info.basicType().type()) {
     case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
@@ -47,7 +44,7 @@ AttributeFactory::createSetStd(std::string name, const Config & info)
         ret.reset(CREATEFLOATSET(double, name, info));
         break;
     case BasicType::STRING:
-        ret.reset(static_cast<AttributeVector *>(new WeightedSetStringAttribute(name, info)));
+        ret.reset(static_cast<AttributeVector*>(new WeightedSetStringAttribute(name, info)));
         break;
     default:
         break;
@@ -55,4 +52,4 @@ AttributeFactory::createSetStd(std::string name, const Config & info)
     return ret;
 }
 
-}
+} // namespace search

@@ -1,27 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configparser.h"
+
 #include "exceptions.h"
 #include "misc.h"
-#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <string>
 
 namespace config {
 
 void ConfigParser::throwNoDefaultValue(std::string_view key) {
-    throw InvalidConfigException("Config parameter " + std::string(key) + " has no "
-            "default value and is not specified in config", VESPA_STRLOC);
+    throw InvalidConfigException("Config parameter " + std::string(key) +
+                                     " has no "
+                                     "default value and is not specified in config",
+                                 VESPA_STRLOC);
 }
 
-std::string
-ConfigParser::deQuote(const std::string & source)
-{
-    const char *src = source.c_str();
-    const char *s = src;
-    std::vector<char> dst(1+source.length());
-    char *d = &dst[0];
-    bool isQuoted;
+std::string ConfigParser::deQuote(const std::string& source) {
+    const char*       src = source.c_str();
+    const char*       s = src;
+    std::vector<char> dst(1 + source.length());
+    char*             d = &dst[0];
+    bool              isQuoted;
 
     if (*s == '"') {
         isQuoted = true;
@@ -73,7 +76,8 @@ ConfigParser::deQuote(const std::string & source)
             if (!isQuoted) {
                 throwInvalid("Quote character inside unquoted string in '%s'", src);
             }
-            if (*s) throwInvalid("string must terminate after quotes: '%s'", src);
+            if (*s)
+                throwInvalid("string must terminate after quotes: '%s'", src);
             break;
         } else {
             *d++ = c;
@@ -85,9 +89,7 @@ ConfigParser::deQuote(const std::string & source)
 
 namespace {
 
-bool
-getValueForKey(std::string_view key, std::string_view line, std::string& retval)
-{
+bool getValueForKey(std::string_view key, std::string_view line, std::string& retval) {
     if (line.length() <= key.length()) {
         return false;
     }
@@ -121,11 +123,9 @@ getValueForKey(std::string_view key, std::string_view line, std::string& retval)
     return false;
 }
 
-}
+} // namespace
 
-StringVector
-ConfigParser::getLinesForKey(std::string_view key, Cfg lines)
-{
+StringVector ConfigParser::getLinesForKey(std::string_view key, Cfg lines) {
     StringVector retval;
 
     for (uint32_t i = 0; i < lines.size(); i++) {
@@ -139,8 +139,7 @@ ConfigParser::getLinesForKey(std::string_view key, Cfg lines)
     return retval;
 }
 
-std::set<std::string>
-ConfigParser::getUniqueNonWhiteSpaceLines(Cfg config) {
+std::set<std::string> ConfigParser::getUniqueNonWhiteSpaceLines(Cfg config) {
     std::set<std::string> unique;
     for (uint32_t i = 0; i < config.size(); i++) {
         std::string line = stripWhitespace(config[i]);
@@ -151,10 +150,7 @@ ConfigParser::getUniqueNonWhiteSpaceLines(Cfg config) {
     return unique;
 }
 
-void
-ConfigParser::stripLinesForKey(std::string_view key,
-                               std::set<std::string>& config)
-{
+void ConfigParser::stripLinesForKey(std::string_view key, std::set<std::string>& config) {
     std::string value;
     for (auto it = config.begin(); it != config.end();) {
         if (getValueForKey(key, *it, value)) {
@@ -165,9 +161,7 @@ ConfigParser::stripLinesForKey(std::string_view key,
     }
 }
 
-std::map<std::string, StringVector>
-ConfigParser::splitMap(Cfg config)
-{
+std::map<std::string, StringVector> ConfigParser::splitMap(Cfg config) {
     std::map<std::string, StringVector> items;
 
     std::string lastValue;
@@ -176,12 +170,11 @@ ConfigParser::splitMap(Cfg config)
     for (uint32_t i = 0; i < config.size(); i++) {
         size_t pos = config[i].find("}");
 
-        if (config[i].size() < 3 || config[i][0] != '{'
-            || pos == std::string::npos)
-        {
-            throw InvalidConfigException(
-                    "Value '" + config[i] + "' is not a valid map "
-                    "specification.", VESPA_STRLOC);
+        if (config[i].size() < 3 || config[i][0] != '{' || pos == std::string::npos) {
+            throw InvalidConfigException("Value '" + config[i] +
+                                             "' is not a valid map "
+                                             "specification.",
+                                         VESPA_STRLOC);
         }
 
         std::string key = deQuote(config[i].substr(1, pos - 1));
@@ -201,9 +194,7 @@ ConfigParser::splitMap(Cfg config)
     return items;
 }
 
-std::vector<StringVector>
-ConfigParser::splitArray(Cfg config)
-{
+std::vector<StringVector> ConfigParser::splitArray(Cfg config) {
     std::vector<StringVector> items;
 
     std::string lastValue;
@@ -212,12 +203,11 @@ ConfigParser::splitArray(Cfg config)
     for (uint32_t i = 0; i < config.size(); i++) {
         size_t pos = config[i].find("]");
 
-        if (config[i].size() < 3 || config[i][0] != '['
-            || pos == std::string::npos)
-        {
-            throw InvalidConfigException(
-                    "Value '" + config[i] + "' is not a valid array "
-                    "specification.", VESPA_STRLOC);
+        if (config[i].size() < 3 || config[i][0] != '[' || pos == std::string::npos) {
+            throw InvalidConfigException("Value '" + config[i] +
+                                             "' is not a valid array "
+                                             "specification.",
+                                         VESPA_STRLOC);
         }
 
         std::string key = config[i].substr(1, pos - 1);
@@ -237,65 +227,60 @@ ConfigParser::splitArray(Cfg config)
     return items;
 }
 
-std::string
-ConfigParser::stripWhitespace(std::string_view source)
-{
+std::string ConfigParser::stripWhitespace(std::string_view source) {
     // Remove leading spaces and return.
     if (source.empty()) {
         return std::string(source);
     }
     size_t start = 0;
-    bool found = false;
+    bool   found = false;
     while (!found && start < source.size()) {
         switch (source[start]) {
-            case ' ':
-            case '\t':
-            case '\r':
-            case '\f':
-                ++start;
-                break;
-            default:
-                found = true;
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\f':
+            ++start;
+            break;
+        default:
+            found = true;
         }
     }
     size_t stop = source.size() - 1;
     found = false;
     while (!found && stop > start) {
         switch (source[stop]) {
-            case ' ':
-            case '\t':
-            case '\r':
-            case '\f':
-                --stop;
-                break;
-            default:
-                found = true;
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\f':
+            --stop;
+            break;
+        default:
+            found = true;
         }
     }
     return std::string(source.substr(start, stop - start + 1));
 }
 
-std::string
-ConfigParser::arrayToString(Cfg array)
-{
+std::string ConfigParser::arrayToString(Cfg array) {
     vespalib::asciistream ost;
     if (array.size() == 0) {
         ost << "No entries";
     } else {
-        for (uint32_t i=0; i<array.size(); ++i) {
+        for (uint32_t i = 0; i < array.size(); ++i) {
             ost << array[i] << "\n";
         }
     }
     return ost.str();
 }
 
-template<>
-bool
-ConfigParser::convert<bool>(const StringVector & config)
-{
+template <> bool ConfigParser::convert<bool>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with bool value, "
-                "got " + arrayToString(config), VESPA_STRLOC);
+                                     "got " +
+                                         arrayToString(config),
+                                     VESPA_STRLOC);
     }
     std::string value = stripWhitespace(deQuote(config[0]));
 
@@ -304,79 +289,74 @@ ConfigParser::convert<bool>(const StringVector & config)
     } else if (value == "false") {
         return false;
     } else {
-        throw InvalidConfigException("Expected bool value, got " + value
-                + "instead", VESPA_STRLOC);
+        throw InvalidConfigException("Expected bool value, got " + value + "instead", VESPA_STRLOC);
     }
 }
 
-template<>
-int32_t
-ConfigParser::convert<int32_t>(const StringVector & config)
-{
+template <> int32_t ConfigParser::convert<int32_t>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with int32_t value, "
-                "got " + arrayToString(config), VESPA_STRLOC);
+                                     "got " +
+                                         arrayToString(config),
+                                     VESPA_STRLOC);
     }
     std::string value(deQuote(stripWhitespace(config[0])));
 
-    const char *startp = value.c_str();
-    char *endp;
+    const char* startp = value.c_str();
+    char*       endp;
     errno = 0;
     int32_t ret = strtol(startp, &endp, 0);
-    int err = errno;
+    int     err = errno;
     if (err == ERANGE || err == EINVAL || (*endp != '\0'))
         throw InvalidConfigException("Value " + value + " is not a legal int32_t.", VESPA_STRLOC);
     return ret;
 }
 
-template<>
-int64_t
-ConfigParser::convert<int64_t>(const StringVector & config)
-{
+template <> int64_t ConfigParser::convert<int64_t>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with int64_t value, "
-                "got " + arrayToString(config), VESPA_STRLOC);
+                                     "got " +
+                                         arrayToString(config),
+                                     VESPA_STRLOC);
     }
     std::string value(deQuote(stripWhitespace(config[0])));
 
-    const char *startp = value.c_str();
-    char *endp;
+    const char* startp = value.c_str();
+    char*       endp;
     errno = 0;
     int64_t ret = strtoll(startp, &endp, 0);
-    int err = errno;
+    int     err = errno;
     if (err == ERANGE || err == EINVAL || (*endp != '\0'))
         throw InvalidConfigException("Value " + value + " is not a legal int64_t.", VESPA_STRLOC);
     return ret;
 }
 
-template<>
-double
-ConfigParser::convert<double>(const StringVector & config)
-{
+template <> double ConfigParser::convert<double>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with double value, "
-                "got " + arrayToString(config), VESPA_STRLOC);
+                                     "got " +
+                                         arrayToString(config),
+                                     VESPA_STRLOC);
     }
     std::string value(deQuote(stripWhitespace(config[0])));
 
-    const char *startp = value.c_str();
-    char *endp;
+    const char* startp = value.c_str();
+    char*       endp;
     errno = 0;
     double ret = vespalib::locale::c::strtod(startp, &endp);
-    int err = errno;
+    int    err = errno;
     if (err == ERANGE || (*endp != '\0')) {
         throw InvalidConfigException("Value " + value + " is not a legal double", VESPA_STRLOC);
     }
     return ret;
 }
 
-template<>
-std::string
-ConfigParser::convert<std::string>(const StringVector & config)
-{
+template <> std::string ConfigParser::convert<std::string>(const StringVector& config) {
     if (config.size() != 1) {
         throw InvalidConfigException("Expected single line with string value, "
-                "got " + arrayToString(config), VESPA_STRLOC);
+                                     "got " +
+                                         arrayToString(config),
+                                     VESPA_STRLOC);
     }
 
     std::string value = stripWhitespace(config[0]);
@@ -384,4 +364,4 @@ ConfigParser::convert<std::string>(const StringVector & config)
     return deQuote(value);
 }
 
-} // config
+} // namespace config

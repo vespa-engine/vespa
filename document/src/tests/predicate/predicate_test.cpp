@@ -2,10 +2,10 @@
 // Unit tests for predicate.
 
 #include <vespa/document/predicate/predicate.h>
+#include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <vespa/document/predicate/predicate_slime_builder.h>
 #include <climits>
 #include <string>
 
@@ -22,8 +22,7 @@ namespace {
 
 using SlimeUP = std::unique_ptr<Slime>;
 
-TEST(PredicateTest, require_that_predicate_feature_set_slimes_can_be_compared)
-{
+TEST(PredicateTest, require_that_predicate_feature_set_slimes_can_be_compared) {
     PredicateSlimeBuilder builder;
     builder.feature("foo").value("bar").value("baz");
     SlimeUP s1 = builder.build();
@@ -46,8 +45,7 @@ TEST(PredicateTest, require_that_predicate_feature_set_slimes_can_be_compared)
     ASSERT_EQ(1, Predicate::compare(*s1, *builder.build()));
 }
 
-TEST(PredicateTest, require_that_predicate_feature_range_slimes_can_be_compared)
-{
+TEST(PredicateTest, require_that_predicate_feature_range_slimes_can_be_compared) {
     PredicateSlimeBuilder builder;
     builder.feature("foo").range(0, 10);
     SlimeUP s1 = builder.build();
@@ -70,8 +68,7 @@ TEST(PredicateTest, require_that_predicate_feature_range_slimes_can_be_compared)
     ASSERT_EQ(-1, Predicate::compare(*s1, *builder.build()));
 }
 
-TEST(PredicateTest, require_that_predicate_open_feature_range_slimes_can_be_compared)
-{
+TEST(PredicateTest, require_that_predicate_open_feature_range_slimes_can_be_compared) {
     PredicateSlimeBuilder builder;
     builder.feature("foo").greaterEqual(10);
     SlimeUP s1 = builder.build();
@@ -87,8 +84,7 @@ TEST(PredicateTest, require_that_predicate_open_feature_range_slimes_can_be_comp
     ASSERT_EQ(-1, Predicate::compare(*s1, *builder.build()));
 }
 
-TEST(PredicateTest, require_that_predicate_not_slimes_can_be_compared)
-{
+TEST(PredicateTest, require_that_predicate_not_slimes_can_be_compared) {
     PredicateSlimeBuilder builder;
     builder.neg().feature("foo").range(0, 10);
     SlimeUP s1 = builder.build();
@@ -102,12 +98,11 @@ TEST(PredicateTest, require_that_predicate_not_slimes_can_be_compared)
     ASSERT_EQ(-1, Predicate::compare(*s1, *builder.build()));
 }
 
-TEST(PredicateTest, require_that_predicate_and_slimes_can_be_compared)
-{
+TEST(PredicateTest, require_that_predicate_and_slimes_can_be_compared) {
     PredicateSlimeBuilder builder;
-    SlimeUP s1 = builder.feature("foo").value("bar").value("baz").build();
-    SlimeUP s2 = builder.feature("foo").value("bar").value("qux").build();
-    SlimeUP and_node = builder.and_node(std::move(s1), std::move(s2)).build();
+    SlimeUP               s1 = builder.feature("foo").value("bar").value("baz").build();
+    SlimeUP               s2 = builder.feature("foo").value("bar").value("qux").build();
+    SlimeUP               and_node = builder.and_node(std::move(s1), std::move(s2)).build();
 
     s1 = builder.feature("foo").value("bar").value("baz").build();
     s2 = builder.feature("foo").value("bar").value("qux").build();
@@ -120,12 +115,11 @@ TEST(PredicateTest, require_that_predicate_and_slimes_can_be_compared)
     ASSERT_EQ(-1, Predicate::compare(*and_node, *builder.build()));
 }
 
-TEST(PredicateTest, require_that_predicate_or_slimes_can_be_compared)
-{
+TEST(PredicateTest, require_that_predicate_or_slimes_can_be_compared) {
     PredicateSlimeBuilder builder;
-    SlimeUP s1 = builder.feature("foo").value("bar").value("baz").build();
-    SlimeUP s2 = builder.feature("foo").value("bar").value("qux").build();
-    SlimeUP or_node = builder.or_node(std::move(s1), std::move(s2)).build();
+    SlimeUP               s1 = builder.feature("foo").value("bar").value("baz").build();
+    SlimeUP               s2 = builder.feature("foo").value("bar").value("qux").build();
+    SlimeUP               or_node = builder.or_node(std::move(s1), std::move(s2)).build();
 
     s1 = builder.feature("foo").value("bar").value("baz").build();
     s2 = builder.feature("foo").value("bar").value("qux").build();
@@ -138,8 +132,7 @@ TEST(PredicateTest, require_that_predicate_or_slimes_can_be_compared)
     ASSERT_EQ(-1, Predicate::compare(*or_node, *builder.build()));
 }
 
-TEST(PredicateTest, require_that_predicate_true_slimes_can_be_compared)
-{
+TEST(PredicateTest, require_that_predicate_true_slimes_can_be_compared) {
     PredicateSlimeBuilder builder;
     builder.true_predicate();
     SlimeUP s1 = builder.build();
@@ -150,8 +143,7 @@ TEST(PredicateTest, require_that_predicate_true_slimes_can_be_compared)
     ASSERT_EQ(-1, Predicate::compare(*s1, *builder.build()));
 }
 
-TEST(PredicateTest, require_that_predicate_false_slimes_can_be_compared)
-{
+TEST(PredicateTest, require_that_predicate_false_slimes_can_be_compared) {
     PredicateSlimeBuilder builder;
     builder.false_predicate();
     SlimeUP s1 = builder.build();
@@ -162,13 +154,12 @@ TEST(PredicateTest, require_that_predicate_false_slimes_can_be_compared)
     ASSERT_EQ(1, Predicate::compare(*s1, *builder.build()));
 }
 
-TEST(PredicateTest, require_that_feature_set_can_be_created)
-{
+TEST(PredicateTest, require_that_feature_set_can_be_created) {
     const string feature_name = "feature name";
-    Slime input;
-    Cursor &obj = input.setObject();
+    Slime        input;
+    Cursor&      obj = input.setObject();
     obj.setString(Predicate::KEY, feature_name);
-    Cursor &arr = obj.setArray(Predicate::SET);
+    Cursor& arr = obj.setArray(Predicate::SET);
     arr.addString("foo");
     arr.addString("bar");
     FeatureSet set(input.get());
@@ -178,13 +169,12 @@ TEST(PredicateTest, require_that_feature_set_can_be_created)
     EXPECT_EQ("bar", set[1]);
 }
 
-TEST(PredicateTest, require_that_feature_range_can_be_created)
-{
+TEST(PredicateTest, require_that_feature_range_can_be_created) {
     const string feature_name = "feature name";
-    const long min = 0;
-    const long max = 42;
-    Slime input;
-    Cursor &obj = input.setObject();
+    const long   min = 0;
+    const long   max = 42;
+    Slime        input;
+    Cursor&      obj = input.setObject();
     obj.setString(Predicate::KEY, feature_name);
     obj.setLong(Predicate::RANGE_MIN, min);
     obj.setLong(Predicate::RANGE_MAX, max);
@@ -196,11 +186,10 @@ TEST(PredicateTest, require_that_feature_range_can_be_created)
     EXPECT_EQ(max, set.getMax());
 }
 
-TEST(PredicateTest, require_that_feature_range_can_be_open)
-{
+TEST(PredicateTest, require_that_feature_range_can_be_open) {
     const string feature_name = "feature name";
-    Slime input;
-    Cursor &obj = input.setObject();
+    Slime        input;
+    Cursor&      obj = input.setObject();
     obj.setString(Predicate::KEY, feature_name);
     FeatureRange set(input.get());
     EXPECT_EQ(feature_name, set.getKey());
@@ -212,10 +201,10 @@ TEST(PredicateTest, require_that_feature_range_can_be_open)
 
 PredicateNode::UP getPredicateNode() {
     const string feature_name = "feature name";
-    Slime input;
-    Cursor &obj = input.setObject();
+    Slime        input;
+    Cursor&      obj = input.setObject();
     obj.setString(Predicate::KEY, feature_name);
-    Cursor &arr = obj.setArray(Predicate::SET);
+    Cursor& arr = obj.setArray(Predicate::SET);
     arr.addString("foo");
     arr.addString("bar");
 
@@ -223,18 +212,16 @@ PredicateNode::UP getPredicateNode() {
     return node;
 }
 
-TEST(PredicateTest, require_that_negation_nodes_holds_a_child)
-{
+TEST(PredicateTest, require_that_negation_nodes_holds_a_child) {
     PredicateNode::UP node(getPredicateNode());
-    PredicateNode *expected = node.get();
-    Negation neg(std::move(node));
+    PredicateNode*    expected = node.get();
+    Negation          neg(std::move(node));
 
     EXPECT_EQ(expected, &neg.getChild());
 }
 
-TEST(PredicateTest, require_that_conjunction_nodes_holds_several_children)
-{
-    vector<PredicateNode *> nodes;
+TEST(PredicateTest, require_that_conjunction_nodes_holds_several_children) {
+    vector<PredicateNode*> nodes;
     nodes.push_back(getPredicateNode().release());
     nodes.push_back(getPredicateNode().release());
     Conjunction and_node(nodes);
@@ -244,9 +231,8 @@ TEST(PredicateTest, require_that_conjunction_nodes_holds_several_children)
     EXPECT_EQ(nodes[1], and_node[1]);
 }
 
-TEST(PredicateTest, require_that_disjunction_nodes_holds_several_children)
-{
-    vector<PredicateNode *> nodes;
+TEST(PredicateTest, require_that_disjunction_nodes_holds_several_children) {
+    vector<PredicateNode*> nodes;
     nodes.push_back(getPredicateNode().release());
     nodes.push_back(getPredicateNode().release());
     Disjunction or_node(nodes);
@@ -256,6 +242,6 @@ TEST(PredicateTest, require_that_disjunction_nodes_holds_several_children)
     EXPECT_EQ(nodes[1], or_node[1]);
 }
 
-}  // namespace
+} // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()

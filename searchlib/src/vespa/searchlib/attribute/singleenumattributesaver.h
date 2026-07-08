@@ -11,18 +11,16 @@ namespace search {
 /*
  * Class for saving a single value enumerated attribute.
  */
-class SingleValueEnumAttributeSaver : public AttributeSaver
-{
+class SingleValueEnumAttributeSaver : public AttributeSaver {
 private:
-    attribute::EntryRefVector _indices;
-    EnumAttributeSaver        _enumSaver;
+    attribute::EntryRefVectorSnapshot _indices_snapshot;
+    EnumAttributeSaver                _enumSaver;
 
-    bool onSave(IAttributeSaveTarget &saveTarget) override;
+    bool onSave(IAttributeSaveTarget& saveTarget) override;
+
 public:
-    SingleValueEnumAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
-                                  const attribute::AttributeHeader &header,
-                                  attribute::EntryRefVector &&indices,
-                                  IEnumStore &enumStore);
+    SingleValueEnumAttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header,
+                                  attribute::EntryRefVectorSnapshot&& indices_snapshot, IEnumStore& enumStore);
 
     ~SingleValueEnumAttributeSaver() override;
 };

@@ -3,13 +3,13 @@
 #include <vespa/searchlib/diskindex/zc_decoder_validator.h>
 #include <vespa/searchlib/diskindex/zcbuf.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <limits>
 
 using search::diskindex::ZcBuf;
 using search::diskindex::ZcDecoderValidator;
 
-class ZcTest : public ::testing::Test
-{
+class ZcTest : public ::testing::Test {
 protected:
     static constexpr uint32_t fill_size = 1000;
     static constexpr uint32_t timing_loops = 10000000;
@@ -23,21 +23,16 @@ protected:
     bool verify_decoder();
 };
 
-ZcTest::ZcTest()
-: ::testing::Test(),
-  _zc_buf()
-{
+ZcTest::ZcTest() : ::testing::Test(), _zc_buf() {
 }
 
 ZcTest::~ZcTest() = default;
 
-uint32_t
-ZcTest::encode_used_bytes(uint64_t value)
-{
+uint32_t ZcTest::encode_used_bytes(uint64_t value) {
     _zc_buf.clear();
     _zc_buf.encode42(value);
-    auto view = _zc_buf.view();
-    bool failed = false;
+    auto               view = _zc_buf.view();
+    bool               failed = false;
     ZcDecoderValidator zc_decoder(view);
     EXPECT_EQ(value, zc_decoder.decode42()) << (failed = true, "");
     EXPECT_EQ(view.size(), zc_decoder.pos()) << (failed = true, "");
@@ -49,11 +44,9 @@ ZcTest::encode_used_bytes(uint64_t value)
     return failed ? 0 : view.size();
 }
 
-void
-ZcTest::check_encoding(uint32_t bytes, uint64_t min, uint64_t max)
-{
-    SCOPED_TRACE(std::string("check_encoding, bytes=") + std::to_string(bytes) +
-                                  ", min=" + std::to_string(min) + ", max=" + std::to_string(max));
+void ZcTest::check_encoding(uint32_t bytes, uint64_t min, uint64_t max) {
+    SCOPED_TRACE(std::string("check_encoding, bytes=") + std::to_string(bytes) + ", min=" + std::to_string(min) +
+                 ", max=" + std::to_string(max));
     // Test boundary values
     EXPECT_EQ(bytes, encode_used_bytes(min));
     EXPECT_EQ(bytes, encode_used_bytes(max));
@@ -75,18 +68,14 @@ ZcTest::check_encoding(uint32_t bytes, uint64_t min, uint64_t max)
     }
 }
 
-void
-ZcTest::fill()
-{
+void ZcTest::fill() {
     for (uint32_t i = 0; i < fill_size; ++i) {
         _zc_buf.encode32(i);
     }
 }
 
-bool
-ZcTest::verify_decoder()
-{
-    bool failed = false;
+bool ZcTest::verify_decoder() {
+    bool               failed = false;
     ZcDecoderValidator zc_decoder(_zc_buf.view());
     for (uint32_t i = 0; i < fill_size; ++i) {
         if (zc_decoder.decode32() != i) [[unlikely]] {
@@ -96,8 +85,7 @@ ZcTest::verify_decoder()
     return !failed;
 }
 
-TEST_F(ZcTest, encode_then_decode_should_give_original_result)
-{
+TEST_F(ZcTest, encode_then_decode_should_give_original_result) {
     constexpr uint64_t one = 1;
     check_encoding(1, 0, (one << 7) - 1);
     check_encoding(2, one << 7, (one << 14) - 1);
@@ -108,8 +96,7 @@ TEST_F(ZcTest, encode_then_decode_should_give_original_result)
     EXPECT_EQ(5, encode_used_bytes(std::numeric_limits<uint32_t>::max()));
 }
 
-TEST_F(ZcTest, DISABLED_decode_speed_decoder)
-{
+TEST_F(ZcTest, DISABLED_decode_speed_decoder) {
     fill();
     for (uint32_t outer = 0; outer < timing_loops; ++outer) {
         EXPECT_TRUE(verify_decoder());

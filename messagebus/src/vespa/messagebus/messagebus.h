@@ -8,9 +8,11 @@
 #include "messagebusparams.h"
 #include "protocolset.h"
 #include "sourcesession.h"
+
 #include <vespa/messagebus/network/inetworkowner.h>
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <atomic>
 #include <map>
 #include <string>
@@ -33,28 +35,27 @@ class MessageBus : public IMessageHandler,
                    public IConfigHandler,
                    public IDiscardHandler,
                    public INetworkOwner,
-                   public IReplyHandler
-{
+                   public IReplyHandler {
 private:
     using RoutingTableSP = std::shared_ptr<RoutingTable>;
-    INetwork                            &_network;
-    std::mutex                           _lock;
-    vespalib::hash_map<string, RoutingTableSP>     _routingTables;
+    INetwork&                                    _network;
+    std::mutex                                   _lock;
+    vespalib::hash_map<string, RoutingTableSP>   _routingTables;
     vespalib::hash_map<string, IMessageHandler*> _sessions;
-    std::unique_ptr<ProtocolRepository>  _protocolRepository;
-    std::unique_ptr<Messenger>           _msn;
-    std::unique_ptr<Resender>            _resender;
-    std::atomic<size_t>                  _maxPendingCount;
-    std::atomic<size_t>                  _maxPendingSize;
-    std::atomic<size_t>                  _pendingCount;
-    std::atomic<size_t>                  _pendingSize;
+    std::unique_ptr<ProtocolRepository>          _protocolRepository;
+    std::unique_ptr<Messenger>                   _msn;
+    std::unique_ptr<Resender>                    _resender;
+    std::atomic<size_t>                          _maxPendingCount;
+    std::atomic<size_t>                          _maxPendingSize;
+    std::atomic<size_t>                          _pendingCount;
+    std::atomic<size_t>                          _pendingSize;
 
     /**
      * This method performs the common constructor tasks.
      *
      * @param params The parameters to base setup on.
      */
-    void setup(const MessageBusParams &params);
+    void setup(const MessageBusParams& params);
 
     /**
      * This method handles choking input data so that message bus does not blindly accept everything. This prevents an
@@ -64,7 +65,7 @@ private:
      * @param msg The message to count.
      * @return True if the message was accepted.
      */
-    bool checkPending(Message &msg);
+    bool checkPending(Message& msg);
 
     /**
      * Constructs and schedules a Reply containing an error to the handler of the given Message.
@@ -73,7 +74,7 @@ private:
      * @param errCode The code of the error to set.
      * @param errMsg  The message of the error to set.
      */
-    void deliverError(Message::UP msg, uint32_t errCode, const string &errMsg);
+    void deliverError(Message::UP msg, uint32_t errCode, const string& errMsg);
 
 public:
     /**
@@ -83,7 +84,7 @@ public:
      * @param network   The network to associate with.
      * @param protocols An array of protocols to register.
      */
-    MessageBus(INetwork &net, ProtocolSet protocols);
+    MessageBus(INetwork& net, ProtocolSet protocols);
 
     /**
      * Constructs an instance of message bus. This requires a network object that it will associate with. This
@@ -92,7 +93,7 @@ public:
      * @param network The network to associate with.
      * @param params  The parameters that controls this bus.
      */
-    MessageBus(INetwork &net, const MessageBusParams &params);
+    MessageBus(INetwork& net, const MessageBusParams& params);
 
     /**
      * Destruct. The destructor will shut down the underlying INetwork object.
@@ -106,7 +107,7 @@ public:
      * @param handler The reply handler to receive the replies for the session.
      * @return The created session.
      */
-    SourceSession::UP createSourceSession(IReplyHandler &handler);
+    SourceSession::UP createSourceSession(IReplyHandler& handler);
 
     /**
      * This is a convenience method to call {@link this#createSourceSession(SourceSessionParams)} by first
@@ -116,8 +117,7 @@ public:
      * @param params  The parameters to control the session.
      * @return The created session.
      */
-    SourceSession::UP createSourceSession(IReplyHandler &handler,
-                                          const SourceSessionParams &params);
+    SourceSession::UP createSourceSession(IReplyHandler& handler, const SourceSessionParams& params);
 
     /**
      * Creates a source session on top of this message bus.
@@ -125,7 +125,7 @@ public:
      * @param params The parameters to control the session.
      * @return The created session.
      */
-    SourceSession::UP createSourceSession(const SourceSessionParams &params);
+    SourceSession::UP createSourceSession(const SourceSessionParams& params);
 
     /**
      * This is a convenience method to call {@link this#createIntermediateSession(IntermediateSessionParams)} with
@@ -137,10 +137,8 @@ public:
      * @param replyHandler  The handler to received the replies for the session.
      * @return The created session.
      */
-    IntermediateSession::UP createIntermediateSession(const string &name,
-                                                      bool broadcastName,
-                                                      IMessageHandler &msgHandler,
-                                                      IReplyHandler &replyHandler);
+    IntermediateSession::UP createIntermediateSession(const string& name, bool broadcastName,
+                                                      IMessageHandler& msgHandler, IReplyHandler& replyHandler);
 
     /**
      * Creates an intermediate session on top of this message bus using the given handlers and parameter object.
@@ -148,20 +146,18 @@ public:
      * @param params The parameters to control the session.
      * @return The created session.
      */
-    IntermediateSession::UP createIntermediateSession(const IntermediateSessionParams &params);
+    IntermediateSession::UP createIntermediateSession(const IntermediateSessionParams& params);
 
     /**
-     * This is a convenience method to call {@link this#createDestinationSession(DestinationSessionParams)} with default
-     * values for the {@link DestinationSessionParams} object.
+     * This is a convenience method to call {@link this#createDestinationSession(DestinationSessionParams)} with
+     * default values for the {@link DestinationSessionParams} object.
      *
      * @param name          The local unique name for the created session.
      * @param broadcastName Whether or not to broadcast this session's name on the network.
      * @param handler       The handler to receive the messages for the session.
      * @return The created session.
      */
-    DestinationSession::UP createDestinationSession(const string &name,
-                                                    bool broadcastName,
-                                                    IMessageHandler &handler);
+    DestinationSession::UP createDestinationSession(const string& name, bool broadcastName, IMessageHandler& handler);
 
     /**
      * Creates a destination session on top of this message bus using the given handlers and parameter object.
@@ -169,7 +165,7 @@ public:
      * @param params The parameters to control the session.
      * @return The created session.
      */
-    DestinationSession::UP createDestinationSession(const DestinationSessionParams &params);
+    DestinationSession::UP createDestinationSession(const DestinationSessionParams& params);
 
     /**
      * Register a session; used by session instances that are created with deferred registration.
@@ -184,7 +180,7 @@ public:
      *
      * @param sessionName name of the session to unregister
      **/
-    void unregisterSession(const string &sessionName);
+    void unregisterSession(const string& sessionName);
 
     /**
      * Obtain the routing table for the given protocol. If the appropriate routing table could not be found, a shared
@@ -193,7 +189,7 @@ public:
      * @return shared pointer to routing table
      * @param protocol the protocol name
      **/
-    RoutingTableSP getRoutingTable(const string &protocol);
+    RoutingTableSP getRoutingTable(const string& protocol);
 
     /**
      * Returns a routing policy that corresponds to the argument protocol name, policy name and policy parameter. This
@@ -204,8 +200,7 @@ public:
      * @param policyParam The parameter for the routing policy to retrieve.
      * @return A corresponding routing policy, or null.
      */
-    IRoutingPolicy::SP getRoutingPolicy(const string &protocol, const string &policyName,
-                                        const string &policyParam);
+    IRoutingPolicy::SP getRoutingPolicy(const string& protocol, const string& policyName, const string& policyParam);
 
     /**
      * Synchronize with internal threads. This method will handshake with all internal threads. This has the implicit
@@ -220,7 +215,7 @@ public:
      *
      * @return The resender.
      */
-    Resender *getResender() { return _resender.get(); }
+    Resender* getResender() { return _resender.get(); }
 
     /**
      * Returns the number of messages received that have not been replied to yet.
@@ -272,7 +267,7 @@ public:
      *
      * @param protocol The protocol to add.
      */
-    IProtocol::SP putProtocol(const IProtocol::SP & protocol);
+    IProtocol::SP putProtocol(const IProtocol::SP& protocol);
 
     /**
      * Returns the connection spec string for the network layer of this message bus. This is merely a proxy of
@@ -287,7 +282,7 @@ public:
      *
      * @return The underlying {@link Messenger} object.
      */
-    Messenger & getMessenger() { return *_msn; }
+    Messenger& getMessenger() { return *_msn; }
 
     // Implements IReplyHandler.
     void handleReply(Reply::UP reply) override;
@@ -302,14 +297,13 @@ public:
     bool setupRouting(RoutingSpec spec) override;
 
     // Implements INetworkOwner.
-    IProtocol * getProtocol(std::string_view name) override;
+    IProtocol* getProtocol(std::string_view name) override;
 
     // Implements INetworkOwner.
     void deliverMessage(Message::UP msg, std::string_view session) override;
 
     // Implements INetworkOwner.
-    void deliverReply(Reply::UP reply, IReplyHandler &handler) override;
+    void deliverReply(Reply::UP reply, IReplyHandler& handler) override;
 };
 
 } // namespace mbus
-

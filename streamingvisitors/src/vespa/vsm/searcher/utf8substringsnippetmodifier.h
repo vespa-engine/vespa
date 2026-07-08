@@ -2,11 +2,12 @@
 #pragma once
 
 #include "utf8stringfieldsearcherbase.h"
+
 #include <vespa/vsm/common/charbuffer.h>
 
 namespace vsm {
 
-using SharedOffsetBuffer = std::shared_ptr<std::vector<size_t> >;
+using SharedOffsetBuffer = std::shared_ptr<std::vector<size_t>>;
 
 /**
  * This class does substring searches the same way as UTF8SubStringFieldSearcher.
@@ -15,16 +16,16 @@ using SharedOffsetBuffer = std::shared_ptr<std::vector<size_t> >;
  * are inserted before and after a match. These extra unit separators make it possible
  * to highlight a substring match when later generating snippets.
  **/
-class UTF8SubstringSnippetModifier : public UTF8StringFieldSearcherBase
-{
+class UTF8SubstringSnippetModifier : public UTF8StringFieldSearcherBase {
 private:
-    CharBuffer::SP      _modified; // buffer to write the modified field value
-    SharedOffsetBuffer  _offsets;  // for each character in _buf we have an offset into the utf8 buffer (field reference)
-    const char        * _readPtr;  // buffer to read from (field reference)
-    char                _unitSep;  // the unit separator character to use
+    CharBuffer::SP _modified; // buffer to write the modified field value
+    SharedOffsetBuffer
+                _offsets; // for each character in _buf we have an offset into the utf8 buffer (field reference)
+    const char* _readPtr; // buffer to read from (field reference)
+    char        _unitSep; // the unit separator character to use
 
-    size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
-    size_t matchTerms(const FieldRef & f, size_t shortestTerm) override;
+    size_t matchTerm(const FieldRef& f, search::streaming::QueryTerm& qt) override;
+    size_t matchTerms(const FieldRef& f, size_t shortestTerm) override;
 
     /**
      * Copies n bytes from the field reference to the modified buffer and updates the read pointer.
@@ -44,7 +45,7 @@ private:
      * @param mbegin the beginning of the match.
      * @param mend the end of the match.
      **/
-    void insertSeparators(const char * mbegin, const char * mend);
+    void insertSeparators(const char* mbegin, const char* mend);
 
 public:
     using SP = std::shared_ptr<UTF8SubstringSnippetModifier>;
@@ -61,11 +62,10 @@ public:
      * @param modBuf the shared buffer used to store the modified field value.
      * @param offBuf the shared buffer used to store the offsets into the field reference.
      **/
-    UTF8SubstringSnippetModifier(FieldIdT fId, const CharBuffer::SP & modBuf, const SharedOffsetBuffer & offBuf);
+    UTF8SubstringSnippetModifier(FieldIdT fId, const CharBuffer::SP& modBuf, const SharedOffsetBuffer& offBuf);
 
-    const CharBuffer & getModifiedBuf() const { return *_modified; }
-    const search::streaming::QueryTermList & getQueryTerms() const { return _qtl; }
+    const CharBuffer& getModifiedBuf() const { return *_modified; }
+    const search::streaming::QueryTermList& getQueryTerms() const { return _qtl; }
 };
 
-}
-
+} // namespace vsm

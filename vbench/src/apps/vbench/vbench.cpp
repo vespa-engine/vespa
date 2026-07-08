@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
-#include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/runnable_pair.h>
+#include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/thread.h>
+
 #include <vbench/vbench/vbench.h>
+
 #include <iostream>
 
 using namespace vbench;
@@ -13,11 +15,9 @@ VESPA_THREAD_STACK_TAG(vbench_thread);
 using SIG = vespalib::SignalHandler;
 
 struct NotifyDone : public vespalib::Runnable {
-    vespalib::Gate &done;
-    NotifyDone(vespalib::Gate &d) : done(d) {}
-    void run() override {
-        done.countDown();
-    }
+    vespalib::Gate& done;
+    NotifyDone(vespalib::Gate& d) : done(d) {}
+    void run() override { done.countDown(); }
 };
 
 void setupSignals() {
@@ -26,47 +26,46 @@ void setupSignals() {
     SIG::TERM.hook();
 }
 
-int run(const std::string &cfg_name) {
+int run(const std::string& cfg_name) {
     vespalib::MappedFileInput cfg_file(cfg_name);
     if (!cfg_file.valid()) {
         fprintf(stderr, "could not load config file: %s\n", cfg_name.c_str());
         return 1;
     }
-    vespalib::Slime cfg;
+    vespalib::Slime  cfg;
     vespalib::Memory mapped_cfg(cfg_file.get().data, cfg_file.get().size);
     if (!vespalib::slime::JsonFormat::decode(mapped_cfg, cfg)) {
-        fprintf(stderr, "unable to parse config file: %s\n",
-                cfg.toString().c_str());
+        fprintf(stderr, "unable to parse config file: %s\n", cfg.toString().c_str());
         return 1;
     }
     setupSignals();
-    vespalib::Gate done;
-    VBench vbench(cfg);
-    NotifyDone notify(done);
+    vespalib::Gate         done;
+    VBench                 vbench(cfg);
+    NotifyDone             notify(done);
     vespalib::RunnablePair runBoth(vbench, notify);
-    auto thread = vespalib::thread::start(runBoth, vbench_thread);
-    while (!SIG::INT.check() && !SIG::TERM.check() && !done.await(1s)) {}
+    auto                   thread = vespalib::thread::start(runBoth, vbench_thread);
+    while (!SIG::INT.check() && !SIG::TERM.check() && !done.await(1s)) {
+    }
     if (!done.await(vespalib::duration::zero())) {
         vbench.abort();
         done.await();
     }
     thread.join();
     if (vbench.tainted()) {
-        fprintf(stderr, "vbench failed: %s\n",
-                vbench.tainted().reason().c_str());
+        fprintf(stderr, "vbench failed: %s\n", vbench.tainted().reason().c_str());
         return 1;
     }
     return 0;
 }
 
-int usage(const char *prog) {
+int usage(const char* prog) {
     fprintf(stderr, "vbench -- vespa benchmarking tool\n\n");
     fprintf(stderr, "usage: %s run <config-file>\n", prog);
     fprintf(stderr, "  run benchmarking as described in the config file.\n\n");
     return 1;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc > 1) {
         std::string mode = argv[1];
         if (mode == "run" && argc == 3) {

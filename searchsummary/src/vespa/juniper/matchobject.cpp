@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matchobject.h"
+
 #include "charutil.h"
 #include "juniper_separators.h"
 #include "result.h"
 #include "wildcard_match.h"
+
 #include <stack>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.matchobject");
 
@@ -49,18 +52,21 @@ public:
     // revisit on return:
     void RevisitQueryNode(QueryNode* n) override {
         QueryNode* qn = _caller.top();
-        if (n->_parent) _caller.pop();
+        if (n->_parent)
+            _caller.pop();
         _mo.add_nonterm(qn);
     }
 
     QueryExpr* NewQuery() {
-        if (_caller.empty()) return nullptr;
+        if (_caller.empty())
+            return nullptr;
         return _caller.top();
     }
 
 private:
     void update(QueryExpr* e) {
-        if (!_caller.empty()) _caller.top()->AddChild(e);
+        if (!_caller.empty())
+            _caller.top()->AddChild(e);
     }
 
     std::stack<QueryNode*> _caller; // Recursion emulator..
@@ -68,12 +74,7 @@ private:
 }; // class query_expander
 
 MatchObject::MatchObject(QueryExpr* query)
-  : _query(query),
-    _qt(),
-    _nonterms(),
-    _match_overlap(false),
-    _max_arity(0),
-    _qt_byname() {
+    : _query(query), _qt(), _nonterms(), _match_overlap(false), _max_arity(0), _qt_byname() {
     LOG(debug, "MatchObject(default)");
     traverser tr(*this);
     query->Accept(tr); // Initialize structure for the query
@@ -87,7 +88,8 @@ MatchObject::~MatchObject() {
 
 bool MatchObject::Match(MatchObject::iterator& mi, Token& token, unsigned& options) {
     QueryTerm* q = mi.first_match(token);
-    if (!q) return false;
+    if (!q)
+        return false;
     options = 0;
     q->total_match_cnt++;
     if (q->ucs4_len == static_cast<size_t>(token.curlen)) {
@@ -112,17 +114,18 @@ void MatchObject::add_queryterm(QueryTerm* nt) {
 }
 
 match_iterator::match_iterator(MatchObject* mo, Result* rhandle)
-  : _table(mo->_qt_byname),
-    _el(nullptr),
-    _rhandle(rhandle),
-    _reductions(mo->HasReductions()),
-    _reduce_matches(nullptr),
-    _reduce_matches_it(),
-    _mo(mo),
-    _len(0),
-    _stem_min(rhandle->StemMin()),
-    _stemext(rhandle->StemExt()),
-    _term(nullptr) {}
+    : _table(mo->_qt_byname),
+      _el(nullptr),
+      _rhandle(rhandle),
+      _reductions(mo->HasReductions()),
+      _reduce_matches(nullptr),
+      _reduce_matches_it(),
+      _mo(mo),
+      _len(0),
+      _stem_min(rhandle->StemMin()),
+      _stemext(rhandle->StemExt()),
+      _term(nullptr) {
+}
 
 QueryTerm* match_iterator::first() {
     for (; _el != nullptr; _el = _el->GetNext()) {
@@ -130,28 +133,34 @@ QueryTerm* match_iterator::first() {
 
         // If exact match is desired by this subexpression,
         // only have effect if exact match
-        if (q->Exact() && _len > q->len()) continue;
+        if (q->Exact() && _len > q->len())
+            continue;
 
         if (q->is_wildcard()) {
-            if (fast::util::wildcard_match(_term, q->ucs4_term()) == false) continue;
+            if (fast::util::wildcard_match(_term, q->ucs4_term()) == false)
+                continue;
             return q;
         }
 
-        if (_len < q->ucs4_len) continue;
+        if (_len < q->ucs4_len)
+            continue;
         // allow prefix match iff prefix query term or
         // rest < _stem_extend and length > stem_min
         if (!q->is_prefix()) {
             size_t stem_extend = (q->ucs4_len <= _stem_min ? 0 : _stemext);
-            if (_len > q->ucs4_len + stem_extend) continue;
+            if (_len > q->ucs4_len + stem_extend)
+                continue;
         }
-        if (juniper::strncmp(_term, q->ucs4_term(), q->ucs4_len) != 0) continue;
+        if (juniper::strncmp(_term, q->ucs4_term(), q->ucs4_len) != 0)
+            continue;
         return q;
     }
     return nullptr;
 }
 
 QueryTerm* match_iterator::next_reduce_match() {
-    if (!_reduce_matches) return nullptr;
+    if (!_reduce_matches)
+        return nullptr;
     if (_reduce_matches_it != _reduce_matches->end()) {
         QueryTerm* t = *_reduce_matches_it;
         ++_reduce_matches_it;
@@ -171,7 +180,9 @@ QueryTerm* match_iterator::first_match(Token& token) {
         const ucs4_t* terminator = term + len;
         token.token = ++term;
         // starting annotation, skip to after SEPARATOR
-        while (term < terminator && static_cast<char32_t>(*term) != interlinear_annotation_separator) { term++; }
+        while (term < terminator && static_cast<char32_t>(*term) != interlinear_annotation_separator) {
+            term++;
+        }
         const ucs4_t* separator = term;
         // found separator, assume terminator at end
         if (term + 2 < terminator) {
@@ -185,7 +196,9 @@ QueryTerm* match_iterator::first_match(Token& token) {
                     LOG(debug, "recurse A to match token %u..%u len %d", token.token[0],
                         token.token[token.curlen - 1], token.curlen);
                     qt = this->first_match(token);
-                    if (qt != nullptr) { return qt; }
+                    if (qt != nullptr) {
+                        return qt;
+                    }
                     token.token = ++term; // skip SPACE
                 } else {
                     ++term;
@@ -231,8 +244,10 @@ QueryTerm* match_iterator::first_match(Token& token) {
 
 /** Return the current element without advancing iterator pointers */
 QueryTerm* match_iterator::current() {
-    if (_el) return _el->GetItem();
-    if (!_reduce_matches) return nullptr;
+    if (_el)
+        return _el->GetItem();
+    if (!_reduce_matches)
+        return nullptr;
     if (_reduce_matches_it != _reduce_matches->end()) {
         QueryTerm* t = *_reduce_matches_it;
         return t;

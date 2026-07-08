@@ -3,11 +3,15 @@
 
 #include "flushstats.h"
 #include "flushtask.h"
+
 #include <vespa/vespalib/util/time.h>
+
 #include <algorithm>
 #include <vector>
 
-namespace search { class IFlushToken; }
+namespace search {
+class IFlushToken;
+}
 
 namespace searchcorespi {
 
@@ -16,54 +20,40 @@ namespace searchcorespi {
  * getApproxBytesBeforeFlush() bytes of memory, that will be reduced to
  * getApproxBytesAfterFlush() if flushed.
  */
-class IFlushTarget
-{
+class IFlushTarget {
 public:
     /**
      * The flush types that a flush target can represent.
      */
-    enum class Type {
-        FLUSH,
-        SYNC,
-        GC,
-        OTHER
-    };
+    enum class Type { FLUSH, SYNC, GC, OTHER };
 
     /**
      * The component types that a flush target can be used for.
      */
-    enum class Component {
-        ATTRIBUTE,
-        INDEX,
-        DOCUMENT_STORE,
-        OTHER
-    };
+    enum class Component { ATTRIBUTE, INDEX, DOCUMENT_STORE, OTHER };
 
-    enum class Priority {
-        NORMAL = 50,
-        HIGH = 100
-    };
+    enum class Priority { NORMAL = 50, HIGH = 100 };
 
 private:
     std::string _name;
-    Type      _type;
-    Component _component;
+    Type        _type;
+    Component   _component;
 
 public:
-    template<typename T>
-    class Gain {
+    template <typename T> class Gain {
     public:
-        Gain() noexcept : _before(0), _after(0) { }
-        Gain(T before, T after) noexcept : _before(before), _after(after) { }
+        Gain() noexcept : _before(0), _after(0) {}
+        Gain(T before, T after) noexcept : _before(before), _after(after) {}
         T getBefore() const noexcept { return _before; }
-        T  getAfter() const noexcept { return _after; }
+        T getAfter() const noexcept { return _after; }
         T gain() const noexcept { return _before - _after; }
-        double gainRate() const noexcept { return (_before != 0) ? double(gain())/_before : 0;}
+        double gainRate() const noexcept { return (_before != 0) ? double(gain()) / _before : 0; }
         void add_as_positive_or_zero_gain(const Gain& b) noexcept {
             _before += std::max(b.getBefore(), b.getAfter());
             _after += b.getAfter();
         }
         static Gain noGain(size_t currentSize) noexcept { return Gain(currentSize, currentSize); }
+
     private:
         T _before;
         T _after;
@@ -85,7 +75,7 @@ public:
      *
      * @param name The handler-wide unique name of this target.
      */
-    IFlushTarget(const std::string &name) noexcept;
+    IFlushTarget(const std::string& name) noexcept;
 
     /**
      * Constructs a new instance of this class.
@@ -94,9 +84,7 @@ public:
      * @param type The flush type of this target.
      * @param component The component type of this target.
      */
-    IFlushTarget(const std::string &name,
-                 const Type &type,
-                 const Component &component) noexcept;
+    IFlushTarget(const std::string& name, const Type& type, const Component& component) noexcept;
 
     /**
      * Virtual destructor required for inheritance.
@@ -108,7 +96,7 @@ public:
      *
      * @return The name of this.
      */
-    const std::string & getName() const { return _name; }
+    const std::string& getName() const { return _name; }
 
     /**
      * Returns the flush type of this target.
@@ -143,6 +131,14 @@ public:
      * Returns the approximate amount of bytes this target reads from disk if flushed.
      */
     virtual uint64_t get_approx_bytes_to_read_from_disk() const noexcept = 0;
+
+    /**
+     * Returns the number of bytes allocated at start of flush to enable further updates
+     * while flushing is still ongoing. If the disk is slow (cf. HwInfo) causing flush to
+     * a memory buffer (cf. attribute vectors and document meta store), the return value also includes
+     * the estimated size of the memory buffer.
+     */
+    [[nodiscard]] virtual size_t reserved_memory_for_flush() const noexcept = 0;
 
     /**
      * Return cost of replaying a feed operation relative to cost of reading a feed operation from tls.
@@ -185,6 +181,13 @@ public:
      */
     virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) = 0;
 
+    /*
+     * Check if the target can flush data with the specified serial number. If the returned value is false then
+     * the initFlush() will return no task unless the provided serial number is stale (i.e. feed handler having
+     * accepted further feed operations and increased its current serial number).
+     */
+    [[nodiscard]] virtual bool can_flush(SerialNum current_serial) const noexcept = 0;
+
     /**
      * Returns the stats for the last completed flush operation
      * for this flush target.
@@ -193,19 +196,18 @@ public:
      */
     virtual FlushStats getLastFlushStats() const = 0;
 
-    virtual std::chrono::steady_clock::duration last_flush_duration() const noexcept = 0;
+    [[nodiscard]] virtual std::chrono::steady_clock::duration last_flush_duration() const noexcept = 0;
+    [[nodiscard]] virtual std::chrono::steady_clock::duration estimated_flush_duration() const noexcept = 0;
 };
 
 class LeafFlushTarget : public IFlushTarget {
 public:
-    LeafFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept;
+    LeafFlushTarget(const std::string& name, const Type& type, const Component& component) noexcept;
     ~LeafFlushTarget() override;
     bool needUrgentFlush() const override { return false; }
     Priority getPriority() const override { return Priority::NORMAL; }
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
     double get_replay_operation_cost() const override { return 0.0; }
-    std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 } // namespace searchcorespi
-

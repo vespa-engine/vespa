@@ -9,24 +9,18 @@ Intermediate::~Intermediate() {
     }
 }
 
-Intermediate &
-Intermediate::append(Node::UP child)
-{
+Intermediate& Intermediate::append(Node::UP child) {
     _children.push_back(child.release());
     return *this;
 }
 
-Intermediate &
-Intermediate::prepend(Node::UP child)
-{
+Intermediate& Intermediate::prepend(Node::UP child) {
     _children.insert(_children.begin(), child.release());
     return *this;
 }
 
-Node::UP
-Intermediate::stealFirst()
-{
-    if ( _children.empty()) {
+Node::UP Intermediate::stealFirst() {
+    if (_children.empty()) {
         return Node::UP();
     }
     Node::UP first(_children.front());
@@ -34,4 +28,4 @@ Intermediate::stealFirst()
     return first;
 }
 
-}
+} // namespace search::query

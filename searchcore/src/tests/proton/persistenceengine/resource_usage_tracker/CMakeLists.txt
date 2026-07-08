@@ -6,5 +6,6 @@ vespa_add_executable(searchcore_resource_usage_tracker_test_app TEST
     searchcore_persistenceengine
     searchcore_attribute
     searchcore_test
+    GTest::gmock
 )
 vespa_add_test(NAME searchcore_resource_usage_tracker_test_app COMMAND searchcore_resource_usage_tracker_test_app)

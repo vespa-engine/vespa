@@ -7,7 +7,6 @@ import com.yahoo.security.tls.TransportSecurityUtils;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.nio.AsyncClientConnectionManager;
-import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 
@@ -47,17 +46,19 @@ public class VespaAsyncHttpClientBuilder {
         TlsStrategy tlsStrategy;
         if (vespaTlsContext != null) {
             SSLParameters vespaTlsParameters = vespaTlsContext.parameters();
-            tlsStrategy = ClientTlsStrategyBuilder.create()
+            tlsStrategy = VespaTlsStrategy.tlsStrategyBuilder()
                     .setHostnameVerifier(hostnameVerifier)
                     .setSslContext(vespaTlsContext.sslContext().context())
                     .setTlsVersions(vespaTlsParameters.getProtocols())
                     .setCiphers(vespaTlsParameters.getCipherSuites())
-                    .build();
+                    .buildAsync();
             if (TransportSecurityUtils.getInsecureMixedMode() != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
                 clientBuilder.setRoutePlanner(new HttpToHttpsRoutePlanner());
             }
         } else {
-            tlsStrategy = ClientTlsStrategyBuilder.create().build();
+            tlsStrategy = VespaTlsStrategy.tlsStrategyBuilder()
+                    .setHostnameVerifier(hostnameVerifier)
+                    .buildAsync();
         }
         clientBuilder.disableConnectionState(); // Share connections between subsequent requests
         clientBuilder.disableCookieManagement();

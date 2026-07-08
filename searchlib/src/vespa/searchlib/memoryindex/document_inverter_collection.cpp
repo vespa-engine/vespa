@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_inverter_collection.h"
+
 #include "document_inverter.h"
+
 #include <cassert>
 
 namespace search::memoryindex {
@@ -12,15 +14,12 @@ DocumentInverterCollection::DocumentInverterCollection(DocumentInverterContext& 
       _inflight_inverters(),
       _active_inverter(std::make_unique<DocumentInverter>(_context)),
       _num_inverters(1),
-      _max_inverters(max_inverters)
-{
+      _max_inverters(max_inverters) {
 }
 
 DocumentInverterCollection::~DocumentInverterCollection() = default;
 
-void
-DocumentInverterCollection::switch_active_inverter()
-{
+void DocumentInverterCollection::switch_active_inverter() {
     _inflight_inverters.emplace_back(std::move(_active_inverter));
     while (!_inflight_inverters.empty() && _inflight_inverters.front()->has_zero_ref_count()) {
         _free_inverters.emplace_back(std::move(_inflight_inverters.front()));
@@ -42,4 +41,4 @@ DocumentInverterCollection::switch_active_inverter()
     ++_num_inverters;
 }
 
-}
+} // namespace search::memoryindex

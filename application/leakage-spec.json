@@ -1,0 +1,5 @@
+{
+  "com.yahoo.application.container.JDisc" : [
+    "com.yahoo.config.model.ConfigModelRepo"
+  ]
+}

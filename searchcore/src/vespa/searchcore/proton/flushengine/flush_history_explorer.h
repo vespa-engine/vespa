@@ -11,14 +11,14 @@ class FlushHistory;
 /*
  * State explorer for flush history.
  */
-class FlushHistoryExplorer : public vespalib::StateExplorer
-{
+class FlushHistoryExplorer : public vespalib::StateExplorer {
     std::shared_ptr<FlushHistory> _flush_history;
+
 public:
     FlushHistoryExplorer(std::shared_ptr<FlushHistory> flush_history);
     ~FlushHistoryExplorer() override;
 
-    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
-}
+} // namespace proton::flushengine

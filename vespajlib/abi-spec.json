@@ -3565,7 +3565,11 @@
       "public static int encode(int, byte[], int)",
       "public static void encode(int, java.nio.ByteBuffer)",
       "public static int encode(int, java.io.OutputStream)",
-      "public static int codePointAsUtf8Length(int)"
+      "public static int codePointAsUtf8Length(int)",
+      "public static java.io.FileReader createReader(java.io.File)",
+      "public static java.io.FileReader createReader(java.lang.String)",
+      "public static java.io.FileWriter createWriter(java.io.File)",
+      "public static java.io.FileWriter createWriter(java.lang.String)"
     ],
     "fields" : [ ]
   },
@@ -4003,6 +4007,7 @@
       "public void <init>()",
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public static java.util.Optional findCause(java.lang.Throwable, java.lang.Class)",
+      "public static java.util.Optional findRootCause(java.lang.Throwable, java.lang.Class)",
       "public static void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException)",
       "public static varargs void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.String, java.lang.String[])",
       "public static void uncheckAndIgnore(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.Class)",

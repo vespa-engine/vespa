@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "rpinterface.h"
+
 #include "config.h"
 #include "juniperparams.h"
 #include "propreader.h"
 #include "queryhandle.h"
 #include "queryvisitor.h"
 #include "result.h"
+
 #include <cassert>
 #include <vector>
 
@@ -32,8 +34,7 @@ void SetDebug(unsigned int mask) {
 }
 
 Juniper::Juniper(IJuniperProperties* props, const Fast_WordFolder* wordfolder, int api_version)
-  : _props(props),
-    _wordfolder(wordfolder) {
+    : _props(props), _wordfolder(wordfolder) {
     if (api_version != JUNIPER_RP_ABI_VERSION) {
         // This can happen if fsearch and juniper is not compiled with the same version of the
         // Juniper API header files.
@@ -49,10 +50,12 @@ Juniper::Juniper(IJuniperProperties* props, const Fast_WordFolder* wordfolder, i
     LOG(debug, "Juniper result processor (interface v.%d)", JUNIPER_RP_ABI_VERSION);
 
     unsigned int debug_mask = strtol(_props->GetProperty("juniper.debug_mask", "0"), nullptr, 0);
-    if (debug_mask) SetDebug(debug_mask);
+    if (debug_mask)
+        SetDebug(debug_mask);
 }
 
-Juniper::~Juniper() {}
+Juniper::~Juniper() {
+}
 
 std::unique_ptr<Config> Juniper::CreateConfig(const char* config_name) const {
     return std::unique_ptr<Config>(new Config(config_name, *this));

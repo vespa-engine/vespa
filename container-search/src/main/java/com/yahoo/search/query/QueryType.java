@@ -210,6 +210,8 @@ public class QueryType {
             case WEAKAND ->      new QueryType(type, Composite.weakAnd, Tokenization.internal,    Syntax.simple);
             case WEB ->          new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.web);
             case YQL ->          new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.yql);
+            case NEAR ->         new QueryType(type, Composite.near,    Tokenization.internal,    Syntax.simple);
+            case ONEAR ->        new QueryType(type, Composite.oNear,   Tokenization.internal,    Syntax.simple);
         };
     }
 

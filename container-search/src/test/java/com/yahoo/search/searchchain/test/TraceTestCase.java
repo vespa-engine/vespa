@@ -65,7 +65,7 @@ public class TraceTestCase {
         assertEquals("  No query profile is used", trace.next());
         assertEquals("  (level start)", trace.next());
         if (expectQueryInTrace)
-            assertEquals("    During tracer1: 0: [WEAKAND(100) foo]", trace.next());
+            assertEquals("    During tracer1: 0: [WEAKAND foo]", trace.next());
         else
             assertEquals("    During tracer1: 0", trace.next());
     }

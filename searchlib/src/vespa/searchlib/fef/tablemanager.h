@@ -4,9 +4,10 @@
 
 #include "itablefactory.h"
 #include "itablemanager.h"
+
 #include <map>
-#include <vector>
 #include <mutex>
+#include <vector>
 
 namespace search::fef {
 
@@ -14,11 +15,10 @@ namespace search::fef {
  * This class manages a set of tables and contains an ordered list of table factories used to create tables,
  * and a cache of allready created tables. A table is accessed by a unique name.
  **/
-class TableManager : public ITableManager
-{
+class TableManager : public ITableManager {
 private:
-    TableManager(const TableManager &);
-    TableManager &operator=(const TableManager &);
+    TableManager(const TableManager&);
+    TableManager& operator=(const TableManager&);
 
     using TableCache = std::map<std::string, Table::SP>;
     std::vector<ITableFactory::SP> _factories;
@@ -42,7 +42,7 @@ public:
      *    The first table that is successfully created is added it to the cache and returned.
      * 3. Return NULL.
      **/
-    const Table * getTable(const std::string & name) const override;
+    const Table* getTable(const std::string& name) const override;
 };
 
-}
+} // namespace search::fef

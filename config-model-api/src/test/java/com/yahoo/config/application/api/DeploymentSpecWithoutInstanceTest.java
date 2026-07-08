@@ -121,7 +121,7 @@ public class DeploymentSpecWithoutInstanceTest {
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("no-such-region"))));
 
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
-        assertEquals(DeploymentSpec.UpgradeRollout.separate, spec.requireInstance("default").upgradeRollout());
+        assertEquals(DeploymentSpec.UpgradeRollout.simultaneous, spec.requireInstance("default").upgradeRollout());
     }
 
     @Test
@@ -454,10 +454,12 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(2, spec.requireInstance("default").changeBlocker().size());
         assertTrue(spec.requireInstance("default").changeBlocker().get(0).blocksVersions());
         assertFalse(spec.requireInstance("default").changeBlocker().get(0).blocksRevisions());
+        assertFalse(spec.requireInstance("default").changeBlocker().get(0).blocksMaintenance());
         assertEquals(ZoneId.of("UTC"), spec.requireInstance("default").changeBlocker().get(0).window().zone());
 
         assertTrue(spec.requireInstance("default").changeBlocker().get(1).blocksVersions());
         assertTrue(spec.requireInstance("default").changeBlocker().get(1).blocksRevisions());
+        assertFalse(spec.requireInstance("default").changeBlocker().get(1).blocksMaintenance());
         assertEquals(ZoneId.of("CET"), spec.requireInstance("default").changeBlocker().get(1).window().zone());
 
         assertTrue(spec.requireInstance("default").canUpgradeAt(Instant.parse("2017-09-18T14:15:30.00Z")));

@@ -2,10 +2,13 @@
 #pragma once
 
 #include "initializer_task_visitor.h"
+
 #include <memory>
 #include <vector>
 
 namespace proton::initializer {
+
+class LoadMemoryUsage;
 
 /*
  * Class representign an initializer task, used to load a data
@@ -15,25 +18,23 @@ class InitializerTask {
 public:
     using SP = std::shared_ptr<InitializerTask>;
     using List = std::vector<SP>;
-    enum class State {
-        BLOCKED,
-        RUNNING,
-        DONE
-    };
+    enum class State { BLOCKED, RUNNING, DONE };
+
 private:
-    State           _state;
-    List            _dependencies;
+    State _state;
+    List  _dependencies;
+
 public:
-    InitializerTask();
+    InitializerTask() noexcept;
     virtual ~InitializerTask();
-    State getState() const { return _state; }
-    const List &getDependencies() const { return _dependencies; }
-    void setRunning() { _state = State::RUNNING; }
-    void setDone() { _state = State::DONE; }
+    [[nodiscard]] State getState() const noexcept { return _state; }
+    [[nodiscard]] const List& getDependencies() const noexcept { return _dependencies; }
+    void setRunning() noexcept { _state = State::RUNNING; }
+    void setDone() noexcept { _state = State::DONE; }
     void addDependency(SP dependency);
     virtual void run() = 0;
-    virtual size_t get_transient_memory_usage() const;
-    virtual void accept_visitor(InitializerTaskVisitor &visitor);
+    [[nodiscard]] virtual LoadMemoryUsage get_load_memory_usage() const noexcept;
+    virtual void accept_visitor(InitializerTaskVisitor& visitor);
 };
 
-}
+} // namespace proton::initializer

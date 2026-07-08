@@ -5,10 +5,8 @@
 namespace vespalib::net {
 
 ConnectionAuthContext::ConnectionAuthContext(tls::PeerCredentials peer_credentials,
-                                             tls::CapabilitySet capabilities) noexcept
-    : _peer_credentials(std::move(peer_credentials)),
-      _capabilities(std::move(capabilities))
-{
+                                             tls::CapabilitySet   capabilities) noexcept
+    : _peer_credentials(std::move(peer_credentials)), _capabilities(std::move(capabilities)) {
 }
 
 ConnectionAuthContext::ConnectionAuthContext(const ConnectionAuthContext&) = default;
@@ -18,4 +16,4 @@ ConnectionAuthContext& ConnectionAuthContext::operator=(ConnectionAuthContext&&)
 
 ConnectionAuthContext::~ConnectionAuthContext() = default;
 
-}
+} // namespace vespalib::net

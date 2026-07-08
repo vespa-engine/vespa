@@ -8,8 +8,7 @@ using document::BucketId;
 using storage::get_super_bucket_key;
 constexpr uint8_t MUB = storage::spi::BucketLimits::MinUsedBits;
 
-TEST(SuperBucketKeyTest, super_bucket_key_is_min_used_bits_of_msb_of_bucket_id_key)
-{
+TEST(SuperBucketKeyTest, super_bucket_key_is_min_used_bits_of_msb_of_bucket_id_key) {
     // Note that bits are reversed when creating a key from the bucket id
     EXPECT_EQ(0x0F, get_super_bucket_key(BucketId(MUB, 0x1F0)));
     EXPECT_EQ(0x0F, get_super_bucket_key(BucketId(MUB + 1, 0x1F0)));
@@ -22,9 +21,7 @@ TEST(SuperBucketKeyTest, super_bucket_key_is_min_used_bits_of_msb_of_bucket_id_k
     EXPECT_EQ(0xF4, get_super_bucket_key(BucketId(MUB + 1, 0x22F)));
 }
 
-TEST(SuperBucketKeyTest, super_bucket_key_is_zero_when_bucket_id_is_zero)
-{
+TEST(SuperBucketKeyTest, super_bucket_key_is_zero_when_bucket_id_is_zero) {
     EXPECT_EQ(0, get_super_bucket_key(BucketId()));
     EXPECT_EQ(0, get_super_bucket_key(BucketId(0)));
 }
-

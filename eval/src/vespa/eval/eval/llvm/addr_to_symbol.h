@@ -9,11 +9,11 @@ namespace vespalib::eval {
 // Map an address to a symbolic name.
 // Intended for function pointers.
 
-std::string addr_to_symbol(const void *addr);
+std::string addr_to_symbol(const void* addr);
 
 // Return the address of a local symbol.
 // Used for testing.
 
-const void *get_addr_of_local_test_symbol();
+const void* get_addr_of_local_test_symbol();
 
-}
+} // namespace vespalib::eval

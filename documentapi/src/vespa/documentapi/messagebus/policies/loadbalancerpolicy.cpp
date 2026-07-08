@@ -1,20 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "loadbalancerpolicy.h"
+
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/error.h>
+#include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/routing/ihopdirective.h>
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".loadbalancerpolicy");
 
 namespace documentapi {
 
-LoadBalancerPolicy::LoadBalancerPolicy(const string& param)
-    : ExternSlobrokPolicy(parse(param))
-{
+LoadBalancerPolicy::LoadBalancerPolicy(const string& param) : ExternSlobrokPolicy(parse(param)) {
     std::map<string, string> params(parse(param));
 
     if (params.find("cluster") != params.end()) {
@@ -35,8 +35,7 @@ LoadBalancerPolicy::LoadBalancerPolicy(const string& param)
     _loadBalancer.reset(new LoadBalancer(_cluster, _session));
 }
 
-void
-LoadBalancerPolicy::doSelect(mbus::RoutingContext& context) {
+void LoadBalancerPolicy::doSelect(mbus::RoutingContext& context) {
     std::pair<string, int> node = getRecipient(context);
 
     if (node.second != -1) {
@@ -46,14 +45,13 @@ LoadBalancerPolicy::doSelect(mbus::RoutingContext& context) {
         context.addChild(route);
     } else {
         context.setError(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE,
-                             "Could not resolve any nodes to send to in pattern " + _pattern);
+                         "Could not resolve any nodes to send to in pattern " + _pattern);
     }
 }
 
-void
-LoadBalancerPolicy::merge(mbus::RoutingContext& context) {
+void LoadBalancerPolicy::merge(mbus::RoutingContext& context) {
     mbus::RoutingNodeIterator it = context.getChildIterator();
-    mbus::Reply::UP reply = it.removeReply();
+    mbus::Reply::UP           reply = it.removeReply();
 
     uint64_t target = context.getContext().value.UINT64;
 
@@ -63,7 +61,8 @@ LoadBalancerPolicy::merge(mbus::RoutingContext& context) {
             string lastSpec = _loadBalancer->getLastSpec(target);
 
             if (reply->getError(i).getMessage().find(lastSpec) == string::npos) {
-                LOG(debug, "Received busy with message %s, doesn't contain target %s so not updating weight.", reply->getError(i).getMessage().c_str(), lastSpec.c_str());
+                LOG(debug, "Received busy with message %s, doesn't contain target %s so not updating weight.",
+                    reply->getError(i).getMessage().c_str(), lastSpec.c_str());
             } else {
                 LOG(debug, "Received busy for target node %d reducing weight of that node.", (int)target);
                 busy = true;
@@ -76,5 +75,4 @@ LoadBalancerPolicy::merge(mbus::RoutingContext& context) {
     context.setReply(std::move(reply));
 }
 
-}
-
+} // namespace documentapi

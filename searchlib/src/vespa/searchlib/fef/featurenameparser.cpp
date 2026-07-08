@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "featurenameparser.h"
+
 #include "featurenamebuilder.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -26,9 +28,7 @@ int decodeHex(char c) {
 
 //-----------------------------------------------------------------------------
 
-template <typename A>
-class IsLogged
-{
+template <typename A> class IsLogged {
 private:
     A           _a;
     std::string _name;
@@ -37,15 +37,12 @@ public:
     IsLogged(A a) : _a(a), _name(a.getName()) {}
     bool operator()(char c) {
         bool res = _a(c);
-        LOG(info, "%s returned %s for char '%c'",
-            _name.c_str(), res ? "true" : "false", c);
+        LOG(info, "%s returned %s for char '%c'", _name.c_str(), res ? "true" : "false", c);
         return res;
     }
 };
 
-template <typename A>
-class DoLog
-{
+template <typename A> class DoLog {
 private:
     A           _a;
     std::string _name;
@@ -54,44 +51,37 @@ public:
     DoLog(A a) : _a(a), _name(a.getName()) {}
     bool operator()(char c) {
         bool res = _a(c);
-        LOG(info, "%s returned %s for char '%c'",
-            _name.c_str(), res ? "true" : "false", c);
+        LOG(info, "%s returned %s for char '%c'", _name.c_str(), res ? "true" : "false", c);
         return res;
     }
     bool done() {
         bool res = _a.done();
-        LOG(info, "%s returned %s on done signal",
-            _name.c_str(), res ? "true" : "false");
+        LOG(info, "%s returned %s on done signal", _name.c_str(), res ? "true" : "false");
         return res;
     }
 };
 
 //-----------------------------------------------------------------------------
 
-template <typename A>
-IsLogged<A> isLogged(A a) {
+template <typename A> IsLogged<A> isLogged(A a) {
     return IsLogged<A>(a);
 }
 
-template <typename A>
-DoLog<A> doLog(A a) {
+template <typename A> DoLog<A> doLog(A a) {
     return DoLog<A>(a);
 }
 
 //-----------------------------------------------------------------------------
 
-class ParseContext
-{
+class ParseContext {
 private:
-    const std::string &_str;   // the input string. TODO Use std::string_view
+    const std::string& _str;   // the input string. TODO Use std::string_view
     uint32_t           _pos;   // current position
     char               _curr;  // current character, 0 means eos
     bool               _error; // flag indicating whether we have a parse error
 
 public:
-    ParseContext(const std::string &in) : _str(in), _pos(0),
-                                          _curr((in.empty()) ? 0 : in[0]),
-                                          _error(false) {}
+    ParseContext(const std::string& in) : _str(in), _pos(0), _curr((in.empty()) ? 0 : in[0]), _error(false) {}
     uint32_t pos() const { return _pos; }
     char get() const { return _curr; }
     bool eos() const { return !_curr; }
@@ -100,9 +90,7 @@ public:
         _error = true;
         return false;
     }
-    bool error() {
-        return _error;
-    }
+    bool error() { return _error; }
     void next() {
         if (eos()) {
             return;
@@ -120,8 +108,7 @@ public:
         next();
         return true;
     }
-    template <typename CHECK, typename SINK>
-    bool scan(CHECK check, SINK sink) {
+    template <typename CHECK, typename SINK> bool scan(CHECK check, SINK sink) {
         while (!eos()) {
             if (!check(get())) {
                 break;
@@ -140,8 +127,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class IsSpace
-{
+class IsSpace {
 public:
     bool operator()(char c) const {
         switch (c) {
@@ -158,81 +144,75 @@ public:
     std::string getName() const { return "IsSpace"; }
 };
 
-class Ident
-{
+class Ident {
 public:
     Ident() {
-        for(size_t i(0), m(256); i < m; i++) { _valid[i] = false; }
-        for(size_t i('a'), m('z'); i <= m; i++) { _valid[i] = true; }
-        for(size_t i('A'), m('Z'); i <= m; i++) { _valid[i] = true; }
-        for(size_t i('0'), m('9'); i <= m; i++) { _valid[i] = true; }
+        for (size_t i(0), m(256); i < m; i++) {
+            _valid[i] = false;
+        }
+        for (size_t i('a'), m('z'); i <= m; i++) {
+            _valid[i] = true;
+        }
+        for (size_t i('A'), m('Z'); i <= m; i++) {
+            _valid[i] = true;
+        }
+        for (size_t i('0'), m('9'); i <= m; i++) {
+            _valid[i] = true;
+        }
         _valid[uint8_t('_')] = true;
         _valid[uint8_t('+')] = true;
         _valid[uint8_t('-')] = true;
         _valid[uint8_t('$')] = true;
         _valid[uint8_t('@')] = true;
     }
-    bool isValid(uint8_t c) {  return _valid[c]; }
+    bool isValid(uint8_t c) { return _valid[c]; }
+
 private:
     bool _valid[256];
 };
 
 static Ident _G_ident;
 
-class IsIdent
-{
+class IsIdent {
 public:
-    bool operator()(char c) const {
-        return _G_ident.isValid(c);
-    }
+    bool operator()(char c) const { return _G_ident.isValid(c); }
     std::string getName() const { return "IsIdent"; }
 };
 
-class IsChar
-{
+class IsChar {
 private:
     char _c;
 
 public:
     IsChar(char c) : _c(c) {}
-    bool operator()(char c) const {
-        return (c == _c);
-    }
+    bool operator()(char c) const { return (c == _c); }
     std::string getName() const { return vespalib::make_string("IsChar(%c)", _c); }
 };
 
-template <typename A>
-class IsNot
-{
+template <typename A> class IsNot {
 private:
     A _a;
 
 public:
     IsNot(A a) : _a(a) {}
-    bool operator()(char c) {
-        return !(_a(c));
-    }
+    bool operator()(char c) { return !(_a(c)); }
     std::string getName() const { return vespalib::make_string("IsNot(%s)", _a.getName().c_str()); }
 };
 
-template <typename A, typename B>
-class IsEither
-{
+template <typename A, typename B> class IsEither {
 private:
     A _a;
     B _b;
 
 public:
     IsEither(A a, B b) : _a(a), _b(b) {}
-    bool operator()(char c) {
-        return (_a(c) || _b(c));
+    bool operator()(char c) { return (_a(c) || _b(c)); }
+    std::string getName() const {
+        return vespalib::make_string("IsEither(%s,%s)", _a.getName().c_str(), _b.getName().c_str());
     }
-    std::string getName() const { return vespalib::make_string("IsEither(%s,%s)",
-                                          _a.getName().c_str(), _b.getName().c_str()); }
 };
 
-class IsEndQuote
-{
+class IsEndQuote {
 private:
     bool _escape;
 
@@ -254,21 +234,19 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class DoIgnore
-{
+class DoIgnore {
 public:
     bool operator()(char) { return true; }
     bool done() { return true; }
     std::string getName() const { return "doIgnore"; }
 };
 
-class DoSave
-{
+class DoSave {
 private:
-    std::string &_dst;
+    std::string& _dst;
 
 public:
-    DoSave(std::string &str) : _dst(str) {}
+    DoSave(std::string& str) : _dst(str) {}
     bool operator()(char c) {
         _dst.push_back(c);
         return true;
@@ -277,16 +255,15 @@ public:
     std::string getName() const { return "doSave"; }
 };
 
-class DoDequote
-{
+class DoDequote {
 private:
     bool          _escape; // true means we are dequoting something
     int           _hex;    // how many hex numbers left to read
     unsigned char _c;      // save up hex decoded char here
-    std::string  &_dst;    // where to save the dequoted string
+    std::string&  _dst;    // where to save the dequoted string
 
 public:
-    explicit DoDequote(std::string &str) : _escape(false), _hex(0), _c(0), _dst(str) {}
+    explicit DoDequote(std::string& str) : _escape(false), _hex(0), _c(0), _dst(str) {}
     bool operator()(char c) {
         if (_escape) {
             if (_hex > 0) {
@@ -352,37 +329,48 @@ public:
 
 //-----------------------------------------------------------------------------
 
-IsSpace isSpace() { return IsSpace(); }
+IsSpace isSpace() {
+    return IsSpace();
+}
 
-IsIdent isIdent() { return IsIdent(); }
+IsIdent isIdent() {
+    return IsIdent();
+}
 
-IsChar isChar(char c) { return IsChar(c); }
+IsChar isChar(char c) {
+    return IsChar(c);
+}
 
-template <typename A>
-IsNot<A> isNot(A a) {
+template <typename A> IsNot<A> isNot(A a) {
     return IsNot<A>(a);
 }
 
-template <typename A, typename B>
-IsEither<A, B> isEither(A a, B b) {
+template <typename A, typename B> IsEither<A, B> isEither(A a, B b) {
     return IsEither<A, B>(a, b);
 }
 
-IsEndQuote isEndQuote() { return IsEndQuote(); }
+IsEndQuote isEndQuote() {
+    return IsEndQuote();
+}
 
-DoIgnore doIgnore() { return DoIgnore(); }
+DoIgnore doIgnore() {
+    return DoIgnore();
+}
 
-DoSave doSave(std::string &str) { return DoSave(str); }
+DoSave doSave(std::string& str) {
+    return DoSave(str);
+}
 
-DoDequote doDequote(std::string &str) { return DoDequote(str); }
+DoDequote doDequote(std::string& str) {
+    return DoDequote(str);
+}
 
 //-----------------------------------------------------------------------------
 
 // need forward declaration of this for recursive parsing
-bool normalizeFeatureName(ParseContext &ctx, std::string &name);
+bool normalizeFeatureName(ParseContext& ctx, std::string& name);
 
-bool parseParameters(ParseContext &ctx, std::vector<std::string> &parameters)
-{
+bool parseParameters(ParseContext& ctx, std::vector<std::string>& parameters) {
     ctx.scan(isSpace(), doIgnore());
     if (!ctx.eatChar('(')) {
         return true; // no parameters = ok
@@ -399,11 +387,11 @@ bool parseParameters(ParseContext &ctx, std::vector<std::string> &parameters)
             if (!ctx.scan(isNot(isEndQuote()), doDequote(param))) {
                 return false;
             }
-            if (!ctx.eatChar('"')) {   // missing end quote
+            if (!ctx.eatChar('"')) { // missing end quote
                 return ctx.signalError();
             }
             break;
-        default:        // parse param as feature name
+        default: // parse param as feature name
             if (!normalizeFeatureName(ctx, param)) {
                 return false;
             }
@@ -411,7 +399,7 @@ bool parseParameters(ParseContext &ctx, std::vector<std::string> &parameters)
         }
         parameters.push_back(param);
         ctx.scan(isSpace(), doIgnore());
-        if (ctx.eatChar(')')) {         // done
+        if (ctx.eatChar(')')) { // done
             return true;
         } else if (!ctx.eatChar(',')) { // illegal param list
             return ctx.signalError();
@@ -419,8 +407,7 @@ bool parseParameters(ParseContext &ctx, std::vector<std::string> &parameters)
     }
 }
 
-bool parseOutput(ParseContext &ctx, std::string &output)
-{
+bool parseOutput(ParseContext& ctx, std::string& output) {
     ctx.scan(isSpace(), doIgnore());
     if (!ctx.eatChar('.')) {
         return true; // output is optional
@@ -429,15 +416,12 @@ bool parseOutput(ParseContext &ctx, std::string &output)
     return ctx.scan(isEither(isIdent(), isChar('.')), doSave(output));
 }
 
-bool parseFeatureName(ParseContext &ctx, std::string &baseName,
-                      std::vector<std::string> &parameters, std::string &output)
-{
-    return (ctx.scan(isIdent(), doSave(baseName)) &&
-            parseParameters(ctx, parameters) &&
-            parseOutput(ctx, output));
+bool parseFeatureName(ParseContext& ctx, std::string& baseName, std::vector<std::string>& parameters,
+                      std::string& output) {
+    return (ctx.scan(isIdent(), doSave(baseName)) && parseParameters(ctx, parameters) && parseOutput(ctx, output));
 }
 
-bool normalizeFeatureName(ParseContext &ctx, std::string &name) {
+bool normalizeFeatureName(ParseContext& ctx, std::string& name) {
     std::string              baseName;
     std::vector<std::string> params;
     std::string              output;
@@ -446,7 +430,7 @@ bool normalizeFeatureName(ParseContext &ctx, std::string &name) {
     }
     search::fef::FeatureNameBuilder builder;
     builder.baseName(baseName);
-    for (const auto & param : params) {
+    for (const auto& param : params) {
         builder.parameter(param);
     }
     builder.output(output);
@@ -454,19 +438,12 @@ bool normalizeFeatureName(ParseContext &ctx, std::string &name) {
     return true;
 }
 
-} // namespace <unnamed>
+} // namespace
 
 namespace search::fef {
 
-FeatureNameParser::FeatureNameParser(const string &input)
-    : _valid(false),
-      _endPos(0),
-      _baseName(),
-      _parameters(),
-      _output(),
-      _executorName(),
-      _featureName()
-{
+FeatureNameParser::FeatureNameParser(const string& input)
+    : _valid(false), _endPos(0), _baseName(), _parameters(), _output(), _executorName(), _featureName() {
     ParseContext ctx(input);
     ctx.scan(isSpace(), doIgnore());
     _valid = parseFeatureName(ctx, _baseName, _parameters, _output);
@@ -478,7 +455,7 @@ FeatureNameParser::FeatureNameParser(const string &input)
     if (_valid && ctx.eos()) {
         FeatureNameBuilder builder;
         builder.baseName(_baseName);
-        for (const auto & _parameter : _parameters) {
+        for (const auto& _parameter : _parameters) {
             builder.parameter(_parameter);
         }
         _executorName = builder.buildName();
@@ -496,5 +473,4 @@ FeatureNameParser::FeatureNameParser(const string &input)
 
 FeatureNameParser::~FeatureNameParser() = default;
 
-
-}
+} // namespace search::fef

@@ -12,7 +12,7 @@ package com.yahoo.processing.response;
 public interface Streamed {
 
     /**
-     * Returns false if the data in this list can not be returned until it is completed.
+     * Returns false if the data in this list cannot be returned until it is completed.
      * Default: true, meaning eager streaming of the data is permissible.
      */
     boolean isStreamed();

@@ -5,6 +5,8 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.ObjectVisitor;
 
+import java.util.Locale;
+
 /**
  * @author Einar M R Rosenvinge
  */
@@ -34,7 +36,7 @@ public class WeightedSetDataType extends CollectionDataType {
             if ((nestedType == STRING) && createIfNonExistent && removeIfZero) { // the tag type definition
                 setId(TAG_ID);
             } else {
-                setId(getName().toLowerCase().hashCode());
+                setId(getName().toLowerCase(Locale.ROOT).hashCode());
             }
         }
         int code = getId();

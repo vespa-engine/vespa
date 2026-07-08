@@ -3,9 +3,13 @@ package com.yahoo.net;
 
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -23,7 +27,7 @@ public class UrlTokenizerTestCase {
             if (c == '%') {
                 continue; // escape
             }
-            String img = String.format("a%ca", c);
+            String img = String.format(java.util.Locale.ROOT, "a%ca", c);
             if ((c >= '0' && c <= '9') ||
                 (c >= 'a' && c <= 'z') ||
                 (c >= 'A' && c <= 'Z') ||

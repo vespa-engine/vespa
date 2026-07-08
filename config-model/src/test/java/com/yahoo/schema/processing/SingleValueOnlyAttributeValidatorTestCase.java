@@ -5,8 +5,9 @@ import com.yahoo.schema.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.schema.ApplicationBuilder.createFromString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -31,7 +32,10 @@ public class SingleValueOnlyAttributeValidatorTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            if (type.equals("raw")) {
+            if (type.equals("bool")) {
+                assertEquals("weightedset of trivial type '[type BUILTIN] {bool}' is not supported",
+                        e.getMessage());
+            } else if (type.equals("raw")) {
                 assertEquals("weightedset of complex type '[type BUILTIN] {raw}' is not supported",
                         e.getMessage());
             } else {
@@ -42,8 +46,8 @@ public class SingleValueOnlyAttributeValidatorTestCase {
     }
 
     @Test
-    void array_of_bool_attribute_is_not_supported() throws ParseException {
-        array_attribute_is_not_supported("bool");
+    void array_of_bool_attribute_is_supported() {
+        assertDoesNotThrow(() -> createFromString(getSd("field b type array<bool> { indexing: attribute }")));
     }
 
     @Test

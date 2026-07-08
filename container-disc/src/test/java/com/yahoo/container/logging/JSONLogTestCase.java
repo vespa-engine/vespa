@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 
@@ -293,12 +294,16 @@ public class JSONLogTestCase {
                 newRequestLogEntry("test",  new Coverage(100, 200, 200, 4)).build());
         verifyCoverage("\"coverage\":{\"coverage\":0,\"documents\":0,\"degraded\":{\"timeout\":true}}",
                 newRequestLogEntry("test",  new Coverage(0, 0, 0, 2)).build());
+        verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"anntimeout\":true}}",
+                newRequestLogEntry("test",  new Coverage(100, 200, 200, 8)).build());
+        verifyCoverage("\"coverage\":{\"coverage\":100,\"documents\":0,\"degraded\":{\"anntimeout\":true}}",
+                newRequestLogEntry("test",  new Coverage(0, 0, 0, 8)).build());
     }
 
     private String formatEntry(RequestLogEntry entry) {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             new JSONFormatter().write(entry, outputStream);
-            return outputStream.toString();
+            return outputStream.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

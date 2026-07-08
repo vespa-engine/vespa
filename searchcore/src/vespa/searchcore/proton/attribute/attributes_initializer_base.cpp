@@ -1,16 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributes_initializer_base.h"
+
 #include "attributemanager.h"
+
 #include <vespa/searchlib/attribute/attributevector.h>
+
 #include <cassert>
 namespace proton {
 
-void
-AttributesInitializerBase::considerPadAttribute(search::AttributeVector &attribute,
-                                                std::optional<search::SerialNum> currentSerialNum,
-                                                uint32_t newDocIdLimit)
-{
+void AttributesInitializerBase::considerPadAttribute(search::AttributeVector&         attribute,
+                                                     std::optional<search::SerialNum> currentSerialNum,
+                                                     uint32_t                         newDocIdLimit) {
     /*
      * Sizing requirements for other components to work with the
      * new attributes vectors:
@@ -32,18 +33,14 @@ AttributesInitializerBase::considerPadAttribute(search::AttributeVector &attribu
      * 1, since a replay of a non-corrupted transaction log should
      * grow the attribute as needed.
      */
-    if (!currentSerialNum.has_value() ||
-        attribute.getStatus().getLastSyncToken() < currentSerialNum.value()) {
+    if (!currentSerialNum.has_value() || attribute.getStatus().getLastSyncToken() < currentSerialNum.value()) {
         AttributeManager::padAttribute(attribute, newDocIdLimit);
         attribute.commit();
         assert(newDocIdLimit <= attribute.getNumDocs());
     }
 }
 
-AttributesInitializerBase::AttributesInitializerBase()
-    : IAttributeInitializerRegistry(),
-      _initializedAttributes()
-{
+AttributesInitializerBase::AttributesInitializerBase() : IAttributeInitializerRegistry(), _initializedAttributes() {
 }
 
 } // namespace proton

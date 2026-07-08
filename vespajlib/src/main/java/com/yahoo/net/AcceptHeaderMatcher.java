@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.net;
 
+import com.yahoo.text.Text;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -163,7 +164,7 @@ public class AcceptHeaderMatcher {
                     if (isTokenChar(ch)) {
                         yield lexToken();
                     }
-                    throw new IllegalArgumentException("failed to lex next token at index %d".formatted(tokStart));
+                    throw new IllegalArgumentException(Text.format("failed to lex next token at index %d", tokStart));
                 }
             };
         }
@@ -336,7 +337,7 @@ public class AcceptHeaderMatcher {
             String type = token();
             expectAndAdvance(TokenType.FWD_SLASH);
             String subtype = token();
-            return new MediaType(type, subtype, "%s/%s".formatted(type, subtype));
+            return new MediaType(type, subtype, Text.format("%s/%s", type, subtype));
         }
 
         /**
@@ -421,7 +422,7 @@ public class AcceptHeaderMatcher {
 
         private Token expectAndAdvance(TokenType expectedType) {
             if (mismatches(expectedType)) {
-                throw new IllegalArgumentException("Expected token of type %s, got %s".formatted(expectedType, lexer.peek().type));
+                throw new IllegalArgumentException(Text.format("Expected token of type %s, got %s", expectedType, lexer.peek().type));
             }
             return advance();
         }

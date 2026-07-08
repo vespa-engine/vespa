@@ -2,8 +2,8 @@
 // Unit tests for templatetermvisitor.
 
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
-#include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -13,35 +13,29 @@ namespace {
 
 class MyVisitor;
 
-class MyVisitor : public TemplateTermVisitor<MyVisitor, SimpleQueryNodeTypes>
-{
+class MyVisitor : public TemplateTermVisitor<MyVisitor, SimpleQueryNodeTypes> {
 public:
-    template <typename T>
-    bool &isVisited() {
+    template <typename T> bool& isVisited() {
         static bool b;
         return b;
     }
 
-    template <class TermType>
-    void visitTerm(TermType &) { isVisited<TermType>() = true; }
+    template <class TermType> void visitTerm(TermType&) { isVisited<TermType>() = true; }
 };
 
-template <class T>
-bool checkVisit(T *q) {
-    Node::UP query(q);
+template <class T> bool checkVisit(T* q) {
+    Node::UP  query(q);
     MyVisitor visitor;
     visitor.isVisited<T>() = false;
     query->accept(visitor);
     return visitor.isVisited<T>();
 }
 
-template <class T>
-bool checkVisit() {
+template <class T> bool checkVisit() {
     return checkVisit(new T(typename T::Type(), "field", 0, Weight(0)));
 }
 
-TEST(TemplateTermVisitorTest, require_that_all_terms_can_be_visited)
-{
+TEST(TemplateTermVisitorTest, require_that_all_terms_can_be_visited) {
     EXPECT_TRUE(checkVisit<SimpleNumberTerm>());
     EXPECT_TRUE(checkVisit<SimpleLocationTerm>());
     EXPECT_TRUE(checkVisit<SimplePrefixTerm>());
@@ -62,6 +56,6 @@ TEST(TemplateTermVisitorTest, require_that_all_terms_can_be_visited)
     EXPECT_TRUE(!checkVisit(new SimpleRank));
 }
 
-}  // namespace
+} // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()

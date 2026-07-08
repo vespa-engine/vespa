@@ -2,14 +2,15 @@
 #pragma once
 
 #include "ihopdirective.h"
+
 #include <vector>
 
 namespace mbus {
 
 /**
  * A hop is basically an instantiated {@link HopBlueprint}, but it can also be contructed using the factory method
- * {@link this#parse(String)}. It is a set of primitives, either a string primitive that is to be matched verbatim to a
- * service address, or a {@link RoutingPolicy} directive.
+ * {@link this#parse(String)}. It is a set of primitives, either a string primitive that is to be matched verbatim to
+ * a service address, or a {@link RoutingPolicy} directive.
  */
 class Hop {
 private:
@@ -32,7 +33,7 @@ public:
      *
      * @param selector The selector string for this hop.
      */
-    Hop(const string &selector);
+    Hop(const string& selector);
 
     /**
      * Constructs a fully populated hop.
@@ -42,10 +43,10 @@ public:
      */
     Hop(std::vector<IHopDirective::SP> selector, bool ignoreResult);
 
-    Hop(const Hop &);
-    Hop & operator = (const Hop &);
-    Hop(Hop &&) noexcept = default;
-    Hop & operator = (Hop &&) noexcept = default;
+    Hop(const Hop&);
+    Hop& operator=(const Hop&);
+    Hop(Hop&&) noexcept = default;
+    Hop& operator=(Hop&&) noexcept = default;
 
     ~Hop();
 
@@ -55,7 +56,7 @@ public:
      * @param directive The directive to add.
      * @return This, to allow chaining.
      */
-    Hop &addDirective(IHopDirective::SP dir);
+    Hop& addDirective(IHopDirective::SP dir);
 
     /**
      * Returns whether or not there are any directives contained in this hop.
@@ -77,7 +78,7 @@ public:
      * @param i The index of the directive to return.
      * @return The item.
      */
-    const IHopDirective & getDirective(uint32_t i) const { return *_selector[i]; }
+    const IHopDirective& getDirective(uint32_t i) const { return *_selector[i]; }
     IHopDirective::SP getDirectiveSP(uint32_t i) const { return _selector[i]; }
 
     /**
@@ -87,7 +88,7 @@ public:
      * @param dir The directive to set.
      * @return This, to allow chaining.
      */
-    Hop &setDirective(uint32_t i, IHopDirective::SP dir);
+    Hop& setDirective(uint32_t i, IHopDirective::SP dir);
 
     /**
      * Returns the service name referenced by this hop. This is the concatenation of all selector primitives,
@@ -110,7 +111,7 @@ public:
      * @param ignoreResult Whether or not to ignore the result.
      * @return This, to allow chaining.
      */
-    Hop &setIgnoreResult(bool ignoreResult) {
+    Hop& setIgnoreResult(bool ignoreResult) {
         _ignoreResult = ignoreResult;
         return *this;
     }
@@ -121,7 +122,7 @@ public:
      * @param hop The string to parse.
      * @return A hop that corresponds to the string.
      */
-    static Hop parse(const string &hop);
+    static Hop parse(const string& hop);
 
     /**
      * Returns true whether this hop matches another. This respects policy directives matching any other.
@@ -129,7 +130,7 @@ public:
      * @param hop The hop to compare to.
      * @return True if this matches the argument, false otherwise.
      */
-    bool matches(const Hop &hop) const;
+    bool matches(const Hop& hop) const;
 
     /**
      * Returns a string representation of this that can be debugged but not parsed.
@@ -172,4 +173,3 @@ public:
 };
 
 } // namespace mbus
-

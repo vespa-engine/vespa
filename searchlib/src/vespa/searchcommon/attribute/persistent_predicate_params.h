@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <limits>
 
 namespace search::attribute {
@@ -18,19 +19,19 @@ public:
     PersistentPredicateParams() noexcept
         : _lower_bound(std::numeric_limits<int64_t>::min()),
           _upper_bound(std::numeric_limits<int64_t>::max()),
-          _arity(8)
-    { }
-    uint32_t arity()                      const noexcept { return _arity; }
-    int64_t lower_bound()                 const noexcept { return _lower_bound; }
-    int64_t upper_bound()                 const noexcept { return _upper_bound; }
-    void setArity(uint32_t v)                    noexcept { _arity = v; }
-    void setBounds(int64_t lower, int64_t upper) noexcept { _lower_bound = lower; _upper_bound = upper; }
+          _arity(8) {}
+    uint32_t arity() const noexcept { return _arity; }
+    int64_t lower_bound() const noexcept { return _lower_bound; }
+    int64_t upper_bound() const noexcept { return _upper_bound; }
+    void setArity(uint32_t v) noexcept { _arity = v; }
+    void setBounds(int64_t lower, int64_t upper) noexcept {
+        _lower_bound = lower;
+        _upper_bound = upper;
+    }
 
-    bool operator==(const PersistentPredicateParams &rhs) const noexcept {
-        return ((_arity == rhs._arity) &&
-                (_lower_bound == rhs._lower_bound) &&
-                (_upper_bound == rhs._upper_bound));
+    bool operator==(const PersistentPredicateParams& rhs) const noexcept {
+        return ((_arity == rhs._arity) && (_lower_bound == rhs._lower_bound) && (_upper_bound == rhs._upper_bound));
     }
 };
 
-}
+} // namespace search::attribute

@@ -4,12 +4,15 @@
 
 #include <memory>
 
-namespace vespalib { class nbostream; }
-namespace vespalib::eval { struct Value; }
+namespace vespalib {
+class nbostream;
+}
+namespace vespalib::eval {
+struct Value;
+}
 
 namespace search::tensor {
 
-extern std::unique_ptr<vespalib::eval::Value>
-deserialize_tensor(vespalib::nbostream &stream);
+extern std::unique_ptr<vespalib::eval::Value> deserialize_tensor(vespalib::nbostream& stream);
 
-} // namespace
+} // namespace search::tensor

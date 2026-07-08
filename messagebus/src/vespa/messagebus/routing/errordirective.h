@@ -30,13 +30,12 @@ public:
      *
      * @return The error string.
      */
-    const string &getMessage() const { return _msg; }
+    const string& getMessage() const { return _msg; }
 
     Type getType() const override { return TYPE_ERROR; }
-    bool matches(const IHopDirective &) const override { return false; }
+    bool matches(const IHopDirective&) const override { return false; }
     string toString() const override;
     string toDebugString() const override;
 };
 
-} // mbus
-
+} // namespace mbus

@@ -5,27 +5,27 @@
 
 namespace proton {
 
-    namespace feedoperation {
-        struct IStreamHandler {
-            virtual ~IStreamHandler() = default;
-            virtual void serializeConfig(search::SerialNum serialNum, vespalib::nbostream &os) = 0;
-            virtual void deserializeConfig(search::SerialNum serialNum, vespalib::nbostream &is) = 0;
-        };
-    }
+namespace feedoperation {
+struct IStreamHandler {
+    virtual ~IStreamHandler() = default;
+    virtual void serializeConfig(search::SerialNum serialNum, vespalib::nbostream& os) = 0;
+    virtual void deserializeConfig(search::SerialNum serialNum, vespalib::nbostream& is) = 0;
+};
+} // namespace feedoperation
 
-class NewConfigOperation : public FeedOperation
-{
+class NewConfigOperation : public FeedOperation {
 public:
     using IStreamHandler = feedoperation::IStreamHandler;
+
 private:
-    IStreamHandler &_streamHandler;
+    IStreamHandler& _streamHandler;
+
 public:
-    NewConfigOperation(SerialNum serialNum, IStreamHandler &streamHandler);
+    NewConfigOperation(SerialNum serialNum, IStreamHandler& streamHandler);
     ~NewConfigOperation() override {}
-    void serialize(vespalib::nbostream &os) const override;
-    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
+    void serialize(vespalib::nbostream& os) const override;
+    void deserialize(vespalib::nbostream& is, const document::DocumentTypeRepo& repo) override;
     std::string toString() const override;
 };
 
 } // namespace proton
-

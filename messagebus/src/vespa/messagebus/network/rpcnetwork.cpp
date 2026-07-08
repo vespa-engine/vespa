@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rpcnetwork.h"
-#include "rpcservicepool.h"
-#include "rpcsendv2.h"
-#include "rpctargetpool.h"
+
 #include "rpcnetworkparams.h"
+#include "rpcsendv2.h"
+#include "rpcservicepool.h"
+#include "rpctargetpool.h"
+
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/scheduler.h>
@@ -18,6 +20,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cstdlib>
 #include <string_view>
 #include <thread>
@@ -34,48 +37,39 @@ namespace mbus {
 namespace {
 
 struct TargetPoolTask : public FNET_Task {
-    RPCTargetPool &_pool;
+    RPCTargetPool& _pool;
 
-    TargetPoolTask(FNET_Scheduler &scheduler, RPCTargetPool &pool)
-        : FNET_Task(&scheduler),
-        _pool(pool)
-    {
+    TargetPoolTask(FNET_Scheduler& scheduler, RPCTargetPool& pool) : FNET_Task(&scheduler), _pool(pool) {
         ScheduleNow();
     }
-    ~TargetPoolTask() override {
-        Kill();
-    }
+    ~TargetPoolTask() override { Kill(); }
     void PerformTask() override {
         _pool.flushTargets(false);
         Schedule(1.0);
     }
 };
 
-fnet::TransportConfig
-toFNETConfig(const RPCNetworkParams & params) {
+fnet::TransportConfig toFNETConfig(const RPCNetworkParams& params) {
     return fnet::TransportConfig(params.getNumNetworkThreads())
-              .maxInputBufferSize(params.getMaxInputBufferSize())
-              .maxOutputBufferSize(params.getMaxOutputBufferSize())
-              .tcpNoDelay(params.getTcpNoDelay())
-              .events_before_wakeup(params.events_before_wakeup());
+        .maxInputBufferSize(params.getMaxInputBufferSize())
+        .maxOutputBufferSize(params.getMaxOutputBufferSize())
+        .tcpNoDelay(params.getTcpNoDelay())
+        .events_before_wakeup(params.events_before_wakeup());
 }
 
-}
+} // namespace
 
-RPCNetwork::SendContext::SendContext(RPCNetwork &net, const Message &msg,
-                                     const std::vector<RoutingNode*> &recipients)
+RPCNetwork::SendContext::SendContext(RPCNetwork& net, const Message& msg, const std::vector<RoutingNode*>& recipients)
     : _net(net),
       _msg(msg),
       _traceLevel(msg.getTrace().getLevel()),
       _recipients(recipients),
       _hasError(false),
       _pending(_recipients.size()),
-      _version(_net.getVersion())
-{ }
+      _version(_net.getVersion()) {
+}
 
-void
-RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
-{
+void RPCNetwork::SendContext::handleVersion(const vespalib::Version* version) {
     bool shouldSend = false;
     {
         std::lock_guard guard(_lock);
@@ -94,47 +88,39 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
     }
 }
 
-RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
-    _owner(nullptr),
-    _ident(params.getIdentity()),
-    _transport(std::make_unique<FNET_Transport>(toFNETConfig(params))),
-    _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
-    _scheduler(*_transport->GetScheduler()),
-    _slobrokCfgFactory(std::make_unique<slobrok::ConfiguratorFactory>(params.getSlobrokConfig())),
-    _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
-    _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
-    _requestedPort(params.getListenPort()),
-    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs(), params.getNumRpcTargets())),
-    _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
-    _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
-    _sendV2(std::make_unique<RPCSendV2>()),
-    _sendAdapters(),
-    _compressionConfig(params.getCompressionConfig()),
-    _required_capabilities(params.required_capabilities())
-{
+RPCNetwork::RPCNetwork(const RPCNetworkParams& params)
+    : _owner(nullptr),
+      _ident(params.getIdentity()),
+      _transport(std::make_unique<FNET_Transport>(toFNETConfig(params))),
+      _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
+      _scheduler(*_transport->GetScheduler()),
+      _slobrokCfgFactory(std::make_unique<slobrok::ConfiguratorFactory>(params.getSlobrokConfig())),
+      _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
+      _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
+      _requestedPort(params.getListenPort()),
+      _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs(), params.getNumRpcTargets())),
+      _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
+      _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
+      _sendV2(std::make_unique<RPCSendV2>()),
+      _sendAdapters(),
+      _compressionConfig(params.getCompressionConfig()),
+      _required_capabilities(params.required_capabilities()) {
 }
 
-RPCNetwork::~RPCNetwork()
-{
+RPCNetwork::~RPCNetwork() {
     shutdown();
 }
 
-FRT_RPCRequest *
-RPCNetwork::allocRequest()
-{
+FRT_RPCRequest* RPCNetwork::allocRequest() {
     return _orb->AllocRPCRequest();
 }
 
-RPCTarget::SP
-RPCNetwork::getTarget(const RPCServiceAddress &address)
-{
+RPCTarget::SP RPCNetwork::getTarget(const RPCServiceAddress& address) {
     return _targetPool->getTarget(*_orb, address);
 }
 
-void
-RPCNetwork::replyError(const SendContext &ctx, uint32_t errCode, const string &errMsg)
-{
-    for (RoutingNode * rnode : ctx._recipients) {
+void RPCNetwork::replyError(const SendContext& ctx, uint32_t errCode, const string& errMsg) {
+    for (RoutingNode* rnode : ctx._recipients) {
         Reply::UP reply(new EmptyReply());
         reply->setTrace(Trace(ctx._traceLevel));
         reply->addError(Error(errCode, errMsg));
@@ -142,25 +128,20 @@ RPCNetwork::replyError(const SendContext &ctx, uint32_t errCode, const string &e
     }
 }
 
-int RPCNetwork::getPort() const { return _orb->GetListenPort(); }
+int RPCNetwork::getPort() const {
+    return _orb->GetListenPort();
+}
 
-
-void
-RPCNetwork::flushTargetPool()
-{
+void RPCNetwork::flushTargetPool() {
     _targetPool->flushTargets(true);
 }
 
-const vespalib::Version &
-RPCNetwork::getVersion() const
-{
+const vespalib::Version& RPCNetwork::getVersion() const {
     static vespalib::Version reported_version(8, 310); // _Allows_ new protobuf protocol
     return reported_version;
 }
 
-void
-RPCNetwork::attach(INetworkOwner &owner)
-{
+void RPCNetwork::attach(INetworkOwner& owner) {
     LOG_ASSERT(_owner == nullptr);
     _owner = &owner;
 
@@ -174,30 +155,22 @@ RPCNetwork::attach(INetworkOwner &owner)
     builder.RequestAccessFilter(FRT_RequireCapabilities::of(_required_capabilities));
 }
 
-void
-RPCNetwork::invoke(FRT_RPCRequest *req)
-{
+void RPCNetwork::invoke(FRT_RPCRequest* req) {
     req->GetReturn()->AddString(getVersion().toAbbreviatedString().c_str());
 }
 
-const string
-RPCNetwork::getConnectionSpec() const
-{
+const string RPCNetwork::getConnectionSpec() const {
     return make_string("tcp/%s:%d", _ident.getHostname().c_str(), _orb->GetListenPort());
 }
 
-RPCSendAdapter *
-RPCNetwork::getSendAdapter(const vespalib::Version &version)
-{
+RPCSendAdapter* RPCNetwork::getSendAdapter(const vespalib::Version& version) {
     if (version < _sendAdapters.begin()->first) {
         return nullptr;
     }
     return (--_sendAdapters.upper_bound(version))->second;
 }
 
-bool
-RPCNetwork::start()
-{
+bool RPCNetwork::start() {
     if (!_transport->Start()) {
         return false;
     }
@@ -207,13 +180,11 @@ RPCNetwork::start()
     return true;
 }
 
-bool
-RPCNetwork::waitUntilReady(duration timeout) const
-{
+bool RPCNetwork::waitUntilReady(duration timeout) const {
     slobrok::api::SlobrokList brokerList;
     slobrok::Configurator::UP configurator = _slobrokCfgFactory->create(brokerList);
-    bool hasConfig = false;
-    for (int64_t i = 0; i < vespalib::count_ms(timeout)/10; ++i) {
+    bool                      hasConfig = false;
+    for (int64_t i = 0; i < vespalib::count_ms(timeout) / 10; ++i) {
         if (configurator->poll()) {
             hasConfig = true;
         }
@@ -222,18 +193,17 @@ RPCNetwork::waitUntilReady(duration timeout) const
         }
         std::this_thread::sleep_for(10ms);
     }
-    if (! hasConfig) {
+    if (!hasConfig) {
         LOG(error, "failed to get config for location brokers in %2.2f seconds", vespalib::to_s(timeout));
-    } else if (! _mirror->ready()) {
+    } else if (!_mirror->ready()) {
         auto brokers = brokerList.logString();
-        LOG(warning, "mirror (of %s) failed to become ready in %2.2f seconds", brokers.c_str(), vespalib::to_s(timeout));
+        LOG(warning, "mirror (of %s) failed to become ready in %2.2f seconds", brokers.c_str(),
+            vespalib::to_s(timeout));
     }
     return false;
 }
 
-void
-RPCNetwork::registerSession(const string &session)
-{
+void RPCNetwork::registerSession(const string& session) {
     if (_ident.getServicePrefix().empty()) {
         LOG(warning, "The session (%s) will not be registered in the Slobrok since this network has no identity.",
             session.c_str());
@@ -245,9 +215,7 @@ RPCNetwork::registerSession(const string &session)
     _regAPI->registerName(name);
 }
 
-void
-RPCNetwork::unregisterSession(const string &session)
-{
+void RPCNetwork::unregisterSession(const string& session) {
     if (_ident.getServicePrefix().empty()) {
         return;
     }
@@ -260,12 +228,10 @@ RPCNetwork::unregisterSession(const string &session)
     _regAPI->unregisterName(name);
 }
 
-bool
-RPCNetwork::allocServiceAddress(RoutingNode &recipient)
-{
-    const Hop &hop = recipient.getRoute().getHop(0);
-    string service = hop.getServiceName();
-    Error error = resolveServiceAddress(recipient, service);
+bool RPCNetwork::allocServiceAddress(RoutingNode& recipient) {
+    const Hop& hop = recipient.getRoute().getHop(0);
+    string     service = hop.getServiceName();
+    Error      error = resolveServiceAddress(recipient, service);
     if (error.getCode() == ErrorCode::NONE) {
         return true; // service address resolved
     }
@@ -273,11 +239,9 @@ RPCNetwork::allocServiceAddress(RoutingNode &recipient)
     return false; // service adddress not resolved
 }
 
-Error
-RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceName)
-{
+Error RPCNetwork::resolveServiceAddress(RoutingNode& recipient, const string& serviceName) {
     RPCServiceAddress::UP ret = _servicePool->resolve(serviceName);
-    if ( ! ret) {
+    if (!ret) {
         return Error(ErrorCode::NO_ADDRESS_FOR_SERVICE,
                      make_string("The address of service '%s' could not be resolved. It is not currently "
                                  "registered with the Vespa name server. "
@@ -286,31 +250,27 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
                                  serviceName.c_str(), getIdentity().getHostname().c_str()));
     }
     RPCTarget::SP target = _targetPool->getTarget(*_orb, *ret);
-    if ( ! target) {
+    if (!target) {
         return Error(ErrorCode::CONNECTION_ERROR,
-                     make_string("Failed to connect to service '%s' from host '%s'.",
-                                 serviceName.c_str(), getIdentity().getHostname().c_str()));
+                     make_string("Failed to connect to service '%s' from host '%s'.", serviceName.c_str(),
+                                 getIdentity().getHostname().c_str()));
     }
     ret->setTarget(std::move(target)); // free by freeServiceAddress()
     recipient.setServiceAddress(std::move(ret));
     return Error();
 }
 
-void
-RPCNetwork::freeServiceAddress(RoutingNode &recipient)
-{
+void RPCNetwork::freeServiceAddress(RoutingNode& recipient) {
     recipient.setServiceAddress(IServiceAddress::UP());
 }
 
-void
-RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients)
-{
-    SendContext &ctx = *(new SendContext(*this, msg, recipients)); // deletes self
-    duration timeout = ctx._msg.getTimeRemainingNow();
+void RPCNetwork::send(const Message& msg, const std::vector<RoutingNode*>& recipients) {
+    SendContext& ctx = *(new SendContext(*this, msg, recipients)); // deletes self
+    duration     timeout = ctx._msg.getTimeRemainingNow();
     for (uint32_t i = 0, len = ctx._recipients.size(); i < len; ++i) {
-        RoutingNode *&recipient = ctx._recipients[i];
+        RoutingNode*& recipient = ctx._recipients[i];
 
-        RPCServiceAddress &address = static_cast<RPCServiceAddress&>(recipient->getServiceAddress());
+        RPCServiceAddress& address = static_cast<RPCServiceAddress&>(recipient->getServiceAddress());
         LOG_ASSERT(address.hasTarget());
 
         address.getTarget().resolveVersion(timeout, ctx);
@@ -319,8 +279,7 @@ RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients
 
 namespace {
 
-void
-emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipient) {
+void emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipient) {
     if (recipient.hasServiceAddress()) {
         // At this point the service addresses _should_ be RPCServiceAddress instances,
         // but stay on the safe side of the tracks anyway.
@@ -335,12 +294,11 @@ emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipi
     }
 }
 
-}
+} // namespace
 
-std::string
-RPCNetwork::buildRecipientListString(const SendContext& ctx) {
+std::string RPCNetwork::buildRecipientListString(const SendContext& ctx) {
     vespalib::asciistream s;
-    bool first = true;
+    bool                  first = true;
     for (const auto* recipient : ctx._recipients) {
         if (!first) {
             s << ", ";
@@ -351,20 +309,19 @@ RPCNetwork::buildRecipientListString(const SendContext& ctx) {
     return s.str();
 }
 
-void
-RPCNetwork::send(RPCNetwork::SendContext &ctx)
-{
+void RPCNetwork::send(RPCNetwork::SendContext& ctx) {
     if (ctx._hasError) {
         replyError(ctx, ErrorCode::HANDSHAKE_FAILED,
-                make_string("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
-                            buildRecipientListString(ctx).c_str(), getIdentity().getHostname().c_str()));
+                   make_string("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
+                               buildRecipientListString(ctx).c_str(), getIdentity().getHostname().c_str()));
     } else {
-        duration timeRemaining = ctx._msg.getTimeRemainingNow();
-        Blob payload = _owner->getProtocol(ctx._msg.getProtocol())->encode(ctx._version, ctx._msg);
-        RPCSendAdapter *adapter = getSendAdapter(ctx._version);
+        duration        timeRemaining = ctx._msg.getTimeRemainingNow();
+        Blob            payload = _owner->getProtocol(ctx._msg.getProtocol())->encode(ctx._version, ctx._msg);
+        RPCSendAdapter* adapter = getSendAdapter(ctx._version);
         if (adapter == nullptr) {
-            replyError(ctx, ErrorCode::INCOMPATIBLE_VERSION,
-                       make_string("Can not send to version '%s' recipient.", ctx._version.toAbbreviatedString().c_str()));
+            replyError(
+                ctx, ErrorCode::INCOMPATIBLE_VERSION,
+                make_string("Can not send to version '%s' recipient.", ctx._version.toAbbreviatedString().c_str()));
         } else if (timeRemaining == 0ms) {
             replyError(ctx, ErrorCode::TIMEOUT, "Aborting transmission because zero time remains.");
         } else if (payload.size() == 0) {
@@ -373,37 +330,29 @@ RPCNetwork::send(RPCNetwork::SendContext &ctx)
         } else if (ctx._recipients.size() == 1) {
             adapter->sendByHandover(*ctx._recipients.front(), ctx._version, std::move(payload), timeRemaining);
         } else {
-            for (auto & recipient : ctx._recipients) {
+            for (auto& recipient : ctx._recipients) {
                 adapter->send(*recipient, ctx._version, payload, timeRemaining);
             }
         }
     }
 }
 
-void
-RPCNetwork::sync()
-{
+void RPCNetwork::sync() {
     _transport->sync(); // Ensure transport loop run at least once to execute task scheduled for NOW
     _transport->sync(); // And then once more to ensure they are all done.
 }
 
-void
-RPCNetwork::shutdown()
-{
+void RPCNetwork::shutdown() {
     // Unschedule any pending target pool flush task that may race with shutdown target flushing
     _scheduler.Kill(_targetPoolTask.get());
     _transport->ShutDown(true);
 }
 
-void
-RPCNetwork::postShutdownHook()
-{
+void RPCNetwork::postShutdownHook() {
     _scheduler.CheckTasks();
 }
 
-const slobrok::api::IMirrorAPI &
-RPCNetwork::getMirror() const
-{
+const slobrok::api::IMirrorAPI& RPCNetwork::getMirror() const {
     return *_mirror;
 }
 

@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.vespa.model.VespaModel;
@@ -47,6 +48,7 @@ public class RestartOnDeployForSidecarValidatorTest {
             .id(0)
             .name("triton")
             .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.09-py3"))
+            .hasImageMirror(true)
             .minCpu(1.0)
             .volumeMounts(List.of("/models"))
             .command(List.of("tritonserver", "--log-verbose=1", "--model-repository=/models"))
@@ -56,6 +58,7 @@ public class RestartOnDeployForSidecarValidatorTest {
             .id(0)
             .name("triton")
             .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:26.01-py3"))
+            .hasImageMirror(true)
             .minCpu(1.0)
             .volumeMounts(List.of("/models"))
             .command(List.of("tritonserver", "--log-verbose=1", "--model-repository=/models"))
@@ -65,6 +68,7 @@ public class RestartOnDeployForSidecarValidatorTest {
             .id(0)
             .name("triton")
             .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:26.01-py3"))
+            .hasImageMirror(true)
             .minCpu(2.0)
             .volumeMounts(List.of("/models", "/configs"))
             .command(List.of("tritonserver", "--log-verbose=2"))
@@ -168,7 +172,7 @@ public class RestartOnDeployForSidecarValidatorTest {
         }
 
         @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
             var hosts = new ArrayList<HostSpec>();
             var resources = capacity.minResources().nodeResources();
 

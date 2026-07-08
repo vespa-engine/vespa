@@ -1,29 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mcand.h"
+
 #include "Matcher.h"
 #include "juniperdebug.h"
-#include <vespa/log/log.h>
+
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".juniper.mcand");
 
 // Invariant: elms has room for query->_arity match element pointers
 MatchCandidate::MatchCandidate(QueryExpr* m, MatchElement** elms, off_t ctxt_start)
-  : MatchElement(0, 0),
-    element(elms),
-    _match(m),
-    _nelems(0),
-    _elems(std::max(m->_arity, 1)),
-    _endpos(0),
-    _endtoken(0),
-    _docid(0),
-    _ctxt_start(ctxt_start),
-    _elem_weight(0),
-    _options(m->_options),
-    _overlap(0),
-    _refcnt(1),
-    _klist() {
-    for (int i = 0; i < _elems; i++) element[i] = nullptr;
+    : MatchElement(0, 0),
+      element(elms),
+      _match(m),
+      _nelems(0),
+      _elems(std::max(m->_arity, 1)),
+      _endpos(0),
+      _endtoken(0),
+      _docid(0),
+      _ctxt_start(ctxt_start),
+      _elem_weight(0),
+      _options(m->_options),
+      _overlap(0),
+      _refcnt(1),
+      _klist() {
+    for (int i = 0; i < _elems; i++)
+        element[i] = nullptr;
 
     if (LOG_WOULD_LOG(debug)) {
         std::string s;
@@ -40,7 +44,8 @@ void MatchCandidate::dump(std::string& s) {
     int i;
     s.append("MC<");
     for (i = 0; i < _elems; i++) {
-        if (i > 0) s.append(";");
+        if (i > 0)
+            s.append(";");
         _match->AsNode()->_children[i]->Dump(s);
         s.append(":");
         if (element[i]) {
@@ -55,7 +60,8 @@ void MatchCandidate::dump(std::string& s) {
 
 void MatchCandidate::set_valid() {
     for (int j = 0; j < _elems; j++)
-        if (element[j]) element[j]->set_valid();
+        if (element[j])
+            element[j]->set_valid();
     _valid = true;
 }
 
@@ -64,16 +70,19 @@ void MatchCandidate::make_keylist() {
 }
 
 void MatchCandidate::add_to_keylist(keylist& kl) {
-    if (kl.size() > 0) return; // already made list
+    if (kl.size() > 0)
+        return; // already made list
     for (int i = 0; i < _elems; i++) {
         MatchElement* me = element[i];
-        if (me) me->add_to_keylist(kl);
+        if (me)
+            me->add_to_keylist(kl);
     }
 }
 
 MatchCandidate::accept_state MatchCandidate::accept(MatchElement* k, QueryExpr* mexp) {
     if (element[mexp->_childno]) {
-        if (_overlap) return M_OVERLAP;
+        if (_overlap)
+            return M_OVERLAP;
         return M_EXISTS;
     } else {
         if (order()) {
@@ -116,15 +125,18 @@ MatchCandidate::accept_state MatchCandidate::accept(MatchElement* k, QueryExpr* 
 
 int MatchCandidate::weight(MatchElement* me, QueryExpr* mexp) {
     QueryTerm* texp = mexp->AsTerm();
-    if (texp) return mexp->_weight;
+    if (texp)
+        return mexp->_weight;
     MatchCandidate* m = static_cast<MatchCandidate*>(me);
     return m->weight();
 }
 
 bool MatchCandidate::complete() {
-    if (_nelems < _elems) return false;
+    if (_nelems < _elems)
+        return false;
     for (int i = 0; i < _elems; i++)
-        if (!element[i]->complete()) return false;
+        if (!element[i]->complete())
+            return false;
     return true;
 }
 
@@ -144,10 +156,12 @@ void MatchCandidate::log(std::string& logobj) {
 
 // Check optional WITHIN(limit) constraints:
 bool MatchCandidate::matches_limit() {
-    if (!match()->HasLimit()) return true;
+    if (!match()->HasLimit())
+        return true;
 
     // completeness check:
-    if (!complete()) return false;
+    if (!complete())
+        return false;
 
     int    limit = match()->Limit();
     size_t elem_word_len = element[0]->word_length();
@@ -155,11 +169,13 @@ bool MatchCandidate::matches_limit() {
         int prev_term = i - 1;
         elem_word_len += element[i]->word_length();
         // Order check:
-        if (order() && element[prev_term]->starttoken() >= element[i]->starttoken()) return false;
+        if (order() && element[prev_term]->starttoken() >= element[i]->starttoken())
+            return false;
     }
 
     // Then check that within total limit:
-    if (((int)word_length() - (int)elem_word_len) > limit * (_elems - 1)) return false;
+    if (((int)word_length() - (int)elem_word_len) > limit * (_elems - 1))
+        return false;
     return true;
 }
 

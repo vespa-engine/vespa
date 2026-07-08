@@ -80,7 +80,7 @@ public class DispatcherTest {
         SearchCluster cl = new MockSearchCluster("1", 0, 0) {
             @Override
             public Optional<Node> localCorpusDispatchTarget() {
-                return Optional.of(new Node("test", 1, "test", 1));
+                return Optional.of(new Node("test", 1, "test", 1, false));
             }
         };
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, a) -> true);
@@ -129,10 +129,45 @@ public class DispatcherTest {
     void testGroup0IsSelected() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
-                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
+                                               new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
         assertEquals(0,
                 dispatcher.getSearchInvoker(new Query(), null).distributionKey().get().longValue());
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    void testPreferredGroup() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+                                               new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
+        cluster.pingIterationCompleted();
+        assertEquals(2, dispatcher.getSearchInvoker(new Query("?model.searchGroup=2"), null).distributionKey().get().longValue(),
+                     "Preferred group is selected");
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    void testPreferredGroupIsIgnoredWhenMissingCoverage() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+                                               new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
+        cluster.pingIterationCompleted();
+        cluster.groupList().get(2).setHasSufficientCoverage(false);
+        assertEquals(0, dispatcher.getSearchInvoker(new Query("?model.searchGroup=2"), null).distributionKey().get().longValue(),
+                     "Preferred group with insufficient coverage is ignored");
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    void testPreferredGroupIsIgnoredWhenNonExistent() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+                                               new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
+        cluster.pingIterationCompleted();
+        assertEquals(0, dispatcher.getSearchInvoker(new Query("?model.searchGroup=3"), null).distributionKey().get().longValue(),
+                     "Non-existing preferred group is ignored");
         dispatcher.deconstruct();
     }
 
@@ -202,7 +237,7 @@ public class DispatcherTest {
         InvokerFactoryFactory invokerFactories = (rpcConnectionPool, searchGroups, dispatchConfig, qrSearchersConfig) -> new InvokerFactory(searchGroups, dispatchConfig) {
             @Override protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher, Query query, int maxHits, Node node) {
                 return Optional.of(new SearchInvoker(Optional.of(node)) {
-                    @Override protected Object sendSearchRequest(Query query, Object context) {
+                    @Override protected Object sendSearchRequest(Query query, double contentShare, Object context) {
                         rpcPool.getConnection(node.key()).request(null, null, 0, null, null, 0);
                         return null;
                     };
@@ -251,11 +286,11 @@ public class DispatcherTest {
 
         // Start some searches, one against each group, since we have a round-robin policy.
         SearchInvoker search0 = dispatcher.getSearchInvoker(new Query(), null);
-        search0.search(new Query());
+        search0.search(new Query(), 1.0);
         // Unknown whether the first or second search hits node0, so we must track that.
         int offset = nodeIdOfSearcher0.get();
         SearchInvoker search1 = dispatcher.getSearchInvoker(new Query(), null);
-        search1.search(new Query());
+        search1.search(new Query(), 1.0);
 
         // Wait for the current cluster monitor to be mid-ping-round.
         doPing.set(true);
@@ -293,7 +328,7 @@ public class DispatcherTest {
 
         // Next search should hit group0 again, this time on node2.
         SearchInvoker search2 = dispatcher.getSearchInvoker(new Query(), null);
-        search2.search(new Query());
+        search2.search(new Query(), 1.0);
 
         // Searches against nodes 1 and 2 complete.
         (offset == 0 ? search0 : search1).close();
@@ -327,8 +362,8 @@ public class DispatcherTest {
         private final FactoryStep[] events;
         private int step = 0;
 
-        public MockInvokerFactory(SearchGroups cl, DispatchConfig disptachConfig, FactoryStep... events) {
-            super(cl, disptachConfig);
+        public MockInvokerFactory(SearchGroups cl, DispatchConfig dispatchConfig, FactoryStep... events) {
+            super(cl, dispatchConfig);
             this.events = events;
         }
 

@@ -4,6 +4,7 @@
 
 #include <vespa/messagebus/common.h>
 #include <vespa/slobrok/cfg.h>
+
 #include <thread>
 
 namespace slobrok {
@@ -12,15 +13,14 @@ class SBEnv;
 
 namespace mbus {
 
-class Slobrok
-{
+class Slobrok {
 private:
-    std::unique_ptr<slobrok::SBEnv>  _env;
-    int _port;
-    std::thread _thread;
+    std::unique_ptr<slobrok::SBEnv> _env;
+    int                             _port;
+    std::thread                     _thread;
 
-    Slobrok(const Slobrok &);
-    Slobrok &operator=(const Slobrok &);
+    Slobrok(const Slobrok&);
+    Slobrok& operator=(const Slobrok&);
 
     void init();
 

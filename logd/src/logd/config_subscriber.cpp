@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "config_subscriber.h"
+
 #include "empty_forwarder.h"
 #include "rpc_forwarder.h"
+
 #include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <vespa/log/log.h>
@@ -13,10 +15,8 @@ using ns_log::Logger;
 
 namespace logdemon {
 
-void
-ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg)
-{
-    const LogdConfig &newconf(*cfg);
+void ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg) {
+    const LogdConfig& newconf(*cfg);
     if (newconf.logserver.host != _logserver_host) {
         _logserver_host = newconf.logserver.host;
         _need_new_forwarder = true;
@@ -67,18 +67,14 @@ ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg)
     }
 }
 
-bool
-ConfigSubscriber::checkAvailable()
-{
+bool ConfigSubscriber::checkAvailable() {
     if (_subscriber.nextGenerationNow()) {
         _has_available = true;
     }
     return _has_available;
 }
 
-void
-ConfigSubscriber::latch()
-{
+void ConfigSubscriber::latch() {
     if (checkAvailable()) {
         configure(_handle->getConfig());
         _has_available = false;
@@ -93,14 +89,13 @@ ConfigSubscriber::ConfigSubscriber(const config::ConfigUri& configUri)
       _rotate_size(INT_MAX),
       _rotate_age(vespalib::duration::max()),
       _remove_meg(INT_MAX),
-      _remove_age(std::chrono::hours(30*24)),
+      _remove_age(std::chrono::hours(30 * 24)),
       _use_logserver(true),
       _subscriber(configUri.getContext()),
       _handle(),
       _has_available(false),
       _need_new_forwarder(true),
-      _server()
-{
+      _server() {
     _handle = _subscriber.subscribe<LogdConfig>(configUri.getConfigId());
     _subscriber.nextConfigNow();
     configure(_handle->getConfig());
@@ -109,15 +104,12 @@ ConfigSubscriber::ConfigSubscriber(const config::ConfigUri& configUri)
     LOG(debug, "got handle %p", _handle.get());
 }
 
-ConfigSubscriber::~ConfigSubscriber()
-{
+ConfigSubscriber::~ConfigSubscriber() {
     LOG(debug, "forget logServer %s", _logserver_host.c_str());
     LOG(debug, "done ~ConfSub()");
 }
 
-std::unique_ptr<Forwarder>
-ConfigSubscriber::make_forwarder(Metrics& metrics)
-{
+std::unique_ptr<Forwarder> ConfigSubscriber::make_forwarder(Metrics& metrics) {
     std::unique_ptr<Forwarder> result;
     if (_use_logserver) {
         result = std::make_unique<RpcForwarder>(metrics, _forward_filter, _server.supervisor(), _logserver_host,
@@ -129,4 +121,4 @@ ConfigSubscriber::make_forwarder(Metrics& metrics)
     return result;
 }
 
-}
+} // namespace logdemon

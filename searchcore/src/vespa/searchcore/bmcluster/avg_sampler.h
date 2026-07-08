@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 namespace search::bmcluster {
 
@@ -24,4 +25,4 @@ public:
     bool valid() const { return _elapsed != 0.0; }
 };
 
-}
+} // namespace search::bmcluster

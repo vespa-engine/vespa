@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "pendingmessagetracker.h"
+
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <map>
 
 #include <vespa/log/log.h>
@@ -14,51 +17,48 @@ namespace storage::distributor {
 PendingMessageTracker::Messages::~Messages() = default;
 
 PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr, uint32_t stripe_index)
-    : framework::HtmlStatusReporter(vespalib::make_string("pendingmessages%u", stripe_index),
-                                    vespalib::make_string("Pending messages to storage nodes (stripe %u)", stripe_index)),
+    : framework::HtmlStatusReporter(
+          vespalib::make_string("pendingmessages%u", stripe_index),
+          vespalib::make_string("Pending messages to storage nodes (stripe %u)", stripe_index)),
       _component(cr, "pendingmessagetracker"),
       _nodeInfo(_component.getClock()),
       _nodeBusyDuration(60s),
       _deferred_read_tasks(),
       _node_message_stats_tracker(),
       _trackTime(false),
-      _lock()
-{
+      _lock() {
     _component.registerStatusPage(*this);
 }
 
 PendingMessageTracker::~PendingMessageTracker() = default;
 
 PendingMessageTracker::MessageEntry::MessageEntry(TimePoint timeStamp_, uint32_t msgType_, uint32_t priority_,
-                                                  uint64_t msgId_, document::Bucket bucket_, uint16_t nodeIdx_) noexcept
+                                                  uint64_t msgId_, document::Bucket bucket_,
+                                                  uint16_t nodeIdx_) noexcept
     : timeStamp(timeStamp_),
       msgType(msgType_),
       priority(priority_),
       msgId(msgId_),
       bucket(bucket_),
-      nodeIdx(nodeIdx_)
-{ }
+      nodeIdx(nodeIdx_) {
+}
 
-std::string
-PendingMessageTracker::MessageEntry::toHtml() const {
+std::string PendingMessageTracker::MessageEntry::toHtml() const {
     vespalib::asciistream ss;
     ss << "<li><i>Node " << nodeIdx << "</i>: "
        << "<b>" << vespalib::to_string(timeStamp) << "</b> "
-       << api::MessageType::get(api::MessageType::Id(msgType)).getName()
-       << "(" <<  bucket.getBucketId() <<  ", priority=" << priority << ")</li>\n";
+       << api::MessageType::get(api::MessageType::Id(msgType)).getName() << "(" << bucket.getBucketId()
+       << ", priority=" << priority << ")</li>\n";
     return ss.str();
 }
 
-PendingMessageTracker::TimePoint
-PendingMessageTracker::currentTime() const
-{
+PendingMessageTracker::TimePoint PendingMessageTracker::currentTime() const {
     return _component.getClock().getSystemTime();
 }
 
 namespace {
 
-template <typename Pair>
-struct PairAsRange {
+template <typename Pair> struct PairAsRange {
     Pair _pair;
     explicit PairAsRange(Pair pair) : _pair(std::move(pair)) {}
 
@@ -68,29 +68,24 @@ struct PairAsRange {
     auto end() const noexcept { return _pair.second; }
 };
 
-template <typename Pair>
-PairAsRange<Pair>
-pairAsRange(Pair pair)
-{
+template <typename Pair> PairAsRange<Pair> pairAsRange(Pair pair) {
     return PairAsRange<Pair>(std::move(pair));
 }
 
-document::Bucket
-getBucket(const api::StorageMessage & msg) {
+document::Bucket getBucket(const api::StorageMessage& msg) {
     return (msg.getType() != api::MessageType::REQUESTBUCKETINFO)
-           ? msg.getBucket()
-           : document::Bucket(msg.getBucket().getBucketSpace(), dynamic_cast<const api::RequestBucketInfoCommand&>(msg).super_bucket_id());
+               ? msg.getBucket()
+               : document::Bucket(msg.getBucket().getBucketSpace(),
+                                  dynamic_cast<const api::RequestBucketInfoCommand&>(msg).super_bucket_id());
 }
 
-}
+} // namespace
 
-std::vector<uint64_t>
-PendingMessageTracker::clearMessagesForNode(uint16_t node)
-{
+std::vector<uint64_t> PendingMessageTracker::clearMessagesForNode(uint16_t node) {
     std::vector<std::unique_ptr<DeferredTask>> tasks_to_abort;
-    std::unique_lock guard(_lock);
-    auto& idx = _messages.byNodeAndBucketIdx;
-    auto range = pairAsRange(idx.equal_range(NodeKey(node)));
+    std::unique_lock                           guard(_lock);
+    auto&                                      idx = _messages.byNodeAndBucketIdx;
+    auto                                       range = pairAsRange(idx.equal_range(NodeKey(node)));
 
     std::vector<uint64_t> erased_ids;
     for (auto& entry : range) {
@@ -111,15 +106,13 @@ PendingMessageTracker::clearMessagesForNode(uint16_t node)
     return erased_ids;
 }
 
-void
-PendingMessageTracker::enumerate_matching_pending_bucket_ops(
-        const std::function<bool(const document::Bucket&)>& bucket_predicate,
-        const std::function<void(uint64_t)>& msg_id_callback) const
-{
+void PendingMessageTracker::enumerate_matching_pending_bucket_ops(
+    const std::function<bool(const document::Bucket&)>& bucket_predicate,
+    const std::function<void(uint64_t)>&                msg_id_callback) const {
     std::lock_guard guard(_lock);
-    const auto& idx = _messages.byBucketAndTypeIdx;
-    auto iter = idx.begin();
-    const auto last = idx.end();
+    const auto&     idx = _messages.byBucketAndTypeIdx;
+    auto            iter = idx.begin();
+    const auto      last = idx.end();
     while (iter != last) {
         const auto check_bucket = iter->bucket;
         const bool match = bucket_predicate(check_bucket);
@@ -132,17 +125,15 @@ PendingMessageTracker::enumerate_matching_pending_bucket_ops(
     }
 }
 
-void
-PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
-{
+void PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg) {
     if (msg->getAddress()) {
         // TODO STRIPE reevaluate if getBucket() on RequestBucketInfo msgs should transparently return superbucket..!
         document::Bucket bucket = getBucket(*msg);
         {
             // We will not start tracking time until we have been asked for html at least once.
             // Time tracking is only used for presenting pending messages for debugging.
-            TimePoint now = (_trackTime.load(std::memory_order_relaxed)) ? currentTime() : TimePoint();
-            const uint16_t node_index = msg->getAddress()->getIndex();
+            TimePoint       now = (_trackTime.load(std::memory_order_relaxed)) ? currentTime() : TimePoint();
+            const uint16_t  node_index = msg->getAddress()->getIndex();
             std::lock_guard guard(_lock);
             _messages.emplace(now, msg->getType().getId(), msg->getPriority(), msg->getMsgId(), bucket, node_index);
 
@@ -150,21 +141,19 @@ PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
             _node_message_stats_tracker.stats_for(node_index).observe_outgoing_request();
         }
 
-        LOG(debug, "Sending message %s with id %" PRIu64 " to %s",
-            msg->toString().c_str(), msg->getMsgId(), msg->getAddress()->toString().c_str());
+        LOG(debug, "Sending message %s with id %" PRIu64 " to %s", msg->toString().c_str(), msg->getMsgId(),
+            msg->getAddress()->toString().c_str());
     }
 }
 
-document::Bucket
-PendingMessageTracker::reply(const api::StorageReply& r)
-{
+document::Bucket PendingMessageTracker::reply(const api::StorageReply& r) {
     document::Bucket bucket;
     LOG(debug, "Got reply: %s", r.toString().c_str());
     uint64_t msgId = r.getMsgId();
 
     std::unique_lock guard(_lock);
-    const auto& msgs = _messages.byMessageId();
-    auto iter = msgs.find(msgId);
+    const auto&      msgs = _messages.byMessageId();
+    auto             iter = msgs.find(msgId);
     if (iter != msgs.end()) {
         bucket = iter->bucket;
         const uint16_t node_index = r.getAddress()->getIndex();
@@ -190,21 +179,18 @@ PendingMessageTracker::reply(const api::StorageReply& r)
     return bucket;
 }
 
-ContentNodeMessageStatsTracker::NodeStats
-PendingMessageTracker::content_node_stats() const {
+ContentNodeMessageStatsTracker::NodeStats PendingMessageTracker::content_node_stats() const {
     std::lock_guard lock(_lock);
     return _node_message_stats_tracker.node_stats();
 }
 
 namespace {
 
-template <typename Range>
-bool is_empty_range(const Range& range) noexcept {
+template <typename Range> bool is_empty_range(const Range& range) noexcept {
     return (range.first == range.second);
 }
 
-template <typename Range>
-bool range_is_empty_or_only_has_read_ops(const Range& range) noexcept {
+template <typename Range> bool range_is_empty_or_only_has_read_ops(const Range& range) noexcept {
     if (is_empty_range(range)) {
         return true;
     }
@@ -223,19 +209,16 @@ bool range_is_empty_or_only_has_read_ops(const Range& range) noexcept {
     return true;
 }
 
-}
+} // namespace
 
-bool
-PendingMessageTracker::bucket_has_no_pending_write_ops(const document::Bucket& bucket) const noexcept
-{
+bool PendingMessageTracker::bucket_has_no_pending_write_ops(const document::Bucket& bucket) const noexcept {
     auto& bucket_idx = _messages.byBucketAndTypeIdx;
-    auto pending_tasks_for_bucket = bucket_idx.equal_range(BucketKey(bucket));
+    auto  pending_tasks_for_bucket = bucket_idx.equal_range(BucketKey(bucket));
     return range_is_empty_or_only_has_read_ops(pending_tasks_for_bucket);
 }
 
-void
-PendingMessageTracker::get_and_erase_deferred_tasks_for_bucket(const document::Bucket& bucket, std::vector<std::unique_ptr<DeferredTask>>& tasks)
-{
+void PendingMessageTracker::get_and_erase_deferred_tasks_for_bucket(
+    const document::Bucket& bucket, std::vector<std::unique_ptr<DeferredTask>>& tasks) {
     auto waiting_tasks = _deferred_read_tasks.equal_range(bucket);
     for (auto task_iter = waiting_tasks.first; task_iter != waiting_tasks.second; ++task_iter) {
         tasks.emplace_back(std::move(task_iter->second));
@@ -244,8 +227,7 @@ PendingMessageTracker::get_and_erase_deferred_tasks_for_bucket(const document::B
 }
 
 std::vector<std::unique_ptr<DeferredTask>>
-PendingMessageTracker::get_deferred_ops_if_bucket_writes_drained(const document::Bucket& bucket)
-{
+PendingMessageTracker::get_deferred_ops_if_bucket_writes_drained(const document::Bucket& bucket) {
     if (_deferred_read_tasks.empty()) {
         return {};
     }
@@ -256,21 +238,18 @@ PendingMessageTracker::get_deferred_ops_if_bucket_writes_drained(const document:
     return tasks;
 }
 
-void
-PendingMessageTracker::run_once_no_pending_for_bucket(const document::Bucket& bucket, std::unique_ptr<DeferredTask> task)
-{
+void PendingMessageTracker::run_once_no_pending_for_bucket(const document::Bucket&       bucket,
+                                                           std::unique_ptr<DeferredTask> task) {
     std::unique_lock guard(_lock);
     if (bucket_has_no_pending_write_ops(bucket)) {
-        guard.unlock(); // Must not be held whilst running task, or else recursive sends will deadlock.
+        guard.unlock();              // Must not be held whilst running task, or else recursive sends will deadlock.
         task->run(TaskRunState::OK); // Nothing pending, run immediately.
     } else {
         _deferred_read_tasks.emplace(bucket, std::move(task));
     }
 }
 
-void
-PendingMessageTracker::abort_deferred_tasks()
-{
+void PendingMessageTracker::abort_deferred_tasks() {
     std::lock_guard guard(_lock);
     for (auto& task : _deferred_read_tasks) {
         task.second->run(TaskRunState::Aborted);
@@ -279,10 +258,7 @@ PendingMessageTracker::abort_deferred_tasks()
 
 namespace {
 
-template <typename Range>
-void
-runCheckerOnRange(PendingMessageTracker::Checker& checker, const Range& range)
-{
+template <typename Range> void runCheckerOnRange(PendingMessageTracker::Checker& checker, const Range& range) {
     for (auto& e : range) {
         if (!checker.check(e.msgType, e.nodeIdx, e.priority)) {
             break;
@@ -290,48 +266,40 @@ runCheckerOnRange(PendingMessageTracker::Checker& checker, const Range& range)
     }
 }
 
-}
+} // namespace
 
-void
-PendingMessageTracker::checkPendingMessages(uint16_t node, const document::Bucket& bucket, Checker& checker) const
-{
+void PendingMessageTracker::checkPendingMessages(uint16_t node, const document::Bucket& bucket,
+                                                 Checker& checker) const {
     std::lock_guard guard(_lock);
-    const auto& msgs = _messages.byNodeAndBucketIdx;
-    auto range = pairAsRange(msgs.equal_range(NodeBucketKey(node, bucket)));
+    const auto&     msgs = _messages.byNodeAndBucketIdx;
+    auto            range = pairAsRange(msgs.equal_range(NodeBucketKey(node, bucket)));
     runCheckerOnRange(checker, range);
 }
 
-void
-PendingMessageTracker::checkPendingMessages(const document::Bucket& bucket, Checker& checker) const
-{
+void PendingMessageTracker::checkPendingMessages(const document::Bucket& bucket, Checker& checker) const {
     std::lock_guard guard(_lock);
-    const auto& msgs = _messages.byBucketAndTypeIdx;
+    const auto&     msgs = _messages.byBucketAndTypeIdx;
 
     auto range = pairAsRange(msgs.equal_range(BucketKey(bucket)));
     runCheckerOnRange(checker, range);
 }
 
-bool
-PendingMessageTracker::hasPendingMessage(uint16_t node, const document::Bucket& bucket, uint32_t messageType) const
-{
+bool PendingMessageTracker::hasPendingMessage(uint16_t node, const document::Bucket& bucket,
+                                              uint32_t messageType) const {
     std::lock_guard guard(_lock);
-    const auto& msgs = _messages.byNodeAndBucketIdx;
-    auto range = msgs.equal_range(NodeBucketTypeKey(node, bucket, messageType));
+    const auto&     msgs = _messages.byNodeAndBucketIdx;
+    auto            range = msgs.equal_range(NodeBucketTypeKey(node, bucket, messageType));
     return (range.first != range.second);
 }
 
-void
-PendingMessageTracker::getStatusStartPage(std::ostream& out) const
-{
+void PendingMessageTracker::getStatusStartPage(std::ostream& out) const {
     out << "View:\n<ul>\n<li><a href=\"?order=bucket\">Group by bucket</a></li>"
            "<li><a href=\"?order=node\">Group by node</a></li>\n";
 }
 
-void
-PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
-{
+void PendingMessageTracker::getStatusPerBucket(std::ostream& out) const {
     std::lock_guard guard(_lock);
-    const auto& msgs = _messages.byNodeAndBucketIdx;
+    const auto&     msgs = _messages.byNodeAndBucketIdx;
     using BucketMap = std::map<document::Bucket, std::vector<std::string>>;
     BucketMap perBucketMsgs;
     for (const auto& msg : msgs) {
@@ -356,20 +324,18 @@ PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
     }
 }
 
-void
-PendingMessageTracker::getStatusPerNode(std::ostream& out) const
-{
+void PendingMessageTracker::getStatusPerNode(std::ostream& out) const {
     std::lock_guard guard(_lock);
-    const auto& msgs = _messages.byNodeAndBucketIdx;
-    int lastNode = -1;
+    const auto&     msgs = _messages.byNodeAndBucketIdx;
+    int             lastNode = -1;
     for (const auto& node : msgs) {
         if (node.nodeIdx != lastNode) {
             if (lastNode != -1) {
                 out << "</ul>\n";
             }
 
-            out << "<b>Node " << node.nodeIdx << " (pending count: "
-                << _nodeInfo.getPendingCount(node.nodeIdx) << ")</b>\n<ul>\n";
+            out << "<b>Node " << node.nodeIdx << " (pending count: " << _nodeInfo.getPendingCount(node.nodeIdx)
+                << ")</b>\n<ul>\n";
             lastNode = node.nodeIdx;
         }
 
@@ -381,9 +347,7 @@ PendingMessageTracker::getStatusPerNode(std::ostream& out) const
     }
 }
 
-void
-PendingMessageTracker::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath& path) const
-{
+void PendingMessageTracker::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath& path) const {
     _trackTime.store(true, std::memory_order_relaxed);
     if (!path.hasAttribute("order")) {
         getStatusStartPage(out);
@@ -394,7 +358,7 @@ PendingMessageTracker::reportHtmlStatus(std::ostream& out, const framework::Http
     }
 }
 
-void
-PendingMessageTracker::print(std::ostream&, bool, const std::string&) const { }
-
+void PendingMessageTracker::print(std::ostream&, bool, const std::string&) const {
 }
+
+} // namespace storage::distributor

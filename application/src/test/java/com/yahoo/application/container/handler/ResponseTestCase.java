@@ -3,6 +3,8 @@ package com.yahoo.application.container.handler;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Locale;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -13,16 +15,16 @@ public class ResponseTestCase {
 
     @Test
     void requireThatCharsetParsingWorks() {
-        assertEquals("utf-8", Response.charset("text/foobar").toString().toLowerCase());
-        assertEquals("utf-8", Response.charset("adsf").toString().toLowerCase());
-        assertEquals("utf-8", Response.charset("").toString().toLowerCase());
-        assertEquals("utf-8", Response.charset(null).toString().toLowerCase());
+        assertEquals("utf-8", Response.charset("text/foobar").toString().toLowerCase(Locale.ROOT));
+        assertEquals("utf-8", Response.charset("adsf").toString().toLowerCase(Locale.ROOT));
+        assertEquals("utf-8", Response.charset("").toString().toLowerCase(Locale.ROOT));
+        assertEquals("utf-8", Response.charset(null).toString().toLowerCase(Locale.ROOT));
 
-        assertEquals("us-ascii", Response.charset("something; charset=US-ASCII").toString().toLowerCase());
-        assertEquals("iso-8859-1", Response.charset("something; charset=iso-8859-1").toString().toLowerCase());
+        assertEquals("us-ascii", Response.charset("something; charset=US-ASCII").toString().toLowerCase(Locale.ROOT));
+        assertEquals("iso-8859-1", Response.charset("something; charset=iso-8859-1").toString().toLowerCase(Locale.ROOT));
 
-        assertEquals("utf-8", Response.charset("something; charset=").toString().toLowerCase());
-        assertEquals("utf-8", Response.charset("something; charset=bananarama").toString().toLowerCase());
+        assertEquals("utf-8", Response.charset("something; charset=").toString().toLowerCase(Locale.ROOT));
+        assertEquals("utf-8", Response.charset("something; charset=bananarama").toString().toLowerCase(Locale.ROOT));
     }
 
     @Test

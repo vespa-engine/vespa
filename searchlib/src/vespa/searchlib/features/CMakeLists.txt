@@ -5,6 +5,7 @@ vespa_add_library(searchlib_features OBJECT
     array_parser.cpp
     attributefeature.cpp
     attributematchfeature.cpp
+    average_field_length_feature.cpp
     bm25_feature.cpp
     bm25_utils.cpp
     closenessfeature.cpp
@@ -31,6 +32,7 @@ vespa_add_library(searchlib_features OBJECT
     fieldmatchfeature.cpp
     fieldtermmatchfeature.cpp
     firstphasefeature.cpp
+    first_phase_max_feature.cpp
     first_phase_rank_feature.cpp
     first_phase_rank_lookup.cpp
     flow_completeness_feature.cpp
@@ -52,6 +54,7 @@ vespa_add_library(searchlib_features OBJECT
     nativeproximityfeature.cpp
     nativerankfeature.cpp
     nowfeature.cpp
+    num_docs_indexed_feature.cpp
     onnx_feature.cpp
     proximityfeature.cpp
     querycompletenessfeature.cpp
@@ -70,6 +73,7 @@ vespa_add_library(searchlib_features OBJECT
     tensor_attribute_executor.cpp
     tensor_factory_blueprint.cpp
     tensor_from_labels_feature.cpp
+    tensor_from_labels_with_offset_feature.cpp
     tensor_from_structs_feature.cpp
     tensor_from_weighted_set_feature.cpp
     term_field_md_feature.cpp

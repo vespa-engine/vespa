@@ -25,11 +25,11 @@ public class FieldDescription implements Comparable<FieldDescription> {
     private final boolean overridable;
 
     public FieldDescription(String name, FieldType type) {
-        this(name,type,false);
+        this(name, type, false);
     }
 
     public FieldDescription(String name, String type) {
-        this(name,FieldType.fromString(type, null));
+        this(name, FieldType.fromString(type, null));
     }
 
     public FieldDescription(String name, FieldType type, boolean mandatory) {
@@ -138,7 +138,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
 
     @Override
     public String toString() {
-        return "field '" + name + "' type " + type.stringValue() + "" +
+        return "field '" + name + "' type " + type.stringValue() +
                 (mandatory?" (mandatory)":"") + (!overridable?" (not overridable)":"");
     }
 

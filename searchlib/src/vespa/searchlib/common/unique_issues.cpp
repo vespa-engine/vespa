@@ -4,10 +4,8 @@
 
 namespace search {
 
-void
-UniqueIssues::handle(const vespalib::Issue &issue)
-{
+void UniqueIssues::handle(const vespalib::Issue& issue) {
     _messages.insert(issue.message());
 }
 
-}
+} // namespace search

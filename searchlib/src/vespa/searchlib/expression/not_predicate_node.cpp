@@ -3,8 +3,7 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 
-#include "resultnode.h"
-#include "resultvector.h"
+#include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::expression {
 
@@ -21,9 +20,7 @@ NotPredicateNode::NotPredicateNode(const NotPredicateNode&) = default;
 
 NotPredicateNode& NotPredicateNode::operator=(const NotPredicateNode&) = default;
 
-NotPredicateNode::NotPredicateNode(std::unique_ptr<FilterPredicateNode> input)
-  : _expression(std::move(input))
-{
+NotPredicateNode::NotPredicateNode(std::unique_ptr<FilterPredicateNode> input) : _expression(std::move(input)) {
 }
 
 Serializer& NotPredicateNode::onSerialize(Serializer& os) const {
@@ -53,7 +50,7 @@ void NotPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
 }
 
 void NotPredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate,
-                                           vespalib::ObjectOperation& operation) {
+                                     vespalib::ObjectOperation&       operation) {
     _expression->select(predicate, operation);
 }
 

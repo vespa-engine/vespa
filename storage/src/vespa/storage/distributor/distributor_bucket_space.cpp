@@ -1,25 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributor_bucket_space.h"
+
 #include "bucketownership.h"
+
 #include <vespa/storage/bucketdb/btree_bucket_database.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace storage::distributor {
 
 namespace {
 
-const char *up_states = "uri";
-const char *nonretired_up_states = "ui";
-const char *nonretired_or_maintenance_up_states = "uim";
+const char* up_states = "uri";
+const char* nonretired_up_states = "ui";
+const char* nonretired_or_maintenance_up_states = "uim";
 
-}
+} // namespace
 
-DistributorBucketSpace::DistributorBucketSpace()
-    : DistributorBucketSpace(0u)
-{
+DistributorBucketSpace::DistributorBucketSpace() : DistributorBucketSpace(0u) {
 }
 
 DistributorBucketSpace::DistributorBucketSpace(uint16_t node_index)
@@ -32,22 +33,17 @@ DistributorBucketSpace::DistributorBucketSpace(uint16_t node_index)
       _pending_cluster_state(),
       _available_nodes(),
       _ownerships(),
-      _ideal_nodes()
-{
+      _ideal_nodes() {
 }
 
 DistributorBucketSpace::~DistributorBucketSpace() = default;
 
-void
-DistributorBucketSpace::clear()
-{
+void DistributorBucketSpace::clear() {
     _ownerships.clear();
     _ideal_nodes.clear();
 }
 
-void
-DistributorBucketSpace::enumerate_available_nodes()
-{
+void DistributorBucketSpace::enumerate_available_nodes() {
     _distribution_bits = _clusterState->getDistributionBitCount();
     auto node_count = _clusterState->getNodeCount(lib::NodeType::STORAGE);
     if (_pending_cluster_state) {
@@ -56,10 +52,11 @@ DistributorBucketSpace::enumerate_available_nodes()
     }
     std::vector<bool> nodes(node_count);
     for (uint32_t i = 0; i < node_count; ++i) {
-        lib::Node node_key(lib::NodeType::STORAGE, i);
+        lib::Node             node_key(lib::NodeType::STORAGE, i);
         const lib::NodeState& ns(_clusterState->getNodeState(node_key));
         if (ns.getState().oneOf(up_states)) {
-            if (!_pending_cluster_state || _pending_cluster_state->getNodeState(node_key).getState().oneOf(up_states)) {
+            if (!_pending_cluster_state || _pending_cluster_state->getNodeState(node_key).getState().oneOf(up_states))
+            {
                 nodes[i] = true;
             }
         }
@@ -67,35 +64,27 @@ DistributorBucketSpace::enumerate_available_nodes()
     _available_nodes = std::move(nodes);
 }
 
-void
-DistributorBucketSpace::setClusterState(std::shared_ptr<const lib::ClusterState> clusterState)
-{
+void DistributorBucketSpace::setClusterState(std::shared_ptr<const lib::ClusterState> clusterState) {
     _clusterState = std::move(clusterState);
     clear();
     enumerate_available_nodes();
 }
 
-
-void
-DistributorBucketSpace::setDistribution(std::shared_ptr<const lib::Distribution> distribution) {
+void DistributorBucketSpace::setDistribution(std::shared_ptr<const lib::Distribution> distribution) {
     _distribution = std::move(distribution);
     clear();
 }
 
-void
-DistributorBucketSpace::set_pending_cluster_state(std::shared_ptr<const lib::ClusterState> pending_cluster_state)
-{
+void DistributorBucketSpace::set_pending_cluster_state(
+    std::shared_ptr<const lib::ClusterState> pending_cluster_state) {
     _pending_cluster_state = std::move(pending_cluster_state);
     clear();
     enumerate_available_nodes();
 }
 
-bool
-DistributorBucketSpace::owns_bucket_in_state(
-        const lib::Distribution& distribution,
-        const lib::ClusterState& cluster_state,
-        document::BucketId bucket) const
-{
+bool DistributorBucketSpace::owns_bucket_in_state(const lib::Distribution& distribution,
+                                                  const lib::ClusterState& cluster_state,
+                                                  document::BucketId       bucket) const {
     try {
         uint16_t distributor = distribution.getIdealDistributorNode(cluster_state, bucket);
 
@@ -107,23 +96,19 @@ DistributorBucketSpace::owns_bucket_in_state(
     }
 }
 
-bool
-DistributorBucketSpace::owns_bucket_in_state(const lib::ClusterState& clusterState, document::BucketId bucket) const
-{
+bool DistributorBucketSpace::owns_bucket_in_state(const lib::ClusterState& clusterState,
+                                                  document::BucketId       bucket) const {
     return owns_bucket_in_state(*_distribution, clusterState, bucket);
 }
 
 namespace {
 
-void
-setup_ideal_nodes_bundle(IdealServiceLayerNodesBundle& ideal_nodes_bundle,
-                         const lib::Distribution& distribution,
-                         const lib::ClusterState& cluster_state,
-                         document::BucketId bucket)
-{
-    ideal_nodes_bundle.set_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, up_states),
-                                 distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_up_states),
-                                 distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_or_maintenance_up_states));
+void setup_ideal_nodes_bundle(IdealServiceLayerNodesBundle& ideal_nodes_bundle, const lib::Distribution& distribution,
+                              const lib::ClusterState& cluster_state, document::BucketId bucket) {
+    ideal_nodes_bundle.set_nodes(
+        distribution.getIdealStorageNodes(cluster_state, bucket, up_states),
+        distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_up_states),
+        distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_or_maintenance_up_states));
 }
 
 /*
@@ -131,27 +116,25 @@ setup_ideal_nodes_bundle(IdealServiceLayerNodesBundle& ideal_nodes_bundle,
  * we spread out data for a single group over multiple storage nodes.
  * See storage::lib::Distribution::getStorageSeed for details.
  */
-bool is_split_group_bucket(document::BucketId bucket) noexcept
-{
+bool is_split_group_bucket(document::BucketId bucket) noexcept {
     return bucket.getUsedBits() > 33;
 }
 
 // Ideal service layer nodes bundle used when is_split_group_bucket returns true
 thread_local IdealServiceLayerNodesBundle fallback_ideal_nodes_bundle;
 
-}
+} // namespace
 
 const IdealServiceLayerNodesBundle&
-DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const
-{
+DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const {
     assert(bucket.getUsedBits() >= _distribution_bits);
     if (is_split_group_bucket(bucket)) {
-        IdealServiceLayerNodesBundle &ideal_nodes_bundle = fallback_ideal_nodes_bundle;
+        IdealServiceLayerNodesBundle& ideal_nodes_bundle = fallback_ideal_nodes_bundle;
         setup_ideal_nodes_bundle(ideal_nodes_bundle, *_distribution, *_clusterState, bucket);
         return ideal_nodes_bundle;
     }
     document::BucketId lookup_bucket(_distribution_bits, bucket.getId());
-    auto itr = _ideal_nodes.find(lookup_bucket);
+    auto               itr = _ideal_nodes.find(lookup_bucket);
     if (itr != _ideal_nodes.end()) {
         return *itr->second;
     }
@@ -162,9 +145,7 @@ DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId 
     return *insres.first->second;
 }
 
-BucketOwnershipFlags
-DistributorBucketSpace::get_bucket_ownership_flags(document::BucketId bucket) const
-{
+BucketOwnershipFlags DistributorBucketSpace::get_bucket_ownership_flags(document::BucketId bucket) const {
     if (bucket.getUsedBits() < _distribution_bits) {
         BucketOwnershipFlags flags;
         if (!_pending_cluster_state) {
@@ -173,7 +154,7 @@ DistributorBucketSpace::get_bucket_ownership_flags(document::BucketId bucket) co
         return flags;
     }
     document::BucketId super_bucket(_distribution_bits, bucket.getId());
-    auto itr = _ownerships.find(super_bucket);
+    auto               itr = _ownerships.find(super_bucket);
     if (itr != _ownerships.end()) {
         return itr->second;
     }
@@ -190,8 +171,7 @@ DistributorBucketSpace::get_bucket_ownership_flags(document::BucketId bucket) co
 }
 
 BucketOwnership
-DistributorBucketSpace::check_ownership_in_pending_and_current_state(document::BucketId bucket) const
-{
+DistributorBucketSpace::check_ownership_in_pending_and_current_state(document::BucketId bucket) const {
     auto flags = get_bucket_ownership_flags(bucket);
     if (!flags.owned_in_pending_state()) {
         assert(_pending_cluster_state);
@@ -204,4 +184,4 @@ DistributorBucketSpace::check_ownership_in_pending_and_current_state(document::B
     }
 }
 
-}
+} // namespace storage::distributor

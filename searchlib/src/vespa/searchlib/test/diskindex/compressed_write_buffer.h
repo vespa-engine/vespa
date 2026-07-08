@@ -4,7 +4,9 @@
 
 #include <vespa/searchlib/util/comprfile.h>
 
-namespace search::bitcompression { template <bool bigEndian> class FeatureEncodeContext; }
+namespace search::bitcompression {
+template <bool bigEndian> class FeatureEncodeContext;
+}
 
 namespace search::diskindex::test {
 
@@ -13,13 +15,11 @@ namespace search::diskindex::test {
  * available to a feature decoder via the related CompressedReadBuffer class. It is
  * used by unit tests to verify that encode + decode round trip reconstructs original values.
  */
-template <bool bigEndian>
-class CompressedWriteBuffer
-{
+template <bool bigEndian> class CompressedWriteBuffer {
     using EC = bitcompression::FeatureEncodeContext<bigEndian>;
     EC&                   _e;
     ComprFileWriteContext _wc;
-    uint32_t              _header_len;     // Length of file header (bytes)
+    uint32_t              _header_len; // Length of file header (bytes)
     uint64_t              _file_bit_size;
 
 public:
@@ -33,4 +33,4 @@ public:
     const ComprFileWriteContext& get_write_context() const noexcept { return _wc; }
 };
 
-}
+} // namespace search::diskindex::test

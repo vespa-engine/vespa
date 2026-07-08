@@ -3,21 +3,21 @@
 #pragma once
 
 #include "visitorthreadmetrics.h"
-#include <vespa/metrics/summetric.h>
+
 #include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/summetric.h>
 
 namespace storage {
 
-struct VisitorMetrics : public metrics::MetricSet
-{
-    metrics::LongAverageMetric queueSize;
-    metrics::LongCountMetric queueSkips;
-    metrics::LongCountMetric queueFull;
-    metrics::DoubleAverageMetric queueWaitTime;
-    metrics::DoubleAverageMetric queueTimeoutWaitTime;
-    metrics::DoubleAverageMetric queueEvictedWaitTime;
-    std::vector<std::shared_ptr<VisitorThreadMetrics> > threads;
-    metrics::SumMetric<MetricSet> sum;
+struct VisitorMetrics : public metrics::MetricSet {
+    metrics::LongAverageMetric                         queueSize;
+    metrics::LongCountMetric                           queueSkips;
+    metrics::LongCountMetric                           queueFull;
+    metrics::DoubleAverageMetric                       queueWaitTime;
+    metrics::DoubleAverageMetric                       queueTimeoutWaitTime;
+    metrics::DoubleAverageMetric                       queueEvictedWaitTime;
+    std::vector<std::shared_ptr<VisitorThreadMetrics>> threads;
+    metrics::SumMetric<MetricSet>                      sum;
 
     VisitorMetrics();
     ~VisitorMetrics() override;
@@ -25,5 +25,4 @@ struct VisitorMetrics : public metrics::MetricSet
     void initThreads(uint16_t threadCount);
 };
 
-} // storage
-
+} // namespace storage

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "cluster_state_bundle_codec.h"
+
 #include <memory>
 
 namespace storage::rpc {
@@ -21,4 +22,4 @@ public:
     std::shared_ptr<const lib::ClusterStateBundle> decode(const EncodedClusterStateBundle&) const override;
 };
 
-}
+} // namespace storage::rpc

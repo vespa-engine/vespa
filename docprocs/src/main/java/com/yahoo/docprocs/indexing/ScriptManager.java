@@ -8,6 +8,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
@@ -36,9 +37,10 @@ class ScriptManager {
     ScriptManager(DocumentTypeManager documentTypeManager, IlscriptsConfig config, Linguistics linguistics,
                          Map<String, Chunker> chunkers,
                          Map<String, Embedder> embedders,
-                         Map<String, FieldGenerator> generators) {
+                         Map<String, FieldGenerator> generators,
+                         MetricReceiver metricReceiver) {
         this.documentTypeManager = documentTypeManager;
-        documentFieldScripts = createScriptsMap(documentTypeManager, config, linguistics, chunkers, embedders, generators);
+        documentFieldScripts = createScriptsMap(documentTypeManager, config, linguistics, chunkers, embedders, generators, metricReceiver);
     }
 
     private Map<String, DocumentScript> getScripts(DocumentType inputType) {
@@ -74,9 +76,11 @@ class ScriptManager {
                                                                               Linguistics linguistics,
                                                                               Map<String, Chunker> chunkers,
                                                                               Map<String, Embedder> embedders,
-                                                                              Map<String, FieldGenerator> generators) {
+                                                                              Map<String, FieldGenerator> generators,
+                                                                              MetricReceiver metricReceiver) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
-        ScriptParserContext parserContext = new ScriptParserContext(linguistics, chunkers, embedders, generators);
+        ScriptParserContext parserContext = new ScriptParserContext(linguistics, chunkers, embedders, generators)
+                .setMetricReceiver(metricReceiver);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenizeLength(config.fieldmatchmaxlength());
         parserContext.getAnnotatorConfig().setMaxReplacementCharactersRatio(config.maxReplacementCharactersRatio());

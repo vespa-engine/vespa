@@ -149,7 +149,11 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 }
 
 func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
-	target, err := cli.target(targetOptions{supportedType: cloudTargetOnly})
+	targetType, err := cli.targetType(cloudTargetOnly)
+	if err != nil {
+		return err
+	}
+	app, err := cli.config.application()
 	if err != nil {
 		return err
 	}
@@ -160,14 +164,22 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 	if pkg.HasCertificate() && !overwriteCertificate {
 		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
 	}
-	return requireCertificate(true, false, cli, target, pkg)
+	if pkg.IsZip() {
+		return errHint(fmt.Errorf("cannot add certificate to compressed application package: '%s'", pkg.Path),
+			"Try running 'mvn clean', then 'vespa auth cert add' and finally 'mvn package'")
+	}
+	tlsOptions, err := cli.config.readTLSOptions(app, targetType.name)
+	if err != nil {
+		return err
+	}
+	return copyCertificate(tlsOptions, cli, pkg)
 }
 
 func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage) error {
 	if pkg.IsZip() {
 		if ignoreZip {
 			cli.printWarning("Cannot verify existence of "+color.CyanString("security/clients.pem")+" since '"+pkg.Path+"' is compressed",
-				"Deployment to Vespa Cloud requires certificate in application package",
+				"Deployment to Vespa Cloud requires either certificate or token authentication",
 				"See https://docs.vespa.ai/en/security/guide.html")
 			return nil
 		} else {
@@ -216,7 +228,7 @@ func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pk
 			return copyCertificate(tlsOptions, cli, pkg)
 		}
 	}
-	return errHint(fmt.Errorf("deployment to Vespa Cloud requires certificate in application package"),
+	return errHint(fmt.Errorf("Deployment to Vespa Cloud requires either certificate or token authentication"),
 		"See https://docs.vespa.ai/en/security/guide.html",
 		"Pass --add-cert to use the certificate of the current application")
 }

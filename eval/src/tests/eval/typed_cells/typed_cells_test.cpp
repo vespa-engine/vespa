@@ -3,15 +3,13 @@
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/unconstify_span.h>
+
 #include <memory>
 
 using namespace vespalib;
 using namespace eval;
 
-
-
-TEST(TypedCellsTest, require_that_structures_are_of_expected_size)
-{
+TEST(TypedCellsTest, require_that_structures_are_of_expected_size) {
     EXPECT_EQ(sizeof(void*), 8u);
     EXPECT_EQ(sizeof(size_t), 8u);
     EXPECT_EQ(sizeof(CellType), 1u);
@@ -26,11 +24,13 @@ TEST(TypedCellsTest, require_that_structures_are_of_expected_size)
 
 struct CellwiseAdd {
     template <typename A, typename B, typename C>
-    static void call(const std::span<const A> &a, const std::span<const B> &b, const std::span<const C> &c, size_t cnt) __attribute__ ((noinline));
+    static void call(const std::span<const A>& a, const std::span<const B>& b, const std::span<const C>& c,
+                     size_t cnt) __attribute__((noinline));
 };
 
 template <typename A, typename B, typename C>
-void CellwiseAdd::call(const std::span<const A> &a, const std::span<const B> &b, const std::span<const C> &c, size_t cnt) {
+void CellwiseAdd::call(const std::span<const A>& a, const std::span<const B>& b, const std::span<const C>& c,
+                       size_t cnt) {
     auto dst = unconstify(c);
     for (size_t i = 0; i < cnt; ++i) {
         dst[i] = a[i] + b[i];
@@ -41,11 +41,12 @@ void CellwiseAdd::call(const std::span<const A> &a, const std::span<const B> &b,
 
 struct DotProduct {
     template <typename A, typename B>
-    static double call(const std::span<const A> &a, const std::span<const B> &b, size_t cnt) __attribute__ ((noinline));
+    static double call(const std::span<const A>& a, const std::span<const B>& b, size_t cnt)
+        __attribute__((noinline));
 };
 
 template <typename A, typename B>
-double DotProduct::call(const std::span<const A> &a, const std::span<const B> &b, size_t cnt) {
+double DotProduct::call(const std::span<const A>& a, const std::span<const B>& b, size_t cnt) {
     double result = 0.0;
     for (size_t i = 0; i < cnt; ++i) {
         result += (a[i] * b[i]);
@@ -56,14 +57,12 @@ double DotProduct::call(const std::span<const A> &a, const std::span<const B> &b
 //-----------------------------------------------------------------------------
 
 struct Sum {
-    template <typename A>
-    static double call(const std::span<const A> &a) __attribute__ ((noinline));
+    template <typename A> static double call(const std::span<const A>& a) __attribute__((noinline));
 };
 
-template <typename A>
-double Sum::call(const std::span<const A> &a) {
+template <typename A> double Sum::call(const std::span<const A>& a) {
     double result = 0.0;
-    for (const auto &value: a) {
+    for (const auto& value : a) {
         result += value;
     }
     return result;
@@ -71,121 +70,127 @@ double Sum::call(const std::span<const A> &a) {
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-struct Typify {
-    template <typename... Args>
-    static auto typify_1(const TypedCells &a, Args &&...args) {
-        switch(a.type) {
-        case CellType::DOUBLE: return T::call(a.unsafe_typify<double>(), std::forward<Args>(args)...);
-        case CellType::FLOAT: return T::call(a.unsafe_typify<float>(), std::forward<Args>(args)...);
-        case CellType::INT8: return T::call(a.unsafe_typify<Int8Float>(), std::forward<Args>(args)...);
-        default: abort();
+template <typename T> struct Typify {
+    template <typename... Args> static auto typify_1(const TypedCells& a, Args&&... args) {
+        switch (a.type) {
+        case CellType::DOUBLE:
+            return T::call(a.unsafe_typify<double>(), std::forward<Args>(args)...);
+        case CellType::FLOAT:
+            return T::call(a.unsafe_typify<float>(), std::forward<Args>(args)...);
+        case CellType::INT8:
+            return T::call(a.unsafe_typify<Int8Float>(), std::forward<Args>(args)...);
+        default:
+            abort();
         }
     }
-    template <typename A, typename... Args>
-    static auto typify_2(A &&a, const TypedCells &b, Args &&...args) {
-        switch(b.type) {
-        case CellType::DOUBLE: return T::call(std::forward<A>(a), b.unsafe_typify<double>(), std::forward<Args>(args)...);
-        case CellType::FLOAT: return T::call(std::forward<A>(a), b.unsafe_typify<float>(), std::forward<Args>(args)...);
-        case CellType::INT8: return T::call(std::forward<A>(a), b.unsafe_typify<Int8Float>(), std::forward<Args>(args)...);
-        default: abort();
+    template <typename A, typename... Args> static auto typify_2(A&& a, const TypedCells& b, Args&&... args) {
+        switch (b.type) {
+        case CellType::DOUBLE:
+            return T::call(std::forward<A>(a), b.unsafe_typify<double>(), std::forward<Args>(args)...);
+        case CellType::FLOAT:
+            return T::call(std::forward<A>(a), b.unsafe_typify<float>(), std::forward<Args>(args)...);
+        case CellType::INT8:
+            return T::call(std::forward<A>(a), b.unsafe_typify<Int8Float>(), std::forward<Args>(args)...);
+        default:
+            abort();
         }
     }
     template <typename A, typename B, typename... Args>
-    static auto typify_3(A &&a, B &&b, const TypedCells &c, Args &&...args) {
-        switch(c.type) {
-        case CellType::DOUBLE: return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<double>(), std::forward<Args>(args)...);
-        case CellType::FLOAT: return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<float>(), std::forward<Args>(args)...);
-        case CellType::INT8: return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<Int8Float>(), std::forward<Args>(args)...);
-        default: abort();
+    static auto typify_3(A&& a, B&& b, const TypedCells& c, Args&&... args) {
+        switch (c.type) {
+        case CellType::DOUBLE:
+            return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<double>(),
+                           std::forward<Args>(args)...);
+        case CellType::FLOAT:
+            return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<float>(),
+                           std::forward<Args>(args)...);
+        case CellType::INT8:
+            return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<Int8Float>(),
+                           std::forward<Args>(args)...);
+        default:
+            abort();
         }
     }
 };
 
-template <typename Fun>
-struct Dispatch3 {
+template <typename Fun> struct Dispatch3 {
     using Self = Dispatch3<Fun>;
     template <typename A, typename B, typename C, typename... Args>
-    static auto call(const std::span<const A> &a, const std::span<const B> &b, const std::span<const C> &c, Args &&...args) {
+    static auto call(const std::span<const A>& a, const std::span<const B>& b, const std::span<const C>& c,
+                     Args&&... args) {
         return Fun::call(a, b, c, std::forward<Args>(args)...);
     }
     template <typename A, typename B, typename... Args>
-    static auto call(const std::span<const A> &a, const std::span<const B> &b, const TypedCells &c, Args &&...args) {
+    static auto call(const std::span<const A>& a, const std::span<const B>& b, const TypedCells& c, Args&&... args) {
         return Typify<Self>::typify_3(a, b, c, std::forward<Args>(args)...);
     }
     template <typename A, typename... Args>
-    static auto call(const std::span<const A> &a, const TypedCells &b, const TypedCells &c, Args &&...args) {
+    static auto call(const std::span<const A>& a, const TypedCells& b, const TypedCells& c, Args&&... args) {
         return Typify<Self>::typify_2(a, b, c, std::forward<Args>(args)...);
     }
     template <typename A, typename C, typename... Args>
-    static auto call(const std::span<const A> &a, const TypedCells &b, const std::span<const C> &c, Args &&...args) {
+    static auto call(const std::span<const A>& a, const TypedCells& b, const std::span<const C>& c, Args&&... args) {
         return Typify<Self>::typify_2(a, b, c, std::forward<Args>(args)...);
     }
     template <typename... Args>
-    static auto call(const TypedCells &a, const TypedCells &b, const TypedCells &c, Args &&...args) {
+    static auto call(const TypedCells& a, const TypedCells& b, const TypedCells& c, Args&&... args) {
         return Typify<Self>::typify_1(a, b, c, std::forward<Args>(args)...);
     }
     template <typename B, typename... Args>
-    static auto call(const TypedCells &a, const std::span<const B> &b, const TypedCells &c, Args &&...args) {
+    static auto call(const TypedCells& a, const std::span<const B>& b, const TypedCells& c, Args&&... args) {
         return Typify<Self>::typify_1(a, b, c, std::forward<Args>(args)...);
     }
     template <typename C, typename... Args>
-    static auto call(const TypedCells &a, const TypedCells &b, const std::span<const C> &c, Args &&...args) {
+    static auto call(const TypedCells& a, const TypedCells& b, const std::span<const C>& c, Args&&... args) {
         return Typify<Self>::typify_1(a, b, c, std::forward<Args>(args)...);
     }
     template <typename B, typename C, typename... Args>
-    static auto call(const TypedCells &a, const std::span<const B> &b, const std::span<const C> &c, Args &&...args) {
+    static auto call(const TypedCells& a, const std::span<const B>& b, const std::span<const C>& c, Args&&... args) {
         return Typify<Self>::typify_1(a, b, c, std::forward<Args>(args)...);
     }
 };
 
-template <typename Fun>
-struct Dispatch2 {
+template <typename Fun> struct Dispatch2 {
     using Self = Dispatch2<Fun>;
     template <typename A, typename B, typename... Args>
-    static auto call(const std::span<const A> &a, const std::span<const B> &b, Args &&...args) {
+    static auto call(const std::span<const A>& a, const std::span<const B>& b, Args&&... args) {
         return Fun::call(a, b, std::forward<Args>(args)...);
     }
     template <typename A, typename... Args>
-    static auto call(const std::span<const A> &a, const TypedCells &b, Args &&...args) {
+    static auto call(const std::span<const A>& a, const TypedCells& b, Args&&... args) {
         return Typify<Self>::typify_2(a, b, std::forward<Args>(args)...);
     }
-    template <typename... Args>
-    static auto call(const TypedCells &a, const TypedCells &b, Args &&...args) {
+    template <typename... Args> static auto call(const TypedCells& a, const TypedCells& b, Args&&... args) {
         return Typify<Self>::typify_1(a, b, std::forward<Args>(args)...);
     }
     template <typename B, typename... Args>
-    static auto call(const TypedCells &a, const std::span<const B> &b, Args &&...args) {
+    static auto call(const TypedCells& a, const std::span<const B>& b, Args&&... args) {
         return Typify<Self>::typify_1(a, b, std::forward<Args>(args)...);
     }
 };
 
-template <typename Fun>
-struct Dispatch1 {
+template <typename Fun> struct Dispatch1 {
     using Self = Dispatch1<Fun>;
-    template <typename A, typename... Args>
-    static auto call(const std::span<const A> &a, Args &&...args) {
+    template <typename A, typename... Args> static auto call(const std::span<const A>& a, Args&&... args) {
         return Fun::call(a, std::forward<Args>(args)...);
     }
-    template <typename... Args>
-    static auto call(const TypedCells &a, Args &&...args) {
+    template <typename... Args> static auto call(const TypedCells& a, Args&&... args) {
         return Typify<Self>::typify_1(a, std::forward<Args>(args)...);
     }
 };
 
 //-----------------------------------------------------------------------------
 
-TEST(TypedCellsTest, require_that_direct_dispatch_of_a_op_b_builds_c_works)
-{
-    std::vector<Int8Float>   a({1,2,3});
-    std::vector<float>       b({1.5,2.5,3.5});
-    std::vector<double>      c(3, 0.0);
+TEST(TypedCellsTest, require_that_direct_dispatch_of_a_op_b_builds_c_works) {
+    std::vector<Int8Float>     a({1, 2, 3});
+    std::vector<float>         b({1.5, 2.5, 3.5});
+    std::vector<double>        c(3, 0.0);
     std::span<const Int8Float> a_ref(a);
     std::span<const float>     b_ref(b);
     std::span<const double>    c_ref(c);
-    TypedCells               a_cells(a);
-    TypedCells               b_cells(b);
-    TypedCells               c_cells(c);
+    TypedCells                 a_cells(a);
+    TypedCells                 b_cells(b);
+    TypedCells                 c_cells(c);
 
     Dispatch3<CellwiseAdd>::call(a_cells, b_cells, c_cells, 3);
     Dispatch3<CellwiseAdd>::call(a_cells, b_ref, c_cells, 3);
@@ -201,15 +206,14 @@ TEST(TypedCellsTest, require_that_direct_dispatch_of_a_op_b_builds_c_works)
     EXPECT_EQ(c[2], 6.5);
 }
 
-TEST(TypedCellsTest, require_that_direct_dispatch_of_dot_product_with_return_value_works)
-{
-    std::vector<Int8Float>    a({1,2,3});
-    std::vector<float>        b({1.5,2.5,3.5});
-    std::span<const Int8Float>  a_ref(a);
-    std::span<const float>      b_ref(b);
-    TypedCells                a_cells(a);
-    TypedCells                b_cells(b);
-    double                    expect = 1.5 + (2 * 2.5) + (3 * 3.5);
+TEST(TypedCellsTest, require_that_direct_dispatch_of_dot_product_with_return_value_works) {
+    std::vector<Int8Float>     a({1, 2, 3});
+    std::vector<float>         b({1.5, 2.5, 3.5});
+    std::span<const Int8Float> a_ref(a);
+    std::span<const float>     b_ref(b);
+    TypedCells                 a_cells(a);
+    TypedCells                 b_cells(b);
+    double                     expect = 1.5 + (2 * 2.5) + (3 * 3.5);
 
     EXPECT_EQ(expect, Dispatch2<DotProduct>::call(a_cells, b_cells, 3));
     EXPECT_EQ(expect, Dispatch2<DotProduct>::call(a_cells, b_ref, 3));
@@ -217,12 +221,11 @@ TEST(TypedCellsTest, require_that_direct_dispatch_of_dot_product_with_return_val
     EXPECT_EQ(expect, Dispatch2<DotProduct>::call(a_ref, b_ref, 3));
 }
 
-TEST(TypedCellsTest, require_that_direct_dispatch_of_sum_with_return_value_works)
-{
-    std::vector<Int8Float>    a({1,2,3});
-    std::span<const Int8Float>  a_ref(a);
-    TypedCells                a_cells(a);
-    double                    expect = (1 + 2 + 3);
+TEST(TypedCellsTest, require_that_direct_dispatch_of_sum_with_return_value_works) {
+    std::vector<Int8Float>     a({1, 2, 3});
+    std::span<const Int8Float> a_ref(a);
+    TypedCells                 a_cells(a);
+    double                     expect = (1 + 2 + 3);
 
     EXPECT_EQ(expect, Dispatch1<Sum>::call(a_cells));
     EXPECT_EQ(expect, Dispatch1<Sum>::call(a_ref));
@@ -235,124 +238,122 @@ TEST(TypedCellsTest, require_that_direct_dispatch_of_sum_with_return_value_works
 //-----------------------------------------------------------------------------
 
 struct CellwiseAdd2 {
-    virtual void call(const TypedCells &a, const TypedCells &b, const TypedCells &c, size_t cnt) const = 0;
-    template <typename A, typename B, typename C>
-    static std::unique_ptr<CellwiseAdd2> create();
+    virtual void call(const TypedCells& a, const TypedCells& b, const TypedCells& c, size_t cnt) const = 0;
+    template <typename A, typename B, typename C> static std::unique_ptr<CellwiseAdd2> create();
     virtual ~CellwiseAdd2() = default;
 };
 
-template <typename A, typename B, typename C>
-struct CellwiseAdd2Impl : CellwiseAdd2 {
-    void call_impl(const std::span<const A> &a, const std::span<const B> &b, const std::span<const C> &c, size_t cnt) const {
+template <typename A, typename B, typename C> struct CellwiseAdd2Impl : CellwiseAdd2 {
+    void call_impl(const std::span<const A>& a, const std::span<const B>& b, const std::span<const C>& c,
+                   size_t cnt) const {
         auto dst = unconstify(c);
         for (size_t i = 0; i < cnt; ++i) {
             dst[i] = a[i] + b[i];
         }
     }
-    void call(const TypedCells &a, const TypedCells &b, const TypedCells &c, size_t cnt) const override {
+    void call(const TypedCells& a, const TypedCells& b, const TypedCells& c, size_t cnt) const override {
         call_impl(a.unsafe_typify<A>(), b.unsafe_typify<B>(), c.unsafe_typify<C>(), cnt);
     }
 };
 
-template <typename A, typename B, typename C>
-std::unique_ptr<CellwiseAdd2> CellwiseAdd2::create() {
-    return std::make_unique<CellwiseAdd2Impl<A, B, C> >();
+template <typename A, typename B, typename C> std::unique_ptr<CellwiseAdd2> CellwiseAdd2::create() {
+    return std::make_unique<CellwiseAdd2Impl<A, B, C>>();
 }
 
 //-----------------------------------------------------------------------------
 
 struct DotProduct2 {
-    virtual double call(const TypedCells &a, const TypedCells &b, size_t cnt) const = 0;
-    template <typename A, typename B>
-    static std::unique_ptr<DotProduct2> create();
+    virtual double call(const TypedCells& a, const TypedCells& b, size_t cnt) const = 0;
+    template <typename A, typename B> static std::unique_ptr<DotProduct2> create();
     virtual ~DotProduct2() = default;
 };
 
-template <typename A, typename B>
-struct DotProduct2Impl : DotProduct2 {
-    double call_impl(const std::span<const A> &a, const std::span<const B> &b, size_t cnt) const {
+template <typename A, typename B> struct DotProduct2Impl : DotProduct2 {
+    double call_impl(const std::span<const A>& a, const std::span<const B>& b, size_t cnt) const {
         double result = 0.0;
         for (size_t i = 0; i < cnt; ++i) {
             result += (a[i] * b[i]);
         }
         return result;
     }
-    double call(const TypedCells &a, const TypedCells &b, size_t cnt) const override {
+    double call(const TypedCells& a, const TypedCells& b, size_t cnt) const override {
         return call_impl(a.unsafe_typify<A>(), b.unsafe_typify<B>(), cnt);
     }
 };
 
-template <typename A, typename B>
-std::unique_ptr<DotProduct2> DotProduct2::create() {
-    return std::make_unique<DotProduct2Impl<A, B> >();
+template <typename A, typename B> std::unique_ptr<DotProduct2> DotProduct2::create() {
+    return std::make_unique<DotProduct2Impl<A, B>>();
 }
 
 //-----------------------------------------------------------------------------
 
 struct Sum2 {
-    virtual double call(const TypedCells &a) const = 0;
-    template <typename A>
-    static std::unique_ptr<Sum2> create();
+    virtual double call(const TypedCells& a) const = 0;
+    template <typename A> static std::unique_ptr<Sum2> create();
     virtual ~Sum2() = default;
 };
 
-template <typename A>
-struct Sum2Impl : Sum2 {
-    double call_impl(const std::span<const A> &a) const {
+template <typename A> struct Sum2Impl : Sum2 {
+    double call_impl(const std::span<const A>& a) const {
         double result = 0.0;
-        for (const auto &value: a) {
+        for (const auto& value : a) {
             result += value;
         }
         return result;
     }
-    double call(const TypedCells &a) const override {
-        return call_impl(a.unsafe_typify<A>());
-    }
+    double call(const TypedCells& a) const override { return call_impl(a.unsafe_typify<A>()); }
 };
 
-template <typename A>
-std::unique_ptr<Sum2> Sum2::create() {
-    return std::make_unique<Sum2Impl<A> >();
+template <typename A> std::unique_ptr<Sum2> Sum2::create() {
+    return std::make_unique<Sum2Impl<A>>();
 }
 
 //-----------------------------------------------------------------------------
 
-template <typename T, typename... Args>
-std::unique_ptr<T> create(CellType a_type) {
-    switch(a_type) {
-    case CellType::DOUBLE: return T::template create<double, Args...>();
-    case CellType::FLOAT:  return T::template create<float, Args...>();
-    case CellType::INT8:   return T::template create<Int8Float, Args...>();
-    default: abort();
+template <typename T, typename... Args> std::unique_ptr<T> create(CellType a_type) {
+    switch (a_type) {
+    case CellType::DOUBLE:
+        return T::template create<double, Args...>();
+    case CellType::FLOAT:
+        return T::template create<float, Args...>();
+    case CellType::INT8:
+        return T::template create<Int8Float, Args...>();
+    default:
+        abort();
     }
 }
 
-template <typename T, typename... Args>
-std::unique_ptr<T> create(CellType a_type, CellType b_type) {
-    switch(b_type) {
-    case CellType::DOUBLE: return create<T, double, Args...>(a_type);
-    case CellType::FLOAT:  return create<T, float, Args...>(a_type);
-    case CellType::INT8:   return create<T, Int8Float, Args...>(a_type);
-    default: abort();
+template <typename T, typename... Args> std::unique_ptr<T> create(CellType a_type, CellType b_type) {
+    switch (b_type) {
+    case CellType::DOUBLE:
+        return create<T, double, Args...>(a_type);
+    case CellType::FLOAT:
+        return create<T, float, Args...>(a_type);
+    case CellType::INT8:
+        return create<T, Int8Float, Args...>(a_type);
+    default:
+        abort();
     }
 }
 
-template <typename T>
-std::unique_ptr<T> create(CellType a_type, CellType b_type, CellType c_type) {
-    switch(c_type) {
-    case CellType::DOUBLE: return create<T, double>(a_type, b_type);
-    case CellType::FLOAT:  return create<T, float>(a_type, b_type);
-    case CellType::INT8:   return create<T, Int8Float>(a_type, b_type);
-    default: abort();
+template <typename T> std::unique_ptr<T> create(CellType a_type, CellType b_type, CellType c_type) {
+    switch (c_type) {
+    case CellType::DOUBLE:
+        return create<T, double>(a_type, b_type);
+    case CellType::FLOAT:
+        return create<T, float>(a_type, b_type);
+    case CellType::INT8:
+        return create<T, Int8Float>(a_type, b_type);
+    default:
+        abort();
     }
 }
 
 //-----------------------------------------------------------------------------
 
-TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_a_op_b_builds_c_works)
-{
-    std::vector<Int8Float> a({1,2,3});
-    std::vector<float>     b({1.5,2.5,3.5});
+TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_a_op_b_builds_c_works) {
+    std::vector<Int8Float> a({1, 2, 3});
+    std::vector<float>     b({1.5, 2.5, 3.5});
     std::vector<double>    c(3, 0.0);
     TypedCells             a_cells(a);
     TypedCells             b_cells(b);
@@ -366,22 +367,20 @@ TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_a_op_b_builds_c_works
     EXPECT_EQ(c[2], 6.5);
 }
 
-TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_dot_product_with_return_value_works)
-{
-    std::vector<Int8Float> a({1,2,3});
-    std::vector<float>     b({1.5,2.5,3.5});
+TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_dot_product_with_return_value_works) {
+    std::vector<Int8Float> a({1, 2, 3});
+    std::vector<float>     b({1.5, 2.5, 3.5});
     TypedCells             a_cells(a);
     TypedCells             b_cells(b);
     double                 expect = 1.5 + (2 * 2.5) + (3 * 3.5);
 
     auto op = create<DotProduct2>(a_cells.type, b_cells.type);
-    
+
     EXPECT_EQ(expect, op->call(a_cells, b_cells, 3));
 }
 
-TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_sum_with_return_value_works)
-{
-    std::vector<Int8Float> a({1,2,3});
+TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_sum_with_return_value_works) {
+    std::vector<Int8Float> a({1, 2, 3});
     TypedCells             a_cells(a);
     double                 expect = (1 + 2 + 3);
 
@@ -396,33 +395,42 @@ TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_sum_with_return_value
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-template <typename T, typename... Args>
-auto get_fun(CellType a_type) {
-    switch(a_type) {
-    case CellType::DOUBLE: return T::template get_fun<double, Args...>();
-    case CellType::FLOAT:  return T::template get_fun<float, Args...>();
-    case CellType::INT8:   return T::template get_fun<Int8Float, Args...>();
-    default: abort();
+template <typename T, typename... Args> auto get_fun(CellType a_type) {
+    switch (a_type) {
+    case CellType::DOUBLE:
+        return T::template get_fun<double, Args...>();
+    case CellType::FLOAT:
+        return T::template get_fun<float, Args...>();
+    case CellType::INT8:
+        return T::template get_fun<Int8Float, Args...>();
+    default:
+        abort();
     }
 }
 
-template <typename T, typename... Args>
-auto get_fun(CellType a_type, CellType b_type) {
-    switch(b_type) {
-    case CellType::DOUBLE: return get_fun<T, double, Args...>(a_type);
-    case CellType::FLOAT:  return get_fun<T, float, Args...>(a_type);
-    case CellType::INT8:   return get_fun<T, Int8Float, Args...>(a_type);
-    default: abort();
+template <typename T, typename... Args> auto get_fun(CellType a_type, CellType b_type) {
+    switch (b_type) {
+    case CellType::DOUBLE:
+        return get_fun<T, double, Args...>(a_type);
+    case CellType::FLOAT:
+        return get_fun<T, float, Args...>(a_type);
+    case CellType::INT8:
+        return get_fun<T, Int8Float, Args...>(a_type);
+    default:
+        abort();
     }
 }
 
-template <typename T>
-auto get_fun(CellType a_type, CellType b_type, CellType c_type) {
-    switch(c_type) {
-    case CellType::DOUBLE: return get_fun<T, double>(a_type, b_type);
-    case CellType::FLOAT:  return get_fun<T, float>(a_type, b_type);
-    case CellType::INT8:   return get_fun<T, Int8Float>(a_type, b_type);
-    default: abort();
+template <typename T> auto get_fun(CellType a_type, CellType b_type, CellType c_type) {
+    switch (c_type) {
+    case CellType::DOUBLE:
+        return get_fun<T, double>(a_type, b_type);
+    case CellType::FLOAT:
+        return get_fun<T, float>(a_type, b_type);
+    case CellType::INT8:
+        return get_fun<T, Int8Float>(a_type, b_type);
+    default:
+        abort();
     }
 }
 
@@ -430,21 +438,21 @@ auto get_fun(CellType a_type, CellType b_type, CellType c_type) {
 
 struct CellwiseAdd3 {
     struct Self;
-    using fun_type = void (*)(const TypedCells &x, const TypedCells &y, const TypedCells &z, size_t cnt, Self &self);
-    template <typename A, typename B, typename C>
-    static fun_type get_fun();
+    using fun_type = void (*)(const TypedCells& x, const TypedCells& y, const TypedCells& z, size_t cnt, Self& self);
+    template <typename A, typename B, typename C> static fun_type get_fun();
     struct Self {
         fun_type my_fun;
         Self();
     };
     Self self;
-    void call(const TypedCells &x, const TypedCells &y, const TypedCells &z, size_t cnt) {
+    void call(const TypedCells& x, const TypedCells& y, const TypedCells& z, size_t cnt) {
         self.my_fun(x, y, z, cnt, self);
     }
 };
 
 template <typename A, typename B, typename C>
-void cellwise_add(const TypedCells &x, const TypedCells &y, const TypedCells &z, size_t cnt, CellwiseAdd3::Self &self) {
+void cellwise_add(const TypedCells& x, const TypedCells& y, const TypedCells& z, size_t cnt,
+                  CellwiseAdd3::Self& self) {
     if (!x.check_type<A>() || !y.check_type<B>() || !z.check_type<C>()) {
         auto new_fun = get_fun<CellwiseAdd3>(x.type, y.type, z.type);
         self.my_fun = new_fun;
@@ -459,42 +467,36 @@ void cellwise_add(const TypedCells &x, const TypedCells &y, const TypedCells &z,
     }
 };
 
-template <typename A, typename B, typename C>
-CellwiseAdd3::fun_type CellwiseAdd3::get_fun() {
+template <typename A, typename B, typename C> CellwiseAdd3::fun_type CellwiseAdd3::get_fun() {
     return cellwise_add<A, B, C>;
 }
 
-CellwiseAdd3::Self::Self()
-    : my_fun(cellwise_add<double, double, double>)
-{
+CellwiseAdd3::Self::Self() : my_fun(cellwise_add<double, double, double>) {
 }
 
 //-----------------------------------------------------------------------------
 
 struct DotProduct3 {
     struct Self;
-    using fun_type = double (*)(const TypedCells &x, const TypedCells &y, size_t cnt, Self &self);
-    template <typename A, typename B>
-    static fun_type get_fun();
+    using fun_type = double (*)(const TypedCells& x, const TypedCells& y, size_t cnt, Self& self);
+    template <typename A, typename B> static fun_type get_fun();
     struct Self {
         fun_type my_fun;
         Self();
     };
     Self self;
-    double call(const TypedCells &x, const TypedCells &y, size_t cnt) {
-        return self.my_fun(x, y, cnt, self);
-    }
+    double call(const TypedCells& x, const TypedCells& y, size_t cnt) { return self.my_fun(x, y, cnt, self); }
 };
 
 template <typename A, typename B>
-double dot_product(const TypedCells &x, const TypedCells &y, size_t cnt, DotProduct3::Self &self) {
+double dot_product(const TypedCells& x, const TypedCells& y, size_t cnt, DotProduct3::Self& self) {
     if (!x.check_type<A>() || !y.check_type<B>()) {
         auto new_fun = get_fun<DotProduct3>(x.type, y.type);
         self.my_fun = new_fun;
         return new_fun(x, y, cnt, self);
     }
-    auto a = x.unsafe_typify<A>();
-    auto b = y.unsafe_typify<B>();
+    auto   a = x.unsafe_typify<A>();
+    auto   b = y.unsafe_typify<B>();
     double result = 0.0;
     for (size_t i = 0; i < cnt; ++i) {
         result += (a[i] * b[i]);
@@ -502,98 +504,85 @@ double dot_product(const TypedCells &x, const TypedCells &y, size_t cnt, DotProd
     return result;
 }
 
-template <typename A, typename B>
-DotProduct3::fun_type DotProduct3::get_fun() {
+template <typename A, typename B> DotProduct3::fun_type DotProduct3::get_fun() {
     return dot_product<A, B>;
 }
 
-DotProduct3::Self::Self()
-    : my_fun(dot_product<double, double>)
-{
+DotProduct3::Self::Self() : my_fun(dot_product<double, double>) {
 }
 
 //-----------------------------------------------------------------------------
 
 struct Sum3 {
     struct Self;
-    using fun_type = double (*)(const TypedCells &x, Self &self);
-    template <typename A>
-    static fun_type get_fun();
+    using fun_type = double (*)(const TypedCells& x, Self& self);
+    template <typename A> static fun_type get_fun();
     struct Self {
         fun_type my_fun;
         Self();
     };
     Self self;
-    double call(const TypedCells &x) {
-        return self.my_fun(x, self);
-    }
+    double call(const TypedCells& x) { return self.my_fun(x, self); }
 };
 
-template <typename A>
-double sum(const TypedCells &x, Sum3::Self &self) {
+template <typename A> double sum(const TypedCells& x, Sum3::Self& self) {
     if (!x.check_type<A>()) {
         auto new_fun = get_fun<Sum3>(x.type);
         self.my_fun = new_fun;
         return new_fun(x, self);
     }
-    auto a = x.unsafe_typify<A>();
+    auto   a = x.unsafe_typify<A>();
     double result = 0.0;
-    for (const auto &value: a) {
+    for (const auto& value : a) {
         result += value;
     }
     return result;
 }
 
-template <typename A>
-Sum3::fun_type Sum3::get_fun() {
+template <typename A> Sum3::fun_type Sum3::get_fun() {
     return sum<A>;
 }
 
-Sum3::Self::Self()
-    : my_fun(sum<double>)
-{
+Sum3::Self::Self() : my_fun(sum<double>) {
 }
 
 //-----------------------------------------------------------------------------
 
-TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_a_op_b_builds_c_works)
-{
-    std::vector<Int8Float>  a({1,2,3});
-    std::vector<float>      b({1.5,2.5,3.5});
-    std::vector<double>     c(3, 0.0);
-    TypedCells              a_cells(a);
-    TypedCells              b_cells(b);
-    TypedCells              c_cells(c);
+TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_a_op_b_builds_c_works) {
+    std::vector<Int8Float> a({1, 2, 3});
+    std::vector<float>     b({1.5, 2.5, 3.5});
+    std::vector<double>    c(3, 0.0);
+    TypedCells             a_cells(a);
+    TypedCells             b_cells(b);
+    TypedCells             c_cells(c);
 
     CellwiseAdd3 op;
-    EXPECT_EQ(op.self.my_fun, (&cellwise_add<double,double,double>));
+    EXPECT_EQ(op.self.my_fun, (&cellwise_add<double, double, double>));
     op.call(a_cells, b_cells, c_cells, 3);
-    EXPECT_EQ(op.self.my_fun, (&cellwise_add<Int8Float,float,double>));
-    EXPECT_NE(op.self.my_fun, (&cellwise_add<double,double,double>));
+    EXPECT_EQ(op.self.my_fun, (&cellwise_add<Int8Float, float, double>));
+    EXPECT_NE(op.self.my_fun, (&cellwise_add<double, double, double>));
 
     EXPECT_EQ(c[0], 2.5);
     EXPECT_EQ(c[1], 4.5);
     EXPECT_EQ(c[2], 6.5);
 }
 
-TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_dot_product_with_return_value_works)
-{
-    std::vector<Int8Float>  a({1,2,3});
-    std::vector<float>      b({1.5,2.5,3.5});
-    TypedCells              a_cells(a);
-    TypedCells              b_cells(b);
-    double                  expect = 1.5 + (2 * 2.5) + (3 * 3.5);
+TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_dot_product_with_return_value_works) {
+    std::vector<Int8Float> a({1, 2, 3});
+    std::vector<float>     b({1.5, 2.5, 3.5});
+    TypedCells             a_cells(a);
+    TypedCells             b_cells(b);
+    double                 expect = 1.5 + (2 * 2.5) + (3 * 3.5);
 
     DotProduct3 op;
-    EXPECT_EQ(op.self.my_fun, (&dot_product<double,double>));
+    EXPECT_EQ(op.self.my_fun, (&dot_product<double, double>));
     EXPECT_EQ(expect, op.call(a_cells, b_cells, 3));
-    EXPECT_EQ(op.self.my_fun, (&dot_product<Int8Float,float>));
-    EXPECT_NE(op.self.my_fun, (&dot_product<double,double>));
+    EXPECT_EQ(op.self.my_fun, (&dot_product<Int8Float, float>));
+    EXPECT_NE(op.self.my_fun, (&dot_product<double, double>));
 }
 
-TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_sum_with_return_value_works)
-{
-    std::vector<Int8Float> a({1,2,3});
+TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_sum_with_return_value_works) {
+    std::vector<Int8Float> a({1, 2, 3});
     TypedCells             a_cells(a);
     double                 expect = (1 + 2 + 3);
 
@@ -604,16 +593,16 @@ TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_sum_
     EXPECT_NE(op.self.my_fun, (&sum<double>));
 }
 
-TEST(TypedCellsTest, require_that_non_existing_attribute_value_can_be_controlled)
-{
-    float values[3] = {0,1,2};
+TEST(TypedCellsTest, require_that_non_existing_attribute_value_can_be_controlled) {
+    float values[3] = {0, 1, 2};
     EXPECT_FALSE(TypedCells().non_existing_attribute_value());
     EXPECT_FALSE(TypedCells(values, CellType::FLOAT, 3).non_existing_attribute_value());
     EXPECT_FALSE(TypedCells(std::span<const double>()).non_existing_attribute_value());
     EXPECT_FALSE(TypedCells(std::span<const float>()).non_existing_attribute_value());
     EXPECT_FALSE(TypedCells(std::span<const Int8Float>()).non_existing_attribute_value());
     EXPECT_FALSE(TypedCells(std::span<const BFloat16>()).non_existing_attribute_value());
-    EXPECT_TRUE(TypedCells::create_non_existing_attribute_value(values, CellType::FLOAT, 3).non_existing_attribute_value());
+    EXPECT_TRUE(
+        TypedCells::create_non_existing_attribute_value(values, CellType::FLOAT, 3).non_existing_attribute_value());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

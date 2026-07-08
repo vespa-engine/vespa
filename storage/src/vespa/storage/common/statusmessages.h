@@ -19,9 +19,9 @@ namespace storage {
  */
 class RequestStatusPage : public api::InternalCommand {
     framework::HttpUrlPath _path;
-    std::string _sortToken; // Used if sending multiple messages, to set order
-                            // in which results should be sorted on status page.
-                            // (Used by filestor threads)
+    std::string            _sortToken; // Used if sending multiple messages, to set order
+                                       // in which results should be sorted on status page.
+                                       // (Used by filestor threads)
 public:
     static constexpr uint32_t ID = 2100;
 
@@ -45,6 +45,7 @@ public:
 class RequestStatusPageReply : public api::InternalReply {
     std::string _status;
     std::string _sortToken;
+
 public:
     static constexpr uint32_t ID = 2101;
 
@@ -59,11 +60,9 @@ public:
 
 struct StatusReqSorter {
     bool operator()(const std::shared_ptr<RequestStatusPageReply>& a,
-                    const std::shared_ptr<RequestStatusPageReply>& b)
-    {
+                    const std::shared_ptr<RequestStatusPageReply>& b) {
         return (a->getSortToken() < b->getSortToken());
     }
 };
 
-} // storage
-
+} // namespace storage

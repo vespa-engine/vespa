@@ -14,10 +14,7 @@ class ConverterFactory;
 
 namespace sortspec {
 
-enum class SortOrder : uint8_t {
-    ASCENDING,
-    DESCENDING
-};
+enum class SortOrder : uint8_t { ASCENDING, DESCENDING };
 
 enum class MissingPolicy : uint8_t {
     DEFAULT, // Single value: first on ascending, last on descending. Multi value: last
@@ -26,7 +23,7 @@ enum class MissingPolicy : uint8_t {
     AS
 };
 
-}
+} // namespace sortspec
 
 struct FieldSortSpec {
     FieldSortSpec(std::string_view field, bool ascending, std::shared_ptr<BlobConverter> converter) noexcept;
@@ -38,15 +35,13 @@ struct FieldSortSpec {
     std::shared_ptr<BlobConverter> _converter;
     sortspec::MissingPolicy        _missing_policy;
     std::string                    _missing_value;
-    bool is_ascending() const noexcept {
-        return _sort_order == sortspec::SortOrder::ASCENDING;
-    }
+    bool is_ascending() const noexcept { return _sort_order == sortspec::SortOrder::ASCENDING; }
 };
 
-class SortSpec
-{
-    std::string _spec;
+class SortSpec {
+    std::string                _spec;
     std::vector<FieldSortSpec> _field_sort_specs;
+
 public:
     SortSpec();
     SortSpec(const std::string& spec, const ConverterFactory& ucaFactory);
@@ -60,4 +55,4 @@ public:
     const std::vector<FieldSortSpec>& get_field_sort_specs() const noexcept { return _field_sort_specs; }
 };
 
-}
+} // namespace search::common

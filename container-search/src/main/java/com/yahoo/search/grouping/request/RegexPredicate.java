@@ -2,9 +2,11 @@
 package com.yahoo.search.grouping.request;
 
 import com.yahoo.api.annotations.Beta;
+import com.yahoo.text.Text;
 
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
+
 
 /**
  * Represents a filter expression that matches a value from the evaluated expression against a regex.
@@ -28,7 +30,7 @@ public class RegexPredicate extends FilterExpression {
         try {
             Pattern.compile(pattern);
         } catch (PatternSyntaxException e) {
-            throw new IllegalArgumentException("Invalid regex pattern: %s (%s)".formatted(pattern, e.getMessage()), e);
+            throw new IllegalArgumentException(Text.format("Invalid regex pattern: %s (%s)", pattern, e.getMessage()), e);
         }
     }
 
@@ -47,6 +49,6 @@ public class RegexPredicate extends FilterExpression {
     public String getPattern() { return pattern; }
     public GroupingExpression getExpression() { return expression; }
 
-    @Override public String toString() { return "regex(\"%s\", %s)".formatted(pattern, expression); }
+    @Override public String toString() { return Text.format("regex(\"%s\", %s)", pattern, expression); }
     @Override public FilterExpression copy() { return new RegexPredicate(pattern, expression.copy()); }
 }

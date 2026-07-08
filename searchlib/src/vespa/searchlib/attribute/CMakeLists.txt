@@ -2,6 +2,9 @@
 vespa_add_library(searchlib_attribute OBJECT
     SOURCES
     address_space_components.cpp
+    array_bool_attribute.cpp
+    array_bool_attribute_access.cpp
+    array_bool_ext_attribute.cpp
     address_space_usage.cpp
     array_iterator.cpp
     attribute.cpp
@@ -69,6 +72,7 @@ vespa_add_library(searchlib_attribute OBJECT
     imported_attribute_vector.cpp
     imported_attribute_vector_factory.cpp
     imported_attribute_vector_read_guard.cpp
+    imported_array_bool_read_view.cpp
     imported_multi_value_read_view.cpp
     imported_search_context.cpp
     integerbase.cpp

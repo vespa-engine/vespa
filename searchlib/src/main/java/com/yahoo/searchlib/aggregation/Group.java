@@ -224,7 +224,7 @@ public class Group extends Identifiable {
      */
     public Group addChild(Group child) {
         if (child == null) {
-            throw new IllegalArgumentException("Child can not be null.");
+            throw new IllegalArgumentException("Child cannot be null.");
         }
         children = add(children, child);
         return this;

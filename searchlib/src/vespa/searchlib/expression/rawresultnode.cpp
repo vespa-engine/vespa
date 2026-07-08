@@ -8,6 +8,5 @@ const BucketResultNode& RawResultNode::getNullBucket() const {
     return RawBucketResultNode::getNull();
 }
 
-}
-}
-
+} // namespace expression
+} // namespace search

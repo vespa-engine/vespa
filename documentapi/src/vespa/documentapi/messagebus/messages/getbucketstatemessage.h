@@ -2,6 +2,7 @@
 #pragma once
 
 #include "documentmessage.h"
+
 #include <vespa/document/bucket/bucketid.h>
 
 namespace documentapi {
@@ -25,7 +26,7 @@ public:
      *
      * @param bucket The bucket whose state to retrieve.
      */
-    GetBucketStateMessage(const document::BucketId &bucket);
+    GetBucketStateMessage(const document::BucketId& bucket);
 
     /**
      * Returns the bucket whose state to retrieve.
@@ -46,5 +47,4 @@ public:
     string toString() const override { return "getbucketstatemessage"; }
 };
 
-}
-
+} // namespace documentapi

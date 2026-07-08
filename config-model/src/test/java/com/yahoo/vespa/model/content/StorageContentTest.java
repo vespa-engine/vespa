@@ -17,7 +17,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class StorageContentTest extends ContentBaseTest {
     // TODO: Test with document-definitions
@@ -166,7 +169,7 @@ public class StorageContentTest extends ContentBaseTest {
             fail("no exception thrown for doc type in local selection");
         } catch (RuntimeException e) {
             assertTrue(e.getMessage().contains("Selection for document type 'type2" +
-                                               "' can not contain references to other " +
+                                               "' cannot contain references to other " +
                                                "document types, but references type1"));
         }
 

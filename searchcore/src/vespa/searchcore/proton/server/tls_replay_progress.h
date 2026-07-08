@@ -3,34 +3,28 @@
 #pragma once
 
 #include "i_replay_progress_producer.h"
+
 #include <vespa/searchlib/common/serialnum.h>
+
 #include <atomic>
 #include <memory>
 #include <string>
 
 namespace proton {
 
-class TlsReplayProgress : public IReplayProgressProducer
-{
+class TlsReplayProgress : public IReplayProgressProducer {
 private:
-    const std::string  _domainName;
-    const search::SerialNum _first;
-    const search::SerialNum _last;
+    const std::string              _domainName;
+    const search::SerialNum        _first;
+    const search::SerialNum        _last;
     std::atomic<search::SerialNum> _current;
 
 public:
     using UP = std::unique_ptr<TlsReplayProgress>;
 
-    TlsReplayProgress(const std::string &domainName,
-                      search::SerialNum first,
-                      search::SerialNum last)
-        : _domainName(domainName),
-          _first(first),
-          _last(last),
-          _current(first)
-    {
-    }
-    const std::string &getDomainName() const noexcept { return _domainName; }
+    TlsReplayProgress(const std::string& domainName, search::SerialNum first, search::SerialNum last)
+        : _domainName(domainName), _first(first), _last(last), _current(first) {}
+    const std::string& getDomainName() const noexcept { return _domainName; }
     search::SerialNum getFirst() const noexcept { return _first; }
     search::SerialNum getLast() const noexcept { return _last; }
     search::SerialNum getCurrent() const noexcept { return _current.load(std::memory_order_relaxed); }
@@ -38,11 +32,10 @@ public:
         if (_first == _last) {
             return 1.0;
         } else {
-            return ((float)(getCurrent() - _first)/float(_last - _first));
+            return ((float)(getCurrent() - _first) / float(_last - _first));
         }
     }
     void updateCurrent(search::SerialNum current) noexcept { _current.store(current, std::memory_order_relaxed); }
 };
 
 } // namespace proton
-

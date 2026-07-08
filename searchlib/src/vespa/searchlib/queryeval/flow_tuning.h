@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+#include "flow.h"
+
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchcommon/attribute/collectiontype.h>
+
 #include <cmath>
 #include <cstddef>
-#include "flow.h"
 
 namespace search::queryeval::flow {
 
@@ -44,11 +46,17 @@ inline double heap_cost(double my_est, size_t num_children) {
     return my_est * std::log2(std::max(size_t(1), num_children));
 }
 
+// The activation cost of an intermediate blueprint: the per-node cost of
+// invoking its own iterator, excluding the flow cost of its children.
+inline double intermediate_activation_cost() {
+    return 0.5;
+}
+
 /**
  * Returns the number of memory indirections needed when doing lookups
  * in an attribute with the given type.
  */
-inline size_t get_num_indirections(const attribute::BasicType& basic_type,
+inline size_t get_num_indirections(const attribute::BasicType&      basic_type,
                                    const attribute::CollectionType& col_type) {
     size_t res = 0;
     if (basic_type == attribute::BasicType::STRING) {
@@ -63,7 +71,7 @@ inline size_t get_num_indirections(const attribute::BasicType& basic_type,
 // Some blueprints are not able to provide a hit estimate (e.g. attributes without fast-search).
 // In such cases the following estimate is used instead. In most cases this is an overestimate.
 inline double estimate_when_unknown() {
-    return 0.1;
+    return 0.5;
 }
 
 // Non-strict cost of lookup based matching in an attribute (not fast-search).
@@ -139,4 +147,4 @@ inline double disk_index_cost(double my_est) {
     return non_strict_cost_of_strict_iterator(my_est, disk_index_strict_cost(my_est));
 }
 
-}
+} // namespace search::queryeval::flow

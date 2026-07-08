@@ -11,7 +11,7 @@ import com.yahoo.search.query.textserialize.serializer.ItemIdMapper;
  */
 @SuppressWarnings("rawtypes")
 public class NearConverter extends CompositeConverter {
-    final private String distanceProperty = "distance";;
+    final private String distanceProperty = "distance";
 
     @SuppressWarnings("unchecked")
     public NearConverter(Class<? extends NearItem> nearItemClass) {

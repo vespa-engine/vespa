@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/data/slime/slime.h>
+
 #include <cassert>
 
 namespace search::docsummary::test {
@@ -13,12 +14,10 @@ namespace search::docsummary::test {
 struct SlimeValue {
     vespalib::Slime slime;
 
-    SlimeValue(const std::string& json_input)
-        : slime()
-    {
+    SlimeValue(const std::string& json_input) : slime() {
         size_t used = vespalib::slime::JsonFormat::decode(json_input, slime);
         assert(used > 0);
     }
 };
 
-}
+} // namespace search::docsummary::test

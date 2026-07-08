@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_db_prune_elision.h"
+
 #include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::distributor {
@@ -16,14 +17,11 @@ namespace storage::distributor {
 // Down state, and vice versa.
 //
 // Precondition: a.getNodeCount(node_type) == b.getNodeCount(node_type)
-bool node_states_are_idempotent_for_pruning(const lib::NodeType& node_type,
-                                            const lib::ClusterState& a,
-                                            const lib::ClusterState& b,
-                                            const char* up_states)
-{
+bool node_states_are_idempotent_for_pruning(const lib::NodeType& node_type, const lib::ClusterState& a,
+                                            const lib::ClusterState& b, const char* up_states) {
     const uint16_t node_count = a.getNodeCount(node_type);
     for (uint16_t i = 0; i < node_count; ++i) {
-        lib::Node node(node_type, i);
+        lib::Node   node(node_type, i);
         const auto& a_s = a.getNodeState(node);
         const auto& b_s = b.getNodeState(node);
         // Transitioning from one effective Down state to another can elide DB pruning,
@@ -55,4 +53,4 @@ bool db_pruning_may_be_elided(const lib::ClusterState& a, const lib::ClusterStat
             node_states_are_idempotent_for_pruning(lib::NodeType::STORAGE, a, b, up_states));
 }
 
-}
+} // namespace storage::distributor

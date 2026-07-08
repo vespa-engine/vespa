@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "l2_distance.h"
+
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
@@ -15,52 +16,40 @@ using namespace tensor_function;
 
 namespace {
 
-template <typename T>
-double sq_l2(const Value &lhs, const Value &rhs, size_t len) {
-    return hwaccelerated::squared_euclidean_distance((const T *)lhs.cells().data, (const T *)rhs.cells().data, len);
+template <typename T> double sq_l2(const Value& lhs, const Value& rhs, size_t len) {
+    return hwaccelerated::squared_euclidean_distance((const T*)lhs.cells().data, (const T*)rhs.cells().data, len);
 }
 
-template <>
-double sq_l2<Int8Float>(const Value &lhs, const Value &rhs, size_t len) {
+template <> double sq_l2<Int8Float>(const Value& lhs, const Value& rhs, size_t len) {
     return sq_l2<int8_t>(lhs, rhs, len);
 }
 
-template <typename CT>
-void my_squared_l2_distance_op(InterpretedFunction::State &state, uint64_t vector_size) {
+template <typename CT> void my_squared_l2_distance_op(InterpretedFunction::State& state, uint64_t vector_size) {
     double result = sq_l2<CT>(state.peek(1), state.peek(0), vector_size);
     state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
 struct SelectOp {
-    template <typename CT>
-    static InterpretedFunction::op_function invoke() {
-        return my_squared_l2_distance_op<CT>;
-    }
+    template <typename CT> static InterpretedFunction::op_function invoke() { return my_squared_l2_distance_op<CT>; }
 };
 
 bool compatible_cell_types(CellType lhs, CellType rhs) {
-    return ((lhs == rhs) && ((lhs == CellType::INT8) ||
-                             (lhs == CellType::BFLOAT16) ||
-                             (lhs == CellType::FLOAT) ||
+    return ((lhs == rhs) && ((lhs == CellType::INT8) || (lhs == CellType::BFLOAT16) || (lhs == CellType::FLOAT) ||
                              (lhs == CellType::DOUBLE)));
 }
 
-bool compatible_types(const ValueType &lhs, const ValueType &rhs) {
-    return (compatible_cell_types(lhs.cell_type(), rhs.cell_type()) &&
-            lhs.is_dense() && rhs.is_dense() &&
+bool compatible_types(const ValueType& lhs, const ValueType& rhs) {
+    return (compatible_cell_types(lhs.cell_type(), rhs.cell_type()) && lhs.is_dense() && rhs.is_dense() &&
             (lhs.nontrivial_indexed_dimensions() == rhs.nontrivial_indexed_dimensions()));
 }
 
-} // namespace <unnamed>
+} // namespace
 
-L2Distance::L2Distance(const TensorFunction &lhs_in, const TensorFunction &rhs_in)
-  : tensor_function::Op2(ValueType::double_type(), lhs_in, rhs_in)
-{
+L2Distance::L2Distance(const TensorFunction& lhs_in, const TensorFunction& rhs_in)
+    : tensor_function::Op2(ValueType::double_type(), lhs_in, rhs_in) {
 }
 
-InterpretedFunction::Instruction
-L2Distance::compile_self(const ValueBuilderFactory &, Stash &) const
-{
+InterpretedFunction::Instruction L2Distance::compile_self(const ValueBuilderFactory&, Stash&) const {
     auto lhs_t = lhs().result_type();
     auto rhs_t = rhs().result_type();
     REQUIRE_EQ(lhs_t.cell_type(), rhs_t.cell_type());
@@ -69,9 +58,7 @@ L2Distance::compile_self(const ValueBuilderFactory &, Stash &) const
     return InterpretedFunction::Instruction(op, lhs_t.dense_subspace_size());
 }
 
-const TensorFunction &
-L2Distance::optimize(const TensorFunction &expr, Stash &stash)
-{
+const TensorFunction& L2Distance::optimize(const TensorFunction& expr, Stash& stash) {
     auto reduce = as<Reduce>(expr);
     if (reduce && (reduce->aggr() == Aggr::SUM) && expr.result_type().is_double()) {
         auto map = as<Map>(reduce->child());
@@ -87,4 +74,4 @@ L2Distance::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace
+} // namespace vespalib::eval

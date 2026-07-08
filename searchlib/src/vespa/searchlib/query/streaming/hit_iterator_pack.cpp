@@ -4,12 +4,8 @@
 
 namespace search::streaming {
 
-
 HitIteratorPack::HitIteratorPack(std::span<const std::unique_ptr<QueryNode>> children)
-    : _iterators(),
-      _hit_lists(),
-      _field_element(std::make_pair(0, 0))
-{
+    : _iterators(), _hit_lists(), _field_element(std::make_pair(0, 0)) {
     auto num_children = children.size();
     _iterators.reserve(num_children);
     _hit_lists.reserve(num_children);
@@ -19,10 +15,7 @@ HitIteratorPack::HitIteratorPack(std::span<const std::unique_ptr<QueryNode>> chi
 }
 
 HitIteratorPack::HitIteratorPack(std::span<const std::unique_ptr<QueryTerm>> children)
-    : _iterators(),
-      _hit_lists(),
-      _field_element(std::make_pair(0, 0))
-{
+    : _iterators(), _hit_lists(), _field_element(std::make_pair(0, 0)) {
     auto num_children = children.size();
     _iterators.reserve(num_children);
     _hit_lists.reserve(num_children);
@@ -33,9 +26,7 @@ HitIteratorPack::HitIteratorPack(std::span<const std::unique_ptr<QueryTerm>> chi
 
 HitIteratorPack::~HitIteratorPack() = default;
 
-bool
-HitIteratorPack::all_valid() const noexcept
-{
+bool HitIteratorPack::all_valid() const noexcept {
     if (_iterators.empty()) {
         return false;
     }
@@ -47,9 +38,7 @@ HitIteratorPack::all_valid() const noexcept
     return true;
 }
 
-bool
-HitIteratorPack::seek_to_matching_field_element() noexcept
-{
+bool HitIteratorPack::seek_to_matching_field_element() noexcept {
     bool retry = true;
     while (retry) {
         retry = false;
@@ -68,4 +57,4 @@ HitIteratorPack::seek_to_matching_field_element() noexcept
     return true;
 }
 
-}
+} // namespace search::streaming

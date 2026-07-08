@@ -54,12 +54,31 @@ public class Exceptions {
      * Returns the first cause or the given throwable that is an instance of {@code clazz}
      */
     public static <T extends Throwable> Optional<T> findCause(Throwable t, Class<T> clazz) {
-        for (; t != null; t = t.getCause()) {
-            if (clazz.isInstance(t))
-                return Optional.of(clazz.cast(t));
-        }
-        return Optional.empty();
+        return findCause(t, clazz, false);
     }
+
+    /**
+    * Returns the root/innermost cause or the given throwable that is an instance of {@code clazz}
+    */
+    public static <T extends Throwable> Optional<T> findRootCause(Throwable t, Class<T> clazz) {
+        return findCause(t, clazz, true);
+    }
+
+    /**
+     * Returns the cause of a given throwable that is an instance of {@code clazz}.
+     * When {@code findRootCause} is false, the first cause found is returned. Otherwise, the root/innermost cause found is returned.
+     */
+    private static <T extends Throwable> Optional<T> findCause(Throwable t, Class<T> clazz, boolean findRootCause) {
+        T found = null;
+        for (; t != null; t = t.getCause()) {
+            if (clazz.isInstance(t)) {
+                found = clazz.cast(t);
+                if (!findRootCause) break;
+            }
+        }
+        return Optional.ofNullable(found);
+    }
+
 
     @FunctionalInterface
     public interface RunnableThrowingIOException {
@@ -84,7 +103,7 @@ public class Exceptions {
         try {
             runnable.run();
         } catch (IOException e) {
-            String message = String.format(format, (Object[]) args);
+            String message = String.format(java.util.Locale.ROOT, format, (Object[]) args);
             throw new UncheckedIOException(message, e);
         }
     }
@@ -141,7 +160,7 @@ public class Exceptions {
         try {
             return supplier.get();
         } catch (IOException e) {
-            String message = String.format(format, (Object[]) args);
+            String message = String.format(java.util.Locale.ROOT, format, (Object[]) args);
             throw new UncheckedIOException(message, e);
         }
     }

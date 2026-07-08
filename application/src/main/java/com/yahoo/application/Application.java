@@ -42,6 +42,7 @@ import java.net.BindException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -240,7 +241,7 @@ public final class Application implements AutoCloseable {
         }
 
         /**
-         * Get the file name (path) of a resource or fail if it can not be found
+         * Get the file name (path) of a resource or fail if it cannot be found
          *
          * @param resource Name of desired resource
          * @return Path of resource
@@ -369,7 +370,7 @@ public final class Application implements AutoCloseable {
         }
 
         private void generateXml() throws Exception {
-            try (PrintWriter xml = new PrintWriter(Files.newOutputStream(path.resolve("services.xml")))) {
+            try (PrintWriter xml = new PrintWriter(Files.newOutputStream(path.resolve("services.xml")), true, StandardCharsets.UTF_8)) {
                 xml.println("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
                 for (Map.Entry<String, Container> entry : containers.entrySet()) {
                     entry.getValue().build(xml, entry.getKey(), (networking == Networking.enable ? getRandomPort() : -1));

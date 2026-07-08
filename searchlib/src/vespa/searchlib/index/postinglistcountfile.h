@@ -2,10 +2,14 @@
 #pragma once
 
 #include "postinglistcounts.h"
+
 #include <vespa/searchlib/common/tunefileinfo.h>
+
 #include <string>
 
-namespace search::common { class FileHeaderContext; }
+namespace search::common {
+class FileHeaderContext;
+}
 
 namespace search::index {
 
@@ -32,7 +36,7 @@ public:
     /**
      * Open posting list count file for sequential read.
      */
-    virtual bool open(const std::string &name, const TuneFileSeqRead &tuneFileRead) = 0;
+    virtual bool open(const std::string& name, const TuneFileSeqRead& tuneFileRead) = 0;
 
     /**
      * Close posting list count file.
@@ -42,9 +46,8 @@ public:
     /*
      * Get current parameters.
      */
-    virtual void getParams(PostingListParams &params);
+    virtual void getParams(PostingListParams& params);
 };
-
 
 class PostingListCountFileSeqWrite {
 public:
@@ -55,9 +58,8 @@ public:
     /**
      * Open posting list count file for sequential write.
      */
-    virtual bool open(const std::string &name,
-                      const TuneFileSeqWrite &tuneFileWrite,
-                      const common::FileHeaderContext &fileHeaderContext) = 0;
+    virtual bool open(const std::string& name, const TuneFileSeqWrite& tuneFileWrite,
+                      const common::FileHeaderContext& fileHeaderContext) = 0;
 
     /**
      * Close posting list count file.
@@ -67,12 +69,12 @@ public:
     /*
      * Set parameters.
      */
-    virtual void setParams(const PostingListParams &params);
+    virtual void setParams(const PostingListParams& params);
 
     /*
      * Get current parameters.
      */
-    virtual void getParams(PostingListParams &params);
+    virtual void getParams(PostingListParams& params);
 };
 
-}
+} // namespace search::index

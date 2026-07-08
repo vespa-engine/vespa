@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "schema_builder.h"
+
 #include "doc_builder.h"
+
 #include <vespa/document/datatype/collectiondatatype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchcommon/common/schema.h>
+
 #include <cassert>
 
 using document::DataType;
@@ -13,12 +16,9 @@ using search::index::Schema;
 
 namespace search::test {
 
-namespace
-{
+namespace {
 
-search::index::schema::DataType
-get_data_type(const DataType& type)
-{
+search::index::schema::DataType get_data_type(const DataType& type) {
     using SrcType = DataType::Type;
     using DstType = search::index::schema::DataType;
     switch (type.getId()) {
@@ -51,18 +51,14 @@ get_data_type(const DataType& type)
     }
 }
 
-const DataType&
-get_nested_type(const DataType& type)
-{
+const DataType& get_nested_type(const DataType& type) {
     if (type.isArray() || type.isWeightedSet()) {
         return type.cast_collection()->getNestedType();
     }
     return type;
 }
 
-search::index::schema::CollectionType
-get_collection_type(const document::DataType& type)
-{
+search::index::schema::CollectionType get_collection_type(const document::DataType& type) {
     using DstType = search::index::schema::CollectionType;
     if (type.isArray()) {
         return DstType::ARRAY;
@@ -74,24 +70,19 @@ get_collection_type(const document::DataType& type)
     return DstType::SINGLE;
 }
 
-}
-
+} // namespace
 
 SchemaBuilder::SchemaBuilder(const DocBuilder& doc_builder)
-    : _doc_builder(doc_builder),
-      _schema(std::make_unique<Schema>())
-{
+    : _doc_builder(doc_builder), _schema(std::make_unique<Schema>()) {
 }
 
 SchemaBuilder::~SchemaBuilder() = default;
 
-void
-SchemaBuilder::add_index(std::string_view field_name, std::optional<bool> interleaved_features)
-{
+void SchemaBuilder::add_index(std::string_view field_name, std::optional<bool> interleaved_features) {
     auto& field = _doc_builder.get_document_type().getField(field_name);
-    auto ct = get_collection_type(field.getDataType());
+    auto  ct = get_collection_type(field.getDataType());
     auto& type = get_nested_type(field.getDataType());
-    auto dt = get_data_type(type);
+    auto  dt = get_data_type(type);
     assert(dt == search::index::schema::DataType::STRING);
     Schema::IndexField index_field(field_name, dt, ct);
     if (interleaved_features.has_value()) {
@@ -104,22 +95,19 @@ SchemaBuilder::add_index(std::string_view field_name, std::optional<bool> interl
     }
 }
 
-SchemaBuilder&
-SchemaBuilder::add_indexes(std::vector<std::string_view> field_names, std::optional<bool> interleaved_features)
-{
+SchemaBuilder& SchemaBuilder::add_indexes(std::vector<std::string_view> field_names,
+                                          std::optional<bool>           interleaved_features) {
     for (auto& field_name : field_names) {
         add_index(field_name, interleaved_features);
     }
     return *this;
 }
 
-SchemaBuilder&
-SchemaBuilder::add_all_indexes(std::optional<bool> interleaved_features)
-{
+SchemaBuilder& SchemaBuilder::add_all_indexes(std::optional<bool> interleaved_features) {
     auto fields = _doc_builder.get_document_type().getFieldSet();
     for (auto field : fields) {
         auto& type = get_nested_type(field->getDataType());
-        auto dt = get_data_type(type);
+        auto  dt = get_data_type(type);
         if (dt == search::index::schema::DataType::STRING) {
             add_index(field->getName(), interleaved_features);
         }
@@ -127,13 +115,11 @@ SchemaBuilder::add_all_indexes(std::optional<bool> interleaved_features)
     return *this;
 }
 
-void
-SchemaBuilder::add_attribute(std::string_view field_name)
-{
-    auto& field = _doc_builder.get_document_type().getField(field_name);
-    auto ct = get_collection_type(field.getDataType());
-    auto& type = get_nested_type(field.getDataType());
-    auto dt = get_data_type(type);
+void SchemaBuilder::add_attribute(std::string_view field_name) {
+    auto&       field = _doc_builder.get_document_type().getField(field_name);
+    auto        ct = get_collection_type(field.getDataType());
+    auto&       type = get_nested_type(field.getDataType());
+    auto        dt = get_data_type(type);
     std::string tensor_type_spec;
     assert(type.getId() != DataType::Type::T_URI);
     if (type.getId() == DataType::Type::T_TENSOR) {
@@ -144,18 +130,14 @@ SchemaBuilder::add_attribute(std::string_view field_name)
     _schema->addAttributeField(attribute_field);
 }
 
-SchemaBuilder&
-SchemaBuilder::add_attributes(std::vector<std::string_view> field_names)
-{
+SchemaBuilder& SchemaBuilder::add_attributes(std::vector<std::string_view> field_names) {
     for (auto& field_name : field_names) {
         add_attribute(field_name);
     }
     return *this;
 }
 
-SchemaBuilder&
-SchemaBuilder::add_all_attributes()
-{
+SchemaBuilder& SchemaBuilder::add_all_attributes() {
     auto fields = _doc_builder.get_document_type().getFieldSet();
     for (auto field : fields) {
         auto& type = get_nested_type(field->getDataType());
@@ -166,10 +148,8 @@ SchemaBuilder::add_all_attributes()
     return *this;
 }
 
-search::index::Schema
-SchemaBuilder::build()
-{
+search::index::Schema SchemaBuilder::build() {
     return std::move(*_schema);
 }
 
-}
+} // namespace search::test

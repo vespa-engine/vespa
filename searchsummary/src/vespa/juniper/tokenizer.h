@@ -13,7 +13,7 @@ public:
     JuniperTokenizer(const Fast_WordFolder* wordfolder, const char* text, size_t len, ITokenProcessor* = nullptr,
                      const juniper::SpecialTokenRegistry* registry = nullptr);
     inline void SetSuccessor(ITokenProcessor* successor) { _successor = successor; }
-    void        setRegistry(const juniper::SpecialTokenRegistry* registry) { _registry = registry; }
+    void setRegistry(const juniper::SpecialTokenRegistry* registry) { _registry = registry; }
 
     void SetText(const char* text, size_t len);
 

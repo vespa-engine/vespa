@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 
@@ -86,7 +87,7 @@ class CloudHttpConnectorValidatorTest {
     }
 
     private static void runValidatorOnApp(boolean hosted, String appTypeAttribute, String serverXml) throws Exception {
-        String servicesXml = """
+        String servicesXml = Text.format("""
                         <services version='1.0'%s>
                           <container version='1.0'>
                             <http>
@@ -94,7 +95,7 @@ class CloudHttpConnectorValidatorTest {
                             </http>
                           </container>
                         </services>
-                """.formatted(appTypeAttribute, serverXml);
+                """, appTypeAttribute, serverXml);
         var state = new DeployState.Builder()
                 .applicationPackage(
                         new MockApplicationPackage.Builder()

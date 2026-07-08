@@ -13,13 +13,13 @@ class Message;
  * to handle incoming messages received from either an
  * IntermediateSession or a DestinationSession.
  **/
-class IMessageHandler
-{
+class IMessageHandler {
 protected:
     IMessageHandler() = default;
+
 public:
-    IMessageHandler(const IMessageHandler &) = delete;
-    IMessageHandler & operator = (const IMessageHandler &) = delete;
+    IMessageHandler(const IMessageHandler&) = delete;
+    IMessageHandler& operator=(const IMessageHandler&) = delete;
     virtual ~IMessageHandler() = default;
 
     /**
@@ -31,4 +31,3 @@ public:
 };
 
 } // namespace mbus
-

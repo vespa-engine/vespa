@@ -8,14 +8,10 @@ using search::SerialNum;
 namespace proton {
 
 SequentialAttributesInitializer::SequentialAttributesInitializer(uint32_t docIdLimit)
-    : AttributesInitializerBase(),
-      _docIdLimit(docIdLimit)
-{
+    : AttributesInitializerBase(), _docIdLimit(docIdLimit) {
 }
 
-void
-SequentialAttributesInitializer::add(AttributeInitializer::UP initializer)
-{
+void SequentialAttributesInitializer::add(AttributeInitializer::UP initializer) {
     AttributeInitializerResult result = initializer->init();
     if (result) {
         considerPadAttribute(*result.getAttribute(), initializer->getCurrentSerialNum(), _docIdLimit);

@@ -3,7 +3,9 @@
 #pragma once
 
 #include "multi_term.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <optional>
 
 namespace search::streaming {
@@ -13,15 +15,17 @@ namespace search::streaming {
  */
 class DotProductTerm : public MultiTerm {
 protected:
-    using Scores = vespalib::hash_map<uint32_t,double>;
+    using Scores = vespalib::hash_map<uint32_t, double>;
     void build_scores(Scores& scores) const;
-    void unpack_scores(Scores& scores, std::optional<double> score_threshold, uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data);
+    void unpack_scores(Scores& scores, std::optional<double> score_threshold, uint32_t docid,
+                       const fef::ITermData& td, fef::MatchData& match_data);
+
 public:
     DotProductTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms);
     ~DotProductTerm() override;
     void get_element_ids(std::vector<uint32_t>& element_ids) override;
-    void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
-                           search::common::ElementIds element_ids) override;
+    void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                           const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids) override;
 };
 
-}
+} // namespace search::streaming

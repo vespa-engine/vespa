@@ -72,7 +72,7 @@ public class HttpErrorResponse extends HttpResponse {
     }
 
     public static HttpErrorResponse nodeAllocationFailure(String msg) {
-        return new HttpErrorResponse(BAD_REQUEST, ErrorCode.NODE_ALLOCATION_FAILURE.name(), msg);
+        return new HttpErrorResponse(INTERNAL_SERVER_ERROR, ErrorCode.NODE_ALLOCATION_FAILURE.name(), msg);
     }
 
     public static HttpErrorResponse badRequest(String msg) {
@@ -96,7 +96,7 @@ public class HttpErrorResponse extends HttpResponse {
     }
 
     public static HttpErrorResponse applicationLockFailure(String msg) {
-        return new HttpErrorResponse(INTERNAL_SERVER_ERROR, ErrorCode.APPLICATION_LOCK_FAILURE.name(), msg);
+        return new HttpErrorResponse(CONFLICT, ErrorCode.APPLICATION_LOCK_FAILURE.name(), msg);
     }
 
     public static HttpErrorResponse parentHostNotReady(String msg) {

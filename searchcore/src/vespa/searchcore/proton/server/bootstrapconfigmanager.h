@@ -3,10 +3,13 @@
 #pragma once
 
 #include <vespa/config/retriever/configkeyset.h>
-#include <mutex>
-#include <memory>
 
-namespace config { class ConfigSnapshot; };
+#include <memory>
+#include <mutex>
+
+namespace config {
+class ConfigSnapshot;
+};
 namespace proton {
 
 class BootstrapConfig;
@@ -14,21 +17,19 @@ class BootstrapConfig;
 /**
  * This class handles subscribing to the proton bootstrap config.
  */
-class BootstrapConfigManager
-{
+class BootstrapConfigManager {
 public:
-    BootstrapConfigManager(const std::string & configId);
+    BootstrapConfigManager(const std::string& configId);
     ~BootstrapConfigManager();
     const config::ConfigKeySet createConfigKeySet() const;
 
     std::shared_ptr<BootstrapConfig> getConfig() const;
-    void update(const config::ConfigSnapshot & snapshot);
+    void update(const config::ConfigSnapshot& snapshot);
 
 private:
     std::shared_ptr<BootstrapConfig> _pendingConfigSnapshot;
-    std::string                 _configId;
+    std::string                      _configId;
     mutable std::mutex               _pendingConfigMutex;
 };
 
 } // namespace proton
-

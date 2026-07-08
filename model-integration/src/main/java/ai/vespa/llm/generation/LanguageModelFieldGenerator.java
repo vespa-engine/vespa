@@ -18,6 +18,7 @@ import com.yahoo.language.process.FieldGenerator;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -35,12 +36,14 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
 
     private final LanguageModelFieldGeneratorConfig config;
     private final String promptTemplate;
-    
+    private final String responseJsonSchema;
+
     @Inject
     public LanguageModelFieldGenerator(LanguageModelFieldGeneratorConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.languageModel = LanguageModelUtils.findLanguageModel(config.providerId(), languageModels, logger);
         this.config = config;
         this.promptTemplate = loadPromptTemplate(config);
+        this.responseJsonSchema = config.responseJsonSchema().isEmpty() ? null : config.responseJsonSchema();
     }
 
     private String loadPromptTemplate(LanguageModelFieldGeneratorConfig config) {
@@ -52,7 +55,7 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
             Path path = config.promptTemplateFile().get();
 
             try {
-                String promptTemplate = new String(Files.readAllBytes(path));
+                String promptTemplate = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 
                 if (promptTemplate.isEmpty()) {
                     throw new IllegalArgumentException("Prompt template file is empty: " + path);
@@ -78,7 +81,9 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         String jsonSchema = null;
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            jsonSchema = FieldGeneratorUtils.generateJsonSchemaForField(destination, targetType);
+            jsonSchema = (responseJsonSchema != null)
+                    ? responseJsonSchema
+                    : FieldGeneratorUtils.generateJsonSchemaForField(destination, targetType);
             options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
         }
         

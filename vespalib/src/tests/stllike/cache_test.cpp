@@ -1,16 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/vespalib/stllike/cache.hpp>
+
 #include <map>
 #include <string>
 
 using namespace vespalib;
 using namespace ::testing;
 
-template <typename K, typename V>
-class Map : public std::map<K, V> {
+template <typename K, typename V> class Map : public std::map<K, V> {
     using M = std::map<K, V>;
+
 public:
     mutable std::string _forwarded_arg;
 
@@ -26,12 +28,8 @@ public:
         _forwarded_arg = arg;
         return read(k, v);
     }
-    void write(const K& k, const V& v) {
-        (*this)[k] = v;
-    }
-    void erase(const K& k) {
-        M::erase(k);
-    }
+    void write(const K& k, const V& v) { (*this)[k] = v; }
+    void erase(const K& k) { M::erase(k); }
 };
 
 constexpr size_t padded_string_size = 64;
@@ -42,18 +40,24 @@ static_assert(sizeof(std::string) <= padded_string_size);
  * Wrapper for std::string that is padded to 64 bytes.
  */
 class padded_string {
-    std::string _str;
+    std::string           _str;
     [[maybe_unused]] char _pad_hack[padded_string_size - sizeof(std::string)];
 
 public:
-    padded_string() : _str(), _pad_hack() { }
-    padded_string(const char *v) : _str(v), _pad_hack() { }
-    padded_string(const padded_string& rhs) : _str(rhs._str), _pad_hack() { }
-    padded_string(padded_string&& rhs) : _str(std::move(rhs._str)), _pad_hack() { }
-    padded_string(const std::string& rhs) : _str(rhs), _pad_hack() { }
-    padded_string(std::string&& rhs) : _str(std::move(rhs)), _pad_hack() { }
-    padded_string& operator=(const padded_string& rhs) { _str = rhs._str; return *this; }
-    padded_string& operator=(padded_string&& rhs) { _str = std::move(rhs._str); return *this; }
+    padded_string() : _str(), _pad_hack() {}
+    padded_string(const char* v) : _str(v), _pad_hack() {}
+    padded_string(const padded_string& rhs) : _str(rhs._str), _pad_hack() {}
+    padded_string(padded_string&& rhs) : _str(std::move(rhs._str)), _pad_hack() {}
+    padded_string(const std::string& rhs) : _str(rhs), _pad_hack() {}
+    padded_string(std::string&& rhs) : _str(std::move(rhs)), _pad_hack() {}
+    padded_string& operator=(const padded_string& rhs) {
+        _str = rhs._str;
+        return *this;
+    }
+    padded_string& operator=(padded_string&& rhs) {
+        _str = std::move(rhs._str);
+        return *this;
+    }
     ~padded_string() = default;
     bool operator==(const padded_string& rhs) const noexcept { return _str == rhs._str; }
     bool operator==(const std::string& rhs) const noexcept { return _str == rhs; }
@@ -81,7 +85,7 @@ TEST_F(CacheTest, basic) {
     EXPECT_TRUE(cache.empty());
     EXPECT_FALSE(cache.hasKey(1));
     cache.write(1, "First inserted string");
-    EXPECT_TRUE(cache.hasKey(1) );
+    EXPECT_TRUE(cache.hasKey(1));
     m[2] = "String inserted beneath";
     EXPECT_FALSE(cache.hasKey(2));
     EXPECT_EQ(cache.read(2), "String inserted beneath");
@@ -140,58 +144,52 @@ TEST_F(CacheTest, max_cache_size_is_honored) {
 
 TEST_F(CacheTest, overflow_can_remove_multiple_elements) {
     cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> cache(m, 2000);
-    
+
     for (size_t j(0); j < 5; j++) {
         for (size_t i(0); cache.size() == i; i++) {
-            cache.write(j*53+i, "a");
+            cache.write(j * 53 + i, "a");
         }
     }
     EXPECT_EQ(24, cache.size());
     EXPECT_EQ(1944, cache.sizeBytes());
     EXPECT_FALSE(cache.hasKey(0));
     std::string ls("long string aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    std::string vls=ls+ls+ls+ls+ls+ls; // 2844 bytes
-    cache.write(53+5, ls);
+                   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    std::string vls = ls + ls + ls + ls + ls + ls; // 2844 bytes
+    cache.write(53 + 5, ls);
     EXPECT_EQ(18, cache.size());
     EXPECT_EQ(1931, cache.sizeBytes());
     EXPECT_FALSE(cache.hasKey(1));
-    cache.write(53*7+5, ls);
+    cache.write(53 * 7 + 5, ls);
     EXPECT_EQ(13, cache.size());
     EXPECT_EQ(1999, cache.sizeBytes());
     EXPECT_FALSE(cache.hasKey(2));
-    cache.write(53*8+5, vls);
+    cache.write(53 * 8 + 5, vls);
     EXPECT_EQ(1, cache.size());
     EXPECT_EQ(2924, cache.sizeBytes());
-    cache.write(53*9+6, vls);
+    cache.write(53 * 9 + 6, vls);
     EXPECT_EQ(1u, cache.size());
     EXPECT_EQ(2924u, cache.sizeBytes());
     // One oversized KV replaced by another
-    EXPECT_FALSE(cache.hasKey(53*8+5));
-    EXPECT_TRUE(cache.hasKey(53*9+6));
+    EXPECT_FALSE(cache.hasKey(53 * 8 + 5));
+    EXPECT_TRUE(cache.hasKey(53 * 9 + 6));
 }
 
 class ExtendedCache : public cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> {
 public:
     ExtendedCache(BackingStore& b, size_t max_bytes, size_t max_protected_bytes = 0)
-        : cache(b, max_bytes, max_protected_bytes),
-          _insert_count(0),
-          _remove_count(0)
-    {}
+        : cache(b, max_bytes, max_protected_bytes), _insert_count(0), _remove_count(0) {}
     size_t _insert_count;
     size_t _remove_count;
-private:
-    void onRemove(const K&) override {
-        _remove_count++;
-    }
 
-    void onInsert(const K&) override {
-        _insert_count++;
-    }
+private:
+    void onRemove(const K&) override { _remove_count++; }
+
+    void onInsert(const K&) override { _insert_count++; }
 };
 
 TEST_F(CacheTest, insert_and_remove_callbacks_invoked_when_full) {
@@ -285,8 +283,7 @@ struct SlruCacheTest : CacheTest {
         ASSERT_EQ(cache.segment_capacity(CacheSegment::Protected), exp_protected);
     }
 
-    template <typename C>
-    void assert_segment_sizes(const C& cache, size_t exp_probationary, size_t exp_protected) {
+    template <typename C> void assert_segment_sizes(const C& cache, size_t exp_probationary, size_t exp_protected) {
         ASSERT_EQ(cache.segment_size(CacheSegment::Probationary), exp_probationary);
         ASSERT_EQ(cache.segment_size(CacheSegment::Protected), exp_protected);
     }
@@ -298,23 +295,18 @@ struct SlruCacheTest : CacheTest {
     }
 
     template <typename C>
-    void assert_segment_lru_keys(C& cache,
-                                 const std::vector<typename C::key_type>& exp_probationary_keys,
-                                 const std::vector<typename C::key_type>& exp_protected_keys)
-    {
+    void assert_segment_lru_keys(C& cache, const std::vector<typename C::key_type>& exp_probationary_keys,
+                                 const std::vector<typename C::key_type>& exp_protected_keys) {
         ASSERT_EQ(cache.dump_segment_keys_in_lru_order(CacheSegment::Probationary), exp_probationary_keys);
-        ASSERT_EQ(cache.dump_segment_keys_in_lru_order(CacheSegment::Protected),    exp_protected_keys);
+        ASSERT_EQ(cache.dump_segment_keys_in_lru_order(CacheSegment::Protected), exp_protected_keys);
     }
 };
 
 namespace {
 struct SelfAsSize {
-    template <typename T>
-    constexpr size_t operator()(const T& v) const noexcept {
-        return static_cast<size_t>(v);
-    }
+    template <typename T> constexpr size_t operator()(const T& v) const noexcept { return static_cast<size_t>(v); }
 };
-}
+} // namespace
 
 TEST_F(SlruCacheTest, zero_sized_protected_segment_implies_lru_semantics) {
     cache<CacheParam<P, B, SelfAsSize, zero<std::string>>> cache(m, 300, 0);
@@ -500,7 +492,7 @@ TEST_F(SlruCacheTest, transitive_eviction_from_probationary_segment_invokes_remo
     EXPECT_EQ(cache.read(10), "foo"); // ==> protected
     cache.write(30, "a string that is so large that it will squeeze out other elements");
     ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {30}, {10}));
-    (void)cache.read(30); // ==> protected
+    (void)cache.read(30);                                                // ==> protected
     ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {10}, {30})); // the great swaparoo
     EXPECT_EQ(cache._remove_count, 0);
     // Room for another element in probationary
@@ -611,7 +603,7 @@ TEST_F(LfuCacheTest, lfu_gates_probationary_inserts_on_write_through) {
     cache.set_frequency_sketch_size(2);
     ASSERT_EQ(cache.read(2), "b"); // ==> freq 1
     ASSERT_EQ(cache.read(2), "b"); // ==> freq 2
-    cache.write(7, "zoid"); // OK; capacity < max elems
+    cache.write(7, "zoid");        // OK; capacity < max elems
     ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {7, 2}, {}));
     // 8 is not more popular than 2, so this insertion does not displace it
     cache.write(8, "berg");

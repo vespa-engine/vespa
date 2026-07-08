@@ -64,7 +64,7 @@ public class EachOperation extends GroupingOperation {
     @Override
     public void resolveLevel(int level) {
         if (level == 0) {
-            throw new IllegalArgumentException("Operation '" + this + "' can not operate on " + getLevelDesc(level) + ".");
+            throw new IllegalArgumentException("Operation '" + this + "' cannot operate on " + getLevelDesc(level) + ".");
         }
         super.resolveLevel(level - 1);
     }

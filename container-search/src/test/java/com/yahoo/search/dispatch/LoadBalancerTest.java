@@ -15,68 +15,65 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author ollivir
+ * @author Olli Virtanen
  */
 public class LoadBalancerTest {
     private static final double delta = 0.0000001;
     @Test
     void requireThatLoadBalancerServesSingleNodeSetups() {
-        Node n1 = new Node("test", 0, "test-node1", 0);
+        Node n1 = new Node("test", 0, "test-node1", 0, false);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(null);
-        Group group = grp.orElseThrow(() -> {
-            throw new IllegalStateException("Expected a SearchCluster.Group");
-        });
+        Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
+        Group group = grp.orElseThrow(() -> new IllegalStateException("Expected a SearchCluster.Group"));
         assertEquals(1, group.nodes().size());
     }
 
     @Test
     void requireThatLoadBalancerServesMultiGroupSetups() {
-        Node n1 = new Node("test", 0, "test-node1", 0);
-        Node n2 = new Node("test", 1, "test-node2", 1);
+        Node n1 = new Node("test", 0, "test-node1", 0, true);
+        Node n2 = new Node("test", 1, "test-node2", 1, true);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(null);
-        Group group = grp.orElseThrow(() -> {
-            throw new IllegalStateException("Expected a SearchCluster.Group");
-        });
+        Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
+        Group group = grp.orElseThrow(() -> new IllegalStateException("Expected a SearchCluster.Group"));
         assertEquals(1, group.nodes().size());
     }
 
     @Test
     void requireThatLoadBalancerServesClusteredGroups() {
-        Node n1 = new Node("test", 0, "test-node1", 0);
-        Node n2 = new Node("test", 1, "test-node2", 0);
-        Node n3 = new Node("test", 0, "test-node3", 1);
-        Node n4 = new Node("test", 1, "test-node4", 1);
+        Node n1 = new Node("test", 0, "test-node1", 0, true);
+        Node n2 = new Node("test", 1, "test-node2", 0, true);
+        Node n3 = new Node("test", 0, "test-node3", 1, true);
+        Node n4 = new Node("test", 1, "test-node4", 1, true);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1,n2)), new Group(1,List.of(n3,n4))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(null);
+        Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
         assertTrue(grp.isPresent());
     }
 
     @Test
-    void requireThatLoadBalancerReturnsDifferentGroups() {
-        Node n1 = new Node("test", 0, "test-node1", 0);
-        Node n2 = new Node("test", 1, "test-node2", 1);
+    void requireThatLoadBalancerLoadBalances() {
+        Node n1 = new Node("test", 0, "test-node1", 0, true);
+        Node n2 = new Node("test", 1, "test-node2", 1, true);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
         // get first group
-        Optional<Group> grp = lb.takeGroup(null);
+        Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
         Group group = grp.get();
         int id1 = group.id();
         // release allocation
         lb.releaseGroup(group, true, RequestDuration.of(Duration.ofMillis(1)));
 
         // get second group
-        grp = lb.takeGroup(null);
+        grp = lb.takeAnyGroupNotIn(Set.of());
         group = grp.get();
         assertNotEquals(id1, group.id());
     }

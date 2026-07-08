@@ -16,6 +16,7 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.fastsearch.TimeoutException;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
@@ -147,19 +148,20 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         }
 
         EncodedData ed = new EncodedData();
-        boolean sendProtobuf = context.sendProtobufQuerytree();
-        ProtobufSerialization.setProtobufAlsoSerialized(sendProtobuf);
-        try {
+        if (context.sendOldQueryStack()) {
+            ProtobufSerialization.setProtobufAlsoSerialized(true);
             encodeQueryData(query, 0, ed);
             params.setLibraryParameter("query", ed.getEncodedData());
             params.setLibraryParameter("querystackcount", String.valueOf(ed.getReturned()));
-        } finally {
-            ProtobufSerialization.setProtobufAlsoSerialized(false);
+        } else {
+            // TODO: remove dummies - it's for backwards compatibility only
+            params.setLibraryParameter("query", new byte[]{(byte) 0});
+            params.setLibraryParameter("querystackcount", "1");
         }
-        if (sendProtobuf) {
-            var protobufTree = query.getModel().getQueryTree().toProtobufQueryTree();
-            params.setLibraryParameter("querytree", protobufTree.toByteArray());
-        }
+        var serializationContext = SerializationContext.ignored(); // Not tracking content share in streaming
+        var protobufTree = query.getModel().getQueryTree().toProtobufQueryTree(serializationContext);
+        params.setLibraryParameter("querytree", protobufTree.toByteArray());
+
         params.setLibraryParameter("searchcluster", context.searchCluster().getBytes(StandardCharsets.UTF_8));
         params.setLibraryParameter("schema", context.schema().getBytes(StandardCharsets.UTF_8));
 
@@ -257,12 +259,12 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
 
     }
 
-    private static void encodeQueryData(Query query, int code, EncodedData ed){
+    private static void encodeQueryData(Query query, int code, EncodedData ed) {
         ByteBuffer buf = ByteBuffer.allocate(1024);
         while (true) {
             try {
                 switch (code) {
-                    case 0 -> ed.setReturned(query.getModel().getQueryTree().getRoot().encode(buf));
+                    case 0 -> ed.setReturned(query.getModel().getQueryTree().getRoot().encode(buf, SerializationContext.ignored()));
                     case 1 -> ed.setReturned(QueryEncoder.encodeAsProperties(query, buf));
                     case 2 -> throw new IllegalArgumentException("old aggregation no longer exists!");
                     case 3 -> {

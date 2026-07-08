@@ -10,7 +10,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ApplicationMutex;
-import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 
@@ -42,12 +42,12 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
         if (transientFailureOnPrepare) {
             throw new LoadBalancerServiceException("Unable to create load balancer", new Exception("some internal exception"));
         }
         if (hostProvisioner != null) {
-            return hostProvisioner.prepare(cluster, capacity, logger);
+            return hostProvisioner.prepare(cluster, capacity, context);
         }
         throw new UnsupportedOperationException("This mock does not support prepare");
     }

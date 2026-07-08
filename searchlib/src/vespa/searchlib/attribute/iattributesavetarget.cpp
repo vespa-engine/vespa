@@ -8,4 +8,3 @@ IAttributeSaveTarget::~IAttributeSaveTarget() {
 }
 
 } // namespace search
-

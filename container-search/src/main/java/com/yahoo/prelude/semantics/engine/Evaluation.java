@@ -1,14 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.engine;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.SegmentItem;
+import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.TermType;
+import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -23,6 +39,9 @@ public class Evaluation {
     private ParameterNameSpace parameterNameSpace = null;
 
     private final Query query;
+
+    /** A composite emptied by a replacing rule mapped to its replacement, so the rule's later targets accumulate there. */
+    private final Map<Item, CompositeItem> replacementForEmptied = new IdentityHashMap<>();
 
     /** The current index into the flattened item list */
     private int currentIndex = 0;
@@ -86,9 +105,9 @@ public class Evaluation {
     /** Sets the item iterator to point to the last item: */
     public void setToLast() {
         if (flattenedItems != null)
-                currentIndex = flattenedItems.size() - 1;
+            currentIndex = flattenedItems.size() - 1;
         else
-                currentIndex = -1;
+            currentIndex = -1;
     }
 
     /** Resets the item iterator to point to the last item: */
@@ -262,6 +281,14 @@ public class Evaluation {
             return;
         }
 
+        // Earlier in this rule a production emptied (and detached) parent; redirect later targets onto its
+        // replacement and fall through, so each keeps its own type (NOT, OR, ...) and none is lost in the orphan.
+        CompositeItem replaced = replacementForEmptied.get(parent);
+        if (replaced != null) {
+            parent = replaced;
+            index = parent.getItemCount();
+        }
+
         if (parent.getItemCount() > 0 && parent instanceof QueryTree && parent.getItem(0) instanceof CompositeItem) {
             // combine with the existing root instead
             parent = (CompositeItem)parent.getItem(0);
@@ -271,15 +298,23 @@ public class Evaluation {
         }
 
         if (( desiredParentType == TermType.DEFAULT || desiredParentType.hasItemClass(parent.getClass()) )
-             && equalIndexNameIfParentIsPhrase(items, parent)) {
+            && equalIndexNameIfParentIsPhrase(items, parent))
+        {
             for (Item item : items)
                 addItem(parent, index, item, desiredParentType);
         }
         else if (parent.items().isEmpty()) {
+            // A replacing rule emptied this composite (removed its sole matched child). Replace it with one of
+            // the desired type (at the query root if it had no parent) and remember it for later targets above;
+            // replacing it in place previously NPE'd at the root and threw a ClassCastException when nested.
+            CompositeItem replacement = newParent(desiredParentType);
+            items.forEach(replacement::addItem);
             CompositeItem parentsParent = parent.getParent();
-            CompositeItem newParent = newParent(desiredParentType);
-            items.forEach(item -> newParent.addItem(item));
-            parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
+            if (parentsParent != null)
+                parentsParent.setItem(parentsParent.getItemIndex(parent), replacement);
+            else
+                query.getModel().getQueryTree().setRoot(replacement);
+            replacementForEmptied.put(parent, replacement);
         }
         else if (items.size() == 1 && desiredParentType.hasItemClass(items.get(0).getClass())) {
             addItem(parent, index, items.get(0), desiredParentType);
@@ -348,13 +383,12 @@ public class Evaluation {
             return;
         }
 
-        for (Item item : items)
-            newParent.addItem(item);
-
         Item current = parent;
         if (parent instanceof QueryTree && parent.getItemCount() > 0)
             current = parent.getItem(0);
         if (current instanceof CompositeItem && !replacing) { // insert new parent below the current
+            for (Item item : items)
+                newParent.addItem(item);
             if (parent.getItemCount() > index) {
                 var combinedItem = combineItems(newParent, parent.getItem(index), desiredParentType);
                 parent.setItem(index, combinedItem);
@@ -365,6 +399,8 @@ public class Evaluation {
         }
         else if (newParent.acceptsItemsOfType(current.getItemType())) { // insert new parent above the current
             newParent.addItem(current);
+            for (Item item : items)
+                newParent.addItem(item);
             if (newParent != parentsParent) { // Insert new parent as root or child of old parent's parent
                 if (parentsParent != null)
                     parentsParent.setItem(parentsParent.getItemIndex(current), newParent);
@@ -373,6 +409,8 @@ public class Evaluation {
             }
         }
         else {
+            for (Item item : items)
+                newParent.addItem(item);
             ((CompositeItem)current).addItem(newParent); // not an acceptable child -> composite
         }
     }
@@ -443,15 +481,11 @@ public class Evaluation {
     private CompositeItem createType(TermType termType) {
         if (termType == TermType.DEFAULT) {
             if (query.getModel().getType() == Query.Type.ANY)
-                return new OrItem();
+                termType = TermType.OR;
             else if (query.getModel().getType() == Query.Type.WEAKAND)
-                return new WeakAndItem();
-            else
-                return new AndItem();
+                termType = TermType.WEAK_AND;
         }
-        else {
-            return (CompositeItem)termType.createItemClass();
-        }
+        return (CompositeItem)termType.createItemClass();
     }
 
     private void flatten(Item item,int position,List<FlattenedItem> toList) {

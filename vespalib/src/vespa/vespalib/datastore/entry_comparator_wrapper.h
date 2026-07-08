@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "atomic_entry_ref.h"
 #include "entry_comparator.h"
 
 namespace vespalib::datastore {
@@ -10,14 +11,13 @@ namespace vespalib::datastore {
  * Copyable comparator wrapper.
  */
 class EntryComparatorWrapper {
-    const EntryComparator &_comp;
+    const EntryComparator& _comp;
+
 public:
-    EntryComparatorWrapper(const EntryComparator &comp) noexcept
-        : _comp(comp)
-    { }
-    bool operator()(const AtomicEntryRef &lhs, const AtomicEntryRef &rhs) const noexcept {
+    EntryComparatorWrapper(const EntryComparator& comp) noexcept : _comp(comp) {}
+    bool operator()(const AtomicEntryRef& lhs, const AtomicEntryRef& rhs) const noexcept {
         return _comp.less(lhs.load_acquire(), rhs.load_acquire());
     }
 };
 
-}
+} // namespace vespalib::datastore

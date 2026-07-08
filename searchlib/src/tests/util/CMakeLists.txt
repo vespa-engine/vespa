@@ -7,3 +7,12 @@ vespa_add_executable(searchlib_rawbuf_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_rawbuf_test_app COMMAND searchlib_rawbuf_test_app)
+vespa_add_executable(searchlib_util_test_app TEST
+    SOURCES
+    test_runner.cpp
+    directory_traverse_test.cpp
+    DEPENDS
+    vespa_searchlib
+    GTest::gtest
+)
+vespa_add_test(NAME searchlib_util_test_app COMMAND searchlib_util_test_app)

@@ -34,13 +34,17 @@
     </dependency>
     <!-- compile -->
     <dependency>
-      <groupId>de.kherud</groupId>
-      <artifactId>llama</artifactId>
+      <groupId>io.github.arnej27959</groupId>
+      <artifactId>jllama</artifactId>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
           <groupId>org.jetbrains</groupId>
           <artifactId>annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -73,7 +77,7 @@
 	     <createDependencyReducedPom>false</createDependencyReducedPom>
 	     <filters>
 	       <filter>
-		<artifact>de.kherud:*</artifact>
+		<artifact>*:jllama</artifact>
 		<excludes>
 		  <exclude>de/kherud/llama/Linux-Android//**</exclude>
 		  <exclude>de/kherud/llama/Linux/**</exclude>

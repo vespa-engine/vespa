@@ -14,17 +14,15 @@ class IAttributeVector;
  * thread as async callback from asyncForEachAttribute() call on
  * attribute manager.
  */
-class IConstAttributeFunctor
-{
+class IConstAttributeFunctor {
 public:
-    virtual void operator()(const IAttributeVector &attributeVector) = 0;
+    virtual void operator()(const IAttributeVector& attributeVector) = 0;
     virtual ~IConstAttributeFunctor() = default;
 };
 
-class IAttributeFunctor
-{
+class IAttributeFunctor {
 public:
-    virtual void operator()(IAttributeVector &attributeVector) = 0;
+    virtual void operator()(IAttributeVector& attributeVector) = 0;
     virtual ~IAttributeFunctor() = default;
 };
 
@@ -34,4 +32,4 @@ public:
     virtual void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const = 0;
 };
 
-}
+} // namespace search::attribute

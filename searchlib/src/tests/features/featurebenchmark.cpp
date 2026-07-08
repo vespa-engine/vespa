@@ -1,32 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
-
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/test/ft_test_app_base.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/searchlib/attribute/attributevector.hpp>
+
+#include <unistd.h>
 
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <unistd.h>
 
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
 
-using search::AttributeVector;
 using search::AttributeFactory;
+using search::AttributeVector;
 using search::IntegerAttribute;
 using search::StringAttribute;
 
@@ -38,139 +39,106 @@ using AttributePtr = AttributeVector::SP;
 
 using CollectionType = FieldInfo::CollectionType;
 
-class Benchmark : public ::testing::Test,
-                  public FtTestAppBase {
+class Benchmark : public ::testing::Test, public FtTestAppBase {
 public:
-    using KeyValueVector = std::vector<std::pair<std::string, std::string> >;
+    using KeyValueVector = std::vector<std::pair<std::string, std::string>>;
 
     class Config {
     private:
         using StringMap = std::map<std::string, std::string>;
         StringMap _config;
 
-        bool isKnown(const std::string & key) const;
+        bool isKnown(const std::string& key) const;
 
     public:
         Config() : _config() {}
-        Config(const std::string & fileName) : _config() {
-            init(fileName);
-        }
-        void init(const std::string & fileName);
+        Config(const std::string& fileName) : _config() { init(fileName); }
+        void init(const std::string& fileName);
 
-        void add(const std::string & key, const std::string & value) {
-            _config[key] = value;
-        }
+        void add(const std::string& key, const std::string& value) { _config[key] = value; }
 
-        void addIfNotFound(const std::string & key, const std::string & value) {
+        void addIfNotFound(const std::string& key, const std::string& value) {
             if (_config.count(key) == 0) {
                 add(key, value);
             }
         }
 
         // known config values
-        std::string getCase(const std::string & fallback = "") const {
-            return getAsStr("case", fallback);
-        }
-        std::string getFeature(const std::string & fallback = "") const {
-            return getAsStr("feature", fallback);
-        }
-        std::string getIndex(const std::string & fallback = "") const {
-            return getAsStr("index", fallback);
-        }
-        std::string getQuery(const std::string & fallback = "") const {
-            return getAsStr("query", fallback);
-        }
-        std::string getField(const std::string & fallback = "") const {
-            return getAsStr("field", fallback);
-        }
-        uint32_t getNumRuns(uint32_t fallback = 1000) const {
-            return getAsUint32("numruns", fallback);
-        }
+        std::string getCase(const std::string& fallback = "") const { return getAsStr("case", fallback); }
+        std::string getFeature(const std::string& fallback = "") const { return getAsStr("feature", fallback); }
+        std::string getIndex(const std::string& fallback = "") const { return getAsStr("index", fallback); }
+        std::string getQuery(const std::string& fallback = "") const { return getAsStr("query", fallback); }
+        std::string getField(const std::string& fallback = "") const { return getAsStr("field", fallback); }
+        uint32_t getNumRuns(uint32_t fallback = 1000) const { return getAsUint32("numruns", fallback); }
 
         // access "unknown" config values
-        std::string getAsStr(const std::string & key, const std::string & fallback = "") const {
+        std::string getAsStr(const std::string& key, const std::string& fallback = "") const {
             StringMap::const_iterator itr = _config.find(key);
             if (itr != _config.end()) {
                 return std::string(itr->second);
             }
             return std::string(fallback);
         }
-        uint32_t getAsUint32(const std::string & key, uint32_t fallback = 0) const {
+        uint32_t getAsUint32(const std::string& key, uint32_t fallback = 0) const {
             return util::strToNum<uint32_t>(getAsStr(key, vespalib::make_string("%u", fallback)));
         }
-        double getAsDouble(const std::string & key, double fallback = 0) const {
+        double getAsDouble(const std::string& key, double fallback = 0) const {
             return util::strToNum<double>(getAsStr(key, vespalib::make_string("%f", fallback)));
         }
 
         KeyValueVector getUnknown() const;
 
-        friend std::ostream & operator << (std::ostream & os, const Config & cfg);
+        friend std::ostream& operator<<(std::ostream& os, const Config& cfg);
     };
 
 private:
-    int _argc;
-    char **_argv;
+    int                           _argc;
+    char**                        _argv;
     search::fef::BlueprintFactory _factory;
-    vespalib::Timer _timer;
-    vespalib::duration _sample;
+    vespalib::Timer               _timer;
+    vespalib::duration            _sample;
 
     void start() { _timer = vespalib::Timer(); }
     void sample() { _sample = _timer.elapsed(); }
-    void setupPropertyMap(Properties & props, const KeyValueVector & values);
-    void runFieldMatch(Config & cfg);
-    void runRankingExpression(Config & cfg);
+    void setupPropertyMap(Properties& props, const KeyValueVector& values);
+    void runFieldMatch(Config& cfg);
+    void runRankingExpression(Config& cfg);
 
-    AttributePtr createAttributeVector(AVBT dt, const std::string & name, const std::string & ctype, uint32_t numDocs,
+    AttributePtr createAttributeVector(AVBT dt, const std::string& name, const std::string& ctype, uint32_t numDocs,
                                        AttributeVector::largeint_t value, uint32_t valueCount);
-    AttributePtr createAttributeVector(const std::string & name, const std::string & ctype, uint32_t numDocs,
+    AttributePtr createAttributeVector(const std::string& name, const std::string& ctype, uint32_t numDocs,
                                        AttributeVector::largeint_t value, uint32_t valueCount);
-    AttributePtr createStringAttributeVector(const std::string & name, const std::string & ctype, uint32_t numDocs,
-                                             const std::vector<std::string> & values);
-    void runAttributeMatch(Config & cfg);
-    void runAttribute(Config & cfg);
-    void runDotProduct(Config & cfg);
-    void runNativeAttributeMatch(Config & cfg);
-    void runNativeFieldMatch(Config & cfg);
-    void runNativeProximity(Config & cfg);
+    AttributePtr createStringAttributeVector(const std::string& name, const std::string& ctype, uint32_t numDocs,
+                                             const std::vector<std::string>& values);
+    void runAttributeMatch(Config& cfg);
+    void runAttribute(Config& cfg);
+    void runDotProduct(Config& cfg);
+    void runNativeAttributeMatch(Config& cfg);
+    void runNativeFieldMatch(Config& cfg);
+    void runNativeProximity(Config& cfg);
 
 public:
-    Benchmark(int argc, char **argv);
+    Benchmark(int argc, char** argv);
     ~Benchmark() override;
     void TestBody() override;
-
 };
 
-Benchmark::Benchmark(int argc, char **argv)
-    : ::testing::Test(),
-      FtTestAppBase(),
-      _argc(argc),
-      _argv(argv),
-      _factory(),
-      _timer(),
-      _sample()
-{
+Benchmark::Benchmark(int argc, char** argv)
+    : ::testing::Test(), FtTestAppBase(), _argc(argc), _argv(argv), _factory(), _timer(), _sample() {
 }
 
 Benchmark::~Benchmark() = default;
 
-bool
-Benchmark::Config::isKnown(const std::string & key) const
-{
-    if (key == std::string("case") ||
-        key == std::string("feature") ||
-        key == std::string("index") ||
-        key == std::string("query") ||
-        key == std::string("field") ||
-        key == std::string("numruns"))
+bool Benchmark::Config::isKnown(const std::string& key) const {
+    if (key == std::string("case") || key == std::string("feature") || key == std::string("index") ||
+        key == std::string("query") || key == std::string("field") || key == std::string("numruns"))
     {
         return true;
     }
     return false;
 }
 
-void
-Benchmark::Config::init(const std::string & fileName)
-{
+void Benchmark::Config::init(const std::string& fileName) {
     std::ifstream is(fileName.c_str());
     if (is.fail()) {
         throw std::runtime_error(fileName);
@@ -187,9 +155,7 @@ Benchmark::Config::init(const std::string & fileName)
     }
 }
 
-Benchmark::KeyValueVector
-Benchmark::Config::getUnknown() const
-{
+Benchmark::KeyValueVector Benchmark::Config::getUnknown() const {
     KeyValueVector retval;
     for (StringMap::const_iterator itr = _config.begin(); itr != _config.end(); ++itr) {
         if (!isKnown(itr->first)) {
@@ -199,8 +165,7 @@ Benchmark::Config::getUnknown() const
     return retval;
 }
 
-std::ostream & operator << (std::ostream & os, const Benchmark::Config & cfg)
-{
+std::ostream& operator<<(std::ostream& os, const Benchmark::Config& cfg) {
     std::cout << "getCase:    '" << cfg.getCase() << "'" << std::endl;
     std::cout << "getFeature: '" << cfg.getFeature() << "'" << std::endl;
     std::cout << "getIndex:   '" << cfg.getIndex() << "'" << std::endl;
@@ -214,10 +179,7 @@ std::ostream & operator << (std::ostream & os, const Benchmark::Config & cfg)
     return os;
 }
 
-
-void
-Benchmark::setupPropertyMap(Properties & props, const KeyValueVector & values)
-{
+void Benchmark::setupPropertyMap(Properties& props, const KeyValueVector& values) {
     std::cout << "**** setup property map ****" << std::endl;
     for (uint32_t i = 0; i < values.size(); ++i) {
         std::cout << "'" << values[i].first << "'='" << values[i].second << "'" << std::endl;
@@ -226,13 +188,11 @@ Benchmark::setupPropertyMap(Properties & props, const KeyValueVector & values)
     std::cout << "**** setup property map ****" << std::endl;
 }
 
-void
-Benchmark::runFieldMatch(Config & cfg)
-{
+void Benchmark::runFieldMatch(Config& cfg) {
     cfg.addIfNotFound("feature", "fieldMatch(foo)");
-    cfg.addIfNotFound("index",   "foo");
-    cfg.addIfNotFound("query",   "a b c d");
-    cfg.addIfNotFound("field",   "a x x b x x x a x b x x x x x a b x x x x x x x x x x x x x x x x x c d");
+    cfg.addIfNotFound("index", "foo");
+    cfg.addIfNotFound("query", "a b c d");
+    cfg.addIfNotFound("field", "a x x b x x x a x b x x x x x a b x x x x x x x x x x x x x x x x x c d");
 
     std::cout << "**** config ****" << std::endl;
     std::cout << cfg << std::endl;
@@ -242,7 +202,7 @@ Benchmark::runFieldMatch(Config & cfg)
     std::string index = cfg.getIndex();
     std::string query = cfg.getQuery();
     std::string field = cfg.getField();
-    uint32_t numRuns = cfg.getNumRuns();
+    uint32_t    numRuns = cfg.getNumRuns();
 
     FtFeatureTest ft(_factory, feature);
 
@@ -257,9 +217,7 @@ Benchmark::runFieldMatch(Config & cfg)
     sample();
 }
 
-void
-Benchmark::runRankingExpression(Config & cfg)
-{
+void Benchmark::runRankingExpression(Config& cfg) {
     cfg.addIfNotFound("feature", "rankingExpression");
     cfg.addIfNotFound("rankingExpression.rankingScript", "1 + 1 + 1 + 1");
 
@@ -268,7 +226,7 @@ Benchmark::runRankingExpression(Config & cfg)
     std::cout << "**** config ****" << std::endl;
 
     std::string feature = cfg.getFeature();
-    uint32_t numRuns = cfg.getNumRuns();
+    uint32_t    numRuns = cfg.getNumRuns();
 
     FtFeatureTest ft(_factory, feature);
     setupPropertyMap(ft.getIndexEnv().getProperties(), cfg.getUnknown());
@@ -282,31 +240,28 @@ Benchmark::runRankingExpression(Config & cfg)
     sample();
 }
 
-AttributePtr
-Benchmark::createAttributeVector(const std::string & name, const std::string & ctype, uint32_t numDocs,
-                                 AttributeVector::largeint_t value, uint32_t valueCount)
-{
+AttributePtr Benchmark::createAttributeVector(const std::string& name, const std::string& ctype, uint32_t numDocs,
+                                              AttributeVector::largeint_t value, uint32_t valueCount) {
     return createAttributeVector(AVBT::INT32, name, ctype, numDocs, value, valueCount);
 }
 
-AttributePtr
-Benchmark::createAttributeVector(AVBT dt, const std::string & name, const std::string & ctype, uint32_t numDocs,
-                                 AttributeVector::largeint_t value, uint32_t valueCount)
-{
+AttributePtr Benchmark::createAttributeVector(AVBT dt, const std::string& name, const std::string& ctype,
+                                              uint32_t numDocs, AttributeVector::largeint_t value,
+                                              uint32_t valueCount) {
     AttributePtr a;
     if (ctype == "single") {
-        a = AttributeFactory::createAttribute(name, AVC(dt,  AVCT::SINGLE));
+        a = AttributeFactory::createAttribute(name, AVC(dt, AVCT::SINGLE));
         std::cout << "create single int32" << std::endl;
     } else if (ctype == "array") {
-        a = AttributeFactory::createAttribute(name, AVC(dt,  AVCT::ARRAY));
+        a = AttributeFactory::createAttribute(name, AVC(dt, AVCT::ARRAY));
         std::cout << "create array int32" << std::endl;
     } else if (ctype == "wset") {
-        a = AttributeFactory::createAttribute(name, AVC(dt,  AVCT::WSET));
+        a = AttributeFactory::createAttribute(name, AVC(dt, AVCT::WSET));
         std::cout << "create wset int32" << std::endl;
     }
 
     a->addDocs(numDocs);
-    IntegerAttribute * ia = static_cast<IntegerAttribute *>(a.get());
+    IntegerAttribute* ia = static_cast<IntegerAttribute*>(a.get());
     for (uint32_t i = 0; i < numDocs; ++i) {
         if (ctype == "single") {
             ia->update(i, value);
@@ -325,24 +280,22 @@ Benchmark::createAttributeVector(AVBT dt, const std::string & name, const std::s
     return a;
 }
 
-AttributePtr
-Benchmark::createStringAttributeVector(const std::string & name, const std::string & ctype, uint32_t numDocs,
-                                       const std::vector<std::string> & values)
-{
+AttributePtr Benchmark::createStringAttributeVector(const std::string& name, const std::string& ctype,
+                                                    uint32_t numDocs, const std::vector<std::string>& values) {
     AttributePtr a;
     if (ctype == "single") {
-        a = AttributeFactory::createAttribute(name, AVC(AVBT::STRING,  AVCT::SINGLE));
+        a = AttributeFactory::createAttribute(name, AVC(AVBT::STRING, AVCT::SINGLE));
         std::cout << "create single string" << std::endl;
     } else if (ctype == "array") {
-        a = AttributeFactory::createAttribute(name, AVC(AVBT::STRING,  AVCT::ARRAY));
+        a = AttributeFactory::createAttribute(name, AVC(AVBT::STRING, AVCT::ARRAY));
         std::cout << "create array string" << std::endl;
     } else if (ctype == "wset") {
-        a = AttributeFactory::createAttribute(name, AVC(AVBT::STRING,  AVCT::WSET));
+        a = AttributeFactory::createAttribute(name, AVC(AVBT::STRING, AVCT::WSET));
         std::cout << "create wset string" << std::endl;
     }
 
     a->addDocs(numDocs);
-    StringAttribute * sa = static_cast<StringAttribute *>(a.get());
+    StringAttribute* sa = static_cast<StringAttribute*>(a.get());
     for (uint32_t i = 0; i < numDocs; ++i) {
         if (ctype == "single") {
             sa->update(i, values[0]);
@@ -357,9 +310,7 @@ Benchmark::createStringAttributeVector(const std::string & name, const std::stri
     return a;
 }
 
-void
-Benchmark::runAttributeMatch(Config & cfg)
-{
+void Benchmark::runAttributeMatch(Config& cfg) {
     cfg.addIfNotFound("feature", "attributeMatch(foo)");
 
     std::cout << "**** config ****" << std::endl;
@@ -367,8 +318,8 @@ Benchmark::runAttributeMatch(Config & cfg)
     std::cout << "**** config ****" << std::endl;
 
     std::string feature = cfg.getFeature();
-    uint32_t numRuns = 1000000;
-    uint32_t numDocs = 1000000;
+    uint32_t    numRuns = 1000000;
+    uint32_t    numDocs = 1000000;
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "foo");
@@ -379,7 +330,7 @@ Benchmark::runAttributeMatch(Config & cfg)
     MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
     mdb->setWeight("foo", 0, 0);
     mdb->apply(0);
-    TermFieldMatchData *amd = mdb->getTermFieldMatchData(0, 0);
+    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 0);
 
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
@@ -395,9 +346,7 @@ Benchmark::runAttributeMatch(Config & cfg)
     sample();
 }
 
-void
-Benchmark::runAttribute(Config & cfg)
-{
+void Benchmark::runAttribute(Config& cfg) {
     cfg.addIfNotFound("feature", "attribute(foo,str4)");
     cfg.addIfNotFound("numruns", "10000000");
 
@@ -406,11 +355,19 @@ Benchmark::runAttribute(Config & cfg)
     std::cout << "**** config ****" << std::endl;
 
     std::string feature = cfg.getFeature();
-    uint32_t numRuns = cfg.getNumRuns();
-    uint32_t numDocs = cfg.getAsUint32("numdocs", 1000);
-    StringList values;
-    values.add("str0").add("str1").add("str2").add("str3").add("str4")
-          .add("str5").add("str6").add("str7").add("str8").add("str9");
+    uint32_t    numRuns = cfg.getNumRuns();
+    uint32_t    numDocs = cfg.getAsUint32("numdocs", 1000);
+    StringList  values;
+    values.add("str0")
+        .add("str1")
+        .add("str2")
+        .add("str3")
+        .add("str4")
+        .add("str5")
+        .add("str6")
+        .add("str7")
+        .add("str8")
+        .add("str9");
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "foo");
@@ -426,9 +383,7 @@ Benchmark::runAttribute(Config & cfg)
     sample();
 }
 
-void
-Benchmark::runDotProduct(Config & cfg)
-{
+void Benchmark::runDotProduct(Config& cfg) {
     cfg.addIfNotFound("feature", "dotProduct(wsstr,vector)");
     cfg.addIfNotFound("numruns", "1000000");
     cfg.addIfNotFound("numdocs", "1000");
@@ -438,16 +393,16 @@ Benchmark::runDotProduct(Config & cfg)
     std::cout << cfg << std::endl;
     std::cout << "**** config ****" << std::endl;
 
-    std::string feature = cfg.getFeature();
-    std::string collectionType = cfg.getAsStr("collectiontype", "wset");
-    std::string dataType = cfg.getAsStr("datatype", "string");
-    uint32_t numRuns = cfg.getNumRuns();
-    uint32_t numDocs = cfg.getAsUint32("numdocs", 1000);
-    uint32_t numValues = cfg.getAsUint32("numvalues", 10);
+    std::string   feature = cfg.getFeature();
+    std::string   collectionType = cfg.getAsStr("collectiontype", "wset");
+    std::string   dataType = cfg.getAsStr("datatype", "string");
+    uint32_t      numRuns = cfg.getNumRuns();
+    uint32_t      numDocs = cfg.getAsUint32("numdocs", 1000);
+    uint32_t      numValues = cfg.getAsUint32("numvalues", 10);
     FtFeatureTest ft(_factory, feature);
-    ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE,
-                                           collectionType == "wset" ? CollectionType::WEIGHTEDSET : CollectionType::ARRAY,
-                                           "wsstr");
+    ft.getIndexEnv().getBuilder().addField(
+        FieldType::ATTRIBUTE, collectionType == "wset" ? CollectionType::WEIGHTEDSET : CollectionType::ARRAY,
+        "wsstr");
     if (dataType == "string") {
         StringList values;
         for (uint32_t i = 0; i < numValues; ++i) {
@@ -456,13 +411,17 @@ Benchmark::runDotProduct(Config & cfg)
 
         ft.getIndexEnv().getAttributeMap().add(createStringAttributeVector("wsstr", collectionType, numDocs, values));
     } else if (dataType == "int") {
-        ft.getIndexEnv().getAttributeMap().add(createAttributeVector(AVBT::INT32, "wsstr", collectionType, numDocs, 0, numValues));
+        ft.getIndexEnv().getAttributeMap().add(
+            createAttributeVector(AVBT::INT32, "wsstr", collectionType, numDocs, 0, numValues));
     } else if (dataType == "long") {
-        ft.getIndexEnv().getAttributeMap().add(createAttributeVector(AVBT::INT64, "wsstr", collectionType, numDocs, 0, numValues));
+        ft.getIndexEnv().getAttributeMap().add(
+            createAttributeVector(AVBT::INT64, "wsstr", collectionType, numDocs, 0, numValues));
     } else if (dataType == "float") {
-        ft.getIndexEnv().getAttributeMap().add(createAttributeVector(AVBT::FLOAT, "wsstr", collectionType, numDocs, 0, numValues));
+        ft.getIndexEnv().getAttributeMap().add(
+            createAttributeVector(AVBT::FLOAT, "wsstr", collectionType, numDocs, 0, numValues));
     } else if (dataType == "double") {
-        ft.getIndexEnv().getAttributeMap().add(createAttributeVector(AVBT::DOUBLE, "wsstr", collectionType, numDocs, 0, numValues));
+        ft.getIndexEnv().getAttributeMap().add(
+            createAttributeVector(AVBT::DOUBLE, "wsstr", collectionType, numDocs, 0, numValues));
     } else {
         std::cerr << "Illegal data type '" << dataType << std::endl;
     }
@@ -478,9 +437,7 @@ Benchmark::runDotProduct(Config & cfg)
     sample();
 }
 
-void
-Benchmark::runNativeAttributeMatch(Config & cfg)
-{
+void Benchmark::runNativeAttributeMatch(Config& cfg) {
     cfg.addIfNotFound("feature", "nativeAttributeMatch(foo)");
     cfg.addIfNotFound("numruns", "10000000");
     cfg.addIfNotFound("numdocs", "1000000");
@@ -490,12 +447,13 @@ Benchmark::runNativeAttributeMatch(Config & cfg)
     std::cout << "**** config ****" << std::endl;
 
     std::string feature = cfg.getFeature();
-    uint32_t numRuns = cfg.getNumRuns();
-    uint32_t numDocs = cfg.getAsUint32("numdocs");
+    uint32_t    numRuns = cfg.getNumRuns();
+    uint32_t    numDocs = cfg.getAsUint32("numdocs");
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "foo");
-    ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(256))); // same as backend
+    ft.getIndexEnv().getTableManager().addFactory(
+        ITableFactory::SP(new FunctionTableFactory(256))); // same as backend
     ft.getQueryEnv().getBuilder().addAttributeNode("foo")->setWeight(search::query::Weight(100));
     setupPropertyMap(ft.getIndexEnv().getProperties(), cfg.getUnknown());
     ASSERT_TRUE(ft.setup());
@@ -503,7 +461,7 @@ Benchmark::runNativeAttributeMatch(Config & cfg)
     mdb->setWeight("foo", 0, 0);
     mdb->apply(0);
 
-    TermFieldMatchData *amd = mdb->getTermFieldMatchData(0, 0);
+    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 0);
 
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
@@ -520,9 +478,7 @@ Benchmark::runNativeAttributeMatch(Config & cfg)
     sample();
 }
 
-void
-Benchmark::runNativeFieldMatch(Config & cfg)
-{
+void Benchmark::runNativeFieldMatch(Config& cfg) {
     cfg.addIfNotFound("feature", "nativeFieldMatch(foo)");
     cfg.addIfNotFound("numruns", "10000000");
 
@@ -531,11 +487,12 @@ Benchmark::runNativeFieldMatch(Config & cfg)
     std::cout << "**** config ****" << std::endl;
 
     std::string feature = cfg.getFeature();
-    uint32_t numRuns = cfg.getNumRuns();
+    uint32_t    numRuns = cfg.getNumRuns();
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
-    ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(256))); // same as backend
+    ft.getIndexEnv().getTableManager().addFactory(
+        ITableFactory::SP(new FunctionTableFactory(256))); // same as backend
     std::vector<std::string> searchedFields;
     searchedFields.push_back("foo");
     ft.getQueryEnv().getBuilder().addIndexNode(searchedFields);
@@ -559,9 +516,7 @@ Benchmark::runNativeFieldMatch(Config & cfg)
     sample();
 }
 
-void
-Benchmark::runNativeProximity(Config & cfg)
-{
+void Benchmark::runNativeProximity(Config& cfg) {
     cfg.addIfNotFound("feature", "nativeProximity(foo)");
     cfg.addIfNotFound("numruns", "10000000");
 
@@ -570,11 +525,12 @@ Benchmark::runNativeProximity(Config & cfg)
     std::cout << "**** config ****" << std::endl;
 
     std::string feature = cfg.getFeature();
-    uint32_t numRuns = cfg.getNumRuns();
+    uint32_t    numRuns = cfg.getNumRuns();
 
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
-    ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(256))); // same as backend
+    ft.getIndexEnv().getTableManager().addFactory(
+        ITableFactory::SP(new FunctionTableFactory(256))); // same as backend
     std::vector<std::string> searchedFields;
     searchedFields.push_back("foo");
     ft.getQueryEnv().getBuilder().addIndexNode(searchedFields); // termId 0
@@ -601,15 +557,13 @@ Benchmark::runNativeProximity(Config & cfg)
     sample();
 }
 
-void
-Benchmark::TestBody()
-{
+void Benchmark::TestBody() {
     // Configure factory with all known blueprints.
     setup_fef_test_plugin(_factory);
     setup_search_features(_factory);
 
-    int opt;
-    bool optError = false;
+    int         opt;
+    bool        optError = false;
     std::string file;
     std::string feature;
     while ((opt = getopt(_argc, _argv, "c:f:")) != -1) {
@@ -659,14 +613,14 @@ Benchmark::TestBody()
     }
 
     std::cout << "TET:  " << vespalib::count_ms(_sample) << " (ms)" << std::endl;
-    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << double(vespalib::count_ms(_sample)) / cfg.getNumRuns() << " (ms)" << std::endl;
+    std::cout << "ETPD: " << std::fixed << std::setprecision(10)
+              << double(vespalib::count_ms(_sample)) / cfg.getNumRuns() << " (ms)" << std::endl;
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
 }
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
-    ::testing::RegisterTest("Benchmark", "benchmark", nullptr, "",
-                            __FILE__, __LINE__,
+    ::testing::RegisterTest("Benchmark", "benchmark", nullptr, "", __FILE__, __LINE__,
                             [=]() -> Benchmark* { return new Benchmark(argc, argv); });
     return RUN_ALL_TESTS();
 }

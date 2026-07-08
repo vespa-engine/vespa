@@ -5,6 +5,6 @@
 namespace vespalib {
 
 template class PriorityQueue<int>;
-template class PriorityQueue<int, std::greater<int> >;
+template class PriorityQueue<int, std::greater<int>>;
 
 } // namespace vespalib

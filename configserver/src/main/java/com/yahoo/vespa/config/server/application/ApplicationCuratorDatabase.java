@@ -1,7 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Cursor;
@@ -17,7 +20,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,7 +36,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * Stores data and holds locks for the applications of a tenant, backed by a {@link Curator}.
- *
+ * <p>
  * Each application is stored under /config/v2/tenants/&lt;tenant&gt;/applications/&lt;application&gt;,
  * the root contains the currently active session, if any. Children of this node may hold more data.
  * Locks for synchronising writes to these paths, and changes to the config of this application, are found
@@ -44,27 +46,34 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class ApplicationCuratorDatabase {
 
+    private final Duration lockTimeout;
+
     final TenantName tenant;
     final Path applicationsPath;
     final Path locksPath;
 
     private final Curator curator;
 
-    public ApplicationCuratorDatabase(TenantName tenant, Curator curator) {
+    public ApplicationCuratorDatabase(TenantName tenant, Curator curator, ConfigserverConfig configserverConfig) {
         this.tenant = tenant;
         this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
         this.locksPath = TenantRepository.getLocksPath(tenant);
         this.curator = curator;
+        this.lockTimeout = Duration.ofSeconds(configserverConfig.applicationLockTimeoutSeconds());
     }
 
-    /** Returns the lock for changing the session status of the given application. */
+    /** Returns the lock for changes to the given application. */
     public Lock lock(ApplicationId id) {
-        return curator.lock(lockPath(id), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
+        try {
+            return lock(lockPath(id));
+        } catch (UncheckedTimeoutException e) {
+            throw new ApplicationLockException(e);
+        }
     }
 
     /** Reads, modifies and writes the application reindexing for this application, while holding its lock. */
     public void modifyReindexing(ApplicationId id, ApplicationReindexing emptyValue, UnaryOperator<ApplicationReindexing> modifications) {
-        try (Lock lock = curator.lock(reindexingLockPath(id), Duration.ofMinutes(1))) {
+        try (Lock lock = lock(reindexingLockPath(id))) {
             writeReindexingStatus(id, modifications.apply(readReindexingStatus(id).orElse(emptyValue)));
         }
     }
@@ -90,22 +99,6 @@ public class ApplicationCuratorDatabase {
     }
 
     /**
-     * Creates a node for the given application, marking its existence.
-     */
-    // TODO: Remove in Vespa 9
-    public void createApplicationInOldFormat(ApplicationId id) {
-        if (! id.tenant().equals(tenant))
-            throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
-
-        try (Lock lock = lock(id)) {
-            if (curator.exists(applicationPath(id))) return;
-
-            curator.create(applicationPath(id));
-            modifyReindexing(id, ApplicationReindexing.empty(), UnaryOperator.identity());
-        }
-    }
-
-    /**
      * Returns a transaction which writes the given session id as the currently active for the given application.
      *
      * @param applicationId An {@link ApplicationId} that represents an active application.
@@ -114,18 +107,6 @@ public class ApplicationCuratorDatabase {
     public Transaction createWriteActiveTransaction(Transaction transaction, ApplicationId applicationId, long sessionId) {
         String path = applicationPath(applicationId).getAbsolute();
         return transaction.add(setData(path, new ApplicationData(applicationId, OptionalLong.of(sessionId), OptionalLong.of(sessionId)).toJson()));
-    }
-
-    /**
-     * Returns a transaction which writes the given session id as the currently active for the given application.
-     *
-     * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId session id belonging to the application package for this application id.
-     */
-    // TODO: Remove in Vespa 9
-    public Transaction createWriteActiveTransactionInOldFormat(Transaction transaction, ApplicationId applicationId, long sessionId) {
-        String path = applicationPath(applicationId).getAbsolute();
-        return transaction.add(setData(path, Utf8.toAsciiBytes(sessionId)));
     }
 
     /**
@@ -208,7 +189,7 @@ public class ApplicationCuratorDatabase {
     }
 
     public void modifyPendingRestarts(ApplicationId id, UnaryOperator<PendingRestarts> modification) {
-        try (Lock lock = curator.lock(restartsLockPath(id), Duration.ofMinutes(1))) {
+        try (Lock lock = lock(restartsLockPath(id))) {
             PendingRestarts original = readPendingRestarts(id);
             PendingRestarts modified = modification.apply(original);
             if (original != modified) {
@@ -233,6 +214,21 @@ public class ApplicationCuratorDatabase {
     public Curator.DirectoryCache createApplicationsPathCache(ExecutorService zkCacheExecutor) {
         return curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
     }
+
+    /** Returns the lock for changes to the given application, with the given timeout. */
+    public Lock lock(ApplicationId id, Duration lockTimeout) {
+        return lock(lockPath(id),  lockTimeout);
+    }
+
+    /**
+     * Returns the lock for the given lock path.
+     */
+    private Lock lock(Path lockPath) { return lock(lockPath, lockTimeout); }
+
+    /**
+     * Returns the lock for the given lock path.
+     */
+    private Lock lock(Path lockPath, Duration lockTimeout) { return curator.lock(lockPath, lockTimeout); }
 
     private Path restartsLockPath(ApplicationId id) {
         return locksPath.append(id.serializedForm() + "::restarts");

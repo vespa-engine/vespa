@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SidecarSpec;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
@@ -55,7 +56,7 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
             var changedSidecars = nextSidecars.stream().filter(nextSidecar -> previousSidecars.stream().anyMatch(
                     sidecar -> sidecar.matchesByIdOrName(nextSidecar) && !sidecar.equals(nextSidecar))).toList();
 
-            var messageBuilder = new StringBuilder("Need to restart services in %s due to".formatted(clusterId));
+            var messageBuilder = new StringBuilder(Text.format("Need to restart services in %s due to", clusterId));
 
             if (!removedSidecars.isEmpty()) {
                 messageBuilder.append(" removed sidecars: ").append(joinSidecarNames(removedSidecars));
@@ -78,7 +79,7 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                             changedSidecar)).findFirst().orElseThrow(); // Should never throw.
 
                     var sidecarDiff = diffSidecarSpecs(matchingPreviousSidecar, changedSidecar);
-                    return "'%s' (%s)".formatted(changedSidecar.name(), sidecarDiff);
+                    return Text.format("'%s' (%s)", changedSidecar.name(), sidecarDiff);
                 }).collect(Collectors.joining(", "));
 
                 messageBuilder.append(" changed sidecars: ").append(changedSidecarsMessage);
@@ -95,7 +96,7 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
     }
 
     private String joinSidecarNames(List<SidecarSpec> sidecars) {
-        return sidecars.stream().map(sidecar -> "'%s'".formatted(sidecar.name())).collect(Collectors.joining(", "));
+        return sidecars.stream().map(sidecar -> Text.format("'%s'", sidecar.name())).collect(Collectors.joining(", "));
     }
 
     private String diffSidecarSpecs(SidecarSpec from, SidecarSpec to) {
@@ -104,43 +105,47 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         var toResources = to.resources();
 
         if (from.id() != to.id()) {
-            changes.add("id: %s -> %s".formatted(from.id(), to.id()));
+            changes.add(Text.format("id: %s -> %s", from.id(), to.id()));
         }
 
         if (!from.name().equals(to.name())) {
-            changes.add("name: %s -> %s".formatted(from.name(), to.name()));
+            changes.add(Text.format("name: %s -> %s", from.name(), to.name()));
         }
 
         if (!from.image().equals(to.image())) {
-            changes.add("image: %s -> %s".formatted(from.image(), to.image()));
+            changes.add(Text.format("image: %s -> %s", from.image(), to.image()));
+        }
+
+        if (from.hasImageMirror() != to.hasImageMirror()) {
+            changes.add(Text.format("hasImageMirror: %s -> %s", from.hasImageMirror(), to.hasImageMirror()));
         }
 
         if (fromResources.maxCpu() != toResources.maxCpu()) {
-            changes.add("maxCpu: %s -> %s".formatted(fromResources.maxCpu(), toResources.maxCpu()));
+            changes.add(Text.format("maxCpu: %s -> %s", fromResources.maxCpu(), toResources.maxCpu()));
         }
 
         if (fromResources.minCpu() != toResources.minCpu()) {
-            changes.add("minCpu: %s -> %s".formatted(fromResources.minCpu(), toResources.minCpu()));
+            changes.add(Text.format("minCpu: %s -> %s", fromResources.minCpu(), toResources.minCpu()));
         }
 
         if (fromResources.memoryGiB() != toResources.memoryGiB()) {
-            changes.add("memoryGiB: %s -> %s".formatted(fromResources.memoryGiB(), toResources.memoryGiB()));
+            changes.add(Text.format("memoryGiB: %s -> %s", fromResources.memoryGiB(), toResources.memoryGiB()));
         }
 
         if (fromResources.hasGpu() != toResources.hasGpu()) {
-            changes.add("hasGpu: %s -> %s".formatted(fromResources.hasGpu(), toResources.hasGpu()));
+            changes.add(Text.format("hasGpu: %s -> %s", fromResources.hasGpu(), toResources.hasGpu()));
         }
 
         if (!from.volumeMounts().equals(to.volumeMounts())) {
-            changes.add("volumeMounts: %s -> %s".formatted(from.volumeMounts(), to.volumeMounts()));
+            changes.add(Text.format("volumeMounts: %s -> %s", from.volumeMounts(), to.volumeMounts()));
         }
 
         if (!from.envs().equals(to.envs())) {
-            changes.add("envs: %s -> %s".formatted(from.envs(), to.envs()));
+            changes.add(Text.format("envs: %s -> %s", from.envs(), to.envs()));
         }
 
         if (!from.command().equals(to.command())) {
-            changes.add("command: %s -> %s".formatted(from.command(), to.command()));
+            changes.add(Text.format("command: %s -> %s", from.command(), to.command()));
         }
 
         // Skipping livenessProbe diff since it doesn't affect sidecar functionality from sidecar client perspective.

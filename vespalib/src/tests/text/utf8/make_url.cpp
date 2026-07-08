@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/text/utf8.h>
 
-void printCodepoint(unsigned long codepoint)
-{
-    std::string data;
+void printCodepoint(unsigned long codepoint) {
+    std::string          data;
     vespalib::Utf8Writer w(data);
     w.putChar(codepoint);
-    printf("URL encoding of codepoint U+%04lX entity &#%lu; string value '%s' is:\n",
-           codepoint, codepoint, data.c_str());
+    printf("URL encoding of codepoint U+%04lX entity &#%lu; string value '%s' is:\n", codepoint, codepoint,
+           data.c_str());
 
     for (size_t i = 0; i < data.size(); ++i) {
         unsigned char byte = data[i];
@@ -16,8 +15,7 @@ void printCodepoint(unsigned long codepoint)
     printf("\n");
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     if (argc == 2) {
         unsigned long codepoint = 0;
         if (sscanf(argv[1], "U+%lx", &codepoint) == 1) {

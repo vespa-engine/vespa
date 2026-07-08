@@ -16,4 +16,4 @@ public:
     virtual search::SerialNum inc_serial_num() = 0;
 };
 
-}
+} // namespace proton

@@ -5,15 +5,12 @@ namespace vespalib {
 
 IMPLEMENT_IDENTIFIABLE_NS(vespalib, NamedObject, Identifiable);
 
-
-Serializer & NamedObject::onSerialize(Serializer & os) const
-{
+Serializer& NamedObject::onSerialize(Serializer& os) const {
     return os.put(_name);
 }
 
-Deserializer & NamedObject::onDeserialize(Deserializer & is)
-{
+Deserializer& NamedObject::onDeserialize(Deserializer& is) {
     return is.get(_name);
 }
 
-}
+} // namespace vespalib

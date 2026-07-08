@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	DefaultApplication = ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
+	DefaultApplication = ApplicationID{Tenant: "default", Application: "default", Instance: "default"}
 	DefaultZone        = ZoneID{Environment: "prod", Region: "default"}
 	DefaultDeployment  = Deployment{Application: DefaultApplication, Zone: DefaultZone}
 	ErrUnauthorized    = errors.New("unauthorized")
@@ -52,6 +52,8 @@ type DeploymentOptions struct {
 	Target             Target
 	ApplicationPackage ApplicationPackage
 	Version            version.Version
+	AuthMethod         string
+	BearerToken        string
 }
 
 type Submission struct {
@@ -150,26 +152,13 @@ func deployServiceGet(url string, deployment DeploymentOptions, w io.Writer) err
 }
 
 func fetchFromController(deployment DeploymentOptions, path string) error {
-	var (
-		pkgURL *url.URL
-		err    error
-	)
-	switch deployment.Target.Deployment().Zone.Environment {
+	d := deployment.Target.Deployment()
+	var pkgURL *url.URL
+	switch d.Zone.Environment {
 	case "dev", "perf":
-		pkgURL, err = deployment.url(fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/job/%s/package",
-			deployment.Target.Deployment().Application.Tenant,
-			deployment.Target.Deployment().Application.Application,
-			deployment.Target.Deployment().Application.Instance,
-			deployment.Target.Deployment().Zone.Environment+"-"+deployment.Target.Deployment().Zone.Region,
-		))
+		pkgURL = d.System.JobPackageURL(d)
 	default:
-		pkgURL, err = deployment.url(fmt.Sprintf("/application/v4/tenant/%s/application/%s/package",
-			deployment.Target.Deployment().Application.Tenant,
-			deployment.Target.Deployment().Application.Application),
-		)
-	}
-	if err != nil {
-		return err
+		pkgURL = d.System.ApplicationPackageURL(d.Application)
 	}
 	tmpFile, err := os.CreateTemp("", "vespa")
 	if err != nil {
@@ -182,7 +171,10 @@ func fetchFromController(deployment DeploymentOptions, path string) error {
 	if err := tmpFile.Close(); err != nil {
 		return err
 	}
-	return os.Rename(tmpFile.Name(), path)
+	if err = renameOrCopyTmpFile(tmpFile.Name(), path); err != nil {
+		return fmt.Errorf("Could neither rename nor copy %s to %s: %w", tmpFile.Name(), path, err)
+	}
+	return err
 }
 
 func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
@@ -191,7 +183,12 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
-	u, err := deployment.url("/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/content")
+	app := deployment.Target.Deployment().Application
+	endpoint := fmt.Sprintf(
+		"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/content",
+		app.Application,
+		app.Instance)
+	u, err := deployment.url(endpoint)
 	if err != nil {
 		return err
 	}
@@ -267,7 +264,10 @@ func fetchFilesFromConfigServer(deployment DeploymentOptions, contentURL *url.UR
 }
 
 // Prepare deployment and return the session ID
-func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
+func Prepare(deployment DeploymentOptions, timeout time.Duration) (PrepareResult, error) {
+	if timeout == 0 {
+		timeout = time.Second * 30
+	}
 	sessionURL, err := deployment.url("/application/v2/tenant/default/session")
 	if err != nil {
 		return PrepareResult{}, err
@@ -284,7 +284,7 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	response, err := deployServiceDo(req, time.Second*30, deployment)
+	response, err := deployServiceDo(req, timeout, deployment)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -312,7 +312,10 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 }
 
 // Activate deployment with sessionID from a past prepare
-func Activate(sessionID int64, deployment DeploymentOptions) error {
+func Activate(sessionID int64, deployment DeploymentOptions, timeout time.Duration) error {
+	if timeout == 0 {
+		timeout = time.Second * 30
+	}
 	u, err := deployment.url(fmt.Sprintf("/application/v2/tenant/default/session/%d/active", sessionID))
 	if err != nil {
 		return err
@@ -321,7 +324,7 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 	if err != nil {
 		return err
 	}
-	response, err := deployServiceDo(req, time.Second*30, deployment)
+	response, err := deployServiceDo(req, timeout, deployment)
 	if err != nil {
 		return err
 	}
@@ -331,19 +334,18 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 
 // Deactivate given deployment
 func Deactivate(deployment DeploymentOptions) error {
+	if !deployment.Target.IsCloud() {
+		return fmt.Errorf("%s: deactivate is unsupported by %s target", deployment, deployment.Target.Type())
+	}
 	var (
 		u   *url.URL
 		err error
 	)
-	if deployment.Target.IsCloud() {
-		if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
-			return fmt.Errorf("%s: missing zone", deployment)
-		}
-		deploymentURL := deployment.Target.Deployment().System.DeploymentURL(deployment.Target.Deployment())
-		u, err = url.Parse(deploymentURL)
-	} else {
-		u, err = deployment.url("/application/v2/tenant/default/application/default")
+	if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
+		return fmt.Errorf("%s: missing zone", deployment)
 	}
+	deploymentURL := deployment.Target.Deployment().System.DeploymentURL(deployment.Target.Deployment())
+	u, err = url.Parse(deploymentURL)
 	if err != nil {
 		return err
 	}
@@ -371,7 +373,17 @@ func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
 		}
 		u, err = url.Parse(deployment.Target.Deployment().System.DeployURL(deployment.Target.Deployment()))
 	} else {
+		app := deployment.Target.Deployment().Application
 		u, err = deployment.url("/application/v2/tenant/default/prepareandactivate")
+		if err != nil {
+			return PrepareResult{}, err
+		}
+		if app != DefaultApplication {
+			q := u.Query()
+			q.Set("applicationName", app.Application)
+			q.Set("instance", app.Instance)
+			u.RawQuery = q.Encode()
+		}
 	}
 	if err != nil {
 		return PrepareResult{}, err
@@ -473,7 +485,7 @@ func deployServiceDo(request *http.Request, timeout time.Duration, opts Deployme
 }
 
 func checkDeploymentOpts(opts DeploymentOptions) error {
-	if opts.Target.Type() == TargetCloud && !opts.ApplicationPackage.HasCertificate() {
+	if opts.Target.Type() == TargetCloud && opts.AuthMethod == "mtls" && !opts.ApplicationPackage.HasCertificate() {
 		return fmt.Errorf("%s: missing certificate in package", opts)
 	}
 	if !opts.Target.IsCloud() && !opts.Version.IsZero() {
@@ -509,6 +521,9 @@ func newDeploymentRequest(url *url.URL, opts DeploymentOptions) (*http.Request, 
 			return nil, err
 		}
 		header.Set("Content-Type", form.FormDataContentType())
+		if opts.AuthMethod == "token" {
+			header.Set("Authorization", fmt.Sprintf("Bearer %s", opts.BearerToken))
+		}
 		body = &buf
 	} else {
 		header.Set("Content-Type", "application/zip")

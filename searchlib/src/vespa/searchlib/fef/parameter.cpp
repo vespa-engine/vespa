@@ -5,13 +5,8 @@
 namespace search {
 namespace fef {
 
-Parameter::Parameter(ParameterType::Enum type, const std::string & value) :
-    _type(type),
-    _stringVal(value),
-    _doubleVal(0),
-    _intVal(0),
-    _fieldVal(nullptr)
-{
+Parameter::Parameter(ParameterType::Enum type, const std::string& value)
+    : _type(type), _stringVal(value), _doubleVal(0), _intVal(0), _fieldVal(nullptr) {
 }
 
 } // namespace fef

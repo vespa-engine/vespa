@@ -1,36 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sortspec.h"
+
 #include "converters.h"
-#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <cstring>
 #include <stdexcept>
 
 namespace search::common {
 
-using vespalib::ConstBufferRef;
-using vespalib::make_string;
 using sortspec::MissingPolicy;
 using sortspec::SortOrder;
+using vespalib::ConstBufferRef;
+using vespalib::make_string;
 
-ConstBufferRef
-PassThroughConverter::onConvert(const ConstBufferRef & src) const
-{
+ConstBufferRef PassThroughConverter::onConvert(const ConstBufferRef& src) const {
     return src;
 }
 
-LowercaseConverter::LowercaseConverter() noexcept
-    : _buffer()
-{
+LowercaseConverter::LowercaseConverter() noexcept : _buffer() {
 }
 
-ConstBufferRef
-LowercaseConverter::onConvert(const ConstBufferRef & src) const
-{
+ConstBufferRef LowercaseConverter::onConvert(const ConstBufferRef& src) const {
     _buffer.clear();
-    std::string_view input((const char *)src.data(), src.size());
+    std::string_view     input((const char*)src.data(), src.size());
     vespalib::Utf8Reader r(input);
     vespalib::Utf8Writer w(_buffer);
     while (r.hasMore()) {
@@ -41,10 +38,10 @@ LowercaseConverter::onConvert(const ConstBufferRef & src) const
     return {_buffer.data(), _buffer.size()};
 }
 
-FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending, std::shared_ptr<BlobConverter> converter) noexcept
+FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending,
+                             std::shared_ptr<BlobConverter> converter) noexcept
     : FieldSortSpec(field, ascending ? SortOrder::ASCENDING : SortOrder::DESCENDING, std::move(converter),
-                    sortspec::MissingPolicy::DEFAULT, {})
-{
+                    sortspec::MissingPolicy::DEFAULT, {}) {
 }
 
 FieldSortSpec::FieldSortSpec(std::string_view field, SortOrder sort_order, std::shared_ptr<BlobConverter> converter,
@@ -53,16 +50,12 @@ FieldSortSpec::FieldSortSpec(std::string_view field, SortOrder sort_order, std::
       _sort_order(sort_order),
       _converter(std::move(converter)),
       _missing_policy(missing_policy),
-      _missing_value(std::move(missing_value))
-{
+      _missing_value(std::move(missing_value)) {
 }
 
 FieldSortSpec::~FieldSortSpec() = default;
 
-SortSpec::SortSpec()
-    : _spec(),
-      _field_sort_specs()
-{
+SortSpec::SortSpec() : _spec(), _field_sort_specs() {
 }
 
 namespace {
@@ -70,14 +63,11 @@ namespace {
 std::string_view delimiters(",()\\\" ");
 
 class Tokenizer {
-    std::string_view _spec;
+    std::string_view            _spec;
     std::string_view::size_type _pos;
+
 public:
-    Tokenizer(std::string_view spec)
-        : _spec(spec),
-          _pos(0)
-    {
-    }
+    Tokenizer(std::string_view spec) : _spec(spec), _pos(0) {}
     ~Tokenizer() = default;
     std::string_view token();
     bool valid() const noexcept { return _pos < _spec.size(); }
@@ -99,9 +89,7 @@ public:
     std::string dequote_string();
 };
 
-std::string_view
-Tokenizer::token()
-{
+std::string_view Tokenizer::token() {
     auto old_pos = _pos;
     _pos = _spec.find_first_of(delimiters, _pos);
     if (_pos == std::string_view::npos) {
@@ -110,9 +98,7 @@ Tokenizer::token()
     return _spec.substr(old_pos, _pos - old_pos);
 }
 
-std::string
-Tokenizer::spec() const noexcept
-{
+std::string Tokenizer::spec() const noexcept {
     std::string result;
     result.reserve(_spec.size() + 4);
     result.push_back('[');
@@ -124,9 +110,7 @@ Tokenizer::spec() const noexcept
     return result;
 }
 
-void
-Tokenizer::expect_char(char expected)
-{
+void Tokenizer::expect_char(char expected) {
     if (!valid()) {
         throw std::runtime_error(make_string("Expected '%c', end of spec reached at %s", expected, spec().c_str()));
     }
@@ -137,24 +121,21 @@ Tokenizer::expect_char(char expected)
     step();
 }
 
-char
-Tokenizer::expect_chars(char expected1, char expected2)
-{
+char Tokenizer::expect_chars(char expected1, char expected2) {
     if (!valid()) {
-        throw std::runtime_error(make_string("Expected '%c' or '%c', end of spec reached at %s", expected1, expected2, spec().c_str()));
+        throw std::runtime_error(
+            make_string("Expected '%c' or '%c', end of spec reached at %s", expected1, expected2, spec().c_str()));
     }
     auto act = peek();
     if (act != expected1 && act != expected2) {
-        throw std::runtime_error(make_string("Expected '%c' or '%c', got '%c' at %s", expected1, expected2, act,
-                                             spec().c_str()));
+        throw std::runtime_error(
+            make_string("Expected '%c' or '%c', got '%c' at %s", expected1, expected2, act, spec().c_str()));
     }
     step();
     return act;
 }
 
-std::string
-Tokenizer::dequote_string()
-{
+std::string Tokenizer::dequote_string() {
     std::string result;
     result.reserve(_spec.size() - _pos);
     expect_char('"');
@@ -192,8 +173,8 @@ MissingPolicy decode_missing_policy(Tokenizer& tokenizer) {
         return MissingPolicy::AS;
     } else {
         std::string missing_policy_copy(policy);
-        throw std::runtime_error(make_string("Unknown missing policy %s at %s",
-            missing_policy_copy.c_str(), tokenizer.spec().c_str()));
+        throw std::runtime_error(
+            make_string("Unknown missing policy %s at %s", missing_policy_copy.c_str(), tokenizer.spec().c_str()));
     }
 }
 
@@ -215,19 +196,16 @@ void decode_missing(Tokenizer& tokenizer, MissingPolicy& missing_policy, std::st
     tokenizer.expect_char(')');
 }
 
-}
+} // namespace
 
-SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory)
-    : _spec(spec),
-      _field_sort_specs()
-{
+SortSpec::SortSpec(const std::string& spec, const ConverterFactory& ucaFactory) : _spec(spec), _field_sort_specs() {
     Tokenizer tokenizer(_spec);
     while (tokenizer.skip_spaces()) {
-        auto order = decode_sort_order(tokenizer);
-        std::string_view attr;
+        auto                           order = decode_sort_order(tokenizer);
+        std::string_view               attr;
         std::shared_ptr<BlobConverter> converter;
-        auto func = tokenizer.token();
-        bool in_missing = false;
+        auto                           func = tokenizer.token();
+        bool                           in_missing = false;
         if (tokenizer.peek() == '(' && func == "missing") {
             in_missing = true;
             tokenizer.step();
@@ -238,9 +216,9 @@ SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory
             if (func == "uca") {
                 attr = tokenizer.token();
                 tokenizer.expect_char(',');
-                auto locale = tokenizer.token();
+                auto             locale = tokenizer.token();
                 std::string_view strength;
-                auto c = tokenizer.expect_chars(',', ')');
+                auto             c = tokenizer.expect_chars(',', ')');
                 if (c == ',') {
                     strength = tokenizer.token();
                     tokenizer.expect_char(')');
@@ -256,7 +234,7 @@ SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory
         } else {
             attr = func;
         }
-        std::string missing_value;
+        std::string   missing_value;
         MissingPolicy missing_policy = MissingPolicy::DEFAULT;
         if (in_missing) {
             decode_missing(tokenizer, missing_policy, missing_value);
@@ -267,4 +245,4 @@ SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory
 
 SortSpec::~SortSpec() = default;
 
-}
+} // namespace search::common

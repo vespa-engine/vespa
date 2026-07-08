@@ -2,23 +2,24 @@
 #pragma once
 
 #include "i_index_writer.h"
+
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 
 namespace proton {
 
-class IndexWriter : public IIndexWriter,
-                    private FeedDebugger {
+class IndexWriter : public IIndexWriter, private FeedDebugger {
 private:
     IIndexManager::SP _mgr;
 
     bool ignoreOperation(search::SerialNum serialNum) const;
 
 public:
-    IndexWriter(const IIndexManager::SP &mgr);
+    IndexWriter(const IIndexManager::SP& mgr);
     ~IndexWriter() override;
-    const IIndexManager::SP & getIndexManager() const override { return _mgr; }
+    const IIndexManager::SP& getIndexManager() const override { return _mgr; }
 
-    void put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid, const OnWriteDoneType& on_write_done) override;
+    void put(search::SerialNum serialNum, const document::Document& doc, const search::DocumentIdT lid,
+             const OnWriteDoneType& on_write_done) override;
     void removeDocs(search::SerialNum serialNum, LidVector lids) override;
     void commit(search::SerialNum serialNum, const OnWriteDoneType& onWriteDone) override;
 
@@ -27,4 +28,3 @@ public:
 };
 
 } // namespace proton
-

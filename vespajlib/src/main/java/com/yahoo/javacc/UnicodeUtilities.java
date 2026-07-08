@@ -168,7 +168,7 @@ public class UnicodeUtilities {
             } else if (c == '\\') {
                 token.append("\\\\");
             } else {
-                token.append("\\u").append(String.format("%04x", c & 0xffff));
+                token.append("\\u").append(String.format(java.util.Locale.ROOT, "%04x", c & 0xffff));
             }
             token.append("\"");
         }

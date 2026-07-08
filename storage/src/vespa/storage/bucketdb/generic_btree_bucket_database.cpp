@@ -5,7 +5,8 @@ namespace storage::bucketdb {
 
 using document::BucketId;
 
-// TODO getMinDiffBits is hoisted from lockablemap.cpp, could probably be rewritten in terms of xor and MSB bit scan instr
+// TODO getMinDiffBits is hoisted from lockablemap.cpp, could probably be rewritten in terms of xor and MSB bit scan
+// instr
 /*
  *       63 -------- ... -> 0
  *     a: 1101111111 ... 0010
@@ -19,8 +20,7 @@ using document::BucketId;
  */
 
 // TODO dedupe and unify common code
-uint8_t
-getMinDiffBits(uint16_t minBits, const BucketId& a, const BucketId& b) {
+uint8_t getMinDiffBits(uint16_t minBits, const BucketId& a, const BucketId& b) {
     for (uint32_t i = minBits; i <= std::min(a.getUsedBits(), b.getUsedBits()); i++) {
         BucketId a1(i, a.getRawId());
         BucketId b1(i, b.getRawId());
@@ -46,4 +46,4 @@ uint8_t next_parent_bit_seek_level(uint8_t minBits, const BucketId& a, const Buc
     return std::max(min_used, minBits) + 1;
 }
 
-}
+} // namespace storage::bucketdb

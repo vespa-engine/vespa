@@ -9,7 +9,7 @@
 namespace storage::framework {
 class HttpUrlPath;
 struct StatusReporter;
-}
+} // namespace storage::framework
 
 namespace storage::distributor {
 
@@ -18,17 +18,13 @@ struct DelegatedStatusRequest;
 // TODO STRIPE description
 class DistributorStatus {
     const DelegatedStatusRequest& _request;
-    std::mutex              _lock;
-    std::condition_variable _cond;
-    bool                    _done;
+    std::mutex                    _lock;
+    std::condition_variable       _cond;
+    bool                          _done;
 
 public:
     DistributorStatus(const DelegatedStatusRequest& request) noexcept
-        : _request(request),
-          _lock(),
-          _cond(),
-          _done(false)
-    {}
+        : _request(request), _lock(), _cond(), _done(false) {}
 
     std::ostream& getStream();
     const framework::HttpUrlPath& getPath() const;
@@ -38,4 +34,4 @@ public:
     void waitForCompletion();
 };
 
-}
+} // namespace storage::distributor

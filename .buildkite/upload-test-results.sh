@@ -8,6 +8,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+: "${WORKDIR:?Environment variable WORKDIR must be set (working directory for test results)}"
+: "${LOG_DIR:?Environment variable LOG_DIR must be set (directory containing C++ test results)}"
+
 if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
@@ -26,14 +29,10 @@ else
     CPP_TEST_TOKEN=$UNIT_TEST_CPP_ARM64_TOKEN
 fi
 
-if [[ -z $JAVA_TEST_TOKEN ]]; then
-    echo "Missing JAVA_TEST_TOKEN. Exiting."
-    exit 1
-fi
-if [[ -z $CPP_TEST_TOKEN ]]; then
-    echo "Missing CPP_TEST_TOKEN. Exiting."
-    exit 1
-fi
+{ set +o xtrace; } 2>/dev/null
+: "${JAVA_TEST_TOKEN:?Environment variable JAVA_TEST_TOKEN must be set (token for uploading Java test results)}"
+: "${CPP_TEST_TOKEN:?Environment variable CPP_TEST_TOKEN must be set (token for uploading C++ test results)}"
+[[ -n "${DEBUG:-}" ]] && set -o xtrace
 
 upload_result() {
     curl \

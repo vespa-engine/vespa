@@ -14,6 +14,7 @@ import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -105,7 +106,7 @@ class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
                     () -> "Warning: unable to provide ConnectionAuthContext as no SSLSession is available");
         }
         if (result.authorized()) {
-            log.fine(() -> String.format("Verification result: %s", result));
+            log.fine(() -> String.format(Locale.ROOT, "Verification result: %s", result));
         } else {
             String errorMessage = "Authorization failed: " + createInfoString(certChain[0], authType, isVerifyingClient);
             log.warning(errorMessage);
@@ -116,7 +117,7 @@ class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     }
 
     private String createInfoString(X509Certificate certificate, String authType, boolean isVerifyingClient) {
-        return String.format("DN='%s', SANs=%s, authType='%s', isVerifyingClient='%b', mode=%s",
+        return String.format(Locale.ROOT, "DN='%s', SANs=%s, authType='%s', isVerifyingClient='%b', mode=%s",
                 certificate.getSubjectX500Principal(), X509CertificateUtils.getSubjectAlternativeNames(certificate),
                 authType, isVerifyingClient, mode);
     }

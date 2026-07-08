@@ -8,6 +8,7 @@ package storage.protobuf;
 message RequestHeader {
     uint64 time_remaining_ms = 1;
     uint32 trace_level = 2;
+    map<string, string> header_kvs = 3;
 }
 
 message ResponseHeader {

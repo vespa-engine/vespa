@@ -4,8 +4,10 @@ package com.yahoo.config.application.api;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HeapDumpRedaction;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
@@ -60,10 +62,13 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final Optional<AthenzService> athenzService;
     private final Map<CloudName, CloudAccount> cloudAccounts;
     private final Optional<Duration> hostTTL;
+    private final CloudResourceTags cloudResourceTags;
+    private final Optional<HeapDumpRedaction> heapDumpRedaction;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
     private final Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints;
     private final Bcp bcp;
+    private final Optional<DeploymentSpec.BackupSpec> backup;
 
     public DeploymentInstanceSpec(InstanceName name,
                                   Tags tags,
@@ -77,10 +82,13 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Optional<AthenzService> athenzService,
                                   Map<CloudName, CloudAccount> cloudAccounts,
                                   Optional<Duration> hostTTL,
+                                  CloudResourceTags cloudResourceTags,
+                                  Optional<HeapDumpRedaction> heapDumpRedaction,
                                   Notifications notifications,
                                   List<Endpoint> endpoints,
                                   Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints,
                                   Bcp bcp,
+                                  Optional<DeploymentSpec.BackupSpec> backup,
                                   Instant now) {
         super(steps);
         this.name = Objects.requireNonNull(name);
@@ -100,12 +108,15 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.athenzService = Objects.requireNonNull(athenzService);
         this.cloudAccounts = Map.copyOf(cloudAccounts);
         this.hostTTL = Objects.requireNonNull(hostTTL);
+        this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
+        this.heapDumpRedaction = Objects.requireNonNull(heapDumpRedaction);
         this.notifications = Objects.requireNonNull(notifications);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpointsCopy =  new HashMap<>();
         for (var entry : zoneEndpoints.entrySet()) zoneEndpointsCopy.put(entry.getKey(), Collections.unmodifiableMap(new HashMap<>(entry.getValue())));
         this.zoneEndpoints = Collections.unmodifiableMap(zoneEndpointsCopy);
         this.bcp = Objects.requireNonNull(bcp);
+        this.backup = Objects.requireNonNull(backup);
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(this.endpoints);
         validateChangeBlockers(changeBlockers, now);
@@ -220,7 +231,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns the revision change strategy of this, which is {@link DeploymentSpec.RevisionChange#whenFailing} by default */
     public DeploymentSpec.RevisionChange revisionChange() { return revisionChange; }
 
-    /** Returns the upgrade rollout strategy of this, which is {@link DeploymentSpec.UpgradeRollout#separate} by default */
+    /** Returns the upgrade rollout strategy of this, which is {@link DeploymentSpec.UpgradeRollout#simultaneous} by default */
     public DeploymentSpec.UpgradeRollout upgradeRollout() { return upgradeRollout; }
 
     /** Minimum cumulative, enqueued risk required for a new revision to roll out to this instance. 0 by default. */
@@ -247,6 +258,12 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                              .noneMatch(block -> block.window().includes(instant));
     }
 
+    /** Returns whether maintenance can be performed on these instances at the given instant */
+    public boolean canPerformMaintenanceAt(Instant instant) {
+        return changeBlockers.stream().filter(DeploymentSpec.ChangeBlocker::blocksMaintenance)
+                             .noneMatch(block -> block.window().includes(instant));
+    }
+
     /** Returns the athenz service for environment/region if configured, defaulting to that of the instance */
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
         return zones().stream()
@@ -265,6 +282,22 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                       .orElse(cloudAccounts);
     }
 
+    /** Returns the cloud resource tags for this instance. */
+    public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
+
+    /** Returns the cloud resource tags for the given environment and region, merged with zone-specific tags. */
+    public CloudResourceTags cloudResourceTags(Environment environment, RegionName region) {
+        CloudResourceTags zoneTags = zones().stream()
+                                            .filter(zone -> zone.concerns(environment, Optional.of(region)))
+                                            .findFirst()
+                                            .map(DeploymentSpec.DeclaredZone::cloudResourceTags)
+                                            .orElse(CloudResourceTags.empty());
+        return cloudResourceTags.mergedWith(zoneTags);
+    }
+
+    /** Returns the heap dump redaction level set on this instance, if any. */
+    public Optional<HeapDumpRedaction> heapDumpRedaction() { return heapDumpRedaction; }
+
     /** Returns the host TTL to use for given environment and region, if any */
     public Optional<Duration> hostTTL(Environment environment, Optional<RegionName> region) {
         return zones().stream()
@@ -282,6 +315,9 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     /** Returns the BCP spec of this instance, or BcpSpec.empty() if none. */
     public Bcp bcp() { return bcp; }
+
+    /** Returns the backup configuration for this instance, if any. */
+    public Optional<DeploymentSpec.BackupSpec> backup() { return backup; }
 
     /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
     public boolean deploysTo(Environment environment, RegionName region) {
@@ -322,12 +358,13 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                endpoints.equals(other.endpoints) &&
                zoneEndpoints.equals(other.zoneEndpoints) &&
                bcp.equals(other.bcp) &&
+               backup.equals(other.backup) &&
                tags.equals(other.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(upgradePolicy, revisionTarget, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints, zoneEndpoints, bcp, tags);
+        return Objects.hash(upgradePolicy, revisionTarget, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints, zoneEndpoints, bcp, backup, tags);
     }
 
     int deployableHashCode() {

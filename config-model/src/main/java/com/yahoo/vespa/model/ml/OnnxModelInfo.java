@@ -11,6 +11,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.text.Text;
 import onnx.Onnx;
 
 import java.io.ByteArrayOutputStream;
@@ -209,16 +210,14 @@ public class OnnxModelInfo {
         int skippedInput = 0;
         for (Onnx.ValueInfoProto valueInfo : model.getGraph().getInputList()) {
             if (initializerNames.contains(valueInfo.getName())) {
-                log.fine(() -> "For '%s': skipping name '%s' as it's an initializer"
-                        .formatted(path.getName(), valueInfo.getName()));
+                log.fine(() -> Text.format("For '%s': skipping name '%s' as it's an initializer", path.getName(), valueInfo.getName()));
                 ++skippedInput;
                 continue;
             }
             onnxTypeToJson(g, valueInfo);
         }
         if (skippedInput > 0)
-            log.info("For '%s': skipped %d inputs that were also listed in initializers"
-                             .formatted(path.getName(), skippedInput));
+            log.info(Text.format("For '%s': skipped %d inputs that were also listed in initializers", path.getName(), skippedInput));
         g.writeEndArray();
 
         g.writeArrayFieldStart("outputs");
@@ -237,7 +236,7 @@ public class OnnxModelInfo {
 
         g.writeEndObject();
         g.close();
-        return out.toString();
+        return out.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
 
     static public OnnxModelInfo jsonToModelInfo(String json, ApplicationPackage app) throws IOException {

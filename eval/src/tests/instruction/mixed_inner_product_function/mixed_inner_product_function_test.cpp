@@ -8,9 +8,9 @@
 #include <vespa/eval/instruction/dense_multi_matmul_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
 #include <vespa/eval/instruction/mixed_inner_product_function.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("mixed_inner_product_function_test");
@@ -21,29 +21,26 @@ using namespace vespalib::eval::test;
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-struct FunInfo {
+template <typename T> struct FunInfo {
     using LookFor = T;
-    void verify(const LookFor &fun) const {
-        EXPECT_TRUE(fun.result_is_mutable());
-    }
+    void verify(const LookFor& fun) const { EXPECT_TRUE(fun.result_is_mutable()); }
 };
 
-void assert_mixed_optimized(const std::string &expr) {
+void assert_mixed_optimized(const std::string& expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     using MIP = FunInfo<MixedInnerProductFunction>;
     EvalFixture::verify<MIP>(expr, {MIP{}}, all_types);
 }
 
-void assert_not_mixed_optimized(const std::string &expr) {
+void assert_not_mixed_optimized(const std::string& expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     using MIP = FunInfo<MixedInnerProductFunction>;
     EvalFixture::verify<MIP>(expr, {}, all_types);
 }
 
-void assert_dense_optimized(const std::string &expr) {
+void assert_dense_optimized(const std::string& expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     using MIP = FunInfo<MixedInnerProductFunction>;
@@ -91,7 +88,7 @@ TEST(MixedInnerProduct, should_not_trigger_optimizer_for_other_cases) {
 TEST(MixedInnerProduct, check_compatibility_with_complex_types) {
     ValueType vec_type = ValueType::from_spec("tensor<float>(f[1],g[2],i[1],x[3],y[1])");
     ValueType mix_type = ValueType::from_spec("tensor<double>(cat{},g[2],host{},k[1],x[3],z{})");
-    ValueType res_type = ValueType::join(vec_type,mix_type).reduce({"g","k","i","x"});
+    ValueType res_type = ValueType::join(vec_type, mix_type).reduce({"g", "k", "i", "x"});
     EXPECT_EQ(MixedInnerProductFunction::compatible_types(res_type, mix_type, vec_type), true);
     EXPECT_EQ(MixedInnerProductFunction::compatible_types(res_type, vec_type, mix_type), false);
 }

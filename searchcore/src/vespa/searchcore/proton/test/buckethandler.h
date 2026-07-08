@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/server/ibucketstatechangednotifier.h>
 #include <vespa/searchcore/proton/server/ibucketstatechangedhandler.h>
+#include <vespa/searchcore/proton/server/ibucketstatechangednotifier.h>
+
 #include <set>
 
 namespace proton::test {
@@ -12,17 +13,16 @@ namespace proton::test {
  * Test bucket handler that forwards bucket state change notifications
  * as appropriate.
  */
-class BucketHandler : public IBucketStateChangedNotifier
-{
-    std::set<IBucketStateChangedHandler *> _handlers;
+class BucketHandler : public IBucketStateChangedNotifier {
+    std::set<IBucketStateChangedHandler*> _handlers;
+
 public:
     BucketHandler();
     ~BucketHandler() override;
-    void addBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;
-    void removeBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;
+    void addBucketStateChangedHandler(IBucketStateChangedHandler* handler) override;
+    void removeBucketStateChangedHandler(IBucketStateChangedHandler* handler) override;
 
-    void notifyBucketStateChanged(const document::BucketId &bucketId,
-                                  storage::spi::BucketInfo::ActiveState newState);
+    void notifyBucketStateChanged(const document::BucketId& bucketId, storage::spi::BucketInfo::ActiveState newState);
 };
 
-}
+} // namespace proton::test

@@ -4,10 +4,8 @@
 
 namespace search::engine {
 
-struct MonitorRequest
-{
+struct MonitorRequest {
     MonitorRequest();
 };
 
-}
-
+} // namespace search::engine

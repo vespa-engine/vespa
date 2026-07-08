@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
+import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
@@ -112,7 +113,8 @@ public class HitRendererTestCase {
 
     @Test
     void requireThatRootGroupsRenderAsExpected() {
-        RootGroup group = new RootGroup(0, new MyContinuation("69"));
+        Query query = new Query();
+        RootGroup group = new RootGroup(0, new MyContinuation("69"), query);
         group.setField("foo", "bar");
         group.setField("baz", "cox");
         assertRender(group, "<group relevance=\"1.0\">\n" +
@@ -122,7 +124,7 @@ public class HitRendererTestCase {
                 "<output label=\"baz\">cox</output>\n" +
                 "</group>\n");
 
-        group = new RootGroup(0, new MyContinuation("96"));
+        group = new RootGroup(0, new MyContinuation("96"), query);
         group.setField("foo", "b\u00e6r");
         group.setField("b\u00e5z", "cox");
         assertRender(group, "<group relevance=\"1.0\">\n" +
@@ -148,7 +150,7 @@ public class HitRendererTestCase {
     }
 
     private static Group newGroup(GroupId id) {
-        return new Group(id, new Relevance(1));
+        return new Group(id, new Relevance(1), new Query());
     }
 
     private static void assertRender(HitGroup hit, String expectedXml) {

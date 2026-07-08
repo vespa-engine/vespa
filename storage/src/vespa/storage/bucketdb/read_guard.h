@@ -2,13 +2,14 @@
 #pragma once
 
 #include "const_iterator.h"
+
 #include <vespa/document/bucket/bucketid.h>
+
 #include <functional>
 #include <memory>
 #include <vector>
 
 namespace storage::bucketdb {
-
 
 /*
  * Read guard for accessing the bucket tree of an underlying bucket database
@@ -29,8 +30,7 @@ namespace storage::bucketdb {
  * memory to be retained by the backing DB until released.
  */
 
-template <typename ValueT, typename ConstRefT = const ValueT&>
-class ReadGuard {
+template <typename ValueT, typename ConstRefT = const ValueT&> class ReadGuard {
 public:
     ReadGuard() = default;
     virtual ~ReadGuard() = default;
@@ -44,9 +44,6 @@ public:
     virtual std::vector<ValueT> find_parents_self_and_children(const document::BucketId& bucket) const = 0;
     virtual void for_each(std::function<void(uint64_t, const ValueT&)> func) const = 0;
     virtual std::unique_ptr<ConstIterator<ConstRefT>> create_iterator() const = 0;
-    // If the underlying guard represents a snapshot, returns its monotonically
-    // increasing generation. Otherwise returns 0.
-    [[nodiscard]] virtual uint64_t generation() const noexcept = 0;
 };
 
-}
+} // namespace storage::bucketdb

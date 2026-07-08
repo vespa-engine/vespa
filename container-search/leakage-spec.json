@@ -1,0 +1,180 @@
+{
+  "com.yahoo.prelude.query.CompositeIndexedItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.CompositeItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.GeoLocationItem" : [
+    "com.yahoo.prelude.Location"
+  ],
+  "com.yahoo.prelude.query.IndexedSegmentItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.Item" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.MarkerWordItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.MultiRangeItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.NearItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.NearestNeighborItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.NumericInItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.PhraseItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.PhraseSegmentItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.PureWeightedInteger" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.PureWeightedItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.PureWeightedString" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.RootItem" : [
+    "ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol$QueryTree"
+  ],
+  "com.yahoo.prelude.query.SegmentItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.SimpleIndexedItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.StringInItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.TermItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.WandItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.WeakAndItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.WeightedSetItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.WordItem" : [
+    "com.yahoo.prelude.query.parser.Token",
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.search.Result" : [
+    "com.yahoo.collections.ListMap"
+  ],
+  "com.yahoo.search.cluster.ClusterSearcher" : [
+    "com.yahoo.prelude.Ping",
+    "com.yahoo.prelude.Pong"
+  ],
+  "com.yahoo.search.cluster.PingableSearcher" : [
+    "com.yahoo.prelude.Ping",
+    "com.yahoo.prelude.Pong"
+  ],
+  "com.yahoo.search.federation.selection.FederationTarget" : [
+    "com.yahoo.search.searchchain.model.federation.FederationOptions"
+  ],
+  "com.yahoo.search.grouping.GroupingValidator" : [
+    "com.yahoo.search.config.ClusterConfig",
+    "com.yahoo.vespa.config.search.AttributesConfig"
+  ],
+  "com.yahoo.search.handler.HttpSearchResponse" : [
+    "com.yahoo.container.logging.AccessLogEntry",
+    "com.yahoo.container.logging.HitCounts"
+  ],
+  "com.yahoo.search.handler.SearchHandler" : [
+    "com.yahoo.container.core.ContainerHttpConfig",
+    "com.yahoo.container.handler.threadpool.ContainerThreadPool",
+    "com.yahoo.slime.Inspector"
+  ],
+  "com.yahoo.search.handler.SearchResponse" : [
+    "com.yahoo.container.logging.HitCounts"
+  ],
+  "com.yahoo.search.query.Ranking" : [
+    "com.yahoo.prelude.Freshness",
+    "com.yahoo.prelude.Location"
+  ],
+  "com.yahoo.search.query.SelectParser" : [
+    "com.yahoo.search.yql.VespaGroupingStep"
+  ],
+  "com.yahoo.search.query.parser.ParserEnvironment" : [
+    "com.yahoo.prelude.IndexFacts"
+  ],
+  "com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry" : [
+    "com.yahoo.search.query.profile.config.QueryProfilesConfig"
+  ],
+  "com.yahoo.search.query.rewrite.RewriterFeatures" : [
+    "com.yahoo.prelude.querytransform.PhraseMatcher",
+    "com.yahoo.prelude.querytransform.PhraseMatcher$Phrase"
+  ],
+  "com.yahoo.search.rendering.JsonDataSource" : [
+    "com.yahoo.data.disclosure.DataSink",
+    "com.yahoo.data.disclosure.DataSource"
+  ],
+  "com.yahoo.search.rendering.JsonGeneratorDataSink" : [
+    "com.fasterxml.jackson.core.JsonGenerator",
+    "com.yahoo.data.disclosure.DataSink"
+  ],
+  "com.yahoo.search.rendering.JsonRenderer$FieldConsumer" : [
+    "com.yahoo.container.logging.TraceRenderer$FieldConsumer"
+  ],
+  "com.yahoo.search.rendering.NonFiniteToNullDataSink" : [
+    "com.yahoo.data.disclosure.DataSink"
+  ],
+  "com.yahoo.search.result.FeatureData" : [
+    "com.yahoo.data.disclosure.DataSink",
+    "com.yahoo.data.disclosure.DataSource",
+    "com.yahoo.tensor.serialization.JsonFormat$EncodeOptions"
+  ],
+  "com.yahoo.search.result.PositionsData" : [
+    "com.yahoo.data.disclosure.DataSink",
+    "com.yahoo.data.disclosure.DataSource"
+  ],
+  "com.yahoo.search.result.StructuredData" : [
+    "com.yahoo.data.disclosure.DataSink",
+    "com.yahoo.data.disclosure.DataSource"
+  ],
+  "com.yahoo.search.schema.SchemaInfo" : [
+    "com.yahoo.container.QrSearchersConfig",
+    "com.yahoo.search.config.SchemaInfoConfig"
+  ],
+  "com.yahoo.search.searchchain.Execution" : [
+    "com.yahoo.prelude.Ping",
+    "com.yahoo.prelude.Pong"
+  ],
+  "com.yahoo.search.searchchain.Execution$Context" : [
+    "com.yahoo.prelude.IndexFacts"
+  ],
+  "com.yahoo.search.searchchain.ExecutionFactory" : [
+    "com.yahoo.container.QrSearchersConfig",
+    "com.yahoo.container.core.ChainsConfig",
+    "com.yahoo.search.config.IndexInfoConfig",
+    "com.yahoo.search.config.SchemaInfoConfig",
+    "com.yahoo.vespa.configdefinition.SpecialtokensConfig"
+  ],
+  "com.yahoo.search.searchers.RateLimitingSearcher" : [
+    "com.yahoo.cloud.config.ClusterInfoConfig",
+    "com.yahoo.search.config.RateLimitingConfig"
+  ],
+  "com.yahoo.search.searchers.ValidateMatchPhaseSearcher" : [
+    "com.yahoo.vespa.config.search.AttributesConfig"
+  ],
+  "com.yahoo.search.searchers.ValidateNearestNeighborSearcher" : [
+    "com.yahoo.vespa.config.search.AttributesConfig"
+  ],
+  "com.yahoo.search.statistics.TimeTracker" : [
+    "com.yahoo.prelude.Pong"
+  ]
+}

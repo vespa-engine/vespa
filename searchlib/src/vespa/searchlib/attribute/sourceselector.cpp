@@ -1,15 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sourceselector.h"
+
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/util/size_literals.h>
 
+using search::common::FileHeaderContext;
 using search::queryeval::Source;
 using vespalib::FileHeader;
 using vespalib::GenericHeader;
-using search::common::FileHeaderContext;
 
 namespace search {
 
@@ -19,20 +20,15 @@ const std::string defaultSourceTag = "Default source";
 const std::string baseIdTag = "Base id";
 const std::string docIdLimitTag = "Doc id limit";
 
-class AddMyHeaderTags : public FileHeaderContext
-{
-    const SourceSelector::HeaderInfo &_hi;
-    const FileHeaderContext &_parent;
+class AddMyHeaderTags : public FileHeaderContext {
+    const SourceSelector::HeaderInfo& _hi;
+    const FileHeaderContext&          _parent;
 
 public:
-    AddMyHeaderTags(const SourceSelector::HeaderInfo &hi, const FileHeaderContext &parent)
-        : _hi(hi),
-          _parent(parent)
-    { }
+    AddMyHeaderTags(const SourceSelector::HeaderInfo& hi, const FileHeaderContext& parent)
+        : _hi(hi), _parent(parent) {}
 
-    void
-    addTags(GenericHeader &header, const std::string &name) const override
-    {
+    void addTags(GenericHeader& header, const std::string& name) const override {
         using Tag = GenericHeader::Tag;
         _parent.addTags(header, name);
         header.putTag(Tag(defaultSourceTag, _hi._defaultSource));
@@ -41,45 +37,30 @@ public:
     }
 };
 
-}  // namespace
+} // namespace
 
-SourceSelector::HeaderInfo::HeaderInfo(const std::string & baseFileName,
-                                       Source defaultSource,
-                                       uint32_t baseId,
-                                       uint32_t docIdLimit) :
-    _baseFileName(baseFileName),
-    _defaultSource(defaultSource),
-    _baseId(baseId),
-    _docIdLimit(docIdLimit)
-{ }
+SourceSelector::HeaderInfo::HeaderInfo(const std::string& baseFileName, Source defaultSource, uint32_t baseId,
+                                       uint32_t docIdLimit)
+    : _baseFileName(baseFileName), _defaultSource(defaultSource), _baseId(baseId), _docIdLimit(docIdLimit) {
+}
 
-SourceSelector::SaveInfo::SaveInfo(const std::string & baseFileName,
-                                   Source defaultSource,
-                                   uint32_t baseId,
-                                   uint32_t docIdLimit,
-                                   AttributeVector & sourceStore)
-    : _header(baseFileName, defaultSource, baseId, docIdLimit),
-      _memSaver()
-{
+SourceSelector::SaveInfo::SaveInfo(const std::string& baseFileName, Source defaultSource, uint32_t baseId,
+                                   uint32_t docIdLimit, AttributeVector& sourceStore)
+    : _header(baseFileName, defaultSource, baseId, docIdLimit), _memSaver() {
     sourceStore.save(_memSaver, _header._baseFileName);
 }
 
 SourceSelector::SaveInfo::~SaveInfo() = default;
-bool
-SourceSelector::SaveInfo::save(const TuneFileAttributes &tuneFileAttributes,
-                               const FileHeaderContext &fileHeaderContext)
-{
+bool SourceSelector::SaveInfo::save(const TuneFileAttributes& tuneFileAttributes,
+                                    const FileHeaderContext&  fileHeaderContext) {
     AddMyHeaderTags fh(_header, fileHeaderContext);
     return _memSaver.writeToFile(tuneFileAttributes, fh);
 }
 
-SourceSelector::LoadInfo::LoadInfo(const std::string &baseFileName)
-    : _header(baseFileName, 0, 0, 0)
-{ }
+SourceSelector::LoadInfo::LoadInfo(const std::string& baseFileName) : _header(baseFileName, 0, 0, 0) {
+}
 
-void
-SourceSelector::LoadInfo::load()
-{
+void SourceSelector::LoadInfo::load() {
     const std::string fileName = _header._baseFileName + ".dat";
     Fast_BufferedFile file(16_Ki);
     // XXX no checking for success
@@ -98,28 +79,21 @@ SourceSelector::LoadInfo::load()
     }
 }
 
-SourceSelector::SourceSelector(Source defaultSource, AttributeVector::SP realSource) :
-    ISourceSelector(defaultSource),
-    _realSource(std::move(realSource))
-{ }
-
-SourceSelector::SaveInfo::UP
-SourceSelector::extractSaveInfo(const std::string & baseFileName)
-{
-    return std::make_unique<SaveInfo>(baseFileName, getDefaultSource(), getBaseId(),
-                                      getDocIdLimit(), *_realSource);
+SourceSelector::SourceSelector(Source defaultSource, AttributeVector::SP realSource)
+    : ISourceSelector(defaultSource), _realSource(std::move(realSource)) {
 }
 
-SourceSelector::LoadInfo::UP
-SourceSelector::extractLoadInfo(const std::string & baseFileName)
-{
+SourceSelector::SaveInfo::UP SourceSelector::extractSaveInfo(const std::string& baseFileName) {
+    return std::make_unique<SaveInfo>(baseFileName, getDefaultSource(), getBaseId(), getDocIdLimit(), *_realSource);
+}
+
+SourceSelector::LoadInfo::UP SourceSelector::extractLoadInfo(const std::string& baseFileName) {
     return std::make_unique<LoadInfo>(baseFileName);
 }
 
-SourceSelector::Histogram SourceSelector::getDistribution() const
-{
+SourceSelector::Histogram SourceSelector::getDistribution() const {
     Histogram h;
-    auto it = createIterator();
+    auto      it = createIterator();
     for (size_t i(0), m(getDocIdLimit()); i < m; i++) {
         h.inc(it->getSource(i));
     }

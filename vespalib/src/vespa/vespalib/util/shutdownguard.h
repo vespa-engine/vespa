@@ -2,8 +2,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/time.h>
-#include <thread>
+
 #include <atomic>
+#include <thread>
 
 namespace vespalib {
 
@@ -14,10 +15,9 @@ namespace vespalib {
  * termination.
  * A separate shutdown thread will perform the actual _exit() call.
  **/
-class ShutdownGuard
-{
-    std::thread _thread;
-    steady_time _dieAtTime;
+class ShutdownGuard {
+    std::thread       _thread;
+    steady_time       _dieAtTime;
     std::atomic<bool> _cancel;
 
     void run();
@@ -33,8 +33,6 @@ public:
      * Destructor that dismisses the guard and collects the shutdown thread.
      **/
     ~ShutdownGuard();
-
 };
 
 } // namespace vespalib
-

@@ -2,25 +2,22 @@
 
 #pragma once
 
-#include "numeric_direct_posting_store_adapter.h"
 #include "direct_posting_store_adapter.hpp"
+#include "numeric_direct_posting_store_adapter.h"
 
 namespace search::attribute {
 
 template <typename ParentType, typename PostingStoreType, typename EnumStoreType>
-NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::
-NumericDirectPostingStoreAdapter(const PostingStoreType& posting_store,
-                                 const EnumStoreType& enum_store,
-                                 bool attr_is_filter)
-    : DirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>(posting_store, enum_store, attr_is_filter)
-{
+NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::NumericDirectPostingStoreAdapter(
+    const PostingStoreType& posting_store, const EnumStoreType& enum_store, bool attr_is_filter)
+    : DirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>(posting_store, enum_store,
+                                                                             attr_is_filter) {
 }
 
 template <typename ParentType, typename PostingStoreType, typename EnumStoreType>
 NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::LookupResult
-NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::
-lookup(const LookupKey& key, vespalib::datastore::EntryRef dictionary_snapshot) const
-{
+NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::lookup(
+    const LookupKey& key, vespalib::datastore::EntryRef dictionary_snapshot) const {
     int64_t int_term;
     if (!key.asInteger(int_term)) {
         return LookupResult();
@@ -32,7 +29,8 @@ lookup(const LookupKey& key, vespalib::datastore::EntryRef dictionary_snapshot) 
         if (pidx.valid()) {
             if constexpr (PostingStoreType::AggrCalcType::hasAggregated()) {
                 auto minmax = this->_posting_store.getAggregated(pidx);
-                return LookupResult(pidx, this->_posting_store.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
+                return LookupResult(pidx, this->_posting_store.frozenSize(pidx), minmax.getMin(), minmax.getMax(),
+                                    find_result.first);
             } else {
                 return LookupResult(pidx, this->_posting_store.frozenSize(pidx), 1, 1, find_result.first);
             }
@@ -42,21 +40,17 @@ lookup(const LookupKey& key, vespalib::datastore::EntryRef dictionary_snapshot) 
 }
 
 template <typename ParentType, typename PostingStoreType, typename EnumStoreType>
-void
-NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::
-collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot,
-               const std::function<void(vespalib::datastore::EntryRef)>& callback) const
-{
-    (void) dictionary_snapshot;
+void NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::collect_folded(
+    vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot,
+    const std::function<void(vespalib::datastore::EntryRef)>& callback) const {
+    (void)dictionary_snapshot;
     callback(enum_idx);
 }
 
 template <typename ParentType, typename PostingStoreType, typename EnumStoreType>
-int64_t
-NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::
-get_integer_value(vespalib::datastore::EntryRef enum_idx) const noexcept
-{
+int64_t NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::get_integer_value(
+    vespalib::datastore::EntryRef enum_idx) const noexcept {
     return this->_enum_store.get_value(enum_idx);
 }
 
-}
+} // namespace search::attribute

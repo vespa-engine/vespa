@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 
 namespace search::common {
 
@@ -12,21 +12,21 @@ namespace search::common {
  * with methods for computing Great Circle Distance
  * using the haversine formula
  **/
-struct GeoGcd
-{
+struct GeoGcd {
     GeoGcd(double lat, double lng);
 
     // haversine function:
     static constexpr double haversine(double angle) {
-        double s = sin(0.5*angle);
-        return s*s;
+        double s = sin(0.5 * angle);
+        return s * s;
     }
 
     double km_great_circle_distance(double lat, double lng) const;
     static double km_to_internal(double km);
+
 private:
     double _latitude_radians;
     double _longitude_radians;
 };
 
-} // namespace
+} // namespace search::common

@@ -1,16 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/storage/bucketdb/bucketinfo.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
+
 #include <vector>
 
 using namespace ::testing;
 
 namespace storage::distributor {
 
-BucketInfo
-getBucketInfo(std::string nodeList, std::string order) {
+BucketInfo getBucketInfo(std::string nodeList, std::string order) {
     BucketInfo info;
 
     std::vector<uint16_t> ordering;
@@ -23,17 +23,13 @@ getBucketInfo(std::string nodeList, std::string order) {
 
     vespalib::StringTokenizer tokenizer(nodeList, ",");
     for (uint32_t i = 0; i < tokenizer.size(); i++) {
-        info.addNode(BucketCopy(0,
-                                atoi(tokenizer[i].data()),
-                                api::BucketInfo(1,1,1)),
-                     ordering);
+        info.addNode(BucketCopy(0, atoi(tokenizer[i].data()), api::BucketInfo(1, 1, 1)), ordering);
     }
 
     return info;
 }
 
-std::string
-nodeList(const BucketInfo& info) {
+std::string nodeList(const BucketInfo& info) {
     std::ostringstream ost;
     for (uint32_t i = 0; i < info.getNodeCount(); i++) {
         if (i != 0) {
@@ -50,24 +46,24 @@ nodeList(const BucketInfo& info) {
 // insert. This also applies for when we postpone db updates in persistence
 // message tracker until we've received a reply from all copies.
 TEST(BucketInfoTest, bucket_info_entries_with_newest_timestamps_are_kept) {
-    BucketInfo bi;
+    BucketInfo            bi;
     std::vector<uint16_t> idealState;
     idealState.push_back(0);
 
-    bi.addNode(BucketCopy(5, 0, api::BucketInfo(1,1,1)), idealState);
-    EXPECT_EQ(api::BucketInfo(1,1,1), bi.getNode(0)->getBucketInfo());
+    bi.addNode(BucketCopy(5, 0, api::BucketInfo(1, 1, 1)), idealState);
+    EXPECT_EQ(api::BucketInfo(1, 1, 1), bi.getNode(0)->getBucketInfo());
 
-    bi.addNode(BucketCopy(5, 0, api::BucketInfo(2,2,2)), idealState);
-    EXPECT_EQ(api::BucketInfo(1,1,1), bi.getNode(0)->getBucketInfo());
+    bi.addNode(BucketCopy(5, 0, api::BucketInfo(2, 2, 2)), idealState);
+    EXPECT_EQ(api::BucketInfo(1, 1, 1), bi.getNode(0)->getBucketInfo());
 
-    bi.addNode(BucketCopy(4, 0, api::BucketInfo(3,3,3)), idealState);
-    EXPECT_EQ(api::BucketInfo(1,1,1), bi.getNode(0)->getBucketInfo());
+    bi.addNode(BucketCopy(4, 0, api::BucketInfo(3, 3, 3)), idealState);
+    EXPECT_EQ(api::BucketInfo(1, 1, 1), bi.getNode(0)->getBucketInfo());
 
-    bi.addNode(BucketCopy(7, 0, api::BucketInfo(4,4,4)), idealState);
-    EXPECT_EQ(api::BucketInfo(4,4,4), bi.getNode(0)->getBucketInfo());
+    bi.addNode(BucketCopy(7, 0, api::BucketInfo(4, 4, 4)), idealState);
+    EXPECT_EQ(api::BucketInfo(4, 4, 4), bi.getNode(0)->getBucketInfo());
 
-    bi.addNode(BucketCopy(2, 1, api::BucketInfo(4,4,4)), idealState);
-    EXPECT_EQ(api::BucketInfo(4,4,4), bi.getNode(1)->getBucketInfo());
+    bi.addNode(BucketCopy(2, 1, api::BucketInfo(4, 4, 4)), idealState);
+    EXPECT_EQ(api::BucketInfo(4, 4, 4), bi.getNode(1)->getBucketInfo());
 }
 
 TEST(BucketInfoTest, node_ordering_is_preserved) {
@@ -87,7 +83,6 @@ TEST(BucketInfoTest, can_query_for_replica_with_invalid_info) {
 
     info.addNode(BucketCopy(0, 2, api::BucketInfo()), order);
     EXPECT_TRUE(info.hasInvalidCopy());
-
 }
 
 TEST(BucketInfoTest, add_node_sets_trusted_when_consistent) {
@@ -121,7 +116,7 @@ TEST(BucketInfoTest, testTrustedResetWhenTrustedCopiesGoOutOfSync) {
     info.addNode(BucketCopy(0, 1, api::BucketInfo(10, 100, 1000)), order);
     EXPECT_TRUE(info.getNode(0)->trusted());
     EXPECT_TRUE(info.getNode(1)->trusted());
-    
+
     info.updateNode(BucketCopy(0, 1, api::BucketInfo(20, 200, 2000)).setTrusted());
     EXPECT_FALSE(info.getNode(0)->trusted());
     EXPECT_FALSE(info.getNode(1)->trusted());
@@ -137,7 +132,7 @@ TEST(BucketInfoTest, trusted_not_reset_when_non_trusted_copies_still_out_of_sync
     EXPECT_TRUE(info.getNode(0)->trusted());
     EXPECT_FALSE(info.getNode(1)->trusted());
     EXPECT_FALSE(info.getNode(2)->trusted());
-    
+
     info.updateNode(BucketCopy(0, 1, api::BucketInfo(21, 201, 2001)));
 
     EXPECT_TRUE(info.getNode(0)->trusted());
@@ -146,7 +141,7 @@ TEST(BucketInfoTest, trusted_not_reset_when_non_trusted_copies_still_out_of_sync
 }
 
 TEST(BucketInfoTest, add_nodes_can_immediately_update_trusted_flag) {
-    BucketInfo info;
+    BucketInfo            info;
     std::vector<uint16_t> order;
     info.addNodes({BucketCopy(0, 0, api::BucketInfo(10, 100, 1000))}, order, TrustedUpdate::UPDATE);
     // Only one replica, so implicitly trusted iff trusted flag update is invoked.
@@ -154,18 +149,18 @@ TEST(BucketInfoTest, add_nodes_can_immediately_update_trusted_flag) {
 }
 
 TEST(BucketInfoTest, add_nodes_can_defer_update_of_trusted_flag) {
-    BucketInfo info;
+    BucketInfo            info;
     std::vector<uint16_t> order;
     info.addNodes({BucketCopy(0, 0, api::BucketInfo(10, 100, 1000))}, order, TrustedUpdate::DEFER);
     EXPECT_FALSE(info.getNode(0)->trusted());
 }
 
 TEST(BucketInfoTest, remove_node_can_immediately_update_trusted_flag) {
-    BucketInfo info;
+    BucketInfo            info;
     std::vector<uint16_t> order;
-    info.addNodes({BucketCopy(0, 0, api::BucketInfo(10, 100, 1000)),
-                   BucketCopy(0, 1, api::BucketInfo(20, 200, 2000))},
-                  order, TrustedUpdate::UPDATE);
+    info.addNodes(
+        {BucketCopy(0, 0, api::BucketInfo(10, 100, 1000)), BucketCopy(0, 1, api::BucketInfo(20, 200, 2000))}, order,
+        TrustedUpdate::UPDATE);
     EXPECT_FALSE(info.getNode(0)->trusted());
     info.removeNode(1, TrustedUpdate::UPDATE);
     // Only one replica remaining after remove, so implicitly trusted iff trusted flag update is invoked.
@@ -173,18 +168,18 @@ TEST(BucketInfoTest, remove_node_can_immediately_update_trusted_flag) {
 }
 
 TEST(BucketInfoTest, remove_node_can_defer_update_of_trusted_flag) {
-    BucketInfo info;
+    BucketInfo            info;
     std::vector<uint16_t> order;
-    info.addNodes({BucketCopy(0, 0, api::BucketInfo(10, 100, 1000)),
-                   BucketCopy(0, 1, api::BucketInfo(20, 200, 2000))},
-                  order, TrustedUpdate::UPDATE);
+    info.addNodes(
+        {BucketCopy(0, 0, api::BucketInfo(10, 100, 1000)), BucketCopy(0, 1, api::BucketInfo(20, 200, 2000))}, order,
+        TrustedUpdate::UPDATE);
     info.removeNode(1, TrustedUpdate::DEFER);
     EXPECT_FALSE(info.getNode(0)->trusted());
 }
 
 TEST(BucketInfoTest, no_majority_consistent_bucket_for_too_few_replicas) {
     std::vector<uint16_t> order;
-    BucketInfo info;
+    BucketInfo            info;
     // No majority with 0 nodes, for all the obvious reasons.
     EXPECT_FALSE(info.majority_consistent_bucket_info().valid());
     // 1 is technically a majority of 1, but it doesn't make sense from the perspective
@@ -199,7 +194,7 @@ TEST(BucketInfoTest, no_majority_consistent_bucket_for_too_few_replicas) {
 
 TEST(BucketInfoTest, majority_consistent_bucket_info_can_be_inferred) {
     std::vector<uint16_t> order;
-    BucketInfo info;
+    BucketInfo            info;
     info.addNode(BucketCopy(0, 0, api::BucketInfo(0x1, 2, 144)), order);
     info.addNode(BucketCopy(0, 1, api::BucketInfo(0x1, 2, 144)), order);
     info.addNode(BucketCopy(0, 2, api::BucketInfo(0x1, 2, 144)), order);
@@ -236,4 +231,4 @@ TEST(BucketInfoTest, majority_consistent_bucket_info_can_be_inferred) {
     EXPECT_EQ(maj_info, api::BucketInfo(0x1, 3, 255));
 }
 
-} // storage::distributor
+} // namespace storage::distributor

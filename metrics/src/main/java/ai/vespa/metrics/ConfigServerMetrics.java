@@ -27,6 +27,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
 
     MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE("maintenanceDeployment.transientFailure", Unit.OPERATION, "Number of maintenance deployments that failed with a transient failure"),
     MAINTENANCE_DEPLOYMENT_FAILURE("maintenanceDeployment.failure", Unit.OPERATION, "Number of maintenance deployments that failed with a permanent failure"),
+    MAINTENANCE_DEPLOYMENT_REASON("maintenanceDeployment.reason", Unit.OPERATION, "Reason for maintenance deployment"),
 
     MAINTENANCE_SUCCESS_FACTOR_DEVIATION("maintenance.successFactorDeviation", Unit.FRACTION, "Configserver: Maintenance Success Factor Deviation"),
     MAINTENANCE_DURATION("maintenance.duration", Unit.MILLISECOND, "Configserver: Maintenance Duration"),
@@ -70,6 +71,8 @@ public enum ConfigServerMetrics implements VespaMetrics {
     CLUSTER_LOAD_PEAK_CPU("cluster.load.peak.cpu", Unit.FRACTION, "The peak cpu load in the period considered of a certain cluster"),
     CLUSTER_LOAD_PEAK_MEMORY("cluster.load.peak.memory", Unit.FRACTION, "The peak memory load in the period considered of a certain cluster"),
     CLUSTER_LOAD_PEAK_DISK("cluster.load.peak.disk", Unit.FRACTION, "The peak disk load in the period considered of a certain cluster"),
+    CLUSTER_BACKUP_AGE_FRACTION("cluster.backup.age", Unit.FRACTION, "Age of the most recent cluster backup as a fraction of the backup interval"),
+    CLUSTER_SNAPSHOT_BUSY_SECONDS("cluster.snapshot.busySeconds", Unit.SECOND, "The maximum time a snapshot has been busy (creating or restoring) for a cluster"),
 
     ZONE_WORKING("zone.working", Unit.BINARY, "The value 1 if zone is considered healthy, 0 if not. This is decided by considering the number of non-active nodes vs the number of active nodes in a zone"),
     CACHE_NODE_OBJECT_HIT_RATE("cache.nodeObject.hitRate", Unit.FRACTION, "The fraction of cache hits vs cache lookups for the node object cache"),

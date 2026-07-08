@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for sessionmanager.
 
-
-#include <vespa/searchcore/proton/matching/sessionmanager.h>
-#include <vespa/searchcore/proton/matching/session_manager_explorer.h>
-#include <vespa/searchcore/proton/matching/search_session.h>
 #include <vespa/searchcore/proton/matching/match_tools.h>
+#include <vespa/searchcore/proton/matching/search_session.h>
+#include <vespa/searchcore/proton/matching/session_manager_explorer.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <string>
 
 #include <vespa/log/log.h>
@@ -22,20 +22,19 @@ using vespalib::steady_time;
 namespace proton::matching {
 
 void PrintTo(const SessionManager::Stats& stats, std::ostream* os) {
-    *os << "{" << stats.numInsert << "," << stats.numPick << "," << stats.numDropped << "," <<
-       stats.numCached << "," << stats.numTimedout << "}";
+    *os << "{" << stats.numInsert << "," << stats.numPick << "," << stats.numDropped << "," << stats.numCached << ","
+        << stats.numTimedout << "}";
 }
 
-}
+} // namespace proton::matching
 
 namespace {
 
-TEST(SessionManagerTest, require_that_SessionManager_handles_SearchSessions)
-{
-    string session_id("foo");
-    steady_time start(100ns);
-    steady_time doom(1000ns);
-    MatchToolsFactory::UP mtf;
+TEST(SessionManagerTest, require_that_SessionManager_handles_SearchSessions) {
+    string                         session_id("foo");
+    steady_time                    start(100ns);
+    steady_time                    doom(1000ns);
+    MatchToolsFactory::UP          mtf;
     SearchSession::OwnershipBundle owned_objects;
     auto session = std::make_shared<SearchSession>(session_id, start, doom, std::move(mtf), std::move(owned_objects));
 
@@ -57,20 +56,18 @@ TEST(SessionManagerTest, require_that_SessionManager_handles_SearchSessions)
     EXPECT_FALSE(session.get());
 }
 
-TEST(SessionManagerTest, require_that_SessionManager_can_be_explored)
-{
-    steady_time start(100ns);
-    steady_time doom(1000ns);
+TEST(SessionManagerTest, require_that_SessionManager_can_be_explored) {
+    steady_time    start(100ns);
+    steady_time    doom(1000ns);
     SessionManager session_manager(10);
-    session_manager.insert(std::make_shared<SearchSession>("foo", start, doom,
-                                                           MatchToolsFactory::UP(), SearchSession::OwnershipBundle()));
-    session_manager.insert(std::make_shared<SearchSession>("bar", start, doom,
-                                                           MatchToolsFactory::UP(), SearchSession::OwnershipBundle()));
-    session_manager.insert(std::make_shared<SearchSession>("baz", start, doom,
-                                                           MatchToolsFactory::UP(), SearchSession::OwnershipBundle()));
+    session_manager.insert(std::make_shared<SearchSession>("foo", start, doom, MatchToolsFactory::UP(),
+                                                           SearchSession::OwnershipBundle()));
+    session_manager.insert(std::make_shared<SearchSession>("bar", start, doom, MatchToolsFactory::UP(),
+                                                           SearchSession::OwnershipBundle()));
+    session_manager.insert(std::make_shared<SearchSession>("baz", start, doom, MatchToolsFactory::UP(),
+                                                           SearchSession::OwnershipBundle()));
     SessionManagerExplorer explorer(session_manager);
-    EXPECT_EQ(std::vector<std::string>({"search"}),
-                 explorer.get_children_names());
+    EXPECT_EQ(std::vector<std::string>({"search"}), explorer.get_children_names());
     std::unique_ptr<StateExplorer> search = explorer.get_child("search");
     ASSERT_TRUE(search.get() != nullptr);
     vespalib::Slime state;
@@ -83,6 +80,6 @@ TEST(SessionManagerTest, require_that_SessionManager_can_be_explored)
     EXPECT_EQ(3u, full_state.get()["sessions"].entries());
 }
 
-}  // namespace
+} // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()

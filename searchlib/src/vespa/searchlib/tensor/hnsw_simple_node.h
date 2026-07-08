@@ -16,15 +16,15 @@ class HnswSimpleNode {
     AtomicEntryRef _levels_ref;
 
 public:
-    HnswSimpleNode() noexcept : _levels_ref() { }
+    HnswSimpleNode() noexcept : _levels_ref() {}
     AtomicEntryRef& levels_ref() noexcept { return _levels_ref; }
     const AtomicEntryRef& levels_ref() const noexcept { return _levels_ref; }
-    void store_docid(uint32_t docid) noexcept { (void) docid; }
-    void store_subspace(uint32_t subspace) noexcept { (void) subspace; }
+    void store_docid(uint32_t docid) noexcept { (void)docid; }
+    void store_subspace(uint32_t subspace) noexcept { (void)subspace; }
     // Mapping from nodeid to docid and subspace.
     static uint32_t acquire_docid() noexcept { return 0u; }
     static uint32_t acquire_subspace() noexcept { return 0u; }
     static constexpr bool identity_mapping = true;
 };
 
-}
+} // namespace search::tensor

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "service_layer_error_listener.h"
+
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 
@@ -27,10 +28,11 @@ void ServiceLayerErrorListener::on_fatal_error(std::string_view message) {
 }
 
 void ServiceLayerErrorListener::on_resource_exhaustion_error(std::string_view message) {
-    LOG(debug, "SPI reports resource exhaustion ('%s'). "
-                "Applying back-pressure to merge throttler",
+    LOG(debug,
+        "SPI reports resource exhaustion ('%s'). "
+        "Applying back-pressure to merge throttler",
         std::string(message).c_str());
     _merge_throttler.apply_timed_backpressure(); // Thread safe
 }
 
-}
+} // namespace storage

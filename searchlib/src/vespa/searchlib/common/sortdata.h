@@ -6,49 +6,35 @@
 
 namespace search::common {
 
-class SortData
-{
+class SortData {
 public:
-    struct Ref
-    {
-        const char *_buf;
+    struct Ref {
+        const char* _buf;
         uint32_t    _len;
     };
 
-    static uint32_t GetSize(uint32_t        hitcnt,
-                            const uint32_t *sortIndex);
+    static uint32_t GetSize(uint32_t hitcnt, const uint32_t* sortIndex);
 
-    static bool Equals(uint32_t        hitcnt,
-                       const uint32_t *sortIndex_1,
-                       const char     *sortData_1,
-                       const uint32_t *sortIndex_2,
-                       const char     *sortData_2);
+    static bool Equals(uint32_t hitcnt, const uint32_t* sortIndex_1, const char* sortData_1,
+                       const uint32_t* sortIndex_2, const char* sortData_2);
 
     // NB: first element of sortIndex_dst must be set
-    static void Copy(uint32_t        hitcnt,
-                     uint32_t       *sortIndex_dst,
-                     char           *sortData_dst,
-                     const uint32_t *sortIndex_src,
-                     const char     *sortData_src);
+    static void Copy(uint32_t hitcnt, uint32_t* sortIndex_dst, char* sortData_dst, const uint32_t* sortIndex_src,
+                     const char* sortData_src);
 };
 
-
-class SortDataIterator
-{
+class SortDataIterator {
 private:
-    const uint32_t *_ofs;
-    const uint32_t *_ofs_end;
-    const char     *_data;
-    const char     *_buf;
+    const uint32_t* _ofs;
+    const uint32_t* _ofs_end;
+    const char*     _data;
+    const char*     _buf;
     uint32_t        _len;
 
 public:
-    SortDataIterator()
-        : _ofs(nullptr), _ofs_end(nullptr), _data(nullptr),
-          _buf(nullptr), _len(0) {}
+    SortDataIterator() : _ofs(nullptr), _ofs_end(nullptr), _data(nullptr), _buf(nullptr), _len(0) {}
 
-    void Next()
-    {
+    void Next() {
         if (_ofs >= _ofs_end) {
             _buf = nullptr;
             _len = 0;
@@ -60,21 +46,18 @@ public:
         _len = *_ofs - tmp;
     }
 
-    void Init(uint32_t cnt,
-              const uint32_t *idx,
-              const char *data)
-    {
-        _ofs     = idx;
+    void Init(uint32_t cnt, const uint32_t* idx, const char* data) {
+        _ofs = idx;
         _ofs_end = idx + cnt;
-        _data    = data;
-        _buf     = nullptr;
-        _len     = 0;
+        _data = data;
+        _buf = nullptr;
+        _len = 0;
         Next();
     }
 
     uint32_t GetLen() const { return _len; }
-    const char *GetBuf() const { return _buf; }
-    bool Before(SortDataIterator *other, bool beforeOnMatch = false);
+    const char* GetBuf() const { return _buf; }
+    bool Before(SortDataIterator* other, bool beforeOnMatch = false);
 };
 
-}
+} // namespace search::common

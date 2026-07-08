@@ -13,8 +13,10 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
@@ -162,12 +164,20 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readCloudAccount();
     }
 
+    public CloudResourceTags getCloudResourceTags() {
+        return sessionZooKeeperClient.readCloudResourceTags();
+    }
+
     public List<DataplaneToken> getDataplaneTokens() {
         return sessionZooKeeperClient.readDataplaneTokens();
     }
 
     public ActivationTriggers getActivationTriggers() {
         return sessionZooKeeperClient.readActivationTriggers();
+    }
+
+    public TelemetryExporterConfiguration telemetryExportConfig() {
+        return sessionZooKeeperClient.readTelemetryExporterConfiguration();
     }
 
     public SessionZooKeeperClient getSessionZooKeeperClient() { return sessionZooKeeperClient; }

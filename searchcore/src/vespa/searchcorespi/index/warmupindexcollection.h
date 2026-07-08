@@ -4,6 +4,7 @@
 
 #include "isearchableindexcollection.h"
 #include "warmupconfig.h"
+
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/executor.h>
@@ -26,64 +27,64 @@ public:
  * is to be warmed up.
  */
 class WarmupIndexCollection : public ISearchableIndexCollection,
-                              public std::enable_shared_from_this<WarmupIndexCollection>
-{
+                              public std::enable_shared_from_this<WarmupIndexCollection> {
     using WarmupConfig = index::WarmupConfig;
+
 public:
     using SP = std::shared_ptr<WarmupIndexCollection>;
-    WarmupIndexCollection(const WarmupConfig & warmupConfig,
-                          ISearchableIndexCollection::SP prev,
-                          ISearchableIndexCollection::SP next,
-                          IndexSearchable & warmup,
-                          vespalib::Executor & executor,
-                          IWarmupDone & warmupDone);
+    WarmupIndexCollection(const WarmupConfig& warmupConfig, ISearchableIndexCollection::SP prev,
+                          ISearchableIndexCollection::SP next, IndexSearchable& warmup, vespalib::Executor& executor,
+                          IWarmupDone& warmupDone);
     ~WarmupIndexCollection() override;
     // Implements IIndexCollection
-    const ISourceSelector &getSourceSelector() const override;
+    const ISourceSelector& getSourceSelector() const override;
     size_t getSourceCount() const override;
-    IndexSearchable &getSearchable(uint32_t i) const override;
+    IndexSearchable& getSearchable(uint32_t i) const override;
     uint32_t getSourceId(uint32_t i) const override;
 
     // Implements IndexSearchable
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term, search::fef::MatchDataLayout &global_layout) override;
+    createBlueprint(const IRequestContext& requestContext, const FieldSpec& field, const Node& term,
+                    search::fef::MatchDataLayout& global_layout) override;
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term, search::fef::MatchDataLayout &global_layout) override;
+    createBlueprint(const IRequestContext& requestContext, const FieldSpecList& fields, const Node& term,
+                    search::fef::MatchDataLayout& global_layout) override;
     search::IndexStats get_index_stats(bool clear_disk_io_stats) const override;
     search::SerialNum getSerialNum() const override;
-    void accept(IndexSearchableVisitor &visitor) const override;
+    void accept(IndexSearchableVisitor& visitor) const override;
 
     // Implements IFieldLengthInspector
     search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
 
     // Implements ISearchableIndexCollection
-    void append(uint32_t id, const IndexSearchable::SP &source) override;
-    void replace(uint32_t id, const IndexSearchable::SP &source) override;
+    void append(uint32_t id, const IndexSearchable::SP& source) override;
+    void replace(uint32_t id, const IndexSearchable::SP& source) override;
     IndexSearchable::SP getSearchableSP(uint32_t i) const override;
     void setSource(uint32_t docId) override;
 
-    const ISearchableIndexCollection::SP & getNextIndexCollection() const { return _next; }
+    const ISearchableIndexCollection::SP& getNextIndexCollection() const { return _next; }
     std::string toString() const override;
     bool doUnpack() const { return _warmupConfig.getUnpack(); }
     void drainPending();
     vespalib::steady_time warmupEndTime() const { return _warmupEndTime; }
-    vespalib::MonitoredRefCount & pendingTasks() { return _pendingTasks; }
+    vespalib::MonitoredRefCount& pendingTasks() { return _pendingTasks; }
+
 private:
     using Task = vespalib::Executor::Task;
 
     void fireWarmup(Task::UP task);
-    bool handledBefore(uint32_t fieldId, const Node &term);
+    bool handledBefore(uint32_t fieldId, const Node& term);
 
-    const WarmupConfig                 _warmupConfig;
-    ISearchableIndexCollection::SP     _prev;
-    ISearchableIndexCollection::SP     _next;
-    IndexSearchable                  & _warmup;
-    vespalib::Executor               & _executor;
-    IWarmupDone                      & _warmupDone;
-    vespalib::steady_time              _warmupEndTime;
-    std::mutex                         _lock;
-    std::unique_ptr<FieldTermMap>      _handledTerms;
-    vespalib::MonitoredRefCount        _pendingTasks;
+    const WarmupConfig             _warmupConfig;
+    ISearchableIndexCollection::SP _prev;
+    ISearchableIndexCollection::SP _next;
+    IndexSearchable&               _warmup;
+    vespalib::Executor&            _executor;
+    IWarmupDone&                   _warmupDone;
+    vespalib::steady_time          _warmupEndTime;
+    std::mutex                     _lock;
+    std::unique_ptr<FieldTermMap>  _handledTerms;
+    vespalib::MonitoredRefCount    _pendingTasks;
 };
 
-}  // namespace searchcorespi
+} // namespace searchcorespi

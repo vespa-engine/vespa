@@ -12,6 +12,7 @@
             <dimensions>1024</dimensions>
             <endpoint>https://api.voyageai.com/v1/embeddings</endpoint>
             <truncate>true</truncate>
+            <batching max-size="16" max-delay="200ms"/>
         </component>
 
         <!-- VoyageAI Embedder with minimal configuration -->

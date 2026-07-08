@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/external/removelocationoperation.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <tests/distributor/distributor_stripe_test_util.h>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -16,24 +17,15 @@ namespace storage::distributor {
 struct RemoveLocationOperationTest : Test, DistributorStripeTestUtil {
     std::unique_ptr<RemoveLocationOperation> op;
 
-    void SetUp() override {
-        createLinks();
-    };
+    void SetUp() override { createLinks(); };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     void sendRemoveLocation(const std::string& selection) {
         auto msg = std::make_shared<api::RemoveLocationCommand>(selection, makeDocumentBucket(document::BucketId(0)));
 
-        op = std::make_unique<RemoveLocationOperation>(
-                node_context(),
-                operation_context(),
-                doc_selection_parser(),
-                getDistributorBucketSpace(),
-                msg,
-                metrics().removelocations);
+        op = std::make_unique<RemoveLocationOperation>(node_context(), operation_context(), doc_selection_parser(),
+                                                       getDistributorBucketSpace(), msg, metrics().removelocations);
 
         op->start(_sender);
     }
@@ -63,10 +55,9 @@ TEST_F(RemoveLocationOperationTest, simple) {
         sendReply(*op, i);
     }
 
-    ASSERT_EQ("BucketInfoReply(BucketInfo(invalid)) ReturnCode(NONE)",
-              _sender.getLastReply());
+    ASSERT_EQ("BucketInfoReply(BucketInfo(invalid)) ReturnCode(NONE)", _sender.getLastReply());
 }
 
 // TODO test cancellation (implicitly covered via operation PersistenceMessageTracker)
 
-} // storage::distributor
+} // namespace storage::distributor

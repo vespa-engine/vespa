@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
+#include <vespa/searchlib/docstore/idocumentstore.h>
 
-namespace searchcorespi::index { struct IThreadService; }
+namespace searchcorespi::index {
+struct IThreadService;
+}
 
 namespace proton {
-
 
 /**
  * This class implements the IFlushTarget interface to proxy a summary manager.
@@ -22,19 +23,24 @@ public:
     Time getLastFlushTime() const override;
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
 
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
+    [[nodiscard]] size_t reserved_memory_for_flush() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
+    [[nodiscard]] std::chrono::steady_clock::duration estimated_flush_duration() const noexcept override;
+
 protected:
-    SummaryGCTarget(const std::string &, vespalib::Executor & summaryService, IDocumentStore & docStore);
+    SummaryGCTarget(const std::string&, vespalib::Executor& summaryService, IDocumentStore& docStore);
+
 private:
+    virtual size_t getBloat(const IDocumentStore& docStore) const = 0;
+    virtual Task::UP create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial) = 0;
 
-    virtual size_t getBloat(const IDocumentStore & docStore) const = 0;
-    virtual Task::UP create(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial) = 0;
-
-    vespalib::Executor  &_summaryService;
-    IDocumentStore      & _docStore;
-    FlushStats            _lastStats;
+    vespalib::Executor& _summaryService;
+    IDocumentStore&     _docStore;
+    FlushStats          _lastStats;
 };
 
 /**
@@ -42,10 +48,11 @@ private:
  */
 class SummaryCompactBloatTarget : public SummaryGCTarget {
 private:
-    size_t getBloat(const search::IDocumentStore & docStore) const override;
-    Task::UP create(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial) override;
+    size_t getBloat(const search::IDocumentStore& docStore) const override;
+    Task::UP create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial) override;
+
 public:
-    SummaryCompactBloatTarget(vespalib::Executor & summaryService, IDocumentStore & docStore);
+    SummaryCompactBloatTarget(vespalib::Executor& summaryService, IDocumentStore& docStore);
 };
 
 /**
@@ -54,11 +61,11 @@ public:
  */
 class SummaryCompactSpreadTarget : public SummaryGCTarget {
 private:
-    size_t getBloat(const search::IDocumentStore & docStore) const override;
-    Task::UP create(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial) override;
+    size_t getBloat(const search::IDocumentStore& docStore) const override;
+    Task::UP create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial) override;
+
 public:
-    SummaryCompactSpreadTarget(vespalib::Executor & summaryService, IDocumentStore & docStore);
+    SummaryCompactSpreadTarget(vespalib::Executor& summaryService, IDocumentStore& docStore);
 };
 
 } // namespace proton
-

@@ -1,12 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/stllike/replace_variable.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/replace_variable.h>
 
 using namespace vespalib;
 
-TEST(ReplaceVariableTest, simple_usage)
-{
+TEST(ReplaceVariableTest, simple_usage) {
     // replace one variable
     EXPECT_EQ("vv", replace_variable("x", "x", "vv"));
     EXPECT_EQ("f(vv)", replace_variable("f(x)", "x", "vv"));

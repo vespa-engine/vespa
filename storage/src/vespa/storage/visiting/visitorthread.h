@@ -14,83 +14,74 @@
 #pragma once
 
 #include "visitor.h"
-#include "visitormetrics.h"
 #include "visitormessagesessionfactory.h"
-#include <vespa/storage/persistence/messages.h>
+#include "visitormetrics.h"
+
+#include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/persistence/messages.h>
+#include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/storageapi/messageapi/messagehandler.h>
-#include <vespa/metrics/metrictimer.h>
+
 #include <atomic>
 #include <deque>
 
 namespace storage {
 
-namespace framework { class HttpUrlPath; }
+namespace framework {
+class HttpUrlPath;
+}
 
-class VisitorThread : public framework::Runnable,
-                      private api::MessageHandler,
-                      private framework::MetricUpdateHook
-{
+class VisitorThread : public framework::Runnable, private api::MessageHandler, private framework::MetricUpdateHook {
     using LibMap = std::map<std::string, std::shared_ptr<VisitorEnvironment>>;
     LibMap _libs;
 
     using VisitorMap = std::map<api::VisitorId, std::shared_ptr<Visitor>>;
-    VisitorMap _visitors;
+    VisitorMap                                                   _visitors;
     std::deque<std::pair<api::VisitorId, vespalib::steady_time>> _recentlyCompleted;
 
     struct Event {
-        enum class Type {
-            MBUS,
-            PERSISTENCE,
-            NONE
-        };
+        enum class Type { MBUS, PERSISTENCE, NONE };
 
-        api::VisitorId _visitorId;
+        api::VisitorId                       _visitorId;
         std::shared_ptr<api::StorageMessage> _message;
-        mbus::Reply::UP _mbusReply;
-        metrics::MetricTimer _timer;
-        Type _type;
+        mbus::Reply::UP                      _mbusReply;
+        metrics::MetricTimer                 _timer;
+        Type                                 _type;
 
         Event() noexcept : _visitorId(0), _message(), _timer(), _type(Type::NONE) {}
         Event(Event&& other) noexcept;
-        Event& operator= (Event&& other) noexcept;
+        Event& operator=(Event&& other) noexcept;
         Event(const Event& other) = delete;
-        Event& operator= (const Event& other) = delete;
+        Event& operator=(const Event& other) = delete;
         Event(api::VisitorId visitor, mbus::Reply::UP reply) noexcept;
         Event(api::VisitorId visitor, std::shared_ptr<api::StorageMessage> msg) noexcept;
         ~Event();
 
-        [[nodiscard]] bool empty() const noexcept {
-            return (_type == Type::NONE);
-        }
+        [[nodiscard]] bool empty() const noexcept { return (_type == Type::NONE); }
     };
 
     std::deque<Event>       _queue;
     std::mutex              _lock;
     std::condition_variable _cond;
 
-    VisitorMap::iterator _currentlyRunningVisitor;
-    VisitorMessageHandler& _messageSender;
-    VisitorThreadMetrics& _metrics;
-    uint32_t _threadIndex;
-    uint32_t _defaultParallelIterators;
-    uint32_t _iteratorsPerBucket;
-    uint32_t _visitorMemoryUsageLimit;
-    std::atomic<uint32_t> _timeBetweenTicks;
-    StorageComponent _component;
+    VisitorMap::iterator               _currentlyRunningVisitor;
+    VisitorMessageHandler&             _messageSender;
+    VisitorThreadMetrics&              _metrics;
+    uint32_t                           _threadIndex;
+    uint32_t                           _defaultParallelIterators;
+    uint32_t                           _iteratorsPerBucket;
+    uint32_t                           _visitorMemoryUsageLimit;
+    std::atomic<uint32_t>              _timeBetweenTicks;
+    StorageComponent                   _component;
     std::unique_ptr<framework::Thread> _thread;
-    VisitorMessageSessionFactory& _messageSessionFactory;
-    VisitorFactory::Map& _visitorFactories;
+    VisitorMessageSessionFactory&      _messageSessionFactory;
+    VisitorFactory::Map&               _visitorFactories;
 
 public:
-    VisitorThread(uint32_t threadIndex,
-                  StorageComponentRegister&,
-                  VisitorMessageSessionFactory&,
-                  VisitorFactory::Map&,
-                  VisitorThreadMetrics& metrics,
-                  VisitorMessageHandler& sender);
+    VisitorThread(uint32_t threadIndex, StorageComponentRegister&, VisitorMessageSessionFactory&,
+                  VisitorFactory::Map&, VisitorThreadMetrics& metrics, VisitorMessageHandler& sender);
     ~VisitorThread() override;
 
     void processMessage(api::VisitorId visitorId, const std::shared_ptr<api::StorageMessage>& msg);
@@ -98,9 +89,7 @@ public:
     void setTimeBetweenTicks(uint32_t time) { _timeBetweenTicks.store(time, std::memory_order_relaxed); }
     void handleMessageBusReply(std::unique_ptr<mbus::Reply> reply, Visitor& visitor);
 
-    const VisitorThreadMetrics& getMetrics() const noexcept {
-        return _metrics;
-    }
+    const VisitorThreadMetrics& getMetrics() const noexcept { return _metrics; }
 
 private:
     void run(framework::ThreadHandle&) override;
@@ -115,9 +104,8 @@ private:
     void trimRecentlyCompletedList(vespalib::steady_time currentTime);
     void handleNonExistingVisitorCall(const Event& entry, api::ReturnCode& code);
 
-    std::shared_ptr<Visitor> createVisitor(std::string_view libName,
-                                           const vdslib::Parameters& params,
-                                           vespalib::asciistream & error);
+    std::shared_ptr<Visitor> createVisitor(std::string_view libName, const vdslib::Parameters& params,
+                                           vespalib::asciistream& error);
 
     bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
     bool onInternal(const std::shared_ptr<api::InternalCommand>&) override;
@@ -125,9 +113,8 @@ private:
 
     /** Deletes a visitor instance. */
     void close();
-    void getStatus(vespalib::asciistream & out, const framework::HttpUrlPath& path) const;
-    void updateMetrics(const MetricLockGuard &) override;
-
+    void getStatus(vespalib::asciistream& out, const framework::HttpUrlPath& path) const;
+    void updateMetrics(const MetricLockGuard&) override;
 };
 
-} // storage
+} // namespace storage

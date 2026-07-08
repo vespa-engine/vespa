@@ -21,4 +21,4 @@ public:
     virtual void notify_stripe_wants_to_send_host_info(uint16_t stripe_index) = 0;
 };
 
-}
+} // namespace storage::distributor

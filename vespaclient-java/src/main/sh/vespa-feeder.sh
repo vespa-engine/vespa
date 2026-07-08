@@ -83,6 +83,7 @@ java \
 -server -enableassertions \
 -XX:ThreadStackSize=512 \
 -XX:MaxJavaStackTraceDepth=1000000 \
+-Djava.io.tmpdir=${VESPA_HOME}/var/tmp \
 -Djava.library.path=${VESPA_HOME}/libexec64/native:${VESPA_HOME}/lib64 \
 -XX:MaxDirectMemorySize=64m -Djava.awt.headless=true \
 -Xms128m -Xmx1024m $(getJavaOptionsIPV46) \

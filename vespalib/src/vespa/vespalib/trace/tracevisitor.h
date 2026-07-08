@@ -16,16 +16,17 @@ struct TraceVisitor {
      * @param node the TraceNode being visited
      * @see TraceNode#accept(TraceVisitor)
      */
-    virtual void visit(const TraceNode & node) = 0;
+    virtual void visit(const TraceNode& node) = 0;
 
     /**
-     * Enters a {@link TraceNode}. This method is called after {@link #visit(TraceNode)}, but before visiting its children.
-     * Note that this method is NOT called if TraceNode has zero children. The default implementation of this method does nothing.
+     * Enters a {@link TraceNode}. This method is called after {@link #visit(TraceNode)}, but before visiting its
+     * children. Note that this method is NOT called if TraceNode has zero children. The default implementation of
+     * this method does nothing.
      *
      * @param node The TraceNode being entered
      * @see #leaving(TraceNode)
      */
-    virtual void entering(const TraceNode & node) { (void) node; }
+    virtual void entering(const TraceNode& node) { (void)node; }
 
     /**
      * Leaves a {@link TraceNode}. This method is called after {@link #entering(TraceNode)}, and after visiting its
@@ -34,8 +35,7 @@ struct TraceVisitor {
      *
      * @param node the TraceNode being left
      */
-    virtual void leaving(const TraceNode & node) { (void) node; }
+    virtual void leaving(const TraceNode& node) { (void)node; }
 };
 
 } // namespace vespalib
-

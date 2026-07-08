@@ -8,7 +8,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Module local test of the basic property name building block.
@@ -79,7 +83,7 @@ public class CompoundNameTestCase {
 
     @Test
     void testIllegalCompound() {
-        assertEquals("'a.' is not a legal compound name. Names can not end with a dot.",
+        assertEquals("'a.' is not a legal compound name. Names cannot end with a dot.",
                      assertThrows(IllegalArgumentException.class,
                                   () -> CompoundName.from("a."))
                              .getMessage());

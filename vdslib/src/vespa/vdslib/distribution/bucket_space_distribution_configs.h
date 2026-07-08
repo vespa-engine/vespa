@@ -2,7 +2,9 @@
 #pragma once
 
 #include "distribution.h"
+
 #include <vespa/document/bucket/bucketspace.h>
+
 #include <map>
 #include <memory>
 
@@ -29,4 +31,4 @@ struct BucketSpaceDistributionConfigs {
     static BucketSpaceDistributionConfigs from_default_distribution(std::shared_ptr<const Distribution>);
 };
 
-}
+} // namespace storage::lib

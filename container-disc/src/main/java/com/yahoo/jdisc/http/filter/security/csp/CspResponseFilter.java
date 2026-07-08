@@ -15,6 +15,7 @@ import com.yahoo.yolean.chain.Provides;
  *
  * @author freva
  */
+@SuppressWarnings("removal")
 @Provides("CspResponseFilter")
 public class CspResponseFilter extends AbstractResource implements SecurityResponseFilter {
 

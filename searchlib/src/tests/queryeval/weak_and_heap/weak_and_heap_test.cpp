@@ -7,22 +7,18 @@ using namespace search::queryeval;
 using score_t = wand::score_t;
 
 struct Scores : public std::vector<score_t> {
-    Scores &s(score_t val) {
+    Scores& s(score_t val) {
         push_back(val);
         return *this;
     }
 };
 
-void
-adjust(WeakAndHeap &heap, const Scores &scores) 
-{
+void adjust(WeakAndHeap& heap, const Scores& scores) {
     Scores tmp = scores;
     heap.adjust(&tmp[0], &tmp[0] + tmp.size());
 }
 
-void
-assertScores(const Scores &exp, SharedWeakAndPriorityQueue &heap)
-{
+void assertScores(const Scores& exp, SharedWeakAndPriorityQueue& heap) {
     ASSERT_EQ(exp.size(), heap.getScores().size());
     for (size_t i = 0; i < exp.size(); ++i) {
         score_t front = heap.getScores().front();
@@ -49,16 +45,14 @@ struct FilledFixture {
     }
 };
 
-TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_with_0_size_gives_max_threshold)
-{
+TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_with_0_size_gives_max_threshold) {
     NullFixture f;
     EXPECT_EQ(std::numeric_limits<score_t>::max(), f.h.getMinScore());
     adjust(f.h, Scores().s(100));
     EXPECT_EQ(std::numeric_limits<score_t>::max(), f.h.getMinScore());
 }
 
-TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_filled_one_by_one)
-{
+TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_filled_one_by_one) {
     EmptyFixture f;
     adjust(f.h, Scores().s(4));
     EXPECT_EQ(0, f.h.getMinScore());
@@ -71,16 +65,14 @@ TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_filled_one_
     assertScores(Scores().s(1).s(2).s(3).s(4), f.h);
 }
 
-TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_filled_all_at_once)
-{
+TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_filled_all_at_once) {
     EmptyFixture f;
     adjust(f.h, Scores().s(4).s(3).s(2).s(1));
     EXPECT_EQ(1, f.h.getMinScore());
     assertScores(Scores().s(1).s(2).s(3).s(4), f.h);
 }
 
-TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_adjusted_one_by_one)
-{
+TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_adjusted_one_by_one) {
     FilledFixture f;
     adjust(f.h, Scores().s(2));
     EXPECT_EQ(3, f.h.getMinScore());
@@ -95,8 +87,7 @@ TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_adjusted_on
     assertScores(Scores().s(6).s(7).s(8).s(9), f.h);
 }
 
-TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_adjusted_all_at_once)
-{
+TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_adjusted_all_at_once) {
     FilledFixture f;
     adjust(f.h, Scores().s(2).s(3).s(6).s(8).s(4));
     EXPECT_EQ(6, f.h.getMinScore());

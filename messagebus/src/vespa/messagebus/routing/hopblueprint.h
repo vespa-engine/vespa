@@ -23,7 +23,7 @@ public:
      *
      * @param spec The specification to base instantiation on.
      */
-    HopBlueprint(const HopSpec &spec);
+    HopBlueprint(const HopSpec& spec);
 
     /**
      * Creates a hop instance from thie blueprint.
@@ -74,7 +74,7 @@ public:
      * @param i The index of the recipient to return.
      * @return The recipient at the given index.
      */
-    const Hop &getRecipient(uint32_t i) const { return _recipients[i]; }
+    const Hop& getRecipient(uint32_t i) const { return _recipients[i]; }
 
     /**
      * Returns whether or not to ignore the result when routing through this hop.
@@ -92,4 +92,3 @@ public:
 };
 
 } // namespace mbus
-

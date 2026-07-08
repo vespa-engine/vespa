@@ -539,25 +539,25 @@ public class BlendingSearcherTestCase {
         Result r1 = new Result(q);
         Result r2 = new Result(q);
 
-        RootGroup root1 = new RootGroup(0, null);
-        Group subGroup11 = new Group(new StringBucketId("a", "b"), new Relevance(1.0));
-        subGroup11.add(new Group(new StringId("unique1"), new Relevance(1.0)));
-        subGroup11.add(new Group(new StringId("unique5"), new Relevance(1.0)));
-        subGroup11.add(new Group(new StringId("unique6"), new Relevance(1.0)));
-        subGroup11.add(new Group(new StringId("unique7"), new Relevance(1.0)));
+        RootGroup root1 = new RootGroup(0, null, q);
+        Group subGroup11 = new Group(new StringBucketId("a", "b"), new Relevance(1.0), q);
+        subGroup11.add(new Group(new StringId("unique1"), new Relevance(1.0), q));
+        subGroup11.add(new Group(new StringId("unique5"), new Relevance(1.0), q));
+        subGroup11.add(new Group(new StringId("unique6"), new Relevance(1.0), q));
+        subGroup11.add(new Group(new StringId("unique7"), new Relevance(1.0), q));
         root1.add(subGroup11);
         r1.hits().add(root1);
         docSource1.addResult(q, r1);
 
-        RootGroup root2 = new RootGroup(0, null);
-        Group subGroup21 = new Group(new StringBucketId("a", "b"), new Relevance(1.0));
-        subGroup21.add(new Group(new StringId("unique1"), new Relevance(1.0)));
-        subGroup21.add(new Group(new StringId("unique2"), new Relevance(1.0)));
-        subGroup21.add(new Group(new StringId("unique3"), new Relevance(1.0)));
+        RootGroup root2 = new RootGroup(0, null, q);
+        Group subGroup21 = new Group(new StringBucketId("a", "b"), new Relevance(1.0), q);
+        subGroup21.add(new Group(new StringId("unique1"), new Relevance(1.0), q));
+        subGroup21.add(new Group(new StringId("unique2"), new Relevance(1.0), q));
+        subGroup21.add(new Group(new StringId("unique3"), new Relevance(1.0), q));
         root2.add(subGroup21);
-        Group subGroup22 = new Group(new StringBucketId("c", "d"), new Relevance(1.0));
-        subGroup22.add(new Group(new StringId("unique3"), new Relevance(1.0)));
-        subGroup22.add(new Group(new StringId("unique4"), new Relevance(1.0)));
+        Group subGroup22 = new Group(new StringBucketId("c", "d"), new Relevance(1.0), q);
+        subGroup22.add(new Group(new StringId("unique3"), new Relevance(1.0), q));
+        subGroup22.add(new Group(new StringId("unique4"), new Relevance(1.0), q));
         root2.add(subGroup22);
         r2.hits().add(root2);
         docSource2.addResult(q, r2);
@@ -588,24 +588,24 @@ public class BlendingSearcherTestCase {
 
         Result r = new Result(q);
 
-        RootGroup root1 = new RootGroup(0, null);
-        Group subGroup11 = new Group(new StringBucketId("a", "b"), new Relevance(1.0));
-        subGroup11.add(new Group(new StringId("unique1"), new Relevance(1.0)));
-        subGroup11.add(new Group(new StringId("unique5"), new Relevance(1.0)));
-        subGroup11.add(new Group(new StringId("unique6"), new Relevance(1.0)));
-        subGroup11.add(new Group(new StringId("unique7"), new Relevance(1.0)));
+        RootGroup root1 = new RootGroup(0, null, q);
+        Group subGroup11 = new Group(new StringBucketId("a", "b"), new Relevance(1.0), q);
+        subGroup11.add(new Group(new StringId("unique1"), new Relevance(1.0), q));
+        subGroup11.add(new Group(new StringId("unique5"), new Relevance(1.0), q));
+        subGroup11.add(new Group(new StringId("unique6"), new Relevance(1.0), q));
+        subGroup11.add(new Group(new StringId("unique7"), new Relevance(1.0), q));
         root1.add(subGroup11);
         r.hits().add(root1);
 
-        RootGroup root2 = new RootGroup(0, null);
-        Group subGroup21 = new Group(new StringBucketId("a", "b"), new Relevance(1.0));
-        subGroup21.add(new Group(new StringId("unique1"), new Relevance(1.0)));
-        subGroup21.add(new Group(new StringId("unique2"), new Relevance(1.0)));
-        subGroup21.add(new Group(new StringId("unique3"), new Relevance(1.0)));
+        RootGroup root2 = new RootGroup(0, null, q);
+        Group subGroup21 = new Group(new StringBucketId("a", "b"), new Relevance(1.0), q);
+        subGroup21.add(new Group(new StringId("unique1"), new Relevance(1.0), q));
+        subGroup21.add(new Group(new StringId("unique2"), new Relevance(1.0), q));
+        subGroup21.add(new Group(new StringId("unique3"), new Relevance(1.0), q));
         root2.add(subGroup21);
-        Group subGroup22 = new Group(new StringBucketId("c", "d"), new Relevance(1.0));
-        subGroup22.add(new Group(new StringId("unique3"), new Relevance(1.0)));
-        subGroup22.add(new Group(new StringId("unique4"), new Relevance(1.0)));
+        Group subGroup22 = new Group(new StringBucketId("c", "d"), new Relevance(1.0), q);
+        subGroup22.add(new Group(new StringId("unique3"), new Relevance(1.0), q));
+        subGroup22.add(new Group(new StringId("unique4"), new Relevance(1.0), q));
         root2.add(subGroup22);
         r.hits().add(root2);
 

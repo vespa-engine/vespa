@@ -6,22 +6,16 @@ namespace search::docsummary {
 
 const std::string DocsumFieldWriter::_empty("");
 
-const std::string&
-DocsumFieldWriter::getAttributeName() const
-{
+const std::string& DocsumFieldWriter::getAttributeName() const {
     return _empty;
 }
 
-bool
-DocsumFieldWriter::isDefaultValue(uint32_t, const GetDocsumsState&) const
-{
+bool DocsumFieldWriter::isDefaultValue(uint32_t, const GetDocsumsState&) const {
     return false;
 }
 
-bool
-DocsumFieldWriter::setFieldWriterStateIndex(uint32_t)
-{
+bool DocsumFieldWriter::setFieldWriterStateIndex(uint32_t) {
     return false; // Don't need any field writer state by default
 }
 
-}
+} // namespace search::docsummary

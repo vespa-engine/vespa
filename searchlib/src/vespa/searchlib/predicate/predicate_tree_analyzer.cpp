@@ -1,22 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicate_tree_analyzer.h"
+
 #include <vespa/document/predicate/predicate.h>
+
 #include <algorithm>
-#include <cmath>
 #include <cassert>
+#include <cmath>
 
 using document::Predicate;
 using std::map;
 using std::min;
 using std::string;
-using vespalib::slime::Inspector;
 using vespalib::Memory;
+using vespalib::slime::Inspector;
 
 namespace search::predicate {
 
 namespace {
-long getType(const Inspector &in, bool negated) {
+long getType(const Inspector& in, bool negated) {
     long type = in[Predicate::NODE_TYPE].asLong();
     if (negated) {
         if (type == Predicate::TYPE_CONJUNCTION) {
@@ -28,7 +30,7 @@ long getType(const Inspector &in, bool negated) {
     return type;
 }
 
-void createOrIncrease(map<string, int> &counts, const string &key) {
+void createOrIncrease(map<string, int>& counts, const string& key) {
     auto it = counts.find(key);
     if (it == counts.end()) {
         counts.insert(make_pair(key, 1));
@@ -36,9 +38,9 @@ void createOrIncrease(map<string, int> &counts, const string &key) {
         ++(it->second);
     }
 }
-}  // namespace
+} // namespace
 
-void PredicateTreeAnalyzer::traverseTree(const Inspector &in) {
+void PredicateTreeAnalyzer::traverseTree(const Inspector& in) {
     switch (getType(in, _negated)) {
     case Predicate::TYPE_NEGATION:
         assert(in[Predicate::CHILDREN].children() == 1);
@@ -99,25 +101,24 @@ void PredicateTreeAnalyzer::traverseTree(const Inspector &in) {
             createOrIncrease(_key_counts, key);
         }
     }
-    }  // switch
+    } // switch
 }
 
-float PredicateTreeAnalyzer::findMinFeature(const Inspector &in) {
+float PredicateTreeAnalyzer::findMinFeature(const Inspector& in) {
     float min_feature = 0.0f;
     switch (getType(in, _negated)) {
-    case Predicate::TYPE_CONJUNCTION:  // sum of children
+    case Predicate::TYPE_CONJUNCTION: // sum of children
         for (size_t i = 0; i < in[Predicate::CHILDREN].children(); ++i) {
             min_feature += findMinFeature(in[Predicate::CHILDREN][i]);
         }
         return min_feature;
-    case Predicate::TYPE_DISJUNCTION:  // min of children
+    case Predicate::TYPE_DISJUNCTION: // min of children
         min_feature = findMinFeature(in[Predicate::CHILDREN][0]);
         for (size_t i = 1; i < in[Predicate::CHILDREN].children(); ++i) {
-            min_feature = min(min_feature,
-                              findMinFeature(in[Predicate::CHILDREN][i]));
+            min_feature = min(min_feature, findMinFeature(in[Predicate::CHILDREN][i]));
         }
         return min_feature;
-    case Predicate::TYPE_NEGATION:  // == child
+    case Predicate::TYPE_NEGATION: // == child
         assert(in[Predicate::CHILDREN].children() == 1);
         _negated = !_negated;
         min_feature = findMinFeature(in[Predicate::CHILDREN][0]);
@@ -147,22 +148,19 @@ float PredicateTreeAnalyzer::findMinFeature(const Inspector &in) {
             return 0.0f;
         }
         string key = in[Predicate::KEY].asString().make_string();
-        auto it = _key_counts.find(key);
+        auto   it = _key_counts.find(key);
         assert(it != _key_counts.end());
         return 1.0f / it->second;
     }
-    }  // switch
+    } // switch
     return 0.0f;
 }
 
-PredicateTreeAnalyzer::PredicateTreeAnalyzer(const Inspector &in)
-    : _has_not(false),
-      _negated(false)
-{
+PredicateTreeAnalyzer::PredicateTreeAnalyzer(const Inspector& in) : _has_not(false), _negated(false) {
     traverseTree(in);
-    _min_feature = static_cast<int>(std::ceil(float(findMinFeature(in)) + (_has_not? 1.0 : 0.0)));
+    _min_feature = static_cast<int>(std::ceil(float(findMinFeature(in)) + (_has_not ? 1.0 : 0.0)));
 }
 
 PredicateTreeAnalyzer::~PredicateTreeAnalyzer() = default;
 
-}
+} // namespace search::predicate

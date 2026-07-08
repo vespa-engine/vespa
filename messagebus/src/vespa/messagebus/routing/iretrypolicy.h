@@ -15,7 +15,6 @@ namespace mbus {
  */
 class IRetryPolicy {
 public:
-
     using SP = std::shared_ptr<IRetryPolicy>;
     /**
      * Virtual destructor required for inheritance.
@@ -42,4 +41,3 @@ public:
 };
 
 } // namespace mbus
-

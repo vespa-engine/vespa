@@ -5,11 +5,12 @@
 
 class ChildHandler {
 private:
-    bool _childRunning;
+    bool        _childRunning;
     std::string _runningPrefix;
+
 public:
-    void startChild(const std::string &prefix);
+    void startChild(const std::string& prefix);
     void stopChild();
-    void stopChild(const std::string &prefix);
+    void stopChild(const std::string& prefix);
     ChildHandler();
 };

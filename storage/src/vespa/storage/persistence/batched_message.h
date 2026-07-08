@@ -2,13 +2,16 @@
 #pragma once
 
 #include "shared_operation_throttler.h"
+
 #include <memory>
 #include <utility>
 
 namespace storage {
 
-namespace api { class StorageMessage; }
+namespace api {
+class StorageMessage;
+}
 
 using BatchedMessage = std::pair<std::shared_ptr<api::StorageMessage>, ThrottleToken>;
 
-}
+} // namespace storage

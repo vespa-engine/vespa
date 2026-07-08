@@ -113,6 +113,29 @@ class NodeResourcesTest {
     }
 
     @Test
+    public void testCompatible() {
+        var reference = new NodeResources(64, 256, 100, 1);
+        var close =     new NodeResources(64, 252, 100, 1);
+        var far =       new NodeResources(64, 198, 100, 1);
+        assertTrue(reference.compatibleWith(reference));
+
+        assertFalse(reference.compatibleWith(close));
+        assertFalse(    close.compatibleWith(reference));
+        assertFalse(reference.compatibleWith(far));
+        assertFalse(    close.compatibleWith(far));
+
+        assertTrue( reference.compatibleWith(close,     0.02));
+        assertTrue(     close.compatibleWith(reference, 0.02));
+        assertFalse(reference.compatibleWith(far,       0.02));
+        assertFalse(    close.compatibleWith(far,       0.02));
+
+        assertTrue( reference.compatibleWith(close,     0.32));
+        assertTrue(     close.compatibleWith(reference, 0.32));
+        assertTrue( reference.compatibleWith(far,       0.32));
+        assertTrue(     close.compatibleWith(far,       0.32));
+    }
+
+    @Test
     void benchmark() {
         NodeResources [] resources = new NodeResources[100];
         for (int i = 0; i < resources.length; i++) {
@@ -187,10 +210,6 @@ class NodeResourcesTest {
         assertEquals(expected, actual);
     }
 
-    private static NodeResources.GpuResources makeGpus(String t, int cnt, double mem) {
-        return new NodeResources.GpuResources(t, cnt, mem);
-    }
-
     @Test
     void testGpuArithmetic() {
         var zero = NodeResources.GpuResources.zero();
@@ -224,6 +243,9 @@ class NodeResourcesTest {
         assertEquals(makeGpus("L40S", 1, 64), lovelace.plus(one));
     }
 
+    private static NodeResources.GpuResources makeGpus(String t, int cnt, double mem) {
+        return new NodeResources.GpuResources(t, cnt, mem);
+    }
 
     // Comparing AWS (not Vespa) approx pricing for different disk options
     // @Test

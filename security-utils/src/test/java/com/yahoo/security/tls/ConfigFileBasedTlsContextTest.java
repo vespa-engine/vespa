@@ -20,6 +20,7 @@ import java.security.cert.X509Certificate;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,17 +37,17 @@ public class ConfigFileBasedTlsContextTest {
     void can_create_sslcontext_from_credentials() throws IOException, InterruptedException {
         KeyPair keyPair = KeyUtils.generateKeypair(EC);
         Path privateKeyFile = File.createTempFile("junit", null, tempDirectory).toPath();
-        Files.write(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()).getBytes());
+        Files.write(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
 
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, EPOCH.plus(1, DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
         Path certificateChainFile = File.createTempFile("junit", null, tempDirectory).toPath();
         String certificatePem = X509CertificateUtils.toPem(certificate);
-        Files.write(certificateChainFile, certificatePem.getBytes());
+        Files.write(certificateChainFile, certificatePem.getBytes(UTF_8));
 
         Path caCertificatesFile = File.createTempFile("junit", null, tempDirectory).toPath();
-        Files.write(caCertificatesFile, certificatePem.getBytes());
+        Files.write(caCertificatesFile, certificatePem.getBytes(UTF_8));
 
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCertificates(certificateChainFile, privateKeyFile)

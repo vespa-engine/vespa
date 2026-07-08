@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeV
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForLocalLLMValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForSidecarValidator;
@@ -27,6 +26,7 @@ import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForTri
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
+import com.yahoo.vespa.model.application.validation.first.MinimumNodeCountValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
 import com.yahoo.yolean.Exceptions;
 
@@ -120,10 +120,12 @@ public class Validation {
         new TenantSecretValidator().validate(execution);
         new HnswValidator().validate(execution);
         new EmbedExpressionValidator().validate(execution);
+        new MaxDocumentSizeValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {
         new RedundancyValidator().validate((Context) execution);
+        new MinimumNodeCountValidator().validate((Context) execution);
     }
 
     private static void validateChanges(Execution execution) {
@@ -135,11 +137,11 @@ public class Validation {
         new StartupCommandChangeValidator().validate(execution);
         new ContentTypeRemovalValidator().validate(execution);
         new ContentClusterRemovalValidator().validate(execution);
-        new ResourcesReductionValidator().validate(execution);
         new ContainerRestartValidator().validate(execution);
         new NodeResourceChangeValidator().validate(execution);
         new CertificateRemovalChangeValidator().validate(execution);
         new RedundancyValidator().validate(execution);
+        new MinimumNodeCountValidator().validate(execution);
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
         new RestartOnDeployForLocalLLMValidator().validate(execution);
         new RestartOnDeployForTritonOnnxRuntimeValidator().validate(execution);
@@ -186,7 +188,7 @@ public class Validation {
 
         public void throwIfFailed() {
             Optional<ValidationException> invalidException = deployState.validationOverrides().invalidException(failures, deployState.now());
-            if (invalidException.isPresent() && deployState.isHosted() && deployState.zone().environment().isManuallyDeployed()) {
+            if (invalidException.isPresent() && deployState.warnOnlyOnValidationFailure()) {
                 deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
                                                                     "Auto-overriding validation which would be disallowed in production: " +
                                                                     Exceptions.toMessageString(invalidException.get()));

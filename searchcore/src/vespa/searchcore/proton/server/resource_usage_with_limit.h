@@ -10,39 +10,23 @@ namespace proton {
  *   - limit: How much of this resource is allowed to use (number between 0 and 1).
  *   - utilization: How much of the allowed part of this resource is used (usage/limit).
  */
-class ResourceUsageWithLimit
-{
+class ResourceUsageWithLimit {
 private:
     double _usage;
     double _limit;
 
 public:
-    ResourceUsageWithLimit() noexcept
-        : _usage(0),
-          _limit(1.0)
-    {
+    ResourceUsageWithLimit() noexcept : _usage(0), _limit(1.0) {}
+    explicit ResourceUsageWithLimit(double usage_, double limit_) noexcept : _usage(usage_), _limit(limit_) {}
+    bool operator==(const ResourceUsageWithLimit& rhs) const noexcept {
+        return ((_usage == rhs._usage) && (_limit == rhs._limit));
     }
-    explicit ResourceUsageWithLimit(double usage_, double limit_) noexcept
-        : _usage(usage_),
-          _limit(limit_)
-    {
-    }
-    bool operator==(const ResourceUsageWithLimit &rhs) const noexcept {
-        return ((_usage == rhs._usage) &&
-                (_limit == rhs._limit));
-    }
-    bool operator!=(const ResourceUsageWithLimit &rhs) const noexcept {
-        return ! ((*this) == rhs);
-    }
+    bool operator!=(const ResourceUsageWithLimit& rhs) const noexcept { return !((*this) == rhs); }
     double usage() const noexcept { return _usage; }
     double limit() const noexcept { return _limit; }
-    double utilization() const noexcept { return _usage/_limit; }
-    bool aboveLimit() const noexcept {
-        return aboveLimit(1.0);
-    }
-    bool aboveLimit(double lowWatermarkFactor) const noexcept {
-        return usage() > (limit() * lowWatermarkFactor);
-    }
+    double utilization() const noexcept { return _usage / _limit; }
+    bool aboveLimit() const noexcept { return aboveLimit(1.0); }
+    bool aboveLimit(double lowWatermarkFactor) const noexcept { return usage() > (limit() * lowWatermarkFactor); }
 };
 
 } // namespace proton

@@ -3,7 +3,9 @@
 #pragma once
 
 #include "numeric_search_context.h"
+
 #include <vespa/vespalib/util/atomic.h>
+
 #include <span>
 
 namespace search::attribute {
@@ -12,9 +14,7 @@ namespace search::attribute {
  * SingleNumericSearchContext handles the creation of search iterators for
  * a query term on a single value numeric attribute vector.
  */
-template <typename T, typename M>
-class SingleNumericSearchContext final : public NumericSearchContext<M>
-{
+template <typename T, typename M> class SingleNumericSearchContext final : public NumericSearchContext<M> {
 private:
     using DocId = ISearchContext::DocId;
     std::span<const T> _data;
@@ -23,29 +23,30 @@ private:
         return find(docId, elemId, weight);
     }
 
-    int32_t onFind(DocId docId, int elemId) const override {
-        return find(docId, elemId);
-    }
+    int32_t onFind(DocId docId, int elemId) const override { return find(docId, elemId); }
 
 public:
-    SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, std::span<const T> data);
+    SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched,
+                               std::span<const T> data);
     ~SingleNumericSearchContext() override;
     int32_t find(DocId docId, int32_t elemId, int32_t& weight) const {
-        if ( elemId != 0) return -1;
+        if (elemId != 0)
+            return -1;
         const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
         weight = 1;
         return this->match(v) ? 0 : -1;
     }
 
     int32_t find(DocId docId, int elemId) const {
-        if ( elemId != 0) return -1;
+        if (elemId != 0)
+            return -1;
         const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
         return this->match(v) ? 0 : -1;
     }
 
-    std::unique_ptr<queryeval::SearchIterator>
-    createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
+    std::unique_ptr<queryeval::SearchIterator> createFilterIterator(fef::TermFieldMatchData* matchData,
+                                                                    bool                     strict) override;
     uint32_t get_committed_docid_limit() const noexcept override;
 };
 
-}
+} // namespace search::attribute

@@ -22,8 +22,8 @@ class WeightedSetDataType final : public CollectionDataType {
 public:
     WeightedSetDataType(const DataType& nestedType, bool createIfNonExistent, bool removeIfZero);
     WeightedSetDataType(const DataType& nestedType, bool createIfNonExistent, bool removeIfZero, int id);
-    WeightedSetDataType(const WeightedSetDataType &) = delete;
-    WeightedSetDataType & operator=(const WeightedSetDataType &) = delete;
+    WeightedSetDataType(const WeightedSetDataType&) = delete;
+    WeightedSetDataType& operator=(const WeightedSetDataType&) = delete;
     ~WeightedSetDataType() override;
 
     /**
@@ -43,8 +43,7 @@ public:
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     bool equals(const DataType& other) const noexcept override;
-    void onBuildFieldPath(FieldPath & path, std::string_view remainFieldName) const override;
+    void onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const override;
 };
 
-} // document
-
+} // namespace document

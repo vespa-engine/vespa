@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldwriter.h"
-#include "features_size_flush.h"
-#include "zcposocc.h"
+
 #include "extposocc.h"
+#include "features_size_flush.h"
 #include "pagedict4file.h"
+#include "zcposocc.h"
+
 #include <vespa/vespalib/util/error.h>
+
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -15,8 +18,8 @@ using search::index::FieldLengthInfo;
 
 namespace search::diskindex {
 
-using vespalib::getLastErrorString;
 using common::FileHeaderContext;
+using vespalib::getLastErrorString;
 
 FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, std::string_view prefix)
     : _dictFile(),
@@ -29,24 +32,15 @@ FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, std::string_v
       _compactWordNum(0),
       _wordNum(noWordNum()),
       _prevDocId(0),
-      _docIdLimit(docIdLimit)
-{
+      _docIdLimit(docIdLimit) {
 }
 
 FieldWriter::~FieldWriter() = default;
 
-bool
-FieldWriter::open(uint32_t minSkipDocs,
-                  uint32_t minChunkDocs,
-                  uint64_t features_size_flush_bits,
-                  bool dynamicKPosOccFormat,
-                  bool encode_interleaved_features,
-                  const Schema &schema,
-                  const uint32_t indexId,
-                  const FieldLengthInfo &field_length_info,
-                  const TuneFileSeqWrite &tuneFileWrite,
-                  const FileHeaderContext &fileHeaderContext)
-{
+bool FieldWriter::open(uint32_t minSkipDocs, uint32_t minChunkDocs, uint64_t features_size_flush_bits,
+                       bool dynamicKPosOccFormat, bool encode_interleaved_features, const Schema& schema,
+                       const uint32_t indexId, const FieldLengthInfo& field_length_info,
+                       const TuneFileSeqWrite& tuneFileWrite, const FileHeaderContext& fileHeaderContext) {
     std::string name = _prefix + "posocc.dat.compressed";
 
     PostingListParams params;
@@ -69,24 +63,23 @@ FieldWriter::open(uint32_t minSkipDocs,
     if (encode_interleaved_features) {
         params.set("interleaved_features", encode_interleaved_features);
     }
-    
+
     _dictFile = std::make_unique<PageDict4FileSeqWrite>();
     _dictFile->setParams(countParams);
 
-    _posoccfile = makePosOccWrite(_dictFile.get(), dynamicKPosOccFormat, params, featureParams, schema, indexId, field_length_info);
+    _posoccfile = makePosOccWrite(_dictFile.get(), dynamicKPosOccFormat, params, featureParams, schema, indexId,
+                                  field_length_info);
     std::string cname = _prefix + "dictionary";
 
     // Open output dictionary file
     if (!_dictFile->open(cname, tuneFileWrite, fileHeaderContext)) {
-        LOG(error, "Could not open posocc count file %s for write: %s",
-            cname.c_str(), getLastErrorString().c_str());
+        LOG(error, "Could not open posocc count file %s for write: %s", cname.c_str(), getLastErrorString().c_str());
         return false;
     }
 
     // Open output posocc.dat file
     if (!_posoccfile->open(name, tuneFileWrite, fileHeaderContext)) {
-        LOG(error, "Could not open posocc file %s for write: %s",
-            name.c_str(), getLastErrorString().c_str());
+        LOG(error, "Could not open posocc file %s for write: %s", name.c_str(), getLastErrorString().c_str());
         return false;
     }
 
@@ -97,11 +90,9 @@ FieldWriter::open(uint32_t minSkipDocs,
     return true;
 }
 
-void
-FieldWriter::flush()
-{
+void FieldWriter::flush() {
     _posoccfile->flushWord();
-    PostingListCounts &counts = _posoccfile->getCounts();
+    PostingListCounts& counts = _posoccfile->getCounts();
     if (counts._numDocs != 0) {
         assert(_compactWordNum != 0);
         _dictFile->writeWord(_word, counts);
@@ -118,9 +109,7 @@ FieldWriter::flush()
     }
 }
 
-void
-FieldWriter::newWord(uint64_t wordNum, std::string_view word)
-{
+void FieldWriter::newWord(uint64_t wordNum, std::string_view word) {
     assert(wordNum <= _numWordIds);
     assert(wordNum != noWordNum());
     assert(wordNum > _wordNum);
@@ -131,15 +120,11 @@ FieldWriter::newWord(uint64_t wordNum, std::string_view word)
     _prevDocId = 0;
 }
 
-void
-FieldWriter::newWord(std::string_view word)
-{
+void FieldWriter::newWord(std::string_view word) {
     newWord(_wordNum + 1, word);
 }
 
-bool
-FieldWriter::close()
-{
+bool FieldWriter::close() {
     bool ret = true;
     flush();
     _wordNum = noWordNum();
@@ -164,34 +149,21 @@ FieldWriter::close()
     return ret;
 }
 
-void
-FieldWriter::getFeatureParams(PostingListParams &params)
-{
+void FieldWriter::getFeatureParams(PostingListParams& params) {
     _posoccfile->getFeatureParams(params);
 }
 
-static const char *termOccNames[] =
-{
-    "boolocc.bdat",
-    "boolocc.bidx",
-    "boolocc.idx",
-    "posocc.ccnt",
-    "posocc.cnt",
-    "posocc.dat.compressed",
-    "dictionary.pdat",
-    "dictionary.spdat",
-    "dictionary.ssdat",
-    "dictionary.words",
-    nullptr,
+static const char* termOccNames[] = {
+    "boolocc.bdat",     "boolocc.bidx",          "boolocc.idx",     "posocc.ccnt",
+    "posocc.cnt",       "posocc.dat.compressed", "dictionary.pdat", "dictionary.spdat",
+    "dictionary.ssdat", "dictionary.words",      nullptr,
 };
 
-void
-FieldWriter::remove(const std::string &prefix)
-{
-    for (const char **j = termOccNames; *j != nullptr; ++j) {
+void FieldWriter::remove(const std::string& prefix) {
+    for (const char** j = termOccNames; *j != nullptr; ++j) {
         std::string tmpName = prefix + *j;
         std::filesystem::remove(std::filesystem::path(tmpName));
     }
 }
 
-}
+} // namespace search::diskindex

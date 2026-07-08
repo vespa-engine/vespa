@@ -16,7 +16,7 @@ schema test {
         distance-metric: innerproduct
       }
     }
-    # This tensor field can not be used with nearest neighbor search.
+    # This tensor field cannot be used with nearest neighbor search.
     field vec_d type tensor<float>(x{}) {
       indexing: attribute
     }

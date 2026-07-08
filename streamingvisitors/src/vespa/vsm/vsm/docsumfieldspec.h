@@ -4,7 +4,9 @@
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 
-namespace search::docsummary { class SlimeFillerFilter; }
+namespace search::docsummary {
+class SlimeFillerFilter;
+}
 
 namespace vsm {
 
@@ -25,22 +27,22 @@ public:
     public:
         FieldIdentifier();
         FieldIdentifier(FieldIdT id, FieldPath path);
-        FieldIdentifier(FieldIdentifier &&) noexcept;
-        FieldIdentifier & operator=(FieldIdentifier &&) noexcept;
-        FieldIdentifier(const FieldIdentifier &) = delete;
-        FieldIdentifier & operator=(const FieldIdentifier &) = delete;
+        FieldIdentifier(FieldIdentifier&&) noexcept;
+        FieldIdentifier& operator=(FieldIdentifier&&) noexcept;
+        FieldIdentifier(const FieldIdentifier&) = delete;
+        FieldIdentifier& operator=(const FieldIdentifier&) = delete;
         ~FieldIdentifier();
         FieldIdT getId() const { return _id; }
-        const FieldPath & getPath() const { return _path; }
+        const FieldPath& getPath() const { return _path; }
     };
 
     using FieldIdentifierVector = std::vector<FieldIdentifier>;
 
 private:
-    bool                        _struct_or_multivalue; // property of the output field
-    VsmsummaryConfig::Fieldmap::Command  _command;
-    FieldIdentifier             _outputField;
-    FieldIdentifierVector       _inputFields;
+    bool                                                   _struct_or_multivalue; // property of the output field
+    VsmsummaryConfig::Fieldmap::Command                    _command;
+    FieldIdentifier                                        _outputField;
+    FieldIdentifierVector                                  _inputFields;
     std::unique_ptr<search::docsummary::SlimeFillerFilter> _filter;
 
 public:
@@ -64,13 +66,12 @@ public:
         return _inputFields.size() == 1 && _outputField.getId() == _inputFields[0].getId();
     }
 
-    const FieldIdentifier & getOutputField() const { return _outputField; }
+    const FieldIdentifier& getOutputField() const { return _outputField; }
     void setOutputField(FieldIdentifier outputField) { _outputField = std::move(outputField); }
-    const FieldIdentifierVector & getInputFields() const { return _inputFields; }
-    FieldIdentifierVector & getInputFields() { return _inputFields; }
+    const FieldIdentifierVector& getInputFields() const { return _inputFields; }
+    FieldIdentifierVector& getInputFields() { return _inputFields; }
     void set_filter(std::unique_ptr<search::docsummary::SlimeFillerFilter> filter);
-    const search::docsummary::SlimeFillerFilter *get_filter() const noexcept;
+    const search::docsummary::SlimeFillerFilter* get_filter() const noexcept;
 };
 
-}
-
+} // namespace vsm

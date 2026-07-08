@@ -2,15 +2,16 @@
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/enumstore.h>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/singlestringpostattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/multistringpostattribute.h>
-
-#include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
+#include <vespa/searchlib/attribute/singlestringattribute.h>
+#include <vespa/searchlib/attribute/singlestringpostattribute.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/casts.h>
+
+#include <vespa/searchlib/attribute/enumstore.hpp>
+
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -30,10 +31,7 @@ using WeightedSetStrPosting = WeightedSetStringPostingAttribute;
 using Config = attribute::Config;
 using BasicType = attribute::BasicType;
 
-template <typename Attribute>
-void
-addDocs(Attribute & vec, uint32_t numDocs)
-{
+template <typename Attribute> void addDocs(Attribute& vec, uint32_t numDocs) {
     for (uint32_t i = 0; i < numDocs; ++i) {
         IAttributeVector::DocId doc;
         EXPECT_TRUE(vec.addDoc(doc));
@@ -45,10 +43,7 @@ addDocs(Attribute & vec, uint32_t numDocs)
 }
 
 template <typename Attribute>
-void
-checkCount(Attribute & vec, uint32_t doc, uint32_t valueCount,
-                                uint32_t numValues, const std::string & value)
-{
+void checkCount(Attribute& vec, uint32_t doc, uint32_t valueCount, uint32_t numValues, const std::string& value) {
     std::vector<std::string> buffer(valueCount);
     EXPECT_TRUE(static_cast<uint32_t>(vec.getValueCount(doc)) == valueCount);
     EXPECT_TRUE(vec.get(doc, buffer.data(), buffer.size()) == valueCount);
@@ -58,26 +53,23 @@ checkCount(Attribute & vec, uint32_t doc, uint32_t valueCount,
 namespace {
 
 template <typename T0, typename T1>
-auto zipped_and_sorted_by_first(const std::vector<T0>& a, const std::vector<T1>& b) -> std::vector<std::pair<T0, T1>> {
+auto zipped_and_sorted_by_first(const std::vector<T0>& a, const std::vector<T1>& b)
+    -> std::vector<std::pair<T0, T1>> {
     std::vector<std::pair<T0, T1>> combined;
     assert(a.size() == b.size());
     for (size_t i = 0; i < a.size(); ++i) {
         combined.emplace_back(a[i], b[i]);
     }
-    std::sort(combined.begin(), combined.end(), [](const auto& lhs, const auto& rhs){
-        return (lhs.first < rhs.first);
-    });
+    std::sort(combined.begin(), combined.end(),
+              [](const auto& lhs, const auto& rhs) { return (lhs.first < rhs.first); });
     return combined;
 }
 
 constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
 
-}
+} // namespace
 
-template <typename Attribute>
-void
-testMultiValue(Attribute & attr, uint32_t numDocs)
-{
+template <typename Attribute> void testMultiValue(Attribute& attr, uint32_t numDocs) {
     EXPECT_TRUE(attr.getNumDocs() == 0);
 
     // generate two sets of unique strings
@@ -133,7 +125,8 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
         ASSERT_TRUE(attr.get(doc, values.data(), valueCount) == valueCount);
 
         std::vector<uint32_t> enums(valueCount);
-        ASSERT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, enums.data(), valueCount) == valueCount);
+        ASSERT_TRUE((static_cast<search::attribute::IAttributeVector&>(attr)).get(doc, enums.data(), valueCount) ==
+                    valueCount);
 
         auto combined = zipped_and_sorted_by_first(values, enums);
         for (uint32_t j = 0; j < valueCount; ++j) {
@@ -156,7 +149,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t oldValueCount = doc;
         uint32_t valueCount = numDocs - 1 - doc;
-        //LOG(info, "clear and insert: doc = %u, valueCount = %u", doc, valueCount);
+        // LOG(info, "clear and insert: doc = %u, valueCount = %u", doc, valueCount);
         EXPECT_TRUE(attr.clearDoc(doc) == oldValueCount);
         for (uint32_t j = 0; j < valueCount; ++j) {
             EXPECT_TRUE(attr.append(doc, newUniques[j], 1));
@@ -175,7 +168,8 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
         EXPECT_TRUE(attr.get(doc, values.data(), valueCount) == valueCount);
 
         std::vector<uint32_t> enums(valueCount);
-        EXPECT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, enums.data(), valueCount) == valueCount);
+        EXPECT_TRUE((static_cast<search::attribute::IAttributeVector&>(attr)).get(doc, enums.data(), valueCount) ==
+                    valueCount);
 
         auto combined = zipped_and_sorted_by_first(values, enums);
         for (uint32_t j = 0; j < valueCount; ++j) {
@@ -215,8 +209,7 @@ protected:
     static void TearDownTestSuite();
 };
 
-StringAttributeTest::StringAttributeTest()
-    : ::testing::Test() {
+StringAttributeTest::StringAttributeTest() : ::testing::Test() {
 }
 
 StringAttributeTest::~StringAttributeTest() = default;
@@ -230,8 +223,7 @@ void StringAttributeTest::TearDownTestSuite() {
     std::filesystem::remove_all(test_dir);
 }
 
-TEST_F(StringAttributeTest, testMultiValue)
-{
+TEST_F(StringAttributeTest, testMultiValue) {
     uint32_t numDocs = 16;
 
     { // Array String Attribute
@@ -239,8 +231,7 @@ TEST_F(StringAttributeTest, testMultiValue)
         testMultiValue(attr, numDocs);
     }
     { // Weighted Set String Attribute
-        WeightedSetStr attr("ws-string",
-                            Config(BasicType::STRING, CollectionType::WSET));
+        WeightedSetStr attr("ws-string", Config(BasicType::STRING, CollectionType::WSET));
         testMultiValue(attr, numDocs);
     }
     { // Array String Posting Attribute
@@ -257,8 +248,7 @@ TEST_F(StringAttributeTest, testMultiValue)
     }
 }
 
-TEST_F(StringAttributeTest, testMultiValueMultipleClearDocBetweenCommit)
-{
+TEST_F(StringAttributeTest, testMultiValueMultipleClearDocBetweenCommit) {
     // This is also tested for all array attributes in attribute unit test
     ArrayStr mvsa("a-string");
     uint32_t numDocs = 50;
@@ -282,9 +272,7 @@ TEST_F(StringAttributeTest, testMultiValueMultipleClearDocBetweenCommit)
     }
 }
 
-
-TEST_F(StringAttributeTest, testMultiValueRemove)
-{
+TEST_F(StringAttributeTest, testMultiValueRemove) {
     // This is also tested for all array attributes in attribute unit test
     ArrayStr mvsa("a-string");
     uint32_t numDocs = 50;
@@ -325,65 +313,60 @@ TEST_F(StringAttributeTest, testMultiValueRemove)
     }
 }
 
-void
-testDefaultValueOnAddDoc(AttributeVector & v)
-{
+void testDefaultValueOnAddDoc(AttributeVector& v) {
     EXPECT_EQ(0u, v.getNumDocs());
     v.addReservedDoc();
     EXPECT_EQ(1u, v.getNumDocs());
-    EXPECT_TRUE( IEnumStore::Index(EntryRef(v.getEnum(0))).valid() );
+    EXPECT_TRUE(IEnumStore::Index(EntryRef(v.getEnum(0))).valid());
     uint32_t doc(7);
-    EXPECT_TRUE( v.addDoc(doc) );
+    EXPECT_TRUE(v.addDoc(doc));
     EXPECT_EQ(1u, doc);
     EXPECT_EQ(2u, v.getNumDocs());
-    EXPECT_TRUE( IEnumStore::Index(EntryRef(v.getEnum(doc))).valid() );
+    EXPECT_TRUE(IEnumStore::Index(EntryRef(v.getEnum(doc))).valid());
     EXPECT_EQ(0u, v.get_raw(doc).size());
 }
 
-template <typename Attribute>
-void
-testSingleValue(Attribute & svsa, Config &cfg)
-{
-    StringAttribute & v = svsa;
-    const char * t = "not defined";
-    uint32_t doc = 2000;
-    uint32_t e1 = 2000;
-    uint32_t e2 = 2000;
-    uint32_t numDocs = 1000;
-    char tmp[32];
+template <typename Attribute> void testSingleValue(Attribute& svsa, Config& cfg) {
+    StringAttribute& v = svsa;
+    const char*      t = "not defined";
+    uint32_t         doc = 2000;
+    uint32_t         e1 = 2000;
+    uint32_t         e2 = 2000;
+    uint32_t         numDocs = 1000;
+    char             tmp[32];
 
     // add docs
     for (uint32_t i = 0; i < numDocs; ++i) {
-        EXPECT_TRUE( v.addDoc(doc) );
-        EXPECT_TRUE( doc == i );
-        EXPECT_TRUE( v.getNumDocs() == i + 1 );
-        EXPECT_TRUE( v.getValueCount(doc) == 1 );
-        EXPECT_TRUE( ! IEnumStore::Index(EntryRef(v.getEnum(doc))).valid() );
+        EXPECT_TRUE(v.addDoc(doc));
+        EXPECT_TRUE(doc == i);
+        EXPECT_TRUE(v.getNumDocs() == i + 1);
+        EXPECT_TRUE(v.getValueCount(doc) == 1);
+        EXPECT_TRUE(!IEnumStore::Index(EntryRef(v.getEnum(doc))).valid());
     }
 
     std::map<std::string, uint32_t> enums;
     // 10 unique strings
     for (uint32_t i = 0; i < numDocs; ++i) {
-        snprintf(tmp,sizeof(tmp), "enum%u", i % 10);
-        EXPECT_TRUE( v.update(i, tmp) );
-        EXPECT_TRUE( v.getValueCount(i) == 1 );
-        EXPECT_TRUE( ! IEnumStore::Index(EntryRef(v.getEnum(i))).valid() );
+        snprintf(tmp, sizeof(tmp), "enum%u", i % 10);
+        EXPECT_TRUE(v.update(i, tmp));
+        EXPECT_TRUE(v.getValueCount(i) == 1);
+        EXPECT_TRUE(!IEnumStore::Index(EntryRef(v.getEnum(i))).valid());
         if ((i % 10) == 9) {
             v.commit();
             for (uint32_t j = i - 9; j <= i; ++j) {
                 snprintf(tmp, sizeof(tmp), "enum%u", j % 10);
-                EXPECT_TRUE( strcmp(t = v.get(j), tmp) == 0 );
+                EXPECT_TRUE(strcmp(t = v.get(j), tmp) == 0);
                 auto raw = v.get_raw(j);
                 EXPECT_EQ(strlen(tmp), raw.size());
                 EXPECT_EQ(0, memcmp(raw.data(), tmp, raw.size()));
                 e1 = v.getEnum(j);
-                EXPECT_TRUE( v.findEnum(t, e2) );
-                EXPECT_TRUE( e1 == e2 );
+                EXPECT_TRUE(v.findEnum(t, e2));
+                EXPECT_TRUE(e1 == e2);
                 if (enums.count(std::string(t)) == 0) {
                     enums[std::string(t)] = e1;
                 } else {
-                    EXPECT_TRUE( e1 == enums[std::string(t)]);
-                    EXPECT_TRUE( e2 == enums[std::string(t)]);
+                    EXPECT_TRUE(e1 == enums[std::string(t)]);
+                    EXPECT_TRUE(e2 == enums[std::string(t)]);
                 }
             }
         }
@@ -392,18 +375,18 @@ testSingleValue(Attribute & svsa, Config &cfg)
     // 1000 unique strings
     for (uint32_t i = 0; i < numDocs; ++i) {
         snprintf(tmp, sizeof(tmp), "unique%u", i);
-        EXPECT_TRUE( v.update(i, tmp) );
+        EXPECT_TRUE(v.update(i, tmp));
         snprintf(tmp, sizeof(tmp), "enum%u", i % 10);
-        EXPECT_TRUE( strcmp(v.get(i), tmp) == 0 );
+        EXPECT_TRUE(strcmp(v.get(i), tmp) == 0);
         if ((i % 10) == 9) {
-            //LOG(info, "commit: i = %u", i);
+            // LOG(info, "commit: i = %u", i);
             v.commit();
             for (uint32_t j = i - 9; j <= i; ++j) {
                 snprintf(tmp, sizeof(tmp), "unique%u", j);
-                EXPECT_TRUE( strcmp(t = v.get(j), tmp) == 0 );
+                EXPECT_TRUE(strcmp(t = v.get(j), tmp) == 0);
                 e1 = v.getEnum(j);
-                EXPECT_TRUE( v.findEnum(t, e2) );
-                EXPECT_TRUE( e1 == e2 );
+                EXPECT_TRUE(v.findEnum(t, e2));
+                EXPECT_TRUE(e1 == e2);
             }
         }
     }
@@ -411,9 +394,8 @@ testSingleValue(Attribute & svsa, Config &cfg)
     // check that enumX strings are removed (
     for (uint32_t i = 0; i < 10; ++i) {
         snprintf(tmp, sizeof(tmp), "enum%u", i);
-        EXPECT_TRUE( !v.findEnum(tmp, e1) );
+        EXPECT_TRUE(!v.findEnum(tmp, e1));
     }
-
 
     Attribute load(make_attribute_name("load"), cfg);
     svsa.save(load.getBaseFileName());
@@ -422,13 +404,12 @@ testSingleValue(Attribute & svsa, Config &cfg)
     EXPECT_NE(zero_flush_duration, load.last_flush_duration());
 }
 
-TEST_F(StringAttributeTest, testSingleValue)
-{
+TEST_F(StringAttributeTest, testSingleValue) {
     EXPECT_EQ(24u, sizeof(SearchContext));
     EXPECT_EQ(48u, sizeof(StringSearchHelper));
     EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContext));
     {
-        Config cfg(BasicType::STRING, CollectionType::SINGLE);
+        Config                     cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);
         testSingleValue(svsa, cfg);
 
@@ -447,7 +428,7 @@ TEST_F(StringAttributeTest, testSingleValue)
 }
 
 TEST_F(StringAttributeTest, test_uncased_match) {
-    QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::WORD);
+    QueryTermUCS4      xyz("xyz", QueryTermSimple::Type::WORD);
     StringSearchHelper helper(xyz, false);
     EXPECT_FALSE(helper.isCased());
     EXPECT_FALSE(helper.isPrefix());
@@ -460,7 +441,7 @@ TEST_F(StringAttributeTest, test_uncased_match) {
 }
 
 TEST_F(StringAttributeTest, test_uncased_prefix_match) {
-    QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::PREFIXTERM);
+    QueryTermUCS4      xyz("xyz", QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper helper(xyz, false);
     EXPECT_FALSE(helper.isCased());
     EXPECT_TRUE(helper.isPrefix());
@@ -471,7 +452,7 @@ TEST_F(StringAttributeTest, test_uncased_prefix_match) {
     EXPECT_TRUE(helper.isMatch("xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
     EXPECT_FALSE(helper.isMatch("Xy"));
-    QueryTermUCS4 aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
+    QueryTermUCS4      aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper aa_helper(aa, false);
     EXPECT_FALSE(aa_helper.isMatch("alle"));
     EXPECT_TRUE(aa_helper.isMatch(u8"ås"_C));
@@ -480,7 +461,7 @@ TEST_F(StringAttributeTest, test_uncased_prefix_match) {
 }
 
 TEST_F(StringAttributeTest, test_cased_match) {
-    QueryTermUCS4 xyz("XyZ", QueryTermSimple::Type::WORD);
+    QueryTermUCS4      xyz("XyZ", QueryTermSimple::Type::WORD);
     StringSearchHelper helper(xyz, true);
     EXPECT_TRUE(helper.isCased());
     EXPECT_FALSE(helper.isPrefix());
@@ -494,7 +475,7 @@ TEST_F(StringAttributeTest, test_cased_match) {
 }
 
 TEST_F(StringAttributeTest, test_cased_prefix_match) {
-    QueryTermUCS4 xyz("XyZ", QueryTermSimple::Type::PREFIXTERM);
+    QueryTermUCS4      xyz("XyZ", QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper helper(xyz, true);
     EXPECT_TRUE(helper.isCased());
     EXPECT_TRUE(helper.isPrefix());
@@ -506,7 +487,7 @@ TEST_F(StringAttributeTest, test_cased_prefix_match) {
     EXPECT_FALSE(helper.isMatch("Xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
     EXPECT_FALSE(helper.isMatch("Xy"));
-    QueryTermUCS4 aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
+    QueryTermUCS4      aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper aa_helper(aa, true);
     EXPECT_FALSE(aa_helper.isMatch("alle"));
     EXPECT_TRUE(aa_helper.isMatch(u8"ås"_C));
@@ -515,7 +496,7 @@ TEST_F(StringAttributeTest, test_cased_prefix_match) {
 }
 
 TEST_F(StringAttributeTest, test_uncased_regex_match) {
-    QueryTermUCS4 xyz("x[yY]+Z", QueryTermSimple::Type::REGEXP);
+    QueryTermUCS4      xyz("x[yY]+Z", QueryTermSimple::Type::REGEXP);
     StringSearchHelper helper(xyz, false);
     EXPECT_FALSE(helper.isCased());
     EXPECT_FALSE(helper.isPrefix());
@@ -529,7 +510,7 @@ TEST_F(StringAttributeTest, test_uncased_regex_match) {
 }
 
 TEST_F(StringAttributeTest, test_cased_regex_match) {
-    QueryTermUCS4 xyz("x[Y]+Z", QueryTermSimple::Type::REGEXP);
+    QueryTermUCS4      xyz("x[Y]+Z", QueryTermSimple::Type::REGEXP);
     StringSearchHelper helper(xyz, true);
     EXPECT_TRUE(helper.isCased());
     EXPECT_FALSE(helper.isPrefix());
@@ -544,7 +525,7 @@ TEST_F(StringAttributeTest, test_cased_regex_match) {
 }
 
 TEST_F(StringAttributeTest, test_fuzzy_match) {
-    QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::FUZZYTERM);
+    QueryTermUCS4      xyz("xyz", QueryTermSimple::Type::FUZZYTERM);
     StringSearchHelper helper(xyz, false);
     EXPECT_FALSE(helper.isCased());
     EXPECT_FALSE(helper.isPrefix());

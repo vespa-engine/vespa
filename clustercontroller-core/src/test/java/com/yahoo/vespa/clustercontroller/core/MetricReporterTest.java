@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.text.Text;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.matchers.HasMetricContext;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.yahoo.vespa.clustercontroller.core.MetricDimensionNames.CLUSTER;
@@ -75,7 +77,7 @@ public class MetricReporterTest {
     }
 
     private static String metricName(String subName) {
-        return "%s.%s".formatted(CLUSTER_CONTROLLER, subName);
+        return Text.format("%s.%s", CLUSTER_CONTROLLER, subName);
     }
 
     @Test

@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/net/tls/peer_policies.h>
 #include <vespa/vespalib/net/tls/capability_set.h>
+#include <vespa/vespalib/net/tls/peer_policies.h>
 
 namespace vespalib::net::tls {
 
@@ -18,4 +18,4 @@ Capability cap_2();
 Capability cap_3();
 Capability cap_4();
 
-}
+} // namespace vespalib::net::tls

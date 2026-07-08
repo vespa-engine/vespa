@@ -2,18 +2,20 @@
 
 #pragma once
 
-#include "multi_numeric_enum_search_context.h"
 #include "multi_enum_search_context.h"
+#include "multi_numeric_enum_search_context.h"
 
 namespace search::attribute {
 
 template <typename T, typename M>
-MultiNumericEnumSearchContext<T, M>::MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store)
-    : MultiEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>, M>(NumericRangeMatcher<T>(*qTerm), toBeSearched, mv_mapping_read_view, enum_store)
-{
+MultiNumericEnumSearchContext<T, M>::MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm,
+                                                                   const AttributeVector&           toBeSearched,
+                                                                   MultiValueMappingReadView<M> mv_mapping_read_view,
+                                                                   const EnumStoreT<T>&         enum_store)
+    : MultiEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>, M>(
+          NumericRangeMatcher<T>(*qTerm), toBeSearched, mv_mapping_read_view, enum_store) {
 }
 
-template <typename T, typename M>
-MultiNumericEnumSearchContext<T, M>::~MultiNumericEnumSearchContext() = default;
+template <typename T, typename M> MultiNumericEnumSearchContext<T, M>::~MultiNumericEnumSearchContext() = default;
 
-}
+} // namespace search::attribute

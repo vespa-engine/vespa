@@ -21,25 +21,22 @@ public:
      * is tracked in _inherited, with _inherited_finished being incremented when those flushes complete.
      */
     struct FlushCounts {
-        uint32_t    _started;            // # flushes started by this flush strategy
-        uint32_t    _finished;           // # flushes started by this flush strategy that have finished
-        uint32_t    _inherited;          // # flushes started by an earlier flush strategy
-        uint32_t    _inherited_finished; // # flushes started by an earlier flush strategy that have finished
+        uint32_t _started;            // # flushes started by this flush strategy
+        uint32_t _finished;           // # flushes started by this flush strategy that have finished
+        uint32_t _inherited;          // # flushes started by an earlier flush strategy
+        uint32_t _inherited_finished; // # flushes started by an earlier flush strategy that have finished
 
-        constexpr explicit FlushCounts(uint32_t inherited) noexcept
-            : FlushCounts(0, 0, inherited, 0)
-        {
-        }
-        constexpr FlushCounts(uint32_t started, uint32_t finished, uint32_t inherited, uint32_t inherited_finished) noexcept
+        constexpr explicit FlushCounts(uint32_t inherited) noexcept : FlushCounts(0, 0, inherited, 0) {}
+        constexpr FlushCounts(uint32_t started, uint32_t finished, uint32_t inherited,
+                              uint32_t inherited_finished) noexcept
             : _started(started),
               _finished(finished),
               _inherited(inherited),
-              _inherited_finished(inherited_finished)
-        {
-        }
+              _inherited_finished(inherited_finished) {}
         bool has_active_flushes() const noexcept { return _started > _finished || _inherited > _inherited_finished; }
         bool operator==(const FlushCounts& rhs) const noexcept = default;
     };
+
 private:
     std::string _name;
     uint32_t    _id;
@@ -51,13 +48,13 @@ private:
     FlushCounts _flush_counts;
 
 public:
-    FlushStrategyHistoryEntry(std::string name_in, uint32_t id_in,bool priority_strategy_in,
+    FlushStrategyHistoryEntry(std::string name_in, uint32_t id_in, bool priority_strategy_in,
                               time_point start_time_in, uint32_t inherited_flushes_in);
-    FlushStrategyHistoryEntry(const FlushStrategyHistoryEntry &);
-    FlushStrategyHistoryEntry(FlushStrategyHistoryEntry &&) noexcept;
+    FlushStrategyHistoryEntry(const FlushStrategyHistoryEntry&);
+    FlushStrategyHistoryEntry(FlushStrategyHistoryEntry&&) noexcept;
     ~FlushStrategyHistoryEntry();
-    FlushStrategyHistoryEntry& operator=(const FlushStrategyHistoryEntry &);
-    FlushStrategyHistoryEntry& operator=(FlushStrategyHistoryEntry &&) noexcept;
+    FlushStrategyHistoryEntry& operator=(const FlushStrategyHistoryEntry&);
+    FlushStrategyHistoryEntry& operator=(FlushStrategyHistoryEntry&&) noexcept;
     const std::string& name() const noexcept { return _name; }
     uint32_t id() const noexcept { return _id; }
     bool priority_strategy() const noexcept { return _priority_strategy; }
@@ -79,4 +76,4 @@ public:
     bool is_prepare_restart() const noexcept;
 };
 
-}
+} // namespace proton::flushengine

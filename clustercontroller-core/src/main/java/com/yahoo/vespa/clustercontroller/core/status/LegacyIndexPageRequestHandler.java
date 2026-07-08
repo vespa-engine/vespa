@@ -94,6 +94,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         }
         // State of master election
         masterElectionHandler.writeHtmlState(content);
+        writeOrchestrationGeneration(content);
         // Overview of current config
         writeHtmlState(content, options);
         // Event log
@@ -116,7 +117,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             TimeZone tz = TimeZone.getTimeZone("UTC");
             sb.append("<h3 id=\"clusterstatehistory\">Cluster state history</h3>\n");
             sb.append("<table border=\"1\" cellspacing=\"0\"><tr>\n")
-              .append("  <th>Creation date (").append(tz.getDisplayName(false, TimeZone.SHORT)).append(")</th>\n")
+              .append("  <th>Creation date (").append(tz.getDisplayName(false, TimeZone.SHORT, Locale.ROOT)).append(")</th>\n")
               .append("  <th>Bucket space</th>\n")
               .append("  <th>Cluster state</th>\n")
               .append("</tr>\n");
@@ -126,6 +127,12 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             }
             sb.append("</table>\n");
         }
+    }
+
+    private void writeOrchestrationGeneration(StringBuilder sb) {
+        sb.append("<p>Internal orchestration generation: ")
+          .append(cluster.orchestrationGeneration())
+          .append("</p>\n");
     }
 
     private static void writeClusterStates(StringBuilder sb, ClusterStateBundle clusterStates) {

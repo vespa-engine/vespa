@@ -9,10 +9,7 @@ namespace vespalib {
 // Functionally identical to C++20's std::identity
 // TODO remove and replace with std::identity once it is available.
 struct Identity {
-    template <typename T>
-    constexpr T&& operator()(T&& v) const noexcept {
-        return std::forward<T>(v);
-    }
+    template <typename T> constexpr T&& operator()(T&& v) const noexcept { return std::forward<T>(v); }
 };
 
-}
+} // namespace vespalib

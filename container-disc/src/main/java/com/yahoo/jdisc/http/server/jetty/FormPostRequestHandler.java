@@ -11,6 +11,7 @@ import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.text.Text;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -96,7 +97,7 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
             parameterMap = parseFormParameters(content);
         } catch (IllegalArgumentException e) {
             // Log for now until this is solved properly
-            log.log(Level.INFO, "Failed to parse form parameters: %s".formatted(e.getMessage()));
+            log.log(Level.INFO, Text.format("Failed to parse form parameters: %s", e.getMessage()));
             completionHandler.failed(new RequestException(BAD_REQUEST, "Failed to parse form parameters", e));
             return;
         }

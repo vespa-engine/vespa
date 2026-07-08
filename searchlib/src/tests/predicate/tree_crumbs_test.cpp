@@ -56,4 +56,4 @@ TEST(TreeCrumbsTest, require_that_crumbs_can_set_custom_initial_char) {
     EXPECT_EQ("a0b1c2", crumbs.getCrumb());
 }
 
-}  // namespace
+} // namespace

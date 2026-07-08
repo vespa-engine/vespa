@@ -11,7 +11,7 @@ using namespace vespalib::eval::test;
 
 TEST(DimSpecTest, indexed_dimension) {
     ValueType::Dimension ref("foo", 10);
-    DimSpec idx("foo", 10);
+    DimSpec              idx("foo", 10);
     EXPECT_EQ(idx.type(), ref);
     EXPECT_TRUE(ref.is_indexed());
     EXPECT_EQ(idx.name(), "foo");
@@ -21,7 +21,7 @@ TEST(DimSpecTest, indexed_dimension) {
 
 TEST(DimSpecTest, mapped_dimension) {
     ValueType::Dimension ref("foo");
-    DimSpec map("foo", {"a", "b", "c", "d"});
+    DimSpec              map("foo", {"a", "b", "c", "d"});
     EXPECT_EQ(map.type(), ref);
     EXPECT_TRUE(ref.is_mapped());
     EXPECT_EQ(map.name(), "foo");
@@ -30,13 +30,13 @@ TEST(DimSpecTest, mapped_dimension) {
 }
 
 TEST(DimSpecTest, simple_dictionary_creation) {
-    auto dict = DimSpec::make_dict(5, 1, "");
+    auto                     dict = DimSpec::make_dict(5, 1, "");
     std::vector<std::string> expect = {"1", "2", "3", "4", "5"};
     EXPECT_EQ(dict, expect);
 }
 
 TEST(DimSpecTest, advanced_dictionary_creation) {
-    auto dict = DimSpec::make_dict(5, 3, "str_");
+    auto                     dict = DimSpec::make_dict(5, 3, "str_");
     std::vector<std::string> expect = {"str_3", "str_6", "str_9", "str_12", "str_15"};
     EXPECT_EQ(dict, expect);
 }
@@ -49,7 +49,7 @@ TEST(GenSpecTest, default_spec) {
     EXPECT_EQ(spec.cells(), CellType::DOUBLE);
     auto seq = spec.seq();
     for (size_t i = 0; i < 4_Ki; ++i) {
-        EXPECT_EQ(seq(i), (i + 1.0));        
+        EXPECT_EQ(seq(i), (i + 1.0));
     }
 }
 
@@ -72,7 +72,7 @@ TEST(GenSpecTest, scalar_float_is_bad_scalar) {
 TEST(SequenceTest, n) {
     GenSpec::seq_t seq = GenSpec().seq(N()).seq();
     for (size_t i = 0; i < 4_Ki; ++i) {
-        EXPECT_EQ(seq(i), (i + 1.0));        
+        EXPECT_EQ(seq(i), (i + 1.0));
     }
 }
 
@@ -92,7 +92,7 @@ TEST(SequenceTest, ax_b) {
 
 TEST(SequenceTest, seq) {
     std::vector<double> values({1.5, 3.5, 2.5, 10.0});
-    GenSpec::seq_t seq = GenSpec().seq(Seq(values)).seq();
+    GenSpec::seq_t      seq = GenSpec().seq(Seq(values)).seq();
     for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), values[i % values.size()]);
     }
@@ -122,8 +122,12 @@ TEST(SequenceTest, n_sigmoidf) {
 
 //-----------------------------------------------------------------------------
 
-GenSpec flt() { return GenSpec().cells_float(); }
-GenSpec dbl() { return GenSpec().cells_double(); }
+GenSpec flt() {
+    return GenSpec().cells_float();
+}
+GenSpec dbl() {
+    return GenSpec().cells_double();
+}
 
 TEST(GenSpecTest, value_type) {
     EXPECT_EQ(dbl().type().to_spec(), "double");
@@ -140,25 +144,25 @@ TEST(GenSpecTest, value_type) {
 //-----------------------------------------------------------------------------
 
 TensorSpec basic_vector = TensorSpec("tensor(a[5])")
-    .add({{"a", 0}}, 1.0)
-    .add({{"a", 1}}, 2.0)
-    .add({{"a", 2}}, 3.0)
-    .add({{"a", 3}}, 4.0)
-    .add({{"a", 4}}, 5.0);
+                              .add({{"a", 0}}, 1.0)
+                              .add({{"a", 1}}, 2.0)
+                              .add({{"a", 2}}, 3.0)
+                              .add({{"a", 3}}, 4.0)
+                              .add({{"a", 4}}, 5.0);
 
 TensorSpec float_vector = TensorSpec("tensor<float>(a[5])")
-    .add({{"a", 0}}, 1.0)
-    .add({{"a", 1}}, 2.0)
-    .add({{"a", 2}}, 3.0)
-    .add({{"a", 3}}, 4.0)
-    .add({{"a", 4}}, 5.0);
+                              .add({{"a", 0}}, 1.0)
+                              .add({{"a", 1}}, 2.0)
+                              .add({{"a", 2}}, 3.0)
+                              .add({{"a", 3}}, 4.0)
+                              .add({{"a", 4}}, 5.0);
 
 TensorSpec custom_vector = TensorSpec("tensor(a[5])")
-    .add({{"a", 0}}, 5.0)
-    .add({{"a", 1}}, 4.0)
-    .add({{"a", 2}}, 3.0)
-    .add({{"a", 3}}, 2.0)
-    .add({{"a", 4}}, 1.0);
+                               .add({{"a", 0}}, 5.0)
+                               .add({{"a", 1}}, 4.0)
+                               .add({{"a", 2}}, 3.0)
+                               .add({{"a", 3}}, 2.0)
+                               .add({{"a", 4}}, 1.0);
 
 TEST(GenSpecTest, generating_basic_vector) {
     EXPECT_EQ(GenSpec().idx("a", 5).gen(), basic_vector);
@@ -175,15 +179,10 @@ TEST(GenSpecTest, generating_custom_vector) {
 
 //-----------------------------------------------------------------------------
 
-TensorSpec basic_map = TensorSpec("tensor(a{})")
-    .add({{"a", "1"}}, 1.0)
-    .add({{"a", "2"}}, 2.0)
-    .add({{"a", "3"}}, 3.0);
+TensorSpec basic_map = TensorSpec("tensor(a{})").add({{"a", "1"}}, 1.0).add({{"a", "2"}}, 2.0).add({{"a", "3"}}, 3.0);
 
-TensorSpec custom_map = TensorSpec("tensor(a{})")
-    .add({{"a", "s5"}}, 1.0)
-    .add({{"a", "s10"}}, 2.0)
-    .add({{"a", "s15"}}, 3.0);
+TensorSpec custom_map =
+    TensorSpec("tensor(a{})").add({{"a", "s5"}}, 1.0).add({{"a", "s10"}}, 2.0).add({{"a", "s15"}}, 3.0);
 
 TEST(GenSpecTest, generating_basic_map) {
     EXPECT_EQ(GenSpec().map("a", 3).gen(), basic_map);
@@ -200,26 +199,26 @@ TEST(GenSpecTest, generating_custom_map) {
 //-----------------------------------------------------------------------------
 
 TensorSpec basic_mixed = TensorSpec("tensor(a{},b[1],c{},d[3])")
-    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 0}}, 1.0)
-    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 1}}, 2.0)
-    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 2}}, 3.0)
-    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 0}}, 4.0)
-    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 1}}, 5.0)
-    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 2}}, 6.0)
-    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 0}}, 7.0)
-    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 1}}, 8.0)
-    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 2}}, 9.0);
+                             .add({{"a", "1"}, {"b", 0}, {"c", "1"}, {"d", 0}}, 1.0)
+                             .add({{"a", "1"}, {"b", 0}, {"c", "1"}, {"d", 1}}, 2.0)
+                             .add({{"a", "1"}, {"b", 0}, {"c", "1"}, {"d", 2}}, 3.0)
+                             .add({{"a", "2"}, {"b", 0}, {"c", "1"}, {"d", 0}}, 4.0)
+                             .add({{"a", "2"}, {"b", 0}, {"c", "1"}, {"d", 1}}, 5.0)
+                             .add({{"a", "2"}, {"b", 0}, {"c", "1"}, {"d", 2}}, 6.0)
+                             .add({{"a", "3"}, {"b", 0}, {"c", "1"}, {"d", 0}}, 7.0)
+                             .add({{"a", "3"}, {"b", 0}, {"c", "1"}, {"d", 1}}, 8.0)
+                             .add({{"a", "3"}, {"b", 0}, {"c", "1"}, {"d", 2}}, 9.0);
 
 TensorSpec inverted_mixed = TensorSpec("tensor(a{},b[1],c{},d[3])")
-    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 0}}, 1.0)
-    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 0}}, 2.0)
-    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 0}}, 3.0)
-    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 1}}, 4.0)
-    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 1}}, 5.0)
-    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 1}}, 6.0)
-    .add({{"a", "1"},{"b", 0},{"c", "1"},{"d", 2}}, 7.0)
-    .add({{"a", "2"},{"b", 0},{"c", "1"},{"d", 2}}, 8.0)
-    .add({{"a", "3"},{"b", 0},{"c", "1"},{"d", 2}}, 9.0);
+                                .add({{"a", "1"}, {"b", 0}, {"c", "1"}, {"d", 0}}, 1.0)
+                                .add({{"a", "2"}, {"b", 0}, {"c", "1"}, {"d", 0}}, 2.0)
+                                .add({{"a", "3"}, {"b", 0}, {"c", "1"}, {"d", 0}}, 3.0)
+                                .add({{"a", "1"}, {"b", 0}, {"c", "1"}, {"d", 1}}, 4.0)
+                                .add({{"a", "2"}, {"b", 0}, {"c", "1"}, {"d", 1}}, 5.0)
+                                .add({{"a", "3"}, {"b", 0}, {"c", "1"}, {"d", 1}}, 6.0)
+                                .add({{"a", "1"}, {"b", 0}, {"c", "1"}, {"d", 2}}, 7.0)
+                                .add({{"a", "2"}, {"b", 0}, {"c", "1"}, {"d", 2}}, 8.0)
+                                .add({{"a", "3"}, {"b", 0}, {"c", "1"}, {"d", 2}}, 9.0);
 
 TEST(GenSpecTest, generating_basic_mixed) {
     EXPECT_EQ(GenSpec().map("a", 3).idx("b", 1).map("c", 1).idx("d", 3).gen(), basic_mixed);
@@ -253,7 +252,6 @@ TEST(GenSpecFromDescTest, empty_mapped_dim_possible) {
     EXPECT_EQ(dim_desc, expect);
     EXPECT_EQ(gen_desc, expect);
 }
-
 
 TEST(GenSpecFromDescTest, multi_character_sizes_work) {
     // 'a13b1'

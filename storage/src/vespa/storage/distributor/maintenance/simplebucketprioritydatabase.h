@@ -2,14 +2,15 @@
 #pragma once
 
 #include "bucketprioritydatabase.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <set>
+
 #include <map>
+#include <set>
 
 namespace storage::distributor {
 
-class SimpleBucketPriorityDatabase : public BucketPriorityDatabase
-{
+class SimpleBucketPriorityDatabase : public BucketPriorityDatabase {
 public:
     SimpleBucketPriorityDatabase();
     ~SimpleBucketPriorityDatabase() override;
@@ -27,10 +28,7 @@ private:
         uint64_t _seq_num;
 
         constexpr PriFifoCompositeKey() noexcept : _pri(Priority::VERY_LOW), _seq_num(0) {}
-        constexpr PriFifoCompositeKey(Priority pri, uint64_t seq_num) noexcept
-            : _pri(pri),
-              _seq_num(seq_num)
-        {}
+        constexpr PriFifoCompositeKey(Priority pri, uint64_t seq_num) noexcept : _pri(pri), _seq_num(seq_num) {}
 
         constexpr bool operator<(const PriFifoCompositeKey& rhs) const noexcept {
             if (_pri != rhs._pri) {
@@ -43,17 +41,17 @@ private:
 
     using PriFifoBucketMap = std::map<PriFifoCompositeKey, document::Bucket>;
     // Important: the map iterator instances MUST be stable in the presence of other inserts/erases!
-    using BucketToPriIteratorMap = vespalib::hash_map<document::Bucket, PriFifoBucketMap::iterator, document::Bucket::hash>;
+    using BucketToPriIteratorMap =
+        vespalib::hash_map<document::Bucket, PriFifoBucketMap::iterator, document::Bucket::hash>;
 
     class PriFifoMappingConstIteratorImpl final : public ConstIteratorImpl {
         PriFifoBucketMap::const_iterator _pri_fifo_iter;
         PriFifoBucketMap::const_iterator _pri_fifo_end;
+
     public:
         PriFifoMappingConstIteratorImpl(PriFifoBucketMap::const_iterator pri_fifo_iter,
                                         PriFifoBucketMap::const_iterator pri_fifo_end) noexcept
-            : _pri_fifo_iter(pri_fifo_iter),
-              _pri_fifo_end(pri_fifo_end)
-        {}
+            : _pri_fifo_iter(pri_fifo_iter), _pri_fifo_end(pri_fifo_end) {}
         ~PriFifoMappingConstIteratorImpl() override = default;
 
         void increment() noexcept override;
@@ -61,11 +59,11 @@ private:
         PrioritizedBucket dereference() const noexcept override;
     };
 
-    void clearAllEntriesForBucket(const document::Bucket &bucket);
+    void clearAllEntriesForBucket(const document::Bucket& bucket);
 
     PriFifoBucketMap       _pri_fifo_buckets;
     BucketToPriIteratorMap _bucket_to_pri_iterators;
     uint64_t               _fifo_seq_num;
 };
 
-}
+} // namespace storage::distributor

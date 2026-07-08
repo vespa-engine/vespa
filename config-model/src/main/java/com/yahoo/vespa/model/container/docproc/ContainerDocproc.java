@@ -29,7 +29,6 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
     public final Options options;
     private final Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
-    private final boolean useSimpleAnnotations;
 
     public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains) {
         this(cluster, chains, Options.empty(), null);
@@ -53,7 +52,6 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         super(chains);
         assert (options != null) : "Null Options for " + this + " under cluster " + cluster.getName();
         this.options = options;
-        this.useSimpleAnnotations = deployState == null || deployState.featureFlags().useSimpleAnnotations();
 
         if (addSourceClientProvider) {
             addSource(cluster, "source", SessionConfig.Type.SOURCE);
@@ -86,7 +84,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
         if (getMaxQueueTimeMs() != null) {
             builder.maxqueuetimems(getMaxQueueTimeMs());
         }
-        builder.simpleAnnotations(useSimpleAnnotations);
+        builder.simpleAnnotations(true);
     }
 
     @Override
@@ -146,19 +144,16 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implemen
 
     public static class Threadpool extends ContainerThreadpool {
 
-        private final double threads;
-
         public Threadpool(DeployState ds, Element options) {
             super(ds, "docproc-handler", options);
-            threads = ds.featureFlags().docprocHandlerThreadpool();
         }
 
         @Override
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
-                    .relativeMaxThreads(threads)
-                    .relativeMinThreads(threads)
+                    .relativeMaxThreads(1)
+                    .relativeMinThreads(1)
                     .queueSize(Integer.MAX_VALUE);
         }
 

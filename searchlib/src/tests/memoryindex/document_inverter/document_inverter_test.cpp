@@ -1,26 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/searchlib/test/doc_builder.h>
-#include <vespa/searchlib/test/schema_builder.h>
-#include <vespa/searchlib/test/string_field_builder.h>
+#include <vespa/searchlib/index/field_length_calculator.h>
+#include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/i_field_index_collection.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/memoryindex/mock_field_index_collection.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter_backend.h>
-#include <vespa/vespalib/util/gate.h>
-#include <vespa/vespalib/util/destructor_callbacks.h>
-#include <vespa/vespalib/util/sequencedtaskexecutor.h>
-
+#include <vespa/searchlib/test/schema_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
 namespace search::memoryindex {
 
@@ -31,93 +30,80 @@ using index::Schema;
 using search::test::DocBuilder;
 using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
-using vespalib::SequencedTaskExecutor;
 using vespalib::ISequencedTaskExecutor;
+using vespalib::SequencedTaskExecutor;
 
 namespace {
 
-DocBuilder::AddFieldsType
-make_add_fields()
-{
-    return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
+DocBuilder::AddFieldsType make_add_fields() {
+    return [](auto& builder, auto& doc) noexcept {
+        using namespace document::new_config_builder;
         auto string_array = doc.createArray(builder.stringTypeRef()).ref();
         auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
         doc.addField("f0", builder.stringTypeRef())
             .addField("f1", builder.stringTypeRef())
             .addField("f2", string_array)
             .addField("f3", string_wset);
-            };
+    };
 }
 
-Document::UP
-makeDoc10(DocBuilder &b)
-{
+Document::UP makeDoc10(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::10");
+    auto               doc = b.make_document("id:ns:searchdocument::10");
     doc->setValue("f0", sfb.tokenize("a b c d").build());
     return doc;
 }
 
-Document::UP
-makeDoc11(DocBuilder &b)
-{
+Document::UP makeDoc11(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::11");
+    auto               doc = b.make_document("id:ns:searchdocument::11");
     doc->setValue("f0", sfb.tokenize("a b e f").build());
     doc->setValue("f1", sfb.tokenize("a g").build());
     return doc;
 }
 
-Document::UP
-makeDoc12(DocBuilder &b)
-{
+Document::UP makeDoc12(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::12");
+    auto               doc = b.make_document("id:ns:searchdocument::12");
     doc->setValue("f0", sfb.tokenize("h doc12").build());
     return doc;
 }
 
-Document::UP
-makeDoc13(DocBuilder &b)
-{
+Document::UP makeDoc13(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::13");
+    auto               doc = b.make_document("id:ns:searchdocument::13");
     doc->setValue("f0", sfb.tokenize("i doc13").build());
     return doc;
 }
 
-Document::UP
-makeDoc14(DocBuilder &b)
-{
+Document::UP makeDoc14(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::14");
+    auto               doc = b.make_document("id:ns:searchdocument::14");
     doc->setValue("f0", sfb.tokenize("j doc14").build());
     return doc;
 }
 
-Document::UP
-makeDoc15(DocBuilder &b)
-{
+Document::UP makeDoc15(DocBuilder& b) {
     return b.make_document("id:ns:searchdocument::15");
 }
 
-}
+} // namespace
 
 VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
 struct DocumentInverterTest : public ::testing::Test {
-    DocBuilder _b;
-    Schema _schema;
+    DocBuilder                              _b;
+    Schema                                  _schema;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
-    WordStore                       _word_store;
-    FieldIndexRemover               _remover;
-    test::OrderedFieldIndexInserterBackend _inserter_backend;
-    FieldLengthCalculator           _calculator;
-    test::MockFieldIndexCollection  _fic;
-    DocumentInverterContext         _inv_context;
-    DocumentInverter                _inv;
+    WordStore                               _word_store;
+    FieldIndexRemover                       _remover;
+    test::OrderedFieldIndexInserterBackend  _inserter_backend;
+    FieldLengthCalculator                   _calculator;
+    test::MockFieldIndexCollection          _fic;
+    DocumentInverterContext                 _inv_context;
+    DocumentInverter                        _inv;
 
     DocumentInverterTest()
         : _b(make_add_fields()),
@@ -130,9 +116,7 @@ struct DocumentInverterTest : public ::testing::Test {
           _calculator(),
           _fic(_remover, _inserter_backend, _calculator),
           _inv_context(_schema, *_invertThreads, *_pushThreads, _fic),
-          _inv(_inv_context)
-    {
-    }
+          _inv(_inv_context) {}
 
     void pushDocuments() {
         vespalib::Gate gate;
@@ -141,8 +125,7 @@ struct DocumentInverterTest : public ::testing::Test {
     }
 };
 
-TEST_F(DocumentInverterTest, require_that_fresh_insert_works)
-{
+TEST_F(DocumentInverterTest, require_that_fresh_insert_works) {
     auto doc10 = makeDoc10(_b);
     _inv.invertDocument(10, *doc10, {});
     pushDocuments();
@@ -153,8 +136,7 @@ TEST_F(DocumentInverterTest, require_that_fresh_insert_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(DocumentInverterTest, require_that_multiple_docs_work)
-{
+TEST_F(DocumentInverterTest, require_that_multiple_docs_work) {
     auto doc10 = makeDoc10(_b);
     auto doc11 = makeDoc11(_b);
     _inv.invertDocument(10, *doc10, {});
@@ -170,8 +152,7 @@ TEST_F(DocumentInverterTest, require_that_multiple_docs_work)
               _inserter_backend.toStr());
 }
 
-TEST_F(DocumentInverterTest, require_that_remove_works)
-{
+TEST_F(DocumentInverterTest, require_that_remove_works) {
     _inv.getInverter(0)->remove("b", 10);
     _inv.getInverter(0)->remove("a", 10);
     _inv.getInverter(0)->remove("b", 11);
@@ -185,8 +166,7 @@ TEST_F(DocumentInverterTest, require_that_remove_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(DocumentInverterTest, require_that_reput_works)
-{
+TEST_F(DocumentInverterTest, require_that_reput_works) {
     auto doc10 = makeDoc10(_b);
     auto doc11 = makeDoc11(_b);
     _inv.invertDocument(10, *doc10, {});
@@ -201,8 +181,7 @@ TEST_F(DocumentInverterTest, require_that_reput_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(DocumentInverterTest, require_that_abort_pending_doc_works)
-{
+TEST_F(DocumentInverterTest, require_that_abort_pending_doc_works) {
     auto doc10 = makeDoc10(_b);
     auto doc11 = makeDoc11(_b);
     auto doc12 = makeDoc12(_b);
@@ -258,8 +237,7 @@ TEST_F(DocumentInverterTest, require_that_abort_pending_doc_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(DocumentInverterTest, require_that_mix_of_add_and_remove_works)
-{
+TEST_F(DocumentInverterTest, require_that_mix_of_add_and_remove_works) {
     _inv.getInverter(0)->remove("a", 11);
     _inv.getInverter(0)->remove("c", 9);
     _inv.getInverter(0)->remove("d", 10);
@@ -275,15 +253,13 @@ TEST_F(DocumentInverterTest, require_that_mix_of_add_and_remove_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(DocumentInverterTest, require_that_empty_document_can_be_inverted)
-{
+TEST_F(DocumentInverterTest, require_that_empty_document_can_be_inverted) {
     auto doc15 = makeDoc15(_b);
     _inv.invertDocument(15, *doc15, {});
     pushDocuments();
-    EXPECT_EQ("",
-              _inserter_backend.toStr());
+    EXPECT_EQ("", _inserter_backend.toStr());
 }
 
-}
+} // namespace search::memoryindex
 
 GTEST_MAIN_RUN_ALL_TESTS()

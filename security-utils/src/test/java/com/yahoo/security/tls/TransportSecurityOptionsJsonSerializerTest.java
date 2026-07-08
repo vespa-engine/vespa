@@ -21,6 +21,7 @@ import java.util.Optional;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_DNS;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_URI;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -58,7 +59,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
         TransportSecurityOptions deserializedOptions = serializer.deserialize(new ByteArrayInputStream(out.toByteArray()));
         assertEquals(options, deserializedOptions);
         Path expectedJsonFile = Paths.get("src/test/resources/transport-security-options-with-authz-rules.json");
-        assertJsonEquals(new String(Files.readAllBytes(expectedJsonFile)), out.toString());
+        assertJsonEquals(new String(Files.readAllBytes(expectedJsonFile), UTF_8), out.toString(UTF_8));
     }
 
     @Test
@@ -74,8 +75,8 @@ public class TransportSecurityOptionsJsonSerializerTest {
         try (OutputStream out = Files.newOutputStream(outputFile.toPath())) {
             new TransportSecurityOptionsJsonSerializer().serialize(out, options);
         }
-        String expectedOutput = new String(Files.readAllBytes(TEST_CONFIG_FILE));
-        String actualOutput = new String(Files.readAllBytes(outputFile.toPath()));
+        String expectedOutput = new String(Files.readAllBytes(TEST_CONFIG_FILE), UTF_8);
+        String actualOutput = new String(Files.readAllBytes(outputFile.toPath()), UTF_8);
         assertJsonEquals(expectedOutput, actualOutput);
     }
 
@@ -92,8 +93,8 @@ public class TransportSecurityOptionsJsonSerializerTest {
         }
 
         String expectedOutput = new String(Files.readAllBytes(
-                Paths.get("src/test/resources/transport-security-options-with-disable-hostname-validation-set-to-false.json")));
-        String actualOutput = new String(Files.readAllBytes(outputFile.toPath()));
+                Paths.get("src/test/resources/transport-security-options-with-disable-hostname-validation-set-to-false.json")), UTF_8);
+        String actualOutput = new String(Files.readAllBytes(outputFile.toPath()), UTF_8);
         assertJsonEquals(expectedOutput, actualOutput);
     }
 

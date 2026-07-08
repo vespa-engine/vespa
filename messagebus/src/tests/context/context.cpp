@@ -6,46 +6,39 @@
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/sourcesession.h>
 #include <vespa/messagebus/sourcesessionparams.h>
-#include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
+#include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <thread>
 
 using namespace mbus;
 
-struct Handler : public IMessageHandler
-{
+struct Handler : public IMessageHandler {
     DestinationSession::UP session;
 
-    explicit Handler(MessageBus &mb) : session() {
-        session = mb.createDestinationSession("session", true, *this);
-    }
-    ~Handler() override {
-        session.reset();
-    }
-    void handleMessage(Message::UP msg) override {
-        session->acknowledge(std::move(msg));
-    }
+    explicit Handler(MessageBus& mb) : session() { session = mb.createDestinationSession("session", true, *this); }
+    ~Handler() override { session.reset(); }
+    void handleMessage(Message::UP msg) override { session->acknowledge(std::move(msg)); }
 };
 
 RoutingSpec getRouting() {
-    return RoutingSpec()
-        .addTable(RoutingTableSpec("Simple")
-                  .addHop(HopSpec("test", "test/session"))
-                  .addRoute(RouteSpec("test").addHop("test")));
+    return RoutingSpec().addTable(RoutingTableSpec("Simple")
+                                      .addHop(HopSpec("test", "test/session"))
+                                      .addRoute(RouteSpec("test").addHop("test")));
 }
 
 TEST(ContextTest, context_test) {
 
-    Slobrok     slobrok;
-    TestServer  src(Identity(""), getRouting(), slobrok);
-    TestServer  dst(Identity("test"), getRouting(), slobrok);
-    Handler     handler(dst.mb);
+    Slobrok    slobrok;
+    TestServer src(Identity(""), getRouting(), slobrok);
+    TestServer dst(Identity("test"), getRouting(), slobrok);
+    Handler    handler(dst.mb);
 
     ASSERT_TRUE(src.waitSlobrok("test/session"));
 
-    RoutableQueue queue;
+    RoutableQueue       queue;
     SourceSessionParams params;
     params.setThrottlePolicy(IThrottlePolicy::SP());
     SourceSession::UP ss = src.mb.createSourceSession(queue, params);

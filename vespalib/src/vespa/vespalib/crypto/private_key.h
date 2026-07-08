@@ -27,8 +27,9 @@ public:
     virtual std::string private_to_pem() const = 0;
 
     static std::shared_ptr<PrivateKey> generate_p256_ec_key();
+
 protected:
     PrivateKey() = default;
 };
 
-}
+} // namespace vespalib::crypto

@@ -6,32 +6,23 @@ namespace vbench {
 
 using WritableMemory = vespalib::WritableMemory;
 
-SimpleHttpResultHandler::SimpleHttpResultHandler()
-    : _headers(),
-      _content(),
-      _failures()
-{
+SimpleHttpResultHandler::SimpleHttpResultHandler() : _headers(), _content(), _failures() {
 }
 
-SimpleHttpResultHandler::~SimpleHttpResultHandler() {}
+SimpleHttpResultHandler::~SimpleHttpResultHandler() {
+}
 
-void
-SimpleHttpResultHandler::handleHeader(const string &name, const string &value)
-{
+void SimpleHttpResultHandler::handleHeader(const string& name, const string& value) {
     _headers.push_back(std::make_pair(name, value));
 }
 
-void
-SimpleHttpResultHandler::handleContent(const Memory &data)
-{
+void SimpleHttpResultHandler::handleContent(const Memory& data) {
     WritableMemory wm = _content.reserve(data.size);
     memcpy(wm.data, data.data, data.size);
     _content.commit(data.size);
 }
 
-void
-SimpleHttpResultHandler::handleFailure(const string &reason)
-{
+void SimpleHttpResultHandler::handleFailure(const string& reason) {
     _failures.push_back(reason);
 }
 

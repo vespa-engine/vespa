@@ -3,6 +3,7 @@
 #pragma once
 
 #include "atomic_entry_ref.h"
+
 #include <functional>
 
 namespace vespalib::datastore {
@@ -24,4 +25,4 @@ public:
     virtual void foreach_key(std::function<void(const AtomicEntryRef&)> callback) const = 0;
 };
 
-}
+} // namespace vespalib::datastore

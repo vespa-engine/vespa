@@ -13,12 +13,11 @@
 namespace storage::framework {
 
 class MilliSecTimer {
-    const Clock* _clock;
+    const Clock*          _clock;
     vespalib::steady_time _startTime;
 
 public:
-    explicit MilliSecTimer(const Clock& clock)
-        : _clock(&clock), _startTime(_clock->getMonotonicTime()) {}
+    explicit MilliSecTimer(const Clock& clock) : _clock(&clock), _startTime(_clock->getMonotonicTime()) {}
 
     // Copy construction makes the most sense when creating a timer that is
     // intended to inherit another timer's start time point, without incurring
@@ -26,9 +25,7 @@ public:
     MilliSecTimer(const MilliSecTimer&) = default;
     MilliSecTimer& operator=(const MilliSecTimer&) = default;
 
-    [[nodiscard]] vespalib::duration getElapsedTime() const {
-        return _clock->getMonotonicTime() - _startTime;
-    }
+    [[nodiscard]] vespalib::duration getElapsedTime() const { return _clock->getMonotonicTime() - _startTime; }
 
     [[nodiscard]] double getElapsedTimeAsDouble() const {
         using ToDuration = std::chrono::duration<double, std::milli>;
@@ -36,4 +33,4 @@ public:
     }
 };
 
-}
+} // namespace storage::framework

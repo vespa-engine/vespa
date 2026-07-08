@@ -3,6 +3,7 @@
 
 #include "expressiontree.h"
 #include "filter_predicate_node.h"
+
 #include <vespa/vespalib/regex/regex.h>
 
 namespace search::expression {
@@ -15,12 +16,12 @@ namespace search::expression {
 class RegexPredicateNode : public FilterPredicateNode {
 private:
     struct RE {
-        std::string pattern;
+        std::string     pattern;
         vespalib::Regex regex;
         RE() = default;
         RE(const RE& other) : pattern(other.pattern) { compile(); }
         ~RE();
-        RE& operator= (const RE& other) {
+        RE& operator=(const RE& other) {
             pattern = other.pattern;
             compile();
             return *this;
@@ -28,13 +29,14 @@ private:
         void compile();
     };
 
-    RE _re;
+    RE             _re;
     ExpressionTree _argument;
 
     bool check(const ResultNode* result) const;
+
 public:
     RegexPredicateNode() noexcept;
-    ~RegexPredicateNode();
+    ~RegexPredicateNode() override;
     RegexPredicateNode* clone() const override { return new RegexPredicateNode(*this); }
 
     // for unit testing::
@@ -43,10 +45,9 @@ public:
     DECLARE_IDENTIFIABLE_NS2(search, expression, RegexPredicateNode);
     DECLARE_NBO_SERIALIZE;
     bool allow(DocId docId, HitRank rank) override;
-    bool allow(const document::Document &, HitRank) override;
+    bool allow(const document::Document&, HitRank) override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
-    void selectMembers(const vespalib::ObjectPredicate& predicate,
-                       vespalib::ObjectOperation& operation) override;
+    void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;
 };
 
 } // namespace search::expression

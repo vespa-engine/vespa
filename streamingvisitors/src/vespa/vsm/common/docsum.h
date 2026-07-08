@@ -11,12 +11,10 @@ namespace vsm {
   documentId.
 */
 
-class IDocSumCache
-{
+class IDocSumCache {
 public:
-  virtual const Document & getDocSum(const search::DocumentIdT & docId) const = 0;
-  virtual ~IDocSumCache() = default;
+    virtual const Document& getDocSum(const search::DocumentIdT& docId) const = 0;
+    virtual ~IDocSumCache() = default;
 };
 
-}
-
+} // namespace vsm

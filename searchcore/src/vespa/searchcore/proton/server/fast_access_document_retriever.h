@@ -3,6 +3,7 @@
 
 #include "documentretriever.h"
 #include "fast_access_feed_view.h"
+
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 
 namespace proton {
@@ -13,11 +14,10 @@ namespace proton {
  * Handles retrieving of documents by combining from the underlying attribute manager
  * and document store.
  */
-class FastAccessDocumentRetriever : public DocumentRetriever
-{
+class FastAccessDocumentRetriever : public DocumentRetriever {
 private:
-    FastAccessFeedView::SP   _feedView;
-    IAttributeManager::SP    _attrMgr;
+    FastAccessFeedView::SP _feedView;
+    IAttributeManager::SP  _attrMgr;
 
 public:
     FastAccessDocumentRetriever(FastAccessFeedView::SP feedView, IAttributeManager::SP attrMgr) noexcept;
@@ -26,4 +26,3 @@ public:
 };
 
 } // namespace proton
-

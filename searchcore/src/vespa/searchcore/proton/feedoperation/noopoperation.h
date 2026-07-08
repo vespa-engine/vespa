@@ -10,11 +10,9 @@ struct NoopOperation : FeedOperation {
     NoopOperation(SerialNum serialNum);
     ~NoopOperation() override = default;
 
-    void serialize(vespalib::nbostream &) const override {}
-    void deserialize(vespalib::nbostream &,
-                     const document::DocumentTypeRepo &) override {}
+    void serialize(vespalib::nbostream&) const override {}
+    void deserialize(vespalib::nbostream&, const document::DocumentTypeRepo&) override {}
     std::string toString() const override;
 };
 
 } // namespace proton
-

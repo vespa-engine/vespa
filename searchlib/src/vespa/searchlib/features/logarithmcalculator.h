@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
+
 #include <cmath>
 
 namespace search::features {
@@ -29,21 +30,17 @@ public:
     /**
      * Creates a calculator for the given values for m (max) and s (scale).
      **/
-    LogarithmCalculator(feature_t m, feature_t s) :
-        _m(m),
-        _s(s),
-        _maxLog(std::log(_m + _s)),
-        _minLog(std::log(_s)),
-        _divMult(1.0 / (_maxLog - _minLog))
-    {
-    }
+    LogarithmCalculator(feature_t m, feature_t s)
+        : _m(m), _s(s), _maxLog(std::log(_m + _s)), _minLog(std::log(_s)), _divMult(1.0 / (_maxLog - _minLog)) {}
 
     /**
      * Calculate the function for the given x.
      **/
     feature_t get(feature_t x) const {
-        if (x > _m) x = _m;
-        if (x < 0) x = 0;
+        if (x > _m)
+            x = _m;
+        if (x < 0)
+            x = 0;
         return (_maxLog - std::log(x + _s)) * _divMult;
     }
 
@@ -51,9 +48,7 @@ public:
      * Calculate the scale parameter to use if the function should output 0.5
      * for the given x and max parameter.
      */
-    static feature_t getScale(feature_t x, feature_t m) {
-        return (x * x) / (m - 2*x);
-    }
+    static feature_t getScale(feature_t x, feature_t m) { return (x * x) / (m - 2 * x); }
 };
 
-}
+} // namespace search::features

@@ -60,6 +60,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         addLogForwarders(adminElement.child("logforwarding"), admin, deployState);
         addLoggingSpecs(adminElement.child("logging"), admin);
+        addTelemetryExport(adminElement.child("telemetry"), admin);
 
         validateAdminV20Elements(deployState, adminElement);
     }
@@ -136,7 +137,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         return nodesSpecification.provision(hostSystem, 
                                             ClusterSpec.Type.admin, 
                                             ClusterSpec.Id.from(clusterId), 
-                                            context.getDeployLogger(),
+                                            context.getDeployState(),
                                             false,
                                             context.clusterInfo().build())
                                  .keySet();

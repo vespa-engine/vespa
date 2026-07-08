@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespastat;
 
+import com.yahoo.text.Text;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,7 +32,7 @@ public class Main {
             BucketStatsPrinter printer = new BucketStatsPrinter(retriever, System.out);
             printer.retrieveAndPrintBucketStats(params.selectionType, params.id, params.dumpData, params.bucketSpace);
         } catch (IllegalArgumentException e) {
-            System.err.printf("Failed to parse command line arguments: %s.\n", e.getMessage());
+            System.err.print(Text.format("Failed to parse command line arguments: %s.\n", e.getMessage()));
         } catch (BucketStatsException e) {
             System.err.println(e.getMessage());
         }

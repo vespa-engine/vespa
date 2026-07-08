@@ -17,7 +17,8 @@ import java.util.logging.Level;
  */
 public class TenantsMaintainer extends ConfigServerMaintainer {
 
-    static final Duration defaultTtlForUnusedTenant = Duration.ofDays(7);
+    // 7 days was too little over Easter 2026: Lots of tenants were deleted as their applications were deployed again
+    static final Duration defaultTtlForUnusedTenant = Duration.ofDays(14);
 
     private final Duration ttlForUnusedTenant;
     private final Clock clock;

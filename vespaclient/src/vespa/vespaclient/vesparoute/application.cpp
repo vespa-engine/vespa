@@ -2,41 +2,36 @@
 
 #include "application.h"
 
-#include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/document/config/config-documenttypes.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/messagebus/configagent.h>
-#include <vespa/messagebus/routing/routingtable.h>
-#include <vespa/messagebus/routing/routedirective.h>
-#include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/messagebus/network/rpcsendv2.h>
-#include <vespa/slobrok/sbmirror.h>
-#include <vespa/config/common/exceptions.h>
-#include <vespa/config/helper/configgetter.hpp>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/messagebus/configagent.h>
+#include <vespa/messagebus/network/rpcsendv2.h>
+#include <vespa/messagebus/routing/routedirective.h>
+#include <vespa/messagebus/routing/routingtable.h>
+#include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/slobrok/sbmirror.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/config/helper/configgetter.hpp>
 
 using config::ConfigGetter;
 using config::InvalidConfigException;
-using messagebus::MessagebusConfig;
 using document::DocumentTypeRepo;
+using messagebus::MessagebusConfig;
 using namespace vespalib::make_string_short;
 
 namespace vesparoute {
 
-Application::Application() :
-    _net(),
-    _mbus(),
-    _params()
-{ }
+Application::Application() : _net(), _mbus(), _params() {
+}
 
 Application::~Application() = default;
 
-
-int
-Application::main(int argc, char **argv)
-{
+int Application::main(int argc, char** argv) {
     try {
         if (argc == 1) {
             _params.setListRoutes(true);
@@ -46,26 +41,27 @@ Application::main(int argc, char **argv)
         }
 
         auto repo = std::make_shared<DocumentTypeRepo>(
-                        *ConfigGetter<DocumenttypesConfig>::getConfig(_params.getDocumentTypesConfigId()));
+            *ConfigGetter<DocumenttypesConfig>::getConfig(_params.getDocumentTypesConfigId()));
         _net = std::make_unique<MyNetwork>(mbus::RPCNetworkParams(config::ConfigUri(_params.getSlobrokConfigId()))
-                .setIdentity(_params.getRPCNetworkParams().getIdentity())
-                .setListenPort(_params.getRPCNetworkParams().getListenPort()));
+                                               .setIdentity(_params.getRPCNetworkParams().getIdentity())
+                                               .setListenPort(_params.getRPCNetworkParams().getListenPort()));
         _mbus = std::make_unique<mbus::MessageBus>(
-                        *_net,
-                        mbus::MessageBusParams()
-                        .setRetryPolicy(mbus::IRetryPolicy::SP())
-                        .addProtocol(std::make_shared<documentapi::DocumentProtocol>(repo)));
+            *_net, mbus::MessageBusParams()
+                       .setRetryPolicy(mbus::IRetryPolicy::SP())
+                       .addProtocol(std::make_shared<documentapi::DocumentProtocol>(repo)));
         mbus::ConfigAgent cfg(*_mbus);
         cfg.configure(ConfigGetter<MessagebusConfig>::getConfig(_params.getRoutingConfigId()));
 
         // _P_A_R_A_N_O_I_A_
         mbus::RoutingTable::SP table = _mbus->getRoutingTable(_params.getProtocol());
-        if ( ! table) {
-            throw InvalidConfigException(fmt("There is no routing table for protocol '%s'.", _params.getProtocol().c_str()));
+        if (!table) {
+            throw InvalidConfigException(
+                fmt("There is no routing table for protocol '%s'.", _params.getProtocol().c_str()));
         }
-        for (const std::string & hop : _params.getHops()) {
+        for (const std::string& hop : _params.getHops()) {
             if (table->getHop(hop) == nullptr) {
-                throw InvalidConfigException(fmt("There is no hop named '%s' for protocol '%s'.", hop.c_str(), _params.getProtocol().c_str()));
+                throw InvalidConfigException(
+                    fmt("There is no hop named '%s' for protocol '%s'.", hop.c_str(), _params.getProtocol().c_str()));
             }
         }
 
@@ -92,7 +88,7 @@ Application::main(int argc, char **argv)
 
         _mbus.reset();
         _net.reset();
-    } catch(std::exception &e) {
+    } catch (std::exception& e) {
         std::string err(e.what());
         printf("ERROR: %s\n", err.substr(0, err.find_first_of('\n')).c_str());
         return EXIT_FAILURE;
@@ -100,9 +96,7 @@ Application::main(int argc, char **argv)
     return EXIT_SUCCESS;
 }
 
-bool
-Application::parseArgs(int argc, char **argv)
-{
+bool Application::parseArgs(int argc, char** argv) {
     for (int arg = 1; arg < argc; arg++) {
         if (strcasecmp(argv[arg], "--documenttypesconfigid") == 0) {
             if (++arg < argc) {
@@ -112,8 +106,7 @@ Application::parseArgs(int argc, char **argv)
             }
         } else if (strcasecmp(argv[arg], "--dump") == 0) {
             _params.setDump(true);
-        } else if (strcasecmp(argv[arg], "--help") == 0 ||
-                   strcasecmp(argv[arg], "-h") == 0) {
+        } else if (strcasecmp(argv[arg], "--help") == 0 || strcasecmp(argv[arg], "-h") == 0) {
             printHelp();
             return false;
         } else if (strcasecmp(argv[arg], "--hop") == 0) {
@@ -173,9 +166,7 @@ Application::parseArgs(int argc, char **argv)
     return true;
 }
 
-void
-Application::printHelp() const
-{
+void Application::printHelp() const {
     printf("Usage: vespa-route [OPTION]...\n"
            "Options:\n"
            "  --documenttypesconfigid <id>  Sets the config id that supplies document configuration.\n"
@@ -194,17 +185,13 @@ Application::printHelp() const
            "  --verify                        All hops and routes are verified when routing.\n");
 }
 
-bool
-Application::verifyRoute(const mbus::Route &route, std::set<std::string> &errors) const
-{
+bool Application::verifyRoute(const mbus::Route& route, std::set<std::string>& errors) const {
     for (uint32_t i = 0; i < route.getNumHops(); ++i) {
-        std::string str = route.getHop(i).toString();
-        mbus::HopBlueprint hop = getHop(str);
+        std::string           str = route.getHop(i).toString();
+        mbus::HopBlueprint    hop = getHop(str);
         std::set<std::string> hopErrors;
         if (!verifyHop(hop, hopErrors)) {
-            for (std::set<std::string>::iterator err = hopErrors.begin();
-                 err != hopErrors.end(); ++err)
-            {
+            for (std::set<std::string>::iterator err = hopErrors.begin(); err != hopErrors.end(); ++err) {
                 errors.insert(fmt("for hop '%s', %s", str.c_str(), err->c_str()));
             }
         }
@@ -212,9 +199,7 @@ Application::verifyRoute(const mbus::Route &route, std::set<std::string> &errors
     return errors.empty();
 }
 
-bool
-Application::verifyHop(const mbus::HopBlueprint &hop, std::set<std::string> &errors) const
-{
+bool Application::verifyHop(const mbus::HopBlueprint& hop, std::set<std::string>& errors) const {
     // _P_A_R_A_N_O_I_A_
     if (!hop.hasDirectives()) {
         errors.insert("is empty");
@@ -232,9 +217,9 @@ Application::verifyHop(const mbus::HopBlueprint &hop, std::set<std::string> &err
     }
 
     // Look for route or hop names.
-    const mbus::RoutingTable &table = *_mbus->getRoutingTable(_params.getProtocol());
+    const mbus::RoutingTable& table = *_mbus->getRoutingTable(_params.getProtocol());
     if (hop.getDirective(0)->getType() == mbus::IHopDirective::TYPE_ROUTE) {
-        const mbus::RouteDirective &dir = static_cast<const mbus::RouteDirective &>(*hop.getDirective(0));
+        const mbus::RouteDirective& dir = static_cast<const mbus::RouteDirective&>(*hop.getDirective(0));
         if (table.getRoute(dir.getName()) == nullptr) {
             errors.insert(fmt("route '%s' not found", dir.getName().c_str()));
             return false;
@@ -260,16 +245,12 @@ Application::verifyHop(const mbus::HopBlueprint &hop, std::set<std::string> &err
     return errors.empty();
 }
 
-void
-Application::printDump() const
-{
-    const mbus::RoutingTable &table = *_mbus->getRoutingTable(_params.getProtocol());
+void Application::printDump() const {
+    const mbus::RoutingTable& table = *_mbus->getRoutingTable(_params.getProtocol());
     printf("<protocol name='%s'>\n", _params.getProtocol().c_str());
-    for (mbus::RoutingTable::HopIterator it = table.getHopIterator();
-         it.isValid(); it.next())
-    {
+    for (mbus::RoutingTable::HopIterator it = table.getHopIterator(); it.isValid(); it.next()) {
         std::set<std::string> errors;
-        bool ok = verifyHop(it.getHop(), errors);
+        bool                  ok = verifyHop(it.getHop(), errors);
 
         printf("    <hop name='%s' selector='%s'", it.getName().c_str(), it.getHop().create()->toString().c_str());
         if (it.getHop().getIgnoreResult()) {
@@ -282,55 +263,44 @@ Application::printDump() const
             for (uint32_t r = 0; r < it.getHop().getNumRecipients(); ++r) {
                 printf("        <recipient session='%s' />\n", it.getHop().getRecipient(r).toString().c_str());
             }
-            for (std::set<std::string>::iterator err = errors.begin();
-                 err != errors.end(); ++err) {
+            for (std::set<std::string>::iterator err = errors.begin(); err != errors.end(); ++err) {
                 printf("        <error>%s</error>\n", err->c_str());
             }
             printf("    </hop>\n");
         }
     }
-    for (mbus::RoutingTable::RouteIterator it = table.getRouteIterator();
-         it.isValid(); it.next())
-    {
+    for (mbus::RoutingTable::RouteIterator it = table.getRouteIterator(); it.isValid(); it.next()) {
         std::set<std::string> errors;
-        bool ok = verifyRoute(it.getRoute(), errors);
+        bool                  ok = verifyRoute(it.getRoute(), errors);
         printf("    <route name='%s' hops='%s'", it.getName().c_str(), it.getRoute().toString().c_str());
         if (ok) {
             printf(" />\n");
         } else {
             printf(">\n");
-            for (std::set<std::string>::iterator err = errors.begin();
-                 err != errors.end(); ++err) {
+            for (std::set<std::string>::iterator err = errors.begin(); err != errors.end(); ++err) {
                 printf("        <error>%s</error>\n", err->c_str());
             }
             printf("    </route>\n");
         }
-
     }
     printf("</protocol>\n");
 
     slobrok::api::IMirrorAPI::SpecList services;
     getServices(services);
     printf("<services>\n");
-    for (slobrok::api::IMirrorAPI::SpecList::iterator it = services.begin();
-         it != services.end(); ++it)
-    {
+    for (slobrok::api::IMirrorAPI::SpecList::iterator it = services.begin(); it != services.end(); ++it) {
         printf("    <service name='%s' spec='%s'/>\n", it->first.c_str(), it->second.c_str());
     }
     printf("</services>\n");
 }
 
-void
-Application::listHops() const
-{
-    const mbus::RoutingTable &table = *_mbus->getRoutingTable(_params.getProtocol());
+void Application::listHops() const {
+    const mbus::RoutingTable& table = *_mbus->getRoutingTable(_params.getProtocol());
     if (table.hasHops()) {
         printf("There are %d hop(s):\n", table.getNumHops());
 
         uint32_t hop = 0;
-        for (mbus::RoutingTable::HopIterator it = table.getHopIterator();
-             it.isValid(); it.next())
-        {
+        for (mbus::RoutingTable::HopIterator it = table.getHopIterator(); it.isValid(); it.next()) {
             printf("%5d. %s\n", ++hop, it.getName().c_str());
         }
     } else {
@@ -339,15 +309,12 @@ Application::listHops() const
     printf("\n");
 }
 
-void
-Application::printHops() const
-{
-    const mbus::RoutingTable &table = *_mbus->getRoutingTable(_params.getProtocol());
-    const std::vector<std::string> &hops = _params.getHops();
+void Application::printHops() const {
+    const mbus::RoutingTable&       table = *_mbus->getRoutingTable(_params.getProtocol());
+    const std::vector<std::string>& hops = _params.getHops();
     for (uint32_t i = 0; i < hops.size(); ++i) {
-        const mbus::HopBlueprint &hop = *table.getHop(hops[i]);
-        printf("The hop '%s' has selector:\n       %s",
-               hops[i].c_str(), hop.create()->toString().c_str());
+        const mbus::HopBlueprint& hop = *table.getHop(hops[i]);
+        printf("The hop '%s' has selector:\n       %s", hops[i].c_str(), hop.create()->toString().c_str());
 
         std::set<std::string> errors;
         if (_params.getVerify() && verifyHop(hop, errors)) {
@@ -371,9 +338,7 @@ Application::printHops() const
         if (!errors.empty()) {
             printf("It has %zd error(s):\n", errors.size());
             uint32_t err = 1;
-            for (std::set<std::string>::iterator it = errors.begin();
-                 it != errors.end(); ++err, ++it)
-            {
+            for (std::set<std::string>::iterator it = errors.begin(); it != errors.end(); ++err, ++it) {
                 printf("%5d. %s\n", err, it->c_str());
             }
         }
@@ -381,17 +346,13 @@ Application::printHops() const
     }
 }
 
-void
-Application::listRoutes() const
-{
-    const mbus::RoutingTable &table = *_mbus->getRoutingTable(_params.getProtocol());
+void Application::listRoutes() const {
+    const mbus::RoutingTable& table = *_mbus->getRoutingTable(_params.getProtocol());
     if (table.hasRoutes()) {
         printf("There are %d route(s):\n", table.getNumRoutes());
 
         uint32_t route = 0;
-        for (mbus::RoutingTable::RouteIterator it = table.getRouteIterator();
-             it.isValid(); it.next())
-        {
+        for (mbus::RoutingTable::RouteIterator it = table.getRouteIterator(); it.isValid(); it.next()) {
             printf("%5d. %s\n", ++route, it.getName().c_str());
         }
     } else {
@@ -400,16 +361,13 @@ Application::listRoutes() const
     printf("\n");
 }
 
-void
-Application::printRoutes() const
-{
-    const std::vector<std::string> &routes = _params.getRoutes();
+void Application::printRoutes() const {
+    const std::vector<std::string>& routes = _params.getRoutes();
     for (uint32_t i = 0; i < routes.size(); ++i) {
         std::set<std::string> errors;
 
         mbus::Route route = getRoute(routes[i]);
-        printf("The route '%s' has %d hop(s):\n",
-               routes[i].c_str(), route.getNumHops());
+        printf("The route '%s' has %d hop(s):\n", routes[i].c_str(), route.getNumHops());
         for (uint32_t hop = 0; hop < route.getNumHops(); ++hop) {
             std::string str = route.getHop(hop).toString();
             if (_params.getVerify() && verifyRoute(route, errors)) {
@@ -420,9 +378,7 @@ Application::printRoutes() const
         if (!errors.empty()) {
             printf("It has %zd error(s):\n", errors.size());
             uint32_t err = 1;
-            for (std::set<std::string>::iterator it = errors.begin();
-                 it != errors.end(); ++err, ++it)
-            {
+            for (std::set<std::string>::iterator it = errors.begin(); it != errors.end(); ++err, ++it) {
                 printf("%5d. %s\n", err, it->c_str());
             }
         }
@@ -430,23 +386,17 @@ Application::printRoutes() const
     }
 }
 
-void
-Application::printServices() const
-{
+void Application::printServices() const {
     slobrok::api::IMirrorAPI::SpecList services;
     getServices(services);
     if (!services.empty()) {
         std::set<std::string> lst;
-        for (slobrok::api::IMirrorAPI::SpecList::iterator it = services.begin();
-             it != services.end(); ++it)
-        {
+        for (slobrok::api::IMirrorAPI::SpecList::iterator it = services.begin(); it != services.end(); ++it) {
             lst.insert(it->first);
         }
         printf("There are %zd service(s):\n", services.size());
         uint32_t service = 1;
-        for (std::set<std::string>::iterator it = lst.begin();
-             it != lst.end(); ++it, ++service)
-        {
+        for (std::set<std::string>::iterator it = lst.begin(); it != lst.end(); ++it, ++service) {
             printf("%5d. %s\n", service, it->c_str());
         }
     } else {
@@ -455,46 +405,39 @@ Application::printServices() const
     printf("\n");
 }
 
-void
-Application::getServices(slobrok::api::IMirrorAPI::SpecList &ret, uint32_t depth) const
-{
+void Application::getServices(slobrok::api::IMirrorAPI::SpecList& ret, uint32_t depth) const {
     fnet::frt::StandaloneFRT frt;
 
     std::string pattern = "*";
     for (uint32_t i = 0; i < depth; ++i) {
         slobrok::api::IMirrorAPI::SpecList lst = _net->getMirror().lookup(pattern);
-        for (slobrok::api::IMirrorAPI::SpecList::iterator it = lst.begin();
-             it != lst.end(); ++it)
-        {
+        for (slobrok::api::IMirrorAPI::SpecList::iterator it = lst.begin(); it != lst.end(); ++it) {
             if (isService(frt.supervisor(), it->second)) {
                 ret.push_back(*it);
             }
         }
         pattern.append("/*");
     }
-
 }
 
-bool
-Application::isService(FRT_Supervisor &frt, const std::string &spec) const
-{
-    FRT_Target *target = frt.GetTarget(spec.c_str());
+bool Application::isService(FRT_Supervisor& frt, const std::string& spec) const {
+    FRT_Target* target = frt.GetTarget(spec.c_str());
     if (target == nullptr) {
         return false;
     }
-    FRT_RPCRequest *req = frt.AllocRPCRequest();
+    FRT_RPCRequest* req = frt.AllocRPCRequest();
     req->SetMethodName("frt.rpc.getMethodList");
     target->InvokeSync(req, 5.0);
 
     bool ret = false;
     if (!req->IsError()) {
-        uint32_t numMethods      = req->GetReturn()->GetValue(0)._string_array._len;
-        FRT_StringValue *methods = req->GetReturn()->GetValue(0)._string_array._pt;
-        FRT_StringValue *argList = req->GetReturn()->GetValue(1)._string_array._pt;
-        FRT_StringValue *retList = req->GetReturn()->GetValue(2)._string_array._pt;
+        uint32_t         numMethods = req->GetReturn()->GetValue(0)._string_array._len;
+        FRT_StringValue* methods = req->GetReturn()->GetValue(0)._string_array._pt;
+        FRT_StringValue* argList = req->GetReturn()->GetValue(1)._string_array._pt;
+        FRT_StringValue* retList = req->GetReturn()->GetValue(2)._string_array._pt;
 
         for (uint32_t i = 0; i < numMethods; ++i) {
-            if (mbus::RPCSendV2::isCompatible(methods[i]._str,argList[i]._str, retList[i]._str)) {
+            if (mbus::RPCSendV2::isCompatible(methods[i]._str, argList[i]._str, retList[i]._str)) {
                 ret = true;
                 break;
             }
@@ -506,24 +449,20 @@ Application::isService(FRT_Supervisor &frt, const std::string &spec) const
     return ret;
 }
 
-mbus::HopBlueprint
-Application::getHop(const std::string &str) const
-{
-    const mbus::HopBlueprint *ret = _mbus->getRoutingTable(_params.getProtocol())->getHop(str);
+mbus::HopBlueprint Application::getHop(const std::string& str) const {
+    const mbus::HopBlueprint* ret = _mbus->getRoutingTable(_params.getProtocol())->getHop(str);
     if (ret == nullptr) {
         return mbus::HopBlueprint(mbus::HopSpec("anonymous", str));
     }
     return *ret;
 }
 
-mbus::Route
-Application::getRoute(const std::string &str) const
-{
-    const mbus::Route *ret = _mbus->getRoutingTable(_params.getProtocol())->getRoute(str);
+mbus::Route Application::getRoute(const std::string& str) const {
+    const mbus::Route* ret = _mbus->getRoutingTable(_params.getProtocol())->getRoute(str);
     if (ret != nullptr) {
         return *ret;
     }
     return mbus::Route::parse(str);
 }
 
-}
+} // namespace vesparoute

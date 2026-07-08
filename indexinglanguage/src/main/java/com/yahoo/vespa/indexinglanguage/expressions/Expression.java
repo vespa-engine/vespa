@@ -134,7 +134,7 @@ public abstract class Expression extends Selectable {
         if (actualOutput != null && requiredOutput != null && ! actualOutput.isAssignableTo(requiredOutput))
             throw new VerificationException(this, "This produces type " + actualOutput.getName() + " but " + requiredOutput.getName() + " is required");
         if (requiredType != null && requiredOutput != null && ! requiredOutput.isAssignableTo(requiredType))
-            throw new VerificationException(this, "This is required to produce type " + requiredOutput.getName() + " but is produces " + requiredType.getName());;
+            throw new VerificationException(this, "This is required to produce type " + requiredOutput.getName() + " but is produces " + requiredType.getName());
         return assignOutputType(actualOutput != null ? actualOutput : requiredOutput); // Use the more precise type when known
     }
 

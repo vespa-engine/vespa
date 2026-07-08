@@ -86,7 +86,7 @@ public class NGramSearcher extends Searcher {
     private boolean rewriteToNGramMatching(Item item, int indexInParent, IndexFacts.Session indexFacts, Query query) {
         boolean rewritten = false;
         if (item instanceof SegmentItem segments) { // handle CJK segmented terms which should be grams instead
-            Index index = indexFacts.getIndex(segments.getIndexName());
+            Index index = indexFacts.getIndex(segments.getFieldName());
             if (index.isNGram()) {
                 Item grams = splitToGrams(segments, toLowerCase(segments.getRawWord()), index.getGramSize(), query);
                 replaceItemByGrams(item, grams, indexInParent);
@@ -98,7 +98,7 @@ public class NGramSearcher extends Searcher {
                 rewritten = rewriteToNGramMatching(composite.getItem(i), i, indexFacts, query) || rewritten;
         }
         else if (item instanceof TermItem term) {
-            Index index = indexFacts.getIndex(term.getIndexName());
+            Index index = indexFacts.getIndex(term.getFieldName());
             if (index.isNGram()) {
                 Item grams = splitToGrams(term, term.stringValue(), index.getGramSize(), query);
                 replaceItemByGrams(item, grams, indexInParent);

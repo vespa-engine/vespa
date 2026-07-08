@@ -18,5 +18,4 @@ public:
     virtual ~Source() = default;
 };
 
-} // namespace common
-
+} // namespace config

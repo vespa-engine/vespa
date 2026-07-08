@@ -4,18 +4,22 @@
 
 #include <string>
 
-namespace search { class AttributeVector; }
-namespace document { class Field; }
+namespace search {
+class AttributeVector;
+}
+namespace document {
+class Field;
+}
 
 namespace proton {
 
 struct IFieldUpdateCallback {
     virtual ~IFieldUpdateCallback() = default;
-    virtual void onUpdateField(const document::Field & field, const search::AttributeVector * attr) = 0;
+    virtual void onUpdateField(const document::Field& field, const search::AttributeVector* attr) = 0;
 };
 
 struct DummyFieldUpdateCallback : IFieldUpdateCallback {
-    void onUpdateField(const document::Field & , const search::AttributeVector *) override {}
+    void onUpdateField(const document::Field&, const search::AttributeVector*) override {}
 };
 
-}
+} // namespace proton

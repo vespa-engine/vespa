@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.jar.Attributes;
@@ -210,7 +211,7 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
             return Analyze.analyzeClass(jarFile.getInputStream(entry), JdkVersionCheck.DISABLED, version);
         } catch (Exception e) {
             throw new MojoExecutionException(
-                    String.format("While analyzing the class '%s' in jar file '%s'", entry.getName(), jarFile.getName()), e);
+                    String.format(Locale.ROOT, "While analyzing the class '%s' in jar file '%s'", entry.getName(), jarFile.getName()), e);
         }
     }
 

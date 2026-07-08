@@ -2,14 +2,13 @@
 
 #pragma once
 
+#include "lazy_source.h"
 #include "propertiesmap.h"
 #include "request.h"
-#include "lazy_source.h"
 
 namespace search::engine {
 
-class SearchRequest : public Request
-{
+class SearchRequest : public Request {
 public:
     using UP = std::unique_ptr<SearchRequest>;
     using SP = std::shared_ptr<SearchRequest>;
@@ -17,7 +16,7 @@ public:
 
     uint32_t          offset;
     uint32_t          maxhits;
-    std::string  sortSpec;
+    std::string       sortSpec;
     std::vector<char> groupSpec;
 
     SearchRequest();
@@ -25,5 +24,4 @@ public:
     ~SearchRequest() override;
 };
 
-}
-
+} // namespace search::engine

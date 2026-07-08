@@ -7,4 +7,3 @@ namespace search {
 using feature_t = double;
 
 } // namespace search
-

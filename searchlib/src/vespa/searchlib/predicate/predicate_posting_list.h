@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
-#include <cstdint>
+#include <vespa/vespalib/util/vespa_dll_local.h>
 
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+#include <cstdint>
+#include <memory>
 
 /**
  * Interface for posting lists used by PredicateSearch.
@@ -16,10 +16,7 @@ class PredicatePostingList {
     uint64_t _subquery;
 
 protected:
-    PredicatePostingList()
-        : _docId(0),
-          _subquery(UINT64_MAX)
-    { }
+    PredicatePostingList() : _docId(0), _subquery(UINT64_MAX) {}
 
     void setDocId(uint32_t docId) { _docId = docId; }
 
@@ -48,4 +45,4 @@ public:
     uint64_t getSubquery() const { return _subquery; }
 };
 
-}
+} // namespace search::predicate

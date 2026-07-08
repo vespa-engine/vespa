@@ -8,7 +8,7 @@ namespace=vespa.config.content
 # If this is set to true, the distributor will try to enforce one active copy of
 # buckets per hierarchical leaf group. This lets the top level dispatcher send
 # queries only to the nodes of one group, saving computational effort.
-# If used, hierarchical grouping can not be used for other purposes.
+# If used, hierarchical grouping cannot be used for other purposes.
 # Using this option implies that:
 #   - ready_copies == redundancy
 #   - Only one level of hierarchical grouping may be defined.
@@ -44,3 +44,10 @@ cluster{}.group[].nodes[].index int
 
 # Whether this node is retired, and data should migrate out of it.
 cluster{}.group[].nodes[].retired bool default=false
+
+# Iff true, the ideal state node algorithm uses the relative configured
+# node index within the group instead of the node's distribution key when
+# calculating node scores for a given bucket. This means that bucket-to-node
+# mappings will be the same across groups that have the same number of nodes
+# in an available state.
+cluster{}.relative_node_order_scoring bool default=false

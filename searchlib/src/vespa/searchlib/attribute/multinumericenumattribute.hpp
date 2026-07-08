@@ -2,34 +2,35 @@
 
 #pragma once
 
-#include "multinumericenumattribute.h"
 #include "enum_store_loaders.h"
 #include "enumerated_multi_value_read_view.h"
 #include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "multi_numeric_enum_search_context.h"
+#include "multinumericenumattribute.h"
 #include "numeric_sort_blob_writer.h"
 #include "string_to_number.h"
+
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/vespalib/util/stash.h>
+
 #include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/util/stash.h>
 
 namespace search {
 
 using fileutil::LoadedBuffer;
 
 template <typename B, typename M>
-MultiValueNumericEnumAttribute<B, M>::
-MultiValueNumericEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg)
-    : MultiValueEnumAttribute<B, M>(baseFileName, cfg)
-{ }
+MultiValueNumericEnumAttribute<B, M>::MultiValueNumericEnumAttribute(const std::string&             baseFileName,
+                                                                     const AttributeVector::Config& cfg)
+    : MultiValueEnumAttribute<B, M>(baseFileName, cfg) {
+}
 
 template <typename B, typename M>
-void
-MultiValueNumericEnumAttribute<B, M>::loadAllAtOnce(AttributeReader & attrReader, size_t numDocs, size_t numValues)
-{
+void MultiValueNumericEnumAttribute<B, M>::loadAllAtOnce(AttributeReader& attrReader, size_t numDocs,
+                                                         size_t numValues) {
     LoadedVectorR loaded(numValues);
 
     bool hasWeight(attrReader.hasWeight());
@@ -55,16 +56,14 @@ MultiValueNumericEnumAttribute<B, M>::loadAllAtOnce(AttributeReader & attrReader
 }
 
 template <typename B, typename M>
-bool
-MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
-{
+bool MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase& attrReader) {
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
 
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     uint64_t numValues = attrReader.getNumValues();
     uint64_t enumCount = attrReader.getEnumCount();
     assert(numValues == enumCount);
-    (void) enumCount;
+    (void)enumCount;
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
@@ -90,13 +89,9 @@ MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
     return true;
 }
 
-
-template <typename B, typename M>
-bool
-MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
-{
+template <typename B, typename M> bool MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor*) {
     AttributeReader attrReader(*this);
-    bool ok(attrReader.getHasLoadData());
+    bool            ok(attrReader.getHasLoadData());
 
     if (!ok) {
         return false;
@@ -111,8 +106,8 @@ MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
     if (attrReader.getEnumerated()) {
         return onLoadEnumerated(attrReader);
     }
-    
-    size_t numDocs = attrReader.getNumIdx() - 1;
+
+    size_t   numDocs = attrReader.getNumIdx() - 1;
     uint32_t numValues = attrReader.getNumValues();
 
     this->setNumDocs(numDocs);
@@ -130,48 +125,45 @@ MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
 
 template <typename B, typename M>
 const attribute::IArrayReadView<typename B::BaseClass::BaseType>*
-MultiValueNumericEnumAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::ArrayTag<typename B::BaseClass::BaseType>, vespalib::Stash& stash) const
-{
-    return &stash.create<attribute::EnumeratedMultiValueReadView<T, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
+MultiValueNumericEnumAttribute<B, M>::make_read_view(
+    attribute::IMultiValueAttribute::ArrayTag<typename B::BaseClass::BaseType>, vespalib::Stash& stash) const {
+    return &stash.create<attribute::EnumeratedMultiValueReadView<T, M>>(
+        this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }
 
 template <typename B, typename M>
 const attribute::IWeightedSetReadView<typename B::BaseClass::BaseType>*
-MultiValueNumericEnumAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<typename B::BaseClass::BaseType>, vespalib::Stash& stash) const
-{
-    return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<T>, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
+MultiValueNumericEnumAttribute<B, M>::make_read_view(
+    attribute::IMultiValueAttribute::WeightedSetTag<typename B::BaseClass::BaseType>, vespalib::Stash& stash) const {
+    return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<T>, M>>(
+        this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }
 
 template <typename B, typename M>
 std::unique_ptr<attribute::SearchContext>
-MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
-                                                const attribute::SearchContextParams & params) const
-{
-    (void) params;
+MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP                   qTerm,
+                                                const attribute::SearchContextParams& params) const {
+    (void)params;
     auto doc_id_limit = this->getCommittedDocIdLimit();
-    return std::make_unique<attribute::MultiNumericEnumSearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
+    return std::make_unique<attribute::MultiNumericEnumSearchContext<T, M>>(
+        std::move(qTerm), *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
 }
 
-template <typename B, typename M>
-bool
-MultiValueNumericEnumAttribute<B, M>::is_sortable() const noexcept
-{
+template <typename B, typename M> bool MultiValueNumericEnumAttribute<B, M>::is_sortable() const noexcept {
     return true;
 }
 
 template <typename MultiValueMappingT, typename EnumStoreT, typename T, bool ascending>
 class MultiNumericEnumSortBlobWriter : public attribute::ISortBlobWriter {
 private:
-    const MultiValueMappingT& _mv_mapping;
-    const EnumStoreT& _enum_store;
+    const MultiValueMappingT&                      _mv_mapping;
+    const EnumStoreT&                              _enum_store;
     attribute::NumericSortBlobWriter<T, ascending> _writer;
+
 public:
     MultiNumericEnumSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store,
                                    search::common::sortspec::MissingPolicy policy, T missing_value)
-        : _mv_mapping(mv_mapping),
-          _enum_store(enum_store),
-          _writer(policy, missing_value, true)
-    {}
+        : _mv_mapping(mv_mapping), _enum_store(enum_store), _writer(policy, missing_value, true) {}
     long write(uint32_t docid, void* buf, long available) override {
         _writer.reset();
         auto indices = _mv_mapping.get(docid);
@@ -186,17 +178,15 @@ template <typename B, typename M>
 std::unique_ptr<attribute::ISortBlobWriter>
 MultiValueNumericEnumAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
                                                             search::common::sortspec::MissingPolicy policy,
-                                                            std::string_view missing_value) const
-{
+                                                            std::string_view missing_value) const {
     T missing_num = string_to_number<T>(missing_value);
     if (ascending) {
-        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, true>>(this->_mvMapping,
-            this->_enumStore, policy, missing_num);
+        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, true>>(
+            this->_mvMapping, this->_enumStore, policy, missing_num);
     } else {
-        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, false>>(this->_mvMapping,
-            this->_enumStore, policy, missing_num);
+        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, false>>(
+            this->_mvMapping, this->_enumStore, policy, missing_num);
     }
 }
 
 } // namespace search
-

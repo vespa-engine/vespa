@@ -74,6 +74,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -873,7 +874,7 @@ public class JsonRendererTestCase {
 
     @Test
     @Timeout(300)
-    void test() throws IOException, InterruptedException, ExecutionException {
+    void testRendering() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -930,7 +931,8 @@ public class JsonRendererTestCase {
                 + "            }"
                 + "        ],"
                 + "        \"fields\": {"
-                + "            \"totalCount\": 0"
+                + "            \"totalCount\": 0,"
+                + "            \"searchGroup\": 1"
                 + "        },"
                 + "        \"id\": \"toplevel\","
                 + "        \"relevance\": 1.0"
@@ -941,12 +943,12 @@ public class JsonRendererTestCase {
         Result r = new Result(q);
         r.setCoverage(new Coverage(500, 500, 1, 1));
 
-        FastHit h = new FastHit("http://localhost/", .95);
+        FastHit h = new FastHit("http://localhost/", .95, OptionalInt.of(1));
         h.setField("$a", "Hello, world.");
         h.setField("b", "foo");
         r.hits().add(h);
         HitGroup g = new HitGroup("usual");
-        h = new FastHit("http://localhost/1", .90);
+        h = new FastHit("http://localhost/1", .90, OptionalInt.of(1));
         h.setField("c", "d");
         g.add(h);
         r.hits().add(g);
@@ -959,19 +961,18 @@ public class JsonRendererTestCase {
         assertEqualJsonContent(expected, summary);
     }
 
-    @Test
-    @Timeout(300)
-    void testCoverage() throws InterruptedException, ExecutionException, IOException {
+    void verifyCoverage(Coverage coverage) throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"coverage\": {"
                 + "            \"coverage\": 83,"
                 + "            \"documents\": 500,"
                 + "            \"degraded\" : {"
-                + "                \"match-phase\" : true,"
-                + "                \"timeout\" : false,"
-                + "                \"adaptive-timeout\" : true,"
-                + "                \"non-ideal-state\" : false"
+                + "                \"match-phase\" : " + coverage.isDegradedByMatchPhase() + ","
+                + "                \"timeout\" : " + coverage.isDegradedByTimeout() + ","
+                + "                \"adaptive-timeout\" : " + coverage.isDegradedByAdapativeTimeout() + ","
+                + "                \"anntimeout\" : " + coverage.isDegradedByAnnTimeout() + ","
+                + "                \"non-ideal-state\" : " + coverage.isDegradedByNonIdealState()
                 + "            },"
                 + "            \"full\": false,"
                 + "            \"nodes\": 1,"
@@ -985,13 +986,23 @@ public class JsonRendererTestCase {
                 + "        \"relevance\": 1.0"
                 + "    }"
                 + "}";
+
         Query q = new Query("/?query=a&tracelevel=5");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
-        r.setCoverage(new Coverage(500, 600, 1).setDegradedReason(5));
+        r.setCoverage(coverage);
 
         String summary = render(execution, r);
         assertEqualJsonContent(expected, summary);
+    }
+
+    @Test
+    @Timeout(300)
+    void testCoverage() throws InterruptedException, ExecutionException, IOException {
+        verifyCoverage(new Coverage(500, 600, 1).setDegradedReason(5)); // match-phase and adaptive-timeout
+        verifyCoverage(new Coverage(500, 600, 1).setDegradedReason(7)); // match-phase, timeout, and adaptive-timeout
+        verifyCoverage(new Coverage(500, 600, 1).setDegradedReason(13)); // match-phase, adaptive-timeout, and anntimeout
+        verifyCoverage(new Coverage(500, 600, 1).setDegradedReason(15)); // match-phase, timeout, adaptive-timeout, and anntimeout
     }
 
     @Test
@@ -1183,7 +1194,7 @@ public class JsonRendererTestCase {
             public String toString() {
                 return "AAAA";
             }
-        });
+        }, r.getQuery());
         GroupList gl = new GroupList("customer");
         gl.continuations().put("prev", new Continuation() {
             @Override
@@ -1207,7 +1218,7 @@ public class JsonRendererTestCase {
                 return "CCCC";
             }
         });
-        Group g = new Group(new StringId("Jones"), new Relevance(1.0));
+        Group g = new Group(new StringId("Jones"), new Relevance(1.0), r.getQuery());
         g.setField("count()", 7);
         gl.add(g);
         rg.add(gl);
@@ -1269,9 +1280,9 @@ public class JsonRendererTestCase {
             public String toString() {
                 return "AAAA";
             }
-        });
+        }, r.getQuery());
         GroupList gl = new GroupList("customer");
-        Group g = new Group(new DoubleBucketId(1.0, 2.0), new Relevance(1.0));
+        Group g = new Group(new DoubleBucketId(1.0, 2.0), new Relevance(1.0), r.getQuery());
         g.setField("something()", 7);
         gl.add(g);
         rg.add(gl);

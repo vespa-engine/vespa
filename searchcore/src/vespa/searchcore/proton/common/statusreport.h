@@ -18,39 +18,35 @@ public:
     using SP = std::shared_ptr<StatusReport>;
     using List = std::vector<SP>;
 
-    enum State {
-        DOWN = 0,
-        PARTIAL,
-        UPOK
-    };
+    enum State { DOWN = 0, PARTIAL, UPOK };
 
     struct Params {
         std::string _component;
-        State _state;
+        State       _state;
         std::string _internalState;
         std::string _internalConfigState;
-        float _progress;
+        float       _progress;
         std::string _message;
 
-        Params(const std::string &component);
+        Params(const std::string& component);
         ~Params();
-        Params &state(State value) {
+        Params& state(State value) {
             _state = value;
             return *this;
         }
-        Params &internalState(const std::string &value) {
+        Params& internalState(const std::string& value) {
             _internalState = value;
             return *this;
         }
-        Params &internalConfigState(const std::string &value) {
+        Params& internalConfigState(const std::string& value) {
             _internalConfigState = value;
             return *this;
         }
-        Params &progress(float value) {
+        Params& progress(float value) {
             _progress = value;
             return *this;
         }
-        Params &message(const std::string &value) {
+        Params& message(const std::string& value) {
             _message = value;
             return *this;
         }
@@ -58,47 +54,31 @@ public:
 
 private:
     std::string _component;
-    State _state;
+    State       _state;
     std::string _internalState;
     std::string _internalConfigState;
-    float _progress;
+    float       _progress;
     std::string _message;
 
 public:
-    StatusReport(const Params &params);
+    StatusReport(const Params& params);
     ~StatusReport();
 
-    static StatusReport::UP create(const Params &params) {
-        return std::make_unique<StatusReport>(params);
-    }
+    static StatusReport::UP create(const Params& params) { return std::make_unique<StatusReport>(params); }
 
-    const std::string &getComponent() const {
-        return _component;
-    }
+    const std::string& getComponent() const { return _component; }
 
-    State getState() const {
-        return _state;
-    }
+    State getState() const { return _state; }
 
-    const std::string &getInternalState() const {
-        return _internalState;
-    }
+    const std::string& getInternalState() const { return _internalState; }
 
-    const std::string &getInternalConfigState() const {
-        return _internalConfigState;
-    }
+    const std::string& getInternalConfigState() const { return _internalConfigState; }
 
-    bool hasProgress() const {
-        return !std::isnan(_progress);
-    }
+    bool hasProgress() const { return !std::isnan(_progress); }
 
-    float getProgress() const {
-        return _progress;
-    }
+    float getProgress() const { return _progress; }
 
-    const std::string &getMessage() const {
-        return _message;
-    }
+    const std::string& getMessage() const { return _message; }
 
     std::string getInternalStatesStr() const {
         std::string retval = "state=" + _internalState;
@@ -107,7 +87,6 @@ public:
         }
         return retval;
     }
-
 };
 
 /**
@@ -120,4 +99,3 @@ struct StatusProducer {
 };
 
 } // namespace proton
-

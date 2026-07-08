@@ -46,4 +46,3 @@ void forcelink_searchlib_expression() {
     forcelink_file_searchlib_expression_perdocexpression();
     forcelink_file_searchlib_expression_resultvector();
 }
-

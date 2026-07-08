@@ -6,8 +6,7 @@
 
 namespace proton {
 
-class IReplayConfig
-{
+class IReplayConfig {
 public:
     virtual ~IReplayConfig();
 
@@ -15,4 +14,3 @@ public:
 };
 
 } // namespace proton
-

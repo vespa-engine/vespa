@@ -8,13 +8,14 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 
 /**
- * <p>Value update representing a removal of a value (and its associated weight, if any)
- * from a multi-valued data type.</p>
+ * Value update representing a removal of a value (and its associated weight, if any)
+ * from a multivalued data type.
  * Deprecated: Use RemoveFieldPathUpdate instead.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class RemoveValueUpdate extends ValueUpdate {
+
     protected FieldValue value;
 
     public RemoveValueUpdate(FieldValue value) {
@@ -29,10 +30,8 @@ public class RemoveValueUpdate extends ValueUpdate {
 
     @Override
     public FieldValue applyTo(FieldValue fval) {
-        if (fval instanceof CollectionFieldValue) {
-            CollectionFieldValue val = (CollectionFieldValue) fval;
+        if (fval instanceof CollectionFieldValue val)
             val.removeValue(value);
-        }
         return fval;
     }
 
@@ -41,9 +40,8 @@ public class RemoveValueUpdate extends ValueUpdate {
         if (!(fieldType instanceof CollectionDataType)) {
             throw new UnsupportedOperationException("Expected collection, got " + fieldType.getName() + ".");
         }
-        fieldType = ((CollectionDataType)fieldType).getNestedType();
-        if (value != null && !value.getDataType().equals(fieldType)) {
-            throw new IllegalArgumentException("Expected " + fieldType.getName() + ", got " +
+        if (value != null && !value.getDataType().equals(fieldType.getNestedType())) {
+            throw new IllegalArgumentException("Expected " + fieldType.getNestedType().getName() + ", got " +
                                                value.getDataType().getName());
         }
     }

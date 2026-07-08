@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metrics;
 
+import java.util.EnumSet;
+
 /**
  * @author gjoranv
  */
@@ -52,6 +54,8 @@ public enum ContainerMetrics implements VespaMetrics {
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED("jdisc.http.ssl.handshake.failure.connection_closed", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to connection closed"),
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN("jdisc.http.ssl.handshake.failure.unknown", Unit.OPERATION, "JDISC HTTP SSL Handshake failures for unknown reason"),
 
+    JDISC_HTTP_LATENCY("jdisc.http.latency", Unit.MILLISECOND, "Request latency including the HTTP layer"),
+    JDISC_HTTP_TIME_TO_FIRST_BYTE("jdisc.http.time_to_first_byte", Unit.MILLISECOND, "Time from request has been received by the server until the first byte is returned to the client"),
     JDISC_HTTP_REQUEST_PREMATURELY_CLOSED("jdisc.http.request.prematurely_closed", Unit.REQUEST, "HTTP requests prematurely closed"),
     JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION("jdisc.http.request.requests_per_connection", Unit.REQUEST, "HTTP requests per connection"),
     JDISC_HTTP_REQUEST_URI_LENGTH("jdisc.http.request.uri_length", Unit.BYTE, "HTTP URI length"),
@@ -86,7 +90,7 @@ public enum ContainerMetrics implements VespaMetrics {
     SERVER_BYTES_SENT("serverBytesSent", Unit.BYTE, "The number of bytes sent from the server"),
 
     HANDLED_REQUESTS("handled.requests", Unit.OPERATION, "The number of requests handled per metrics snapshot"),
-    HANDLED_LATENCY("handled.latency", Unit.MILLISECOND, "The time used for requests during this metrics snapshot"),
+    HANDLED_LATENCY("handled.latency", Unit.MILLISECOND, "The time used for handling requests, excluding HTTP layer and rendering"),
     
     HTTPAPI_LATENCY("httpapi_latency", Unit.MILLISECOND, "Duration for requests to the HTTP document APIs"),
     HTTPAPI_PENDING("httpapi_pending", Unit.OPERATION, "Document operations pending execution"),
@@ -131,7 +135,7 @@ public enum ContainerMetrics implements VespaMetrics {
     FEED_HTTP_REQUESTS("feed.http-requests", Unit.OPERATION, "Feed HTTP requests"),
     QUERIES("queries", Unit.OPERATION, "Query volume"),
     QUERY_CONTAINER_LATENCY("query_container_latency", Unit.MILLISECOND, "The query execution time consumed in the container"),
-    QUERY_LATENCY("query_latency", Unit.MILLISECOND, "The overall query latency as seen by the container"),
+    QUERY_LATENCY("query_latency", Unit.MILLISECOND, "The overall query latency as observed by the container cluster, excluding HTTP layer and rendering"),
     QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execution, from the client"),
     FAILED_QUERIES("failed_queries", Unit.OPERATION, "The number of failed queries"),
     DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some content nodes not responding in time"),
@@ -205,14 +209,24 @@ public enum ContainerMetrics implements VespaMetrics {
     SERVER_NUM_SUCCESSFUL_RESPONSE_WRITES("serverNumSuccessfulResponseWrites", Unit.REQUEST, "Number of successful response writes"),
     SERVER_NUM_FAILED_RESPONSE_WRITES("serverNumFailedResponseWrites", Unit.REQUEST, "Number of failed response writes"),
 
-    SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY("serverTotalSuccessfulResponseLatency", Unit.MILLISECOND, "Total duration for execution of successful responses"),
-    SERVER_TOTAL_FAILED_RESPONSE_LATENCY("serverTotalFailedResponseLatency", Unit.MILLISECOND, "Total duration for execution of failed responses"),
-    SERVER_TIME_TO_FIRST_BYTE("serverTimeToFirstByte", Unit.MILLISECOND, "Time from request has been received by the server until the first byte is returned to the client"),
-
     SERVER_STARTED_MILLIS("serverStartedMillis", Unit.MILLISECOND, "Time since the service was started"),
 
     EMBEDDER_LATENCY("embedder.latency", Unit.MILLISECOND, "Time spent creating an embedding"),
-    EMBEDDER_SEQUENCE_LENGTH("embedder.sequence_length", Unit.BYTE, "Size of sequence produced by tokenizer");
+    EMBEDDER_SEQUENCE_LENGTH("embedder.sequence_length", Unit.ITEM, "Number of tokens in the input sequence"),
+    EMBEDDER_REQUEST_COUNT("embedder.request.count", Unit.REQUEST, "Number of embedder API requests"),
+    EMBEDDER_REQUEST_FAILURE_COUNT("embedder.request.failure.count", Unit.REQUEST, "Number of failed embedder API requests"),
+
+    EMBEDDER_BATCH_SIZE("embedder.batch.size", Unit.ITEM, "Number of items in each dispatched batch"),
+    EMBEDDER_BATCH_QUEUE_TIME("embedder.batch.queue_time", Unit.MILLISECOND, "Time spent waiting in queue before batch dispatch"),
+    EMBEDDER_BATCH_COUNT("embedder.batch.count", Unit.OPERATION, "Number of batch dispatches"),
+
+    INFERENCE_PENDING("inference.pending", Unit.ITEM, "Number of pending inference requests in a queue"),
+    INFERENCE_REQUEST_RATE("inference.request.rate", Unit.OPERATION_PER_SECOND, "Successful inference requests per second"),
+    INFERENCE_FAILURE_RATE("inference.failure.rate", Unit.OPERATION_PER_SECOND, "Failed inference requests per second"),
+    INFERENCE_REQUEST_LATENCY("inference.request.latency", Unit.MILLISECOND, "Average inference request latency"),
+    INFERENCE_QUEUE_LATENCY("inference.queue.latency", Unit.MILLISECOND, "Average inference queue latency"),
+    INFERENCE_COMPUTE_LATENCY("inference.compute.latency", Unit.MILLISECOND, "Average inference compute latency"),
+    INFERENCE_QUEUE_COMPUTE_RATIO("inference.queue_compute.ratio", Unit.RATIO, "Ratio of inference queue time to compute time");
 
     private final String name;
     private final Unit unit;

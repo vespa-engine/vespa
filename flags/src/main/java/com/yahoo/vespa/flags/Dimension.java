@@ -107,8 +107,8 @@ public enum Dimension {
     VESPA_VERSION("vespa-version"),
 
     /**
-     * Virtual zone ID from com.yahoo.config.provision.zone.ZoneId::value of the form environment.region,
-     * see com.yahoo.config.provision.zone.ZoneApi::getVirtualId.  <em>Eager resolution</em>, see {@link #CLOUD}.
+     * Zone ID from com.yahoo.config.provision.zone.ZoneId::value of the form environment.region,
+     * see com.yahoo.config.provision.zone.ZoneApi::id.  <em>Eager resolution</em>, see {@link #CLOUD}.
      */
     ZONE_ID("zone");
 

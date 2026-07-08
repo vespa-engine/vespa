@@ -2,12 +2,13 @@
 
 #include "attributefactory.h"
 #include "predicate_attribute.h"
-#include "singlesmallnumericattribute.h"
 #include "reference_attribute.h"
-#include "singlestringattribute.h"
+#include "single_raw_attribute.h"
 #include "singleboolattribute.h"
 #include "singlenumericattribute.h"
-#include "single_raw_attribute.h"
+#include "singlesmallnumericattribute.h"
+#include "singlestringattribute.h"
+
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
@@ -17,11 +18,9 @@ namespace search {
 
 using attribute::BasicType;
 
-AttributeVector::SP
-AttributeFactory::createSingleStd(std::string name, const Config & info)
-{
+AttributeVector::SP AttributeFactory::createSingleStd(std::string name, const Config& info) {
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
-    switch(info.basicType().type()) {
+    switch (info.basicType().type()) {
     case BasicType::BOOL:
         return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());
     case BasicType::UINT2:
@@ -61,4 +60,4 @@ AttributeFactory::createSingleStd(std::string name, const Config & info)
     return AttributeVector::SP();
 }
 
-}
+} // namespace search

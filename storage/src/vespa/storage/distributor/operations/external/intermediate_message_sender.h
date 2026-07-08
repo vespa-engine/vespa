@@ -3,9 +3,12 @@
 
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <vespa/storage/distributor/sentmessagemap.h>
+
 #include <memory>
 
-namespace storage::api { class StorageReply; }
+namespace storage::api {
+class StorageReply;
+}
 
 namespace storage::distributor {
 
@@ -15,8 +18,7 @@ struct IntermediateMessageSender final : DistributorStripeMessageSender {
     DistributorStripeMessageSender&    forward;
     std::shared_ptr<api::StorageReply> _reply;
 
-    IntermediateMessageSender(SentMessageMap& mm,
-                              std::shared_ptr<Operation> cb,
+    IntermediateMessageSender(SentMessageMap& mm, std::shared_ptr<Operation> cb,
                               DistributorStripeMessageSender& fwd) noexcept;
     ~IntermediateMessageSender() override;
 
@@ -30,4 +32,4 @@ struct IntermediateMessageSender final : DistributorStripeMessageSender {
     OperationSequencer& operation_sequencer() noexcept override;
 };
 
-}
+} // namespace storage::distributor

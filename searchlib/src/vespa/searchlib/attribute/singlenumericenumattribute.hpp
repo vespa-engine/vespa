@@ -2,29 +2,28 @@
 
 #pragma once
 
-#include "singlenumericenumattribute.h"
 #include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "primitivereader.h"
-#include "singleenumattribute.hpp"
 #include "single_numeric_enum_search_context.h"
+#include "singleenumattribute.hpp"
+#include "singlenumericenumattribute.h"
+
 #include <vespa/searchlib/query/query_term_simple.h>
+
 #include <vespa/searchlib/util/fileutil.hpp>
 
 namespace search {
 
 template <typename B>
-void
-SingleValueNumericEnumAttribute<B>::considerUpdateAttributeChange(DocId doc, const Change & c)
-{
+void SingleValueNumericEnumAttribute<B>::considerUpdateAttributeChange(DocId doc, const Change& c) {
     _currDocValues[doc] = c._data.get();
 }
 
 template <typename B>
-void
-SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
-{
-    T oldValue;
+void SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Change&          c,
+                                                                           EnumStoreBatchUpdater& inserter) {
+    T    oldValue;
     auto iter = _currDocValues.find(c._doc);
     if (iter != _currDocValues.end()) {
         oldValue = iter->second;
@@ -32,7 +31,8 @@ SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Chan
         oldValue = get(c._doc);
     }
 
-    T newValue = this->template applyArithmetic<T, typename Change::DataType>(oldValue, c._data.getArithOperand(), c._type);
+    T newValue =
+        this->template applyArithmetic<T, typename Change::DataType>(oldValue, c._data.getArithOperand(), c._type);
 
     EnumIndex idx;
     if (!this->_enumStore.find_index(newValue, idx)) {
@@ -45,41 +45,30 @@ SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Chan
 }
 
 template <typename B>
-void
-SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater)
-{
+void SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) {
     EnumIndex oldIdx = this->_enumIndices[c._doc].load_relaxed();
     EnumIndex newIdx;
-    T newValue = this->template applyArithmetic<T, typename Change::DataType>(get(c._doc), c._data.getArithOperand(), c._type);
+    T         newValue =
+        this->template applyArithmetic<T, typename Change::DataType>(get(c._doc), c._data.getArithOperand(), c._type);
     this->_enumStore.find_index(newValue, newIdx);
 
     this->updateEnumRefCounts(c._doc, newIdx, oldIdx, updater);
 }
 
 template <typename B>
-SingleValueNumericEnumAttribute<B>::
-SingleValueNumericEnumAttribute(const std::string & baseFileName,
-                                const AttributeVector::Config & c)
-    : SingleValueEnumAttribute<B>(baseFileName, c),
-      _currDocValues()
-{
+SingleValueNumericEnumAttribute<B>::SingleValueNumericEnumAttribute(const std::string&             baseFileName,
+                                                                    const AttributeVector::Config& c)
+    : SingleValueEnumAttribute<B>(baseFileName, c), _currDocValues() {
 }
 
-template <typename B>
-SingleValueNumericEnumAttribute<B>::~SingleValueNumericEnumAttribute() = default;
+template <typename B> SingleValueNumericEnumAttribute<B>::~SingleValueNumericEnumAttribute() = default;
 
-template <typename B>
-void
-SingleValueNumericEnumAttribute<B>::onCommit()
-{
+template <typename B> void SingleValueNumericEnumAttribute<B>::onCommit() {
     SingleValueEnumAttribute<B>::onCommit();
     _currDocValues.clear();
 }
 
-template <typename B>
-bool
-SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
-{
+template <typename B> bool SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase& attrReader) {
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
 
     uint64_t numValues = attrReader.getEnumCount();
@@ -107,14 +96,10 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     return true;
 }
 
-
-template <typename B>
-bool
-SingleValueNumericEnumAttribute<B>::onLoad(vespalib::Executor *)
-{
+template <typename B> bool SingleValueNumericEnumAttribute<B>::onLoad(vespalib::Executor*) {
     PrimitiveReader<T> attrReader(*this);
-    bool ok(attrReader.getHasLoadData());
-    
+    bool               ok(attrReader.getHasLoadData());
+
     if (!ok) {
         return false;
     }
@@ -129,7 +114,7 @@ SingleValueNumericEnumAttribute<B>::onLoad(vespalib::Executor *)
         return onLoadEnumerated(attrReader);
     }
 
-    const uint32_t numDocs(attrReader.getDataCount());
+    const uint32_t                                       numDocs(attrReader.getDataCount());
     SequentialReadModifyWriteVector<LoadedNumericValueT> loaded(numDocs);
 
     this->setNumDocs(numDocs);
@@ -153,20 +138,18 @@ SingleValueNumericEnumAttribute<B>::onLoad(vespalib::Executor *)
     attribute::sortLoadedByDocId(loaded);
     loaded.rewind();
     this->fillValues(loaded);
-    
+
     return true;
 }
 
-
 template <typename B>
 std::unique_ptr<attribute::SearchContext>
-SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
-                                              const attribute::SearchContextParams & params) const
-{
-    (void) params;
+SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP                   qTerm,
+                                              const attribute::SearchContextParams& params) const {
+    (void)params;
     auto docid_limit = this->getCommittedDocIdLimit();
-    return std::make_unique<attribute::SingleNumericEnumSearchContext<T>>(std::move(qTerm), *this, this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
+    return std::make_unique<attribute::SingleNumericEnumSearchContext<T>>(
+        std::move(qTerm), *this, this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
 }
 
-}
-
+} // namespace search

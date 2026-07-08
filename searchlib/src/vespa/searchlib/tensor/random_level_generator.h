@@ -17,4 +17,4 @@ public:
     virtual uint32_t max_level() = 0;
 };
 
-}
+} // namespace search::tensor

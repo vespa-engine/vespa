@@ -1,24 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <csignal>
 #include <unistd.h>
+
+#include <csignal>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-logforwarder-start");
 
 #include "splunk-starter.h"
 #include "splunk-stopper.h"
+
 #include <vespa/vespalib/util/sig_catch.h>
 
 class Wrapper {
-    const char *_configId;
+    const char* _configId;
+
 public:
-    Wrapper(const char *cfid) : _configId(cfid) {}
+    Wrapper(const char* cfid) : _configId(cfid) {}
     void run() {
         vespalib::SigCatch catcher;
-        SplunkStarter handler;
+        SplunkStarter      handler;
         handler.start(_configId);
-        while (! catcher.receivedStopSignal()) {
+        while (!catcher.receivedStopSignal()) {
             handler.check();
             usleep(12500); // Avoid busy looping;
         }
@@ -26,12 +29,10 @@ public:
     }
 };
 
-int
-main(int argc, char** argv)
-{
-    int c = -1;
-    bool stopMode = false;
-    const char *cfid = nullptr;
+int main(int argc, char** argv) {
+    int         c = -1;
+    bool        stopMode = false;
+    const char* cfid = nullptr;
     while ((c = getopt(argc, argv, "Sc:")) != -1) {
         switch (c) {
         case 'S':

@@ -5,6 +5,7 @@ import com.yahoo.test.ManualClock;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -200,7 +201,7 @@ public class SpoolerTest {
 
     private boolean sendEntry(Logger logger, String x) {
         return logger.newEntry()
-                     .blob(x.getBytes())
+                     .blob(x.getBytes(StandardCharsets.UTF_8))
                      .send();
     }
 
@@ -219,7 +220,7 @@ public class SpoolerTest {
 
     private void assertContent(Path file, String expectedContent) throws IOException {
         String content = Files.readString(file);
-        assertTrue(content.contains(Base64.getEncoder().encodeToString(expectedContent.getBytes())));
+        assertTrue(content.contains(Base64.getEncoder().encodeToString(expectedContent.getBytes(StandardCharsets.UTF_8))));
     }
 
     private static Spooler createSpooler(Path spoolDir, int maxEntriesPerFile) {

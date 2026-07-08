@@ -1,27 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/ptrholder.h>
 
 using vespalib::PtrHolder;
 
-
-struct Data
-{
+struct Data {
     int ctorCnt;
     int dtorCnt;
     Data() : ctorCnt(0), dtorCnt(0) {}
 };
 
-
-class DataRef
-{
+class DataRef {
 private:
-    Data &_d;
-    DataRef(const DataRef &);
-    DataRef &operator=(const DataRef &);
+    Data& _d;
+    DataRef(const DataRef&);
+    DataRef& operator=(const DataRef&);
+
 public:
-    DataRef(Data &d) : _d(d) { ++d.ctorCnt; }
+    DataRef(Data& d) : _d(d) { ++d.ctorCnt; }
     ~DataRef() { ++_d.dtorCnt; }
     int getCtorCnt() const { return _d.ctorCnt; }
     int getDtorCnt() const { return _d.dtorCnt; }
@@ -29,9 +26,7 @@ public:
 using PT = std::shared_ptr<DataRef>;
 using HOLD = PtrHolder<DataRef>;
 
-
-TEST(PtrHolderTest, test_empty)
-{
+TEST(PtrHolderTest, test_empty) {
     HOLD hold;
     EXPECT_TRUE(hold.get().get() == nullptr);
     EXPECT_TRUE(!hold.hasValue());
@@ -45,9 +40,7 @@ TEST(PtrHolderTest, test_empty)
     EXPECT_TRUE(!hold.hasNewValue());
 }
 
-
-TEST(PtrHolderTest, test_simple)
-{
+TEST(PtrHolderTest, test_simple) {
     Data data;
     HOLD hold;
     {

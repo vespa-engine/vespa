@@ -11,6 +11,7 @@ namespace search::streaming {
  */
 class WandTerm : public DotProductTerm {
     double _score_threshold;
+
 public:
     WandTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms);
     ~WandTerm() override;
@@ -20,4 +21,4 @@ public:
                            const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids) override;
 };
 
-}
+} // namespace search::streaming

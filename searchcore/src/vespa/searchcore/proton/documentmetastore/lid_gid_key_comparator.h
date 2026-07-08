@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "raw_document_meta_data.h"
 #include "gid_to_lid_map_key.h"
+#include "raw_document_metadata.h"
+
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 
@@ -13,19 +14,18 @@ namespace proton::documentmetastore {
  * Comparator class used by the lid<->gid btree to get the lids
  * sorted by their gid counterpart.
  **/
-class LidGidKeyComparator
-{
+class LidGidKeyComparator {
 private:
     using DocId = search::IDocumentMetaStore::DocId;
-    using UnboundMetaDataView = const RawDocumentMetaData *;
+    using UnboundMetadataView = const RawDocumentMetadata*;
 
-    const document::GlobalId &_gid;
-    UnboundMetaDataView       _metaDataView;
+    const document::GlobalId&                _gid;
+    UnboundMetadataView                      _metadataView;
     const document::GlobalId::BucketOrderCmp _gidCompare;
 
-    const document::GlobalId &getGid(const GidToLidMapKey &key) const {
+    const document::GlobalId& getGid(const GidToLidMapKey& key) const {
         if (!key.is_find_key()) {
-            return _metaDataView[key.get_lid()].getGid();
+            return _metadataView[key.get_lid()].getGid();
         }
         return _gid;
     }
@@ -36,20 +36,16 @@ public:
      * key is a find key. Otherwise the metadata store is
      * used to map from lid -> metadata (including gid).
      **/
-    LidGidKeyComparator(const document::GlobalId &gid,
-                        UnboundMetaDataView metaDataView);
+    LidGidKeyComparator(const document::GlobalId& gid, UnboundMetadataView metadataView);
 
-    LidGidKeyComparator(const RawDocumentMetaData &metaData,
-                        UnboundMetaDataView metaDataView);
+    LidGidKeyComparator(const RawDocumentMetadata& metadata, UnboundMetadataView metadataView);
 
-    bool operator()(const GidToLidMapKey &lhs, const GidToLidMapKey &rhs) const {
+    bool operator()(const GidToLidMapKey& lhs, const GidToLidMapKey& rhs) const {
         if (lhs.get_gid_key() != rhs.get_gid_key()) {
             return lhs.get_gid_key() < rhs.get_gid_key();
         }
         return _gidCompare(getGid(lhs), getGid(rhs));
     }
-
 };
 
-}
-
+} // namespace proton::documentmetastore

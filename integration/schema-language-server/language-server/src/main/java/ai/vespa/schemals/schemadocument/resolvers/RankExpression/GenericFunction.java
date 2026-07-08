@@ -100,54 +100,61 @@ public class GenericFunction {
 
         diagnostics.addAll(signature.get().handleArgumentList(context, node.getChildren()));
 
-        Set<String> signatureProps = signature.get().getProperties();
+        Optional<SpecificFunction> specificFunction = instantiate(context, signature.get(), node, ignoreProperty, diagnostics);
+        specificFunction.ifPresent(instantiation -> node.setFunctionSignature(instantiation));
 
-        if (property.isEmpty() && (signatureProps.contains("") || signatureProps.size() == 0)) {
-            // This is valid
-            node.setFunctionSignature(new SpecificFunction(this, signature.get()));
-            return diagnostics;
+        return diagnostics;
+    }
+
+    public Optional<SpecificFunction> instantiate(ParseContext context, FunctionSignature signature, RankNode node, boolean ignoreProperty, List<Diagnostic> diagnostics) {
+        Set<String> signatureProps = signature.getProperties();
+
+        Optional<SchemaNode> propertyNode = ignoreProperty ? Optional.empty() : node.getProperty();
+        Optional<String> propertyString = Optional.empty();
+        if (propertyNode.isPresent()) {
+            propertyString = Optional.of(propertyNode.get().getText());
         }
 
-        if (signature.get().anyPropertyAllowed()) {
-            if (property.isEmpty()) {
-                node.setFunctionSignature(new SpecificFunction(this, signature.get()));
-            } else {
-                node.setFunctionSignature(new SpecificFunction(this, signature.get(), Optional.of(property.get().getText())));
-            }
-            return diagnostics;
+        if (propertyString.isEmpty() && (signatureProps.contains("") || signatureProps.size() == 0)) {
+            // This is valid
+            return Optional.of(new SpecificFunction(this, signature));
+        }
+
+        if (signature.anyPropertyAllowed()) {
+            return Optional.of(new SpecificFunction(this, signature, propertyString));
         }
         
-        String availableProps = (signatureProps.size() == 0) ? "No one" : String.join(", ", signatureProps);
-        if (!property.isPresent()) {
+        String availableProps = (signatureProps.size() == 0) ? "No one" : String.join(", ", signatureProps.stream().filter(prop -> !prop.isEmpty()).toList());
+        if (!propertyString.isPresent()) {
             String message = "The function '" + node.getSchemaNode().getText() + "' must be used with a property. Available properties are: " + availableProps;
             diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(node.getRange())
                 .setMessage(message)
                 .setSeverity(DiagnosticSeverity.Error)
                 .build());
-            return diagnostics;
+            return Optional.empty();
         }
 
-        if (!properties.contains(property.get().getText())) {
-            String message = "Invalid property '" + property.get().getText() + "'. Available properties are: " + availableProps;
+        if (!properties.contains(propertyString.get())) {
+            String message = "Invalid property '" + propertyString.get() + "'. Available properties are: " + availableProps;
             diagnostics.add(new SchemaDiagnostic.Builder()
-                .setRange(property.get().getRange())
+                .setRange(propertyNode.get().getRange())
                 .setMessage(message)
                 .setSeverity(DiagnosticSeverity.Error)
                 .build());
-            return diagnostics;
+            return Optional.empty();
         }
 
-        if (!signature.get().getProperties().contains(property.get().getText())) {
+        if (!signatureProps.contains(propertyString.get())) {
             String message = "This property is not available with with this signature. Available properties are: " + availableProps;
             diagnostics.add(new SchemaDiagnostic.Builder()
-                .setRange(property.get().getRange())
+                .setRange(propertyNode.get().getRange())
                 .setMessage(message)
                 .setSeverity(DiagnosticSeverity.Warning)
                 .build());
         }
 
-        Node symbolNode = property.get();
+        Node symbolNode = propertyNode.get();
         while (!symbolNode.isASTInstance(identifierStr.class) && symbolNode.size() > 0) {
             symbolNode = symbolNode.get(0);
         }
@@ -157,25 +164,10 @@ public class GenericFunction {
                 .setStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
 
-        node.setFunctionSignature(new SpecificFunction(this, signature.get(), propertyString));
-
-        return diagnostics;
+        return Optional.of(new SpecificFunction(this, signature, propertyString));
     }
 
-    private static boolean propertyInSet(Optional<String> string, Set<String> propertySet) {
-        if (string.isEmpty() && (
-            propertySet.size() == 0 ||
-            propertySet.contains("")
-        )) {
-            return true;
-        }
-
-        if (string.isEmpty()) return false;
-
-        return propertySet.contains(string.get());
-    }
-
-    private Optional<FunctionSignature> findFunctionSignature(List<RankNode> arguments, Optional<String> property) {
+    public Optional<FunctionSignature> findFunctionSignature(List<RankNode> arguments, Optional<String> property) {
 
         List<FunctionSignature> bestMatches = new ArrayList<>();
         int maxScore = 0;
@@ -208,5 +200,18 @@ public class GenericFunction {
         if (possibleSignatures.size() == 1) return Optional.of(possibleSignatures.get(0));
 
         return Optional.empty();
+    }
+
+    private static boolean propertyInSet(Optional<String> string, Set<String> propertySet) {
+        if (string.isEmpty() && (
+            propertySet.size() == 0 ||
+            propertySet.contains("")
+        )) {
+            return true;
+        }
+
+        if (string.isEmpty()) return false;
+
+        return propertySet.contains(string.get());
     }
 }

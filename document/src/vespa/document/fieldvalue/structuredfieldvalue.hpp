@@ -3,16 +3,15 @@
 #pragma once
 
 #include "structuredfieldvalue.h"
+
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace document {
 
-template <typename T>
-std::unique_ptr<T>
-StructuredFieldValue::getAs(const Field &field) const {
+template <typename T> std::unique_ptr<T> StructuredFieldValue::getAs(const Field& field) const {
     FieldValue::UP val = getValue(field);
-    T *t = dynamic_cast<T *>(val.get());
+    T*             t = dynamic_cast<T*>(val.get());
     if (val.get() && !t) {
         throw vespalib::IllegalStateException("Field " + field.toString() + " has unexpected type.", VESPA_STRLOC);
     }
@@ -20,4 +19,4 @@ StructuredFieldValue::getAs(const Field &field) const {
     return std::unique_ptr<T>(t);
 }
 
-} // document
+} // namespace document

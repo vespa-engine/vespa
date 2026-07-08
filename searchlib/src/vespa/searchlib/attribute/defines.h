@@ -8,4 +8,3 @@
 #define MULTIVALUE_ENUM_ARG vespalib::datastore::AtomicEntryRef
 #define WEIGHTED_MULTIVALUE_ARG(T) multivalue::WeightedValue<T>
 #define WEIGHTED_MULTIVALUE_ENUM_ARG multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>
-

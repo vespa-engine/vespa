@@ -25,8 +25,8 @@ import java.util.regex.Pattern;
  * This is useful for building CLI tools that utilize existing bundles, removing the need for building self-contained fat jars.
  *
  * <p>This utility uses automatic bundle dependency resolution. It scans available bundles in {@code $VESPA_HOME/lib/jars}
- * and additional directories specified in {@code bundle.additionalLocations}, creates an index (stored per main bundle symbolic name),
- * and automatically resolves and installs all required dependencies for the main bundle.
+ * and additional directories specified in {@code bundle.additionalLocations}, creates a fresh index in a temporary file
+ * on every invocation (deleted on JVM exit), and automatically resolves and installs all required dependencies for the main bundle.
  *
  * <p>System properties:
  * <ul>
@@ -122,7 +122,9 @@ public class MinimalMain {
         try {
             var denylistPattern = createDenylistPattern();
             var bundleIndexer = new BundleIndexer(Path.of(Defaults.getDefaults().underVespaHome("lib/jars")), denylistPattern);
-            var indexPath = bundleIndexer.createIndexIfMissing(additionalDirectories, mainBundleSymbolicName);
+            var indexPath = Files.createTempFile("bundle-index-" + mainBundleSymbolicName + "-", ".xml");
+            indexPath.toFile().deleteOnExit();
+            bundleIndexer.createIndex(additionalDirectories, indexPath);
             return new BundleResolver(framework.bundleContext(), indexPath).resolve(mainBundleSymbolicName);
         } catch (Exception e) {
             throw new LauncherException("Failed to resolve bundle dependencies: " + e.getMessage(), 1, e);

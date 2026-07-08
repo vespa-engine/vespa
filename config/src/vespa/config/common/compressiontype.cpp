@@ -3,20 +3,16 @@
 
 namespace config {
 
-std::string
-compressionTypeToString(const CompressionType & compressionType)
-{
+std::string compressionTypeToString(const CompressionType& compressionType) {
     switch (compressionType) {
-        case CompressionType::UNCOMPRESSED:
-            return "UNCOMPRESSED";
-        default:
-            return "LZ4";
+    case CompressionType::UNCOMPRESSED:
+        return "UNCOMPRESSED";
+    default:
+        return "LZ4";
     }
 }
 
-CompressionType
-stringToCompressionType(const std::string & type)
-{
+CompressionType stringToCompressionType(const std::string& type) {
     if (type.compare("UNCOMPRESSED") == 0) {
         return CompressionType::UNCOMPRESSED;
     } else {
@@ -24,4 +20,4 @@ stringToCompressionType(const std::string & type)
     }
 }
 
-}
+} // namespace config

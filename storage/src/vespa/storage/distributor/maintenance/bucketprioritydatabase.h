@@ -2,15 +2,14 @@
 #pragma once
 
 #include "prioritizedbucket.h"
+
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 
 namespace storage::distributor {
 
-class BucketPriorityDatabase
-{
+class BucketPriorityDatabase {
 protected:
-    class ConstIteratorImpl
-    {
+    class ConstIteratorImpl {
     public:
         virtual ~ConstIteratorImpl() = default;
         virtual void increment() noexcept = 0;
@@ -19,35 +18,27 @@ protected:
     };
 
     using ConstIteratorImplPtr = std::unique_ptr<ConstIteratorImpl>;
+
 public:
     // Note: does not fulfill LegacyIterator requirements.
-    class ConstIterator final
-    {
+    class ConstIterator final {
         ConstIteratorImplPtr _impl;
+
     public:
-        explicit ConstIterator(ConstIteratorImplPtr impl) noexcept
-            : _impl(std::move(impl))
-        {}
-        const PrioritizedBucket operator* () const noexcept { return dereference(); }
+        explicit ConstIterator(ConstIteratorImplPtr impl) noexcept : _impl(std::move(impl)) {}
+        const PrioritizedBucket operator*() const noexcept { return dereference(); }
         void operator++() noexcept { increment(); }
-        bool operator== (const ConstIterator& other) const noexcept {
-            return equal(other);
-        }
-        ConstIterator(const ConstIterator &) = delete;
-        ConstIterator(ConstIterator &&) noexcept = default;
+        bool operator==(const ConstIterator& other) const noexcept { return equal(other); }
+        ConstIterator(const ConstIterator&) = delete;
+        ConstIterator(ConstIterator&&) noexcept = default;
         ~ConstIterator() = default;
+
     private:
-        void increment() noexcept {
-            _impl->increment();
-        }
+        void increment() noexcept { _impl->increment(); }
 
-        [[nodiscard]] bool equal(const ConstIterator& other) const noexcept {
-            return _impl->equal(*other._impl);
-        }
+        [[nodiscard]] bool equal(const ConstIterator& other) const noexcept { return _impl->equal(*other._impl); }
 
-        PrioritizedBucket dereference() const noexcept {
-            return _impl->dereference();
-        }
+        PrioritizedBucket dereference() const noexcept { return _impl->dereference(); }
     };
 
     using const_iterator = ConstIterator;
@@ -59,4 +50,4 @@ public:
     virtual void setPriority(const PrioritizedBucket&) = 0;
 };
 
-}
+} // namespace storage::distributor

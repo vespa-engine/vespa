@@ -13,4 +13,4 @@ struct IDiversifier {
      */
     virtual bool accepted(uint32_t docId) = 0;
 };
-}
+} // namespace search::queryeval

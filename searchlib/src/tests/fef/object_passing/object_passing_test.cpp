@@ -1,15 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
-#include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/searchlib/fef/test/plugin/unbox.h>
+#include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/rank_program.h>
+#include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/fef/test/plugin/unbox.h>
+#include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/verify_feature.h>
-#include <vespa/eval/eval/value_type.h>
-#include <vespa/searchlib/fef/feature_type.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
 #include <string>
 
 using namespace search::fef;
@@ -23,8 +24,10 @@ struct ProxyExecutor : FeatureExecutor {
     double                    number_value;
     vespalib::eval::Value::UP object_value;
     ProxyExecutor(bool input_is_object_in, bool output_is_object_in)
-        : input_is_object(input_is_object_in), output_is_object(output_is_object_in),
-          number_value(0.0), object_value() {}
+        : input_is_object(input_is_object_in),
+          output_is_object(output_is_object_in),
+          number_value(0.0),
+          object_value() {}
     bool isPure() override { return true; }
     void execute(uint32_t) override {
         double was_object = 0.0;
@@ -48,25 +51,30 @@ struct ProxyExecutor : FeatureExecutor {
 struct ProxyBlueprint : Blueprint {
     std::string name;
     AcceptInput accept_input;
-    bool object_input;
-    bool object_output;
-    ProxyBlueprint(const std::string &name_in, AcceptInput accept_input_in, bool object_output_in)
-        : Blueprint(name_in), name(name_in), accept_input(accept_input_in), object_input(false), object_output(object_output_in) {}
-    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
+    bool        object_input;
+    bool        object_output;
+    ProxyBlueprint(const std::string& name_in, AcceptInput accept_input_in, bool object_output_in)
+        : Blueprint(name_in),
+          name(name_in),
+          accept_input(accept_input_in),
+          object_input(false),
+          object_output(object_output_in) {}
+    void visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const override {}
     Blueprint::UP createInstance() const override {
         return Blueprint::UP(new ProxyBlueprint(name, accept_input, object_output));
     }
-    bool setup(const IIndexEnvironment &, const std::vector<std::string> &params) override {
+    bool setup(const IIndexEnvironment&, const std::vector<std::string>& params) override {
         assert(params.size() == 1);
         if (auto input = defineInput(params[0], accept_input)) {
             object_input = input.value().is_object();
-            describeOutput("value", "the value", object_output ? FeatureType::object(ValueType::double_type()) : FeatureType::number());
+            describeOutput("value", "the value",
+                           object_output ? FeatureType::object(ValueType::double_type()) : FeatureType::number());
             describeOutput("was_object", "whether input was object", FeatureType::number());
             return true;
         }
         return false;
     }
-    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
+    FeatureExecutor& createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const override {
         return stash.create<ProxyExecutor>(object_input, object_output);
     }
 };
@@ -78,30 +86,30 @@ struct ObjectPassingTest : public ::testing::Test {
     explicit ObjectPassingTest() {
         factory.addPrototype(std::make_shared<ValueBlueprint>());
         factory.addPrototype(std::make_shared<UnboxBlueprint>());
-        factory.addPrototype(std::make_shared<ProxyBlueprint>("do_box",      Blueprint::AcceptInput::NUMBER, true));
-        factory.addPrototype(std::make_shared<ProxyBlueprint>("do_unbox",    Blueprint::AcceptInput::OBJECT, false));
-        factory.addPrototype(std::make_shared<ProxyBlueprint>("maybe_box",   Blueprint::AcceptInput::ANY,    true));
-        factory.addPrototype(std::make_shared<ProxyBlueprint>("maybe_unbox", Blueprint::AcceptInput::ANY,    false));
+        factory.addPrototype(std::make_shared<ProxyBlueprint>("do_box", Blueprint::AcceptInput::NUMBER, true));
+        factory.addPrototype(std::make_shared<ProxyBlueprint>("do_unbox", Blueprint::AcceptInput::OBJECT, false));
+        factory.addPrototype(std::make_shared<ProxyBlueprint>("maybe_box", Blueprint::AcceptInput::ANY, true));
+        factory.addPrototype(std::make_shared<ProxyBlueprint>("maybe_unbox", Blueprint::AcceptInput::ANY, false));
     }
 
-    double eval(const std::string &feature) {
+    double eval(const std::string& feature) {
         BlueprintResolver::SP resolver(new BlueprintResolver(factory, indexEnv));
         resolver->addSeed(feature);
         bool retval = resolver->compile();
         assert(retval);
-        MatchDataLayout mdl;
-        MatchData::UP md = mdl.createMatchData();
+        MatchDataLayout  mdl;
+        MatchData::UP    md = mdl.createMatchData();
         QueryEnvironment queryEnv(&indexEnv);
-        Properties overrides;
-        RankProgram program(resolver);
-        program.setup(*md, queryEnv, overrides);        
+        Properties       overrides;
+        RankProgram      program(resolver);
+        program.setup(*md, queryEnv, overrides);
         auto result = program.get_seeds();
         EXPECT_EQ(1u, result.num_features());
         EXPECT_TRUE(!result.is_object(0)); // verifies auto-unboxing
         return result.resolve(0).as_number(1);
     }
 
-    bool verify(const std::string &feature) {
+    bool verify(const std::string& feature) {
         std::vector<search::fef::Message> errors;
         return verifyFeature(factory, indexEnv, feature, "unit test", errors);
     }

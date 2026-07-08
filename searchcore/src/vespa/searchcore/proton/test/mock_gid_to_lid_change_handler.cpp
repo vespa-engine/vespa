@@ -5,24 +5,19 @@
 namespace proton::test {
 
 MockGidToLidChangeHandler::MockGidToLidChangeHandler() noexcept
-    : IGidToLidChangeHandler(),
-      _adds(),
-      _removes(),
-      _listeners()
-{
+    : IGidToLidChangeHandler(), _adds(), _removes(), _listeners() {
 }
 
 MockGidToLidChangeHandler::~MockGidToLidChangeHandler() = default;
 
-void
-MockGidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> listener) {
+void MockGidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> listener) {
     _adds.emplace_back(listener->getDocTypeName(), listener->getName());
     _listeners.push_back(std::move(listener));
 }
 
-void
-MockGidToLidChangeHandler::removeListeners(const std::string &docTypeName, const std::set<std::string> &keepNames) {
+void MockGidToLidChangeHandler::removeListeners(const std::string&           docTypeName,
+                                                const std::set<std::string>& keepNames) {
     _removes.emplace_back(docTypeName, keepNames);
 }
 
-}
+} // namespace proton::test

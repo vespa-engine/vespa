@@ -1,16 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "great_circle_distance_feature.h"
+
+#include "utils.h"
+
+#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
+
 #include <cmath>
 #include <limits>
-#include "utils.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.great_circle_distance_feature");
@@ -30,8 +33,8 @@ feature_t GCDExecutor::calculateGCD(uint32_t docId) {
     }
     _intBuf.fill(*_pos, docId);
     uint32_t numValues = _intBuf.size();
-    int32_t docx = 0;
-    int32_t docy = 0;
+    int32_t  docx = 0;
+    int32_t  docy = 0;
     for (auto loc : _locations) {
         for (uint32_t i = 0; i < numValues; ++i) {
             vespalib::geo::ZCurve::decode(_intBuf[i], &docx, &docy);
@@ -48,17 +51,13 @@ feature_t GCDExecutor::calculateGCD(uint32_t docId) {
     return dist;
 }
 
-GCDExecutor::GCDExecutor(GeoLocationSpecPtrs locations, const attribute::IAttributeVector * pos)
-    : FeatureExecutor(),
-      _locations(),
-      _pos(pos),
-      _intBuf()
-{
+GCDExecutor::GCDExecutor(GeoLocationSpecPtrs locations, const attribute::IAttributeVector* pos)
+    : FeatureExecutor(), _locations(), _pos(pos), _intBuf() {
     if (_pos == nullptr) {
         return;
     }
     _intBuf.allocate(_pos->getMaxValueCount());
-    for (const auto * p : locations) {
+    for (const auto* p : locations) {
         if (p && p->location.valid()) {
             double lat = p->location.point.y * 1.0e-6;
             double lng = p->location.point.x * 1.0e-6;
@@ -67,37 +66,25 @@ GCDExecutor::GCDExecutor(GeoLocationSpecPtrs locations, const attribute::IAttrib
     }
 }
 
-void
-GCDExecutor::execute(uint32_t docId)
-{
+void GCDExecutor::execute(uint32_t docId) {
     outputs().set_number(0, calculateGCD(docId));
     outputs().set_number(1, _best_lat); // latitude
     outputs().set_number(2, _best_lng); // longitude
 }
 
-
-GreatCircleDistanceBlueprint::GreatCircleDistanceBlueprint() :
-    Blueprint("great_circle_distance"),
-    _attr_name()
-{
+GreatCircleDistanceBlueprint::GreatCircleDistanceBlueprint() : Blueprint("great_circle_distance"), _attr_name() {
 }
 
 GreatCircleDistanceBlueprint::~GreatCircleDistanceBlueprint() = default;
 
-void GreatCircleDistanceBlueprint::visitDumpFeatures(const IIndexEnvironment &,
-                                                     IDumpFeatureVisitor &) const
-{
+void GreatCircleDistanceBlueprint::visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const {
 }
 
-Blueprint::UP
-GreatCircleDistanceBlueprint::createInstance() const
-{
+Blueprint::UP GreatCircleDistanceBlueprint::createInstance() const {
     return std::make_unique<GreatCircleDistanceBlueprint>();
 }
 
-bool
-GreatCircleDistanceBlueprint::setup_geopos(const std::string &attr)
-{
+bool GreatCircleDistanceBlueprint::setup_geopos(const std::string& attr) {
     _attr_name = attr;
     describeOutput("km", "The distance (in km) from the query position.");
     describeOutput("latitude", "Latitude of closest point");
@@ -105,11 +92,7 @@ GreatCircleDistanceBlueprint::setup_geopos(const std::string &attr)
     return true;
 }
 
-
-bool
-GreatCircleDistanceBlueprint::setup(const IIndexEnvironment & env,
-                                    const ParameterList & params)
-{
+bool GreatCircleDistanceBlueprint::setup(const IIndexEnvironment& env, const ParameterList& params) {
     if (params.size() == 1) {
         _field_name = params[0].getValue();
     } else if (params.size() == 2) {
@@ -126,16 +109,13 @@ GreatCircleDistanceBlueprint::setup(const IIndexEnvironment & env,
         return false;
     }
     std::string z = document::PositionDataType::getZCurveFieldName(_field_name);
-    const auto *fi = env.getFieldByName(z);
+    const auto* fi = env.getFieldByName(z);
     if (fi != nullptr && fi->hasAttribute()) {
         auto dt = fi->get_data_type();
         auto ct = fi->collection();
-        LOG(spam, "index env has attribute for field '%s' which is: %s%s",
-            z.c_str(),
-            (ct == CollectionType::SINGLE ? "" :
-             (ct == CollectionType::ARRAY ? "array of " : "collection of ")),
-            (dt == DataType::INT64 ? "int64" :
-             (dt == DataType::DOUBLE ? "double" : "something")));
+        LOG(spam, "index env has attribute for field '%s' which is: %s%s", z.c_str(),
+            (ct == CollectionType::SINGLE ? "" : (ct == CollectionType::ARRAY ? "array of " : "collection of ")),
+            (dt == DataType::INT64 ? "int64" : (dt == DataType::DOUBLE ? "double" : "something")));
         /* we can't check these because streaming has wrong information
         if (dt == DataType::INT64) {
             if (ct == CollectionType::SINGLE || ct == CollectionType::ARRAY) {
@@ -148,29 +128,27 @@ GreatCircleDistanceBlueprint::setup(const IIndexEnvironment & env,
     if (env.getFieldByName(_field_name) == nullptr && fi == nullptr) {
         LOG(error, "unknown field '%s' for rank feature %s\n", _field_name.c_str(), getName().c_str());
     } else {
-        LOG(error, "field '%s' must be type position and attribute for rank feature %s\n", _field_name.c_str(), getName().c_str());
+        LOG(error, "field '%s' must be type position and attribute for rank feature %s\n", _field_name.c_str(),
+            getName().c_str());
     }
     return false;
 }
 
-FeatureExecutor &
-GreatCircleDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
-{
+FeatureExecutor& GreatCircleDistanceBlueprint::createExecutor(const IQueryEnvironment& env,
+                                                              vespalib::Stash&         stash) const {
     // expect geo pos:
-    const search::attribute::IAttributeVector * pos = nullptr;
-    GeoLocationSpecPtrs matching_locs;
-    GeoLocationSpecPtrs other_locs;
+    const search::attribute::IAttributeVector* pos = nullptr;
+    GeoLocationSpecPtrs                        matching_locs;
+    GeoLocationSpecPtrs                        other_locs;
 
     for (auto loc_ptr : env.getAllLocations()) {
         if (loc_ptr && loc_ptr->location.valid()) {
-            if (loc_ptr->field_name == _attr_name ||
-                loc_ptr->field_name == _field_name)
-            {
+            if (loc_ptr->field_name == _attr_name || loc_ptr->field_name == _field_name) {
                 LOG(debug, "found loc from query env matching '%s'", _attr_name.c_str());
                 matching_locs.push_back(loc_ptr);
             } else {
-                LOG(debug, "found loc(%s) from query env not matching arg(%s)",
-                    loc_ptr->field_name.c_str(), _attr_name.c_str());
+                LOG(debug, "found loc(%s) from query env not matching arg(%s)", loc_ptr->field_name.c_str(),
+                    _attr_name.c_str());
                 other_locs.push_back(loc_ptr);
             }
         }
@@ -198,4 +176,4 @@ GreatCircleDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespa
     return stash.create<GCDExecutor>(matching_locs.empty() ? other_locs : matching_locs, pos);
 }
 
-}
+} // namespace search::features

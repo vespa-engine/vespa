@@ -1,36 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/messagebus/destinationsession.h>
+#include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routablequeue.h>
-#include <vespa/messagebus/sourcesession.h>
-#include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/routing/routingspec.h>
+#include <vespa/messagebus/sourcesession.h>
+#include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <thread>
 
 using namespace mbus;
 
-struct DelayedHandler : public IMessageHandler
-{
+struct DelayedHandler : public IMessageHandler {
     DestinationSession::UP session;
     uint32_t               delay;
 
-    DelayedHandler(MessageBus &mb, uint32_t d) : session(), delay(d) {
+    DelayedHandler(MessageBus& mb, uint32_t d) : session(), delay(d) {
         session = mb.createDestinationSession("session", true, *this);
     }
-    ~DelayedHandler() override {
-        session.reset();
-    }
+    ~DelayedHandler() override { session.reset(); }
     void handleMessage(Message::UP msg) override {
         // this will block the transport thread in the server messagebus,
         // but that should be ok, as we only want to test the timing in the
@@ -41,20 +39,16 @@ struct DelayedHandler : public IMessageHandler
 };
 
 RoutingSpec getRouting() {
-    return RoutingSpec()
-        .addTable(RoutingTableSpec("Simple")
-                  .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(RouteSpec("dst").addHop("dst")));
+    return RoutingSpec().addTable(
+        RoutingTableSpec("Simple").addHop(HopSpec("dst", "dst/session")).addRoute(RouteSpec("dst").addHop("dst")));
 }
 
 RoutingSpec getBadRouting() {
-    return RoutingSpec()
-        .addTable(RoutingTableSpec("Simple")
-                  .addHop(HopSpec("dst", "dst/session"))
-                  .addRoute(RouteSpec("dst").addHop("dst")));
+    return RoutingSpec().addTable(
+        RoutingTableSpec("Simple").addHop(HopSpec("dst", "dst/session")).addRoute(RouteSpec("dst").addHop("dst")));
 }
 
-bool waitQueueSize(RoutableQueue &queue, uint32_t size) {
+bool waitQueueSize(RoutableQueue& queue, uint32_t size) {
     for (uint32_t i = 0; i < 60000; ++i) {
         if (queue.size() == size) {
             return true;
@@ -64,11 +58,10 @@ bool waitQueueSize(RoutableQueue &queue, uint32_t size) {
     return false;
 }
 
-TEST(SourceSessionTest, test_sequencing)
-{
-    Slobrok     slobrok;
-    TestServer  src(Identity(""), getRouting(), slobrok);
-    TestServer  dst(Identity("dst"), getRouting(), slobrok);
+TEST(SourceSessionTest, test_sequencing) {
+    Slobrok    slobrok;
+    TestServer src(Identity(""), getRouting(), slobrok);
+    TestServer dst(Identity("dst"), getRouting(), slobrok);
 
     RoutableQueue srcQ;
     RoutableQueue dstQ;
@@ -97,10 +90,9 @@ TEST(SourceSessionTest, test_sequencing)
     ASSERT_TRUE(waitQueueSize(dstQ, 0));
 }
 
-TEST(SourceSessionTest, test_resend_error)
-{
+TEST(SourceSessionTest, test_resend_error) {
     Slobrok slobrok;
-    auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
+    auto    retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
     retryPolicy->setBaseDelay(0);
     TestServer src(MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()).setRetryPolicy(retryPolicy),
                    RPCNetworkParams(slobrok.config()));
@@ -123,7 +115,7 @@ TEST(SourceSessionTest, test_resend_error)
     EXPECT_TRUE(waitQueueSize(dstQ, 1));
     {
         Routable::UP r = dstQ.dequeue();
-        Reply::UP reply(new EmptyReply());
+        Reply::UP    reply(new EmptyReply());
         r->swapState(*reply);
         reply->addError(Error(ErrorCode::FATAL_ERROR, "error"));
         ds->reply(std::move(reply));
@@ -139,7 +131,7 @@ TEST(SourceSessionTest, test_resend_error)
     EXPECT_TRUE(waitQueueSize(dstQ, 1));
     {
         Routable::UP r = dstQ.dequeue();
-        Reply::UP reply(new EmptyReply());
+        Reply::UP    reply(new EmptyReply());
         r->swapState(*reply);
         reply->addError(Error(ErrorCode::TRANSIENT_ERROR, "error"));
         ds->reply(std::move(reply));
@@ -157,28 +149,27 @@ TEST(SourceSessionTest, test_resend_error)
     }
 }
 
-TEST(SourceSessionTest, test_resend_conn_down)
-{
+TEST(SourceSessionTest, test_resend_conn_down) {
     Slobrok slobrok;
-    auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
+    auto    retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
     retryPolicy->setBaseDelay(0);
     TestServer src(MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()).setRetryPolicy(retryPolicy),
                    RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                               .addHop(HopSpec("dst", "dst2/session"))
-                                               .addHop(HopSpec("pxy", "[All]").addRecipient("dst"))
-                                               .addRoute(RouteSpec("dst").addHop("pxy"))));
-    RoutableQueue srcQ;
+                                                   .addHop(HopSpec("dst", "dst2/session"))
+                                                   .addHop(HopSpec("pxy", "[All]").addRecipient("dst"))
+                                                   .addRoute(RouteSpec("dst").addHop("pxy"))));
+    RoutableQueue     srcQ;
     SourceSession::UP ss = src.mb.createSourceSession(srcQ);
 
-    TestServer dst(Identity("dst"), RoutingSpec(), slobrok);
-    RoutableQueue dstQ;
+    TestServer             dst(Identity("dst"), RoutingSpec(), slobrok);
+    RoutableQueue          dstQ;
     DestinationSession::UP ds = dst.mb.createDestinationSession("session", true, dstQ);
     ASSERT_TRUE(src.waitSlobrok("dst/session", 1));
 
     {
-        TestServer dst2(Identity("dst2"), RoutingSpec(), slobrok);
-        RoutableQueue dst2Q;
+        TestServer             dst2(Identity("dst2"), RoutingSpec(), slobrok);
+        RoutableQueue          dst2Q;
         DestinationSession::UP ds2 = dst2.mb.createDestinationSession("session", true, dst2Q);
         ASSERT_TRUE(src.waitSlobrok("dst2/session", 1));
 
@@ -188,8 +179,8 @@ TEST(SourceSessionTest, test_resend_conn_down)
         EXPECT_TRUE(waitQueueSize(dst2Q, 1));
         Routable::UP obj = dst2Q.dequeue();
         obj->discard();
-        src.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                   .addHop(HopSpec("dst", "dst/session"))));
+        src.mb.setupRouting(
+            RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME).addHop(HopSpec("dst", "dst/session"))));
     } // dst2 goes down, resend with new config
 
     ASSERT_TRUE(waitQueueSize(dstQ, 1)); // fails
@@ -202,16 +193,14 @@ TEST(SourceSessionTest, test_resend_conn_down)
     fprintf(stderr, "\nTRACE DUMP:\n%s\n\n", trace.c_str());
 }
 
-TEST(SourceSessionTest, test_illegal_route)
-{
-    Slobrok slobrok;
-    TestServer src(MessageBusParams()
-                   .addProtocol(std::make_shared<SimpleProtocol>())
-                   .setRetryPolicy(IRetryPolicy::SP()),
-                   RPCNetworkParams(slobrok.config()));
+TEST(SourceSessionTest, test_illegal_route) {
+    Slobrok    slobrok;
+    TestServer src(
+        MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()).setRetryPolicy(IRetryPolicy::SP()),
+        RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(getRouting());
 
-    RoutableQueue srcQ;
+    RoutableQueue     srcQ;
     SourceSession::UP ss = src.mb.createSourceSession(srcQ, SourceSessionParams());
     {
         // no such hop
@@ -234,16 +223,14 @@ TEST(SourceSessionTest, test_illegal_route)
     }
 }
 
-TEST(SourceSessionTest, test_no_services)
-{
-    Slobrok slobrok;
-    TestServer src(MessageBusParams()
-                   .addProtocol(std::make_shared<SimpleProtocol>())
-                   .setRetryPolicy(IRetryPolicy::SP()),
-                   RPCNetworkParams(slobrok.config()));
+TEST(SourceSessionTest, test_no_services) {
+    Slobrok    slobrok;
+    TestServer src(
+        MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()).setRetryPolicy(IRetryPolicy::SP()),
+        RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(getBadRouting());
 
-    RoutableQueue srcQ;
+    RoutableQueue     srcQ;
     SourceSession::UP ss = src.mb.createSourceSession(srcQ);
     {
         // no services for hop
@@ -265,11 +252,10 @@ TEST(SourceSessionTest, test_no_services)
     }
 }
 
-TEST(SourceSessionTest, test_blocking_close)
-{
-    Slobrok     slobrok;
-    TestServer  src(Identity(""), getRouting(), slobrok);
-    TestServer  dst(Identity("dst"), getRouting(), slobrok);
+TEST(SourceSessionTest, test_blocking_close) {
+    Slobrok    slobrok;
+    TestServer src(Identity(""), getRouting(), slobrok);
+    TestServer dst(Identity("dst"), getRouting(), slobrok);
 
     RoutableQueue  srcQ;
     DelayedHandler dstH(dst.mb, 1000);
@@ -285,10 +271,9 @@ TEST(SourceSessionTest, test_blocking_close)
     EXPECT_TRUE(routable->isReply());
 }
 
-TEST(SourceSessionTest, test_non_blocking_close)
-{
-    Slobrok     slobrok;
-    TestServer  src(Identity(""), getRouting(), slobrok);
+TEST(SourceSessionTest, test_non_blocking_close) {
+    Slobrok    slobrok;
+    TestServer src(Identity(""), getRouting(), slobrok);
 
     RoutableQueue srcQ;
 

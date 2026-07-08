@@ -48,7 +48,14 @@ public class TensorDataType extends DataType {
         if (tensorType == null) return true; // any
         if ( ! TensorFieldValue.class.isAssignableFrom(value.getClass())) return false;
         TensorFieldValue tensorValue = (TensorFieldValue)value;
-        return tensorValue.getDataType().getTensorType().isConvertibleTo(tensorType);
+        TensorType valueType = tensorValue.getDataType().getTensorType();
+        return valueType.isConvertibleTo(tensorType) || canCastFloatToBFloat16(valueType, tensorType);
+    }
+
+    private static boolean canCastFloatToBFloat16(TensorType source, TensorType target) {
+        return source.valueType() == TensorType.Value.FLOAT &&
+               target.valueType() == TensorType.Value.BFLOAT16 &&
+               source.dimensions().equals(target.dimensions());
     }
 
     /** Returns the type of the tensor this field can hold */

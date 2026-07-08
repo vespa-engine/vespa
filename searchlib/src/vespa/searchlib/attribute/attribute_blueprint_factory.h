@@ -6,14 +6,11 @@
 
 namespace search {
 
-class AttributeBlueprintFactory : public queryeval::Searchable
-{
+class AttributeBlueprintFactory : public queryeval::Searchable {
 public:
-    std::unique_ptr<queryeval::Blueprint>
-    createBlueprint(const queryeval::IRequestContext & requestContext,
-                    const queryeval::FieldSpec &field,
-                    const query::Node &term,
-                    fef::MatchDataLayout &global_layout) override;
+    std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext& requestContext,
+                                                          const queryeval::FieldSpec& field, const query::Node& term,
+                                                          fef::MatchDataLayout& global_layout) override;
 };
 
-}  // namespace search
+} // namespace search

@@ -7,10 +7,9 @@ using vespalib::datastore::AtomicEntryRef;
 namespace search::attribute {
 
 template <typename MultiValueType, typename RawMultiValueType>
-CopyMultiValueReadView<MultiValueType, RawMultiValueType>::CopyMultiValueReadView(MultiValueMappingReadView<RawMultiValueType> mv_mapping_read_view)
-    : _mv_mapping_read_view(mv_mapping_read_view),
-      _copy()
-{
+CopyMultiValueReadView<MultiValueType, RawMultiValueType>::CopyMultiValueReadView(
+    MultiValueMappingReadView<RawMultiValueType> mv_mapping_read_view)
+    : _mv_mapping_read_view(mv_mapping_read_view), _copy() {
 }
 
 template <typename MultiValueType, typename RawMultiValueType>
@@ -18,14 +17,13 @@ CopyMultiValueReadView<MultiValueType, RawMultiValueType>::~CopyMultiValueReadVi
 
 template <typename MultiValueType, typename RawMultiValueType>
 std::span<const MultiValueType>
-CopyMultiValueReadView<MultiValueType, RawMultiValueType>::get_values(uint32_t docid) const
-{
+CopyMultiValueReadView<MultiValueType, RawMultiValueType>::get_values(uint32_t docid) const {
     auto raw = _mv_mapping_read_view.get(docid);
     if (_copy.size() < raw.size()) {
         _copy.resize(raw.size());
     }
     auto dst = _copy.data();
-    for (auto &src : raw) {
+    for (auto& src : raw) {
         ValueType v = multivalue::get_value_ref(src);
         *dst = multivalue::ValueBuilder<MultiValueType>::build(v, multivalue::get_weight(src));
         ++dst;
@@ -51,4 +49,4 @@ template class CopyMultiValueReadView<WeightedValue<float>, float>;
 template class CopyMultiValueReadView<WeightedValue<double>, double>;
 template class CopyMultiValueReadView<WeightedValue<AtomicEntryRef>, AtomicEntryRef>;
 
-}
+} // namespace search::attribute

@@ -6,6 +6,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.RawFlag;
+import com.yahoo.vespa.flags.SnapshotFlagSource;
 
 import java.util.Optional;
 
@@ -24,5 +25,8 @@ public class ZooKeeperFlagSource implements FlagSource {
     public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
         return flagsDb.getValue(id).flatMap(data -> data.resolve(vector));
     }
+
+    @Override
+    public FlagSource snapshot() { return new SnapshotFlagSource(flagsDb.getAllFlagData()); }
 
 }

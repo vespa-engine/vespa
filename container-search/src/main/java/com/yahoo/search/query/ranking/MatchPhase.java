@@ -24,6 +24,12 @@ import java.util.Objects;
  */
 public class MatchPhase implements Cloneable {
 
+    /** For internal use only. */
+    public static final String maxHitsProperty = "vespa.matchphase.degradation.maxhits";
+
+    /** For internal use only. */
+    public static final String totalMaxHitsProperty = "vespa.matchphase.degradation.totalMaxhits";
+
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
@@ -31,6 +37,7 @@ public class MatchPhase implements Cloneable {
     public static final String ATTRIBUTE = "attribute";
     public static final String ASCENDING = "ascending";
     public static final String MAX_HITS = "maxHits";
+    public static final String TOTAL_MAX_HITS = "totalMaxHits";
     public static final String MAX_FILTER_COVERAGE = "maxFilterCoverage";
 
     static {
@@ -40,6 +47,7 @@ public class MatchPhase implements Cloneable {
         argumentType.addField(new FieldDescription(ATTRIBUTE, "string"));
         argumentType.addField(new FieldDescription(ASCENDING, "boolean"));
         argumentType.addField(new FieldDescription(MAX_HITS, "long"));
+        argumentType.addField(new FieldDescription(TOTAL_MAX_HITS, "long"));
         argumentType.addField(new FieldDescription(MAX_FILTER_COVERAGE, "double"));
         argumentType.addField(new FieldDescription(Diversity.DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.freeze();
@@ -49,6 +57,7 @@ public class MatchPhase implements Cloneable {
     private String attribute = null;
     private boolean ascending = false;
     private Long maxHits = null;
+    private Long totalMaxHits = null;
     private Double maxFilterCoverage = 0.2;
     private Diversity diversity = new Diversity();
 
@@ -79,11 +88,18 @@ public class MatchPhase implements Cloneable {
     public boolean getAscending() { return ascending; }
 
     /**
-     * Sets the max hits to aim for producing in the match phase.
-     * This must be set if an attribute value is set.
-     * It should be set to a reasonable fraction of the total documents on each partition.
+     * Sets the max hits per node to aim for producing in the match phase.
+     * This or totalMaxHits must be set if an attribute value is set.
+     * It should be set to a reasonable fraction of the total documents on the node.
      */
-    public void setMaxHits(long maxHits) { this.maxHits = maxHits; }
+    public void setMaxHits(long count) { this.maxHits = count; }
+
+    /**
+     * Sets the total max hits over all nodes to aim for producing in the match phase.
+     * This or maxHits must be set if an attribute value is set.
+     * It should be set to a reasonable fraction of the total documents across all nodes.
+     */
+    public void setTotalMaxHits(long count) { this.totalMaxHits = count; }
 
     public void setMaxFilterCoverage(double maxFilterCoverage) {
         if ((maxFilterCoverage < 0.0) || (maxFilterCoverage > 1.0)) {
@@ -93,8 +109,11 @@ public class MatchPhase implements Cloneable {
         this.maxFilterCoverage = maxFilterCoverage;
     }
 
-    /** Returns the max hits to aim for producing in the match phase on each content node, or null if not set */
+    /** Returns the max hits to aim for producing in the match phase on each content node, or null to use totalMaxHits */
     public Long getMaxHits() { return maxHits; }
+
+    /** Returns the max hits to aim for producing in the match phase across all content nodes, or null if not set */
+    public Long getTotalMaxHits() { return totalMaxHits; }
 
     public Double getMaxFilterCoverage() { return maxFilterCoverage; }
 
@@ -112,7 +131,6 @@ public class MatchPhase implements Cloneable {
         if (ascending) { // backend default is descending
             rankProperties.put("vespa.matchphase.degradation.ascendingorder", "true");
         }
-        rankProperties.put("vespa.matchphase.degradation.maxhits", String.valueOf(maxHits));
         rankProperties.put("vespa.matchphase.degradation.maxfiltercoverage", String.valueOf(maxFilterCoverage));
         diversity.prepare(rankProperties);
     }

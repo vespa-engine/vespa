@@ -4,31 +4,26 @@
 
 namespace search::index {
 
-SchemaIndexFields::SchemaIndexFields()
-    : _textFields(),
-      _uriFields()
-{
+SchemaIndexFields::SchemaIndexFields() : _textFields(), _uriFields() {
 }
 
 SchemaIndexFields::~SchemaIndexFields() = default;
 
-void
-SchemaIndexFields::setup(const Schema &schema)
-{
-    uint32_t numIndexFields = schema.getNumIndexFields();
+void SchemaIndexFields::setup(const Schema& schema) {
+    uint32_t                numIndexFields = schema.getNumIndexFields();
     UriField::UsedFieldsMap usedFields;
     usedFields.resize(numIndexFields);
 
     // Detect all URI fields (flattened structs).
     for (uint32_t fieldId = 0; fieldId < numIndexFields; ++fieldId) {
-        const Schema::IndexField &field = schema.getIndexField(fieldId);
-        const std::string &name = field.getName();
-        size_t dotPos = name.find('.');
+        const Schema::IndexField& field = schema.getIndexField(fieldId);
+        const std::string&        name = field.getName();
+        size_t                    dotPos = name.find('.');
         if (dotPos != std::string::npos) {
             const std::string suffix = name.substr(dotPos + 1);
             if (suffix == "scheme") {
                 const std::string shortName = name.substr(0, dotPos);
-                UriField uriField;
+                UriField          uriField;
                 uriField.setup(schema, shortName);
                 if (uriField.valid(schema, field.getCollectionType())) {
                     _uriFields.push_back(uriField);
@@ -46,15 +41,14 @@ SchemaIndexFields::setup(const Schema &schema)
         if (usedFields[fieldId]) {
             continue;
         }
-        const Schema::IndexField &field = schema.getIndexField(fieldId);
+        const Schema::IndexField& field = schema.getIndexField(fieldId);
         switch (field.getDataType()) {
         case schema::DataType::STRING:
             _textFields.push_back(fieldId);
             break;
-        default:
-            ;
+        default:;
         }
     }
 }
 
-}
+} // namespace search::index

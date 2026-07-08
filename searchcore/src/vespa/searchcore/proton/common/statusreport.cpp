@@ -4,26 +4,28 @@
 
 namespace proton {
 
-StatusReport::Params::Params(const std::string &component)
+StatusReport::Params::Params(const std::string& component)
     : _component(component),
       _state(DOWN),
       _internalState(),
       _internalConfigState(),
       _progress(std::numeric_limits<float>::quiet_NaN()),
-      _message()
-{}
+      _message() {
+}
 
-StatusReport::Params::~Params() { }
+StatusReport::Params::~Params() {
+}
 
-StatusReport::StatusReport(const Params &params)
+StatusReport::StatusReport(const Params& params)
     : _component(params._component),
       _state(params._state),
       _internalState(params._internalState),
       _internalConfigState(params._internalConfigState),
       _progress(params._progress),
-      _message(params._message)
-{}
-
-StatusReport::~StatusReport() { }
-
+      _message(params._message) {
 }
+
+StatusReport::~StatusReport() {
+}
+
+} // namespace proton

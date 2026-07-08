@@ -2,25 +2,24 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/searchlib/fef/iindexenvironment.h>
 
 namespace proton::matching {
 
 class FieldIdToNameMapper {
 public:
-    const std::string & lookup(uint32_t fieldId) const {
+    const std::string& lookup(uint32_t fieldId) const {
         static const std::string lookupFailed;
         if (auto fieldInfo = _indexEnv.getField(fieldId)) {
             return fieldInfo->name();
         }
         return lookupFailed;
     }
-    FieldIdToNameMapper(const search::fef::IIndexEnvironment &indexEnv)
-      : _indexEnv(indexEnv)
-    {}
+    FieldIdToNameMapper(const search::fef::IIndexEnvironment& indexEnv) : _indexEnv(indexEnv) {}
+
 private:
-    const search::fef::IIndexEnvironment &_indexEnv;
+    const search::fef::IIndexEnvironment& _indexEnv;
 };
 
-}
+} // namespace proton::matching

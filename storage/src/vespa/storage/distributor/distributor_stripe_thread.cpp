@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributor_stripe_thread.h"
+
 #include "distributor_stripe.h"
 #include "distributor_stripe_pool.h"
 #include "tickable_stripe.h"
+
 #include <cassert>
 
 namespace storage::distributor {
 
-DistributorStripeThread::DistributorStripeThread(TickableStripe& stripe,
-                                                 DistributorStripePool& stripe_pool)
+DistributorStripeThread::DistributorStripeThread(TickableStripe& stripe, DistributorStripePool& stripe_pool)
     : _stripe(stripe),
       _stripe_pool(stripe_pool),
       _tick_wait_duration(vespalib::adjustTimeoutByDetectedHz(1ms)),
@@ -18,8 +19,8 @@ DistributorStripeThread::DistributorStripeThread(TickableStripe& stripe,
       _ticks_before_wait(10),
       _should_park(false),
       _should_stop(false),
-      _waiting_for_event(false)
-{}
+      _waiting_for_event(false) {
+}
 
 DistributorStripeThread::~DistributorStripeThread() = default;
 
@@ -71,7 +72,7 @@ void DistributorStripeThread::wait_until_event_notified_or_timed_out() noexcept 
 void DistributorStripeThread::wait_until_unparked() noexcept {
     std::unique_lock lock(_mutex);
     // _should_park is always written within _mutex, relaxed load is safe.
-    _park_cond.wait(lock, [this]{ return !should_park_relaxed(); });
+    _park_cond.wait(lock, [this] { return !should_park_relaxed(); });
 }
 
 void DistributorStripeThread::notify_event_has_triggered() noexcept {
@@ -101,5 +102,4 @@ void DistributorStripeThread::set_ticks_before_wait(uint32_t new_ticks_before_wa
     _ticks_before_wait.store(new_ticks_before_wait, std::memory_order_relaxed);
 }
 
-
-}
+} // namespace storage::distributor

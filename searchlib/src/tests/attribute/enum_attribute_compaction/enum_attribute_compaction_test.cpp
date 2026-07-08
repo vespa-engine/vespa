@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("enum_attribute_compaction_test");
@@ -23,8 +23,7 @@ using EnumHandle = search::attribute::IAttributeVector::EnumHandle;
 
 template <typename VectorType> struct TestData;
 
-template <>
-struct TestData<IntegerAttribute> {
+template <> struct TestData<IntegerAttribute> {
     using BufferType = search::attribute::IntegerContent;
     using CheckType = int32_t;
     static constexpr BasicType::Type basic_type = BasicType::INT32;
@@ -33,13 +32,12 @@ struct TestData<IntegerAttribute> {
     static int32_t make_undefined_value() { return std::numeric_limits<int32_t>::min(); }
 };
 
-template <>
-struct TestData<StringAttribute> {
+template <> struct TestData<StringAttribute> {
     using BufferType = search::attribute::ConstCharContent;
     using CheckType = std::string;
     static constexpr BasicType::Type basic_type = BasicType::STRING;
     static std::string make_value(uint32_t doc_id, uint32_t idx) {
-        uint32_t combined = doc_id * 10 + idx;
+        uint32_t              combined = doc_id * 10 + idx;
         vespalib::asciistream s;
         if (doc_id == 2 && idx == 0) {
             // Longer string will be stored in a different buffer
@@ -49,7 +47,7 @@ struct TestData<StringAttribute> {
         }
         return std::string(s.view());
     }
-    static const char *as_add(const std::string &value) { return value.c_str(); }
+    static const char* as_add(const std::string& value) { return value.c_str(); }
     static std::string make_undefined_value() { return std::string(); }
 };
 
@@ -57,28 +55,21 @@ class CompactionTestBase : public ::testing::TestWithParam<CollectionType::Type>
 public:
     std::shared_ptr<AttributeVector> _v;
 
-    CompactionTestBase()
-        : _v()
-    {
-    }
+    CompactionTestBase() : _v() {}
     void SetUp() override;
     virtual BasicType get_basic_type() const = 0;
     CollectionType get_collection_type() const noexcept { return GetParam(); }
     void add_docs(uint32_t num_docs);
-    uint32_t count_changed_enum_handles(const std::vector<EnumHandle> &handles, uint32_t stride);
+    uint32_t count_changed_enum_handles(const std::vector<EnumHandle>& handles, uint32_t stride);
 };
 
-void
-CompactionTestBase::SetUp()
-{
+void CompactionTestBase::SetUp() {
     Config cfg(get_basic_type(), get_collection_type());
     cfg.setFastSearch(true);
     _v = search::AttributeFactory::createAttribute("test", cfg);
 }
 
-void
-CompactionTestBase::add_docs(uint32_t num_docs)
-{
+void CompactionTestBase::add_docs(uint32_t num_docs) {
     uint32_t start_doc;
     uint32_t end_doc;
     _v->addDocs(start_doc, end_doc, num_docs);
@@ -88,9 +79,7 @@ CompactionTestBase::add_docs(uint32_t num_docs)
     _v->commit();
 }
 
-uint32_t
-CompactionTestBase::count_changed_enum_handles(const std::vector<EnumHandle> &handles, uint32_t stride)
-{
+uint32_t CompactionTestBase::count_changed_enum_handles(const std::vector<EnumHandle>& handles, uint32_t stride) {
     uint32_t changed = 0;
     for (uint32_t doc_id = 0; doc_id < handles.size(); doc_id += stride) {
         if (_v->getEnum(doc_id) != handles[doc_id]) {
@@ -100,9 +89,7 @@ CompactionTestBase::count_changed_enum_handles(const std::vector<EnumHandle> &ha
     return changed;
 }
 
-template <typename VectorType>
-class CompactionTest : public CompactionTestBase
-{
+template <typename VectorType> class CompactionTest : public CompactionTestBase {
 public:
     CompactionTest();
     void set_values(uint32_t doc_id);
@@ -112,18 +99,12 @@ public:
     BasicType get_basic_type() const override { return TestData<VectorType>::basic_type; }
 };
 
-template <typename VectorType>
-CompactionTest<VectorType>::CompactionTest()
-    : CompactionTestBase()
-{
+template <typename VectorType> CompactionTest<VectorType>::CompactionTest() : CompactionTestBase() {
 }
 
-template <typename VectorType>
-void
-CompactionTest<VectorType>::set_values(uint32_t doc_id)
-{
+template <typename VectorType> void CompactionTest<VectorType>::set_values(uint32_t doc_id) {
     using MyTestData = TestData<VectorType>;
-    auto &typed_v = dynamic_cast<VectorType &>(*_v);
+    auto& typed_v = dynamic_cast<VectorType&>(*_v);
     _v->clearDoc(doc_id);
     if (_v->hasMultiValue()) {
         EXPECT_TRUE(typed_v.append(doc_id, MyTestData::as_add(MyTestData::make_value(doc_id, 0)), 1));
@@ -134,10 +115,7 @@ CompactionTest<VectorType>::set_values(uint32_t doc_id)
     _v->commit();
 }
 
-template <typename VectorType>
-void
-CompactionTest<VectorType>::check_values(uint32_t doc_id)
-{
+template <typename VectorType> void CompactionTest<VectorType>::check_values(uint32_t doc_id) {
     using MyTestData = TestData<VectorType>;
     using CheckType = typename MyTestData::CheckType;
     typename MyTestData::BufferType buffer;
@@ -157,10 +135,7 @@ CompactionTest<VectorType>::check_values(uint32_t doc_id)
     }
 }
 
-template <typename VectorType>
-void
-CompactionTest<VectorType>::check_cleared_values(uint32_t doc_id)
-{
+template <typename VectorType> void CompactionTest<VectorType>::check_cleared_values(uint32_t doc_id) {
     using MyTestData = TestData<VectorType>;
     using CheckType = typename MyTestData::CheckType;
     typename MyTestData::BufferType buffer;
@@ -173,14 +148,11 @@ CompactionTest<VectorType>::check_cleared_values(uint32_t doc_id)
     }
 }
 
-template <typename VectorType>
-void
-CompactionTest<VectorType>::test_enum_store_compaction()
-{
+template <typename VectorType> void CompactionTest<VectorType>::test_enum_store_compaction() {
     constexpr uint32_t canary_stride = 256;
-    uint32_t dead_limit = vespalib::datastore::CompactionStrategy::DEAD_BYTES_SLACK / 8;
-    uint32_t doc_count = dead_limit * 3;
-    if (_v->hasMultiValue() || std::is_same_v<VectorType,StringAttribute>) {
+    uint32_t           dead_limit = vespalib::datastore::CompactionStrategy::DEAD_BYTES_SLACK / 8;
+    uint32_t           doc_count = dead_limit * 3;
+    if (_v->hasMultiValue() || std::is_same_v<VectorType, StringAttribute>) {
         doc_count /= 2;
     }
     std::vector<EnumHandle> enum_handles;
@@ -217,20 +189,20 @@ CompactionTest<VectorType>::test_enum_store_compaction()
 
 using IntegerCompactionTest = CompactionTest<IntegerAttribute>;
 
-TEST_P(IntegerCompactionTest, compact)
-{
+TEST_P(IntegerCompactionTest, compact) {
     test_enum_store_compaction();
 }
 
-INSTANTIATE_TEST_SUITE_P(IntegerCompactionTestSet, IntegerCompactionTest, ::testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET));
+INSTANTIATE_TEST_SUITE_P(IntegerCompactionTestSet, IntegerCompactionTest,
+                         ::testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET));
 
 using StringCompactionTest = CompactionTest<StringAttribute>;
 
-TEST_P(StringCompactionTest, compact)
-{
+TEST_P(StringCompactionTest, compact) {
     test_enum_store_compaction();
 }
 
-INSTANTIATE_TEST_SUITE_P(StringCompactionTestSet, StringCompactionTest, ::testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET));
+INSTANTIATE_TEST_SUITE_P(StringCompactionTestSet, StringCompactionTest,
+                         ::testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET));
 
 GTEST_MAIN_RUN_ALL_TESTS()

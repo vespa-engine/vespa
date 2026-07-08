@@ -3,11 +3,13 @@
 #pragma once
 
 #include "int8float.h"
+
 #include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/typify.h>
-#include <vector>
+
 #include <cassert>
 #include <cstdlib>
+#include <vector>
 
 namespace vespalib::eval {
 
@@ -15,10 +17,18 @@ enum class CellType : char { DOUBLE, FLOAT, BFLOAT16, INT8 };
 
 // converts actual cell type to CellType enum value
 template <typename CT> constexpr CellType get_cell_type();
-template <> constexpr CellType get_cell_type<double>() { return CellType::DOUBLE; }
-template <> constexpr CellType get_cell_type<float>() { return CellType::FLOAT; }
-template <> constexpr CellType get_cell_type<BFloat16>() { return CellType::BFLOAT16; }
-template <> constexpr CellType get_cell_type<Int8Float>() { return CellType::INT8; }
+template <> constexpr CellType get_cell_type<double>() {
+    return CellType::DOUBLE;
+}
+template <> constexpr CellType get_cell_type<float>() {
+    return CellType::FLOAT;
+}
+template <> constexpr CellType get_cell_type<BFloat16>() {
+    return CellType::BFLOAT16;
+}
+template <> constexpr CellType get_cell_type<Int8Float>() {
+    return CellType::INT8;
+}
 
 // check if the given CellType enum value and actual cell type match
 template <typename CT> constexpr bool check_cell_type(CellType type) {
@@ -53,7 +63,7 @@ struct LimitedCellMetaNotScalar {
 // -> for values that are results of operations
 struct LimitedCellMeta {
     const CellType cell_type;
-    const bool is_scalar;
+    const bool     is_scalar;
     constexpr LimitedCellMetaNotScalar not_scalar() const {
         assert(!is_scalar);
         return {cell_type};
@@ -69,16 +79,13 @@ struct CellMetaNotScalar {
 // meta-information about the cell type and 'scalar-ness' of a value
 struct CellMeta {
     const CellType cell_type;
-    const bool is_scalar;
+    const bool     is_scalar;
     constexpr CellMeta(CellType cell_type_in, bool is_scalar_in) noexcept
-        : cell_type(cell_type_in), is_scalar(is_scalar_in)
-    {
+        : cell_type(cell_type_in), is_scalar(is_scalar_in) {
         // is_scalar -> double cell type
         assert(!is_scalar || (cell_type == CellType::DOUBLE));
     }
-    constexpr bool is_limited() const {
-        return ((cell_type == CellType::DOUBLE) || (cell_type == CellType::FLOAT));
-    }
+    constexpr bool is_limited() const { return ((cell_type == CellType::DOUBLE) || (cell_type == CellType::FLOAT)); }
     constexpr LimitedCellMeta limit() const {
         assert(is_limited());
         return {cell_type, is_scalar};
@@ -90,7 +97,7 @@ struct CellMeta {
 
     constexpr CellMeta self() const { return *this; }
 
-    constexpr bool eq(const CellMeta &rhs) const {
+    constexpr bool eq(const CellMeta& rhs) const {
         return ((cell_type == rhs.cell_type) && (is_scalar == rhs.is_scalar));
     }
 
@@ -129,29 +136,27 @@ struct CellMeta {
 
     // convenience functions to be used for specific operations
     constexpr CellMeta map() const { return decay(); }
-    constexpr CellMeta wrap(CellMeta inner) const {
-        return (inner.is_scalar) ? decay() : inner;
-    }
-    constexpr CellMeta reduce(bool output_is_scalar) const {
-        return normalize(cell_type, output_is_scalar).decay();
-    }
+    constexpr CellMeta wrap(CellMeta inner) const { return (inner.is_scalar) ? decay() : inner; }
+    constexpr CellMeta reduce(bool output_is_scalar) const { return normalize(cell_type, output_is_scalar).decay(); }
     static constexpr CellMeta join(CellMeta a, CellMeta b) { return unify(a, b).decay(); }
     static constexpr CellMeta merge(CellMeta a, CellMeta b) { return unify(a, b).decay(); }
     static constexpr CellMeta concat(CellMeta a, CellMeta b) { return unify(a, b); }
-    constexpr CellMeta peek(bool output_is_scalar) const {
-        return normalize(cell_type, output_is_scalar);
-    }
+    constexpr CellMeta peek(bool output_is_scalar) const { return normalize(cell_type, output_is_scalar); }
     constexpr CellMeta rename() const { return self(); }
 };
 
 struct TypifyCellType {
     template <typename T> using Result = TypifyResultType<T>;
-    template <typename F> static decltype(auto) resolve(CellType value, F &&f) {
-        switch(value) {
-        case CellType::DOUBLE:   return f(Result<double>());
-        case CellType::FLOAT:    return f(Result<float>());
-        case CellType::BFLOAT16: return f(Result<BFloat16>());
-        case CellType::INT8:     return f(Result<Int8Float>());
+    template <typename F> static decltype(auto) resolve(CellType value, F&& f) {
+        switch (value) {
+        case CellType::DOUBLE:
+            return f(Result<double>());
+        case CellType::FLOAT:
+            return f(Result<float>());
+        case CellType::BFLOAT16:
+            return f(Result<BFloat16>());
+        case CellType::INT8:
+            return f(Result<Int8Float>());
         }
         abort();
     }
@@ -159,7 +164,7 @@ struct TypifyCellType {
 
 struct TypifyCellMeta {
     template <CellMeta VALUE> using Result = TypifyResultValue<CellMeta, VALUE>;
-    template <typename F> static decltype(auto) resolve(CellMeta value, F &&f) {
+    template <typename F> static decltype(auto) resolve(CellMeta value, F&& f) {
         if (value.is_scalar) {
             if (value.cell_type == CellType::DOUBLE) {
                 return f(Result<CellMeta(CellType::DOUBLE, true)>());
@@ -169,16 +174,20 @@ struct TypifyCellMeta {
             return resolve(value.not_scalar(), std::forward<F>(f));
         }
     }
-    template <typename F> static decltype(auto) resolve(CellMetaNotScalar value, F &&f) {
+    template <typename F> static decltype(auto) resolve(CellMetaNotScalar value, F&& f) {
         switch (value.cell_type) {
-        case CellType::DOUBLE:   return f(Result<CellMeta(CellType::DOUBLE, false)>());
-        case CellType::FLOAT:    return f(Result<CellMeta(CellType::FLOAT, false)>());
-        case CellType::BFLOAT16: return f(Result<CellMeta(CellType::BFLOAT16, false)>());
-        case CellType::INT8:     return f(Result<CellMeta(CellType::INT8, false)>());
+        case CellType::DOUBLE:
+            return f(Result<CellMeta(CellType::DOUBLE, false)>());
+        case CellType::FLOAT:
+            return f(Result<CellMeta(CellType::FLOAT, false)>());
+        case CellType::BFLOAT16:
+            return f(Result<CellMeta(CellType::BFLOAT16, false)>());
+        case CellType::INT8:
+            return f(Result<CellMeta(CellType::INT8, false)>());
         }
         abort();
     }
-    template <typename F> static decltype(auto) resolve(LimitedCellMeta value, F &&f) {
+    template <typename F> static decltype(auto) resolve(LimitedCellMeta value, F&& f) {
         if (value.is_scalar) {
             if (value.cell_type == CellType::DOUBLE) {
                 return f(Result<CellMeta(CellType::DOUBLE, true)>());
@@ -188,11 +197,14 @@ struct TypifyCellMeta {
             return resolve(value.not_scalar(), std::forward<F>(f));
         }
     }
-    template <typename F> static decltype(auto) resolve(LimitedCellMetaNotScalar value, F &&f) {
+    template <typename F> static decltype(auto) resolve(LimitedCellMetaNotScalar value, F&& f) {
         switch (value.cell_type) {
-        case CellType::DOUBLE:   return f(Result<CellMeta(CellType::DOUBLE, false)>());
-        case CellType::FLOAT:    return f(Result<CellMeta(CellType::FLOAT, false)>());
-        default: break;
+        case CellType::DOUBLE:
+            return f(Result<CellMeta(CellType::DOUBLE, false)>());
+        case CellType::FLOAT:
+            return f(Result<CellMeta(CellType::FLOAT, false)>());
+        default:
+            break;
         }
         abort();
     }
@@ -206,4 +218,4 @@ struct CellTypeUtils {
     static std::vector<CellType> list_unstable_types();
 };
 
-} // namespace
+} // namespace vespalib::eval

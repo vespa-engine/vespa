@@ -13,6 +13,7 @@ import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
+import static com.yahoo.search.yql.YqlParser.ELEMENT_FILTER;
 import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
@@ -22,6 +23,7 @@ import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
+import static com.yahoo.search.yql.YqlParser.USER_INPUT_LANGUAGE;
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.NEAR;
 import static com.yahoo.search.yql.YqlParser.NEAREST_NEIGHBOR;
@@ -45,6 +47,8 @@ import static com.yahoo.search.yql.YqlParser.STEM;
 import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
+import static com.yahoo.search.yql.YqlParser.TOTAL_TARGET_HITS;
+import static com.yahoo.search.yql.YqlParser.MIN_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.URI;
@@ -79,6 +83,7 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.HasIndexItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
+import com.yahoo.language.Language;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.prelude.query.MarkerWordItem;
@@ -678,6 +683,19 @@ public class VespaSerializer {
         boolean serialize(StringBuilder destination, SameElementItem item, Boolean includeField) {
             serializeField(item, includeField, destination);
 
+            boolean hasFilter = !item.getElementFilter().isEmpty();
+            if (hasFilter) {
+                // NOTE(johsol): sameElement with annotation must be wrapped in parens
+                destination.append("({");
+                destination.append(ELEMENT_FILTER);
+                destination.append(":[");
+                List<Integer> filter = item.getElementFilter();
+                for (int i = 0; i < filter.size(); i++) {
+                    if (i > 0) destination.append(", ");
+                    destination.append(filter.get(i));
+                }
+                destination.append("]} ");
+            }
             destination.append(SAME_ELEMENT);
             if (item.getItemCount() == 1 && item.getItem(0) instanceof AndItem || item.getItem(0) instanceof OrItem) {
                 // serialize nested content without extra parenthesis
@@ -690,6 +708,10 @@ public class VespaSerializer {
                         destination.append(", ");
                     VespaSerializer.serialize(item.getItem(i), null, destination);
                 }
+                destination.append(')');
+            }
+            if (hasFilter) {
+                // NOTE(johsol): sameElement with annotation must be wrapped in parens
                 destination.append(')');
             }
 
@@ -736,15 +758,28 @@ public class VespaSerializer {
             destination.append("{");
             int initLen = destination.length();
             destination.append(leafAnnotations(item));
-            comma(destination, initLen);
-            int targetNumHits = item.getTargetNumHits();
-            annotationKey(destination, YqlParser.TARGET_HITS).append(targetNumHits);
+            Integer targetHits = item.getTargetHits();
+            if (targetHits != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.TARGET_HITS).append(targetHits);
+            }
+            Integer totalTargetHits = item.getTotalTargetHits();
+            if (totalTargetHits != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.TOTAL_TARGET_HITS).append(totalTargetHits);
+            }
+            Integer minTargetHits = item.getMinTargetHits();
+            if (minTargetHits != null) {
+                comma(destination, initLen);
+                annotationKey(destination, YqlParser.MIN_TARGET_HITS).append(minTargetHits);
+            }
             double distanceThreshold = item.getDistanceThreshold();
             if (distanceThreshold < Double.POSITIVE_INFINITY) {
                 comma(destination, initLen);
                 String key = YqlParser.DISTANCE_THRESHOLD;
                 annotationKey(destination, key).append(distanceThreshold);
             }
+            @SuppressWarnings("deprecation")
             int explore = item.getHnswExploreAdditionalHits();
             if (explore != 0) {
                 comma(destination, initLen);
@@ -982,11 +1017,16 @@ public class VespaSerializer {
 
         private String specificAnnotations(WandItem w) {
             StringBuilder annotations = new StringBuilder();
-            int targetNumHits = w.getTargetNumHits();
+            Integer targetHits = w.getTargetHits();
+            Integer totalTargetHits = w.getTotalTargetHits();
             double scoreThreshold = w.getScoreThreshold();
             double thresholdBoostFactor = w.getThresholdBoostFactor();
-            if (targetNumHits != 10) {
-                annotations.append(TARGET_HITS).append(": ").append(targetNumHits);
+            if (targetHits != null) {
+                annotations.append(TARGET_HITS).append(": ").append(targetHits);
+            }
+            if (totalTargetHits != null) {
+                comma(annotations, 0);
+                annotations.append(TOTAL_TARGET_HITS).append(": ").append(totalTargetHits);
             }
             if (scoreThreshold != 0) {
                 comma(annotations, 0);
@@ -1017,18 +1057,24 @@ public class VespaSerializer {
         }
 
         private boolean needsAnnotationBlock(WeakAndItem item) {
-            return item.nIsExplicit();
+            return item.getTargetHits() != null || item.getTotalTargetHits() != null;
         }
 
         @Override
         boolean serialize(StringBuilder destination, WeakAndItem item, Boolean includeField) {
             if (needsAnnotationBlock(item)) {
                 destination.append("({");
-            }
-            if (item.nIsExplicit()) {
-                destination.append(TARGET_HITS).append(": ").append(item.getN());
-            }
-            if (needsAnnotationBlock(item)) {
+                boolean needsComma = false;
+                if (item.getTargetHits() != null) {
+                    destination.append(TARGET_HITS).append(": ").append(item.getTargetHits());
+                    needsComma = true;
+                }
+                if (item.getTotalTargetHits() != null) {
+                    if (needsComma) {
+                        destination.append(", ");
+                    }
+                    destination.append(TOTAL_TARGET_HITS).append(": ").append(item.getTotalTargetHits());
+                }
                 destination.append("}");
             }
             destination.append(WEAK_AND).append('(');
@@ -1516,6 +1562,11 @@ public class VespaSerializer {
             if (weight != 100) {
                 comma(annotation, initLen);
                 annotation.append(WEIGHT).append(": ").append(weight);
+            }
+            Language language = leaf.getLanguage();
+            if (language != Language.UNKNOWN) {
+                comma(annotation, initLen);
+                annotation.append(USER_INPUT_LANGUAGE).append(": \"").append(language.languageCode()).append("\"");
             }
         }
         if (item instanceof IntItem) {

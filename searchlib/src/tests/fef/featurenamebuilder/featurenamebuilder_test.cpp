@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("featurenamebuilder_test");
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;
 
@@ -28,24 +28,32 @@ TEST(FeatureNameBuilderTest, quoting) {
     EXPECT_EQ(B().baseName("foo").parameter("a)").output("out").buildName(), "foo(\"a)\").out");
     EXPECT_EQ(B().baseName("foo").parameter(" ").output("out").buildName(), "foo(\" \").out");
     EXPECT_EQ(B().baseName("foo").parameter("\"").output("out").buildName(), "foo(\"\\\"\").out");
-    EXPECT_EQ(B().baseName("foo").parameter("\\\t\n\r\f\x15").output("out").buildName(), "foo(\"\\\\\\t\\n\\r\\f\\x15\").out");
-    EXPECT_EQ(B().baseName("foo").parameter("\\\t\n\r\f\x20").output("out").buildName(), "foo(\"\\\\\\t\\n\\r\\f \").out");
+    EXPECT_EQ(B().baseName("foo").parameter("\\\t\n\r\f\x15").output("out").buildName(),
+              "foo(\"\\\\\\t\\n\\r\\f\\x15\").out");
+    EXPECT_EQ(B().baseName("foo").parameter("\\\t\n\r\f\x20").output("out").buildName(),
+              "foo(\"\\\\\\t\\n\\r\\f \").out");
 }
 
 TEST(FeatureNameBuilderTest, empty_parameters) {
     EXPECT_EQ(B().baseName("foo").parameter("").output("out").buildName(), "foo().out");
     EXPECT_EQ(B().baseName("foo").parameter("").parameter("").output("out").buildName(), "foo(,).out");
     EXPECT_EQ(B().baseName("foo").parameter("").parameter("").parameter("").output("out").buildName(), "foo(,,).out");
-    EXPECT_EQ(B().baseName("foo").parameter("").parameter("x").parameter("").output("out").buildName(), "foo(,x,).out");
+    EXPECT_EQ(B().baseName("foo").parameter("").parameter("x").parameter("").output("out").buildName(),
+              "foo(,x,).out");
 }
 
 TEST(FeatureNameBuilderTest, change_components) {
     EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").buildName(), "foo(a,b).out");
-    EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").baseName("bar").buildName(), "bar(a,b).out");
-    EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").clearParameters().buildName(), "foo.out");
-    EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").clearParameters().parameter("x").buildName(), "foo(x).out");
+    EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").baseName("bar").buildName(),
+              "bar(a,b).out");
+    EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").clearParameters().buildName(),
+              "foo.out");
+    EXPECT_EQ(
+        B().baseName("foo").parameter("a").parameter("b").output("out").clearParameters().parameter("x").buildName(),
+        "foo(x).out");
     EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").output("").buildName(), "foo(a,b)");
-    EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").output("len").buildName(), "foo(a,b).len");
+    EXPECT_EQ(B().baseName("foo").parameter("a").parameter("b").output("out").output("len").buildName(),
+              "foo(a,b).len");
 }
 
 TEST(FeatureNameBuilderTest, exact_quote_vs_non_quote) {
@@ -70,7 +78,8 @@ TEST(FeatureNameBuilderTest, non_exact_quote_vs_non_quote) {
     EXPECT_EQ(B().baseName("foo").parameter(" bar ( a , b ) ", false).buildName(), "foo(bar(a,b))");
     EXPECT_EQ(B().baseName("foo").parameter(" bar ( a , b ) . out ", false).buildName(), "foo(bar(a,b).out)");
     EXPECT_EQ(B().baseName("foo").parameter(" bar ( a , b ) . out.2 ", false).buildName(), "foo(bar(a,b).out.2)");
-    EXPECT_EQ(B().baseName("foo").parameter(" bar ( a , b ) . out . 2 ", false).buildName(), "foo(\" bar ( a , b ) . out . 2 \")");
+    EXPECT_EQ(B().baseName("foo").parameter(" bar ( a , b ) . out . 2 ", false).buildName(),
+              "foo(\" bar ( a , b ) . out . 2 \")");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

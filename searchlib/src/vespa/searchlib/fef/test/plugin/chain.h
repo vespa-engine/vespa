@@ -9,25 +9,21 @@ namespace search {
 namespace fef {
 namespace test {
 
-class ChainExecutor : public FeatureExecutor
-{
+class ChainExecutor : public FeatureExecutor {
 public:
     ChainExecutor();
     void execute(uint32_t docId) override;
 };
 
-
-class ChainBlueprint : public Blueprint
-{
+class ChainBlueprint : public Blueprint {
 public:
     ChainBlueprint();
-    void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
+    void visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const override {}
     Blueprint::UP createInstance() const override { return Blueprint::UP(new ChainBlueprint()); }
-    bool setup(const IIndexEnvironment & indexEnv, const StringVector & params) override;
-    FeatureExecutor &createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const override;
+    bool setup(const IIndexEnvironment& indexEnv, const StringVector& params) override;
+    FeatureExecutor& createExecutor(const IQueryEnvironment& queryEnv, vespalib::Stash& stash) const override;
 };
 
 } // namespace test
 } // namespace fef
 } // namespace search
-

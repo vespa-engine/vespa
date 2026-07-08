@@ -8,6 +8,22 @@
 #include "rankmanager.h"
 #include "rankprocessor.h"
 #include "searchenvironment.h"
+
+#include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
+#include <vespa/searchlib/aggregation/aggregation.h>
+#include <vespa/searchlib/attribute/attributemanager.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/common/sortspec.h>
+#include <vespa/searchlib/common/unique_issues.h>
+#include <vespa/searchlib/query/streaming/query.h>
+#include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
+#include <vespa/storage/visiting/visitor.h>
+#include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/objects/objectoperation.h>
+#include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/common/documenttypemapping.h>
 #include <vespa/vsm/common/storagedocument.h>
@@ -16,21 +32,7 @@
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
-#include <vespa/vespalib/objects/objectoperation.h>
-#include <vespa/vespalib/objects/objectpredicate.h>
-#include <vespa/vespalib/data/smart_buffer.h>
-#include <vespa/searchlib/query/streaming/query.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
-#include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/extendableattributes.h>
-#include <vespa/searchlib/common/sortspec.h>
-#include <vespa/searchlib/common/unique_issues.h>
-#include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
-#include <vespa/storage/visiting/visitor.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
-#include <vespa/document/fieldvalue/iteratorhandler.h>
+
 #include <optional>
 
 using namespace search::aggregation;
@@ -45,11 +47,9 @@ class SearchEnvironmentSnapshot;
  * @brief Visitor that applies a search query to visitor data and
  * converts them to a QueryResultCommand.
  **/
-class SearchVisitor : public storage::Visitor,
-                      public search::QueryNormalization {
+class SearchVisitor : public storage::Visitor, public search::QueryNormalization {
 public:
-    SearchVisitor(storage::StorageComponent&, storage::VisitorEnvironment& vEnv,
-                  const vdslib::Parameters & params);
+    SearchVisitor(storage::StorageComponent&, storage::VisitorEnvironment& vEnv, const vdslib::Parameters& params);
 
     ~SearchVisitor() override;
 
@@ -70,8 +70,8 @@ private:
          **/
         AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr) noexcept;
 
-        vsm::FieldIdT          _field;
-        search::AttributeGuard::UP _attr;
+        vsm::FieldIdT                                       _field;
+        search::AttributeGuard::UP                          _attr;
         std::unique_ptr<search::attribute::ISortBlobWriter> _sort_blob_writer;
     };
 
@@ -81,24 +81,25 @@ private:
      **/
     class AttributeInserter : public document::fieldvalue::IteratorHandler {
     protected:
-        search::AttributeVector &      _attribute;
+        search::AttributeVector&       _attribute;
         search::AttributeVector::DocId _docId;
 
-        void onPrimitive(uint32_t fid, const Content & c) override;
+        void onPrimitive(uint32_t fid, const Content& c) override;
 
     public:
-        AttributeInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId);
+        AttributeInserter(search::AttributeVector& attribute, search::AttributeVector::DocId docId);
     };
 
     class PositionInserter : public AttributeInserter {
     public:
-        PositionInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId);
+        PositionInserter(search::AttributeVector& attribute, search::AttributeVector::DocId docId);
         ~PositionInserter() override;
+
     private:
-        void onPrimitive(uint32_t fid, const Content & c) override;
-        void onStructStart(const Content & fv) override;
-        document::Field _fieldX;
-        document::Field _fieldY;
+        void onPrimitive(uint32_t fid, const Content& c) override;
+        void onStructStart(const Content& fv) override;
+        document::Field         _fieldX;
+        document::Field         _fieldY;
         document::IntFieldValue _valueX;
         document::IntFieldValue _valueY;
     };
@@ -108,36 +109,37 @@ private:
      **/
     class RankController {
     private:
-        std::string               _rankProfile;
-        std::shared_ptr<const RankManager::Snapshot>  _rankManagerSnapshot;
-        std::optional<search::feature_t> _rank_score_drop_limit;
-        bool                           _hasRanking;
-        bool                           _hasSummaryFeatures;
-        bool                           _dumpFeatures;
-        search::fef::Properties        _queryProperties;
-        search::fef::Properties        _featureOverrides;
-        RankProcessor::UP              _rankProcessor;
-        RankProcessor::UP              _dumpProcessor;
+        std::string                                  _rankProfile;
+        std::shared_ptr<const RankManager::Snapshot> _rankManagerSnapshot;
+        std::optional<search::feature_t>             _rank_score_drop_limit;
+        bool                                         _hasRanking;
+        bool                                         _hasSummaryFeatures;
+        bool                                         _dumpFeatures;
+        search::fef::Properties                      _queryProperties;
+        search::fef::Properties                      _featureOverrides;
+        RankProcessor::UP                            _rankProcessor;
+        RankProcessor::UP                            _dumpProcessor;
 
         /**
          * Process attribute accessed and add needed attributes to the
          * given list.
          **/
-        static void processAccessedAttributes(const QueryEnvironment& queryEnv,
-                                              bool rank,
+        static void processAccessedAttributes(const QueryEnvironment& queryEnv, bool rank,
                                               const search::IAttributeManager& attrMan,
-                                              std::vector<AttrInfo>& attributeFields);
+                                              std::vector<AttrInfo>&           attributeFields);
 
     public:
         RankController();
         ~RankController();
         bool valid() const { return bool(_rankProcessor); }
-        void setRankProfile(const std::string &rankProfile) { _rankProfile = rankProfile; }
-        const std::string &getRankProfile() const { return _rankProfile; }
-        void setRankManagerSnapshot(const std::shared_ptr<const RankManager::Snapshot>& snapshot) { _rankManagerSnapshot = snapshot; }
-        search::fef::Properties & getQueryProperties() { return _queryProperties; }
-        search::fef::Properties & getFeatureOverrides() { return _featureOverrides; }
-        RankProcessor * getRankProcessor() { return _rankProcessor.get(); }
+        void setRankProfile(const std::string& rankProfile) { _rankProfile = rankProfile; }
+        const std::string& getRankProfile() const { return _rankProfile; }
+        void setRankManagerSnapshot(const std::shared_ptr<const RankManager::Snapshot>& snapshot) {
+            _rankManagerSnapshot = snapshot;
+        }
+        search::fef::Properties& getQueryProperties() { return _queryProperties; }
+        search::fef::Properties& getFeatureOverrides() { return _featureOverrides; }
+        RankProcessor* getRankProcessor() { return _rankProcessor.get(); }
         void setDumpFeatures(bool dumpFeatures) { _dumpFeatures = dumpFeatures; }
         bool getDumpFeatures() const { return _dumpFeatures; }
         std::optional<search::feature_t> rank_score_drop_limit() const noexcept { return _rank_score_drop_limit; }
@@ -150,11 +152,9 @@ private:
          * @param attrMan the attribute manager.
          * @param attributeFields the list of attribute vectors needed.
          **/
-        void setupRankProcessors(search::streaming::Query & query,
-                                 const std::string & location,
-                                 size_t wantedHitCount, bool use_sort_blob,
-                                 const search::IAttributeManager & attrMan,
-                                 std::vector<AttrInfo> & attributeFields);
+        void setupRankProcessors(search::streaming::Query& query, const std::string& location, size_t wantedHitCount,
+                                 bool use_sort_blob, const search::IAttributeManager& attrMan,
+                                 std::vector<AttrInfo>& attributeFields);
         /**
          * Callback function that is called for each document that match.
          * Unpack match data.
@@ -183,9 +183,7 @@ private:
          * @param tmpSortBuffer the sort buffer containing the sort data.
          * @param document the document to collect. Must be kept alive on the outside.
          **/
-        void collectMatchedDocument(bool hasSorting,
-                                    SearchVisitor & visitor,
-                                    const std::vector<char> & tmpSortBuffer,
+        void collectMatchedDocument(bool hasSorting, SearchVisitor& visitor, const std::vector<char>& tmpSortBuffer,
                                     vsm::StorageDocument::SP document);
         /**
          * Callback function that is called when visiting is completed.
@@ -193,7 +191,8 @@ private:
          *
          * @param docsumsStateCallback state object to store summary features and rank features.
          **/
-        void onCompletedVisiting(vsm::GetDocsumsStateCallback & docsumsStateCallback, vdslib::SearchResult & searchResult);
+        void onCompletedVisiting(vsm::GetDocsumsStateCallback& docsumsStateCallback,
+                                 vdslib::SearchResult&         searchResult);
         vespalib::FeatureSet::SP getFeatureSet(search::DocumentIdT docId);
     };
 
@@ -213,15 +212,14 @@ private:
          * @param fieldRegistry mapping from field name to field id for all known fields.
          * @param fieldsInQuery mapping from field name to field id for fields mentioned in the query.
          **/
-        void setup(const vsm::StringFieldIdTMap & fieldRegistry,
-                   const vsm::StringFieldIdTMap & fieldsInQuery);
+        void setup(const vsm::StringFieldIdTMap& fieldRegistry, const vsm::StringFieldIdTMap& fieldsInQuery);
 
         /**
          * Callback function that is called for each document received.
          *
          * @param document the document received.
          **/
-        void onDocument(vsm::StorageDocument & document);
+        void onDocument(vsm::StorageDocument& document);
 
         /**
          * Callback function that is called for each document matched.
@@ -229,8 +227,7 @@ private:
          * @param document the document matched.
          * @param documentId the document id of the matched document.
          **/
-        void onDocumentMatch(vsm::StorageDocument & document,
-                             const std::string & documentId);
+        void onDocumentMatch(vsm::StorageDocument& document, const std::string& documentId);
     };
 
     /**
@@ -241,7 +238,8 @@ private:
      * @param docsumSpec config with the field names used by the docsum setup.
      * @param fieldList list of field names that are built.
      **/
-    static std::vector<std::string> registerAdditionalFields(const std::vector<vsm::DocsumTools::FieldSpec> & docsumSpec);
+    static std::vector<std::string>
+    registerAdditionalFields(const std::vector<vsm::DocsumTools::FieldSpec>& docsumSpec);
 
     /**
      * Setup the field searchers used when matching the query with the stream of documents.
@@ -268,7 +266,7 @@ private:
      * Setup the scratch document that is used when receiving a stream of documents through the visitor api.
      * Each document in this stream is serialized into the scratch document and passed to vsm for matching.
      **/
-    void setupScratchDocument(const vsm::StringFieldIdTMap & fieldsInQuery);
+    void setupScratchDocument(const vsm::StringFieldIdTMap& fieldsInQuery);
 
     /**
      * Setup the objects used for document summary.
@@ -287,22 +285,19 @@ private:
      *
      * @param sortList the list of attributes needed for sorting.
      **/
-    void setupAttributeVectorsForSorting(const search::common::SortSpec & sortList);
+    void setupAttributeVectorsForSorting(const search::common::SortSpec& sortList);
 
     /**
      * Setup grouping based on the given grouping blob.
      *
      * @param groupingBlob the binary representation of the grouping specification.
      **/
-    void setupGrouping(const std::vector<char> & groupingBlob);
+    void setupGrouping(const std::vector<char>& groupingBlob);
 
     // Inherit doc from Visitor
-    void handleDocuments(const document::BucketId&,
-                         DocEntryList& entries,
-                         HitCounter& hitCounter) override;
+    void handleDocuments(const document::BucketId&, DocEntryList& entries, HitCounter& hitCounter) override;
 
-    static bool compatibleDocumentTypes(const document::DocumentType& typeA,
-                                        const document::DocumentType& typeB);
+    static bool compatibleDocumentTypes(const document::DocumentType& typeA, const document::DocumentType& typeB);
 
     /**
      * Process one document
@@ -316,7 +311,7 @@ private:
      * @param doc the document used for grouping.
      * @param all whether we should group all documents, not just hits.
      **/
-    void group(const document::Document & doc, search::HitRank rank, bool all);
+    void group(const document::Document& doc, search::HitRank rank, bool all);
 
     /**
      * Check if the given document matches the query.
@@ -324,14 +319,14 @@ private:
      * @param doc the document to match.
      * @return whether the document matched the query.
      **/
-    bool match(const vsm::StorageDocument & doc);
+    bool match(const vsm::StorageDocument& doc);
 
     /**
      * Fill attribute vectors needed for aggregation and sorting with values from the scratch document.
      *
      * @param documentId the document id of the matched document.
      **/
-    void fillAttributeVectors(const std::string & documentId, const vsm::StorageDocument & document);
+    void fillAttributeVectors(const std::string& documentId, const vsm::StorageDocument& document);
 
     /**
      * Fill the sort buffer based on the attribute vectors needed for sorting.
@@ -370,79 +365,84 @@ private:
 
     class GroupingEntry : std::shared_ptr<Grouping> {
     public:
-        explicit GroupingEntry(Grouping * grouping);
+        explicit GroupingEntry(Grouping* grouping);
         ~GroupingEntry();
-        void aggregate(const document::Document & doc, search::HitRank rank);
-        const Grouping & operator * () const { return *_grouping; }
-        Grouping & operator * () { return *_grouping; }
-        const Grouping * operator -> () const { return _grouping.get(); }
+        void aggregate(const document::Document& doc, search::HitRank rank);
+        const Grouping& operator*() const { return *_grouping; }
+        Grouping& operator*() { return *_grouping; }
+        const Grouping* operator->() const { return _grouping.get(); }
+
     private:
         std::shared_ptr<Grouping> _grouping;
-        size_t _count;
-        size_t _limit;
+        size_t                    _count;
+        size_t                    _limit;
     };
-    using GroupingList = std::vector< GroupingEntry >;
+    using GroupingList = std::vector<GroupingEntry>;
 
     class StreamingDocsumsState {
         using ResolveClassInfo = search::docsummary::IDocsumWriter::ResolveClassInfo;
         GetDocsumsState  _state;
         ResolveClassInfo _resolve_class_info;
+
     public:
-        StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback, ResolveClassInfo& resolve_class_info);
+        StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback,
+                              ResolveClassInfo&                            resolve_class_info);
         ~StreamingDocsumsState();
         GetDocsumsState& get_state() noexcept { return _state; }
         const ResolveClassInfo& get_resolve_class_info() const noexcept { return _resolve_class_info; }
     };
 
-    class SummaryGenerator : public HitsAggregationResult::SummaryGenerator
-    {
+    class SummaryGenerator : public HitsAggregationResult::SummaryGenerator {
     public:
-        explicit SummaryGenerator(const search::IAttributeManager&, const search::QueryNormalization &);
+        explicit SummaryGenerator(const search::IAttributeManager&, const search::QueryNormalization&);
         ~SummaryGenerator() override;
-        vsm::GetDocsumsStateCallback & getDocsumCallback() { return _callback; }
+        vsm::GetDocsumsStateCallback& getDocsumCallback() { return _callback; }
         void setFilter(std::unique_ptr<vsm::DocsumFilter> filter) { _docsumFilter = std::move(filter); }
-        void setDocsumCache(const vsm::IDocSumCache & cache) { _docsumFilter->setDocSumStore(cache); }
-        void setDocsumWriter(IDocsumWriter & docsumWriter) { _docsumWriter = & docsumWriter; }
-        vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, std::string_view summaryClass) override;
+        void setDocsumCache(const vsm::IDocSumCache& cache) { _docsumFilter->setDocSumStore(cache); }
+        void setDocsumWriter(IDocsumWriter& docsumWriter) { _docsumWriter = &docsumWriter; }
+        vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid,
+                                             std::string_view               summaryClass) override;
         void set_dump_features(bool dump_features) { _dump_features = dump_features; }
         void set_location(std::string location) { _location = std::move(location); }
-        void set_serialized_query_tree(search::SerializedQueryTreeSP tree) { _serialized_query_tree = std::move(tree); }
+        void set_serialized_query_tree(search::SerializedQueryTreeSP tree) {
+            _serialized_query_tree = std::move(tree);
+        }
         void add_summary_field(std::string_view field) { _summaryFields.emplace_back(field); }
-        search::fef::Properties & highlightTerms() { return _highlight_terms;}
+        search::fef::Properties& highlightTerms() { return _highlight_terms; }
+
     private:
         StreamingDocsumsState& get_streaming_docsums_state(std::string_view summary_class);
-        vsm::GetDocsumsStateCallback            _callback;
+        vsm::GetDocsumsStateCallback                                            _callback;
         vespalib::hash_map<std::string, std::unique_ptr<StreamingDocsumsState>> _docsum_states;
-        std::vector<std::string>                _summaryFields;
-        std::unique_ptr<vsm::DocsumFilter>      _docsumFilter;
-        search::docsummary::IDocsumWriter     * _docsumWriter;
-        vespalib::SmartBuffer                   _buf;
-        std::optional<bool>                     _dump_features;
-        std::optional<std::string>              _location;
-        search::SerializedQueryTreeSP                     _serialized_query_tree;
-        search::fef::Properties                 _highlight_terms;
-        const search::IAttributeManager&        _attr_manager;
-        const search::QueryNormalization &      _query_normalization;
+        std::vector<std::string>                                                _summaryFields;
+        std::unique_ptr<vsm::DocsumFilter>                                      _docsumFilter;
+        search::docsummary::IDocsumWriter*                                      _docsumWriter;
+        vespalib::SmartBuffer                                                   _buf;
+        std::optional<bool>                                                     _dump_features;
+        std::optional<std::string>                                              _location;
+        search::SerializedQueryTreeSP                                           _serialized_query_tree;
+        search::fef::Properties                                                 _highlight_terms;
+        const search::IAttributeManager&                                        _attr_manager;
+        const search::QueryNormalization&                                       _query_normalization;
     };
 
-    class HitsResultPreparator : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
-    {
+    class HitsResultPreparator : public vespalib::ObjectOperation, public vespalib::ObjectPredicate {
     public:
-        explicit HitsResultPreparator(SummaryGenerator & summaryGenerator)
-            : _summaryGenerator(summaryGenerator),
-              _numHitsAggregators(0)
-        { }
-        size_t getNumHitsAggregators() const  { return _numHitsAggregators; }
+        explicit HitsResultPreparator(SummaryGenerator& summaryGenerator)
+            : _summaryGenerator(summaryGenerator), _numHitsAggregators(0) {}
+        size_t getNumHitsAggregators() const { return _numHitsAggregators; }
+
     private:
-        void execute(vespalib::Identifiable &obj) override;
-        bool check(const vespalib::Identifiable &obj) const override;
-        SummaryGenerator & _summaryGenerator;
-        size_t             _numHitsAggregators;
+        void execute(vespalib::Identifiable& obj) override;
+        bool check(const vespalib::Identifiable& obj) const override;
+        SummaryGenerator& _summaryGenerator;
+        size_t            _numHitsAggregators;
     };
 
     class ElementGapInspector : public search::queryeval::IElementGapInspector {
-        const search::fef::IQueryEnvironment* _query_env;
+        const search::fef::IQueryEnvironment*                       _query_env;
         mutable std::vector<std::optional<search::fef::ElementGap>> _cache;
+
     public:
         ElementGapInspector() noexcept;
         ~ElementGapInspector() override;
@@ -450,58 +450,60 @@ private:
         search::fef::ElementGap get_element_gap(uint32_t field_id) const noexcept override;
     };
 
-    void init(const vdslib::Parameters & params);
+    void init(const vdslib::Parameters& params);
     std::shared_ptr<const SearchEnvironmentSnapshot> _env;
-    vdslib::Parameters                      _params;
-    bool                                    _init_called;
-    bool                                    _collectGroupingHits;
-    size_t                                  _docSearchedCount;
-    size_t                                  _hitCount;
-    size_t                                  _hitsRejectedCount;
-    search::streaming::Query                _query;
-    std::unique_ptr<documentapi::QueryResultMessage>    _queryResult;
-    vsm::FieldIdTSearcherMap                _fieldSearcherMap;
-    vsm::SharedFieldPathMap                 _fieldPathMap;
-    vsm::DocumentTypeMapping                _docTypeMapping;
-    vsm::FieldSearchSpecMap                 _fieldSearchSpecMap;
-    vsm::SnippetModifierManager             _snippetModifierManager;
-    std::string                        _summaryClass;
-    search::AttributeManager                _attrMan;
-    search::attribute::IAttributeContext::UP _attrCtx;
-    SummaryGenerator                        _summaryGenerator;
-    GroupingList                            _groupingList;
-    std::vector<AttrInfo>                   _attributeFields;
-    search::common::SortSpec                _sortSpec;
-    std::vector<size_t>                     _sortList;
-    vsm::SharedSearcherBuf                  _searchBuffer;
-    std::vector<char>                       _tmpSortBuffer;
-    search::AttributeVector::SP             _documentIdAttributeBacking;
-    search::AttributeVector::SP             _rankAttributeBacking;
-    search::SingleStringExtAttribute      & _documentIdAttribute;
-    search::SingleFloatExtAttribute       & _rankAttribute;
-    bool                                    _shouldFillRankAttribute;
-    SyntheticFieldsController               _syntheticFieldsController;
-    RankController                          _rankController;
-    vsm::StringFieldIdTMapT                 _fieldsUnion;
-    search::UniqueIssues                    _unique_issues;
-    ElementGapInspector                     _element_gap_inspector;
+    vdslib::Parameters                               _params;
+    bool                                             _init_called;
+    bool                                             _collectGroupingHits;
+    size_t                                           _docSearchedCount;
+    size_t                                           _hitCount;
+    size_t                                           _hitsRejectedCount;
+    search::streaming::Query                         _query;
+    std::unique_ptr<documentapi::QueryResultMessage> _queryResult;
+    vsm::FieldIdTSearcherMap                         _fieldSearcherMap;
+    vsm::SharedFieldPathMap                          _fieldPathMap;
+    vsm::DocumentTypeMapping                         _docTypeMapping;
+    vsm::FieldSearchSpecMap                          _fieldSearchSpecMap;
+    vsm::SnippetModifierManager                      _snippetModifierManager;
+    std::string                                      _summaryClass;
+    search::AttributeManager                         _attrMan;
+    search::attribute::IAttributeContext::UP         _attrCtx;
+    SummaryGenerator                                 _summaryGenerator;
+    GroupingList                                     _groupingList;
+    std::vector<AttrInfo>                            _attributeFields;
+    search::common::SortSpec                         _sortSpec;
+    std::vector<size_t>                              _sortList;
+    vsm::SharedSearcherBuf                           _searchBuffer;
+    std::vector<char>                                _tmpSortBuffer;
+    search::AttributeVector::SP                      _documentIdAttributeBacking;
+    search::AttributeVector::SP                      _rankAttributeBacking;
+    search::SingleStringExtAttribute&                _documentIdAttribute;
+    search::SingleFloatExtAttribute&                 _rankAttribute;
+    bool                                             _shouldFillRankAttribute;
+    SyntheticFieldsController                        _syntheticFieldsController;
+    RankController                                   _rankController;
+    vsm::StringFieldIdTMapT                          _fieldsUnion;
+    search::UniqueIssues                             _unique_issues;
+    ElementGapInspector                              _element_gap_inspector;
 
-    void setupAttributeVector(const vsm::FieldPath &fieldPath);
+    void setupAttributeVector(const vsm::FieldPath& fieldPath);
     bool is_text_matching(std::string_view index) const noexcept override;
     Normalizing normalizing_mode(std::string_view index) const noexcept override;
 };
 
 class SearchVisitorFactory : public storage::VisitorFactory {
-    config::ConfigUri _configUri;
+    config::ConfigUri                            _configUri;
     std::shared_ptr<storage::VisitorEnvironment> _env;
     std::shared_ptr<storage::VisitorEnvironment> makeVisitorEnvironment(storage::StorageComponent&) override;
 
-    storage::Visitor* makeVisitor(storage::StorageComponent&, storage::VisitorEnvironment&env,
+    storage::Visitor* makeVisitor(storage::StorageComponent&, storage::VisitorEnvironment& env,
                                   const vdslib::Parameters& params) override;
+
 public:
-    explicit SearchVisitorFactory(const config::ConfigUri & configUri, FNET_Transport* transport, const std::string& file_distributor_connection_spec);
+    explicit SearchVisitorFactory(const config::ConfigUri& configUri, FNET_Transport* transport,
+                                  const std::string& file_distributor_connection_spec);
     ~SearchVisitorFactory() override;
     std::optional<int64_t> get_oldest_config_generation() const;
 };
 
-}
+} // namespace streaming

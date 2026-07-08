@@ -1,22 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
-using vespalib::make_string_short::fmt;
-using vespalib::Slime;
-using vespalib::slime::JsonFormat;
 using vespalib::MappedFileInput;
+using vespalib::Slime;
+using vespalib::make_string_short::fmt;
+using vespalib::slime::JsonFormat;
 
 std::string module_build_path("../../../../");
 
-TEST(TensorConformanceTest, require_that_cross_language_tensor_conformance_tests_pass_with_CXX_expression_evaluation) {
+TEST(TensorConformanceTest,
+     require_that_cross_language_tensor_conformance_tests_pass_with_CXX_expression_evaluation) {
     std::string result_file = "conformance_result.json";
     std::string binary = module_build_path + "src/apps/tensor_conformance/vespa-tensor-conformance";
-    EXPECT_EQ(system(fmt("%s generate-some | %s evaluate | %s verify > %s", binary.c_str(), binary.c_str(), binary.c_str(), result_file.c_str()).c_str()), 0);
-    Slime result;
+    EXPECT_EQ(system(fmt("%s generate-some | %s evaluate | %s verify > %s", binary.c_str(), binary.c_str(),
+                         binary.c_str(), result_file.c_str())
+                         .c_str()),
+              0);
+    Slime           result;
     MappedFileInput input(result_file);
     JsonFormat::decode(input, result);
     fprintf(stderr, "conformance summary: %s\n", result.toString().c_str());
