@@ -14,10 +14,12 @@ public class SearchGroupsImpl implements SearchGroups {
 
     private final AvailabilityPolicy availabilityPolicy;
     private final Map<Integer, Group> groups;
+    private volatile DocumentCount documentCount;
 
     public SearchGroupsImpl(AvailabilityPolicy availabilityPolicy, Map<Integer, Group> groups) {
         this.availabilityPolicy = availabilityPolicy;
         this.groups = Map.copyOf(groups);
+        this.documentCount = new DocumentCount();
     }
 
     @Override public Group get(int id) { return groups.get(id); }
@@ -71,4 +73,19 @@ public class SearchGroupsImpl implements SearchGroups {
         return (long)groups().stream().mapToDouble(Group::activeDocuments).max().orElse(0);
     }
 
+    public long maxTargetDocumentCount() {
+        return (long)groups().stream().mapToDouble(Group::targetActiveDocuments).max().orElse(0);
+    }
+
+    public boolean hasAllWorkingGroup() {
+        return groups().stream().anyMatch(Group::allNodesWorking);
+    }
+
+    public DocumentCount getDocumentCount() {
+        return this.documentCount;
+    }
+
+    public void setDocumentCount(DocumentCount documentCount) {
+        this.documentCount = documentCount;
+    }
 }

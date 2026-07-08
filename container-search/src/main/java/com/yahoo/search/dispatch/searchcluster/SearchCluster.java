@@ -222,6 +222,7 @@ public class SearchCluster implements NodeManager<Node> {
     private void pingIterationCompletedSingleGroup(SearchGroupsImpl groups) {
         Group group = groups.groups().iterator().next();
         group.aggregateNodeValues();
+        groups.setDocumentCount(new DocumentCount(group.activeDocuments(), group.targetActiveDocuments(), group.allNodesWorking()));
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
@@ -234,6 +235,7 @@ public class SearchCluster implements NodeManager<Node> {
         groups.groups().forEach(Group::aggregateNodeValues);
         long medianDocuments = groups.medianDocumentCount();
         long maxDocuments = groups.maxDocumentCount();
+        groups.setDocumentCount(new DocumentCount(maxDocuments, groups.maxTargetDocumentCount(), groups.hasAllWorkingGroup()));
         for (Group group : groups.groups()) {
             boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.hasSufficientCoverage(),
                                                                           group.activeDocuments(), medianDocuments, maxDocuments);

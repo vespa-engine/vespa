@@ -13,7 +13,7 @@ import static java.util.stream.Collectors.toCollection;
  *
  * @author baldersheim
  */
-public interface SearchGroups {
+public interface SearchGroups extends DocumentCountSource {
 
     Group get(int id);
 

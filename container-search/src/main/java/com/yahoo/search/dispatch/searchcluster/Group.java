@@ -71,6 +71,13 @@ public class Group {
         return workingNodes().size();
     }
 
+    /**
+     * Returns whether all nodes in this group are working.
+     */
+    public boolean allNodesWorking() {
+        return workingNodesCount() == size();
+    }
+
     /** Called every time, and only when, we have received a ping response from every node in the group. */
     public void aggregateNodeValues() {
         List<Node> workingNodes = workingNodes();
@@ -111,7 +118,7 @@ public class Group {
      * Returns the target active documents in this group.
      * If we have not yet received this information from <i>all</i> nodes in the group, 0 is returned.
      */
-    long targetActiveDocuments() { return targetActiveDocuments; }
+    public long targetActiveDocuments() { return targetActiveDocuments; }
 
     /** Returns whether the nodes in the group have about the same number of documents */
     public boolean isBalanced() { return isBalanced; }
