@@ -195,7 +195,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
-            "restart-on-deploy-maintainer", false,
+            "restart-on-deploy-maintainer", true,
             List.of("glebashnik"), "2026-04-07", "2026-10-07",
             "When enabled, RestartOnDeployMaintainer is used instead of PendingRestartsMaintainer " +
                     "to trigger pending restarts.",
