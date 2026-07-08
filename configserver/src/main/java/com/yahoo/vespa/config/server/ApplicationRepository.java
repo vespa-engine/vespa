@@ -702,6 +702,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         List<String> deleted = new ArrayList<>();
         toDelete.forEach(fileReference -> {
             try {
+                // Note that a file reference will only be deleted if it is not in use and is old enough
                 if (fileDirectory.delete(new FileReference(fileReference), this::isFileReferenceInUse, this::isFileReferenceOld))
                     deleted.add(fileReference);
             } catch (UncheckedIOException e) {
@@ -748,8 +749,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                     try {
                         return lastModified(new File(fileReferencesPath, a));
                     } catch (UncheckedIOException e) {
-                        log.log(Level.FINE, "Unable to get last modified time for file reference " + a + ", probably deleted");
-                        return Instant.EPOCH;
+                        log.log(Level.INFO, "Unable to get last modified time for file reference " + a + ", probably deleted");
+                        return clock.instant();
                     }
                 }))
                 // Do max 20 at a time

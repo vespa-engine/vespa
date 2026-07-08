@@ -218,7 +218,8 @@ public class FileServer {
                                                                           false);
             file = downloader.getFile(newDownload);
             if (file.isEmpty())
-                log.log(Level.INFO, "Failed downloading '" + fileReferenceDownload + "'");
+                log.log(Level.INFO, "File not available for serving and failed downloading '" +
+                        fileReferenceDownload + "' from another source");
             return file;
         } else {
             log.log(FINE, "File not found, will not download from another source");

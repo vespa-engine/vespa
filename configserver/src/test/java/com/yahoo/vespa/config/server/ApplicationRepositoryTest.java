@@ -59,6 +59,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -305,6 +306,35 @@ public class ApplicationRepositoryTest {
         assertFalse(new File(fileReferencesDir, "baz0").exists());
         assertFalse(new File(fileReferencesDir, "baz1").exists());
         assertTrue(filereferenceDirNewest.exists());
+    }
+
+    @Test
+    public void deleteUnusedFileReferencesWithConcurrentlyDeletedFileReference() throws IOException {
+        File fileReferencesDir = new File(configserverConfig.fileReferencesDir());
+
+        // Create 20 old file references (more than the limit of 20 to be returned by sortedUnusedFileReferences)
+        IntStream.range(0, 20).forEach(i -> {
+            createFileReferenceOnDisk(new File(fileReferencesDir, "ref" + i));
+            clock.advance(Duration.ofSeconds(1));
+        });
+        clock.advance(Duration.ofMinutes(configserverConfig.keepUnusedFileReferencesMinutes()));
+
+        // Create a broken symlink to simulate a file reference that was concurrently deleted:
+        // it appears in the directory listing but throws UncheckedIOException when lastModified is called.
+        // With the fix (clock.instant()), this sorts as the newest entry and does not take a deletion slot.
+        // Without the fix (Instant.EPOCH), it sorts first and displaces one old file reference.
+        Files.createSymbolicLink(fileReferencesDir.toPath().resolve("concurrently-deleted"),
+                                 java.nio.file.Path.of("/nonexistent/target"));
+
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withClock(clock)
+                .withConfigserverConfig(configserverConfig)
+                .build();
+
+        List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory);
+        assertEquals(20, deleted.size());
+        IntStream.range(0, 20).forEach(i -> assertFalse(new File(fileReferencesDir, "ref" + i).exists()));
     }
 
     private File createFileReferenceOnDisk(File filereference) {
