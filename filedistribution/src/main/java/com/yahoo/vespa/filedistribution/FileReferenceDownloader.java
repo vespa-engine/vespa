@@ -192,7 +192,8 @@ public class FileReferenceDownloader {
                 return DownloadResult.SUCCESS;
             } else {
                 var error = FileApiErrorCodes.get(errorCode);
-                log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed (" + error + ")");
+                var errorDescription = error == null ? "Unknown error" : error.description();
+                log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed (" + errorDescription + ")");
                 return DownloadResult.FAILURE;
             }
         } else {
