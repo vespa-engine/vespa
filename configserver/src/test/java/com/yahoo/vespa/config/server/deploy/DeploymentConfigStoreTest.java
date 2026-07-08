@@ -6,6 +6,7 @@ import com.yahoo.config.provision.BackupConfig;
 import com.yahoo.config.provision.BlockWindow;
 import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HeapDumpRedaction;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.Zone;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests that Deployment.activate() stores backup config and block windows via DeploymentConfigStore
  * when activated in a production environment, and does nothing in non-production environments.
+ * Heap dump redaction is stored in all environments.
  *
  * @author olaa
  */
@@ -126,6 +128,54 @@ public class DeploymentConfigStoreTest {
     }
 
     @Test
+    public void stores_heap_dump_redaction_for_prod_deployment() {
+        CapturingDeploymentConfigStore store = new CapturingDeploymentConfigStore();
+        Zone prodZone = new Zone(Environment.prod, RegionName.from("us-north-1"));
+
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(prodZone)
+                .modelFactory(createHostedModelFactory())
+                .deploymentConfigStore(store)
+                .build();
+
+        tester.deployApp("src/test/apps/hosted-with-backup/");
+
+        assertEquals(List.of(HeapDumpRedaction.basic), store.redactionCalls);
+    }
+
+    @Test
+    public void stores_heap_dump_redaction_also_for_non_prod_deployment() {
+        CapturingDeploymentConfigStore store = new CapturingDeploymentConfigStore();
+        Zone devZone = new Zone(Environment.dev, RegionName.defaultName());
+
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(devZone)
+                .modelFactory(createHostedModelFactory())
+                .deploymentConfigStore(store)
+                .build();
+
+        tester.deployApp("src/test/apps/hosted-with-backup/");
+
+        assertEquals(List.of(HeapDumpRedaction.basic), store.redactionCalls);
+    }
+
+    @Test
+    public void stores_heap_dump_redaction_none_when_not_declared() {
+        CapturingDeploymentConfigStore store = new CapturingDeploymentConfigStore();
+        Zone prodZone = new Zone(Environment.prod, RegionName.from("us-north-1"));
+
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(prodZone)
+                .modelFactory(createHostedModelFactory())
+                .deploymentConfigStore(store)
+                .build();
+
+        tester.deployApp("src/test/apps/hosted-without-memory-dump/");
+
+        assertEquals(List.of(HeapDumpRedaction.none), store.redactionCalls);
+    }
+
+    @Test
     public void does_not_store_config_when_no_store_configured() {
         Zone prodZone = new Zone(Environment.prod, RegionName.from("us-north-1"));
 
@@ -142,6 +192,7 @@ public class DeploymentConfigStoreTest {
     private static class CapturingDeploymentConfigStore implements DeploymentConfigStore {
 
         final List<Call> calls = new ArrayList<>();
+        final List<HeapDumpRedaction> redactionCalls = new ArrayList<>();
 
         @Override
         public void store(ApplicationId applicationId,
@@ -149,6 +200,11 @@ public class DeploymentConfigStoreTest {
                           List<BlockWindow> blockWindows,
                           TelemetryExporterConfiguration telemetryExporterConfiguration) {
             calls.add(new Call(applicationId, backup, blockWindows, telemetryExporterConfiguration));
+        }
+
+        @Override
+        public void storeHeapDumpRedaction(ApplicationId applicationId, HeapDumpRedaction heapDumpRedaction) {
+            redactionCalls.add(heapDumpRedaction);
         }
 
         record Call(ApplicationId applicationId,
