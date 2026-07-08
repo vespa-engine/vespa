@@ -9,7 +9,10 @@ import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.searchcluster.DocumentCount;
+import com.yahoo.search.dispatch.searchcluster.DocumentCountSource;
 import com.yahoo.search.dispatch.searchcluster.Group;
+import com.yahoo.search.dispatch.searchcluster.MockDocumentCountSource;
 import com.yahoo.search.dispatch.searchcluster.MockSearchCluster;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.Coverage;
@@ -353,7 +356,8 @@ public class InterleavedSearchInvokerTest {
                         .addAggregationResult(new MinAggregationResult().setMin(new IntegerResultNode(6)).setTag(3))));
         invokers.add(new MockInvoker(0).setHits(List.of(new GroupingListHit(List.of(grouping2)))));
 
-        try (InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, new Group(0, List.of()), Set.of())) {
+        try (InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig,
+                new Group(0, List.of()), new MockDocumentCountSource(), Set.of())) {
             invoker.responseAvailable(invokers.get(0));
             invoker.responseAvailable(invokers.get(1));
             Result result = invoker.search(query, 1.0);
@@ -398,7 +402,8 @@ public class InterleavedSearchInvokerTest {
         List<SearchInvoker> invokers = new ArrayList<>();
         invokers.add(createMockInvoker(a, new Node("test", 0, "?", 0, false)));
         invokers.add(createMockInvoker(b, new Node("test", 1, "?", 0, false)));
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, Set.of());
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig,
+                group, new MockDocumentCountSource(), Set.of());
         invoker.responseAvailable(invokers.get(0));
         invoker.responseAvailable(invokers.get(1));
         return invoker;
@@ -449,16 +454,25 @@ public class InterleavedSearchInvokerTest {
     }
 
     private InterleavedSearchInvoker createInterleavedInvoker(Group group, int numInvokers) {
-        return createInterleavedInvoker(hitEstimator, dispatchConfig, group, numInvokers);
+        return createInterleavedInvoker(hitEstimator, dispatchConfig, group, numInvokers, new MockDocumentCountSource());
+    }
+
+    private InterleavedSearchInvoker createInterleavedInvoker(Group group, int numInvokers, DocumentCountSource documentCountSource) {
+        return createInterleavedInvoker(hitEstimator, dispatchConfig, group, numInvokers, documentCountSource);
     }
 
     private InterleavedSearchInvoker createInterleavedInvoker(TopKEstimator hitEstimator, DispatchConfig dispatchConfig,
                                                               Group group, int numInvokers) {
+        return createInterleavedInvoker(hitEstimator, dispatchConfig, group, numInvokers, new MockDocumentCountSource());
+    }
+
+    private InterleavedSearchInvoker createInterleavedInvoker(TopKEstimator hitEstimator, DispatchConfig dispatchConfig,
+                                                              Group group, int numInvokers, DocumentCountSource documentCountSource) {
         for (int i = 0; i < numInvokers; i++) {
             invokers.add(new MockInvoker(i));
         }
 
-        return new InterleavedSearchInvoker(Timer.wrap(clock), invokers, hitEstimator, dispatchConfig, group,null) {
+        return new InterleavedSearchInvoker(Timer.wrap(clock), invokers, hitEstimator, dispatchConfig, group, documentCountSource, null) {
 
             @Override
             protected LinkedBlockingQueue<SearchInvoker> newQueue() {
