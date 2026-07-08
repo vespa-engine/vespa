@@ -18,6 +18,10 @@ namespace vespalib {
 class Executor;
 }
 
+namespace proton::initializer {
+class LoadMemoryUsage;
+}
+
 namespace proton {
 
 class AttributeDirectory;
@@ -61,7 +65,7 @@ public:
 
     AttributeInitializerResult init() const;
     const std::optional<uint64_t>& getCurrentSerialNum() const noexcept { return _currentSerialNum; }
-    size_t get_transient_memory_usage() const;
+    initializer::LoadMemoryUsage get_load_memory_usage() const;
     std::shared_ptr<search::attribute::AttributeInitializationStatus> get_attribute_initialization_status() const {
         return _initialization_status;
     }

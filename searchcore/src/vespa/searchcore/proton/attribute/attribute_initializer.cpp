@@ -13,6 +13,7 @@
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
+#include <vespa/searchcore/proton/initializer/load_memory_usage.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -24,6 +25,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_initializer");
 
+using proton::initializer::LoadMemoryUsage;
 using search::AttributeVector;
 using search::CommitParam;
 using search::IndexMetaInfo;
@@ -251,12 +253,12 @@ AttributeInitializerResult AttributeInitializer::init() const {
     }
 }
 
-size_t AttributeInitializer::get_transient_memory_usage() const {
+LoadMemoryUsage AttributeInitializer::get_load_memory_usage() const {
     if (_header_ok) {
         AttributeLoadMemoryCalculator get_load_memory_usage;
-        return get_load_memory_usage(*_header, _spec.getConfig()).transient();
+        return get_load_memory_usage(*_header, _spec.getConfig());
     }
-    return 0u;
+    return LoadMemoryUsage();
 }
 
 } // namespace proton

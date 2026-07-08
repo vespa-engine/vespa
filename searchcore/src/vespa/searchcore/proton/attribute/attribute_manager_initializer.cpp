@@ -6,10 +6,12 @@
 #include "attributes_initializer_base.h"
 
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
+#include <vespa/searchcore/proton/initializer/load_memory_usage.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 
 #include <future>
 
+using proton::initializer::LoadMemoryUsage;
 using search::AttributeVector;
 using search::GrowStrategy;
 using search::SerialNum;
@@ -43,7 +45,7 @@ public:
             _result.add(result);
         }
     }
-    size_t get_transient_memory_usage() const override { return _initializer->get_transient_memory_usage(); }
+    LoadMemoryUsage get_load_memory_usage() const override { return _initializer->get_load_memory_usage(); }
     void accept_visitor(initializer::InitializerTaskVisitor& visitor) override {
         visitor.visit_attribute_initializer(*_initializer);
         InitializerTask::accept_visitor(visitor);

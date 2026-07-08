@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_initializer.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
+#include <vespa/searchcore/proton/initializer/load_memory_usage.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -236,7 +237,7 @@ TEST_F(
     saveAttr("a", int32_wset, 10, 2);
     Fixture f;
     auto    avi = f.createInitializer({"a", get_int32_wset_fs()}, 5);
-    EXPECT_EQ(40u, avi->get_transient_memory_usage());
+    EXPECT_EQ(40u, avi->get_load_memory_usage().transient());
 }
 
 TEST_F(AttributeInitializerTest,
@@ -244,7 +245,7 @@ TEST_F(AttributeInitializerTest,
     saveAttr("a", get_int32_wset_fs(), 10, 2);
     Fixture f;
     auto    avi = f.createInitializer({"a", get_int32_wset_fs()}, 5);
-    EXPECT_EQ(24u, avi->get_transient_memory_usage());
+    EXPECT_EQ(24u, avi->get_load_memory_usage().transient());
 }
 
 TEST_F(AttributeInitializerTest,
@@ -252,7 +253,7 @@ TEST_F(AttributeInitializerTest,
     saveAttr("a", int32_wset, 10, 2);
     Fixture f;
     auto    avi = f.createInitializer({"a", int32_wset}, 5);
-    EXPECT_EQ(0u, avi->get_transient_memory_usage());
+    EXPECT_EQ(0u, avi->get_load_memory_usage().transient());
 }
 
 TEST_F(AttributeInitializerTest, require_that_saved_attribute_is_ignored_when_serial_num_is_not_set) {

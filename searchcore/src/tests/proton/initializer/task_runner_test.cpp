@@ -2,6 +2,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("task_runner_test");
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
+#include <vespa/searchcore/proton/initializer/load_memory_usage.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -11,6 +12,7 @@ LOG_SETUP("task_runner_test");
 #include <string>
 
 using proton::initializer::InitializerTask;
+using proton::initializer::LoadMemoryUsage;
 using proton::initializer::TaskRunner;
 
 struct TestLog {
@@ -39,7 +41,7 @@ public:
         : _name(name), _log(log), _transient_memory_usage(transient_memory_usage) {}
 
     void run() override { _log.append(_name); }
-    size_t get_transient_memory_usage() const override { return _transient_memory_usage; }
+    LoadMemoryUsage get_load_memory_usage() const override { return LoadMemoryUsage(_transient_memory_usage, 0); }
 };
 
 struct TestJob {
