@@ -108,6 +108,9 @@ public class RelatedDocumentsByNearestNeighborSearcher extends Searcher {
         restrict.ifPresent(r -> fetchQuery.getModel().setRestrict(r));
 
         Result result = execution.search(fetchQuery);
+        if (result.hits().getError() != null) {
+            return null;
+        }
         execution.fill(result, summary);
 
         if (result.hits().size() < 1) {
