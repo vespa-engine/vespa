@@ -77,7 +77,7 @@ public class SearchGroupsImpl implements SearchGroups {
         return (long)groups().stream().mapToDouble(Group::targetActiveDocuments).max().orElse(0);
     }
 
-    public boolean hasAllWorkingGroup() {
+    public boolean hasGroupWithAllNodesWorking() {
         return groups().stream().anyMatch(Group::allNodesWorking);
     }
 

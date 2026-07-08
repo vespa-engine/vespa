@@ -235,7 +235,7 @@ public class SearchCluster implements NodeManager<Node> {
         groups.groups().forEach(Group::aggregateNodeValues);
         long medianDocuments = groups.medianDocumentCount();
         long maxDocuments = groups.maxDocumentCount();
-        groups.setDocumentCount(new DocumentCount(maxDocuments, groups.maxTargetDocumentCount(), groups.hasAllWorkingGroup()));
+        groups.setDocumentCount(new DocumentCount(maxDocuments, groups.maxTargetDocumentCount(), groups.hasGroupWithAllNodesWorking()));
         for (Group group : groups.groups()) {
             boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.hasSufficientCoverage(),
                                                                           group.activeDocuments(), medianDocuments, maxDocuments);
