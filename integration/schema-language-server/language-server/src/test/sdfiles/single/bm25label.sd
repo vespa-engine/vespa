@@ -1,0 +1,14 @@
+schema bm25label {
+    document bm25label {
+        field title type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: max(bm25(title), bm25(title, someLabel))
+        }
+    }
+}

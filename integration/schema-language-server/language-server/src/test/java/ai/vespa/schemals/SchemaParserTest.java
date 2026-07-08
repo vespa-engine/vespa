@@ -239,6 +239,7 @@ public class SchemaParserTest {
              * CUSTOM TESTS
              * */
             "src/test/sdfiles/single/attributeposition.sd",
+            "src/test/sdfiles/single/bm25label.sd",
             "src/test/sdfiles/single/defaultdefault.sd",
             "src/test/sdfiles/single/elementwise.sd",
             "src/test/sdfiles/single/embed.sd",
@@ -315,7 +316,7 @@ public class SchemaParserTest {
             new BadFileTestCase("../../../config-model/src/test/examples/rankingexpressionfunction/rankingexpressionfunction.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/rankpropvars.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/examples/stemmingresolver.sd", 1),
-            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 44),
+            new BadFileTestCase("../../../config-model/src/test/derived/rankingexpression/rankexpression.sd", 41),
             new BadFileTestCase("../../../config-model/src/test/derived/renamedfeatures/foo.sd", 4),
 
             new BadFileTestCase("../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd", 1), // only throws a warning during vespa deploy, but it is an unresolved reference case.

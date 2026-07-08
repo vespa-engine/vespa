@@ -86,4 +86,23 @@ public class ItemLabelTestCase {
         assertNull(query.getRanking().getProperties().get("vespa.label.missing.id"));
     }
 
+    @Test
+    final void testSharedLabelEncodesAllUniqueIds() {
+        WordItem w1 = new WordItem("w1");
+        WordItem w2 = new WordItem("w2");
+        AndItem and = new AndItem();
+        Query query = new Query();
+
+        w1.setLabel("shared");
+        w2.setLabel("shared");
+        and.addItem(w1);
+        and.addItem(w2);
+        query.getModel().getQueryTree().setRoot(and);
+        query.prepare();
+        var values = query.getRanking().getProperties().get("vespa.label.shared.id");
+        assertEquals(2, values.size());
+        assertEquals(String.valueOf(w1.getUniqueID()), values.get(0));
+        assertEquals(String.valueOf(w2.getUniqueID()), values.get(1));
+    }
+
 }

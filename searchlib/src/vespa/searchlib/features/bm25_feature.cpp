@@ -3,6 +3,7 @@
 #include "bm25_feature.h"
 
 #include "bm25_utils.h"
+#include "utils.h"
 
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/itermdata.h>
@@ -25,6 +26,17 @@ using fef::MatchDataDetails;
 using fef::objectstore::as_value;
 using vespalib::Trinary;
 
+void Bm25Executor::add_term_fields(const fef::ITermData& term, uint32_t field_id, const fef::IQueryEnvironment& env,
+                                   double k1_param) {
+    for (size_t j = 0; j < term.numFields(); ++j) {
+        const ITermFieldData& term_field = term.field(j);
+        if (field_id == term_field.getFieldId()) {
+            _terms.emplace_back(term_field.getHandle(MatchDataDetails::Interleaved),
+                                Bm25Utils::get_inverse_document_frequency(term_field, env, term), k1_param);
+        }
+    }
+}
+
 Bm25Executor::Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnvironment& env, double avg_field_length,
                            double k1_param, double b_param)
     : FeatureExecutor(),
@@ -33,14 +45,20 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnviron
       _k1_mul_b(k1_param * b_param),
       _k1_mul_one_minus_b(k1_param * (1 - b_param)) {
     for (size_t i = 0; i < env.getNumTerms(); ++i) {
-        const ITermData* term = env.getTerm(i);
-        for (size_t j = 0; j < term->numFields(); ++j) {
-            const ITermFieldData& term_field = term->field(j);
-            if (field.id() == term_field.getFieldId()) {
-                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Interleaved),
-                                    Bm25Utils::get_inverse_document_frequency(term_field, env, *term), k1_param);
-            }
-        }
+        add_term_fields(*env.getTerm(i), field.id(), env, k1_param);
+    }
+}
+
+Bm25Executor::Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnvironment& env,
+                           const std::vector<const fef::ITermData*>& terms, double avg_field_length, double k1_param,
+                           double b_param)
+    : FeatureExecutor(),
+      _terms(),
+      _avg_field_length(avg_field_length),
+      _k1_mul_b(k1_param * b_param),
+      _k1_mul_one_minus_b(k1_param * (1 - b_param)) {
+    for (const ITermData* term : terms) {
+        add_term_fields(*term, field.id(), env, k1_param);
     }
 }
 
@@ -79,7 +97,8 @@ Bm25Blueprint::Bm25Blueprint()
       _field(nullptr),
       _k1_param(default_k1_param),
       _b_param(default_b_param),
-      _avg_field_length() {
+      _avg_field_length(),
+      _label() {
 }
 
 void Bm25Blueprint::visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const {
@@ -98,7 +117,12 @@ fef::Blueprint::UP Bm25Blueprint::createInstance() const {
 }
 
 fef::ParameterDescriptions Bm25Blueprint::getDescriptions() const {
-    return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY);
+    return fef::ParameterDescriptions()
+        .desc()
+        .indexField(fef::ParameterCollection::ANY)
+        .desc()
+        .indexField(fef::ParameterCollection::ANY)
+        .string();
 }
 
 bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) {
@@ -118,8 +142,16 @@ bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::Paramete
     if (bm25_utils.lookup_param(Bm25Utils::average_field_length(), _avg_field_length) == Trinary::Undefined) {
         return fail(bm25_utils.last_error());
     }
-
-    describeOutput("score", "The bm25 score for all terms searching in the given index field");
+    if (params.size() == 2) {
+        _label = params[1].getValue();
+        if (_label.empty()) {
+            return fail("The label parameter cannot be empty");
+        }
+        describeOutput("score", "The bm25 score for the query terms with the given label searching in the given "
+                                "index field");
+    } else {
+        describeOutput("score", "The bm25 score for all terms searching in the given index field");
+    }
     return true;
 }
 
@@ -149,7 +181,11 @@ fef::FeatureExecutor& Bm25Blueprint::createExecutor(const fef::IQueryEnvironment
     double      avg_field_length = lookup_result != nullptr
                                        ? as_value<double>(*lookup_result)
                                        : _avg_field_length.value_or(get_average_field_length(env, _field->name()));
-    return stash.create<Bm25Executor>(*_field, env, avg_field_length, _k1_param, _b_param);
+    if (_label.empty()) {
+        return stash.create<Bm25Executor>(*_field, env, avg_field_length, _k1_param, _b_param);
+    }
+    return stash.create<Bm25Executor>(*_field, env, util::getTermsByLabel(env, _label), avg_field_length, _k1_param,
+                                      _b_param);
 }
 
 } // namespace search::features

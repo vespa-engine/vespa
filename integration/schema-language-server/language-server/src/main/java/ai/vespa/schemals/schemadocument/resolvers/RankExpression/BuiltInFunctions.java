@@ -247,7 +247,10 @@ public class BuiltInFunctions {
         ));
 
         // ==== Rank score ====
-        put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
+        put("bm25", new GenericFunction("bm25", List.of(
+            new FunctionSignature(new FieldArgument("field")),
+            new FunctionSignature(List.of(new FieldArgument("field"), new LabelArgument("label")))
+        )));
         put("averageFieldLength", new GenericFunction("averageFieldLength",
             new FunctionSignature(new FieldArgument("field"), Set.of(
                 "",
