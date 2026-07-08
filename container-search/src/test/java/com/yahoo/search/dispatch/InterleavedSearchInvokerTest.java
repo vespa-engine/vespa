@@ -231,6 +231,37 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
+    void correctCoverageCalculationWithMultipleGroupsWhenOneNodeIsUnexpectedlyDown() throws IOException {
+        // This one is online and has taken over for the offline node.
+        invokers.add(new MockInvoker(0, createCoverage(100_000, 100_000, 100_000, 1, 1, 0)));
+        // This one is offline.
+        Coverage errorCoverage = new Coverage(0, 0, 0);
+        errorCoverage.setNodesTried(1);
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("node is down"), errorCoverage));
+        // Group info from another group: There are 100_000 documents
+        DocumentCount count = new DocumentCount(100_000L, 100_000L, true);
+        try (SearchInvoker invoker = createInterleavedInvoker(new Group(1, List.of()), 0, new MockDocumentCountSource(count))) {
+
+            expectedEvents.add(new Event(null, 100, 0));
+            expectedEvents.add(new Event(null, 200, 1));
+
+            Result result = invoker.search(query, 1.0);
+
+            Coverage cov = result.getCoverage(true);
+            assertEquals(100_000L, cov.getDocs());
+            assertEquals(1, cov.getNodes());
+            assertEquals(2, cov.getNodesTried());
+            assertTrue(cov.getFull());
+            assertEquals(100, cov.getResultPercentage());
+            assertEquals(1, cov.getResultSets());
+            assertEquals(1, cov.getFullResultSets());
+            assertFalse(cov.isDegraded());
+            assertFalse(cov.isDegradedByNonIdealState());
+            assertFalse(cov.isDegradedByTimeout());
+        }
+    }
+
+    @Test
     void topKProbabilityOverrideTakesEffect() throws IOException {
         assertTopKProbabilityOverride(null, 8, new Group(0, List.of()));
         assertTopKProbabilityOverride(0.8, 7, new Group(0, List.of()));
