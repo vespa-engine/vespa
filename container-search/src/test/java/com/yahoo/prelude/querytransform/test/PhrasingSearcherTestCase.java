@@ -46,6 +46,61 @@ public class PhrasingSearcherTestCase {
     }
 
     @Test
+    void testNoPhrasingWhenWordHasLabel() {
+        Searcher searcher =
+                new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+
+        Query query = new Query();
+        AndItem andItem = new AndItem();
+        WordItem labeled = new WordItem("tudor", "someindex");
+        labeled.setLabel("t1");
+        andItem.addItem(labeled);
+        andItem.addItem(new WordItem("vidor", "someindex"));
+        query.getModel().getQueryTree().setRoot(andItem);
+
+        new Execution(searcher, Execution.Context.createContextStub()).search(query);
+
+        // The span is not phrased: a word inside a phrase is not addressable from rank
+        // features, so phrasing would silently disable the label
+        CompositeItem root = (CompositeItem) query.getModel().getQueryTree().getRoot();
+        assertEquals(2, root.getItemCount());
+        assertEquals("tudor", ((WordItem) root.getItem(0)).getWord());
+        assertEquals("t1", root.getItem(0).getLabel());
+        assertEquals("vidor", ((WordItem) root.getItem(1)).getWord());
+    }
+
+    @Test
+    void testLabeledSpanIsSkippedWhileUnlabeledSpanIsPhrased() {
+        Searcher searcher =
+                new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
+
+        Query query = new Query();
+        AndItem labeledBranch = new AndItem();
+        WordItem labeled = new WordItem("tudor", "someindex");
+        labeled.setLabel("t1");
+        labeledBranch.addItem(labeled);
+        labeledBranch.addItem(new WordItem("vidor", "someindex"));
+
+        AndItem unlabeledBranch = new AndItem();
+        unlabeledBranch.addItem(new WordItem("tudor", "someindex"));
+        unlabeledBranch.addItem(new WordItem("vidor", "someindex"));
+
+        OrItem root = new OrItem();
+        root.addItem(labeledBranch);
+        root.addItem(unlabeledBranch);
+        query.getModel().getQueryTree().setRoot(root);
+
+        new Execution(searcher, Execution.Context.createContextStub()).search(query);
+
+        OrItem or = (OrItem) query.getModel().getQueryTree().getRoot();
+        CompositeItem first = (CompositeItem) or.getItem(0);
+        assertEquals(2, first.getItemCount(), "Labeled span should not be phrased: " + first);
+        assertEquals("t1", first.getItem(0).getLabel());
+        CompositeItem second = (CompositeItem) or.getItem(1);
+        assertTrue(second.getItem(0) instanceof PhraseItem, "Unlabeled span should be phrased: " + second);
+    }
+
+    @Test
     void testPartialPhrasing() {
         Searcher searcher =
                 new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");

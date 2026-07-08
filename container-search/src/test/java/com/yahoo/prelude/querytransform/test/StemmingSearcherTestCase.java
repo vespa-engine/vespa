@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -312,6 +313,37 @@ public class StemmingSearcherTestCase {
         assertTrue(word != stemmedWord);
         assertNotEquals(word.get().getWord(), stemmedWord.get().getWord());
         assertEquals(Optional.of(new DocumentFrequency(13, 100)), stemmedWord.get().getDocumentFrequency());
+    }
+
+    @Test
+    void testLabelIsPropagated() {
+        var builder = new Query.Builder();
+        builder.setRequest(QueryTestCase.httpEncode("/search?query=trees"));
+        var query = builder.build();
+        var word = getFirstWord(query);
+        assertTrue(word.isPresent());
+        word.get().setLabel("myLabel");
+        executeStemming(query);
+        var stemmedWord = getFirstWord(query);
+        assertTrue(stemmedWord.isPresent());
+        assertTrue(word.get() != stemmedWord.get());
+        assertNotEquals(word.get().getWord(), stemmedWord.get().getWord());
+        assertEquals("myLabel", stemmedWord.get().getLabel());
+    }
+
+    @Test
+    void testNoLabelMeansNoLabelAndNoUniqueIdAfterStemming() {
+        var builder = new Query.Builder();
+        builder.setRequest(QueryTestCase.httpEncode("/search?query=trees"));
+        var query = builder.build();
+        var word = getFirstWord(query);
+        assertTrue(word.isPresent());
+        executeStemming(query);
+        var stemmedWord = getFirstWord(query);
+        assertTrue(stemmedWord.isPresent());
+        assertTrue(word.get() != stemmedWord.get());
+        assertNull(stemmedWord.get().getLabel());
+        assertFalse(stemmedWord.get().hasUniqueID(), "setLabel(null) must not be called: it force-assigns a unique id");
     }
 
     @Test
