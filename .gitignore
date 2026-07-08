@@ -54,3 +54,4 @@ install_manifest.txt
 .metadata
 /maven-wrapper
 /compile_commands.json
+/.cache
