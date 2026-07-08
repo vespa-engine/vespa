@@ -21,6 +21,7 @@ using vespalib::datastore::CompactionStrategy;
 namespace proton {
 
 using initializer::InitializerTask;
+using initializer::LoadMemoryUsage;
 
 namespace {
 
@@ -29,12 +30,16 @@ private:
     AttributeInitializer::UP                    _initializer;
     std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
     InitializedAttributesResult&                _result;
+    LoadMemoryUsage                             _load_memory_usage;
 
 public:
     AttributeInitializerTask(AttributeInitializer::UP                    initializer,
                              std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                             InitializedAttributesResult&                result)
-        : _initializer(std::move(initializer)), _documentMetaStore(std::move(documentMetaStore)), _result(result) {}
+                             InitializedAttributesResult&                result) noexcept
+        : _initializer(std::move(initializer)),
+          _documentMetaStore(std::move(documentMetaStore)),
+          _result(result),
+          _load_memory_usage(_initializer->get_load_memory_usage()) {}
 
     void run() override {
         AttributeInitializerResult result = _initializer->init();
@@ -45,7 +50,7 @@ public:
             _result.add(result);
         }
     }
-    LoadMemoryUsage get_load_memory_usage() const override { return _initializer->get_load_memory_usage(); }
+    [[nodiscard]] LoadMemoryUsage get_load_memory_usage() const noexcept override { return _load_memory_usage; }
     void accept_visitor(initializer::InitializerTaskVisitor& visitor) override {
         visitor.visit_attribute_initializer(*_initializer);
         InitializerTask::accept_visitor(visitor);

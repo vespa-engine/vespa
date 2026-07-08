@@ -25,15 +25,15 @@ private:
     List  _dependencies;
 
 public:
-    InitializerTask();
+    InitializerTask() noexcept;
     virtual ~InitializerTask();
-    State getState() const { return _state; }
-    const List& getDependencies() const { return _dependencies; }
-    void setRunning() { _state = State::RUNNING; }
-    void setDone() { _state = State::DONE; }
+    [[nodiscard]] State getState() const noexcept { return _state; }
+    [[nodiscard]] const List& getDependencies() const noexcept { return _dependencies; }
+    void setRunning() noexcept { _state = State::RUNNING; }
+    void setDone() noexcept { _state = State::DONE; }
     void addDependency(SP dependency);
     virtual void run() = 0;
-    virtual LoadMemoryUsage get_load_memory_usage() const;
+    [[nodiscard]] virtual LoadMemoryUsage get_load_memory_usage() const noexcept;
     virtual void accept_visitor(InitializerTaskVisitor& visitor);
 };
 

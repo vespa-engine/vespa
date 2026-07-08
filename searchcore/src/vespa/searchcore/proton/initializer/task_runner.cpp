@@ -2,7 +2,7 @@
 
 #include "task_runner.h"
 
-#include "load_memory_usage.h"
+#include "load_order_compare.h"
 
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -102,7 +102,8 @@ void TaskRunner::pollTask(Context::SP context) {
     TaskSet  checked;
     getReadyTasks(context->rootTask(), readyTasks, checked);
     std::sort(readyTasks.begin(), readyTasks.end(), [](const auto& a, const auto& b) -> bool {
-        return a->get_load_memory_usage().transient() > b->get_load_memory_usage().transient();
+        LoadOrderCompare load_order_compare;
+        return load_order_compare(a->get_load_memory_usage(), b->get_load_memory_usage());
     });
     internalRunTasks(readyTasks, context);
 }

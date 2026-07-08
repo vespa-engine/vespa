@@ -28,10 +28,10 @@ class AttributeLoadMemoryCalculator {
 public:
     AttributeLoadMemoryCalculator() = default;
     ~AttributeLoadMemoryCalculator() = default;
-    initializer::LoadMemoryUsage operator()(const search::AttributeVector&   attribute_vector,
-                                            const search::attribute::Config& new_config) const;
-    initializer::LoadMemoryUsage operator()(const search::attribute::AttributeHeader& old_header,
-                                            const search::attribute::Config&          new_config) const;
+    [[nodiscard]] initializer::LoadMemoryUsage operator()(const search::AttributeVector&   attribute_vector,
+                                                          const search::attribute::Config& new_config) const noexcept;
+    [[nodiscard]] initializer::LoadMemoryUsage operator()(const search::attribute::AttributeHeader& old_header,
+                                                          const search::attribute::Config& new_config) const noexcept;
 };
 
 } // namespace proton

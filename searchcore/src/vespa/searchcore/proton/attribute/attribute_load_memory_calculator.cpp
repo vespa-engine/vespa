@@ -16,7 +16,7 @@ namespace proton {
 namespace {
 
 size_t get_transient_memory_usage(bool old_enumerated, const search::attribute::Config& new_config,
-                                  uint64_t total_value_count) {
+                                  uint64_t total_value_count) noexcept {
     if (new_config.fastSearch()) {
         if (old_enumerated) {
             return sizeof(search::attribute::LoadedEnumAttribute) * total_value_count;
@@ -42,16 +42,19 @@ size_t get_transient_memory_usage(bool old_enumerated, const search::attribute::
 }
 
 } // namespace
-LoadMemoryUsage AttributeLoadMemoryCalculator::operator()(const search::AttributeVector&   attribute_vector,
-                                                          const search::attribute::Config& new_config) const {
+
+LoadMemoryUsage
+AttributeLoadMemoryCalculator::operator()(const search::AttributeVector&   attribute_vector,
+                                          const search::attribute::Config& new_config) const noexcept {
     uint64_t total_value_count = attribute_vector.getStatus().getNumValues();
     bool     old_enumerated = attribute_vector.getEnumeratedSave();
     size_t   memory_usage = attribute_vector.getStatus().get_used_minus_dead_and_onhold();
     return LoadMemoryUsage(get_transient_memory_usage(old_enumerated, new_config, total_value_count), memory_usage);
 }
 
-LoadMemoryUsage AttributeLoadMemoryCalculator::operator()(const search::attribute::AttributeHeader& old_header,
-                                                          const search::attribute::Config& new_config) const {
+LoadMemoryUsage
+AttributeLoadMemoryCalculator::operator()(const search::attribute::AttributeHeader& old_header,
+                                          const search::attribute::Config&          new_config) const noexcept {
     size_t memory_usage = old_header.get_memory_usage();
     return LoadMemoryUsage(
         get_transient_memory_usage(old_header.getEnumerated(), new_config, old_header.get_total_value_count()),
