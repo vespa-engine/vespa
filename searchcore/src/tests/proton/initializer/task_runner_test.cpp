@@ -41,7 +41,9 @@ public:
         : _name(name), _log(log), _transient_memory_usage(transient_memory_usage) {}
 
     void run() override { _log.append(_name); }
-    LoadMemoryUsage get_load_memory_usage() const override { return LoadMemoryUsage(_transient_memory_usage, 0); }
+    [[nodiscard]] LoadMemoryUsage get_load_memory_usage() const noexcept override {
+        return LoadMemoryUsage(_transient_memory_usage, 0);
+    }
 };
 
 struct TestJob {

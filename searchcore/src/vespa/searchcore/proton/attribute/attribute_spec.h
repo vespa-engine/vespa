@@ -26,9 +26,8 @@ public:
     AttributeSpec(AttributeSpec&&) noexcept;
     AttributeSpec& operator=(AttributeSpec&&) noexcept;
     ~AttributeSpec();
-    const std::string& getName() const { return _name; }
-    const Config& getConfig() const { return *_cfg; }
-    bool operator==(const AttributeSpec& rhs) const;
+    [[nodiscard]] const std::string& getName() const noexcept { return _name; }
+    [[nodiscard]] const Config& getConfig() const noexcept { return *_cfg; }
 };
 
 } // namespace proton

@@ -253,7 +253,7 @@ AttributeInitializerResult AttributeInitializer::init() const {
     }
 }
 
-LoadMemoryUsage AttributeInitializer::get_load_memory_usage() const {
+LoadMemoryUsage AttributeInitializer::get_load_memory_usage() const noexcept {
     if (_header_ok) {
         AttributeLoadMemoryCalculator get_load_memory_usage;
         return get_load_memory_usage(*_header, _spec.getConfig());

@@ -65,7 +65,7 @@ public:
 
     AttributeInitializerResult init() const;
     const std::optional<uint64_t>& getCurrentSerialNum() const noexcept { return _currentSerialNum; }
-    initializer::LoadMemoryUsage get_load_memory_usage() const;
+    [[nodiscard]] initializer::LoadMemoryUsage get_load_memory_usage() const noexcept;
     std::shared_ptr<search::attribute::AttributeInitializationStatus> get_attribute_initialization_status() const {
         return _initialization_status;
     }
