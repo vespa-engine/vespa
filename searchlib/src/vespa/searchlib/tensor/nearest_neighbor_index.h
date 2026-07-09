@@ -50,6 +50,8 @@ class NearestNeighborIndexSaver;
  */
 class NearestNeighborIndex {
 public:
+    enum class SearchAlgorithm { HNSW, FILTER_FIRST, RESILIENT_FILTER_FIRST };
+
     /**
      * Class for collecting statistics during search.
      * An instance of this class is handed to find_top_k() or find_top_k_with_filter(),
@@ -138,7 +140,7 @@ public:
 
     // only return neighbors where the corresponding filter bit is set
     virtual std::vector<Neighbor> find_top_k_with_filter(Stats& stats, uint32_t k, const BoundDistanceFunction& df,
-                                                         const GlobalFilter& filter, bool low_hit_ratio,
+                                                         const GlobalFilter& filter, SearchAlgorithm alg,
                                                          double exploration, uint32_t explore_k,
                                                          double exploration_slack, bool prefetch_tensors,
                                                          const vespalib::Deadline& doom,

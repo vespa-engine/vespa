@@ -319,7 +319,7 @@ public:
     }
     std::vector<Neighbor> find_top_k_with_filter(Stats& stats, uint32_t k,
                                                  const search::tensor::BoundDistanceFunction& df,
-                                                 const GlobalFilter& filter, bool low_hit_ratio, double exploration,
+                                                 const GlobalFilter& filter, SearchAlgorithm alg, double exploration,
                                                  uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
                                                  const vespalib::Deadline& doom,
                                                  double                    distance_threshold) const override {
@@ -337,7 +337,7 @@ public:
         (void)exploration_slack;
         (void)prefetch_tensors;
         (void)filter;
-        (void)low_hit_ratio;
+        (void)alg;
         (void)exploration;
         (void)distance_threshold;
         return {};

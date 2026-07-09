@@ -253,13 +253,13 @@ public:
         vespalib::eval::TypedCells  qv_cells(qv_ref);
         NearestNeighborIndex::Stats stats;
         auto                        df = index->distance_function_factory().for_query_vector(qv_cells);
-        auto                        got_by_docid =
-            (global_filter->is_active())
-                                       ? index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, explore_k,
-                                                                       exploration_slack, false, _doom->get_deadline(), 10000.0)
-                                       : index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_deadline(),
-                                                           10000.0);
-        std::vector<uint32_t> act;
+        auto                        got_by_docid = (global_filter->is_active())
+                                                       ? index->find_top_k_with_filter(
+                                      stats, k, *df, *global_filter, NearestNeighborIndex::SearchAlgorithm::HNSW, 0.3,
+                                      explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0)
+                                                       : index->find_top_k(stats, k, *df, explore_k, exploration_slack, false,
+                                                                           _doom->get_deadline(), 10000.0);
+        std::vector<uint32_t>       act;
         act.reserve(got_by_docid.size());
         for (auto& hit : got_by_docid) {
             act.emplace_back(hit.docid);
@@ -274,7 +274,9 @@ public:
         auto                        df = index->distance_function_factory().for_query_vector(qv);
         auto                        rv = index
                       ->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(),
-                                         filter_first, 0.3, _doom->get_deadline())
+                                         filter_first ? NearestNeighborIndex::SearchAlgorithm::FILTER_FIRST
+                                                      : NearestNeighborIndex::SearchAlgorithm::HNSW,
+                                         0.3, _doom->get_deadline())
                       .peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
@@ -304,12 +306,14 @@ public:
         vespalib::eval::TypedCells  qv_cells(qv_ref);
         NearestNeighborIndex::Stats stats;
         auto                        df = index->distance_function_factory().for_query_vector(qv_cells);
-        auto                        got_by_docid =
-            (global_filter->is_active())
-                                       ? index->find_top_k_with_filter(stats, k, *df, *global_filter, filter_first, 0.3, explore_k,
-                                                                       exploration_slack, false, _doom->get_deadline(), 10000.0)
-                                       : index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_deadline(),
-                                                           10000.0);
+        auto                        got_by_docid = (global_filter->is_active())
+                                                       ? index->find_top_k_with_filter(
+                                      stats, k, *df, *global_filter,
+                                      filter_first ? NearestNeighborIndex::SearchAlgorithm::FILTER_FIRST
+                                                                          : NearestNeighborIndex::SearchAlgorithm::HNSW,
+                                      0.3, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0)
+                                                       : index->find_top_k(stats, k, *df, explore_k, exploration_slack, false,
+                                                                           _doom->get_deadline(), 10000.0);
         return stats;
     }
     void check_with_distance_threshold(uint32_t docid, double exploration_slack = 0.0) {
@@ -319,7 +323,7 @@ public:
         uint32_t                    k = 3;
         auto                        rv = index
                       ->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(),
-                                         false, 0.3, _doom->get_deadline())
+                                         NearestNeighborIndex::SearchAlgorithm::HNSW, 0.3, _doom->get_deadline())
                       .peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
@@ -327,8 +331,9 @@ public:
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
         auto   got_by_docid =
             (global_filter->is_active())
-                  ? index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, k, exploration_slack,
-                                                  false, _doom->get_deadline(), thr)
+                  ? index->find_top_k_with_filter(stats, k, *df, *global_filter,
+                                                  NearestNeighborIndex::SearchAlgorithm::HNSW, 0.3, k,
+                                                  exploration_slack, false, _doom->get_deadline(), thr)
                   : index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_deadline(), thr);
         EXPECT_EQ(got_by_docid.size(), 1);
         EXPECT_EQ(got_by_docid[0].docid, index->get_docid(rv[0].nodeid));
