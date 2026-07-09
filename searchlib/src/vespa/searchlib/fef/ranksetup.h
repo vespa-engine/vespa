@@ -83,6 +83,7 @@ private:
     double                           _global_filter_upper_limit;
     double                           _filter_first_upper_limit;
     double                           _filter_first_exploration;
+    bool                             _resilient_filter_first;
     double                           _exploration_slack;
     bool                             _prefetch_tensors;
     double                           _target_hits_max_adjustment_factor;
@@ -389,6 +390,8 @@ public:
     double get_filter_first_upper_limit() const { return _filter_first_upper_limit; }
     void set_filter_first_exploration(double v) { _filter_first_exploration = v; }
     double get_filter_first_exploration() const { return _filter_first_exploration; }
+    void set_resilient_filter_first(bool v) { _resilient_filter_first = v; }
+    bool get_resilient_filter_first() const { return _resilient_filter_first; }
     void set_exploration_slack(double v) { _exploration_slack = v; }
     double get_exploration_slack() const { return _exploration_slack; }
     void set_prefetch_tensors(bool v) { _prefetch_tensors = v; };

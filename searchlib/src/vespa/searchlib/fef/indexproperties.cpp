@@ -459,6 +459,18 @@ double FilterFirstExploration::lookup(const Properties& props, double defaultVal
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string ResilientFilterFirst::NAME("vespa.matching.nns.resilient_filter_first");
+
+const bool ResilientFilterFirst::DEFAULT_VALUE(false);
+
+bool ResilientFilterFirst::lookup(const Properties& props) {
+    return lookup(props, DEFAULT_VALUE);
+}
+
+bool ResilientFilterFirst::lookup(const Properties& props, bool defaultValue) {
+    return lookupBool(props, NAME, defaultValue);
+}
+
 const std::string ExplorationSlack::NAME("vespa.matching.nns.exploration_slack");
 
 const double ExplorationSlack::DEFAULT_VALUE(0.00);

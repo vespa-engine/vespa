@@ -16,6 +16,7 @@ struct CreateBlueprintParams {
     double                            global_filter_upper_limit;
     double                            filter_first_upper_limit;
     double                            filter_first_exploration;
+    bool                              resilient_filter_first;
     double                            exploration_slack;
     bool                              prefetch_tensors;
     double                            target_hits_max_adjustment_factor;
@@ -25,7 +26,7 @@ struct CreateBlueprintParams {
 
     CreateBlueprintParams(double global_filter_lower_limit_in, double global_filter_upper_limit_in,
                           double filter_first_upper_limit_in, double filter_first_exploration_in,
-                          double exploration_slack_in, bool prefetch_tensors_in,
+                          bool resilient_filter_first_in, double exploration_slack_in, bool prefetch_tensors_in,
                           double                            target_hits_max_adjustment_factor_in,
                           vespalib::FuzzyMatchingAlgorithm  fuzzy_matching_algorithm_in,
                           queryeval::wand::StopWordStrategy weakand_stop_word_strategy_in,
@@ -34,6 +35,7 @@ struct CreateBlueprintParams {
           global_filter_upper_limit(global_filter_upper_limit_in),
           filter_first_upper_limit(filter_first_upper_limit_in),
           filter_first_exploration(filter_first_exploration_in),
+          resilient_filter_first(resilient_filter_first_in),
           exploration_slack(exploration_slack_in),
           prefetch_tensors(prefetch_tensors_in),
           target_hits_max_adjustment_factor(target_hits_max_adjustment_factor_in),
@@ -46,6 +48,7 @@ struct CreateBlueprintParams {
                                 fef::indexproperties::matching::GlobalFilterUpperLimit::DEFAULT_VALUE,
                                 fef::indexproperties::matching::FilterFirstUpperLimit::DEFAULT_VALUE,
                                 fef::indexproperties::matching::FilterFirstExploration::DEFAULT_VALUE,
+                                fef::indexproperties::matching::ResilientFilterFirst::DEFAULT_VALUE,
                                 fef::indexproperties::matching::ExplorationSlack::DEFAULT_VALUE,
                                 fef::indexproperties::matching::TensorsPrefetch::DEFAULT_VALUE,
                                 fef::indexproperties::matching::TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE,

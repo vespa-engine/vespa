@@ -1361,6 +1361,7 @@ public:
                                                          .global_filter_upper_limit = 1.0,
                                                          .filter_first_upper_limit = 0.0,
                                                          .filter_first_exploration = 0.3,
+                                                         .resilient_filter_first = false,
                                                          .exploration_slack = 0.0,
                                                          .prefetch_tensors = false,
                                                          .target_hits_max_adjustment_factor =

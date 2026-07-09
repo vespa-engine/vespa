@@ -73,6 +73,7 @@ RankSetup::RankSetup(const BlueprintFactory& factory, const IIndexEnvironment& i
       _global_filter_upper_limit(1.0),
       _filter_first_upper_limit(0.2),
       _filter_first_exploration(0.01),
+      _resilient_filter_first(false),
       _exploration_slack(0.0),
       _target_hits_max_adjustment_factor(20.0),
       _weakand_stop_word_adjust_limit(matching::WeakAndStopWordAdjustLimit::DEFAULT_VALUE),
@@ -135,6 +136,7 @@ void RankSetup::configure() {
     set_global_filter_upper_limit(matching::GlobalFilterUpperLimit::lookup(_indexEnv.getProperties()));
     set_filter_first_upper_limit(matching::FilterFirstUpperLimit::lookup(_indexEnv.getProperties()));
     set_filter_first_exploration(matching::FilterFirstExploration::lookup(_indexEnv.getProperties()));
+    set_resilient_filter_first(matching::ResilientFilterFirst::lookup(_indexEnv.getProperties()));
     set_exploration_slack(matching::ExplorationSlack::lookup(_indexEnv.getProperties()));
     set_prefetch_tensors(matching::TensorsPrefetch::lookup(_indexEnv.getProperties()));
     set_target_hits_max_adjustment_factor(matching::TargetHitsMaxAdjustmentFactor::lookup(_indexEnv.getProperties()));

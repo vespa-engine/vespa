@@ -138,6 +138,7 @@ public:
         std::optional<bool>     prefetch_tensors;
         std::optional<double>   filter_first_exploration;
         std::optional<double>   filter_first_threshold;
+        std::optional<bool>     resilient_filter_first;
         std::optional<double>   post_filter_threshold;
         std::optional<double>   target_hits_max_adjustment_factor;
         std::optional<uint32_t> explore_additional_hits;

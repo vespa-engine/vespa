@@ -341,6 +341,16 @@ struct FilterFirstExploration {
 };
 
 /**
+ * Property to control whether to use the resilient variant of the filter-first heuristic.
+ **/
+struct ResilientFilterFirst {
+    static const std::string NAME;
+    static const bool        DEFAULT_VALUE;
+    static bool lookup(const Properties& props);
+    static bool lookup(const Properties& props, bool defaultValue);
+};
+
+/**
  * Property to control the slack in an HNSW search. A higher slack results in a higher recall
  * at the cost of the respone time.
  **/

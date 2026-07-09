@@ -37,6 +37,7 @@ public:
         double   global_filter_upper_limit;
         double   filter_first_upper_limit;
         double   filter_first_exploration;
+        bool     resilient_filter_first;
         double   exploration_slack;
         bool     prefetch_tensors;
         double   target_hits_max_adjustment_factor;
@@ -71,7 +72,7 @@ private:
     std::shared_ptr<const GlobalFilter>                         _lazy_filter;
     std::optional<uint32_t>                                     _lazy_filter_hits;
     std::optional<double>                                       _lazy_filter_hit_ratio;
-    bool                                                        _low_hit_ratio;
+    search::tensor::NearestNeighborIndex::SearchAlgorithm       _search_algorithm;
     bool                                                        _pending_index_search;
     MatchingPhase                                               _matching_phase;
     AnnStats                                                    _ann_stats;

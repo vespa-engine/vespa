@@ -338,6 +338,8 @@ CreateBlueprintParams MatchToolsFactory::extract_create_blueprint_params(const R
         FilterFirstUpperLimit::lookup(rank_properties, rank_setup.get_filter_first_upper_limit());
     double filter_first_exploration =
         FilterFirstExploration::lookup(rank_properties, rank_setup.get_filter_first_exploration());
+    bool resilient_filter_first =
+        ResilientFilterFirst::lookup(rank_properties, rank_setup.get_resilient_filter_first());
     double exploration_slack = ExplorationSlack::lookup(rank_properties, rank_setup.get_exploration_slack());
     bool   prefetch_tensors = TensorsPrefetch::lookup(rank_properties, rank_setup.get_prefetch_tensors());
     double target_hits_max_adjustment_factor =
@@ -360,6 +362,7 @@ CreateBlueprintParams MatchToolsFactory::extract_create_blueprint_params(const R
             upper_limit * active_hit_ratio,
             filter_first_upper_limit,
             filter_first_exploration,
+            resilient_filter_first,
             exploration_slack,
             prefetch_tensors,
             target_hits_max_adjustment_factor,

@@ -770,6 +770,7 @@ public:
                     hnsw_params.filter_first_threshold.value_or(params.filter_first_upper_limit),
                 .filter_first_exploration =
                     hnsw_params.filter_first_exploration.value_or(params.filter_first_exploration),
+                .resilient_filter_first = hnsw_params.resilient_filter_first.value_or(params.resilient_filter_first),
                 .exploration_slack = hnsw_params.exploration_slack.value_or(params.exploration_slack),
                 .prefetch_tensors = hnsw_params.prefetch_tensors.value_or(params.prefetch_tensors),
                 .target_hits_max_adjustment_factor =

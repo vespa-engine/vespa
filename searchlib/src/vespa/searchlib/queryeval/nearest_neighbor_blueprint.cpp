@@ -26,6 +26,33 @@ namespace search::queryeval {
 
 namespace {
 
+search::tensor::NearestNeighborIndex::SearchAlgorithm
+decide_on_search_algorithm(double hit_ratio, double filter_first_upper_limit, bool resilient) {
+    bool low_hit_ratio = hit_ratio < filter_first_upper_limit;
+    if (low_hit_ratio) {
+        if (resilient) {
+            return search::tensor::NearestNeighborIndex::SearchAlgorithm::RESILIENT_FILTER_FIRST;
+        } else {
+            return search::tensor::NearestNeighborIndex::SearchAlgorithm::FILTER_FIRST;
+        }
+    } else {
+        return search::tensor::NearestNeighborIndex::SearchAlgorithm::HNSW;
+    }
+}
+
+std::string to_string(search::tensor::NearestNeighborIndex::SearchAlgorithm algorithm) {
+    using NNISA = search::tensor::NearestNeighborIndex::SearchAlgorithm;
+    switch (algorithm) {
+    case NNISA::HNSW:
+        return "hnsw";
+    case NNISA::FILTER_FIRST:
+        return "filter-first heuristic";
+    case NNISA::RESILIENT_FILTER_FIRST:
+        return "resilient filter-first heuristic";
+    }
+    return "unknown";
+}
+
 std::string to_string(NearestNeighborBlueprint::Algorithm algorithm) {
     using NNBA = NearestNeighborBlueprint::Algorithm;
     switch (algorithm) {
@@ -93,6 +120,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec&  
                    .global_filter_upper_limit = hnsw_params.global_filter_upper_limit,
                    .filter_first_upper_limit = hnsw_params.filter_first_upper_limit,
                    .filter_first_exploration = hnsw_params.filter_first_exploration,
+                   .resilient_filter_first = hnsw_params.resilient_filter_first,
                    .exploration_slack = hnsw_params.exploration_slack,
                    .prefetch_tensors = hnsw_params.prefetch_tensors,
                    .target_hits_max_adjustment_factor = hnsw_params.target_hits_max_adjustment_factor},
@@ -106,7 +134,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec&  
       _lazy_filter(),
       _lazy_filter_hits(),
       _lazy_filter_hit_ratio(),
-      _low_hit_ratio(false),
+      _search_algorithm(search::tensor::NearestNeighborIndex::SearchAlgorithm::HNSW),
       _pending_index_search(false),
       _matching_phase(MatchingPhase::FIRST_PHASE),
       _ann_stats(),
@@ -206,20 +234,20 @@ void NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighb
         }
         _lazy_filter_hits = use_filter->count();
         _lazy_filter_hit_ratio = static_cast<double>(_lazy_filter_hits.value()) / _attr_tensor.get_num_docs();
-        _low_hit_ratio = _lazy_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
-        auto alg = _low_hit_ratio ? search::tensor::NearestNeighborIndex::SearchAlgorithm::FILTER_FIRST
-                                  : search::tensor::NearestNeighborIndex::SearchAlgorithm::HNSW;
+        _search_algorithm =
+            decide_on_search_algorithm(_lazy_filter_hit_ratio.value(), _hnsw_params.filter_first_upper_limit,
+                                       _hnsw_params.resilient_filter_first);
         _found_hits = nns_index->find_top_k_with_filter(
-            _ann_stats.index_stats, k, df, *use_filter, alg, _hnsw_params.filter_first_exploration,
+            _ann_stats.index_stats, k, df, *use_filter, _search_algorithm, _hnsw_params.filter_first_exploration,
             k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors,
             doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else if (_global_filter->is_active()) {
-        _low_hit_ratio = _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
-        auto alg = _low_hit_ratio ? search::tensor::NearestNeighborIndex::SearchAlgorithm::FILTER_FIRST
-                                  : search::tensor::NearestNeighborIndex::SearchAlgorithm::HNSW;
+        _search_algorithm =
+            decide_on_search_algorithm(_global_filter_hit_ratio.value(), _hnsw_params.filter_first_upper_limit,
+                                       _hnsw_params.resilient_filter_first);
         _found_hits = nns_index->find_top_k_with_filter(
-            _ann_stats.index_stats, k, df, *_global_filter, alg, _hnsw_params.filter_first_exploration,
+            _ann_stats.index_stats, k, df, *_global_filter, _search_algorithm, _hnsw_params.filter_first_exploration,
             k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors,
             doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
@@ -276,9 +304,7 @@ void NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) co
     visitor.visitBool("wanted_approximate", _approximate);
     visitor.visitBool("has_index", _attr_tensor.nearest_neighbor_index());
     visitor.visitString("algorithm", to_string(_algorithm));
-    if (_algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
-        visitor.visitBool("filter_first_heuristic_used", _low_hit_ratio);
-    }
+    visitor.visitString("search_algorithm", to_string(_search_algorithm));
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
         _ann_stats.visit(visitor);
         visitor.visitInt("top_k_hits", _found_hits.size());
