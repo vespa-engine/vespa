@@ -22,6 +22,10 @@ class VespaQuorumPeer extends QuorumPeerMain implements QuorumPeer {
 
     private static final Logger log = java.util.logging.Logger.getLogger(VespaQuorumPeer.class.getName());
 
+    // Set before triggering shutdown of quorumPeer, so that initializeAndRun() can tell an intentional
+    // shutdown apart from the quorum peer thread dying unexpectedly (see comment there).
+    private volatile boolean shutdownRequested = false;
+
     @Override
     public void start(Path path) {
         initializeAndRun(new String[]{ path.toFile().getAbsolutePath()});
@@ -31,6 +35,7 @@ class VespaQuorumPeer extends QuorumPeerMain implements QuorumPeer {
     public void shutdown(Duration timeout) {
         if (quorumPeer != null) {
             log.log(Level.FINE, "Shutting down ZooKeeper server");
+            shutdownRequested = true;
             try {
                 quorumPeer.shutdown();
                 quorumPeer.join(timeout.toMillis()); // Wait for shutdown to complete
@@ -54,6 +59,13 @@ class VespaQuorumPeer extends QuorumPeerMain implements QuorumPeer {
             super.initializeAndRun(args);
         } catch (QuorumPeerConfig.ConfigException | IOException | AdminServer.AdminServerException e) {
             throw new RuntimeException("Exception when initializing or running ZooKeeper server", e);
+        }
+        // super.initializeAndRun() blocks in quorumPeer.join(), which returns quietly whenever the
+        // quorum peer thread terminates, whether from an intentional shutdown() or from an uncaught
+        // exception/error inside that thread. Treat the latter as a failure, so callers retry/recover
+        // instead of assuming the server is still running.
+        if (!shutdownRequested) {
+            throw new RuntimeException("ZooKeeper server thread terminated unexpectedly");
         }
     }
 
