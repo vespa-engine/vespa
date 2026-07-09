@@ -32,6 +32,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     private Double hnswExplorationSlack = null;
     private Double hnswFilterFirstExploration = null;
     private Double hnswFilterFirstThreshold = null;
+    private Boolean hnswResilientFilterFirst = null;
     private Double hnswPostFilterThreshold = null;
     private Double hnswTargetHitsMaxAdjustmentFactor = null;
 
@@ -95,6 +96,9 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Returns the filter-first threshold for HNSW */
     public Double getHnswFilterFirstThreshold() { return hnswFilterFirstThreshold; }
 
+    /** Returns whether the resilient filter-first heuristic for HNSW is enabled*/
+    public Boolean getHnswResilientFilterFirst() { return hnswResilientFilterFirst; }
+
     /** Returns the post-filter threshold for HNSW */
     public Double getHnswPostFilterThreshold() { return hnswPostFilterThreshold; }
 
@@ -149,6 +153,9 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Set the filter-first threshold for HNSW */
     public void setHnswFilterFirstThreshold(Double value) { this.hnswFilterFirstThreshold = value; }
 
+    /** Set whether the resilient filter-first heuristic for HNSW is enabled */
+    public void setHnswResilientFilterFirst(Boolean enabled) { this.hnswResilientFilterFirst = enabled; }
+
     /** Set the post-filter threshold for HNSW */
     public void setHnswPostFilterThreshold(Double value) { this.hnswPostFilterThreshold = value; }
 
@@ -202,6 +209,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
             buffer.append(",hnsw.filterFirstExploration=").append(hnswFilterFirstExploration);
         if (hnswFilterFirstThreshold != null)
             buffer.append(",hnsw.filterFirstThreshold=").append(hnswFilterFirstThreshold);
+        if (hnswResilientFilterFirst != null)
+            buffer.append(",hnsw.resilientFilterFirst=").append(hnswResilientFilterFirst);
         if (hnswPostFilterThreshold != null)
             buffer.append(",hnsw.postFilterThreshold=").append(hnswPostFilterThreshold);
         if (hnswTargetHitsMaxAdjustmentFactor != null)
@@ -234,6 +243,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
             discloser.addProperty("hnsw.filterFirstExploration", hnswFilterFirstExploration);
         if (hnswFilterFirstThreshold != null)
             discloser.addProperty("hnsw.filterFirstThreshold", hnswFilterFirstThreshold);
+        if (hnswResilientFilterFirst != null)
+            discloser.addProperty("hnsw.resilientFilterFirst", hnswResilientFilterFirst);
         if (hnswPostFilterThreshold != null)
             discloser.addProperty("hnsw.postFilterThreshold", hnswPostFilterThreshold);
         if (hnswTargetHitsMaxAdjustmentFactor != null)
@@ -258,6 +269,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         if ( ! Objects.equals(this.hnswExplorationSlack, other.hnswExplorationSlack)) return false;
         if ( ! Objects.equals(this.hnswFilterFirstExploration, other.hnswFilterFirstExploration)) return false;
         if ( ! Objects.equals(this.hnswFilterFirstThreshold, other.hnswFilterFirstThreshold)) return false;
+        if ( ! Objects.equals(this.hnswResilientFilterFirst, other.hnswResilientFilterFirst)) return false;
         if ( ! Objects.equals(this.hnswPostFilterThreshold, other.hnswPostFilterThreshold)) return false;
         if ( ! Objects.equals(this.hnswTargetHitsMaxAdjustmentFactor, other.hnswTargetHitsMaxAdjustmentFactor)) return false;
         return true;
@@ -270,6 +282,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
                             distanceThreshold, approximate, field, queryTensorName,
                             hnswApproximateThreshold, hnswExplorationSlack,
                             hnswFilterFirstExploration, hnswFilterFirstThreshold,
+                            hnswResilientFilterFirst,
                             hnswPostFilterThreshold, hnswTargetHitsMaxAdjustmentFactor);
     }
 
@@ -290,6 +303,8 @@ public class NearestNeighborItem extends SimpleTaggableItem {
             builder.setFilterFirstExploration(hnswFilterFirstExploration);
         if (hnswFilterFirstThreshold != null)
             builder.setFilterFirstThreshold(hnswFilterFirstThreshold);
+        if (hnswResilientFilterFirst != null)
+            builder.setResilientFilterFirst(hnswResilientFilterFirst);
         if (hnswPostFilterThreshold != null)
             builder.setPostFilterThreshold(hnswPostFilterThreshold);
         if (hnswTargetHitsMaxAdjustmentFactor != null)

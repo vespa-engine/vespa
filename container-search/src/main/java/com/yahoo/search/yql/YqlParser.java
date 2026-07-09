@@ -188,6 +188,7 @@ public class YqlParser implements Parser {
     public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits"; // 'ef' in HNSW
     public static final String HNSW_FILTER_FIRST_EXPLORATION = "hnsw.filterFirstExploration"; // acorn-1 aggression, default 0.3
     public static final String HNSW_FILTER_FIRST_THRESHOLD = "hnsw.filterFirstThreshold"; // 'acorn-1', default 0.0 (aka off)
+    public static final String HNSW_RESILIENT_FILTER_FIRST = "hnsw.resilientFilterFirst"; // 'resilient acorn-1', default false (aka off)
     public static final String HNSW_POST_FILTER_THRESHOLD = "hnsw.postFilterThreshold"; // default 1.0 (aka off)
     public static final String HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "hnsw.targetHitsMaxAdjustmentFactor"; // for post-filter, default 20
     public static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
@@ -646,6 +647,10 @@ public class YqlParser implements Parser {
         assignAnnotationAsDoubleIfNotNull(ast, HNSW_EXPLORATION_SLACK, "slack for adaptive beam search", item::setHnswExplorationSlack);
         assignAnnotationAsDoubleIfNotNull(ast, HNSW_FILTER_FIRST_EXPLORATION, "tune how aggressively the filter-first heuristic explores the graph", item::setHnswFilterFirstExploration);
         assignAnnotationAsDoubleIfNotNull(ast, HNSW_FILTER_FIRST_THRESHOLD, "enable filter-first heuristic when filter keeps less than threshold", item::setHnswFilterFirstThreshold);
+        Boolean resilient = getAnnotation(ast, HNSW_RESILIENT_FILTER_FIRST, Boolean.class, null, "use resilient variant of filter-first heuristic");
+        if (resilient != null) {
+            item.setHnswResilientFilterFirst(resilient);
+        }
         assignAnnotationAsDoubleIfNotNull(ast, HNSW_POST_FILTER_THRESHOLD, "enable post-filter when filter keeps more than threshold", item::setHnswPostFilterThreshold);
         assignAnnotationAsDoubleIfNotNull(ast, HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "max expansion for post-filter strategy", item::setHnswTargetHitsMaxAdjustmentFactor);
 

@@ -28,6 +28,7 @@ public class Matching implements Cloneable {
     public static final String APPROXIMATE_THRESHOLD = "approximateThreshold";
     public static final String FILTER_FIRST_THRESHOLD = "filterFirstThreshold";
     public static final String FILTER_FIRST_EXPLORATION = "filterFirstExploration";
+    public static final String RESILIENT_FILTER_FIRST = "resilientFilterFirst";
     public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
     public static final String LAZY_FILTER = "lazyFilter";
     public static final String FILTER_THRESHOLD = "filterThreshold";
@@ -47,6 +48,7 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(APPROXIMATE_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(FILTER_FIRST_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(FILTER_FIRST_EXPLORATION, "double"));
+        argumentType.addField(new FieldDescription(RESILIENT_FILTER_FIRST, "boolean"));
         argumentType.addField(new FieldDescription(EXPLORATION_SLACK, "double"));
         argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
         argumentType.addField(new FieldDescription(LAZY_FILTER, "boolean"));
@@ -67,6 +69,7 @@ public class Matching implements Cloneable {
     private Double approximateThreshold = null;
     private Double filterFirstThreshold = null;
     private Double filterFirstExploration = null;
+    private Boolean resilientFilterFirst = null;
     private Double explorationSlack = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Boolean lazyFilter = null;
@@ -83,6 +86,7 @@ public class Matching implements Cloneable {
     public Double getApproximateThreshold() { return approximateThreshold; }
     public Double getFilterFirstThreshold() { return filterFirstThreshold; }
     public Double getFilterFirstExploration() { return filterFirstExploration; }
+    public Boolean getResilientFilterFirst() { return resilientFilterFirst; }
     public Double getExplorationSlack() { return explorationSlack; }
     public Double getTargetHitsMaxAdjustmentFactor() { return targetHitsMaxAdjustmentFactor; }
     public Boolean getLazyFilter() { return lazyFilter; }
@@ -127,6 +131,9 @@ public class Matching implements Cloneable {
     public void setFilterFirstExploration(double threshold) {
         filterFirstExploration = threshold;
     }
+    public void setResilientFilterFirst(boolean enabled) {
+        resilientFilterFirst = enabled;
+    }
     public void setExplorationSlack(double slack) {
         explorationSlack = slack;
     }
@@ -169,6 +176,9 @@ public class Matching implements Cloneable {
         }
         if (filterFirstThreshold != null) {
             rankProperties.put("vespa.matching.nns.filter_first_exploration", String.valueOf(filterFirstExploration));
+        }
+        if (resilientFilterFirst != null) {
+            rankProperties.put("vespa.matching.nns.resilient_filter_first", String.valueOf(resilientFilterFirst));
         }
         if (explorationSlack != null) {
             rankProperties.put("vespa.matching.nns.exploration_slack", String.valueOf(explorationSlack));
@@ -215,6 +225,7 @@ public class Matching implements Cloneable {
                Objects.equals(approximateThreshold, matching.approximateThreshold) &&
                Objects.equals(filterFirstThreshold, matching.filterFirstThreshold) &&
                Objects.equals(filterFirstExploration, matching.filterFirstExploration) &&
+               Objects.equals(resilientFilterFirst, matching.resilientFilterFirst) &&
                Objects.equals(explorationSlack, matching.explorationSlack) &&
                Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
                Objects.equals(lazyFilter, matching.lazyFilter) &&
@@ -227,7 +238,7 @@ public class Matching implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
-                            postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration,
+                            postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration, resilientFilterFirst,
                             explorationSlack, targetHitsMaxAdjustmentFactor, lazyFilter, filterThreshold, annTimeBudget,
                             annTimeout, weakAnd);
     }

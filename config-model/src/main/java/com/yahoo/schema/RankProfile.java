@@ -114,6 +114,7 @@ public class RankProfile implements Cloneable {
     private Double approximateThreshold = null;
     private Double filterFirstThreshold = null;
     private Double filterFirstExploration = null;
+    private Boolean resilientFilterFirst = null;
     private Double explorationSlack = null;
     private Boolean prefetchTensors = null;
     private Double targetHitsMaxAdjustmentFactor = null;
@@ -818,6 +819,7 @@ public class RankProfile implements Cloneable {
     public void setApproximateThreshold(double threshold) { this.approximateThreshold = threshold; }
     public void setFilterFirstThreshold(double threshold) { this.filterFirstThreshold = threshold; }
     public void setFilterFirstExploration(double exploration) { this.filterFirstExploration = exploration; }
+    public void setResilientFilterFirst(boolean enabled) { this.resilientFilterFirst = enabled; }
     public void setExplorationSlack(double slack) { this.explorationSlack = slack; }
     public void setPrefetchTensors(boolean value) { this.prefetchTensors = value; }
     public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
@@ -858,6 +860,13 @@ public class RankProfile implements Cloneable {
             return OptionalDouble.of(filterFirstExploration);
         }
         return uniquelyInherited(RankProfile::getFilterFirstExploration, OptionalDouble::isPresent, "filter-first-exploration").orElse(OptionalDouble.empty());
+    }
+
+    public Boolean getResilientFilterFirst() {
+        if (resilientFilterFirst != null) {
+            return resilientFilterFirst;
+        }
+        return uniquelyInherited(RankProfile::getResilientFilterFirst, "resilient-filter-first").orElse(null);
     }
 
     public OptionalDouble getExplorationSlack() {
