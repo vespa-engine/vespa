@@ -5,6 +5,7 @@
 #include "single_string_enum_search_context.h"
 #include "singlestringpostattribute.h"
 #include "string_direct_posting_store_adapter.hpp"
+#include "string_posting_search_context.hpp"
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>

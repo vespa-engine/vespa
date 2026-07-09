@@ -104,6 +104,7 @@ vespa_add_library(searchlib_attribute OBJECT
     multivalueattributesaverutils.cpp
     not_implemented_attribute.cpp
     numeric_matcher.cpp
+    numeric_posting_search_context.cpp
     numeric_range_matcher.cpp
     numeric_search_context.cpp
     numeric_sort_blob_writer.cpp
@@ -153,6 +154,7 @@ vespa_add_library(searchlib_attribute OBJECT
     singlestringpostattribute.cpp
     sourceselector.cpp
     string_matcher.cpp
+    string_posting_search_context.cpp
     string_search_context.cpp
     string_search_helper.cpp
     string_sort_blob_writer.cpp
