@@ -222,7 +222,9 @@ public class SearchCluster implements NodeManager<Node> {
     private void pingIterationCompletedSingleGroup(SearchGroupsImpl groups) {
         Group group = groups.groups().iterator().next();
         group.aggregateNodeValues();
-        groups.setDocumentCount(new DocumentCount(group.activeDocuments(), group.targetActiveDocuments(), group.allNodesWorking()));
+        // Mark the document count as "not reliable" since we only have one group. That is, when a node is down,
+        // it will be a node from this very group and a "reliable" document count would be outdated anyway.
+        groups.setDocumentCount(new DocumentCount(group.activeDocuments(), group.targetActiveDocuments(), false));
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
