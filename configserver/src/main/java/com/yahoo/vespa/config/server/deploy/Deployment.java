@@ -26,6 +26,8 @@ import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.configchange.RefeedActions;
+import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.DeferredReconfiguration;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.NodeRestart;
@@ -33,7 +35,6 @@ import com.yahoo.vespa.config.server.session.ActivationTriggers.Reindexing;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.concurrent.Memoized;
 import com.yahoo.text.Text;
@@ -109,8 +110,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     public static Deployment prepared(Session session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
-                                      Tenant tenant, DeployLogger logger,
-                                      Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
+                                      DeployLogger logger, Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, false, isBootstrap, false, force, false);
         return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, logger, clock, true);
     }
@@ -123,6 +123,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         try (ActionTimer timer = applicationRepository.timerFor(params.get().getApplicationId(), ConfigServerMetrics.DEPLOYMENT_PREPARE_MILLIS.baseName())) {
             configChangeActions = sessionRepository().prepareLocalSession(session, deployLogger, params.get(), clock.instant());
             prepared = true;
+            logConfigChangeActions(configChangeActions(), deployLogger);
         } catch (Exception e) {
             log.log(Level.FINE, "Preparing session " + session.getSessionId() + " failed, deleting it");
             deleteSession();
@@ -366,6 +367,35 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 lastException.set(e);
                 Sleeper.DEFAULT.sleep(durationBetweenResourceReadyChecks.toMillis());
             }
+        }
+    }
+
+    private void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
+        var isVespaCloud = applicationRepository.configserverConfig().hostedVespa();
+        RestartActions restartActions = actions.getRestartActions();
+        if ( ! restartActions.isEmpty()) {
+            if (isVespaCloud)
+                logger.log(Level.INFO, "Orchestrated service restart triggered due to change(s) from active to new application:\n" +
+                        restartActions.format());
+            else
+                logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
+                        restartActions.format());
+        }
+        RefeedActions refeedActions = actions.getRefeedActions();
+        if ( ! refeedActions.isEmpty()) {
+            logger.logApplicationPackage(Level.WARNING,
+                                         "Change(s) between active and new application that may require re-feed:\n" +
+                                                 refeedActions.format());
+        }
+        ReindexActions reindexActions = actions.getReindexActions();
+        if ( ! reindexActions.isEmpty()) {
+            if (isVespaCloud)
+                logger.log(Level.INFO, "Re-indexing triggered due to change(s) from active to new application:\n" +
+                        reindexActions.format());
+            else
+                logger.log(Level.WARNING,
+                           "Change(s) between active and new application that may require re-index:\n" +
+                                   reindexActions.format());
         }
     }
 
