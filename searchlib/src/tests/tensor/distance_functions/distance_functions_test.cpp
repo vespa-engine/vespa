@@ -632,6 +632,10 @@ double computeTransformedMipsChecked(TypedCells a, TypedCells b, bool check_inse
         auto d_i = dbl_dff.for_insertion_vector(a);
         EXPECT_DOUBLE_EQ(d_i->calc(b), result);
     }
+
+    QuantizedMipsDistanceFunctionFactory q_dff(a.size, quant_bits, quant_seed);
+    check_quantized_distance_function(q_dff, a, b, result, 1.8, vespalib::quant::QuantMode::InnerProduct);
+
     return result;
 }
 
