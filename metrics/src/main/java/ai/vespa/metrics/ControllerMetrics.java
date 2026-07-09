@@ -42,6 +42,7 @@ public enum ControllerMetrics implements VespaMetrics {
     DNS_QUEUED_REQUESTS("dns.queuedRequests", Unit.REQUEST, "Queued DNS requests"),
     CLOUD_QUOTA_USAGE("cloud.quota.usage", Unit.FRACTION, "Cloud Quota usage per resource type"),
     ZMS_QUOTA_USAGE("zms.quota.usage", Unit.FRACTION, "ZMS Quota usage per resource type"),
+    STRONGDM_RESOURCES("strongdm.resources", Unit.ITEM, "The number of StrongDM resources"),
     COREDUMP_PROCESSED("coredump.processed", Unit.FAILURE,"Controller: Core dumps processed"),
     AUTH0_EXCEPTIONS("auth0.exceptions", Unit.FAILURE, "Controller: Auth0 exceptions"),
     CERTIFICATE_POOL_AVAILABLE("certificate_pool_available", Unit.FRACTION, "Available certificates in the pool, fraction of configured size"),
