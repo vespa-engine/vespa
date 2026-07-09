@@ -52,12 +52,8 @@ func (n annNode) makeRows(tab *table, showDetails bool) {
 
 	// Results/reactions by Vespa to the inputs
 	tab.str("algorithm").str(n.root.Field("algorithm").AsString()).commit()
-	if filter_first_heuristic := n.root.Field("filter_first_heuristic_used"); filter_first_heuristic.Valid() {
-		if filter_first_heuristic.AsBool() {
-			tab.str("filter-first heuristic").str("used").commit()
-		} else {
-			tab.str("filter-first heuristic").str("not used").commit()
-		}
+	if search_algorithm := n.root.Field("search_algorithm"); search_algorithm.Valid() {
+		tab.str("search algorithm").str(search_algorithm.AsString()).commit()
 	}
 	if calculated := n.root.Field("global_filter").Field("calculated"); calculated.Valid() && !calculated.AsBool() {
 		tab.str("global filter").str("not calculated").commit()
