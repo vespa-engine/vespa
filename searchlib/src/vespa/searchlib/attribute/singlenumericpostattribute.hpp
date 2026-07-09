@@ -5,6 +5,7 @@
 #include "enumcomparator.h"
 #include "enumstore.h"
 #include "numeric_direct_posting_store_adapter.hpp"
+#include "numeric_posting_search_context.hpp"
 #include "singlenumericenumattribute.hpp"
 #include "singlenumericpostattribute.h"
 

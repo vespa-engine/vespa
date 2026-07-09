@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/flagattribute.h>
 #include <vespa/searchlib/attribute/postinglistsearchcontext.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
+#include <vespa/searchlib/attribute/string_posting_search_context.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>

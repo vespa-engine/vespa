@@ -5,6 +5,7 @@
 #include "multi_numeric_enum_search_context.h"
 #include "multinumericpostattribute.h"
 #include "numeric_direct_posting_store_adapter.hpp"
+#include "numeric_posting_search_context.hpp"
 
 #include <vespa/searchcommon/attribute/config.h>
 

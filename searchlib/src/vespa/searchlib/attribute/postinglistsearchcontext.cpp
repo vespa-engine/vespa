@@ -4,6 +4,7 @@
 
 #include "attributeiterators.hpp"
 #include "diversity.hpp"
+#include "string_posting_search_context.hpp"
 
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 
