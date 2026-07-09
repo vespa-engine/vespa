@@ -46,9 +46,9 @@ std::string to_string(search::tensor::NearestNeighborIndex::SearchAlgorithm algo
     case NNISA::HNSW:
         return "hnsw";
     case NNISA::FILTER_FIRST:
-        return "filter-first heuristic";
+        return "filter-first";
     case NNISA::RESILIENT_FILTER_FIRST:
-        return "resilient filter-first heuristic";
+        return "resilient filter-first";
     }
     return "unknown";
 }
