@@ -11,7 +11,10 @@ namespace proton::initializer {
 class LoadOrderCompare {
 public:
     bool operator()(const LoadMemoryUsage& lhs, const LoadMemoryUsage& rhs) const noexcept {
-        return lhs.transient() > rhs.transient();
+        if (lhs.transient() != rhs.transient()) {
+            return lhs.transient() > rhs.transient();
+        }
+        return lhs.permanent() > rhs.permanent();
     }
 };
 
