@@ -9,7 +9,10 @@ import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.searchcluster.DocumentCount;
+import com.yahoo.search.dispatch.searchcluster.DocumentCountSource;
 import com.yahoo.search.dispatch.searchcluster.Group;
+import com.yahoo.search.dispatch.searchcluster.MockDocumentCountSource;
 import com.yahoo.search.dispatch.searchcluster.MockSearchCluster;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.Coverage;
@@ -228,6 +231,37 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
+    void correctCoverageCalculationWithMultipleGroupsWhenOneNodeIsUnexpectedlyDown() throws IOException {
+        // This one is online and has taken over for the offline node.
+        invokers.add(new MockInvoker(0, createCoverage(100_000, 100_000, 100_000, 1, 1, 0)));
+        // This one is offline.
+        Coverage errorCoverage = new Coverage(0, 0, 0);
+        errorCoverage.setNodesTried(1);
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("node is down"), errorCoverage));
+        // Group info from another group: There are 100_000 documents
+        DocumentCount count = new DocumentCount(100_000L, 100_000L, true);
+        try (SearchInvoker invoker = createInterleavedInvoker(new Group(1, List.of()), 0, new MockDocumentCountSource(count))) {
+
+            expectedEvents.add(new Event(null, 100, 0));
+            expectedEvents.add(new Event(null, 200, 1));
+
+            Result result = invoker.search(query, 1.0);
+
+            Coverage cov = result.getCoverage(true);
+            assertEquals(100_000L, cov.getDocs());
+            assertEquals(1, cov.getNodes());
+            assertEquals(2, cov.getNodesTried());
+            assertTrue(cov.getFull());
+            assertEquals(100, cov.getResultPercentage());
+            assertEquals(1, cov.getResultSets());
+            assertEquals(1, cov.getFullResultSets());
+            assertFalse(cov.isDegraded());
+            assertFalse(cov.isDegradedByNonIdealState());
+            assertFalse(cov.isDegradedByTimeout());
+        }
+    }
+
+    @Test
     void topKProbabilityOverrideTakesEffect() throws IOException {
         assertTopKProbabilityOverride(null, 8, new Group(0, List.of()));
         assertTopKProbabilityOverride(0.8, 7, new Group(0, List.of()));
@@ -353,7 +387,8 @@ public class InterleavedSearchInvokerTest {
                         .addAggregationResult(new MinAggregationResult().setMin(new IntegerResultNode(6)).setTag(3))));
         invokers.add(new MockInvoker(0).setHits(List.of(new GroupingListHit(List.of(grouping2)))));
 
-        try (InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, new Group(0, List.of()), Set.of())) {
+        try (InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig,
+                new Group(0, List.of()), new MockDocumentCountSource(), Set.of())) {
             invoker.responseAvailable(invokers.get(0));
             invoker.responseAvailable(invokers.get(1));
             Result result = invoker.search(query, 1.0);
@@ -398,7 +433,8 @@ public class InterleavedSearchInvokerTest {
         List<SearchInvoker> invokers = new ArrayList<>();
         invokers.add(createMockInvoker(a, new Node("test", 0, "?", 0, false)));
         invokers.add(createMockInvoker(b, new Node("test", 1, "?", 0, false)));
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, Set.of());
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig,
+                group, new MockDocumentCountSource(), Set.of());
         invoker.responseAvailable(invokers.get(0));
         invoker.responseAvailable(invokers.get(1));
         return invoker;
@@ -449,16 +485,25 @@ public class InterleavedSearchInvokerTest {
     }
 
     private InterleavedSearchInvoker createInterleavedInvoker(Group group, int numInvokers) {
-        return createInterleavedInvoker(hitEstimator, dispatchConfig, group, numInvokers);
+        return createInterleavedInvoker(hitEstimator, dispatchConfig, group, numInvokers, new MockDocumentCountSource());
+    }
+
+    private InterleavedSearchInvoker createInterleavedInvoker(Group group, int numInvokers, DocumentCountSource documentCountSource) {
+        return createInterleavedInvoker(hitEstimator, dispatchConfig, group, numInvokers, documentCountSource);
     }
 
     private InterleavedSearchInvoker createInterleavedInvoker(TopKEstimator hitEstimator, DispatchConfig dispatchConfig,
                                                               Group group, int numInvokers) {
+        return createInterleavedInvoker(hitEstimator, dispatchConfig, group, numInvokers, new MockDocumentCountSource());
+    }
+
+    private InterleavedSearchInvoker createInterleavedInvoker(TopKEstimator hitEstimator, DispatchConfig dispatchConfig,
+                                                              Group group, int numInvokers, DocumentCountSource documentCountSource) {
         for (int i = 0; i < numInvokers; i++) {
             invokers.add(new MockInvoker(i));
         }
 
-        return new InterleavedSearchInvoker(Timer.wrap(clock), invokers, hitEstimator, dispatchConfig, group,null) {
+        return new InterleavedSearchInvoker(Timer.wrap(clock), invokers, hitEstimator, dispatchConfig, group, documentCountSource, null) {
 
             @Override
             protected LinkedBlockingQueue<SearchInvoker> newQueue() {

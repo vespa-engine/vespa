@@ -21,6 +21,7 @@ import com.yahoo.search.dispatch.InterleavedSearchInvoker;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.search.dispatch.searchcluster.Group;
+import com.yahoo.search.dispatch.searchcluster.MockDocumentCountSource;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.schema.MatchPhase;
 import com.yahoo.search.schema.RankProfile;
@@ -408,7 +409,7 @@ public class RpcSearchInvokerTest {
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
         TopKEstimator hitEstimator = new TopKEstimator(30, dispatchConfig.topKProbability(), 0.05);
         List<SearchInvoker> invokers = new ArrayList<>(nodeInvokers);
-        return new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, Set.of());
+        return new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, new MockDocumentCountSource(), Set.of());
     }
 
     RpcSearchInvoker createRpcInvoker(Node node, int maxHits, Holders holders) {

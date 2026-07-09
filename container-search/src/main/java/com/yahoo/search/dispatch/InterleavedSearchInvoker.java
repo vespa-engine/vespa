@@ -10,6 +10,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.DocumentCountSource;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -44,6 +45,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private final Set<SearchInvoker> invokers;
     private final DispatchConfig dispatchConfig;
     private final Group group;
+    private final DocumentCountSource documentCountSource;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
     private final CoverageAggregator coverageAggregator;
@@ -55,12 +57,14 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                                     TopKEstimator hitEstimator,
                                     DispatchConfig dispatchConfig,
                                     Group group,
+                                    DocumentCountSource documentCountSource,
                                     Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
         this.timer = timer;
         this.invokers = new LinkedHashSet<>(invokers);
         this.dispatchConfig = dispatchConfig;
         this.group = group;
+        this.documentCountSource = documentCountSource;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
         this.coverageAggregator = new CoverageAggregator(invokers.size());
@@ -142,7 +146,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         groupingResultAggregator.toAggregatedHit().ifPresent(h -> result.getResult().hits().add(h));
 
         insertNetworkErrors(result.getResult());
-        CoverageAggregator adjusted = coverageAggregator.adjustedDegradedCoverage((int)dispatchConfig.redundancy(), timeoutHandler);
+        CoverageAggregator adjusted = coverageAggregator.adjustedDegradedCoverage((int)dispatchConfig.redundancy(),
+                timeoutHandler, documentCountSource.getDocumentCount());
         result.getResult().setCoverage(adjusted.createCoverage(timeoutHandler));
 
         int needed = query.getOffset() + query.getHits();
