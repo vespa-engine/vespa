@@ -40,6 +40,7 @@ vespa_add_library(searchcore_attribute STATIC
     imported_attributes_context.cpp
     imported_attributes_repo.cpp
     initialized_attributes_result.cpp
+    reserved_memory_for_attribute_load_calculator.cpp
     sequential_attributes_initializer.cpp
     DEPENDS
     searchcore_flushengine
