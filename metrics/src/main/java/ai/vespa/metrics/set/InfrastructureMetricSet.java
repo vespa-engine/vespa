@@ -197,6 +197,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.DNS_QUEUED_REQUESTS.max());
         addMetric(metrics, ControllerMetrics.CLOUD_QUOTA_USAGE.max());
         addMetric(metrics, ControllerMetrics.ZMS_QUOTA_USAGE.max());
+        addMetric(metrics, ControllerMetrics.STRONGDM_RESOURCES.max());
         addMetric(metrics, ControllerMetrics.COREDUMP_PROCESSED.count());
         addMetric(metrics, ControllerMetrics.AUTH0_EXCEPTIONS.count());
         addMetric(metrics, ControllerMetrics.BILLING_CREDITS.last());
