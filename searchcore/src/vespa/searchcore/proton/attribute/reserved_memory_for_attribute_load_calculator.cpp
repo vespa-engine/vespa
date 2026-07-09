@@ -69,6 +69,10 @@ size_t ReservedMemoryForAttributeLoadCalculator::calc() {
     size_t                 reserved_memory = 0;
     std::span<MemoryUsage> usages(_memory_usages);
     if (_initialize_threads > 1) {
+        /*
+         * Calculate worst case for _initialize_threads - 1 tasks using max transient memory and ignoring
+         * later_memory(). This corresponds to these tasks running until all other tasks have also been started.
+         */
         std::span<MemoryUsage> first_usages(usages);
         if (_initialize_threads - 1 < _memory_usages.size()) {
             std::nth_element(_memory_usages.begin(), _memory_usages.begin() + _initialize_threads - 1,
@@ -81,10 +85,9 @@ size_t ReservedMemoryForAttributeLoadCalculator::calc() {
         usages = usages.last(usages.size() - first_usages.size());
     }
     if (!usages.empty()) {
-        if (usages.size() > 1) {
-            std::nth_element(usages.begin(), usages.begin() + 1, usages.end(), MaxReservedMemoryCompare());
-        }
-        reserved_memory += usages.front().reserved_memory();
+        // Calculate worst case for last initializer thread using reserved memory() which uses later_memory()
+        reserved_memory +=
+            std::min_element(usages.begin(), usages.end(), MaxReservedMemoryCompare())->reserved_memory();
     }
     return reserved_memory;
 }

@@ -15,7 +15,11 @@ namespace proton {
  */
 class ReservedMemoryForAttributeLoadCalculator {
     class MemoryUsage : public initializer::LoadMemoryUsage {
-        size_t _later_memory; // memory usage in attribute vectors known to be loaded later on.
+        /*
+         * Permanent memory usage in attribute vectors known to be loaded later on, for the single threaded case
+         * (_initialize_threads <= 1). Only partially usable when multiple threads are used (_initialize_threads > 1).
+         */
+        size_t _later_memory;
 
     public:
         MemoryUsage(const initializer::LoadMemoryUsage& usage, size_t later_memory_) noexcept
