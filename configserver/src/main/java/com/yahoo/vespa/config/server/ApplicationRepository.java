@@ -209,7 +209,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new ActiveTokenFingerprintsClient(),
              flagSource,
              new DeploymentMetricsRetriever(new ClusterDeploymentMetricsRetriever(),
-                     nodeSuspensionProvider(nodeSuspensionProviders)));
+                     nodeSuspensionProvider(nodeSuspensionProviders), flagSource));
     }
 
     private static NodeSuspensionProvider nodeSuspensionProvider(ComponentRegistry<NodeSuspensionProvider> registry) {
@@ -366,7 +366,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              ClusterReindexingStatusClient.DUMMY_INSTANCE,
                                              __ -> activeTokens,
                                              flagSource,
-                                             new DeploymentMetricsRetriever());
+                                             new DeploymentMetricsRetriever(new ClusterDeploymentMetricsRetriever(),
+                                                     NodeSuspensionProvider.EMPTY, flagSource));
         }
 
     }
