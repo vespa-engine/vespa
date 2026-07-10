@@ -22,6 +22,8 @@
 
 #include <vespa/vespalib/datastore/array_store.hpp>
 
+#include <cmath>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.tensor.hnsw_index");
@@ -39,6 +41,16 @@ using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace {
+
+void stride_sample(std::vector<uint32_t>& nodes, uint32_t target_size, std::vector<uint32_t> target) {
+    assert(nodes.size() >= target_size);
+    uint32_t stride = nodes.size() / target_size;
+
+    for (uint32_t t = 0; t < target_size; ++t) {
+        target.push_back(nodes[t * stride]);
+        // t * stride <= (target_size - 1) * stride <= nodes.size() - stride < nodes.size()
+    }
+}
 
 constexpr size_t min_num_arrays_for_new_buffer = 512_Ki;
 constexpr float  alloc_grow_factor = 0.3;
@@ -585,7 +597,8 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
         // Instead of taking immediate neighbors, we additionally explore 2-hop neighbors (and possibly 3-hop
         // neighbors)
         neighborhood.clear();
-        exploreNeighborhood(stats, cand, neighborhood, visited, exploration, level, filter_wrapper, nodeid_limit);
+        explore_neighborhood_resilient(stats, cand, neighborhood, visited, exploration, level, filter_wrapper,
+                                       nodeid_limit, best_neighbors.size() >= neighbors_to_find);
         neighbor_link_metas.clear();
 
         for (uint32_t neighbor_nodeid : neighborhood) {
@@ -611,8 +624,9 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
             if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
                 candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
 
-                if (dist_to_input < limit_dist) {
-                    // exploreNeighborhood only returns nodes that pass the filter, no need to check that here
+                // We have to check the filter here: resilient filter-first heuristic also uses nodes that do not pass
+                // the filter
+                if (dist_to_input < limit_dist && filter_wrapper.check(link.neighbor_docid)) {
                     best_neighbors.emplace(link.neighbor_nodeid, link.neighbor_docid, link.neighbor_ref,
                                            dist_to_input);
                     while (best_neighbors.size() > neighbors_to_find) {
@@ -626,6 +640,91 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
             break;
         }
     }
+}
+template <HnswIndexType type>
+template <class VisitedTracker>
+void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversalCandidate& cand,
+                                                     std::deque<uint32_t>& found, VisitedTracker& visited,
+                                                     double exploration, uint32_t level,
+                                                     const internal::GlobalFilterWrapper<type>& filter_wrapper,
+                                                     uint32_t nodeid_limit, bool best_neighbors_filled) const {
+    assert(found.empty());
+    std::vector<uint32_t> one_hop_pass;
+    uint32_t              one_hop_unvisited = 0;
+    std::vector<uint32_t> two_hop_pass;
+    std::vector<uint32_t> two_hop_fail;
+
+    auto& node = _graph.acquire_node(cand.nodeid);
+    auto  ref = node.levels_ref().load_acquire();
+    for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
+        if (neighbor_nodeid >= nodeid_limit) {
+            continue;
+        }
+
+        // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
+        auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+        auto  neighbor_ref = neighbor_node.levels_ref().load_acquire();
+        if (!neighbor_ref.valid()) {
+            continue;
+        }
+
+        if (visited.try_mark(neighbor_nodeid)) { // We already mark one-hop neighbors as visited at this point
+            stats.count_visited_node();
+            ++one_hop_unvisited;
+
+            if (filter_wrapper.check(neighbor_nodeid)) {
+                one_hop_pass.push_back(neighbor_nodeid);
+            }
+        }
+
+        // We do not skip visited one-hop neighbors here. TODO: Try skipping
+        for (uint32_t neighbor_neighbor_nodeid : _graph.get_link_array(neighbor_ref, level)) {
+            if (neighbor_neighbor_nodeid >= nodeid_limit) {
+                continue;
+            }
+
+            // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
+            auto& neighbor_neighbor_node = _graph.acquire_node(neighbor_neighbor_nodeid);
+            auto  neighbor_neighbor_ref = neighbor_neighbor_node.levels_ref().load_acquire();
+            if (!neighbor_neighbor_ref.valid() || !visited.try_mark(neighbor_neighbor_nodeid)) {
+                continue;
+            }
+            stats.count_visited_node();
+
+            if (filter_wrapper.check(neighbor_neighbor_nodeid)) {
+                two_hop_pass.push_back(neighbor_neighbor_nodeid);
+            } else {
+                two_hop_fail.push_back(neighbor_neighbor_nodeid);
+            }
+        }
+    }
+
+    // The goal is to end up with as many nodes as we had unvisited one-hop neighbors (if exploration is 1.0).
+    // Check if we get there by using the two-hop neighbors passing the filter.
+    // If not, we also use some that do not pass the filter.
+    // TODO: Try to get to unvisited one-hop neighbors *not passing the filter* instead?
+    // TODO: Try to get to M or 2M instead?
+    std::vector<uint32_t> bridges;
+    uint32_t              target = static_cast<uint32_t>(std::ceil(one_hop_unvisited * exploration));
+    if (two_hop_pass.size() < target && !best_neighbors_filled) { // TODO: Try also when best_neighbors is filled
+        uint32_t needed = target - two_hop_pass.size();
+        if (two_hop_fail.size() > needed) {
+            stride_sample(two_hop_fail, needed, bridges);
+        } else {
+            bridges.insert(bridges.end(), two_hop_fail.begin(), two_hop_fail.end());
+        }
+    }
+
+    uint32_t max_links = max_links_for_level(level); // We use 2M and not M here
+    if (one_hop_pass.size() + two_hop_pass.size() > max_links) {
+        std::vector<uint32_t> two_hop_pass_sampled;
+        stride_sample(two_hop_pass, max_links - one_hop_pass.size(), two_hop_pass_sampled);
+        std::swap(two_hop_pass, two_hop_pass_sampled);
+    }
+
+    found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
+    found.insert(found.end(), two_hop_pass.begin(), two_hop_pass.end());
+    found.insert(found.end(), bridges.begin(), bridges.end());
 }
 
 template <HnswIndexType type>

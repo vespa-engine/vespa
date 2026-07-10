@@ -247,6 +247,11 @@ protected:
                                                     uint32_t nodeid_limit, const vespalib::Deadline* const doom,
                                                     uint32_t estimated_visited_nodes) const __attribute__((noinline));
     template <class VisitedTracker>
+    void explore_neighborhood_resilient(Stats& stats, HnswTraversalCandidate& cand, std::deque<uint32_t>& found,
+                                        VisitedTracker& visited, double exploration, uint32_t level,
+                                        const internal::GlobalFilterWrapper<type>& filter_wrapper,
+                                        uint32_t nodeid_limit, bool best_neighbors_filled) const;
+    template <class VisitedTracker>
     void exploreNeighborhood(Stats& stats, HnswTraversalCandidate& cand, std::deque<uint32_t>& found,
                              VisitedTracker& visited, double exploration, uint32_t level,
                              const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const;
