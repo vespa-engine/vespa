@@ -15,6 +15,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
@@ -396,7 +397,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Session session = validateThatLocalSessionIsNotActive(tenant, sessionId);
         Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, deploymentConfigStore, prepareParams, logger, clock);
         deployment.prepare();
-        logConfigChangeActions(deployment.configChangeActions(), logger);
         log.log(Level.INFO, TenantRepository.logPre(prepareParams.getApplicationId()) + "Session " + sessionId + " prepared successfully. ");
         return deployment;
     }
@@ -493,7 +493,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (activeSession.isEmpty()) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         SessionRepository sessionRepository = tenant.getSessionRepository();
-        DeployLogger logger = new SilentDeployLogger();
+        DeployLogger logger = bootstrap ? new BaseDeployLogger() : new SilentDeployLogger();
         Session newSession = sessionRepository.createSessionFromExisting(activeSession.get(), true, timeoutBudget, logger);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, deploymentConfigStore, logger, timeout, clock,
@@ -552,7 +552,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   boolean force) {
         DeployLogger logger = new SilentDeployLogger();
         Session session = getLocalSession(tenant, sessionId);
-        Deployment deployment = Deployment.prepared(session, this, hostProvisioner, deploymentConfigStore, tenant, logger, timeoutBudget.timeout(), clock, false, force);
+        Deployment deployment = Deployment.prepared(session, this, hostProvisioner, deploymentConfigStore, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
         return sessionRepository(tenant).read(session).applicationId();
     }
@@ -1253,34 +1253,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     @Override
     public Duration serverDeployTimeout() { return Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()); }
-
-    private void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
-        RestartActions restartActions = actions.getRestartActions();
-        if ( ! restartActions.isEmpty()) {
-            if (configserverConfig().hostedVespa())
-                logger.log(Level.INFO, "Orchestrated service restart triggered due to change(s) from active to new application:\n" +
-                                       restartActions.format());
-            else
-                logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
-                                          restartActions.format());
-        }
-        RefeedActions refeedActions = actions.getRefeedActions();
-        if ( ! refeedActions.isEmpty()) {
-            logger.logApplicationPackage(Level.WARNING,
-                                         "Change(s) between active and new application that may require re-feed:\n" +
-                                         refeedActions.format());
-        }
-        ReindexActions reindexActions = actions.getReindexActions();
-        if ( ! reindexActions.isEmpty()) {
-            if (configserverConfig().hostedVespa())
-                logger.log(Level.INFO, "Re-indexing triggered due to change(s) from active to new application:\n" +
-                                       reindexActions.format());
-            else
-                logger.log(Level.WARNING,
-                           "Change(s) between active and new application that may require re-index:\n" +
-                           reindexActions.format());
-        }
-    }
 
     List<HttpURL> getLogServerUris(ApplicationId applicationId, Optional<DomainName> hostname) {
         // Allow to get logs from a given hostname if the application is under the hosted-vespa tenant.
