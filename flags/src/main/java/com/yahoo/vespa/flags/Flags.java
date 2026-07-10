@@ -12,6 +12,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
@@ -62,6 +63,15 @@ public class Flags {
             List.of("hmusum"), "2020-12-02", "2026-12-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundStringFlag DEPLOYMENT_METRICS_CONSUMER = defineStringFlag(
+            "deployment-metrics-consumer", "Vespa",
+            List.of("hmusum"), "2026-07-10", "2026-12-01",
+            "Selects which metrics-proxy consumer the config server uses when fetching " +
+            "metrics for cluster deployment metrics aggregation. Valid values: Vespa, cluster-deployment-metrics",
+            "Takes effect on next metrics retrieval",
+            value -> Set.of("Vespa", "cluster-deployment-metrics").contains(value),
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
