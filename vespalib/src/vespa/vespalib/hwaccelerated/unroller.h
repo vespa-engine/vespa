@@ -53,16 +53,10 @@ class Unroller {
     template <size_t UnrollLbound, size_t UnrollUbound, typename Fn, typename... FnArgs>
     static inline __attribute__((always_inline)) void
     do_unroll(Fn&& fn, FnArgs&&... fn_args) noexcept(noexcept(fn(UnrollIdx<0>{}, std::forward<FnArgs>(fn_args)...))) {
-        if constexpr (UnrollLbound == UnrollUbound - 1) { // Leaf recursion case
-            constexpr size_t unroll_idx = UnrollLbound;
-            fn(UnrollIdx<unroll_idx>{}, std::forward<FnArgs>(fn_args)...);
-        } else {
-            static_assert(UnrollLbound < UnrollUbound);
-            constexpr size_t half = (UnrollUbound - UnrollLbound) / 2;
-            do_unroll<UnrollLbound, UnrollLbound + half>(std::forward<Fn>(fn), std::forward<FnArgs>(fn_args)...);
-            if constexpr (half > 0) {
-                do_unroll<UnrollLbound + half, UnrollUbound>(std::forward<Fn>(fn), std::forward<FnArgs>(fn_args)...);
-            }
+        constexpr size_t unroll_idx = UnrollLbound;
+        fn(UnrollIdx<unroll_idx>{}, std::forward<FnArgs>(fn_args)...);
+        if constexpr (UnrollLbound + 1 < UnrollUbound) {
+            do_unroll<UnrollLbound + 1, UnrollUbound>(std::forward<Fn>(fn), std::forward<FnArgs>(fn_args)...);
         }
     }
 
