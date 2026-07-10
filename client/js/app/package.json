@@ -38,6 +38,6 @@
     "react-router-dom": "7.15.1",
     "use-context-selector": "2.0.0",
     "vite": "8.0.16",
-    "vitest": "4.1.0"
+    "vitest": "4.1.10"
   }
 }
