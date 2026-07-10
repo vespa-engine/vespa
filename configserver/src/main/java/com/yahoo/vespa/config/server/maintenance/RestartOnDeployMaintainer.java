@@ -15,8 +15,6 @@ import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.PendingRestarts;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
@@ -41,8 +39,6 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_
  * Maintainer that triggers restart of pending restart nodes stored in ZooKeeper.
  * Implements restart conditions to ensure that services converge to the same config generation before restart.
  * Removes restarted nodes from ZooKeeper.
- * This is an experimental replacement for {@link PendingRestartsMaintainer}, enabled by
- * {@link Flags#RESTART_ON_DEPLOY_MAINTAINER} feature flag.
  *
  * @author glebashnik
  */
@@ -57,13 +53,11 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             "distributor");
 
     private final Clock clock;
-    private final BooleanFlag restartOnDeployMaintainer;
 
     public RestartOnDeployMaintainer(
             ApplicationRepository applicationRepository, Curator curator, Clock clock, Duration interval) {
         super(applicationRepository, curator, applicationRepository.flagSource(), clock, interval, true);
         this.clock = clock;
-        this.restartOnDeployMaintainer = Flags.RESTART_ON_DEPLOY_MAINTAINER.bindTo(applicationRepository.flagSource());
     }
 
     @Override
@@ -74,34 +68,30 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
         for (Tenant tenant : tenantRepository.getAllTenants()) {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications()) {
-                // Controls whether to use this maintainer for a specific instance with the feature flag.
-                // Alternatively, the older PendingRestartsMaintainer will be used.
-                if (restartOnDeployMaintainer.with(id).value()) {
-                    applicationRepository
-                            .getActiveApplicationVersions(id)
-                            .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
-                            .ifPresent(application -> {
-                                try {
-                                    attempts.incrementAndGet();
-                                    applicationRepository.modifyPendingRestarts(
-                                            id,
-                                            restarts -> triggerPendingRestarts(
-                                                    restartingHosts ->
-                                                            fetchConfigServiceStates(application, restartingHosts),
-                                                    this::restart,
-                                                    id,
-                                                    restarts,
-                                                    log));
-                                } catch (RuntimeException e) {
-                                    log.log(
-                                            Level.INFO,
-                                            Text.format(
-                                                    "Failed to update pending restarts of %s: %s",
-                                                    id.toFullString(), Exceptions.toMessageString(e)));
-                                    failures.incrementAndGet();
-                                }
-                            });
-                }
+                applicationRepository
+                        .getActiveApplicationVersions(id)
+                        .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
+                        .ifPresent(application -> {
+                            try {
+                                attempts.incrementAndGet();
+                                applicationRepository.modifyPendingRestarts(
+                                        id,
+                                        restarts -> triggerPendingRestarts(
+                                                restartingHosts ->
+                                                        fetchConfigServiceStates(application, restartingHosts),
+                                                this::restart,
+                                                id,
+                                                restarts,
+                                                log));
+                            } catch (RuntimeException e) {
+                                log.log(
+                                        Level.INFO,
+                                        Text.format(
+                                                "Failed to update pending restarts of %s: %s",
+                                                id.toFullString(), Exceptions.toMessageString(e)));
+                                failures.incrementAndGet();
+                            }
+                        });
             }
         }
         return asSuccessFactorDeviation(attempts.get(), failures.get());
