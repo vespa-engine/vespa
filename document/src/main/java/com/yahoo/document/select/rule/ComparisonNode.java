@@ -204,15 +204,10 @@ public class ComparisonNode implements ExpressionNode {
     }
 
     private static Result collapseObservedResults(EnumSet<Result> observedResults) {
-        boolean foundFalse = false;
-        for (var mergedResult : observedResults) {
-            if (mergedResult == Result.TRUE) {
-                return mergedResult;
-            } else if (mergedResult == Result.FALSE) {
-                foundFalse = true;
-            }
+        if (observedResults.contains(Result.TRUE)) {
+            return Result.TRUE;
         }
-        return foundFalse ? Result.FALSE : Result.INVALID;
+        return observedResults.contains(Result.FALSE) ? Result.FALSE : Result.INVALID;
     }
 
     private ResultList evaluateLhsListAndRhsSingle(AttributeNode.VariableValueList lhs, Object rhs) {
