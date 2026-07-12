@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
@@ -312,6 +313,12 @@ public class BuiltInFunctions {
             "",
             "out"
         ))));
+        put("queryTermDocumentFrequency", new GenericFunction("queryTermDocumentFrequency",
+            new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, EnumSet.of(IndexingType.INDEX), "field"), Set.of(
+                "",
+                "out"
+            ))
+        ));
         // put("random", new GenericFunction());
 
         // put("random.match", new GenericFunction()); // This is buggy

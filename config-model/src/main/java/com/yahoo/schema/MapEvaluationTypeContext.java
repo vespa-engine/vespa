@@ -297,15 +297,21 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     /**
-     * There are 5 features which may return (non-empty) tensor type:
+     * There are 6 features which may return (non-empty) tensor type:
      * - tensorFromLabels
      * - tensorFromWeightedSet
      * - tensorFromStructs
      * - closest
      * - elementwise
+     * - queryTermDocumentFrequency
      * This returns the type of those features if this is a reference to either of them, or empty otherwise.
      */
     private Optional<TensorType> tensorFeatureType(Reference reference) {
+        if (reference.name().equals("queryTermDocumentFrequency")) {
+            if (reference.arguments().size() != 1)
+                throw new IllegalArgumentException(reference.name() + " must have one argument");
+            return Optional.of(new TensorType.Builder(TensorType.Value.DOUBLE).mapped("term").build());
+        }
         if ( ! reference.name().equals("tensorFromLabels") &&
              ! reference.name().equals("tensorFromWeightedSet") &&
              ! reference.name().equals("tensorFromStructs") &&

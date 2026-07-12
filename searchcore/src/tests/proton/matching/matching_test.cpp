@@ -288,6 +288,15 @@ struct MyWorld {
         config.add(indexproperties::match::Feature::NAME, "num_docs_indexed");
     }
 
+    void setup_query_term_document_frequency_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "queryTermDocumentFrequency(f1)");
+        config.add(indexproperties::match::Feature::NAME,
+                   "rankingExpression(\"queryTermDocumentFrequency(f1){term:0}\")");
+        config.add(indexproperties::match::Feature::NAME,
+                   "rankingExpression(\"reduce(merge(queryTermDocumentFrequency(f1),"
+                   "queryTermDocumentFrequency(f2),f(a,b)(max(a,b))),sum,term)\")");
+    }
+
     void setup_feature_renames() {
         config.add(indexproperties::feature_rename::Rename::NAME, "matches(f1)");
         config.add(indexproperties::feature_rename::Rename::NAME, "foobar");
@@ -350,6 +359,29 @@ struct MyWorld {
         ASSERT_EQ(reply.match_features.values.size(), reply.hits.size());
         for (const auto& value : reply.match_features.values) {
             EXPECT_EQ(value.as_double(), NUM_DOCS - 1);
+        }
+    }
+
+    static void verify_query_term_document_frequency_match_features(SearchReply& reply) {
+        ASSERT_GT(reply.hits.size(), 0u);
+        ASSERT_EQ(reply.match_features.names.size(), 3u);
+        EXPECT_EQ(reply.match_features.names[0], "queryTermDocumentFrequency(f1)");
+        EXPECT_EQ(reply.match_features.names[1], "rankingExpression(\"queryTermDocumentFrequency(f1){term:0}\")");
+        EXPECT_EQ(reply.match_features.names[2], "rankingExpression(\"reduce(merge(queryTermDocumentFrequency(f1),"
+                                                 "queryTermDocumentFrequency(f2),f(a,b)(max(a,b))),sum,term)\")");
+        ASSERT_EQ(reply.match_features.values.size(), 3 * reply.hits.size());
+        // the term "spread" matches 9 documents in f1 (see basicResults())
+        auto expect = TensorSpec("tensor(term{})").add({{"term", "0"}}, 9);
+        for (size_t i = 0; i < reply.hits.size(); ++i) {
+            const auto* f = &reply.match_features.values[i * 3];
+            ASSERT_TRUE(f[0].is_data());
+            {
+                nbostream buf(f[0].as_data().data, f[0].as_data().size);
+                EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+            }
+            EXPECT_EQ(f[1].as_double(), 9.0);
+            // the term does not search f2, so the merge keeps the f1 cell
+            EXPECT_EQ(f[2].as_double(), 9.0);
         }
     }
 
@@ -679,6 +711,16 @@ TEST_F(MatchingTest, require_that_num_docs_indexed_match_feature_uses_bm25_docid
     SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
     SearchReply::UP   reply = world.performSearch(*request, 1);
     MyWorld::verify_num_docs_indexed_match_feature(*reply);
+}
+
+TEST_F(MatchingTest, require_that_query_term_document_frequency_match_feature_has_per_term_doc_freq) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    world.setup_query_term_document_frequency_match_features();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    SearchReply::UP   reply = world.performSearch(*request, 1);
+    MyWorld::verify_query_term_document_frequency_match_features(*reply);
 }
 
 TEST_F(MatchingTest, require_that_no_hits_gives_no_match_feature_names) {
