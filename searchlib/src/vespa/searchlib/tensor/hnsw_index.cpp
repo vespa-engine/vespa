@@ -602,6 +602,10 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
         neighbor_link_metas.clear();
 
         for (uint32_t neighbor_nodeid : neighborhood) {
+            if (visited.try_mark(neighbor_nodeid)) {
+                stats.count_visited_node();
+            }
+
             auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
             auto  neighbor_ref = neighbor_node.levels_ref().load_acquire();
             if (!neighbor_ref.valid()) {
@@ -650,6 +654,7 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
                                                      uint32_t nodeid_limit, bool best_neighbors_filled) const {
     assert(found.empty());
     std::vector<uint32_t> one_hop_pass;
+    std::vector<uint32_t> one_hop_fail;
     uint32_t              one_hop_unvisited = 0;
     std::vector<uint32_t> two_hop_pass;
     std::vector<uint32_t> two_hop_fail;
@@ -668,13 +673,14 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
             continue;
         }
 
-        if (visited.try_mark(neighbor_nodeid)) { // We already mark one-hop neighbors as visited at this point
-            stats.count_visited_node();
+        if (!visited.marked(neighbor_nodeid)) {
             ++one_hop_unvisited;
 
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             if (filter_wrapper.check(neighbor_docid)) {
                 one_hop_pass.push_back(neighbor_nodeid);
+            } else {
+                one_hop_fail.push_back(neighbor_nodeid);
             }
         }
 
@@ -687,10 +693,9 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
             // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
             auto& neighbor_neighbor_node = _graph.acquire_node(neighbor_neighbor_nodeid);
             auto  neighbor_neighbor_ref = neighbor_neighbor_node.levels_ref().load_acquire();
-            if (!neighbor_neighbor_ref.valid() || !visited.try_mark(neighbor_neighbor_nodeid)) {
+            if (!neighbor_neighbor_ref.valid() || visited.marked(neighbor_neighbor_nodeid)) {
                 continue;
             }
-            stats.count_visited_node();
 
             uint32_t neighbor_neighbor_docid = acquire_docid(neighbor_neighbor_node, neighbor_neighbor_nodeid);
             if (filter_wrapper.check(neighbor_neighbor_docid)) {
@@ -722,6 +727,17 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
     // TODO: Try to get to M or 2M instead?
     uint32_t target = static_cast<uint32_t>(std::ceil(one_hop_unvisited * exploration));
     if (two_hop_pass.size() < target) { // TODO: Try also when best_neighbors is filled
+        for (uint32_t nodeid : one_hop_fail) {
+            if (visited.try_mark(nodeid)) {
+                stats.count_visited_node();
+            }
+        }
+        for (uint32_t nodeid : two_hop_fail) {
+            if (visited.try_mark(nodeid)) {
+                stats.count_visited_node();
+            }
+        }
+
         if (!best_neighbors_filled) {
             uint32_t needed = target - two_hop_pass.size();
             if (two_hop_fail.size() > needed) {

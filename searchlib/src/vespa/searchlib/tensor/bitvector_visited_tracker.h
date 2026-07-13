@@ -25,6 +25,7 @@ public:
             return true;
         }
     }
+    bool marked(uint32_t nodeid) { return _visited.testBit(nodeid); }
 };
 
 } // namespace search::tensor
