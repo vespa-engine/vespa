@@ -356,6 +356,13 @@ fieldvalue::VariableMap cloneMap(const fieldvalue::VariableMap& map) {
     return m;
 }
 
+[[nodiscard]] const Result& collapseOR(std::bitset<3> observed_results) noexcept {
+    if (observed_results[Result::True.toEnum()]) {
+        return Result::True;
+    }
+    return observed_results[Result::Invalid.toEnum()] ? Result::Invalid : Result::False;
+}
+
 } // namespace
 
 template <typename Predicate> ResultList ArrayValue::doCompare(const Value& value, const Predicate& cmp) const {
@@ -385,10 +392,8 @@ template <typename Predicate> ResultList ArrayValue::doCompare(const Value& valu
                 results.add(cloneMap(item.first), result);
             }
         }
-        for (uint32_t i(0); i < resultForNoVariables.size(); i++) {
-            if (resultForNoVariables[i]) {
-                results.add(fieldvalue::VariableMap(), Result::fromEnum(i));
-            }
+        if (resultForNoVariables.any()) {
+            results.add(fieldvalue::VariableMap(), collapseOR(resultForNoVariables));
         }
         return results;
     }

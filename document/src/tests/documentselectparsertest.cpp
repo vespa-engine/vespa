@@ -39,7 +39,21 @@
 
 using namespace document::new_config_builder;
 
+namespace document::select {
+
+void PrintTo(const ResultList& result_list, std::ostream* os) {
+    *os << result_list.toString();
+}
+
+} // namespace document::select
+
 namespace document {
+
+namespace {
+
+std::string intarray_name("intarray");
+
+}
 
 class DocumentSelectParserTest : public ::testing::Test {
 protected:
@@ -47,6 +61,10 @@ protected:
     std::unique_ptr<select::Parser> _parser;
     std::vector<Document::SP>       _doc;
     std::vector<DocumentUpdate::SP> _update;
+    static constexpr size_t         with_no_intarray = 13;
+    static constexpr size_t         with_empty_intarray = 14;
+    static constexpr size_t         with_intarray0 = 15;
+    static constexpr size_t         with_intarray1 = 16;
 
     ~DocumentSelectParserTest() override;
 
@@ -124,6 +142,7 @@ void DocumentSelectParserTest::SetUp() {
         .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")
         .addTensorField("sparse_float_tensor", "tensor<float>(x{})")
         .addTensorField("dense_tensor", "tensor(x[2])");
+    doc1.addField(intarray_name, doc1.createArray(builder.intTypeRef()).ref());
 
     doc1.imported_field("my_imported_field");
     doc1.fieldSet("[document]", {"headerval", "hstringval", "title"});
@@ -287,6 +306,34 @@ void DocumentSelectParserTest::createDocs() {
     _doc.push_back(
         createDoc("testdoctype1", "id:myspace:testdoctype1::withfalsebool", 10, 1.4, "inherited", "", 42)); // DOC 12
     _doc.back()->setValue("boolfield", BoolFieldValue(false));
+    _doc.push_back(
+        createDoc("testdoctype1", "id:myspace:testdoctype1::withnointarray", 10, 1.4, "inherited", "", 42)); // DOC 13
+    _doc.push_back(createDoc("testdoctype1", "id:myspace:testdoctype1::withemptyintarray", 10, 1.4, "inherited", "",
+                             42)); // DOC 14
+    {
+        ArrayFieldValue intarray(_doc.back()->getField(intarray_name).getDataType());
+        _doc.back()->setValue(intarray_name, intarray);
+    }
+    _doc.push_back(
+        createDoc("testdoctype1", "id:myspace:testdoctype1::withintarray0", 10, 1.4, "inherited", "", 42)); // DOC 15
+    {
+        ArrayFieldValue intarray(_doc.back()->getField(intarray_name).getDataType());
+        intarray.add(IntFieldValue(12));
+        intarray.add(IntFieldValue(40));
+        intarray.add(IntFieldValue(60));
+        intarray.add(IntFieldValue(84));
+        _doc.back()->setValue(intarray_name, intarray);
+    }
+    _doc.push_back(
+        createDoc("testdoctype1", "id:myspace:testdoctype1::withintarray2", 10, 1.4, "inherited", "", 42)); // DOC 16
+    {
+        ArrayFieldValue intarray(_doc.back()->getField(intarray_name).getDataType());
+        intarray.add(IntFieldValue(3));
+        intarray.add(IntFieldValue(56));
+        intarray.add(IntFieldValue(23));
+        intarray.add(IntFieldValue(9));
+        _doc.back()->setValue(intarray_name, intarray);
+    }
 
     _update.clear();
     _update.push_back(createUpdate("testdoctype1", "id:myspace:testdoctype1::anything", 20, "hmm"));
@@ -836,8 +883,8 @@ TEST_F(DocumentSelectParserTest, operators_6) {
     PARSE("testdoctype1.mystruct != testdoctype1.mystruct", *_doc[1], False);
     PARSE("testdoctype1.mystruct < testdoctype1.mystruct", *_doc[0], Invalid);
     PARSE("testdoctype1.mystruct < testdoctype1.mystruct", *_doc[1], False);
-    PARSE("testdoctype1.mystruct < 5", *_doc[1], False);
-    //  PARSE("testdoctype1.mystruct == \"foo\"", *_doc[1], Invalid);
+    PARSE("testdoctype1.mystruct < 5", *_doc[1], Invalid);
+    PARSE("testdoctype1.mystruct == \"foo\"", *_doc[1], Invalid);
     PARSE("testdoctype1.mystruct.key == 14", *_doc[0], False);
     PARSE("testdoctype1.mystruct.value == \"structval\"", *_doc[0], False);
     PARSE("testdoctype1.mystruct.key == 14", *_doc[1], True);
@@ -1738,5 +1785,47 @@ TEST_F(DocumentSelectParserTest, lexing_does_not_have_superlinear_time_complexit
     // A really, really long time.
     PARSE(expr, *_doc[0], False);
 }
+
+// Array not yet supported at right hand side
+#define BROKEN_RHS_ARRAY(x) Invalid
+
+TEST_F(DocumentSelectParserTest, primitive_value_versus_array_value) {
+    createDocs();
+    PARSE("testdoctype1.intarray", *_doc[with_no_intarray], False);
+    PARSE("testdoctype1.intarray", *_doc[with_empty_intarray], False);
+    PARSE("testdoctype1.intarray", *_doc[with_intarray0], True);
+    PARSE("testdoctype1.intarray", *_doc[with_intarray1], True);
+    PARSE("testdoctype1.intarray < 5", *_doc[with_no_intarray], Invalid);
+    PARSE("testdoctype1.intarray < 5", *_doc[with_empty_intarray], Invalid);
+    PARSE("testdoctype1.intarray < 5", *_doc[with_intarray0], False);
+    PARSE("testdoctype1.intarray < 5", *_doc[with_intarray1], True);
+    PARSE("testdoctype1.intarray and testdoctype1.intarray < 5", *_doc[with_no_intarray], False);
+    PARSE("testdoctype1.intarray and testdoctype1.intarray < 5", *_doc[with_empty_intarray], False);
+    PARSE("testdoctype1.intarray and testdoctype1.intarray < 5", *_doc[with_intarray0], False);
+    PARSE("testdoctype1.intarray and testdoctype1.intarray < 5", *_doc[with_intarray1], True);
+    PARSE("testdoctype1.intarray > 80", *_doc[with_intarray0], True);
+    PARSE("testdoctype1.intarray > 80", *_doc[with_intarray1], False);
+    PARSE("testdoctype1.intarray >= 84", *_doc[with_intarray0], True);
+    PARSE("testdoctype1.intarray <= 3", *_doc[with_intarray1], True);
+    PARSE("not testdoctype1.intarray < 5", *_doc[with_intarray0], True);
+    PARSE("not testdoctype1.intarray < 5", *_doc[with_intarray1], False);
+    PARSE("5 > testdoctype1.intarray", *_doc[with_no_intarray], BROKEN_RHS_ARRAY(False));
+    PARSE("5 > testdoctype1.intarray", *_doc[with_empty_intarray], BROKEN_RHS_ARRAY(False));
+    PARSE("5 > testdoctype1.intarray", *_doc[with_intarray0], BROKEN_RHS_ARRAY(False));
+    PARSE("5 > testdoctype1.intarray", *_doc[with_intarray1], BROKEN_RHS_ARRAY(True));
+    PARSE("not 5 > testdoctype1.intarray", *_doc[with_intarray0], BROKEN_RHS_ARRAY(True));
+    PARSE("not 5 > testdoctype1.intarray", *_doc[with_intarray1], BROKEN_RHS_ARRAY(False));
+
+    PARSE("testdoctype1.intarray == 84", *_doc[with_intarray0], True);
+    PARSE("testdoctype1.intarray != 84", *_doc[with_intarray0], True);
+    PARSE("not testdoctype1.intarray == 84", *_doc[with_intarray0], False);
+    PARSE("not testdoctype1.intarray != 84", *_doc[with_intarray0], False);
+    PARSE("84 == testdoctype1.intarray", *_doc[with_intarray0], BROKEN_RHS_ARRAY(True));
+    PARSE("84 != testdoctype1.intarray", *_doc[with_intarray0], BROKEN_RHS_ARRAY(True));
+    PARSE("not 84 == testdoctype1.intarray", *_doc[with_intarray0], BROKEN_RHS_ARRAY(False));
+    PARSE("not 84 != testdoctype1.intarray", *_doc[with_intarray0], BROKEN_RHS_ARRAY(False));
+}
+
+#undef BROKEN_RHS_ARRAY
 
 } // namespace document
