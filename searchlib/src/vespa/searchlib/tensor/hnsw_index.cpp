@@ -672,7 +672,8 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
             stats.count_visited_node();
             ++one_hop_unvisited;
 
-            if (filter_wrapper.check(neighbor_nodeid)) {
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            if (filter_wrapper.check(neighbor_docid)) {
                 one_hop_pass.push_back(neighbor_nodeid);
             }
         }
@@ -691,7 +692,8 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
             }
             stats.count_visited_node();
 
-            if (filter_wrapper.check(neighbor_neighbor_nodeid)) {
+            uint32_t neighbor_neighbor_docid = acquire_docid(neighbor_neighbor_node, neighbor_neighbor_nodeid);
+            if (filter_wrapper.check(neighbor_neighbor_docid)) {
                 two_hop_pass.push_back(neighbor_neighbor_nodeid);
             } else {
                 two_hop_fail.push_back(neighbor_neighbor_nodeid);
@@ -718,7 +720,7 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
     // If not, we also use some that do not pass the filter.
     // TODO: Try to get to unvisited one-hop neighbors *not passing the filter* instead?
     // TODO: Try to get to M or 2M instead?
-    uint32_t              target = static_cast<uint32_t>(std::ceil(one_hop_unvisited * exploration));
+    uint32_t target = static_cast<uint32_t>(std::ceil(one_hop_unvisited * exploration));
     if (two_hop_pass.size() < target) { // TODO: Try also when best_neighbors is filled
         if (!best_neighbors_filled) {
             uint32_t needed = target - two_hop_pass.size();
