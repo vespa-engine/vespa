@@ -659,6 +659,9 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
     std::vector<uint32_t> two_hop_pass;
     std::vector<uint32_t> two_hop_fail;
 
+    uint32_t              max_links = max_links_for_level(level); // We use 2M and not M here
+    HashSetVisitedTracker local_tracker(max_links * max_links, max_links * max_links);
+
     auto& node = _graph.acquire_node(cand.nodeid);
     auto  ref = node.levels_ref().load_acquire();
     for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
@@ -673,7 +676,7 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
             continue;
         }
 
-        if (!visited.marked(neighbor_nodeid)) {
+        if (!visited.marked(neighbor_nodeid) && local_tracker.try_mark(neighbor_nodeid)) {
             ++one_hop_unvisited;
 
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
@@ -693,7 +696,9 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
             // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
             auto& neighbor_neighbor_node = _graph.acquire_node(neighbor_neighbor_nodeid);
             auto  neighbor_neighbor_ref = neighbor_neighbor_node.levels_ref().load_acquire();
-            if (!neighbor_neighbor_ref.valid() || visited.marked(neighbor_neighbor_nodeid)) {
+            if (!neighbor_neighbor_ref.valid() || visited.marked(neighbor_neighbor_nodeid) ||
+                !local_tracker.try_mark(neighbor_neighbor_nodeid))
+            {
                 continue;
             }
 
@@ -710,7 +715,6 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
     found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
 
     // Second, insert two-hop neighbors. Depending on how many we have, we either use all or sample a subset.
-    uint32_t max_links = max_links_for_level(level); // We use 2M and not M here
     if (one_hop_pass.size() + two_hop_pass.size() > max_links) {
         // Sample subset
         stride_sample(found, two_hop_pass, max_links - one_hop_pass.size());
