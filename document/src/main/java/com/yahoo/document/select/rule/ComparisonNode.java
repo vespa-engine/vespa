@@ -203,6 +203,14 @@ public class ComparisonNode implements ExpressionNode {
         }
     }
 
+    private static Result collapseOR(EnumSet<Result> observedResults) {
+        // Same logic as in ResultList.combineOR
+        if (observedResults.contains(Result.TRUE)) {
+            return Result.TRUE;
+        }
+        return observedResults.contains(Result.INVALID) ? Result.INVALID : Result.FALSE;
+    }
+
     private ResultList evaluateLhsListAndRhsSingle(AttributeNode.VariableValueList lhs, Object rhs) {
         return evaluateOneSideListOnly(lhs, rhs, (val) -> evaluateBool(val, rhs));
     }
@@ -236,10 +244,10 @@ public class ComparisonNode implements ExpressionNode {
                 results.add((FieldPathIteratorHandler.VariableMap) value.getVariables().clone(), result);
             }
         }
-        for (var mergedResult : observedNoVarResults) {
-            results.add(new FieldPathIteratorHandler.VariableMap(), mergedResult); // TODO sentinel empty var map
+        // Collapse results for the common case where there are no variables as all.
+        if (!observedNoVarResults.isEmpty()) {
+            results.add(new FieldPathIteratorHandler.VariableMap(), collapseOR(observedNoVarResults)); // TODO sentinel empty var map
         }
-
         return results;
     }
 
