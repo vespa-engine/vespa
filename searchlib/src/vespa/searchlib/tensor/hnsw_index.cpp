@@ -42,13 +42,13 @@ using vespalib::datastore::EntryRef;
 
 namespace {
 
-void stride_sample(std::vector<uint32_t>& nodes, uint32_t target_size, std::vector<uint32_t> target) {
-    assert(nodes.size() >= target_size);
-    uint32_t stride = nodes.size() / target_size;
+void stride_sample(std::deque<uint32_t>& to, std::vector<uint32_t>& from, uint32_t num) {
+    assert(from.size() >= num);
+    uint32_t stride = from.size() / num;
 
-    for (uint32_t t = 0; t < target_size; ++t) {
-        target.push_back(nodes[t * stride]);
-        // t * stride <= (target_size - 1) * stride <= nodes.size() - stride < nodes.size()
+    for (uint32_t i = 0; i < num; ++i) {
+        to.push_back(from[i * stride]);
+        // i * stride <= (num - 1) * stride <= from.size() - stride < from.size()
     }
 }
 
@@ -699,32 +699,36 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
         }
     }
 
+    // First, insert one-hop neighbors. We will use these no matter what.
+    found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
+
+    // Second, insert two-hop neighbors. Depending on how many we have, we either use all or sample a subset.
+    uint32_t max_links = max_links_for_level(level); // We use 2M and not M here
+    if (one_hop_pass.size() + two_hop_pass.size() > max_links) {
+        // Sample subset
+        stride_sample(found, two_hop_pass, max_links - one_hop_pass.size());
+    } else {
+        // Use all
+        found.insert(found.end(), two_hop_pass.begin(), two_hop_pass.end());
+    }
+
+    // Third, insert bridges.
     // The goal is to end up with as many nodes as we had unvisited one-hop neighbors (if exploration is 1.0).
     // Check if we get there by using the two-hop neighbors passing the filter.
     // If not, we also use some that do not pass the filter.
     // TODO: Try to get to unvisited one-hop neighbors *not passing the filter* instead?
     // TODO: Try to get to M or 2M instead?
-    std::vector<uint32_t> bridges;
     uint32_t              target = static_cast<uint32_t>(std::ceil(one_hop_unvisited * exploration));
-    if (two_hop_pass.size() < target && !best_neighbors_filled) { // TODO: Try also when best_neighbors is filled
-        uint32_t needed = target - two_hop_pass.size();
-        if (two_hop_fail.size() > needed) {
-            stride_sample(two_hop_fail, needed, bridges);
-        } else {
-            bridges.insert(bridges.end(), two_hop_fail.begin(), two_hop_fail.end());
+    if (two_hop_pass.size() < target) { // TODO: Try also when best_neighbors is filled
+        if (!best_neighbors_filled) {
+            uint32_t needed = target - two_hop_pass.size();
+            if (two_hop_fail.size() > needed) {
+                stride_sample(found, two_hop_fail, needed);
+            } else {
+                found.insert(found.end(), two_hop_fail.begin(), two_hop_fail.end());
+            }
         }
     }
-
-    uint32_t max_links = max_links_for_level(level); // We use 2M and not M here
-    if (one_hop_pass.size() + two_hop_pass.size() > max_links) {
-        std::vector<uint32_t> two_hop_pass_sampled;
-        stride_sample(two_hop_pass, max_links - one_hop_pass.size(), two_hop_pass_sampled);
-        std::swap(two_hop_pass, two_hop_pass_sampled);
-    }
-
-    found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
-    found.insert(found.end(), two_hop_pass.begin(), two_hop_pass.end());
-    found.insert(found.end(), bridges.begin(), bridges.end());
 }
 
 template <HnswIndexType type>
