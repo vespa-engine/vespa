@@ -6,6 +6,7 @@
 #include "mips_distance_transform.h"
 
 using search::attribute::DistanceMetric;
+using search::attribute::QuantizationParams;
 using vespalib::eval::CellType;
 using vespalib::eval::Int8Float;
 
@@ -84,6 +85,45 @@ std::unique_ptr<DistanceFunctionFactory> make_distance_function_factory(Distance
     }
     // Not reached:
     return {};
+}
+
+namespace {
+
+DistanceFunctionFactory::UP make_quantized_distance_function_factory(DistanceMetric variant, size_t vector_dimensions,
+                                                                     const QuantizationParams& quant_params) {
+    // The cell type does not matter for quantized distance functions, as vectors are
+    // internally treated either as opaque quantized byte (well, Int8Float to be pedantic)
+    // vectors or float32 vectors.
+    switch (variant) {
+    case DistanceMetric::Angular:
+        return std::make_unique<QuantizedAngularDistanceFunctionFactory>(vector_dimensions, quant_params.bits(),
+                                                                         quant_params.seed());
+    case DistanceMetric::Euclidean:
+        return std::make_unique<QuantizedEuclideanDistanceFunctionFactory>(vector_dimensions, quant_params.bits(),
+                                                                           quant_params.seed());
+    case DistanceMetric::InnerProduct:
+    case DistanceMetric::PrenormalizedAngular:
+        return std::make_unique<QuantizedPrenormalizedAngularDistanceFunctionFactory>(
+            vector_dimensions, quant_params.bits(), quant_params.seed());
+    case DistanceMetric::Dotproduct:
+        return std::make_unique<QuantizedMipsDistanceFunctionFactory>(vector_dimensions, quant_params.bits(),
+                                                                      quant_params.seed());
+    default:
+        // Incompatible distance functions should not be allowed to be deployed.
+        abort();
+    }
+}
+
+} // namespace
+
+DistanceFunctionFactory::UP make_distance_function_factory(DistanceMetric variant, CellType cell_type,
+                                                           size_t                                   vector_dimensions,
+                                                           const std::optional<QuantizationParams>& quant_params) {
+    if (!quant_params) {
+        return make_distance_function_factory(variant, cell_type);
+    } else {
+        return make_quantized_distance_function_factory(variant, vector_dimensions, *quant_params);
+    }
 }
 
 } // namespace search::tensor
