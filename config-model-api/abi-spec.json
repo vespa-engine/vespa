@@ -277,6 +277,7 @@
       "public java.util.Optional backup()",
       "public boolean deploysTo(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public java.util.Map zoneEndpoints(com.yahoo.config.provision.zone.ZoneId)",
+      "public java.util.Set zoneEndpointClusters()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"

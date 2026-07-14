@@ -53,7 +53,61 @@ public class DeploymentSpecValidatorTest {
         assertValidationError("Duplicate instance name 'default' specified in deployment.xml.", deploymentXml);
     }
 
+    @Test
+    void testPrivateEndpointNonExistentContainerId() {
+        var deploymentXml = "<?xml version='1.0' encoding='UTF-8'?>" +
+                "<deployment version='1.0'>" +
+                "  <prod>" +
+                "    <region>us-east</region>" +
+                "  </prod>" +
+                "  <endpoints>" +
+                "    <endpoint type='private' container-id='non-existing'/>" +
+                "  </endpoints>" +
+                "</deployment>";
+        assertValidationError("Zone endpoint in instance default: 'non-existing' specified in " +
+                "deployment.xml does not match any container cluster ID", deploymentXml);
+    }
+
+    @Test
+    void testZoneEndpointNonExistentContainerId() {
+        var deploymentXml = "<?xml version='1.0' encoding='UTF-8'?>" +
+                "<deployment version='1.0'>" +
+                "  <prod>" +
+                "    <region>us-east</region>" +
+                "  </prod>" +
+                "  <endpoints>" +
+                "    <endpoint type='zone' container-id='non-existing'/>" +
+                "  </endpoints>" +
+                "</deployment>";
+        assertValidationError("Zone endpoint in instance default: 'non-existing' specified in " +
+                "deployment.xml does not match any container cluster ID", deploymentXml);
+    }
+
+    @Test
+    void testPrivateEndpointExistingContainerIdValidates() {
+        // 'default' matches the container in the test services, so this must not fail
+        var deploymentXml = "<?xml version='1.0' encoding='UTF-8'?>" +
+                "<deployment version='1.0'>" +
+                "  <prod>" +
+                "    <region>us-east</region>" +
+                "  </prod>" +
+                "  <endpoints>" +
+                "    <endpoint type='private' container-id='default'/>" +
+                "  </endpoints>" +
+                "</deployment>";
+        validate(deploymentXml);
+    }
+
     private static void assertValidationError(String message, String deploymentXml) {
+        try {
+            validate(deploymentXml);
+            fail("Did not get expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals(message, e.getMessage());
+        }
+    }
+
+    private static void validate(String deploymentXml) {
         var simpleHosts = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                           "<hosts>  " +
                           "<host name=\"localhost\">" +
@@ -82,9 +136,6 @@ public class DeploymentSpecValidatorTest {
         try {
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
             ValidationTester.validate(new DeploymentSpecValidator(), model, deployState);
-            fail("Did not get expected exception");
-        } catch (IllegalArgumentException e) {
-            assertEquals(message, e.getMessage());
         } catch (SAXException|IOException e) {
             throw new RuntimeException(e);
         }
