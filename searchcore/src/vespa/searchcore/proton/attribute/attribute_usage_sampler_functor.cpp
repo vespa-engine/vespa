@@ -3,7 +3,7 @@
 #include "attribute_usage_sampler_functor.h"
 
 #include "attribute_config_inspector.h"
-#include "attribute_usage_sampler_context.h"
+#include "attribute_load_memory_calculator.h"
 
 #include <vespa/searchlib/attribute/attributevector.h>
 
@@ -12,18 +12,21 @@ using search::attribute::BasicType;
 namespace proton {
 
 AttributeUsageSamplerFunctor::AttributeUsageSamplerFunctor(
-    std::shared_ptr<AttributeUsageSamplerContext> samplerContext, const std::string& subDbName)
-    : _samplerContext(samplerContext), _subDbName(subDbName) {
+    std::shared_ptr<AttributeUsageSamplerContext> samplerContext, AttributeUsageSamplerContext::SubDb sub_db,
+    const std::string& subDbName)
+    : _samplerContext(samplerContext), _sub_db(sub_db), _subDbName(subDbName) {
 }
 
 AttributeUsageSamplerFunctor::~AttributeUsageSamplerFunctor() = default;
 
 void AttributeUsageSamplerFunctor::operator()(const search::attribute::IAttributeVector& iAttributeVector) {
     // Executed by attribute writer thread
-    const auto&               attributeVector = dynamic_cast<const search::AttributeVector&>(iAttributeVector);
-    search::AddressSpaceUsage usage = attributeVector.getAddressSpaceUsage();
-    std::string               attributeName = attributeVector.getName();
-    _samplerContext->merge(usage, attributeName, _subDbName);
+    const auto&                   attributeVector = dynamic_cast<const search::AttributeVector&>(iAttributeVector);
+    search::AddressSpaceUsage     usage = attributeVector.getAddressSpaceUsage();
+    std::string                   attributeName = attributeVector.getName();
+    AttributeLoadMemoryCalculator calc;
+    auto                          load_memory_usage = calc(attributeVector);
+    _samplerContext->merge(usage, load_memory_usage, _sub_db, attributeName, _subDbName);
 }
 
 } // namespace proton

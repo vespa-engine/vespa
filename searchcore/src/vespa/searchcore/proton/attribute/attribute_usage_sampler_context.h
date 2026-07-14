@@ -4,8 +4,10 @@
 
 #include "attribute_usage_stats.h"
 
-#include <memory>
+#include <vespa/searchcore/proton/initializer/load_memory_usage.h>
+
 #include <mutex>
+#include <vector>
 
 namespace proton {
 
@@ -18,18 +20,25 @@ class TransientResourceUsageProvider;
  * When instance is destroyed, the aggregated stats is passed on to attribute usage filter.
  */
 class AttributeUsageSamplerContext {
+public:
+    enum class SubDb { NONE, READY, NOTREADY };
+
+private:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
 
-    AttributeUsageStats   _usage;
-    Mutex                 _lock;
-    AttributeUsageFilter& _filter;
+    AttributeUsageStats                       _usage;
+    Mutex                                     _lock;
+    std::vector<initializer::LoadMemoryUsage> _ready_load_memory_usages;
+    std::vector<initializer::LoadMemoryUsage> _notready_load_memory_usages;
+    AttributeUsageFilter&                     _filter;
 
 public:
-    AttributeUsageSamplerContext(const std::string& document_type, AttributeUsageFilter& filter);
+    AttributeUsageSamplerContext(const std::string& document_type, uint32_t ready_attributes,
+                                 uint32_t notready_attributes, AttributeUsageFilter& filter);
     ~AttributeUsageSamplerContext();
-    void merge(const search::AddressSpaceUsage& usage, const std::string& attributeName,
-               const std::string& subDbName);
+    void merge(const search::AddressSpaceUsage& usage, const initializer::LoadMemoryUsage& load_memory_usage,
+               SubDb sub_db, const std::string& attributeName, const std::string& subDbName);
     const AttributeUsageStats& getUsage() const { return _usage; }
 };
 
