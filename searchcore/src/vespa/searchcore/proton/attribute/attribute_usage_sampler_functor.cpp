@@ -14,7 +14,7 @@ namespace proton {
 AttributeUsageSamplerFunctor::AttributeUsageSamplerFunctor(
     std::shared_ptr<AttributeUsageSamplerContext> samplerContext, AttributeUsageSamplerContext::SubDb sub_db,
     const std::string& subDbName)
-    : _samplerContext(samplerContext), _sub_db(sub_db), _subDbName(subDbName) {
+    : _samplerContext(std::move(samplerContext)), _sub_db(sub_db), _subDbName(subDbName) {
 }
 
 AttributeUsageSamplerFunctor::~AttributeUsageSamplerFunctor() = default;
