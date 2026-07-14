@@ -564,7 +564,6 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
     internal::GlobalFilterWrapper<type> filter_wrapper(filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
-    VisitedTracker visited_two(nodeid_limit, estimated_visited_nodes);
     if (deadline != nullptr && deadline->is_missed()) {
         while (!best_neighbors.empty()) {
             best_neighbors.pop();
@@ -626,8 +625,7 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
         for (const auto& link : neighbor_link_metas) {
             double dist_to_input = calc_distance(df, link.neighbor_docid, link.neighbor_subspace);
             stats.count_computed_distance();
-            if (dist_to_input < (1.0 + exploration_slack) * limit_dist && visited_two.try_mark(link.neighbor_nodeid))
-            {
+            if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
                 candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
 
                 // We have to check the filter here: resilient filter-first heuristic also uses nodes that do not pass
