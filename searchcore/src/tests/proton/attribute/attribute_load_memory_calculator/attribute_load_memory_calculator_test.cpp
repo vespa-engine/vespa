@@ -62,10 +62,11 @@ size_t sample_transient_usage(bool old_fast_search, bool new_fast_search) {
     auto old_inspector = std::make_shared<AttributeConfigInspector>(old_config);
     auto av1 = build_attribute_vector("a1", *old_inspector, 1);
     EXPECT_EQ(av1->getEnumeratedSave(), old_fast_search);
-    auto                          new_config = build_config(new_fast_search);
-    auto                          new_inspector = std::make_shared<AttributeConfigInspector>(new_config);
+    auto new_config = build_config(new_fast_search);
+    auto new_inspector = std::make_shared<AttributeConfigInspector>(new_config);
+    av1->update_config(*new_inspector->get_config("a1"));
     AttributeLoadMemoryCalculator calc;
-    return calc(*av1, *new_inspector->get_config("a1")).transient();
+    return calc(*av1).transient();
 }
 
 TEST(AttributeLoadMemoryCalculator, plain_attribute_vector_requires_no_transient_memory_for_load) {
