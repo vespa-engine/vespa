@@ -24,6 +24,7 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_usage_sampler_context.cpp
     attribute_usage_sampler_functor.cpp
     attribute_usage_stats.cpp
+    attribute_usage_stats_and_load_info.cpp
     attribute_vector_explorer.cpp
     attribute_writer.cpp
     attribute_writer_explorer.cpp
