@@ -80,7 +80,6 @@ class LoadedBuffer;
 } // namespace search
 
 namespace search {
-
 using document::ArithmeticValueUpdate;
 using document::FieldValue;
 using document::MapValueUpdate;
@@ -139,6 +138,7 @@ protected:
     }
 
     void setEnum(bool hasEnum_) { _hasEnum = hasEnum_; }
+    void set_want_fast_search(bool value) noexcept { _want_fast_search.store(value, std::memory_order_relaxed); }
     void setNumDocs(uint32_t n) { _status.setNumDocs(n); }
     void incNumDocs() { _status.incNumDocs(); }
 
@@ -287,6 +287,7 @@ public:
     const std::string& getName() const override final { return _baseFileName.getAttributeName(); }
 
     bool hasEnum() const override final;
+    [[nodiscard]] bool want_fast_search() const noexcept { return _want_fast_search.load(std::memory_order_relaxed); }
     uint32_t getMaxValueCount() const override;
     uint32_t getEnumMax() const { return _enumMax; }
 
@@ -435,6 +436,7 @@ private:
     bool                                              _hasEnum;
     bool                                              _loaded;
     bool                                              _isUpdateableInMemoryOnly;
+    std::atomic<bool>                                 _want_fast_search;
     vespalib::steady_time                             _nextStatUpdateTime;
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
     std::atomic<uint64_t>                             _size_on_disk;
