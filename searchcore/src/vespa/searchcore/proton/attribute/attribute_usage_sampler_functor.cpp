@@ -4,6 +4,7 @@
 
 #include "attribute_config_inspector.h"
 #include "attribute_load_memory_calculator.h"
+#include "attribute_usage_sampler_context.h"
 
 #include <vespa/searchlib/attribute/attributevector.h>
 
@@ -12,7 +13,7 @@ using search::attribute::BasicType;
 namespace proton {
 
 AttributeUsageSamplerFunctor::AttributeUsageSamplerFunctor(
-    std::shared_ptr<AttributeUsageSamplerContext> samplerContext, AttributeUsageSamplerContext::SubDb sub_db,
+    std::shared_ptr<AttributeUsageSamplerContext> samplerContext, AttributeUsageStatsAndLoadInfo::SubDb sub_db,
     const std::string& subDbName)
     : _samplerContext(std::move(samplerContext)), _sub_db(sub_db), _subDbName(subDbName) {
 }
