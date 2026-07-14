@@ -564,6 +564,7 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
     internal::GlobalFilterWrapper<type> filter_wrapper(filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
+    VisitedTracker visited_two(nodeid_limit, estimated_visited_nodes);
     if (deadline != nullptr && deadline->is_missed()) {
         while (!best_neighbors.empty()) {
             best_neighbors.pop();
@@ -625,7 +626,8 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
         for (const auto& link : neighbor_link_metas) {
             double dist_to_input = calc_distance(df, link.neighbor_docid, link.neighbor_subspace);
             stats.count_computed_distance();
-            if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
+            if (dist_to_input < (1.0 + exploration_slack) * limit_dist && visited_two.try_mark(link.neighbor_nodeid))
+            {
                 candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
 
                 // We have to check the filter here: resilient filter-first heuristic also uses nodes that do not pass
@@ -669,22 +671,36 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
             continue;
         }
 
-        // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
-        auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
-        auto  neighbor_ref = neighbor_node.levels_ref().load_acquire();
-        if (!neighbor_ref.valid()) {
-            continue;
-        }
-
         if (!visited.marked(neighbor_nodeid) && local_tracker.try_mark(neighbor_nodeid)) {
             ++one_hop_unvisited;
 
+            auto&    neighbor_node = _graph.acquire_node(neighbor_nodeid);
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             if (filter_wrapper.check(neighbor_docid)) {
                 one_hop_pass.push_back(neighbor_nodeid);
             } else {
                 one_hop_fail.push_back(neighbor_nodeid);
             }
+        }
+    }
+
+    // Fall back to the way normal HNSW works
+    if (static_cast<double>(one_hop_pass.size()) / one_hop_unvisited > 0.3) {
+        found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
+        found.insert(found.end(), one_hop_fail.begin(), one_hop_fail.end());
+        return;
+    }
+
+    for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
+        if (neighbor_nodeid >= nodeid_limit) {
+            continue;
+        }
+
+        // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
+        auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+        auto  neighbor_ref = neighbor_node.levels_ref().load_acquire();
+        if (!neighbor_ref.valid()) {
+            continue;
         }
 
         // We do not skip visited one-hop neighbors here. TODO: Try skipping
