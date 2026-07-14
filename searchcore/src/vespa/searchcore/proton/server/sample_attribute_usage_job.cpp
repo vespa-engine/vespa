@@ -56,7 +56,8 @@ void merge_index_shards(AttributeUsageSamplerContext& context, IIndexManager& in
         AddressSpaceUsage index_shards;
         index_shards.set(
             "", vespalib::AddressSpace(count_indexes_visitor.get_indexes(), 0, ISourceSelector::SOURCE_LIMIT));
-        context.merge(index_shards, "index_shards", "");
+        context.merge(index_shards, initializer::LoadMemoryUsage(), AttributeUsageSamplerContext::SubDb::NONE,
+                      "index_shards", "");
     }
 }
 
@@ -78,11 +79,14 @@ SampleAttributeUsageJob::SampleAttributeUsageJob(IAttributeManagerSP   readyAttr
 SampleAttributeUsageJob::~SampleAttributeUsageJob() = default;
 
 bool SampleAttributeUsageJob::run() {
-    auto context = std::make_shared<AttributeUsageSamplerContext>(_document_type, _attributeUsageFilter);
+    auto context = std::make_shared<AttributeUsageSamplerContext>(
+        _document_type, _readyAttributeManager->getWritableAttributes().size(),
+        _notReadyAttributeManager->getWritableAttributes().size(), _attributeUsageFilter);
     merge_index_shards(*context, *_index_manager);
-    _readyAttributeManager->asyncForEachAttribute(std::make_shared<AttributeUsageSamplerFunctor>(context, "ready"));
-    _notReadyAttributeManager->asyncForEachAttribute(
-        std::make_shared<AttributeUsageSamplerFunctor>(context, "notready"));
+    _readyAttributeManager->asyncForEachAttribute(
+        std::make_shared<AttributeUsageSamplerFunctor>(context, AttributeUsageSamplerContext::SubDb::READY, "ready"));
+    _notReadyAttributeManager->asyncForEachAttribute(std::make_shared<AttributeUsageSamplerFunctor>(
+        context, AttributeUsageSamplerContext::SubDb::NOTREADY, "notready"));
     return true;
 }
 
