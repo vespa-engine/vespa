@@ -194,7 +194,10 @@ TEST_F(AttributeUsageNotifierTest, passes_reserved_memory_for_attribute_load) {
     EXPECT_EQ(make_stats("doctype1", "0.ready", "a1", 20), get_usage());
     EXPECT_EQ(8, get_reserved_memory_for_attribute_load()); // a1 is loaded before a2
     EXPECT_EQ(1u, get_update_count());
+    aul1->notify_attribute_usage(b1.build());
+    EXPECT_EQ(1u, get_update_count());
     _notifier->apply_config(2); // 2 initializer threads
+    EXPECT_EQ(1u, get_update_count());
     aul1->notify_attribute_usage(b1.build());
     EXPECT_EQ(make_stats("doctype1", "0.ready", "a1", 20), get_usage());
     EXPECT_EQ(11, get_reserved_memory_for_attribute_load()); // a1 and a2 are loaded at the same time
