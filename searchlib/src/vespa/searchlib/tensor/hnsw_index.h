@@ -85,6 +85,24 @@ struct PreparedAddDoc final : public PrepareResult {
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
 
+// Result of preparing an in-place partial (per-subspace) update of a multi-vector document. Holds the
+// prepared neighbor lists for the subspaces that must be (re-)inserted (parallel to add_positions), along
+// with the positions of the subspaces whose graph nodes are kept untouched.
+struct PreparedPartialUpdate final : public PrepareResult {
+    using ReadGuard = vespalib::GenerationGuard;
+    uint32_t                     docid;
+    ReadGuard                    read_guard;
+    ReadGuard                    hnsw_graph_read_guard;
+    uint32_t                     new_subspaces;
+    std::vector<uint32_t>        keep_positions;
+    std::vector<uint32_t>        add_positions;
+    std::vector<PreparedAddNode> add_nodes;
+    PreparedPartialUpdate(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
+    ~PreparedPartialUpdate() override;
+    PreparedPartialUpdate(PreparedPartialUpdate&& other) noexcept;
+    bool is_partial_update() const noexcept override { return true; }
+};
+
 template <HnswIndexType type> class GlobalFilterWrapper;
 
 template <> class GlobalFilterWrapper<HnswIndexType::SINGLE> {
@@ -289,6 +307,16 @@ public:
     void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override;
     void remove_node(uint32_t nodeid);
     void remove_document(uint32_t docid) override;
+    bool supports_partial_update() const noexcept override;
+    void partial_update_remove_and_resize(uint32_t docid, uint32_t new_subspaces,
+                                          std::span<const uint32_t> keep_positions) override;
+    void partial_update_add(uint32_t docid, std::span<const uint32_t> positions) override;
+    std::unique_ptr<PrepareResult> prepare_partial_update(uint32_t docid, VectorBundle new_vectors,
+                                                          std::span<const uint32_t> keep_positions,
+                                                          std::span<const uint32_t> add_positions,
+                                                          vespalib::GenerationGuard read_guard) const override;
+    void complete_partial_update_remove(uint32_t docid, PrepareResult& prepare_result) override;
+    void complete_partial_update_add(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override;
     void assign_generation(vespalib::Generation current_gen) override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     vespalib::GenerationGuard make_generation_read_guard() const override;

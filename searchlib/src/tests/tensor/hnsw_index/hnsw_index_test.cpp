@@ -1320,4 +1320,80 @@ TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove_heuristic_select_neighbors
     this->prepare_insert_during_remove(true);
 }
 
+// Directly exercises the fully-prepared two-phase per-subspace update path (prepare_partial_update +
+// complete_partial_update_remove/add) on a multi-vector index. The factory hardcodes
+// min_size_before_two_phase=10000, so this branch is only reachable on large graphs in production and is not
+// hit by the attribute-level tests (which use a tiny graph and fall back to the single-phase path). Here the
+// test fixture's HnswIndexConfig uses min_size_before_two_phase=0, so the prepared branch is taken even on a
+// small graph. The test verifies: unchanged subspaces keep their nodes, changed ones are re-indexed, and the
+// graph stays connected (no disconnection from prepared neighbors that were removed before the add phase).
+TEST(HnswIndexPartialUpdateTest, two_phase_prepared_partial_update_keeps_unchanged_subspaces_and_stays_connected) {
+    using Index = HnswIndex<HnswIndexType::MULTI>;
+    FloatVectors vectors;
+    SubspaceType subspace_type(ValueType::make_type(vespalib::eval::CellType::FLOAT, {{"dims", 2}}));
+    // 8 documents, each with two subspaces (subspace 0 = {d,0}, subspace 1 = {0,d}).
+    const uint32_t num_docs = 8;
+    for (uint32_t d = 1; d <= num_docs; ++d) {
+        vectors.set(d, {float(d), 0.0f, 0.0f, float(d)});
+    }
+    auto gen = std::make_unique<LevelGenerator>();
+    gen->level = 0;
+    Index index(vectors,
+                std::make_unique<MyDistanceFunctionFactory>(search::tensor::make_distance_function_factory(
+                    search::attribute::DistanceMetric::Euclidean, vespalib::eval::CellType::FLOAT)),
+                std::move(gen), HnswIndexConfig(5, 2, 10, 0, true));
+    auto commit = [&] {
+        index.inc_generation();
+        index.reclaim_unused_memory();
+    };
+    for (uint32_t d = 1; d <= num_docs; ++d) {
+        index.add_document(d);
+        commit();
+    }
+    ASSERT_TRUE(index.check_link_symmetry());
+
+    std::vector<uint32_t> before(index.get_id_mapping().get_ids(1).begin(),
+                                 index.get_id_mapping().get_ids(1).end());
+    ASSERT_EQ(2u, before.size());
+
+    // Two-phase partial update of doc 1: keep subspace 0 ({1,0}), change subspace 1 ({0,1} -> {9,9}).
+    std::vector<float>    new_flat = {1.0f, 0.0f, 9.0f, 9.0f};
+    VectorBundle          new_vectors(new_flat.data(), 2, subspace_type);
+    std::vector<uint32_t> keep = {0};
+    std::vector<uint32_t> add = {1};
+    auto                  prepared = index.prepare_partial_update(1, new_vectors, keep, add, index.make_generation_read_guard());
+    ASSERT_TRUE(prepared.get() != nullptr); // min_size_before_two_phase==0 => genuine prepared branch taken
+    EXPECT_TRUE(prepared->is_partial_update());
+    index.complete_partial_update_remove(1, *prepared);
+    vectors.set(1, new_flat); // simulate the tensor-store swap between the remove and add phases
+    index.complete_partial_update_add(1, std::move(prepared));
+    commit();
+
+    std::vector<uint32_t> after(index.get_id_mapping().get_ids(1).begin(), index.get_id_mapping().get_ids(1).end());
+    ASSERT_EQ(2u, after.size());
+    EXPECT_EQ(before[0], after[0]); // unchanged subspace 0 keeps its node
+    EXPECT_NE(before[1], after[1]); // changed subspace 1 is re-indexed
+
+    // No disconnection: graph still symmetric and every node reachable.
+    EXPECT_TRUE(index.check_link_symmetry());
+    EXPECT_EQ(0u, index.count_reachable_nodes().nodes_not_found);
+
+    auto finds_doc1 = [&](std::vector<float> q) {
+        std::span<float>            ref(q);
+        vespalib::eval::TypedCells  cells(ref);
+        NearestNeighborIndex::Stats stats;
+        auto                        df = index.distance_function_factory().for_query_vector(cells);
+        vespalib::FakeDeadline      doom;
+        auto r = index.find_top_k(stats, 5, *df, 10, 0.0, false, doom.get_deadline(), 1.0e30);
+        for (const auto& n : r) {
+            if (n.docid == 1) {
+                return true;
+            }
+        }
+        return false;
+    };
+    EXPECT_TRUE(finds_doc1({1.0f, 0.0f})); // kept subspace 0
+    EXPECT_TRUE(finds_doc1({9.0f, 9.0f})); // re-indexed subspace 1
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

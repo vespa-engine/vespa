@@ -1,6 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/update/tensor_add_update.h>
+#include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -1054,6 +1059,190 @@ TEST_P(
     Hnsw_index_is_integrated_in_mixed_tensor_attribute_and_can_be_saved_and_loaded_with_multiple_points_per_document) {
     MixedTensorAttributeHnswIndex f(GetParam());
     f.test_save_load(true);
+}
+
+namespace {
+
+// The current nodeids (one per subspace) of a document in the multi-vector hnsw index.
+std::vector<uint32_t> doc_nodeids(HnswIndex<HnswIndexType::MULTI>& index, uint32_t docid) {
+    auto ids = index.get_id_mapping().get_ids(docid);
+    return {ids.begin(), ids.end()};
+}
+
+std::vector<uint32_t> search_top_k(HnswIndex<HnswIndexType::MULTI>& index, std::vector<double> q, uint32_t k) {
+    std::span<double>           ref(q);
+    vespalib::eval::TypedCells  cells(ref);
+    NearestNeighborIndex::Stats stats;
+    auto                        df = index.distance_function_factory().for_query_vector(cells);
+    vespalib::FakeDeadline      doom;
+    auto r = index.find_top_k(stats, k, *df, 100, 0.0, false, doom.get_deadline(), 1.0e30);
+    std::vector<uint32_t> docids;
+    for (const auto& n : r) {
+        docids.push_back(n.docid);
+    }
+    return docids;
+}
+
+bool contains(const std::vector<uint32_t>& v, uint32_t x) {
+    return std::find(v.begin(), v.end(), x) != v.end();
+}
+
+} // namespace
+
+// A partial (single-phase) update of a multi-vector document must keep the graph nodes for the subspaces
+// whose vectors are unchanged and only re-index the changed ones, while staying correct for data and search.
+TEST(TensorAttributeTest, Partial_update_keeps_unchanged_subspace_nodes_single_phase) {
+    MixedTensorAttributeHnswIndex f(1); // tensor(a{},x[2]) with subspaces a=0,1,2
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {2, 2}, {3, 3}}));
+    f.set_tensor(2, vec_mixed_2d(1, {{50, 50}, {60, 60}}));
+    auto& index = f.hnsw_typed_index<HnswIndexType::MULTI>();
+    auto  before = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, before.size());
+
+    // Update doc 1: change the subspace at position 1 (a=1), keep positions 0 and 2 unchanged.
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {9, 9}, {3, 3}}));
+    auto after = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, after.size());
+    EXPECT_EQ(before[0], after[0]); // unchanged subspace keeps its node
+    EXPECT_NE(before[1], after[1]); // changed subspace is re-indexed (fresh node)
+    EXPECT_EQ(before[2], after[2]); // unchanged subspace keeps its node
+
+    EXPECT_EQ(WrapValue(vec_mixed_2d(1, {{1, 1}, {9, 9}, {3, 3}})), f.get_tensor(1));
+    EXPECT_TRUE(contains(search_top_k(index, {9, 9}, 3), 1u)); // findable by the updated vector
+    EXPECT_TRUE(contains(search_top_k(index, {3, 3}, 3), 1u)); // findable by a kept vector
+}
+
+// Same guarantee through the two-phase prepare/complete path used by the attribute writer. On this small
+// graph (well below min_size_before_two_phase) prepare declines and complete falls back to the synchronous
+// partial update, mirroring prepare_add_document's first-documents handling; the per-subspace outcome is the
+// same either way. (The fully prepared two-phase branch only engages once the graph is large.)
+TEST(TensorAttributeTest, Partial_update_keeps_unchanged_subspace_nodes_two_phase) {
+    MixedTensorAttributeHnswIndex f(1);
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {2, 2}, {3, 3}}));
+    f.set_tensor(2, vec_mixed_2d(1, {{50, 50}, {60, 60}}));
+    auto& index = f.hnsw_typed_index<HnswIndexType::MULTI>();
+    auto  before = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, before.size());
+
+    auto updated = vec_mixed_2d(1, {{1, 1}, {9, 9}, {3, 3}});
+    auto prepared = f.prepare_set_tensor(1, updated);
+    f.complete_set_tensor(1, updated, std::move(prepared));
+
+    auto after = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, after.size());
+    EXPECT_EQ(before[0], after[0]);
+    EXPECT_NE(before[1], after[1]);
+    EXPECT_EQ(before[2], after[2]);
+    EXPECT_EQ(WrapValue(updated), f.get_tensor(1));
+    EXPECT_TRUE(contains(search_top_k(index, {9, 9}, 3), 1u));
+    EXPECT_TRUE(contains(search_top_k(index, {3, 3}, 3), 1u));
+}
+
+namespace {
+
+const document::TensorDataType& get_tensor_data_type(const std::string& spec) {
+    static std::map<std::string, std::unique_ptr<const document::TensorDataType>> cache;
+    auto it = cache.find(spec);
+    if (it == cache.end()) {
+        it = cache.emplace(spec, document::TensorDataType::fromSpec(spec)).first;
+    }
+    return *it->second;
+}
+
+std::unique_ptr<document::TensorFieldValue> make_tensor_field_value(const TensorSpec& spec) {
+    auto tensor = vespalib::eval::SimpleValue::from_spec(spec);
+    auto result = std::make_unique<document::TensorFieldValue>(get_tensor_data_type(tensor->type().to_spec()));
+    result->assignDeserialized(std::move(tensor));
+    return result;
+}
+
+} // namespace
+
+// A real TensorModifyUpdate preserves subspace order, so the partial-update optimization keeps the unchanged
+// subspaces' nodes and re-indexes only the modified one.
+TEST(TensorAttributeTest, Real_tensor_modify_update_reindexes_only_the_changed_subspace) {
+    MixedTensorAttributeHnswIndex f(1); // tensor(a{},x[2]) with subspaces a=0,1,2
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {2, 2}, {3, 3}}));
+    auto& index = f.hnsw_typed_index<HnswIndexType::MULTI>();
+    auto  before = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, before.size());
+
+    // The modify modifier addresses cells with both dimensions mapped (x label as a string).
+    auto modifier = make_tensor_field_value(
+        TensorSpec("tensor(a{},x{})").add({{"a", "1"}, {"x", "0"}}, 9).add({{"a", "1"}, {"x", "1"}}, 9));
+    document::TensorModifyUpdate update(document::TensorModifyUpdate::Operation::REPLACE, std::move(modifier));
+    f._tensorAttr->update_tensor(1, update, false);
+    f._attr->commit();
+
+    auto after = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, after.size());
+    EXPECT_EQ(before[0], after[0]); // a=0 unchanged -> node kept
+    EXPECT_NE(before[1], after[1]); // a=1 modified -> re-indexed
+    EXPECT_EQ(before[2], after[2]); // a=2 unchanged -> node kept
+    EXPECT_EQ(WrapValue(vec_mixed_2d(1, {{1, 1}, {9, 9}, {3, 3}})), f.get_tensor(1));
+    EXPECT_TRUE(contains(search_top_k(index, {9, 9}, 3), 1u));
+}
+
+// A real TensorAddUpdate prepends the added subspace (see document::TensorPartialUpdate PerformAdd), which
+// reorders the document's subspaces. The partial-update path reorders the incoming tensor back to the stored
+// document's subspace positions, so the unchanged subspaces keep their nodes and only the added one is
+// inserted.
+TEST(TensorAttributeTest, Real_tensor_add_update_keeps_unchanged_subspace_nodes) {
+    MixedTensorAttributeHnswIndex f(1);
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {2, 2}, {3, 3}}));
+    auto& index = f.hnsw_typed_index<HnswIndexType::MULTI>();
+    auto  before = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, before.size());
+
+    auto modifier = make_tensor_field_value(
+        TensorSpec(vec_specs[1]).add({{"a", "3"}, {"x", 0}}, 7).add({{"a", "3"}, {"x", 1}}, 7));
+    document::TensorAddUpdate update(std::move(modifier));
+    f._tensorAttr->update_tensor(1, update, false);
+    f._attr->commit();
+
+    auto after = doc_nodeids(index, 1);
+    ASSERT_EQ(4u, after.size());
+    EXPECT_EQ(before[0], after[0]);     // a=0 kept
+    EXPECT_EQ(before[1], after[1]);     // a=1 kept
+    EXPECT_EQ(before[2], after[2]);     // a=2 kept
+    EXPECT_FALSE(contains(before, after[3])); // a=3 is newly inserted
+    // Correctness: the stored value is right and the document is findable by every one of its vectors.
+    EXPECT_EQ(WrapValue(vec_mixed_2d(1, {{1, 1}, {2, 2}, {3, 3}, {7, 7}})), f.get_tensor(1));
+    for (const auto& qv : std::vector<std::vector<double>>{{1, 1}, {2, 2}, {3, 3}, {7, 7}}) {
+        EXPECT_TRUE(contains(search_top_k(index, qv, 4), 1u));
+    }
+}
+
+// A real TensorRemoveUpdate drops a subspace. Rather than compacting (which would shift every later
+// survivor), the freed position is filled by the displaced tail subspace, so survivors whose position still
+// exists keep their nodes and only the relocated one is re-indexed.
+TEST(TensorAttributeTest, Real_tensor_remove_update_keeps_in_range_survivors) {
+    MixedTensorAttributeHnswIndex f(1);
+    f.set_tensor(1, vec_mixed_2d(1, {{1, 1}, {2, 2}, {3, 3}, {4, 4}})); // a=0,1,2,3
+    auto& index = f.hnsw_typed_index<HnswIndexType::MULTI>();
+    auto  before = doc_nodeids(index, 1);
+    ASSERT_EQ(4u, before.size());
+
+    // Remove subspace a=1; the hole at position 1 is filled by the displaced tail subspace a=3.
+    auto modifier = make_tensor_field_value(TensorSpec("tensor(a{})").add({{"a", "1"}}, 1));
+    document::TensorRemoveUpdate update(std::move(modifier));
+    f._tensorAttr->update_tensor(1, update, false);
+    f._attr->commit();
+
+    auto after = doc_nodeids(index, 1);
+    ASSERT_EQ(3u, after.size());
+    EXPECT_EQ(before[0], after[0]);           // a=0 kept in place
+    EXPECT_EQ(before[2], after[2]);           // a=2 kept in place (naive compaction would have shifted it)
+    EXPECT_FALSE(contains(before, after[1])); // pos 1 now holds the relocated a=3 (re-indexed)
+
+    TensorSpec expected(vec_specs[1]);
+    expected.add({{"a", "0"}, {"x", 0}}, 1).add({{"a", "0"}, {"x", 1}}, 1);
+    expected.add({{"a", "2"}, {"x", 0}}, 3).add({{"a", "2"}, {"x", 1}}, 3);
+    expected.add({{"a", "3"}, {"x", 0}}, 4).add({{"a", "3"}, {"x", 1}}, 4);
+    EXPECT_EQ(WrapValue(expected), f.get_tensor(1));
+    for (const auto& qv : std::vector<std::vector<double>>{{1, 1}, {3, 3}, {4, 4}}) {
+        EXPECT_TRUE(contains(search_top_k(index, qv, 4), 1u));
+    }
 }
 
 TEST(TensorAttributeTest, Populates_address_space_usage_in_dense_tensor_attribute_with_hnsw_index) {
