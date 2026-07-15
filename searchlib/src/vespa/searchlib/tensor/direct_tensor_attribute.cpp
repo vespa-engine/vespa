@@ -33,6 +33,7 @@ void DirectTensorAttribute::setTensor(DocId lid, const vespalib::eval::Value& te
 
 void DirectTensorAttribute::update_tensor(DocId docId, const document::TensorUpdate& update,
                                           bool create_if_non_existing) {
+    assert(!is_quantized()); // See `TensorAttribute::update_tensor()` for rationale
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
         ref = _refVector[docId].load_relaxed();

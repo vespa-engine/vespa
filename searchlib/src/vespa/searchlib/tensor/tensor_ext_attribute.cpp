@@ -41,6 +41,9 @@ TensorExtAttribute::TensorExtAttribute(const std::string& name, const Config& cf
       _subspace_type(cfg.tensorType()),
       _empty(_subspace_type),
       _empty_tensor(create_empty_tensor(cfg.tensorType())) {
+    // Streaming search pseudo-attributes operate on the raw, full-precision document data
+    // and should therefore never be quantized.
+    assert(!cfg.quantization_params().has_value());
 }
 
 TensorExtAttribute::~TensorExtAttribute() = default;
@@ -84,6 +87,18 @@ VectorBundle TensorExtAttribute::get_vectors(uint32_t docid) const noexcept {
         return {};
     }
     return {tensor->cells().data, static_cast<uint32_t>(tensor->index().size()), _subspace_type};
+}
+
+bool TensorExtAttribute::is_quantized() const noexcept {
+    return false;
+}
+
+const vespalib::eval::ValueType& TensorExtAttribute::unquantized_tensor_type() const noexcept {
+    return getConfig().tensorType();
+}
+
+std::unique_ptr<TensorDequantizer> TensorExtAttribute::make_dequantizer() const {
+    notImplemented();
 }
 
 std::unique_ptr<Value> TensorExtAttribute::getTensor(uint32_t docid) const {
