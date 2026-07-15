@@ -12,7 +12,8 @@ namespace proton {
 class IAttributeUsageListener {
 public:
     virtual ~IAttributeUsageListener() = default;
-    virtual void notify_attribute_usage(const AttributeUsageStats& attribute_usage) = 0;
+    virtual void notify_attribute_usage(const AttributeUsageStats& attribute_usage,
+                                        size_t                     reserved_memory_for_attribute_load) = 0;
 };
 
 } // namespace proton

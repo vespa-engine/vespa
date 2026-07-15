@@ -62,6 +62,7 @@ public:
     const search::TuneFileDocumentDB::SP& getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
     int64_t getGeneration() const { return _generation; }
     const vespalib::HwInfo& getHwInfo() const { return _hwInfo; }
+    [[nodiscard]] uint32_t initialize_threads() const noexcept;
 
     /**
      * Shared pointers are checked for identity, not equality.

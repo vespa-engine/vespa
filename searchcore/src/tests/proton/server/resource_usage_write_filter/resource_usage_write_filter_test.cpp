@@ -90,7 +90,7 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test {
                                      ReservedDiskSpaceAndMemory());
     }
 
-    void notify_attribute_usage(const AttributeUsageStats& usage) { _notifier.notify_attribute_usage(usage); }
+    void notify_attribute_usage(const AttributeUsageStats& usage) { _notifier.notify_attribute_usage(usage, 0); }
 };
 
 TEST_F(ResourceUsageWriteFilterTest, default_filter_allows_write) {

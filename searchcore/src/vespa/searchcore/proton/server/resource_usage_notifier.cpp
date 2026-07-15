@@ -25,6 +25,7 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
       _reserved_disk_space_and_memory(),
       _resource_usage(),
       _attribute_usage(),
+      _reserved_memory_for_attribute_load(0),
       _config(),
       _usage_state(),
       _disk_mem_usage_metrics(),
@@ -111,9 +112,11 @@ void ResourceUsageNotifier::warn_on_disk_capacity_changed(const DiskUsage& disk_
     }
 }
 
-void ResourceUsageNotifier::notify_attribute_usage(const AttributeUsageStats& attribute_usage) {
+void ResourceUsageNotifier::notify_attribute_usage(const AttributeUsageStats& attribute_usage,
+                                                   size_t                     reserved_memory_for_attribute_load) {
     Guard guard(_lock);
     _attribute_usage = attribute_usage;
+    _reserved_memory_for_attribute_load = reserved_memory_for_attribute_load;
     recalcState(guard, false);
 }
 

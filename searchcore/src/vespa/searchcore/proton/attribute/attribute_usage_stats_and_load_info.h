@@ -33,6 +33,12 @@ public:
     void merge(const search::AddressSpaceUsage& usage, const initializer::LoadMemoryUsage& load_memory_usage,
                SubDb sub_db, const std::string& attributeName, const std::string& subDbName);
     [[nodiscard]] const AttributeUsageStats& usage_stats() const noexcept { return _usage_stats; }
+    [[nodiscard]] std::vector<initializer::LoadMemoryUsage>& ready_load_memory_usages() noexcept {
+        return _ready_load_memory_usages;
+    }
+    [[nodiscard]] std::vector<initializer::LoadMemoryUsage>& notready_load_memory_usages() noexcept {
+        return _notready_load_memory_usages;
+    }
     [[nodiscard]] AttributeUsageStatsAndLoadInfo clone() const;
 };
 
