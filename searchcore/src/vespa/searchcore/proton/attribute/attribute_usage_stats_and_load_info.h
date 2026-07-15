@@ -33,7 +33,7 @@ public:
     void merge(const search::AddressSpaceUsage& usage, const initializer::LoadMemoryUsage& load_memory_usage,
                SubDb sub_db, const std::string& attributeName, const std::string& subDbName);
     [[nodiscard]] const AttributeUsageStats& usage_stats() const noexcept { return _usage_stats; }
-    AttributeUsageStatsAndLoadInfo clone() const;
+    [[nodiscard]] AttributeUsageStatsAndLoadInfo clone() const;
 };
 
 } // namespace proton
