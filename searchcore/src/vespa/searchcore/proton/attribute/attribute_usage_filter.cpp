@@ -2,7 +2,7 @@
 
 #include "attribute_usage_filter.h"
 
-#include "i_attribute_usage_listener.h"
+#include "i_attribute_usage_and_load_info_listener.h"
 
 #include <sstream>
 
@@ -29,12 +29,13 @@ AttributeUsageFilter::AttributeUsageFilter()
 
 AttributeUsageFilter::~AttributeUsageFilter() = default;
 
-void AttributeUsageFilter::setAttributeStats(AttributeUsageStats attributeStats_in) {
+void AttributeUsageFilter::setAttributeStats(
+    AttributeUsageStatsAndLoadInfo attribute_usage_stats_and_load_info) noexcept {
     Guard guard(_lock);
-    _attributeStats = attributeStats_in;
+    _attributeStats = attribute_usage_stats_and_load_info.usage_stats();
     recalcState(guard);
     if (_listener) {
-        _listener->notify_attribute_usage(_attributeStats);
+        _listener->notify_attribute_usage(std::move(attribute_usage_stats_and_load_info));
     }
 }
 
@@ -49,7 +50,7 @@ void AttributeUsageFilter::setConfig(Config config_in) {
     recalcState(guard);
 }
 
-void AttributeUsageFilter::set_listener(std::unique_ptr<IAttributeUsageListener> listener) {
+void AttributeUsageFilter::set_listener(std::unique_ptr<IAttributeUsageAndLoadInfoListener> listener) {
     Guard guard(_lock);
     _listener = std::move(listener);
 }

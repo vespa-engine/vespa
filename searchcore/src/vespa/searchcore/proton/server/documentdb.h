@@ -420,7 +420,7 @@ public:
     searchcorespi::common::ResourceUsage get_resource_usage() const;
     ExecutorThreadingService& getWriteService() { return _writeService; }
 
-    void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
+    void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageAndLoadInfoListener> listener);
     const DDBState& get_state() const noexcept { return *_state; }
 
     std::shared_ptr<DocumentDBInitializationStatus> get_initialization_status() const;

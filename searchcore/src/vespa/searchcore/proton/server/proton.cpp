@@ -31,7 +31,7 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/metrics/updatehook.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_notifier.h>
-#include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_usage_and_load_info_listener.h>
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>

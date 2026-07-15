@@ -1,16 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/attribute/attribute_usage_notifier.h>
-#include <vespa/searchcore/proton/attribute/attribute_usage_stats.h>
+#include <vespa/searchcore/proton/attribute/attribute_usage_stats_and_load_info.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_usage_and_load_info_listener.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <atomic>
-
 using proton::AttributeUsageNotifier;
 using proton::AttributeUsageStats;
+using proton::AttributeUsageStatsAndLoadInfo;
+using proton::IAttributeUsageAndLoadInfoListener;
 using proton::IAttributeUsageListener;
+using proton::initializer::LoadMemoryUsage;
 using vespalib::AddressSpace;
 
 namespace {
@@ -61,44 +63,55 @@ AttributeUsageNotifierTest::~AttributeUsageNotifierTest() = default;
 namespace {
 
 struct NamedAttribute {
-    std::string subdb;
-    std::string attribute;
+    AttributeUsageStatsAndLoadInfo::SubDb sub_db_enum;
+    std::string                           subdb;
+    std::string                           attribute;
 
-    NamedAttribute(const std::string& subdb_in, const std::string& attribute_in)
-        : subdb(subdb_in), attribute(attribute_in) {}
+    NamedAttribute(AttributeUsageStatsAndLoadInfo::SubDb sub_db_enum_in, const std::string& subdb_in,
+                   const std::string& attribute_in)
+        : sub_db_enum(sub_db_enum_in), subdb(subdb_in), attribute(attribute_in) {}
 };
 
-NamedAttribute ready_a1("0.ready", "a1");
-NamedAttribute notready_a1("2.notready", "a1");
-NamedAttribute ready_a2("0.ready", "a2");
+NamedAttribute ready_a1(AttributeUsageStatsAndLoadInfo::SubDb::READY, "0.ready", "a1");
+NamedAttribute notready_a1(AttributeUsageStatsAndLoadInfo::SubDb::NOTREADY, "2.notready", "a1");
+NamedAttribute ready_a2(AttributeUsageStatsAndLoadInfo::SubDb::READY, "0.ready", "a2");
 
 constexpr size_t usage_limit = 1024;
 
 struct AttributeUsageStatsBuilder {
-    AttributeUsageStats stats;
+    AttributeUsageStatsAndLoadInfo stats;
 
-    AttributeUsageStatsBuilder(const std::string& document_type) : stats(document_type) {}
+    AttributeUsageStatsBuilder(const std::string& document_type) : stats(document_type, 0, 0) {}
 
     ~AttributeUsageStatsBuilder();
 
     AttributeUsageStatsBuilder& reset() {
-        std::string document_type = stats.document_type();
-        stats = AttributeUsageStats(document_type);
+        std::string document_type = stats.usage_stats().document_type();
+        stats = AttributeUsageStatsAndLoadInfo(document_type, 0, 0);
         return *this;
     }
     AttributeUsageStatsBuilder& merge(const NamedAttribute& named_attribute, size_t used_address_space);
+    AttributeUsageStatsBuilder& merge(const NamedAttribute& named_attribute, size_t used_address_space,
+                                      const LoadMemoryUsage& load_memory_usage);
 
-    AttributeUsageStats build() { return stats; }
+    AttributeUsageStatsAndLoadInfo build() { return stats.clone(); }
 };
 
 AttributeUsageStatsBuilder::~AttributeUsageStatsBuilder() = default;
 
 AttributeUsageStatsBuilder& AttributeUsageStatsBuilder::merge(const NamedAttribute& named_attribute,
                                                               size_t                used_address_space) {
+    return merge(named_attribute, used_address_space, LoadMemoryUsage());
+}
+
+AttributeUsageStatsBuilder& AttributeUsageStatsBuilder::merge(const NamedAttribute&  named_attribute,
+                                                              size_t                 used_address_space,
+                                                              const LoadMemoryUsage& load_memory_usage) {
     AddressSpace              address_space_usage(used_address_space, 0, usage_limit);
     search::AddressSpaceUsage as_usage;
     as_usage.set("comp", address_space_usage);
-    stats.merge(as_usage, named_attribute.attribute, named_attribute.subdb);
+    stats.merge(as_usage, load_memory_usage, named_attribute.sub_db_enum, named_attribute.attribute,
+                named_attribute.subdb);
     return *this;
 }
 
