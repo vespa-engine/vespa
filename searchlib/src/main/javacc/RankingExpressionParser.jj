@@ -358,13 +358,27 @@ String out() :
     { return null; }
 }
 
+private ExpressionNode argExpression() :
+{
+    String argName, argValue;
+    ExpressionNode node;
+}
+{
+    LOOKAHEAD(2) (
+        argName = identifier() <COLON> argValue = identifier() {
+            node = new ConstantNode(Value.parse("\"" + argName + ":" + argValue + "\""));
+              return node;
+        }
+    ) | ( node = expression() { return node; } )
+}
+
 List<ExpressionNode> args() :
 {
     List<ExpressionNode> arguments = new ArrayList<ExpressionNode>();
     ExpressionNode argument;
 }
 {
-    ( ( argument = expression() { arguments.add(argument); } ( <COMMA> argument = expression() { arguments.add(argument); } )* )? )
+    ( ( argument = argExpression() { arguments.add(argument); } ( <COMMA> argument = argExpression() { arguments.add(argument); } )* )? )
     { return arguments; }
 }
 
