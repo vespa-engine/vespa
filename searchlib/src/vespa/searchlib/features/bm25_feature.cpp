@@ -143,10 +143,12 @@ bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::Paramete
         return fail(bm25_utils.last_error());
     }
     if (params.size() == 2) {
-        _label = params[1].getValue();
-        if (_label.empty()) {
-            return fail("The label parameter cannot be empty");
+        auto label = util::parse_label_argument(params[1].getValue());
+        if (!label.has_value()) {
+            return fail("The second parameter must be of the form label(<query-item-label>), but was '%s'",
+                        params[1].getValue().c_str());
         }
+        _label = std::move(*label);
         describeOutput("score", "The bm25 score for the query terms with the given label searching in the given "
                                 "index field");
     } else {

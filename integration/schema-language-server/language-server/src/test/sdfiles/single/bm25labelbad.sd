@@ -1,5 +1,5 @@
-schema bm25label {
-    document bm25label {
+schema bm25labelbad {
+    document bm25labelbad {
         field title type string {
             indexing: index
             index: enable-bm25
@@ -8,7 +8,7 @@ schema bm25label {
 
     rank-profile myprofile {
         first-phase {
-            expression: max(bm25(title), bm25(title, label(someLabel)))
+            expression: bm25(title, label(someLabel).out)
         }
     }
 }

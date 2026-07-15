@@ -127,6 +127,25 @@ TEST(UtilsTest, require_that_duplicated_uid_values_are_deduped_by_term_set_looku
     EXPECT_EQ(0u, issues.list.size());
 }
 
+TEST(UtilsTest, require_that_label_argument_is_unwrapped) {
+    EXPECT_EQ("mylabel", parse_label_argument("label(mylabel)").value());
+    // whitespace is normalized by feature name parsing
+    EXPECT_EQ("mylabel", parse_label_argument("label( mylabel )").value());
+    // quoting allows label names that are not valid identifiers
+    EXPECT_EQ("my label", parse_label_argument("label(\"my label\")").value());
+}
+
+TEST(UtilsTest, require_that_malformed_label_argument_is_rejected) {
+    EXPECT_FALSE(parse_label_argument("").has_value());
+    EXPECT_FALSE(parse_label_argument("mylabel").has_value());      // missing label() wrapper
+    EXPECT_FALSE(parse_label_argument("label").has_value());        // no parameter list
+    EXPECT_FALSE(parse_label_argument("label()").has_value());      // empty label name
+    EXPECT_FALSE(parse_label_argument("label(a,b)").has_value());   // more than one name
+    EXPECT_FALSE(parse_label_argument("label(a).out").has_value()); // output suffix
+    EXPECT_FALSE(parse_label_argument("labels(a)").has_value());    // wrong wrapper name
+    EXPECT_FALSE(parse_label_argument("label(a").has_value());      // unbalanced parenthesis
+}
+
 template <typename T> void verifyStrToNum(const std::string& label) {
     SCOPED_TRACE(label);
     EXPECT_EQ(-17, static_cast<long>(strToNum<T>("-17")));

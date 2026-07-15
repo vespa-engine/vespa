@@ -3,6 +3,7 @@
 #include "utils.hpp"
 
 #include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/featurenameparser.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -215,6 +216,15 @@ std::vector<const ITermData*> getTermsByLabel(const search::fef::IQueryEnvironme
         Issue::report("Query label '%s' was attached to non-existing unique id: '%u'", label.c_str(), uid);
     }
     return terms;
+}
+
+std::optional<std::string> parse_label_argument(const std::string& param) {
+    FeatureNameParser parser(param);
+    if (!parser.valid() || parser.baseName() != "label" || parser.parameters().size() != 1 ||
+        parser.parameters()[0].empty() || !parser.output().empty()) {
+        return std::nullopt;
+    }
+    return parser.parameters()[0];
 }
 
 std::optional<DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,

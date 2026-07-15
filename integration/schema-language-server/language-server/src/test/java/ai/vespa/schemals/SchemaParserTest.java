@@ -325,6 +325,7 @@ public class SchemaParserTest {
 
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
+            new BadFileTestCase("src/test/sdfiles/single/bm25labelbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/featuresinheritance.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/foreachbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),

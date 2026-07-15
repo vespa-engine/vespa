@@ -308,8 +308,8 @@ struct MyWorld {
 
     void setup_bm25_label_match_features() {
         config.add(indexproperties::match::Feature::NAME, "bm25(f1)");
-        config.add(indexproperties::match::Feature::NAME, "bm25(f1,t1)");
-        config.add(indexproperties::match::Feature::NAME, "bm25(f1,t2)");
+        config.add(indexproperties::match::Feature::NAME, "bm25(f1,label(t1))");
+        config.add(indexproperties::match::Feature::NAME, "bm25(f1,label(t2))");
     }
 
     void setup_feature_renames() {
@@ -763,8 +763,8 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
         return names.size();
     };
     size_t full_idx = feature_index("bm25(f1)");
-    size_t t1_idx = feature_index("bm25(f1,t1)");
-    size_t t2_idx = feature_index("bm25(f1,t2)");
+    size_t t1_idx = feature_index("bm25(f1,label(t1))");
+    size_t t2_idx = feature_index("bm25(f1,label(t2))");
     ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
     for (size_t i = 0; i < reply->hits.size(); ++i) {
         const auto* values = &reply->match_features.values[i * names.size()];

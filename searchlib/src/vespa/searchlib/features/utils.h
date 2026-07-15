@@ -194,6 +194,18 @@ const search::fef::ITermData* getTermByLabel(const search::fef::IQueryEnvironmen
 std::vector<const search::fef::ITermData*> getTermsByLabel(const search::fef::IQueryEnvironment& env,
                                                            const std::string&                    label);
 
+/**
+ * Parse a feature parameter of the form 'label(<name>)' and extract
+ * the label name. The parameter is parsed as a feature name, so
+ * whitespace and quoting are handled ('label("my label")' yields 'my
+ * label'). Anything else (a bare name, 'label()', extra arguments or
+ * an output suffix) yields std::nullopt.
+ *
+ * @return the label name, or std::nullopt if the parameter is not of the required form
+ * @param param feature parameter expected to be of the form 'label(<name>)'
+ **/
+std::optional<std::string> parse_label_argument(const std::string& param);
+
 std::optional<search::fef::DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,
                                                                         const search::fef::ITermData&         term);
 

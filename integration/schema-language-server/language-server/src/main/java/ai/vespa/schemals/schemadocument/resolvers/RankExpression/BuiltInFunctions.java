@@ -13,6 +13,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelFunctionArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.ExpressionArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument;
@@ -249,7 +250,7 @@ public class BuiltInFunctions {
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", List.of(
             new FunctionSignature(new FieldArgument("field")),
-            new FunctionSignature(List.of(new FieldArgument("field"), new LabelArgument("label")))
+            new FunctionSignature(List.of(new FieldArgument("field"), new LabelFunctionArgument("name")))
         )));
         put("averageFieldLength", new GenericFunction("averageFieldLength",
             new FunctionSignature(new FieldArgument("field"), Set.of(
