@@ -13,7 +13,7 @@ AttributeUsageSamplerContext::AttributeUsageSamplerContext(const std::string& do
 }
 
 AttributeUsageSamplerContext::~AttributeUsageSamplerContext() {
-    _filter.setAttributeStats(_usage_stats_and_load_info.usage_stats());
+    _filter.setAttributeStats(std::move(_usage_stats_and_load_info));
 }
 
 void AttributeUsageSamplerContext::merge(const search::AddressSpaceUsage&      usage,

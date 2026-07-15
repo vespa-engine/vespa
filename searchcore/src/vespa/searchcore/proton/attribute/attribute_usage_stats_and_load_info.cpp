@@ -4,6 +4,9 @@
 
 namespace proton {
 
+AttributeUsageStatsAndLoadInfo::AttributeUsageStatsAndLoadInfo() : AttributeUsageStatsAndLoadInfo("", 0, 0) {
+}
+
 AttributeUsageStatsAndLoadInfo::AttributeUsageStatsAndLoadInfo(const std::string& document_type,
                                                                uint32_t           ready_attributes,
                                                                uint32_t           notready_attributes)
@@ -15,9 +18,6 @@ AttributeUsageStatsAndLoadInfo::AttributeUsageStatsAndLoadInfo(const std::string
 AttributeUsageStatsAndLoadInfo::AttributeUsageStatsAndLoadInfo(const AttributeUsageStatsAndLoadInfo&) = default;
 
 AttributeUsageStatsAndLoadInfo::~AttributeUsageStatsAndLoadInfo() = default;
-
-AttributeUsageStatsAndLoadInfo&
-AttributeUsageStatsAndLoadInfo::operator=(const AttributeUsageStatsAndLoadInfo&) = default;
 
 void AttributeUsageStatsAndLoadInfo::merge(const search::AddressSpaceUsage&    usage,
                                            const initializer::LoadMemoryUsage& load_memory_usage, SubDb sub_db,
@@ -32,6 +32,10 @@ void AttributeUsageStatsAndLoadInfo::merge(const search::AddressSpaceUsage&    u
         break;
     default:;
     }
+}
+
+AttributeUsageStatsAndLoadInfo AttributeUsageStatsAndLoadInfo::clone() const {
+    return *this;
 }
 
 } // namespace proton
