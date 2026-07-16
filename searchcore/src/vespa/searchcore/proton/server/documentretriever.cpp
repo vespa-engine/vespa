@@ -13,6 +13,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/attribute/document_field_retriever.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/geo/zcurve.h>
 
 #include <vespa/log/log.h>
@@ -47,6 +48,23 @@ bool is_array_of_position_type(const document::DataType& field_type) noexcept {
         return false;
     }
     return (arr_type->getNestedType() == PositionDataType::getInstance());
+}
+
+[[nodiscard]] bool is_quantized_tensor_attribute(const search::AttributeVector& attr) noexcept {
+    if (attr.getBasicType() != BasicType::TENSOR) [[likely]] {
+        return false;
+    }
+    auto* tensor_attr = attr.asTensorAttribute();
+    assert(tensor_attr);
+    return tensor_attr->is_quantized();
+}
+
+// An authoritative attribute is one where the contents of a document field may be losslessly
+// regenerated from the contents of the attribute alone, without requiring a read from the
+// document store source of truth.
+[[nodiscard]] bool is_authoritative_attribute(const search::AttributeVector& attr) noexcept {
+    return (attr.getBasicType() != BasicType::PREDICATE) && (attr.getBasicType() != BasicType::REFERENCE) &&
+           !is_quantized_tensor_attribute(attr);
 }
 
 } // namespace
@@ -105,8 +123,7 @@ DocumentRetriever::DocumentRetriever(const DocTypeName& docTypeName, const Docum
             const std::string& name = field->getName();
             AttributeGuard::UP attr = attr_manager.getAttribute(name);
             if (attr && attr->valid() && !_schema.isIndexField(field->getName()) &&
-                ((*attr)->getBasicType() != BasicType::PREDICATE) &&
-                ((*attr)->getBasicType() != BasicType::REFERENCE))
+                is_authoritative_attribute(**attr))
             {
                 attrBuilder.add(field);
             } else {
