@@ -13,7 +13,9 @@ using search::tags::FREEZE_TIME;
 using std::chrono::microseconds;
 using std::chrono::steady_clock;
 using std::chrono::system_clock;
+#if !defined(_LIBCPP_VERSION)
 using std::chrono::utc_clock;
+#endif
 
 namespace search::common {
 
@@ -37,13 +39,21 @@ CreateAndFreezeTimes::CreateAndFreezeTimes(const vespalib::GenericHeader& header
 }
 
 int64_t CreateAndFreezeTimes::to_utc_us(std::chrono::system_clock::time_point system_time) {
+#if defined(_LIBCPP_VERSION)
+    auto utc_time = system_time;
+#else
     auto utc_time = utc_clock::from_sys(system_time);
+#endif
     return duration_cast<microseconds>(utc_time.time_since_epoch()).count();
 }
 
 system_clock::time_point CreateAndFreezeTimes::from_utc_us(uint64_t us) {
+#if defined(_LIBCPP_VERSION)
+    return system_clock::time_point(microseconds(us));
+#else
     auto utc_time = utc_clock::time_point(microseconds(us));
     return utc_clock::to_sys(utc_time);
+#endif
 }
 
 void CreateAndFreezeTimes::merge(const CreateAndFreezeTimes& rhs) noexcept {
