@@ -3,7 +3,9 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/issue.h>
 
+using vespalib::Issue;
 using namespace search;
 using namespace search::fef;
 using namespace search::fef::test;
@@ -35,8 +37,30 @@ struct TermLabelFixture {
         queryEnv.getProperties().add("vespa.label.bar.id", "0"); // undefined uid
         queryEnv.getProperties().add("vespa.label.baz.id", "10");
         queryEnv.getProperties().add("vespa.label.fox.id", "7"); // non-existing
+        queryEnv.getProperties().add("vespa.label.multi.id", "5");
+        queryEnv.getProperties().add("vespa.label.multi.id", "10");
+        queryEnv.getProperties().add("vespa.label.dup.id", "10"); // duplicated uid values
+        queryEnv.getProperties().add("vespa.label.dup.id", "10");
+        queryEnv.getProperties().add("vespa.label.zeroed.id", "0"); // undefined uid among valid ones
+        queryEnv.getProperties().add("vespa.label.zeroed.id", "10");
+        queryEnv.getProperties().add("vespa.label.partial.id", "5"); // non-existing uid among valid ones
+        queryEnv.getProperties().add("vespa.label.partial.id", "7");
+        queryEnv.getProperties().add("vespa.label.dupmissing.id", "5"); // duplicated non-existing uid
+        queryEnv.getProperties().add("vespa.label.dupmissing.id", "7");
+        queryEnv.getProperties().add("vespa.label.dupmissing.id", "7");
     }
+    const ITermData* term(size_t idx) { return &queryEnv.getTerms()[idx]; }
 };
+
+struct MyIssues : Issue::Handler {
+    std::vector<std::string> list;
+    Issue::Binding           capture;
+    MyIssues() : list(), capture(Issue::listen(*this)) {}
+    ~MyIssues() override;
+    void handle(const Issue& issue) override { list.push_back(issue.message()); }
+};
+
+MyIssues::~MyIssues() = default;
 
 TEST(UtilsTest, require_that_label_can_be_mapped_to_term) {
     TermLabelFixture f1;
@@ -45,6 +69,81 @@ TEST(UtilsTest, require_that_label_can_be_mapped_to_term) {
     EXPECT_EQ((ITermData*)&f1.queryEnv.getTerms()[2], getTermByLabel(f1.queryEnv, "baz"));
     EXPECT_EQ(nullptr, getTermByLabel(f1.queryEnv, "fox"));
     EXPECT_EQ(nullptr, getTermByLabel(f1.queryEnv, "unknown"));
+}
+
+TEST(UtilsTest, require_that_multi_valued_label_maps_to_the_first_value_term) {
+    TermLabelFixture f1;
+    EXPECT_EQ(f1.term(0), getTermByLabel(f1.queryEnv, "multi"));
+}
+
+TEST(UtilsTest, require_that_label_can_be_mapped_to_term_set) {
+    using TermVector = std::vector<const ITermData*>;
+    TermLabelFixture f1;
+    MyIssues         issues;
+    EXPECT_EQ(TermVector({f1.term(0)}), getTermsByLabel(f1.queryEnv, "foo"));
+    EXPECT_EQ(0u, issues.list.size());
+    EXPECT_EQ(TermVector({f1.term(2)}), getTermsByLabel(f1.queryEnv, "baz"));
+    EXPECT_EQ(0u, issues.list.size());
+    // terms are returned in query environment order
+    EXPECT_EQ(TermVector({f1.term(0), f1.term(2)}), getTermsByLabel(f1.queryEnv, "multi"));
+    EXPECT_EQ(0u, issues.list.size());
+    // unknown label -> empty result, no issue
+    EXPECT_EQ(TermVector(), getTermsByLabel(f1.queryEnv, "unknown"));
+    EXPECT_EQ(0u, issues.list.size());
+}
+
+TEST(UtilsTest, require_that_invalid_uid_values_are_skipped_by_term_set_lookup) {
+    using TermVector = std::vector<const ITermData*>;
+    TermLabelFixture f1;
+    MyIssues         issues;
+    // uid 0 is reported and skipped
+    EXPECT_EQ(TermVector(), getTermsByLabel(f1.queryEnv, "bar"));
+    EXPECT_EQ(1u, issues.list.size());
+    // uid 0 is reported and skipped, the valid uid is still resolved
+    EXPECT_EQ(TermVector({f1.term(2)}), getTermsByLabel(f1.queryEnv, "zeroed"));
+    EXPECT_EQ(2u, issues.list.size());
+}
+
+TEST(UtilsTest, require_that_non_existing_uids_are_reported_by_term_set_lookup) {
+    using TermVector = std::vector<const ITermData*>;
+    TermLabelFixture f1;
+    MyIssues         issues;
+    // non-existing uid is reported and contributes nothing
+    EXPECT_EQ(TermVector(), getTermsByLabel(f1.queryEnv, "fox"));
+    EXPECT_EQ(1u, issues.list.size());
+    // non-existing uid does not affect the valid one
+    EXPECT_EQ(TermVector({f1.term(0)}), getTermsByLabel(f1.queryEnv, "partial"));
+    EXPECT_EQ(2u, issues.list.size());
+    // duplicated non-existing uid is reported at most once
+    EXPECT_EQ(TermVector({f1.term(0)}), getTermsByLabel(f1.queryEnv, "dupmissing"));
+    EXPECT_EQ(3u, issues.list.size());
+}
+
+TEST(UtilsTest, require_that_duplicated_uid_values_are_deduped_by_term_set_lookup) {
+    using TermVector = std::vector<const ITermData*>;
+    TermLabelFixture f1;
+    MyIssues         issues;
+    EXPECT_EQ(TermVector({f1.term(2)}), getTermsByLabel(f1.queryEnv, "dup"));
+    EXPECT_EQ(0u, issues.list.size());
+}
+
+TEST(UtilsTest, require_that_label_argument_is_unwrapped) {
+    EXPECT_EQ("mylabel", parse_label_argument("label(mylabel)").value());
+    // whitespace is normalized by feature name parsing
+    EXPECT_EQ("mylabel", parse_label_argument("label( mylabel )").value());
+    // quoting allows label names that are not valid identifiers
+    EXPECT_EQ("my label", parse_label_argument("label(\"my label\")").value());
+}
+
+TEST(UtilsTest, require_that_malformed_label_argument_is_rejected) {
+    EXPECT_FALSE(parse_label_argument("").has_value());
+    EXPECT_FALSE(parse_label_argument("mylabel").has_value());      // missing label() wrapper
+    EXPECT_FALSE(parse_label_argument("label").has_value());        // no parameter list
+    EXPECT_FALSE(parse_label_argument("label()").has_value());      // empty label name
+    EXPECT_FALSE(parse_label_argument("label(a,b)").has_value());   // more than one name
+    EXPECT_FALSE(parse_label_argument("label(a).out").has_value()); // output suffix
+    EXPECT_FALSE(parse_label_argument("labels(a)").has_value());    // wrong wrapper name
+    EXPECT_FALSE(parse_label_argument("label(a").has_value());      // unbalanced parenthesis
 }
 
 template <typename T> void verifyStrToNum(const std::string& label) {

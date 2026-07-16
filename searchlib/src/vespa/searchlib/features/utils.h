@@ -14,6 +14,7 @@
 #include <cstring>
 #include <limits>
 #include <optional>
+#include <vector>
 
 namespace search::features::util {
 
@@ -177,6 +178,33 @@ inline search::fef::TermFieldHandle getTermFieldHandle(const search::fef::IQuery
  * @param label query item label
  **/
 const search::fef::ITermData* getTermByLabel(const search::fef::IQueryEnvironment& env, const std::string& label);
+
+/**
+ * Obtain the set of terms annotated with the given label. A label
+ * names a set of query terms: the label property may hold multiple
+ * unique ids (e.g. when several query items share a label). This
+ * function reverse maps the label to its unique ids and collects the
+ * matching terms in query environment order. An unknown label yields
+ * an empty vector.
+ *
+ * @return terms with the given label, in query environment order
+ * @param env query environment
+ * @param label query item label
+ **/
+std::vector<const search::fef::ITermData*> getTermsByLabel(const search::fef::IQueryEnvironment& env,
+                                                           const std::string&                    label);
+
+/**
+ * Parse a feature parameter of the form 'label(<name>)' and extract
+ * the label name. The parameter is parsed as a feature name, so
+ * whitespace and quoting are handled ('label("my label")' yields 'my
+ * label'). Anything else (a bare name, 'label()', extra arguments or
+ * an output suffix) yields std::nullopt.
+ *
+ * @return the label name, or std::nullopt if the parameter is not of the required form
+ * @param param feature parameter expected to be of the form 'label(<name>)'
+ **/
+std::optional<std::string> parse_label_argument(const std::string& param);
 
 std::optional<search::fef::DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,
                                                                         const search::fef::ITermData&         term);

@@ -3,9 +3,11 @@
 #include "utils.hpp"
 
 #include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/featurenameparser.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -180,6 +182,49 @@ const ITermData* getTermByLabel(const search::fef::IQueryEnvironment& env, const
     }
     Issue::report("Query label '%s' was attached to non-existing unique id: '%s'", label.c_str(), p.get().c_str());
     return nullptr;
+}
+
+std::vector<const ITermData*> getTermsByLabel(const search::fef::IQueryEnvironment& env, const std::string& label) {
+    // Labeling the query items with unique ids '5' and '7' with the label 'foo'
+    // is represented as: [vespa.label.foo.id: "5", vespa.label.foo.id: "7"]
+    vespalib::asciistream os;
+    os << "vespa.label." << label << ".id";
+    Property p = env.getProperties().lookup(os.view());
+    std::vector<const ITermData*> terms;
+    if (!p.found()) {
+        return terms;
+    }
+    vespalib::hash_set<uint32_t> uids;
+    for (uint32_t i(0), m(p.size()); i < m; ++i) {
+        uint32_t uid = strToNum<uint32_t>(p.getAt(i));
+        if (uid == 0) {
+            Issue::report("Query label '%s' was attached to invalid unique id: '%s'", label.c_str(),
+                          p.getAt(i).c_str());
+        } else {
+            uids.insert(uid);
+        }
+    }
+    vespalib::hash_set<uint32_t> missing_uids(uids);
+    for (uint32_t i(0), m(env.getNumTerms()); i < m; ++i) {
+        const ITermData* term = env.getTerm(i);
+        if (uids.contains(term->getUniqueId())) {
+            terms.push_back(term);
+            missing_uids.erase(term->getUniqueId());
+        }
+    }
+    for (uint32_t uid : missing_uids) {
+        Issue::report("Query label '%s' was attached to non-existing unique id: '%u'", label.c_str(), uid);
+    }
+    return terms;
+}
+
+std::optional<std::string> parse_label_argument(const std::string& param) {
+    FeatureNameParser parser(param);
+    if (!parser.valid() || parser.baseName() != "label" || parser.parameters().size() != 1 ||
+        parser.parameters()[0].empty() || !parser.output().empty()) {
+        return std::nullopt;
+    }
+    return parser.parameters()[0];
 }
 
 std::optional<DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,

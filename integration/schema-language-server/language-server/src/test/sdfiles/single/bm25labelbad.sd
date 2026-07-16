@@ -1,0 +1,14 @@
+schema bm25labelbad {
+    document bm25labelbad {
+        field title type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: bm25(title, label(someLabel).out)
+        }
+    }
+}

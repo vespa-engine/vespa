@@ -6,4 +6,6 @@ namespace search::fef::test {
 
 NoLabel::~NoLabel() = default;
 
+MultiLabel::~MultiLabel() = default;
+
 }

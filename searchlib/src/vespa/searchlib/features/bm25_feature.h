@@ -7,6 +7,8 @@
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 
+#include <string>
+
 namespace search::features {
 
 /**
@@ -25,9 +27,16 @@ class Bm25Executor : public fef::FeatureExecutor {
     double _k1_mul_b;
     double _k1_mul_one_minus_b;
 
+    void add_term_fields(const fef::ITermData& term, uint32_t field_id, const fef::IQueryEnvironment& env,
+                         double k1_param);
+
 public:
     Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnvironment& env, double avg_field_length,
                  double k1_param, double b_param);
+    // Collects only from the given terms (the terms carrying a label).
+    Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnvironment& env,
+                 const std::vector<const fef::ITermData*>& terms, double avg_field_length, double k1_param,
+                 double b_param);
 
     void handle_bind_match_data(const fef::MatchData& match_data) override;
     void execute(uint32_t docId) override;
@@ -42,6 +51,7 @@ private:
     double                _k1_param;
     double                _b_param;
     std::optional<double> _avg_field_length;
+    std::string           _label; // empty = unlabeled, sum over all terms searching the field
 
 public:
     Bm25Blueprint();
