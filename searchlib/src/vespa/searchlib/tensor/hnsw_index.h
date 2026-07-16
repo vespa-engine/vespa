@@ -4,6 +4,7 @@
 #include "distance_function.h"
 #include "distance_function_factory.h"
 #include "doc_vector_access.h"
+#include "hash_set_visited_tracker.h"
 #include "hnsw_graph.h"
 #include "hnsw_identity_mapping.h"
 #include "hnsw_index_config.h"
@@ -58,6 +59,39 @@ struct ReachabilityResult {
     }
     double links_explored_pct() const noexcept {
         return nodes_found > 0 ? (100.0 * (nodes_found - nodes_pending) / nodes_found) : 100.0;
+    }
+};
+
+struct ResilientFilterFirstContext {
+    const uint32_t        max_links;
+    std::deque<uint32_t>  found;
+    std::vector<uint32_t> one_hop_pass;
+    std::vector<uint32_t> one_hop_fail;
+    std::vector<uint32_t> two_hop_pass;
+    std::vector<uint32_t> two_hop_fail;
+    HashSetVisitedTracker local_tracker;
+
+    ResilientFilterFirstContext(uint32_t max_links_in)
+        : max_links(max_links_in),
+          found(),
+          one_hop_pass(),
+          one_hop_fail(),
+          two_hop_pass(),
+          two_hop_fail(),
+          local_tracker(max_links * max_links, max_links * max_links) {
+        one_hop_pass.reserve(max_links);
+        one_hop_fail.reserve(max_links);
+        two_hop_pass.reserve(max_links * max_links);
+        two_hop_fail.reserve(max_links * max_links);
+    }
+    ~ResilientFilterFirstContext();
+    void clear() {
+        found.clear();
+        one_hop_pass.clear();
+        one_hop_fail.clear();
+        two_hop_pass.clear();
+        two_hop_fail.clear();
+        local_tracker.clear();
     }
 };
 
@@ -247,8 +281,9 @@ protected:
                                                     uint32_t nodeid_limit, const vespalib::Deadline* const doom,
                                                     uint32_t estimated_visited_nodes) const __attribute__((noinline));
     template <class VisitedTracker>
-    void explore_neighborhood_resilient(Stats& stats, HnswTraversalCandidate& cand, std::deque<uint32_t>& found,
-                                        VisitedTracker& visited, double exploration, uint32_t level,
+    void explore_neighborhood_resilient(Stats& stats, HnswTraversalCandidate& cand,
+                                        ResilientFilterFirstContext& context, VisitedTracker& visited,
+                                        double exploration, uint32_t level,
                                         const internal::GlobalFilterWrapper<type>& filter_wrapper,
                                         uint32_t nodeid_limit, bool best_neighbors_filled) const;
     template <class VisitedTracker>

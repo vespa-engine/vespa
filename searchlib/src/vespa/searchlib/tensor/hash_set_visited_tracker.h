@@ -19,6 +19,7 @@ public:
     void mark(uint32_t nodeid) { _visited.insert(nodeid); }
     bool try_mark(uint32_t nodeid) { return _visited.insert(nodeid).second; }
     bool marked(uint32_t nodeid) { return _visited.contains(nodeid); }
+    void clear() { _visited.clear(); }
 };
 
 } // namespace search::tensor

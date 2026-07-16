@@ -116,6 +116,8 @@ template <typename GraphType> struct NeighborLinkMeta {
 
 } // namespace
 
+ResilientFilterFirstContext::~ResilientFilterFirstContext() = default;
+
 namespace internal {
 
 PreparedAddNode::PreparedAddNode() noexcept : connections() {
@@ -583,7 +585,7 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
     }
     double limit_dist = std::numeric_limits<double>::max();
 
-    std::deque<uint32_t>                     neighborhood;
+    ResilientFilterFirstContext              context(max_links_for_level(level));
     std::vector<NeighborLinkMeta<GraphType>> neighbor_link_metas;
     neighbor_link_metas.reserve(max_links_for_level(level));
 
@@ -596,12 +598,12 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
 
         // Instead of taking immediate neighbors, we additionally explore 2-hop neighbors (and possibly 3-hop
         // neighbors)
-        neighborhood.clear();
-        explore_neighborhood_resilient(stats, cand, neighborhood, visited, exploration, level, filter_wrapper,
+        context.clear();
+        explore_neighborhood_resilient(stats, cand, context, visited, exploration, level, filter_wrapper,
                                        nodeid_limit, best_neighbors.size() >= neighbors_to_find);
         neighbor_link_metas.clear();
 
-        for (uint32_t neighbor_nodeid : neighborhood) {
+        for (uint32_t neighbor_nodeid : context.found) {
             if (visited.try_mark(neighbor_nodeid)) {
                 stats.count_visited_node();
             }
@@ -648,19 +650,19 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
 template <HnswIndexType type>
 template <class VisitedTracker>
 void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversalCandidate& cand,
-                                                     std::deque<uint32_t>& found, VisitedTracker& visited,
+                                                     ResilientFilterFirstContext& context, VisitedTracker& visited,
                                                      double exploration, uint32_t level,
                                                      const internal::GlobalFilterWrapper<type>& filter_wrapper,
                                                      uint32_t nodeid_limit, bool best_neighbors_filled) const {
+    std::deque<uint32_t>& found = context.found;
     assert(found.empty());
-    std::vector<uint32_t> one_hop_pass;
-    std::vector<uint32_t> one_hop_fail;
-    uint32_t              one_hop_unvisited = 0;
-    std::vector<uint32_t> two_hop_pass;
-    std::vector<uint32_t> two_hop_fail;
+    std::vector<uint32_t>& one_hop_pass = context.one_hop_pass;
+    std::vector<uint32_t>& one_hop_fail = context.one_hop_fail;
+    std::vector<uint32_t>& two_hop_pass = context.two_hop_pass;
+    std::vector<uint32_t>& two_hop_fail = context.two_hop_fail;
+    HashSetVisitedTracker& local_tracker = context.local_tracker;
 
-    uint32_t              max_links = max_links_for_level(level); // We use 2M and not M here
-    HashSetVisitedTracker local_tracker(max_links * max_links, max_links * max_links);
+    uint32_t one_hop_unvisited = 0;
 
     auto& node = _graph.acquire_node(cand.nodeid);
     auto  ref = node.levels_ref().load_acquire();
@@ -729,9 +731,9 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
     found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
 
     // Second, insert two-hop neighbors. Depending on how many we have, we either use all or sample a subset.
-    if (one_hop_pass.size() + two_hop_pass.size() > max_links) {
+    if (one_hop_pass.size() + two_hop_pass.size() > context.max_links) {
         // Sample subset
-        stride_sample(found, two_hop_pass, max_links - one_hop_pass.size());
+        stride_sample(found, two_hop_pass, context.max_links - one_hop_pass.size());
     } else {
         // Use all
         found.insert(found.end(), two_hop_pass.begin(), two_hop_pass.end());
