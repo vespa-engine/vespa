@@ -99,6 +99,7 @@ public:
     vespalib::ProcessMemoryStats getMemoryStats() const;
     [[nodiscard]] DiskUsage disk_usage() const;
     [[nodiscard]] ReservedDiskSpaceAndMemory reserved_disk_space_and_memory() const noexcept;
+    [[nodiscard]] size_t reserved_memory_for_attribute_load() const noexcept;
     searchcorespi::common::ResourceUsage get_resource_usage() const;
     Config getConfig() const;
     const vespalib::HwInfo& getHwInfo() const noexcept { return _hwInfo; }
@@ -107,7 +108,7 @@ public:
     void add_resource_usage_listener(IResourceUsageListener* listener) override;
     void remove_resource_usage_listener(IResourceUsageListener* listener) override;
     void notify_attribute_usage(const AttributeUsageStats& attribute_usage,
-                                size_t                     reserved_memory_for_attribute_load) override;
+                                size_t                     reserved_memory_for_attribute_load_) override;
 };
 
 } // namespace proton
