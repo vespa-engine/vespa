@@ -22,6 +22,7 @@ struct AttributeUtils {
     static const Config& getStringConfig();
     static const Config& getPredicateConfig();
     static const Config& getTensorConfig();
+    static const Config& get_quantized_tensor_config();
     static const Config& get_bool_config();
 };
 
