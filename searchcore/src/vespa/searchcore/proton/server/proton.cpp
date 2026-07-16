@@ -414,7 +414,8 @@ void Proton::init(const BootstrapConfig::SP& configSnapshot) {
                                                              protonConfig.visit.defaultserializedsize,
                                                              protonConfig.visit.ignoremaxbytes);
     auto resource_usage_tracker = _persistenceEngine->get_resource_usage_tracker().shared_from_this();
-    _attribute_usage_notifier = std::make_shared<AttributeUsageNotifier>(_resource_usage_notifier);
+    _attribute_usage_notifier =
+        std::make_shared<AttributeUsageNotifier>(_resource_usage_notifier, configSnapshot->initialize_threads());
     _shared_service = std::make_unique<SharedThreadingService>(
         SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
     _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
@@ -495,6 +496,7 @@ void Proton::applyConfig(const BootstrapConfig::SP& configSnapshot) {
     setFS4Compression(protonConfig);
     _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
     _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
+    _attribute_usage_notifier->apply_config(configSnapshot->initialize_threads());
 
     _queryLimiter.configure(protonConfig.search.memory.limiter.maxthreads,
                             protonConfig.search.memory.limiter.mincoverage,

@@ -40,6 +40,10 @@ BootstrapConfig::BootstrapConfig(int64_t generation, const DocumenttypesConfigSP
 
 BootstrapConfig::~BootstrapConfig() = default;
 
+uint32_t BootstrapConfig::initialize_threads() const noexcept {
+    return std::min(_hwInfo.cpu().cores(), static_cast<uint32_t>(_proton->initialize.threads));
+}
+
 bool BootstrapConfig::operator==(const BootstrapConfig& rhs) const {
     return equals<DocumenttypesConfig>(_documenttypes.get(), rhs._documenttypes.get()) &&
            _repo.get() == rhs._repo.get() && equals<ProtonConfig>(_proton.get(), rhs._proton.get()) &&

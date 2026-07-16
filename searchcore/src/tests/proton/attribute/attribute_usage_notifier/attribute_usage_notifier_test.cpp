@@ -21,21 +21,28 @@ struct MyAttributeUsageListener : public IAttributeUsageListener {
     mutable std::mutex  _lock;
     size_t              _update_count;
     AttributeUsageStats _usage;
+    size_t              _reserved_memory_for_attribute_load;
 
     MyAttributeUsageListener() : IAttributeUsageListener(), _lock(), _update_count(0u), _usage() {}
 
-    void notify_attribute_usage(const AttributeUsageStats& attribute_usage) override {
+    void notify_attribute_usage(const AttributeUsageStats& attribute_usage,
+                                size_t                     reserved_memory_for_attribute_load) override {
         std::lock_guard guard(_lock);
         _usage = attribute_usage;
+        _reserved_memory_for_attribute_load = reserved_memory_for_attribute_load;
         ++_update_count;
     }
-    size_t get_update_count() const {
+    [[nodiscard]] size_t get_update_count() const {
         std::lock_guard guard(_lock);
         return _update_count;
     }
-    AttributeUsageStats get_usage() const {
+    [[nodiscard]] AttributeUsageStats get_usage() const {
         std::lock_guard guard(_lock);
         return _usage;
+    }
+    [[nodiscard]] size_t get_reserved_memory_for_attribute_load() const {
+        std::lock_guard guard(_lock);
+        return _reserved_memory_for_attribute_load;
     }
 };
 
@@ -50,12 +57,15 @@ public:
     AttributeUsageNotifierTest()
         : testing::Test(),
           _listener(std::make_shared<MyAttributeUsageListener>()),
-          _notifier(std::make_shared<AttributeUsageNotifier>(_listener)) {}
+          _notifier(std::make_shared<AttributeUsageNotifier>(_listener, 0)) {}
 
     ~AttributeUsageNotifierTest() override;
 
-    AttributeUsageStats get_usage() { return _listener->get_usage(); }
-    size_t get_update_count() const { return _listener->get_update_count(); }
+    [[nodiscard]] AttributeUsageStats get_usage() { return _listener->get_usage(); }
+    [[nodiscard]] size_t get_reserved_memory_for_attribute_load() {
+        return _listener->get_reserved_memory_for_attribute_load();
+    }
+    [[nodiscard]] size_t get_update_count() const { return _listener->get_update_count(); }
 };
 
 AttributeUsageNotifierTest::~AttributeUsageNotifierTest() = default;
@@ -174,6 +184,24 @@ TEST_F(AttributeUsageNotifierTest, can_skip_scan_when_aggregating_attributes) {
     aul1.reset();
     EXPECT_EQ(2u, get_update_count()); // notify
     EXPECT_EQ(make_stats("", "", "", 0), get_usage());
+}
+
+TEST_F(AttributeUsageNotifierTest, passes_reserved_memory_for_attribute_load) {
+    auto                       aul1 = _notifier->make_attribute_usage_listener("doctype1");
+    AttributeUsageStatsBuilder b1("doctype1");
+    b1.merge(ready_a1, 20, LoadMemoryUsage(10, 5)).merge(ready_a2, 5, LoadMemoryUsage(1, 2));
+    aul1->notify_attribute_usage(b1.build());
+    EXPECT_EQ(make_stats("doctype1", "0.ready", "a1", 20), get_usage());
+    EXPECT_EQ(8, get_reserved_memory_for_attribute_load()); // a1 is loaded before a2
+    EXPECT_EQ(1u, get_update_count());
+    aul1->notify_attribute_usage(b1.build());
+    EXPECT_EQ(1u, get_update_count());
+    _notifier->apply_config(2); // 2 initializer threads
+    EXPECT_EQ(1u, get_update_count());
+    aul1->notify_attribute_usage(b1.build());
+    EXPECT_EQ(make_stats("doctype1", "0.ready", "a1", 20), get_usage());
+    EXPECT_EQ(11, get_reserved_memory_for_attribute_load()); // a1 and a2 are loaded at the same time
+    EXPECT_EQ(2u, get_update_count());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
