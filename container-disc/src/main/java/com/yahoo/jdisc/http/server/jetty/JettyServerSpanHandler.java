@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import io.opentelemetry.api.OpenTelemetry;
+import ai.vespa.telemetry.api.Telemetry;
+import ai.vespa.telemetry.api.trace.ScopedTracer;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
@@ -32,8 +32,8 @@ import java.util.logging.Logger;
  * (async requests), so the span is carried explicitly in the request attribute rather than via a
  * thread-local {@link io.opentelemetry.context.Scope}.</p>
  *
- * <p>Always installed; when telemetry is disabled the injected {@link OpenTelemetry} is
- * {@link OpenTelemetry#noop()}, so all spans are non-recording and effectively free.</p>
+ * <p>Always installed; when telemetry is disabled the injected {@link Telemetry} is
+ * {@link ai.vespa.telemetry.api.NoopTelemetry}, so all spans are non-recording and effectively free.</p>
  *
  * @author onur
  */
@@ -68,23 +68,33 @@ class JettyServerSpanHandler extends EventsHandler {
         }
     };
 
-    private final Tracer tracer;
+    private final ScopedTracer tracer;
     private final TextMapPropagator propagator;
 
-    JettyServerSpanHandler(OpenTelemetry openTelemetry, Handler handler) {
+    JettyServerSpanHandler(Telemetry telemetry, Handler handler) {
         super(handler);
-        this.tracer = openTelemetry.getTracer(INSTRUMENTATION_SCOPE_NAME);
-        this.propagator = openTelemetry.getPropagators().getTextMapPropagator();
+        this.tracer = telemetry.tracer(INSTRUMENTATION_SCOPE_NAME);
+        this.propagator = telemetry.textMapPropagator();
     }
 
+    /**
+     * Starts the per-request SERVER span at the beginning of request handling.
+     *
+     * <p>Context propagation: the incoming W3C trace-context headers are read via the {@link #propagator}
+     * to recover the caller's (remote parent) {@link Context}; the new span is created as a child of it, so a
+     * distributed trace started upstream continues through this server. The owning context — the extracted
+     * parent with this span set on it ({@code parentContext.with(span)}) — is then stored in the Jetty request
+     * attribute {@link #OTEL_CONTEXT_REQUEST_ATTRIBUTE}, NOT in a thread-local {@link io.opentelemetry.context.Scope},
+     * because {@link #onComplete} may run on a different thread for async requests. Downstream code can read that
+     * attribute to create child spans and propagate the context further.</p>
+     *
+     * <p>Best-effort: any failure here is logged and swallowed so instrumentation never breaks request handling.</p>
+     */
     @Override
     protected void onBeforeHandling(Request request) {
         try {
             Context parentContext = propagator.extract(Context.current(), request, HEADER_GETTER);
-            Span span = tracer.spanBuilder(spanName(request))
-                    .setSpanKind(SpanKind.SERVER)
-                    .setParent(parentContext)
-                    .startSpan();
+            Span span = tracer.startServerSpan(spanName(request), parentContext);
             // Store the context before setting attributes so onComplete can always end the span,
             // even if an attribute getter below throws.
             request.setAttribute(OTEL_CONTEXT_REQUEST_ATTRIBUTE, parentContext.with(span));
@@ -94,6 +104,18 @@ class JettyServerSpanHandler extends EventsHandler {
         }
     }
 
+    /**
+     * Ends the SERVER span once the request and response are fully processed.
+     *
+     * <p>Retrieves the owning {@link Context} from the request attribute set in {@link #onBeforeHandling}
+     * (returning early if absent — e.g. span creation failed), records the HTTP response status, and marks the
+     * span {@link StatusCode#ERROR} on a transport failure or a 5xx response (recording the exception and an
+     * {@code error.type}). The span is always ended. This may run on a different thread than
+     * {@link #onBeforeHandling}, which is why the context travels via the request attribute rather than a
+     * thread-local.</p>
+     *
+     * <p>Best-effort: any failure here is logged and swallowed.</p>
+     */
     @Override
     protected void onComplete(Request request, int status, HttpFields headers, Throwable failure) {
         try {

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.telemetry.api.Telemetry;
 import ai.vespa.utils.BytesQuantity;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -15,7 +16,6 @@ import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.text.Text;
-import io.opentelemetry.api.OpenTelemetry;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -65,7 +65,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            RequestLog requestLog,
                            ConnectionLog connectionLog,
-                           OpenTelemetry openTelemetry) {
+                           Telemetry telemetry) {
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
 
@@ -126,7 +126,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
             topHandler = connectionMetricAggregator;
         }
         // Server span handler is outermost so the span encloses the entire request handling.
-        server.setHandler(new JettyServerSpanHandler(openTelemetry, topHandler));
+        server.setHandler(new JettyServerSpanHandler(telemetry, topHandler));
 
         server.addBeanToAllConnectors(connectionMetricAggregator);
 
