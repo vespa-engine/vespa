@@ -113,10 +113,10 @@ void ResourceUsageNotifier::warn_on_disk_capacity_changed(const DiskUsage& disk_
 }
 
 void ResourceUsageNotifier::notify_attribute_usage(const AttributeUsageStats& attribute_usage,
-                                                   size_t                     reserved_memory_for_attribute_load) {
+                                                   size_t                     reserved_memory_for_attribute_load_) {
     Guard guard(_lock);
     _attribute_usage = attribute_usage;
-    _reserved_memory_for_attribute_load = reserved_memory_for_attribute_load;
+    _reserved_memory_for_attribute_load = reserved_memory_for_attribute_load_;
     recalcState(guard, false);
 }
 
@@ -142,6 +142,11 @@ DiskUsage ResourceUsageNotifier::disk_usage() const {
 ReservedDiskSpaceAndMemory ResourceUsageNotifier::reserved_disk_space_and_memory() const noexcept {
     Guard guard(_lock);
     return _reserved_disk_space_and_memory;
+}
+
+size_t ResourceUsageNotifier::reserved_memory_for_attribute_load() const noexcept {
+    Guard guard(_lock);
+    return _reserved_memory_for_attribute_load;
 }
 
 ResourceUsage ResourceUsageNotifier::get_resource_usage() const {

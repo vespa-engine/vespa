@@ -71,6 +71,8 @@ void ResourceUsageExplorer::get_state(const vespalib::slime::Inserter& inserter,
         memory.setDouble("reserved-for-memory-indexes",
                          static_cast<double>(reserved_disk_space_and_memory.reserved_memory_for_memory_indexes()) /
                              physical_memory);
+        memory.setDouble("reserved-for-attribute-load",
+                         static_cast<double>(_usage_notifier.reserved_memory_for_attribute_load()) / physical_memory);
         convertMemoryStatsToSlime(_usage_notifier.getMemoryStats(), memory.setObject("stats"));
 
         Cursor& address_space = object.setObject("attribute_address_space");
