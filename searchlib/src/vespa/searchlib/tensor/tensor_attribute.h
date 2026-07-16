@@ -5,6 +5,7 @@
 #include "i_tensor_attribute.h"
 #include "prepare_result.h"
 #include "subspace_type.h"
+#include "tensor_quantization.h"
 #include "tensor_store.h"
 #include "typed_cells_comparator.h"
 
@@ -37,6 +38,7 @@ protected:
     std::unique_ptr<DistanceFunctionFactory> _distance_function_factory;
     std::unique_ptr<NearestNeighborIndex>    _index;
     bool                                     _is_dense;
+    bool                                     _is_quantized;
     std::unique_ptr<vespalib::eval::Value>   _emptyTensor;
     vespalib::Generation                     _compactGeneration; // Generation when last compact occurred
     SubspaceType                             _subspace_type;
@@ -62,10 +64,27 @@ protected:
     void setup_memory_usage_empty();
 
 public:
-    TensorAttribute(std::string_view name, const Config& cfg, TensorStore& tensorStore,
+    TensorAttribute(std::string_view name, const Config& cfg, TensorStore& tensor_store,
                     const NearestNeighborIndexFactory& index_factory);
     ~TensorAttribute() override;
     const ITensorAttribute* asTensorAttribute() const override;
+
+    [[nodiscard]] bool is_quantized() const noexcept final { return _is_quantized; }
+    [[nodiscard]] const vespalib::eval::ValueType& unquantized_tensor_type() const noexcept final;
+    /*
+     * Returns a new TensorQuantizer instance that can be used to transform full-precision
+     * input tensors of the schema-configured tensor type to a quantized shape and type
+     * matching `unquantized_tensor_type()`.
+     *
+     * A TensorQuantizer constructed from one TensorAttribute must never be attempted used
+     * on the tensor data inserted into another, unrelated TensorAttribute.
+     *
+     * Important: individual TensorQuantizer instances are _not_ thread safe.
+     *
+     * Precondition: is_quantized() == true
+     */
+    [[nodiscard]] std::unique_ptr<TensorQuantizer> make_quantizer() const;
+    [[nodiscard]] std::unique_ptr<TensorDequantizer> make_dequantizer() const override;
 
     uint32_t clearDoc(DocId docId) override;
     void onCommit() override;

@@ -19,9 +19,11 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/quantization_params.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/datastore/i_compaction_context.h>
+#include <vespa/vespalib/quant/eden.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -53,16 +55,65 @@ std::string makeWrongTensorTypeMsg(const ValueType& fieldTensorType, const Value
                                  fieldTensorType.to_spec().c_str(), tensorType.to_spec().c_str());
 }
 
+vespalib::quant::QuantMode to_vespalib_quant_mode(attribute::QuantizationParams::QuantizationMode mode) noexcept {
+    switch (mode) {
+    case attribute::QuantizationParams::QuantizationMode::MSE:
+        return vespalib::quant::QuantMode::MSE;
+    case attribute::QuantizationParams::QuantizationMode::InnerProduct:
+        return vespalib::quant::QuantMode::InnerProduct;
+    }
+    abort();
+}
+
+class TensorQuantizerImpl final : public TensorQuantizer, public TensorDequantizer {
+    const vespalib::eval::ValueType& _full_precision_type;
+    const vespalib::eval::ValueType& _quantized_type;
+    vespalib::quant::EdenQuantizer   _quantizer;
+    std::vector<float>               _quant_scratch_buf;
+    vespalib::quant::QuantMode       _quant_mode;
+
+public:
+    TensorQuantizerImpl(const vespalib::eval::ValueType&     full_precision_type,
+                        const vespalib::eval::ValueType&     quantized_type,
+                        const attribute::QuantizationParams& quant_params)
+        : _full_precision_type(full_precision_type),
+          _quantized_type(quantized_type),
+          _quantizer(_full_precision_type.dense_subspace_size(), quant_params.bits(), quant_params.seed()),
+          _quant_scratch_buf(), // lazily allocated, iff needed
+          _quant_mode(to_vespalib_quant_mode(quant_params.quantization_mode())) {}
+
+    ~TensorQuantizerImpl() override;
+
+    std::unique_ptr<vespalib::eval::Value> quantize(const vespalib::eval::Value& full_precision_tensor) override {
+        if (!TensorDataType::isAssignableType(_full_precision_type, full_precision_tensor.type())) [[unlikely]] {
+            throw WrongTensorTypeException(makeWrongTensorTypeMsg(_full_precision_type, full_precision_tensor.type()),
+                                           VESPA_STRLOC);
+        }
+        return quantize_tensor(full_precision_tensor, _quantized_type, _quantizer, _quant_mode, _quant_scratch_buf);
+    }
+
+    // This works transparently for the output of getTensor and get_tensor_ref
+    // TODO also make one that works for get_serialized_tensor_ref?
+    std::unique_ptr<vespalib::eval::Value> dequantize(const vespalib::eval::Value& quantized_tensor) override {
+        return dequantize_tensor(quantized_tensor, _full_precision_type, _quantizer, _quant_scratch_buf);
+    }
+};
+
+TensorQuantizerImpl::~TensorQuantizerImpl() = default;
+
 } // namespace
 
-TensorAttribute::TensorAttribute(std::string_view name, const Config& cfg, TensorStore& tensorStore,
+TensorAttribute::TensorAttribute(std::string_view name, const Config& cfg, TensorStore& tensor_store,
                                  const NearestNeighborIndexFactory& index_factory)
     : NotImplementedAttribute(name, cfg),
       _refVector(cfg.getGrowStrategy(), getGenerationHolder()),
-      _tensorStore(tensorStore),
-      _distance_function_factory(make_distance_function_factory(cfg.distance_metric(), cfg.tensorType().cell_type())),
+      _tensorStore(tensor_store),
+      _distance_function_factory(make_distance_function_factory(cfg.distance_metric(), cfg.tensorType().cell_type(),
+                                                                cfg.unquantized_tensor_type().dense_subspace_size(),
+                                                                cfg.quantization_params())),
       _index(),
       _is_dense(cfg.tensorType().is_dense()),
+      _is_quantized(cfg.quantization_params().has_value()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
       _compactGeneration(0),
       _subspace_type(cfg.tensorType()),
@@ -71,10 +122,10 @@ TensorAttribute::TensorAttribute(std::string_view name, const Config& cfg, Tenso
       _memory_usage_at_save_start(0),
       _size_on_disk_factor(1.0) {
     if (cfg.hnsw_index_params().has_value()) {
-        auto   tensor_type = cfg.tensorType();
-        size_t vector_size = tensor_type.dense_subspace_size();
-        _index = index_factory.make(*this, vector_size, !_is_dense, tensor_type.cell_type(),
-                                    cfg.hnsw_index_params().value());
+        // Note that we always pass the dimensionality of the unquantized (original) tensor type
+        size_t vector_size = cfg.unquantized_tensor_type().dense_subspace_size();
+        _index = index_factory.make(*this, vector_size, !_is_dense, cfg.tensorType().cell_type(),
+                                    cfg.hnsw_index_params().value(), cfg.quantization_params());
     }
 }
 
@@ -231,6 +282,10 @@ const vespalib::eval::ValueType& TensorAttribute::getTensorType() const {
     return getConfig().tensorType();
 }
 
+const vespalib::eval::ValueType& TensorAttribute::unquantized_tensor_type() const noexcept {
+    return getConfig().unquantized_tensor_type();
+}
+
 DistanceFunctionFactory& TensorAttribute::distance_function_factory() const {
     return *_distance_function_factory;
 }
@@ -307,6 +362,11 @@ void TensorAttribute::setTensor(DocId docId, const Value& tensor) {
 
 void TensorAttribute::update_tensor(DocId docId, const document::TensorUpdate& update,
                                     bool create_empty_if_non_existing) {
+    // It never makes sense to do a low-level read-modify-write update with an arbitrary
+    // higher-level TensorUpdate when the tensor is quantized. This is because we'll end
+    // up applying the update on the implementation-specific raw quantized int8 representation
+    // rather than the (expected) full precision representation, with "exciting" results.
+    assert(!_is_quantized);
     const vespalib::eval::Value* old_v = nullptr;
     auto                         old_tensor = getTensor(docId);
     if (old_tensor) {
@@ -453,6 +513,18 @@ void TensorAttribute::reclaim_unused_memory() {
             _index->reclaim_memory(oldest_used_gen);
         }
     }
+}
+
+std::unique_ptr<TensorQuantizer> TensorAttribute::make_quantizer() const {
+    assert(_is_quantized);
+    return std::make_unique<TensorQuantizerImpl>(unquantized_tensor_type(), getTensorType(),
+                                                 *getConfig().quantization_params());
+}
+
+std::unique_ptr<TensorDequantizer> TensorAttribute::make_dequantizer() const {
+    assert(_is_quantized);
+    return std::make_unique<TensorQuantizerImpl>(unquantized_tensor_type(), getTensorType(),
+                                                 *getConfig().quantization_params());
 }
 
 } // namespace search::tensor

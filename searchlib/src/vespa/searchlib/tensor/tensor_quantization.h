@@ -86,5 +86,44 @@ namespace search::tensor {
 dequantize_tensor(const vespalib::eval::Value& quantized_in_tensor, const vespalib::eval::ValueType& out_tensor_type,
                   vespalib::quant::EdenQuantizer& quantizer, std::vector<float>& scratch_space);
 
+/*
+ * Transforms input tensors from full precision to an opaque, quantized representation. The
+ * input and output types depend on the TensorAttribute the TensorQuantizer was created from,
+ * and the quantizer must never be used with another unrelated TensorAttribute instance.
+ *
+ * Lifetime must not exceed that of the tensor attribute the quantizer was created from.
+ */
+class TensorQuantizer {
+public:
+    virtual ~TensorQuantizer() = default;
+
+    // Returns a new tensor value that is a quantized representation of `full_precision_tensor`
+    // that is suitable for inserting into the quantized tensor attribute this TensorQuantizer
+    // was created by.
+    // Note: _not_ thread safe.
+    [[nodiscard]] virtual std::unique_ptr<vespalib::eval::Value>
+    quantize(const vespalib::eval::Value& full_precision_tensor) = 0;
+};
+
+/*
+ * Transforms input tensors from a quantized representation to an _approximation_ of the original
+ * input full precision tensor, which was previously created by a TensorQuantizer for the same
+ * TensorAttribute. The input and output types depend on the TensorAttribute the TensorDequantizer
+ * was created from, and the dequantizer must never be used with another unrelated TensorAttribute
+ * instance.
+ *
+ * Lifetime must not exceed that of the tensor attribute the dequantizer was created from.
+ */
+class TensorDequantizer {
+public:
+    virtual ~TensorDequantizer() = default;
+
+    // Returns a new tensor value that is a dequantized version of `quantized_tensor`. The
+    // returned tensor has the same type as the configured (unquantized) tensor type of the
+    // attribute this TensorDequantizer was created by.
+    // Note: _not_ thread safe.
+    [[nodiscard]] virtual std::unique_ptr<vespalib::eval::Value>
+    dequantize(const vespalib::eval::Value& quantized_tensor) = 0;
+};
 
 } // namespace search::tensor
