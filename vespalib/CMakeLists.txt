@@ -172,6 +172,7 @@ vespa_define_module(
     src/tests/util/hamming
     src/tests/util/md5
     src/tests/util/mimalloc
+    src/tests/util/reusable_set
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/wakeup
