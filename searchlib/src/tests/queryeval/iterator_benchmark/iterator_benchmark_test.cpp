@@ -677,7 +677,7 @@ void print_cell(const std::string& value, size_t width, bool left_align) {
 }
 
 struct Column {
-    uint64_t width = 4;
+    size_t width = 4;
 };
 
 /**
