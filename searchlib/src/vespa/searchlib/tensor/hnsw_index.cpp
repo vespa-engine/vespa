@@ -118,6 +118,8 @@ template <typename GraphType> struct NeighborLinkMeta {
 
 ResilientFilterFirstContext::~ResilientFilterFirstContext() = default;
 
+ResilientAltFilterFirstContext::~ResilientAltFilterFirstContext() = default;
+
 namespace internal {
 
 PreparedAddNode::PreparedAddNode() noexcept : connections() {
@@ -647,6 +649,7 @@ void HnswIndex<type>::search_layer_resilient_filter_first_helper(Stats& stats, c
         }
     }
 }
+
 template <HnswIndexType type>
 template <class VisitedTracker>
 void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversalCandidate& cand,
@@ -654,6 +657,222 @@ void HnswIndex<type>::explore_neighborhood_resilient(Stats& stats, HnswTraversal
                                                      double exploration, uint32_t level,
                                                      const internal::GlobalFilterWrapper<type>& filter_wrapper,
                                                      uint32_t nodeid_limit, bool best_neighbors_filled) const {
+    std::deque<uint32_t>& found = context.found;
+    assert(found.empty());
+    std::vector<uint32_t>& one_hop_pass = context.one_hop_pass;
+    std::vector<uint32_t>& one_hop_fail = context.one_hop_fail;
+    std::vector<uint32_t>& two_hop_pass = context.two_hop_pass;
+    std::vector<uint32_t>& two_hop_fail = context.two_hop_fail;
+    HashSetVisitedTracker& local_tracker = context.local_tracker;
+
+    uint32_t one_hop_unvisited = 0;
+
+    auto& node = _graph.acquire_node(cand.nodeid);
+    auto  ref = node.levels_ref().load_acquire();
+    for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
+        if (neighbor_nodeid >= nodeid_limit) {
+            continue;
+        }
+
+        if (!visited.marked(neighbor_nodeid) && local_tracker.try_mark(neighbor_nodeid)) {
+            ++one_hop_unvisited;
+
+            auto&    neighbor_node = _graph.acquire_node(neighbor_nodeid);
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            if (filter_wrapper.check(neighbor_docid)) {
+                one_hop_pass.push_back(neighbor_nodeid);
+            } else {
+                one_hop_fail.push_back(neighbor_nodeid);
+            }
+        }
+    }
+
+    // Fall back to the way normal HNSW works
+    if (static_cast<double>(one_hop_pass.size()) / one_hop_unvisited > 0.3) {
+        found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
+        found.insert(found.end(), one_hop_fail.begin(), one_hop_fail.end());
+        return;
+    }
+
+    for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
+        if (neighbor_nodeid >= nodeid_limit) {
+            continue;
+        }
+
+        // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
+        auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+        auto  neighbor_ref = neighbor_node.levels_ref().load_acquire();
+        if (!neighbor_ref.valid()) {
+            continue;
+        }
+
+        // We do not skip visited one-hop neighbors here. TODO: Try skipping
+        for (uint32_t neighbor_neighbor_nodeid : _graph.get_link_array(neighbor_ref, level)) {
+            if (neighbor_neighbor_nodeid >= nodeid_limit) {
+                continue;
+            }
+
+            // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
+            auto& neighbor_neighbor_node = _graph.acquire_node(neighbor_neighbor_nodeid);
+            auto  neighbor_neighbor_ref = neighbor_neighbor_node.levels_ref().load_acquire();
+            if (!neighbor_neighbor_ref.valid() || visited.marked(neighbor_neighbor_nodeid) ||
+                !local_tracker.try_mark(neighbor_neighbor_nodeid))
+            {
+                continue;
+            }
+
+            uint32_t neighbor_neighbor_docid = acquire_docid(neighbor_neighbor_node, neighbor_neighbor_nodeid);
+            if (filter_wrapper.check(neighbor_neighbor_docid)) {
+                two_hop_pass.push_back(neighbor_neighbor_nodeid);
+            } else {
+                two_hop_fail.push_back(neighbor_neighbor_nodeid);
+            }
+        }
+    }
+
+    // First, insert one-hop neighbors. We will use these no matter what.
+    found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
+
+    // Second, insert two-hop neighbors. Depending on how many we have, we either use all or sample a subset.
+    if (one_hop_pass.size() + two_hop_pass.size() > context.max_links) {
+        // Sample subset
+        stride_sample(found, two_hop_pass, context.max_links - one_hop_pass.size());
+    } else {
+        // Use all
+        found.insert(found.end(), two_hop_pass.begin(), two_hop_pass.end());
+    }
+
+    // Third, insert bridges.
+    // The goal is to end up with as many nodes as we had unvisited one-hop neighbors (if exploration is 1.0).
+    // Check if we get there by using the two-hop neighbors passing the filter.
+    // If not, we also use some that do not pass the filter.
+    // TODO: Try to get to unvisited one-hop neighbors *not passing the filter* instead?
+    // TODO: Try to get to M or 2M instead?
+    uint32_t target = static_cast<uint32_t>(std::ceil(one_hop_unvisited * exploration));
+    if (two_hop_pass.size() < target) { // TODO: Try also when best_neighbors is filled
+        for (uint32_t nodeid : one_hop_fail) {
+            if (visited.try_mark(nodeid)) {
+                stats.count_visited_node();
+            }
+        }
+        for (uint32_t nodeid : two_hop_fail) {
+            if (visited.try_mark(nodeid)) {
+                stats.count_visited_node();
+            }
+        }
+
+        if (!best_neighbors_filled) {
+            uint32_t needed = target - two_hop_pass.size();
+            if (two_hop_fail.size() > needed) {
+                stride_sample(found, two_hop_fail, needed);
+            } else {
+                found.insert(found.end(), two_hop_fail.begin(), two_hop_fail.end());
+            }
+        }
+    }
+}
+
+template <HnswIndexType type>
+template <class VisitedTracker, class BestNeighbors>
+void HnswIndex<type>::search_layer_resilient_alt_filter_first_helper(
+    Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find, double exploration_slack,
+    bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration, uint32_t level,
+    const GlobalFilter* filter, uint32_t nodeid_limit, const vespalib::Deadline* const deadline,
+    uint32_t estimated_visited_nodes) const {
+    assert(filter);
+    NearestPriQ                         candidates;
+    internal::GlobalFilterWrapper<type> filter_wrapper(filter);
+    filter_wrapper.clamp_nodeid_limit(nodeid_limit);
+    VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
+    if (deadline != nullptr && deadline->is_missed()) {
+        while (!best_neighbors.empty()) {
+            best_neighbors.pop();
+        }
+        return;
+    }
+    for (const auto& entry : best_neighbors.peek()) {
+        if (entry.nodeid >= nodeid_limit) {
+            continue;
+        }
+        candidates.push(entry);
+        visited.mark(entry.nodeid);
+        if (!filter_wrapper.check(entry.docid)) {
+            assert(best_neighbors.peek().size() == 1);
+            best_neighbors.pop();
+        }
+    }
+    double limit_dist = std::numeric_limits<double>::max();
+
+    ResilientAltFilterFirstContext           context(max_links_for_level(level));
+    std::vector<NeighborLinkMeta<GraphType>> neighbor_link_metas;
+    neighbor_link_metas.reserve(max_links_for_level(level));
+
+    while (!candidates.empty()) {
+        auto cand = candidates.top();
+        if (cand.distance > (1.0 + exploration_slack) * limit_dist) {
+            break;
+        }
+        candidates.pop();
+
+        // Instead of taking immediate neighbors, we additionally explore 2-hop neighbors (and possibly 3-hop
+        // neighbors)
+        context.clear();
+        explore_neighborhood_resilient_alt(stats, cand, context, visited, exploration, level, filter_wrapper,
+                                           nodeid_limit, best_neighbors.size() >= neighbors_to_find);
+        neighbor_link_metas.clear();
+
+        for (uint32_t neighbor_nodeid : context.found) {
+            if (visited.try_mark(neighbor_nodeid)) {
+                stats.count_visited_node();
+            }
+
+            auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
+            auto  neighbor_ref = neighbor_node.levels_ref().load_acquire();
+            if (!neighbor_ref.valid()) {
+                continue;
+            }
+            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
+            uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
+
+            neighbor_link_metas.emplace_back(neighbor_nodeid, neighbor_ref, neighbor_docid, neighbor_subspace);
+            prefetch_docid(_vectors, neighbor_docid);
+        }
+        if (prefetch_tensors) {
+            for (const auto& link : neighbor_link_metas) {
+                prefetch_vector(_vectors, link.neighbor_docid);
+            }
+        }
+        for (const auto& link : neighbor_link_metas) {
+            double dist_to_input = calc_distance(df, link.neighbor_docid, link.neighbor_subspace);
+            stats.count_computed_distance();
+            if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
+                candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
+
+                // We have to check the filter here: resilient filter-first heuristic also uses nodes that do not pass
+                // the filter
+                if (dist_to_input < limit_dist && filter_wrapper.check(link.neighbor_docid)) {
+                    best_neighbors.emplace(link.neighbor_nodeid, link.neighbor_docid, link.neighbor_ref,
+                                           dist_to_input);
+                    while (best_neighbors.size() > neighbors_to_find) {
+                        best_neighbors.pop();
+                        limit_dist = best_neighbors.top().distance;
+                    }
+                }
+            }
+        }
+        if (deadline != nullptr && deadline->is_missed()) {
+            break;
+        }
+    }
+}
+
+template <HnswIndexType type>
+template <class VisitedTracker>
+void HnswIndex<type>::explore_neighborhood_resilient_alt(Stats& stats, HnswTraversalCandidate& cand,
+                                                         ResilientAltFilterFirstContext& context,
+                                                         VisitedTracker& visited, double exploration, uint32_t level,
+                                                         const internal::GlobalFilterWrapper<type>& filter_wrapper,
+                                                         uint32_t nodeid_limit, bool best_neighbors_filled) const {
     std::deque<uint32_t>& found = context.found;
     assert(found.empty());
     std::vector<uint32_t>& one_hop_pass = context.one_hop_pass;
@@ -900,6 +1119,27 @@ void HnswIndex<type>::search_layer_resilient_filter_first(Stats& stats, const Bo
             filter, nodeid_limit, deadline, estimated_visited_nodes);
     } else {
         search_layer_resilient_filter_first_helper<HashSetVisitedTracker>(
+            stats, df, neighbors_to_find, exploration_slack, prefetch_tensors, best_neighbors, exploration, level,
+            filter, nodeid_limit, deadline, estimated_visited_nodes);
+    }
+}
+
+template <HnswIndexType type>
+template <class BestNeighbors>
+void HnswIndex<type>::search_layer_resilient_alt_filter_first(Stats& stats, const BoundDistanceFunction& df,
+                                                              uint32_t neighbors_to_find, double exploration_slack,
+                                                              bool prefetch_tensors, BestNeighbors& best_neighbors,
+                                                              double exploration, uint32_t level,
+                                                              const vespalib::Deadline* const deadline,
+                                                              const GlobalFilter*             filter) const {
+    uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
+    uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
+    if (estimated_visited_nodes >= nodeid_limit / 128) {
+        search_layer_resilient_alt_filter_first_helper<BitVectorVisitedTracker>(
+            stats, df, neighbors_to_find, exploration_slack, prefetch_tensors, best_neighbors, exploration, level,
+            filter, nodeid_limit, deadline, estimated_visited_nodes);
+    } else {
+        search_layer_resilient_alt_filter_first_helper<HashSetVisitedTracker>(
             stats, df, neighbors_to_find, exploration_slack, prefetch_tensors, best_neighbors, exploration, level,
             filter, nodeid_limit, deadline, estimated_visited_nodes);
     }
@@ -1349,11 +1589,11 @@ HnswIndex<type>::top_k_candidates(Stats& stats, const BoundDistanceFunction& df,
     best_neighbors.push(entry_point);
     bool active_filter = filter && filter->is_active();
     if (active_filter && alg == SearchAlgorithm::FILTER_FIRST) {
-        search_layer_filter_first(stats, df, k, exploration_slack, prefetch_tensors, best_neighbors, exploration, 0,
-                                  &deadline, filter);
-    } else if (active_filter && alg == SearchAlgorithm::RESILIENT_FILTER_FIRST) {
         search_layer_resilient_filter_first(stats, df, k, exploration_slack, prefetch_tensors, best_neighbors,
                                             exploration, 0, &deadline, filter);
+    } else if (active_filter && alg == SearchAlgorithm::RESILIENT_FILTER_FIRST) {
+        search_layer_resilient_alt_filter_first(stats, df, k, exploration_slack, prefetch_tensors, best_neighbors,
+                                                exploration, 0, &deadline, filter);
     } else {
         search_layer(stats, df, k, exploration_slack, prefetch_tensors, best_neighbors, 0, &deadline, filter);
     }

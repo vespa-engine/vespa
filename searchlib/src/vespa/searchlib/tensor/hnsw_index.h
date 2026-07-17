@@ -95,6 +95,39 @@ struct ResilientFilterFirstContext {
     }
 };
 
+struct ResilientAltFilterFirstContext {
+    const uint32_t        max_links;
+    std::deque<uint32_t>  found;
+    std::vector<uint32_t> one_hop_pass;
+    std::vector<uint32_t> one_hop_fail;
+    std::vector<uint32_t> two_hop_pass;
+    std::vector<uint32_t> two_hop_fail;
+    HashSetVisitedTracker local_tracker;
+
+    ResilientAltFilterFirstContext(uint32_t max_links_in)
+        : max_links(max_links_in),
+          found(),
+          one_hop_pass(),
+          one_hop_fail(),
+          two_hop_pass(),
+          two_hop_fail(),
+          local_tracker(max_links * max_links, max_links * max_links) {
+        one_hop_pass.reserve(max_links);
+        one_hop_fail.reserve(max_links);
+        two_hop_pass.reserve(max_links * max_links);
+        two_hop_fail.reserve(max_links * max_links);
+    }
+    ~ResilientAltFilterFirstContext();
+    void clear() {
+        found.clear();
+        one_hop_pass.clear();
+        one_hop_fail.clear();
+        two_hop_pass.clear();
+        two_hop_fail.clear();
+        local_tracker.clear();
+    }
+};
+
 namespace internal {
 struct PreparedAddNode {
     using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
@@ -280,12 +313,27 @@ protected:
                                                     double exploration, uint32_t level, const GlobalFilter* filter,
                                                     uint32_t nodeid_limit, const vespalib::Deadline* const doom,
                                                     uint32_t estimated_visited_nodes) const __attribute__((noinline));
+    template <class VisitedTracker, class BestNeighbors>
+    void search_layer_resilient_alt_filter_first_helper(Stats& stats, const BoundDistanceFunction& df,
+                                                        uint32_t neighbors_to_find, double exploration_slack,
+                                                        bool prefetch_tensors, BestNeighbors& best_neighbors,
+                                                        double exploration, uint32_t level,
+                                                        const GlobalFilter* filter, uint32_t nodeid_limit,
+                                                        const vespalib::Deadline* const doom,
+                                                        uint32_t                        estimated_visited_nodes) const
+        __attribute__((noinline));
     template <class VisitedTracker>
     void explore_neighborhood_resilient(Stats& stats, HnswTraversalCandidate& cand,
                                         ResilientFilterFirstContext& context, VisitedTracker& visited,
                                         double exploration, uint32_t level,
                                         const internal::GlobalFilterWrapper<type>& filter_wrapper,
                                         uint32_t nodeid_limit, bool best_neighbors_filled) const;
+    template <class VisitedTracker>
+    void explore_neighborhood_resilient_alt(Stats& stats, HnswTraversalCandidate& cand,
+                                            ResilientAltFilterFirstContext& context, VisitedTracker& visited,
+                                            double exploration, uint32_t level,
+                                            const internal::GlobalFilterWrapper<type>& filter_wrapper,
+                                            uint32_t nodeid_limit, bool best_neighbors_filled) const;
     template <class VisitedTracker>
     void exploreNeighborhood(Stats& stats, HnswTraversalCandidate& cand, std::deque<uint32_t>& found,
                              VisitedTracker& visited, double exploration, uint32_t level,
@@ -310,6 +358,13 @@ protected:
                                              bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
                                              uint32_t level, const vespalib::Deadline* const doom,
                                              const GlobalFilter* filter = nullptr) const;
+    template <class BestNeighbors>
+    void search_layer_resilient_alt_filter_first(Stats& stats, const BoundDistanceFunction& df,
+                                                 uint32_t neighbors_to_find, double exploration_slack,
+                                                 bool prefetch_tensors, BestNeighbors& best_neighbors,
+                                                 double exploration, uint32_t level,
+                                                 const vespalib::Deadline* const doom,
+                                                 const GlobalFilter*             filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(Stats& stats, uint32_t k, const BoundDistanceFunction& df,
                                          const GlobalFilter* filter, SearchAlgorithm alg, double exploration,
                                          uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
