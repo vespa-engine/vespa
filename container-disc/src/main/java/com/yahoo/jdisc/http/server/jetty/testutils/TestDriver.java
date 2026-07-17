@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty.testutils;
 
+import ai.vespa.telemetry.api.NoopTelemetry;
+import ai.vespa.telemetry.api.Telemetry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
@@ -18,7 +20,6 @@ import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.security.SslContextBuilder;
-import io.opentelemetry.api.OpenTelemetry;
 
 import javax.net.ssl.SSLContext;
 import java.nio.file.Paths;
@@ -97,7 +98,7 @@ public class TestDriver implements AutoCloseable {
                         bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                         bind(RequestLog.class).toInstance(new VoidRequestLog());
                         bind(MetricReceiver.class).toInstance(MetricReceiver.nullImplementation);
-                        bind(OpenTelemetry.class).toInstance(OpenTelemetry.noop());
+                        bind(Telemetry.class).toInstance(NoopTelemetry.INSTANCE);
                     }
                 },
                 new ConnectorFactoryRegistryModule(connectorConfig));

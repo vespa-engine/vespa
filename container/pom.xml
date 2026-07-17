@@ -29,6 +29,13 @@
           <groupId>io.opentelemetry</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <!-- LOAD-BEARING (unlike the redundant http-utils exclusion below): keeps ai.vespa.telemetry.* off the
+             public 3rd-party container COMPILE classpath. The io.opentelemetry:* wildcard above does NOT catch a
+             com.yahoo.vespa artifact, so this separate exclusion is required. Do not remove as "redundant". -->
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>container-opentelemetry</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>http-utils</artifactId>

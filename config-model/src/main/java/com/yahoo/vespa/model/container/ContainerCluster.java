@@ -205,8 +205,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addSimpleComponent("com.yahoo.container.jdisc.DisabledConnectionLogProvider");
         addSimpleComponent(com.yahoo.jdisc.http.server.jetty.Janitor.class);
-        // OpenTelemetry tracing provider: present in all container types; hands out a no-op instance unless enabled.
-        addSimpleComponent("com.yahoo.container.jdisc.telemetry.OpenTelemetryProvider");
+        // Telemetry (tracing) provider: present in all container types; hands out a no-op instance unless enabled.
+        addSimpleComponent("com.yahoo.container.jdisc.telemetry.TelemetryProvider");
     }
 
     protected abstract boolean messageBusEnabled();

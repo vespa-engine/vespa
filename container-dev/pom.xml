@@ -187,13 +187,20 @@
       <version>${project.version}</version>
       <type>pom</type>
     </dependency>
-    <!-- OpenTelemetry API only: this is what the in-process container test harness needs to instantiate the
-         (disabled, no-op) OpenTelemetryProvider, and all that 3rd-party container projects should compile
-         against. The SDK is loaded lazily by OpenTelemetrySdkBuilder and supplied at runtime by the
-         pre-installed container-opentelemetry bundle. -->
+    <!-- OpenTelemetry API only: this is what the in-process container test harness needs (the Jetty span
+         handler uses api/context types), and all that 3rd-party container projects should compile against.
+         The disabled TelemetryProvider hands out NoopTelemetry (also API-only); the SDK is referenced only by
+         OtelTelemetry inside the pre-installed container-opentelemetry bundle, which supplies it at runtime. -->
     <dependency>
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-api</artifactId>
+    </dependency>
+    <!-- Telemetry seam bundle: the in-process container test harness must load Telemetry/NoopTelemetry when it
+         instantiates TelemetryProvider in the component graph. Its optional OTel SDK deps do NOT leak transitively. -->
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-opentelemetry</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
