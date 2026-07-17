@@ -78,7 +78,7 @@ struct ResilientFilterFirstContext {
           one_hop_fail(),
           two_hop_pass(),
           two_hop_fail(),
-          local_tracker(max_links * max_links, max_links * max_links) {
+          local_tracker(max_links + max_links * max_links, max_links + max_links * max_links) {
         one_hop_pass.reserve(max_links);
         one_hop_fail.reserve(max_links);
         two_hop_pass.reserve(max_links * max_links);
@@ -97,34 +97,23 @@ struct ResilientFilterFirstContext {
 
 struct ResilientAltFilterFirstContext {
     const uint32_t        max_links;
-    std::deque<uint32_t>  found;
-    std::vector<uint32_t> one_hop_pass;
-    std::vector<uint32_t> one_hop_fail;
-    std::vector<uint32_t> two_hop_pass;
-    std::vector<uint32_t> two_hop_fail;
+    std::vector<uint32_t> found;
+    std::vector<uint32_t> failed_stash;
     HashSetVisitedTracker local_tracker;
 
     ResilientAltFilterFirstContext(uint32_t max_links_in)
         : max_links(max_links_in),
           found(),
-          one_hop_pass(),
-          one_hop_fail(),
-          two_hop_pass(),
-          two_hop_fail(),
-          local_tracker(max_links * max_links, max_links * max_links) {
-        one_hop_pass.reserve(max_links);
-        one_hop_fail.reserve(max_links);
-        two_hop_pass.reserve(max_links * max_links);
-        two_hop_fail.reserve(max_links * max_links);
+          failed_stash(),
+          local_tracker(max_links + max_links * max_links, max_links + max_links * max_links) {
+        found.reserve(max_links + max_links * max_links);
+        failed_stash.reserve(max_links + max_links * max_links);
     }
     ~ResilientAltFilterFirstContext();
     void clear() {
         found.clear();
-        one_hop_pass.clear();
-        one_hop_fail.clear();
-        two_hop_pass.clear();
-        two_hop_fail.clear();
-        local_tracker.clear();
+        failed_stash.clear();
+        // local_tracker.clear();
     }
 };
 

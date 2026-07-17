@@ -52,6 +52,28 @@ void stride_sample(std::deque<uint32_t>& to, std::vector<uint32_t>& from, uint32
     }
 }
 
+void stride_sample(std::vector<uint32_t>& to, uint32_t* data, uint32_t size, uint32_t num) {
+    if (num == 0 || num >= size) {
+        return;
+    }
+    uint32_t stride = size / num;
+
+    for (uint32_t i = 0; i < num; ++i) {
+        to.push_back(data[i * stride]);
+    }
+}
+
+void stride_sample_inplace(uint32_t* data, uint32_t size, uint32_t num) {
+    if (num == 0 || num >= size) {
+        return;
+    }
+    uint32_t stride = size / num;
+
+    for (uint32_t i = 0; i < num; ++i) {
+        data[i] = data[i * stride];
+    }
+}
+
 constexpr size_t min_num_arrays_for_new_buffer = 512_Ki;
 constexpr float  alloc_grow_factor = 0.3;
 // TODO: Adjust these numbers to what we accept as max in config.
@@ -873,15 +895,10 @@ void HnswIndex<type>::explore_neighborhood_resilient_alt(Stats& stats, HnswTrave
                                                          VisitedTracker& visited, double exploration, uint32_t level,
                                                          const internal::GlobalFilterWrapper<type>& filter_wrapper,
                                                          uint32_t nodeid_limit, bool best_neighbors_filled) const {
-    std::deque<uint32_t>& found = context.found;
+    std::vector<uint32_t>& found = context.found;
     assert(found.empty());
-    std::vector<uint32_t>& one_hop_pass = context.one_hop_pass;
-    std::vector<uint32_t>& one_hop_fail = context.one_hop_fail;
-    std::vector<uint32_t>& two_hop_pass = context.two_hop_pass;
-    std::vector<uint32_t>& two_hop_fail = context.two_hop_fail;
+    std::vector<uint32_t>& failed_stash = context.failed_stash;
     HashSetVisitedTracker& local_tracker = context.local_tracker;
-
-    uint32_t one_hop_unvisited = 0;
 
     auto& node = _graph.acquire_node(cand.nodeid);
     auto  ref = node.levels_ref().load_acquire();
@@ -890,102 +907,118 @@ void HnswIndex<type>::explore_neighborhood_resilient_alt(Stats& stats, HnswTrave
             continue;
         }
 
-        if (!visited.marked(neighbor_nodeid) && local_tracker.try_mark(neighbor_nodeid)) {
-            ++one_hop_unvisited;
-
-            auto&    neighbor_node = _graph.acquire_node(neighbor_nodeid);
-            uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
-            if (filter_wrapper.check(neighbor_docid)) {
-                one_hop_pass.push_back(neighbor_nodeid);
-            } else {
-                one_hop_fail.push_back(neighbor_nodeid);
-            }
+        if (!visited.marked(neighbor_nodeid)) {
+            found.push_back(neighbor_nodeid);
         }
     }
 
-    // Fall back to the way normal HNSW works
-    if (static_cast<double>(one_hop_pass.size()) / one_hop_unvisited > 0.3) {
-        found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
-        found.insert(found.end(), one_hop_fail.begin(), one_hop_fail.end());
+    // TODO: Does this help?
+    uint32_t one_hop_unvisited = found.size();
+    if (one_hop_unvisited == 0) {
         return;
     }
 
+    // Partition found: nodes passing the filter in the front
+    uint32_t one_hop_passed = 0;
+    for (uint32_t t = 0; t < found.size(); ++t) {
+        uint32_t t_nodeid = found[t];
+        auto&    t_node = _graph.acquire_node(t_nodeid);
+        uint32_t t_docid = acquire_docid(t_node, t_nodeid);
+        if (filter_wrapper.check(t_docid)) {
+            std::swap(found[one_hop_passed++], found[t]);
+        }
+    }
+
+    // Fall back to the way normal HNSW works: Return all unvisited one-hop neighbors
+    if (static_cast<double>(one_hop_passed) / one_hop_unvisited > 0.3) {
+        return;
+    }
+
+    // TODO: generational hash set
+    // Add one-hop neighbors to hash set to avoid
+    local_tracker.clear();
+    for (uint32_t nodeid : found) {
+        local_tracker.mark(nodeid);
+    }
+
+    // Stash away one-hop neighbors that fail the filter
+    uint32_t one_hop_failed = found.size() - one_hop_passed;
+    for (uint32_t t = one_hop_passed; t < found.size(); ++t) {
+        failed_stash.push_back(found[t]);
+    }
+    found.resize(one_hop_passed);
+
+    // Collect two-hop neighbors
+    // Traverse all one-hop neighbors here (visited or not)
     for (uint32_t neighbor_nodeid : _graph.get_link_array(ref, level)) {
         if (neighbor_nodeid >= nodeid_limit) {
             continue;
         }
 
-        // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
         auto& neighbor_node = _graph.acquire_node(neighbor_nodeid);
         auto  neighbor_ref = neighbor_node.levels_ref().load_acquire();
         if (!neighbor_ref.valid()) {
             continue;
         }
 
-        // We do not skip visited one-hop neighbors here. TODO: Try skipping
         for (uint32_t neighbor_neighbor_nodeid : _graph.get_link_array(neighbor_ref, level)) {
             if (neighbor_neighbor_nodeid >= nodeid_limit) {
                 continue;
             }
 
             // Skip if the current node was marked as visited (-> We already checked if it passes the filter)
-            auto& neighbor_neighbor_node = _graph.acquire_node(neighbor_neighbor_nodeid);
-            auto  neighbor_neighbor_ref = neighbor_neighbor_node.levels_ref().load_acquire();
-            if (!neighbor_neighbor_ref.valid() || visited.marked(neighbor_neighbor_nodeid) ||
-                !local_tracker.try_mark(neighbor_neighbor_nodeid))
-            {
+            if (visited.marked(neighbor_neighbor_nodeid) || !local_tracker.try_mark(neighbor_neighbor_nodeid)) {
                 continue;
             }
-
-            uint32_t neighbor_neighbor_docid = acquire_docid(neighbor_neighbor_node, neighbor_neighbor_nodeid);
-            if (filter_wrapper.check(neighbor_neighbor_docid)) {
-                two_hop_pass.push_back(neighbor_neighbor_nodeid);
-            } else {
-                two_hop_fail.push_back(neighbor_neighbor_nodeid);
-            }
+            found.push_back(neighbor_neighbor_nodeid);
         }
     }
 
-    // First, insert one-hop neighbors. We will use these no matter what.
-    found.insert(found.end(), one_hop_pass.begin(), one_hop_pass.end());
-
-    // Second, insert two-hop neighbors. Depending on how many we have, we either use all or sample a subset.
-    if (one_hop_pass.size() + two_hop_pass.size() > context.max_links) {
-        // Sample subset
-        stride_sample(found, two_hop_pass, context.max_links - one_hop_pass.size());
-    } else {
-        // Use all
-        found.insert(found.end(), two_hop_pass.begin(), two_hop_pass.end());
+    uint32_t two_hop_neighbors = found.size() - one_hop_passed;
+    if (two_hop_neighbors == 0 && one_hop_passed == 0) {
+        return;
     }
 
-    // Third, insert bridges.
-    // The goal is to end up with as many nodes as we had unvisited one-hop neighbors (if exploration is 1.0).
-    // Check if we get there by using the two-hop neighbors passing the filter.
-    // If not, we also use some that do not pass the filter.
-    // TODO: Try to get to unvisited one-hop neighbors *not passing the filter* instead?
-    // TODO: Try to get to M or 2M instead?
-    uint32_t target = static_cast<uint32_t>(std::ceil(one_hop_unvisited * exploration));
-    if (two_hop_pass.size() < target) { // TODO: Try also when best_neighbors is filled
-        for (uint32_t nodeid : one_hop_fail) {
-            if (visited.try_mark(nodeid)) {
-                stats.count_visited_node();
-            }
-        }
-        for (uint32_t nodeid : two_hop_fail) {
-            if (visited.try_mark(nodeid)) {
-                stats.count_visited_node();
-            }
-        }
-
-        if (!best_neighbors_filled) {
-            uint32_t needed = target - two_hop_pass.size();
-            if (two_hop_fail.size() > needed) {
-                stride_sample(found, two_hop_fail, needed);
-            } else {
-                found.insert(found.end(), two_hop_fail.begin(), two_hop_fail.end());
-            }
+    // Stash away two-hop neighbors that fail the filter
+    uint32_t two_hop_passed = 0;
+    for (uint32_t t = one_hop_passed; t < found.size(); ++t) {
+        uint32_t neighbor_neighbor_nodeid = found[t];
+        auto&    neighbor_neighbor_node = _graph.acquire_node(neighbor_neighbor_nodeid);
+        uint32_t neighbor_neighbor_docid = acquire_docid(neighbor_neighbor_node, neighbor_neighbor_nodeid);
+        if (filter_wrapper.check(neighbor_neighbor_docid)) {
+            found[one_hop_passed + two_hop_passed++] = neighbor_neighbor_nodeid;
+        } else {
+            failed_stash.push_back(neighbor_neighbor_nodeid);
         }
     }
+    found.resize(one_hop_passed + two_hop_passed);
+    uint32_t two_hop_failed = failed_stash.size() - one_hop_failed;
+    uint32_t two_hop_passed_keep = std::min(two_hop_passed, context.max_links - one_hop_passed);
+
+    stride_sample_inplace(found.data() + one_hop_passed, two_hop_passed, two_hop_passed_keep);
+    found.resize(one_hop_passed + two_hop_passed_keep);
+
+    uint32_t target = static_cast<uint32_t>(one_hop_unvisited * exploration);
+
+    if (two_hop_passed >= target || two_hop_failed == 0) {
+        return;
+    }
+
+    for (uint32_t nodeid : failed_stash) {
+        if (visited.try_mark(nodeid)) {
+            stats.count_visited_node();
+        }
+    }
+
+    if (best_neighbors_filled) {
+        return;
+    }
+
+    // uint32_t needed = target > two_hop_passed ? target - two_hop_passed : 0;
+    //  TODO: Difference between paper and implementation
+    uint32_t needed = target > found.size() ? target - found.size() : 0;
+    uint32_t limit = std::min(needed, two_hop_failed);
+    stride_sample(found, failed_stash.data() + one_hop_failed, two_hop_failed, limit);
 }
 
 template <HnswIndexType type>
