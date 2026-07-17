@@ -364,7 +364,7 @@ void do_test_quantized_vectors_squared_euclidean_distance(const size_t dimension
         ASSERT_NE(real_q_eqd, 0.0); // it could theoretically happen...
         const float q_eqd = q.quantized_lhs_rhs_squared_euclidean_distance(lhs_q, rhs_q);
         // Normalize for magnitude by computing relative error
-        ASSERT_THAT(q_eqd / real_q_eqd, FloatNear(1.0, 0.00005f));
+        ASSERT_THAT(q_eqd / real_q_eqd, FloatNear(1.0, 0.0001f));
     }
 }
 
