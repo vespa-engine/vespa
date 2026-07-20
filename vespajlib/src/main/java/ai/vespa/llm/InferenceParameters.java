@@ -31,6 +31,7 @@ public class InferenceParameters {
     public static final String OPTION_PRESENCE_PENALTY = "presencepenalty";
     public static final String OPTION_SEED = "seed";
     public static final String OPTION_JSON_SCHEMA = "json_schema";
+    public static final String OPTION_REASONING_EFFORT = "reasoningEffort";
     
     private String apiKey;
     private String endpoint;
