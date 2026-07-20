@@ -17,6 +17,7 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
+#include <vespa/searchlib/tensor/tensor_quantization.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/issue.h>
@@ -25,13 +26,13 @@
 LOG_SETUP(".searchlib.docsummary.attributedfw");
 
 using namespace search;
-using search::attribute::BasicType;
-using search::attribute::IArrayBoolReadView;
-using search::attribute::IAttributeContext;
-using search::attribute::IAttributeVector;
-using search::attribute::IMultiValueAttribute;
-using search::attribute::IMultiValueReadView;
-using search::common::ElementIds;
+using attribute::BasicType;
+using attribute::IArrayBoolReadView;
+using attribute::IAttributeContext;
+using attribute::IAttributeVector;
+using attribute::IMultiValueAttribute;
+using attribute::IMultiValueReadView;
+using common::ElementIds;
 using vespalib::Issue;
 using vespalib::Memory;
 using vespalib::eval::Value;
@@ -44,7 +45,7 @@ namespace search::docsummary {
 AttrDFW::AttrDFW(const std::string& attrName) : _attrName(attrName) {
 }
 
-const attribute::IAttributeVector& AttrDFW::get_attribute(const GetDocsumsState& s) const {
+const IAttributeVector& AttrDFW::get_attribute(const GetDocsumsState& s) const {
     return *s.getAttribute(getIndex());
 }
 
@@ -86,24 +87,17 @@ void SingleAttrDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, Ge
         break;
     }
     case BasicType::Type::TENSOR: {
-        const tensor::ITensorAttribute* tv = v.asTensorAttribute();
-        assert(tv != nullptr);
-        const auto tensor = tv->getTensor(docid);
-        if (tensor) {
-            vespalib::nbostream str;
-            encode_value(*tensor, str);
-            target.insertData(vespalib::Memory(str.peek(), str.size()));
-        }
+        assert(false); // Should not be handled by this field writer
         break;
     }
     case BasicType::STRING: {
         auto s = v.get_raw(docid);
-        target.insertString(vespalib::Memory(s.data(), s.size()));
+        target.insertString(Memory(s.data(), s.size()));
         break;
     }
     case BasicType::RAW: {
         auto s = v.get_raw(docid);
-        target.insertData(vespalib::Memory(s.data(), s.size()));
+        target.insertData(Memory(s.data(), s.size()));
         break;
     }
     case BasicType::REFERENCE:
@@ -112,7 +106,59 @@ void SingleAttrDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, Ge
     default:
         break; // Unknown type
     }
-    return;
+}
+
+class TensorAttrDFW : public AttrDFW {
+    uint32_t _state_index; // index into _fieldWriterStates in GetDocsumsState
+
+public:
+    TensorAttrDFW(const std::string& attr_name) : AttrDFW(attr_name), _state_index(0) {}
+    bool setFieldWriterStateIndex(uint32_t field_writer_state_index) override {
+        _state_index = field_writer_state_index;
+        return true;
+    }
+    void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                      ElementIds selected_elements, Inserter& target) const override;
+};
+
+class TensorAttrDFWState : public DocsumFieldWriterState {
+    const tensor::ITensorAttribute&            _tensor_attr;
+    std::unique_ptr<tensor::TensorDequantizer> _dequantizer;
+
+public:
+    explicit TensorAttrDFWState(const tensor::ITensorAttribute& attr);
+    ~TensorAttrDFWState() override;
+    void insertField(uint32_t docid, ElementIds selected_elements, Inserter& target) override;
+};
+
+TensorAttrDFWState::TensorAttrDFWState(const tensor::ITensorAttribute& attr)
+    : _tensor_attr(attr),
+      _dequantizer(attr.is_quantized() ? attr.make_dequantizer() : std::unique_ptr<tensor::TensorDequantizer>()) {
+}
+
+TensorAttrDFWState::~TensorAttrDFWState() = default;
+
+void TensorAttrDFWState::insertField(uint32_t docid, ElementIds, Inserter& target) {
+    if (auto tensor = _tensor_attr.getTensor(docid)) {
+        if (_dequantizer) {
+            tensor = _dequantizer->dequantize(*tensor);
+        }
+        vespalib::nbostream str;
+        encode_value(*tensor, str);
+        target.insertData(Memory(str.peek(), str.size()));
+    }
+}
+
+void TensorAttrDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state,
+                                 ElementIds selected_elements, Inserter& target) const {
+    auto& field_writer_state = state._fieldWriterStates[_state_index];
+    if (!field_writer_state) {
+        const auto& attr = get_attribute(state);
+        const auto* as_tensor_attr = attr.asTensorAttribute();
+        assert(as_tensor_attr != nullptr);
+        field_writer_state = &state.get_stash().create<TensorAttrDFWState>(*as_tensor_attr);
+    }
+    field_writer_state->insertField(docid, selected_elements, target);
 }
 
 //-----------------------------------------------------------------------------
@@ -258,7 +304,6 @@ void MultiAttrDFWStateBool::insertField(uint32_t docid, ElementIds selected_elem
 }
 
 class MultiAttrDFW : public AttrDFW {
-private:
     uint32_t _state_index; // index into _fieldWriterStates in GetDocsumsState
 
 public:
@@ -350,6 +395,8 @@ std::unique_ptr<DocsumFieldWriter> AttributeDFWFactory::create(const IAttributeM
     }
     if (attr->hasMultiValue()) {
         return create_multi_writer(*attr);
+    } else if (attr->getBasicType() == BasicType::TENSOR) {
+        return std::make_unique<TensorAttrDFW>(attr->getName());
     } else {
         return std::make_unique<SingleAttrDFW>(attr->getName());
     }

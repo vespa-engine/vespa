@@ -1,12 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/test/tensor_divergence.h>
 #include <vespa/searchsummary/docsummary/attributedfw.h>
 #include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/searchsummary/test/mock_attribute_manager.h>
 #include <vespa/searchsummary/test/mock_state_callback.h>
 #include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributedfw_test");
@@ -22,11 +29,25 @@ using search::docsummary::SummaryElementsSelector;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
 using search::docsummary::test::SlimeValue;
+using search::test::compute_tensor_nrmse;
+using vespalib::eval::FastValueBuilderFactory;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::Value;
 
 using ElementVector = std::vector<uint32_t>;
 
 std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
+}
+
+const std::string dense_tensor_spec = "tensor(x[4])";
+
+[[nodiscard]] std::unique_ptr<Value> tensor_from_spec(const TensorSpec& spec) {
+    return value_from_spec(spec, FastValueBuilderFactory::get());
+}
+
+[[nodiscard]] std::unique_ptr<Value> make_tensor(const double x1, const double x3) {
+    return tensor_from_spec(TensorSpec(dense_tensor_spec).add({{"x", 1}}, x1).add({{"x", 3}}, x3));
 }
 
 class AttributeDFWTest : public ::testing::Test {
@@ -59,6 +80,13 @@ public:
 
         _attrs.build_string_attribute("single_str", {{"world"}, {}}, CollectionType::SINGLE);
         _attrs.build_raw_attribute("single_raw", {{as_vector("hello")}, {}});
+
+        std::vector<std::unique_ptr<Value>> tensors;
+        tensors.emplace_back(make_tensor(4, 2));
+        tensors.emplace_back(make_tensor(10, 20));
+
+        _attrs.build_tensor_attribute("dense_tensor", dense_tensor_spec, false, tensors);
+        _attrs.build_tensor_attribute("quantized_dense_tensor", dense_tensor_spec, true, tensors);
         _state._attrCtx = _attrs.mgr().createContext();
         _state._matching_elements_fields = _matching_elements_fields;
     }
@@ -74,7 +102,7 @@ public:
         _writer = AttributeDFWFactory::create(_attrs.mgr(), field_name);
         _writer->setIndex(0);
         auto attr = _state._attrCtx->getAttribute(field_name);
-        if (attr->hasMultiValue()) {
+        if (attr->hasMultiValue() || (attr->getBasicType() == BasicType::TENSOR)) {
             EXPECT_TRUE(_writer->setFieldWriterStateIndex(0));
             _state._fieldWriterStates.resize(1);
         } else {
@@ -85,15 +113,25 @@ public:
         _state._attributes[0] = attr;
     }
 
-    void expect_field(const std::string& exp_slime_as_json, uint32_t docid) {
+    [[nodiscard]] vespalib::Slime field_to_slime(uint32_t docid) {
         vespalib::Slime                act;
         vespalib::slime::SlimeInserter inserter(act);
         if (!_writer->isDefaultValue(docid, _state)) {
             _writer->insert_field(docid, nullptr, _state, _elements_selector->get_selected_elements(docid, _state),
                                   inserter);
         }
+        return act;
+    }
 
-        SlimeValue exp(exp_slime_as_json);
+    [[nodiscard]] static std::unique_ptr<Value> decode_slime_to_tensor(const vespalib::Slime& obj) {
+        auto                buf = obj.get().asData();
+        vespalib::nbostream in_stream(buf.data, buf.size);
+        return vespalib::eval::decode_value(in_stream, FastValueBuilderFactory::get());
+    }
+
+    void expect_field(const std::string& exp_slime_as_json, uint32_t docid) {
+        vespalib::Slime act = field_to_slime(docid);
+        SlimeValue      exp(exp_slime_as_json);
         EXPECT_EQ(exp.slime, act);
     }
 
@@ -192,6 +230,29 @@ TEST_F(AttributeDFWTest, single_value_raw) {
     setup("single_raw", false);
     expect_field("x68656C6C6F", 1);
     expect_field("null", 2);
+}
+
+TEST_F(AttributeDFWTest, tensors_are_rendered_as_encoded_data_field) {
+    setup("dense_tensor", false);
+    // To be able to actually compare the rendered tensors, we have to decode the output
+    const auto t1 = decode_slime_to_tensor(field_to_slime(1));
+    EXPECT_EQ(*t1, *make_tensor(4, 2));
+    const auto t2 = decode_slime_to_tensor(field_to_slime(2));
+    EXPECT_EQ(*t2, *make_tensor(10, 20));
+}
+
+TEST_F(AttributeDFWTest, quantized_tensor_cells_are_dequantized_and_rendered_as_encoded_data_field) {
+    setup("quantized_dense_tensor", false);
+    // Quantized tensors are approximations, so we have to compare within a max error bound
+    constexpr double max_divergence = 0.0125;
+
+    const auto t1 = decode_slime_to_tensor(field_to_slime(1));
+    const auto expected_t1 = make_tensor(4, 2);
+    EXPECT_LE(compute_tensor_nrmse(*expected_t1, *t1), max_divergence);
+
+    const auto t2 = decode_slime_to_tensor(field_to_slime(2));
+    const auto expected_t2 = make_tensor(10, 20);
+    EXPECT_LE(compute_tensor_nrmse(*expected_t2, *t2), max_divergence);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

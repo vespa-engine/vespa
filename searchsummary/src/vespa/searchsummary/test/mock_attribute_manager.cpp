@@ -2,6 +2,7 @@
 
 #include "mock_attribute_manager.h"
 
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -9,15 +10,32 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 
 #include <cassert>
 
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
+using search::attribute::QuantizationParams;
 using search::attribute::SingleRawAttribute;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::Value;
+using vespalib::eval::ValueType;
 
 namespace search::docsummary::test {
+
+template <typename AttributeType>
+std::shared_ptr<AttributeType> MockAttributeManager::create_and_register_attribute(const std::string&       name,
+                                                                                   const attribute::Config& cfg) {
+    auto attr_base = AttributeFactory::createAttribute(name, cfg);
+    assert(attr_base);
+    auto attr = std::dynamic_pointer_cast<AttributeType>(attr_base);
+    assert(attr);
+    attr->addReservedDoc();
+    _mgr.add(attr);
+    return attr;
+}
 
 template <typename AttributeType, typename ValueType>
 void MockAttributeManager::build_attribute(const std::string& name, BasicType type, CollectionType col_type,
@@ -27,11 +45,7 @@ void MockAttributeManager::build_attribute(const std::string& name, BasicType ty
     if (uncased.has_value()) {
         cfg.set_match(uncased.value() ? Config::Match::UNCASED : Config::Match::CASED);
     }
-    auto attr_base = AttributeFactory::createAttribute(name, cfg);
-    assert(attr_base);
-    auto attr = std::dynamic_pointer_cast<AttributeType>(attr_base);
-    assert(attr);
-    attr->addReservedDoc();
+    auto attr = create_and_register_attribute<AttributeType>(name, cfg);
     for (const auto& docValues : values) {
         uint32_t docId = 0;
         attr->addDoc(docId);
@@ -46,12 +60,9 @@ void MockAttributeManager::build_attribute(const std::string& name, BasicType ty
         }
         attr->commit();
     }
-    _mgr.add(attr);
 }
 
-MockAttributeManager::MockAttributeManager() : _mgr() {
-}
-
+MockAttributeManager::MockAttributeManager() = default;
 MockAttributeManager::~MockAttributeManager() = default;
 
 void MockAttributeManager::build_string_attribute(const std::string&                           name,
@@ -81,19 +92,39 @@ void MockAttributeManager::build_raw_attribute(const std::string&               
 void MockAttributeManager::build_bool_attribute(const std::string&                      name,
                                                 const std::vector<std::vector<int8_t>>& values) {
     Config cfg(BasicType::BOOL, CollectionType::ARRAY);
-    auto   attr_base = AttributeFactory::createAttribute(name, cfg);
-    assert(attr_base);
-    auto& bool_attr = dynamic_cast<search::attribute::ArrayBoolAttribute&>(*attr_base);
-    attr_base->addReservedDoc();
+    auto   bool_attr = create_and_register_attribute<attribute::ArrayBoolAttribute>(name, cfg);
     for (const auto& doc_values : values) {
         uint32_t docId = 0;
-        attr_base->addDoc(docId);
+        bool_attr->addDoc(docId);
         if (!doc_values.empty()) {
-            bool_attr.set_bools(docId, doc_values);
+            bool_attr->set_bools(docId, doc_values);
         }
-        attr_base->commit();
+        bool_attr->commit();
     }
-    _mgr.add(attr_base);
+}
+
+void MockAttributeManager::build_tensor_attribute(const std::string& name, const std::string& tensor_spec,
+                                                  bool                                       quantized,
+                                                  const std::vector<std::unique_ptr<Value>>& tensors) {
+    Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
+    if (!quantized) {
+        cfg.setTensorType(ValueType::from_spec(tensor_spec));
+    } else {
+        constexpr uint64_t seed = 0x1337cafe;
+        QuantizationParams qp(seed, QuantizationParams::QuantizationMode::MSE, 4);
+        cfg.set_tensor_type_with_quantization(ValueType::from_spec(tensor_spec), qp);
+    }
+    auto attr = create_and_register_attribute<tensor::TensorAttribute>(name, cfg);
+    for (const auto& t : tensors) {
+        uint32_t doc_id = 0;
+        attr->addDoc(doc_id);
+        if (!quantized) {
+            attr->setTensor(doc_id, *t);
+        } else {
+            attr->setTensor(doc_id, *attr->make_quantizer()->quantize(*t));
+        }
+        attr->commit();
+    }
 }
 
 } // namespace search::docsummary::test
