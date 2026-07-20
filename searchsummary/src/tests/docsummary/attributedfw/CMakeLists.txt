@@ -5,6 +5,7 @@ vespa_add_executable(searchsummary_attributedfw_test_app TEST
     DEPENDS
     vespa_searchsummary
     searchsummary_test
+    searchlib_test
     GTest::gtest
 )
 vespa_add_test(NAME searchsummary_attributedfw_test_app COMMAND searchsummary_attributedfw_test_app)
