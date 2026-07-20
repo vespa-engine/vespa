@@ -4324,7 +4324,8 @@
       "public static final java.lang.String OPTION_FREQUENCY_PENALTY",
       "public static final java.lang.String OPTION_PRESENCE_PENALTY",
       "public static final java.lang.String OPTION_SEED",
-      "public static final java.lang.String OPTION_JSON_SCHEMA"
+      "public static final java.lang.String OPTION_JSON_SCHEMA",
+      "public static final java.lang.String OPTION_REASONING_EFFORT"
     ]
   },
   "ai.vespa.llm.LanguageModel" : {
