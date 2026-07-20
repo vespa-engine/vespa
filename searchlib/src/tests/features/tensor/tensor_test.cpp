@@ -15,6 +15,8 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/test/tensor_divergence.h>
+#include <vespa/searchlib/test/test_quantization_params.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -25,8 +27,10 @@ using namespace search::fef::test;
 using namespace search::features;
 using search::AttributeFactory;
 using search::AttributeVector;
+using search::attribute::QuantizationParams;
 using search::tensor::DirectTensorAttribute;
 using search::tensor::TensorAttribute;
+using search::test::compute_tensor_nrmse;
 using vespalib::eval::Function;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::spec_from_value;
@@ -65,10 +69,15 @@ struct ExecFixture {
         return AttributeFactory::createAttribute(attrName, AVC(AVBT::STRING, AVCT::SINGLE));
     }
     AttributeVector::SP createTensorAttribute(const std::string& attrName, const std::string& type,
-                                              bool direct = false) {
+                                              bool direct = false, bool quantized = false) {
         addAttributeField(attrName);
         AVC config(AVBT::TENSOR, AVCT::SINGLE);
-        config.setTensorType(ValueType::from_spec(type));
+        if (!quantized) {
+            config.setTensorType(ValueType::from_spec(type));
+        } else {
+            config.set_tensor_type_with_quantization(ValueType::from_spec(type),
+                                                     search::test::mse_4bit_quantization_params());
+        }
         config.setFastSearch(direct);
         return AttributeFactory::createAttribute(attrName, config);
     }
@@ -86,11 +95,13 @@ struct ExecFixture {
         std::vector<AttributePtr> attrs;
         attrs.push_back(createTensorAttribute("tensorattr", "tensor(x{})"));
         attrs.push_back(createTensorAttribute("directattr", "tensor(x{})", true));
+        attrs.push_back(createTensorAttribute("quantattr", "tensor(x[10])", false, true));
         attrs.push_back(createStringAttribute("singlestr"));
         attrs.push_back(createTensorAttribute("wrongtype", "tensor(y{})"));
         addAttributeField("null");
         setAttributeTensorType("tensorattr", "tensor(x{})");
         setAttributeTensorType("directattr", "tensor(x{})");
+        setAttributeTensorType("quantattr", "tensor(x[10])");
         setAttributeTensorType("wrongtype", "tensor(x{})");
         setAttributeTensorType("null", "tensor(x{})");
 
@@ -103,13 +114,18 @@ struct ExecFixture {
             test.getIndexEnv().getAttributeMap().add(attr);
         }
 
-        TensorAttribute*       tensorAttr = dynamic_cast<TensorAttribute*>(attrs[0].get());
-        DirectTensorAttribute* directAttr = dynamic_cast<DirectTensorAttribute*>(attrs[1].get());
+        auto* tensorAttr = dynamic_cast<TensorAttribute*>(attrs[0].get());
+        auto* directAttr = dynamic_cast<DirectTensorAttribute*>(attrs[1].get());
+        auto* quantized_attr = dynamic_cast<TensorAttribute*>(attrs[2].get());
 
         auto doc_tensor = SimpleValue::from_spec(
             TensorSpec("tensor(x{})").add({{"x", "a"}}, 3).add({{"x", "b"}}, 5).add({{"x", "c"}}, 7));
         tensorAttr->setTensor(1, *doc_tensor);
         directAttr->setTensor(1, *doc_tensor);
+
+        auto dense_doc_tensor = SimpleValue::from_spec(
+            TensorSpec("tensor(x[10])").add({{"x", 1}}, 3).add({{"x", 3}}, 5).add({{"x", 8}}, 7));
+        quantized_attr->setTensor(1, *quantized_attr->make_quantizer()->quantize(*dense_doc_tensor));
 
         for (const auto& attr : attrs) {
             attr->commit();
@@ -155,6 +171,15 @@ TEST(TensorTest, require_that_direct_tensor_attribute_can_be_extracted_in_attrib
     ExecFixture f("attribute(directattr)");
     EXPECT_EQ(TensorSpec("tensor(x{})").add({{"x", "b"}}, 5).add({{"x", "c"}}, 7).add({{"x", "a"}}, 3),
               spec_from_value(f.execute()));
+}
+
+TEST(TensorTest, quantized_tensor_attribute_can_be_extracted_as_dequantized_tensor_in_attribute_feature) {
+    ExecFixture f("attribute(quantattr)");
+    const auto  expected =
+        SimpleValue::from_spec(TensorSpec("tensor(x[10])").add({{"x", 1}}, 3).add({{"x", 3}}, 5).add({{"x", 8}}, 7));
+    const auto&      actual = f.execute();
+    constexpr double max_divergence = 0.035;
+    EXPECT_LE(compute_tensor_nrmse(*expected, actual), max_divergence);
 }
 
 TEST(TensorTest, require_that_tensor_from_query_can_be_extracted_as_tensor_in_query_feature) {

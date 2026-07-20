@@ -14,6 +14,7 @@ vespa_add_library(searchlib_features OBJECT
     debug_attribute_wait.cpp
     debug_wait.cpp
     dense_tensor_attribute_executor.cpp
+    dequantizing_tensor_attribute_executor.cpp
     direct_tensor_attribute_executor.cpp
     distance_calculator_bundle.cpp
     distancefeature.cpp

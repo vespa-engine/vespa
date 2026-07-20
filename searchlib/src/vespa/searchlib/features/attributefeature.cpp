@@ -4,6 +4,7 @@
 
 #include "constant_tensor_executor.h"
 #include "dense_tensor_attribute_executor.h"
+#include "dequantizing_tensor_attribute_executor.h"
 #include "direct_tensor_attribute_executor.h"
 #include "tensor_attribute_executor.h"
 #include "utils.h"
@@ -426,12 +427,15 @@ fef::FeatureExecutor& createTensorAttributeExecutor(const IAttributeVector* attr
                       attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
-    if (tensorType != tensorAttribute->getTensorType()) {
+    if (tensorType != tensorAttribute->unquantized_tensor_type()) {
         Issue::report("attribute feature: The tensor attribute '%s' has tensor type '%s',"
                       " while the feature executor expects type '%s'. Returning empty tensor.",
-                      attribute->getName().c_str(), tensorAttribute->getTensorType().to_spec().c_str(),
+                      attribute->getName().c_str(), tensorAttribute->unquantized_tensor_type().to_spec().c_str(),
                       tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
+    }
+    if (tensorAttribute->is_quantized()) {
+        return stash.create<DequantizingTensorAttributeExecutor>(*tensorAttribute);
     }
     if (tensorAttribute->supports_extract_cells_ref()) {
         return stash.create<DenseTensorAttributeExecutor>(*tensorAttribute);
