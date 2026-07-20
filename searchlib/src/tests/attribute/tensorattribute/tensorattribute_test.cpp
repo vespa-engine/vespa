@@ -28,6 +28,7 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute_flags.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchlib/test/tensor_divergence.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -465,17 +466,11 @@ void PrintTo(const WrapValue& value, std::ostream* os) {
 /*
  * Checks if two tensors are approximately equal to each other, where the max divergence is
  * given by the `max_nrmse` (maximum normalized root mean squared error) argument.
- * NRMSE isn't necessarily the most intuitive error metric, but unlike other metrics (MAPE,
- * SMAPE etc.) it is well-defined for values of (or close to) zero, and it compensates for
- * different vector norms. The latter is very useful since vector dequantization precision
- * is directly affected by the norm due to the scaling factor used during reconstruction.
  *
  * If `max_nrmse` is zero, this will fall back to eval::Value operator== for equality testing,
  * as it transparently handles floating point precision issues.
  *
  * `arg` is expected to be a WrapValue instance.
- *
- * TODO move this out since it's useful for other quantization tests.
  */
 MATCHER_P2(TensorApproxEquals, exp_spec, max_nrmse, "") {
     using vespalib::eval::Aggr;
@@ -483,29 +478,8 @@ MATCHER_P2(TensorApproxEquals, exp_spec, max_nrmse, "") {
     if (max_nrmse == 0) {
         return ExplainMatchResult(Eq(exp_spec), arg, result_listener);
     }
-    auto arg_spec = TensorSpec::from_value(*arg._value); // WrapValue arg
-    if (exp_spec.type() != arg_spec.type()) {
-        *result_listener << "tensors have mismatching types";
-        return false;
-    }
-    // Root mean squared error (RMSE)
-    // For simplicity, compute across all subspaces. Quantization works on a per
-    // dense subspace basis, so we may want to change this to be subspace-aware.
-    // We also casually assume tensors have at least 1 dimension.
-    const double n = ReferenceOperations::reduce(exp_spec, Aggr::COUNT, {}).as_double();
-    auto         err_sq = ReferenceOperations::merge(exp_spec, arg_spec, [](double a, double b) noexcept {
-        const double diff = a - b;
-        return diff * diff;
-    });
-    const double sum_err_sq = ReferenceOperations::reduce(err_sq, Aggr::SUM, {}).as_double();
-    const double mse = sum_err_sq / n;
-    const double rmse = std::sqrt(mse);
-    // Normalized root mean squared error (NRSME)
-    // We choose to normalize based on the max observed cell value in the expected tensor
-    // Ref: https://en.wikipedia.org/wiki/Root_mean_square_deviation#Normalization
-    const double exp_max = ReferenceOperations::reduce(exp_spec, Aggr::MAX, {}).as_double();
-    const double nrmse = (exp_max != 0) ? (rmse / exp_max) : rmse;
-
+    const auto   exp_value = WrapValue(exp_spec);
+    const double nrmse = search::test::compute_tensor_nrmse(*exp_value._value, *arg._value);
     if (nrmse > max_nrmse) {
         *result_listener << "expected NRMSE between tensors to be <= " << max_nrmse << ", was " << nrmse;
         return false;
