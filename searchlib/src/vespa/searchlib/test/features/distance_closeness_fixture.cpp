@@ -16,6 +16,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::DistanceMetric;
+using search::attribute::QuantizationParams;
 using search::fef::test::IndexEnvironment;
 using search::fef::test::QueryEnvironment;
 using search::tensor::DenseTensorAttribute;
@@ -33,9 +34,15 @@ namespace {
 
 std::shared_ptr<TensorAttribute> create_tensor_attribute(const std::string& attr_name, const std::string& tensor_type,
                                                          DistanceMetric distance_metric, bool direct_tensor,
-                                                         uint32_t docid_limit) {
+                                                         bool quantized_tensor, uint32_t docid_limit) {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
-    cfg.setTensorType(ValueType::from_spec(tensor_type));
+    if (!quantized_tensor) {
+        cfg.setTensorType(ValueType::from_spec(tensor_type));
+    } else {
+        constexpr uint64_t seed = 0x12345678;
+        constexpr auto     mode = QuantizationParams::QuantizationMode::InnerProduct;
+        cfg.set_tensor_type_with_quantization(ValueType::from_spec(tensor_type), QuantizationParams(seed, mode, 4));
+    }
     cfg.set_distance_metric(distance_metric);
     std::shared_ptr<TensorAttribute> result;
     if (cfg.tensorType().is_dense()) {
@@ -58,14 +65,14 @@ FeatureDumpFixture::~FeatureDumpFixture() = default;
 DistanceClosenessFixture::DistanceClosenessFixture(size_t fooCnt, size_t barCnt, const Labels& labels,
                                                    const std::string& featureName, const std::string& query_tensor,
                                                    DistanceMetric distance_metric)
-    : DistanceClosenessFixture("tensor(x[2])", false, fooCnt, barCnt, labels, featureName, query_tensor,
+    : DistanceClosenessFixture("tensor(x[2])", false, false, fooCnt, barCnt, labels, featureName, query_tensor,
                                distance_metric) {
 }
 
-DistanceClosenessFixture::DistanceClosenessFixture(const std::string& tensor_type, bool direct_tensor, size_t fooCnt,
-                                                   size_t barCnt, const Labels& labels,
-                                                   const std::string& featureName, const std::string& query_tensor,
-                                                   DistanceMetric distance_metric)
+DistanceClosenessFixture::DistanceClosenessFixture(const std::string& tensor_type, bool direct_tensor,
+                                                   bool quantized_tensor, size_t fooCnt, size_t barCnt,
+                                                   const Labels& labels, const std::string& featureName,
+                                                   const std::string& query_tensor, DistanceMetric distance_metric)
     : queryEnv(&indexEnv),
       rankSetup(factory, indexEnv),
       mdl(),
@@ -75,6 +82,7 @@ DistanceClosenessFixture::DistanceClosenessFixture(const std::string& tensor_typ
       barHandles(),
       tensor_attr(),
       docid_limit(11),
+      _quantized(quantized_tensor),
       _failed(false) {
     for (size_t i = 0; i < fooCnt; ++i) {
         uint32_t fieldId = indexEnv.getFieldByName("foo")->id();
@@ -96,7 +104,8 @@ DistanceClosenessFixture::DistanceClosenessFixture(const std::string& tensor_typ
         queryEnv.getTerms().push_back(term);
     }
     if (!query_tensor.empty()) {
-        tensor_attr = create_tensor_attribute("bar", tensor_type, distance_metric, direct_tensor, docid_limit);
+        tensor_attr = create_tensor_attribute("bar", tensor_type, distance_metric, direct_tensor, quantized_tensor,
+                                              docid_limit);
         indexEnv.getAttributeMap().add(tensor_attr);
         search::fef::indexproperties::type::Attribute::set(indexEnv.getProperties(), "bar", tensor_type);
         set_query_tensor("qbar", "tensor(x[2])", TensorSpec::from_expr(query_tensor));
@@ -118,7 +127,11 @@ DistanceClosenessFixture::~DistanceClosenessFixture() = default;
 
 void DistanceClosenessFixture::set_attribute_tensor(uint32_t docid, const vespalib::eval::TensorSpec& spec) {
     auto tensor = SimpleValue::from_spec(spec);
-    tensor_attr->setTensor(docid, *tensor);
+    if (!_quantized) {
+        tensor_attr->setTensor(docid, *tensor);
+    } else {
+        tensor_attr->setTensor(docid, *tensor_attr->make_quantizer()->quantize(*tensor));
+    }
     tensor_attr->commit();
 }
 

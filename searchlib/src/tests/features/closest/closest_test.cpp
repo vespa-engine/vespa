@@ -12,6 +12,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
+#include <format>
+
 using search::feature_t;
 using search::features::ClosestBlueprint;
 using search::features::test::BlueprintFactoryFixture;
@@ -53,20 +55,18 @@ TensorSpec get_spec(RankFixture& f, uint32_t docid) {
 }
 
 struct TestParam {
-    std::string _name;
-    bool        _direct_tensor;
-    uint32_t    _mapped_dimensions;
-    TestParam(std::string name, bool direct_tensor, uint32_t mapped_dimensions)
-        : _name(std::move(name)), _direct_tensor(direct_tensor), _mapped_dimensions(mapped_dimensions) {}
-    ~TestParam();
+    bool     _direct_tensor;
+    bool     _quantized_tensor;
+    uint32_t _mapped_dimensions;
+
+    constexpr TestParam(bool direct_tensor, bool quantized_tensor, uint32_t mapped_dimensions) noexcept
+        : _direct_tensor(direct_tensor), _quantized_tensor(quantized_tensor), _mapped_dimensions(mapped_dimensions) {}
+
+    [[nodiscard]] std::string to_test_name() const {
+        return std::format("{}_{}_mapped_dim{}{}", (_direct_tensor ? "Direct" : "Serialized"), _mapped_dimensions,
+                           (_mapped_dimensions != 1 ? "s" : ""), (_quantized_tensor ? "_quantized" : ""));
+    }
 };
-
-TestParam::~TestParam() = default;
-
-std::ostream& operator<<(std::ostream& os, const TestParam param) {
-    os << param._name;
-    return os;
-}
 
 void assert_setup(std::string field_name, bool exp_setup_result, std::optional<std::string> attr_type_spec,
                   std::optional<std::string> label) {
@@ -94,7 +94,9 @@ class ClosestTest : public ::testing::TestWithParam<TestParam> {
 protected:
     ClosestTest();
     ~ClosestTest() override;
-    bool direct_tensor() const noexcept { return GetParam()._direct_tensor; }
+    [[nodiscard]] uint32_t mapped_dimensions() const noexcept { return GetParam()._mapped_dimensions; }
+    [[nodiscard]] bool direct_tensor() const noexcept { return GetParam()._direct_tensor; }
+    [[nodiscard]] bool quantized_tensor() const noexcept { return GetParam()._quantized_tensor; }
     void assert_closest(const Labels& labels, const std::string& feature_name, const std::string& query_tensor,
                         const TensorSpec& exp_spec);
     void assert_closest(const Labels& labels, const std::string& feature_name,
@@ -108,12 +110,11 @@ ClosestTest::~ClosestTest() = default;
 
 void ClosestTest::assert_closest(const Labels& labels, const std::string& feature_name,
                                  const std::string& query_tensor, const TensorSpec& exp_spec) {
-    uint32_t    mapped_dimensions = GetParam()._mapped_dimensions;
-    RankFixture f(mixed_tensor_types[mapped_dimensions], direct_tensor(), 0, 1, labels, feature_name,
-                  dense_tensor_type + ":" + query_tensor);
+    RankFixture f(mixed_tensor_types[mapped_dimensions()], direct_tensor(), quantized_tensor(), 0, 1, labels,
+                  feature_name, dense_tensor_type + ":" + query_tensor);
     ASSERT_FALSE(f.failed());
     SCOPED_TRACE(query_tensor);
-    f.set_attribute_tensor(9, doc_tensors[mapped_dimensions]);
+    f.set_attribute_tensor(9, doc_tensors[mapped_dimensions()]);
     EXPECT_EQ(exp_spec, get_spec(f, 9));
 }
 
@@ -123,12 +124,16 @@ void ClosestTest::assert_closest(const Labels& labels, const std::string& featur
     assert_closest(labels, feature_name, "[1,10]", exp_specs[1]);
 }
 
+struct MyPrintTestParams {
+    std::string operator()(const testing::TestParamInfo<TestParam>& info) const { return info.param.to_test_name(); }
+};
+
 INSTANTIATE_TEST_SUITE_P(ClosestMultiTest, ClosestTest,
-                         testing::Values(TestParam("Serialized_1_mapped_dim", false, 1),
-                                         TestParam("Direct_1_mapped_dim", true, 1),
-                                         TestParam("Serialized_2_mapped_dims", false, 2),
-                                         TestParam("Direct_2_mapped_dims", true, 2)),
-                         testing::PrintToStringParamName());
+                         testing::Values(TestParam(false, false, 1), TestParam(true, false, 1),
+                                         TestParam(false, false, 2), TestParam(true, false, 2),
+                                         TestParam(false, true, 1), TestParam(true, true, 1),
+                                         TestParam(false, true, 2), TestParam(true, true, 2)),
+                         MyPrintTestParams());
 
 TEST_F(ClosestTest, require_that_blueprint_can_be_created_from_factory) {
     BlueprintFactoryFixture f;
@@ -145,8 +150,7 @@ TEST_F(ClosestTest, require_that_no_features_are_dumped) {
 }
 
 TEST_P(ClosestTest, require_that_setup_fails_for_unknown_field) {
-    uint32_t mapped_dimensions = this->GetParam()._mapped_dimensions;
-    assert_setup("random_field", false, mixed_tensor_types[mapped_dimensions], std::nullopt);
+    assert_setup("random_field", false, mixed_tensor_types[mapped_dimensions()], std::nullopt);
 }
 
 TEST_F(ClosestTest, require_that_setup_fails_if_field_type_is_not_attribute) {
@@ -158,8 +162,7 @@ TEST_F(ClosestTest, require_that_setup_fails_if_field_data_type_is_not_tensor) {
 }
 
 TEST_P(ClosestTest, require_that_setup_can_be_done_on_random_label) {
-    uint32_t mapped_dimensions = this->GetParam()._mapped_dimensions;
-    assert_setup("bar", true, mixed_tensor_types[mapped_dimensions], "random_label");
+    assert_setup("bar", true, mixed_tensor_types[mapped_dimensions()], "random_label");
 }
 
 TEST_F(ClosestTest, require_that_setup_fails_if_tensor_type_is_missing) {
@@ -175,29 +178,26 @@ TEST_F(ClosestTest, require_that_setup_fails_if_tensor_type_is_sparse) {
 }
 
 TEST_P(ClosestTest, require_that_no_label_gives_empty_result) {
-    NoLabel  f;
-    uint32_t mapped_dimensions = GetParam()._mapped_dimensions;
-    auto&    no_subspace = no_subspaces[mapped_dimensions];
+    NoLabel f;
+    auto&   no_subspace = no_subspaces[mapped_dimensions()];
     assert_closest(f, field_and_label_feature_name, {no_subspace, no_subspace});
 }
 
 TEST_P(ClosestTest, require_that_unrelated_label_gives_empty_result) {
     SingleLabel f("unrelated", 1);
-    uint32_t    mapped_dimensions = GetParam()._mapped_dimensions;
-    auto&       no_subspace = no_subspaces[mapped_dimensions];
+    auto&       no_subspace = no_subspaces[mapped_dimensions()];
     assert_closest(f, field_and_label_feature_name, {no_subspace, no_subspace});
 }
 
 TEST_P(ClosestTest, closest_using_field_setup) {
-    NoLabel  f;
-    uint32_t mapped_dimensions = GetParam()._mapped_dimensions;
-    assert_closest(f, field_feature_name, {subspace_bs[mapped_dimensions], subspace_as[mapped_dimensions]});
+    NoLabel f;
+    assert_closest(f, field_feature_name, {subspace_bs[mapped_dimensions()], subspace_as[mapped_dimensions()]});
 }
 
 TEST_P(ClosestTest, closest_using_field_and_label_setup) {
     SingleLabel f("nns", 1);
-    uint32_t    mapped_dimensions = GetParam()._mapped_dimensions;
-    assert_closest(f, field_and_label_feature_name, {subspace_bs[mapped_dimensions], subspace_as[mapped_dimensions]});
+    assert_closest(f, field_and_label_feature_name,
+                   {subspace_bs[mapped_dimensions()], subspace_as[mapped_dimensions()]});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

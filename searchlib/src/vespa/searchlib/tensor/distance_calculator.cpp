@@ -56,7 +56,7 @@ DistanceCalculator::make_with_validation(const search::attribute::IAttributeVect
     if (attr_tensor == nullptr) {
         throw IllegalArgumentException("Attribute is not a tensor");
     }
-    const auto& at_type = attr_tensor->getTensorType();
+    const auto& at_type = attr_tensor->unquantized_tensor_type();
     if (!supported_tensor_type(at_type)) {
         throw IllegalArgumentException(
             make_string("Attribute tensor type (%s) is not supported", at_type.to_spec().c_str()));
