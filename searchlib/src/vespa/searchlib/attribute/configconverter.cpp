@@ -137,9 +137,26 @@ Config ConfigConverter::convert(const AttributesConfig::Attribute& cfg) {
                                                      cfg.index.hnsw.neighborstoexploreatinsert, dm,
                                                      cfg.index.hnsw.multithreadedindexing));
     }
+    std::optional<QuantizationParams> quantization_params;
+    if (cfg.quantization.bits > 0) {
+        // The default Most Blessed Seed is the 64 MSBs of sha256(utf8_bytes("Vinsjan på kaia"))
+        constexpr uint64_t quant_seed = 0xd4517d0bd7375213;
+        // Quantization mode depends on the chosen distance metric. We prefer inner-product
+        // optimized quantization for everything except Euclidean distance.
+        // TODO consider adding explicit schema config for this; people may use quantized vectors
+        //  without a configured distance metric, but then use dot product etc for ranking.
+        const auto quant_mode = (dm == DistanceMetric::Euclidean)
+                                    ? QuantizationParams::QuantizationMode::MSE
+                                    : QuantizationParams::QuantizationMode::InnerProduct;
+        quantization_params = QuantizationParams(quant_seed, quant_mode, cfg.quantization.bits);
+    }
     if (retval.basicType().type() == BasicType::Type::TENSOR) {
         if (!cfg.tensortype.empty()) {
-            retval.setTensorType(ValueType::from_spec(cfg.tensortype));
+            if (!quantization_params) {
+                retval.setTensorType(ValueType::from_spec(cfg.tensortype));
+            } else {
+                retval.set_tensor_type_with_quantization(ValueType::from_spec(cfg.tensortype), *quantization_params);
+            }
         } else {
             retval.setTensorType(ValueType::double_type());
         }
