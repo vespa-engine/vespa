@@ -51,11 +51,44 @@ type PemKeyPair struct {
 }
 
 // WriteCertificateFile writes the certificate contained in this key pair to certificateFile.
-func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool) error {
-	if ioutil.Exists(certificateFile) && !overwrite {
+func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool, addNewIdentity bool) error {
+	if ioutil.Exists(certificateFile) && !overwrite && !addNewIdentity {
 		return fmt.Errorf("cannot overwrite existing file: %s", certificateFile)
 	}
-	return ioutil.AtomicWriteFile(certificateFile, kp.Certificate)
+	data := kp.Certificate
+
+	if addNewIdentity {
+		existing, err := os.ReadFile(certificateFile)
+		if err == nil {
+			data = append(data, existing...)
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("could not read existing certificate file %s: %w", certificateFile, err)
+		}
+	}
+	return ioutil.AtomicWriteFile(certificateFile, data)
+}
+
+func ParseCertificates(data []byte) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
+	for rest := data; ; {
+		var block *pem.Block
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			break
+		}
+		if block.Type != "CERTIFICATE" {
+			return nil, fmt.Errorf("unexpected PEM block type %q; expected CERTIFICATE", block.Type)
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		certs = append(certs, cert)
+	}
+	if len(certs) == 0 {
+		return nil, fmt.Errorf("no certificates found in PEM data")
+	}
+	return certs, nil
 }
 
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
