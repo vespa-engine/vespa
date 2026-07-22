@@ -210,6 +210,11 @@ template <> void AttributeUpdater::handleUpdate(PredicateAttribute& vec, uint32_
 
 template <> void AttributeUpdater::handleUpdate(TensorAttribute& vec, uint32_t lid, const ValueUpdate& upd) {
     LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
+    if (vec.is_quantized()) {
+        LOG(debug, "Ignoring partial update to quantized tensor attribute '%s'; will be updated via setTensor",
+            vec.getName().c_str());
+        return;
+    }
     ValueUpdate::ValueUpdateType op = upd.getType();
     assert(!vec.hasMultiValue());
     if (op == ValueUpdate::Assign) {
@@ -489,7 +494,11 @@ void AttributeUpdater::updateValue(TensorAttribute& vec, uint32_t lid, const Fie
     validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
     const auto* tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
     if (tensor) {
-        vec.setTensor(lid, *tensor);
+        if (!vec.is_quantized()) {
+            vec.setTensor(lid, *tensor);
+        } else {
+            vec.setTensor(lid, *vec.make_quantizer()->quantize(*tensor));
+        }
     } else {
         vec.clearDoc(lid);
     }
@@ -557,11 +566,35 @@ void validate_tensor_attribute_type(AttributeVector& attr) {
     }
 }
 
+/*
+ * Quantized tensor attributes require input tensors to be pre-quantized for both
+ * the preparation and completion steps. To avoid having to re-quantize the original
+ * tensor upon completion, wrap the PrepareResult from the underlying attribute and
+ * remember the quantized result explicitly across the two calls.
+ */
+struct QuantizedPrepareResultWrapper : PrepareResult {
+    std::unique_ptr<PrepareResult>         _nested_prepare;
+    std::unique_ptr<vespalib::eval::Value> _quant_tensor;
+
+    QuantizedPrepareResultWrapper(std::unique_ptr<PrepareResult>         nested_prepare,
+                                  std::unique_ptr<vespalib::eval::Value> quant_tensor) noexcept
+        : _nested_prepare(std::move(nested_prepare)), _quant_tensor(std::move(quant_tensor)) {}
+    ~QuantizedPrepareResultWrapper() override;
+};
+
+QuantizedPrepareResultWrapper::~QuantizedPrepareResultWrapper() = default;
+
 std::unique_ptr<PrepareResult> prepare_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue& val) {
     validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
     const auto* tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
     if (tensor) {
-        return attr.prepare_set_tensor(docid, *tensor);
+        if (!attr.is_quantized()) {
+            return attr.prepare_set_tensor(docid, *tensor);
+        } else {
+            auto quantized_tensor = attr.make_quantizer()->quantize(*tensor);
+            auto result = attr.prepare_set_tensor(docid, *quantized_tensor);
+            return std::make_unique<QuantizedPrepareResultWrapper>(std::move(result), std::move(quantized_tensor));
+        }
     }
     return std::unique_ptr<PrepareResult>();
 }
@@ -571,7 +604,14 @@ void complete_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue
     validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
     const auto* tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
     if (tensor) {
-        attr.complete_set_tensor(docid, *tensor, std::move(prepare_result));
+        if (!attr.is_quantized()) {
+            attr.complete_set_tensor(docid, *tensor, std::move(prepare_result));
+        } else {
+            auto* quantized_wrapper = dynamic_cast<QuantizedPrepareResultWrapper*>(prepare_result.get());
+            assert(quantized_wrapper != nullptr);
+            attr.complete_set_tensor(docid, *quantized_wrapper->_quant_tensor,
+                                     std::move(quantized_wrapper->_nested_prepare));
+        }
     } else {
         attr.clearDoc(docid);
     }

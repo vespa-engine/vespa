@@ -20,6 +20,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
@@ -46,6 +47,7 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/test_quantization_params.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -660,9 +662,9 @@ TEST_F(AttributeWriterTest, can_write_to_tensor_attribute) {
     put(1, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
     auto* tensorAttribute = dynamic_cast<TensorAttribute*>(a1.get());
-    EXPECT_TRUE(tensorAttribute != nullptr);
+    ASSERT_TRUE(tensorAttribute != nullptr);
     auto tensor2 = tensorAttribute->getTensor(1);
-    EXPECT_TRUE(static_cast<bool>(tensor2));
+    ASSERT_TRUE(static_cast<bool>(tensor2));
     EXPECT_EQ(*tensor, *tensor2);
 }
 
@@ -675,9 +677,9 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update) {
     put(1, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
     auto* tensorAttribute = dynamic_cast<TensorAttribute*>(a1.get());
-    EXPECT_TRUE(tensorAttribute != nullptr);
+    ASSERT_TRUE(tensorAttribute != nullptr);
     auto tensor2 = tensorAttribute->getTensor(1);
-    EXPECT_TRUE(static_cast<bool>(tensor2));
+    ASSERT_TRUE(static_cast<bool>(tensor2));
     EXPECT_EQ(*tensor, *tensor2);
 
     DocumentUpdate upd(builder.get_repo(), builder.get_document_type(), DocumentId("id:ns:searchdocument::1"));
@@ -690,9 +692,9 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update) {
     DummyFieldUpdateCallback onUpdate;
     update(2, upd, 1, onUpdate);
     EXPECT_EQ(2u, a1->getNumDocs());
-    EXPECT_TRUE(tensorAttribute != nullptr);
+    ASSERT_TRUE(tensorAttribute != nullptr);
     tensor2 = tensorAttribute->getTensor(1);
-    EXPECT_TRUE(static_cast<bool>(tensor2));
+    ASSERT_TRUE(static_cast<bool>(tensor2));
     EXPECT_FALSE(*tensor == *tensor2);
     EXPECT_EQ(*new_tensor, *tensor2);
 }
@@ -768,14 +770,14 @@ public:
     mutable size_t prepare_set_tensor_cnt;
     mutable size_t complete_set_tensor_cnt;
     size_t         clear_doc_cnt;
-    const Value*   exp_tensor;
+    TensorSpec     exp_tensor_spec;
 
     MockDenseTensorAttribute(std::string_view name, const AVConfig& cfg)
         : DenseTensorAttribute(name, cfg),
           prepare_set_tensor_cnt(0),
           complete_set_tensor_cnt(0),
           clear_doc_cnt(0),
-          exp_tensor() {
+          exp_tensor_spec("double") { // dummy spec
         setup_memory_usage_empty();
     }
     uint32_t clearDoc(DocId docid) override {
@@ -784,7 +786,7 @@ public:
     }
     std::unique_ptr<PrepareResult> prepare_set_tensor(uint32_t docid, const Value& tensor) const override {
         ++prepare_set_tensor_cnt;
-        EXPECT_EQ(*exp_tensor, tensor);
+        EXPECT_EQ(vespalib::eval::spec_from_value(tensor), exp_tensor_spec);
         return std::make_unique<MockPrepareResult>(docid, tensor);
     }
 
@@ -801,16 +803,21 @@ public:
 
 const std::string dense_tensor = "tensor(x[2])";
 
-AVConfig get_tensor_config(bool multi_threaded_indexing) {
+AVConfig get_tensor_config(bool multi_threaded_indexing, bool quantized = false) {
     AVConfig cfg(AVBasicType::TENSOR);
-    cfg.setTensorType(ValueType::from_spec(dense_tensor));
+    if (!quantized) {
+        cfg.setTensorType(ValueType::from_spec(dense_tensor));
+    } else {
+        cfg.set_tensor_type_with_quantization(ValueType::from_spec(dense_tensor),
+                                              search::test::mse_4bit_quantization_params());
+    }
     cfg.set_hnsw_index_params(HnswIndexParams(4, 4, DistanceMetric::Euclidean, multi_threaded_indexing));
     return cfg;
 }
 
-std::shared_ptr<MockDenseTensorAttribute> make_mock_tensor_attribute(const std::string& name,
-                                                                     bool               multi_threaded_indexing) {
-    auto cfg = get_tensor_config(multi_threaded_indexing);
+std::shared_ptr<MockDenseTensorAttribute>
+make_mock_tensor_attribute(const std::string& name, bool multi_threaded_indexing, bool quantized = false) {
+    auto cfg = get_tensor_config(multi_threaded_indexing, quantized);
     return std::make_shared<MockDenseTensorAttribute>(name, cfg);
 }
 
@@ -835,7 +842,9 @@ TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separat
     EXPECT_EQ("t2", ctx[2].getFields()[0].getAttribute().getName());
 }
 
-class TwoPhasePutTest : public AttributeWriterTest {
+using IsQuantized = bool;
+
+class TwoPhasePutTest : public AttributeWriterTest, public testing::WithParamInterface<IsQuantized> {
 public:
     DocBuilder                                builder;
     std::string                               doc_id;
@@ -848,14 +857,20 @@ public:
           doc_id("id:ns:searchdocument::1"),
           attr() {
         setup(2);
-        attr = make_mock_tensor_attribute("a1", true);
+        attr = make_mock_tensor_attribute("a1", true, is_quantized());
         add_attribute(attr);
         AttributeManager::padAttribute(*attr, 4);
         attr->clear_doc_cnt = 0;
-        tensor = make_tensor(TensorSpec(dense_tensor).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
-        attr->exp_tensor = tensor.get();
+        auto tensor_spec = TensorSpec(dense_tensor).add({{"x", 0}}, 3).add({{"x", 1}}, 5);
+        tensor = make_tensor(tensor_spec);
+        if (!is_quantized()) {
+            attr->exp_tensor_spec = std::move(tensor_spec);
+        } else {
+            attr->exp_tensor_spec = vespalib::eval::spec_from_value(*attr->make_quantizer()->quantize(*tensor));
+        }
         allocAttributeWriter();
     }
+    [[nodiscard]] bool is_quantized() const noexcept { return GetParam(); }
     void expect_tensor_attr_calls(size_t exp_prepare_cnt, size_t exp_complete_cnt, size_t exp_clear_doc_cnt = 0) {
         EXPECT_EQ(exp_prepare_cnt, attr->prepare_set_tensor_cnt);
         EXPECT_EQ(exp_complete_cnt, attr->complete_set_tensor_cnt);
@@ -886,7 +901,7 @@ public:
     }
 };
 
-TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attribute) {
+TEST_P(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attribute) {
     auto doc = make_doc();
 
     put(1, *doc, 1);
@@ -900,7 +915,7 @@ TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attr
     assertExecuteHistory({0, 0});
 }
 
-TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_attribute) {
+TEST_P(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_attribute) {
     auto doc = make_doc();
     attr->commit(CommitParam(7, CommitParam::UpdateStats::SKIP));
     put(7, *doc, 1);
@@ -909,7 +924,7 @@ TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_a
     assertExecuteHistory({0});
 }
 
-TEST_F(TwoPhasePutTest, document_is_cleared_if_field_is_not_set) {
+TEST_P(TwoPhasePutTest, document_is_cleared_if_field_is_not_set) {
     auto doc = make_no_field_doc();
     put(1, *doc, 1);
     expect_tensor_attr_calls(0, 0, 1);
@@ -917,7 +932,7 @@ TEST_F(TwoPhasePutTest, document_is_cleared_if_field_is_not_set) {
     assertExecuteHistory({0});
 }
 
-TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set) {
+TEST_P(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set) {
     auto doc = make_no_tensor_doc();
     put(1, *doc, 1);
     expect_tensor_attr_calls(0, 0, 1);
@@ -925,7 +940,7 @@ TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set) {
     assertExecuteHistory({0});
 }
 
-TEST_F(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_for_tensor_attribute) {
+TEST_P(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_for_tensor_attribute) {
     auto upd = make_assign_update();
 
     DummyFieldUpdateCallback on_update;
@@ -939,6 +954,15 @@ TEST_F(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_fo
     expect_shared_executor_tasks(2);
     assertExecuteHistory({0, 0});
 }
+
+struct QuantizedTestParamPrinter {
+    std::string operator()(const testing::TestParamInfo<IsQuantized>& info) const {
+        return info.param ? "quantized" : "unquantized";
+    }
+};
+
+INSTANTIATE_TEST_SUITE_P(FullPrecisionAndQuantizedTensors, TwoPhasePutTest, testing::Bool(),
+                         QuantizedTestParamPrinter());
 
 ImportedAttributeVector::SP createImportedAttribute(const std::string& name) {
     auto result = ImportedAttributeVectorFactory::create(name, {}, {}, {}, {}, true);

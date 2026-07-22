@@ -29,6 +29,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/schema_builder.h>
+#include <vespa/searchlib/test/test_quantization_params.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
@@ -266,9 +267,11 @@ struct MySummaryAdapter : public test::MockSummaryAdapter {
           _removes() {}
     ~MySummaryAdapter() override;
     void put(SerialNum serialNum, DocumentIdT lid, const Document& doc) override {
+        LOG(info, "MySummaryAdapter::put(doc): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
         _store.write(serialNum, lid, doc);
     }
     void put(SerialNum serialNum, DocumentIdT lid, const vespalib::nbostream& os) override {
+        LOG(info, "MySummaryAdapter::put(nbostream): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
         _store.write(serialNum, lid, os);
     }
     void remove(SerialNum serialNum, const DocumentIdT lid) override {
@@ -292,11 +295,15 @@ struct MyAttributeWriter : public IAttributeWriter {
     SerialNum   _updateSerial;
     DocumentId  _updateDocId;
     DocumentIdT _updateLid;
+    SerialNum   _update_with_doc_serial;
+    DocumentId  _update_with_doc_doc_id;
+    DocumentIdT _update_with_doc_lid;
     SerialNum   _removeSerial;
     DocumentIdT _removeLid;
     int         _heartBeatCount;
     uint32_t    _commitCount;
     uint32_t    _wantedLidLimit;
+    bool        _has_non_authoritative_attr;
     using AttrMap = std::map<std::string, std::shared_ptr<AttributeVector>>;
     AttrMap                       _attrMap;
     std::set<std::string>         _attrs;
@@ -315,6 +322,7 @@ struct MyAttributeWriter : public IAttributeWriter {
         return ((itr == _attrMap.end()) ? nullptr : itr->second.get());
     }
     void put(SerialNum serialNum, const document::Document& doc, DocumentIdT lid, const OnWriteDoneType&) override {
+        LOG(info, "MyAttributeAdapter::put(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
         _putSerial = serialNum;
         _putDocId = doc.getId();
         _putLid = lid;
@@ -334,6 +342,7 @@ struct MyAttributeWriter : public IAttributeWriter {
     }
     void update(SerialNum serialNum, const document::DocumentUpdate& upd, DocumentIdT lid, const OnWriteDoneType&,
                 IFieldUpdateCallback& onUpdate) override {
+        LOG(info, "MyAttributeAdapter::update(DocumentUpdate): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
         _updateSerial = serialNum;
         _updateDocId = upd.getId();
         _updateLid = lid;
@@ -344,9 +353,10 @@ struct MyAttributeWriter : public IAttributeWriter {
     }
     void update(SerialNum serialNum, const document::Document& doc, DocumentIdT lid,
                 const OnWriteDoneType&) override {
-        (void)serialNum;
-        (void)doc;
-        (void)lid;
+        LOG(info, "MyAttributeAdapter::update(Document): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
+        _update_with_doc_serial = serialNum;
+        _update_with_doc_doc_id = doc.getId();
+        _update_with_doc_lid = lid;
     }
     void heartBeat(SerialNum, const OnWriteDoneType&) override { ++_heartBeatCount; }
     void compactLidSpace(uint32_t wantedLidLimit, SerialNum) override { _wantedLidLimit = wantedLidLimit; }
@@ -359,6 +369,7 @@ struct MyAttributeWriter : public IAttributeWriter {
 
     void onReplayDone(uint32_t) override {}
     bool hasStructFieldAttribute() const override { return false; }
+    bool has_non_authoritative_attribute() const noexcept override { return _has_non_authoritative_attr; }
 };
 
 MyAttributeWriter::MyAttributeWriter(MyTracer& tracer)
@@ -369,11 +380,15 @@ MyAttributeWriter::MyAttributeWriter(MyTracer& tracer)
       _updateSerial(0),
       _updateDocId(),
       _updateLid(0),
+      _update_with_doc_serial(0),
+      _update_with_doc_doc_id(),
+      _update_with_doc_lid(0),
       _removeSerial(0),
       _removeLid(0),
       _heartBeatCount(0),
       _commitCount(0),
       _wantedLidLimit(0),
+      _has_non_authoritative_attr(false),
       _attrMap(),
       _attrs(),
       _mgr(),
@@ -385,6 +400,10 @@ MyAttributeWriter::MyAttributeWriter(MyTracer& tracer)
     search::attribute::Config cfg3(search::attribute::BasicType::TENSOR);
     cfg3.setTensorType(ValueType::from_spec("tensor(x[10])"));
     _attrMap["a3"] = search::AttributeFactory::createAttribute("test3", cfg3);
+    search::attribute::Config cfg4(search::attribute::BasicType::TENSOR);
+    cfg4.set_tensor_type_with_quantization(ValueType::from_spec("tensor(x[10])"),
+                                           search::test::mse_4bit_quantization_params());
+    _attrMap["a4"] = search::AttributeFactory::createAttribute("test4", cfg4);
 }
 MyAttributeWriter::~MyAttributeWriter() = default;
 
@@ -420,10 +439,11 @@ SchemaContext::SchemaContext()
               .addField("a1", builder.stringTypeRef())
               .addField("a2", builder.predicateTypeRef())
               .addTensorField("a3", "")
+              .addTensorField("a4", "")
               .addField("s1", builder.stringTypeRef());
       }),
       _schema(std::make_shared<Schema>(
-          SchemaBuilder(_builder).add_indexes({"i1"}).add_attributes({"a1", "a2", "a3"}).build())) {
+          SchemaBuilder(_builder).add_indexes({"i1"}).add_attributes({"a1", "a2", "a3", "a4"}).build())) {
 }
 
 SchemaContext::~SchemaContext() = default;
@@ -725,6 +745,10 @@ void assertAttributeUpdate(SerialNum serialNum, const document::DocumentId& docI
     EXPECT_EQ(serialNum, adapter._updateSerial);
     EXPECT_EQ(docId, adapter._updateDocId);
     EXPECT_EQ(lid, adapter._updateLid);
+    // We should not get full Document-granularity updates to regular attributes
+    EXPECT_EQ(0, adapter._update_with_doc_serial);
+    EXPECT_EQ(DocumentId(), adapter._update_with_doc_doc_id);
+    EXPECT_EQ(0, adapter._update_with_doc_lid);
 }
 
 } // namespace
@@ -1025,6 +1049,22 @@ void requireThatUpdateUpdatesAttributeAndDocumentStore(Fixture& f, const std::st
     assertAttributeUpdate(2u, DocumentId("id:ns:searchdocument::1"), 1, f.maw);
 }
 
+template <typename Fixture>
+void check_update_writes_document_to_attribute_and_document_store(Fixture& f, const std::string& field_name) {
+    putDocumentAndUpdate(f, field_name);
+    // Although this seemingly partially updates the attribute itself, the non-mock
+    // AttributeUpdater will explicitly _ignore_ partial updates to quantized tensors.
+    // So it's a no-op in practice.
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+    EXPECT_EQ(2, f.maw._updateSerial);
+    EXPECT_EQ(DocumentId("id:ns:searchdocument::1"), f.maw._updateDocId);
+    EXPECT_EQ(1, f.maw._updateLid);
+    // We shall have triggered a _Document_-granularity update
+    EXPECT_EQ(2, f.maw._update_with_doc_serial);
+    EXPECT_EQ(DocumentId("id:ns:searchdocument::1"), f.maw._update_with_doc_doc_id);
+    EXPECT_EQ(1, f.maw._update_with_doc_lid);
+}
+
 } // namespace
 
 TEST(FeedViewTest, require_that_update_to_fast_access_attribute_only_updates_attribute_and_not_document_store) {
@@ -1067,6 +1107,20 @@ TEST(FeedViewTest, require_that_update_to_tensor_attribute_only_updates_attribut
     SearchableFeedViewFixture f;
     f.maw._attrs.insert("a3"); // mark a3 as attribute field
     requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(f, "a3");
+}
+
+TEST(FeedViewTest, update_to_fast_access_quantized_tensor_attribute_updates_document_store_and_puts_to_attribute) {
+    FastAccessFeedViewFixture f;
+    f.maw._attrs.insert("a4"); // mark a4 as fast-access attribute field
+    f.maw._has_non_authoritative_attr = true;
+    check_update_writes_document_to_attribute_and_document_store(f, "a4");
+}
+
+TEST(FeedViewTest, update_to_quantized_tensor_attribute_updates_document_store_and_puts_to_attribute) {
+    SearchableFeedViewFixture f;
+    f.maw._attrs.insert("a4"); // mark a4 as attribute field
+    f.maw._has_non_authoritative_attr = true;
+    check_update_writes_document_to_attribute_and_document_store(f, "a4");
 }
 
 TEST(

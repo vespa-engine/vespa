@@ -32,7 +32,10 @@ void FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentI
 
 void FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc,
                                           const OnOperationDoneType& onWriteDone) {
-    if (_attributeWriter->hasStructFieldAttribute()) {
+    if (_attributeWriter->has_non_authoritative_attribute()) {
+        // TODO wouldn't it be better to pass the _future_ to _attributeWriter->update so
+        //  it can avoid waiting for the document in the case the update is to some entirely
+        //  unrelated field?
         const std::unique_ptr<const Document>& doc = futureDoc.get();
         if (doc) {
             _attributeWriter->update(serialNum, *doc, lid, onWriteDone);

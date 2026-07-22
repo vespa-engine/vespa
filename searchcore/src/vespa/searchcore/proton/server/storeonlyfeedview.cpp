@@ -143,12 +143,14 @@ class UpdateScope final : public IFieldUpdateCallback {
 private:
     const vespalib::hash_set<int32_t>& _indexedFields;
     bool                               _nonAttributeFields;
+    bool                               _hasIndexedFields;
 
 public:
-    bool _hasIndexedFields;
-
     UpdateScope(const vespalib::hash_set<int32_t>& indexedFields, const DocumentUpdate& upd);
-    bool hasIndexOrNonAttributeFields() const { return _hasIndexedFields || _nonAttributeFields; }
+    [[nodiscard]] bool has_indexed_fields() const noexcept { return _hasIndexedFields; }
+    [[nodiscard]] bool hasIndexOrNonAttributeFields() const noexcept {
+        return _hasIndexedFields || _nonAttributeFields;
+    }
     void onUpdateField(const document::Field& field, const search::AttributeVector* attr) override;
 };
 
@@ -422,7 +424,7 @@ void StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation& u
         FutureDoc   futureDoc = promisedDoc.get_future().share();
         onWriteDone->setDocument(futureDoc);
         _pendingLidsForDocStore.waitComplete(lid);
-        if (updateScope._hasIndexedFields) {
+        if (updateScope.has_indexed_fields()) {
             updateIndexedFields(serialNum, lid, futureDoc, onWriteDone);
         }
         PromisedStream promisedStream;

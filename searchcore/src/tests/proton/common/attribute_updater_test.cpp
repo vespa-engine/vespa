@@ -37,6 +37,7 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 #include <vespa/searchlib/test/attribute_builder.h>
+#include <vespa/searchlib/test/test_quantization_params.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -87,14 +88,15 @@ using WeightedString = AttributeVector::WeightedString;
 
 std::unique_ptr<DocumentTypeRepo> makeDocumentTypeRepo() {
     new_config_builder::NewConfigBuilder builder;
-    auto&                                doc = builder.document("testdoc", 222);
-    auto                                 bool_array = doc.createArray(builder.boolTypeRef()).ref();
-    auto                                 int_array = doc.createArray(builder.intTypeRef()).ref();
-    auto                                 float_array = doc.createArray(builder.floatTypeRef()).ref();
-    auto                                 string_array = doc.createArray(builder.stringTypeRef()).ref();
-    auto                                 int_wset = doc.createWset(builder.intTypeRef()).ref();
-    auto                                 float_wset = doc.createWset(builder.floatTypeRef()).ref();
-    auto                                 string_wset = doc.createWset(builder.stringTypeRef()).ref();
+
+    auto& doc = builder.document("testdoc", 222);
+    auto  bool_array = doc.createArray(builder.boolTypeRef()).ref();
+    auto  int_array = doc.createArray(builder.intTypeRef()).ref();
+    auto  float_array = doc.createArray(builder.floatTypeRef()).ref();
+    auto  string_array = doc.createArray(builder.stringTypeRef()).ref();
+    auto  int_wset = doc.createWset(builder.intTypeRef()).ref();
+    auto  float_wset = doc.createWset(builder.floatTypeRef()).ref();
+    auto  string_wset = doc.createWset(builder.stringTypeRef()).ref();
     // Create self-referencing type (reference to testdoc itself)
     auto ref_type = doc.referenceType(doc.idx());
     doc.addField("int", builder.intTypeRef())
@@ -109,7 +111,9 @@ std::unique_ptr<DocumentTypeRepo> makeDocumentTypeRepo() {
         .addField("wsfloat", float_wset)
         .addField("wsstring", string_wset)
         .addField("ref", ref_type);
-    doc.addTensorField("dense_tensor", "tensor(x[2])").addTensorField("sparse_tensor", "tensor(x{})");
+    doc.addTensorField("dense_tensor", "tensor(x[2])")
+        .addTensorField("quantized_tensor", "tensor(x[2])")
+        .addTensorField("sparse_tensor", "tensor(x{})");
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
@@ -448,9 +452,15 @@ TEST(AttributeUpdaterTest, require_that_weighted_set_attributes_are_updated) {
 }
 
 template <typename TensorAttributeType>
-std::unique_ptr<TensorAttributeType> makeTensorAttribute(const std::string& name, const std::string& tensorType) {
+std::unique_ptr<TensorAttributeType> makeTensorAttribute(const std::string& name, const std::string& tensorType,
+                                                         bool quantized) {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
-    cfg.setTensorType(ValueType::from_spec(tensorType));
+    if (!quantized) {
+        cfg.setTensorType(ValueType::from_spec(tensorType));
+    } else {
+        cfg.set_tensor_type_with_quantization(ValueType::from_spec(tensorType),
+                                              search::test::mse_4bit_quantization_params());
+    }
     auto result = std::make_unique<TensorAttributeType>(name, cfg);
     result->addReservedDoc();
     result->addDocs(1);
@@ -475,27 +485,38 @@ std::unique_ptr<TensorFieldValue> makeTensorFieldValue(const TensorSpec& spec) {
     return result;
 }
 
-template <typename TensorAttributeType> struct TensorFixture : public Fixture {
+template <typename TensorAttributeType>
+struct TensorFixture : public Fixture {
     std::string                          type;
     std::unique_ptr<TensorAttributeType> attribute;
 
-    TensorFixture(const std::string& type_, const std::string& name)
-        : type(type_), attribute(makeTensorAttribute<TensorAttributeType>(name, type)) {}
+    TensorFixture(const std::string& type_, const std::string& name, bool quantized = false)
+        : type(type_), attribute(makeTensorAttribute<TensorAttributeType>(name, type, quantized)) {}
     ~TensorFixture();
 
     void setTensor(const TensorSpec& spec) {
         auto tensor = makeTensor(spec);
-        attribute->setTensor(1, *tensor);
+        if (!attribute->is_quantized()) {
+            attribute->setTensor(1, *tensor);
+        } else {
+            attribute->setTensor(1, *attribute->make_quantizer()->quantize(*tensor));
+        }
         attribute->commit();
     }
 
     void assertTensor(const TensorSpec& expSpec) {
-        auto actual = spec_from_value(*attribute->getTensor(1));
+        auto tensor = attribute->getTensor(1);
+        ASSERT_TRUE(tensor);
+        if (attribute->is_quantized()) {
+            tensor = attribute->make_dequantizer()->dequantize(*tensor);
+        }
+        auto actual = spec_from_value(*tensor);
         EXPECT_EQ(expSpec, actual);
     }
 };
 
-template <typename TensorAttributeType> TensorFixture<TensorAttributeType>::~TensorFixture() = default;
+template <typename TensorAttributeType>
+TensorFixture<TensorAttributeType>::~TensorFixture() = default;
 
 TEST(AttributeUpdaterTest, require_that_tensor_modify_update_is_applied) {
     TensorFixture<DenseTensorAttribute> f("tensor(x[2])", "dense_tensor");
@@ -540,6 +561,29 @@ TEST(AttributeUpdaterTest, require_that_tensor_remove_update_is_applied) {
         *f.attribute, 1,
         std::make_unique<TensorRemoveUpdate>(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "b"}}, 1))));
     f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
+}
+
+// The AttributeUpdater must not apply partial updates directly to quantized tensor attributes,
+// as the "read" part of a read-modify-write operation would operate on lossy information, thus
+// causing precision to go down for each subsequent operation. I.e. quantized attributes do not
+// contain source of truth information.
+// Instead, quantized tensors updates must be handled on a higher level by converting them to
+// _document store_-level read-modify-writes, followed by an attribute put. This ensures the
+// update takes in the full precision data and also ensures the attribute is in sync with what's
+// in the doc store.
+TEST(AttributeUpdaterTest, partial_updates_to_quantized_tensors_are_ignored) {
+    TensorFixture<DenseTensorAttribute> f("tensor(x[2])", "quantized_tensor", true);
+    auto                                orig_spec = TensorSpec(f.type).add({{"x", 0}}, 3).add({{"x", 1}}, 5);
+    f.setTensor(orig_spec);
+    f.applyValueUpdate(*f.attribute, 1,
+                       std::make_unique<TensorModifyUpdate>(
+                           TensorModifyUpdate::Operation::ADD,
+                           makeTensorFieldValue(TensorSpec("tensor(x[2])").add({{"x", 1}}, 3)), 0.0));
+    // Send orig_spec through the tumble drier to get the expected dequantized representation
+    // of the initially fed tensor (_not_ the one that that is updated).
+    auto quant_spec = spec_from_value(*f.attribute->make_dequantizer()->dequantize(
+        *f.attribute->make_quantizer()->quantize(*makeTensor(orig_spec))));
+    f.assertTensor(quant_spec);
 }
 
 } // namespace attribute_updater_test
