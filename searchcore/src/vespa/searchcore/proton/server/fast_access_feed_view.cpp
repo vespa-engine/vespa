@@ -32,7 +32,7 @@ void FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentI
 
 void FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc,
                                           const OnOperationDoneType& onWriteDone) {
-    if (_attributeWriter->hasStructFieldAttribute()) {
+    if (_attributeWriter->has_non_authoritative_attribute()) {
         const std::unique_ptr<const Document>& doc = futureDoc.get();
         if (doc) {
             _attributeWriter->update(serialNum, *doc, lid, onWriteDone);
