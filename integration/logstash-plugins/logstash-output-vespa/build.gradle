@@ -60,7 +60,7 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.22.0'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.22.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.22.1'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
 
     implementation "org.yaml:snakeyaml:${snakeYamlVersion}"
