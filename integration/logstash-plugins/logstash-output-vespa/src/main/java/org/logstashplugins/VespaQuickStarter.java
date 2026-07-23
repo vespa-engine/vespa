@@ -19,7 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 
 import org.logstash.ObjectMappers;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public class VespaQuickStarter {
     private static final Logger logger = LogManager.getLogger(VespaQuickStarter.class);
@@ -207,7 +209,7 @@ public class VespaQuickStarter {
 
         logger.info("Loading type mappings from {}", source);
         try (InputStream is = mappingStream) {
-            Yaml yaml = new Yaml();
+            Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
             Map<String, List<String>> typeConfigs = yaml.load(is);
             
             Map<String, List<String>> mappings = new HashMap<>();
