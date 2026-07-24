@@ -204,15 +204,6 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
     );
 
-    public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
-            "restart-on-deploy-maintainer", true,
-            List.of("glebashnik"), "2026-04-07", "2026-10-07",
-            "When enabled, RestartOnDeployMaintainer is used instead of PendingRestartsMaintainer " +
-                    "to trigger pending restarts.",
-            "Takes effect at next run of RestartOnDeployMaintainer and PendingRestartsMaintainer.",
-            INSTANCE_ID
-    );
-
     public static final UnboundIntFlag METRICS_PROXY_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-heap-size-in-mib", 0,
             List.of("hmusum"), "2026-04-29", "2026-09-01",
