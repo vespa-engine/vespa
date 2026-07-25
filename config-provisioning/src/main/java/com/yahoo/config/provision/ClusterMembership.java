@@ -131,6 +131,10 @@ public class ClusterMembership {
         return new ClusterMembership(newCluster, index, retired);
     }
 
+    public ClusterMembership withGroup(int group) {
+        return with(cluster.with(Optional.of(ClusterSpec.Group.from(group))));
+    }
+
     /**
      * Returns all the information in this as a string which can be used to construct the same ClusterMembership
      * instance using {@link #from}. This string is currently stored in ZooKeeper on running instances.
