@@ -8,11 +8,9 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionContext;
-import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 
 import java.util.List;
-
 
 /**
  * A wrapper for {@link Provisioner} to avoid having to expose multitenant
