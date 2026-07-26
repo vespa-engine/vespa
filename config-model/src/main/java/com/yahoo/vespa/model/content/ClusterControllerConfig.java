@@ -118,7 +118,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                        .logApplicationPackage(INFO, "Coverage policy is '" + coveragePolicy.name().toLowerCase(java.util.Locale.ROOT) +
                                "', but with 2 groups in the cluster all load will be placed on 1 group when the" +
                                " other group is allowed to be down when doing maintenance or upgrades." +
-                               " This might lead to overload. See https://docs.vespa.ai/en/reference/services/content.html#coverage-policy.");
+                               " This might lead to overload. See https://docs.vespa.ai/en/reference/applications/services/content.html#coverage-policy.");
         }
 
         if (tuning != null) {

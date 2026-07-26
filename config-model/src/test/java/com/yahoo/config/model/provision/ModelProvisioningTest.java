@@ -2317,7 +2317,7 @@ public class ModelProvisioningTest {
         assertEquals("Coverage policy is 'group', but with 2 groups in the cluster all load" +
                              " will be placed on 1 group when the other group" +
                              " is allowed to be down when doing maintenance or upgrades." +
-                             " This might lead to overload. See https://docs.vespa.ai/en/reference/services/content.html#coverage-policy.",
+                             " This might lead to overload. See https://docs.vespa.ai/en/reference/applications/services/content.html#coverage-policy.",
                      logger.entries.get(0).message);
     }
 
