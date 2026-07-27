@@ -11,7 +11,6 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -86,10 +85,6 @@ public class DeployTester {
 
     public Tenant tenant(ApplicationId applicationId) {
         return tenantRepository.getTenant(applicationId.tenant());
-    }
-
-    public Provisioned provisioned() {
-        return applicationRepository().getActiveApplicationVersions(applicationId()).get().applications().get(0).getModel().provisioned();
     }
 
     /** Create a model factory for the version of this source*/

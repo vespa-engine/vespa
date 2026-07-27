@@ -27,7 +27,6 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -677,11 +676,10 @@ public class HostedDeployTest {
                                              .provisioner(new MockProvisioner().hostProvisioner(provisionerRegion1))
                                              .build();
         testerRegion1.deployApp("src/test/apps/availability-zones/", new PrepareParams.Builder().vespaVersion("4.5.6"));
-
-        assertEquals("[az1, az2]", testerRegion1.provisioned().clusters()
-                                                .get(ClusterSpec.Id.from("container")).availabilityZones().toString());
-        assertEquals("[az1, az2]", testerRegion1.provisioned().clusters()
-                                                .get(ClusterSpec.Id.from("test")).availabilityZones().toString());
+        assertEquals("[az1, az2]", provisionerRegion1.provisioned().clusters()
+                                                     .get(ClusterSpec.Id.from("container")).availabilityZones().toString());
+        assertEquals("[az1, az2]", provisionerRegion1.provisioned().clusters()
+                                                     .get(ClusterSpec.Id.from("test")).availabilityZones().toString());
 
         var zone2 = new Zone(Environment.prod, RegionName.from("region2"));
         var provisionerRegion2 = new InMemoryProvisioner(10, false);
@@ -692,10 +690,10 @@ public class HostedDeployTest {
                                              .provisioner(new MockProvisioner().hostProvisioner(provisionerRegion2))
                                              .build();
         testerRegion2.deployApp("src/test/apps/availability-zones/", new PrepareParams.Builder().vespaVersion("4.5.6"));
-        assertEquals("[az3]", testerRegion2.provisioned().clusters()
-                                           .get(ClusterSpec.Id.from("container")).availabilityZones().toString());
-        assertEquals("[az3]", testerRegion2.provisioned().clusters()
-                                           .get(ClusterSpec.Id.from("test")).availabilityZones().toString());
+        assertEquals("[az3]", provisionerRegion2.provisioned().clusters()
+                                                .get(ClusterSpec.Id.from("container")).availabilityZones().toString());
+        assertEquals("[az3]", provisionerRegion2.provisioned().clusters()
+                                                .get(ClusterSpec.Id.from("test")).availabilityZones().toString());
     }
 
     /** Create the given number of hosts using the supplied versions--the last version is repeated as needed. */

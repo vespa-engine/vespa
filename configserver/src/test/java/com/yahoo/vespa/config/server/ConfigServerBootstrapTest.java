@@ -73,12 +73,8 @@ public class ConfigServerBootstrapTest {
         tester.deployApp("src/test/apps/hosted/");
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        // Take a host away (from a cluster having multiple)
-        // so that there are too few for the application, to verify we can still bootstrap
-        provisioner.allocations().entrySet().stream()
-                   .filter(entry -> entry.getKey().id().value().equals("music"))
-                   .findFirst().orElseThrow()
-                   .getValue().remove(0);
+        // Take a host away so that there are too few for the application, to verify we can still bootstrap
+        provisioner.allocations().values().iterator().next().remove(0);
         Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
         assertTrue(bootstrap.isUpgraded());
         assertEquals(List.of("ApplicationPackageMaintainer", "TenantsMaintainer"),
