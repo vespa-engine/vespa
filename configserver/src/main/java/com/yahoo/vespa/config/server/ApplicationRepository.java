@@ -21,6 +21,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterHosts;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
@@ -1034,7 +1035,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
             transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
             if (applicationTransaction.isPresent()) {
-                hostProvisioner.get().activate(session.getAllocatedHosts().getHosts(),
+                var hosts = session.getAllocatedHosts().getHosts();
+                // TODO: Get ClusterSpecs from application package
+                var hostsByCluster = hosts.stream().collect(Collectors.groupingBy(host -> host.membership().get().id()));
+                var clusterHosts = hostsByCluster.values().stream()
+                                                 .map(hostsInCluster -> new ClusterHosts(hostsInCluster.get(0).membership().get().cluster(),
+                                                                                         hostsInCluster))
+                                                 .toList();
+                hostProvisioner.get().activate(clusterHosts,
                                                new ActivationContext(session.getSessionId(), isBootstrap),
                                                applicationTransaction.get());
                 applicationTransaction.get().nested().commit();

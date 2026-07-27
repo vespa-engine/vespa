@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.BackupConfig;
 import com.yahoo.config.provision.BlockWindow;
+import com.yahoo.config.provision.ClusterHosts;
 import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -361,7 +362,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             try (ApplicationMutex lock = provisioner.get().lock(session.getApplicationId())) {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
                 ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
-                provisioner.get().activate(preparedHosts, context, transaction);
+                // TODO: Get ClusterSpecs from application package
+                var hostsByCluster = preparedHosts.stream().collect(Collectors.groupingBy(host -> host.membership().get().id()));
+                var clusterHosts = hostsByCluster.values().stream()
+                                                 .map(hostsInCluster -> new ClusterHosts(hostsInCluster.get(0).membership().get().cluster(),
+                                                                                         hostsInCluster))
+                                                 .toList();
+                provisioner.get().activate(clusterHosts, context, transaction);
                 return;
             } catch (ApplicationLockException | TransientException e) {
                 lastException.set(e);
