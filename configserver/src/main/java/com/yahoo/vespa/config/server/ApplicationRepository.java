@@ -1039,8 +1039,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
             if (applicationTransaction.isPresent()) {
                 var hostsByCluster = session.getAllocatedHosts().getHostsByCluster();
-                if (clusters == null) // TODO: Remove
-                    clusters = hostsByCluster.values().stream().map(h -> h.get(0).membership().get().cluster()).toList();
                 var clusterHosts = clusters.stream().map(cluster -> new ClusterHosts(cluster, hostsByCluster.get(cluster.id()))).toList();
                 hostProvisioner.get().activate(clusterHosts,
                                                new ActivationContext(session.getSessionId(), isBootstrap),
