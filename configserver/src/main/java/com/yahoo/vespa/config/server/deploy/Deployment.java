@@ -13,6 +13,8 @@ import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.BackupConfig;
 import com.yahoo.config.provision.BlockWindow;
+import com.yahoo.config.provision.ClusterHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -42,7 +44,9 @@ import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -140,15 +144,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (sessionAlreadyActive(session))
             return configGeneration();
 
+        Collection<ClusterSpec> clusters = getClustersFromModel();
         PrepareParams prepareParams = params.get();
-        waitForResourcesOrTimeout(prepareParams, session, provisioner);
+        waitForResourcesOrTimeout(clusters, prepareParams, session, provisioner);
 
         var applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, ConfigServerMetrics.DEPLOYMENT_ACTIVATE_MILLIS.baseName())) {
             var timeoutBudget = prepareParams.getTimeoutBudget().assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
             applyDeferredReconfigurationOfClusters();
-            var activation = applicationRepository.activate(session, applicationId, prepareParams.isBootstrap(), prepareParams.force());
+            var activation = applicationRepository.activate(session, applicationId, clusters, prepareParams.isBootstrap(), prepareParams.force());
             waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId);
@@ -156,6 +161,14 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             return configGeneration();
         }
+    }
+
+    /** Returns the clusters built by this model, recorded during model building */
+    private Collection<ClusterSpec> getClustersFromModel() {
+        var applicationVersions = sessionRepository().ensureApplicationLoaded(sessionRepository().getRemoteSession(session.getSessionId()));
+        return applicationVersions.get(session.getVespaVersion())
+                                  .map(Application::getModel).map(model -> model.provisioned().clusters().values())
+                                  .orElse(List.of());
     }
 
     private void waitForActivation(ApplicationId applicationId, TimeoutBudget timeoutBudget, Activation activation) {
@@ -346,10 +359,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         });
     }
 
-    private static void waitForResourcesOrTimeout(PrepareParams params, Session session, Optional<Provisioner> provisioner) {
+    private void waitForResourcesOrTimeout(Collection<ClusterSpec> clusters,
+                                           PrepareParams params,
+                                           Session session,
+                                           Optional<Provisioner> provisioner) {
         if (!params.waitForResourcesInPrepare() || provisioner.isEmpty()) return;
 
-        Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
+        Map<ClusterSpec.Id, List<HostSpec>> hostsByCluster = session.getAllocatedHosts().getHostsByCluster();
         ActivationContext context = new ActivationContext(session.getSessionId(), params.isBootstrap());
         AtomicReference<Exception> lastException = new AtomicReference<>();
 
@@ -361,7 +377,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             try (ApplicationMutex lock = provisioner.get().lock(session.getApplicationId())) {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
                 ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
-                provisioner.get().activate(preparedHosts, context, transaction);
+                var clusterHosts = clusters.stream().map(cluster -> new ClusterHosts(cluster, hostsByCluster.get(cluster.id()))).toList();
+                provisioner.get().activate(clusterHosts, context, transaction);
                 return;
             } catch (ApplicationLockException | TransientException e) {
                 lastException.set(e);
