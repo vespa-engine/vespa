@@ -261,7 +261,9 @@ public class TenantApplicationsTest {
     }
 
     private Thread setupWaiter(TenantApplications applications) {
-        Curator.CompletionWaiter waiter = applications.getRemoveApplicationWaiter(createApplicationId());
+        long sessionId = 1L;
+        applications.createRemoveApplicationWaiter(sessionId);
+        Curator.CompletionWaiter waiter = applications.getRemoveApplicationWaiter(sessionId);
         Thread t1 = new Thread(() -> {
             try {
                 waiter.awaitCompletion(Duration.ofSeconds(120));
@@ -274,9 +276,9 @@ public class TenantApplicationsTest {
     }
 
     private void notifyCompletion(TenantApplications applications, int respondentCount) {
+        long sessionId = 1L;
         IntStream.range(0, respondentCount)
-                 .forEach(i -> applications.createRemoveApplicationWaiter(createApplicationId())
-                                           .notifyCompletion());
+                 .forEach(i -> applications.getRemoveApplicationWaiter(sessionId).notifyCompletion());
     }
 
     private TenantApplications createZKAppRepo() {
@@ -285,10 +287,6 @@ public class TenantApplicationsTest {
 
     private TenantApplications createZKAppRepo(InMemoryFlagSource flagSource) {
         return createTenantApplications(tenantName, curator, configserverConfig, new MockConfigActivationListener(), flagSource);
-    }
-
-    private static ApplicationId createApplicationId() {
-        return createApplicationId("foo");
     }
 
     private static ApplicationId createApplicationId(String name) {
