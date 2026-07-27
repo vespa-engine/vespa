@@ -31,13 +31,4 @@ public class Provisioned {
     /** Returns an unmodifiable map of all the capacity provision requests recorded during build of the model this belongs to */
     public Map<ClusterSpec.Id, Capacity> capacities() { return Collections.unmodifiableMap(capacities); }
 
-    // TODO: Remove after June 2024
-    public void add(ClusterSpec.Id id, Capacity capacity) {
-        capacities.put(id, capacity);
-    }
-
-    /** Returns an unmodifiable map of all the provision requests recorded during build of the model this belongs to */
-    // TODO: Remove after June 2024
-    public Map<ClusterSpec.Id, Capacity> all() { return Collections.unmodifiableMap(capacities); }
-
 }
