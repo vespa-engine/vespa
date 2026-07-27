@@ -2,7 +2,10 @@
 package com.yahoo.config.provision;
 
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The hosts allocated to an application.
@@ -24,7 +27,12 @@ public class AllocatedHosts {
 
     /** Returns the hosts of this allocation */
     public Set<HostSpec> getHosts() { return hosts; }
-    
+
+    /** Returns the hosts of this allocation grouped by their cluster */
+    public Map<ClusterSpec.Id, List<HostSpec>> getHostsByCluster() {
+        return hosts.stream().collect(Collectors.groupingBy(host -> host.membership().get().id()));
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) return true;
