@@ -28,6 +28,7 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ConfigStateChecker;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareAndActivateResult;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
@@ -284,6 +285,7 @@ public class DeployTester {
         private List<ModelFactory> modelFactories;
         private FlagSource flagSource = new InMemoryFlagSource();
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker(flagSource);
+        private ConfigStateChecker configStateChecker = new ConfigStateChecker();
         private DeploymentConfigStore deploymentConfigStore;
 
         public Builder(TemporaryFolder temporaryFolder) {
@@ -325,6 +327,7 @@ public class DeployTester {
                     .withConfigserverConfig(configserverConfig)
                     .withClock(clock)
                     .withConfigConvergenceChecker(configConvergenceChecker)
+                    .withConfigStateChecker(configStateChecker)
                     .withFlagSource(flagSource)
                     .withDeploymentConfigStore(Optional.ofNullable(deploymentConfigStore))
                     .build();
@@ -382,6 +385,11 @@ public class DeployTester {
 
         public Builder configConvergenceChecker(ConfigConvergenceChecker configConvergenceChecker) {
             this.configConvergenceChecker = configConvergenceChecker;
+            return this;
+        }
+
+        public Builder configStateChecker(ConfigStateChecker configStateChecker) {
+            this.configStateChecker = configStateChecker;
             return this;
         }
 

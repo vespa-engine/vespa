@@ -89,7 +89,7 @@ public class ConfigServerBootstrapTest {
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
         assertEquals(List.of("ApplicationPackageMaintainer", "FileDistributionMaintainer", "HostRegistryMaintainer",
-                             "PendingRestartsMaintainer", "ReindexingMaintainer", "RestartOnDeployMaintainer",
+                             "ReindexingMaintainer", "RestartOnDeployMaintainer",
                              "SessionsMaintainer", "TenantsMaintainer"),
                      bootstrap.configServerMaintenance().maintainers().stream()
                               .map(Maintainer::name)
