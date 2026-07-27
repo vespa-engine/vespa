@@ -160,7 +160,6 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionContext context) {
-        provisioned.add(cluster, requested);
         clusters.add(cluster);
         if (environment == Environment.dev && ! requested.isRequired()) {
             requested = requested.withLimits(requested.minResources().withNodes(1),

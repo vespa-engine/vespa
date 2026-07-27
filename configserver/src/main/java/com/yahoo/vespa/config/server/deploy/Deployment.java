@@ -83,7 +83,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Clock clock;
 
     private boolean prepared;
-    private ConfigChangeActions     configChangeActions;
+    private ConfigChangeActions configChangeActions;
 
     private Deployment(Session session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
                        Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
