@@ -226,6 +226,7 @@ org.mockito:mockito-core:${mockito.vespa.version}
 org.mockito:mockito-junit-jupiter:${mockito.vespa.version}
 org.objenesis:objenesis:3.3
 org.opentest4j:opentest4j:${opentest4j.vespa.version}
+org.osgi:osgi.annotation:8.1.0
 org.ow2.asm:asm-analysis:${asm.vespa.version}
 org.ow2.asm:asm-commons:${asm.vespa.version}
 org.ow2.asm:asm-tree:${asm.vespa.version}
