@@ -14,6 +14,7 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.BackupConfig;
 import com.yahoo.config.provision.BlockWindow;
 import com.yahoo.config.provision.ClusterHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -43,7 +44,9 @@ import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -80,11 +83,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Clock clock;
 
     private boolean prepared;
-    private ConfigChangeActions configChangeActions;
+    /** The prepared clusters, or null if not prepared yet, or if not known (TODO: Make them always known) */
+    private Collection<ClusterSpec> clusters = null;
+    private ConfigChangeActions     configChangeActions;
 
     private Deployment(Session session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
                        Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
-                       DeployLogger deployLogger, Clock clock, boolean prepared) {
+                       DeployLogger deployLogger, Clock clock, boolean prepared, Collection<ClusterSpec> clusters) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.params = params;
@@ -93,12 +98,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.deployLogger = deployLogger;
         this.clock = clock;
         this.prepared = prepared;
+        this.clusters = clusters;
     }
 
     public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
                                         PrepareParams params, DeployLogger logger, Clock clock) {
-        return new Deployment(session, applicationRepository, () -> params, provisioner, deploymentConfigStore, logger, clock, false);
+        return new Deployment(session, applicationRepository, () -> params, provisioner, deploymentConfigStore, logger, clock, false, null);
     }
 
     public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
@@ -106,14 +112,14 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                         DeployLogger logger,
                                         Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, true, isBootstrap, !validate, false, true);
-        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, logger, clock, false);
+        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, logger, clock, false, null);
     }
 
     public static Deployment prepared(Session session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
                                       DeployLogger logger, Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, false, isBootstrap, false, force, false);
-        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, logger, clock, true);
+        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, logger, clock, true, null);
     }
 
     /** Prepares this. This does nothing if this is already prepared */
@@ -149,7 +155,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             var timeoutBudget = prepareParams.getTimeoutBudget().assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
             applyDeferredReconfigurationOfClusters();
-            var activation = applicationRepository.activate(session, applicationId, prepareParams.isBootstrap(), prepareParams.force());
+            var activation = applicationRepository.activate(session, applicationId, clusters, prepareParams.isBootstrap(), prepareParams.force());
             waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId);
@@ -347,10 +353,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         });
     }
 
-    private static void waitForResourcesOrTimeout(PrepareParams params, Session session, Optional<Provisioner> provisioner) {
+    private void waitForResourcesOrTimeout(PrepareParams params, Session session, Optional<Provisioner> provisioner) {
         if (!params.waitForResourcesInPrepare() || provisioner.isEmpty()) return;
 
-        Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
+        Map<ClusterSpec.Id, List<HostSpec>> hostsByCluster = session.getAllocatedHosts().getHostsByCluster();
         ActivationContext context = new ActivationContext(session.getSessionId(), params.isBootstrap());
         AtomicReference<Exception> lastException = new AtomicReference<>();
 
@@ -362,12 +368,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             try (ApplicationMutex lock = provisioner.get().lock(session.getApplicationId())) {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
                 ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
-                // TODO: Get ClusterSpecs from application package
-                var hostsByCluster = preparedHosts.stream().collect(Collectors.groupingBy(host -> host.membership().get().id()));
-                var clusterHosts = hostsByCluster.values().stream()
-                                                 .map(hostsInCluster -> new ClusterHosts(hostsInCluster.get(0).membership().get().cluster(),
-                                                                                         hostsInCluster))
-                                                 .toList();
+                if (clusters == null) // TODO: Remove
+                    clusters = hostsByCluster.values().stream().map(h -> h.get(0).membership().get().cluster()).toList();
+                var clusterHosts = clusters.stream().map(cluster -> new ClusterHosts(cluster, hostsByCluster.get(cluster.id()))).toList();
                 provisioner.get().activate(clusterHosts, context, transaction);
                 return;
             } catch (ApplicationLockException | TransientException e) {

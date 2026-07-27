@@ -22,6 +22,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
@@ -119,6 +120,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -1022,7 +1024,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-    public Activation activate(Session session, ApplicationId applicationId, boolean isBootstrap, boolean force) {
+    public Activation activate(Session session, ApplicationId applicationId, Collection<ClusterSpec> clusters,
+                               boolean isBootstrap, boolean force) {
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
@@ -1035,13 +1038,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
             transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
             if (applicationTransaction.isPresent()) {
-                var hosts = session.getAllocatedHosts().getHosts();
-                // TODO: Get ClusterSpecs from application package
-                var hostsByCluster = hosts.stream().collect(Collectors.groupingBy(host -> host.membership().get().id()));
-                var clusterHosts = hostsByCluster.values().stream()
-                                                 .map(hostsInCluster -> new ClusterHosts(hostsInCluster.get(0).membership().get().cluster(),
-                                                                                         hostsInCluster))
-                                                 .toList();
+                var hostsByCluster = session.getAllocatedHosts().getHostsByCluster();
+                if (clusters == null) // TODO: Remove
+                    clusters = hostsByCluster.values().stream().map(h -> h.get(0).membership().get().cluster()).toList();
+                var clusterHosts = clusters.stream().map(cluster -> new ClusterHosts(cluster, hostsByCluster.get(cluster.id()))).toList();
                 hostProvisioner.get().activate(clusterHosts,
                                                new ActivationContext(session.getSessionId(), isBootstrap),
                                                applicationTransaction.get());
