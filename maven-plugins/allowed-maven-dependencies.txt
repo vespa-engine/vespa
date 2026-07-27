@@ -63,6 +63,7 @@ org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.jdom:jdom2:2.0.6.1
+org.jspecify:jspecify:1.0.0
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}
 org.junit.jupiter:junit-jupiter-engine:${junit.vespa.version}
 org.junit.jupiter:junit-jupiter-params:${junit.vespa.version}
