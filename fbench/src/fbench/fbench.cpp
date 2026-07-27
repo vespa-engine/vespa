@@ -22,6 +22,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
+#include <string_view>
 
 namespace {
 
@@ -37,6 +38,26 @@ std::string maybe_load(const std::string& file_name, bool& failed) {
         }
     }
     return content;
+}
+
+constexpr char ascii_lower(char c) noexcept {
+    if (c >= 'A' && c <= 'Z') {
+        return static_cast<char>(c + ('a' - 'A'));
+    }
+    return c;
+}
+
+// case-insensitive
+bool starts_with_icase(std::string_view text, std::string_view prefix) noexcept {
+    if (text.size() < prefix.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < prefix.size(); i++) {
+        if (ascii_lower(text[i]) != ascii_lower(prefix[i])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace
@@ -346,12 +367,12 @@ int FBench::Main(int argc, char* argv[]) {
             authority = optarg;
             break;
         case 'H':
-            if (strncmp(optarg, "Content-type:", 13) == 0) {
+            if (starts_with_icase(optarg, "Content-type:")) {
                 content_type = optarg;
             } else {
                 extraHeaders += std::string(optarg) + "\r\n";
             }
-            if (strncmp(optarg, "Host:", 5) == 0) {
+            if (starts_with_icase(optarg, "Host:")) {
                 fprintf(stderr, "Do not override 'Host:' header, use -A option instead\n");
                 return -1;
             }
