@@ -119,7 +119,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 fileRegistry,
                 executor,
                 new ApplicationCuratorDatabase(applicationId.tenant(), curator, configserverConfig).readReindexingStatus(applicationId),
-                createHostProvisioner(applicationPackage, provisioned),
+                createHostProvisioner(applicationPackage),
                 provisioned,
                 createModelContextProperties(modelFactory.version(), applicationPackage),
                 getAppDir(applicationPackage),
@@ -152,9 +152,9 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         return activeApplicationVersions.get().get(version).map(Application::getModel);
     }
 
-    private HostProvisioner createHostProvisioner(ApplicationPackage applicationPackage, Provisioned provisioned) {
+    private HostProvisioner createHostProvisioner(ApplicationPackage applicationPackage) {
         // Note: nodeRepositoryProvisioner will always be present when hosted is true
-        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(params.getApplicationId(), provisioned);
+        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(params.getApplicationId());
         Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
 
         if (hosted) {
