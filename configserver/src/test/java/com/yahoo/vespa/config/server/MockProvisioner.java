@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -53,7 +54,7 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
-    public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
+    public void activate(List<ClusterHosts> hosts, ActivationContext context, ApplicationTransaction transaction) {
         if (activationFailure != null) {
             RuntimeException toThrow = activationFailure;
             activationFailure = null;
