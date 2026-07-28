@@ -21,8 +21,8 @@ public class Provisioned {
     private final Map<ClusterSpec.Id, Capacity> capacities = new HashMap<>();
 
     public void add(ClusterSpec cluster, Capacity capacity) {
-        clusters.put(cluster.id(), cluster);
-        capacities.put(cluster.id(), capacity);
+        clusters.putIfAbsent(cluster.id(), cluster);
+        capacities.putIfAbsent(cluster.id(), capacity);
     }
 
     /** Returns an unmodifiable map of all the cluster requests recorded during build of the model this belongs to */

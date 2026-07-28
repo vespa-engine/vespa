@@ -602,7 +602,8 @@ public class SessionRepository {
                                                                 session.getVersionToBuildFirst(),
                                                                 sessionZooKeeperClient.loadApplicationPackage(),
                                                                 new AllocatedHostsFromAllModels(),
-                                                                clock.instant()));
+                                                                clock.instant()),
+                                            builder.provisioned());
     }
 
     private void nodeChanged() {

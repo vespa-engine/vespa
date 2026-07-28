@@ -64,6 +64,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
     private final List<EndpointCertificateSecretStore> endpointCertificateSecretStores;
+    private final Provisioned provisioned;
 
     public ActivatedModelsBuilder(TenantName tenant,
                                   long applicationGeneration,
@@ -92,6 +93,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.executor = executor;
         this.onnxModelCost = onnxModelCost;
         this.endpointCertificateSecretStores = endpointCertificateSecretStores;
+        this.provisioned = new Provisioned();
     }
 
     @Override
@@ -103,7 +105,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         log.log(Level.FINE, () -> Text.format("Loading model version %s for session %s application %s",
                                                 modelFactory.version(), applicationGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId, modelFactory.version(), applicationPackage);
-        Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 modelOf(modelFactory.version()),
@@ -129,6 +130,12 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                applicationMetricUpdater,
                                applicationId);
     }
+
+    /**
+     * All the clusters provisioned by all model versions built by this
+     * (those built first prioritized when multiple build the same).
+     */
+    public Provisioned provisioned() { return provisioned; }
 
     private Optional<Model> modelOf(Version version) {
         if (activeApplicationVersions.isEmpty()) return Optional.empty();

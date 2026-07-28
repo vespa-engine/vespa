@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -156,12 +157,13 @@ public class TenantApplicationsTest {
                                                                    .properties(new TestProperties())
                                                                    .applicationPackage(FilesApplicationPackage.fromDir(new File("src/test/apps/app"), Map.of()))
                                                                    .build());
-        return ApplicationVersions.from(new Application(model,
-                                                        new ServerCache(),
-                                                        1,
-                                                        Version.emptyVersion,
-                                                        MetricUpdater.createTestUpdater(),
-                                                        id));
+        return ApplicationVersions.fromList(List.of(new Application(model,
+                                                                    new ServerCache(),
+                                                                    1,
+                                                                    Version.emptyVersion,
+                                                                    MetricUpdater.createTestUpdater(),
+                                                                    id)),
+                                                    new Provisioned());
     }
 
     @Test
@@ -216,13 +218,15 @@ public class TenantApplicationsTest {
         ApplicationId applicationId = ApplicationId.defaultId();
         applications.createApplication(applicationId);
         writeActiveTransaction(applications, applicationId, 1);
-        applications.activateApplication(ApplicationVersions.from(new Application(model,
-                                                                                  new ServerCache(),
-                                                                                  1,
-                                                                                  vespaVersion,
-                                                                                  MetricUpdater.createTestUpdater(),
-                                                                                  applicationId)),
+        applications.activateApplication(ApplicationVersions.fromList(List.of(new Application(model,
+                                                                                              new ServerCache(),
+                                                                                              1,
+                                                                                              vespaVersion,
+                                                                                              MetricUpdater.createTestUpdater(),
+                                                                                              applicationId)),
+                                                                      new Provisioned()),
                                          1);
+
         Set<ConfigKey<?>> configNames = applications.listConfigs(applicationId, Optional.of(vespaVersion), false);
         assertTrue(configNames.contains(new ConfigKey<>("sentinel", "hosts", "cloud.config")));
 

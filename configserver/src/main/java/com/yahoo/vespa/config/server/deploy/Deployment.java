@@ -166,9 +166,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     /** Returns the clusters built by this model, recorded during model building */
     private Collection<ClusterSpec> getClustersFromModel() {
         var applicationVersions = sessionRepository().ensureApplicationLoaded(sessionRepository().getRemoteSession(session.getSessionId()));
-        return applicationVersions.get(session.getVespaVersion())
-                                  .map(Application::getModel).map(model -> model.provisioned().clusters().values())
-                                  .orElse(List.of());
+        return applicationVersions.provisioned().clusters().values();
     }
 
     private void waitForActivation(ApplicationId applicationId, TimeoutBudget timeoutBudget, Activation activation) {
