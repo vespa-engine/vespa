@@ -268,7 +268,7 @@ public class SessionRepository {
         });
 
         ApplicationId applicationId = params.getApplicationId();
-        tenantApplications.createApplication(applicationId); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
+        tenantApplications.createApplication(applicationId); // TODO: Preparation can change the application ID of a session (?)
         logger.log(Level.FINE, "Created application " + applicationId);
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
