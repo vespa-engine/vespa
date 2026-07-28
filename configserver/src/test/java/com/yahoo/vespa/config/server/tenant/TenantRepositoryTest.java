@@ -7,7 +7,6 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.api.OnnxModelCost;
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -113,13 +112,12 @@ public class TenantRepositoryTest {
         try (var transaction = new CuratorTransaction(curator)) {
             applicationRepo.createWriteActiveTransaction(transaction, id, 4).commit();
         }
-        applicationRepo.activateApplication(ApplicationVersions.fromList(List.of(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
-                                                                                                 new ServerCache(),
-                                                                                                 4L,
-                                                                                                 new Version(1, 2, 3),
-                                                                                                 MetricUpdater.createTestUpdater(),
-                                                                                                 id)),
-                                                                         new Provisioned()),
+        applicationRepo.activateApplication(ApplicationVersions.from(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
+                                                                                     new ServerCache(),
+                                                                                     4L,
+                                                                                     new Version(1, 2, 3),
+                                                                                     MetricUpdater.createTestUpdater(),
+                                                                                     id)),
                                             4);
         assertEquals(1, listener.activated.get());
     }

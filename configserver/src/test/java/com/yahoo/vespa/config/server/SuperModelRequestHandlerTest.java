@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
@@ -113,12 +112,12 @@ public class SuperModelRequestHandlerTest {
     }
 
     private ApplicationVersions createApp(ApplicationId applicationId, long generation) throws IOException, SAXException {
-        return ApplicationVersions.fromList(List.of(
-                new TestApplication(new VespaModel(FilesApplicationPackage.fromDir(testApp, Map.of())),
-                                    new ServerCache(),
-                                    generation,
-                                    applicationId)),
-                                            new Provisioned());
+        return ApplicationVersions.from(
+                new TestApplication(
+                        new VespaModel(FilesApplicationPackage.fromDir(testApp, Map.of())),
+                        new ServerCache(),
+                        generation,
+                        applicationId));
     }
 
     private static class TestApplication extends Application {
