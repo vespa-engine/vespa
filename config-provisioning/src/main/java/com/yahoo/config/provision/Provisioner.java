@@ -3,7 +3,6 @@ package com.yahoo.config.provision;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Interface used by the config system to acquire hosts.
@@ -11,6 +10,11 @@ import java.util.stream.Collectors;
  * @author Ulf Lilleengen
  */
 public interface Provisioner {
+
+    @Deprecated // Remove after June 2026
+    default List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+        return prepare(applicationId, cluster, capacity, new ProvisionContext.Builder().setLogger(logger).build());
+    }
 
     /**
      * Prepares allocation of a set of hosts with a given type, common id and the amount.
@@ -21,23 +25,12 @@ public interface Provisioner {
      * @param context the context this request is made in
      * @return the specification of the hosts allocated
      */
-    List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context);
+    default List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+        return prepare(applicationId, cluster, capacity, context.provisionLogger());
+    }
 
     /** Activates the allocation of nodes to this application captured in the 'hosts' argument. */
-    // TODO: Remove after August 2026
-    @Deprecated
-    default void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
-        var hostsByCluster = hosts.stream().collect(Collectors.groupingBy(host -> host.membership().get().id()));
-        var clusterHosts = hostsByCluster.values().stream()
-                                         .map(hostsInCluster -> new ClusterHosts(hostsInCluster.get(0).membership().get().cluster(),
-                                                                                 hostsInCluster))
-                                         .toList();
-        activate(clusterHosts, context, transaction);
-    }
-
-    default void activate(List<ClusterHosts> clusterHosts, ActivationContext context, ApplicationTransaction transaction) {
-        activate(clusterHosts.stream().flatMap(cluster -> cluster.hosts().stream()).toList(), context, transaction);
-    }
+    void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction);
 
     /** Transactionally remove an application under lock. */
     void remove(ApplicationTransaction transaction);

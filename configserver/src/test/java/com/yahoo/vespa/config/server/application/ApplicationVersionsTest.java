@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.config.server.ModelStub;
@@ -32,7 +31,7 @@ public class ApplicationVersionsTest {
 
     @Test
     public void testGetForVersionOrLatestReturnsCorrectVersion() {
-        applicationVersions = ApplicationVersions.fromList(applications, new Provisioned());
+        applicationVersions = ApplicationVersions.fromList(applications);
         assertEquals(applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(0)), Instant.now()), applications.get(0));
         assertEquals(applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now()), applications.get(1));
         assertEquals(applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(2)), Instant.now()), applications.get(2));
@@ -40,19 +39,19 @@ public class ApplicationVersionsTest {
 
     @Test
     public void testGetForVersionOrLatestReturnsLatestVersion() {
-        applicationVersions = ApplicationVersions.fromList(applications, new Provisioned());
+        applicationVersions = ApplicationVersions.fromList(applications);
         assertEquals(applicationVersions.getForVersionOrLatest(Optional.empty(), Instant.now()), applications.get(2));
     }
 
     @Test (expected = VersionDoesNotExistException.class)
     public void testGetForVersionOrLatestThrows() {
-        applicationVersions = ApplicationVersions.fromList(List.of(applications.get(0), applications.get(2)), new Provisioned());
+        applicationVersions = ApplicationVersions.fromList(List.of(applications.get(0), applications.get(2)));
         applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now());
     }
 
     @Test
     public void testGetAllVersions() {
-        applicationVersions = ApplicationVersions.fromList(applications, new Provisioned());
+        applicationVersions = ApplicationVersions.fromList(applications);
         assertEquals(List.of(Version.fromString("1.2.3"), Version.fromString("1.2.4"), Version.fromString("1.2.5")),
                      applicationVersions.versions());
     }

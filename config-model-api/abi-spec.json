@@ -1780,7 +1780,9 @@
       "public void <init>()",
       "public void add(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity)",
       "public java.util.Map clusters()",
-      "public java.util.Map capacities()"
+      "public java.util.Map capacities()",
+      "public void add(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.Capacity)",
+      "public java.util.Map all()"
     ],
     "fields" : [ ]
   },
