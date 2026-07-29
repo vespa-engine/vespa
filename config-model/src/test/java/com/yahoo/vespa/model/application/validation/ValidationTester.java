@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -88,7 +87,6 @@ public class ValidationTester {
                                                              String validationOverrides,
                                                              String... containerCluster) {
         Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        Provisioned provisioned = hostProvisioner.startProvisionedRecording();
         ApplicationPackage newApp = new MockApplicationPackage.Builder()
                 .withServices(services)
                 .withSchemas(schema != null ? List.of(schema) : List.of(MUSIC_SCHEMA, BOOK_SCHEMA))
@@ -106,7 +104,6 @@ public class ValidationTester {
                                                              .applicationPackage(newApp)
                                                              .properties(properties)
                                                              .modelHostProvisioner(hostProvisioner)
-                                                             .provisioned(provisioned)
                                                              .now(now);
         if (previousModel != null)
             deployStateBuilder.previousModel(previousModel);

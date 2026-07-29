@@ -255,7 +255,6 @@ public class ClusterInfoTest {
                                   .zone(new Zone(cloud, SystemName.Public, Environment.prod, RegionName.from(region)))
                                   .endpoints(Set.of(new ContainerEndpoint("testcontainer", ApplicationClusterEndpoint.Scope.zone, List.of("tc.example.com"))))
                                   .modelHostProvisioner(provisioner)
-                                  .provisioned(provisioner.provisioned())
                                   .zone(new Zone(Environment.prod, RegionName.from(region)))
                                   .build();
         new VespaModel(new NullConfigModelRegistry(), deployState);

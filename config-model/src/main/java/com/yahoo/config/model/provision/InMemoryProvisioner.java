@@ -5,7 +5,6 @@ import com.yahoo.config.provision.IntRange;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
@@ -14,7 +13,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionContext;
-import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,7 +68,6 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     private final boolean alwaysReturnOneNode;
 
-    private Provisioned provisioned = new Provisioned();
     private final Set<ClusterSpec> clusters = new TreeSet<>(Comparator.comparing(cluster -> cluster.id().value()));
 
     private Environment environment = Environment.prod;
@@ -129,8 +126,6 @@ public class InMemoryProvisioner implements HostProvisioner {
         this.startIndexForClusters = startIndexForClusters;
         this.retiredHostNames = Set.of(retiredHostNames);
     }
-
-    public Provisioned provisioned() { return provisioned; }
 
     /** May affect e.g. the number of nodes/cluster. */
     public InMemoryProvisioner setEnvironment(Environment environment) {
@@ -212,13 +207,6 @@ public class InMemoryProvisioner implements HostProvisioner {
         }
 
         return allocation;
-    }
-
-    /** Create a new provisioned instance to record provision requests to this and returns it */
-    public Provisioned startProvisionedRecording() {
-        provisioned = new Provisioned();
-        clusters.clear();
-        return provisioned;
     }
 
     private HostSpec retire(HostSpec host) {
