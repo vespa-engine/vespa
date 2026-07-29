@@ -206,6 +206,10 @@ void applyUpdateToAttribute(SerialNum serialNum, const FieldUpdate& fieldUpd, Do
 void apply_field_path_update_to_attribute(SerialNum serial_num, const FieldPathTarget& target,
                                           const FieldPathUpdate& update, DocumentIdT lid, AttributeVector& attr) {
     ensureLidSpace(serial_num, lid, attr);
+    // Pending changes may hold removes, also from earlier document updates in the same
+    // commit window; they must be applied before an element-addressed update to match
+    // document model semantics.
+    attr.commit_if_change_vector_nonempty();
     AttributeUpdater::handle_field_path_update(attr, lid, target, update);
     attr.commitIfChangeVectorTooLarge();
 }

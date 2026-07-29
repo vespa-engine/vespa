@@ -681,6 +681,14 @@ bool AttributeVector::commitIfChangeVectorTooLarge() {
     return needCommit;
 }
 
+bool AttributeVector::commit_if_change_vector_nonempty() {
+    bool need_commit = getChangeVectorMemoryUsage().usedBytes() > 0;
+    if (need_commit) {
+        commit(CommitParam::UpdateStats::SKIP);
+    }
+    return need_commit;
+}
+
 void AttributeVector::logEnumStoreEvent(const char* reason, const char* stage) {
     vespalib::JSONStringer jstr;
     jstr.beginObject();

@@ -18,6 +18,7 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/removefieldpathupdate.h>
+#include <vespa/document/update/removevalueupdate.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
@@ -611,6 +612,38 @@ TEST_F(AttributeWriterFieldPathTest, assign_element_to_non_attribute_field_is_ig
         std::make_unique<AssignFieldPathUpdate>(upd.getType(), "a1[0]", "", IntFieldValue::make(42)));
     apply(2, upd);
     assert_int_array(*_a1, 1, {42, 20, 30});
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_in_same_update) {
+    auto upd = make_update();
+    upd.addUpdate(FieldUpdate(upd.getType().getField("a2"))
+                      .addUpdate(std::make_unique<RemoveValueUpdate>(StringFieldValue::make("foo"))));
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "a2[1]", "", StringFieldValue::make("x")));
+    apply(2, upd);
+    // Document model semantics: the remove shifts the array to ["bar"], so the
+    // assign to index 1 is out of bounds and must be a no-op.
+    attribute::ConstCharContent sbuf;
+    sbuf.fill(*_a2, 1);
+    ASSERT_EQ(1u, sbuf.size());
+    EXPECT_EQ(0, strcmp("bar", sbuf[0]));
+}
+
+TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_from_earlier_uncommitted_update) {
+    DummyFieldUpdateCallback on_update;
+    auto                     remove_upd = make_update();
+    remove_upd.addUpdate(FieldUpdate(remove_upd.getType().getField("a2"))
+                             .addUpdate(std::make_unique<RemoveValueUpdate>(StringFieldValue::make("foo"))));
+    _aw->update(2, remove_upd, 1, emptyCallback, on_update);
+    auto assign_upd = make_update();
+    assign_upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(assign_upd.getType(), "a2[1]", "", StringFieldValue::make("x")));
+    _aw->update(3, assign_upd, 1, emptyCallback, on_update);
+    commit(3);
+    attribute::ConstCharContent sbuf;
+    sbuf.fill(*_a2, 1);
+    ASSERT_EQ(1u, sbuf.size());
+    EXPECT_EQ(0, strcmp("bar", sbuf[0]));
 }
 
 class AttributeCollectionSpecTest : public ::testing::Test {
