@@ -709,24 +709,30 @@ void AttributeWriter::update(SerialNum serialNum, const DocumentUpdate& upd, Doc
     }
 
     for (const auto& fpupd : upd.getFieldPathUpdates()) {
-        auto target = FieldPathTarget::parse(*fpupd, upd.getType());
+        auto        target = FieldPathTarget::parse(*fpupd, upd.getType());
+        const auto* field = target.field();
+        if (field == nullptr) {
+            LOG(debug, "Skipping field path with unknown field: %s", fpupd->getOriginalFieldPath().c_str());
+            continue;
+        }
+
+        auto             found = _attrMap.find(field->getName());
+        AttributeVector* attr = (found != _attrMap.end()) ? found->second.attribute : nullptr;
+        onUpdate.onUpdateField(*field, attr);
         if (target.is_unsupported()) {
-            LOG(debug, "Skipping unsupported field path: %s", fpupd->getOriginalFieldPath().c_str());
+            if (attr != nullptr) {
+                LOG(warning,
+                    "Field path update '%s' is not supported for attributes. Attribute '%s' is not updated "
+                    "and will disagree with the document until refed",
+                    fpupd->getOriginalFieldPath().c_str(), attr->getName().c_str());
+            } else {
+                LOG(debug, "Skipping unsupported field path: %s", fpupd->getOriginalFieldPath().c_str());
+            }
             continue;
         }
 
-        LOG(debug, "Retrieving guard for attribute vector '%s'.", fpupd->getOriginalFieldPath().c_str());
-        auto found = _attrMap.find(target.attribute_name());
-        if (found == _attrMap.end()) {
-            // Not an attribute field.
-            continue;
-        }
-
-        const AttributeWithInfo& attr_info = found->second;
-        AttributeVector*         attr = attr_info.attribute;
         if (attr == nullptr) {
-            std::string attr_name(target.attribute_name());
-            LOG(warning, "Attribute pointer is null for field '%s'", attr_name.c_str());
+            // Not an attribute field; the document store is authoritative.
             continue;
         }
 
@@ -735,7 +741,7 @@ void AttributeWriter::update(SerialNum serialNum, const DocumentUpdate& upd, Doc
             continue;
         }
 
-        args[attr_info.executor_id.getId()]->_field_path_updates.emplace_back(attr, target, fpupd.get());
+        args[found->second.executor_id.getId()]->_field_path_updates.emplace_back(attr, target, fpupd.get());
         LOG(debug, "About to apply field path update for docId %u in attribute vector '%s'.", lid,
             attr->getName().c_str());
     }

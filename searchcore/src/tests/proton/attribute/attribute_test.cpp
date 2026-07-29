@@ -629,6 +629,32 @@ TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_in_same_upda
     EXPECT_EQ(0, strcmp("bar", sbuf[0]));
 }
 
+namespace {
+
+struct RecordingFieldUpdateCallback : IFieldUpdateCallback {
+    std::vector<std::pair<std::string, bool>> _reported;
+    void onUpdateField(const document::Field& field, const search::AttributeVector* attr) override {
+        _reported.emplace_back(field.getName(), attr != nullptr);
+    }
+};
+
+} // namespace
+
+TEST_F(AttributeWriterFieldPathTest, field_path_updates_report_fields_to_update_callback) {
+    auto upd = make_update();
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "a1[0]", "", IntFieldValue::make(42)));
+    upd.addFieldPathUpdate(
+        std::make_unique<AssignFieldPathUpdate>(upd.getType(), "extra[0]", "", IntFieldValue::make(5)));
+    upd.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("a1[1]", "", "5"));
+    upd.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("nosuchfield[0]", "", "5"));
+    RecordingFieldUpdateCallback on_update;
+    update(2, upd, 1, on_update);
+    std::vector<std::pair<std::string, bool>> exp = {{"a1", true}, {"extra", false}, {"a1", true}};
+    EXPECT_EQ(exp, on_update._reported);
+    assert_int_array(*_a1, 1, {42, 20, 30});
+}
+
 TEST_F(AttributeWriterFieldPathTest, assign_element_observes_remove_from_earlier_uncommitted_update) {
     DummyFieldUpdateCallback on_update;
     auto                     remove_upd = make_update();
