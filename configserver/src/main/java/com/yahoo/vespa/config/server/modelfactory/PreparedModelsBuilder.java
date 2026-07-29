@@ -69,6 +69,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final Curator curator;
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
+    private final Provisioned provisioned = new Provisioned();
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
                                  FlagSource flagSource,
@@ -110,7 +111,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         log.log(FINE, () -> "Building model " + modelVersion + " for " + applicationId);
 
         // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
-        Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 modelOf(modelVersion),

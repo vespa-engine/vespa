@@ -20,6 +20,8 @@ public class Provisioned {
 
     private final Map<ClusterSpec.Id, Capacity> capacities = new HashMap<>();
 
+    public Provisioned() {}
+
     public void add(ClusterSpec cluster, Capacity capacity) {
         clusters.putIfAbsent(cluster.id(), cluster);
         capacities.putIfAbsent(cluster.id(), capacity);

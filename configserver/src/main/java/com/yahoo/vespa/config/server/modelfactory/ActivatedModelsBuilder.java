@@ -64,7 +64,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
     private final List<EndpointCertificateSecretStore> endpointCertificateSecretStores;
-    private final Provisioned provisioned;
+    private final Provisioned provisioned = new Provisioned();
 
     public ActivatedModelsBuilder(TenantName tenant,
                                   long applicationGeneration,
@@ -93,7 +93,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.executor = executor;
         this.onnxModelCost = onnxModelCost;
         this.endpointCertificateSecretStores = endpointCertificateSecretStores;
-        this.provisioned = new Provisioned();
     }
 
     @Override
