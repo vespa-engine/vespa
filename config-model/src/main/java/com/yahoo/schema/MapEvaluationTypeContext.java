@@ -297,8 +297,9 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     /**
-     * There are 6 features which may return (non-empty) tensor type:
+     * There are 7 features which may return (non-empty) tensor type:
      * - tensorFromLabels
+     * - tensorFromLabelsWithOffset
      * - tensorFromWeightedSet
      * - tensorFromStructs
      * - closest
@@ -313,6 +314,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             return Optional.of(new TensorType.Builder(TensorType.Value.DOUBLE).mapped("term").build());
         }
         if ( ! reference.name().equals("tensorFromLabels") &&
+             ! reference.name().equals("tensorFromLabelsWithOffset") &&
              ! reference.name().equals("tensorFromWeightedSet") &&
              ! reference.name().equals("tensorFromStructs") &&
              ! reference.name().equals("elementwise") &&
@@ -377,7 +379,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             return Optional.of(builder.build());
         }
         if (reference.name().equals("tensorFromLabels") ||
-            reference.name().equals("tensorFromWeightedSet"))
+            reference.name().equals("tensorFromWeightedSet") ||
+            reference.name().equals("tensorFromLabelsWithOffset"))
         {
             if (arg0 instanceof ReferenceNode arg0ref && FeatureNames.isSimpleFeature(arg0ref.reference())) {
                 if (arg1 == null) {
@@ -388,6 +391,17 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 throw new IllegalArgumentException("The first argument of " + reference.name() +
                                                    " must be a simple feature, not " + arg0);
             }
+        }
+
+        if (reference.name().equals("tensorFromLabelsWithOffset")) {
+            int numArgs = reference.arguments().size();
+            if (numArgs != 3) {
+                throw new IllegalArgumentException(reference + " must have 3 arguments, not " + numArgs + ": (attribute(myarray), label-dimension, offset-dimension)");
+            }
+            var builder = new TensorType.Builder(cellType);
+            builder.mapped(String.valueOf(arg1));
+            builder.mapped(String.valueOf(arg2));
+            return Optional.of(builder.build());
         }
 
         // fill dimension from second argument if present:

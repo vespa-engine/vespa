@@ -108,6 +108,20 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
+    void testTensorFromLabelsWithOffsetTypeConstruction() throws ParseException {
+        var expression = "tensorFromLabelsWithOffset(attribute(int_array_field), mylabel, myoffset)";
+        var expected = "tensor(mylabel{},myoffset{})";
+        for (var rankPropertyExpression : buildSearch(expression)) {
+            if (rankPropertyExpression.getFirst().equals("rankingExpression(testexpression).type")) {
+                String rankExpression = censorBindingHash(rankPropertyExpression.getSecond().replace(" ",""));
+                assertEquals(expected, rankExpression);
+                return;
+            }
+        }
+        fail("No 'rankingExpression(testexpression).type' property produced");
+    }
+
+    @Test
     void requireThatMaxAndMinWithTensorInQueryIsReplaced() throws ParseException {
         assertTransformedExpression("reduce(query(q),max,x)", "max(query(q),x)");
         assertTransformedExpression("max(query(n),x)", "max(query(n),x)");
