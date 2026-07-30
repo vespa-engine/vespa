@@ -398,7 +398,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             if (numArgs != 3) {
                 throw new IllegalArgumentException(reference + " must have 3 arguments, not " + numArgs + ": (attribute(myarray), label-dimension, offset-dimension)");
             }
-            var builder = new TensorType.Builder(cellType);
+            var builder = new TensorType.Builder(TensorType.Value.FLOAT);
             builder.mapped(String.valueOf(arg1));
             builder.mapped(String.valueOf(arg2));
             return Optional.of(builder.build());
