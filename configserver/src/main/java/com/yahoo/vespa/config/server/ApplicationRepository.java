@@ -29,6 +29,7 @@ import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.DeploymentConfigStore;
@@ -1039,6 +1040,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
             if (applicationTransaction.isPresent()) {
                 var hostsByCluster = session.getAllocatedHosts().getHostsByCluster();
+                validate(hostsByCluster, clusters);
                 var clusterHosts = clusters.stream().map(cluster -> new ClusterHosts(cluster, hostsByCluster.get(cluster.id()))).toList();
                 hostProvisioner.get().activate(clusterHosts,
                                                new ActivationContext(session.getSessionId(), isBootstrap),
@@ -1051,6 +1053,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } finally {
             applicationTransaction.ifPresent(ApplicationTransaction::close);
         }
+    }
+
+    private void validate(Map<ClusterSpec.Id, List<HostSpec>> hostsByCluster, Collection<ClusterSpec> clusters) {
+        Set<ClusterSpec.Id> clusterIds = clusters.stream().map(ClusterSpec::id).collect(Collectors.toSet());
+        if ( ! clusterIds.containsAll(hostsByCluster.keySet()))
+            throw new IllegalArgumentException("Wanted to activate clusters " + clusters +
+                                               ", but the list of hosts to activate has clusters " + hostsByCluster.keySet());
     }
 
     /**
