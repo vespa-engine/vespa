@@ -21,6 +21,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -131,6 +132,47 @@ public class DocumentUpdateTestCase {
         var mvu = (MapValueUpdate)valueUpdate;
         assertEquals(mvu.getValue(), new IntegerFieldValue(2));
         assertEquals(mvu.getUpdate(), assignUpdate);
+    }
+
+    @Test
+    public void assign_matched_array_of_primitives_element_update_survives_real_indexing_script() throws ParseException {
+        var docType = new DocumentType("my_input");
+        docType.addField(new Field("my_array", ArrayDataType.getArray(DataType.INT)));
+
+        var upd = new DocumentUpdate(docType, "id:scheme:my_input::");
+        upd.addFieldUpdate(FieldUpdate.createMap(docType.getField("my_array"),
+                new IntegerFieldValue(0), ValueUpdate.createAssign(new IntegerFieldValue(4))));
+
+        upd = Expression.execute(Expression.fromString("input my_array | attribute my_array | summary my_array"), upd);
+
+        assertNotNull(upd);
+        assertEquals(1, upd.fieldUpdates().size());
+        var fieldUpdate = upd.getFieldUpdate("my_array");
+        assertNotNull(fieldUpdate);
+        assertEquals(1, fieldUpdate.getValueUpdates().size());
+        var valueUpdate = fieldUpdate.getValueUpdate(0);
+        assertTrue(valueUpdate instanceof MapValueUpdate);
+        var mvu = (MapValueUpdate)valueUpdate;
+        assertEquals(new IntegerFieldValue(0), mvu.getValue());
+        assertTrue(mvu.getUpdate() instanceof AssignValueUpdate);
+        assertEquals(new IntegerFieldValue(4), mvu.getUpdate().getValue());
+    }
+
+    @Test
+    public void assign_matched_map_field_is_rejected_when_the_update_is_constructed() {
+        // Pinning test: MapValueUpdate supports array, weighted set and struct, but NOT map
+        // fields (same in the C++ document model). A JSON feed with match on a map field is
+        // rejected while parsing the update, which rejects the whole update document.
+        var docType = new DocumentType("my_input");
+        docType.addField(new Field("my_map", new com.yahoo.document.MapDataType(DataType.STRING, DataType.INT)));
+
+        try {
+            FieldUpdate.createMap(docType.getField("my_map"),
+                    new StringFieldValue("a"), ValueUpdate.createAssign(new IntegerFieldValue(5)));
+            fail("Expected UnsupportedOperationException from MapValueUpdate.checkCompatibility");
+        } catch (UnsupportedOperationException e) {
+            assertTrue(e.getMessage().contains("not supported"));
+        }
     }
 
     @Test
