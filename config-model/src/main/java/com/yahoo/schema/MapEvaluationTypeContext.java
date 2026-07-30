@@ -414,16 +414,12 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             var builder = new TensorType.Builder(TensorType.Value.FLOAT);
             // the first dimension is already checked
             builder.mapped(dimension);
-            if (arg2 != null) {
-                if ((arg2 instanceof NameNode) ||
-                        (arg2 instanceof ReferenceNode ref2 && ref2.reference().isIdentifier()))
-                {
-                    // it is safe to add a second dimension
-                    builder.mapped(arg2.toString());
-                } else  {
-                    throw new IllegalArgumentException("The third argument of " + reference.name() +
-                            " must be a dimension name, not " + arg2);
-                }
+            if ((arg2 instanceof NameNode) || (arg2 instanceof ReferenceNode ref2 && ref2.reference().isIdentifier())) {
+                  // it is safe to add a second dimension
+                  builder.mapped(arg2.toString());
+            } else  {
+                  throw new IllegalArgumentException("The third argument of " + reference.name() +
+                          " must be a dimension name, not " + arg2);
             }
             return Optional.of(builder.build());
         }
