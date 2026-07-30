@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
@@ -56,6 +57,12 @@ public class FieldValuesFactory {
                     // in wolf's clothing. Convert it to a regular field update to be friendlier
                     // towards the search core backend.
                     FieldPathUpdateHelper.applyUpdate(fieldUpdate, complete);
+                } else if (FieldPathUpdateHelper.isElementAssign(fieldUpdate)) {
+                    // The assigned element must be processed by the indexing script like any put
+                    // value, or e.g. an element of an indexed string array reaches the backend
+                    // without linguistics annotations and produces no index tokens.
+                    ret.add(newElementAssignFieldValues(docType, docId, complete,
+                                                        (AssignFieldPathUpdate)fieldUpdate));
                 } else {
                     ret.add(new IdentityFieldPathUpdateFieldValues(fieldUpdate, newDocumentAdapter(complete, true)));
                 }
@@ -83,6 +90,25 @@ public class FieldValuesFactory {
         }
         ret.add(FieldUpdateFieldValues.fromCompleteUpdate(newDocumentAdapter(complete, true)));
         return ret;
+    }
+
+    /**
+     * Returns values which run the assigned element through the indexing script, or - if this field has
+     * no indexing statement taking only it as input - values which pass the update on unchanged.
+     */
+    private UpdateFieldValues newElementAssignFieldValues(DocumentType docType, DocumentId docId, Document complete,
+                                                          AssignFieldPathUpdate elementAssign) {
+        String fieldName = elementAssign.getFieldPath().get(0).getFieldRef().getName();
+        Expression expression;
+        try {
+            expression = expressionSelector.selectExpression(docType, fieldName);
+        } catch (IllegalArgumentException e) {
+            // There is no script to run the element through, so pass the update on as fed rather
+            // than failing the entire update.
+            return new IdentityFieldPathUpdateFieldValues(elementAssign, newDocumentAdapter(complete, true));
+        }
+        Document partial = ElementAssignFieldPathUpdateFieldValues.newPartialDocument(docType, docId, elementAssign);
+        return new ElementAssignFieldPathUpdateFieldValues(expression, newDocumentAdapter(partial, true), elementAssign);
     }
 
 }

@@ -25,6 +25,27 @@ public abstract class FieldPathUpdateHelper {
                 && update.getFieldPath().get(0).getType() == FieldPathEntry.Type.STRUCT_FIELD);
     }
 
+    /**
+     * Returns true if this update assigns a value to one element of a top-level array field,
+     * e.g. <code>my_array[3]</code>.
+     */
+    public static boolean isElementAssign(FieldPathUpdate update) {
+        if (!(update instanceof AssignFieldPathUpdate assign)) {
+            return false;
+        }
+        // If getNewValue() returns null, assign is applying a mathematical expression to the field.
+        // Currently, we only support assigning a value to top level array field.
+        if (assign.getNewValue() == null) {
+            return false;
+        }
+        if (update.getOriginalWhereClause() != null && !update.getOriginalWhereClause().isEmpty()) {
+            return false;
+        }
+        return ((update.getFieldPath().size() == 2)
+                && update.getFieldPath().get(0).getType() == FieldPathEntry.Type.STRUCT_FIELD
+                && update.getFieldPath().get(1).getType() == FieldPathEntry.Type.ARRAY_INDEX);
+    }
+
     public static void applyUpdate(FieldPathUpdate update, Document doc) {
         if (update instanceof AddFieldPathUpdate) {
             update.applyTo(doc);
