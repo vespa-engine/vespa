@@ -393,17 +393,6 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             }
         }
 
-        if (reference.name().equals("tensorFromLabelsWithOffset")) {
-            int numArgs = reference.arguments().size();
-            if (numArgs != 3) {
-                throw new IllegalArgumentException(reference + " must have 3 arguments, not " + numArgs + ": (attribute(myarray), label-dimension, offset-dimension)");
-            }
-            var builder = new TensorType.Builder(TensorType.Value.FLOAT);
-            builder.mapped(String.valueOf(arg1));
-            builder.mapped(String.valueOf(arg2));
-            return Optional.of(builder.build());
-        }
-
         // fill dimension from second argument if present:
         if (arg1 != null) {
             if ((arg1 instanceof NameNode) ||
@@ -414,6 +403,29 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 throw new IllegalArgumentException("The second argument of " + reference.name() +
                                                    " must be a dimension name, not " + arg1);
             }
+        }
+
+        if (reference.name().equals("tensorFromLabelsWithOffset")) {
+            int numArgs = reference.arguments().size();
+            if (numArgs != 3) {
+                throw new IllegalArgumentException(reference + " must have 3 arguments, not " + numArgs + ": (attribute(myarray), label-dimension, offset-dimension)");
+            }
+
+            var builder = new TensorType.Builder(TensorType.Value.FLOAT);
+            // the first dimension is already checked
+            builder.mapped(dimension);
+            if (arg2 != null) {
+                if ((arg2 instanceof NameNode) ||
+                        (arg2 instanceof ReferenceNode ref2 && ref2.reference().isIdentifier()))
+                {
+                    // it is safe to add a second dimension
+                    builder.mapped(arg2.toString());
+                } else  {
+                    throw new IllegalArgumentException("The third argument of " + reference.name() +
+                            " must be a dimension name, not " + arg2);
+                }
+            }
+            return Optional.of(builder.build());
         }
 
         if (dimension == null) {

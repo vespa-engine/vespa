@@ -26,6 +26,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TensorTransformTestCase extends AbstractSchemaTestCase {
 
@@ -119,6 +120,15 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
             }
         }
         fail("No 'rankingExpression(testexpression).type' property produced");
+    }
+
+    @Test
+    void testNumArgsInTensorFromLabelsWithOffsetTypeConstruction() throws ParseException {
+        var expressionWithTooFewArgsNum = "tensorFromLabelsWithOffset(attribute(int_array_field), mylabel)";
+        assertThrows(IllegalArgumentException.class, () -> buildSearch(expressionWithTooFewArgsNum));
+
+        var expressionWithTooManyArgsNum = "tensorFromLabelsWithOffset(attribute(int_array_field), mylabel, myoffset, toomany)";
+        assertThrows(IllegalArgumentException.class, () -> buildSearch(expressionWithTooManyArgsNum));
     }
 
     @Test
