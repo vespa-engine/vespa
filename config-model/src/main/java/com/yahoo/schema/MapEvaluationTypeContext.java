@@ -297,8 +297,9 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     /**
-     * There are 6 features which may return (non-empty) tensor type:
+     * There are 7 features which may return (non-empty) tensor type:
      * - tensorFromLabels
+     * - tensorFromLabelsWithOffset
      * - tensorFromWeightedSet
      * - tensorFromStructs
      * - closest
@@ -313,6 +314,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             return Optional.of(new TensorType.Builder(TensorType.Value.DOUBLE).mapped("term").build());
         }
         if ( ! reference.name().equals("tensorFromLabels") &&
+             ! reference.name().equals("tensorFromLabelsWithOffset") &&
              ! reference.name().equals("tensorFromWeightedSet") &&
              ! reference.name().equals("tensorFromStructs") &&
              ! reference.name().equals("elementwise") &&
@@ -377,7 +379,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             return Optional.of(builder.build());
         }
         if (reference.name().equals("tensorFromLabels") ||
-            reference.name().equals("tensorFromWeightedSet"))
+            reference.name().equals("tensorFromWeightedSet") ||
+            reference.name().equals("tensorFromLabelsWithOffset"))
         {
             if (arg0 instanceof ReferenceNode arg0ref && FeatureNames.isSimpleFeature(arg0ref.reference())) {
                 if (arg1 == null) {
@@ -400,6 +403,25 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 throw new IllegalArgumentException("The second argument of " + reference.name() +
                                                    " must be a dimension name, not " + arg1);
             }
+        }
+
+        if (reference.name().equals("tensorFromLabelsWithOffset")) {
+            int numArgs = reference.arguments().size();
+            if (numArgs != 3) {
+                throw new IllegalArgumentException(reference + " must have 3 arguments, not " + numArgs + ": (attribute(myarray), label-dimension, offset-dimension)");
+            }
+
+            var builder = new TensorType.Builder(TensorType.Value.FLOAT);
+            // the first dimension is already checked
+            builder.mapped(dimension);
+            if ((arg2 instanceof NameNode) || (arg2 instanceof ReferenceNode ref2 && ref2.reference().isIdentifier())) {
+                  // it is safe to add a second dimension
+                  builder.mapped(arg2.toString());
+            } else  {
+                  throw new IllegalArgumentException("The third argument of " + reference.name() +
+                          " must be a dimension name, not " + arg2);
+            }
+            return Optional.of(builder.build());
         }
 
         if (dimension == null) {
