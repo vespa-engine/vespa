@@ -296,12 +296,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      * returns empty otherwise, which may either mean that no hosts are allocated or that we are running
      * non-hosted and should default to use hosts defined in the application package, depending on context
      */
-    HostProvisioner createStaticProvisioner(ApplicationPackage applicationPackage,
-                                            ApplicationId applicationId,
-                                            Provisioned provisioned) {
+    HostProvisioner createStaticProvisioner(ApplicationPackage applicationPackage, ApplicationId applicationId) {
         Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
         if (hosted && allocatedHosts.isPresent())
-            return createStaticProvisionerForHosted(allocatedHosts.get(), createNodeRepositoryProvisioner(applicationId, provisioned).get());
+            return createStaticProvisionerForHosted(allocatedHosts.get(), createNodeRepositoryProvisioner(applicationId).get());
         return DeployState.getDefaultModelHostProvisioner(applicationPackage);
     }
 
@@ -312,9 +310,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         return new StaticProvisioner(allocatedHosts, nodeRepositoryProvisioner);
     }
 
-    Optional<HostProvisioner> createNodeRepositoryProvisioner(ApplicationId applicationId, Provisioned provisioned) {
+    Optional<HostProvisioner> createNodeRepositoryProvisioner(ApplicationId applicationId) {
         return hostProvisionerProvider.getHostProvisioner().map(
-                provisioner -> new ProvisionerAdapter(provisioner, applicationId, provisioned));
+                provisioner -> new ProvisionerAdapter(provisioner, applicationId));
     }
 
 }

@@ -339,7 +339,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, false, "host1.yahoo.com", "host2.yahoo.com");
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .modelHostProvisioner(provisioner)
-                .provisioned(provisioner.startProvisionedRecording())
                 .applicationPackage(applicationPackage)
                 .endpoints(Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
                 .properties(new TestProperties().setMultitenant(true)
@@ -594,7 +593,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, false, "host1.yahoo.com", "host2.yahoo.com");
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .modelHostProvisioner(provisioner)
-                .provisioned(provisioner.startProvisionedRecording())
                 .applicationPackage(applicationPackage)
                 .endpoints(Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
                 .properties(new TestProperties().setMultitenant(true)

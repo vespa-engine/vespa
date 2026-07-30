@@ -21,12 +21,15 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.DeploymentConfigStore;
@@ -118,6 +121,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -1021,7 +1025,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-    public Activation activate(Session session, ApplicationId applicationId, boolean isBootstrap, boolean force) {
+    public Activation activate(Session session, ApplicationId applicationId, Collection<ClusterSpec> clusters,
+                               boolean isBootstrap, boolean force) {
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
@@ -1034,7 +1039,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
             transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
             if (applicationTransaction.isPresent()) {
-                hostProvisioner.get().activate(session.getAllocatedHosts().getHosts(),
+                var hostsByCluster = session.getAllocatedHosts().getHostsByCluster();
+                validate(hostsByCluster, clusters);
+                var clusterHosts = clusters.stream().map(cluster -> new ClusterHosts(cluster, hostsByCluster.get(cluster.id()))).toList();
+                hostProvisioner.get().activate(clusterHosts,
                                                new ActivationContext(session.getSessionId(), isBootstrap),
                                                applicationTransaction.get());
                 applicationTransaction.get().nested().commit();
@@ -1045,6 +1053,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         } finally {
             applicationTransaction.ifPresent(ApplicationTransaction::close);
         }
+    }
+
+    private void validate(Map<ClusterSpec.Id, List<HostSpec>> hostsByCluster, Collection<ClusterSpec> clusters) {
+        Set<ClusterSpec.Id> clusterIds = clusters.stream().map(ClusterSpec::id).collect(Collectors.toSet());
+        if ( ! clusterIds.containsAll(hostsByCluster.keySet()))
+            throw new IllegalArgumentException("Wanted to activate clusters " + clusters +
+                                               ", but the list of hosts to activate has clusters " + hostsByCluster.keySet());
     }
 
     /**

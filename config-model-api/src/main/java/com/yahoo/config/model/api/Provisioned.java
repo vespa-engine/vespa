@@ -20,9 +20,11 @@ public class Provisioned {
 
     private final Map<ClusterSpec.Id, Capacity> capacities = new HashMap<>();
 
+    public Provisioned() {}
+
     public void add(ClusterSpec cluster, Capacity capacity) {
-        clusters.put(cluster.id(), cluster);
-        capacities.put(cluster.id(), capacity);
+        clusters.putIfAbsent(cluster.id(), cluster);
+        capacities.putIfAbsent(cluster.id(), capacity);
     }
 
     /** Returns an unmodifiable map of all the cluster requests recorded during build of the model this belongs to */
@@ -30,14 +32,5 @@ public class Provisioned {
 
     /** Returns an unmodifiable map of all the capacity provision requests recorded during build of the model this belongs to */
     public Map<ClusterSpec.Id, Capacity> capacities() { return Collections.unmodifiableMap(capacities); }
-
-    // TODO: Remove after June 2024
-    public void add(ClusterSpec.Id id, Capacity capacity) {
-        capacities.put(id, capacity);
-    }
-
-    /** Returns an unmodifiable map of all the provision requests recorded during build of the model this belongs to */
-    // TODO: Remove after June 2024
-    public Map<ClusterSpec.Id, Capacity> all() { return Collections.unmodifiableMap(capacities); }
 
 }
