@@ -178,7 +178,24 @@ void AttributeUpdater::handleUpdateT(V& vec, Accessor, uint32_t lid, const Value
             removeValue(vec, lid, remove.getKey());
         } else if (op == ValueUpdate::Map) {
             const MapValueUpdate& map(static_cast<const MapValueUpdate&>(upd));
-            if (!vec.AttributeVector::apply(lid, map)) {
+            if (vec.hasArrayType() && map.getUpdate().getType() == ValueUpdate::Assign) {
+                // Match update addressing an array element by index, e.g.
+                // {"match": {"element": 0, "assign": 4}}. The key holds the element index.
+                const auto& assign = static_cast<const AssignValueUpdate&>(map.getUpdate());
+                int32_t     index = map.getKey().getAsInt();
+                if (assign.hasValue() && index >= 0) {
+                    // Element-addressed changes must observe committed array shape: pending
+                    // removes are deferred to the end of the change vector apply and would
+                    // reorder past element indices.
+                    vec.commit_if_change_vector_nonempty();
+                    assign_element(vec, lid, index, assign.getValue());
+                } else {
+                    // Assign without a value removes the element in the document model;
+                    // not supported for attributes yet.
+                    LOG(warning, "Unsupported match update (element=%d, assign) on array attribute %s", index,
+                        vec.getName().c_str());
+                }
+            } else if (!vec.AttributeVector::apply(lid, map)) {
                 throw UpdateException(make_string("attribute map(%s, %s) failed: %s[%u]", map.getKey().className(),
                                                   map.getUpdate().className(), vec.getName().c_str(), lid));
             }

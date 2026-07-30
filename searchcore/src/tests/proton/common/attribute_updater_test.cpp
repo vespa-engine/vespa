@@ -504,6 +504,31 @@ TEST(AttributeUpdaterTest, require_that_last_assign_element_to_same_index_wins) 
     EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(42), WeightedInt(30)}));
 }
 
+TEST(AttributeUpdaterTest, require_that_match_assign_updates_array_element) {
+    Fixture f;
+    using IL = AttributeBuilder::IntList;
+    auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, CollectionType::ARRAY))
+                   .fill_array({IL{10, 20, 30}})
+                   .get();
+    f.applyValueUpdate(
+        *vec, 1,
+        std::make_unique<MapValueUpdate>(std::make_unique<IntFieldValue>(1),
+                                         std::make_unique<AssignValueUpdate>(IntFieldValue::make(42))));
+    EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(42), WeightedInt(30)}));
+}
+
+TEST(AttributeUpdaterTest, require_that_match_assign_out_of_bounds_is_a_no_op) {
+    Fixture f;
+    using IL = AttributeBuilder::IntList;
+    auto vec =
+        AttributeBuilder("in1/aint", Config(BasicType::INT32, CollectionType::ARRAY)).fill_array({IL{10, 20}}).get();
+    f.applyValueUpdate(
+        *vec, 1,
+        std::make_unique<MapValueUpdate>(std::make_unique<IntFieldValue>(5),
+                                         std::make_unique<AssignValueUpdate>(IntFieldValue::make(42))));
+    EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(10), WeightedInt(20)}));
+}
+
 TEST(AttributeUpdaterTest, require_that_assign_element_out_of_bounds_is_a_no_op) {
     Fixture f;
     using IL = AttributeBuilder::IntList;
