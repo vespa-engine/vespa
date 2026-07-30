@@ -13,6 +13,7 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.language.process.Chunker;
@@ -20,6 +21,7 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.TimeoutException;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -512,6 +514,66 @@ public class IndexingProcessorTestCase {
         String reason = progress.getReason().get();
         assertTrue("Expected reason to contain 'timed out', got: " + reason, reason.contains("timed out"));
         assertTrue("Expected reason to contain '5000ms', got: " + reason, reason.contains("5000ms"));
+    }
+
+    @Test
+    public void requireThatElementAssignIsProcessedByIndexingScript() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index a");
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
+        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
+
+        DocumentUpdate output = (DocumentUpdate)tester.process(input);
+        assertEquals(1, output.fieldPathUpdates().size());
+        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
+        assertEquals("a[2]", assign.getOriginalFieldPath());
+        assertEquals(new StringFieldValue("hello"), assign.getNewValue());
+    }
+
+    /**
+     * A field which no indexing statement takes as its only input has no script to run the assigned
+     * element through. The update must then be passed on as fed rather than failing the whole update.
+     */
+    @Test
+    public void requireThatElementAssignOfFieldWithoutIndexingStatementIsPassedOn() {
+        var tester = elementAssignTester("input b | index b");
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
+        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
+
+        DocumentUpdate output = (DocumentUpdate)tester.process(input);
+        assertEquals(1, output.fieldPathUpdates().size());
+        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
+        assertEquals("a[2]", assign.getOriginalFieldPath());
+        assertEquals(new StringFieldValue("HELLO"), assign.getNewValue());
+    }
+
+    private static IndexingProcessorTester elementAssignTester(String... ilscriptContents) {
+        var documentTypes = new DocumentTypeManager();
+        var test = new DocumentType("test");
+        test.addField("a", DataType.getArray(DataType.STRING));
+        test.addField("b", DataType.STRING);
+        documentTypes.register(test);
+
+        var ilscript = new IlscriptsConfig.Ilscript.Builder()
+                                                   .doctype("test")
+                                                   .docfield("a")
+                                                   .docfield("b");
+
+        for (String content : ilscriptContents) {
+            ilscript.content(content);
+        }
+
+        IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
+        config.ilscript(ilscript);
+        var scripts = new ScriptManager(documentTypes,
+                                        new IlscriptsConfig(config),
+                                        new SimpleLinguistics(),
+                                        Chunker.throwsOnUse.asMap(),
+                                        Embedder.throwsOnUse.asMap(),
+                                        FieldGenerator.throwsOnUse.asMap(),
+                                        MetricReceiver.nullImplementation);
+        return new IndexingProcessorTester(documentTypes, scripts);
     }
 
     static class PartialUpdateTester {
