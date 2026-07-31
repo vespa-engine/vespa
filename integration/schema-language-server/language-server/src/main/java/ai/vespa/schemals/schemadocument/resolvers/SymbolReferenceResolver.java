@@ -442,6 +442,11 @@ public class SymbolReferenceResolver {
             return myArgIndex == 1;
         }
 
+        if (functionIdentifier.equals("tensorFromLabelsWithOffset")) {
+            // both the label dimension and the offset dimension are names, not symbols
+            return myArgIndex == 1 || myArgIndex == 2;
+        }
+
         if (functionIdentifier.equals("query")) {
             // TODO: query gotodefinition could be nice to refer to inputs {} where possible
             return myArgIndex == 0;

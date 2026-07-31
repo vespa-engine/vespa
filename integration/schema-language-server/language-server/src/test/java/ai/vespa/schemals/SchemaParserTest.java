@@ -247,6 +247,7 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/rankprofilebuiltin.sd",
             "src/test/sdfiles/single/structinfieldset.sd",
             "src/test/sdfiles/single/subqueries.sd",
+            "src/test/sdfiles/single/tensorfromlabels.sd",
         };
 
         return Arrays.stream(filePaths)
@@ -333,6 +334,7 @@ public class SchemaParserTest {
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
             new BadFileTestCase("src/test/sdfiles/single/rankproperties.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2),
+            new BadFileTestCase("src/test/sdfiles/single/tensorfromlabelsbad.sd", 1),
         };
 
         return Arrays.stream(tests)
