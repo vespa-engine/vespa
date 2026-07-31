@@ -88,6 +88,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     public static final int defaultHeapSizePercentageOfAvailableMemory = 85;
 
+    private ClusterSpec spec;
+
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
     private final Set<String> previousHosts;
@@ -119,7 +121,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final UserConfiguredUrls userConfiguredUrls = new UserConfiguredUrls();
 
     private Optional<CloudSecrets> tenantSecrets = Optional.empty();
-
 
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true);
@@ -157,6 +158,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 deployState.getApplicationPackage(), deployState.getProperties().applicationId(), ClusterSpec.Id.from(clusterId));
         logger = deployState.getDeployLogger();
     }
+
+    public ClusterSpec getSpec() { return spec; }
+
+    public void setSpec(ClusterSpec spec) { this.spec = spec; }
 
     public UserConfiguredUrls userConfiguredUrls() { return userConfiguredUrls; }
 
