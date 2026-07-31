@@ -112,6 +112,18 @@ public class BuiltInFunctions {
         )));
 
         // TODO: requires you to write attribute(name)
+        // Only array attributes are supported, and both dimension names are required.
+        // Note: the argument names make up the signature string used to look up the hover documentation,
+        // so they have to match the documented parameter names.
+        put("tensorFromLabelsWithOffset", new GenericFunction("tensorFromLabelsWithOffset",
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldArgument.ArrayType, FieldArgument.IndexAttributeType, "attribute"),
+                new StringArgument("label-dimension"),
+                new StringArgument("offset-dimension")
+            ))
+        ));
+
+        // TODO: requires you to write attribute(name)
         put("tensorFromStructs", new GenericFunction("tensorFromStructs", BuiltInFunctions.tensorFromStructsSignatures()));
 
         // ==== Field match features - normalized ====

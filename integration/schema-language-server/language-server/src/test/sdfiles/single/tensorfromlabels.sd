@@ -1,0 +1,33 @@
+schema tensorfromlabels {
+    document tensorfromlabels {
+        field tags type array<string> {
+            indexing: attribute
+        }
+
+        field ids type array<int> {
+            indexing: attribute
+        }
+
+        field category type string {
+            indexing: attribute
+        }
+    }
+
+    rank-profile myprofile {
+        function labels_default() {
+            expression: sum(tensorFromLabels(attribute(tags)))
+        }
+
+        function labels_dim() {
+            expression: sum(tensorFromLabels(attribute(category), tag))
+        }
+
+        function labels_with_offset() {
+            expression: sum(tensorFromLabelsWithOffset(attribute(tags), tag, offset))
+        }
+
+        function labels_with_offset_int() {
+            expression: sum(tensorFromLabelsWithOffset(attribute(ids), id, pos))
+        }
+    }
+}
