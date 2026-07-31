@@ -265,7 +265,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         var sidecars = new ArrayList<SidecarSpec>();
-
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
             var sidecarImage = SidecarImages.readFromPropertiesFile().getOrThrow("triton");
@@ -284,7 +283,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             sidecars.add(spec);
         }
-
         return sidecars;
     }
 
