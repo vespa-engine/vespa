@@ -815,10 +815,8 @@ public class ModelProvisioningTest {
         ClusterControllerContainerCluster clusterControllers = model.getAdmin().getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("cluster-controllers", clusterControllers.getName());
-        clusterControllers.getContainers().stream().map(ClusterControllerContainer::getHost).forEach(host -> {
-            assertTrue(host.spec().membership().get().cluster().isStateful());
-            assertEquals(ClusterSpec.Type.admin, host.spec().membership().get().type());
-        });
+        assertTrue(model.provisioned().clusters().get(ClusterSpec.Id.from("cluster-controllers")).isStateful());
+        assertEquals(ClusterSpec.Type.admin, model.provisioned().clusters().get(ClusterSpec.Id.from("cluster-controllers")).type());
     }
 
     @Test
@@ -1227,7 +1225,8 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false, deployStateWithClusterEndpoints("container"));
-        model.hostSystem().getHosts().forEach(host -> assertTrue(host.spec().membership().get().cluster().isExclusive()));
+        assertTrue(model.provisioned().clusters().get(ClusterSpec.Id.from("container")).isExclusive());
+        assertTrue(model.provisioned().clusters().get(ClusterSpec.Id.from("bar")).isExclusive());
     }
 
     @Test
@@ -2199,9 +2198,7 @@ public class ModelProvisioningTest {
         tests.forEach((clusterId, stateful) -> {
             List<HostResource> hosts = hostsByCluster.getOrDefault(clusterId, List.of());
             assertFalse(hosts.isEmpty(), "Hosts are provisioned for '" + clusterId + "'");
-            assertEquals(stateful,
-                         hosts.stream().allMatch(h -> h.spec().membership().get().cluster().isStateful()),
-                         "Hosts in cluster '" + clusterId + "' are " + (stateful ? "" : "not ") + "stateful");
+            assertEquals(stateful, model.provisioned().clusters().get(ClusterSpec.Id.from(clusterId)).isStateful());
         });
     }
 
@@ -2714,14 +2711,8 @@ public class ModelProvisioningTest {
         var deployStateBuilder = deployStateWithClusterEndpoints("container1").onnxModelCost(mockModelCost);
         var model = tester.createModel(zone, services, true, deployStateBuilder);
 
-        var clusterSpec = model.hostSystem().getHosts().stream().filter(
-                host -> host.spec().membership().isPresent()).filter(
-                host -> "container1".equals(host.spec().membership().get().id().value())).findFirst().map(
-                host -> host.spec().membership().get().cluster());
-
-        assertTrue(clusterSpec.isPresent());
-        assertFalse(clusterSpec.get().sidecars().isEmpty());
-
+        var clusterSpec = model.provisioned().clusters().get(ClusterSpec.Id.from("container1"));
+        assertFalse(clusterSpec.sidecars().isEmpty());
         var expectedSidecarSpec = SidecarSpec.builder()
                 .id(0)
                 .name("triton")
@@ -2733,7 +2724,7 @@ public class ModelProvisioningTest {
                 .command(List.of("tritonserver", "--model-repository=/models", "--model-control-mode=explicit"))
                 .livenessProbe(new SidecarProbe(new SidecarProbe.HttpGetAction("/v2/health/live", 8000), 10, 5, 2, 3))
                 .build();
-        var actualSidecarSpec = clusterSpec.get().sidecars().get(0);
+        var actualSidecarSpec = clusterSpec.sidecars().get(0);
         assertEquals(expectedSidecarSpec, actualSidecarSpec);
     }
 
@@ -2757,24 +2748,8 @@ public class ModelProvisioningTest {
         tester.addHosts(9);
         VespaModel model = tester.createModel(xml, true, deployStateWithClusterEndpoints("container1"));
 
-        List<String> containerProfiles = profilesForNodes(model, ClusterSpec.Type.container);
-        assertEquals(2, containerProfiles.size());
-        assertTrue(containerProfiles.stream().allMatch(profile -> profile.equals("high-cpu")));
-
-        List<String> contentProfiles = profilesForNodes(model, ClusterSpec.Type.content);
-        assertEquals(2, contentProfiles.size());
-        assertTrue(contentProfiles.stream().allMatch(profile -> profile.equals("large-storage")));
+        assertEquals("high-cpu", model.provisioned().clusters().get(ClusterSpec.Id.from("container1")).profile().get());
+        assertEquals("large-storage", model.provisioned().clusters().get(ClusterSpec.Id.from("content1")).profile().get());
     }
 
-    private List<String> profilesForNodes(VespaModel vespaModel, ClusterSpec.Type type) {
-        List<ClusterMembership> memberships = vespaModel.hostSystem()
-                .getHosts()
-                .stream()
-                .flatMap(h -> h.spec().membership().stream()).toList();
-        return memberships.stream()
-                .filter(m -> m.type() == type)
-                .map(m -> m.cluster().profile())
-                .flatMap(Optional::stream)
-                .toList();
-    }
 }
