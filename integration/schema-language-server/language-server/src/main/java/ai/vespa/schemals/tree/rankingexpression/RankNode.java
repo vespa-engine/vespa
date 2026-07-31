@@ -12,6 +12,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.rankingexpression.ast.argExpression;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.feature;
@@ -119,6 +120,11 @@ public class RankNode implements Iterable<RankNode>  {
         for (Node child : parameterNode) {
             if (child.getASTClass() == expression.class) {
                 ret.add(new RankNode(child.getSchemaNode()));
+            } else if (child.getASTClass() == argExpression.class) {
+                // An argExpression wraps either a normal expression or a "name:value" tag.
+                // Flatten it so the parameter structure matches a plain expression argument;
+                // the tag form has no expression child and thus contributes no parameter.
+                ret.addAll(findChildren(child.getSchemaNode()));
             }
         }
 
