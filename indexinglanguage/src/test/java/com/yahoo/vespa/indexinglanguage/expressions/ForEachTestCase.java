@@ -8,7 +8,6 @@ import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
@@ -20,8 +19,6 @@ import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.asse
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

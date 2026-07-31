@@ -3,7 +3,6 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.language.Language;
 
 /**
  * Gets the language previously set in the execution context.
