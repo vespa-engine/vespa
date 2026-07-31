@@ -3,7 +3,6 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;

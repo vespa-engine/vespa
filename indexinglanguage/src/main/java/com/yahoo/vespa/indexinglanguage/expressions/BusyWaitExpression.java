@@ -1,6 +1,5 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
-import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 

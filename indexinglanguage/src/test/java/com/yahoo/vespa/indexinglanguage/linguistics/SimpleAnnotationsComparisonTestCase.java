@@ -10,7 +10,6 @@ import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.LinguisticsParameters;
-import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
