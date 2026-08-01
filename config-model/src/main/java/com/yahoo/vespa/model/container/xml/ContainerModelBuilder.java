@@ -265,6 +265,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         var sidecars = new ArrayList<SidecarSpec>();
+
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
             var sidecarImage = SidecarImages.readFromPropertiesFile().getOrThrow("triton");
@@ -283,6 +284,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             sidecars.add(spec);
         }
+
         return sidecars;
     }
 
@@ -1168,6 +1170,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             applyPerContainerGCOptions(nodes, context, cluster, null);
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
+
             var xmlGcOptions = extractJvmOptions(nodes, cluster, nodesElement, context);
             applyDefaultPreload(nodes, nodesElement);
             var envVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT)).entrySet();
@@ -1251,7 +1254,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             false,
                                             context.clusterInfo().build(),
                                             sidecars);
-            return createNodesFromHosts(hosts, nodesSpec.cluster(), cluster, context.getDeployState());
+            return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
         else {
             return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
@@ -1290,7 +1293,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                       getZooKeeper(containerElement) != null,
                                                                                       context.clusterInfo().build(),
                                                                                       sidecars);
-            return createNodesFromHosts(hosts, nodesSpecification.cluster(), cluster, context.getDeployState());
+            return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("In " + cluster, e);
@@ -1310,14 +1313,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
                                                              Capacity.fromRequiredNodeType(type),
                                                              context.getDeployState());
-        return createNodesFromHosts(hosts, clusterSpec, cluster, context.getDeployState());
+        return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
 
     private List<ApplicationContainer> createNodesFromHosts(Map<HostResource, ClusterMembership> hosts,
-                                                            ClusterSpec clusterSpec,
                                                             ApplicationContainerCluster cluster,
                                                             DeployState deployState) {
-        cluster.setSpec(clusterSpec);
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
@@ -1336,7 +1337,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             nodes.add(new ContainerServiceBuilder("container." + nodeIndex, nodeIndex).build(deployState, cluster, nodeElem));
             nodeIndex++;
         }
-        cluster.setSpec(ClusterSpec.request(ClusterSpec.Type.container, cluster.id()).vespaVersion(deployState.getVespaVersion()).build());
         return nodes;
     }
 

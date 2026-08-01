@@ -17,8 +17,17 @@ public class UrlConfigValidator implements Validator {
         if (! context.deployState().isHostedTenantApplication(context.model().getAdmin().getApplicationType())) return;
 
         context.model().getContainerClusters().forEach((__, cluster) -> {
-            validateS3UlsInConfig(context, cluster, cluster.getSpec().isExclusive());
+            var isExclusive = hasExclusiveNodes(context.model(), cluster);
+            validateS3UlsInConfig(context, cluster, isExclusive);
         });
+    }
+
+    private static boolean hasExclusiveNodes(VespaModel model, ApplicationContainerCluster cluster) {
+        return model.hostSystem().getHosts()
+                .stream()
+                .flatMap(hostResource -> hostResource.spec().membership().stream())
+                .filter(membership -> membership.id().equals(cluster.id()))
+                .anyMatch(membership -> membership.cluster().isExclusive());
     }
 
     private static void validateS3UlsInConfig(Context context, ApplicationContainerCluster cluster, boolean isExclusive) {

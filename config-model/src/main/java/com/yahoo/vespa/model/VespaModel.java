@@ -647,11 +647,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     public Provisioned provisioned() { return provisioned; }
 
     /** Returns the spec of all clusters in this */
-    public Set<ClusterSpec.Id> allClusters() {
+    public Set<ClusterSpec> allClusters() {
         return hostSystem().getHosts().stream()
                                       .map(HostResource::spec)
                                       .filter(spec -> spec.membership().isPresent())
-                                      .map(spec -> spec.membership().get().id())
+                                      .map(spec -> spec.membership().get().cluster())
                                       .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

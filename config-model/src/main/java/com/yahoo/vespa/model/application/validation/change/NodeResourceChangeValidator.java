@@ -26,7 +26,7 @@ public class NodeResourceChangeValidator implements ChangeValidator {
 
     @Override
     public void validate(ChangeContext context) {
-        for (ClusterSpec.Id cluster : context.previousModel().allClusters()) {
+        for (ClusterSpec cluster : context.previousModel().allClusters()) {
             Optional<NodeResources> currentResources = resourcesOf(cluster, context.previousModel());
             Optional<NodeResources> nextResources = resourcesOf(cluster, context.model());
             if (currentResources.isEmpty() || nextResources.isEmpty()) continue; // new or removed cluster
@@ -39,19 +39,19 @@ public class NodeResourceChangeValidator implements ChangeValidator {
         return currentResources.memoryGiB() != nextResources.memoryGiB();
     }
 
-    private Optional<NodeResources> resourcesOf(ClusterSpec.Id cluster, VespaModel model) {
+    private Optional<NodeResources> resourcesOf(ClusterSpec cluster, VespaModel model) {
         return model.allocatedHosts().getHosts().stream().filter(host -> host.membership().isPresent())
-                                                         .filter(host -> host.membership().get().id().equals(cluster))
+                                                         .filter(host -> host.membership().get().id().equals(cluster.id()))
                                                          .findFirst()
                                                          .map(HostSpec::advertisedResources);
     }
 
-    private List<ConfigChangeAction> createRestartActionsFor(ClusterSpec.Id cluster, VespaModel model) {
-        ApplicationContainerCluster containerCluster = model.getContainerClusters().get(cluster.value());
+    private List<ConfigChangeAction> createRestartActionsFor(ClusterSpec cluster, VespaModel model) {
+        ApplicationContainerCluster containerCluster = model.getContainerClusters().get(cluster.id().value());
         if (containerCluster != null)
             return createRestartActionsFor(containerCluster);
 
-        ContentCluster contentCluster = model.getContentClusters().get(cluster.value());
+        ContentCluster contentCluster = model.getContentClusters().get(cluster.id().value());
         if (contentCluster != null)
             return createRestartActionsFor(contentCluster);
 
