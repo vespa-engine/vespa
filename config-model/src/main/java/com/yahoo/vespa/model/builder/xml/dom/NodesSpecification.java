@@ -73,8 +73,6 @@ public class NodesSpecification {
 
     private final String profile;
 
-    private ClusterSpec cluster;
-
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
                                IntRange groupSize,
@@ -323,7 +321,7 @@ public class NodesSpecification {
                                                           boolean stateful,
                                                           ClusterInfo info,
                                                           List<SidecarSpec> sidecars) {
-        cluster = ClusterSpec.request(clusterType, clusterId)
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId)
                 .vespaVersion(version)
                 .exclusive(exclusive)
                 .dockerImageRepository(dockerImageRepo)
@@ -337,12 +335,6 @@ public class NodesSpecification {
         return hostSystem.allocateHosts(cluster,
                                         Capacity.from(min, max, groupSize, required, canFail, cloudAccount, cloudResourceTags, info),
                                         deployState);
-    }
-
-    public ClusterSpec cluster() {
-        if (cluster == null)
-            throw new IllegalStateException("cluster() can only be accessed after calling provision()");
-        return cluster;
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {

@@ -15,7 +15,6 @@ import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.SimpleConfigProducer;
@@ -341,9 +340,6 @@ public class Content extends ConfigModel {
             TreeConfigProducer<AnyConfigProducer> parent = getDocProc(root);
             var indexingCluster = new ApplicationContainerCluster(parent, "cluster." + indexerName,
                                                                   indexerName, modelContext.getDeployState());
-            indexingCluster.setSpec(ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(indexerName))
-                                               .vespaVersion(modelContext.getDeployState().getVespaVersion())
-                                               .build());
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);
             modelContext.getConfigModelRepoAdder().add(indexingClusterModel);
