@@ -41,8 +41,7 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnviron
                            double k1_param, double b_param)
     : FeatureExecutor(),
       _terms(),
-      _avg_field_length(avg_field_length),
-      _k1_mul_b(k1_param * b_param),
+      _k1_mul_b_div_avg_field_length(k1_param * b_param / avg_field_length),
       _k1_mul_one_minus_b(k1_param * (1 - b_param)) {
     for (size_t i = 0; i < env.getNumTerms(); ++i) {
         add_term_fields(*env.getTerm(i), field.id(), env, k1_param);
@@ -54,8 +53,7 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnviron
                            double b_param)
     : FeatureExecutor(),
       _terms(),
-      _avg_field_length(avg_field_length),
-      _k1_mul_b(k1_param * b_param),
+      _k1_mul_b_div_avg_field_length(k1_param * b_param / avg_field_length),
       _k1_mul_one_minus_b(k1_param * (1 - b_param)) {
     for (const ITermData* term : terms) {
         add_term_fields(*term, field.id(), env, k1_param);
@@ -78,9 +76,9 @@ void Bm25Executor::execute(uint32_t doc_id) {
                 score += term.degraded_score;
             } else {
                 feature_t num_occs = raw_num_occs;
-                feature_t norm_field_length = ((feature_t)term.tfmd->getFieldLength()) / _avg_field_length;
                 feature_t numerator = num_occs * term.idf_mul_k1_plus_one;
-                feature_t denominator = num_occs + (_k1_mul_one_minus_b + _k1_mul_b * norm_field_length);
+                feature_t denominator =
+                    num_occs + (_k1_mul_one_minus_b + term.tfmd->getFieldLength() * _k1_mul_b_div_avg_field_length);
 
                 score += numerator / denominator;
             }
