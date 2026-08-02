@@ -12,24 +12,99 @@ on:
   schedule:
     - cron: "0 2 * * 1-5"
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
     if: >-
       github.event_name != 'pull_request' ||
       contains(github.event.pull_request.labels.*.name, 'run-link-check')
-    uses: vespa-engine/gh-actions/.github/workflows/jekyll-link-checker.yml@main
-    secrets:
-      github-app-id: ${{ secrets.LINK_CHECKER_APP_ID }}
-      github-app-priv-key: ${{ secrets.LINK_CHECKER_PRIVATE_KEY }}
-    with:
-      ignore-urls: |-
-        /slack.vespa.ai/
-        /localhost:8080/
-        /127.0.0.1:3000/
-        /favicon.svg/
-        /main.jsx/
-      ignore-files: |-
-        /fnet/index.html/
-        /client/js/app/node_modules/
-      swap-urls: |-
-        (.*).md:\1.html
+    name: htmlproofer
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4.9
+
+      - name: bundle install
+        run: |
+          bundle install
+
+      - name: Install libvips
+        run: sudo apt-get update && sudo apt-get install -y libvips-dev
+
+      - name: Build site
+        run: |
+          bundle exec jekyll build
+
+      - name: Clean redirections
+        run: |
+          find _site/ -name '*.html' -print0 | \
+            xargs -0 -n 100 --no-run-if-empty grep -l "Click here if you are not redirected." || true | \
+            xargs --no-run-if-empty rm
+
+      - name: Clean code elements from html
+        run: |
+          find _site -name '*.html' | xargs sed -i'' 's/<code[^>]*>//g; s/<\/code>//g; s/<pre[^>]*>//g; s/<\/pre>//g;'
+
+      - name: check links without github.com
+        env:
+          LANG: "C.UTF-8"
+        run: |
+          IGNORE_URLS="$(printf '%s\n' "/github.com/" "/slack.vespa.ai/" "/localhost:8080/" "/127.0.0.1:3000/" "/favicon.svg/" "/main.jsx/" | awk '{gsub(/ /, "", $0); print}' ORS=',' )"
+          IGNORE_FILES="$(printf '%s\n' "/fnet/index.html/" "/client/js/app/node_modules/" | awk '{gsub(/ /, "", $0); print}' ORS=',' )"
+          SWAP_URLS="$( echo "(.*).md:\1.html" | awk '{gsub(/ /, "", $0); print}' ORS=',' )"
+
+          bundle exec htmlproofer \
+            --allow-missing-href \
+            --hydra '{"max_concurrency": 1}' \
+            --ignore-files "${IGNORE_FILES}" \
+            --ignore-urls "${IGNORE_URLS}" \
+            --no-check-external-hash \
+            --no-enforce-https \
+            --swap-urls "${SWAP_URLS}" \
+            --typhoeus '{"connecttimeout": 10, "timeout": 30, "accept_encoding": "zstd,br,gzip,deflate"}' \
+            _site
+
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        continue-on-error: true
+        with:
+          app-id: ${{ secrets.LINK_CHECKER_APP_ID }}
+          private-key: ${{ secrets.LINK_CHECKER_PRIVATE_KEY }}
+          owner: vespaai
+
+      - name: check links github.com only
+        env:
+          LANG: "C.UTF-8"
+          REQ_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          IGNORE_URLS='/^(?!.*github\.com).*$/'
+          IGNORE_FILES="$(printf '%s\n' "/fnet/index.html/" "/client/js/app/node_modules/" | awk '{gsub(/ /, "", $0); print}' ORS=',' )"
+          SWAP_URLS="$( echo "(.*).md:\1.html" | awk '{gsub(/ /, "", $0); print}' ORS=',' )"
+          TYPHOEUS='{"connecttimeout": 10, "timeout": 30, "accept_encoding": "zstd,br,gzip,deflate"}'
+
+          if [[ -n "${REQ_TOKEN}" ]]; then
+            export AUTH_HEADER
+            AUTH_HEADER="$(printf '%s%s' 'Bearer ' "${REQ_TOKEN}")"
+            TYPHOEUS="$(python3 -c 'import json, os; print(json.dumps({\"connecttimeout\": 10, \"timeout\": 30, \"accept_encoding\": \"zstd,br,gzip,deflate\", \"headers\": {\"Authorization\": os.environ[\"AUTH_HEADER\"]}}))')"
+          else
+            echo "::warning::Falling back to unauthenticated GitHub link checks because the GitHub App token could not be created."
+          fi
+
+          bundle exec htmlproofer \
+            --allow-missing-href \
+            --hydra '{"max_concurrency": 1}' \
+            --ignore-files "${IGNORE_FILES}" \
+            --ignore-urls "${IGNORE_URLS}" \
+            --no-check-external-hash \
+            --no-enforce-https \
+            --swap-urls "${SWAP_URLS}" \
+            --typhoeus "${TYPHOEUS}" \
+            _site
