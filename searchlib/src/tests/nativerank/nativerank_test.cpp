@@ -564,9 +564,11 @@ TEST_F(NativeRankTest, test_native_proximity) {
             EXPECT_TRUE(pairs[0].first.termData() == &a);
             EXPECT_TRUE(pairs[0].second.termData() == &b);
             EXPECT_EQ(pairs[0].connectedness, 0.8);
+            EXPECT_EQ(pairs[0].term_pair_weight, 40);
             EXPECT_TRUE(pairs[1].first.termData() == &b);
             EXPECT_TRUE(pairs[1].second.termData() == &c);
             EXPECT_EQ(pairs[1].connectedness, 0.6);
+            EXPECT_EQ(pairs[1].term_pair_weight, 78);
             EXPECT_EQ(setup.divisor, 118); // (10 + 40)*0.8 + (40 + 90)*0.6
 
             pairs.clear();
@@ -577,12 +579,15 @@ TEST_F(NativeRankTest, test_native_proximity) {
             EXPECT_TRUE(pairs[0].first.termData() == &a);
             EXPECT_TRUE(pairs[0].second.termData() == &b);
             EXPECT_EQ(pairs[0].connectedness, 0.8);
+            EXPECT_EQ(pairs[0].term_pair_weight, 40);
             EXPECT_TRUE(pairs[1].first.termData() == &a);
             EXPECT_TRUE(pairs[1].second.termData() == &c);
             EXPECT_EQ(pairs[1].connectedness, 0.3);
+            EXPECT_EQ(pairs[1].term_pair_weight, 30);
             EXPECT_TRUE(pairs[2].first.termData() == &b);
             EXPECT_TRUE(pairs[2].second.termData() == &c);
             EXPECT_EQ(pairs[2].connectedness, 0.6);
+            EXPECT_EQ(pairs[2].term_pair_weight, 78);
             EXPECT_EQ(setup.divisor, 148); // (10 + 40)*0.8 + (10 + 90)*0.3 + (40 + 90)*0.6
 
             pairs.clear();
@@ -596,6 +601,7 @@ TEST_F(NativeRankTest, test_native_proximity) {
             EXPECT_TRUE(pairs[0].first.termData() == &b);
             EXPECT_TRUE(pairs[0].second.termData() == &c);
             EXPECT_EQ(pairs[0].connectedness, 0.6);
+            EXPECT_EQ(pairs[0].term_pair_weight, 54);
         }
     }
 
