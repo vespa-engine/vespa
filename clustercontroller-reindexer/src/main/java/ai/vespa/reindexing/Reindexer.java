@@ -176,7 +176,7 @@ class Reindexer {
         VisitorParameters parameters = createParameters(type, speed, status.get().progress().orElse(null));
         parameters.setControlHandler(control);
         Runnable sessionShutdown = visitorSessions.apply(parameters); // Also starts the visitor session.
-        log.log(FINE, () -> "Running reindexing of " + type);
+        log.log(INFO, () -> "Running reindexing of " + type);
 
         // Wait until done; or until termination is forced, in which case we shut down the visitor session immediately.
         phaser.arriveAndAwaitAdvance(); // Synchronize with visitor completion.
