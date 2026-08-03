@@ -358,6 +358,16 @@ String out() :
     { return null; }
 }
 
+private String tagValue() :
+{
+    String value;
+}
+{
+    ( value = identifier() { return value; }
+    | <STRING> { return ((StringValue)Value.parse(token.image)).asString(); }
+    )
+}
+
 private ExpressionNode argExpression() :
 {
     String argName, argValue;
@@ -365,10 +375,12 @@ private ExpressionNode argExpression() :
 }
 {
     LOOKAHEAD(2) (
-        argName = identifier() <COLON> argValue = identifier() {
-            node = new ConstantNode(Value.parse("\"" + argName + ":" + argValue + "\""));
-              return node;
-        }
+        argName = identifier() <COLON> (
+            argValue = tagValue() {
+                node = new ConstantNode(new StringValue(argName + ":" + argValue));
+                return node;
+            }
+        )
     ) | ( node = expression() { return node; } )
 }
 

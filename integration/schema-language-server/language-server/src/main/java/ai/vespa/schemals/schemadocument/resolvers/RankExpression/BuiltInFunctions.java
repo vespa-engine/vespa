@@ -13,7 +13,11 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelArgument;
-import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelFunctionArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.BareLabelRejectionArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Bm25FieldOnlyExpressionArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelWrapperRejectionArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.TaggedFieldArgument;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.TaggedLabelArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.ExpressionArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldArgument;
@@ -250,7 +254,22 @@ public class BuiltInFunctions {
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", List.of(
             new FunctionSignature(new FieldArgument("field")),
-            new FunctionSignature(List.of(new FieldArgument("field"), new LabelFunctionArgument("name")))
+            new FunctionSignature(List.of(
+                new TaggedFieldArgument("field"),
+                new TaggedLabelArgument("name")
+            )),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldType.STRING, IndexingType.INDEX, "field"),
+                new TaggedLabelArgument("name")
+            )),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldType.STRING, IndexingType.INDEX, "field"),
+                new LabelWrapperRejectionArgument()
+            )).hidden(),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldType.STRING, IndexingType.INDEX, "field"),
+                new BareLabelRejectionArgument("name")
+            )).hidden()
         )));
         put("averageFieldLength", new GenericFunction("averageFieldLength",
             new FunctionSignature(new FieldArgument("field"), Set.of(
@@ -261,11 +280,11 @@ public class BuiltInFunctions {
 
         put("elementwise", new GenericFunction("elementwise", List.of(
             new FunctionSignature(List.of(
-                new ExpressionArgument("bm25(field)"),
+                new Bm25FieldOnlyExpressionArgument("bm25(field)"),
                 new StringArgument("dimension")
             )),
             new FunctionSignature(List.of(
-                new ExpressionArgument("bm25(field)"),
+                new Bm25FieldOnlyExpressionArgument("bm25(field)"),
                 new StringArgument("dimension"),
                 new TensorTypeArgument("cell_type")
             ))

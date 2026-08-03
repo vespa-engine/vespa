@@ -218,14 +218,6 @@ std::vector<const ITermData*> getTermsByLabel(const search::fef::IQueryEnvironme
     return terms;
 }
 
-std::optional<std::string> parse_label_argument(const std::string& param) {
-    FeatureNameParser parser(param);
-    if (!parser.valid() || parser.baseName() != "label" || parser.parameters().size() != 1 ||
-        parser.parameters()[0].empty() || !parser.output().empty()) {
-        return std::nullopt;
-    }
-    return parser.parameters()[0];
-}
 
 std::optional<DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,
                                                            const ITermData&                      term) {

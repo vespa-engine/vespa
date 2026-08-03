@@ -12,7 +12,12 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.rankingexpression.ast.COLON;
+import ai.vespa.schemals.parser.rankingexpression.ast.IDENTIFIER;
+import ai.vespa.schemals.parser.rankingexpression.ast.STRING;
 import ai.vespa.schemals.parser.rankingexpression.ast.argExpression;
+import ai.vespa.schemals.parser.rankingexpression.ast.identifierStr;
+import ai.vespa.schemals.parser.rankingexpression.ast.tagValueStr;
 import ai.vespa.schemals.parser.rankingexpression.ast.args;
 import ai.vespa.schemals.parser.rankingexpression.ast.expression;
 import ai.vespa.schemals.parser.rankingexpression.ast.feature;
@@ -20,6 +25,9 @@ import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.outs;
 import ai.vespa.schemals.parser.rankingexpression.ast.scalarOrTensorFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorReduceComposites;
+import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunction;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -36,7 +44,8 @@ public class RankNode implements Iterable<RankNode>  {
     public static enum RankNodeType {
         FEATURE,
         EXPRESSION,
-        BUILT_IN_FUNCTION
+        BUILT_IN_FUNCTION,
+        TAGGED_ARGUMENT
     };
 
     private SchemaNode schemaNode;
@@ -52,6 +61,14 @@ public class RankNode implements Iterable<RankNode>  {
 
     // For feature nodes, this specifies the function signature
     private Optional<SpecificFunction> functionSignature = Optional.empty();
+
+    // For tagged arguments: field: value / label: value
+    private Optional<String> tagKey = Optional.empty();
+    private Optional<SchemaNode> tagValueNode = Optional.empty();
+
+    public static RankNode wrap(SchemaNode node) {
+        return new RankNode(node);
+    }
 
     private RankNode(SchemaNode node) {
         this.schemaNode = node;
@@ -101,6 +118,122 @@ public class RankNode implements Iterable<RankNode>  {
         return ret;
     }
 
+    private static Optional<RankNode> tryParseTaggedArgument(SchemaNode argExprNode) {
+        String key = null;
+        SchemaNode valueNode = null;
+        boolean sawColon = false;
+        boolean hasColonChild = false;
+        for (Node child : argExprNode) {
+            if (child.isASTInstance(COLON.class)) {
+                hasColonChild = true;
+                sawColon = true;
+            } else if (!sawColon) {
+                key = child.getText();
+            } else if (valueNode == null) {
+                valueNode = child.getSchemaNode();
+            }
+        }
+        if (!hasColonChild) {
+            Optional<RankNode> fromSource = tryParseTaggedArgumentFromSource(argExprNode);
+            if (fromSource.isPresent()) {
+                return fromSource;
+            }
+            return Optional.empty();
+        }
+        if (key == null || valueNode == null) {
+            return tryParseTaggedArgumentFromSource(argExprNode);
+        }
+        return Optional.of(makeTaggedArgument(argExprNode, key, valueNode));
+    }
+
+    private static Optional<RankNode> tryParseTaggedArgumentFromSource(SchemaNode argExprNode) {
+        String source = argExprNode.getText();
+        if (source == null) {
+            return Optional.empty();
+        }
+        int colon = source.indexOf(':');
+        if (colon <= 0 || colon >= source.length() - 1) {
+            return Optional.empty();
+        }
+        String key = source.substring(0, colon).trim();
+        if (!isTagKey(key)) {
+            return Optional.empty();
+        }
+        SchemaNode valueNode = findTagValueNode(argExprNode).orElse(argExprNode);
+        return Optional.of(makeTaggedArgument(argExprNode, key, valueNode));
+    }
+
+    private static boolean isTagKey(String key) {
+        return key.matches("[A-Za-z_][A-Za-z0-9_]*");
+    }
+
+    public static SchemaNode resolveTagValueLeaf(SchemaNode valueNode) {
+        return findTagValueNode(valueNode).orElse(valueNode);
+    }
+
+    public static boolean tagValueIsIdentifier(SchemaNode valueNode) {
+        SchemaNode leaf = resolveTagValueLeaf(valueNode);
+        return leaf.isASTInstance(identifierStr.class) || leaf.isASTInstance(IDENTIFIER.class);
+    }
+
+    public static boolean tagValueIsString(SchemaNode valueNode) {
+        return resolveTagValueLeaf(valueNode).isASTInstance(STRING.class);
+    }
+
+    public static String findTagValueText(SchemaNode valueNode) {
+        SchemaNode leaf = resolveTagValueLeaf(valueNode);
+        if (leaf.isASTInstance(STRING.class)) {
+            return ((StringValue) Value.parse(leaf.getText())).asString();
+        }
+        return leaf.getText();
+    }
+
+    private static Optional<SchemaNode> findTagValueNode(SchemaNode node) {
+        for (int i = node.size() - 1; i >= 0; i--) {
+            Node child = node.get(i);
+            if (child.isASTInstance(COLON.class)) {
+                continue;
+            }
+            SchemaNode childNode = child.getSchemaNode();
+            if (childNode.isASTInstance(identifierStr.class)
+                    || childNode.isASTInstance(IDENTIFIER.class)
+                    || childNode.isASTInstance(STRING.class)
+                    || childNode.isASTInstance(tagValueStr.class)) {
+                Optional<SchemaNode> nested = findTagValueNode(childNode);
+                if (nested.isPresent()) {
+                    return nested;
+                }
+                return Optional.of(childNode);
+            }
+            Optional<SchemaNode> nested = findTagValueNode(childNode);
+            if (nested.isPresent()) {
+                return nested;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static RankNode makeTaggedArgument(SchemaNode argExprNode, String key, SchemaNode valueNode) {
+        RankNode rankNode = new RankNode(argExprNode);
+        rankNode.type = RankNodeType.TAGGED_ARGUMENT;
+        rankNode.children = new ArrayList<>();
+        rankNode.tagKey = Optional.of(key);
+        rankNode.tagValueNode = Optional.of(valueNode);
+        return rankNode;
+    }
+
+    public boolean isTaggedArgument() {
+        return tagKey.isPresent();
+    }
+
+    public String getTagKey() {
+        return tagKey.orElse(null);
+    }
+
+    public SchemaNode getTagValueNode() {
+        return tagValueNode.orElse(null);
+    }
+
     private static Optional<List<RankNode>> findParameters(SchemaNode node) {
         Node parameterNode = null;
 
@@ -118,17 +251,55 @@ public class RankNode implements Iterable<RankNode>  {
         List<RankNode> ret = new ArrayList<>();
 
         for (Node child : parameterNode) {
-            if (child.getASTClass() == expression.class) {
-                ret.add(new RankNode(child.getSchemaNode()));
-            } else if (child.getASTClass() == argExpression.class) {
-                // An argExpression wraps either a normal expression or a "name:value" tag.
-                // Flatten it so the parameter structure matches a plain expression argument;
-                // the tag form has no expression child and thus contributes no parameter.
-                ret.addAll(findChildren(child.getSchemaNode()));
+            if (child.isASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.COMMA.class)) {
+                continue;
+            }
+            SchemaNode childNode = child.getSchemaNode();
+            if (childNode.isASTInstance(argExpression.class)) {
+                addParameterFromArgExpression(childNode, ret);
+            } else if (child.getASTClass() == expression.class) {
+                Optional<RankNode> tagged = tryParseTaggedArgument(childNode);
+                if (tagged.isEmpty()) {
+                    Optional<SchemaNode> argExprNode = findArgExpressionNode(childNode);
+                    if (argExprNode.isPresent()) {
+                        tagged = tryParseTaggedArgument(argExprNode.get());
+                    }
+                }
+                if (tagged.isPresent()) {
+                    ret.add(tagged.get());
+                } else {
+                    ret.add(new RankNode(childNode));
+                }
             }
         }
 
         return Optional.of(ret);
+    }
+
+    private static void addParameterFromArgExpression(SchemaNode argExprNode, List<RankNode> ret) {
+        Optional<RankNode> tagged = tryParseTaggedArgument(argExprNode);
+        if (tagged.isPresent()) {
+            ret.add(tagged.get());
+            return;
+        }
+        for (Node grandchild : argExprNode) {
+            if (grandchild.getASTClass() == expression.class) {
+                ret.add(new RankNode(grandchild.getSchemaNode()));
+            }
+        }
+    }
+
+    private static Optional<SchemaNode> findArgExpressionNode(SchemaNode node) {
+        if (node.isASTInstance(argExpression.class)) {
+            return Optional.of(node);
+        }
+        for (Node child : node) {
+            Optional<SchemaNode> found = findArgExpressionNode(child.getSchemaNode());
+            if (found.isPresent()) {
+                return found;
+            }
+        }
+        return Optional.empty();
     }
 
     private static List<RankNode> findBuiltInChildren(SchemaNode node) {

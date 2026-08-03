@@ -1,0 +1,14 @@
+schema elementwisebm25labelbad {
+    document elementwisebm25labelbad {
+        field title type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: elementwise(bm25(field: title, label: x), x)
+        }
+    }
+}

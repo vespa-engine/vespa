@@ -387,10 +387,14 @@ struct Bm25LabelBlueprintTest : public ::testing::Test {
     }
     ~Bm25LabelBlueprintTest() override;
 
-    void expect_setup_fail(const std::string& base_name, const StringVector& params) {
+    void expect_setup_fail(const std::string& base_name, const StringVector& params,
+                           const std::string& exp_fail_msg = "") {
         auto                         blueprint = factory.createBlueprint(base_name);
         test::DummyDependencyHandler deps(*blueprint);
         EXPECT_FALSE(blueprint->setup(index_env, params));
+        if (!exp_fail_msg.empty()) {
+            EXPECT_EQ(exp_fail_msg, deps.fail_msg);
+        }
     }
 
     void expect_setup_succeed(const StringVector& params) {
@@ -404,21 +408,53 @@ struct Bm25LabelBlueprintTest : public ::testing::Test {
 
 Bm25LabelBlueprintTest::~Bm25LabelBlueprintTest() = default;
 
-TEST_F(Bm25LabelBlueprintTest, blueprint_setup_succeeds_with_label_parameter) {
-    expect_setup_succeed({"is", "label(mylabel)"});
-    // the label is an opaque string; one that happens to name a field is still just a label
-    expect_setup_succeed({"is", "label(ia)"});
+TEST_F(Bm25LabelBlueprintTest, blueprint_setup_succeeds_with_tagged_label_parameters) {
+    expect_setup_succeed({"field:is", "label:mylabel"});
+    expect_setup_succeed({"is", "label:mylabel"});
+    expect_setup_succeed({"field:is", "label:title:terms"});
+}
+
+TEST_F(Bm25LabelBlueprintTest, blueprint_setup_succeeds_with_one_argument) {
+    expect_setup_succeed({"is"});
 }
 
 TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_when_label_argument_is_malformed) {
-    expect_setup_fail("bm25", {"is", ""});
-    expect_setup_fail("bm25", {"is", "mylabel"});   // missing label() wrapper
-    expect_setup_fail("bm25", {"is", "label()"});   // empty label name
-    expect_setup_fail("bm25", {"is", "label(a,b)"}); // more than one name
+    expect_setup_fail("bm25", {"is", ""},
+                        "The second parameter must be of the form label:<query-item-label>, but was ''");
+    expect_setup_fail("bm25", {"is", "mylabel"},
+                        "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
+    expect_setup_fail("bm25", {"is", "label()"},
+                        "The second parameter must be of the form label:<query-item-label>, but was 'label()'");
+    expect_setup_fail("bm25", {"is", "label(mylabel)"},
+                        "The second parameter must be of the form label:<query-item-label>, but was 'label(mylabel)'");
+    expect_setup_fail("bm25", {"is", "label:"},
+                        "The second parameter must be of the form label:<query-item-label>, but was 'label:'");
+    expect_setup_fail("bm25", {"label", "mylabel"},
+                        "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
+    expect_setup_fail("bm25", {"is", "name:mylabel"},
+                        "The second parameter must be of the form label:<query-item-label>, but was 'name:mylabel'");
+    expect_setup_fail("bm25", {"foo:is", "label:mylabel"},
+                        "The first parameter must be an index field name or of the form field:<index-field>, but was "
+                        "'foo:is'");
+    expect_setup_fail("bm25", {"field:", "label:mylabel"},
+                        "The first parameter must be an index field name or of the form field:<index-field>, but was "
+                        "'field:'");
+    expect_setup_fail("bm25", {"field:\"title\"", "label:mylabel"},
+                        "The field tag value must be an identifier, but was '\"title\"'");
+}
+
+TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_for_unknown_field) {
+    expect_setup_fail("bm25", {"missing", "label:mylabel"}, "Unknown index field 'missing'");
+    expect_setup_fail("bm25", {"field:missing", "label:mylabel"}, "Unknown index field 'missing'");
+}
+
+TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_for_invalid_parameter_count) {
+    expect_setup_fail("bm25", {});
+    expect_setup_fail("bm25", {"is", "label:a", "extra"});
 }
 
 TEST_F(Bm25LabelBlueprintTest, label_parameter_is_not_supported_by_elementwise_bm25) {
-    expect_setup_fail("elementwise", {"bm25(is,label(someLabel))", "x", "double"});
+    expect_setup_fail("elementwise", {"bm25(is,\"label:someLabel\")", "x", "double"});
 }
 
 struct Bm25LabelFixture {
@@ -476,57 +512,71 @@ struct Bm25LabelFixture {
     bool execute(const test::RankResult& expected) { return test.execute(expected); }
 };
 
+// Normalized feature names below must stay in sync with config-model/src/test/derived/bm25label/test.sd.
 TEST(Bm25LabelExecutorTest, only_labeled_terms_are_scored) {
-    Bm25LabelFixture f({"bm25(foo)", "bm25(foo,label(mylabel))"});
+    Bm25LabelFixture f({"bm25(foo)", "bm25(\"field:foo\",\"label:mylabel\")"});
     f.add_label("mylabel", {11});
     f.setup();
     f.prepare_term(0, 0, 3, 20);
     f.prepare_term(1, 0, 7, 5);
-    // the labeled feature scores only the labeled term, while the unlabeled feature
-    // evaluated for the same query environment still scores all terms
     test::RankResult expected;
     expected.setEpsilon(0.000001);
     expected.addScore("bm25(foo)", f.score(3.0, 20, f.idf(25)) + f.score(7.0, 5.0, f.idf(35)));
-    expected.addScore("bm25(foo,label(mylabel))", f.score(3.0, 20, f.idf(25)));
+    expected.addScore("bm25(\"field:foo\",\"label:mylabel\")", f.score(3.0, 20, f.idf(25)));
+    EXPECT_TRUE(f.execute(expected));
+}
+
+TEST(Bm25LabelExecutorTest, shorthand_form_returns_same_score_as_preferred_form) {
+    Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")", "bm25(foo,\"label:mylabel\")"});
+    f.add_label("mylabel", {11});
+    f.setup();
+    f.prepare_term(0, 0, 3, 20);
+    f.prepare_term(1, 0, 7, 5);
+    test::RankResult expected;
+    expected.setEpsilon(0.000001);
+    const feature_t labeled_score = f.score(3.0, 20, f.idf(25));
+    expected.addScore("bm25(\"field:foo\",\"label:mylabel\")", labeled_score);
+    expected.addScore("bm25(foo,\"label:mylabel\")", labeled_score);
     EXPECT_TRUE(f.execute(expected));
 }
 
 TEST(Bm25LabelExecutorTest, label_with_multiple_terms_scores_their_sum) {
-    Bm25LabelFixture f({"bm25(foo,label(mylabel))"});
+    Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")"});
     f.add_label("mylabel", {11, 12});
     f.setup();
     f.prepare_term(0, 0, 3, 20);
     f.prepare_term(1, 0, 7, 5);
     test::RankResult expected;
     expected.setEpsilon(0.000001);
-    expected.addScore("bm25(foo,label(mylabel))", f.score(3.0, 20, f.idf(25)) + f.score(7.0, 5.0, f.idf(35)));
+    expected.addScore("bm25(\"field:foo\",\"label:mylabel\")",
+                      f.score(3.0, 20, f.idf(25)) + f.score(7.0, 5.0, f.idf(35)));
     EXPECT_TRUE(f.execute(expected));
 }
 
 TEST(Bm25LabelExecutorTest, label_not_present_in_query_gives_zero_score) {
-    Bm25LabelFixture f({"bm25(foo,label(mylabel))"});
+    Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")"});
     f.setup();
     f.prepare_term(0, 0, 3, 20);
     test::RankResult expected;
     expected.setEpsilon(0.000001);
-    expected.addScore("bm25(foo,label(mylabel))", 0.0);
+    expected.addScore("bm25(\"field:foo\",\"label:mylabel\")", 0.0);
     EXPECT_TRUE(f.execute(expected));
 }
 
 TEST(Bm25LabelExecutorTest, labeled_term_searching_another_field_contributes_nothing) {
-    Bm25LabelFixture f({"bm25(foo,label(mylabel))"});
+    Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")"});
     f.add_label("mylabel", {13}); // term searching field 'bar'
     f.setup();
     f.prepare_term(0, 0, 3, 20);
     f.prepare_term(2, 1, 3, 20);
     test::RankResult expected;
     expected.setEpsilon(0.000001);
-    expected.addScore("bm25(foo,label(mylabel))", 0.0);
+    expected.addScore("bm25(\"field:foo\",\"label:mylabel\")", 0.0);
     EXPECT_TRUE(f.execute(expected));
 }
 
 TEST(Bm25LabelExecutorTest, labeled_feature_uses_field_level_tuning) {
-    Bm25LabelFixture f({"bm25(foo,label(mylabel))"});
+    Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")"});
     // tuning properties are keyed per field only, not per feature instance
     f.test.getIndexEnv().getProperties().add("bm25(foo).k1", "2.5");
     f.add_label("mylabel", {11});
@@ -535,7 +585,7 @@ TEST(Bm25LabelExecutorTest, labeled_feature_uses_field_level_tuning) {
     f.scorer.k1_param = 2.5;
     test::RankResult expected;
     expected.setEpsilon(0.000001);
-    expected.addScore("bm25(foo,label(mylabel))", f.score(3.0, 20, f.idf(25)));
+    expected.addScore("bm25(\"field:foo\",\"label:mylabel\")", f.score(3.0, 20, f.idf(25)));
     EXPECT_TRUE(f.execute(expected));
 }
 

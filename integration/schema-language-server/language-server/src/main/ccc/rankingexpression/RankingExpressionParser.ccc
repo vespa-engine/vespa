@@ -408,6 +408,16 @@ String out() :
     { /* Unreachable: return null; */ }
 ;
 
+String tagValueStr() :
+{
+    String value;
+}
+
+    ( value = identifierStr() { return value; }
+    | <STRING> { return ((StringValue)Value.parse(lastConsumedToken.toString())).asString(); }
+    )
+;
+
 ExpressionNode argExpression() :
 {
     String argName, argValue;
@@ -415,11 +425,13 @@ ExpressionNode argExpression() :
 }
 
     ( SCAN 2 (
-        argName = identifierStr() <COLON> argValue = identifierStr() {
-            node = new ConstantNode(Value.parse("\"" + argName + ":" + argValue + "\""));
-            thisProduction.expressionNode = node;
-            return node;
-        }
+        argName = identifierStr() <COLON> (
+            argValue = tagValueStr() {
+                node = new ConstantNode(new StringValue(argName + ":" + argValue));
+                thisProduction.expressionNode = node;
+                return node;
+            }
+        )
       ) | ( node = expression() { thisProduction.expressionNode = node; return node; } ) )
 ;
 

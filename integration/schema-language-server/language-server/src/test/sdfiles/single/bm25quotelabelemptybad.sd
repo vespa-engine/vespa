@@ -1,0 +1,14 @@
+schema bm25quotelabelemptybad {
+    document bm25quotelabelemptybad {
+        field title type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: bm25(title, label: '')
+        }
+    }
+}

@@ -11,6 +11,9 @@
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/vespalib/util/stash.h>
 
+#include <cctype>
+#include <string_view>
+
 namespace search::features {
 
 using fef::AnyWrapper;
@@ -121,14 +124,98 @@ fef::ParameterDescriptions Bm25Blueprint::getDescriptions() const {
         .desc()
         .indexField(fef::ParameterCollection::ANY)
         .desc()
-        .indexField(fef::ParameterCollection::ANY)
+        .string()
         .string();
 }
 
-bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) {
-    const auto& field_name = params[0].getValue();
+namespace {
+
+bool is_valid_field_name(std::string_view value) {
+    if (value.empty()) {
+        return false;
+    }
+    char first = value.front();
+    if (!std::isalpha(static_cast<unsigned char>(first)) && first != '_') {
+        return false;
+    }
+    for (char c : value) {
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_') {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::optional<std::string> parse_tagged_argument(const std::string& param, std::string_view expected_tag) {
+    auto colon = param.find(':');
+    if (colon == std::string::npos || colon == 0 || colon + 1 >= param.size()) {
+        return std::nullopt;
+    }
+    if (param.substr(0, colon) != expected_tag) {
+        return std::nullopt;
+    }
+    std::string value = param.substr(colon + 1);
+    if (value.empty()) {
+        return std::nullopt;
+    }
+    return value;
+}
+
+} // namespace
+
+bool Bm25Blueprint::setup_label_parameter(const std::string& param) {
+    auto label = parse_tagged_argument(param, "label");
+    if (!label.has_value()) {
+        return fail("The second parameter must be of the form label:<query-item-label>, but was '%s'",
+                    param.c_str());
+    }
+    _label = std::move(*label);
+    return true;
+}
+
+bool Bm25Blueprint::resolve_index_field(const fef::IIndexEnvironment& env, const std::string& field_name) {
     _field = env.getFieldByName(field_name);
     if (_field == nullptr) {
+        return fail("Unknown index field '%s'", field_name.c_str());
+    }
+    if (_field->type() != FieldType::INDEX) {
+        return fail("Field '%s' is not an index field", field_name.c_str());
+    }
+    return true;
+}
+
+bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) {
+    if (params.size() == 1) {
+        const auto& field_name = params[0].getValue();
+        if (!resolve_index_field(env, field_name)) {
+            return false;
+        }
+    } else if (params.size() == 2) {
+        if (!setup_label_parameter(params[1].getValue())) {
+            return false;
+        }
+        std::string field_name;
+        const auto& first = params[0].getValue();
+        if (first.find(':') != std::string::npos) {
+            auto field = parse_tagged_argument(first, "field");
+            if (!field.has_value()) {
+                return fail("The first parameter must be an index field name or of the form field:<index-field>, "
+                              "but was '%s'",
+                              first.c_str());
+            }
+            if (!is_valid_field_name(*field)) {
+                return fail("The field tag value must be an identifier, but was '%s'", field->c_str());
+            }
+            field_name = std::move(*field);
+        } else {
+            field_name = first;
+        }
+        if (!resolve_index_field(env, field_name)) {
+            return false;
+        }
+        describeOutput("score", "The bm25 score for the query terms with the given label searching in the given "
+                                "index field");
+    } else {
         return false;
     }
     Bm25Utils bm25_utils(getBaseName() + "(" + _field->name() + ").", env.getProperties());
@@ -142,16 +229,7 @@ bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::Paramete
     if (bm25_utils.lookup_param(Bm25Utils::average_field_length(), _avg_field_length) == Trinary::Undefined) {
         return fail(bm25_utils.last_error());
     }
-    if (params.size() == 2) {
-        auto label = util::parse_label_argument(params[1].getValue());
-        if (!label.has_value()) {
-            return fail("The second parameter must be of the form label(<query-item-label>), but was '%s'",
-                        params[1].getValue().c_str());
-        }
-        _label = std::move(*label);
-        describeOutput("score", "The bm25 score for the query terms with the given label searching in the given "
-                                "index field");
-    } else {
+    if (params.size() == 1) {
         describeOutput("score", "The bm25 score for all terms searching in the given index field");
     }
     return true;

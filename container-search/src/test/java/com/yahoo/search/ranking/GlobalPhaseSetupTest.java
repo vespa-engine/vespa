@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GlobalPhaseSetupTest {
     private static final String CONFIG_DIR = "src/test/resources/config/";
@@ -138,6 +139,19 @@ public class GlobalPhaseSetupTest {
         assertEquals("plusOne(attribute(foo2))", wantMF.get(1).matchFeatureName());
         assertEquals("useAttr(t1,42)", wantMF.get(2).matchFeatureName());
         assertEquals("withIndirect(foo1)", wantMF.get(3).matchFeatureName());
+    }
+
+    @Test void labeledBm25GlobalPhaseSetup() {
+        RankProfilesConfig rpCfg = readConfig("bm25_label_global_phase");
+        assertEquals(1, rpCfg.rankprofile().size());
+        RankProfilesEvaluator rpEvaluator = createEvaluator(rpCfg);
+        var setup = GlobalPhaseSetup.maybeMakeSetup(rpCfg.rankprofile().get(0), rpEvaluator);
+        assertNotNull(setup);
+        assertEquals(1, setup.matchFeaturesToHide.size());
+        assertTrue(setup.matchFeaturesToHide.contains("bm25(\"field:myfield\",\"label:mylabel\")"));
+        assertEquals(1, setup.globalPhaseEvalSpec.fromMF().size());
+        assertEquals("bm25(\"field:myfield\",\"label:mylabel\")",
+                     setup.globalPhaseEvalSpec.fromMF().get(0).inputName());
     }
 
     private RankProfilesEvaluator createEvaluator(RankProfilesConfig config) {
