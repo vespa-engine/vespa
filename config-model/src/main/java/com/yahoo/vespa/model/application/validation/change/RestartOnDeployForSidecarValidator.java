@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -30,7 +31,9 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
             if (nextCluster == null) continue;
 
             var clusterId = previousCluster.id();
-            var previousSidecars = previousCluster.getSpec().sidecars();
+            var previousSpec = getSpec(previousCluster);
+            if (previousSpec.isEmpty()) return;
+            var previousSidecars = previousSpec.get().sidecars();
             var nextSidecars = nextCluster.getSpec().sidecars();
 
             var removedSidecars = previousSidecars.stream().filter(previousSidecar -> nextSidecars.stream().noneMatch(
@@ -75,6 +78,17 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                 addRestartAction(context, nextCluster, messageBuilder.toString());
             }
         }
+    }
+
+    // TODO: Replace by just cluster.getSpec() after August 2026
+    private Optional<ClusterSpec> getSpec(ApplicationContainerCluster cluster) {
+        if (cluster.getSpec() != null) return Optional.of(cluster.getSpec());
+        return cluster.hostSystem().getHosts().stream()
+                      .map(HostResource::spec)
+                      .filter(spec -> spec.membership().isPresent())
+                      .filter(spec -> spec.membership().get().id().equals(cluster.id()))
+                      .map(spec -> spec.membership().get().cluster())
+                      .findAny();
     }
 
     private String joinSidecarNames(List<SidecarSpec> sidecars) {
