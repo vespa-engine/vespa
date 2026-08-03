@@ -27,25 +27,11 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         // Validate sidecars in existing clusters only, new clusters do not need restartOnDeploy.
         for (var previousCluster : context.previousModel().getContainerClusters().values()) {
             var nextCluster = context.model().getContainerClusters().get(previousCluster.name());
-
-            if (nextCluster == null) {
-                continue;
-            }
+            if (nextCluster == null) continue;
 
             var clusterId = previousCluster.id();
-
-            var previousClusterSpec = findClusterSpec(context.previousModel(), clusterId);
-            if (previousClusterSpec.isEmpty()) {
-                continue;
-            }
-
-            var nextClusterSpec = findClusterSpec(context.model(), clusterId);
-            if (nextClusterSpec.isEmpty()) {
-                continue;
-            }
-
-            var previousSidecars = previousClusterSpec.get().sidecars();
-            var nextSidecars = nextClusterSpec.get().sidecars();
+            var previousSidecars = previousCluster.getSpec().sidecars();
+            var nextSidecars = nextCluster.getSpec().sidecars();
 
             var removedSidecars = previousSidecars.stream().filter(previousSidecar -> nextSidecars.stream().noneMatch(
                     sidecar -> sidecar.matchesByIdOrName(previousSidecar))).toList();
@@ -89,10 +75,6 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
                 addRestartAction(context, nextCluster, messageBuilder.toString());
             }
         }
-    }
-
-    private Optional<ClusterSpec> findClusterSpec(VespaModel model, ClusterSpec.Id clusterId) {
-        return model.allClusters().stream().filter(c -> c.id().equals(clusterId)).findFirst();
     }
 
     private String joinSidecarNames(List<SidecarSpec> sidecars) {
