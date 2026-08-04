@@ -409,6 +409,48 @@ func TestPruneOldUpdatesAppPackage(t *testing.T) {
 	assert.Equal(t, 1, countPEMBlocks(t, filepath.Join(appDir, "security", "clients.pem")))
 }
 
+func TestCertNewKeyUpdatesExistingPackageCert(t *testing.T) {
+	cli, _, _ := newTestCLI(t)
+	configureCloud(t, cli)
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+
+	// Package already contains a certificate, as it would after a previous 'vespa auth cert'.
+	appDir, pkgDir := mock.ApplicationPackageDir(t, false, true)
+	pkgCertificate := filepath.Join(appDir, "security", "clients.pem")
+
+	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+cli.config.homeDir)
+	cli2.isTerminal = func() bool { return true }
+	cli2.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli2.Run("auth", "cert", "--new-key", pkgDir))
+
+	assert.Contains(t, stdout2.String(), "Certificate written to")
+	assert.Contains(t, stdout2.String(), "Copied certificate")
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+	assert.Equal(t, 2, countPEMBlocks(t, pkgCertificate))
+}
+
+func TestPruneOldUpdatesExistingPackageCert(t *testing.T) {
+	homeDir, certFile := setupRotation(t)
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+
+	appDir, pkgDir := mock.ApplicationPackageDir(t, false, true)
+	pkgCertificate := filepath.Join(appDir, "security", "clients.pem")
+
+	cli, stdout, _ := newTestCLI(t, "VESPA_CLI_HOME="+homeDir)
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli.Run("auth", "cert", "--prune-old", pkgDir))
+
+	assert.Contains(t, stdout.String(), "Pruned certificate file")
+	assert.Contains(t, stdout.String(), "Copied certificate")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+	assert.Equal(t, 1, countPEMBlocks(t, pkgCertificate))
+}
+
 func TestCertNoAdd(t *testing.T) {
 	cli, stdout, stderr := newTestCLI(t)
 	configureCloud(t, cli)
