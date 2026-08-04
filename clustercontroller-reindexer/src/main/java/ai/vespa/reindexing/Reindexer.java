@@ -192,7 +192,9 @@ class Reindexer {
                 status.updateAndGet(value -> value.failed(clock.instant(), control.getResult().getMessage()));
                 break;
             case ABORTED:
-                log.log(FINE, () -> "Halting reindexing of " + type + " due to shutdown — will continue later");
+                log.log(INFO, () -> "Halting reindexing of " + type + " — will resume later. Reason: " +
+                        (control.getResult() != null ? control.getResult().getMessage()
+                                : "shut down locally"));
                 status.updateAndGet(Status::halted);
                 break;
             case SUCCESS:
