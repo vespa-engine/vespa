@@ -1,6 +1,7 @@
 package ai.vespa.schemals.tree.rankingexpression;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -41,6 +42,7 @@ public class RankNodeTaggedArgumentTest {
         assertEquals(2, bm25.getChildren().size(), () -> bm25.getChildren().toString());
         assertTrue(bm25.getChildren().get(1).isTaggedArgument(), () -> bm25.getChildren().get(1).toString());
         assertEquals("label", bm25.getChildren().get(1).getTagKey());
+        assertEquals("mylabel", bm25.getChildren().get(1).getTagValue());
         var valueNode = bm25.getChildren().get(1).getTagValueNode();
         assertTrue(valueNode.isASTInstance(identifierStr.class)
                        || valueNode.isASTInstance(IDENTIFIER.class)
@@ -71,7 +73,7 @@ public class RankNodeTaggedArgumentTest {
         List<RankNode> roots = RankNode.createTree(parseResult.CST().get());
         RankNode bm25 = findFeature(roots, "bm25");
         RankNode labelArg = bm25.getChildren().get(1);
-        assertEquals("", RankNode.findTagValueText(labelArg.getTagValueNode()));
+        assertEquals("", labelArg.getTagValue());
         assertTrue(!new TaggedLabelArgument("name").validateArgument(labelArg));
     }
 
@@ -100,8 +102,68 @@ public class RankNodeTaggedArgumentTest {
         RankNode bm25 = findFeature(roots, "bm25");
         RankNode fieldArg = bm25.getChildren().get(0);
         assertEquals("field", fieldArg.getTagKey());
-        assertEquals("title", RankNode.findTagValueText(fieldArg.getTagValueNode()));
+        assertEquals("title", fieldArg.getTagValue());
         assertTrue(new TaggedFieldArgument("name").validateArgument(fieldArg));
+    }
+
+    @Test
+    void escapedQuotedLabelIsDecoded() throws Exception {
+        RankNode bm25 = parseBm25("bm25(title, label: \"quote\\\"back\")");
+        RankNode labelArg = bm25.getChildren().get(1);
+        assertEquals("quote\"back", labelArg.getTagValue());
+        assertTrue(new TaggedLabelArgument("name").validateArgument(labelArg));
+    }
+
+    @Test
+    void tensorSliceIsNotATaggedArgument() throws Exception {
+        String sd = """
+            schema test {
+                document test {
+                    field t1 type tensor<float>(x[3]) { indexing: attribute }
+                }
+                rank-profile default {
+                    first-phase {
+                        expression: attribute(t1){x:0}
+                    }
+                }
+            }
+            """;
+        var context = Utils.createTestContext(sd, "test.sd");
+        context.useGeneralIdentifers();
+        context.useDocumentIdentifiers();
+        var parseResult = SchemaDocument.parseContent(context);
+
+        List<RankNode> roots = RankNode.createTree(parseResult.CST().get());
+        assertFalse(containsTaggedArgument(roots));
+    }
+
+    private static RankNode parseBm25(String expression) throws Exception {
+        String sd = """
+            schema test {
+                document test {
+                    field title type string { indexing: index }
+                }
+                rank-profile default {
+                    first-phase {
+                        expression: %s
+                    }
+                }
+            }
+            """.formatted(expression);
+        var context = Utils.createTestContext(sd, "test.sd");
+        context.useGeneralIdentifers();
+        context.useDocumentIdentifiers();
+        var parseResult = SchemaDocument.parseContent(context);
+        return findFeature(RankNode.createTree(parseResult.CST().get()), "bm25");
+    }
+
+    private static boolean containsTaggedArgument(List<RankNode> nodes) {
+        for (RankNode node : nodes) {
+            if (node.isTaggedArgument() || containsTaggedArgument(node.getChildren())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static RankNode findFeature(List<RankNode> nodes, String name) {

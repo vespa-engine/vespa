@@ -412,6 +412,8 @@ TEST_F(Bm25LabelBlueprintTest, blueprint_setup_succeeds_with_tagged_label_parame
     expect_setup_succeed({"field:is", "label:mylabel"});
     expect_setup_succeed({"is", "label:mylabel"});
     expect_setup_succeed({"field:is", "label:title:terms"});
+    expect_setup_succeed({"field:is", "label:123"});
+    expect_setup_succeed({"field:is", "label:-123"});
 }
 
 TEST_F(Bm25LabelBlueprintTest, blueprint_setup_succeeds_with_one_argument) {
@@ -441,6 +443,8 @@ TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_when_label_argument_is_malf
                         "'field:'");
     expect_setup_fail("bm25", {"field:\"title\"", "label:mylabel"},
                         "The field tag value must be an identifier, but was '\"title\"'");
+    expect_setup_fail("bm25", {"field:123", "label:mylabel"},
+                        "The field tag value must be an identifier, but was '123'");
 }
 
 TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_for_unknown_field) {

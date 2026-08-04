@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
+import com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
 import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -410,13 +412,23 @@ public class RankingExpressionTestCase {
                     "bm25(field: myfield, label: \"quote\\\"back\")");
         assertParse("bm25(\"field:myfield\",\"label:mylabel\")",
                     "bm25( field : myfield , label : mylabel )");
+        assertParse("bm25(\"field:myfield\",\"label:123\")", "bm25(field: myfield, label: 123)");
+        assertParse("bm25(\"field:myfield\",\"label:-123\")", "bm25(field: myfield, label: -123)");
+
+        ReferenceNode parsed = (ReferenceNode)new RankingExpression("bm25(field: myfield, label: mylabel)").getRoot();
+        ConstantNode labelArgument = (ConstantNode)parsed.getArguments().expressions().get(1);
+        assertTrue(labelArgument.getValue() instanceof NamedStringValue);
+        NamedStringValue labelValue = (NamedStringValue)labelArgument.getValue();
+        assertEquals("label", labelValue.name());
+        assertEquals("mylabel", labelValue.value());
+        assertEquals("label:mylabel", labelValue.asString());
 
         String canonical = "bm25(\"field:myfield\",\"label:mylabel\")";
         assertEquals(canonical, new RankingExpression(canonical).toString());
 
         assertParseFails("bm25(field:, label: mylabel)");
         assertParseFails("bm25(field: myfield, label: title-terms)");
-        assertParseFails("bm25(field: myfield, label: 123)");
+        assertParseFails("bm25(field: myfield, label: 1.25)");
         assertParseFails("bm25(field: myfield, label: mylabel + 1)");
         assertParse("bm25(\"field:title\",\"label:mylabel\")", "bm25(field: \"title\", label: mylabel)");
         assertParse("bm25(\"field:title\",\"label:mylabel\")", "bm25(field: title, label: \"mylabel\")");

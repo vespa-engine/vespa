@@ -56,6 +56,15 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testNamedStringValue() {
+        NamedStringValue value = new NamedStringValue("label", "title-terms");
+        assertEquals("label:title-terms", value.asString());
+
+        value.freeze();
+        assertTrue(value.asMutable() instanceof NamedStringValue);
+    }
+
+    @Test
     public void testEvaluationOrder() {
         EvaluationTester tester = new EvaluationTester();
         tester.assertEvaluates(-4, "1 + -2 + -3");

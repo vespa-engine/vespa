@@ -35,4 +35,10 @@ schema bm25label {
             expression: bm25(field: "title", label: someLabel)
         }
     }
+
+    rank-profile numeric-label {
+        first-phase {
+            expression: bm25(field: title, label: -123)
+        }
+    }
 }

@@ -47,7 +47,7 @@ public class TaggedFieldArgument extends FieldArgument {
             return false;
         }
         if (RankNode.tagValueIsIdentifier(valueNode) || RankNode.tagValueIsString(valueNode)) {
-            return !RankNode.findTagValueText(valueNode).isEmpty();
+            return !node.getTagValue().isEmpty();
         }
         return false;
     }
@@ -67,7 +67,7 @@ public class TaggedFieldArgument extends FieldArgument {
         }
 
         SchemaNode fieldNode = RankNode.resolveTagValueLeaf(valueNode);
-        String fieldName = RankNode.findTagValueText(valueNode);
+        String fieldName = node.getTagValue();
         Optional<Symbol> scope = CSTUtils.findScope(fieldNode);
         fieldNode.setSymbol(SymbolType.FIELD, context.fileURI(), scope.orElse(null), fieldName);
         fieldNode.getSymbol().setStatus(SymbolStatus.UNRESOLVED);

@@ -44,8 +44,10 @@ public class TaggedLabelArgument implements Argument {
         if (valueNode == null) {
             return false;
         }
-        if (RankNode.tagValueIsIdentifier(valueNode) || RankNode.tagValueIsString(valueNode)) {
-            return !RankNode.findTagValueText(valueNode).isEmpty();
+        if (RankNode.tagValueIsIdentifier(valueNode)
+                || RankNode.tagValueIsString(valueNode)
+                || RankNode.tagValueIsInteger(valueNode)) {
+            return !node.getTagValue().isEmpty();
         }
         return false;
     }

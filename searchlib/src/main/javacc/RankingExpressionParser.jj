@@ -19,6 +19,7 @@ package com.yahoo.searchlib.rankingexpression.parser;
 
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
@@ -363,9 +364,8 @@ private String tagValue() :
     String value;
 }
 {
-    ( value = identifier() { return value; }
-    | <STRING> { return ((StringValue)Value.parse(token.image)).asString(); }
-    )
+    ( value = tag() | value = string() )
+    { return value; }
 }
 
 private ExpressionNode argExpression() :
@@ -377,7 +377,7 @@ private ExpressionNode argExpression() :
     LOOKAHEAD(2) (
         argName = identifier() <COLON> (
             argValue = tagValue() {
-                node = new ConstantNode(new StringValue(argName + ":" + argValue));
+                node = new ConstantNode(new NamedStringValue(argName, argValue));
                 return node;
             }
         )
@@ -1236,5 +1236,5 @@ String label() :
 
 String string() : {}
 {
-    <STRING> { return token.image.substring(1, token.image.length() - 1); }
+    <STRING> { return ((StringValue)Value.parse(token.image)).asString(); }
 }
