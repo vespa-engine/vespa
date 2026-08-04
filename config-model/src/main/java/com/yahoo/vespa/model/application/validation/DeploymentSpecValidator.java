@@ -35,6 +35,10 @@ public class DeploymentSpecValidator implements Validator {
                 requireClusterId(context, containers, instance.name(),
                                  "Endpoint '" + endpoint.endpointId() + "'", endpoint.containerId());
             });
+            instance.zoneEndpointClusters().forEach(clusterId -> {
+                requireClusterId(context, containers, instance.name(),
+                                 "Zone endpoint", clusterId.value());
+            });
         }
     }
 
