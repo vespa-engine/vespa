@@ -330,6 +330,7 @@ func doPruneOldCertificates(cli *CLI, force, skipApplicationPackage bool, args [
 	}
 	for _, cert := range unknownCerts {
 		if force {
+			cli.printWarning("Removing certificate not associated with any of your saved private keys: " + certInfo(cert))
 			removeSet[cert] = true
 		} else {
 			cli.printWarning("This certificate is not associated with any of your saved private keys")
