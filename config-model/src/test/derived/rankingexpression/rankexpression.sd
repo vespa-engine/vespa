@@ -570,6 +570,7 @@ schema rankexpression {
   rank-profile with_tensor_from_dotted_attr {
       summary-features {
           tensorFromLabelsWithOffset(attribute(m_chunk.cnum), i, offset)
+          attribute(m_chunk.cnum)
       }
   }
 }

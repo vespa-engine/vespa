@@ -1492,6 +1492,12 @@ public class RankProfile implements Cloneable {
                 featureTypes.put(FeatureNames.asAttributeFeature(name), new AttributeErrorType(deployLogger, name, a.getCollectionType()));
             }
         });
+        // attributes on struct fields are named "field.structField" and are not in allFieldsList();
+        // imported fields do not support struct traversal, their struct fields are imported one by one
+        if ( ! field.isImportedField()) {
+            for (ImmutableSDField structField : field.getStructFields())
+                addAttributeFeatureTypes(structField, featureTypes);
+        }
     }
 
     @Override
