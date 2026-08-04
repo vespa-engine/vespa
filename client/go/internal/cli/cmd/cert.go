@@ -242,9 +242,16 @@ func doPruneOldCertificates(cli *CLI, force, skipApplicationPackage bool, args [
 	if err != nil {
 		return fmt.Errorf("could not read private key file: %w", err)
 	}
-	// Old key backup is optional — used only to label certs.
-	oldPrivateKeyFile, _ := cli.config.oldPrivateKeyPath(app, targetType.name)
-	oldPrivateKeyData, _ := os.ReadFile(oldPrivateKeyFile.path)
+	// Old key backup is optional — used only to label certs. A backup that exists but cannot be
+	// read must not be treated as absent, as that would misclassify its certificates as unknown.
+	oldPrivateKeyFile, err := cli.config.oldPrivateKeyPath(app, targetType.name)
+	if err != nil {
+		return err
+	}
+	oldPrivateKeyData, err := os.ReadFile(oldPrivateKeyFile.path)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("could not read old private key file: %w", err)
+	}
 
 	// Classify every certificate in the file.
 	var currentCerts, oldCerts, unknownCerts []*x509.Certificate
@@ -280,7 +287,7 @@ func doPruneOldCertificates(cli *CLI, force, skipApplicationPackage bool, args [
 		cli.printWarning(fmt.Sprintf("%d certificates match the current private key", len(currentCerts)))
 		newestCurrent := currentCerts[0]
 		for _, cert := range currentCerts[1:] {
-			if cert.NotAfter.After(newestCurrent.NotAfter) {
+			if cert.NotBefore.After(newestCurrent.NotBefore) {
 				newestCurrent = cert
 			}
 		}
@@ -292,8 +299,8 @@ func doPruneOldCertificates(cli *CLI, force, skipApplicationPackage bool, args [
 			}
 		} else {
 			ok, err := cli.confirm(fmt.Sprintf(
-				"Remove %d extra certificate(s) matching the current key, keeping the one expiring %s?",
-				len(currentCerts)-1, newestCurrent.NotAfter.Format(time.RFC3339),
+				"Remove %d extra certificate(s) matching the current key, keeping %s?",
+				len(currentCerts)-1, certInfo(newestCurrent),
 			), false)
 			if err != nil {
 				return err
