@@ -51,7 +51,7 @@ private:
     double                _k1_param;
     double                _b_param;
     std::optional<double> _avg_field_length;
-    std::string           _label; // empty = unlabeled, sum over all terms searching the field
+    std::string           _label; // empty = unlabeled; otherwise label:<name> value from setup
 
 public:
     Bm25Blueprint();
@@ -62,6 +62,10 @@ public:
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
     void prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const override;
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
+
+private:
+    bool setup_label_parameter(const std::string& param);
+    bool resolve_index_field(const fef::IIndexEnvironment& env, const std::string& field_name);
 };
 
 } // namespace search::features

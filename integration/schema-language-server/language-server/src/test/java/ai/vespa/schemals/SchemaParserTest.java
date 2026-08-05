@@ -326,7 +326,16 @@ public class SchemaParserTest {
 
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
-            new BadFileTestCase("src/test/sdfiles/single/bm25labelbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25labelbarebad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25labelemptybad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25quotelabelemptybad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25labelunknownfieldbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25labelwrapperbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25labelwrongtagbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25numericfieldbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25quotefieldattrbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/bm25quotefieldunknownbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/elementwisebm25labelbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/featuresinheritance.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/foreachbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),

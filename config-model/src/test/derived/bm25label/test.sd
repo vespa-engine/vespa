@@ -1,0 +1,36 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Normalized feature names below must stay in sync with searchlib/src/tests/features/bm25/bm25_test.cpp.
+schema bm25label {
+
+    document bm25label {
+        field myfield type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile default {
+        first-phase {
+            expression: bm25(myfield)
+        }
+        match-features {
+            bm25(myfield)
+            bm25(field: myfield, label: mylabel)
+            bm25(myfield, label: mylabel)
+        }
+        summary-features {
+            bm25(myfield)
+            bm25(field: myfield, label: mylabel)
+            bm25(myfield, label: mylabel)
+        }
+    }
+
+    rank-profile quoted-field {
+        first-phase {
+            expression: bm25(field: "myfield", label: mylabel)
+        }
+        match-features {
+            bm25(field: "myfield", label: mylabel)
+        }
+    }
+}

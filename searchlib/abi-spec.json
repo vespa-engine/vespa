@@ -679,6 +679,22 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue" : {
+    "superClass" : "com.yahoo.searchlib.rankingexpression.evaluation.StringValue",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String name()",
+      "public java.lang.String value()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue asMutable()",
+      "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.Value asMutable()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

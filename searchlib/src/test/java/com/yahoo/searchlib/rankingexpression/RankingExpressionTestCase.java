@@ -2,7 +2,9 @@
 package com.yahoo.searchlib.rankingexpression;
 
 import com.yahoo.searchlib.ranking.features.FeatureNames;
+import com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
 import com.yahoo.searchlib.rankingexpression.rule.Operator;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -398,6 +400,48 @@ public class RankingExpressionTestCase {
         ExpressionNode isNan = comparison.children().get(0);
         assertTrue(isNan instanceof FunctionNode);
         assertEquals("isNan(attribute(foo))", isNan.toString());
+    }
+
+    @Test
+    public void testBm25TaggedArguments() throws ParseException {
+        assertParse("bm25(\"field:myfield\",\"label:mylabel\")", "bm25(field: myfield, label: mylabel)");
+        assertParse("bm25(myfield,\"label:mylabel\")", "bm25(myfield, label: mylabel)");
+        assertParse("bm25(\"field:myfield\",\"label:title-terms\")", "bm25(field: myfield, label: \"title-terms\")");
+        assertParse("bm25(\"field:myfield\",\"label:hello: world\")",
+                    "bm25(field: myfield, label: \"hello: world\")");
+        assertParse("bm25(\"field:myfield\",\"label:quote\\\"back\")",
+                    "bm25(field: myfield, label: \"quote\\\"back\")");
+        assertParse("bm25(\"field:myfield\",\"label:mylabel\")",
+                    "bm25( field : myfield , label : mylabel )");
+        assertParse("bm25(\"field:myfield\",\"label:123\")", "bm25(field: myfield, label: 123)");
+        assertParse("bm25(\"field:myfield\",\"label:-123\")", "bm25(field: myfield, label: -123)");
+
+        ReferenceNode parsed = (ReferenceNode)new RankingExpression("bm25(field: myfield, label: mylabel)").getRoot();
+        ConstantNode labelArgument = (ConstantNode)parsed.getArguments().expressions().get(1);
+        assertTrue(labelArgument.getValue() instanceof NamedStringValue);
+        NamedStringValue labelValue = (NamedStringValue)labelArgument.getValue();
+        assertEquals("label", labelValue.name());
+        assertEquals("mylabel", labelValue.value());
+        assertEquals("label:mylabel", labelValue.asString());
+
+        String canonical = "bm25(\"field:myfield\",\"label:mylabel\")";
+        assertEquals(canonical, new RankingExpression(canonical).toString());
+
+        assertParseFails("bm25(field:, label: mylabel)");
+        assertParseFails("bm25(field: myfield, label: title-terms)");
+        assertParseFails("bm25(field: myfield, label: 1.25)");
+        assertParseFails("bm25(field: myfield, label: mylabel + 1)");
+        assertParse("bm25(\"field:title\",\"label:mylabel\")", "bm25(field: \"title\", label: mylabel)");
+        assertParse("bm25(\"field:title\",\"label:mylabel\")", "bm25(field: title, label: \"mylabel\")");
+    }
+
+    private static void assertParseFails(String expression) {
+        try {
+            new RankingExpression(expression);
+            fail("Expected parse failure for: " + expression);
+        } catch (ParseException e) {
+            // expected
+        }
     }
 
     @Test

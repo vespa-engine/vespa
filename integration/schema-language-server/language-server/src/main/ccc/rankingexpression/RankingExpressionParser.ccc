@@ -23,9 +23,11 @@ INJECT RankingExpressionParser :
     import com.yahoo.searchlib.rankingexpression.Reference;
     import com.yahoo.searchlib.rankingexpression.parser.CellMapHelper;
     import com.yahoo.searchlib.rankingexpression.rule.*;
+    import com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue;
     import com.yahoo.searchlib.rankingexpression.evaluation.Value;
     import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
     import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+    import com.yahoo.javacc.UnicodeUtilities;
     import com.yahoo.tensor.*;
     import com.yahoo.tensor.functions.*;
     import java.util.LinkedHashMap;
@@ -408,6 +410,15 @@ String out() :
     { /* Unreachable: return null; */ }
 ;
 
+String tagValueStr() :
+{
+    String value;
+}
+
+    ( value = tag() | value = stringLiteral() )
+    { return value; }
+;
+
 ExpressionNode argExpression() :
 {
     String argName, argValue;
@@ -415,11 +426,13 @@ ExpressionNode argExpression() :
 }
 
     ( SCAN 2 (
-        argName = identifierStr() <COLON> argValue = identifierStr() {
-            node = new ConstantNode(Value.parse("\"" + argName + ":" + argValue + "\""));
-            thisProduction.expressionNode = node;
-            return node;
-        }
+        argName = identifierStr() <COLON> (
+            argValue = tagValueStr() {
+                node = new ConstantNode(new NamedStringValue(argName, argValue));
+                thisProduction.expressionNode = node;
+                return node;
+            }
+        )
       ) | ( node = expression() { thisProduction.expressionNode = node; return node; } ) )
 ;
 
@@ -1377,5 +1390,5 @@ String label() :
 
 String stringLiteral() : {}
 
-    <STRING> { return lastConsumedToken.toString().substring(1, lastConsumedToken.toString().length() - 1); }
+    <STRING> { return UnicodeUtilities.unquote(lastConsumedToken.toString()); }
 ;

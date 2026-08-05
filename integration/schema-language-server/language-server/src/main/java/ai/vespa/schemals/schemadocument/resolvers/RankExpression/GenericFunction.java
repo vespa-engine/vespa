@@ -86,6 +86,7 @@ public class GenericFunction {
 
         if (signature.isEmpty()) {
             List<String> signatureStrings = signatures.stream()
+                                                      .filter(sig -> !sig.isHidden())
                                                       .map(func -> name + func.toString())
                                                       .collect(Collectors.toList());
             String availableSignatures = String.join("\n", signatureStrings);

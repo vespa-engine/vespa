@@ -56,6 +56,9 @@ public class RankingExpressionCompletion implements CompletionProvider {
             String name = entry.getKey();
 
             for (List<FunctionSignature> group : groupSignatures(function.getSignatures())) {
+                if (group.get(0).isHidden()) {
+                    continue;
+                }
                 StringBuilder signatureStr = new StringBuilder("(");
                 signatureStr.append(String.join(", ", group.get(0).getArgumentList().stream().map(arg -> arg.displayString()).toList()));
                 signatureStr.append(")");

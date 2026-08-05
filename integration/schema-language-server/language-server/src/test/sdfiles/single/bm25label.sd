@@ -6,9 +6,39 @@ schema bm25label {
         }
     }
 
-    rank-profile myprofile {
+    rank-profile ordinary {
         first-phase {
-            expression: max(bm25(title), bm25(title, label(someLabel)))
+            expression: bm25(title)
+        }
+    }
+
+    rank-profile preferred {
+        first-phase {
+            expression: bm25(field: title, label: someLabel)
+        }
+    }
+
+    rank-profile shorthand {
+        first-phase {
+            expression: bm25(title, label: someLabel)
+        }
+    }
+
+    rank-profile quoted-label {
+        first-phase {
+            expression: bm25(field: title, label: "title-terms")
+        }
+    }
+
+    rank-profile quoted-field {
+        first-phase {
+            expression: bm25(field: "title", label: someLabel)
+        }
+    }
+
+    rank-profile numeric-label {
+        first-phase {
+            expression: bm25(field: title, label: -123)
         }
     }
 }

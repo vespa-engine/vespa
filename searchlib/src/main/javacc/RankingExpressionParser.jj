@@ -19,9 +19,11 @@ package com.yahoo.searchlib.rankingexpression.parser;
 
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.tensor.*;
 import com.yahoo.tensor.functions.*;
 import java.util.LinkedHashMap;
@@ -371,6 +373,15 @@ String out() :
     { return null; }
 }
 
+private String tagValue() :
+{
+    String value;
+}
+{
+    ( value = tag() | value = string() )
+    { return value; }
+}
+
 private ExpressionNode argExpression() :
 {
     String argName, argValue;
@@ -378,10 +389,12 @@ private ExpressionNode argExpression() :
 }
 {
     LOOKAHEAD(2) (
-        argName = identifier() <COLON> argValue = identifier() {
-            node = new ConstantNode(Value.parse("\"" + argName + ":" + argValue + "\""));
-              return node;
-        }
+        argName = identifier() <COLON> (
+            argValue = tagValue() {
+                node = new ConstantNode(new NamedStringValue(argName, argValue));
+                return node;
+            }
+        )
     ) | ( node = expression() { return node; } )
 }
 
@@ -1237,5 +1250,5 @@ String label() :
 
 String string() : {}
 {
-    <STRING> { return token.image.substring(1, token.image.length() - 1); }
+    <STRING> { return UnicodeUtilities.unquote(token.image); }
 }
