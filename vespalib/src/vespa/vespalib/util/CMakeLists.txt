@@ -79,6 +79,9 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     relative_frequency_sketch.cpp
     require.cpp
     resource_limits.cpp
+    reusable_set.cpp
+    reusable_set_handle.cpp
+    reusable_set_pool.cpp
     round_up_to_page_size.cpp
     runnable.cpp
     runnable_pair.cpp
