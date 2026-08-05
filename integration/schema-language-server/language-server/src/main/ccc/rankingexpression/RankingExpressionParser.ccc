@@ -27,6 +27,7 @@ INJECT RankingExpressionParser :
     import com.yahoo.searchlib.rankingexpression.evaluation.Value;
     import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
     import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+    import com.yahoo.javacc.UnicodeUtilities;
     import com.yahoo.tensor.*;
     import com.yahoo.tensor.functions.*;
     import java.util.LinkedHashMap;
@@ -1389,5 +1390,5 @@ String label() :
 
 String stringLiteral() : {}
 
-    <STRING> { return ((StringValue)Value.parse(lastConsumedToken.toString())).asString(); }
+    <STRING> { return UnicodeUtilities.unquote(lastConsumedToken.toString()); }
 ;
