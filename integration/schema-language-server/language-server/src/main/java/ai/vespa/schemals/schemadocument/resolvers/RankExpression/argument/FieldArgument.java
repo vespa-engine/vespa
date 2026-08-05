@@ -44,6 +44,11 @@ public class FieldArgument extends SymbolArgument {
         FieldType.STRING_ARRAY
     );
 
+    public static final EnumSet<FieldType> ArrayType = EnumSet.of(
+        FieldType.NUMERIC_ARRAY,
+        FieldType.STRING_ARRAY
+    );
+
     public static final EnumSet<IndexingType> IndexAttributeType = EnumSet.of(
         IndexingType.ATTRIBUTE,
         IndexingType.INDEX

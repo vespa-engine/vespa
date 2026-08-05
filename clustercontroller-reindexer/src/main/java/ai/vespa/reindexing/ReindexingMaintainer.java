@@ -98,11 +98,13 @@ public class ReindexingMaintainer extends AbstractComponent {
             // Shutdown the executor before reindexers, so that no new reindexing tasks are submitted when
             // reindexers have shutdown
             executor.shutdown();
-            if ( ! executor.awaitTermination(5, TimeUnit.SECONDS))
-                log.log(WARNING, "Failed to shut down reindexing within timeout");
 
+            // Abort current reindexing visitor sessions.
             for (Reindexer reindexer : reindexers)
                 reindexer.shutdown();
+
+            if ( ! executor.awaitTermination(5, TimeUnit.SECONDS))
+                log.log(WARNING, "Failed to shut down reindexing within timeout");
 
             curator.close(); // Close the underlying curator independently to force shutdown.
         }

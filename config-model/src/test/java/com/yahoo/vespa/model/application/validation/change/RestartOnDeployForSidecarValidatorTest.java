@@ -152,53 +152,10 @@ public class RestartOnDeployForSidecarValidatorTest {
         var deployState = new DeployState.Builder()
                 .properties(properties)
                 .endpoints(Set.of(new ContainerEndpoint(
-                        "feed", ApplicationClusterEndpoint.Scope.zone, List.of("c1.example.com"))))
-                .modelHostProvisioner(new ProvisionerWithSidecars(sidecars));
-
-        return new VespaModelCreatorWithMockPkg(null, SERVICES_XML).create(deployState);
+                        "feed", ApplicationClusterEndpoint.Scope.zone, List.of("c1.example.com"))));
+        var model = new VespaModelCreatorWithMockPkg(null, SERVICES_XML).create(deployState);
+        model.getContainerClusters().values().forEach(c -> c.setSpec(c.getSpec().withSidecars(sidecars)));
+        return model;
     }
 
-    private static class ProvisionerWithSidecars implements HostProvisioner {
-        private final List<SidecarSpec> sidecars;
-        private int hostsCreated = 0;
-
-        ProvisionerWithSidecars(List<SidecarSpec> sidecars) {
-            this.sidecars = sidecars;
-        }
-
-        @Override
-        public HostSpec allocateHost(String alias) {
-            return new HostSpec(alias, Optional.empty());
-        }
-
-        @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
-            var hosts = new ArrayList<HostSpec>();
-            var resources = capacity.minResources().nodeResources();
-
-            // Rebuild cluster spec with sidecars
-            var clusterWithSidecars = ClusterSpec.specification(cluster.type(), cluster.id())
-                    .group(cluster.group().orElse(null))
-                    .vespaVersion(cluster.vespaVersion())
-                    .exclusive(cluster.isExclusive())
-                    .dockerImageRepository(cluster.dockerImageRepo())
-                    .loadBalancerSettings(cluster.zoneEndpoint())
-                    .stateful(cluster.isStateful())
-                    .sidecars(sidecars)
-                    .build();
-
-            for (int i = 0; i < capacity.minResources().nodes(); i++) {
-                hosts.add(new HostSpec(
-                        "host" + (hostsCreated++),
-                        resources,
-                        resources,
-                        resources,
-                        ClusterMembership.from(clusterWithSidecars, i),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty()));
-            }
-            return hosts;
-        }
-    }
 }

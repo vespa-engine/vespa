@@ -317,10 +317,23 @@ ReferenceNode feature() :
 {
     ( name = identifier() [ <LBRACE> args = args() <RBRACE> ] [ <DOT> out = outs() ] )
     {
-         if (args == null && out == null) // know the difference between "foo" and "foo()"
-             return new ReferenceNode(name);
-         else
-             return new ReferenceNode(name, args, out);
+        if (args == null && out == null) { // know the difference between "foo" and "foo()"
+            return new ReferenceNode(name);
+        }
+        if (name.equals("attribute") && args != null && args.size() == 1
+            && args.get(0) instanceof ReferenceNode)
+        {
+            Reference inner = ((ReferenceNode)args.get(0)).reference();
+            if (inner.arguments().expressions().isEmpty() && inner.output() != null) {
+                // an attribute name in the "foo.bar" form is parsed as the feature foo().bar,
+                // but we want the identifier "foo.bar" as the attribute name instead:
+                Reference attribute = Reference.simple(name, inner.toString());
+                if (out != null)
+                    attribute = attribute.withOutput(out);
+                return new ReferenceNode(attribute);
+            }
+        }
+        return new ReferenceNode(name, args, out);
     }
 }
 

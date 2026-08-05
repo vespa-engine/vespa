@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
@@ -441,6 +442,38 @@ public class RankingExpressionTestCase {
         } catch (ParseException e) {
             // expected
         }
+    }
+
+    @Test
+    public void attributeNameCanContainDot() throws ParseException {
+        for (String name : List.of("foo.bar", "foo.bar.baz")) {
+            Reference ref = referenceOf("attribute(" + name + ")");
+            assertTrue(FeatureNames.isAttributeFeature(ref));
+            assertEquals(name, ref.simpleArgument().get());
+            assertNull(ref.output());
+            assertEquals("attribute(" + name + ")", ref.toString());
+        }
+    }
+
+    @Test
+    public void attributeNameWithDotCanHaveOutput() throws ParseException {
+        Reference ref = referenceOf("attribute(foo.bar).count");
+        assertTrue(ref.isSimple());
+        assertEquals("foo.bar", ref.simpleArgument().get());
+        assertEquals("count", ref.output());
+        assertEquals("attribute(foo.bar).count", ref.toString());
+    }
+
+    /** Only the "foo.bar" name form is special cased: other arguments are left alone */
+    @Test
+    public void attributeArgumentCanBeAnExpression() throws ParseException {
+        assertParse("attribute(myfunc(a,b))", "attribute(myfunc(a,b))");
+        assertParse("attribute(myfunc(a + 1))", "attribute(myfunc(a+1))");
+        assertParse("attribute(foo) + attribute(bar)", "attribute(foo)+attribute(bar)");
+    }
+
+    private static Reference referenceOf(String expression) throws ParseException {
+        return ((ReferenceNode)new RankingExpression(expression).getRoot()).reference();
     }
 
     protected static void assertParse(String expected, String expression) throws ParseException {
