@@ -168,7 +168,7 @@ public class Flags {
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2026-08-01",
+            List.of("olaa"), "2024-04-03", "2026-10-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
