@@ -264,7 +264,6 @@ public class ModelContextImpl implements ModelContext {
             var flag = flag(Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE);
             return clusterId.map(id -> flag.withClusterId(ClusterSpec.Id.from(id)).value()).orElseGet(flag::value);
         }
-        @Override public boolean tokenAuthForDeploy() { return flag(Flags.TOKEN_AUTH_FOR_DEPLOY).value(); }
         @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
         @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
