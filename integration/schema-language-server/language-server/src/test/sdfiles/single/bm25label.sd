@@ -41,4 +41,10 @@ schema bm25label {
             expression: bm25(field: title, label: -123)
         }
     }
+
+    rank-profile for-labels {
+        first-phase {
+            expression: reduce(bm25_for_labels(title), sum, label)
+        }
+    }
 }

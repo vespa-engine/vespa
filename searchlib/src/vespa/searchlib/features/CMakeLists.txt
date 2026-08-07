@@ -7,6 +7,7 @@ vespa_add_library(searchlib_features OBJECT
     attributematchfeature.cpp
     average_field_length_feature.cpp
     bm25_feature.cpp
+    bm25_for_labels_feature.cpp
     bm25_utils.cpp
     closenessfeature.cpp
     closest_feature.cpp

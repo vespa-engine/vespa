@@ -51,6 +51,7 @@ public class ReservedFunctionNames extends Processor {
         Arrays.stream(RankingExpressionParserConstants.tokenImage)
                 .map(token -> token.substring(1, token.length()-1)).forEach(name -> temp.add(name));
         temp.add("attribute");
+        temp.add("bm25_for_labels");
         temp.add("constant");
         temp.add("customTokenInputIds");
         temp.add("firstphase");

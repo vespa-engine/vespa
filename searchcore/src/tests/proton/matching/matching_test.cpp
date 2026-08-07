@@ -310,6 +310,8 @@ struct MyWorld {
         config.add(indexproperties::match::Feature::NAME, "bm25(f1)");
         config.add(indexproperties::match::Feature::NAME, "bm25(\"field:f1\",\"label:t1\")");
         config.add(indexproperties::match::Feature::NAME, "bm25(f1,\"label:t2\")");
+        config.add(indexproperties::match::Feature::NAME, "bm25_for_labels(f1)");
+        config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
     }
 
     void setup_feature_renames() {
@@ -752,7 +754,7 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
     SearchReply::UP reply = world.performSearch(*request, 1);
     ASSERT_GT(reply->hits.size(), 0u);
     const auto& names = reply->match_features.names;
-    ASSERT_EQ(names.size(), 3u);
+    ASSERT_EQ(names.size(), 5u);
     auto feature_index = [&names](const std::string& name) {
         for (size_t i = 0; i < names.size(); ++i) {
             if (names[i] == name) {
@@ -765,6 +767,8 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
     size_t full_idx = feature_index("bm25(f1)");
     size_t t1_idx = feature_index("bm25(\"field:f1\",\"label:t1\")");
     size_t t2_idx = feature_index("bm25(f1,\"label:t2\")");
+    size_t tensor_idx = feature_index("bm25_for_labels(f1)");
+    size_t slice_idx = feature_index("rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
     ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
     for (size_t i = 0; i < reply->hits.size(); ++i) {
         const auto* values = &reply->match_features.values[i * names.size()];
@@ -775,6 +779,16 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
         EXPECT_GT(t1_score, 0.0);
         EXPECT_GT(t2_score, 0.0);
         EXPECT_DOUBLE_EQ(full_score, t1_score + t2_score);
+        // the tensor feature has one cell per label, each equal to the scalar labeled feature
+        ASSERT_TRUE(values[tensor_idx].is_data());
+        {
+            nbostream  buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
+            TensorSpec expect =
+                TensorSpec("tensor(label{})").add({{"label", "t1"}}, t1_score).add({{"label", "t2"}}, t2_score);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        // and slicing a cell out of it evaluates in the backend
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), t1_score);
     }
 }
 

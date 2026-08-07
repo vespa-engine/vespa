@@ -33,4 +33,19 @@ schema bm25label {
             bm25(field: "myfield", label: mylabel)
         }
     }
+
+    rank-profile labels {
+        first-phase {
+            expression: reduce(bm25_for_labels(myfield), max, label)
+        }
+        match-features {
+            bm25_for_labels(myfield)
+        }
+    }
+
+    rank-profile label-slice {
+        first-phase {
+            expression: bm25_for_labels(myfield){label:mylabel}
+        }
+    }
 }
