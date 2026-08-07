@@ -50,9 +50,12 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import javax.net.ssl.SSLContext;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.BindException;
+import java.net.Socket;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -98,6 +101,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -868,6 +872,55 @@ public class HttpServerIT {
                 new ConnectorConfig.Builder().maxContentSize(4));
         driver.client().newPost("/").setBinaryContent(new byte[4]).execute().expectStatusCode(is(OK));
         driver.client().newPost("/").setBinaryContent(new byte[5]).execute().expectStatusCode(is(REQUEST_TOO_LONG));
+        assertTrue(driver.close());
+    }
+
+    @Test
+    void stalledRequestContentFailsWith408() throws Exception {
+        var handler = new BlockingContentReadRequestHandler();
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                handler,
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder().idleTimeout(0.5));
+        try (var socket = new Socket("localhost", driver.server().getListenPort())) {
+            socket.setSoTimeout(30_000);
+            // Announce a body, send only part of it, then go silent while keeping the connection open.
+            // Jetty's idle timeout is then delivered as a transient read failure which must fail the
+            // request; if it is swallowed instead, the handler thread blocks reading content forever.
+            socket.getOutputStream().write(
+                    ("POST / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 100\r\n\r\npartial").getBytes(UTF_8));
+            socket.getOutputStream().flush();
+            var statusLine = new BufferedReader(new InputStreamReader(socket.getInputStream(), UTF_8)).readLine();
+            assertNotNull(statusLine, "Connection closed without a response");
+            assertTrue(statusLine.contains("408"), "Expected '408 Request Timeout', got: " + statusLine);
+        }
+        assertTrue(handler.contentReadTerminated.await(30, TimeUnit.SECONDS),
+                   "Handler thread was not released from blocking content read");
+        assertTrue(driver.close());
+    }
+
+    @Test
+    void slowlyProgressingRequestContentDoesNotTimeOut() throws Exception {
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new ReadBeforeWriteRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder().idleTimeout(1.5));
+        try (var socket = new Socket("localhost", driver.server().getListenPort())) {
+            socket.setSoTimeout(30_000);
+            var out = socket.getOutputStream();
+            out.write("POST / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 20\r\n\r\n".getBytes(UTF_8));
+            out.flush();
+            // Each gap between chunks is well below the idle timeout, but the gaps sum to above it.
+            // The timeout must reset on every chunk - only a full stall should fail the request.
+            for (int i = 0; i < 4; i++) {
+                Thread.sleep(500);
+                out.write("chunk".getBytes(UTF_8));
+                out.flush();
+            }
+            var statusLine = new BufferedReader(new InputStreamReader(socket.getInputStream(), UTF_8)).readLine();
+            assertNotNull(statusLine, "Connection closed without a response");
+            assertTrue(statusLine.contains("200"), "Expected '200 OK', got: " + statusLine);
+        }
         assertTrue(driver.close());
     }
 

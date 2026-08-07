@@ -13,6 +13,7 @@ import org.eclipse.jetty.server.Request;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -124,7 +125,16 @@ class JettyRequestContentReader {
             }
             // Retry read if failure but not the last chunk
             if (Content.Chunk.isFailure(chunk, false)) {
-                log.log(Level.FINE, chunk.getFailure(), () -> "Failed to read non-last chunk");
+                var failure = chunk.getFailure();
+                // Jetty delivers connection/stream idle timeouts as transient failures while we wait for content.
+                // A client that stops sending mid-body without closing the connection never produces another chunk,
+                // so retrying would leave the request (and the handler thread reading the content) hanging forever.
+                if (failure instanceof TimeoutException) {
+                    jettyReadCompletion.completeExceptionally(new RequestException(
+                            HttpStatus.REQUEST_TIMEOUT_408, "Timed out waiting for request content", failure));
+                    return;
+                }
+                log.log(Level.FINE, failure, () -> "Failed to read non-last chunk");
                 jettyRequest.demand(this::processChunks);
                 return;
             }
