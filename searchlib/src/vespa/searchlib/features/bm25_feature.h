@@ -19,12 +19,11 @@ class Bm25Executor : public fef::FeatureExecutor {
     using QueryTermVector = std::vector<QueryTerm>;
 
     QueryTermVector _terms;
-    double          _avg_field_length;
 
     // The 'k1' param determines term frequency saturation characteristics.
     // The 'b' param adjusts the effects of the field length of the document matched compared to the average field
     // length.
-    double _k1_mul_b;
+    double _k1_mul_b_div_avg_field_length;
     double _k1_mul_one_minus_b;
 
     void add_term_fields(const fef::ITermData& term, uint32_t field_id, const fef::IQueryEnvironment& env,
