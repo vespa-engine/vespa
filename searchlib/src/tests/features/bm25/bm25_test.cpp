@@ -761,8 +761,8 @@ TEST_P(Bm25ExecutorTest, multiple_elements_and_terms) {
     append_term(1, 0, 7, 1, 5);
     append_term(1, 0, 9, 2, 7);
     if (!GetParam()._elementwise) {
-        // flattened
-        EXPECT_TRUE(execute(score(5, 25, idf(25))) + score(3, 25, idf(35)));
+        // flattened: term 0 is (5 occs, length 25), term 1 is (3 occs, length 12)
+        EXPECT_TRUE(execute(score(5, 25, idf(25)) + score(3, 12, idf(35))));
     } else {
         // One tensor cell for each matching element
         auto       value = test.resolveObjectFeature();
