@@ -48,6 +48,8 @@ struct TermLabelFixture {
         queryEnv.getProperties().add("vespa.label.dupmissing.id", "5"); // duplicated non-existing uid
         queryEnv.getProperties().add("vespa.label.dupmissing.id", "7");
         queryEnv.getProperties().add("vespa.label.dupmissing.id", "7");
+        queryEnv.getProperties().add("vespa.label..id", "5");        // the empty label
+        queryEnv.getProperties().add("vespa.label.my.label.id", "10"); // label containing '.'
     }
     const ITermData* term(size_t idx) { return &queryEnv.getTerms()[idx]; }
 };
@@ -117,6 +119,34 @@ TEST(UtilsTest, require_that_non_existing_uids_are_reported_by_term_set_lookup) 
     // duplicated non-existing uid is reported at most once
     EXPECT_EQ(TermVector({f1.term(0)}), getTermsByLabel(f1.queryEnv, "dupmissing"));
     EXPECT_EQ(3u, issues.list.size());
+}
+
+TEST(UtilsTest, require_that_all_labels_can_be_mapped_to_term_sets) {
+    using LabelTerms = std::vector<std::pair<std::string, std::vector<const ITermData*>>>;
+    TermLabelFixture f1;
+    MyIssues         issues;
+    // Labels are sorted, the terms of each label are in query environment order, and labels
+    // resolving to no term ('bar', 'fox') are dropped.
+    LabelTerms expected({{"", {f1.term(0)}},
+                         {"baz", {f1.term(2)}},
+                         {"dup", {f1.term(2)}},
+                         {"dupmissing", {f1.term(0)}},
+                         {"foo", {f1.term(0)}},
+                         {"multi", {f1.term(0), f1.term(2)}},
+                         {"my.label", {f1.term(2)}},
+                         {"partial", {f1.term(0)}},
+                         {"zeroed", {f1.term(2)}}});
+    EXPECT_EQ(expected, getTermsByAllLabels(f1.queryEnv));
+    // 'bar' and 'zeroed' each report an invalid uid, and the missing uid 7 is reported once per label
+    // claiming it - a single global set of missing uids would report it once and give 3 issues in all.
+    EXPECT_EQ(5u, issues.list.size());
+    size_t missing_uid_7 = 0;
+    for (const auto& message : issues.list) {
+        if (message.find("non-existing unique id: '7'") != std::string::npos) {
+            ++missing_uid_7;
+        }
+    }
+    EXPECT_EQ(3u, missing_uid_7); // claimed by 'dupmissing', 'fox' and 'partial'
 }
 
 TEST(UtilsTest, require_that_duplicated_uid_values_are_deduped_by_term_set_lookup) {

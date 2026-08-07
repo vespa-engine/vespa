@@ -283,6 +283,12 @@ public class BuiltInFunctions {
                 new BareLabelRejectionArgument("name")
             )).hidden()
         )));
+        put("bm25_for_labels", new GenericFunction("bm25_for_labels",
+            new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType, EnumSet.of(IndexingType.INDEX), "field"), Set.of(
+                "",
+                "score"
+            ))
+        ));
         put("averageFieldLength", new GenericFunction("averageFieldLength",
             new FunctionSignature(new FieldArgument("field"), Set.of(
                 "",

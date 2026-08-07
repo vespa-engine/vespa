@@ -194,6 +194,19 @@ const search::fef::ITermData* getTermByLabel(const search::fef::IQueryEnvironmen
 std::vector<const search::fef::ITermData*> getTermsByLabel(const search::fef::IQueryEnvironment& env,
                                                            const std::string&                    label);
 
+/**
+ * Obtain every query item label that resolves to at least one term, and the
+ * terms annotated with it, in sorted label order, with the terms of each label
+ * in query environment order. Labels come from the 'vespa.label.<label>.id'
+ * query properties. Label resolution behaves exactly as getTermsByLabel does,
+ * including the reporting of invalid and non-existing unique ids.
+ *
+ * @return the labels with their terms, sorted by label
+ * @param env query environment
+ **/
+std::vector<std::pair<std::string, std::vector<const search::fef::ITermData*>>>
+getTermsByAllLabels(const search::fef::IQueryEnvironment& env);
+
 
 std::optional<search::fef::DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,
                                                                         const search::fef::ITermData&         term);
