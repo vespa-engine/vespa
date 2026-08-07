@@ -14,7 +14,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -64,12 +63,7 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 			if err != nil {
 				return err
 			}
-			opts := vespa.DeploymentOptions{
-				ApplicationPackage: pkg,
-				Target:             target,
-				AuthMethod:         cli.selectAuthMethod(),
-				BearerToken:        cli.Environment[envvars.VESPA_CLI_DATA_PLANE_TOKEN],
-			}
+			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			if versionArg != "" {
 				version, err := version.Parse(versionArg)
 				if err != nil {
