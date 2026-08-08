@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
@@ -56,6 +57,18 @@ public class FieldValuesFactory {
                     // in wolf's clothing. Convert it to a regular field update to be friendlier
                     // towards the search core backend.
                     FieldPathUpdateHelper.applyUpdate(fieldUpdate, complete);
+                } else if (FieldPathUpdateHelper.isElementAssign(fieldUpdate)) {
+                    // The assigned element must be processed by the indexing script like any put
+                    // value, or e.g. an element of an indexed string array reaches the backend
+                    // without linguistics annotations and produces no index tokens.
+                    AssignFieldPathUpdate elementAssign = (AssignFieldPathUpdate)fieldUpdate;
+                    String fieldName = fieldUpdate.getFieldPath().get(0).getFieldRef().getName();
+                    Document partial = ElementAssignFieldPathUpdateFieldValues.newPartialDocument(docType, docId,
+                                                                                                  elementAssign);
+                    ret.add(new ElementAssignFieldPathUpdateFieldValues(
+                            expressionSelector.selectExpression(docType, fieldName),
+                            newDocumentAdapter(partial, true),
+                            elementAssign));
                 } else {
                     ret.add(new IdentityFieldPathUpdateFieldValues(fieldUpdate, newDocumentAdapter(complete, true)));
                 }
