@@ -205,10 +205,17 @@ MessageTracker::UP SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& 
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
         document::Bucket           srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
         FileStorHandler::RemapInfo target(cmd.getBucket());
-        _env._fileStorHandler.remapQueueAfterJoin(FileStorHandler::RemapInfo(srcBucket), target);
-        // Remove source from bucket db.
+        // Hold the source bucket's DB entry lock across the queue remap, as feed ops
+        // check bucket existence and schedule to the queue while holding this lock.
+        // Taking it first ensures any concurrent feed op is either already in the
+        // queue (and gets remapped) or will observe the removed entry and either
+        // remap to the target or be rejected, instead of getting stranded towards
+        // a bucket the DB no longer knows about.
+        // This mirrors the ordering used by the split path.
         StorBucketDatabase::WrappedEntry entry =
             _env.getBucketDatabase(srcBucket.getBucketSpace()).get(srcBucket.getBucketId(), "join-remove-source");
+        _env._fileStorHandler.remapQueueAfterJoin(FileStorHandler::RemapInfo(srcBucket), target);
+        // Remove source from bucket db.
         if (entry.exists()) {
             lastModified = std::max(lastModified, entry->info.getLastModified());
             entry.remove();

@@ -27,6 +27,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -1183,6 +1184,43 @@ TEST_F(FileStorManagerTest, join) {
     // Closing file stor handler before threads are deleted, such that
     // file stor threads getNextMessage calls returns.
     filestorHandler.close();
+}
+
+// Feed checks bucket existence and schedules its operation while holding the
+// bucket DB entry lock. A join must therefore hold this lock while remapping
+// queued operations, or a feed operation may be queued after the remap and
+// subsequently become stranded in the removed source bucket.
+TEST_F(FileStorManagerTest, join_holds_source_bucket_db_lock_while_remapping_queued_operations) {
+    TestFileStorComponents c(*this);
+    auto&                  top = c.top;
+    document::BucketId     source1(17, 0x00001);
+    document::BucketId     source2(17, 0x10001);
+    document::BucketId     target(16, 0x00001);
+    createBucket(source1);
+    createBucket(source2);
+
+    std::atomic<uint32_t> sources_locked_during_remap{0};
+    auto&                 handler = dynamic_cast<FileStorHandlerImpl&>(c.manager->getFileStorHandler());
+    handler.set_before_join_queue_remap_hook_for_testing([&] {
+        vespalib::asciistream lock_clients;
+        _node->getStorageBucketDatabase().showLockClients(lock_clients);
+        if (lock_clients.view().find("join-remove-source") != std::string_view::npos) {
+            sources_locked_during_remap.fetch_add(1, std::memory_order_relaxed);
+        }
+    });
+
+    auto join = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(target));
+    join->getSourceBuckets().emplace_back(source1);
+    join->getSourceBuckets().emplace_back(source2);
+    join->setAddress(_storage3);
+    top.sendDown(join);
+    top.waitForMessages(1, _waitTime);
+    handler.set_before_join_queue_remap_hook_for_testing({});
+
+    auto reply = std::dynamic_pointer_cast<api::JoinBucketsReply>(top.getReply(0));
+    ASSERT_TRUE(reply.get());
+    EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
+    EXPECT_EQ(2u, sources_locked_during_remap.load(std::memory_order_relaxed));
 }
 
 namespace {
