@@ -2,6 +2,7 @@
 package com.yahoo.metrics.simple;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
@@ -80,6 +81,21 @@ public class DimensionsCacheTest {
     }
 
     @Test
+    final void doesNotPadCounters() {
+        Bucket first = new Bucket();
+        populateDimensionLessValue("gauge", first, 2);
+        populateDimensionLessCounter("counter", first, 3);
+        cache.updateDimensionPersistence(null, first);
+
+        Bucket second = new Bucket();
+        cache.updateDimensionPersistence(first, second);
+
+        Collection<String> names = second.getAllMetricNames();
+        assertTrue(names.contains("gauge"));
+        assertFalse(names.contains("counter"));
+    }
+
+    @Test
     final void requireThatOldDataIsForgotten() {
         Bucket first = new Bucket(); // "now" as timestamp
         populateDimensionLessValue("one", first, 2);
@@ -112,6 +128,12 @@ public class DimensionsCacheTest {
     private void populateDimensionLessValue(String metricName, Bucket bucket, double x) {
         Identifier id = new Identifier(metricName, null);
         Sample wrappedX = new Sample(new Measurement(Double.valueOf(x)), id, AssumedType.GAUGE);
+        bucket.put(wrappedX);
+    }
+
+    private void populateDimensionLessCounter(String metricName, Bucket bucket, double x) {
+        Identifier id = new Identifier(metricName, null);
+        Sample wrappedX = new Sample(new Measurement(Double.valueOf(x)), id, AssumedType.COUNTER);
         bucket.put(wrappedX);
     }
 
