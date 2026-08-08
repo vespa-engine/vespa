@@ -10,99 +10,86 @@ public class UnicodeUtilities {
      * Adds a leading and trailing double quotation mark to the given string. This will escape whatever content is
      * within the string literal.
      *
-     * @param str   The string to quote.
-     * @param quote The quote character.
-     * @return The quoted string.
+     * @param string the string to quote
+     * @param quote the quote character
+     * @return the quoted string
      */
-    public static String quote(String str, char quote) {
-        StringBuilder ret = new StringBuilder();
-        ret.append(quote);
-        for (int i = 0; i < str.length(); ++i) {
-            char c = str.charAt(i);
+    public static String quote(String string, char quote) {
+        StringBuilder b = new StringBuilder();
+        b.append(quote);
+        for (int i = 0; i < string.length(); ++i) {
+            char c = string.charAt(i);
             if (c == quote) {
-                ret.append("\\").append(c);
+                b.append("\\").append(c);
             } else {
-                ret.append(escape(c));
+                b.append(escape(c));
             }
         }
-        ret.append(quote);
-        return ret.toString();
+        b.append(quote);
+        return b.toString();
     }
 
     /**
      * Removes leading and trailing quotation mark from the given string. This method will properly unescape whatever
      * content is withing the string literal as well.
      *
-     * @param str The string to unquote.
-     * @return The unquoted string.
+     * @param string the string to unquote
+     * @return the unquoted string
      */
-    public static String unquote(String str) {
-        if (str.length() == 0) {
-            return str;
-        }
-        char quote = str.charAt(0);
-        if (quote != '"' && quote != '\'') {
-            return str;
-        }
-        if (str.charAt(str.length() - 1) != quote) {
-            return str;
-        }
-        StringBuilder ret = new StringBuilder();
-        for (int i = 1; i < str.length() - 1; ++i) {
-            char c = str.charAt(i);
+    public static String unquote(String string) {
+        if (string.isEmpty()) return "";
+
+        char startQuote = string.charAt(0);
+        if (startQuote != '"' && startQuote != '\'') return string;
+        if (string.charAt(string.length() - 1) != startQuote) return string;
+
+        StringBuilder b = new StringBuilder();
+        for (int i = 1; i < string.length() - 1; ++i) {
+            char c = string.charAt(i);
             if (c == '\\') {
-                if (++i == str.length() - 1) {
-                    break; // done
-                }
-                c = str.charAt(i);
+                if (++i == string.length() - 1) break; // done
+
+                c = string.charAt(i);
                 if (c == 'f') {
-                    ret.append("\f");
+                    b.append("\f");
                 } else if (c == 'n') {
-                    ret.append("\n");
+                    b.append("\n");
                 } else if (c == 'r') {
-                    ret.append("\r");
+                    b.append("\r");
                 } else if (c == 't') {
-                    ret.append("\t");
+                    b.append("\t");
                 } else if (c == 'u') {
-                    if (++i > str.length() - 4) {
-                        break; // done
-                    }
+                    if (++i > string.length() - 4) break; // done
                     try {
-                        ret.append((char)Integer.parseInt(str.substring(i, i + 4), 16));
+                        b.append((char)Integer.parseInt(string.substring(i, i + 4), 16));
                     } catch (NumberFormatException e) {
                         throw new IllegalArgumentException(e);
                     }
                     i += 3;
                 } else {
-                    ret.append(c);
+                    b.append(c);
                 }
-            } else if (c == quote) {
+            } else if (c == startQuote) {
                 throw new IllegalArgumentException();
             } else {
-                ret.append(c);
+                b.append(c);
             }
         }
-        return ret.toString();
+        return b.toString();
     }
 
     private static String escape(char c) {
         switch (c) {
-        case '\b':
-            return "\\b";
-        case '\t':
-            return "\\t";
-        case '\n':
-            return "\\n";
-        case '\f':
-            return "\\f";
-        case '\r':
-            return "\\r";
-        case '\\':
-            return "\\\\";
+            case '\b': return "\\b";
+            case '\t': return "\\t";
+            case '\n': return "\\n";
+            case '\f': return "\\f";
+            case '\r': return "\\r";
+            case '\\': return "\\\\";
         }
         if (c < 0x20 || c > 0x7e) {
             String unicode = Integer.toString(c, 16);
-            return "\\u" + "0000".substring(0, 4 - unicode.length()) + unicode + "";
+            return "\\u" + "0000".substring(0, 4 - unicode.length()) + unicode;
         }
         return "" + c;
     }
@@ -110,17 +97,14 @@ public class UnicodeUtilities {
     public static String generateToken(Predicate predicate) {
         TokenBuilder builder = new TokenBuilder();
         for (int c = 0; c <= 0xffff; ++c) {
-            if (!predicate.accepts((char)c)) {
-                continue;
-            }
+            if (!predicate.accepts((char)c)) continue;
             builder.add(c);
         }
         return builder.build();
     }
 
-    public static interface Predicate {
-
-        public boolean accepts(char c);
+    public interface Predicate {
+        boolean accepts(char c);
     }
 
     private static class TokenBuilder {
@@ -178,4 +162,5 @@ public class UnicodeUtilities {
             return token.toString();
         }
     }
+
 }
