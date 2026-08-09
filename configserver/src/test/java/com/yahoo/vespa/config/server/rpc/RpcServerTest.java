@@ -13,7 +13,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
+import com.yahoo.jrt.StringValue;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadApplier;
@@ -28,6 +30,8 @@ import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.rpc.security.DenyFileRequestsAuthorizer;
+import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.model.VespaModel;
@@ -40,6 +44,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.jrt.ErrorCode.PERMISSION_DENIED;
 import static com.yahoo.vespa.config.server.rpc.RpcServer.ChunkedFileReceiver.createMetaRequest;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
@@ -84,7 +89,7 @@ public class RpcServerTest {
     @Test
     public void testEmptySentinelConfigWhenAppDeletedOnHostedVespa() throws IOException, InterruptedException {
         ConfigserverConfig.Builder configBuilder = new ConfigserverConfig.Builder().canReturnEmptySentinelConfig(true);
-        try (RpcTester tester = new RpcTester(applicationId, temporaryFolder, configBuilder)) {
+        try (RpcTester tester = new RpcTester(applicationId, temporaryFolder, configBuilder, new NoopRpcAuthorizer())) {
             tester.hostRegistry.removeHosts(applicationId);
             tester.rpcServer().onTenantsLoaded();
             JRTClientConfigRequest clientReq = createSentinelRequest();
@@ -113,6 +118,22 @@ public class RpcServerTest {
         assertEquals("compressed", request.parameters().get(2).asString());
         assertEquals(0, request.parameters().get(3).asInt64());
         assertEquals("lz4", request.parameters().get(4).asString());
+    }
+
+    @Test
+    public void testGettingFileThatClientIsNotAuthorizedToGet() throws IOException, InterruptedException {
+        try (RpcTester tester = new RpcTester(applicationId,
+                                              temporaryFolder,
+                                              new ConfigserverConfig.Builder(),
+                                              new DenyFileRequestsAuthorizer())) {
+            Request request = new Request("filedistribution.serveFile");
+            request.parameters().add(new StringValue("foo"));
+            request.parameters().add(new Int32Value(0));
+
+            tester.rpcServer().serveFile(request, false);
+            assertEquals(PERMISSION_DENIED, request.errorCode());
+            assertEquals("Not authorized to serve file with reference 'foo'", request.errorMessage());
+        }
     }
 
     private JRTClientConfigRequest createSimpleRequest() {

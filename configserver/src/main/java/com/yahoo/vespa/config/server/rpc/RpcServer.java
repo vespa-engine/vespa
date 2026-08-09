@@ -64,6 +64,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.jrt.ErrorCode.PERMISSION_DENIED;
 import static com.yahoo.vespa.config.util.ConfigUtils.getCanonicalHostName;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static java.util.logging.Level.FINE;
@@ -551,17 +552,29 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     }
 
     private void serveFile(Request request) {
-        request.detach();
+        serveFile(request, true);
+    }
+
+    // Non-private for testing
+    void serveFile(Request request, boolean detach) {
+        if (detach) {
+            request.detach();
+        }
         rpcAuthorizer.authorizeFileRequest(request)
-                .thenRun(() -> { // okay to do in authorizer thread as serveFile is async
-                    FileReference reference = new FileReference(request.parameters().get(0).asString());
-                    boolean downloadFromOtherSourceIfNotFound = request.parameters().get(1).asInt32() == 0;
-                    var acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
-                            .map(CompressionType::valueOf)
-                            .collect(Collectors.toSet());
-                    var receiver = new ChunkedFileReceiver(request.target());
-                    fileServer.serveFile(reference, downloadFromOtherSourceIfNotFound, acceptedCompressionTypes, request, receiver);
-                });
+                     .thenRun(() -> { // okay to do in authorizer thread as serveFile is async
+                         FileReference reference = new FileReference(request.parameters().get(0).asString());
+                         boolean downloadFromOtherSourceIfNotFound = request.parameters().get(1).asInt32() == 0;
+                         var acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
+                                                              .map(CompressionType::valueOf)
+                                                              .collect(Collectors.toSet());
+                         var receiver = new ChunkedFileReceiver(request.target());
+                         fileServer.serveFile(reference, downloadFromOtherSourceIfNotFound, acceptedCompressionTypes, request, receiver);
+                     })
+                     .exceptionally(e -> {
+                         request.setError(PERMISSION_DENIED, "Not authorized to serve file with reference '" +
+                                 request.parameters().get(0).asString() + "'");
+                         return null;
+                     });
     }
 
     private void triggerDownload(Request req) {

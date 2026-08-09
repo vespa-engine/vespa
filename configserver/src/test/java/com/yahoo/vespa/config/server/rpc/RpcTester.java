@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
+import com.yahoo.vespa.config.server.rpc.security.RpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -58,10 +59,13 @@ public class RpcTester implements AutoCloseable {
     private final TemporaryFolder temporaryFolder;
 
     RpcTester(ApplicationId applicationId, TemporaryFolder temporaryFolder) throws InterruptedException, IOException {
-        this(applicationId, temporaryFolder, new ConfigserverConfig.Builder());
+        this(applicationId, temporaryFolder, new ConfigserverConfig.Builder(), new NoopRpcAuthorizer());
     }
 
-    RpcTester(ApplicationId applicationId, TemporaryFolder temporaryFolder, ConfigserverConfig.Builder configBuilder) throws InterruptedException, IOException {
+    RpcTester(ApplicationId applicationId,
+              TemporaryFolder temporaryFolder,
+              ConfigserverConfig.Builder configBuilder,
+              RpcAuthorizer rpcAuthorizer) throws InterruptedException, IOException {
         this.temporaryFolder = temporaryFolder;
         this.applicationId = applicationId;
         this.tenantName = applicationId.tenant();
@@ -81,7 +85,7 @@ public class RpcTester implements AutoCloseable {
                     .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                     .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath());
             tempConfig = new ConfigserverConfig(configBuilder);
-            tempRpcServer = createRpcServer(tempConfig);
+            tempRpcServer = createRpcServer(tempConfig, rpcAuthorizer);
             tempTenantRepository = new TestTenantRepository.Builder()
                     .withHostRegistry(hostRegistry)
                     .withConfigserverConfig(tempConfig)
@@ -118,7 +122,7 @@ public class RpcTester implements AutoCloseable {
         return port;
     }
 
-    RpcServer createRpcServer(ConfigserverConfig config) throws IOException {
+    RpcServer createRpcServer(ConfigserverConfig config, RpcAuthorizer rpcAuthorizer) throws IOException {
         RpcServer rpcServer = new RpcServer(config,
                                             new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                           config,
@@ -129,7 +133,7 @@ public class RpcTester implements AutoCloseable {
                                             Metrics.createTestMetrics(),
                                             hostRegistry,
                                             new FileServer(config, new InMemoryFlagSource(), new FileDirectory(temporaryFolder.newFolder())),
-                                            new NoopRpcAuthorizer(),
+                                            rpcAuthorizer,
                                             new RpcRequestHandlerProvider());
         rpcServer.setUpGetConfigHandlers();
         return rpcServer;
