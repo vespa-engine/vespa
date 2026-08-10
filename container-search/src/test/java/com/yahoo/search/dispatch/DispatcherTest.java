@@ -213,6 +213,7 @@ public class DispatcherTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // Thread.getId is deprecated on jdk21
     void testRpcResourceShutdownOnReconfiguration() throws InterruptedException, ExecutionException, IOException {
         // Ping factory lets us tick each ping, so we may delay shutdown, due to monitor thread RPC usage.
         Map<Integer, Phaser> pingPhasers = new ConcurrentHashMap<>();
