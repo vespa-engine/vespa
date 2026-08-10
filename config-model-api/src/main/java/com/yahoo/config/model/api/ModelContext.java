@@ -130,7 +130,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.710", comment = "Use metricsProxyHeapSizeInMibFlag instead") default OptionalInt metricsProxyHeapSizeInMib() { return OptionalInt.empty(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return OptionalInt.empty(); }
-        @ModelFeatureFlag(owners = {"hmusum"}) default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.738") default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
         @ModelFeatureFlag(owners = {"toregge"}) default double searchNodeReservedMemoryFactor() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forceDisableOnnxModelOptimization() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean failWhenConfiguringIndexedMapOfArray() { return false; }

@@ -260,10 +260,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB).value()); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
         @Override public boolean requireExplicitDocprocCluster() { return flag(Flags.REQUIRE_EXPLICIT_DOCPROC_CLUSTER).value(); }
-        @Override public double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) {
-            var flag = flag(Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE);
-            return clusterId.map(id -> flag.withClusterId(ClusterSpec.Id.from(id)).value()).orElseGet(flag::value);
-        }
         @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
         @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
