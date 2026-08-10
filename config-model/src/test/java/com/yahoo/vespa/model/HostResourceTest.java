@@ -3,6 +3,7 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
@@ -54,7 +55,8 @@ public class HostResourceTest {
                                 new HostSpec("hostname",
                                              NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
                                              membership,
-                                             Optional.empty(), Optional.empty(), Optional.empty()));
+                                             Optional.empty(), Optional.empty(), Optional.empty(),
+                                             AzName.defaultName()));
     }
 
     private static int counter = 0;

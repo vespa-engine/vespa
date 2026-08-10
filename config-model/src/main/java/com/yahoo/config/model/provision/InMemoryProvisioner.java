@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
@@ -217,7 +218,8 @@ public class InMemoryProvisioner implements HostProvisioner {
                             host.membership().get().retire(),
                             host.version(),
                             Optional.empty(),
-                            host.dockerImageRepo());
+                            host.dockerImageRepo(),
+                            host.availabilityZone());
     }
 
     // Minimal capacity policies
@@ -266,7 +268,8 @@ public class InMemoryProvisioner implements HostProvisioner {
                                         resources, resources, requestedResources,
                                         membership,
                                         newHost.version(), Optional.empty(),
-                                        Optional.empty()));
+                                        Optional.empty(),
+                                        AzName.defaultName()));
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 

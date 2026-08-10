@@ -59,11 +59,11 @@ public class IndexedSearchCluster extends SearchCluster {
 
     private static DistributionPolicy.Enum toDistributionPolicy(DispatchTuning.DispatchPolicy tuning) {
         return switch (tuning) {
-            case ADAPTIVE: yield DistributionPolicy.ADAPTIVE;
-            case ROUNDROBIN: yield DistributionPolicy.ROUNDROBIN;
-            case BEST_OF_RANDOM_2: yield DistributionPolicy.BEST_OF_RANDOM_2;
-            case LATENCY_AMORTIZED_OVER_REQUESTS: yield DistributionPolicy.LATENCY_AMORTIZED_OVER_REQUESTS;
-            case LATENCY_AMORTIZED_OVER_TIME: yield DistributionPolicy.LATENCY_AMORTIZED_OVER_TIME;
+            case ADAPTIVE -> DistributionPolicy.ADAPTIVE;
+            case ROUNDROBIN -> DistributionPolicy.ROUNDROBIN;
+            case BEST_OF_RANDOM_2 -> DistributionPolicy.BEST_OF_RANDOM_2;
+            case LATENCY_AMORTIZED_OVER_REQUESTS -> DistributionPolicy.LATENCY_AMORTIZED_OVER_REQUESTS;
+            case LATENCY_AMORTIZED_OVER_TIME -> DistributionPolicy.LATENCY_AMORTIZED_OVER_TIME;
         };
     }
 
@@ -72,6 +72,8 @@ public class IndexedSearchCluster extends SearchCluster {
             DispatchNodesConfig.Node.Builder nodeBuilder = new DispatchNodesConfig.Node.Builder();
             nodeBuilder.key(node.getDistributionKey());
             nodeBuilder.group(node.getNodeSpec().groupIndex());
+            if (node.getHostResource() != null)
+                nodeBuilder.availabilityZone(node.getHostResource().spec().availabilityZone().value());
             nodeBuilder.host(node.getHostName());
             nodeBuilder.port(node.getRpcPort());
             builder.node(nodeBuilder);

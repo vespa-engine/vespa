@@ -18,6 +18,7 @@ public class Node {
     private final String hostname;
     private final int group;
     private final OptionalInt groupWhenMultiple;
+    private final String availabilityZone;
     private int pathIndex;
 
     private final AtomicLong pingSequence = new AtomicLong(0);
@@ -28,11 +29,16 @@ public class Node {
     private volatile boolean working = true;
 
     public Node(String clusterName, int key, String hostname, int group, boolean multipleGroups) {
+        this(clusterName, key, hostname, group, multipleGroups, "default");
+    }
+
+    public Node(String clusterName, int key, String hostname, int group, boolean multipleGroups, String availabilityZone) {
         this.clusterName = clusterName;
         this.key = key;
         this.hostname = hostname;
         this.group = group;
         this.groupWhenMultiple = multipleGroups ? OptionalInt.of(group) : OptionalInt.empty();
+        this.availabilityZone = availabilityZone;
     }
 
     /** Returns a monotonically increasing sequence number.*/
@@ -72,6 +78,9 @@ public class Node {
     public OptionalInt groupWhenMultiple() {
         return groupWhenMultiple;
     }
+
+    /** Returns the name of the availability zone this node is allocated in, or "default" when not known. */
+    public String availabilityZone() { return availabilityZone; }
 
     public void setWorking(boolean working) {
         this.statusIsKnown = true;

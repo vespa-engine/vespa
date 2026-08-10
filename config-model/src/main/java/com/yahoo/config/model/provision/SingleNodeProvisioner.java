@@ -2,6 +2,7 @@
 package com.yahoo.config.model.provision;
 
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -39,7 +40,8 @@ public class SingleNodeProvisioner implements HostProvisioner {
         this.hostSpec = new HostSpec(host.hostname(),
                                      flavor.resources(), flavor.resources(), flavor.resources(),
                                      ClusterMembership.from(ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).group(ClusterSpec.Group.from(0)).vespaVersion("1").build(), 0),
-                                     Optional.empty(), Optional.empty(), Optional.empty());
+                                     Optional.empty(), Optional.empty(), Optional.empty(),
+                                     AzName.defaultName());
     }
 
     @Override
@@ -53,7 +55,8 @@ public class SingleNodeProvisioner implements HostProvisioner {
         hosts.add(new HostSpec(host.hostname(),
                                NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
                                ClusterMembership.from(cluster.with(Optional.of(ClusterSpec.Group.from(0))), counter++),
-                               Optional.empty(), Optional.empty(), Optional.empty()));
+                               Optional.empty(), Optional.empty(), Optional.empty(),
+                               AzName.defaultName()));
         return hosts;
     }
 
