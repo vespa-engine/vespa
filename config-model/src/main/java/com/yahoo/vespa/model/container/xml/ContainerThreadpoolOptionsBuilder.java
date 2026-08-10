@@ -81,11 +81,11 @@ public class ContainerThreadpoolOptionsBuilder {
             isRelative = false;
         }
 
-        if (min != null && min < 0)
+        if (min != null && (min.isNaN() || min.isInfinite() || min < 0))
             throw new IllegalArgumentException("For <threadpool>: <threads> must be positive.");
-        if (max != null && max <= 0)
+        if (max != null && (max.isNaN() || max.isInfinite() || max <= 0))
             throw new IllegalArgumentException("For <threadpool>: 'max' on <threads> must be positive.");
-        if (queue != null && queue < 0)
+        if (queue != null && (queue.isNaN() || queue.isInfinite() || queue < 0))
             throw new IllegalArgumentException("For <threadpool>: <queue> must be positive.");
         if (min != null && max != null && min > max)
             throw new IllegalArgumentException("For <threadpool>: 'max' on <threads> must be greater than <threads>.");

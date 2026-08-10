@@ -4,6 +4,8 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.model.api.ConfigChangeRestartAction;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.util.List;
 
@@ -49,6 +51,13 @@ public class VespaRestartAction extends VespaConfigChangeAction implements Confi
         super(id, message, services);
         this.ignoreForInternalRedeploy = ignoreForInternalRedeploy;
         this.configChange = configChange;
+    }
+
+    /** Creates an action restarting all containers in the given cluster. */
+    public static VespaRestartAction ofCluster(ContainerCluster<?> cluster, String message, ConfigChange configChange) {
+        return new VespaRestartAction(cluster.id(), message,
+                                      cluster.getContainers().stream().map(AbstractService::getServiceInfo).toList(),
+                                      configChange);
     }
 
     @Override

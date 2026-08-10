@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
@@ -150,11 +149,6 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
     }
 
     private void addRestartAction(ChangeContext context, ApplicationContainerCluster cluster, String message) {
-        var services = cluster.getContainers().stream().map(AbstractService::getServiceInfo).toList();
-
-        context.require(new VespaRestartAction(
-                cluster.id(), message, services,
-                VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART
-        ));
+        context.require(VespaRestartAction.ofCluster(cluster, message, VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART));
     }
 }

@@ -6,7 +6,6 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRestartAction;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -98,13 +97,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
 
     private static void setRestartOnDeployAndAddRestartAction(List<ConfigChangeAction> actions, ApplicationContainerCluster cluster, String message) {
         log.log(INFO, message);
-        actions.add(new VespaRestartAction(
-                cluster.id(),
-                message,
-                cluster.getContainers().stream()
-                        .map(AbstractService::getServiceInfo)
-                        .toList(),
-                DEFER_UNTIL_RESTART));
+        actions.add(VespaRestartAction.ofCluster(cluster, message, DEFER_UNTIL_RESTART));
     }
 
     private static boolean enoughMemoryToAvoidRestart(ApplicationContainerCluster clusterInCurrentModel,
