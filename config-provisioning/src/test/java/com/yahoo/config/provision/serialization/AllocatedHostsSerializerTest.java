@@ -52,7 +52,8 @@ public class AllocatedHostsSerializerTest {
                                                       Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
                                Optional.empty(),
                                Optional.empty(),
-                               Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))));
+                               Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar")),
+                               AzName.from("my-az")));
         hosts.add(new HostSpec("flavor-from-resources-2",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
@@ -61,7 +62,8 @@ public class AllocatedHostsSerializerTest {
                                                       Optional.empty()),
                                Optional.empty(),
                                Optional.empty(),
-                               Optional.empty()));
+                               Optional.empty(),
+                               AzName.defaultName()));
         hosts.add(new HostSpec("with-version",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
@@ -69,7 +71,8 @@ public class AllocatedHostsSerializerTest {
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty()),
                                Optional.of(Version.fromString("3.4.5")),
-                               Optional.empty(), Optional.empty()));
+                               Optional.empty(), Optional.empty(),
+                               AzName.defaultName()));
         hosts.add(new HostSpec("with-load-balancer-settings",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
@@ -78,7 +81,8 @@ public class AllocatedHostsSerializerTest {
                                                       Optional.empty(), new ZoneEndpoint(true, true, List.of(AuthMethod.mtls, AuthMethod.token), List.of(new AllowedUrn(AccessType.awsPrivateLink, "burn")))),
                                Optional.empty(),
                                Optional.empty(),
-                               Optional.empty()));
+                               Optional.empty(),
+                               AzName.defaultName()));
         hosts.add(new HostSpec("with-ports",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
@@ -88,7 +92,8 @@ public class AllocatedHostsSerializerTest {
                                Optional.empty(),
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                       new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
-                               Optional.empty()));
+                               Optional.empty(),
+                               AzName.defaultName()));
         hosts.add(new HostSpec("arm64",
                                arm64Node,
                                arm64Node,
@@ -99,7 +104,8 @@ public class AllocatedHostsSerializerTest {
                                Optional.empty(),
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                       new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
-                               Optional.empty()));
+                               Optional.empty(),
+                               AzName.defaultName()));
         hosts.add(new HostSpec("with-profile",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
@@ -109,7 +115,8 @@ public class AllocatedHostsSerializerTest {
                                                       Optional.of("large-storage")),
                                Optional.empty(),
                                Optional.empty(),
-                               Optional.empty()));
+                               Optional.empty(),
+                               AzName.defaultName()));
         hosts.add(new HostSpec("with-sidecars",
                 smallSlowDiskSpeedNode,
                 bigSlowDiskSpeedNode,
@@ -148,7 +155,8 @@ public class AllocatedHostsSerializerTest {
                 ),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.empty()));
+                Optional.empty(),
+                               AzName.defaultName()));
 
         assertAllocatedHosts(AllocatedHosts.withHosts(hosts));
     }
@@ -168,6 +176,7 @@ public class AllocatedHostsSerializerTest {
             assertEquals(expectedHost.version(), deserializedHost.version());
             assertEquals(expectedHost.networkPorts(), deserializedHost.networkPorts());
             assertEquals(expectedHost.dockerImageRepo(), deserializedHost.dockerImageRepo());
+            assertEquals(expectedHost.availabilityZone(), deserializedHost.availabilityZone());
         }
     }
 
@@ -176,19 +185,6 @@ public class AllocatedHostsSerializerTest {
             if (host.hostname().equals(hostname))
                 return host;
         throw new IllegalArgumentException("No host " + hostname + " is present");
-    }
-
-    @Test
-    void testProfileRoundTrip() throws IOException {
-        var membership = ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), List.of(),
-                                                Optional.of("large-storage"));
-        var host = new HostSpec("with-profile",
-                                smallSlowDiskSpeedNode, bigSlowDiskSpeedNode, anyDiskSpeedNode,
-                                membership, Optional.empty(), Optional.empty(), Optional.empty());
-        AllocatedHosts deserialized = fromJson(toJson(AllocatedHosts.withHosts(Set.of(host))));
-        assertEquals(Optional.of("large-storage"),
-                     requireHost("with-profile", deserialized).membership().get().cluster().profile());
     }
 
     @Test
@@ -207,10 +203,11 @@ public class AllocatedHostsSerializerTest {
                 .build();
 
         var host = new HostSpec("host-with-exec-probe",
-                smallSlowDiskSpeedNode, bigSlowDiskSpeedNode, anyDiskSpeedNode,
-                ClusterMembership.from("container/test/0/0",
-                        Version.fromString("6.73.1"), Optional.empty(), List.of(sidecarWithExecProbe)),
-                Optional.empty(), Optional.empty(), Optional.empty());
+                                smallSlowDiskSpeedNode, bigSlowDiskSpeedNode, anyDiskSpeedNode,
+                                ClusterMembership.from("container/test/0/0",
+                                                       Version.fromString("6.73.1"), Optional.empty(), List.of(sidecarWithExecProbe)),
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                AzName.defaultName());
 
         assertAllocatedHosts(AllocatedHosts.withHosts(Set.of(host)));
     }

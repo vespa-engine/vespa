@@ -9,6 +9,9 @@ node[].key int
 # The index of the group this search node belongs to
 node[].group int default=0
 
+# The name of the availability zone this search node is allocated in
+node[].availabilityZone string default="default"
+
 # The host name of this search node
 node[].host string
 

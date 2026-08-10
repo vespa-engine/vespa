@@ -11,9 +11,16 @@ import java.util.Objects;
 public class Node {
 
     private final int index;
+    private final String availabilityZone;
 
+    @Deprecated // TODO: Remove on Vespa 9
     public Node(int index) {
+        this(index, "default");
+    }
+
+    public Node(int index, String availabilityZone) {
         this.index = index;
+        this.availabilityZone = Objects.requireNonNull(availabilityZone);
     }
 
     /**
@@ -22,16 +29,22 @@ public class Node {
      */
     public int index() { return index; }
 
+    /**
+     * Returns the name of the availability zone this node is allocated in
+     * (or possibly "default" for single-AZ zones).
+     */
+    public String availabilityZone() { return availabilityZone; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
-        return index == node.index;
+        return index == node.index && availabilityZone.equals(node.availabilityZone);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(index);
+        return Objects.hash(index, availabilityZone);
     }
 }

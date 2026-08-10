@@ -335,7 +335,7 @@ public class LoadBalancerSimulationTest {
         }
 
         // Create load balancer with specified policy
-        LoadBalancer loadBalancer = new LoadBalancer(groups, policy);
+        LoadBalancer loadBalancer = new LoadBalancer(groups, policy, "default");
 
         // Create manual clock starting at epoch
         ManualClock clock = new ManualClock(config.startTime);

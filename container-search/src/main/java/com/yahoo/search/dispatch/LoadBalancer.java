@@ -6,13 +6,16 @@ import com.yahoo.search.dispatch.searchcluster.Group;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * LoadBalancer determines which group of content nodes should be accessed next for each search query when the
@@ -34,26 +37,45 @@ public class LoadBalancer {
     private final Map<Integer, GroupStatus> scoreboard;
     private final GroupScheduler scheduler;
 
+    /**
+     * The groups which are not in the same availability zone as this container,
+     * or empty if all groups are, or if no group is (in which case there is nothing to prefer).
+     */
+    private final Set<Integer> nonLocalGroups;
+
     public enum Policy { ROUNDROBIN, ADAPTIVE, BEST_OF_RANDOM_2, LATENCY_AMORTIZED_OVER_TIME}
 
-    public LoadBalancer(Collection<Group> groups, Policy policy) {
-        this.scoreboard = new HashMap<>();
-        for (Group group : groups) {
+    public LoadBalancer(Collection<Group> groups, Policy policy, String localAvailabilityZone) {
+        this(groups, policy, localAvailabilityZone, System.currentTimeMillis());
+    }
+
+    LoadBalancer(Collection<Group> groups, Policy policy, String localAvailabilityZone, long seed) {
+        var scoreboard = new HashMap<Integer, GroupStatus>();
+        for (Group group : groups)
             scoreboard.put(group.id(), new GroupStatus(group));
-        }
+        this.scoreboard = Collections.unmodifiableMap(scoreboard);
+
         if (scoreboard.size() == 1)
             policy = Policy.ROUNDROBIN;
 
         this.scheduler = switch (policy) {
-            case ROUNDROBIN: yield new RoundRobinScheduler(scoreboard);
-            case BEST_OF_RANDOM_2: yield new BestOfRandom2(new Random(), scoreboard);
-            case ADAPTIVE: yield new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, new Random(), scoreboard);
-            case LATENCY_AMORTIZED_OVER_TIME: yield new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(), scoreboard);
+            case ROUNDROBIN -> new RoundRobinScheduler(scoreboard);
+            case BEST_OF_RANDOM_2 -> new BestOfRandom2(new Random(), scoreboard);
+            case ADAPTIVE -> new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, new Random(seed), scoreboard);
+            case LATENCY_AMORTIZED_OVER_TIME -> new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(), scoreboard);
         };
+
+        Set<Integer> nonLocalGroups = groups.stream()
+                                            .filter(group -> ! group.availabilityZone().equals(localAvailabilityZone))
+                                            .map(Group::id)
+                                            .collect(Collectors.toSet());
+        this.nonLocalGroups = nonLocalGroups.size() == groups.size() ? Set.of() : Set.copyOf(nonLocalGroups);
     }
 
     /**
      * Selects and allocates the search cluster group which is to be used for the next search query.
+     * Groups in the same availability zone as this container are preferred when any of them
+     * has sufficient coverage.
      * Callers <b>must</b> call {@link #releaseGroup} symmetrically for each taken allocation.
      *
      * @param rejectedGroups if not null, the load balancer will only return groups with IDs not in the set
@@ -61,17 +83,54 @@ public class LoadBalancer {
      */
     public Optional<Group> takeAnyGroupNotIn(Set<Integer> rejectedGroups) {
         synchronized (this) {
-            Optional<GroupStatus> best = scheduler.takeNextGroup(rejectedGroups);
+            Optional<GroupStatus> best = takePreferablyLocalGroup(rejectedGroups);
             if (best.isPresent()) {
                 GroupStatus status = best.get();
                 status.allocate();
-                Group group = status.group;
-                log.fine(() -> "Offering <" + group + "> for query connection");
-                return Optional.of(group);
+                return Optional.of(status.group);
             } else {
                 return Optional.empty();
             }
         }
+    }
+
+    private Optional<GroupStatus> takePreferablyLocalGroup(Set<Integer> rejectedGroups) {
+        if (! aRemoteIsPreferable(rejectedGroups)) {
+            Set<Integer> rejectedOrNonLocal = new HashSet<>(nonLocalGroups);
+            if (rejectedGroups != null)
+                rejectedOrNonLocal.addAll(rejectedGroups);
+            Optional<GroupStatus> local = scheduler.takeNextGroup(rejectedOrNonLocal);
+            if (local.isPresent()) return local;
+            return scheduler.takeNextGroup(rejectedGroups);
+        }
+        else {
+            return scheduler.takeNextGroup(rejectedGroups);
+        }
+    }
+
+    /**
+     * Returns true if there exists some remote group which is preferable
+     * to all the local groups (disregarding rejected).
+     */
+    private boolean aRemoteIsPreferable(Set<Integer> rejectedGroups) {
+        Set<Integer> localGroups = new HashSet<>(scoreboard.keySet());
+        if (localGroups.size() == nonLocalGroups.size()) return false; // TODO: Remove when removing the "OR" part of this
+        localGroups.removeAll(nonLocalGroups);
+        for (var local : localGroups) {
+            if (rejectedGroups.contains(local)) continue;
+            if (! remoteIsPreferableTo(local, rejectedGroups))
+                return false;
+        }
+        return true;
+    }
+
+    private boolean remoteIsPreferableTo(Integer local, Set<Integer> rejectedGroups) {
+        for (var remote : nonLocalGroups) {
+            if (rejectedGroups.contains(remote)) continue;
+            if (scoreboard.get(remote).group.isPreferableTo(scoreboard.get(local).group))
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -148,6 +207,9 @@ public class LoadBalancer {
             return group.id();
         }
 
+        @Override
+        public String toString() { return "status of " + group; }
+
     }
 
     private interface GroupScheduler {
@@ -172,12 +234,12 @@ public class LoadBalancer {
                 GroupStatus candidate = scoreboard.get(groupId);
                 if (rejectedGroups == null || !rejectedGroups.contains(candidate.groupId())) {
                     GroupStatus better = betterGroup(bestCandidate, candidate);
-                    if (better == candidate) {
+                    if (better == candidate)
                         bestCandidate = candidate;
-                    }
                 }
                 groupId = nextScoreboardIndex(groupId);
             }
+            if (bestCandidate == null) return Optional.empty();
             needle = nextScoreboardIndex(bestCandidate.groupId());
             return Optional.of(bestCandidate);
         }
@@ -202,9 +264,8 @@ public class LoadBalancer {
 
         private int nextScoreboardIndex(int current) {
             int next = current + 1;
-            if (next >= scoreboard.size()) {
+            if (next >= scoreboard.size())
                 next %= scoreboard.size();
-            }
             return next;
         }
     }

@@ -1,6 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import ai.vespa.cloud.ApplicationId;
+import ai.vespa.cloud.Cloud;
+import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.SystemInfo;
+import ai.vespa.cloud.Zone;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.Pong;
@@ -68,7 +73,12 @@ public class DispatcherTest {
             assertEquals(1, nodes.get(0).key());
             return true;
         });
-        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
+        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false),
+                                         cl,
+                                         dispatchConfig,
+                                         new QrSearchersConfig.Builder().build(),
+                                         systemInfo("default"),
+                                         invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(q, null);
         assertNotNull(invoker);
         invokerFactory.verifyAllEventsProcessed();
@@ -84,7 +94,12 @@ public class DispatcherTest {
             }
         };
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, a) -> true);
-        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
+        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false),
+                                         cl,
+                                         dispatchConfig,
+                                         new QrSearchersConfig.Builder().build(),
+                                         systemInfo("default"),
+                                         invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         assertNotNull(invoker);
         invokerFactory.verifyAllEventsProcessed();
@@ -102,7 +117,12 @@ public class DispatcherTest {
             assertTrue(acceptIncompleteCoverage);
             return true;
         });
-        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
+        Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false),
+                                         cl,
+                                         dispatchConfig,
+                                         new QrSearchersConfig.Builder().build(),
+                                         systemInfo("default"),
+                                         invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         assertNotNull(invoker);
         invokerFactory.verifyAllEventsProcessed();
@@ -115,7 +135,12 @@ public class DispatcherTest {
             SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
             MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, a) -> false, (n, a) -> false);
-            Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false), cl, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
+            Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false),
+                                             cl,
+                                             dispatchConfig,
+                                             new QrSearchersConfig.Builder().build(),
+                                             systemInfo("default"),
+                                             invokerFactory);
             disp.getSearchInvoker(new Query(), null);
             disp.deconstruct();
             fail("Expected exception");
@@ -128,7 +153,11 @@ public class DispatcherTest {
     @Test
     void testGroup0IsSelected() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false),
+                                               cluster,
+                                               dispatchConfig,
+                                               new QrSearchersConfig.Builder().build(),
+                                               systemInfo("default"),
                                                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
         assertEquals(0,
@@ -139,7 +168,11 @@ public class DispatcherTest {
     @Test
     void testPreferredGroup() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false),
+                                               cluster,
+                                               dispatchConfig,
+                                               new QrSearchersConfig.Builder().build(),
+                                               systemInfo("default"),
                                                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
         assertEquals(2, dispatcher.getSearchInvoker(new Query("?model.searchGroup=2"), null).distributionKey().get().longValue(),
@@ -151,7 +184,11 @@ public class DispatcherTest {
     void testPreferredGroupIsIgnoredWhenMissingCoverage() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
 
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false),
+                                               cluster,
+                                               dispatchConfig,
+                                               new QrSearchersConfig.Builder().build(),
+                                               systemInfo("default"),
                                                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
         cluster.groupList().get(2).setHasSufficientCoverage(false);
@@ -163,7 +200,11 @@ public class DispatcherTest {
     @Test
     void testPreferredGroupIsIgnoredWhenNonExistent() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
-        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false),
+                                               cluster,
+                                               dispatchConfig,
+                                               new QrSearchersConfig.Builder().build(),
+                                               systemInfo("default"),
                                                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
         assertEquals(0, dispatcher.getSearchInvoker(new Query("?model.searchGroup=3"), null).distributionKey().get().longValue(),
@@ -171,7 +212,6 @@ public class DispatcherTest {
         dispatcher.deconstruct();
     }
 
-    @SuppressWarnings("deprecation") // Thread.getId() is deprecated
     @Test
     void testRpcResourceShutdownOnReconfiguration() throws InterruptedException, ExecutionException, IOException {
         // Ping factory lets us tick each ping, so we may delay shutdown, due to monitor thread RPC usage.
@@ -214,7 +254,6 @@ public class DispatcherTest {
                 };
             }
             // Verifies cleanup is done by the expected thread, by ID, and cleans up the "RPC connection" (phaser).
-            @SuppressWarnings("deprecation") // Thread.getId() is deprecated
             @Override public Collection<? extends AutoCloseable> updateNodes(DispatchNodesConfig config) {
                 for (DispatchNodesConfig.Node node : config.node())
                     rpcResources.putIfAbsent(node.key(), true);
@@ -256,7 +295,12 @@ public class DispatcherTest {
             }
         };
 
-        Dispatcher dispatcher = new Dispatcher(dispatchConfig, new QrSearchersConfig.Builder().build(), rpcPool, cluster, invokerFactories);
+        Dispatcher dispatcher = new Dispatcher(dispatchConfig,
+                                               new QrSearchersConfig.Builder().build(),
+                                               rpcPool,
+                                               cluster,
+                                               systemInfo("default"),
+                                               invokerFactories);
         ExecutorService executor = Executors.newFixedThreadPool(1);
 
         // Set two groups with a single node each.
@@ -351,6 +395,14 @@ public class DispatcherTest {
         reconfiguration.get();
         assertNotEquals(cleanupThreadId.get(), Thread.currentThread().getId());
         dispatcher.deconstruct();
+    }
+
+    private static SystemInfo systemInfo(String localAvailabilityZone) {
+        return new SystemInfo(new ApplicationId("tenant1", "application1", "default"),
+                              new Zone(Environment.prod, "region1"),
+                              new Cloud("cloud1"),
+                              "cluster1",
+                              new ai.vespa.cloud.Node(0, localAvailabilityZone));
     }
 
     interface FactoryStep {

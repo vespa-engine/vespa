@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.Quota;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -144,7 +145,8 @@ public class HostedDeployNodeAllocationTest {
                                 membership,
                                 Optional.of(Version.fromString(version)),
                                 Optional.empty(),
-                                Optional.empty());
+                                Optional.empty(),
+                                AzName.defaultName());
         }
 
     }

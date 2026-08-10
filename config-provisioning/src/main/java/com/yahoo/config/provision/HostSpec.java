@@ -30,14 +30,18 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<NetworkPorts> networkPorts;
 
+    /** The availability zone this host is allocated in */
+    private final AzName availabilityZone;
+
     /** Create a host in a non-cloud system, where hosts are specified in config */
     public HostSpec(String hostname, Optional<NetworkPorts> networkPorts) {
         this(hostname,
              NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-             Optional.empty(), Optional.empty(), networkPorts, Optional.empty());
+             Optional.empty(), Optional.empty(), networkPorts, Optional.empty(), AzName.defaultName());
     }
 
-    /** Create a host in a hosted system */
+    /** Create a host in a hosted system, in the zone's default availability zone */
+    @Deprecated // TODO: Remove after August 2026
     public HostSpec(String hostname,
                     NodeResources realResources,
                     NodeResources advertisedResources,
@@ -50,10 +54,32 @@ public class HostSpec implements Comparable<HostSpec> {
              realResources,
              advertisedResources,
              requestedResources,
+             membership,
+             version,
+             networkPorts,
+             dockerImageRepo,
+             AzName.defaultName());
+    }
+
+    /** Create a host in a hosted system, in the given availability zone */
+    public HostSpec(String hostname,
+                    NodeResources realResources,
+                    NodeResources advertisedResources,
+                    NodeResources requestedResources,
+                    ClusterMembership membership,
+                    Optional<Version> version,
+                    Optional<NetworkPorts> networkPorts,
+                    Optional<DockerImage> dockerImageRepo,
+                    AzName availabilityZone) {
+        this(hostname,
+             realResources,
+             advertisedResources,
+             requestedResources,
              Optional.of(membership),
              version,
              networkPorts,
-             dockerImageRepo);
+             dockerImageRepo,
+             availabilityZone);
     }
 
     private HostSpec(String hostname,
@@ -63,7 +89,8 @@ public class HostSpec implements Comparable<HostSpec> {
                      Optional<ClusterMembership> membership,
                      Optional<Version> version,
                      Optional<NetworkPorts> networkPorts,
-                     Optional<DockerImage> dockerImageRepo) {
+                     Optional<DockerImage> dockerImageRepo,
+                     AzName availabilityZone) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         this.hostname = hostname;
         this.realResources = Objects.requireNonNull(realResources);
@@ -73,6 +100,7 @@ public class HostSpec implements Comparable<HostSpec> {
         this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");
         this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");
         this.dockerImageRepo = Objects.requireNonNull(dockerImageRepo, "Docker image repo cannot be null but can be empty");
+        this.availabilityZone = Objects.requireNonNull(availabilityZone, "Availability zone must be specified");
     }
 
     /** Returns the name identifying this host */
@@ -98,8 +126,11 @@ public class HostSpec implements Comparable<HostSpec> {
 
     public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
+    /** Returns the availability zone this host is allocated in */
+    public AzName availabilityZone() { return availabilityZone; }
+
     public HostSpec withPorts(Optional<NetworkPorts> ports) {
-        return new HostSpec(hostname, realResources, advertisedResources, requestedResources, membership, version, ports, dockerImageRepo);
+        return new HostSpec(hostname, realResources, advertisedResources, requestedResources, membership, version, ports, dockerImageRepo, availabilityZone);
     }
 
     @Override

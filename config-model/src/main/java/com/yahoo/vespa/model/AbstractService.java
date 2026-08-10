@@ -439,9 +439,10 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         this.basePort = wantedPort;
     }
 
-    public void setHostResource(HostResource hostResource) {
-        this.hostResource = hostResource;
-    }
+    /** Returns the host resources of this, or null if not assigned yet. */
+    public HostResource getHostResource() { return hostResource; }
+
+    public void setHostResource(HostResource hostResource) { this.hostResource = hostResource; }
 
     public boolean isInitialized() {
         return initialized;
@@ -460,10 +461,6 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
     // For testing
     public int getNumPortsAllocated() {
         return ports.size();
-    }
-
-    public HostResource getHostResource() {
-        return hostResource;
     }
 
     public Optional<Affinity> getAffinity() {

@@ -152,7 +152,7 @@ public class IndexedBackendTestCase {
         VipStatus vipStatus = new VipStatus(b.build());
         List<Node> nodes_1 = List.of(new Node(CLUSTER, 0, "host0", 0, true));
         RpcResourcePool rpcPool_1 = new RpcResourcePool(MockDispatcher.toDispatchConfig(), MockDispatcher.toNodesConfig(nodes_1));
-        MockDispatcher dispatch_1 = MockDispatcher.create(nodes_1, rpcPool_1, vipStatus);
+        MockDispatcher dispatch_1 = MockDispatcher.create(nodes_1, rpcPool_1, vipStatus, "default");
         dispatch_1.clusterMonitor.shutdown();
         vipStatus.addToRotation(clusterName);
         assertTrue(vipStatus.isInRotation());

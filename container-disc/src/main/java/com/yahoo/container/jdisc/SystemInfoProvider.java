@@ -34,7 +34,7 @@ public class SystemInfoProvider extends AbstractComponent implements Provider<Sy
                                        new Zone(Environment.valueOf(csConfig.environment()), csConfig.region()),
                                        new Cloud(csConfig.cloud()),
                                        qrConfig.clustername(),
-                                       new Node(qrConfig.nodeIndex()));
+                                       new Node(qrConfig.nodeIndex(), qrConfig.availabilityZone()));
     }
 
     @Override
