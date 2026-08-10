@@ -161,7 +161,7 @@ public class Flags {
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2026-08-01",
+            List.of("olaa"), "2024-04-03", "2026-10-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -226,14 +226,6 @@ public class Flags {
             "If true, send the old query stack format in addition to protobuf serialization.",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
-
-
-    public static final UnboundBooleanFlag TOKEN_AUTH_FOR_DEPLOY = defineFeatureFlag(
-            "token-auth-for-deploy", false, 
-            List.of("bragehk"), "2026-05-19", "2026-09-01",
-            "Whether to activate token auth for vespa deploy", 
-            "Takes effect at deployment", 
-            TENANT_ID);
 
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_MEMORY_FACTOR = defineDoubleFlag(
         "searchnode-reserved-memory-factor", 0.0,
