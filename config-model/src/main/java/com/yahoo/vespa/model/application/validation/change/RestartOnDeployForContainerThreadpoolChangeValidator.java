@@ -24,6 +24,10 @@ public class RestartOnDeployForContainerThreadpoolChangeValidator implements Cha
 
     @Override
     public void validate(ChangeContext context) {
+        // Restart is only triggered automatically for hosted Vespa,
+        // for self-hosted a deferred restart would freeze all config changes until a manual restart.
+        if ( ! context.deployState().isHosted()) return;
+
         // Validate existing clusters only, new clusters do not need restartOnDeploy.
         for (var previousCluster : context.previousModel().getContainerClusters().values()) {
             var nextCluster = context.model().getContainerClusters().get(previousCluster.name());
