@@ -144,13 +144,6 @@ public class Flags {
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
-    public static final UnboundDoubleFlag AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE = defineDoubleFlag(
-            "autoscaler-target-write-cpu-percentage", 0.95,
-            List.of("hmusum"), "2026-02-15", "2026-08-15",
-            "Target write CPU percentage for autoscaler (e.g., 0.8 = 80%)",
-            "Takes effect on next autoscaler evaluation",
-            INSTANCE_ID, CLUSTER_ID);
-
     public static final UnboundBooleanFlag REQUIRE_EXPLICIT_DOCPROC_CLUSTER = defineFeatureFlag(
             "require-explicit-docproc-cluster", true,
             List.of("hmusum"), "2026-05-26", "2026-12-01",
