@@ -1,10 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.model.api.ConfigChangeRestartAction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -43,7 +41,7 @@ public class RestartOnDeployForTritonOnnxRuntimeValidator implements ChangeValid
                 var message = hasTritonRuntime
                         ? "Triton ONNX runtime was enabled for cluster '%s', services require restart"
                         : "Triton ONNX runtime was disabled for cluster '%s', services require restart";
-                var action = createRestartAction(currentCluster, Text.format(message, clusterId), DEFER_UNTIL_RESTART);
+                var action = VespaRestartAction.ofCluster(currentCluster, Text.format(message, clusterId), DEFER_UNTIL_RESTART);
                 context.require(action);
             }
         }
@@ -58,13 +56,5 @@ public class RestartOnDeployForTritonOnnxRuntimeValidator implements ChangeValid
         return cluster.getAllComponents().stream()
                 .anyMatch(component ->
                         component.getClassId().getName().equals(ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS));
-    }
-
-    private static VespaRestartAction createRestartAction(
-            ApplicationContainerCluster cluster, String message, ConfigChangeRestartAction.ConfigChange configChange) {
-        var services = cluster.getContainers().stream()
-                .map(AbstractService::getServiceInfo)
-                .toList();
-        return new VespaRestartAction(cluster.id(), message, services, configChange);
     }
 }
