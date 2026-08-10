@@ -110,6 +110,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
+        @ModelFeatureFlag(owners = {"bragehk"}) default boolean tokenAuthForDeploy() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
