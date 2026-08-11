@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  */
 class TrackedGroup {
 
-    private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
+    private static final Logger log = Logger.getLogger(TrackedGroup.class.getName());
 
     private final Group group;
     private int allocations = 0;
