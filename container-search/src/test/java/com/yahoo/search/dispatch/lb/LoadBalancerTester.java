@@ -12,17 +12,20 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
  */
 public class LoadBalancerTester {
 
-    private final int                 requests = 100;
+    private final int requests = 100;
+    private final double deviationPercentage;
     private final LoadBalancer.Policy policy;
 
-    public LoadBalancerTester(LoadBalancer.Policy policy) {
+    public LoadBalancerTester(LoadBalancer.Policy policy, double deviationPercentage) {
         this.policy = policy;
+        this.deviationPercentage = deviationPercentage;
     }
 
     void assertAzAwareLoadBalancing() {
@@ -94,29 +97,27 @@ public class LoadBalancerTester {
         assertLb(List.of(0,   0, 50, 50), loadBalance(List.of(g0, g1, g2, g3), List.of(g0, g1), "az1"));
     }
 
-    /**
-     * Asserts that the expected number of requests per group matches the actual.
-     * If the policy is round-robin, exaoct match is expected, otherwise this is ... smarter.
-     */
+    /** Asserts that the expected number of requests per group matches the actual. */
     private void assertLb(List<Integer> expected, List<Integer> actual) {
-        if ( policy == LoadBalancer.Policy.ROUNDROBIN) {
+        if ( deviationPercentage == 0.0) { // Give better assert failure messages
             assertEquals(expected, actual);
         }
         else {
             int totalRequests = 0;
             for (int i = 0; i < expected.size(); i++) {
-                totalRequests+= actual.get(i);
+                totalRequests += actual.get(i);
                 if (expected.get(i) == 0 || expected.get(i) == requests)
                     assertEquals(expected.get(i), actual.get(i), "Requests to group " + i);
                 else
-                    assertEquals(round(actual.get(i)), round(expected.get(i)), "Requests to group " + i + " (rounded)");
+                    assertSimilar(expected.get(i), actual.get(i), "Requests to group " + i);
             }
             assertEquals(expected.stream().mapToInt(e -> e).sum(), totalRequests, "Total requests");
         }
     }
 
-    private int round(int value) {
-        return (int)Math.round(value / 5.0);
+    private void assertSimilar(int expected, int actual, String message) {
+        assertTrue(Math.abs((100.0 * ( actual - expected) ) / expected) < deviationPercentage,
+                   message + ": Expected " + expected + " but was " + actual);
     }
 
     private List<Integer> loadBalance(List<Group> groups, String localAZ) {

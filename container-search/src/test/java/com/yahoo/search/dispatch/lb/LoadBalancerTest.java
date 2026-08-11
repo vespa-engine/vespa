@@ -40,12 +40,14 @@ public class LoadBalancerTest {
 
     @Test
     void test_az_aware_group_load_balancing() {
-        new LoadBalancerTester(LoadBalancer.Policy.ROUNDROBIN).assertAzAwareLoadBalancing();
-        new LoadBalancerTester(LoadBalancer.Policy.ADAPTIVE).assertAzAwareLoadBalancing();
+        new LoadBalancerTester(LoadBalancer.Policy.ROUNDROBIN, 0.0).assertAzAwareLoadBalancing();
+        new LoadBalancerTester(LoadBalancer.Policy.ADAPTIVE, 3.0).assertAzAwareLoadBalancing();
+        new LoadBalancerTester(LoadBalancer.Policy.BEST_OF_RANDOM_2, 3.0).assertAzAwareLoadBalancing();
+        new LoadBalancerTester(LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME, 3.0).assertAzAwareLoadBalancing();
     }
 
     @Test
-    void tst_search_time_decay() {
+    void test_search_time_decay() {
         AdaptiveScheduler.DecayByRequests decayer = new AdaptiveScheduler.DecayByRequests(0, Duration.ofSeconds(1));
         TrackedGroup gs = newGroupStatus(1);
         gs.setDecayer(decayer);

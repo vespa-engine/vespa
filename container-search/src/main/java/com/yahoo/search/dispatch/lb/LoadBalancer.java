@@ -44,9 +44,9 @@ public class LoadBalancer {
 
         this.scheduler = switch (policy) {
             case ROUNDROBIN -> new RoundRobinScheduler(scoreboard);
-            case BEST_OF_RANDOM_2 -> new BestOfRandom2Scheduler(new Random(), scoreboard);
+            case BEST_OF_RANDOM_2 -> new BestOfRandom2Scheduler(new Random(seed), scoreboard);
             case ADAPTIVE -> new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, new Random(seed), scoreboard);
-            case LATENCY_AMORTIZED_OVER_TIME -> new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(), scoreboard);
+            case LATENCY_AMORTIZED_OVER_TIME -> new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(seed), scoreboard);
         };
 
         this.remoteGroups = groups.stream()
