@@ -17,39 +17,39 @@ import java.util.Set;
 class BestOfRandom2Scheduler implements GroupScheduler {
 
     private final Random random;
-    private final Map<Integer, LoadBalancer.GroupStatus> scoreboard;
+    private final Map<Integer, TrackedGroup> scoreboard;
 
-    public BestOfRandom2Scheduler(Random random, Map<Integer, LoadBalancer.GroupStatus> scoreboard) {
+    public BestOfRandom2Scheduler(Random random, Map<Integer, TrackedGroup> scoreboard) {
         this.random = random;
         this.scoreboard = scoreboard;
     }
 
     @Override
-    public Optional<LoadBalancer.GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
-        LoadBalancer.GroupStatus gs = selectBestOf2(rejectedGroups, true);
+    public Optional<TrackedGroup> takeNextGroup(Set<Integer> rejectedGroups) {
+        TrackedGroup gs = selectBestOf2(rejectedGroups, true);
         return (gs != null)
                ? Optional.of(gs)
                : Optional.ofNullable(selectBestOf2(rejectedGroups, false));
     }
 
-    private LoadBalancer.GroupStatus selectBestOf2(Set<Integer> rejectedGroups, boolean requireCoverage) {
+    private TrackedGroup selectBestOf2(Set<Integer> rejectedGroups, boolean requireCoverage) {
         List<Integer> candidates = new ArrayList<>(scoreboard.size());
-        for (LoadBalancer.GroupStatus gs : scoreboard.values()) {
+        for (TrackedGroup gs : scoreboard.values()) {
             if (rejectedGroups == null || !rejectedGroups.contains(gs.group().id())) {
                 if (!requireCoverage || gs.group().hasSufficientCoverage()) {
                     candidates.add(gs.groupId());
                 }
             }
         }
-        LoadBalancer.GroupStatus candA = selectRandom(candidates);
-        LoadBalancer.GroupStatus candB = selectRandom(candidates);
+        TrackedGroup candA = selectRandom(candidates);
+        TrackedGroup candB = selectRandom(candidates);
         if (candA == null) return candB;
         if (candB == null) return candA;
         if (candB.allocations() < candA.allocations()) return candB;
         return candA;
     }
 
-    private LoadBalancer.GroupStatus selectRandom(List<Integer> candidates) {
+    private TrackedGroup selectRandom(List<Integer> candidates) {
         if (!candidates.isEmpty()) {
             int index = random.nextInt(candidates.size());
             return scoreboard.get(candidates.remove(index));

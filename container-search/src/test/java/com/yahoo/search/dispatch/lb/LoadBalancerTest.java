@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch.lb;
 
 import com.yahoo.search.dispatch.RequestDuration;
-import com.yahoo.search.dispatch.lb.LoadBalancer.GroupStatus;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import org.junit.jupiter.api.Test;
@@ -48,7 +47,7 @@ public class LoadBalancerTest {
     @Test
     void tst_search_time_decay() {
         AdaptiveScheduler.DecayByRequests decayer = new AdaptiveScheduler.DecayByRequests(0, Duration.ofSeconds(1));
-        GroupStatus gs = newGroupStatus(1);
+        TrackedGroup gs = newGroupStatus(1);
         gs.setDecayer(decayer);
         updateSearchTime(gs, RequestDuration.of(Duration.ofSeconds(1)));
         assertEquals(Duration.ofSeconds(1), decayer.averageSearchTime());
@@ -94,7 +93,7 @@ public class LoadBalancerTest {
         Random seq = sequence(0.0, 0.4379, 0.4380, 0.6569, 0.6570, 0.8029, 0.8030, 0.9124, 0.9125);
         AdaptiveScheduler sched = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, seq, scoreboard);
         int i = 0;
-        for (GroupStatus gs : scoreboard.values()) {
+        for (TrackedGroup gs : scoreboard.values()) {
             gs.setDecayer(new AdaptiveScheduler.DecayByRequests(1, Duration.ofMillis((long)(0.1 * (i + 1)*1000.0))));
             i++;
         }
@@ -137,7 +136,7 @@ public class LoadBalancerTest {
 
     @Test
     public void test_decay_by_time() {
-        GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
+        TrackedGroup.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
         assertEquals(0.002, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(1000), Duration.ofMillis(10)));
         assertEquals(0.003344426, decayer.averageCost(), delta);
@@ -169,23 +168,23 @@ public class LoadBalancerTest {
 
     }
 
-    private Map<Integer, GroupStatus> createScoreBoard(int count) {
-        Map<Integer, GroupStatus> scoreboard = new HashMap<>();
+    private Map<Integer, TrackedGroup> createScoreBoard(int count) {
+        Map<Integer, TrackedGroup> scoreboard = new HashMap<>();
         for (int i = 0; i < count; i++) {
-            GroupStatus gs = newGroupStatus(i);
+            TrackedGroup gs = newGroupStatus(i);
             scoreboard.put(gs.groupId(), gs);
         }
         return scoreboard;
     }
 
-    private static GroupStatus allocate(GroupStatus gs) {
+    private static TrackedGroup allocate(TrackedGroup gs) {
         gs.allocate();
         return gs;
     }
 
     private static int countRequestsToReach90p(Duration timeBetweenSample, Duration searchTime) {
         double p90 = 0.9*searchTime.toMillis()/1000.0;
-        GroupStatus.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(1), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
+        TrackedGroup.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(1), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
         int requests = 0;
         Instant start = Instant.EPOCH;
         while (decayer.averageCost() < p90) {
@@ -196,19 +195,19 @@ public class LoadBalancerTest {
         return requests;
     }
 
-    private static void updateSearchTime(GroupStatus gs, RequestDuration time) {
+    private static void updateSearchTime(TrackedGroup gs, RequestDuration time) {
         gs.allocate();
         gs.release(true, time);
     }
 
-    private GroupStatus newGroupStatus(int id) {
+    private TrackedGroup newGroupStatus(int id) {
         Group dummyGroup = new Group(id, List.of()) {
             @Override
             public boolean hasSufficientCoverage() {
                 return true;
             }
         };
-        return new GroupStatus(dummyGroup);
+        return new TrackedGroup(dummyGroup);
     }
 
     private Random sequence(double... values) {

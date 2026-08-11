@@ -16,6 +16,6 @@ public interface GroupScheduler {
      *
      * @param rejectedGroups a set of ids of groups this is not allowed to select
      */
-    Optional<LoadBalancer.GroupStatus> takeNextGroup(Set<Integer> rejectedGroups);
+    Optional<TrackedGroup> takeNextGroup(Set<Integer> rejectedGroups);
 
 }

@@ -13,21 +13,21 @@ import java.util.Set;
 class RoundRobinScheduler implements GroupScheduler {
 
     private int needle = 0;
-    private final Map<Integer, LoadBalancer.GroupStatus> scoreboard;
+    private final Map<Integer, TrackedGroup> scoreboard;
 
-    public RoundRobinScheduler(Map<Integer, LoadBalancer.GroupStatus> scoreboard) {
+    public RoundRobinScheduler(Map<Integer, TrackedGroup> scoreboard) {
         this.scoreboard = scoreboard;
     }
 
     @Override
-    public Optional<LoadBalancer.GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
-        LoadBalancer.GroupStatus bestCandidate = null;
+    public Optional<TrackedGroup> takeNextGroup(Set<Integer> rejectedGroups) {
+        TrackedGroup bestCandidate = null;
 
         int groupId = needle;
         for (int i = 0; i < scoreboard.size(); i++) {
-            LoadBalancer.GroupStatus candidate = scoreboard.get(groupId);
+            TrackedGroup candidate = scoreboard.get(groupId);
             if (rejectedGroups == null || !rejectedGroups.contains(candidate.groupId())) {
-                LoadBalancer.GroupStatus better = betterGroup(bestCandidate, candidate);
+                TrackedGroup better = betterGroup(bestCandidate, candidate);
                 if (better == candidate)
                     bestCandidate = candidate;
             }
@@ -48,7 +48,7 @@ class RoundRobinScheduler implements GroupScheduler {
      * @param second potentially better GroupStatus
      * @return the better of the two
      */
-    private static LoadBalancer.GroupStatus betterGroup(LoadBalancer.GroupStatus first, LoadBalancer.GroupStatus second) {
+    private static TrackedGroup betterGroup(TrackedGroup first, TrackedGroup second) {
         if (second == null) return first;
         if (first == null) return second;
         if (first.group().hasSufficientCoverage() != second.group().hasSufficientCoverage())

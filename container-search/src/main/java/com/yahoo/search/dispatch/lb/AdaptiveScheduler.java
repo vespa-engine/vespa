@@ -25,7 +25,7 @@ class AdaptiveScheduler implements GroupScheduler {
     enum Type {TIME, REQUESTS}
 
     private final Random random;
-    private final Map<Integer, LoadBalancer.GroupStatus> scoreboard;
+    private final Map<Integer, TrackedGroup> scoreboard;
 
     private static double toDouble(Duration duration) {
         return duration.toNanos() / 1_000_000_000.0;
@@ -33,7 +33,7 @@ class AdaptiveScheduler implements GroupScheduler {
 
     private static Duration fromDouble(double seconds) {return Duration.ofNanos((long) (seconds * 1_000_000_000));}
 
-    static class DecayByRequests implements LoadBalancer.GroupStatus.Decayer {
+    static class DecayByRequests implements TrackedGroup.Decayer {
 
         private long queries;
         private double averageSearchTime;
@@ -62,7 +62,7 @@ class AdaptiveScheduler implements GroupScheduler {
 
     }
 
-    static class DecayByTime implements LoadBalancer.GroupStatus.Decayer {
+    static class DecayByTime implements TrackedGroup.Decayer {
 
         private double averageSearchTime;
 
@@ -92,16 +92,16 @@ class AdaptiveScheduler implements GroupScheduler {
 
     }
 
-    public AdaptiveScheduler(Type type, Random random, Map<Integer, LoadBalancer.GroupStatus> scoreboard) {
+    public AdaptiveScheduler(Type type, Random random, Map<Integer, TrackedGroup> scoreboard) {
         this.random = random;
         this.scoreboard = scoreboard;
         scoreboard.forEach((id, gs) -> gs.setDecayer(type == Type.REQUESTS ? new DecayByRequests() : new DecayByTime()));
     }
 
-    private Optional<LoadBalancer.GroupStatus> selectGroup(double needle, boolean requireCoverage, Set<Integer> rejected) {
+    private Optional<TrackedGroup> selectGroup(double needle, boolean requireCoverage, Set<Integer> rejected) {
         double sum = 0;
         int n = 0;
-        for (LoadBalancer.GroupStatus gs : scoreboard.values()) {
+        for (TrackedGroup gs : scoreboard.values()) {
             if (rejected == null || !rejected.contains(gs.group().id())) {
                 if (!requireCoverage || gs.group().hasSufficientCoverage()) {
                     sum += gs.weight();
@@ -113,7 +113,7 @@ class AdaptiveScheduler implements GroupScheduler {
             return Optional.empty();
         }
         double accum = 0;
-        for (LoadBalancer.GroupStatus gs : scoreboard.values()) {
+        for (TrackedGroup gs : scoreboard.values()) {
             if (rejected == null || !rejected.contains(gs.group().id())) {
                 if (!requireCoverage || gs.group().hasSufficientCoverage()) {
                     accum += gs.weight();
@@ -127,9 +127,9 @@ class AdaptiveScheduler implements GroupScheduler {
     }
 
     @Override
-    public Optional<LoadBalancer.GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
+    public Optional<TrackedGroup> takeNextGroup(Set<Integer> rejectedGroups) {
         double needle = random.nextDouble();
-        Optional<LoadBalancer.GroupStatus> gs = selectGroup(needle, true, rejectedGroups);
+        Optional<TrackedGroup> gs = selectGroup(needle, true, rejectedGroups);
         if (gs.isPresent()) return gs;
         return selectGroup(needle, false, rejectedGroups); // any coverage better than none
     }

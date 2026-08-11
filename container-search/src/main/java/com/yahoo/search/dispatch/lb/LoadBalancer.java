@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -25,11 +24,9 @@ import java.util.stream.Collectors;
  */
 public class LoadBalancer {
 
-    private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
-
     static final double MIN_QUERY_TIME = Duration.ofMillis(1).toMillis()/1000.0;
 
-    private final Map<Integer, GroupStatus> scoreboard;
+    private final Map<Integer, TrackedGroup> scoreboard;
     private final GroupScheduler scheduler;
 
     /**
@@ -45,9 +42,9 @@ public class LoadBalancer {
     }
 
     LoadBalancer(Collection<Group> groups, Policy policy, String localAvailabilityZone, long seed) {
-        var scoreboard = new HashMap<Integer, GroupStatus>();
+        var scoreboard = new HashMap<Integer, TrackedGroup>();
         for (Group group : groups)
-            scoreboard.put(group.id(), new GroupStatus(group));
+            scoreboard.put(group.id(), new TrackedGroup(group));
         this.scoreboard = Collections.unmodifiableMap(scoreboard);
 
         if (scoreboard.size() == 1)
@@ -78,23 +75,23 @@ public class LoadBalancer {
      */
     public Optional<Group> takeAnyGroupNotIn(Set<Integer> rejectedGroups) {
         synchronized (this) {
-            Optional<GroupStatus> best = takePreferablyLocalGroup(rejectedGroups);
+            Optional<TrackedGroup> best = takePreferablyLocalGroup(rejectedGroups);
             if (best.isPresent()) {
-                GroupStatus status = best.get();
-                status.allocate();
-                return Optional.of(status.group);
+                TrackedGroup group = best.get();
+                group.allocate();
+                return Optional.of(group.group());
             } else {
                 return Optional.empty();
             }
         }
     }
 
-    private Optional<GroupStatus> takePreferablyLocalGroup(Set<Integer> rejectedGroups) {
+    private Optional<TrackedGroup> takePreferablyLocalGroup(Set<Integer> rejectedGroups) {
         if (! aRemoteIsPreferable(rejectedGroups)) {
             Set<Integer> rejectedOrNonLocal = new HashSet<>(nonLocalGroups);
             if (rejectedGroups != null)
                 rejectedOrNonLocal.addAll(rejectedGroups);
-            Optional<GroupStatus> local = scheduler.takeNextGroup(rejectedOrNonLocal);
+            Optional<TrackedGroup> local = scheduler.takeNextGroup(rejectedOrNonLocal);
             if (local.isPresent()) return local;
             return scheduler.takeNextGroup(rejectedGroups);
         }
@@ -122,7 +119,7 @@ public class LoadBalancer {
     private boolean remoteIsPreferableTo(Integer local, Set<Integer> rejectedGroups) {
         for (var remote : nonLocalGroups) {
             if (rejectedGroups.contains(remote)) continue;
-            if (scoreboard.get(remote).group.isPreferableTo(scoreboard.get(local).group))
+            if (scoreboard.get(remote).group().isPreferableTo(scoreboard.get(local).group()))
                 return true;
         }
         return false;
@@ -134,7 +131,7 @@ public class LoadBalancer {
      */
     public Optional<Group> takeGroup(Group group) {
         synchronized (this) {
-            GroupStatus groupStatus = scoreboard.get(group.id());
+            TrackedGroup groupStatus = scoreboard.get(group.id());
             if (groupStatus == null) return Optional.empty();
             groupStatus.allocate();
             return Optional.of(group);
@@ -150,67 +147,9 @@ public class LoadBalancer {
      */
     public void releaseGroup(Group group, boolean success, RequestDuration searchTime) {
         synchronized (this) {
-            GroupStatus scheduled = scoreboard.get(group.id());
+            TrackedGroup scheduled = scoreboard.get(group.id());
             scheduled.release(success, searchTime);
         }
-    }
-
-    static class GroupStatus {
-
-        interface Decayer {
-            void decay(RequestDuration duration);
-            double averageCost();
-        }
-
-        static class NoDecay implements Decayer {
-            public void decay(RequestDuration duration) {}
-            public double averageCost() { return MIN_QUERY_TIME; }
-        }
-
-        private final Group group;
-        private int allocations = 0;
-        private Decayer decayer;
-
-        GroupStatus(Group group) {
-            this.group = group;
-            this.decayer = new NoDecay();
-        }
-
-        public Group group() { return group; }
-
-        /** Returns the current number of requests allocated to this. */
-        public int allocations() { return allocations; }
-
-        void setDecayer(Decayer decayer) {
-            this.decayer = decayer;
-        }
-
-        void allocate() {
-            allocations++;
-        }
-
-        void release(boolean success, RequestDuration searchTime) {
-            allocations--;
-            if (allocations < 0) {
-                log.warning("Double free of query target group detected");
-                allocations = 0;
-            }
-            if (success) {
-                decayer.decay(searchTime);
-            }
-        }
-
-        double weight() {
-            return 1.0 / decayer.averageCost();
-        }
-
-        int groupId() {
-            return group.id();
-        }
-
-        @Override
-        public String toString() { return "status of " + group; }
-
     }
 
 }
