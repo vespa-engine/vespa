@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * LoadBalancer determines which group of content nodes should be accessed next for each search query when the
  * internal java dispatcher is used.
- * The implementation here is a simplistic least queries in flight + round-robin load balancer
+ * The implementation here is a simplistic least queries in flight + round-robin load balancer.
  *
  * @author Olli Virtanen
  */
@@ -33,7 +33,7 @@ public class LoadBalancer {
      * The groups which are not in the same availability zone as this container,
      * or empty if all groups are, or if no group is (in which case there is nothing to prefer).
      */
-    private final Set<Integer> nonLocalGroups;
+    private final Set<Integer> remoteGroups;
 
     public enum Policy { ROUNDROBIN, ADAPTIVE, BEST_OF_RANDOM_2, LATENCY_AMORTIZED_OVER_TIME}
 
@@ -57,11 +57,10 @@ public class LoadBalancer {
             case LATENCY_AMORTIZED_OVER_TIME -> new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(), scoreboard);
         };
 
-        Set<Integer> nonLocalGroups = groups.stream()
-                                            .filter(group -> ! group.availabilityZone().equals(localAvailabilityZone))
-                                            .map(Group::id)
-                                            .collect(Collectors.toSet());
-        this.nonLocalGroups = nonLocalGroups.size() == groups.size() ? Set.of() : Set.copyOf(nonLocalGroups);
+        this.remoteGroups = groups.stream()
+                                  .filter(group -> ! group.availabilityZone().equals(localAvailabilityZone))
+                                  .map(Group::id)
+                                  .collect(Collectors.toUnmodifiableSet());
     }
 
     /**
@@ -88,7 +87,7 @@ public class LoadBalancer {
 
     private Optional<TrackedGroup> takePreferablyLocalGroup(Set<Integer> rejectedGroups) {
         if (! aRemoteIsPreferable(rejectedGroups)) {
-            Set<Integer> rejectedOrNonLocal = new HashSet<>(nonLocalGroups);
+            Set<Integer> rejectedOrNonLocal = new HashSet<>(remoteGroups);
             if (rejectedGroups != null)
                 rejectedOrNonLocal.addAll(rejectedGroups);
             Optional<TrackedGroup> local = scheduler.takeNextGroup(rejectedOrNonLocal);
@@ -106,8 +105,7 @@ public class LoadBalancer {
      */
     private boolean aRemoteIsPreferable(Set<Integer> rejectedGroups) {
         Set<Integer> localGroups = new HashSet<>(scoreboard.keySet());
-        if (localGroups.size() == nonLocalGroups.size()) return false; // TODO: Remove when removing the "OR" part of this
-        localGroups.removeAll(nonLocalGroups);
+        localGroups.removeAll(remoteGroups);
         for (var local : localGroups) {
             if (rejectedGroups.contains(local)) continue;
             if (! remoteIsPreferableTo(local, rejectedGroups))
@@ -117,7 +115,7 @@ public class LoadBalancer {
     }
 
     private boolean remoteIsPreferableTo(Integer local, Set<Integer> rejectedGroups) {
-        for (var remote : nonLocalGroups) {
+        for (var remote : remoteGroups) {
             if (rejectedGroups.contains(remote)) continue;
             if (scoreboard.get(remote).group().isPreferableTo(scoreboard.get(local).group()))
                 return true;
