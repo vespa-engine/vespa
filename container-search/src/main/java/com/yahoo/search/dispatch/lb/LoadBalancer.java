@@ -61,7 +61,7 @@ public class LoadBalancer {
      * has sufficient coverage.
      * Callers <b>must</b> call {@link #releaseGroup} symmetrically for each taken allocation.
      *
-     * @param rejectedGroups if not null, the load balancer will only return groups with IDs not in the set
+     * @param rejectedGroups the load balancer will only return groups with IDs not in the set
      * @return the node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
      */
     public Optional<Group> takeAnyGroupNotIn(Set<Integer> rejectedGroups) {
@@ -80,8 +80,7 @@ public class LoadBalancer {
     private Optional<TrackedGroup> takePreferablyLocalGroup(Set<Integer> rejectedGroups) {
         if (! aRemoteIsPreferable(rejectedGroups)) {
             Set<Integer> rejectedOrNonLocal = new HashSet<>(remoteGroups);
-            if (rejectedGroups != null)
-                rejectedOrNonLocal.addAll(rejectedGroups);
+            rejectedOrNonLocal.addAll(rejectedGroups);
             Optional<TrackedGroup> local = scheduler.takeNextGroup(rejectedOrNonLocal);
             if (local.isPresent()) return local;
             return scheduler.takeNextGroup(rejectedGroups);
