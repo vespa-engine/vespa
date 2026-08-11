@@ -423,29 +423,29 @@ TEST_F(Bm25LabelBlueprintTest, blueprint_setup_succeeds_with_one_argument) {
 
 TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_when_label_argument_is_malformed) {
     expect_setup_fail("bm25", {"is", ""},
-                        "The second parameter must be of the form label:<query-item-label>, but was ''");
+                      "The second parameter must be of the form label:<query-item-label>, but was ''");
     expect_setup_fail("bm25", {"is", "mylabel"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
     expect_setup_fail("bm25", {"is", "label()"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'label()'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'label()'");
     expect_setup_fail("bm25", {"is", "label(mylabel)"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'label(mylabel)'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'label(mylabel)'");
     expect_setup_fail("bm25", {"is", "label:"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'label:'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'label:'");
     expect_setup_fail("bm25", {"label", "mylabel"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
     expect_setup_fail("bm25", {"is", "name:mylabel"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'name:mylabel'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'name:mylabel'");
     expect_setup_fail("bm25", {"foo:is", "label:mylabel"},
-                        "The first parameter must be an index field name or of the form field:<index-field>, but was "
-                        "'foo:is'");
+                      "The first parameter must be an index field name or of the form field:<index-field>, but was "
+                      "'foo:is'");
     expect_setup_fail("bm25", {"field:", "label:mylabel"},
-                        "The first parameter must be an index field name or of the form field:<index-field>, but was "
-                        "'field:'");
+                      "The first parameter must be an index field name or of the form field:<index-field>, but was "
+                      "'field:'");
     expect_setup_fail("bm25", {"field:\"title\"", "label:mylabel"},
-                        "The field tag value must be an identifier, but was '\"title\"'");
+                      "The field tag value must be an identifier, but was '\"title\"'");
     expect_setup_fail("bm25", {"field:123", "label:mylabel"},
-                        "The field tag value must be an identifier, but was '123'");
+                      "The field tag value must be an identifier, but was '123'");
 }
 
 TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_for_unknown_field) {
@@ -467,9 +467,9 @@ TEST_F(Bm25LabelBlueprintTest, bm25_for_labels_blueprint_setup_succeeds_for_inde
 }
 
 TEST_F(Bm25LabelBlueprintTest, bm25_for_labels_blueprint_setup_fails_for_invalid_parameter_list) {
-    expect_setup_fail("bm25_for_labels", {});                    // wrong parameter number
+    expect_setup_fail("bm25_for_labels", {});                      // wrong parameter number
     expect_setup_fail("bm25_for_labels", {"is", "label:mylabel"}); // wrong parameter number
-    expect_setup_fail("bm25_for_labels", {"as"});                // 'as' is an attribute
+    expect_setup_fail("bm25_for_labels", {"as"});                  // 'as' is an attribute
 }
 
 TEST_F(Bm25LabelBlueprintTest, bm25_for_labels_is_not_a_dump_feature) {
@@ -493,6 +493,7 @@ struct Bm25LabelFixture {
         add_query_term("bar", 45, 13);
         test.getQueryEnv().getBuilder().set_avg_field_length("foo", 10);
     }
+    ~Bm25LabelFixture();
 
     void add_query_term(const std::string& field_name, uint32_t matching_doc_count, uint32_t unique_id) {
         auto* term = test.getQueryEnv().getBuilder().addIndexNode({field_name});
@@ -530,6 +531,8 @@ struct Bm25LabelFixture {
     }
     bool execute(const test::RankResult& expected) { return test.execute(expected); }
 };
+
+Bm25LabelFixture::~Bm25LabelFixture() = default;
 
 // Normalized feature names below must stay in sync with config-model/src/test/derived/bm25label/test.sd.
 TEST(Bm25LabelExecutorTest, only_labeled_terms_are_scored) {
@@ -629,6 +632,7 @@ struct Bm25ForLabelsFixture {
         add_query_term("bar", 45, 13);
         test.getQueryEnv().getBuilder().set_avg_field_length("foo", 10);
     }
+    ~Bm25ForLabelsFixture();
 
     void add_query_term(const std::string& field_name, uint32_t matching_doc_count, uint32_t unique_id) {
         auto* term = test.getQueryEnv().getBuilder().addIndexNode({field_name});
@@ -670,6 +674,8 @@ struct Bm25ForLabelsFixture {
     static TensorSpec::Address label_addr(const std::string& label) { return {{"label", label}}; }
     TensorSpec execute() { return spec_from_value(test.resolveObjectFeature()); }
 };
+
+Bm25ForLabelsFixture::~Bm25ForLabelsFixture() = default;
 
 TEST(Bm25ForLabelsExecutorTest, label_with_one_term_gives_one_cell) {
     Bm25ForLabelsFixture f;
