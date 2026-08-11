@@ -10,6 +10,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -23,6 +24,7 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterHosts;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
@@ -31,13 +33,12 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
+import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.config.provision.ParentHostUnavailableException;
-import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -66,10 +67,6 @@ import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.PendingRestarts;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
-import com.yahoo.vespa.config.server.configchange.RefeedActions;
-import com.yahoo.vespa.config.server.configchange.ReindexActions;
-import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
@@ -103,12 +100,12 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -562,9 +559,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return sessionRepository(tenant).read(session).applicationId();
     }
 
-    public Transaction deactivateCurrentActivateNew(Optional<Session> active, Session prepared, boolean force) {
+    public Transaction deactivateCurrentActivateNew(Lock applicationLock, Optional<Session> active, Session prepared, boolean force) {
         Tenant tenant = tenantRepository.getTenant(prepared.getTenantName());
-        Transaction transaction = tenant.getSessionRepository().createActivateTransaction(prepared);
+        Transaction transaction = tenant.getSessionRepository().createActivateTransaction(applicationLock, prepared);
         if (active.isPresent()) {
             checkIfActiveHasChanged(prepared, active.get(), force);
             checkIfActiveIsNewerThanSessionToBeActivated(prepared.getSessionId(), active.get().getSessionId());
@@ -631,7 +628,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
-        try (@SuppressWarnings("unused") var applicationLock = tenantApplications.lock(applicationId)) {
+        try (var applicationLock = tenantApplications.lock(applicationId)) {
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             CompletionWaiter waiter;
             if (activeSession.isPresent()) {
@@ -655,7 +652,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(new EndpointCertificateMetadataStore(curator, tenant.getPath()).delete(applicationId));
             // This call will remove application in zookeeper. Watches in TenantApplications will remove the application
             // and allocated hosts in model and handlers in RPC server
-            transaction.add(tenantApplications.createDeleteTransaction(applicationId));
+            transaction.add(tenantApplications.createDeleteTransaction(applicationLock, applicationId));
             transaction.onCommitted(() -> log.log(Level.INFO, "Deleted " + applicationId));
 
             if (applicationTransaction.isPresent()) {
@@ -1032,12 +1029,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
 
         Tenant tenant = tenantRepository().getTenant(applicationId.tenant());
-        try (@SuppressWarnings("unused") var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
+        try (var applicationLock = tenant.getApplicationRepo().lock(applicationId)) {
             Optional<Session> activeSession = getActiveSession(applicationId);
             var sessionZooKeeperClient = tenant.getSessionRepository().createSessionZooKeeperClient(session.getSessionId());
             CompletionWaiter waiter = sessionZooKeeperClient.createActiveWaiter();
 
-            transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
+            transaction.add(deactivateCurrentActivateNew(applicationLock, activeSession, session, force));
             if (applicationTransaction.isPresent()) {
                 var hostsByCluster = session.getAllocatedHosts().getHostsByCluster();
                 validate(hostsByCluster, clusters);
