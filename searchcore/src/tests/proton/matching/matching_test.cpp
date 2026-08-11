@@ -388,7 +388,7 @@ struct MyWorld {
                                                  "queryTermDocumentFrequency(f2),f(a,b)(max(a,b))),sum,term)\")");
         ASSERT_EQ(reply.match_features.values.size(), 3 * reply.hits.size());
         // the term "spread" matches 9 documents in f1 (see basicResults())
-        auto expect = TensorSpec("tensor(term{})").add({{"term", "0"}}, 9);
+        auto expect = TensorSpec("tensor<float>(term{})").add({{"term", "0"}}, 9);
         for (size_t i = 0; i < reply.hits.size(); ++i) {
             const auto* f = &reply.match_features.values[i * 3];
             ASSERT_TRUE(f[0].is_data());
@@ -782,13 +782,16 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
         // the tensor feature has one cell per label, each equal to the scalar labeled feature
         ASSERT_TRUE(values[tensor_idx].is_data());
         {
-            nbostream  buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
-            TensorSpec expect =
-                TensorSpec("tensor(label{})").add({{"label", "t1"}}, t1_score).add({{"label", "t2"}}, t2_score);
+            nbostream buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
+            // the tensor has float cells, so normalize() rounds the double scalar scores the same way
+            TensorSpec expect = TensorSpec("tensor<float>(label{})")
+                                    .add({{"label", "t1"}}, t1_score)
+                                    .add({{"label", "t2"}}, t2_score)
+                                    .normalize();
             EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
         }
-        // and slicing a cell out of it evaluates in the backend
-        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), t1_score);
+        // and slicing a cell out of it evaluates in the backend (as a float, hence not DOUBLE_EQ)
+        EXPECT_FLOAT_EQ(values[slice_idx].as_double(), t1_score);
     }
 }
 

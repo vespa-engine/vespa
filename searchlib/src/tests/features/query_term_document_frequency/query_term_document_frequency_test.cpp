@@ -19,7 +19,7 @@ using CollectionType = FieldInfo::CollectionType;
 namespace {
 
 TensorSpec empty_spec() {
-    return TensorSpec("tensor(term{})");
+    return TensorSpec("tensor<float>(term{})");
 }
 
 TensorSpec::Address term_addr(const std::string& label) {

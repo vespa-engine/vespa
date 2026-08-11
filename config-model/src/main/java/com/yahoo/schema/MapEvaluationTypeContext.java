@@ -312,12 +312,12 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         if (reference.name().equals("queryTermDocumentFrequency")) {
             if (reference.arguments().size() != 1)
                 throw new IllegalArgumentException(reference.name() + " must have one argument");
-            return Optional.of(new TensorType.Builder(TensorType.Value.DOUBLE).mapped("term").build());
+            return Optional.of(new TensorType.Builder(TensorType.Value.FLOAT).mapped("term").build());
         }
         if (reference.name().equals("bm25_for_labels")) {
             if (reference.arguments().size() != 1)
                 throw new IllegalArgumentException(reference.name() + " must have one argument");
-            return Optional.of(new TensorType.Builder(TensorType.Value.DOUBLE).mapped("label").build());
+            return Optional.of(new TensorType.Builder(TensorType.Value.FLOAT).mapped("label").build());
         }
         if ( ! reference.name().equals("tensorFromLabels") &&
              ! reference.name().equals("tensorFromLabelsWithOffset") &&
