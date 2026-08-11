@@ -10,9 +10,9 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * Because of the way the parser works (allowing any token as identifier),
  * it is not practical to limit the syntax of field names there, do it here.
- * Important to disallow dash, has semantic in IL.
+ * Important to disallow dash, has semantic in indexing language.
  *
- * @author Vehard Havdal
+ * @author Vegard Havdal
  */
 public class IndexFieldNames extends Processor {
 

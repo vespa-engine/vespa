@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.parser;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.document.DataType;
+import com.yahoo.document.MapDataType;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.parser.ConvertParsedTypes.TypeResolver;
 import com.yahoo.schema.Index;
@@ -33,10 +35,13 @@ public class ConvertParsedFields {
 
     private final TypeResolver context;
     private final Map<String, SDDocumentType> structProxies;
+    private final ModelContext.Properties properties;
 
-    ConvertParsedFields(TypeResolver context, Map<String, SDDocumentType> structProxies) {
+    ConvertParsedFields(TypeResolver context, Map<String, SDDocumentType> structProxies,
+                        ModelContext.Properties properties) {
         this.context = context;
         this.structProxies = structProxies;
+        this.properties = properties;
     }
 
     static void caseHandling(SDField field, Case casing) {
@@ -242,6 +247,28 @@ public class ConvertParsedFields {
         if (parsed.hasNormal()) {
             field.getRanking().setNormal(true);
         }
+        if (parsed.getFastMapSearch()) {
+            convertFastMapSearch(schema, field);
+        }
+    }
+
+    private void convertFastMapSearch(Schema schema, SDField field) {
+        if (!(field.getDataType() instanceof MapDataType)) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "For schema '%s', field '%s': 'map: fast-search' requires a map field, but the type is %s.",
+                            schema.getName(),
+                            field.getName(),
+                            field.getDataType().getName()));
+        }
+        if (!properties.featureFlags().fastMapSearch()) {
+            throw new IllegalArgumentException(
+                    String.format("For schema '%s', field '%s': 'map: fast-search' is an unfinished feature that " +
+                                  "will not be enabled yet. Please remove this property from the field.",
+                                  schema.getName(),
+                                  field.getName()));
+        }
+        field.setFastMapSearch(true);
     }
 
     private void convertStructField(Schema schema, SDField field, ParsedField parsed) {
