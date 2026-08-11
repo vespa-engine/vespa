@@ -18,12 +18,6 @@ class TrackedGroup {
 
     private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
 
-    interface Decayer {
-        void decay(RequestDuration duration);
-
-        double averageCost();
-    }
-
     private final Group group;
     private int allocations = 0;
     private Decayer decayer;

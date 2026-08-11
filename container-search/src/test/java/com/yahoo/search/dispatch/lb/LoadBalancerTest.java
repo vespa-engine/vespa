@@ -136,7 +136,7 @@ public class LoadBalancerTest {
 
     @Test
     public void test_decay_by_time() {
-        TrackedGroup.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
+        Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(2), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
         assertEquals(0.002, decayer.averageCost(), delta);
         decayer.decay(RequestDuration.of(Instant.ofEpochMilli(1000), Duration.ofMillis(10)));
         assertEquals(0.003344426, decayer.averageCost(), delta);
@@ -184,7 +184,7 @@ public class LoadBalancerTest {
 
     private static int countRequestsToReach90p(Duration timeBetweenSample, Duration searchTime) {
         double p90 = 0.9*searchTime.toMillis()/1000.0;
-        TrackedGroup.Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(1), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
+        Decayer decayer = new AdaptiveScheduler.DecayByTime(Duration.ofMillis(1), RequestDuration.of(Instant.EPOCH, Duration.ZERO));
         int requests = 0;
         Instant start = Instant.EPOCH;
         while (decayer.averageCost() < p90) {

@@ -75,7 +75,7 @@ class AdaptiveScheduler implements GroupScheduler {
 
     private static Duration fromDouble(double seconds) {return Duration.ofNanos((long) (seconds * 1_000_000_000));}
 
-    static class DecayByRequests implements TrackedGroup.Decayer {
+    static class DecayByRequests implements Decayer {
 
         private long queries;
         private double averageSearchTime;
@@ -104,7 +104,7 @@ class AdaptiveScheduler implements GroupScheduler {
 
     }
 
-    static class DecayByTime implements TrackedGroup.Decayer {
+    static class DecayByTime implements Decayer {
 
         private double averageSearchTime;
 
