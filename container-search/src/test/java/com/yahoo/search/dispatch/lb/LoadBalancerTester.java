@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch;
+package com.yahoo.search.dispatch.lb;
 
+import com.yahoo.search.dispatch.RequestDuration;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class LoadBalancerTester {
 
-    private final int requests = 100;
+    private final int                 requests = 100;
     private final LoadBalancer.Policy policy;
 
     public LoadBalancerTester(LoadBalancer.Policy policy) {

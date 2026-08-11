@@ -1,24 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch;
+package com.yahoo.search.dispatch.lb;
 
-import com.yahoo.search.dispatch.LoadBalancer.AdaptiveScheduler;
-import com.yahoo.search.dispatch.LoadBalancer.BestOfRandom2;
-import com.yahoo.search.dispatch.LoadBalancer.GroupStatus;
+import com.yahoo.search.dispatch.RequestDuration;
+import com.yahoo.search.dispatch.lb.LoadBalancer.AdaptiveScheduler;
+import com.yahoo.search.dispatch.lb.LoadBalancer.BestOfRandom2;
+import com.yahoo.search.dispatch.lb.LoadBalancer.GroupStatus;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;

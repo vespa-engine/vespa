@@ -13,6 +13,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
+import com.yahoo.search.dispatch.lb.LoadBalancer;
 import com.yahoo.search.dispatch.rpc.RpcConnectionPool;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
@@ -74,7 +75,7 @@ public class Dispatcher extends AbstractComponent {
 
     private static class VolatileItems {
 
-        final LoadBalancer loadBalancer;
+        final LoadBalancer   loadBalancer;
         final InvokerFactory invokerFactory;
         final AtomicInteger inflight = new AtomicInteger(1); // Initial reference.
         Runnable cleanup = () -> { };
