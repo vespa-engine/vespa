@@ -5,12 +5,10 @@ import com.yahoo.search.dispatch.RequestDuration;
 import com.yahoo.search.dispatch.searchcluster.Group;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -23,17 +21,13 @@ import java.util.stream.Collectors;
  * internal java dispatcher is used.
  * The implementation here is a simplistic least queries in flight + round-robin load balancer
  *
- * @author ollivir
+ * @author Olli Virtanen
  */
 public class LoadBalancer {
 
     private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
 
-    private static final long DEFAULT_LATENCY_DECAY_RATE = 1000;
-    private static final long MIN_LATENCY_DECAY_RATE = 42;
-    private static final double LATENCY_DECAY_TIME = Duration.ofSeconds(5).toMillis()/1000.0;
-    private static final Duration INITIAL_QUERY_TIME = Duration.ofMillis(1);
-    private static final double MIN_QUERY_TIME = Duration.ofMillis(1).toMillis()/1000.0;
+    static final double MIN_QUERY_TIME = Duration.ofMillis(1).toMillis()/1000.0;
 
     private final Map<Integer, GroupStatus> scoreboard;
     private final GroupScheduler scheduler;
@@ -61,7 +55,7 @@ public class LoadBalancer {
 
         this.scheduler = switch (policy) {
             case ROUNDROBIN -> new RoundRobinScheduler(scoreboard);
-            case BEST_OF_RANDOM_2 -> new BestOfRandom2(new Random(), scoreboard);
+            case BEST_OF_RANDOM_2 -> new BestOfRandom2Scheduler(new Random(), scoreboard);
             case ADAPTIVE -> new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, new Random(seed), scoreboard);
             case LATENCY_AMORTIZED_OVER_TIME -> new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(), scoreboard);
         };
@@ -181,6 +175,12 @@ public class LoadBalancer {
             this.group = group;
             this.decayer = new NoDecay();
         }
+
+        public Group group() { return group; }
+
+        /** Returns the current number of requests allocated to this. */
+        public int allocations() { return allocations; }
+
         void setDecayer(Decayer decayer) {
             this.decayer = decayer;
         }
@@ -210,218 +210,6 @@ public class LoadBalancer {
 
         @Override
         public String toString() { return "status of " + group; }
-
-    }
-
-    private interface GroupScheduler {
-        Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups);
-    }
-
-    private static class RoundRobinScheduler implements GroupScheduler {
-
-        private int needle = 0;
-        private final Map<Integer, GroupStatus> scoreboard;
-
-        public RoundRobinScheduler(Map<Integer, GroupStatus> scoreboard) {
-            this.scoreboard = scoreboard;
-        }
-
-        @Override
-        public Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
-            GroupStatus bestCandidate = null;
-
-            int groupId = needle;
-            for (int i = 0; i < scoreboard.size(); i++) {
-                GroupStatus candidate = scoreboard.get(groupId);
-                if (rejectedGroups == null || !rejectedGroups.contains(candidate.groupId())) {
-                    GroupStatus better = betterGroup(bestCandidate, candidate);
-                    if (better == candidate)
-                        bestCandidate = candidate;
-                }
-                groupId = nextScoreboardIndex(groupId);
-            }
-            if (bestCandidate == null) return Optional.empty();
-            needle = nextScoreboardIndex(bestCandidate.groupId());
-            return Optional.of(bestCandidate);
-        }
-
-        /**
-         * Select the better of the two given GroupStatus objects, biased to the first
-         * parameter. Thus, if all groups have equal coverage sufficiency, the one
-         * currently at the needle will be used. Either parameter can be null, in which
-         * case any non-null will be preferred.
-         *
-         * @param first preferred GroupStatus
-         * @param second potentially better GroupStatus
-         * @return the better of the two
-         */
-        private static GroupStatus betterGroup(GroupStatus first, GroupStatus second) {
-            if (second == null) return first;
-            if (first == null) return second;
-            if (first.group.hasSufficientCoverage() != second.group.hasSufficientCoverage())
-                return first.group.hasSufficientCoverage() ? first : second;
-            return first;
-        }
-
-        private int nextScoreboardIndex(int current) {
-            int next = current + 1;
-            if (next >= scoreboard.size())
-                next %= scoreboard.size();
-            return next;
-        }
-    }
-
-    static class AdaptiveScheduler implements GroupScheduler {
-
-        enum Type {TIME, REQUESTS}
-        private final Random random;
-        private final Map<Integer, GroupStatus> scoreboard;
-
-        private static double toDouble(Duration duration) {
-            return duration.toNanos()/1_000_000_000.0;
-        }
-        private static Duration fromDouble(double seconds) { return Duration.ofNanos((long)(seconds*1_000_000_000));}
-
-        static class DecayByRequests implements GroupStatus.Decayer {
-
-            private long queries;
-            private double averageSearchTime;
-
-            DecayByRequests() {
-                this(0, INITIAL_QUERY_TIME);
-            }
-
-            DecayByRequests(long initialQueries, Duration initialSearchTime) {
-                queries = initialQueries;
-                averageSearchTime = toDouble(initialSearchTime);
-            }
-
-            @Override
-            public void decay(RequestDuration duration) {
-                double searchTime = Math.max(toDouble(duration.duration()), MIN_QUERY_TIME);
-                double decayRate = Math.min(queries + MIN_LATENCY_DECAY_RATE, DEFAULT_LATENCY_DECAY_RATE);
-                queries++;
-                averageSearchTime = (searchTime + (decayRate - 1) * averageSearchTime) / decayRate;
-            }
-
-            @Override
-            public double averageCost() { return averageSearchTime; }
-
-            Duration averageSearchTime() { return fromDouble(averageSearchTime);}
-
-        }
-
-        static class DecayByTime implements GroupStatus.Decayer {
-
-            private double averageSearchTime;
-
-            private RequestDuration prev;
-
-            DecayByTime() {
-                this(INITIAL_QUERY_TIME, RequestDuration.of(Duration.ZERO));
-            }
-
-            DecayByTime(Duration initialSearchTime, RequestDuration start) {
-                averageSearchTime = toDouble(initialSearchTime);
-                prev = start;
-            }
-
-            @Override
-            public void decay(RequestDuration duration) {
-                double searchTime = Math.max(toDouble(duration.duration()), MIN_QUERY_TIME);
-                double sampleWeight = toDouble(duration.difference(prev));
-                averageSearchTime = (sampleWeight*searchTime + LATENCY_DECAY_TIME * averageSearchTime) / (LATENCY_DECAY_TIME + sampleWeight);
-                prev = duration;
-            }
-
-            @Override
-            public double averageCost() { return averageSearchTime; }
-
-            Duration averageSearchTime() { return fromDouble(averageSearchTime);}
-
-        }
-
-        public AdaptiveScheduler(Type type, Random random, Map<Integer, GroupStatus> scoreboard) {
-            this.random = random;
-            this.scoreboard = scoreboard;
-            scoreboard.forEach((id, gs) -> gs.setDecayer(type == Type.REQUESTS ? new DecayByRequests() : new DecayByTime()));
-        }
-
-        private Optional<GroupStatus> selectGroup(double needle, boolean requireCoverage, Set<Integer> rejected) {
-            double sum = 0;
-            int n = 0;
-            for (GroupStatus gs : scoreboard.values()) {
-                if (rejected == null || !rejected.contains(gs.group.id())) {
-                    if (!requireCoverage || gs.group.hasSufficientCoverage()) {
-                        sum += gs.weight();
-                        n++;
-                    }
-                }
-            }
-            if (n == 0) {
-                return Optional.empty();
-            }
-            double accum = 0;
-            for (GroupStatus gs : scoreboard.values()) {
-                if (rejected == null || !rejected.contains(gs.group.id())) {
-                    if (!requireCoverage || gs.group.hasSufficientCoverage()) {
-                        accum += gs.weight();
-                        if (needle < accum / sum) {
-                            return Optional.of(gs);
-                        }
-                    }
-                }
-            }
-            return Optional.empty(); // should not happen here
-        }
-
-        @Override
-        public Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
-            double needle = random.nextDouble();
-            Optional<GroupStatus> gs = selectGroup(needle, true, rejectedGroups);
-            if (gs.isPresent()) return gs;
-            return selectGroup(needle, false, rejectedGroups); // any coverage better than none
-        }
-    }
-
-    static class BestOfRandom2 implements GroupScheduler {
-        private final Random random;
-        private final Map<Integer, GroupStatus> scoreboard;
-        public BestOfRandom2(Random random, Map<Integer, GroupStatus> scoreboard) {
-            this.random = random;
-            this.scoreboard = scoreboard;
-        }
-        @Override
-        public Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
-            GroupStatus gs = selectBestOf2(rejectedGroups, true);
-            return (gs != null)
-                    ? Optional.of(gs)
-                    : Optional.ofNullable(selectBestOf2(rejectedGroups, false));
-        }
-
-        private GroupStatus selectBestOf2(Set<Integer> rejectedGroups, boolean requireCoverage) {
-            List<Integer> candidates = new ArrayList<>(scoreboard.size());
-            for (GroupStatus gs : scoreboard.values()) {
-                if (rejectedGroups == null || !rejectedGroups.contains(gs.group.id())) {
-                    if (!requireCoverage || gs.group.hasSufficientCoverage()) {
-                        candidates.add(gs.groupId());
-                    }
-                }
-            }
-            GroupStatus candA = selectRandom(candidates);
-            GroupStatus candB = selectRandom(candidates);
-            if (candA == null) return candB;
-            if (candB == null) return candA;
-            if (candB.allocations < candA.allocations) return candB;
-            return candA;
-        }
-        private GroupStatus selectRandom(List<Integer> candidates) {
-            if ( ! candidates.isEmpty()) {
-                int index = random.nextInt(candidates.size());
-                return scoreboard.get(candidates.remove(index));
-            }
-            return null;
-        }
 
     }
 

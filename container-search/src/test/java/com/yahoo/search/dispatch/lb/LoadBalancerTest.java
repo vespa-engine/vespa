@@ -2,8 +2,6 @@
 package com.yahoo.search.dispatch.lb;
 
 import com.yahoo.search.dispatch.RequestDuration;
-import com.yahoo.search.dispatch.lb.LoadBalancer.AdaptiveScheduler;
-import com.yahoo.search.dispatch.lb.LoadBalancer.BestOfRandom2;
 import com.yahoo.search.dispatch.lb.LoadBalancer.GroupStatus;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -124,7 +122,7 @@ public class LoadBalancerTest {
                 0.9, 0.125,
                 0.9, 0.125
                 );
-        BestOfRandom2 sched = new BestOfRandom2(seq, createScoreBoard(5));
+        BestOfRandom2Scheduler sched = new BestOfRandom2Scheduler(seq, createScoreBoard(5));
 
         assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
         assertEquals(1, allocate(sched.takeNextGroup(null).get()).groupId());
