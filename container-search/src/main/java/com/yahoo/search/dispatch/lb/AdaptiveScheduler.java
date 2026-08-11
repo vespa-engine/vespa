@@ -45,7 +45,7 @@ class AdaptiveScheduler implements GroupScheduler {
         double sum = 0;
         int n = 0;
         for (TrackedGroup group : scoreboard.values()) {
-            if (rejected == null || !rejected.contains(group.group().id())) {
+            if (rejected == null || !rejected.contains(group.id())) {
                 if (!requireCoverage || group.group().hasSufficientCoverage()) {
                     sum += group.weight();
                     n++;
@@ -57,7 +57,7 @@ class AdaptiveScheduler implements GroupScheduler {
         }
         double accumulator = 0;
         for (TrackedGroup group : scoreboard.values()) {
-            if (rejected == null || !rejected.contains(group.group().id())) {
+            if (rejected == null || !rejected.contains(group.id())) {
                 if (!requireCoverage || group.group().hasSufficientCoverage()) {
                     accumulator += group.weight();
                     if (needle < accumulator / sum) {

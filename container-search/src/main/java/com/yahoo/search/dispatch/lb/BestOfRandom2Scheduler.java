@@ -26,18 +26,18 @@ class BestOfRandom2Scheduler implements GroupScheduler {
 
     @Override
     public Optional<TrackedGroup> takeNextGroup(Set<Integer> rejectedGroups) {
-        TrackedGroup gs = selectBestOf2(rejectedGroups, true);
-        return (gs != null)
-               ? Optional.of(gs)
+        TrackedGroup group = selectBestOf2(rejectedGroups, true);
+        return (group != null)
+               ? Optional.of(group)
                : Optional.ofNullable(selectBestOf2(rejectedGroups, false));
     }
 
     private TrackedGroup selectBestOf2(Set<Integer> rejectedGroups, boolean requireCoverage) {
         List<Integer> candidates = new ArrayList<>(scoreboard.size());
-        for (TrackedGroup gs : scoreboard.values()) {
-            if (rejectedGroups == null || !rejectedGroups.contains(gs.group().id())) {
-                if (!requireCoverage || gs.group().hasSufficientCoverage()) {
-                    candidates.add(gs.groupId());
+        for (TrackedGroup group : scoreboard.values()) {
+            if (rejectedGroups == null || !rejectedGroups.contains(group.id())) {
+                if (!requireCoverage || group.group().hasSufficientCoverage()) {
+                    candidates.add(group.id());
                 }
             }
         }

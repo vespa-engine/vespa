@@ -24,12 +24,6 @@ class TrackedGroup {
         double averageCost();
     }
 
-    static class NoDecay implements Decayer {
-        public void decay(RequestDuration duration) {}
-
-        public double averageCost() {return LoadBalancer.MIN_QUERY_TIME;}
-    }
-
     private final Group group;
     private int allocations = 0;
     private Decayer decayer;
@@ -43,7 +37,9 @@ class TrackedGroup {
         this.decayer = decayer;
     }
 
-    public Group group() {return group;}
+    int id() { return group.id(); }
+
+    public Group group() { return group; }
 
     /** Returns the current number of requests allocated to this. */
     public int allocations() {return allocations;}
@@ -67,11 +63,13 @@ class TrackedGroup {
         return 1.0 / decayer.averageCost();
     }
 
-    int groupId() {
-        return group.id();
-    }
-
     @Override
     public String toString() {return "status of " + group;}
+
+    static class NoDecay implements Decayer {
+        public void decay(RequestDuration duration) {}
+
+        public double averageCost() {return LoadBalancer.MIN_QUERY_TIME;}
+    }
 
 }

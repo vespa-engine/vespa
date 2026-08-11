@@ -26,7 +26,7 @@ class RoundRobinScheduler implements GroupScheduler {
         int groupId = needle;
         for (int i = 0; i < scoreboard.size(); i++) {
             TrackedGroup candidate = scoreboard.get(groupId);
-            if (rejectedGroups == null || !rejectedGroups.contains(candidate.groupId())) {
+            if (rejectedGroups == null || !rejectedGroups.contains(candidate.id())) {
                 TrackedGroup better = betterGroup(bestCandidate, candidate);
                 if (better == candidate)
                     bestCandidate = candidate;
@@ -34,7 +34,7 @@ class RoundRobinScheduler implements GroupScheduler {
             groupId = nextScoreboardIndex(groupId);
         }
         if (bestCandidate == null) return Optional.empty();
-        needle = nextScoreboardIndex(bestCandidate.groupId());
+        needle = nextScoreboardIndex(bestCandidate.id());
         return Optional.of(bestCandidate);
     }
 
@@ -62,4 +62,5 @@ class RoundRobinScheduler implements GroupScheduler {
             next %= scoreboard.size();
         return next;
     }
+
 }

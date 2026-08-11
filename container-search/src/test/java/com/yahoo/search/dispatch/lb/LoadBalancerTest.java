@@ -77,14 +77,14 @@ public class LoadBalancerTest {
         Random seq = sequence(0.0, 0.1, 0.2, 0.39, 0.4, 0.6, 0.8, 0.99999);
         AdaptiveScheduler sched = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, seq, createScoreBoard(5));
 
-        assertEquals(0, sched.takeNextGroup(null).get().groupId());
-        assertEquals(0, sched.takeNextGroup(null).get().groupId());
-        assertEquals(1, sched.takeNextGroup(null).get().groupId());
-        assertEquals(1, sched.takeNextGroup(null).get().groupId());
-        assertEquals(2, sched.takeNextGroup(null).get().groupId());
-        assertEquals(3, sched.takeNextGroup(null).get().groupId());
-        assertEquals(4, sched.takeNextGroup(null).get().groupId());
-        assertEquals(4, sched.takeNextGroup(null).get().groupId());
+        assertEquals(0, sched.takeNextGroup(null).get().id());
+        assertEquals(0, sched.takeNextGroup(null).get().id());
+        assertEquals(1, sched.takeNextGroup(null).get().id());
+        assertEquals(1, sched.takeNextGroup(null).get().id());
+        assertEquals(2, sched.takeNextGroup(null).get().id());
+        assertEquals(3, sched.takeNextGroup(null).get().id());
+        assertEquals(4, sched.takeNextGroup(null).get().id());
+        assertEquals(4, sched.takeNextGroup(null).get().id());
     }
 
     @Test
@@ -98,15 +98,15 @@ public class LoadBalancerTest {
             i++;
         }
 
-        assertEquals(0, sched.takeNextGroup(null).get().groupId());
-        assertEquals(0, sched.takeNextGroup(null).get().groupId());
-        assertEquals(1, sched.takeNextGroup(null).get().groupId());
-        assertEquals(1, sched.takeNextGroup(null).get().groupId());
-        assertEquals(2, sched.takeNextGroup(null).get().groupId());
-        assertEquals(2, sched.takeNextGroup(null).get().groupId());
-        assertEquals(3, sched.takeNextGroup(null).get().groupId());
-        assertEquals(3, sched.takeNextGroup(null).get().groupId());
-        assertEquals(4, sched.takeNextGroup(null).get().groupId());
+        assertEquals(0, sched.takeNextGroup(null).get().id());
+        assertEquals(0, sched.takeNextGroup(null).get().id());
+        assertEquals(1, sched.takeNextGroup(null).get().id());
+        assertEquals(1, sched.takeNextGroup(null).get().id());
+        assertEquals(2, sched.takeNextGroup(null).get().id());
+        assertEquals(2, sched.takeNextGroup(null).get().id());
+        assertEquals(3, sched.takeNextGroup(null).get().id());
+        assertEquals(3, sched.takeNextGroup(null).get().id());
+        assertEquals(4, sched.takeNextGroup(null).get().id());
     }
 
     @Test
@@ -123,15 +123,15 @@ public class LoadBalancerTest {
                 );
         BestOfRandom2Scheduler sched = new BestOfRandom2Scheduler(seq, createScoreBoard(5));
 
-        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
-        assertEquals(1, allocate(sched.takeNextGroup(null).get()).groupId());
-        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
-        assertEquals(1, allocate(sched.takeNextGroup(null).get()).groupId());
-        assertEquals(2, allocate(sched.takeNextGroup(null).get()).groupId());
-        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
-        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
-        assertEquals(4, allocate(sched.takeNextGroup(null).get()).groupId());
-        assertEquals(0, allocate(sched.takeNextGroup(null).get()).groupId());
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(1, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(1, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(2, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(4, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(0, allocate(sched.takeNextGroup(null).get()).id());
     }
 
     @Test
@@ -172,7 +172,7 @@ public class LoadBalancerTest {
         Map<Integer, TrackedGroup> scoreboard = new HashMap<>();
         for (int i = 0; i < count; i++) {
             TrackedGroup gs = newGroupStatus(i);
-            scoreboard.put(gs.groupId(), gs);
+            scoreboard.put(gs.id(), gs);
         }
         return scoreboard;
     }
