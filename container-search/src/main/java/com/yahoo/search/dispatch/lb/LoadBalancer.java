@@ -14,9 +14,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * LoadBalancer determines which group of content nodes should be accessed next for each search query when the
- * internal java dispatcher is used.
- * The implementation here is a simplistic least queries in flight + round-robin load balancer.
+ * A LoadBalancer determines the content group that should be used for each request.
+ * A number of policies can be selected to make this decision, some of which rely on tracking the
+ * requests going to each group.
  *
  * @author Olli Virtanen
  */
