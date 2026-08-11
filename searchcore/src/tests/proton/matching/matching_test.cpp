@@ -790,7 +790,7 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
                                     .normalize();
             EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
         }
-        // and slicing a cell out of it evaluates in the backend (as a float, hence not DOUBLE_EQ)
+        // and slicing a cell out of it evaluates in the backend 
         EXPECT_FLOAT_EQ(values[slice_idx].as_double(), t1_score);
     }
 }
