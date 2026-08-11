@@ -9,7 +9,7 @@ import java.util.Set;
  *
  * @author Olli Virtanen
  */
-public interface GroupScheduler {
+interface GroupScheduler {
 
     /**
      * Returns the selected group for a request, or empty if no non-rejected group is available.
