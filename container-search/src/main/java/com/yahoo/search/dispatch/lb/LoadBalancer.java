@@ -6,8 +6,6 @@ import com.yahoo.search.dispatch.searchcluster.Group;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -29,10 +27,7 @@ public class LoadBalancer {
     private final Map<Integer, TrackedGroup> scoreboard;
     private final GroupScheduler scheduler;
 
-    /**
-     * The groups which are not in the same availability zone as this container,
-     * or empty if all groups are, or if no group is (in which case there is nothing to prefer).
-     */
+    /** The groups which are not in the same availability zone as this container. */
     private final Set<Integer> remoteGroups;
 
     public enum Policy { ROUNDROBIN, ADAPTIVE, BEST_OF_RANDOM_2, LATENCY_AMORTIZED_OVER_TIME}
@@ -42,10 +37,7 @@ public class LoadBalancer {
     }
 
     LoadBalancer(Collection<Group> groups, Policy policy, String localAvailabilityZone, long seed) {
-        var scoreboard = new HashMap<Integer, TrackedGroup>();
-        for (Group group : groups)
-            scoreboard.put(group.id(), new TrackedGroup(group));
-        this.scoreboard = Collections.unmodifiableMap(scoreboard);
+        this.scoreboard = groups.stream().collect(Collectors.toUnmodifiableMap(Group::id, TrackedGroup::new));
 
         if (scoreboard.size() == 1)
             policy = Policy.ROUNDROBIN;
