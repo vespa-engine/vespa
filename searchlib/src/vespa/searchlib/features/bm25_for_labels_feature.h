@@ -21,7 +21,7 @@ namespace search::features {
 
 /**
  * Executor calculating the BM25 score in a single index field for the terms carrying each query item
- * label, as a tensor(label{}) with one cell per label that scored for the document.
+ * label, as a tensor<float>(label{}) with one cell per label that scored for the document.
  */
 class Bm25ForLabelsExecutor : public fef::FeatureExecutor {
     using QueryTerm = Bm25Utils::QueryTerm;
@@ -37,7 +37,7 @@ class Bm25ForLabelsExecutor : public fef::FeatureExecutor {
 
     vespalib::SharedStringRepo::Handles    _labels;       // every candidate label, resolved once
     vespalib::StringIdVector               _view_labels;  // per document scoring subset, non-owning
-    std::vector<double>                    _view_cells;   // per document scores, parallel to _view_labels
+    std::vector<float>                     _view_cells;   // per document scores, parallel to _view_labels
     const vespalib::eval::Value&           _empty_output; // owned by the blueprint
     std::unique_ptr<vespalib::eval::Value> _output;
 
@@ -55,7 +55,7 @@ public:
 
 /**
  * Blueprint for the BM25 score in a given index field of the terms carrying each query item label,
- * exposed as a mapped tensor(label{}) with the query item labels as cell labels. A label gets a cell
+ * exposed as a mapped tensor<float>(label{}) with the query item labels as cell labels. A label gets a cell
  * only when it actually scores, i.e. when it is carried by at least one query term searching the given
  * field and at least one of those terms matched the document. Tuning properties are the ones of
  * bm25(<field>), so that bm25_for_labels(<field>){label:x} equals bm25(field: <field>, label: x).

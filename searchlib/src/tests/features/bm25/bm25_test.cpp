@@ -664,7 +664,9 @@ struct Bm25ForLabelsFixture {
     feature_t score(feature_t num_occs, feature_t field_length, double inverse_doc_freq) const {
         return scorer.score(num_occs, field_length, inverse_doc_freq);
     }
-    static TensorSpec expected_spec() { return TensorSpec("tensor(label{})"); }
+    // The output has float cells, so expected specs must be normalize()d to round their
+    // locally computed double scores the same way the executor does.
+    static TensorSpec expected_spec() { return TensorSpec("tensor<float>(label{})"); }
     static TensorSpec::Address label_addr(const std::string& label) { return {{"label", label}}; }
     TensorSpec execute() { return spec_from_value(test.resolveObjectFeature()); }
 };
@@ -675,7 +677,7 @@ TEST(Bm25ForLabelsExecutorTest, label_with_one_term_gives_one_cell) {
     f.setup();
     f.prepare_term(0, 0, 3, 20);
     f.prepare_term(1, 0, 7, 5);
-    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25))), f.execute());
+    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25))).normalize(), f.execute());
 }
 
 TEST(Bm25ForLabelsExecutorTest, label_with_multiple_terms_in_the_field_scores_their_sum) {
@@ -684,8 +686,9 @@ TEST(Bm25ForLabelsExecutorTest, label_with_multiple_terms_in_the_field_scores_th
     f.setup();
     f.prepare_term(0, 0, 3, 20);
     f.prepare_term(1, 0, 7, 5);
-    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"),
-                                    f.score(3.0, 20, f.idf(25)) + f.score(7.0, 5.0, f.idf(35))),
+    EXPECT_EQ(f.expected_spec()
+                  .add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25)) + f.score(7.0, 5.0, f.idf(35)))
+                  .normalize(),
               f.execute());
 }
 
@@ -698,7 +701,8 @@ TEST(Bm25ForLabelsExecutorTest, each_label_scores_only_its_own_terms) {
     f.prepare_term(1, 0, 7, 5);
     EXPECT_EQ(f.expected_spec()
                   .add(f.label_addr("first"), f.score(3.0, 20, f.idf(25)))
-                  .add(f.label_addr("second"), f.score(7.0, 5.0, f.idf(35))),
+                  .add(f.label_addr("second"), f.score(7.0, 5.0, f.idf(35)))
+                  .normalize(),
               f.execute());
 }
 
@@ -726,7 +730,7 @@ TEST(Bm25ForLabelsExecutorTest, label_not_matching_the_document_is_absent) {
     f.prepare_term(0, 0, 3, 20);
     uint32_t unmatched_doc_id = 123;
     f.prepare_term(1, 0, 7, 5, unmatched_doc_id);
-    EXPECT_EQ(f.expected_spec().add(f.label_addr("matching"), f.score(3.0, 20, f.idf(25))), f.execute());
+    EXPECT_EQ(f.expected_spec().add(f.label_addr("matching"), f.score(3.0, 20, f.idf(25))).normalize(), f.execute());
 }
 
 TEST(Bm25ForLabelsExecutorTest, no_label_matching_the_document_gives_empty_tensor) {
@@ -749,7 +753,7 @@ TEST(Bm25ForLabelsExecutorTest, uses_field_level_tuning) {
     f.setup();
     f.prepare_term(0, 0, 3, 20);
     f.scorer.k1_param = 2.5;
-    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25))), f.execute());
+    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25))).normalize(), f.execute());
 }
 
 TEST_P(Bm25ExecutorTest, multiple_elements_and_terms) {

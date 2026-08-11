@@ -564,7 +564,7 @@ schema rankexpression {
       }
       rank-features { averageFieldLength(textchunks) num_docs_indexed }
       match-features { averageFieldLength(textchunks) num_docs_indexed }
-      summary-features { averageFieldLength(textchunks) num_docs_indexed }
+      summary-features { averageFieldLength(textchunks) num_docs_indexed queryTermDocumentFrequency(textchunks) }
   }
 
   rank-profile with_tensor_from_dotted_attr {

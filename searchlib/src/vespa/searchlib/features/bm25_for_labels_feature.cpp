@@ -73,9 +73,9 @@ std::vector<Bm25Utils::QueryTerm> collect_field_terms(const std::vector<const IT
 
 } // namespace
 
-Bm25ForLabelsExecutor::Bm25ForLabelsExecutor(std::vector<std::pair<std::string, std::vector<QueryTerm>>> labeled_terms,
-                                             double avg_field_length, double k1_param, double b_param,
-                                             const Value& empty_output)
+Bm25ForLabelsExecutor::Bm25ForLabelsExecutor(
+    std::vector<std::pair<std::string, std::vector<QueryTerm>>> labeled_terms, double avg_field_length,
+    double k1_param, double b_param, const Value& empty_output)
     : FeatureExecutor(),
       _terms_per_label(),
       _avg_field_length(avg_field_length),
@@ -153,7 +153,7 @@ Bm25ForLabelsBlueprint::Bm25ForLabelsBlueprint()
       _k1_param(default_k1_param),
       _b_param(default_b_param),
       _avg_field_length(),
-      _value_type(ValueType::from_spec("tensor(label{})")),
+      _value_type(ValueType::from_spec("tensor<float>(label{})")),
       _empty_output() {
 }
 
@@ -185,7 +185,7 @@ bool Bm25ForLabelsBlueprint::setup(const fef::IIndexEnvironment& env, const fef:
     _empty_output = vespalib::eval::value_from_spec(_value_type.to_spec(), FastValueBuilderFactory::get());
     describeOutput("score",
                    "The bm25 score in the given index field for the terms carrying each query item label, "
-                   "as a tensor(label{}) with the labels as cell labels",
+                   "as a tensor<float>(label{}) with the labels as cell labels",
                    FeatureType::object(_value_type));
     return true;
 }
@@ -205,6 +205,7 @@ FeatureExecutor& Bm25ForLabelsBlueprint::createExecutor(const fef::IQueryEnviron
     double avg_field_length = lookup_result != nullptr
                                   ? as_value<double>(*lookup_result)
                                   : _avg_field_length.value_or(get_average_field_length(env, _field->name()));
+
     std::vector<std::pair<std::string, std::vector<Bm25Utils::QueryTerm>>> labeled_terms;
     for (auto& labeled_term : util::getTermsByAllLabels(env)) {
         auto field_terms = collect_field_terms(labeled_term.second, _field->id(), env, _k1_param);
