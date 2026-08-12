@@ -170,7 +170,7 @@ public class ParsedType {
     public static ParsedType wsetOf(ParsedType vt) {
         assert(vt != null);
         if (vt.getVariant() != Variant.BUILTIN) {
-            throw new IllegalArgumentException("weightedset of complex type '" + vt + "' is not supported");
+            throw new IllegalArgumentException("weightedset of complex type '" + vt.toNiceName() + "' is not supported");
         }
         switch (vt.name()) {
             // allowed types:
@@ -181,17 +181,17 @@ public class ParsedType {
         case "uri":
             break;
         case "bool":
-            throw new IllegalArgumentException("weightedset of trivial type '" + vt + "' is not supported");
+            throw new IllegalArgumentException("weightedset of trivial type '" + vt.toNiceName() + "' is not supported");
         case "predicate":
         case "raw":
         case "tag":
-            throw new IllegalArgumentException("weightedset of complex type '" + vt + "' is not supported");
+            throw new IllegalArgumentException("weightedset of complex type '" + vt.toNiceName() + "' is not supported");
         case "float16":
         case "float":
         case "double":
-            throw new IllegalArgumentException("weightedset of inexact type '" + vt + "' is not supported");
+            throw new IllegalArgumentException("weightedset of inexact type '" + vt.toNiceName() + "' is not supported");
         default:
-            throw new IllegalArgumentException("weightedset of unknown type '" + vt + "' is not supported");
+            throw new IllegalArgumentException("weightedset of unknown type '" + vt.toNiceName() + "' is not supported");
         }
         return new ParsedType("weightedset<" + vt.name() + ">", Variant.WSET, vt);
     }
@@ -222,14 +222,14 @@ public class ParsedType {
 
     public void setCreateIfNonExistent(boolean value) {
         if (variant != Variant.WSET) {
-            throw new IllegalArgumentException("CreateIfNonExistent only valid for weightedset, not " + variant);
+            throw new IllegalArgumentException("CreateIfNonExistent only valid for weightedset, not " + toNiceName());
         }
         this.createIfNonExistent = value;
     }
 
     public void setRemoveIfZero(boolean value) {
         if (variant != Variant.WSET) {
-            throw new IllegalArgumentException("RemoveIfZero only valid for weightedset, not " + variant);
+            throw new IllegalArgumentException("RemoveIfZero only valid for weightedset, not " + toNiceName());
         }
         this.removeIfZero = value;
     }
