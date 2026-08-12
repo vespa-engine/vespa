@@ -127,11 +127,14 @@ public class NodesSpecification {
                                      List<AzName> availabilityZones) {
         var resolvedElement = resolveElement(nodesElement);
         var resourceConstraints = toResourceConstraints(resolvedElement);
+        var maxCostFactor = resolvedElement.optionalChild("resources")
+                                           .map(r -> r.doubleAttribute("max-cost-factor", 1.0))
+                                           .orElse(1.0);
         boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
         return new NodesSpecification(resourceConstraints.min,
                                       resourceConstraints.max,
                                       resourceConstraints.groupSize,
-                                      resolvedElement.doubleAttribute("max-cost-factor", 1.0),
+                                      maxCostFactor,
                                       dedicated,
                                       version,
                                       resolvedElement.booleanAttribute("required", false),
@@ -286,6 +289,7 @@ public class NodesSpecification {
     public ClusterResources minResources() { return min; }
     public ClusterResources maxResources() { return max; }
     public IntRange groupSize() { return groupSize; }
+    public double maxCostFactor() { return maxCostFactor; }
 
     /**
      * Returns whether this requires dedicated nodes.

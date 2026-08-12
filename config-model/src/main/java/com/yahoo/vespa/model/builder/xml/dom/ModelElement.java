@@ -9,6 +9,7 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.StringTokenizer;
 
 /**
@@ -31,6 +32,13 @@ public class ModelElement {
         Element e = XML.getChild(xml, name);
         if (e == null) return null;
         return new ModelElement(e);
+    }
+
+    /** Returns the child with the given name, or null if none. */
+    public Optional<ModelElement> optionalChild(String name) {
+        Element e = XML.getChild(xml, name);
+        if (e == null) return Optional.empty();
+        return Optional.of(new ModelElement(e));
     }
 
     /** If not found, return empty list. */
