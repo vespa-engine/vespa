@@ -260,14 +260,14 @@ public class Flags {
             "Takes effect at deployment");
 
     public static final UnboundBooleanFlag PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE = defineFeatureFlag(
-            "proton-log-warning-on-disk-capacity-change", false,
+            "proton-log-warning-on-disk-capacity-change", true,
             List.of("johsol"), "2026-07-06", "2026-09-01",
             "Log a warning when sampled disk capacity changes. Escape hatch in case of log spam " +
             "while working towards adding back resampling of disk capacity.",
             "Takes effect at deployment");
 
     public static final UnboundBooleanFlag PROTON_RESAMPLE_DISK_CAPACITY = defineFeatureFlag(
-            "proton-resample-disk-capacity", false,
+            "proton-resample-disk-capacity", true,
             List.of("johsol"), "2026-07-06", "2026-09-01",
             "Resample disk capacity in proton.",
             "Takes effect at deployment");
