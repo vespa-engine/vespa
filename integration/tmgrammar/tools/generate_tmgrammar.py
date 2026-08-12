@@ -7,7 +7,7 @@ Auto-generate a TextMate grammar for the Vespa schema language.
 
 Reads token declarations from the CongoCC parser grammars and scope
 classifications from SchemaSemanticTokenConfig.java, then emits
-grammar/vespa-schema.tmLanguage.json.
+grammars/vespa-schema.tmLanguage.json.
 
 The generated scopes are chosen to match the colors produced by the
 Java LSP semantic tokens in VS Code's default Dark+ theme:
@@ -50,7 +50,7 @@ INDEXING_CCC = LSP / "src/main/ccc/indexinglanguage/IndexingParser.ccc"
 RANKING_CCC = LSP / "src/main/ccc/rankingexpression/RankingExpressionParser.ccc"
 SEMANTIC_CFG = LSP / "src/main/java/ai/vespa/schemals/lsp/schema/semantictokens/SchemaSemanticTokenConfig.java"
 BUILTIN_FUNCS = LSP / "src/main/java/ai/vespa/schemals/schemadocument/resolvers/RankExpression/BuiltInFunctions.java"
-OUTPUT = TMGRAMMAR / "grammar/vespa-schema.tmLanguage.json"
+OUTPUT = TMGRAMMAR / "grammars/vespa-schema.tmLanguage.json"
 
 # ---------------------------------------------------------------------------
 # 1a  Parse .ccc token declarations
