@@ -157,8 +157,12 @@ public class ModelElement {
     }
 
     public Double doubleAttribute(String name) {
+        return doubleAttribute(name, null);
+    }
+
+    public Double doubleAttribute(String name, Double defaultValue) {
         String value = stringAttribute(name);
-        if (value == null) return null;
+        if (value == null) return defaultValue;
         return Double.parseDouble(value);
     }
 
@@ -186,7 +190,6 @@ public class ModelElement {
             throw new IllegalArgumentException("Required attribute '" + name + "' is missing");
         return stringAttribute(name);
     }
-
 
     public List<ModelElement> subElements(String name) {
         List<Element> elements = XML.getChildren(xml, name);

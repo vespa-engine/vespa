@@ -132,7 +132,7 @@ public final class Capacity {
     }
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return from(min, max, groupSize, false, true, Optional.empty(), CloudResourceTags.empty(), ClusterInfo.empty());
+        return from(min, max, groupSize, 1.0, false, true, Optional.empty(), CloudResourceTags.empty(), ClusterInfo.empty());
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
@@ -145,13 +145,21 @@ public final class Capacity {
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 Optional<CloudAccount> cloudAccount, ClusterInfo clusterInfo) {
-        return from(min, max, groupSize, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
+        return from(min, max, groupSize, 1.0, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
     }
 
+    @Deprecated // TODO: Remove after September 2026
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
                                 ClusterInfo clusterInfo) {
         return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, 1.0, cloudAccount, cloudResourceTags, clusterInfo);
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, double maxCostFactor,
+                                boolean required, boolean canFail,
+                                Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
+                                ClusterInfo clusterInfo) {
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     /** Creates this from a node type */
