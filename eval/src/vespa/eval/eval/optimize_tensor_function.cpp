@@ -73,6 +73,7 @@ const TensorFunction& optimize_for_factory(const ValueBuilderFactory&, const Ten
                       [&stash](const Child& child) { child.set(PowAsMapOptimizer::optimize(child.get(), stash)); });
     run_optimize_pass(root, [&stash](const Child& child) {
         child.set(SumMaxInvHammingFunction::optimize(child.get(), stash));
+        child.set(MaxSumMaxInvHammingFunction::optimize(child.get(), stash));
         child.set(SumMaxDotProductFunction::optimize(child.get(), stash));
     });
     run_optimize_pass(root, [&stash](const Child& child) {

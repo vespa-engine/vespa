@@ -3,7 +3,14 @@
 #include "sum_max_inv_hamming_function.h"
 
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/wrap_param.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/util/binary_hamming_distance.h>
+
+#include <algorithm>
+#include <array>
+#include <unordered_map>
+#include <vector>
 
 namespace vespalib::eval {
 
@@ -29,6 +36,60 @@ void my_sum_max_inv_hamming_op(InterpretedFunction::State& state, uint64_t vec_s
             }
             result += max_inv_hamming;
         }
+    }
+    state.pop_pop_push(state.stash.create<DoubleValue>(result));
+}
+
+struct ChunkedParam {
+    size_t vec_size;
+    size_t chunk_dim;
+    ChunkedParam(size_t vec_size_in, size_t chunk_dim_in) : vec_size(vec_size_in), chunk_dim(chunk_dim_in) {}
+};
+
+void my_max_sum_max_inv_hamming_op(InterpretedFunction::State& state, uint64_t param_in) {
+    const auto&  param = unwrap_param<ChunkedParam>(param_in);
+    double       result = 0.0;
+    auto         query_cells = state.peek(1).cells().unsafe_typify<int8_t>();
+    const Value& document = state.peek(0);
+    auto         document_cells = document.cells().unsafe_typify<int8_t>();
+    if ((query_cells.size() > 0) && (document_cells.size() > 0)) {
+        size_t                               num_query_vectors = query_cells.size() / param.vec_size;
+        size_t                               max_distance = param.vec_size * 8;
+        size_t                               num_chunks = 0;
+        std::unordered_map<uint32_t, size_t> chunk_index;
+        std::vector<size_t>                  min_distances;
+        std::array<string_id, 2>             address;
+        std::array<string_id*, 2>            address_ref = {&address[0], &address[1]};
+        size_t                               subspace = 0;
+        auto                                 view = document.index().create_view({});
+        view->lookup({});
+        while (view->next_result(address_ref, subspace)) {
+            auto [pos, inserted] = chunk_index.try_emplace(address[param.chunk_dim].value(), num_chunks);
+            if (inserted) {
+                min_distances.resize(++num_chunks * num_query_vectors, max_distance);
+            }
+            size_t*       chunk_distances = min_distances.data() + (pos->second * num_query_vectors);
+            const int8_t* document_vector = document_cells.data() + (subspace * param.vec_size);
+            for (size_t i = 0; i < num_query_vectors; ++i) {
+                if (chunk_distances[i] != 0) {
+                    const int8_t* query_vector = query_cells.data() + (i * param.vec_size);
+                    chunk_distances[i] = std::min(
+                        chunk_distances[i],
+                        hwaccelerated::binary_hamming_distance(query_vector, document_vector, param.vec_size));
+                }
+            }
+        }
+        // sum in float to match the cell type of the per-chunk tensor produced by generic evaluation
+        float max_chunk_score = aggr::Max<float>::null_value();
+        for (size_t chunk = 0; chunk < num_chunks; ++chunk) {
+            const size_t* chunk_distances = min_distances.data() + (chunk * num_query_vectors);
+            float         chunk_score = 0.0f;
+            for (size_t i = 0; i < num_query_vectors; ++i) {
+                chunk_score += 1.0f / (1.0f + chunk_distances[i]);
+            }
+            max_chunk_score = aggr::Max<float>::combine(max_chunk_score, chunk_score);
+        }
+        result = max_chunk_score;
     }
     state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
@@ -86,11 +147,26 @@ bool check_params(const ValueType& res_type, const ValueType& query, const Value
             (document.stride_of(ham_dim) == 1));
 }
 
+bool check_chunked_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
+                          const std::string& sum_dim, const std::string& max_dim, const std::string& chunk_dim,
+                          const std::string& ham_dim) {
+    return (res_type.is_double() && (query.dimensions().size() == 2) && (query.cell_type() == CellType::INT8) &&
+            (document.dimensions().size() == 3) && (document.count_mapped_dimensions() == 2) &&
+            (document.cell_type() == CellType::INT8) && query.has_dimension(sum_dim) &&
+            (query.stride_of(ham_dim) == 1) && document.has_dimension(max_dim) && document.has_dimension(chunk_dim) &&
+            (document.stride_of(ham_dim) == 1));
+}
+
 size_t get_dim_size(const ValueType& type, const std::string& dim) {
     size_t npos = ValueType::Dimension::npos;
     size_t idx = type.dimension_index(dim);
     assert(idx != npos);
     return type.dimensions()[idx].size;
+}
+
+// the document has exactly two mapped dimensions; the chunk dimension is either the first or the second
+size_t get_chunk_dim(const ValueType& document, const std::string& chunk_dim) {
+    return (document.mapped_dimensions()[0].name == chunk_dim) ? 0 : 1;
 }
 
 } // namespace
@@ -126,6 +202,54 @@ const TensorFunction& SumMaxInvHammingFunction::optimize(const TensorFunction& e
                             size_t vec_size = get_dim_size(ham->rhs().result_type(), ham_dim);
                             return stash.create<SumMaxInvHammingFunction>(expr.result_type(), ham->rhs(), ham->lhs(),
                                                                           vec_size);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return expr;
+}
+
+MaxSumMaxInvHammingFunction::MaxSumMaxInvHammingFunction(const ValueType& res_type_in, const TensorFunction& query,
+                                                         const TensorFunction& document, size_t vec_size,
+                                                         size_t chunk_dim)
+    : tensor_function::Op2(res_type_in, query, document), _vec_size(vec_size), _chunk_dim(chunk_dim) {
+}
+
+InterpretedFunction::Instruction MaxSumMaxInvHammingFunction::compile_self(const ValueBuilderFactory&,
+                                                                           Stash& stash) const {
+    const auto& param = stash.create<ChunkedParam>(_vec_size, _chunk_dim);
+    return InterpretedFunction::Instruction(my_max_sum_max_inv_hamming_op, wrap_param<ChunkedParam>(param));
+}
+
+const TensorFunction& MaxSumMaxInvHammingFunction::optimize(const TensorFunction& expr, Stash& stash) {
+    if (auto chunk_reduce = check_reduce(expr, Aggr::MAX)) {
+        if (auto sum_reduce = check_reduce(chunk_reduce->child(), Aggr::SUM)) {
+            if (auto max_reduce = check_reduce(sum_reduce->child(), Aggr::MAX)) {
+                if (auto inverted = check_inv(max_reduce->child())) {
+                    if (auto ham_reduce = check_reduce(*inverted, Aggr::SUM)) {
+                        if (auto ham = check_join(ham_reduce->child(), Hamming::f)) {
+                            const auto& sum_dim = sum_reduce->dimensions()[0];
+                            const auto& max_dim = max_reduce->dimensions()[0];
+                            const auto& chunk_dim = chunk_reduce->dimensions()[0];
+                            const auto& ham_dim = ham_reduce->dimensions()[0];
+                            if (check_chunked_params(expr.result_type(), ham->lhs().result_type(),
+                                                     ham->rhs().result_type(), sum_dim, max_dim, chunk_dim, ham_dim))
+                            {
+                                size_t vec_size = get_dim_size(ham->lhs().result_type(), ham_dim);
+                                return stash.create<MaxSumMaxInvHammingFunction>(
+                                    expr.result_type(), ham->lhs(), ham->rhs(), vec_size,
+                                    get_chunk_dim(ham->rhs().result_type(), chunk_dim));
+                            }
+                            if (check_chunked_params(expr.result_type(), ham->rhs().result_type(),
+                                                     ham->lhs().result_type(), sum_dim, max_dim, chunk_dim, ham_dim))
+                            {
+                                size_t vec_size = get_dim_size(ham->rhs().result_type(), ham_dim);
+                                return stash.create<MaxSumMaxInvHammingFunction>(
+                                    expr.result_type(), ham->rhs(), ham->lhs(), vec_size,
+                                    get_chunk_dim(ham->lhs().result_type(), chunk_dim));
+                            }
                         }
                     }
                 }
