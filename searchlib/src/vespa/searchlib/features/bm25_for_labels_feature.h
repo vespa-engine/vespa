@@ -9,7 +9,6 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/vespalib/util/shared_string_repo.h>
 
 #include <memory>
 #include <optional>
@@ -18,40 +17,6 @@
 #include <vector>
 
 namespace search::features {
-
-/**
- * Executor calculating the BM25 score in a single index field for the terms carrying each query item
- * label, as a tensor<float>(label{}) with one cell per label that scored for the document.
- */
-class Bm25ForLabelsExecutor : public fef::FeatureExecutor {
-    using QueryTerm = Bm25Utils::QueryTerm;
-
-    std::vector<std::vector<QueryTerm>> _terms_per_label; // in label order
-    double                              _avg_field_length;
-
-    // The 'k1' param determines term frequency saturation characteristics.
-    // The 'b' param adjusts the effects of the field length of the document matched compared to the average field
-    // length.
-    double _k1_mul_b;
-    double _k1_mul_one_minus_b;
-
-    vespalib::SharedStringRepo::Handles    _labels;       // every candidate label, resolved once
-    vespalib::StringIdVector               _view_labels;  // per document scoring subset, non-owning
-    std::vector<float>                     _view_cells;   // per document scores, parallel to _view_labels
-    const vespalib::eval::Value&           _empty_output; // owned by the blueprint
-    std::unique_ptr<vespalib::eval::Value> _output;
-
-    feature_t term_score(const QueryTerm& term, uint32_t doc_id) const;
-
-public:
-    Bm25ForLabelsExecutor(std::vector<std::pair<std::string, std::vector<QueryTerm>>> labeled_terms,
-                          double avg_field_length, double k1_param, double b_param,
-                          const vespalib::eval::Value& empty_output);
-    ~Bm25ForLabelsExecutor() override;
-
-    void handle_bind_match_data(const fef::MatchData& match_data) override;
-    void execute(uint32_t docId) override;
-};
 
 /**
  * Blueprint for the BM25 score in a given index field of the terms carrying each query item label,
