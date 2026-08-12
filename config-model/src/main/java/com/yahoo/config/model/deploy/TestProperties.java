@@ -82,7 +82,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
     private double searchNodeReservedMemoryFactor = 0.0;
-    private boolean failWhenConfiguringIndexedMapOfArray = false;
+    private boolean failWhenConfiguringIndexedMapOfArray = true;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
