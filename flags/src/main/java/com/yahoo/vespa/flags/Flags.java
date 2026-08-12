@@ -245,7 +245,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY = defineFeatureFlag(
-            "fail-when-configuring-indexed-map-of-array", false,
+            "fail-when-configuring-indexed-map-of-array", true,
             List.of("hmusum"), "2026-07-01", "2026-10-13",
             "Whether to fail a deployment when an indexed map of array is used in a schema",
             "Takes effect at redeployment",
