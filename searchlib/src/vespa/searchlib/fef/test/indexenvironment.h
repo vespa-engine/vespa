@@ -86,7 +86,7 @@ public:
 
 private:
     Properties             _properties;
-    std::vector<FieldInfo> _fields;
+    std::vector<FieldInfo> _fields{FieldInfo::no_field()};
     AttributeMap           _attrMap;
     TableManager           _tableMan;
     ConstantsMap           _constants;

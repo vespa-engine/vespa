@@ -92,7 +92,9 @@ QueryTermTest::QueryTermTest()
     FieldInfo filterfield(FieldType::INDEX, CollectionType::ARRAY, "filterfield", filter_field_id);
     filterfield.setFilter(true);
     auto& fields = _index_env.getFields();
-    for (uint32_t id = 0; id < field.id(); ++id) {
+    // The index environment already holds the "no field" first, so start filling
+    // dummies at the first unused field id to keep id and index in sync.
+    for (uint32_t id = fields.size(); id < field.id(); ++id) {
         fields.emplace_back(FieldType::INDEX, CollectionType::SINGLE, "dummy" + std::to_string(id), id);
     }
     _index_env.getFields().emplace_back(field);

@@ -41,8 +41,28 @@ public:
      * an index used to iterate all fields through the index
      * environment and as an enumeration of fields. Multiple fields
      * owned by the same index environment may not have the same name.
+     *
+     * Id 0 is reserved for the special "no field" instance, see
+     * no_field(), so declared fields have ids in the range [1, numFields>.
      **/
     FieldInfo(FieldType type_in, CollectionType collection_in, const string& name_in, uint32_t id_in);
+
+    /**
+     * Obtain the special "no field" instance. This is held first (index and
+     * id 0) in the field table of every index environment, so that field id 0
+     * never denotes a declared field and can be used to represent the absence
+     * of a field. It has FieldType::NONE and an empty name, and is
+     * deliberately not registered in any name to id mapping; looking up the
+     * empty name through IIndexEnvironment::getFieldByName() yields nullptr.
+     **/
+    static const FieldInfo& no_field();
+
+    /**
+     * Check whether this is the special "no field" instance.
+     *
+     * @return true if this does not describe a declared field
+     **/
+    bool is_no_field() const noexcept { return _type == FieldType::NONE; }
 
     /**
      * Check if an attribute vector is available for this

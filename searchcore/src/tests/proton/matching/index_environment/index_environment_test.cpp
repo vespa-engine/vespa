@@ -121,14 +121,42 @@ struct Fixture {
         assert_field_common(field, idx, name, DataType::COMBINED, CollectionType::ARRAY);
         EXPECT_TRUE(field->type() == FieldType::VIRTUAL);
     }
+    void assert_no_field_is_first() const {
+        SCOPED_TRACE("no field is first");
+        const FieldInfo* field = env.getField(0);
+        ASSERT_NE(nullptr, field);
+        EXPECT_TRUE(field->is_no_field());
+        EXPECT_TRUE(field->type() == FieldType::NONE);
+        EXPECT_EQ("", field->name());
+        EXPECT_EQ(0u, field->id());
+        EXPECT_FALSE(field->hasAttribute());
+        EXPECT_FALSE(field->isFilter());
+        // The "no field" is not name addressable.
+        EXPECT_EQ(nullptr, env.getFieldByName(""));
+    }
+    void assert_id_matches_index() const {
+        SCOPED_TRACE("id matches index");
+        for (uint32_t i = 0; i < env.getNumFields(); ++i) {
+            const FieldInfo* field = env.getField(i);
+            ASSERT_NE(nullptr, field);
+            EXPECT_EQ(i, field->id());
+        }
+        EXPECT_EQ(nullptr, env.getField(env.getNumFields()));
+    }
 };
 
 Fixture::~Fixture() = default;
 
+TEST(IndexEnvironmentTest, require_that_no_field_is_held_first_in_index_environment) {
+    Fixture f(buildEmptySchema());
+    f.assert_no_field_is_first();
+    f.assert_id_matches_index();
+}
+
 TEST(IndexEnvironmentTest, require_that_document_meta_store_is_always_extracted_in_index_environment) {
     Fixture f(buildEmptySchema());
-    ASSERT_EQ(1u, f.env.getNumFields());
-    f.assertHiddenAttributeField(0, "[documentmetastore]", DataType::RAW, CollectionType::SINGLE);
+    ASSERT_EQ(2u, f.env.getNumFields());
+    f.assertHiddenAttributeField(1, "[documentmetastore]", DataType::RAW, CollectionType::SINGLE);
 }
 
 TEST(IndexEnvironmentTest, require_that_distribution_key_is_visible_in_index_environment) {
@@ -138,10 +166,12 @@ TEST(IndexEnvironmentTest, require_that_distribution_key_is_visible_in_index_env
 
 TEST(IndexEnvironmentTest, require_that_imported_attribute_fields_are_extracted_in_index_environment) {
     Fixture f(buildSchema());
-    ASSERT_EQ(3u, f.env.getNumFields());
-    f.assertAttributeField(0, "imported_a", DataType::INT32, CollectionType::SINGLE);
-    f.assertAttributeField(1, "imported_b", DataType::STRING, CollectionType::ARRAY);
-    EXPECT_EQ("[documentmetastore]", f.env.getField(2)->name());
+    ASSERT_EQ(4u, f.env.getNumFields());
+    f.assertAttributeField(1, "imported_a", DataType::INT32, CollectionType::SINGLE);
+    f.assertAttributeField(2, "imported_b", DataType::STRING, CollectionType::ARRAY);
+    EXPECT_EQ("[documentmetastore]", f.env.getField(3)->name());
+    f.assert_no_field_is_first();
+    f.assert_id_matches_index();
 }
 
 Schema::UP schema_with_virtual_fields() {
@@ -165,18 +195,20 @@ Schema::UP schema_with_virtual_fields() {
 
 TEST(IndexEnvironmentTest, virtual_fields_are_extracted_in_index_environment) {
     Fixture f(schema_with_virtual_fields());
-    ASSERT_EQ(11u, f.env.getNumFields());
-    f.assertAttributeField(0, "person_map.key", DataType::INT32, CollectionType::ARRAY);
-    f.assertAttributeField(1, "person_map.value.name", DataType::STRING, CollectionType::ARRAY);
-    f.assertAttributeField(2, "person_map.value.year", DataType::INT32, CollectionType::ARRAY);
-    f.assertField(3, "url.hostname", DataType::STRING, CollectionType::SINGLE);
-    f.assertField(4, "url.port", DataType::STRING, CollectionType::SINGLE);
-    f.assertAttributeField(5, "int_map.key", DataType::INT32, CollectionType::ARRAY);
-    f.assertAttributeField(6, "int_map.value", DataType::INT32, CollectionType::ARRAY);
-    EXPECT_EQ("[documentmetastore]", f.env.getField(7)->name());
-    f.assert_virtual_field(8, "int_map");
-    f.assert_virtual_field(9, "person_map");
-    f.assert_virtual_field(10, "person_map.value");
+    ASSERT_EQ(12u, f.env.getNumFields());
+    f.assertAttributeField(1, "person_map.key", DataType::INT32, CollectionType::ARRAY);
+    f.assertAttributeField(2, "person_map.value.name", DataType::STRING, CollectionType::ARRAY);
+    f.assertAttributeField(3, "person_map.value.year", DataType::INT32, CollectionType::ARRAY);
+    f.assertField(4, "url.hostname", DataType::STRING, CollectionType::SINGLE);
+    f.assertField(5, "url.port", DataType::STRING, CollectionType::SINGLE);
+    f.assertAttributeField(6, "int_map.key", DataType::INT32, CollectionType::ARRAY);
+    f.assertAttributeField(7, "int_map.value", DataType::INT32, CollectionType::ARRAY);
+    EXPECT_EQ("[documentmetastore]", f.env.getField(8)->name());
+    f.assert_virtual_field(9, "int_map");
+    f.assert_virtual_field(10, "person_map");
+    f.assert_virtual_field(11, "person_map.value");
+    f.assert_no_field_is_first();
+    f.assert_id_matches_index();
 }
 
 TEST(IndexEnvironmentTest, require_that_onnx_model_config_can_be_obtained) {

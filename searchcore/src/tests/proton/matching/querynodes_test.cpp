@@ -163,7 +163,7 @@ public:
         }
 
         fef_test::IndexEnvironment index_environment;
-        uint32_t                   fieldId = 0;
+        uint32_t                   fieldId = index_environment.getFields().size();
         for (int i = 0; i < _field_count; ++i) {
             FieldInfo field_info(FieldType::INDEX, CollectionType::SINGLE, field[i], fieldId++);
             index_environment.getFields().push_back(field_info);

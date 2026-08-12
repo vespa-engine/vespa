@@ -181,6 +181,9 @@ TEST_F(ParameterTest, test_validator) {
     EXPECT_FALSE(validate(env, SL().add("baz"), PDS().desc().string().string()));
     EXPECT_FALSE(validate(env, SL().add("baz").add("baz"), PDS().desc().string()));
     EXPECT_FALSE(validate(env, SL().add("baz"), PDS().desc().field()));
+    // The "no field" held first in the index environment is not name addressable.
+    EXPECT_FALSE(validate(env, SL().add(""), PDS().desc().field()));
+    EXPECT_FALSE(validate(env, SL().add(""), PDS().desc().indexField(ParameterCollection::ANY)));
     EXPECT_FALSE(validate(env, SL().add("bar"), PDS().desc().indexField(ParameterCollection::SINGLE)));
     EXPECT_FALSE(validate(env, SL().add("foo"), PDS().desc().indexField(ParameterCollection::NONE)));
     EXPECT_FALSE(validate(env, SL().add("foo"), PDS().desc().indexField(ParameterCollection::ARRAY)));

@@ -61,8 +61,8 @@ struct ExecFixture {
         attrs.push_back(AttributeFactory::createAttribute("aint", AVC(AVBT::INT32, AVCT::ARRAY)));
         attrs.push_back(AttributeFactory::createAttribute("afloat", AVC(AVBT::FLOAT, AVCT::ARRAY)));
 
-        test.getIndexEnv().getFields().push_back(FieldInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint", 0));
-        test.getIndexEnv().getFields().push_back(FieldInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, "afloat", 1));
+        test.getIndexEnv().getFields().push_back(FieldInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint", 1));
+        test.getIndexEnv().getFields().push_back(FieldInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, "afloat", 2));
 
         for (const auto& attr : attrs) {
             attr->addReservedDoc();

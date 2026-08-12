@@ -109,6 +109,9 @@ void FieldInfoBlueprint::visitDumpFeatures(const fef::IIndexEnvironment& indexEn
         fnb.baseName(getBaseName());
         for (uint32_t i = 0; i < indexEnv.getNumFields(); ++i) {
             const fef::FieldInfo* fi = indexEnv.getField(i);
+            if (fi->is_no_field()) {
+                continue;
+            }
             fnb.clearParameters().parameter(fi->name());
             fnb.output("type");
             visitor.visitDumpFeature(fnb.buildName());
