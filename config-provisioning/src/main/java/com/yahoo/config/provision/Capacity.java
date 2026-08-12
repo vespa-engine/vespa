@@ -88,7 +88,8 @@ public final class Capacity {
 
     /**
      * Returns how must larger an exclusively allocated hosts can be compared to the requested resources
-     * of the node to be allocated, measured  in cost compared to the equivalent exact match node type.
+     * of the node to be allocated, measured in cost for the host resources compared to the cost for the
+     * requested node resources.
      * This allows trading cost against node type availability.
      * The default value is 1.0: Require exact match between host and tenant node resources.
      */
