@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * @author geirst
+ * @author Geir Storli
  */
 public class SingleValueOnlyAttributeValidatorTestCase {
 
@@ -33,12 +33,18 @@ public class SingleValueOnlyAttributeValidatorTestCase {
         }
         catch (IllegalArgumentException e) {
             if (type.equals("bool")) {
-                assertEquals("weightedset of trivial type '[type BUILTIN] {bool}' is not supported",
+                assertEquals("weightedset of trivial type 'bool' is not supported",
                         e.getMessage());
             } else if (type.equals("raw")) {
-                assertEquals("weightedset of complex type '[type BUILTIN] {raw}' is not supported",
+                assertEquals("weightedset of complex type 'raw' is not supported",
                         e.getMessage());
-            } else {
+            } else if (type.equals("double")) {
+                assertEquals("weightedset of inexact type 'double' is not supported",
+                        e.getMessage());
+            } else if (type.equals("map<int, string>")) {
+                assertEquals("weightedset of complex type 'map<int, string>' is not supported",
+                        e.getMessage());
+            }else {
                 assertEquals("For schema 'test', field 'b': Only single value " + type + " attribute fields are supported",
                         e.getMessage());
             }
@@ -53,6 +59,16 @@ public class SingleValueOnlyAttributeValidatorTestCase {
     @Test
     void weightedset_of_bool_attribute_is_not_supported() throws ParseException {
         weightedset_attribute_is_not_supported("bool");
+    }
+
+    @Test
+    void weightedset_of_double_attribute_is_not_supported() throws ParseException {
+        weightedset_attribute_is_not_supported("double");
+    }
+
+    @Test
+    void weightedset_of_map_attribute_is_not_supported() throws ParseException {
+        weightedset_attribute_is_not_supported("map<int, string>");
     }
 
     @Test
