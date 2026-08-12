@@ -83,6 +83,26 @@ public class ParsedType {
         return buf.toString();
     }
 
+    /**
+     * Returns nice name for type that can be displayed in error messages.
+     */
+    public String toNiceName() {
+        switch (variant) {
+        case STRUCT:   return "struct " + name;
+        case DOCUMENT: return "document " + name;
+        default:       return toTypeSpec();
+        }
+    }
+
+    private String toTypeSpec() {
+        switch (variant) {
+            case ARRAY: return "array<" + valType.toTypeSpec() + ">";
+            case WSET:  return "weightedset<" + valType.toTypeSpec() + ">";
+            case MAP:   return "map<" + keyType.toTypeSpec() + ", " + valType.toTypeSpec() + ">";
+            default:    return name;
+        }
+    }
+
     private static Variant guessVariant(String name) {
         switch (name) {
         case "bool":      return Variant.BUILTIN;
@@ -191,6 +211,13 @@ public class ParsedType {
     }
     public static ParsedType documentType(String name) {
         return new ParsedType(name, Variant.DOCUMENT);
+    }
+
+    // Only used in tests.
+    public static ParsedType structType(String name) {
+        var type = fromName(name);
+        type.setVariant(Variant.STRUCT);
+        return type;
     }
 
     public void setCreateIfNonExistent(boolean value) {
