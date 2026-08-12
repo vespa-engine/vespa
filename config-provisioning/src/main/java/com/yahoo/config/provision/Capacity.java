@@ -22,6 +22,7 @@ public final class Capacity {
     private final boolean required;
     private final boolean canFail;
     private final NodeType type;
+    private final double maxCostFactor;
     private final Optional<CloudAccount> cloudAccount;
     private final CloudResourceTags cloudResourceTags;
     private final ClusterInfo clusterInfo;
@@ -32,6 +33,7 @@ public final class Capacity {
                      boolean required,
                      boolean canFail,
                      NodeType type,
+                     double maxCostFactor,
                      Optional<CloudAccount> cloudAccount,
                      CloudResourceTags cloudResourceTags,
                      ClusterInfo clusterInfo) {
@@ -40,6 +42,8 @@ public final class Capacity {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("The max capacity must be larger than the min capacity, but got min " +
                                                min + " and max " + max);
+        if (maxCostFactor < 1.0)
+            throw new IllegalArgumentException("The max cost factor must be at least 1.0, but got " + maxCostFactor);
         if (cloudAccount.isEmpty() && ! clusterInfo.hostTTL().isZero())
             throw new IllegalArgumentException("Cannot set hostTTL without a custom cloud account");
         this.min = min;
@@ -48,6 +52,7 @@ public final class Capacity {
         this.required = required;
         this.canFail = canFail;
         this.type = type;
+        this.maxCostFactor = maxCostFactor;
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.cloudResourceTags = requireNonNull(cloudResourceTags);
         this.clusterInfo = clusterInfo;
@@ -81,6 +86,14 @@ public final class Capacity {
      */
     public NodeType type() { return type; }
 
+    /**
+     * Returns how must larger an exclusively allocated hosts can be compared to the requested resources
+     * of the node to be allocated, measured  in cost compared to the equivalent exact match node type.
+     * This allows trading cost against node type availability.
+     * The default value is 1.0: Require exact match between host and tenant node resources.
+     */
+    public double maxCostFactor() { return maxCostFactor; }
+
     /** Returns the cloud account where this capacity is requested */
     public Optional<CloudAccount> cloudAccount() {
         return cloudAccount;
@@ -98,7 +111,7 @@ public final class Capacity {
     }
 
     public Capacity withLimits(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount, cloudResourceTags, clusterInfo);
+        return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     @Override
@@ -137,7 +150,7 @@ public final class Capacity {
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
                                 ClusterInfo clusterInfo) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, cloudResourceTags, clusterInfo);
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, 1.0, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     /** Creates this from a node type */
@@ -146,7 +159,7 @@ public final class Capacity {
     }
 
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type, Duration hostTTL) {
-        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(),
+        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, 1.0, Optional.empty(),
                             CloudResourceTags.empty(), new ClusterInfo.Builder().hostTTL(hostTTL).build());
     }
 
