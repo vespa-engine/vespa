@@ -3,7 +3,6 @@
 #include "distancefeature.h"
 
 #include "distance_calculator_bundle.h"
-#include "utils.h"
 
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcommon/common/datatype.h>
