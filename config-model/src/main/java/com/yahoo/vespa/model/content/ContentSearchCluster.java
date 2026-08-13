@@ -61,8 +61,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final boolean forwardIssuesToQrs;
     private final int searchNodeInitializerThreads;
     private final double searchNodeReservedMemoryFactor;
-    private final boolean logWarningOnDiskCapacityChange;
-    private final boolean resampleDiskCapacity;
 
     public ContentSearchCluster(TreeConfigProducer<?> parent,
                                 String clusterName,
@@ -85,8 +83,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.searchNodeInitializerThreads = searchNodeInitializeThreads;
         this.searchNodeReservedMemoryFactor = featureFlags.searchNodeReservedMemoryFactor();
-        this.logWarningOnDiskCapacityChange = featureFlags.protonLogWarningOnDiskCapacityChange();
-        this.resampleDiskCapacity = featureFlags.protonResampleDiskCapacity();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -263,8 +259,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.forward_issues(forwardIssuesToQrs);
         builder.writefilter.reserved_memory_factor(searchNodeReservedMemoryFactor);
-        builder.log_warning_on_disk_capacity_change(logWarningOnDiskCapacityChange);
-        builder.resample_disk_capacity(resampleDiskCapacity);
 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(
