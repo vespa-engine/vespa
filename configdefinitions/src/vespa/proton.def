@@ -626,8 +626,8 @@ forward_issues bool default = true
 
 ## Log a warning when the sampled disk capacity differs from the previous sample.
 ## TODO: Remove when resampling of disk capacity has been re-landed.
-log_warning_on_disk_capacity_change bool default=false
+log_warning_on_disk_capacity_change bool default=true
 
 ## Periodically resample disk capacity instead of using the value detected at startup.
 ## TODO: Remove when resampling of disk capacity has been re-landed.
-resample_disk_capacity bool default=false
+resample_disk_capacity bool default=true
