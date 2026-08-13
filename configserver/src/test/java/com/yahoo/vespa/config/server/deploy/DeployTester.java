@@ -288,7 +288,7 @@ public class DeployTester {
         private Metrics metrics;
         private List<ModelFactory> modelFactories;
         private FlagSource flagSource = new InMemoryFlagSource();
-        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker(flagSource);
+        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
         private DeploymentConfigStore deploymentConfigStore;
 
         public Builder(TemporaryFolder temporaryFolder) {

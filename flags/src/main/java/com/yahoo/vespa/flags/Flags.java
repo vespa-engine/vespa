@@ -252,13 +252,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK = defineFeatureFlag(
-            "use-wanted-generation-in-convergence-check", true,
-            List.of("hmusum"), "2026-06-16", "2026-09-01",
-            "Whether to use extended info (wantedGeneration) from /state/v1/config API to " +
-                    "decide if config convergence is achieved during deploy",
-            "Takes effect at deployment");
-
     public static final UnboundBooleanFlag PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE = defineFeatureFlag(
             "proton-log-warning-on-disk-capacity-change", true,
             List.of("johsol"), "2026-07-06", "2026-09-01",
