@@ -221,6 +221,7 @@ public enum ContainerMetrics implements VespaMetrics {
     EMBEDDER_BATCH_COUNT("embedder.batch.count", Unit.OPERATION, "Number of batch dispatches"),
 
     INFERENCE_PENDING("inference.pending", Unit.ITEM, "Number of pending inference requests in a queue"),
+    INFERENCE_QUEUE_DEPTH("inference.queue.depth", Unit.ITEM, "Time-averaged number of inference requests waiting in a queue"),
     INFERENCE_REQUEST_RATE("inference.request.rate", Unit.OPERATION_PER_SECOND, "Successful inference requests per second"),
     INFERENCE_FAILURE_RATE("inference.failure.rate", Unit.OPERATION_PER_SECOND, "Failed inference requests per second"),
     INFERENCE_REQUEST_LATENCY("inference.request.latency", Unit.MILLISECOND, "Average inference request latency"),
