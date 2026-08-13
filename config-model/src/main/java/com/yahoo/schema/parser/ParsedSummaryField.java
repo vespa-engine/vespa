@@ -25,10 +25,6 @@ public class ParsedSummaryField extends ParsedBlock {
     private final List<String> destinations = new ArrayList<>();
     private String selectElementsBySummaryFeature = null;
 
-    public ParsedSummaryField(String name) {
-        this(name, null);
-    }
-
     public ParsedSummaryField(String name, ParsedType type) {
         super(name, "summary field");
         this.type = type;
