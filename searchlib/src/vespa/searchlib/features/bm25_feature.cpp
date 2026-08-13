@@ -3,12 +3,16 @@
 #include "bm25_feature.h"
 
 #include "bm25_utils.h"
+#include "utils.h"
 
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/vespalib/util/stash.h>
+
+#include <cctype>
+#include <string_view>
 
 namespace search::features {
 
@@ -25,6 +29,17 @@ using fef::MatchDataDetails;
 using fef::objectstore::as_value;
 using vespalib::Trinary;
 
+void Bm25Executor::add_term_fields(const fef::ITermData& term, uint32_t field_id, const fef::IQueryEnvironment& env,
+                                   double k1_param) {
+    for (size_t j = 0; j < term.numFields(); ++j) {
+        const ITermFieldData& term_field = term.field(j);
+        if (field_id == term_field.getFieldId()) {
+            _terms.emplace_back(term_field.getHandle(MatchDataDetails::Interleaved),
+                                Bm25Utils::get_inverse_document_frequency(term_field, env, term), k1_param);
+        }
+    }
+}
+
 Bm25Executor::Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnvironment& env, double avg_field_length,
                            double k1_param, double b_param)
     : FeatureExecutor(),
@@ -33,14 +48,20 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnviron
       _k1_mul_b(k1_param * b_param),
       _k1_mul_one_minus_b(k1_param * (1 - b_param)) {
     for (size_t i = 0; i < env.getNumTerms(); ++i) {
-        const ITermData* term = env.getTerm(i);
-        for (size_t j = 0; j < term->numFields(); ++j) {
-            const ITermFieldData& term_field = term->field(j);
-            if (field.id() == term_field.getFieldId()) {
-                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Interleaved),
-                                    Bm25Utils::get_inverse_document_frequency(term_field, env, *term), k1_param);
-            }
-        }
+        add_term_fields(*env.getTerm(i), field.id(), env, k1_param);
+    }
+}
+
+Bm25Executor::Bm25Executor(const fef::FieldInfo& field, const fef::IQueryEnvironment& env,
+                           const std::vector<const fef::ITermData*>& terms, double avg_field_length, double k1_param,
+                           double b_param)
+    : FeatureExecutor(),
+      _terms(),
+      _avg_field_length(avg_field_length),
+      _k1_mul_b(k1_param * b_param),
+      _k1_mul_one_minus_b(k1_param * (1 - b_param)) {
+    for (const ITermData* term : terms) {
+        add_term_fields(*term, field.id(), env, k1_param);
     }
 }
 
@@ -79,7 +100,8 @@ Bm25Blueprint::Bm25Blueprint()
       _field(nullptr),
       _k1_param(default_k1_param),
       _b_param(default_b_param),
-      _avg_field_length() {
+      _avg_field_length(),
+      _label() {
 }
 
 void Bm25Blueprint::visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const {
@@ -98,13 +120,102 @@ fef::Blueprint::UP Bm25Blueprint::createInstance() const {
 }
 
 fef::ParameterDescriptions Bm25Blueprint::getDescriptions() const {
-    return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY);
+    return fef::ParameterDescriptions()
+        .desc()
+        .indexField(fef::ParameterCollection::ANY)
+        .desc()
+        .string()
+        .string();
+}
+
+namespace {
+
+bool is_valid_field_name(std::string_view value) {
+    if (value.empty()) {
+        return false;
+    }
+    char first = value.front();
+    if (!std::isalpha(static_cast<unsigned char>(first)) && first != '_') {
+        return false;
+    }
+    for (char c : value) {
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_') {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::optional<std::string> parse_tagged_argument(const std::string& param, std::string_view expected_tag) {
+    auto colon = param.find(':');
+    if (colon == std::string::npos || colon == 0 || colon + 1 >= param.size()) {
+        return std::nullopt;
+    }
+    if (param.substr(0, colon) != expected_tag) {
+        return std::nullopt;
+    }
+    std::string value = param.substr(colon + 1);
+    if (value.empty()) {
+        return std::nullopt;
+    }
+    return value;
+}
+
+} // namespace
+
+bool Bm25Blueprint::setup_label_parameter(const std::string& param) {
+    auto label = parse_tagged_argument(param, "label");
+    if (!label.has_value()) {
+        return fail("The second parameter must be of the form label:<query-item-label>, but was '%s'",
+                    param.c_str());
+    }
+    _label = std::move(*label);
+    return true;
+}
+
+bool Bm25Blueprint::resolve_index_field(const fef::IIndexEnvironment& env, const std::string& field_name) {
+    _field = env.getFieldByName(field_name);
+    if (_field == nullptr) {
+        return fail("Unknown index field '%s'", field_name.c_str());
+    }
+    if (_field->type() != FieldType::INDEX) {
+        return fail("Field '%s' is not an index field", field_name.c_str());
+    }
+    return true;
 }
 
 bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) {
-    const auto& field_name = params[0].getValue();
-    _field = env.getFieldByName(field_name);
-    if (_field == nullptr) {
+    if (params.size() == 1) {
+        const auto& field_name = params[0].getValue();
+        if (!resolve_index_field(env, field_name)) {
+            return false;
+        }
+    } else if (params.size() == 2) {
+        if (!setup_label_parameter(params[1].getValue())) {
+            return false;
+        }
+        std::string field_name;
+        const auto& first = params[0].getValue();
+        if (first.find(':') != std::string::npos) {
+            auto field = parse_tagged_argument(first, "field");
+            if (!field.has_value()) {
+                return fail("The first parameter must be an index field name or of the form field:<index-field>, "
+                              "but was '%s'",
+                              first.c_str());
+            }
+            if (!is_valid_field_name(*field)) {
+                return fail("The field tag value must be an identifier, but was '%s'", field->c_str());
+            }
+            field_name = std::move(*field);
+        } else {
+            field_name = first;
+        }
+        if (!resolve_index_field(env, field_name)) {
+            return false;
+        }
+        describeOutput("score", "The bm25 score for the query terms with the given label searching in the given "
+                                "index field");
+    } else {
         return false;
     }
     Bm25Utils bm25_utils(getBaseName() + "(" + _field->name() + ").", env.getProperties());
@@ -118,8 +229,9 @@ bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::Paramete
     if (bm25_utils.lookup_param(Bm25Utils::average_field_length(), _avg_field_length) == Trinary::Undefined) {
         return fail(bm25_utils.last_error());
     }
-
-    describeOutput("score", "The bm25 score for all terms searching in the given index field");
+    if (params.size() == 1) {
+        describeOutput("score", "The bm25 score for all terms searching in the given index field");
+    }
     return true;
 }
 
@@ -149,7 +261,11 @@ fef::FeatureExecutor& Bm25Blueprint::createExecutor(const fef::IQueryEnvironment
     double      avg_field_length = lookup_result != nullptr
                                        ? as_value<double>(*lookup_result)
                                        : _avg_field_length.value_or(get_average_field_length(env, _field->name()));
-    return stash.create<Bm25Executor>(*_field, env, avg_field_length, _k1_param, _b_param);
+    if (_label.empty()) {
+        return stash.create<Bm25Executor>(*_field, env, avg_field_length, _k1_param, _b_param);
+    }
+    return stash.create<Bm25Executor>(*_field, env, util::getTermsByLabel(env, _label), avg_field_length, _k1_param,
+                                      _b_param);
 }
 
 } // namespace search::features

@@ -7,6 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.api.OnnxModelCost;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -109,15 +110,17 @@ public class TenantRepositoryTest {
         TenantApplications applicationRepo = tenantRepository.getTenant(tenant1).getApplicationRepo();
         ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
         applicationRepo.createApplication(id);
-        try (var transaction = new CuratorTransaction(curator)) {
-            applicationRepo.createWriteActiveTransaction(transaction, id, 4).commit();
+        try (var applicationLock = applicationRepo.lock(id);
+             var transaction = new CuratorTransaction(curator)) {
+            applicationRepo.appendActivateOperations(applicationLock, id, 4, transaction).commit();
         }
-        applicationRepo.activateApplication(ApplicationVersions.from(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
-                                                                                     new ServerCache(),
-                                                                                     4L,
-                                                                                     new Version(1, 2, 3),
-                                                                                     MetricUpdater.createTestUpdater(),
-                                                                                     id)),
+        applicationRepo.activateApplication(ApplicationVersions.fromList(List.of(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
+                                                                                                 new ServerCache(),
+                                                                                                 4L,
+                                                                                                 new Version(1, 2, 3),
+                                                                                                 MetricUpdater.createTestUpdater(),
+                                                                                                 id)),
+                                                                         new Provisioned()),
                                             4);
         assertEquals(1, listener.activated.get());
     }

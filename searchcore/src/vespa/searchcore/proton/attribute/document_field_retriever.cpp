@@ -140,7 +140,8 @@ void set_raw_value(DocumentIdT lid, Document& doc, const document::Field& field,
 
 void setTensorValue(DocumentIdT lid, Document& doc, const document::Field& field, const IAttributeVector& attr) {
     const auto& tensorAttribute = static_cast<const TensorAttribute&>(attr);
-    auto        tensor = tensorAttribute.getTensor(lid);
+    assert(!tensorAttribute.is_quantized()); // Should never populate document fields from lossy, quantized attribute
+    auto tensor = tensorAttribute.getTensor(lid);
     if (tensor) {
         auto tensorField = field.createValue();
         dynamic_cast<TensorFieldValue&>(*tensorField) = std::move(tensor);

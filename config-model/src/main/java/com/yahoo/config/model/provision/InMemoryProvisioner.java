@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
@@ -14,7 +14,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionContext;
-import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,7 +69,6 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     private final boolean alwaysReturnOneNode;
 
-    private Provisioned provisioned = new Provisioned();
     private final Set<ClusterSpec> clusters = new TreeSet<>(Comparator.comparing(cluster -> cluster.id().value()));
 
     private Environment environment = Environment.prod;
@@ -130,8 +128,6 @@ public class InMemoryProvisioner implements HostProvisioner {
         this.retiredHostNames = Set.of(retiredHostNames);
     }
 
-    public Provisioned provisioned() { return provisioned; }
-
     /** May affect e.g. the number of nodes/cluster. */
     public InMemoryProvisioner setEnvironment(Environment environment) {
         this.environment = environment;
@@ -160,7 +156,6 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionContext context) {
-        provisioned.add(cluster, requested);
         clusters.add(cluster);
         if (environment == Environment.dev && ! requested.isRequired()) {
             requested = requested.withLimits(requested.minResources().withNodes(1),
@@ -215,13 +210,6 @@ public class InMemoryProvisioner implements HostProvisioner {
         return allocation;
     }
 
-    /** Create a new provisioned instance to record provision requests to this and returns it */
-    public Provisioned startProvisionedRecording() {
-        provisioned = new Provisioned();
-        clusters.clear();
-        return provisioned;
-    }
-
     private HostSpec retire(HostSpec host) {
         return new HostSpec(host.hostname(),
                             host.realResources(),
@@ -230,7 +218,8 @@ public class InMemoryProvisioner implements HostProvisioner {
                             host.membership().get().retire(),
                             host.version(),
                             Optional.empty(),
-                            host.dockerImageRepo());
+                            host.dockerImageRepo(),
+                            host.availabilityZone());
     }
 
     // Minimal capacity policies
@@ -279,7 +268,8 @@ public class InMemoryProvisioner implements HostProvisioner {
                                         resources, resources, requestedResources,
                                         membership,
                                         newHost.version(), Optional.empty(),
-                                        Optional.empty()));
+                                        Optional.empty(),
+                                        AzName.defaultName()));
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 

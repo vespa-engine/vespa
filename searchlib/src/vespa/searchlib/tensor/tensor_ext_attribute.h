@@ -39,6 +39,9 @@ public:
     VectorBundle get_vectors(uint32_t docid) const noexcept override;
 
     // ITensorAttribute API
+    bool is_quantized() const noexcept override;
+    const vespalib::eval::ValueType& unquantized_tensor_type() const noexcept override;
+    std::unique_ptr<TensorDequantizer> make_dequantizer() const override;
     std::unique_ptr<vespalib::eval::Value> getTensor(uint32_t docid) const override;
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
     vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const override;

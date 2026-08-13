@@ -4,6 +4,7 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/reference_operations.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -50,6 +51,7 @@ using search::AttributeVector;
 using search::CommitParam;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
+using search::attribute::QuantizationParams;
 using search::queryeval::Blueprint;
 using search::queryeval::GlobalFilter;
 using search::queryeval::NearestNeighborBlueprint;
@@ -72,6 +74,8 @@ using search::tensor::TensorAttribute;
 using search::tensor::TensorAttributeFlags;
 using search::tensor::VectorBundle;
 using testing::AllOf;
+using testing::Eq;
+using testing::ExplainMatchResult;
 using testing::Ge;
 using testing::Le;
 using vespalib::Generation;
@@ -82,6 +86,7 @@ using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
+using vespalib::eval::Int8Float;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -91,6 +96,7 @@ using DoubleVector = std::vector<double>;
 
 std::string              sparseSpec("tensor(x{},y{})");
 std::string              denseSpec("tensor(x[2],y[3])");
+std::string              quantized_dense_spec("tensor<int8>(y[7])"); // sizeof(float) + 4bits*2*3 => 7 bytes
 std::string              a_dimension("a");
 std::string              b_dimension("b");
 std::string              x_dimension("x");
@@ -355,12 +361,14 @@ public:
 
 class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
 
-    std::unique_ptr<NearestNeighborIndex> make(const DocVectorAccess& vectors, size_t vector_size,
-                                               bool multi_vector_index, CellType cell_type,
-                                               const search::attribute::HnswIndexParams& params) const override {
+    std::unique_ptr<NearestNeighborIndex>
+    make(const DocVectorAccess& vectors, size_t vector_size, bool multi_vector_index, CellType cell_type,
+         const search::attribute::HnswIndexParams&                   params,
+         const std::optional<search::attribute::QuantizationParams>& quant_params) const override {
         (void)vector_size;
         (void)params;
         (void)multi_vector_index;
+        (void)quant_params;
         assert(cell_type == CellType::DOUBLE);
         return std::make_unique<MockNearestNeighborIndex>(vectors);
     }
@@ -378,6 +386,7 @@ struct FixtureTraits {
     bool use_mock_index = false;
     bool use_mmap_file_allocator = false;
     bool use_mips_distance = false;
+    bool use_quantization = false;
 
     FixtureTraits dense() && {
         use_dense_tensor_attribute = true;
@@ -424,6 +433,11 @@ struct FixtureTraits {
         use_direct_tensor_attribute = true;
         return *this;
     }
+
+    FixtureTraits quantized() && {
+        use_quantization = true;
+        return *this;
+    }
 };
 
 struct WrapValue {
@@ -448,6 +462,57 @@ void PrintTo(const WrapValue& value, std::ostream* os) {
     }
 }
 
+/*
+ * Checks if two tensors are approximately equal to each other, where the max divergence is
+ * given by the `max_nrmse` (maximum normalized root mean squared error) argument.
+ * NRMSE isn't necessarily the most intuitive error metric, but unlike other metrics (MAPE,
+ * SMAPE etc.) it is well-defined for values of (or close to) zero, and it compensates for
+ * different vector norms. The latter is very useful since vector dequantization precision
+ * is directly affected by the norm due to the scaling factor used during reconstruction.
+ *
+ * If `max_nrmse` is zero, this will fall back to eval::Value operator== for equality testing,
+ * as it transparently handles floating point precision issues.
+ *
+ * `arg` is expected to be a WrapValue instance.
+ *
+ * TODO move this out since it's useful for other quantization tests.
+ */
+MATCHER_P2(TensorApproxEquals, exp_spec, max_nrmse, "") {
+    using vespalib::eval::Aggr;
+    using vespalib::eval::ReferenceOperations;
+    if (max_nrmse == 0) {
+        return ExplainMatchResult(Eq(exp_spec), arg, result_listener);
+    }
+    auto arg_spec = TensorSpec::from_value(*arg._value); // WrapValue arg
+    if (exp_spec.type() != arg_spec.type()) {
+        *result_listener << "tensors have mismatching types";
+        return false;
+    }
+    // Root mean squared error (RMSE)
+    // For simplicity, compute across all subspaces. Quantization works on a per
+    // dense subspace basis, so we may want to change this to be subspace-aware.
+    // We also casually assume tensors have at least 1 dimension.
+    const double n = ReferenceOperations::reduce(exp_spec, Aggr::COUNT, {}).as_double();
+    auto         err_sq = ReferenceOperations::merge(exp_spec, arg_spec, [](double a, double b) noexcept {
+        const double diff = a - b;
+        return diff * diff;
+    });
+    const double sum_err_sq = ReferenceOperations::reduce(err_sq, Aggr::SUM, {}).as_double();
+    const double mse = sum_err_sq / n;
+    const double rmse = std::sqrt(mse);
+    // Normalized root mean squared error (NRSME)
+    // We choose to normalize based on the max observed cell value in the expected tensor
+    // Ref: https://en.wikipedia.org/wiki/Root_mean_square_deviation#Normalization
+    const double exp_max = ReferenceOperations::reduce(exp_spec, Aggr::MAX, {}).as_double();
+    const double nrmse = (exp_max != 0) ? (rmse / exp_max) : rmse;
+
+    if (nrmse > max_nrmse) {
+        *result_listener << "expected NRMSE between tensors to be <= " << max_nrmse << ", was " << nrmse;
+        return false;
+    }
+    return true;
+}
+
 struct Fixture {
     using BasicType = search::attribute::BasicType;
     using CollectionType = search::attribute::CollectionType;
@@ -456,8 +521,10 @@ struct Fixture {
     search::test::DirectoryHandler               _dir_handler;
     Config                                       _cfg;
     std::string                                  _name;
-    std::string                                  _typeSpec;
-    ValueType                                    _tensor_type;
+    std::string                                  _configured_type_spec;
+    std::string                                  _stored_type_spec; // possibly quantized spec
+    ValueType                                    _configured_tensor_type;
+    ValueType                                    _stored_tensor_type; // possibly quantized type
     bool                                         _use_mock_index;
     std::unique_ptr<NearestNeighborIndexFactory> _index_factory;
     std::shared_ptr<TensorAttribute>             _tensorAttr;
@@ -472,7 +539,16 @@ struct Fixture {
     ~Fixture();
 
     void setup() {
-        _cfg.setTensorType(ValueType::from_spec(_typeSpec));
+        if (!_traits.use_quantization) {
+            _cfg.setTensorType(ValueType::from_spec(_configured_type_spec));
+        } else {
+            constexpr uint64_t seed = 0x12345678;
+            constexpr auto     mode = QuantizationParams::QuantizationMode::MSE;
+            _cfg.set_tensor_type_with_quantization(ValueType::from_spec(_configured_type_spec),
+                                                   QuantizationParams(seed, mode, 4));
+            _stored_type_spec = _cfg.tensorType().to_spec();
+            _stored_tensor_type = ValueType::from_spec(_stored_type_spec);
+        }
         if (_cfg.tensorType().is_dense()) {
             _denseTensors = true;
         }
@@ -546,15 +622,26 @@ struct Fixture {
         _attr->commit();
     }
 
-    void set_tensor(uint32_t docid, const TensorSpec& spec) { set_tensor_internal(docid, *createTensor(spec)); }
+    // Expected max normalized root mean squared error (NRMSE) between expected and actual
+    // tensor cell values. Always zero for non-quantized tensor attributes.
+    [[nodiscard]] double max_nrmse() const noexcept { return _traits.use_quantization ? 0.042 : 0.0; }
+
+    [[nodiscard]] std::unique_ptr<Value> create_tensor_auto_quantized(const TensorSpec& spec) const {
+        auto t = createTensor(spec);
+        return _traits.use_quantization ? _tensorAttr->make_quantizer()->quantize(*t) : std::move(t);
+    }
+
+    void set_tensor(uint32_t docid, const TensorSpec& spec) {
+        set_tensor_internal(docid, *create_tensor_auto_quantized(spec));
+    }
 
     std::unique_ptr<PrepareResult> prepare_set_tensor(uint32_t docid, const TensorSpec& spec) const {
-        return _tensorAttr->prepare_set_tensor(docid, *createTensor(spec));
+        return _tensorAttr->prepare_set_tensor(docid, *create_tensor_auto_quantized(spec));
     }
 
     void complete_set_tensor(uint32_t docid, const TensorSpec& spec, std::unique_ptr<PrepareResult> prepare_result) {
         ensureSpace(docid);
-        _tensorAttr->complete_set_tensor(docid, *createTensor(spec), std::move(prepare_result));
+        _tensorAttr->complete_set_tensor(docid, *create_tensor_auto_quantized(spec), std::move(prepare_result));
         _attr->commit();
     }
 
@@ -581,7 +668,12 @@ struct Fixture {
 
     WrapValue get_tensor(uint32_t docId) {
         AttributeGuard guard(_attr);
-        return {_tensorAttr->getTensor(docId)};
+        auto           t = _tensorAttr->getTensor(docId);
+        if (!t || !_traits.use_quantization) {
+            return {std::move(t)};
+        } else {
+            return {_tensorAttr->make_dequantizer()->dequantize(*t)};
+        }
     }
 
     bool save() {
@@ -619,14 +711,17 @@ struct Fixture {
 
     TensorSpec expEmptyDenseTensor() const { return {denseSpec}; }
 
-    std::string expEmptyDenseTensorSpec() const { return denseSpec; }
+    std::string expEmptyDenseTensorSpec() const {
+        return _traits.use_quantization ? quantized_dense_spec : denseSpec;
+    }
 
-    uint32_t count_mapped_dimensions() { return _tensor_type.count_mapped_dimensions(); }
+    uint32_t count_mapped_dimensions() { return _configured_tensor_type.count_mapped_dimensions(); }
 
     vespalib::FileHeader get_file_header();
     void set_example_tensors();
     void assert_example_tensors();
     void save_example_tensors_with_mock_index();
+    void test_tensor_quantization_config();
     void testEmptyAttribute();
     void testSetTensorValue();
     void testSaveLoad();
@@ -643,8 +738,10 @@ Fixture::Fixture(const std::string& typeSpec, FixtureTraits traits)
     : _dir_handler(test_dir),
       _cfg(BasicType::TENSOR, CollectionType::SINGLE),
       _name(attr_name),
-      _typeSpec(typeSpec),
-      _tensor_type(ValueType::from_spec(typeSpec)),
+      _configured_type_spec(typeSpec),
+      _stored_type_spec(typeSpec),
+      _configured_tensor_type(ValueType::from_spec(typeSpec)),
+      _stored_tensor_type(_configured_tensor_type),
       _index_factory(),
       _tensorAttr(),
       _attr(),
@@ -683,6 +780,19 @@ void Fixture::save_example_tensors_with_mock_index() {
     EXPECT_TRUE(std::filesystem::exists(std::filesystem::path(_name + ".nnidx")));
 }
 
+void Fixture::test_tensor_quantization_config() {
+    SCOPED_TRACE("test_tensor_quantization_config");
+    EXPECT_EQ(_tensorAttr->is_quantized(), _traits.use_quantization);
+    EXPECT_EQ(_tensorAttr->unquantized_tensor_type(), _configured_tensor_type);
+    if (_traits.use_quantization) {
+        EXPECT_NE(_stored_tensor_type, _configured_tensor_type);
+        EXPECT_EQ(_tensorAttr->getTensorType(), _stored_tensor_type);
+    } else {
+        EXPECT_EQ(_stored_tensor_type, _configured_tensor_type);
+        EXPECT_EQ(_tensorAttr->getTensorType(), _configured_tensor_type);
+    }
+}
+
 void Fixture::testEmptyAttribute() {
     SCOPED_TRACE("testEmptyAttribute");
     EXPECT_EQ(1u, _attr->getNumDocs());
@@ -701,7 +811,7 @@ void Fixture::testSetTensorValue() {
     if (_denseTensors) {
         EXPECT_EQ(WrapValue(expEmptyDenseTensor()), get_tensor(4));
         set_tensor(3, expDenseTensor3());
-        EXPECT_EQ(WrapValue(expDenseTensor3()), get_tensor(3));
+        EXPECT_THAT(get_tensor(3), TensorApproxEquals(expDenseTensor3(), max_nrmse()));
     } else {
         EXPECT_EQ(WrapValue(TensorSpec(sparseSpec)), get_tensor(4));
         set_tensor(3, TensorSpec(sparseSpec).add({{"x", ""}, {"y", ""}}, 11));
@@ -726,7 +836,7 @@ void Fixture::testSaveLoad() {
     EXPECT_EQ(5u, _attr->getNumDocs());
     EXPECT_EQ(5u, _attr->getCommittedDocIdLimit());
     if (_denseTensors) {
-        EXPECT_EQ(WrapValue(expDenseTensor3()), get_tensor(3));
+        EXPECT_THAT(get_tensor(3), TensorApproxEquals(expDenseTensor3(), max_nrmse()));
         EXPECT_EQ(WrapValue(expEmptyDenseTensor()), get_tensor(4));
     } else {
         EXPECT_EQ(WrapValue(TensorSpec(sparseSpec).add({{"x", ""}, {"y", "1"}}, 11)), get_tensor(3));
@@ -776,8 +886,8 @@ void Fixture::testCompaction() {
     LOG(info, "iter = %" PRIu64 ", memory usage %" PRIu64 " -> %" PRIu64, iter, oldStatus.getUsed(),
         newStatus.getUsed());
     EXPECT_EQ(WrapValue(), get_tensor(1));
-    EXPECT_EQ(WrapValue(fill_tensor), get_tensor(2));
-    EXPECT_EQ(WrapValue(simple_tensor), get_tensor(3));
+    EXPECT_THAT(get_tensor(2), TensorApproxEquals(fill_tensor, max_nrmse()));
+    EXPECT_THAT(get_tensor(3), TensorApproxEquals(simple_tensor, max_nrmse()));
     EXPECT_EQ(WrapValue(empty_xy_tensor), get_tensor(4));
 }
 
@@ -797,7 +907,7 @@ void Fixture::testTensorTypeFileHeaderTag() {
 
     auto header = get_file_header();
     EXPECT_TRUE(header.hasTag("tensortype"));
-    EXPECT_EQ(_typeSpec, header.getTag("tensortype").asString());
+    EXPECT_EQ(_stored_type_spec, header.getTag("tensortype").asString());
     if (_traits.use_dense_tensor_attribute) {
         EXPECT_EQ(1u, header.getTag("version").asInteger());
     } else {
@@ -814,7 +924,7 @@ void Fixture::testEmptyTensor() {
         EXPECT_EQ(emptyTensor->type(), ValueType::from_spec(expSpec));
     } else {
         EXPECT_EQ(emptyTensor->type(), tensorAttr.getConfig().tensorType());
-        EXPECT_EQ(emptyTensor->type(), ValueType::from_spec(_typeSpec));
+        EXPECT_EQ(emptyTensor->type(), ValueType::from_spec(_configured_type_spec));
     }
 }
 
@@ -834,7 +944,13 @@ void Fixture::testSerializedTensorRef() {
     }
     auto ref = tensorAttr.get_serialized_tensor_ref(3);
     auto vectors = ref.get_vectors();
-    if (_denseTensors) {
+    if (_traits.use_quantization) {
+        // Quantized serialized tensor refs only lets us see the opaque quantization bytes.
+        ASSERT_EQ(1u, vectors.subspaces());
+        auto labels = ref.get_labels(0);
+        EXPECT_EQ(0u, labels.size());
+        EXPECT_EQ(vectors.cells(0).size, 7);
+    } else if (_denseTensors) {
         EXPECT_EQ(1u, vectors.subspaces());
         auto cells = vectors.cells(0).typify<double>();
         auto labels = ref.get_labels(0);
@@ -898,6 +1014,7 @@ void Fixture::test_mmap_file_allocator() {
 }
 
 template <class MakeFixture> void testAll(MakeFixture&& f) {
+    f()->test_tensor_quantization_config();
     f()->testEmptyAttribute();
     f()->testSetTensorValue();
     f()->testSaveLoad();
@@ -926,12 +1043,20 @@ TEST(TensorAttributeTest, Test_dense_tensors_with_generic_tensor_attribute) {
     testAll([]() { return std::make_shared<Fixture>(denseSpec); });
 }
 
+TEST(TensorAttributeTest, quantized_dense_tensors_with_generic_tensor_attribute) {
+    testAll([]() { return std::make_shared<Fixture>(denseSpec, FixtureTraits().quantized()); });
+}
+
 TEST(TensorAttributeTest, Test_dense_tensors_with_generic_tensor_attribute_with_paged_setting) {
     testAll([]() { return std::make_shared<Fixture>(denseSpec, FixtureTraits().mmap_file_allocator()); });
 }
 
 TEST(TensorAttributeTest, Test_dense_tensors_with_dense_tensor_attribute) {
     testAll([]() { return std::make_shared<Fixture>(denseSpec, FixtureTraits().dense()); });
+}
+
+TEST(TensorAttributeTest, quantized_dense_tensors_with_dense_tensor_attribute) {
+    testAll([]() { return std::make_shared<Fixture>(denseSpec, FixtureTraits().dense().quantized()); });
 }
 
 TEST(TensorAttributeTest, Test_dense_tensors_with_dense_tensor_attribute_with_paged_setting) {
@@ -1029,6 +1154,19 @@ MixedTensorAttributeTest::MixedTensorAttributeTest() : ::testing::TestWithParam<
 
 MixedTensorAttributeTest::~MixedTensorAttributeTest() = default;
 
+class QuantizedDenseTensorAttributeHnswIndex : public TensorAttributeHnswIndex<HnswIndexType::SINGLE> {
+public:
+    QuantizedDenseTensorAttributeHnswIndex()
+        : TensorAttributeHnswIndex<HnswIndexType::SINGLE>(vec_2d_spec, FixtureTraits().hnsw().quantized()) {}
+};
+
+class QuantizedMixedTensorAttributeHnswIndex : public TensorAttributeHnswIndex<HnswIndexType::MULTI> {
+public:
+    QuantizedMixedTensorAttributeHnswIndex(uint32_t mapped_dimensions)
+        : TensorAttributeHnswIndex<HnswIndexType::MULTI>(vec_specs[mapped_dimensions],
+                                                         FixtureTraits().mixed_hnsw().quantized()) {}
+};
+
 TEST(TensorAttributeTest, Hnsw_index_is_instantiated_in_dense_tensor_attribute_when_specified_in_config) {
     DenseTensorAttributeHnswIndex f;
     f.test_setup();
@@ -1049,11 +1187,29 @@ TEST_P(MixedTensorAttributeTest, Hnsw_index_is_integrated_in_mixed_tensor_attrib
     f.test_save_load(false);
 }
 
+TEST(TensorAttributeTest, hnsw_index_is_instantiated_in_quantized_dense_tensor_attribute_when_specified_in_config) {
+    QuantizedDenseTensorAttributeHnswIndex f;
+    f.test_setup();
+}
+
+TEST(TensorAttributeTest, hnsw_index_is_integrated_in_quantized_dense_tensor_attribute_and_can_be_saved_and_loaded) {
+    QuantizedDenseTensorAttributeHnswIndex f;
+    f.test_save_load(false);
+}
+
 TEST_P(
     MixedTensorAttributeTest,
     Hnsw_index_is_integrated_in_mixed_tensor_attribute_and_can_be_saved_and_loaded_with_multiple_points_per_document) {
-    MixedTensorAttributeHnswIndex f(GetParam());
-    f.test_save_load(true);
+    {
+        SCOPED_TRACE("unquantized mixed");
+        MixedTensorAttributeHnswIndex f(GetParam());
+        f.test_save_load(true);
+    }
+    {
+        SCOPED_TRACE("quantized mixed");
+        QuantizedMixedTensorAttributeHnswIndex f(GetParam());
+        f.test_save_load(true);
+    }
 }
 
 TEST(TensorAttributeTest, Populates_address_space_usage_in_dense_tensor_attribute_with_hnsw_index) {

@@ -1,6 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import ai.vespa.cloud.ApplicationId;
+import ai.vespa.cloud.Cloud;
+import ai.vespa.cloud.Cluster;
+import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.SystemInfo;
+import ai.vespa.cloud.Zone;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.search.cluster.ClusterMonitor;
@@ -21,26 +27,54 @@ public class MockDispatcher extends Dispatcher {
 
     public static MockDispatcher create(List<Node> nodes) {
         var rpcResourcePool = new RpcResourcePool(toDispatchConfig(), toNodesConfig(nodes));
-
-        return create(nodes, rpcResourcePool, new VipStatus());
+        return create(nodes, rpcResourcePool, new VipStatus(), "default");
     }
 
-    public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool, VipStatus vipStatus) {
+    public static MockDispatcher create(List<Node> nodes,
+                                        RpcResourcePool rpcResourcePool,
+                                        VipStatus vipStatus,
+                                        String localAvailabilityZone) {
         var dispatchConfig = toDispatchConfig();
         var searchCluster = new SearchCluster("a",
                                               AvailabilityPolicy.from(dispatchConfig),
                                               nodes,
                                               vipStatus,
                                               new RpcPingFactory(rpcResourcePool));
-        return new MockDispatcher(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, rpcResourcePool);
+        var systemInfo = new SystemInfo(new ApplicationId("tenant1", "application1", "default"),
+                                        new Zone(Environment.prod, "region1"),
+                                        new Cloud("cloud1"),
+                                        "cluster1",
+                                        new ai.vespa.cloud.Node(0, localAvailabilityZone));
+        return new MockDispatcher(new ClusterMonitor<>(searchCluster, true),
+                                  searchCluster,
+                                  dispatchConfig,
+                                  systemInfo,
+                                  rpcResourcePool);
     }
 
-    private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcResourcePool rpcResourcePool) {
-        this(clusterMonitor, searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster.groupList(), dispatchConfig, new QrSearchersConfig.Builder().build()));
+    private MockDispatcher(ClusterMonitor clusterMonitor,
+                           SearchCluster searchCluster,
+                           DispatchConfig dispatchConfig,
+                           SystemInfo systemInfo,
+                           RpcResourcePool rpcResourcePool) {
+        this(clusterMonitor,
+             searchCluster,
+             dispatchConfig,
+             systemInfo,
+             new RpcInvokerFactory(rpcResourcePool, searchCluster.groupList(), dispatchConfig, new QrSearchersConfig.Builder().build()));
     }
 
-    private MockDispatcher(ClusterMonitor clusterMonitor, SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
-        super(clusterMonitor, searchCluster, dispatchConfig, new QrSearchersConfig.Builder().build(), invokerFactory);
+    private MockDispatcher(ClusterMonitor clusterMonitor,
+                           SearchCluster searchCluster,
+                           DispatchConfig dispatchConfig,
+                           SystemInfo systemInfo,
+                           RpcInvokerFactory invokerFactory) {
+        super(clusterMonitor,
+              searchCluster,
+              dispatchConfig,
+              new QrSearchersConfig.Builder().build(),
+              systemInfo,
+              invokerFactory);
         this.clusterMonitor = clusterMonitor;
     }
 

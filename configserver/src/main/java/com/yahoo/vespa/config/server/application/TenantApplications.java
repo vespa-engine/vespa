@@ -9,6 +9,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
+import com.yahoo.text.Text;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
@@ -31,7 +32,6 @@ import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import com.yahoo.text.Text;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -139,29 +139,28 @@ public class TenantApplications implements RequestHandler, HostValidator {
     }
 
     /**
-     * Returns a transaction which writes the given session id as the currently active for the given application.
-     *
-     * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId session id belonging to the application package for this application id.
+     * Append transaction operations for activation of session: update the "last deployed" session of the application,
+     * and set which session is active for the application.
      */
-    public Transaction createWriteActiveTransaction(Transaction transaction, ApplicationId applicationId, long sessionId) {
-        return database().createWriteActiveTransaction(transaction, applicationId, sessionId);
+    public Transaction appendActivateOperations(Lock applicationLock,
+                                                ApplicationId applicationId,
+                                                long sessionId,
+                                                Transaction transaction) {
+        return database().appendDeployOperations(applicationLock, applicationId, sessionId, OptionalLong.of(sessionId), transaction);
     }
 
-    /**
-     * Returns a transaction which writes the given session id as the last deployed for the given application.
-     *
-     * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId session id belonging to the application package for this application id.
-     */
-    public Transaction createWritePrepareTransaction(Transaction transaction,
-                                                     ApplicationId applicationId,
-                                                     long sessionId,
-                                                     Optional<Long> activeSessionId) {
-        return database().createWritePrepareTransaction(transaction,
-                                                        applicationId,
-                                                        sessionId,
-                                                        activeSessionId.map(OptionalLong::of).orElseGet(OptionalLong::empty));
+    /** Application session is being prepared: Update the "last deployed" session of the application. */
+    public void prepare(ApplicationId applicationId, long sessionId) {
+        try (var applicationLock = lock(applicationId);
+             var transaction = new CuratorTransaction(curator)) {
+            OptionalLong activeSessionId = database().activeSessionOf(applicationId).map(OptionalLong::of).orElseGet(OptionalLong::empty);
+            database().appendDeployOperations(applicationLock,
+                                              applicationId,
+                                              sessionId,
+                                              activeSessionId,
+                                              transaction)
+                      .commit();
+        }
     }
 
     /**
@@ -186,8 +185,8 @@ public class TenantApplications implements RequestHandler, HostValidator {
     /**
      * Returns a transaction which deletes this application.
      */
-    public CuratorTransaction createDeleteTransaction(ApplicationId applicationId) {
-        return database().createDeleteTransaction(applicationId);
+    public CuratorTransaction createDeleteTransaction(Lock applicationLock, ApplicationId applicationId) {
+        return database().createDeleteTransaction(applicationLock, applicationId);
     }
 
     /**

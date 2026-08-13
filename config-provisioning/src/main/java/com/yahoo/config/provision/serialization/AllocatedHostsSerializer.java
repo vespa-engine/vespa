@@ -37,7 +37,7 @@ import java.util.Set;
  */
 public class AllocatedHostsSerializer {
 
-    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster, and they upgrade one by one
     //          (and rewrite all nodes on startup), changes to the serialized format must be made
     //          such that what is serialized on version N+1 can be read by version N:
     //          - ADDING FIELDS: Always ok
@@ -82,6 +82,7 @@ public class AllocatedHostsSerializer {
     private static final String hostSpecNetworkPortsKey = "ports";
     private static final String sidecarsKey = "sidecars";
     private static final String availabilityZonesKey = "azs";
+    private static final String availabilityZoneKey = "az";
     private static final String profileKey = "profile";
 
     public static byte[] toJson(AllocatedHosts allocatedHosts) throws IOException {
@@ -117,6 +118,7 @@ public class AllocatedHostsSerializer {
         host.requestedResources().ifPresent(resources -> toSlime(resources, object.setObject(requestedResourcesKey)));
         host.version().ifPresent(version -> object.setString(hostSpecCurrentVespaVersionKey, version.toFullString()));
         host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(hostSpecNetworkPortsKey)));
+        object.setString(availabilityZoneKey, host.availabilityZone().value());
     }
 
     private static void toSlime(NodeResources resources, Cursor resourcesObject) {
@@ -157,7 +159,8 @@ public class AllocatedHostsSerializer {
                                 membershipFromSlime(object),
                                 optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(Version::new),
                                 NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
-                                optionalDockerImage(object.field(hostSpecDockerImageRepoKey)));
+                                optionalDockerImage(object.field(hostSpecDockerImageRepoKey)),
+                                availabilityZone(object.field(availabilityZoneKey)));
         }
         else {
             return new HostSpec(object.field(hostSpecHostNameKey).asString(),
@@ -386,6 +389,11 @@ public class AllocatedHostsSerializer {
         List<AzName> availabilityZones = new ArrayList<>();
         arrayInspector.traverse((ArrayTraverser) (index, az)-> availabilityZones.add(AzName.from(az.asString())));
         return availabilityZones;
+    }
+
+    private static AzName availabilityZone(Inspector inspector) {
+        if ( ! inspector.valid()) return AzName.defaultName(); // TODO: Remove after August 2026
+        return AzName.from(inspector.asString());
     }
 
     private static Optional<String> optionalString(Inspector inspector) {

@@ -188,6 +188,15 @@ std::string make_same_element_stack_dump(const std::string& a1_term, const std::
     return StackDumpCreator::create(*builder.build());
 }
 
+std::string make_two_term_and_stack_dump(const std::string& field, const std::string& term1,
+                                         const std::string& term2) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addAnd(2);
+    builder.addStringTerm(term1, field, 1, Weight(1));
+    builder.addStringTerm(term2, field, 2, Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
 std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
     QueryBuilder<ProtonNodeTypes> builder;
     constexpr int                 child_count = 2;
@@ -288,6 +297,23 @@ struct MyWorld {
         config.add(indexproperties::match::Feature::NAME, "num_docs_indexed");
     }
 
+    void setup_query_term_document_frequency_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "queryTermDocumentFrequency(f1)");
+        config.add(indexproperties::match::Feature::NAME,
+                   "rankingExpression(\"queryTermDocumentFrequency(f1){term:0}\")");
+        config.add(indexproperties::match::Feature::NAME,
+                   "rankingExpression(\"reduce(merge(queryTermDocumentFrequency(f1),"
+                   "queryTermDocumentFrequency(f2),f(a,b)(max(a,b))),sum,term)\")");
+    }
+
+    void setup_bm25_label_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "bm25(f1)");
+        config.add(indexproperties::match::Feature::NAME, "bm25(\"field:f1\",\"label:t1\")");
+        config.add(indexproperties::match::Feature::NAME, "bm25(f1,\"label:t2\")");
+        config.add(indexproperties::match::Feature::NAME, "bm25_for_labels(f1)");
+        config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
+    }
+
     void setup_feature_renames() {
         config.add(indexproperties::feature_rename::Rename::NAME, "matches(f1)");
         config.add(indexproperties::feature_rename::Rename::NAME, "foobar");
@@ -350,6 +376,29 @@ struct MyWorld {
         ASSERT_EQ(reply.match_features.values.size(), reply.hits.size());
         for (const auto& value : reply.match_features.values) {
             EXPECT_EQ(value.as_double(), NUM_DOCS - 1);
+        }
+    }
+
+    static void verify_query_term_document_frequency_match_features(SearchReply& reply) {
+        ASSERT_GT(reply.hits.size(), 0u);
+        ASSERT_EQ(reply.match_features.names.size(), 3u);
+        EXPECT_EQ(reply.match_features.names[0], "queryTermDocumentFrequency(f1)");
+        EXPECT_EQ(reply.match_features.names[1], "rankingExpression(\"queryTermDocumentFrequency(f1){term:0}\")");
+        EXPECT_EQ(reply.match_features.names[2], "rankingExpression(\"reduce(merge(queryTermDocumentFrequency(f1),"
+                                                 "queryTermDocumentFrequency(f2),f(a,b)(max(a,b))),sum,term)\")");
+        ASSERT_EQ(reply.match_features.values.size(), 3 * reply.hits.size());
+        // the term "spread" matches 9 documents in f1 (see basicResults())
+        auto expect = TensorSpec("tensor<float>(term{})").add({{"term", "0"}}, 9);
+        for (size_t i = 0; i < reply.hits.size(); ++i) {
+            const auto* f = &reply.match_features.values[i * 3];
+            ASSERT_TRUE(f[0].is_data());
+            {
+                nbostream buf(f[0].as_data().data, f[0].as_data().size);
+                EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+            }
+            EXPECT_EQ(f[1].as_double(), 9.0);
+            // the term does not search f2, so the merge keeps the f1 cell
+            EXPECT_EQ(f[2].as_double(), 9.0);
         }
     }
 
@@ -679,6 +728,71 @@ TEST_F(MatchingTest, require_that_num_docs_indexed_match_feature_uses_bm25_docid
     SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
     SearchReply::UP   reply = world.performSearch(*request, 1);
     MyWorld::verify_num_docs_indexed_match_feature(*reply);
+}
+
+TEST_F(MatchingTest, require_that_query_term_document_frequency_match_feature_has_per_term_doc_freq) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    world.setup_query_term_document_frequency_match_features();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    SearchReply::UP   reply = world.performSearch(*request, 1);
+    MyWorld::verify_query_term_document_frequency_match_features(*reply);
+}
+
+TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labeled_terms) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // two terms matching the same documents in field f1
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(10).doc(20).doc(30));
+    world.setup_bm25_label_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_two_term_and_stack_dump("f1", "foo", "bar"));
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_GT(reply->hits.size(), 0u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 5u);
+    auto feature_index = [&names](const std::string& name) {
+        for (size_t i = 0; i < names.size(); ++i) {
+            if (names[i] == name) {
+                return i;
+            }
+        }
+        ADD_FAILURE() << "match feature '" << name << "' not found";
+        return names.size();
+    };
+    size_t full_idx = feature_index("bm25(f1)");
+    size_t t1_idx = feature_index("bm25(\"field:f1\",\"label:t1\")");
+    size_t t2_idx = feature_index("bm25(f1,\"label:t2\")");
+    size_t tensor_idx = feature_index("bm25_for_labels(f1)");
+    size_t slice_idx = feature_index("rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        double      full_score = values[full_idx].as_double();
+        double      t1_score = values[t1_idx].as_double();
+        double      t2_score = values[t2_idx].as_double();
+        // each labeled feature scores only its term, and together they cover the unlabeled score
+        EXPECT_GT(t1_score, 0.0);
+        EXPECT_GT(t2_score, 0.0);
+        EXPECT_DOUBLE_EQ(full_score, t1_score + t2_score);
+        // the tensor feature has one cell per label, each equal to the scalar labeled feature
+        ASSERT_TRUE(values[tensor_idx].is_data());
+        {
+            nbostream buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
+            // the tensor has float cells, so normalize() rounds the double scalar scores the same way
+            TensorSpec expect = TensorSpec("tensor<float>(label{})")
+                                    .add({{"label", "t1"}}, t1_score)
+                                    .add({{"label", "t2"}}, t2_score)
+                                    .normalize();
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        // and slicing a cell out of it evaluates in the backend 
+        EXPECT_FLOAT_EQ(values[slice_idx].as_double(), t1_score);
+    }
 }
 
 TEST_F(MatchingTest, require_that_no_hits_gives_no_match_feature_names) {

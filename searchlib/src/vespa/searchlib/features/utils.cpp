@@ -3,9 +3,12 @@
 #include "utils.hpp"
 
 #include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/featurenameparser.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -181,6 +184,109 @@ const ITermData* getTermByLabel(const search::fef::IQueryEnvironment& env, const
     Issue::report("Query label '%s' was attached to non-existing unique id: '%s'", label.c_str(), p.get().c_str());
     return nullptr;
 }
+
+namespace {
+
+// The unique ids a label property names, deduplicated. Invalid ids are reported and skipped.
+vespalib::hash_set<uint32_t> parse_label_uids(const std::string& label, const Property& p) {
+    vespalib::hash_set<uint32_t> uids;
+    for (uint32_t i(0), m(p.size()); i < m; ++i) {
+        uint32_t uid = strToNum<uint32_t>(p.getAt(i));
+        if (uid == 0) {
+            Issue::report("Query label '%s' was attached to invalid unique id: '%s'", label.c_str(),
+                          p.getAt(i).c_str());
+        } else {
+            uids.insert(uid);
+        }
+    }
+    return uids;
+}
+
+void report_missing_uids(const std::string& label, const vespalib::hash_set<uint32_t>& missing_uids) {
+    for (uint32_t uid : missing_uids) {
+        Issue::report("Query label '%s' was attached to non-existing unique id: '%u'", label.c_str(), uid);
+    }
+}
+
+// Collects the 'vespa.label.<label>.id' properties. Keys are visited with the namespace stripped.
+struct LabelIdVisitor : IPropertiesVisitor {
+    std::vector<std::pair<std::string, Property>> labels;
+    void visitProperty(const Property::Value& key, const Property& values) override {
+        std::string_view suffix(".id");
+        if (!key.ends_with(suffix)) {
+            return;
+        }
+        labels.emplace_back(key.substr(0, key.size() - suffix.size()), values);
+    }
+};
+
+} // namespace
+
+std::vector<const ITermData*> getTermsByLabel(const search::fef::IQueryEnvironment& env, const std::string& label) {
+    // Labeling the query items with unique ids '5' and '7' with the label 'foo'
+    // is represented as: [vespa.label.foo.id: "5", vespa.label.foo.id: "7"]
+    vespalib::asciistream os;
+    os << "vespa.label." << label << ".id";
+    Property p = env.getProperties().lookup(os.view());
+    std::vector<const ITermData*> terms;
+    if (!p.found()) {
+        return terms;
+    }
+    vespalib::hash_set<uint32_t> uids = parse_label_uids(label, p);
+    vespalib::hash_set<uint32_t> missing_uids(uids);
+    for (uint32_t i(0), m(env.getNumTerms()); i < m; ++i) {
+        const ITermData* term = env.getTerm(i);
+        if (uids.contains(term->getUniqueId())) {
+            terms.push_back(term);
+            missing_uids.erase(term->getUniqueId());
+        }
+    }
+    report_missing_uids(label, missing_uids);
+    return terms;
+}
+
+std::vector<std::pair<std::string, std::vector<const ITermData*>>>
+getTermsByAllLabels(const search::fef::IQueryEnvironment& env) {
+    LabelIdVisitor visitor;
+    env.getProperties().visitNamespace("vespa.label", visitor);
+    // Properties are visited in hash map order; sort to make the result (and the reported issues) reproducible.
+    std::sort(visitor.labels.begin(), visitor.labels.end(),
+              [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+
+    std::vector<std::pair<std::string, std::vector<const ITermData*>>> result;
+    result.reserve(visitor.labels.size());
+    // A unique id may be claimed by several labels, so map it to all the labels claiming it.
+    vespalib::hash_map<uint32_t, std::vector<uint32_t>> label_indexes_by_uid;
+    std::vector<vespalib::hash_set<uint32_t>>           missing_uids;
+    for (const auto& [label, p] : visitor.labels) {
+        vespalib::hash_set<uint32_t> uids = parse_label_uids(label, p);
+        if (uids.empty()) {
+            continue;
+        }
+        uint32_t label_index = result.size();
+        result.emplace_back(label, std::vector<const ITermData*>());
+        for (uint32_t uid : uids) {
+            label_indexes_by_uid[uid].push_back(label_index);
+        }
+        missing_uids.push_back(std::move(uids));
+    }
+    for (uint32_t i(0), m(env.getNumTerms()); i < m; ++i) {
+        const ITermData* term = env.getTerm(i);
+        auto             itr = label_indexes_by_uid.find(term->getUniqueId());
+        if (itr != label_indexes_by_uid.end()) {
+            for (uint32_t label_index : itr->second) {
+                result[label_index].second.push_back(term);
+                missing_uids[label_index].erase(term->getUniqueId());
+            }
+        }
+    }
+    for (uint32_t i(0), m(result.size()); i < m; ++i) {
+        report_missing_uids(result[i].first, missing_uids[i]);
+    }
+    std::erase_if(result, [](const auto& entry) noexcept { return entry.second.empty(); });
+    return result;
+}
+
 
 std::optional<DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,
                                                            const ITermData&                      term) {

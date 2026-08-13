@@ -1,0 +1,13 @@
+schema bm25forlabelsattrbad {
+    document bm25forlabelsattrbad {
+        field tags type string {
+            indexing: attribute | summary
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: reduce(bm25_for_labels(tags), sum, label)
+        }
+    }
+}

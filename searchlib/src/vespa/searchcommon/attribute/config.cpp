@@ -2,13 +2,22 @@
 
 #include "config.h"
 
+#include <vespa/searchlib/tensor/tensor_quantization.h>
+
 namespace search::attribute {
 
 namespace {
 
 static constexpr uint64_t MAX_UNCOMMITTED_MEMORY = 8000;
 
+vespalib::eval::ValueType to_quantized_type(const vespalib::eval::ValueType& original_tensor_type,
+                                            const QuantizationParams&        qp) {
+    // TODO don't require going via a quantizer instance to compute the type
+    vespalib::quant::EdenQuantizer quantizer(original_tensor_type.dense_subspace_size(), qp.bits(), qp.seed());
+    return tensor::to_quantized_tensor_type(original_tensor_type, quantizer);
 }
+
+} // namespace
 
 Config::Config() noexcept : Config(BasicType::NONE, CollectionType::SINGLE, false) {
 }
@@ -29,6 +38,7 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
       _compactionStrategy(),
       _predicateParams(),
       _tensorType(vespalib::eval::ValueType::error_type()),
+      _unquantized_tensor_type(vespalib::eval::ValueType::error_type()),
       _hnsw_index_params() {
 }
 
@@ -44,8 +54,25 @@ bool Config::operator==(const Config& b) const noexcept {
            _maxUnCommittedMemory == b._maxUnCommittedMemory && _match == b._match && _dictionary == b._dictionary &&
            _growStrategy == b._growStrategy && _compactionStrategy == b._compactionStrategy &&
            _predicateParams == b._predicateParams &&
-           (_basicType.type() != BasicType::Type::TENSOR || _tensorType == b._tensorType) &&
-           _distance_metric == b._distance_metric && _hnsw_index_params == b._hnsw_index_params;
+           (_basicType.type() != BasicType::Type::TENSOR ||
+            (_tensorType == b._tensorType && _unquantized_tensor_type == b._unquantized_tensor_type)) &&
+           _distance_metric == b._distance_metric && _hnsw_index_params == b._hnsw_index_params &&
+           _quantization_params == b._quantization_params;
+}
+
+Config& Config::setTensorType(const vespalib::eval::ValueType& tensorType_in) {
+    _tensorType = tensorType_in;
+    _unquantized_tensor_type = tensorType_in;
+    _quantization_params.reset();
+    return *this;
+}
+
+Config& Config::set_tensor_type_with_quantization(const vespalib::eval::ValueType& original_tensor_type,
+                                                  const QuantizationParams&        quantization_params) {
+    _tensorType = to_quantized_type(original_tensor_type, quantization_params);
+    _unquantized_tensor_type = original_tensor_type;
+    _quantization_params = quantization_params;
+    return *this;
 }
 
 Config& Config::set_hnsw_index_params(const HnswIndexParams& params) {

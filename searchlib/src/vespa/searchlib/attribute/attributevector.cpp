@@ -105,6 +105,7 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config& c)
       _hasEnum(false),
       _loaded(false),
       _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig())),
+      _want_fast_search(false),
       _nextStatUpdateTime(),
       _memory_allocator(make_memory_allocator(_baseFileName.getAttributeName(), c)),
       _size_on_disk(0),
@@ -703,6 +704,9 @@ void AttributeVector::drain_hold(uint64_t hold_limit) {
 
 void AttributeVector::update_config(const Config& cfg) {
     commit(CommitParam::UpdateStats::FORCE);
+    if (_config->basicType().is_integer_type() || isFloatingPointType() || isStringType()) {
+        set_want_fast_search(cfg.fastSearch());
+    }
     _config->setGrowStrategy(cfg.getGrowStrategy());
     if (cfg.getCompactionStrategy() == _config->getCompactionStrategy()) {
         return;

@@ -19,6 +19,7 @@ public class Group {
 
     private final int id;
     private final List<Node> nodes;
+    private final String availabilityZone;
 
     // Using volatile to ensure visibility for reader.
     // All updates are done in a single writer thread
@@ -31,6 +32,7 @@ public class Group {
     public Group(int id, List<Node> nodes) {
         this.id = id;
         this.nodes = List.copyOf(nodes);
+        this.availabilityZone = nodes.isEmpty() ? "default" : nodes.get(0).availabilityZone();
 
         int index = 0;
         for (var node: nodes) {
@@ -44,6 +46,9 @@ public class Group {
      * NOTE: This is a contiguous index from 0, NOT necessarily the group id assigned by the user or node repo.
      */
     public int id() { return id; }
+
+    /** Returns the name of the availability zone this group is allocated in. */
+    public String availabilityZone() { return availabilityZone; }
 
     /** Returns the number of nodes in this. */
     public int size() { return nodes.size(); }
@@ -133,6 +138,15 @@ public class Group {
         boolean previousState = hasFullCoverage;
         hasFullCoverage = hasFullCoverageNow;
         return previousState != hasFullCoverageNow;
+    }
+
+    /**
+     * Returns true if - given the two group's status - it's strictly preferable to route a request to this group
+     * over the given group.
+     */
+    public boolean isPreferableTo(Group other) {
+        if (this.hasSufficientCoverage() && !other.hasSufficientCoverage()) return true;
+        return false;
     }
 
     @Override

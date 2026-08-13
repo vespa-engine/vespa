@@ -21,3 +21,8 @@ temperature double default=-1
 # The maximum number of tokens that can be generated in the completion.
 # -1 means use default for the API.
 maxTokens int default=-1
+# Constrains effort on reasoning for reasoning models, e.g. "low", "medium", "high".
+# Accepted values depend on the provider (OpenAI also accepts "minimal"; Google's
+# OpenAI-compatible API accepts "none"). Passed through to the API as-is.
+# Empty means use default for the API.
+reasoningEffort string default=""

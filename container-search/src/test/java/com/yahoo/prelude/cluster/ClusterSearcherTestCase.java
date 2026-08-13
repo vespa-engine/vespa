@@ -1,6 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
+import ai.vespa.cloud.ApplicationId;
+import ai.vespa.cloud.Cloud;
+import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.SystemInfo;
+import ai.vespa.cloud.Zone;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.InThreadExecutorService;
@@ -479,10 +484,16 @@ public class ClusterSearcherTestCase {
 
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
         DispatchNodesConfig nodesConfig = new DispatchNodesConfig.Builder().build();
+        var systemInfo = new SystemInfo(new ApplicationId("tenant1", "application1", "default"),
+                                        new Zone(Environment.prod, "region1"),
+                                        new Cloud("cloud1"),
+                                        "cluster1",
+                                        new ai.vespa.cloud.Node(0, "default"));
         Dispatcher dispatcher = new Dispatcher(ComponentId.createAnonymousComponentId("test-id"),
                                                dispatchConfig,
                                                new QrSearchersConfig.Builder().build(),
                                                nodesConfig,
+                                               systemInfo,
                                                vipStatus);
         ComponentRegistry<Dispatcher> dispatchers = new ComponentRegistry<>();
         dispatchers.register(new ComponentId("dispatcher." + clusterName), dispatcher);

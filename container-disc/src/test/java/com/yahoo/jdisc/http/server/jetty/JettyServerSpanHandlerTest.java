@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.telemetry.api.Telemetry;
+import ai.vespa.telemetry.api.trace.ScopedTracer;
 import com.google.inject.Module;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
@@ -14,6 +16,7 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -102,8 +105,8 @@ class JettyServerSpanHandlerTest {
     }
 
     @Test
-    void requestSucceedsWithNoopOpenTelemetry() throws IOException {
-        // No OpenTelemetry override, so TestDriver's OpenTelemetry.noop() binding is used (telemetry disabled).
+    void requestSucceedsWithNoopTelemetry() throws IOException {
+        // No Telemetry override, so TestDriver's default NoopTelemetry binding is used (telemetry disabled).
         // The handler is still installed but produces no spans; the request must be unaffected.
         JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
 
@@ -119,7 +122,13 @@ class JettyServerSpanHandlerTest {
                         .build())
                 .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
                 .build();
-        return binder -> binder.bind(OpenTelemetry.class).toInstance(sdk);
+        // Minimal recording Telemetry over the in-memory SDK (OtelTelemetry.create builds its own SDK, so it
+        // cannot be pointed at an InMemorySpanExporter; the seam is trivial to implement inline for the test).
+        Telemetry telemetry = new Telemetry() {
+            @Override public ScopedTracer tracer(String scope) { return new ScopedTracer(sdk.getTracer(scope)); }
+            @Override public TextMapPropagator textMapPropagator() { return sdk.getPropagators().getTextMapPropagator(); }
+        };
+        return binder -> binder.bind(Telemetry.class).toInstance(telemetry);
     }
 
     /** {@code onComplete} fires just after the client receives the response, so poll briefly for the span. */

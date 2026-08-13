@@ -1433,8 +1433,8 @@
       "public java.lang.String unknownConfigDefinition()",
       "public boolean sortBlueprintsByCost()",
       "public boolean logserverOtelCol()",
-      "public boolean tokenAuthForDeploy()",
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
+      "public boolean tokenAuthForDeploy()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public double logserverNodeMemory()",
       "public double clusterControllerNodeMemory()",
@@ -1459,7 +1459,8 @@
       "public boolean forceDisableOnnxModelOptimization()",
       "public boolean failWhenConfiguringIndexedMapOfArray()",
       "public boolean protonLogWarningOnDiskCapacityChange()",
-      "public boolean protonResampleDiskCapacity()"
+      "public boolean protonResampleDiskCapacity()",
+      "public boolean fastMapSearch()"
     ],
     "fields" : [ ]
   },
@@ -1780,9 +1781,7 @@
       "public void <init>()",
       "public void add(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity)",
       "public java.util.Map clusters()",
-      "public java.util.Map capacities()",
-      "public void add(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.Capacity)",
-      "public java.util.Map all()"
+      "public java.util.Map capacities()"
     ],
     "fields" : [ ]
   },

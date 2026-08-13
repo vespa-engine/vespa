@@ -20,18 +20,18 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
+import com.yahoo.text.Text;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.InheritableApplications;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.application.InheritableApplications;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.text.Text;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -46,7 +46,6 @@ import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -80,7 +79,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -90,6 +88,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.session.ActivationTriggers.DeferredReconfiguration;
 import static com.yahoo.vespa.config.server.session.Session.Status.ACTIVATE;
@@ -268,7 +267,7 @@ public class SessionRepository {
         });
 
         ApplicationId applicationId = params.getApplicationId();
-        tenantApplications.createApplication(applicationId); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
+        tenantApplications.createApplication(applicationId); // TODO: Preparation can change the application ID of a session (?)
         logger.log(Level.FINE, "Created application " + applicationId);
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
@@ -276,13 +275,7 @@ public class SessionRepository {
                 ? Optional.empty()
                 : Optional.of(sessionZooKeeperClient.createPrepareWaiter());
         Optional<ApplicationVersions> activeApplicationVersions = activeApplicationVersions(applicationId);
-        try (var transaction = new CuratorTransaction(curator)) {
-            tenantApplications.createWritePrepareTransaction(transaction,
-                                                             applicationId,
-                                                             sessionId,
-                                                             getActiveSessionId(applicationId))
-                    .commit();
-        }
+        tenantApplications.prepare(applicationId, sessionId);
         ConfigChangeActions actions = sessionPreparer.prepare(tenantApplications, logger, params,
                                                               activeApplicationVersions, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
@@ -602,7 +595,8 @@ public class SessionRepository {
                                                                 session.getVersionToBuildFirst(),
                                                                 sessionZooKeeperClient.loadApplicationPackage(),
                                                                 new AllocatedHostsFromAllModels(),
-                                                                clock.instant()));
+                                                                clock.instant()),
+                                            builder.provisioned());
     }
 
     private void nodeChanged() {
@@ -1123,10 +1117,9 @@ public class SessionRepository {
                 sessionAdded(sessionId);
     }
 
-    public Transaction createActivateTransaction(Session session) {
+    public Transaction createActivateTransaction(Lock applicationLock, Session session) {
         Transaction transaction = createSetStatusTransaction(session, ACTIVATE);
-        transaction.add(tenantApplications.createWriteActiveTransaction(transaction, session.getApplicationId(), session.getSessionId()).operations());
-        return transaction;
+        return tenantApplications.appendActivateOperations(applicationLock, session.getApplicationId(), session.getSessionId(), transaction);
     }
 
     public Transaction createSetStatusTransaction(Session session, Session.Status status) {

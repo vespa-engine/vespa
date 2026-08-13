@@ -3,17 +3,10 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
-import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.SpanTrees;
-import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.Struct;
-import com.yahoo.document.update.AssignValueUpdate;
-import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.LinguisticsParameters;
@@ -21,15 +14,11 @@ import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.language.simple.SimpleTokenizer;
-import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.ScriptTester;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
-import com.yahoo.vespa.indexinglanguage.UpdateFieldValues;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.util.List;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;

@@ -23,7 +23,7 @@
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcore/proton/attribute/attribute_initialization_status_collector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
-#include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_usage_and_load_info_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
@@ -1001,7 +1001,7 @@ searchcorespi::common::ResourceUsage DocumentDB::get_resource_usage() const {
     return resource_usage;
 }
 
-void DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener) {
+void DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageAndLoadInfoListener> listener) {
     _writeFilter.set_listener(std::move(listener));
 }
 

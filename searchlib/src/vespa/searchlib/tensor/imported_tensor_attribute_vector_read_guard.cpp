@@ -3,6 +3,7 @@
 #include "imported_tensor_attribute_vector_read_guard.h"
 
 #include "serialized_tensor_ref.h"
+#include "tensor_quantization.h"
 #include "vector_bundle.h"
 
 #include <vespa/eval/eval/value.h>
@@ -32,6 +33,18 @@ ImportedTensorAttributeVectorReadGuard::~ImportedTensorAttributeVectorReadGuard(
 
 const ITensorAttribute* ImportedTensorAttributeVectorReadGuard::asTensorAttribute() const {
     return this;
+}
+
+bool ImportedTensorAttributeVectorReadGuard::is_quantized() const noexcept {
+    return _target_tensor_attribute.is_quantized();
+}
+
+const vespalib::eval::ValueType& ImportedTensorAttributeVectorReadGuard::unquantized_tensor_type() const noexcept {
+    return _target_tensor_attribute.unquantized_tensor_type();
+}
+
+std::unique_ptr<TensorDequantizer> ImportedTensorAttributeVectorReadGuard::make_dequantizer() const {
+    return _target_tensor_attribute.make_dequantizer();
 }
 
 std::unique_ptr<vespalib::eval::Value> ImportedTensorAttributeVectorReadGuard::getTensor(uint32_t docId) const {

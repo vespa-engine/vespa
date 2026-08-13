@@ -1,0 +1,14 @@
+schema bm25numericfieldbad {
+    document bm25numericfieldbad {
+        field title type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile default {
+        first-phase {
+            expression: bm25(field: 123, label: someLabel)
+        }
+    }
+}

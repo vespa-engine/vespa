@@ -6,9 +6,12 @@ import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexFactsFactory;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.query.parser.TestLinguistics;
@@ -25,6 +28,8 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
 import com.yahoo.search.yql.MinimalQueryInserter;
 import org.junit.jupiter.api.Test;
+
+import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -186,6 +191,55 @@ public class CJKSearcherTestCase {
         String trace = query.getContext(false).getTrace().toString();
         assertFalse(trace.contains("Rewriting for CJK behavior for implicit phrases"),
                 "Trace should NOT contain CJK rewriting message when no CJK items: " + trace);
+    }
+
+    @Test
+    void testLabelIsPropagatedToSegmentWords() {
+        PhraseSegmentItem segment = createSegmentedItem(Language.CHINESE_SIMPLIFIED);
+        segment.setLabel("t1");
+
+        Query query = new Query("?language=zh-hans");
+        query.getModel().getQueryTree().setRoot(segment);
+
+        new Execution(new Chain<Searcher>(new CJKSearcher()),
+                      Execution.Context.createContextStub(indexFacts, TestLinguistics.INSTANCE)).search(query);
+
+        Item root = query.getModel().getQueryTree().getRoot();
+        assertTrue(root instanceof AndSegmentItem, "Segment should be transformed to SAND: " + root);
+        AndSegmentItem sand = (AndSegmentItem) root;
+        assertEquals(2, sand.getItemCount());
+        for (Iterator<Item> i = sand.getItemIterator(); i.hasNext(); )
+            assertEquals("t1", i.next().getLabel(), "Words should inherit the segment label");
+
+        // The label must resolve to the words' unique ids when the query is prepared
+        query.prepare();
+        var values = query.getRanking().getProperties().get("vespa.label.t1.id");
+        assertEquals(2, values.size(), "Both words should be addressable through the label");
+        assertEquals(String.valueOf(((WordItem) sand.getItem(0)).getUniqueID()), values.get(0));
+        assertEquals(String.valueOf(((WordItem) sand.getItem(1)).getUniqueID()), values.get(1));
+    }
+
+    @Test
+    void testLabelIsPropagatedFromImplicitPhrase() {
+        PhraseItem phrase = new PhraseItem();
+        phrase.setIndexName("default");
+        phrase.addItem(new WordItem("e", "default"));
+        phrase.addItem(new WordItem("fg", "default"));
+        phrase.setLanguage(Language.CHINESE_SIMPLIFIED);
+        phrase.setLabel("t1");
+
+        Query query = new Query("?language=zh-hans");
+        query.getModel().getQueryTree().setRoot(phrase);
+
+        new Execution(new Chain<Searcher>(new CJKSearcher()),
+                      Execution.Context.createContextStub(indexFacts, TestLinguistics.INSTANCE)).search(query);
+
+        Item root = query.getModel().getQueryTree().getRoot();
+        assertTrue(root instanceof AndItem, "Implicit phrase should be transformed to AND: " + root);
+        AndItem and = (AndItem) root;
+        assertEquals(2, and.getItemCount());
+        for (Iterator<Item> i = and.getItemIterator(); i.hasNext(); )
+            assertEquals("t1", i.next().getLabel(), "Words should inherit the phrase label");
     }
 
     private void assertTransformed(String queryString, String expected, Query.Type mode, Language actualLanguage,

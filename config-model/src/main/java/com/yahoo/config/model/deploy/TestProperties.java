@@ -74,7 +74,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
     private boolean logserverOtelCol = false;
-    private boolean tokenAuthForDeploy = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
@@ -83,7 +82,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
     private double searchNodeReservedMemoryFactor = 0.0;
-    private boolean failWhenConfiguringIndexedMapOfArray = false;
+    private boolean failWhenConfiguringIndexedMapOfArray = true;
+    private boolean fastMapSearch = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -133,7 +133,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
-    @Override public boolean tokenAuthForDeploy() { return tokenAuthForDeploy; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
@@ -146,6 +145,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
+    @Override public boolean fastMapSearch() { return fastMapSearch; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -322,11 +322,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setTokenAuthForDeploy(boolean tokenAuthForDeploy) {
-        this.tokenAuthForDeploy = tokenAuthForDeploy;
-        return this;
-    }
-
     public TestProperties setContainerEndpoints(Set<ContainerEndpoint> containerEndpoints) {
         this.endpoints = containerEndpoints;
         return this;
@@ -374,6 +369,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties failWhenConfiguringIndexedMapOfArray(boolean value) {
         this.failWhenConfiguringIndexedMapOfArray = value;
+        return this;
+    }
+
+    public TestProperties fastMapSearch(boolean value) {
+        this.fastMapSearch = value;
         return this;
     }
 

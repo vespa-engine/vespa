@@ -7,9 +7,10 @@
 namespace search::attribute {
 
 bool isUpdateableInMemoryOnly(const std::string& attrName, const Config& cfg) {
-    auto basicType = cfg.basicType().type();
+    const auto basicType = cfg.basicType().type();
+    const bool is_quantized_tensor = (basicType == BasicType::Type::TENSOR && cfg.quantization_params().has_value());
     return ((basicType != BasicType::Type::PREDICATE) && (basicType != BasicType::Type::REFERENCE)) &&
-           !isStructFieldAttribute(attrName);
+           !is_quantized_tensor && !isStructFieldAttribute(attrName);
 }
 
 bool isStructFieldAttribute(const std::string& attrName) {

@@ -23,10 +23,6 @@ public class OsgiImpl implements Osgi {
     private static final Logger log = Logger.getLogger(OsgiImpl.class.getName());
 
     private final OsgiFramework jdiscOsgi;
-
-    // The initial bundles are never scheduled for uninstall
-    private final List<Bundle> initialBundles;
-
     private final Bundle systemBundle;
 
     // An initial bundle that is not the framework, and can hence be used to look up current bundles
@@ -35,7 +31,8 @@ public class OsgiImpl implements Osgi {
     public OsgiImpl(OsgiFramework jdiscOsgi) {
         this.jdiscOsgi = jdiscOsgi;
 
-        this.initialBundles = jdiscOsgi.bundles();
+        // The initial bundles are never scheduled for uninstall
+        var initialBundles = jdiscOsgi.bundles();
         if (initialBundles.isEmpty())
             throw new IllegalStateException("No initial bundles!");
 
@@ -64,7 +61,7 @@ public class OsgiImpl implements Osgi {
         } else {
             if (jdiscOsgi.isFelixFramework() && ! spec.bundle.equals(spec.classId)) {
                 // Bundle was explicitly specified, but not found.
-                throw new IllegalArgumentException("Could not find bundle " + spec.bundle + " to create a component with class '"
+                throw new IllegalArgumentException("Could not find bundle '" + spec.bundle + "' to create a component with class '"
                                                      + spec.classId.getName() + ". " + bundleResolutionErrorMessage(spec.bundle));
             }
             return resolveFromThisBundleOrSystemBundle(spec);
@@ -134,7 +131,7 @@ public class OsgiImpl implements Osgi {
      * @param id the id of the component to return. May not include a version, or include
      *        an underspecified version, in which case the highest (matching) version which
      *        does not contain a qualifier is returned
-     * @return the bundle match having the highest version, or null if there was no matches
+     * @return the bundle match having the highest version, or null if there were no matches
      */
     public Bundle getBundle(ComponentSpecification id) {
         log.fine(() -> "Getting bundle for component " + id + ". Set of current bundles: " + getCurrentBundles());

@@ -7,22 +7,9 @@ import com.redhat.devtools.lsp4ij.server.ProcessStreamConnectionProvider;
 import java.io.File;
 import java.util.List;
 
-import com.intellij.openapi.extensions.PluginId;
-import com.intellij.ide.plugins.PluginManagerCore;
-
 public class LemminxVespaServer extends ProcessStreamConnectionProvider {
     public LemminxVespaServer(Project project) {
-        PluginId id = PluginId.getId("ai.vespa");
-        var vespaPlugin = PluginManagerCore.getPlugin(id);
-        if (vespaPlugin == null) {
-            throw new IllegalStateException("Plugin " + id + " not found. Cannot start the Vespa Schema Language Support plugin.");
-        }
-        var vespaPluginPath = vespaPlugin.getPluginPath();
-
-        var lsp4ijPlugin = PluginManagerCore.getPlugin(PluginId.getId("com.redhat.devtools.lsp4ij"));
-        if (lsp4ijPlugin == null) {
-            throw new IllegalStateException("LSP4IJ could not be found. Cannot start the Vespa Schema Language Support plugin.");
-        }
+        var vespaPluginPath = PluginPaths.pluginDirectoryOf(LemminxVespaServer.class);
 
         var vespaServerPath = vespaPluginPath
                 .resolve("lemminx-vespa-jar-with-dependencies.jar")
@@ -35,8 +22,7 @@ public class LemminxVespaServer extends ProcessStreamConnectionProvider {
                 .toAbsolutePath()
                 .toString();
 
-        var lsp4ijPath = lsp4ijPlugin.getPluginPath()
-                .resolve("lib")
+        var lsp4ijPath = PluginPaths.libDirectoryOf(ProcessStreamConnectionProvider.class)
                 .resolve("*")
                 .toAbsolutePath()
                 .toString();

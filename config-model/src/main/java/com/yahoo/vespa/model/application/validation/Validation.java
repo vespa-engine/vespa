@@ -20,6 +20,7 @@ import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterC
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForLocalLLMValidator;
+import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForContainerThreadpoolChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForSidecarValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForTritonOnnxRuntimeValidator;
@@ -148,6 +149,7 @@ public class Validation {
         new DataplaneTokenRemovalValidator().validate(execution);
         new DataplaneProxyChangeValidator().validate(execution);
         new RestartOnDeployForSidecarValidator().validate(execution);
+        new RestartOnDeployForContainerThreadpoolChangeValidator().validate(execution);
     }
 
     public interface Context {

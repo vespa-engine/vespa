@@ -7,6 +7,7 @@ import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.SimpletypesConfig;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -36,6 +37,7 @@ import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.config.server.rpc.RpcServer.ChunkedFileReceiver.createMetaRequest;
@@ -134,7 +136,7 @@ public class RpcServerTest {
                                           new Version(1, 2, 3),
                                           MetricUpdater.createTestUpdater(),
                                           applicationId);
-        ApplicationVersions appSet = ApplicationVersions.from(app);
+        ApplicationVersions appSet = ApplicationVersions.fromList(List.of(app), new Provisioned());
         tester.rpcServer().configActivated(appSet);
         ConfigKey<?> key = new ConfigKey<>(LbServicesConfig.class, "*");
         JRTClientConfigRequest clientReq  = createRequest(new RawConfig(key, LbServicesConfig.getDefMd5()));

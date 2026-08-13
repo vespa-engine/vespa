@@ -17,6 +17,7 @@ import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.MarkerWordItem;
+import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.PhraseItem;
@@ -406,6 +407,17 @@ public class YqlParserTestCase {
         assertEquals("abc", origin.string);
         assertEquals(1, origin.start);
         assertEquals(3, origin.end);
+    }
+
+    @Test
+    void testLabelOnCompositeIsInheritedByEachLeaf() {
+        QueryTree query = parse("select foo from bar where " +
+                "({label: \"t1\"}baz contains ({distance: 4}near(\"sports\", \"shoes\")))");
+        NearItem near = (NearItem) query.getRoot();
+        assertEquals(2, near.getItemCount());
+        for (Item leaf : near.items()) {
+            assertEquals("t1", leaf.getLabel());
+        }
     }
 
     @Test

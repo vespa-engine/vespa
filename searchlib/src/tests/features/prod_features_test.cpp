@@ -29,6 +29,7 @@
 #include <vespa/searchlib/features/matchfeature.h>
 #include <vespa/searchlib/features/nowfeature.h>
 #include <vespa/searchlib/features/num_docs_indexed_feature.h>
+#include <vespa/searchlib/features/query_term_document_frequency_feature.h>
 #include <vespa/searchlib/features/queryfeature.h>
 #include <vespa/searchlib/features/querytermcountfeature.h>
 #include <vespa/searchlib/features/random_normal_feature.h>
@@ -610,6 +611,27 @@ TEST_F(ProdFeaturesTest, test_num_docs_indexed) {
         ASSERT_TRUE(ft.execute(expected, 1));
         ASSERT_TRUE(ft.execute(expected, 987));
     }
+}
+
+TEST_F(ProdFeaturesTest, test_query_term_document_frequency) {
+    QueryTermDocumentFrequencyBlueprint pt;
+    { // Test blueprint.
+        EXPECT_TRUE(assertCreateInstance(pt, "queryTermDocumentFrequency"));
+
+        StringList params, in, out;
+        FT_SETUP_FAIL(pt, params);
+        FtIndexEnvironment ie;
+        ie.getBuilder()
+            .addField(FieldType::INDEX, CollectionType::SINGLE, "foo")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
+        FT_SETUP_FAIL(pt, params.add("qux"));
+        FT_SETUP_FAIL(pt, params.clear().add("bar"));
+        FT_SETUP_OK(pt, ie, params.clear().add("foo"), in, out.add("out"));
+
+        FT_DUMP_EMPTY(_factory, "queryTermDocumentFrequency");
+        FT_DUMP_EMPTY(_factory, "queryTermDocumentFrequency", ie);
+    }
+    // Executor (tensor output) is tested in searchlib/src/tests/features/query_term_document_frequency/.
 }
 
 void Test::assertFieldMatch(const std::string& spec, const std::string& query, const std::string& field,

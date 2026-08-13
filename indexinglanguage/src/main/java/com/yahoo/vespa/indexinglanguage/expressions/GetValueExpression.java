@@ -2,12 +2,8 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
-import com.yahoo.document.StructuredDataType;
-import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
-import com.yahoo.document.datatypes.StructuredFieldValue;
 
 import java.util.Objects;
 

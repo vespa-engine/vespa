@@ -7,6 +7,7 @@ vespa_add_library(searchlib_features OBJECT
     attributematchfeature.cpp
     average_field_length_feature.cpp
     bm25_feature.cpp
+    bm25_for_labels_feature.cpp
     bm25_utils.cpp
     closenessfeature.cpp
     closest_feature.cpp
@@ -57,6 +58,7 @@ vespa_add_library(searchlib_features OBJECT
     num_docs_indexed_feature.cpp
     onnx_feature.cpp
     proximityfeature.cpp
+    query_term_document_frequency_feature.cpp
     querycompletenessfeature.cpp
     queryfeature.cpp
     queryterm.cpp

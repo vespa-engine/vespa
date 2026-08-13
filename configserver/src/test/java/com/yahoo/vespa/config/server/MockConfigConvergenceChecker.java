@@ -19,7 +19,7 @@ public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
     }
 
     public MockConfigConvergenceChecker(long wantedGeneration, List<ServiceInfo> servicesThatFailFirstIteration) {
-        super(new InMemoryFlagSource());
+        super();
         this.wantedGeneration = wantedGeneration;
     }
 

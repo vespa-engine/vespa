@@ -113,10 +113,6 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec&  
       _eval_stats() {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
-    // Default to the expensive cost tier to allow the WhiteListBlueprint to come before this blueprint.
-    // If we decide to use HNSW (INDEX_TOP_K, INDEX_TOP_K_WITH_FILTER) or exact search with a global filter
-    // (EXACT_FALLBACK), we move the blueprint to the normal cost tier.
-    set_cost_tier(State::COST_TIER_EXPENSIVE);
     setEstimate(HitEstimate(est_hits, false));
 }
 
@@ -144,7 +140,6 @@ void NearestNeighborBlueprint::set_global_filter(const GlobalFilter& global_filt
             est_hits = std::min(est_hits, _global_filter_hits.value());
             if (_global_filter_hit_ratio.value() < _hnsw_params.global_filter_lower_limit) {
                 _algorithm = Algorithm::EXACT_FALLBACK;
-                set_cost_tier(State::COST_TIER_NORMAL);
                 setEstimate(HitEstimate(est_hits, false));
             }
         } else { // post-filtering case
@@ -160,7 +155,6 @@ void NearestNeighborBlueprint::set_global_filter(const GlobalFilter& global_filt
         }
         if (_algorithm != Algorithm::EXACT_FALLBACK) {
             est_hits = std::min(est_hits, _adjusted_target_hits);
-            set_cost_tier(State::COST_TIER_NORMAL);
             setEstimate(HitEstimate(est_hits, false));
             _pending_index_search = true;
         }
@@ -169,6 +163,11 @@ void NearestNeighborBlueprint::set_global_filter(const GlobalFilter& global_filt
 
 void NearestNeighborBlueprint::set_lazy_filter(const GlobalFilter& lazy_filter) {
     _lazy_filter = lazy_filter.shared_from_this();
+}
+
+void NearestNeighborBlueprint::set_cost_tier_to_expensive() {
+    // Move this blueprint to the expensive cost tier to allow the WhiteListBlueprint to come before this blueprint.
+    set_cost_tier(State::COST_TIER_EXPENSIVE);
 }
 
 bool NearestNeighborBlueprint::pending_index_search() const {

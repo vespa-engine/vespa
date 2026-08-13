@@ -133,6 +133,7 @@
                                         <include>com.yahoo.vespa:config-model:*:test</include>
                                         <include>com.yahoo.vespa:config-provisioning:*:test</include>
                                         <include>com.yahoo.vespa:container-apache-http-client-bundle:*:test</include>
+                                        <include>com.yahoo.vespa:container-opentelemetry:*:test</include>
                                         <include>com.yahoo.vespa:container-test:*:test</include>
                                         <include>com.yahoo.vespa:http-utils:*:test</include>
                                         <include>com.yahoo.vespa:indexinglanguage:*:test</include>

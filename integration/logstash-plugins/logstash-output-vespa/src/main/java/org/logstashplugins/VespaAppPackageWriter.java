@@ -18,7 +18,9 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.logstash.LockException;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public class VespaAppPackageWriter {
     private final QuickStartConfig config;
@@ -401,7 +403,7 @@ public class VespaAppPackageWriter {
 
         logger.info("Loading type conflict resolution from {}", source);
         try (InputStream is = resolutionStream) {
-            Yaml yaml = new Yaml();
+            Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
             return yaml.load(is);
         } catch (IOException e) {
             logger.error("Error loading type conflict resolution: {}", e.getMessage());

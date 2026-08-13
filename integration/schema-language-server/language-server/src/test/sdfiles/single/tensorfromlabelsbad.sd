@@ -1,0 +1,14 @@
+schema tensorfromlabelsbad {
+    document tensorfromlabelsbad {
+        field tags type array<string> {
+            indexing: attribute
+        }
+    }
+
+    rank-profile myprofile {
+        # the offset dimension is required
+        function missing_offset_dimension() {
+            expression: sum(tensorFromLabelsWithOffset(attribute(tags), tag))
+        }
+    }
+}

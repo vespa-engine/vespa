@@ -17,6 +17,7 @@ EnumAttribute<B>::EnumAttribute(const std::string& baseFileName, const Attribute
       _enumStore(cfg.fastSearch(), cfg.get_dictionary_config(), this->get_memory_allocator(),
                  this->_defaultValue._data.raw()) {
     this->setEnum(true);
+    this->set_want_fast_search(cfg.fastSearch());
 }
 
 template <typename B> EnumAttribute<B>::~EnumAttribute() = default;

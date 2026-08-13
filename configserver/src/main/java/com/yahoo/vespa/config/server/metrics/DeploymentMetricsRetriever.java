@@ -6,6 +6,8 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Set;
@@ -21,34 +23,32 @@ public class DeploymentMetricsRetriever {
 
     private final ClusterDeploymentMetricsRetriever metricsRetriever;
     private final NodeSuspensionProvider nodeSuspensionProvider;
-
-    public DeploymentMetricsRetriever() {
-        this(new ClusterDeploymentMetricsRetriever(), NodeSuspensionProvider.EMPTY);
-    }
-
-    public DeploymentMetricsRetriever(ClusterDeploymentMetricsRetriever metricsRetriever) {
-        this(metricsRetriever, NodeSuspensionProvider.EMPTY);
-    }
+    private final FlagSource flagSource;
 
     public DeploymentMetricsRetriever(ClusterDeploymentMetricsRetriever metricsRetriever,
-                                      NodeSuspensionProvider nodeSuspensionProvider) {
+                                      NodeSuspensionProvider nodeSuspensionProvider,
+                                      FlagSource flagSource) {
         this.metricsRetriever = metricsRetriever;
         this.nodeSuspensionProvider = nodeSuspensionProvider;
+        this.flagSource = flagSource;
     }
 
     public DeploymentMetricsResponse getMetrics(Application application) {
         var suspendedHostnames = nodeSuspensionProvider.suspendedHosts(application.getId());
-        var hosts = getHostsOfApplication(application, suspendedHostnames);
+        String consumer = Flags.DEPLOYMENT_METRICS_CONSUMER.bindTo(flagSource)
+                .with(application.getId())
+                .value();
+        var hosts = getHostsOfApplication(application, suspendedHostnames, consumer);
         var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
         return new DeploymentMetricsResponse(application.getId(), clusterMetrics);
     }
 
-    private static Collection<URI> getHostsOfApplication(Application application, Set<String> suspendedHostnames) {
+    private static Collection<URI> getHostsOfApplication(Application application, Set<String> suspendedHostnames, String consumer) {
         return application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
                 .filter(host -> !suspendedHostnames.contains(host.getHostname()))
                 .map(HostInfo::getHostname)
-                .map(DeploymentMetricsRetriever::createMetricsProxyURI)
+                .map(hostname -> createMetricsProxyURI(hostname, consumer))
                 .toList();
     }
 
@@ -56,8 +56,8 @@ public class DeploymentMetricsRetriever {
         return serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver");
     }
 
-    private static URI createMetricsProxyURI(String hostname) {
-        return URI.create("http://" + hostname + ":19092/metrics/v1/values?consumer=Vespa");
+    private static URI createMetricsProxyURI(String hostname, String consumer) {
+        return URI.create("http://" + hostname + ":19092/metrics/v1/values?consumer=" + consumer);
     }
 
 }

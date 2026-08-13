@@ -90,7 +90,10 @@ namespace {
 struct DequantizedTensors {
     std::unique_ptr<TensorValue> mse_dequant; // MSE-optimized quantization mode
     std::unique_ptr<TensorValue> ip_dequant;  // Inner-product-optimized quantization mode
+    ~DequantizedTensors();
 };
+
+DequantizedTensors::~DequantizedTensors() = default;
 
 DequantizedTensors quantize_tensor_roundtrip(const TensorValue& t, const uint8_t q_bits) {
     auto q = make_quantizer_from_type(t.type(), q_bits);

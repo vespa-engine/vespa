@@ -51,6 +51,7 @@ public class ReservedFunctionNames extends Processor {
         Arrays.stream(RankingExpressionParserConstants.tokenImage)
                 .map(token -> token.substring(1, token.length()-1)).forEach(name -> temp.add(name));
         temp.add("attribute");
+        temp.add("bm25_for_labels");
         temp.add("constant");
         temp.add("customTokenInputIds");
         temp.add("firstphase");
@@ -60,6 +61,7 @@ public class ReservedFunctionNames extends Processor {
         temp.add("onnx");
         temp.add("onnx_vespa");
         temp.add("query");
+        temp.add("queryTermDocumentFrequency");
         temp.add("reciprocal_rank");
         temp.add("reciprocal_rank_fusion");
         temp.add("secondphase");

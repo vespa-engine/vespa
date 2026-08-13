@@ -1,0 +1,50 @@
+schema bm25label {
+    document bm25label {
+        field title type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile ordinary {
+        first-phase {
+            expression: bm25(title)
+        }
+    }
+
+    rank-profile preferred {
+        first-phase {
+            expression: bm25(field: title, label: someLabel)
+        }
+    }
+
+    rank-profile shorthand {
+        first-phase {
+            expression: bm25(title, label: someLabel)
+        }
+    }
+
+    rank-profile quoted-label {
+        first-phase {
+            expression: bm25(field: title, label: "title-terms")
+        }
+    }
+
+    rank-profile quoted-field {
+        first-phase {
+            expression: bm25(field: "title", label: someLabel)
+        }
+    }
+
+    rank-profile numeric-label {
+        first-phase {
+            expression: bm25(field: title, label: -123)
+        }
+    }
+
+    rank-profile for-labels {
+        first-phase {
+            expression: reduce(bm25_for_labels(title), sum, label)
+        }
+    }
+}

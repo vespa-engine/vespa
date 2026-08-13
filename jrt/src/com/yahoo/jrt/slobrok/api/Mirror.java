@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -30,6 +32,32 @@ import java.util.logging.Level;
  */
 public class Mirror implements IMirror {
 
+    /**
+     * Wrapper around an immutable set of name resolution entries that represents the state
+     * of a particular Slobrok generation. Contains an internal mapping that can be used to
+     * speed up _exact_ name lookups when wildcard-style pattern matching is not needed.
+     */
+    private record ImmutableSpecs(Entry[] entryArray, Map<String, Entry> entriesByName) {
+
+        static ImmutableSpecs of(Entry[] entryArray) {
+            Objects.requireNonNull(entryArray);
+            Map<String, Entry> entryMap = new HashMap<>(entryArray.length);
+            for (var e : entryArray) {
+                entryMap.put(e.getName(), e);
+            }
+            return new ImmutableSpecs(entryArray, entryMap);
+        }
+
+        static ImmutableSpecs ofEmpty() {
+            return of(new Entry[0]);
+        }
+
+        Optional<Entry> lookupExactMatch(String name) {
+            return Optional.ofNullable(entriesByName.get(name));
+        }
+
+    }
+
     private static final Logger log = Logger.getLogger(Mirror.class.getName());
 
     private final EventLog eventLog = new EventLog();
@@ -41,7 +69,7 @@ public class Mirror implements IMirror {
     private volatile long iterations = 0;
     private boolean requestDone = false;
     private boolean logOnSuccess = true;
-    private final AtomicReference<Entry[]> specs = new AtomicReference<>(new Entry[0]);
+    private final AtomicReference<ImmutableSpecs> specs = new AtomicReference<>(ImmutableSpecs.ofEmpty());
     private int specsGeneration = 0;
     private final TransportThread transportThread;
     private final Task updateTask;
@@ -96,11 +124,17 @@ public class Mirror implements IMirror {
 
     @Override
     public List<Entry> lookup(String pattern) {
-        ArrayList<Entry> found = new ArrayList<>();
-        char[] p = pattern.toCharArray();
-        for (Entry specEntry : specs.get()) {
-            if (match(specEntry.getNameArray(), p)) {
-                found.add(specEntry);
+        var curSpecs = specs.get();
+        ArrayList<Entry> found = new ArrayList<>(); // May be mutated by caller
+        // Use fast-path with O(1) lookup instead of O(n) pattern matching if possible
+        if (canUseExactStringMatching(pattern)) {
+            curSpecs.lookupExactMatch(pattern).ifPresent(found::add);
+        } else {
+            char[] p = pattern.toCharArray();
+            for (Entry specEntry : curSpecs.entryArray()) {
+                if (match(specEntry.getNameArray(), p)) {
+                    found.add(specEntry);
+                }
             }
         }
         return found;
@@ -129,6 +163,14 @@ public class Mirror implements IMirror {
      */
     public boolean connected() {
         return (target != null);
+    }
+
+    /**
+     * Returns true iff <code>pattern</code> can use exact string matching for resolving a
+     * pattern to 0-1 service entries. Otherwise, wildcard pattern matching must be used.
+     */
+    private static boolean canUseExactStringMatching(String pattern) {
+        return pattern.indexOf('*') == -1;
     }
 
     /**
@@ -251,7 +293,7 @@ public class Mirror implements IMirror {
                 }
             } else {
                 Map<String, Entry> map = new HashMap<>();
-                for (Entry e : specs.get()) {
+                for (Entry e : specs.get().entryArray()) {
                     map.put(e.getName(), e);
                 }
                 for (String rem : r) {
@@ -272,7 +314,7 @@ public class Mirror implements IMirror {
             } else {
                 log.fine(() -> "successfully updated from location broker "+currSlobrok+" (now "+newSpecs.length+" service names)");
             }
-            specs.set(newSpecs);
+            specs.set(ImmutableSpecs.of(newSpecs));
 
             specsGeneration = diffToGeneration;
             int u = (updates + 1);
@@ -299,7 +341,7 @@ public class Mirror implements IMirror {
             target.close();
             target = null;
         }
-        specs.set(new Entry[0]);
+        specs.set(ImmutableSpecs.ofEmpty());
     }
 
     /**
@@ -346,7 +388,7 @@ public class Mirror implements IMirror {
         log.log(Level.INFO, "location broker mirror state: " +
                 " iterations: " + iterations +
                 ", connected to: " + target +
-                ", number of service specs: " + specs.get().length +
+                ", number of service specs: " + specs.get().entryArray().length +
                 ", seen " + updates + " updates" +
                 ", current server: "+ currSlobrok +
                 ", list of servers: " + slobroks);

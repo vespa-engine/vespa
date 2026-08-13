@@ -285,28 +285,23 @@
     <!-- END JETTY embedded jars -->
 
     <!-- PROVIDED scope dependencies -->
-    <!-- OpenTelemetry API/SDK: compiled against here, provided at runtime by container-opentelemetry -->
+    <!-- OpenTelemetry API only: the Jetty span handler uses api/context types (Span, SpanKind, Context);
+         provided at runtime by container-opentelemetry. The SDK and OTLP exporter are NOT needed here anymore
+         (they live entirely in container-opentelemetry's OtelTelemetry); the only remaining SDK use is the
+         handler test, which gets it transitively from opentelemetry-sdk-testing (test scope, below). -->
     <dependency>
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-api</artifactId>
       <scope>provided</scope>
     </dependency>
+    <!-- Telemetry seam (Telemetry/ScopedTracer/OtelTelemetry): compiled against here so the bundle-plugin
+         generates the ai.vespa.telemetry.{api,otel} imports; provided at runtime by container-opentelemetry.
+         provided is non-transitive, so it does NOT reach 3rd-party consumers. -->
     <dependency>
-      <groupId>io.opentelemetry</groupId>
-      <artifactId>opentelemetry-sdk</artifactId>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-opentelemetry</artifactId>
+      <version>${project.version}</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.opentelemetry</groupId>
-      <artifactId>opentelemetry-exporter-otlp</artifactId>
-      <scope>provided</scope>
-      <exclusions>
-        <!-- Sender is resolved at runtime from container-opentelemetry (jdk sender); never pull okhttp -->
-        <exclusion>
-          <groupId>io.opentelemetry</groupId>
-          <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
         <groupId>com.yahoo.vespa</groupId>

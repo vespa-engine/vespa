@@ -23,8 +23,12 @@ public class ReconfigurableDispatcher extends Dispatcher {
     private final ConfigSubscriber subscriber;
 
     @Inject
-    public ReconfigurableDispatcher(ComponentId clusterId, DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig, SystemInfo systemInfo, VipStatus vipStatus) {
-        super(clusterId, dispatchConfig, qrSearchersConfig, new DispatchNodesConfig.Builder().build(), vipStatus);
+    public ReconfigurableDispatcher(ComponentId clusterId,
+                                    DispatchConfig dispatchConfig,
+                                    QrSearchersConfig qrSearchersConfig,
+                                    SystemInfo systemInfo,
+                                    VipStatus vipStatus) {
+        super(clusterId, dispatchConfig, qrSearchersConfig, new DispatchNodesConfig.Builder().build(), systemInfo, vipStatus);
         this.subscriber = new ConfigSubscriber();
         CountDownLatch configured = new CountDownLatch(1);
         this.subscriber.subscribe(nodesConfig -> { updateWithNewConfig(nodesConfig); configured.countDown(); },
