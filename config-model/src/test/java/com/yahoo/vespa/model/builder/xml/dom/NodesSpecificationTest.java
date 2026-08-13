@@ -32,7 +32,8 @@ public class NodesSpecificationTest {
                                                    bandwidth='1ZbPs'
                                                    disk-speed='fast'
                                                    storage-type='local'
-                                                   architecture='x86_64'>
+                                                   architecture='x86_64'
+                                                   max-cost-factor='1.5'>
                                           <gpu count='1g' memory='3' />
                                         </resources>
                                       </nodes>
@@ -67,6 +68,8 @@ public class NodesSpecificationTest {
 
         assertEquals(Architecture.x86_64, spec.minResources().nodeResources().architecture());
         assertEquals(Architecture.x86_64, spec.maxResources().nodeResources().architecture());
+
+        assertEquals(1.5, spec.maxCostFactor());
     }
 
     @Test

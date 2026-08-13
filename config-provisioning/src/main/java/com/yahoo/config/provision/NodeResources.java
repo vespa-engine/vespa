@@ -19,6 +19,7 @@ public class NodeResources {
 
     private static final NodeResources zero = new NodeResources(0, 0, 0, 0);
     private static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
+    private boolean satisfies;
 
     public enum DiskSpeed {
 
@@ -436,17 +437,23 @@ public class NodeResources {
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
     public boolean satisfies(NodeResources other) {
+        return satisfies(other, 0.00000001);
+    }
+
+    /**
+     * Returns true if all the resources of this are the same (with some tolerance),
+     * or larger than the given resources.
+     */
+    public boolean satisfies(NodeResources other, double tolerance) {
         ensureSpecified();
         other.ensureSpecified();
-        if (this.vcpu < other.vcpu) return false;
-        if (this.memoryGiB < other.memoryGiB) return false;
-        if ( ! this.diskIsUnspecified() && ! other.diskIsUnspecified() && this.diskGb < other.diskGb) return false;
-        if (this.bandwidthGbps < other.bandwidthGbps) return false;
+        if (smaller(this.vcpu, other.vcpu, tolerance)) return false;
+        if (smaller(this.memoryGiB, other.memoryGiB, tolerance)) return false;
+        if ( ! this.diskIsUnspecified() && ! other.diskIsUnspecified() && smaller(this.diskGb, other.diskGb, tolerance)) return false;
+        if (smaller(this.bandwidthGbps, other.bandwidthGbps, tolerance)) return false;
         if (this.gpuResources.lessThan(other.gpuResources)) return false;
         // disallow substitution of GPU type
-        if (this.gpuResources.type() != other.gpuResources.type()) {
-            return false;
-        }
+        if (this.gpuResources.type() != other.gpuResources.type()) return false;
 
         // Why doesn't a fast disk satisfy a slow disk? Because if slow disk is explicitly specified
         // (i.e. not "any"), you should not randomly, sometimes get a faster disk as that means you may
@@ -536,7 +543,6 @@ public class NodeResources {
         return this.isUnspecified() ? Optional.empty() : Optional.of(this);
     }
 
-
     private static boolean equal(double a, double b) {
         return equal(a, b, 0.00000001);
     }
@@ -544,6 +550,10 @@ public class NodeResources {
     private static boolean equal(double a, double b, double tolerance) {
         if (b == 0) return a == 0;
         return Math.abs(1.0 - a/b) < tolerance;
+    }
+
+    private static boolean smaller(double a, double b, double tolerance) {
+        return a <= b && ! equal(a, b, tolerance);
     }
 
     private static double validate(double value, String valueName) {
