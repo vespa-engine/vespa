@@ -29,7 +29,6 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.MockConfigStateChecker;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -494,13 +493,14 @@ public class HostedDeployTest {
                                                     clock,
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
-        List<ServiceInfo> mutableServices = new ArrayList<>(services);
+        var configStateChecker = new MockConfigStateChecker(2L)
+                .failFirstIteration();
         DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactories(modelFactories)
                 .clock(clock)
                 .zone(prodZone)
                 .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
-                .configStateChecker(new MockConfigStateChecker(2L, mutableServices))
+                .configStateChecker(configStateChecker)
                 .hostedConfigserverConfig(prodZone)
                 .build();
         var result = tester.deployApp("src/test/apps/hosted/", "6.2.0");
@@ -525,7 +525,6 @@ public class HostedDeployTest {
         assertEquals(Set.of("host1"), pendingRestarts1.hostnames());
 
         // All services converge, and maintainer triggers restarts
-        mutableServices.clear();
         System.out.println("RUNNING MAINTAINER 2");
         maintainer.run();
         assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).hostnames());

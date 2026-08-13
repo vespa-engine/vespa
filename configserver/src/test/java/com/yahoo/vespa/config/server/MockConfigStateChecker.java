@@ -14,23 +14,23 @@ import java.util.Optional;
 public class MockConfigStateChecker extends ConfigStateChecker {
 
     private final long wantedGeneration;
-    private final List<ServiceInfo> servicesThatFailFirstIteration;
 
+    private boolean failFirstIteration = false;
     private int iteration = 0;
 
     public MockConfigStateChecker(long wantedGeneration) {
-        this(wantedGeneration, List.of());
+        this.wantedGeneration = wantedGeneration;
     }
 
-    public MockConfigStateChecker(long wantedGeneration, List<ServiceInfo> servicesThatFailFirstIteration) {
-        this.wantedGeneration = wantedGeneration;
-        this.servicesThatFailFirstIteration = servicesThatFailFirstIteration;
+    public MockConfigStateChecker failFirstIteration() {
+        failFirstIteration = true;
+        return this;
     }
 
     @Override
     public Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(List<ServiceInfo> services, Duration timeout) {
         iteration++;
-        boolean stillFailing = !servicesThatFailFirstIteration.isEmpty() && iteration <= 1;
+        boolean stillFailing = failFirstIteration && iteration <= 1;
         long generation = stillFailing ? wantedGeneration - 1 : wantedGeneration;
 
         Map<ServiceInfo, ServiceConfigState> result = new LinkedHashMap<>();
