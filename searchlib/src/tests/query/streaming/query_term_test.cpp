@@ -14,7 +14,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 using search::common::ElementIds;
-using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::IllegalHandle;
 using search::fef::MatchData;
@@ -88,22 +87,19 @@ QueryTermTest::QueryTermTest()
       _filter_handle(IllegalHandle),
       _md(),
       _tfmd(nullptr) {
-    FieldInfo field(FieldType::INDEX, CollectionType::ARRAY, "field", normal_field_id);
-    FieldInfo filterfield(FieldType::INDEX, CollectionType::ARRAY, "filterfield", filter_field_id);
-    filterfield.setFilter(true);
-    auto& fields = _index_env.getFields();
     // The index environment already holds the "no field" first, so start filling
     // dummies at the first unused field id to keep id and index in sync.
-    for (uint32_t id = fields.size(); id < field.id(); ++id) {
-        fields.emplace_back(FieldType::INDEX, CollectionType::SINGLE, "dummy" + std::to_string(id), id);
+    for (uint32_t id = _index_env.getFields().size(); id < normal_field_id; ++id) {
+        _index_env.addField(FieldType::INDEX, CollectionType::SINGLE, "dummy" + std::to_string(id));
     }
-    _index_env.getFields().emplace_back(field);
-    _index_env.getFields().emplace_back(filterfield);
+    _index_env.addField(FieldType::INDEX, CollectionType::ARRAY, "field");
+    _index_env.addField(FieldType::INDEX, CollectionType::ARRAY, "filterfield");
+    _index_env.getFields().back().setFilter(true);
     for (uint32_t i = 0; i < existing_handles; ++i) {
         (void)_mdl.allocTermField(field0);
     }
-    _normal_handle = _mdl.allocTermField(field.id());
-    _filter_handle = _mdl.allocTermField(filterfield.id());
+    _normal_handle = _mdl.allocTermField(normal_field_id);
+    _filter_handle = _mdl.allocTermField(filter_field_id);
 }
 
 QueryTermTest::~QueryTermTest() = default;

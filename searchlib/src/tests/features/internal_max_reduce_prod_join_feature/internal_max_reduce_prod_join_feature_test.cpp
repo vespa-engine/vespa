@@ -34,9 +34,8 @@ struct SetupFixture {
     }
 
     void addAttribute(const std::string& name, const CollectionType& collType, const DataType& dataType) {
-        FieldInfo attrInfo(FieldType::ATTRIBUTE, collType, name, indexEnv.getFields().size());
-        attrInfo.set_data_type(dataType);
-        indexEnv.getFields().push_back(attrInfo);
+        indexEnv.addField(FieldType::ATTRIBUTE, collType, name);
+        indexEnv.getFields().back().set_data_type(dataType);
     }
 };
 

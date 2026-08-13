@@ -49,8 +49,8 @@ protected:
 };
 
 ResolveViewVisitorTest::ResolveViewVisitorTest() : ::testing::Test(), index_environment() {
-    index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field1, 1);
-    index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field2, 2);
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, field1);
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, field2);
 }
 
 ResolveViewVisitorTest::~ResolveViewVisitorTest() = default;

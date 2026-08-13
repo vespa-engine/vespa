@@ -31,8 +31,7 @@ struct SetupFixture {
     EuclideanDistanceBlueprint blueprint;
     IndexEnvironment           indexEnv;
     SetupFixture() : blueprint(), indexEnv() {
-        FieldInfo myField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "myAttribute", 1);
-        indexEnv.getFields().push_back(myField);
+        indexEnv.addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "myAttribute");
     }
 };
 
@@ -61,8 +60,8 @@ struct ExecFixture {
         attrs.push_back(AttributeFactory::createAttribute("aint", AVC(AVBT::INT32, AVCT::ARRAY)));
         attrs.push_back(AttributeFactory::createAttribute("afloat", AVC(AVBT::FLOAT, AVCT::ARRAY)));
 
-        test.getIndexEnv().getFields().push_back(FieldInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint", 1));
-        test.getIndexEnv().getFields().push_back(FieldInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, "afloat", 2));
+        test.getIndexEnv().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint");
+        test.getIndexEnv().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "afloat");
 
         for (const auto& attr : attrs) {
             attr->addReservedDoc();
