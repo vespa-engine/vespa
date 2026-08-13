@@ -47,6 +47,13 @@ public:
         }
     }
 
+    void visit(ProtonNodeTypes::LabelWrapper& n) override {
+        // Addressed by label from rank features such as itemRawScore, but unlike other
+        // term data it is not a ranking leaf: its child subtree is ranked as usual.
+        _term_data.push_back(&n);
+        visitChildren(n);
+    }
+
     void visit(ProtonNodeTypes::Equiv& n) override {
         // XXX: unranked equiv not supported
         _term_data.push_back(&n);

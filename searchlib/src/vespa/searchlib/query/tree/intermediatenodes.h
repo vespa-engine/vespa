@@ -67,6 +67,27 @@ public:
 
 //-----------------------------------------------------------------------------
 
+/**
+ * Behaves like Rank with a single child, but carries a score that the ranking
+ * framework can use to rank the matched documents. The unique id is what a
+ * "vespa.label.<label>.id" rank property maps a label to, so that rank features
+ * such as itemRawScore can address this wrapper.
+ */
+class LabelWrapper : public QueryNodeMixin<LabelWrapper, Intermediate> {
+    int32_t _id;
+    double  _score;
+
+public:
+    virtual ~LabelWrapper() = 0;
+
+    LabelWrapper(int32_t id, double score) : _id(id), _score(score) {}
+
+    int32_t getId() const noexcept { return _id; }
+    double getLabelScore() const noexcept { return _score; }
+};
+
+//-----------------------------------------------------------------------------
+
 class Near : public QueryNodeMixin<Near, Intermediate> {
     uint32_t _distance;
     uint32_t _num_negative_terms;

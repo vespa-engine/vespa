@@ -3,6 +3,7 @@
 #include "query_builder.h"
 
 #include "fuzzy_term.h"
+#include "label_wrapper_query_node.h"
 #include "near_query_node.h"
 #include "nearest_neighbor_query_node.h"
 #include "phrase_query_node.h"
@@ -94,7 +95,8 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
     case ParseItem::ITEM_WEAK_AND:
     case ParseItem::ITEM_NEAR:
     case ParseItem::ITEM_ONEAR:
-    case ParseItem::ITEM_RANK: {
+    case ParseItem::ITEM_RANK:
+    case ParseItem::ITEM_LABEL_WRAPPER: {
         qn = QueryConnector::create(type, factory);
         if (qn) {
             auto*    qc = dynamic_cast<QueryConnector*>(qn.get());
@@ -108,6 +110,10 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
             }
             if (type == ParseItem::ITEM_WEAK_AND) {
                 qn->setIndex(queryRep.index_as_string());
+            }
+            if (auto* lbn = dynamic_cast<LabelWrapperQueryNode*>(qc)) {
+                lbn->set_unique_id(queryRep.getUniqueId());
+                lbn->set_label_score(queryRep.get_label_score());
             }
             HiddenTermsGuard hidden_terms_guard(*this);
             size_t           num_positive = (num_negative_terms > arity) ? 0 : (arity - num_negative_terms);

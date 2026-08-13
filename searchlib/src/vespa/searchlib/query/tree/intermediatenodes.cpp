@@ -9,6 +9,7 @@ Or::~Or() = default;
 WeakAnd::~WeakAnd() = default;
 Equiv::~Equiv() = default;
 Rank::~Rank() = default;
+LabelWrapper::~LabelWrapper() = default;
 Near::~Near() = default;
 ONear::~ONear() = default;
 Phrase::~Phrase() = default;

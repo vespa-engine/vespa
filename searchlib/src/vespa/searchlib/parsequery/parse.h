@@ -64,7 +64,9 @@ public:
         ITEM_FUZZY = 30,
         ITEM_STRING_IN = 31,
         ITEM_NUMERIC_IN = 32,
-        ITEM_UNDEF = 33,
+        ITEM_LABEL_WRAPPER = 33,
+        // sentinel, kept last: it moves up as item types are added
+        ITEM_UNDEF = 34,
     };
 
     /*

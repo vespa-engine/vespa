@@ -106,6 +106,11 @@ public:
         return true;
     }
 
+    bool handle(const ItemLabelWrapper& item) {
+        _builder.add_label_wrapper(item.unique_id(), item.score());
+        return handle_item(item.child());
+    }
+
     bool handle(const ItemNear& item) {
         uint32_t arity = item.children_size();
         uint32_t nearDistance = item.distance();
@@ -633,6 +638,8 @@ public:
             return handle(qti.item_and_not());
         case IC::kItemRank:
             return handle(qti.item_rank());
+        case IC::kItemLabelWrapper:
+            return handle(qti.item_label_wrapper());
         case IC::kItemNear:
             return handle(qti.item_near());
         case IC::kItemOnear:

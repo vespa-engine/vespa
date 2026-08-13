@@ -20,6 +20,7 @@ using search::query::Equiv;
 using search::query::FalseQueryNode;
 using search::query::FuzzyTerm;
 using search::query::InTerm;
+using search::query::LabelWrapper;
 using search::query::LocationTerm;
 using search::query::Near;
 using search::query::NearestNeighborTerm;
@@ -92,6 +93,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(Phrase&) override { illegalVisit(); }
     void visit(SameElement&) override { illegalVisit(); }
     void visit(Rank&) override { illegalVisit(); }
+    void visit(LabelWrapper&) override { illegalVisit(); }
     void visit(WeakAnd&) override { illegalVisit(); }
     void visit(WeightedSetTerm&) override { illegalVisit(); }
     void visit(DotProduct&) override { illegalVisit(); }

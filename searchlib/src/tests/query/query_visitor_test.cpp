@@ -36,6 +36,7 @@ public:
     void visit(PrefixTerm&) override { isVisited<PrefixTerm>() = true; }
     void visit(RangeTerm&) override { isVisited<RangeTerm>() = true; }
     void visit(Rank&) override { isVisited<Rank>() = true; }
+    void visit(LabelWrapper&) override { isVisited<LabelWrapper>() = true; }
     void visit(StringTerm&) override { isVisited<StringTerm>() = true; }
     void visit(SubstringTerm&) override { isVisited<SubstringTerm>() = true; }
     void visit(SuffixTerm&) override { isVisited<SuffixTerm>() = true; }
@@ -73,6 +74,7 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<DotProduct>(new SimpleDotProduct(0, "field", 0, Weight(42)));
     checkVisit<WandTerm>(new SimpleWandTerm(0, "field", 0, Weight(42), 57, 67, 77.7));
     checkVisit<Rank>(new SimpleRank);
+    checkVisit<LabelWrapper>(new SimpleLabelWrapper(7, 2.5));
     checkVisit<NumberTerm>(new SimpleNumberTerm("0.42", "field", 0, Weight(0)));
     const Location location(Point{10, 10}, 20, 0);
     checkVisit<LocationTerm>(new SimpleLocationTerm(location, "field", 0, Weight(0)));

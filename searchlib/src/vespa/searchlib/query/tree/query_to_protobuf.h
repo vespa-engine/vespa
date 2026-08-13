@@ -63,6 +63,8 @@ private:
             child = parent->mutable_item_and_not()->add_children();
         } else if (parent->has_item_rank()) {
             child = parent->mutable_item_rank()->add_children();
+        } else if (parent->has_item_label_wrapper()) {
+            child = parent->mutable_item_label_wrapper()->mutable_child();
         } else if (parent->has_item_near()) {
             child = parent->mutable_item_near()->add_children();
         } else if (parent->has_item_onear()) {
@@ -232,6 +234,13 @@ private:
 
     void visit(Rank& node) override {
         _item_stack.back()->mutable_item_rank();
+        visitNodes(node.getChildren());
+    }
+
+    void visit(LabelWrapper& node) override {
+        auto* item = _item_stack.back()->mutable_item_label_wrapper();
+        item->set_unique_id(node.getId());
+        item->set_score(node.getLabelScore());
         visitNodes(node.getChildren());
     }
 

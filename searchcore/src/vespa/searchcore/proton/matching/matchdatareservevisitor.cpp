@@ -32,4 +32,9 @@ void MatchDataReserveVisitor::visit(ProtonNodeTypes::Phrase& n) {
     visitChildren(n);
 }
 
+void MatchDataReserveVisitor::visit(ProtonNodeTypes::LabelWrapper& n) {
+    visitChildren(n);
+    n.allocateTerms(_mdl);
+}
+
 } // namespace proton::matching

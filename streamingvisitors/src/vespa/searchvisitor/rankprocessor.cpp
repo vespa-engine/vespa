@@ -2,9 +2,11 @@
 
 #include "rankprocessor.h"
 
+#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/simpletermfielddata.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
+#include <vespa/searchlib/query/streaming/label_wrapper_query_node.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
@@ -135,6 +137,18 @@ void RankProcessor::maybe_add_query_term(search::streaming::QueryTerm& term) {
     }
 }
 
+void RankProcessor::add_label_wrapper(search::streaming::LabelWrapperQueryNode& wrapper) {
+    auto& qtd = dynamic_cast<QueryTermData&>(wrapper.getQueryItem());
+    qtd.getTermData().setWeight(search::query::Weight(100));
+    qtd.getTermData().setUniqueId(wrapper.unique_id());
+    qtd.getTermData().setPhraseLength(1);
+    // A wrapper searches no field of its own, so it holds the reserved "no field".
+    // This keeps it out of the per-field rank features, which only address declared fields.
+    auto field_id = search::fef::FieldInfo::no_field().id();
+    qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
+    _queryEnv.addTerm(&qtd.getTermData());
+}
+
 void RankProcessor::initQueryEnvironment() {
     QueryWrapper::TermList& terms = _query.getTermList();
 
@@ -145,6 +159,9 @@ void RankProcessor::initQueryEnvironment() {
             _queryEnv.addGeoLocation(fieldName, locStr);
         }
         maybe_add_query_term(*term);
+    }
+    for (auto* wrapper : _query.get_label_wrappers()) {
+        add_label_wrapper(*wrapper);
     }
     _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
     _match_data = _mdLayout.createMatchData();

@@ -155,6 +155,9 @@ template <class NodeTypes, typename... Args> typename NodeTypes::WandTerm* creat
 template <class NodeTypes> typename NodeTypes::Rank* createRank() {
     return new typename NodeTypes::Rank;
 }
+template <class NodeTypes> typename NodeTypes::LabelWrapper* createLabelWrapper(int32_t id, double score) {
+    return new typename NodeTypes::LabelWrapper(id, score);
+}
 
 template <class NodeTypes>
 typename NodeTypes::Near* createNear(size_t distance, size_t num_negative_terms, size_t exclusion_distance) {
@@ -349,6 +352,10 @@ public:
 
     typename NodeTypes::Rank& addRank(int child_count) {
         return addIntermediate(createRank<NodeTypes>(), child_count);
+    }
+
+    typename NodeTypes::LabelWrapper& add_label_wrapper(int32_t id, double score) {
+        return addIntermediate(createLabelWrapper<NodeTypes>(id, score), 1);
     }
 
     typename NodeTypes::NumberTerm& addNumberTerm(const string& term, const string& view, int32_t id, Weight weight) {
