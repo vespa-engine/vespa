@@ -421,6 +421,26 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testLabelOnUserInputIsInheritedByEachParsedTerm() {
+        QueryTree query = parse("select foo from bar where " +
+                "({label: \"t1\"}userInput(\"new york\"))");
+        WeakAndItem weakAnd = (WeakAndItem) query.getRoot();
+        assertEquals(2, weakAnd.getItemCount());
+        for (Item term : weakAnd.items()) {
+            assertEquals("t1", term.getLabel());
+        }
+    }
+
+    @Test
+    void testLabelOnUserInputPhraseIsAppliedToParsedPhrase() {
+        QueryTree query = parse("select foo from bar where " +
+                "({label: \"t1\", grammar.syntax: \"none\", grammar.composite: \"phrase\"}" +
+                "userInput(\"new york\"))");
+        PhraseItem phrase = (PhraseItem) query.getRoot();
+        assertEquals("t1", phrase.getLabel());
+    }
+
+    @Test
     void testCompoundItemAnnotations() {
         assertEquals("and", parse("select foo from bar where ({annotations: {scope: \"and\"}}(a contains \"A\" and b contains \"B\"))")
             .getRoot().getAnnotation("scope"));
