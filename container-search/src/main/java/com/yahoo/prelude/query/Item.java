@@ -59,7 +59,9 @@ public abstract class Item implements Cloneable {
         FALSE(29),
         FUZZY(30),
         STRING_IN(31),
-        NUMERIC_IN(32);
+        NUMERIC_IN(32),
+        LABEL_WRAPPER(33);
+        // The next type added here is 34: ITEM_UNDEF in parse.h is kept last and moves up
 
         public final int code;
 

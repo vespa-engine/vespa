@@ -14,6 +14,9 @@
   "com.yahoo.prelude.query.Item" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],
+  "com.yahoo.prelude.query.LabelWrapperItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
   "com.yahoo.prelude.query.MarkerWordItem" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],

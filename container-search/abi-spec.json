@@ -804,6 +804,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType FUZZY",
       "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_IN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NUMERIC_IN",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType LABEL_WRAPPER",
       "public final int code"
     ]
   },
@@ -886,6 +887,29 @@
     "methods" : [
       "public void <init>()",
       "public void getPositiveTerms(com.yahoo.prelude.query.Item, java.util.List)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.LabelWrapperItem" : {
+    "superClass" : "com.yahoo.prelude.query.CompositeTaggableItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, double)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public double getLabelScore()",
+      "public void setLabelScore(double)",
+      "public java.util.Optional extractSingleChild()",
+      "public void addItem(com.yahoo.prelude.query.Item)",
+      "public void addItem(int, com.yahoo.prelude.query.Item)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
     ],
     "fields" : [ ]
   },

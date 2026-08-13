@@ -23,6 +23,7 @@ import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
+import static com.yahoo.search.yql.YqlParser.LABELED;
 import static com.yahoo.search.yql.YqlParser.USER_INPUT_LANGUAGE;
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.NEAR;
@@ -83,6 +84,7 @@ import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.HasIndexItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.LabelWrapperItem;
 import com.yahoo.language.Language;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.GeoLocationItem;
@@ -936,6 +938,23 @@ public class VespaSerializer {
 
     }
 
+    private static class LabelWrapperSerializer extends Serializer<LabelWrapperItem> {
+
+        @Override
+        void onExit(StringBuilder destination, LabelWrapperItem item) {
+            destination.append(", \"");
+            escape(item.getLabel(), destination).append("\", ");
+            destination.append(item.getLabelScore()).append(')');
+        }
+
+        @Override
+        boolean serialize(StringBuilder destination, LabelWrapperItem item, Boolean includeField) {
+            destination.append(LABELED).append('(');
+            return true;
+        }
+
+    }
+
     private static class WordAlternativesSerializer extends Serializer<WordAlternativesItem> {
 
         @Override
@@ -1322,6 +1341,7 @@ public class VespaSerializer {
         dispatchBuilder.put(WordAlternativesItem.class, new WordAlternativesSerializer());
         dispatchBuilder.put(RangeItem.class, new RangeSerializer());
         dispatchBuilder.put(RankItem.class, new RankSerializer());
+        dispatchBuilder.put(LabelWrapperItem.class, new LabelWrapperSerializer());
         dispatchBuilder.put(SubstringItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(SuffixItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(WandItem.class, new WandSerializer());
