@@ -61,9 +61,9 @@ Node::UP getQuery(const ViewResolver& resolver) {
     Node::UP node = query_builder.build();
 
     fef_test::IndexEnvironment index_environment;
-    index_environment.getFields().push_back(FieldInfo(FieldType::INDEX, CollectionType::SINGLE, field, 0));
-    index_environment.getFields().push_back(FieldInfo(FieldType::INDEX, CollectionType::SINGLE, "foo", 1));
-    index_environment.getFields().push_back(FieldInfo(FieldType::INDEX, CollectionType::SINGLE, "bar", 2));
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, field);
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, "bar");
 
     ResolveViewVisitor visitor(resolver, index_environment);
     node->accept(visitor);

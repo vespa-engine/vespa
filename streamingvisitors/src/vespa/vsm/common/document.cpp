@@ -19,17 +19,19 @@ vespalib::asciistream& operator<<(vespalib::asciistream& os, const StringFieldId
     return os;
 }
 
-StringFieldIdTMap::StringFieldIdTMap() : _map() {
+StringFieldIdTMap::StringFieldIdTMap() : _map(), _nextId(1) {
 }
 
 void StringFieldIdTMap::add(const std::string& s, FieldIdT fieldId) {
     _map[s] = fieldId;
+    if (fieldId != npos && fieldId >= _nextId) {
+        _nextId = fieldId + 1;
+    }
 }
 
 void StringFieldIdTMap::add(const std::string& s) {
     if (_map.find(s) == _map.end()) {
-        FieldIdT fieldId = _map.size();
-        _map[s] = fieldId;
+        _map[s] = _nextId++;
     }
 }
 

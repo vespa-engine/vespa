@@ -254,6 +254,7 @@ std::unique_ptr<document::Document> MyDocType::make_test_doc() const {
 
 vsm::SharedFieldPathMap make_field_path_map(const MyDocType& doc_type) {
     auto ret = std::make_shared<std::vector<FieldPath>>();
+    ret->emplace_back(); // field id 0 is the "no field"
     ret->emplace_back(doc_type.make_field_path("elem_array.name"));
     ret->emplace_back(doc_type.make_field_path("elem_array.weight"));
     ret->emplace_back(doc_type.make_field_path("elem_map.key"));
@@ -286,33 +287,33 @@ void setup_index_env(streaming::IndexEnvironment& index_env) {
 
 vsm::FieldIdTSearcherMap make_field_searcher_map() {
     vsm::FieldIdTSearcherMap ret;
-    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(0));
-    ret.emplace_back(std::make_unique<IntFieldSearcher>(1));
-    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(2));
+    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(1));
+    ret.emplace_back(std::make_unique<IntFieldSearcher>(2));
     ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(3));
-    ret.emplace_back(std::make_unique<IntFieldSearcher>(4));
-    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(5));
-    ret.emplace_back(std::make_unique<IntFieldSearcher>(6));
-    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(7));
+    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(4));
+    ret.emplace_back(std::make_unique<IntFieldSearcher>(5));
+    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(6));
+    ret.emplace_back(std::make_unique<IntFieldSearcher>(7));
     ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(8));
     ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(9));
+    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(10));
     return ret;
 }
 
 vsm::DocumentTypeIndexFieldMapT make_index_to_field_ids() {
     vsm::DocumentTypeIndexFieldMapT ret;
     auto&                           index_map = ret["test"];
-    index_map["elem_array.name"] = FieldIdTList{0};
-    index_map["elem_array.weight"] = FieldIdTList{1};
-    index_map["elem_map.key"] = FieldIdTList{2};
-    index_map["elem_map.value.name"] = FieldIdTList{3};
-    index_map["elem_map.value.weight"] = FieldIdTList{4};
-    index_map["str_int_map.key"] = FieldIdTList{5};
-    index_map["str_int_map.value"] = FieldIdTList{6};
-    index_map["apples"] = FieldIdTList{7};
-    index_map["oranges"] = FieldIdTList{8};
-    index_map["fruit"] = FieldIdTList{7, 8};
-    index_map["string_array"] = FieldIdTList{9};
+    index_map["elem_array.name"] = FieldIdTList{1};
+    index_map["elem_array.weight"] = FieldIdTList{2};
+    index_map["elem_map.key"] = FieldIdTList{3};
+    index_map["elem_map.value.name"] = FieldIdTList{4};
+    index_map["elem_map.value.weight"] = FieldIdTList{5};
+    index_map["str_int_map.key"] = FieldIdTList{6};
+    index_map["str_int_map.value"] = FieldIdTList{7};
+    index_map["apples"] = FieldIdTList{8};
+    index_map["oranges"] = FieldIdTList{9};
+    index_map["fruit"] = FieldIdTList{8, 9};
+    index_map["string_array"] = FieldIdTList{10};
     return ret;
 }
 
@@ -374,6 +375,14 @@ MatchingElementsFillerTest::MatchingElementsFillerTest()
       _matching_elements() {
     _env.field_paths = make_field_path_map(_doc_type);
     setup_index_env(_env.index_env);
+    // The hand-built vsm field ids must be identical to the index environment ids.
+    EXPECT_TRUE(_env.index_env.getField(0)->is_no_field());
+    for (const auto& entry : _index_to_field_ids["test"]) {
+        const auto* field = _env.index_env.getFieldByName(entry.first);
+        if (field != nullptr) { // 'fruit' is a view, not a field
+            EXPECT_EQ(FieldIdTList({field->id()}), entry.second) << entry.first;
+        }
+    }
     _search_result.addHit(1, "id::test::1", 0.0, nullptr, 0);
     auto sdoc =
         std::make_shared<StorageDocument>(_doc_type.make_test_doc(), _env.field_paths, _env.field_paths->size());
