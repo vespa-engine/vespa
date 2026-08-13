@@ -265,6 +265,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
         @Override public boolean protonLogWarningOnDiskCapacityChange() { return flag(Flags.PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE).value(); }
         @Override public boolean protonResampleDiskCapacity() { return flag(Flags.PROTON_RESAMPLE_DISK_CAPACITY).value(); }
+        @Override public boolean fastMapSearch() { return flag(Flags.FAST_MAP_SEARCH).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();
