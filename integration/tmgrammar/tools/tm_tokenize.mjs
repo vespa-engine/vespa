@@ -13,7 +13,7 @@ const wasmBin = fs.readFileSync(path.join(__dirname, 'node_modules/vscode-onigur
 
 const tmgrammarRoot = path.resolve(__dirname, '..');
 const vespaRoot = path.resolve(tmgrammarRoot, '..', '..');
-const grammarPath = path.join(tmgrammarRoot, 'grammar/vespa-schema.tmLanguage.json');
+const grammarPath = path.join(tmgrammarRoot, 'grammars/vespa-schema.tmLanguage.json');
 const sdFilesDir = path.join(vespaRoot, 'integration/schema-language-server/language-server/src/test/sdfiles');
 
 async function main() {
