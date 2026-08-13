@@ -354,7 +354,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              tenantRepository.hostProvisionerProvider().getHostProvisioner(),
                                              deploymentConfigStore,
                                              InfraDeployerProvider.empty().getInfraDeployer(),
-                                             configConvergenceChecker == null ? new ConfigConvergenceChecker(flagSource) : configConvergenceChecker,
+                                             configConvergenceChecker == null ? new ConfigConvergenceChecker() : configConvergenceChecker,
                                              configStateChecker,
                                              httpProxy,
                                              endpointsChecker,
