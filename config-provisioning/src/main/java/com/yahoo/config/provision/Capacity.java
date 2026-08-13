@@ -87,7 +87,7 @@ public final class Capacity {
     public NodeType type() { return type; }
 
     /**
-     * Returns how must larger an exclusively allocated hosts can be compared to the requested resources
+     * Returns how much larger an exclusively allocated hosts can be compared to the requested resources
      * of the node to be allocated, measured in cost for the host resources compared to the cost for the
      * requested node resources.
      * This allows trading cost against node type availability.
