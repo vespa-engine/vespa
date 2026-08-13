@@ -25,10 +25,6 @@ public class ParsedSummaryField extends ParsedBlock {
     private final List<String> destinations = new ArrayList<>();
     private String selectElementsBySummaryFeature = null;
 
-    public ParsedSummaryField(String name) {
-        this(name, null);
-    }
-
     public ParsedSummaryField(String name, ParsedType type) {
         super(name, "summary field");
         this.type = type;
@@ -57,7 +53,7 @@ public class ParsedSummaryField extends ParsedBlock {
     public void setTokens() { this.isTokens = true; }
     public void setHasExplicitType() { this.hasExplicitType = true; }
     void setType(ParsedType value) {
-        verifyThat(type == null, "Cannot change type from ", type, "to", value);
+        verifyThat(type == null, "Cannot change type from ", type.toNiceName(), "to", value.toNiceName());
         this.type = value;
     }
 }

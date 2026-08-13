@@ -4,14 +4,12 @@
 
 #include "constant_tensor_executor.h"
 #include "distance_calculator_bundle.h"
-#include "valuefeature.h"
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/parameterdescriptions.h>
-#include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/fast_value_view.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
@@ -23,7 +21,6 @@
 LOG_SETUP(".features.closest_feature");
 
 using search::fef::FeatureType;
-using search::fef::FieldInfo;
 using search::fef::ParameterDataTypeSet;
 using search::tensor::FastValueView;
 using search::tensor::ITensorAttribute;
@@ -31,7 +28,6 @@ using search::tensor::SubspaceType;
 using search::tensor::VectorBundle;
 using vespalib::string_id;
 using vespalib::typify_invoke;
-using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TypedCells;
 using vespalib::eval::TypifyCellType;
@@ -188,7 +184,7 @@ ClosestBlueprint::ClosestBlueprint()
       _field_name(),
       _field_tensor_type(ValueType::error_type()),
       _output_tensor_type(ValueType::error_type()),
-      _field_id(search::index::Schema::UNKNOWN_FIELD_ID),
+      _field_id(fef::IllegalFieldId),
       _item_label(),
       _empty_output(),
       _identity_space(),

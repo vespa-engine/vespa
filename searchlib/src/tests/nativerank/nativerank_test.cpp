@@ -29,6 +29,16 @@ const double EPS = 10e-4;
 
 namespace search::features {
 
+/*
+ * Rank feature parameter vectors are indexed by field id. The index
+ * environment holds the "no field" first, so declared fields have ids
+ * starting at 1 and slot 0 is always unused.
+ */
+template <typename ParamsT>
+const auto& nth_field(const ParamsT& params, uint32_t n) {
+    return params.vector[n + 1];
+}
+
 class NativeRankTest : public ::testing::Test, public FtTestAppBase {
 protected:
     BlueprintFactory _factory;
@@ -100,23 +110,23 @@ TEST_F(NativeRankTest, test_native_field_match) {
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
             const NativeFieldMatchParams& pas = (dynamic_cast<NativeFieldMatchBlueprint*>(bp.get()))->getParams();
-            ASSERT_TRUE(pas.vector.size() == 3);
-            EXPECT_TRUE(pas.vector[0].firstOccTable == tm.getTable("expdecay(8000,12.50)"));
-            EXPECT_TRUE(pas.vector[1].firstOccTable == tm.getTable("expdecay(8000,12.50)"));
-            EXPECT_TRUE(pas.vector[0].numOccTable == tm.getTable("loggrowth(1500,4000,19)"));
-            EXPECT_TRUE(pas.vector[1].numOccTable == tm.getTable("loggrowth(1500,4000,19)"));
-            EXPECT_EQ(pas.vector[0].maxTableSum, 1);
-            EXPECT_EQ(pas.vector[1].maxTableSum, 1);
-            EXPECT_EQ(pas.vector[0].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[0].field, true);
-            EXPECT_EQ(pas.vector[1].field, true);
-            EXPECT_EQ(pas.vector[2].field, false);
-            EXPECT_EQ(pas.vector[0].averageFieldLength, NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH);
-            EXPECT_EQ(pas.vector[1].averageFieldLength, NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH);
+            ASSERT_TRUE(pas.vector.size() == 4);
+            EXPECT_TRUE(nth_field(pas, 0).firstOccTable == tm.getTable("expdecay(8000,12.50)"));
+            EXPECT_TRUE(nth_field(pas, 1).firstOccTable == tm.getTable("expdecay(8000,12.50)"));
+            EXPECT_TRUE(nth_field(pas, 0).numOccTable == tm.getTable("loggrowth(1500,4000,19)"));
+            EXPECT_TRUE(nth_field(pas, 1).numOccTable == tm.getTable("loggrowth(1500,4000,19)"));
+            EXPECT_EQ(nth_field(pas, 0).maxTableSum, 1);
+            EXPECT_EQ(nth_field(pas, 1).maxTableSum, 1);
+            EXPECT_EQ(nth_field(pas, 0).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 1).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 0).field, true);
+            EXPECT_EQ(nth_field(pas, 1).field, true);
+            EXPECT_EQ(nth_field(pas, 2).field, false);
+            EXPECT_EQ(nth_field(pas, 0).averageFieldLength, NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH);
+            EXPECT_EQ(nth_field(pas, 1).averageFieldLength, NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH);
             EXPECT_EQ(pas.minFieldLength, 6u);
-            EXPECT_EQ(pas.vector[0].firstOccImportance, 0.5);
-            EXPECT_EQ(pas.vector[1].firstOccImportance, 0.5);
+            EXPECT_EQ(nth_field(pas, 0).firstOccImportance, 0.5);
+            EXPECT_EQ(nth_field(pas, 1).firstOccImportance, 0.5);
         }
         {
             p.clear();
@@ -133,32 +143,32 @@ TEST_F(NativeRankTest, test_native_field_match) {
             p.add("nativeFieldMatch.firstOccurrenceImportance.foo", "0.6");
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "baz");
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "quux");
-            ft.getIndexEnv().getFields()[4].setFilter(true);
+            ft.getIndexEnv().getFields()[5].setFilter(true);
             FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("foo").add("baz").add("quux"), in, out);
             Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
             const NativeFieldMatchParams& pas = (dynamic_cast<NativeFieldMatchBlueprint*>(bp.get()))->getParams();
-            ASSERT_TRUE(pas.vector.size() == 5);
-            EXPECT_TRUE(pas.vector[0].firstOccTable == tm.getTable("linear(0,2)"));
-            EXPECT_TRUE(pas.vector[3].firstOccTable == tm.getTable("linear(0,1)"));
-            EXPECT_TRUE(pas.vector[0].numOccTable == tm.getTable("linear(0,3)"));
-            EXPECT_TRUE(pas.vector[3].numOccTable == tm.getTable("linear(0,4)"));
-            EXPECT_NEAR(pas.vector[0].maxTableSum, 2.4, 10e-6);
-            EXPECT_NEAR(pas.vector[3].maxTableSum, 1.6, 10e-6);
-            EXPECT_EQ(pas.vector[0].fieldWeight, 200u);
-            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[3].fieldWeight, 0u);
-            EXPECT_EQ(pas.vector[0].field, true);
-            EXPECT_EQ(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
-            EXPECT_EQ(pas.vector[2].field, false); // 'qux' is an attribute
-            EXPECT_EQ(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
-            EXPECT_EQ(pas.vector[4].field, false); // filter field
-            EXPECT_EQ(pas.vector[0].averageFieldLength, 400u);
-            EXPECT_EQ(pas.vector[3].averageFieldLength, 500u);
+            ASSERT_TRUE(pas.vector.size() == 6);
+            EXPECT_TRUE(nth_field(pas, 0).firstOccTable == tm.getTable("linear(0,2)"));
+            EXPECT_TRUE(nth_field(pas, 3).firstOccTable == tm.getTable("linear(0,1)"));
+            EXPECT_TRUE(nth_field(pas, 0).numOccTable == tm.getTable("linear(0,3)"));
+            EXPECT_TRUE(nth_field(pas, 3).numOccTable == tm.getTable("linear(0,4)"));
+            EXPECT_NEAR(nth_field(pas, 0).maxTableSum, 2.4, 10e-6);
+            EXPECT_NEAR(nth_field(pas, 3).maxTableSum, 1.6, 10e-6);
+            EXPECT_EQ(nth_field(pas, 0).fieldWeight, 200u);
+            EXPECT_EQ(nth_field(pas, 1).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 3).fieldWeight, 0u);
+            EXPECT_EQ(nth_field(pas, 0).field, true);
+            EXPECT_EQ(nth_field(pas, 1).field, false); // only 'foo' and 'baz' are specified explicit
+            EXPECT_EQ(nth_field(pas, 2).field, false); // 'qux' is an attribute
+            EXPECT_EQ(nth_field(pas, 3).field, false); // fieldWeight == 0 -> do not consider this field
+            EXPECT_EQ(nth_field(pas, 4).field, false); // filter field
+            EXPECT_EQ(nth_field(pas, 0).averageFieldLength, 400u);
+            EXPECT_EQ(nth_field(pas, 3).averageFieldLength, 500u);
             EXPECT_EQ(pas.minFieldLength, 12u);
-            EXPECT_EQ(pas.vector[0].firstOccImportance, 0.6);
-            EXPECT_EQ(pas.vector[3].firstOccImportance, 0.8);
+            EXPECT_EQ(nth_field(pas, 0).firstOccImportance, 0.6);
+            EXPECT_EQ(nth_field(pas, 3).firstOccImportance, 0.8);
         }
         {
             FtIndexEnvironment ie;
@@ -321,16 +331,16 @@ TEST_F(NativeRankTest, test_native_attribute_match) {
             bp->setup(ft.getIndexEnv(), params);
             const NativeAttributeMatchParams& pas =
                 (dynamic_cast<NativeAttributeMatchBlueprint*>(bp.get()))->getParams();
-            ASSERT_TRUE(pas.vector.size() == 3);
-            //            EXPECT_TRUE(pas.vector[0].weightBoostTable == tm.getTable("linear(1,0)"));
-            //            EXPECT_TRUE(pas.vector[1].weightBoostTable == tm.getTable("linear(1,0)"));
-            EXPECT_EQ(pas.vector[0].maxTableSum, 1);
-            EXPECT_EQ(pas.vector[1].maxTableSum, 1);
-            EXPECT_EQ(pas.vector[0].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[0].field, true);
-            EXPECT_EQ(pas.vector[1].field, true);
-            EXPECT_EQ(pas.vector[2].field, false);
+            ASSERT_TRUE(pas.vector.size() == 4);
+            //            EXPECT_TRUE(nth_field(pas, 0).weightBoostTable == tm.getTable("linear(1,0)"));
+            //            EXPECT_TRUE(nth_field(pas, 1).weightBoostTable == tm.getTable("linear(1,0)"));
+            EXPECT_EQ(nth_field(pas, 0).maxTableSum, 1);
+            EXPECT_EQ(nth_field(pas, 1).maxTableSum, 1);
+            EXPECT_EQ(nth_field(pas, 0).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 1).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 0).field, true);
+            EXPECT_EQ(nth_field(pas, 1).field, true);
+            EXPECT_EQ(nth_field(pas, 2).field, false);
         }
         {
             p.clear();
@@ -345,18 +355,18 @@ TEST_F(NativeRankTest, test_native_attribute_match) {
             bp->setup(ft.getIndexEnv(), params);
             const NativeAttributeMatchParams& pas =
                 (dynamic_cast<NativeAttributeMatchBlueprint*>(bp.get()))->getParams();
-            ASSERT_TRUE(pas.vector.size() == 4);
-            //            EXPECT_TRUE(pas.vector[0].weightBoostTable == tm.getTable("linear(0,2)"));
-            //            EXPECT_TRUE(pas.vector[3].weightBoostTable == tm.getTable("linear(0,3)"));
-            EXPECT_EQ(pas.vector[0].maxTableSum, 2);
-            EXPECT_EQ(pas.vector[3].maxTableSum, 3);
-            EXPECT_EQ(pas.vector[0].fieldWeight, 200u);
-            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[3].fieldWeight, 0u);
-            EXPECT_EQ(pas.vector[0].field, true);
-            EXPECT_EQ(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
-            EXPECT_EQ(pas.vector[2].field, false); // 'qux' is an index
-            EXPECT_EQ(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
+            ASSERT_TRUE(pas.vector.size() == 5);
+            //            EXPECT_TRUE(nth_field(pas, 0).weightBoostTable == tm.getTable("linear(0,2)"));
+            //            EXPECT_TRUE(nth_field(pas, 3).weightBoostTable == tm.getTable("linear(0,3)"));
+            EXPECT_EQ(nth_field(pas, 0).maxTableSum, 2);
+            EXPECT_EQ(nth_field(pas, 3).maxTableSum, 3);
+            EXPECT_EQ(nth_field(pas, 0).fieldWeight, 200u);
+            EXPECT_EQ(nth_field(pas, 1).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 3).fieldWeight, 0u);
+            EXPECT_EQ(nth_field(pas, 0).field, true);
+            EXPECT_EQ(nth_field(pas, 1).field, false); // only 'foo' and 'baz' are specified explicit
+            EXPECT_EQ(nth_field(pas, 2).field, false); // 'qux' is an index
+            EXPECT_EQ(nth_field(pas, 3).field, false); // fieldWeight == 0 -> do not consider this field
         }
 
         {
@@ -422,14 +432,14 @@ bool NativeRankTest::assertNativeAttributeMatch(feature_t score, const ANAM& t1,
 
     MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
     {
-        TermFieldMatchData* tfmd = mdb->getTermFieldMatchData(0, 0);
+        TermFieldMatchData* tfmd = mdb->getTermFieldMatchData(0, 1);
         tfmd->reset(t1.docId);
         TermFieldMatchDataPosition pos;
         pos.setElementWeight(t1.attributeWeight);
         tfmd->appendPosition(pos);
     }
     {
-        TermFieldMatchData* tfmd = mdb->getTermFieldMatchData(1, 1);
+        TermFieldMatchData* tfmd = mdb->getTermFieldMatchData(1, 2);
         tfmd->reset(t2.docId);
         TermFieldMatchDataPosition pos;
         pos.setElementWeight(t2.attributeWeight);
@@ -473,21 +483,21 @@ TEST_F(NativeRankTest, test_native_proximity) {
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
             const NativeProximityParams& pas = (dynamic_cast<NativeProximityBlueprint*>(bp.get()))->getParams();
-            ASSERT_TRUE(pas.vector.size() == 3);
-            EXPECT_TRUE(pas.vector[0].proximityTable == tm.getTable("expdecay(500,3)"));
-            EXPECT_TRUE(pas.vector[1].proximityTable == tm.getTable("expdecay(500,3)"));
-            EXPECT_TRUE(pas.vector[0].revProximityTable == tm.getTable("expdecay(400,3)"));
-            EXPECT_TRUE(pas.vector[1].revProximityTable == tm.getTable("expdecay(400,3)"));
-            EXPECT_EQ(pas.vector[0].maxTableSum, 1);
-            EXPECT_EQ(pas.vector[1].maxTableSum, 1);
-            EXPECT_EQ(pas.vector[0].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[0].field, true);
-            EXPECT_EQ(pas.vector[1].field, true);
-            EXPECT_EQ(pas.vector[2].field, false);
+            ASSERT_TRUE(pas.vector.size() == 4);
+            EXPECT_TRUE(nth_field(pas, 0).proximityTable == tm.getTable("expdecay(500,3)"));
+            EXPECT_TRUE(nth_field(pas, 1).proximityTable == tm.getTable("expdecay(500,3)"));
+            EXPECT_TRUE(nth_field(pas, 0).revProximityTable == tm.getTable("expdecay(400,3)"));
+            EXPECT_TRUE(nth_field(pas, 1).revProximityTable == tm.getTable("expdecay(400,3)"));
+            EXPECT_EQ(nth_field(pas, 0).maxTableSum, 1);
+            EXPECT_EQ(nth_field(pas, 1).maxTableSum, 1);
+            EXPECT_EQ(nth_field(pas, 0).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 1).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 0).field, true);
+            EXPECT_EQ(nth_field(pas, 1).field, true);
+            EXPECT_EQ(nth_field(pas, 2).field, false);
             EXPECT_EQ(pas.slidingWindow, 4u);
-            EXPECT_EQ(pas.vector[0].proximityImportance, 0.5);
-            EXPECT_EQ(pas.vector[1].proximityImportance, 0.5);
+            EXPECT_EQ(nth_field(pas, 0).proximityImportance, 0.5);
+            EXPECT_EQ(nth_field(pas, 1).proximityImportance, 0.5);
         }
         {
             p.clear();
@@ -502,30 +512,30 @@ TEST_F(NativeRankTest, test_native_proximity) {
             p.add("nativeProximity.proximityImportance.foo", "0.6");
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "baz");
             ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "quux");
-            ft.getIndexEnv().getFields()[4].setFilter(true);
+            ft.getIndexEnv().getFields()[5].setFilter(true);
             FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("foo").add("baz"), in, out);
             Blueprint::UP          bp = pt.createInstance();
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
             const NativeProximityParams& pas = (dynamic_cast<NativeProximityBlueprint*>(bp.get()))->getParams();
-            ASSERT_TRUE(pas.vector.size() == 5);
-            EXPECT_TRUE(pas.vector[0].proximityTable == tm.getTable("linear(0,2)"));
-            EXPECT_TRUE(pas.vector[3].proximityTable == tm.getTable("linear(0,1)"));
-            EXPECT_TRUE(pas.vector[0].revProximityTable == tm.getTable("linear(0,3)"));
-            EXPECT_TRUE(pas.vector[3].revProximityTable == tm.getTable("linear(0,4)"));
-            EXPECT_NEAR(pas.vector[0].maxTableSum, 2.4, 10e-6);
-            EXPECT_NEAR(pas.vector[3].maxTableSum, 1.6, 10e-6);
-            EXPECT_EQ(pas.vector[0].fieldWeight, 200u);
-            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQ(pas.vector[3].fieldWeight, 0u);
-            EXPECT_EQ(pas.vector[0].field, true);
-            EXPECT_EQ(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
-            EXPECT_EQ(pas.vector[2].field, false); // 'qux' is an attribute
-            EXPECT_EQ(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
-            EXPECT_EQ(pas.vector[4].field, false); // filter field
+            ASSERT_TRUE(pas.vector.size() == 6);
+            EXPECT_TRUE(nth_field(pas, 0).proximityTable == tm.getTable("linear(0,2)"));
+            EXPECT_TRUE(nth_field(pas, 3).proximityTable == tm.getTable("linear(0,1)"));
+            EXPECT_TRUE(nth_field(pas, 0).revProximityTable == tm.getTable("linear(0,3)"));
+            EXPECT_TRUE(nth_field(pas, 3).revProximityTable == tm.getTable("linear(0,4)"));
+            EXPECT_NEAR(nth_field(pas, 0).maxTableSum, 2.4, 10e-6);
+            EXPECT_NEAR(nth_field(pas, 3).maxTableSum, 1.6, 10e-6);
+            EXPECT_EQ(nth_field(pas, 0).fieldWeight, 200u);
+            EXPECT_EQ(nth_field(pas, 1).fieldWeight, 100u);
+            EXPECT_EQ(nth_field(pas, 3).fieldWeight, 0u);
+            EXPECT_EQ(nth_field(pas, 0).field, true);
+            EXPECT_EQ(nth_field(pas, 1).field, false); // only 'foo' and 'baz' are specified explicit
+            EXPECT_EQ(nth_field(pas, 2).field, false); // 'qux' is an attribute
+            EXPECT_EQ(nth_field(pas, 3).field, false); // fieldWeight == 0 -> do not consider this field
+            EXPECT_EQ(nth_field(pas, 4).field, false); // filter field
             EXPECT_EQ(pas.slidingWindow, 2u);
-            EXPECT_EQ(pas.vector[0].proximityImportance, 0.6);
-            EXPECT_EQ(pas.vector[3].proximityImportance, 0.8);
+            EXPECT_EQ(nth_field(pas, 0).proximityImportance, 0.6);
+            EXPECT_EQ(nth_field(pas, 3).proximityImportance, 0.8);
         }
 
         {

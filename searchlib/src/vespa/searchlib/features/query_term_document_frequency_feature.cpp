@@ -28,7 +28,7 @@ namespace search::features {
 QueryTermDocumentFrequencyBlueprint::QueryTermDocumentFrequencyBlueprint()
     : Blueprint("queryTermDocumentFrequency"),
       _field_id(0),
-      _value_type(ValueType::from_spec("tensor(term{})")) {
+      _value_type(ValueType::from_spec("tensor<float>(term{})")) {
 }
 
 void QueryTermDocumentFrequencyBlueprint::visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const {
@@ -38,7 +38,7 @@ bool QueryTermDocumentFrequencyBlueprint::setup(const IIndexEnvironment&, const 
     _field_id = params[0].asField()->id();
     describeOutput("out",
                    "The document frequency BM25 would use for each query term in this field, including "
-                   "query-provided overrides, as a tensor(term{}) with query-term indexes as labels. "
+                   "query-provided overrides, as a tensor<float>(term{}) with query-term indexes as labels. "
                    "In streaming search, non-overridden values are 0.",
                    FeatureType::object(_value_type));
     return true;
@@ -69,7 +69,7 @@ FeatureExecutor& QueryTermDocumentFrequencyBlueprint::createExecutor(const IQuer
         return ConstantTensorExecutor::createEmpty(_value_type, stash);
     }
     auto                          factory = FastValueBuilderFactory::get();
-    auto                          builder = factory.create_value_builder<double>(_value_type, 1, 1, cells.size());
+    auto                          builder = factory.create_value_builder<float>(_value_type, 1, 1, cells.size());
     std::vector<std::string_view> addr_ref;
     for (const auto& cell : cells) {
         addr_ref.clear();

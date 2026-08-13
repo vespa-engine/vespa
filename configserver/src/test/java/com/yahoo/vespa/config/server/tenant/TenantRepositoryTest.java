@@ -110,8 +110,9 @@ public class TenantRepositoryTest {
         TenantApplications applicationRepo = tenantRepository.getTenant(tenant1).getApplicationRepo();
         ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
         applicationRepo.createApplication(id);
-        try (var transaction = new CuratorTransaction(curator)) {
-            applicationRepo.createWriteActiveTransaction(transaction, id, 4).commit();
+        try (var applicationLock = applicationRepo.lock(id);
+             var transaction = new CuratorTransaction(curator)) {
+            applicationRepo.appendActivateOperations(applicationLock, id, 4, transaction).commit();
         }
         applicationRepo.activateApplication(ApplicationVersions.fromList(List.of(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                                                                                  new ServerCache(),

@@ -4,7 +4,7 @@ TextMate grammar for the [Vespa](https://vespa.ai) schema language (`.sd` files)
 
 ## Usage
 
-The grammar file is [`grammar/vespa-schema.tmLanguage.json`](grammar/vespa-schema.tmLanguage.json). You can use it directly in any tool that supports TextMate grammars:
+The grammar file is [`grammars/vespa-schema.tmLanguage.json`](grammars/vespa-schema.tmLanguage.json). You can use it directly in any tool that supports TextMate grammars:
 
 ### Shiki (docs, blogs, static sites)
 
@@ -125,10 +125,10 @@ node audit-colors.mjs --file spotcheck.sd                     # specific file
 
 ```
 integration/tmgrammar/
-  grammar/
+  grammars/
     vespa-schema.tmLanguage.json   # THE OUTPUT -- generated TextMate grammar
   tools/                           # Build and validation pipeline
-    generate_tmgrammar.py          #   Generator: reads .ccc grammars + Java config, writes grammar/
+    generate_tmgrammar.py          #   Generator: reads .ccc grammars + Java config, writes grammars/
     test_tmgrammar.py              #   Validates keyword completeness, structure, scopes, .sd parsing
     compare_tokens.py              #   Structural diff: Java LSP token types vs TM scope assignments
     tm_tokenize.mjs                #   Tokenizes .sd files with the real vscode-textmate engine

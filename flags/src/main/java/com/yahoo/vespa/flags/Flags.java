@@ -245,32 +245,33 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY = defineFeatureFlag(
-            "fail-when-configuring-indexed-map-of-array", false,
+            "fail-when-configuring-indexed-map-of-array", true,
             List.of("hmusum"), "2026-07-01", "2026-10-13",
             "Whether to fail a deployment when an indexed map of array is used in a schema",
             "Takes effect at redeployment",
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK = defineFeatureFlag(
-            "use-wanted-generation-in-convergence-check", true,
-            List.of("hmusum"), "2026-06-16", "2026-09-01",
-            "Whether to use extended info (wantedGeneration) from /state/v1/config API to " +
-                    "decide if config convergence is achieved during deploy",
-            "Takes effect at deployment");
-
     public static final UnboundBooleanFlag PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE = defineFeatureFlag(
-            "proton-log-warning-on-disk-capacity-change", false,
+            "proton-log-warning-on-disk-capacity-change", true,
             List.of("johsol"), "2026-07-06", "2026-09-01",
             "Log a warning when sampled disk capacity changes. Escape hatch in case of log spam " +
             "while working towards adding back resampling of disk capacity.",
             "Takes effect at deployment");
 
     public static final UnboundBooleanFlag PROTON_RESAMPLE_DISK_CAPACITY = defineFeatureFlag(
-            "proton-resample-disk-capacity", false,
+            "proton-resample-disk-capacity", true,
             List.of("johsol"), "2026-07-06", "2026-09-01",
             "Resample disk capacity in proton.",
             "Takes effect at deployment");
+
+    public static final UnboundBooleanFlag FAST_MAP_SEARCH = defineFeatureFlag(
+            "fast-map-search", false,
+            List.of("johsol", "boeker", "arnej"), "2026-08-13", "2027-02-13",
+            "Whether to enable fast map search for map fields in a schema.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

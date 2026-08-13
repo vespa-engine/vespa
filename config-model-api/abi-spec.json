@@ -1459,7 +1459,8 @@
       "public boolean forceDisableOnnxModelOptimization()",
       "public boolean failWhenConfiguringIndexedMapOfArray()",
       "public boolean protonLogWarningOnDiskCapacityChange()",
-      "public boolean protonResampleDiskCapacity()"
+      "public boolean protonResampleDiskCapacity()",
+      "public boolean fastMapSearch()"
     ],
     "fields" : [ ]
   },

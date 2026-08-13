@@ -133,9 +133,10 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.738") default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
         @ModelFeatureFlag(owners = {"toregge"}) default double searchNodeReservedMemoryFactor() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forceDisableOnnxModelOptimization() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean failWhenConfiguringIndexedMapOfArray() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean failWhenConfiguringIndexedMapOfArray() { return true; }
         @ModelFeatureFlag(owners = {"johsol"}) default boolean protonLogWarningOnDiskCapacityChange() { return false; }
         @ModelFeatureFlag(owners = {"johsol"}) default boolean protonResampleDiskCapacity() { return false; }
+        @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

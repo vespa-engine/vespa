@@ -99,35 +99,22 @@ public class ApplicationCuratorDatabase {
     }
 
     /**
-     * Returns a transaction which writes the given session id as the currently active for the given application.
-     *
-     * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId     session id belonging to the application package for this application id.
+     * Append transaction operations that updates the last "deployed" (prepare or activate) session, and the active session,
+     * assuming the /config/v2/lock application lock is held.
      */
-    public Transaction createWriteActiveTransaction(Transaction transaction, ApplicationId applicationId, long sessionId) {
+    public Transaction appendDeployOperations(@SuppressWarnings("unused") Lock applicationLock,
+                                              ApplicationId applicationId,
+                                              long deployedSessionId,
+                                              OptionalLong activeSessionId,
+                                              Transaction transaction) {
         String path = applicationPath(applicationId).getAbsolute();
-        return transaction.add(setData(path, new ApplicationData(applicationId, OptionalLong.of(sessionId), OptionalLong.of(sessionId)).toJson()));
-    }
-
-    /**
-     * Returns a transaction which writes the given session id as the currently active for the given application.
-     *
-     * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId session id belonging to the application package for this application id.
-     */
-    public Transaction createWritePrepareTransaction(Transaction transaction,
-                                                     ApplicationId applicationId,
-                                                     long sessionId,
-                                                     OptionalLong activeSessionId) {
-        // Needs to read or be supplied current active session id, to avoid overwriting a newer session id.
-        String path = applicationPath(applicationId).getAbsolute();
-        return transaction.add(setData(path, new ApplicationData(applicationId, activeSessionId, OptionalLong.of(sessionId)).toJson()));
+        return transaction.add(setData(path, new ApplicationData(applicationId, activeSessionId, OptionalLong.of(deployedSessionId)).toJson()));
     }
 
     /**
      * Returns a transaction which deletes this application.
      */
-    public CuratorTransaction createDeleteTransaction(ApplicationId applicationId) {
+    public CuratorTransaction createDeleteTransaction(@SuppressWarnings("unused") Lock applicationLock, ApplicationId applicationId) {
         return CuratorTransaction.from(CuratorOperations.deleteAll(applicationPath(applicationId).getAbsolute(), curator), curator);
     }
 

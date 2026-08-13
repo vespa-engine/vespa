@@ -32,6 +32,9 @@ clustername string default=""
 ## or starting from zero.
 nodeIndex int default=0
 
+## The name of the availability zone this container is allocated in
+availabilityZone string default="default"
+
 ## Force restart of container on deploy, and defer any changes until restart
 restartOnDeploy bool default=false restart
 

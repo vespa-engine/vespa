@@ -14,13 +14,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class SystemInfoTest {
 
     @Test
-    @SuppressWarnings("removal")
     void testSystemInfo() {
         ApplicationId application = new ApplicationId("tenant1", "application1", "instance1");
         Zone zone = new Zone(Environment.dev, "us-west-1");
         Cloud cloud = new Cloud("aws");
         String cluster = "clusterName";
-        Node node = new Node(0);
+        Node node = new Node(0, "my-az");
 
         SystemInfo info = new SystemInfo(application, zone, cloud, cluster, node);
         assertEquals(application, info.application());
@@ -72,8 +71,9 @@ public class SystemInfoTest {
     @Test
     void testNode() {
         int index = 0;
-        Node node = new Node(index);
+        Node node = new Node(index, "my-az");
         assertEquals(index, node.index());
+        assertEquals("my-az", node.availabilityZone());
     }
 
 }

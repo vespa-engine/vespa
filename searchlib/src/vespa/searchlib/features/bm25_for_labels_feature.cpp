@@ -15,6 +15,7 @@
 #include <vespa/searchlib/fef/match_data_details.h>
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/searchlib/tensor/fast_value_view.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/vespalib/util/stash.h>
 
 #include <algorithm>
@@ -37,6 +38,40 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 
 namespace {
+
+/**
+ * Executor calculating the BM25 score in a single index field for the terms carrying each query item
+ * label, as a tensor<float>(label{}) with one cell per label that scored for the document.
+ */
+class Bm25ForLabelsExecutor : public fef::FeatureExecutor {
+    using QueryTerm = Bm25Utils::QueryTerm;
+
+    std::vector<std::vector<QueryTerm>> _terms_per_label; // in label order
+    double                              _avg_field_length;
+
+    // The 'k1' param determines term frequency saturation characteristics.
+    // The 'b' param adjusts the effects of the field length of the document matched compared to the average field
+    // length.
+    double _k1_mul_b;
+    double _k1_mul_one_minus_b;
+
+    vespalib::SharedStringRepo::Handles    _labels;       // every candidate label, resolved once
+    vespalib::StringIdVector               _view_labels;  // per document scoring subset, non-owning
+    std::vector<float>                     _view_cells;   // per document scores, parallel to _view_labels
+    const vespalib::eval::Value&           _empty_output; // owned by the blueprint
+    std::unique_ptr<vespalib::eval::Value> _output;
+
+    feature_t term_score(const QueryTerm& term, uint32_t doc_id) const;
+
+public:
+    Bm25ForLabelsExecutor(std::vector<std::pair<std::string, std::vector<QueryTerm>>> labeled_terms,
+                          double avg_field_length, double k1_param, double b_param,
+                          const vespalib::eval::Value& empty_output);
+    ~Bm25ForLabelsExecutor() override;
+
+    void handle_bind_match_data(const fef::MatchData& match_data) override;
+    void execute(uint32_t docId) override;
+};
 
 // keep in sync with default_k1_param / default_b_param in bm25_feature.cpp
 double constexpr default_k1_param = 1.2;
@@ -71,11 +106,9 @@ std::vector<Bm25Utils::QueryTerm> collect_field_terms(const std::vector<const IT
     return field_terms;
 }
 
-} // namespace
-
-Bm25ForLabelsExecutor::Bm25ForLabelsExecutor(std::vector<std::pair<std::string, std::vector<QueryTerm>>> labeled_terms,
-                                             double avg_field_length, double k1_param, double b_param,
-                                             const Value& empty_output)
+Bm25ForLabelsExecutor::Bm25ForLabelsExecutor(
+    std::vector<std::pair<std::string, std::vector<QueryTerm>>> labeled_terms, double avg_field_length,
+    double k1_param, double b_param, const Value& empty_output)
     : FeatureExecutor(),
       _terms_per_label(),
       _avg_field_length(avg_field_length),
@@ -147,13 +180,15 @@ void Bm25ForLabelsExecutor::execute(uint32_t doc_id) {
     outputs().set_object(0, *_output);
 }
 
+} // namespace
+
 Bm25ForLabelsBlueprint::Bm25ForLabelsBlueprint()
     : Blueprint("bm25_for_labels"),
       _field(nullptr),
       _k1_param(default_k1_param),
       _b_param(default_b_param),
       _avg_field_length(),
-      _value_type(ValueType::from_spec("tensor(label{})")),
+      _value_type(ValueType::from_spec("tensor<float>(label{})")),
       _empty_output() {
 }
 
@@ -185,7 +220,7 @@ bool Bm25ForLabelsBlueprint::setup(const fef::IIndexEnvironment& env, const fef:
     _empty_output = vespalib::eval::value_from_spec(_value_type.to_spec(), FastValueBuilderFactory::get());
     describeOutput("score",
                    "The bm25 score in the given index field for the terms carrying each query item label, "
-                   "as a tensor(label{}) with the labels as cell labels",
+                   "as a tensor<float>(label{}) with the labels as cell labels",
                    FeatureType::object(_value_type));
     return true;
 }
@@ -205,6 +240,7 @@ FeatureExecutor& Bm25ForLabelsBlueprint::createExecutor(const fef::IQueryEnviron
     double avg_field_length = lookup_result != nullptr
                                   ? as_value<double>(*lookup_result)
                                   : _avg_field_length.value_or(get_average_field_length(env, _field->name()));
+
     std::vector<std::pair<std::string, std::vector<Bm25Utils::QueryTerm>>> labeled_terms;
     for (auto& labeled_term : util::getTermsByAllLabels(env)) {
         auto field_terms = collect_field_terms(labeled_term.second, _field->id(), env, _k1_param);

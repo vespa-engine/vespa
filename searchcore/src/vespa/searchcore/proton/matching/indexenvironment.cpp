@@ -100,6 +100,9 @@ void IndexEnvironment::extractFields(const search::index::Schema& schema) {
 
 void IndexEnvironment::insertField(const search::fef::FieldInfo& field) {
     assert(field.id() == _fields.size());
+    // The empty name belongs to the "no field" held first in _fields, and must
+    // stay out of _fieldNames so that getFieldByName("") returns nullptr.
+    assert(!field.name().empty());
     _fieldNames[field.name()] = _fields.size();
     _fields.push_back(field);
 }
@@ -109,7 +112,7 @@ IndexEnvironment::IndexEnvironment(uint32_t distributionKey, const search::index
     : _tableManager(),
       _properties(std::move(props)),
       _fieldNames(),
-      _fields(),
+      _fields(1, search::fef::FieldInfo::no_field()),
       _motivation(UNKNOWN),
       _rankingAssetsRepo(rankingAssetsRepo),
       _distributionKey(distributionKey) {

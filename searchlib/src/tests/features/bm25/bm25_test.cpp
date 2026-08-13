@@ -221,9 +221,9 @@ struct Bm25ExecutorTest : public ::testing::TestWithParam<TestParam> {
     void setup() {
         EXPECT_TRUE(test.setup());
         match_data = test.createMatchDataBuilder();
-        clear_term(0, 0);
-        clear_term(1, 0);
-        clear_term(2, 1);
+        clear_term(0, 1);
+        clear_term(1, 1);
+        clear_term(2, 2);
     }
     std::string feature_name() const { return GetParam().feature_name({"foo"}); }
     bool execute(feature_t exp_score) {
@@ -292,28 +292,28 @@ INSTANTIATE_TEST_SUITE_P(Bm25ExecutorMultiTest, Bm25ExecutorTest, test_values, t
 
 TEST_P(Bm25ExecutorTest, score_is_calculated_for_a_single_term) {
     setup();
-    prepare_term(0, 0, 3, 20);
+    prepare_term(0, 1, 3, 20);
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
 TEST_P(Bm25ExecutorTest, score_is_calculated_for_multiple_terms) {
     setup();
-    prepare_term(0, 0, 3, 20);
-    prepare_term(1, 0, 7, 5);
+    prepare_term(0, 1, 3, 20);
+    prepare_term(1, 1, 7, 5);
     EXPECT_TRUE(execute(score(3.0, 20, idf(25)) + score(7.0, 5.0, idf(35))));
 }
 
 TEST_P(Bm25ExecutorTest, term_that_does_not_match_document_is_ignored) {
     setup();
-    prepare_term(0, 0, 3, 20);
+    prepare_term(0, 1, 3, 20);
     uint32_t unmatched_doc_id = 123;
-    prepare_term(1, 0, 7, 5, unmatched_doc_id);
+    prepare_term(1, 1, 7, 5, unmatched_doc_id);
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
 TEST_P(Bm25ExecutorTest, term_searching_another_field_is_ignored) {
     setup();
-    prepare_term(2, 1, 3, 20);
+    prepare_term(2, 2, 3, 20);
     EXPECT_TRUE(execute(0.0));
 }
 
@@ -321,7 +321,7 @@ TEST_P(Bm25ExecutorTest, uses_average_field_length_from_shared_state_if_found) {
     std::string key(GetParam()._elementwise ? "bm25.ael.foo" : "bm25.afl.foo");
     test.getQueryEnv().getObjectStore().add(key, std::make_unique<AnyWrapper<double>>(15));
     setup();
-    prepare_term(0, 0, 3, 20);
+    prepare_term(0, 1, 3, 20);
     scorer.avg_field_length = 15;
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
@@ -339,7 +339,7 @@ TEST_P(Bm25ExecutorTest, calculates_inverse_document_frequency) {
 TEST_P(Bm25ExecutorTest, k1_param_can_be_overriden) {
     test.getIndexEnv().getProperties().add(feature_name() + ".k1", "2.5");
     setup();
-    prepare_term(0, 0, 3, 20);
+    prepare_term(0, 1, 3, 20);
     scorer.k1_param = 2.5;
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
@@ -347,7 +347,7 @@ TEST_P(Bm25ExecutorTest, k1_param_can_be_overriden) {
 TEST_P(Bm25ExecutorTest, b_param_can_be_overriden) {
     test.getIndexEnv().getProperties().add(feature_name() + ".b", "0.9");
     setup();
-    prepare_term(0, 0, 3, 20);
+    prepare_term(0, 1, 3, 20);
     scorer.b_param = 0.9;
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
@@ -355,7 +355,7 @@ TEST_P(Bm25ExecutorTest, b_param_can_be_overriden) {
 TEST_P(Bm25ExecutorTest, avg_field_length_can_be_overriden) {
     test.getIndexEnv().getProperties().add(feature_name() + "." + GetParam().average_length_suffix(), "15");
     setup();
-    prepare_term(0, 0, 3, 20);
+    prepare_term(0, 1, 3, 20);
     scorer.avg_field_length = 15;
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
@@ -363,13 +363,13 @@ TEST_P(Bm25ExecutorTest, avg_field_length_can_be_overriden) {
 TEST_P(Bm25ExecutorTest, inverse_document_frequency_can_be_overriden_with_significance) {
     test.getQueryEnv().getProperties().add("vespa.term.0.significance", "0.35");
     setup();
-    prepare_term(0, 0, 3, 20);
+    prepare_term(0, 1, 3, 20);
     EXPECT_TRUE(execute(score(3.0, 20, 0.35)));
 }
 
 TEST_P(Bm25ExecutorTest, missing_interleaved_features_are_handled) {
     setup();
-    prepare_term(0, 0, 0, 0);
+    prepare_term(0, 1, 0, 0);
     EXPECT_TRUE(execute(score(GetParam()._elementwise ? 0.0 : 1.0, 10, idf(25))));
 }
 
@@ -423,29 +423,29 @@ TEST_F(Bm25LabelBlueprintTest, blueprint_setup_succeeds_with_one_argument) {
 
 TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_when_label_argument_is_malformed) {
     expect_setup_fail("bm25", {"is", ""},
-                        "The second parameter must be of the form label:<query-item-label>, but was ''");
+                      "The second parameter must be of the form label:<query-item-label>, but was ''");
     expect_setup_fail("bm25", {"is", "mylabel"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
     expect_setup_fail("bm25", {"is", "label()"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'label()'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'label()'");
     expect_setup_fail("bm25", {"is", "label(mylabel)"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'label(mylabel)'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'label(mylabel)'");
     expect_setup_fail("bm25", {"is", "label:"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'label:'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'label:'");
     expect_setup_fail("bm25", {"label", "mylabel"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'mylabel'");
     expect_setup_fail("bm25", {"is", "name:mylabel"},
-                        "The second parameter must be of the form label:<query-item-label>, but was 'name:mylabel'");
+                      "The second parameter must be of the form label:<query-item-label>, but was 'name:mylabel'");
     expect_setup_fail("bm25", {"foo:is", "label:mylabel"},
-                        "The first parameter must be an index field name or of the form field:<index-field>, but was "
-                        "'foo:is'");
+                      "The first parameter must be an index field name or of the form field:<index-field>, but was "
+                      "'foo:is'");
     expect_setup_fail("bm25", {"field:", "label:mylabel"},
-                        "The first parameter must be an index field name or of the form field:<index-field>, but was "
-                        "'field:'");
+                      "The first parameter must be an index field name or of the form field:<index-field>, but was "
+                      "'field:'");
     expect_setup_fail("bm25", {"field:\"title\"", "label:mylabel"},
-                        "The field tag value must be an identifier, but was '\"title\"'");
+                      "The field tag value must be an identifier, but was '\"title\"'");
     expect_setup_fail("bm25", {"field:123", "label:mylabel"},
-                        "The field tag value must be an identifier, but was '123'");
+                      "The field tag value must be an identifier, but was '123'");
 }
 
 TEST_F(Bm25LabelBlueprintTest, blueprint_setup_fails_for_unknown_field) {
@@ -467,9 +467,9 @@ TEST_F(Bm25LabelBlueprintTest, bm25_for_labels_blueprint_setup_succeeds_for_inde
 }
 
 TEST_F(Bm25LabelBlueprintTest, bm25_for_labels_blueprint_setup_fails_for_invalid_parameter_list) {
-    expect_setup_fail("bm25_for_labels", {});                    // wrong parameter number
+    expect_setup_fail("bm25_for_labels", {});                      // wrong parameter number
     expect_setup_fail("bm25_for_labels", {"is", "label:mylabel"}); // wrong parameter number
-    expect_setup_fail("bm25_for_labels", {"as"});                // 'as' is an attribute
+    expect_setup_fail("bm25_for_labels", {"as"});                  // 'as' is an attribute
 }
 
 TEST_F(Bm25LabelBlueprintTest, bm25_for_labels_is_not_a_dump_feature) {
@@ -493,6 +493,7 @@ struct Bm25LabelFixture {
         add_query_term("bar", 45, 13);
         test.getQueryEnv().getBuilder().set_avg_field_length("foo", 10);
     }
+    ~Bm25LabelFixture();
 
     void add_query_term(const std::string& field_name, uint32_t matching_doc_count, uint32_t unique_id) {
         auto* term = test.getQueryEnv().getBuilder().addIndexNode({field_name});
@@ -505,9 +506,9 @@ struct Bm25LabelFixture {
     void setup() {
         EXPECT_TRUE(test.setup());
         match_data = test.createMatchDataBuilder();
-        clear_term(0, 0);
-        clear_term(1, 0);
-        clear_term(2, 1);
+        clear_term(0, 1);
+        clear_term(1, 1);
+        clear_term(2, 2);
     }
     void clear_term(uint32_t term_id, uint32_t field_id) {
         auto* tfmd = match_data->getTermFieldMatchData(term_id, field_id);
@@ -531,13 +532,15 @@ struct Bm25LabelFixture {
     bool execute(const test::RankResult& expected) { return test.execute(expected); }
 };
 
+Bm25LabelFixture::~Bm25LabelFixture() = default;
+
 // Normalized feature names below must stay in sync with config-model/src/test/derived/bm25label/test.sd.
 TEST(Bm25LabelExecutorTest, only_labeled_terms_are_scored) {
     Bm25LabelFixture f({"bm25(foo)", "bm25(\"field:foo\",\"label:mylabel\")"});
     f.add_label("mylabel", {11});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
-    f.prepare_term(1, 0, 7, 5);
+    f.prepare_term(0, 1, 3, 20);
+    f.prepare_term(1, 1, 7, 5);
     test::RankResult expected;
     expected.setEpsilon(0.000001);
     expected.addScore("bm25(foo)", f.score(3.0, 20, f.idf(25)) + f.score(7.0, 5.0, f.idf(35)));
@@ -549,8 +552,8 @@ TEST(Bm25LabelExecutorTest, shorthand_form_returns_same_score_as_preferred_form)
     Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")", "bm25(foo,\"label:mylabel\")"});
     f.add_label("mylabel", {11});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
-    f.prepare_term(1, 0, 7, 5);
+    f.prepare_term(0, 1, 3, 20);
+    f.prepare_term(1, 1, 7, 5);
     test::RankResult expected;
     expected.setEpsilon(0.000001);
     const feature_t labeled_score = f.score(3.0, 20, f.idf(25));
@@ -563,8 +566,8 @@ TEST(Bm25LabelExecutorTest, label_with_multiple_terms_scores_their_sum) {
     Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")"});
     f.add_label("mylabel", {11, 12});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
-    f.prepare_term(1, 0, 7, 5);
+    f.prepare_term(0, 1, 3, 20);
+    f.prepare_term(1, 1, 7, 5);
     test::RankResult expected;
     expected.setEpsilon(0.000001);
     expected.addScore("bm25(\"field:foo\",\"label:mylabel\")",
@@ -575,7 +578,7 @@ TEST(Bm25LabelExecutorTest, label_with_multiple_terms_scores_their_sum) {
 TEST(Bm25LabelExecutorTest, label_not_present_in_query_gives_zero_score) {
     Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")"});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
+    f.prepare_term(0, 1, 3, 20);
     test::RankResult expected;
     expected.setEpsilon(0.000001);
     expected.addScore("bm25(\"field:foo\",\"label:mylabel\")", 0.0);
@@ -586,8 +589,8 @@ TEST(Bm25LabelExecutorTest, labeled_term_searching_another_field_contributes_not
     Bm25LabelFixture f({"bm25(\"field:foo\",\"label:mylabel\")"});
     f.add_label("mylabel", {13}); // term searching field 'bar'
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
-    f.prepare_term(2, 1, 3, 20);
+    f.prepare_term(0, 1, 3, 20);
+    f.prepare_term(2, 2, 3, 20);
     test::RankResult expected;
     expected.setEpsilon(0.000001);
     expected.addScore("bm25(\"field:foo\",\"label:mylabel\")", 0.0);
@@ -600,7 +603,7 @@ TEST(Bm25LabelExecutorTest, labeled_feature_uses_field_level_tuning) {
     f.test.getIndexEnv().getProperties().add("bm25(foo).k1", "2.5");
     f.add_label("mylabel", {11});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
+    f.prepare_term(0, 1, 3, 20);
     f.scorer.k1_param = 2.5;
     test::RankResult expected;
     expected.setEpsilon(0.000001);
@@ -629,6 +632,7 @@ struct Bm25ForLabelsFixture {
         add_query_term("bar", 45, 13);
         test.getQueryEnv().getBuilder().set_avg_field_length("foo", 10);
     }
+    ~Bm25ForLabelsFixture();
 
     void add_query_term(const std::string& field_name, uint32_t matching_doc_count, uint32_t unique_id) {
         auto* term = test.getQueryEnv().getBuilder().addIndexNode({field_name});
@@ -641,9 +645,9 @@ struct Bm25ForLabelsFixture {
     void setup() {
         EXPECT_TRUE(test.setup());
         match_data = test.createMatchDataBuilder();
-        clear_term(0, 0);
-        clear_term(1, 0);
-        clear_term(2, 1);
+        clear_term(0, 1);
+        clear_term(1, 1);
+        clear_term(2, 2);
     }
     void clear_term(uint32_t term_id, uint32_t field_id) {
         auto* tfmd = match_data->getTermFieldMatchData(term_id, field_id);
@@ -664,28 +668,33 @@ struct Bm25ForLabelsFixture {
     feature_t score(feature_t num_occs, feature_t field_length, double inverse_doc_freq) const {
         return scorer.score(num_occs, field_length, inverse_doc_freq);
     }
-    static TensorSpec expected_spec() { return TensorSpec("tensor(label{})"); }
+    // The output has float cells, so expected specs must be normalize()d to round their
+    // locally computed double scores the same way the executor does.
+    static TensorSpec expected_spec() { return TensorSpec("tensor<float>(label{})"); }
     static TensorSpec::Address label_addr(const std::string& label) { return {{"label", label}}; }
     TensorSpec execute() { return spec_from_value(test.resolveObjectFeature()); }
 };
+
+Bm25ForLabelsFixture::~Bm25ForLabelsFixture() = default;
 
 TEST(Bm25ForLabelsExecutorTest, label_with_one_term_gives_one_cell) {
     Bm25ForLabelsFixture f;
     f.add_label("mylabel", {11});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
-    f.prepare_term(1, 0, 7, 5);
-    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25))), f.execute());
+    f.prepare_term(0, 1, 3, 20);
+    f.prepare_term(1, 1, 7, 5);
+    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25))).normalize(), f.execute());
 }
 
 TEST(Bm25ForLabelsExecutorTest, label_with_multiple_terms_in_the_field_scores_their_sum) {
     Bm25ForLabelsFixture f;
     f.add_label("mylabel", {11, 12});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
-    f.prepare_term(1, 0, 7, 5);
-    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"),
-                                    f.score(3.0, 20, f.idf(25)) + f.score(7.0, 5.0, f.idf(35))),
+    f.prepare_term(0, 1, 3, 20);
+    f.prepare_term(1, 1, 7, 5);
+    EXPECT_EQ(f.expected_spec()
+                  .add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25)) + f.score(7.0, 5.0, f.idf(35)))
+                  .normalize(),
               f.execute());
 }
 
@@ -694,11 +703,12 @@ TEST(Bm25ForLabelsExecutorTest, each_label_scores_only_its_own_terms) {
     f.add_label("first", {11});
     f.add_label("second", {12});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
-    f.prepare_term(1, 0, 7, 5);
+    f.prepare_term(0, 1, 3, 20);
+    f.prepare_term(1, 1, 7, 5);
     EXPECT_EQ(f.expected_spec()
                   .add(f.label_addr("first"), f.score(3.0, 20, f.idf(25)))
-                  .add(f.label_addr("second"), f.score(7.0, 5.0, f.idf(35))),
+                  .add(f.label_addr("second"), f.score(7.0, 5.0, f.idf(35)))
+                  .normalize(),
               f.execute());
 }
 
@@ -706,15 +716,15 @@ TEST(Bm25ForLabelsExecutorTest, label_whose_terms_search_another_field_is_absent
     Bm25ForLabelsFixture f;
     f.add_label("mylabel", {13}); // term searching field 'bar'
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
-    f.prepare_term(2, 1, 3, 20);
+    f.prepare_term(0, 1, 3, 20);
+    f.prepare_term(2, 2, 3, 20);
     EXPECT_EQ(f.expected_spec(), f.execute());
 }
 
 TEST(Bm25ForLabelsExecutorTest, query_without_labels_gives_empty_tensor) {
     Bm25ForLabelsFixture f;
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
+    f.prepare_term(0, 1, 3, 20);
     EXPECT_EQ(f.expected_spec(), f.execute());
 }
 
@@ -723,10 +733,10 @@ TEST(Bm25ForLabelsExecutorTest, label_not_matching_the_document_is_absent) {
     f.add_label("matching", {11});
     f.add_label("other", {12});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
+    f.prepare_term(0, 1, 3, 20);
     uint32_t unmatched_doc_id = 123;
-    f.prepare_term(1, 0, 7, 5, unmatched_doc_id);
-    EXPECT_EQ(f.expected_spec().add(f.label_addr("matching"), f.score(3.0, 20, f.idf(25))), f.execute());
+    f.prepare_term(1, 1, 7, 5, unmatched_doc_id);
+    EXPECT_EQ(f.expected_spec().add(f.label_addr("matching"), f.score(3.0, 20, f.idf(25))).normalize(), f.execute());
 }
 
 TEST(Bm25ForLabelsExecutorTest, no_label_matching_the_document_gives_empty_tensor) {
@@ -735,8 +745,8 @@ TEST(Bm25ForLabelsExecutorTest, no_label_matching_the_document_gives_empty_tenso
     f.add_label("second", {12});
     f.setup();
     uint32_t unmatched_doc_id = 123;
-    f.prepare_term(0, 0, 3, 20, unmatched_doc_id);
-    f.prepare_term(1, 0, 7, 5, unmatched_doc_id);
+    f.prepare_term(0, 1, 3, 20, unmatched_doc_id);
+    f.prepare_term(1, 1, 7, 5, unmatched_doc_id);
     EXPECT_EQ(f.expected_spec(), f.execute());
 }
 
@@ -747,19 +757,19 @@ TEST(Bm25ForLabelsExecutorTest, uses_field_level_tuning) {
     f.test.getIndexEnv().getProperties().add("bm25_for_labels(foo).k1", "3.5");
     f.add_label("mylabel", {11});
     f.setup();
-    f.prepare_term(0, 0, 3, 20);
+    f.prepare_term(0, 1, 3, 20);
     f.scorer.k1_param = 2.5;
-    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25))), f.execute());
+    EXPECT_EQ(f.expected_spec().add(f.label_addr("mylabel"), f.score(3.0, 20, f.idf(25))).normalize(), f.execute());
 }
 
 TEST_P(Bm25ExecutorTest, multiple_elements_and_terms) {
     setup();
-    prepare_term(0, 0, 0, 0);
-    append_term(0, 0, 1, 3, 20);
-    append_term(0, 0, 7, 2, 5);
-    prepare_term(1, 0, 0, 0);
-    append_term(1, 0, 7, 1, 5);
-    append_term(1, 0, 9, 2, 7);
+    prepare_term(0, 1, 0, 0);
+    append_term(0, 1, 1, 3, 20);
+    append_term(0, 1, 7, 2, 5);
+    prepare_term(1, 1, 0, 0);
+    append_term(1, 1, 7, 1, 5);
+    append_term(1, 1, 9, 2, 7);
     if (!GetParam()._elementwise) {
         // flattened: term 0 is (5 occs, length 25), term 1 is (3 occs, length 12)
         EXPECT_TRUE(execute(score(5, 25, idf(25)) + score(3, 12, idf(35))));

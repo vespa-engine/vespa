@@ -20,6 +20,7 @@
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 
+#include <cassert>
 #include <regex>
 
 #include <vespa/log/log.h>
@@ -75,7 +76,8 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT& fid, const std::string& fname, 
       _reconfigured(false) {
     switch (searchDef) {
     default:
-        Issue::report("Unknown searchdef = %d. Defaulting to AUTOUTF8", static_cast<int>(searchDef));
+        LOG(warning, "Unknown searchdef = %d for field '%s'. Defaulting to AUTOUTF8", static_cast<int>(searchDef),
+            fname.c_str());
         [[fallthrough]];
     case VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8:
     case VsmfieldsConfig::Fieldspec::Searchmethod::NONE:
@@ -262,7 +264,8 @@ FieldIdTList buildFieldSet(const VsmfieldsConfig::Documenttype::Index& ci, const
             if (foundField != specMap.end()) {
                 ifm.push_back(foundField->second.id());
             } else {
-                Issue::report("Field %s not defined. Ignoring....", cf.name.c_str());
+                LOG(warning, "Field '%s' is not defined. Cannot add to index view '%s'.", cf.name.c_str(),
+                    ci.name.c_str());
             }
         }
     }
@@ -285,10 +288,31 @@ search::Normalizing FieldSearchSpecMap::convert_normalize_mode(VsmfieldsConfig::
 
 void FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle&                conf,
                                          const search::fef::IIndexEnvironment& index_env) {
+    /*
+     * The vsm field id space must be identical to the field id space of the
+     * index environment, which is built from this same config, cf.
+     * streaming::IndexEnvPrototype::detectFields(). Rather than counting along
+     * in parallel, take each id from the index environment. Field id 0 is the
+     * reserved "no field" in both id spaces and never denotes a vsm field.
+     */
+    assert(index_env.getNumFields() > 0);
+    assert(index_env.getField(0)->is_no_field());
     LOG(spam, "Parsing %zd fields", conf->fieldspec.size());
     for (const VsmfieldsConfig::Fieldspec& cfs : conf->fieldspec) {
         LOG(spam, "Parsing %s", cfs.name.c_str());
-        FieldIdT        fieldId = specMap().size();
+        const auto* field = index_env.getFieldByName(cfs.name);
+        if (field == nullptr) {
+            LOG(warning,
+                "Field '%s' is not registered in the index environment. "
+                "Cannot add a field search spec for it.",
+                cfs.name.c_str());
+            continue;
+        }
+        FieldIdT fieldId = field->id();
+        if (specMap().contains(fieldId)) {
+            LOG(warning, "We already have a field search spec for field '%s'. Drop the new one.", cfs.name.c_str());
+            continue;
+        }
         FieldSearchSpec fss(fieldId, cfs.name, cfs.searchmethod, convert_normalize_mode(cfs.normalize), cfs.arg1,
                             cfs.maxlength);
         _specMap[fieldId] = std::move(fss);
@@ -297,12 +321,15 @@ void FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle&                c
     }
     /*
      * Index env is based on same vsm fields config but has additional
-     * virtual fields, cf. IndexEnvironment::add_virtual_fields().
+     * virtual fields, cf. IndexEnvironment::add_virtual_fields(). Propagate
+     * their name to field id mapping without assuming where in the id space
+     * they live.
      */
-    for (uint32_t field_id = specMap().size(); field_id < index_env.getNumFields(); ++field_id) {
+    for (uint32_t field_id = 1; field_id < index_env.getNumFields(); ++field_id) {
         auto& field = *index_env.getField(field_id);
-        assert(field.type() == search::fef::FieldType::VIRTUAL);
-        _nameIdMap.add(field.name(), field_id);
+        if (field.type() == search::fef::FieldType::VIRTUAL) {
+            _nameIdMap.add(field.name(), field_id);
+        }
     }
 
     LOG(spam, "Parsing %zd document types", conf->documenttype.size());

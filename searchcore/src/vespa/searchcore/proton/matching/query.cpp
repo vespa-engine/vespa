@@ -306,6 +306,21 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
         }
         trace_global_filter_decision(5, trace, "Skip", estimated_hit_ratio, effective_lower_limit,
                                      effective_upper_limit);
+
+        // We are skipping the global filter computation on the premise that this query matches only very few
+        // documents, i.e., the estimated hit ratio is very low, and using exact nearest neighbor search to compute
+        // the distances to these documents is cheap.
+        // A WhiteListBlueprint that only matches very few documents can be the reason for the low estimated
+        // hit ratio. Hence, we have to make sure that the WhiteListBlueprint comes before the
+        // NearestNeighborBlueprints to reap the benefits of the low estimated hit ratio. The WhiteListBlueprint is in
+        // the expensive cost tier, however, which means that we have to mark the NearestNeighborBlueprints also as
+        // expensive to allow them to come after the WhiteListBlueprint.
+        blueprint.each_node_post_order([](Blueprint& bp) {
+            if (auto nearest_neighbor = bp.asNearestNeighbor()) {
+                nearest_neighbor->set_cost_tier_to_expensive();
+            }
+        });
+
         return false;
     }
 

@@ -111,7 +111,7 @@ void setupIndexEnvironments() {
     resolved_index_env.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, resolved_field2,
                                                 field_id + 1);
 
-    attribute_index_env.getFields().emplace_back(FieldType::ATTRIBUTE, CollectionType::SINGLE, field, 0);
+    attribute_index_env.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, field);
     FieldInfo loc_field_info = FieldInfo(FieldType::ATTRIBUTE, CollectionType::SINGLE,
                                          PositionDataType::getZCurveFieldName(loc_field), field_id + 1);
     plain_index_env.getFields().push_back(loc_field_info);
@@ -644,9 +644,9 @@ TEST(QueryTest, requireThatQueryGluesEverythingTogether) {
 
 void checkQueryAddsLocation(const string& loc_in, const string& loc_out) {
     fef_test::IndexEnvironment index_environment;
-    index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field, 0);
-    index_environment.getFields().emplace_back(FieldType::ATTRIBUTE, CollectionType::SINGLE,
-                                               PositionDataType::getZCurveFieldName(loc_field), 1);
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, field);
+    index_environment.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE,
+                               PositionDataType::getZCurveFieldName(loc_field));
 
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm(string_term, field, 1, Weight(2));

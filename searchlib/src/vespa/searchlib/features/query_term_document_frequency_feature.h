@@ -9,7 +9,7 @@ namespace search::features {
 
 /**
  * Blueprint for the per-term document frequency of the query terms searching a given index field,
- * exposed as a mapped tensor(term{}) with one cell per query term. Labels are query-term indexes.
+ * exposed as a mapped tensor<float>(term{}) with one cell per query term. Labels are query-term indexes.
  * Cell values are the document frequency BM25 would use: a query-provided override
  * (documentFrequency annotation / significance model) if present, otherwise the local index statistic.
  */
