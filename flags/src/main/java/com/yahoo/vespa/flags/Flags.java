@@ -265,6 +265,14 @@ public class Flags {
             "Resample disk capacity in proton.",
             "Takes effect at deployment");
 
+    public static final UnboundBooleanFlag FAST_MAP_SEARCH = defineFeatureFlag(
+            "fast-map-search", false,
+            List.of("johsol", "boeker", "arnej"), "2026-08-13", "2027-02-13",
+            "Whether to enable fast map search for map fields in a schema.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
