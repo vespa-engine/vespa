@@ -57,7 +57,7 @@ public class ParsedSummaryField extends ParsedBlock {
     public void setTokens() { this.isTokens = true; }
     public void setHasExplicitType() { this.hasExplicitType = true; }
     void setType(ParsedType value) {
-        verifyThat(type == null, "Cannot change type from ", type, "to", value);
+        verifyThat(type == null, "Cannot change type from ", type.toNiceName(), "to", value.toNiceName());
         this.type = value;
     }
 }

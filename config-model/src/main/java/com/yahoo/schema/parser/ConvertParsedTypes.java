@@ -241,7 +241,7 @@ public class ConvertParsedTypes {
 
     private DataType createAnnRef(ParsedType pType, ParsedDocument context) {
         deployLogger.log(Level.WARNING, "For schema '" + context.name() +
-                         "', " + pType +
+                         "', " + pType.toNiceName() +
                          ": annotation references are deprecated and will be removed in the near future");
         SDAnnotationType annotation = findAnnotationFromSchemas(pType.getNameOfReferencedAnnotation(), context);
         return new AnnotationReferenceDataType(annotation);
