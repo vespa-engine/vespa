@@ -1,0 +1,13 @@
+schema bm25quotefieldattrbad {
+    document bm25quotefieldattrbad {
+        field tags type string {
+            indexing: attribute | summary
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: bm25(field: "tags", label: someLabel)
+        }
+    }
+}

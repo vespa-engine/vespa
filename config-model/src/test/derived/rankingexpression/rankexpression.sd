@@ -1,6 +1,11 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema rankexpression {
 
+  struct chunk {
+    field txt type string {}
+    field cnum type int {}
+  }
+
   document rankexpression {
 
     field nrtgmp type double {
@@ -71,6 +76,12 @@ schema rankexpression {
     field textchunks type array<string> {
       indexing: index
       index: enable-bm25
+    }
+
+    field m_chunk type array<chunk> {
+      struct-field cnum {
+        indexing: attribute
+      }
     }
   }
 
@@ -548,8 +559,18 @@ schema rankexpression {
       first-phase {
         expression: bm25(textchunks)
       }
+      second-phase {
+        expression: reduce(queryTermDocumentFrequency(textchunks), sum, term) + queryTermDocumentFrequency(textchunks){term:"0"}
+      }
       rank-features { averageFieldLength(textchunks) num_docs_indexed }
       match-features { averageFieldLength(textchunks) num_docs_indexed }
-      summary-features { averageFieldLength(textchunks) num_docs_indexed }
+      summary-features { averageFieldLength(textchunks) num_docs_indexed queryTermDocumentFrequency(textchunks) }
+  }
+
+  rank-profile with_tensor_from_dotted_attr {
+      summary-features {
+          tensorFromLabelsWithOffset(attribute(m_chunk.cnum), i, offset)
+          attribute(m_chunk.cnum)
+      }
   }
 }

@@ -6,19 +6,22 @@
 
 namespace proton {
 
-AttributeUsageSamplerContext::AttributeUsageSamplerContext(const std::string&    document_type,
+AttributeUsageSamplerContext::AttributeUsageSamplerContext(const std::string& document_type,
+                                                           uint32_t ready_attributes, uint32_t notready_attributes,
                                                            AttributeUsageFilter& filter)
-    : _usage(document_type), _lock(), _filter(filter) {
+    : _usage_stats_and_load_info(document_type, ready_attributes, notready_attributes), _lock(), _filter(filter) {
 }
 
 AttributeUsageSamplerContext::~AttributeUsageSamplerContext() {
-    _filter.setAttributeStats(_usage);
+    _filter.setAttributeStats(std::move(_usage_stats_and_load_info));
 }
 
-void AttributeUsageSamplerContext::merge(const search::AddressSpaceUsage& usage, const std::string& attributeName,
-                                         const std::string& subDbName) {
+void AttributeUsageSamplerContext::merge(const search::AddressSpaceUsage&      usage,
+                                         const initializer::LoadMemoryUsage&   load_memory_usage,
+                                         AttributeUsageStatsAndLoadInfo::SubDb sub_db,
+                                         const std::string& attributeName, const std::string& subDbName) {
     Guard guard(_lock);
-    _usage.merge(usage, attributeName, subDbName);
+    _usage_stats_and_load_info.merge(usage, load_memory_usage, sub_db, attributeName, subDbName);
 }
 
 } // namespace proton

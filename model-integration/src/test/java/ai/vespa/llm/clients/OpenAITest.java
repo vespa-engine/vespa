@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import com.openai.errors.UnauthorizedException;
 import com.openai.errors.OpenAIIoException;
+import com.openai.models.ReasoningEffort;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,6 +70,32 @@ public class OpenAITest {
         assertNumTokens(text.toString(), 3, 10);
     }
     
+    @Test
+    public void testReasoningEffortOption() {
+        var prompt = StringPrompt.from("hello");
+
+        // Not set: not sent to the API
+        var openai = new OpenAI(new LlmClientConfig.Builder().apiKeySecretName("openai").build(), new MockSecrets());
+        var params = openai.getChatCompletionCreateParams(new InferenceParameters(Map.<String, String>of()::get), prompt);
+        assertTrue(params.reasoningEffort().isEmpty());
+
+        // Set in component config
+        var openaiWithConfig = new OpenAI(
+                new LlmClientConfig.Builder().apiKeySecretName("openai").reasoningEffort("low").build(),
+                new MockSecrets());
+        params = openaiWithConfig.getChatCompletionCreateParams(
+                openaiWithConfig.prepareParameters(new InferenceParameters(Map.<String, String>of()::get)), prompt);
+        assertEquals(ReasoningEffort.LOW, params.reasoningEffort().orElseThrow());
+
+        // Per-request option overrides config; non-enum values pass through
+        // as-is (providers accept different sets, e.g. "minimal" and "none").
+        params = openaiWithConfig.getChatCompletionCreateParams(
+                openaiWithConfig.prepareParameters(
+                        new InferenceParameters(Map.of(InferenceParameters.OPTION_REASONING_EFFORT, "none")::get)),
+                prompt);
+        assertEquals(ReasoningEffort.of("none"), params.reasoningEffort().orElseThrow());
+    }
+
     @Test
     public void testClientCaching() {
         // Create OpenAI instance

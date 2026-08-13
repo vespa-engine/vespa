@@ -310,6 +310,8 @@ public abstract class Container extends AbstractService implements
                 .clustername(clusterName != null ? clusterName : "")
                 .nodeIndex(index)
                 .shutdown.dumpHeapOnTimeout(dumpHeapOnShutdownTimeout);
+        if (getHostResource() != null)
+            builder.availabilityZone(getHostResource().spec().availabilityZone().value());
     }
 
     /** Returns the jvm args set explicitly for this node */

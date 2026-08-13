@@ -16,7 +16,7 @@ plugins {
 ext {
     snakeYamlVersion = '2.6'
     shadowGradlePluginVersion = '8.1.1'
-    log4jVersion = '2.26.0'
+    log4jVersion = '2.26.1'
 }
 
 apply from: LOGSTASH_CORE_PATH + "/../rubyUtils.gradle"
@@ -58,9 +58,9 @@ dependencies {
 
     implementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.22.0'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.22.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.22.1'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
 
     implementation "org.yaml:snakeyaml:${snakeYamlVersion}"

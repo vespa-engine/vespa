@@ -25,6 +25,7 @@ public class FunctionSignature {
     private Set<String> properties;
     private boolean expandable = false;
     private boolean anyPropertyAllowed = false;
+    private boolean hidden = false;
 
     public FunctionSignature(List<Argument> arguments, Set<String> properties, boolean expandable) {
         this.argumentList = arguments;
@@ -84,6 +85,15 @@ public class FunctionSignature {
 
     public boolean anyPropertyAllowed() {
         return this.anyPropertyAllowed;
+    }
+
+    public FunctionSignature hidden() {
+        this.hidden = true;
+        return this;
+    }
+
+    public boolean isHidden() {
+        return hidden;
     }
 
     int matchScore(List<RankNode> arguments) {

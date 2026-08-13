@@ -716,10 +716,22 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.FALSE, evaluate("test.intarray > 80", documents.get(1)));
         assertEquals(Result.TRUE, evaluate("test.intarray >= 84", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.intarray <= 3", documents.get(1)));
+        assertEquals(Result.TRUE, evaluate("not test.intarray < 5", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("not test.intarray < 5", documents.get(1)));
+        assertEquals(Result.FALSE, evaluate("5 > test.intarray", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("5 > test.intarray", documents.get(1)));
+        assertEquals(Result.TRUE, evaluate("not 5 > test.intarray", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("not 5 > test.intarray", documents.get(1)));
 
         // Interesting property ...
         assertEquals(Result.TRUE, evaluate("test.intarray == 84", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.intarray != 84", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("not test.intarray == 84", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("not test.intarray != 84", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("84 == test.intarray", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("84 != test.intarray", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("not 84 == test.intarray", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("not 84 != test.intarray", documents.get(0)));
 
         assertEquals(Result.TRUE, evaluate("test.structarray[$x].key == 15 AND test.structarray[$x].value == \"structval1\"", documents.get(1)));
         assertEquals(Result.FALSE, evaluate("test.structarray[$x].key == 15 AND test.structarray[$x].value == \"structval2\"", documents.get(1)));

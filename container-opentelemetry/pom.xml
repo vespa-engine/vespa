@@ -18,59 +18,103 @@
     <name>${project.artifactId}</name>
     <description>OSGi bundle embedding the OpenTelemetry SDK + API and exporting them to the Vespa container.</description>
 
-    <properties>
-        <maven.javadoc.skip>true</maven.javadoc.skip> <!-- No source code in module -->
-    </properties>
-
     <dependencies>
+        <!-- provided => NOT embedded; supplied at runtime by other bundles (configdefinitions, security-utils)
+             or by the jdisc_core system packages (defaults). The packages these provide must be listed as
+             mandatory in Import-Package below, otherwise the *;resolution:=optional catch-all makes them
+             optional imports: the bundle resolves cleanly and throws NoClassDefFoundError on first use. -->
+        <dependency>
+            <!-- TelemetryConfig extends com.yahoo.config.ConfigInstance, so the supertype must be on the
+                 compile classpath and com.yahoo.config must resolve at runtime. Same pairing as container-disc. -->
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-lib</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>configdefinitions</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>security-utils</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>defaults</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- compile => embedded into the bundle; versions managed by container-dependency-versions (opentelemetry-bom).
              Every module is declared directly (not via transitive resolution): the maven-bundle-plugin does not
              reliably embed deep transitives across build environments, which left e.g. opentelemetry-common
              unembedded and imported as a mandatory package, breaking OSGi resolution. Listing them directly
-             guarantees they are embedded. (Same workaround pattern as container-apache-http-client-bundle.) -->
+             guarantees they are embedded. (Same workaround pattern as container-apache-http-client-bundle.)
+
+             optional=true => not transitive to consumers. Without it, container-disc's provided-scope dependency
+             on this module would drag the whole SDK back onto its compile classpath (a provided EDGE re-scopes the
+             target's compile deps to provided, it does not drop them), defeating D4. It does NOT affect embedding:
+             Embed-Dependency ignores the optional flag unless an explicit ;optional= clause is given, and the
+             assembly's dependencySet resolves direct deps at depth 1 where the flag never applies. -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-context</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-common</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-common</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-trace</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-metrics</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-logs</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-common</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp-common</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <optional>true</optional>
             <exclusions>
                 <!-- Use the JDK HttpClient sender instead, to avoid okhttp/okio/kotlin -->
                 <exclusion>
@@ -82,11 +126,37 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-sender-jdk</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- test scope: not matched by Embed-Dependency's scope=compile|runtime filter, so not embedded -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- InMemorySpanExporter for asserting on emitted spans -->
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-testing</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>parse-version</id>
+                        <goals>
+                            <goal>parse-version</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -94,14 +164,37 @@
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Version>${opentelemetry.vespa.version}</Bundle-Version>
+                        <!-- The bundle carries Vespa code (ai.vespa.telemetry.*), so its version tracks Vespa,
+                             not the embedded OTel release. Same parse-version idiom as container-apache-http-client-bundle. -->
+                        <Bundle-Version>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</Bundle-Version>
                         <!-- Export the OTel API + SDK so Vespa components (and the Provider in container-disc) can import them -->
+                        <!-- SDK + OTLP exporter are NOT exported: they are embedded (private) and used only by
+                             OtelTelemetry inside this bundle (D4). Only the OTel api + context surface and the
+                             Vespa telemetry seam are exported. See Private-Package below for the jctools caveat. -->
                         <Export-Package>
                             io.opentelemetry.api.*;version=${opentelemetry.vespa.version};-noimport:=true,
                             io.opentelemetry.context.*;version=${opentelemetry.vespa.version};-noimport:=true,
-                            io.opentelemetry.sdk.*;version=${opentelemetry.vespa.version};-noimport:=true,
-                            io.opentelemetry.exporter.otlp.*;version=${opentelemetry.vespa.version};-noimport:=true
+                            ai.vespa.telemetry.api;version=1.0.0;-noimport:=true,
+                            ai.vespa.telemetry.api.trace;version=1.0.0;-noimport:=true,
+                            ai.vespa.telemetry.otel;version=1.0.0;-noimport:=true
                         </Export-Package>
+                        <!-- Removing io.opentelemetry.sdk.* from Export-Package is NOT enough. opentelemetry-sdk-trace
+                             ships 7 shaded-jctools package-info.class files annotated @org.osgi.annotation.bundle.Export;
+                             Embed-Dependency inline=true makes them our content, and bnd's Analyzer.getExportedByAnnotation()
+                             re-exports them regardless of Export-Package. Listing all 7 EXPLICITLY here strips them from the
+                             annotation-derived export set (Analyzer removeAll, before the export filter is built) without
+                             changing bundle content. The wildcard form (...jctools.*) SILENTLY no-ops (string set-difference
+                             against concrete names), so it must be the 7 explicit names. This also clears the long-standing
+                             duplicate-export warnings for these packages. -->
+                        <Private-Package>
+                            io.opentelemetry.sdk.trace.internal.shaded.jctools.counters,
+                            io.opentelemetry.sdk.trace.internal.shaded.jctools.maps,
+                            io.opentelemetry.sdk.trace.internal.shaded.jctools.queues,
+                            io.opentelemetry.sdk.trace.internal.shaded.jctools.queues.atomic,
+                            io.opentelemetry.sdk.trace.internal.shaded.jctools.queues.atomic.unpadded,
+                            io.opentelemetry.sdk.trace.internal.shaded.jctools.queues.unpadded,
+                            io.opentelemetry.sdk.trace.internal.shaded.jctools.util
+                        </Private-Package>
                         <!-- compile|runtime: exporter-otlp-common/exporter-common/sdk-common arrive as
                              runtime transitives; they must be embedded (and thus made private) too. -->
                         <Embed-Dependency>*;scope=compile|runtime;type=!pom;inline=true</Embed-Dependency>
@@ -111,8 +204,19 @@
                              which the Vespa container provides. Mark every other computed import optional so
                              the bundle resolves without unavailable deps it never exercises
                              (grpc/okhttp sender, incubator, autoconfigure, guava, jspecify, sun.misc). -->
+                        <!-- MANDATORY imports must be listed BEFORE the catch-all: bnd matches first-match-wins,
+                             so anything not named here becomes resolution:=optional -> the bundle resolves cleanly
+                             and throws NoClassDefFoundError on first use, with no build-time signal.
+                             ai.vespa.telemetry <- configdefinitions bundle (TelemetryConfig; preinstalled)
+                             com.yahoo.security, com.yahoo.security.tls <- security-utils bundle (preinstalled);
+                                 these are two SEPARATE OSGi packages, listing the first does not cover the second
+                             com.yahoo.vespa.defaults <- jdisc_core system packages (Defaults) -->
                         <Import-Package>
+                            ai.vespa.telemetry,
                             com.fasterxml.jackson.core,
+                            com.yahoo.security,
+                            com.yahoo.security.tls,
+                            com.yahoo.vespa.defaults,
                             javax.net.ssl,
                             *;resolution:=optional
                         </Import-Package>

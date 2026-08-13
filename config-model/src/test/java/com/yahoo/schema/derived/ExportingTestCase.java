@@ -192,4 +192,9 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("bolding_dynamic_summary");
     }
 
+    @Test
+    void testBm25Label() throws IOException, ParseException {
+        assertCorrectDeriving("bm25label");
+    }
+
 }

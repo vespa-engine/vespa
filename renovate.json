@@ -31,6 +31,14 @@
         "com.fasterxml.jackson.module:{/,}**",
       ],
       "allowedVersions": "< 2.22.0 || >= 2.24.0"
+    },
+    // Don't update, need to keep it in sync with netty and we have a check through netty bom that takes care of that
+    {
+      "matchPackageNames": [
+	"io.netty:netty-tcnative",
+	"io.netty:netty-tcnative-boringssl-static"
+      ],
+      "enabled": false
     }
   ]
 }

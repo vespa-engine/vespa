@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.provision.ApplicationId;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,8 +24,9 @@ public final class ApplicationVersions {
     private final ApplicationId applicationId;
     private final long generation;
     private final HashMap<Version, Application> applications = new HashMap<>();
+    private final Provisioned provisioned;
 
-    private ApplicationVersions(List<Application> applications) {
+    private ApplicationVersions(List<Application> applications, Provisioned provisioned) {
         if (applications.isEmpty())
             throw new IllegalArgumentException("application list cannot be empty");
         if (applications.stream().map(Application::getId).distinct().count() > 1)
@@ -37,15 +39,11 @@ public final class ApplicationVersions {
         generation = firstApp.getApplicationGeneration();
         applications.forEach(application -> this.applications.put(application.getVespaVersion(), application));
         latestVersion = this.applications.keySet().stream().max(Version::compareTo).get();
+        this.provisioned = provisioned;
     }
 
-    public static ApplicationVersions fromList(List<Application> applications) {
-        return new ApplicationVersions(applications);
-    }
-
-    // For testing
-    public static ApplicationVersions from(Application application) {
-        return fromList(List.of(application));
+    public static ApplicationVersions fromList(List<Application> applications, Provisioned provisioned) {
+        return new ApplicationVersions(applications, provisioned);
     }
 
     /**
@@ -60,6 +58,9 @@ public final class ApplicationVersions {
         return resolveForVersion(version, now)
                  .orElseThrow(() -> new VersionDoesNotExistException(applicationId + " has no model for Vespa version " + version));
     }
+
+    /** Returns all the clusters provisioned by all model versions of this (newer versions prioritized). */
+    public Provisioned provisioned() { return provisioned; }
 
     private Optional<Application> resolveForVersion(Version vespaVersion, Instant now) {
         Application application = applications.get(vespaVersion);

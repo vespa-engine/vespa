@@ -437,6 +437,9 @@ public class StemmingSearcher extends Searcher {
         replacement.setFilter(blockAsItem.isFilter());
         replacement.setRanked(blockAsItem.isRanked());
         replacement.setPositionData(blockAsItem.usePositionData());
+        if (blockAsItem.getLabel() != null) {
+            replacement.setLabel(blockAsItem.getLabel());
+        }
     }
 
     private void copyWeight(Item block, Item replacement) {

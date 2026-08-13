@@ -98,6 +98,8 @@ public:
     // decided on an index search and perform_index_search() has to be called to perform the search.
     void set_global_filter(const GlobalFilter& global_filter, double estimated_hit_ratio) override;
     void set_lazy_filter(const GlobalFilter& lazy_filter) override;
+    // Set the cost tier of this blueprint to State::COST_TIER_EXPENSIVE
+    void set_cost_tier_to_expensive();
     // Whether the last call to want_global_filter() resulted in the decision to search the index.
     bool pending_index_search() const;
     // Perform the index search scheduled by the last call to set_global_filter().

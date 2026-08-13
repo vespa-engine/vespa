@@ -20,6 +20,7 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.SegmentItem;
+import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.QueryTree;
@@ -68,19 +69,19 @@ public class CJKSearcher extends Searcher {
                 if (child instanceof WordItem)
                     replacement.addItem(child);
                 else if (child instanceof PhraseSegmentItem asSegment)
-                    replacement.addItem(new AndSegmentItem(asSegment));
+                    replacement.addItem(propagateLabelToLeaves(asSegment, new AndSegmentItem(asSegment)));
                 else
                     replacement.addItem(child); // should never get here
             }
             modified[0] = true;
-            return replacement;
+            return propagateLabelToLeaves(phrase, replacement);
         }
         else if (item instanceof PhraseSegmentItem segment) {
             if ( ! language.isCjk()) return item;
             if (segment.isExplicit() || hasOverlappingTokens(segment))
                 return item;
             modified[0] = true;
-            return new AndSegmentItem(segment);
+            return propagateLabelToLeaves(segment, new AndSegmentItem(segment));
         }
         else if (item instanceof SegmentItem) {
             return item; // avoid descending into AndSegmentItems and similar
@@ -95,6 +96,30 @@ public class CJKSearcher extends Searcher {
             return item;
         }
         return item;
+    }
+
+    /**
+     * The source items replaced here are taggable ranking leaves, while their replacements are plain
+     * composites whose taggable leaves are the words inside them. A label on the source must therefore
+     * move to those words to remain addressable from rank features, the same way YQL label annotations
+     * on composites are inherited by each taggable leaf. Existing (more specific) labels are kept.
+     */
+    private Item propagateLabelToLeaves(Item source, Item replacement) {
+        String label = source.getLabel();
+        if (label != null)
+            setLabelIfUnset(replacement, label);
+        return replacement;
+    }
+
+    private void setLabelIfUnset(Item item, String label) {
+        if (item instanceof TaggableItem) { // tested before descending, as in Model.collectTaggableItems
+            if (item.getLabel() == null)
+                item.setLabel(label);
+        }
+        else if (item instanceof CompositeItem composite) {
+            for (Iterator<Item> i = composite.getItemIterator(); i.hasNext(); )
+                setLabelIfUnset(i.next(), label);
+        }
     }
 
     private boolean hasOverlappingTokens(PhraseItem phrase) {

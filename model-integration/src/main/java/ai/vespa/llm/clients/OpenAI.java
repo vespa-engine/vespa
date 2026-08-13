@@ -18,6 +18,7 @@ import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
 import com.openai.core.JsonValue;
 import com.openai.models.ResponseFormatJsonSchema;
+import com.openai.models.ReasoningEffort;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.HashMap;
@@ -70,9 +71,14 @@ public class OpenAI extends ConfigurableLanguageModel {
         if (config.maxTokens() >= 0) {
             configOptions.put(InferenceParameters.OPTION_MAX_TOKENS, String.valueOf(config.maxTokens()));
         }
+
+        if (!config.reasoningEffort().isBlank()) {
+            configOptions.put(InferenceParameters.OPTION_REASONING_EFFORT, config.reasoningEffort());
+        }
     }
     
-    private InferenceParameters prepareParameters(InferenceParameters parameters) {
+    // Package-private for testing
+    InferenceParameters prepareParameters(InferenceParameters parameters) {
         setApiKey(parameters);
         setEndpoint(parameters);
         return parameters.withDefaultOptions(configOptions::get);
@@ -183,7 +189,8 @@ public class OpenAI extends ConfigurableLanguageModel {
         return future;
     }
 
-    private ChatCompletionCreateParams getChatCompletionCreateParams(InferenceParameters parameters, Prompt prompt) {
+    // Package-private for testing
+    ChatCompletionCreateParams getChatCompletionCreateParams(InferenceParameters parameters, Prompt prompt) {
         ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
             .model(ChatModel.of(parameters.get(InferenceParameters.OPTION_MODEL).map(Object::toString).orElse(DEFAULT_MODEL)))
             .addUserMessage(prompt.toString());
@@ -194,6 +201,8 @@ public class OpenAI extends ConfigurableLanguageModel {
         parameters.getInt(InferenceParameters.OPTION_N_PREDICT).ifPresent(builder::n);
         parameters.getDouble(InferenceParameters.OPTION_FREQUENCY_PENALTY).ifPresent(builder::frequencyPenalty);
         parameters.getDouble(InferenceParameters.OPTION_PRESENCE_PENALTY).ifPresent(builder::presencePenalty);
+        parameters.get(InferenceParameters.OPTION_REASONING_EFFORT)
+                .ifPresent(effort -> builder.reasoningEffort(ReasoningEffort.of(effort)));
         // Add JSON schema if specified
         addResponseFormat(parameters, builder);
         

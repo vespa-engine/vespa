@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -27,25 +27,13 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         // Validate sidecars in existing clusters only, new clusters do not need restartOnDeploy.
         for (var previousCluster : context.previousModel().getContainerClusters().values()) {
             var nextCluster = context.model().getContainerClusters().get(previousCluster.name());
-
-            if (nextCluster == null) {
-                continue;
-            }
+            if (nextCluster == null) continue;
 
             var clusterId = previousCluster.id();
-
-            var previousClusterSpec = findClusterSpec(context.previousModel(), clusterId);
-            if (previousClusterSpec.isEmpty()) {
-                continue;
-            }
-
-            var nextClusterSpec = findClusterSpec(context.model(), clusterId);
-            if (nextClusterSpec.isEmpty()) {
-                continue;
-            }
-
-            var previousSidecars = previousClusterSpec.get().sidecars();
-            var nextSidecars = nextClusterSpec.get().sidecars();
+            var previousSpec = getSpec(previousCluster);
+            if (previousSpec.isEmpty()) return;
+            var previousSidecars = previousSpec.get().sidecars();
+            var nextSidecars = nextCluster.getSpec().sidecars();
 
             var removedSidecars = previousSidecars.stream().filter(previousSidecar -> nextSidecars.stream().noneMatch(
                     sidecar -> sidecar.matchesByIdOrName(previousSidecar))).toList();
@@ -91,8 +79,15 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
         }
     }
 
-    private Optional<ClusterSpec> findClusterSpec(VespaModel model, ClusterSpec.Id clusterId) {
-        return model.allClusters().stream().filter(c -> c.id().equals(clusterId)).findFirst();
+    // TODO: Replace by just cluster.getSpec() after August 2026
+    private Optional<ClusterSpec> getSpec(ApplicationContainerCluster cluster) {
+        if (cluster.getSpec() != null) return Optional.of(cluster.getSpec());
+        return cluster.hostSystem().getHosts().stream()
+                      .map(HostResource::spec)
+                      .filter(spec -> spec.membership().isPresent())
+                      .filter(spec -> spec.membership().get().id().equals(cluster.id()))
+                      .map(spec -> spec.membership().get().cluster())
+                      .findAny();
     }
 
     private String joinSidecarNames(List<SidecarSpec> sidecars) {
@@ -154,11 +149,6 @@ public class RestartOnDeployForSidecarValidator implements ChangeValidator {
     }
 
     private void addRestartAction(ChangeContext context, ApplicationContainerCluster cluster, String message) {
-        var services = cluster.getContainers().stream().map(AbstractService::getServiceInfo).toList();
-
-        context.require(new VespaRestartAction(
-                cluster.id(), message, services,
-                VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART
-        ));
+        context.require(VespaRestartAction.ofCluster(cluster, message, VespaRestartAction.ConfigChange.DEFER_UNTIL_RESTART));
     }
 }

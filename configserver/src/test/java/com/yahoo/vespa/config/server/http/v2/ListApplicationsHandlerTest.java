@@ -128,8 +128,9 @@ public class ListApplicationsHandlerTest {
     }
 
     private void writeActiveTransaction(TenantApplications repo, ApplicationId id1, int x) {
-        try (var transaction = new CuratorTransaction(tenantRepository.getCurator())) {
-            repo.createWriteActiveTransaction(transaction, id1, x).commit();
+        try (var applicationLock = repo.lock(id1);
+             var transaction = new CuratorTransaction(tenantRepository.getCurator())) {
+            repo.appendActivateOperations(applicationLock, id1, x, transaction).commit();
         }
     }
 

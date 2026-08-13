@@ -1,0 +1,14 @@
+schema bm25forlabelsargsbad {
+    document bm25forlabelsargsbad {
+        field title type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: reduce(bm25_for_labels(title, label: someLabel), sum, label)
+        }
+    }
+}

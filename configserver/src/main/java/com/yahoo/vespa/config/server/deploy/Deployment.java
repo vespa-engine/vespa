@@ -13,6 +13,8 @@ import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.BackupConfig;
 import com.yahoo.config.provision.BlockWindow;
+import com.yahoo.config.provision.ClusterHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -26,6 +28,8 @@ import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.configchange.RefeedActions;
+import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.DeferredReconfiguration;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.NodeRestart;
@@ -33,7 +37,6 @@ import com.yahoo.vespa.config.server.session.ActivationTriggers.Reindexing;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.concurrent.Memoized;
 import com.yahoo.text.Text;
@@ -41,7 +44,9 @@ import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -109,8 +114,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     public static Deployment prepared(Session session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
-                                      Tenant tenant, DeployLogger logger,
-                                      Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
+                                      DeployLogger logger, Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, false, isBootstrap, false, force, false);
         return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, logger, clock, true);
     }
@@ -123,6 +127,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         try (ActionTimer timer = applicationRepository.timerFor(params.get().getApplicationId(), ConfigServerMetrics.DEPLOYMENT_PREPARE_MILLIS.baseName())) {
             configChangeActions = sessionRepository().prepareLocalSession(session, deployLogger, params.get(), clock.instant());
             prepared = true;
+            logConfigChangeActions(configChangeActions(), deployLogger);
         } catch (Exception e) {
             log.log(Level.FINE, "Preparing session " + session.getSessionId() + " failed, deleting it");
             deleteSession();
@@ -139,15 +144,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (sessionAlreadyActive(session))
             return configGeneration();
 
+        Collection<ClusterSpec> clusters = getClustersFromModel();
         PrepareParams prepareParams = params.get();
-        waitForResourcesOrTimeout(prepareParams, session, provisioner);
+        waitForResourcesOrTimeout(clusters, prepareParams, session, provisioner);
 
         var applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, ConfigServerMetrics.DEPLOYMENT_ACTIVATE_MILLIS.baseName())) {
             var timeoutBudget = prepareParams.getTimeoutBudget().assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
             applyDeferredReconfigurationOfClusters();
-            var activation = applicationRepository.activate(session, applicationId, prepareParams.isBootstrap(), prepareParams.force());
+            var activation = applicationRepository.activate(session, applicationId, clusters, prepareParams.isBootstrap(), prepareParams.force());
             waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId);
@@ -155,6 +161,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             return configGeneration();
         }
+    }
+
+    /** Returns the clusters built by this model, recorded during model building */
+    private Collection<ClusterSpec> getClustersFromModel() {
+        var applicationVersions = sessionRepository().ensureApplicationLoaded(sessionRepository().getRemoteSession(session.getSessionId()));
+        return applicationVersions.provisioned().clusters().values();
     }
 
     private void waitForActivation(ApplicationId applicationId, TimeoutBudget timeoutBudget, Activation activation) {
@@ -345,10 +357,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         });
     }
 
-    private static void waitForResourcesOrTimeout(PrepareParams params, Session session, Optional<Provisioner> provisioner) {
+    private void waitForResourcesOrTimeout(Collection<ClusterSpec> clusters,
+                                           PrepareParams params,
+                                           Session session,
+                                           Optional<Provisioner> provisioner) {
         if (!params.waitForResourcesInPrepare() || provisioner.isEmpty()) return;
 
-        Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
+        Map<ClusterSpec.Id, List<HostSpec>> hostsByCluster = session.getAllocatedHosts().getHostsByCluster();
         ActivationContext context = new ActivationContext(session.getSessionId(), params.isBootstrap());
         AtomicReference<Exception> lastException = new AtomicReference<>();
 
@@ -360,12 +375,42 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             try (ApplicationMutex lock = provisioner.get().lock(session.getApplicationId())) {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
                 ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
-                provisioner.get().activate(preparedHosts, context, transaction);
+                var clusterHosts = clusters.stream().map(cluster -> new ClusterHosts(cluster, hostsByCluster.get(cluster.id()))).toList();
+                provisioner.get().activate(clusterHosts, context, transaction);
                 return;
             } catch (ApplicationLockException | TransientException e) {
                 lastException.set(e);
                 Sleeper.DEFAULT.sleep(durationBetweenResourceReadyChecks.toMillis());
             }
+        }
+    }
+
+    private void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
+        var isVespaCloud = applicationRepository.configserverConfig().hostedVespa();
+        RestartActions restartActions = actions.getRestartActions();
+        if ( ! restartActions.isEmpty()) {
+            if (isVespaCloud)
+                logger.log(Level.INFO, "Orchestrated service restart triggered due to change(s) from active to new application:\n" +
+                        restartActions.format());
+            else
+                logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
+                        restartActions.format());
+        }
+        RefeedActions refeedActions = actions.getRefeedActions();
+        if ( ! refeedActions.isEmpty()) {
+            logger.logApplicationPackage(Level.WARNING,
+                                         "Change(s) between active and new application that may require re-feed:\n" +
+                                                 refeedActions.format());
+        }
+        ReindexActions reindexActions = actions.getReindexActions();
+        if ( ! reindexActions.isEmpty()) {
+            if (isVespaCloud)
+                logger.log(Level.INFO, "Re-indexing triggered due to change(s) from active to new application:\n" +
+                        reindexActions.format());
+            else
+                logger.log(Level.WARNING,
+                           "Change(s) between active and new application that may require re-index:\n" +
+                                   reindexActions.format());
         }
     }
 

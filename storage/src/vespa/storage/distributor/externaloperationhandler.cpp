@@ -293,7 +293,7 @@ void ExternalOperationHandler::reject_as_oversized_message(api::StorageCommand& 
     const uint32_t limit = _op_ctx.distributor_config().max_document_operation_message_size_bytes();
     std::string    msg = vespalib::make_string(
         "Message size (%u bytes) exceeds maximum configured limit (%u bytes), "
-           "see https://docs.vespa.ai/en/reference/services/content.html#max-document-size for how to configure",
+           "see https://docs.vespa.ai/en/reference/applications/services/content.html#max-document-size for how to configure",
         cmd.getApproxByteSize(), limit);
     // TODO increment a metric
     bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::REJECTED, std::move(msg)));

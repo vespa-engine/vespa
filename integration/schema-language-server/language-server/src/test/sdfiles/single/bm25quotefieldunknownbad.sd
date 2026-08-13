@@ -1,0 +1,14 @@
+schema bm25quotefieldunknownbad {
+    document bm25quotefieldunknownbad {
+        field title type string {
+            indexing: index
+            index: enable-bm25
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: bm25(field: "missing", label: someLabel)
+        }
+    }
+}

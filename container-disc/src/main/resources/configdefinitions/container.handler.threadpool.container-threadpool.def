@@ -1,32 +1,34 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+# All values are only applied when the thread pool is constructed, hence the restart flags.
+
 namespace=container.handler.threadpool
 
 ## Maximum number of thread in the thread pool (absolute)
-maxThreads int default=-1
+maxThreads int default=-1 restart
 
 ## Minimum number of thread in the thread pool (absolute)
-minThreads int default=-1
+minThreads int default=-1 restart
 
 ## Minimum number of threads relative to number of cores (vcpu)
-relativeMinThreads double default=-1.0
+relativeMinThreads double default=-1.0 restart
 
 ## Maximum number of threads relative to number of cores (vcpu)
-relativeMaxThreads double default=-1.0
+relativeMaxThreads double default=-1.0 restart
 
 ## The number of seconds that excess idle threads will wait for new tasks before terminating
-keepAliveTime double default=5.0
+keepAliveTime double default=5.0 restart
 
 ## Absolute queue capacity
-queueSize int default=-1
+queueSize int default=-1 restart
 
 ## Max queue capacity relative to number of cores
-relativeQueueSize double default=-1.0
+relativeQueueSize double default=-1.0 restart
 
 ## The max time the container tolerates having no threads available before it shuts down to
 ## get out of a bad state. This should be set a bit higher than the expected max execution
 ## time of each request when in a state of overload, i.e about "worst case execution time*2"
-maxThreadExecutionTimeSeconds int default=190
+maxThreadExecutionTimeSeconds int default=190 restart
 
 # Prefix for the name of the threads
-name string default="default-pool"
+name string default="default-pool" restart

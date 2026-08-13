@@ -103,6 +103,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Needed to resolve org.osgi.annotation.bundle annotations on org.apache.felix.log.Activator at compile time. -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>osgi.annotation</artifactId>
+            <version>8.1.0</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.resolver</artifactId>

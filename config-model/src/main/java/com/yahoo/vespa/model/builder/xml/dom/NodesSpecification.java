@@ -42,6 +42,8 @@ public class NodesSpecification {
 
     private final IntRange groupSize;
 
+    private final double maxCostFactor;
+
     private final boolean dedicated;
 
     /** The Vespa version we want the nodes to run */
@@ -73,9 +75,12 @@ public class NodesSpecification {
 
     private final String profile;
 
+    private ClusterSpec cluster;
+
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
                                IntRange groupSize,
+                               double maxCostFactor,
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
@@ -101,6 +106,7 @@ public class NodesSpecification {
         this.min = min;
         this.max = max;
         this.groupSize = groupSize;
+        this.maxCostFactor = maxCostFactor;
         this.dedicated = dedicated;
         this.version = version;
         this.required = required;
@@ -121,10 +127,14 @@ public class NodesSpecification {
                                      List<AzName> availabilityZones) {
         var resolvedElement = resolveElement(nodesElement);
         var resourceConstraints = toResourceConstraints(resolvedElement);
+        var maxCostFactor = resolvedElement.optionalChild("resources")
+                                           .map(r -> r.doubleAttribute("max-cost-factor", 1.0))
+                                           .orElse(1.0);
         boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
         return new NodesSpecification(resourceConstraints.min,
                                       resourceConstraints.max,
                                       resourceConstraints.groupSize,
+                                      maxCostFactor,
                                       dedicated,
                                       version,
                                       resolvedElement.booleanAttribute("required", false),
@@ -208,13 +218,12 @@ public class NodesSpecification {
                                   context.availabilityZones()));
     }
 
-    /**
-     * Returns a requirement from <code>count</code> non-dedicated nodes in one group
-     */
+    /** Returns a requirement from <code>count</code> non-dedicated nodes in one group. */
     public static NodesSpecification nonDedicated(int count, ConfigModelContext context) {
         return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified()),
                                       new ClusterResources(count, 1, NodeResources.unspecified()),
                                       IntRange.empty(),
+                                      1.0,
                                       false,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
@@ -233,6 +242,7 @@ public class NodesSpecification {
         return new NodesSpecification(new ClusterResources(count, 1, NodeResources.unspecified()),
                                       new ClusterResources(count, 1, NodeResources.unspecified()),
                                       IntRange.empty(),
+                                      1.0,
                                       true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
@@ -262,6 +272,7 @@ public class NodesSpecification {
         return new NodesSpecification(new ClusterResources(count, 1, resources),
                                       new ClusterResources(count, 1, resources),
                                       IntRange.empty(),
+                                      1.0,
                                       true,
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       allContent.stream().anyMatch(content -> content.required),
@@ -278,6 +289,7 @@ public class NodesSpecification {
     public ClusterResources minResources() { return min; }
     public ClusterResources maxResources() { return max; }
     public IntRange groupSize() { return groupSize; }
+    public double maxCostFactor() { return maxCostFactor; }
 
     /**
      * Returns whether this requires dedicated nodes.
@@ -321,7 +333,7 @@ public class NodesSpecification {
                                                           boolean stateful,
                                                           ClusterInfo info,
                                                           List<SidecarSpec> sidecars) {
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId)
+        cluster = ClusterSpec.request(clusterType, clusterId)
                 .vespaVersion(version)
                 .exclusive(exclusive)
                 .dockerImageRepository(dockerImageRepo)
@@ -333,8 +345,14 @@ public class NodesSpecification {
                 .build();
 
         return hostSystem.allocateHosts(cluster,
-                                        Capacity.from(min, max, groupSize, required, canFail, cloudAccount, cloudResourceTags, info),
+                                        Capacity.from(min, max, groupSize, maxCostFactor, required, canFail, cloudAccount, cloudResourceTags, info),
                                         deployState);
+    }
+
+    public ClusterSpec cluster() {
+        if (cluster == null)
+            throw new IllegalStateException("cluster() can only be accessed after calling provision()");
+        return cluster;
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {

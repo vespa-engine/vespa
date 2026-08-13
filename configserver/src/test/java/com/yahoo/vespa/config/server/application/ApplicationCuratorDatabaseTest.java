@@ -144,22 +144,22 @@ public class ApplicationCuratorDatabaseTest {
 
 
     private void deleteApplication(ApplicationCuratorDatabase db, ApplicationId applicationId) {
-        try (var t = db.createDeleteTransaction(applicationId)) {
+        try (var applicationLock = db.lock(applicationId);
+             var t = db.createDeleteTransaction(applicationLock, applicationId)) {
             t.commit();
         }
     }
 
     private void prepareSession(ApplicationCuratorDatabase db, ApplicationId applicationId, long sessionId, OptionalLong activesSessionId) {
-        try (var t = db.createWritePrepareTransaction(new CuratorTransaction(curator),
-                                                      applicationId,
-                                                      sessionId,
-                                                      activesSessionId)) {
+        try (var applicationLock = db.lock(applicationId);
+             var t = db.appendDeployOperations(applicationLock, applicationId, sessionId, activesSessionId, new CuratorTransaction(curator))) {
             t.commit();
         }
     }
 
     private void activateSession(ApplicationCuratorDatabase db, ApplicationId applicationId, long sessionId) {
-        try (var t = db.createWriteActiveTransaction(new CuratorTransaction(curator), applicationId, sessionId)) {
+        try (var applicationLock = db.lock(applicationId);
+             var t = db.appendDeployOperations(applicationLock, applicationId, sessionId, OptionalLong.of(sessionId), new CuratorTransaction(curator))) {
             t.commit();
         }
     }

@@ -157,6 +157,12 @@ func (a *Client) AccessToken() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("auth0: failed to renew access token: %w: %s", err, reauthMessage)
 		} else {
+			if resp.RefreshToken != "" {
+				// the refresh token was rotated: persist the new one, or the next refresh will be rejected
+				if err := tr.Secrets.Set(auth.SecretsNamespace, a.options.SystemName, resp.RefreshToken); err != nil {
+					return "", fmt.Errorf("auth0: failed to persist rotated refresh token: %w", err)
+				}
+			}
 			// persist the updated system with renewed access token
 			creds.AccessToken = resp.AccessToken
 			creds.ExpiresAt = time.Now().Add(time.Duration(resp.ExpiresIn) * time.Second)

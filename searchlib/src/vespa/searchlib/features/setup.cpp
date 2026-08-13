@@ -6,6 +6,7 @@
 #include "attributematchfeature.h"
 #include "average_field_length_feature.h"
 #include "bm25_feature.h"
+#include "bm25_for_labels_feature.h"
 #include "closenessfeature.h"
 #include "closest_feature.h"
 #include "constant_feature.h"
@@ -45,6 +46,7 @@
 #include "num_docs_indexed_feature.h"
 #include "onnx_feature.h"
 #include "proximityfeature.h"
+#include "query_term_document_frequency_feature.h"
 #include "querycompletenessfeature.h"
 #include "queryfeature.h"
 #include "querytermcountfeature.h"
@@ -83,6 +85,7 @@ void setup_search_features(fef::IBlueprintRegistry& registry) {
     registry.addPrototype(std::make_shared<AttributeMatchBlueprint>());
     registry.addPrototype(std::make_shared<AverageFieldLengthBlueprint>());
     registry.addPrototype(std::make_shared<Bm25Blueprint>());
+    registry.addPrototype(std::make_shared<Bm25ForLabelsBlueprint>());
     registry.addPrototype(std::make_shared<ClosenessBlueprint>());
     registry.addPrototype(std::make_shared<ClosestBlueprint>());
     registry.addPrototype(std::make_shared<DebugAttributeWaitBlueprint>());
@@ -117,6 +120,7 @@ void setup_search_features(fef::IBlueprintRegistry& registry) {
     registry.addPrototype(std::make_shared<NumDocsIndexedBlueprint>());
     registry.addPrototype(std::make_shared<QueryBlueprint>());
     registry.addPrototype(std::make_shared<QueryTermCountBlueprint>());
+    registry.addPrototype(std::make_shared<QueryTermDocumentFrequencyBlueprint>());
     registry.addPrototype(std::make_shared<RandomBlueprint>());
     registry.addPrototype(std::make_shared<RandomNormalBlueprint>());
     registry.addPrototype(std::make_shared<RandomNormalStableBlueprint>());

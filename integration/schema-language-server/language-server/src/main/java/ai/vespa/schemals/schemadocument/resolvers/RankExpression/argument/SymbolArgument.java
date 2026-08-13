@@ -44,6 +44,9 @@ public class SymbolArgument implements Argument {
 
     @Override
     public boolean validateArgument(RankNode node) {
+        if (node.isTaggedArgument()) {
+            return false;
+        }
         SchemaNode symbolNode = findSymbolNode(node);
         return symbolNode.hasSymbol();
     }

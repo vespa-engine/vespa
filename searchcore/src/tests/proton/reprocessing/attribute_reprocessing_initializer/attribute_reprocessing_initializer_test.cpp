@@ -70,6 +70,9 @@ struct MyConfig {
             if (attr == "tensor") {
                 _mgr->addAttribute({attr, AttributeUtils::getTensorConfig()}, 1);
                 _schema.addAttributeField(Schema::AttributeField(attr, DataType::TENSOR));
+            } else if (attr == "quantized_tensor") {
+                _mgr->addAttribute({attr, AttributeUtils::get_quantized_tensor_config()}, 1);
+                _schema.addAttributeField(Schema::AttributeField(attr, DataType::TENSOR));
             } else if (attr == "predicate") {
                 _mgr->addAttribute({attr, AttributeUtils::getPredicateConfig()}, 1);
                 _schema.addAttributeField(Schema::AttributeField(attr, DataType::BOOLEANTREE));
@@ -260,6 +263,13 @@ TEST_F(InitializerTest, require_that_removing_attribute_aspect_from_tensor_field
 TEST_F(InitializerTest, require_that_predicate_fields_are_not_populated_from_attribute) {
     addOldConfig({"a", "b", "c", "d", "predicate"}, {"a", "b", "c", "d", "predicate"})
         .addNewConfig({"a", "b", "c", "d", "predicate"}, {"a", "b"})
+        .init();
+    assertFields({"c", "d"});
+}
+
+TEST_F(InitializerTest, quantized_tensor_fields_are_not_populated_from_attribute) {
+    addOldConfig({"a", "b", "c", "d", "quantized_tensor"}, {"a", "b", "c", "d", "quantized_tensor"})
+        .addNewConfig({"a", "b", "c", "d", "quantized_tensor"}, {"a", "b"})
         .init();
     assertFields({"c", "d"});
 }

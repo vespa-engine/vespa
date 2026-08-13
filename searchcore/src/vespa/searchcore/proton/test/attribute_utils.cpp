@@ -10,6 +10,7 @@ using search::CommitParam;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
+using search::attribute::QuantizationParams;
 
 namespace proton::test {
 
@@ -64,10 +65,22 @@ Config tensorConfig() {
     return Config(BasicType::TENSOR).setTensorType(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
 }
 
+Config quantized_tensor_config() {
+    constexpr uint64_t seed = 0x1234567890;
+    QuantizationParams qp(seed, QuantizationParams::QuantizationMode::MSE, 4);
+    return Config(BasicType::TENSOR)
+        .set_tensor_type_with_quantization(vespalib::eval::ValueType::from_spec("tensor(x{},y[128])"), qp);
+}
+
 } // namespace
 
 const Config& AttributeUtils::getTensorConfig() {
     static Config cfg = tensorConfig();
+    return cfg;
+}
+
+const Config& AttributeUtils::get_quantized_tensor_config() {
+    static Config cfg = quantized_tensor_config();
     return cfg;
 }
 

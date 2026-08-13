@@ -12,6 +12,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
@@ -52,7 +53,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2026-07-10",
+            List.of("hakonhall"), "2025-03-19", "2026-08-27",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
@@ -62,6 +63,15 @@ public class Flags {
             List.of("hmusum"), "2020-12-02", "2026-12-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundStringFlag DEPLOYMENT_METRICS_CONSUMER = defineStringFlag(
+            "deployment-metrics-consumer", "Vespa",
+            List.of("hmusum"), "2026-07-10", "2026-12-01",
+            "Selects which metrics-proxy consumer the config server uses when fetching " +
+            "metrics for cluster deployment metrics aggregation. Valid values: Vespa, cluster-deployment-metrics",
+            "Takes effect on next metrics retrieval",
+            value -> Set.of("Vespa", "cluster-deployment-metrics").contains(value),
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
@@ -134,13 +144,6 @@ public class Flags {
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
-    public static final UnboundDoubleFlag AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE = defineDoubleFlag(
-            "autoscaler-target-write-cpu-percentage", 0.95,
-            List.of("hmusum"), "2026-02-15", "2026-08-15",
-            "Target write CPU percentage for autoscaler (e.g., 0.8 = 80%)",
-            "Takes effect on next autoscaler evaluation",
-            INSTANCE_ID, CLUSTER_ID);
-
     public static final UnboundBooleanFlag REQUIRE_EXPLICIT_DOCPROC_CLUSTER = defineFeatureFlag(
             "require-explicit-docproc-cluster", true,
             List.of("hmusum"), "2026-05-26", "2026-12-01",
@@ -158,7 +161,7 @@ public class Flags {
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2026-08-01",
+            List.of("olaa"), "2024-04-03", "2026-10-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -215,12 +218,11 @@ public class Flags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-
     public static final UnboundBooleanFlag TOKEN_AUTH_FOR_DEPLOY = defineFeatureFlag(
-            "token-auth-for-deploy", false, 
+            "token-auth-for-deploy", false,
             List.of("bragehk"), "2026-05-19", "2026-09-01",
-            "Whether to activate token auth for vespa deploy", 
-            "Takes effect at deployment", 
+            "Whether to activate token auth for vespa deploy",
+            "Takes effect at deployment",
             TENANT_ID);
 
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_MEMORY_FACTOR = defineDoubleFlag(
@@ -234,32 +236,33 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY = defineFeatureFlag(
-            "fail-when-configuring-indexed-map-of-array", false,
+            "fail-when-configuring-indexed-map-of-array", true,
             List.of("hmusum"), "2026-07-01", "2026-10-13",
             "Whether to fail a deployment when an indexed map of array is used in a schema",
             "Takes effect at redeployment",
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK = defineFeatureFlag(
-            "use-wanted-generation-in-convergence-check", false,
-            List.of("hmusum"), "2026-06-16", "2026-09-01",
-            "Whether to use extended info (wantedGeneration) from /state/v1/config API to " +
-                    "decide if config convergence is achieved during deploy",
-            "Takes effect at deployment");
-
     public static final UnboundBooleanFlag PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE = defineFeatureFlag(
-            "proton-log-warning-on-disk-capacity-change", false,
+            "proton-log-warning-on-disk-capacity-change", true,
             List.of("johsol"), "2026-07-06", "2026-09-01",
             "Log a warning when sampled disk capacity changes. Escape hatch in case of log spam " +
             "while working towards adding back resampling of disk capacity.",
             "Takes effect at deployment");
 
     public static final UnboundBooleanFlag PROTON_RESAMPLE_DISK_CAPACITY = defineFeatureFlag(
-            "proton-resample-disk-capacity", false,
+            "proton-resample-disk-capacity", true,
             List.of("johsol"), "2026-07-06", "2026-09-01",
             "Resample disk capacity in proton.",
             "Takes effect at deployment");
+
+    public static final UnboundBooleanFlag FAST_MAP_SEARCH = defineFeatureFlag(
+            "fast-map-search", false,
+            List.of("johsol", "boeker", "arnej"), "2026-08-13", "2027-02-13",
+            "Whether to enable fast map search for map fields in a schema.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

@@ -25,7 +25,7 @@ from pathlib import Path
 TMGRAMMAR = Path(__file__).resolve().parent.parent
 VESPA_ROOT = TMGRAMMAR.parents[1]
 LSP = VESPA_ROOT / "integration" / "schema-language-server" / "language-server"
-GRAMMAR_PATH = TMGRAMMAR / "grammar/vespa-schema.tmLanguage.json"
+GRAMMAR_PATH = TMGRAMMAR / "grammars/vespa-schema.tmLanguage.json"
 SCHEMA_CCC = LSP / "src/main/ccc/SchemaParser.ccc"
 INDEXING_CCC = LSP / "src/main/ccc/indexinglanguage/IndexingParser.ccc"
 RANKING_CCC = LSP / "src/main/ccc/rankingexpression/RankingExpressionParser.ccc"

@@ -86,6 +86,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeVector;
+using search::attribute::QuantizationParams;
 using search::attribute::SingleRawAttribute;
 using search::index::Schema;
 using search::index::schema::DataType;
@@ -107,6 +108,12 @@ using namespace proton;
 
 namespace {
 
+std::unique_ptr<Value> make_dense_tensor(const std::string& spec) {
+    // Want more than a single cell to ensure quantization can't reproduce the tensor losslessly.
+    // With a single cell, the reconstruction scaling factor can compensate for the quantization error.
+    return SimpleValue::from_spec(TensorSpec(spec).add({{"x", 1}}, 5.5).add({{"x", 3}}, 42));
+}
+
 const string              doc_type_name = "type_name";
 const char                static_field[] = "static field";
 const char                dyn_field_i[] = "dynamic int field";
@@ -118,12 +125,15 @@ const char                dyn_field_nas[] = "dynamic null attr string field"; //
 const char                position_field[] = "position_field";
 std::string               dyn_field_raw("dynamic_raw_field");
 std::string               dyn_field_tensor("dynamic_tensor_field");
+std::string               quantized_tensor_field("quantized_tensor_field");
 std::string               static_raw_backing("static raw");
 std::string               dynamic_raw_backing("dynamic raw");
 std::span<const char>     dynamic_raw(dynamic_raw_backing.data(), dynamic_raw_backing.size());
 std::string               tensor_spec("tensor(x{})");
+std::string               dense_tensor_spec("tensor(x[4])");
 std::unique_ptr<Value>    static_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
 std::unique_ptr<Value>    dynamic_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
+std::unique_ptr<Value>    dense_tensor = make_dense_tensor(dense_tensor_spec);
 const char                zcurve_field[] = "position_field_zcurve";
 const char                position_array_field[] = "position_array";
 const char                zcurve_array_field[] = "position_array_zcurve";
@@ -147,6 +157,7 @@ const int32_t             dyn_weight = 21;
 const int64_t             static_zcurve_value = 1118035438880ll;
 const int64_t             dynamic_zcurve_value = 6145423666930817152ll;
 const TensorDataType      tensorDataType(ValueType::from_spec(tensor_spec));
+const TensorDataType      dense_tensor_data_type(ValueType::from_spec(dense_tensor_spec));
 
 std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
@@ -178,9 +189,15 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         doc->setValue(zcurve_field, LongFieldValue::make(static_zcurve_value));
         doc->setValue(dyn_field_p, static_value_p);
         doc->setValue(dyn_field_raw, RawFieldValue(static_raw_backing.data(), static_raw_backing.size()));
+
         TensorFieldValue tensorFieldValue(tensorDataType);
         tensorFieldValue = SimpleValue::from_value(*static_tensor);
         doc->setValue(dyn_field_tensor, tensorFieldValue);
+
+        TensorFieldValue dense_tensor_field_value(dense_tensor_data_type);
+        dense_tensor_field_value = SimpleValue::from_value(*dense_tensor);
+        doc->setValue(quantized_tensor_field, dense_tensor_field_value);
+
         if (_set_position_struct_field) {
             FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();
             auto&          pos = dynamic_cast<StructFieldValue&>(*fv);
@@ -233,6 +250,7 @@ DocumenttypesConfig getRepoConfig() {
         .addField(position_field, builder.positionType())
         .addField(dyn_field_raw, builder.primitiveType(document::DataType::T_RAW))
         .addTensorField(dyn_field_tensor, tensor_spec)
+        .addTensorField(quantized_tensor_field, dense_tensor_spec)
         .addField(zcurve_field, builder.primitiveType(document::DataType::T_LONG))
         .addField(position_array_field, position_array)
         .addField(zcurve_array_field, long_array);
@@ -296,18 +314,23 @@ struct Fixture {
     DocTypeName                         _dtName;
     std::unique_ptr<IDocumentRetriever> _retriever;
 
-    template <typename T> T* addAttribute(const char* name, Schema::DataType t, Schema::CollectionType ct) {
-        AttributeVector::SP    attrPtr = AttributeFactory::createAttribute(name, convertConfig(t, ct));
-        T*                     attr = dynamic_cast<T*>(attrPtr.get());
+    template <typename T> T* addAttribute(AttributeVector::SP attr_sp, Schema::DataType t,
+                                          Schema::CollectionType ct) {
+        T* attr = dynamic_cast<T*>(attr_sp.get());
+        assert(attr != nullptr);
         AttributeVector::DocId id;
-        attr_manager.add(attrPtr);
+        attr_manager.add(attr_sp);
         attr->addReservedDoc();
         attr->addDoc(id);
         attr->clearDoc(id);
         EXPECT_EQ(id, lid);
-        schema.addAttributeField(Schema::Field(name, t, ct));
+        schema.addAttributeField(Schema::Field(attr->getName(), t, ct));
         attr->commit();
         return attr;
+    }
+
+    template <typename T> T* addAttribute(const char* name, Schema::DataType t, Schema::CollectionType ct) {
+        return addAttribute<T>(AttributeFactory::createAttribute(name, convertConfig(t, ct)), t, ct);
     }
 
     template <typename T, typename U>
@@ -321,9 +344,25 @@ struct Fixture {
         }
         attr->commit();
     }
+
     void addTensorAttribute(const char* name, const Value& val) {
         auto* attr = addAttribute<TensorAttribute>(name, schema::DataType::TENSOR, schema::CollectionType::SINGLE);
         attr->setTensor(lid, val);
+        attr->commit();
+    }
+
+    void add_quantized_tensor_attribute(const char* name, const Value& val) {
+        const auto t = schema::DataType::TENSOR;
+        const auto ct = schema::CollectionType::SINGLE;
+
+        search::attribute::Config cfg(convertDataType(t), convertCollectionType(ct));
+        constexpr uint64_t        quant_seed = 0x12345678;
+        cfg.set_tensor_type_with_quantization(
+            ValueType::from_spec(dense_tensor_spec),
+            QuantizationParams(quant_seed, QuantizationParams::QuantizationMode::MSE, 4));
+        auto* attr = addAttribute<TensorAttribute>(AttributeFactory::createAttribute(name, cfg), t, ct);
+        ASSERT_TRUE(attr->is_quantized());
+        attr->setTensor(lid, *attr->make_quantizer()->quantize(val));
         attr->commit();
     }
 
@@ -377,6 +416,7 @@ struct Fixture {
         addAttribute<IntegerAttribute>(zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
         add_raw_attribute(dyn_field_raw.c_str(), dynamic_raw);
         addTensorAttribute(dyn_field_tensor.c_str(), *dynamic_tensor);
+        add_quantized_tensor_attribute(quantized_tensor_field.c_str(), *dense_tensor);
         auto* attr = addAttribute<PredicateAttribute>(dyn_field_p, DataType::BOOLEANTREE, ct);
         attr->getIndex().indexEmptyDocument(lid);
         attr->commit();
@@ -615,6 +655,19 @@ TEST(DocumentRetrieverTest, require_that_tensor_attribute_can_be_retrieved) {
     ASSERT_TRUE(value);
     auto* tensor_value = dynamic_cast<TensorFieldValue*>(value.get());
     ASSERT_EQ(*tensor_value->getAsTensorPtr(), *dynamic_tensor);
+}
+
+TEST(DocumentRetrieverTest, quantized_tensor_must_fetch_original_data_from_doc_store) {
+    Fixture          f;
+    DocumentMetadata metadata = f._retriever->getDocumentMetadata(doc_id);
+    Document::UP     doc = f._retriever->getDocument(metadata.lid, doc_id);
+    ASSERT_TRUE(doc);
+
+    FieldValue::UP value = doc->getValue(quantized_tensor_field);
+    ASSERT_TRUE(value);
+    auto* tensor_value = dynamic_cast<TensorFieldValue*>(value.get());
+    ASSERT_TRUE(tensor_value);
+    ASSERT_EQ(*tensor_value->getAsTensorPtr(), *dense_tensor);
 }
 
 TEST(DocumentRetrieverTest, require_that_raw_attribute_can_be_retrieved) {

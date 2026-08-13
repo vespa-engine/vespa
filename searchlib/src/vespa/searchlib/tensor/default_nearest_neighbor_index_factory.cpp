@@ -27,19 +27,18 @@ RandomLevelGenerator::UP make_random_level_generator(uint32_t m) {
 
 std::unique_ptr<NearestNeighborIndex>
 DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors, size_t vector_size, bool multi_vector_index,
-                                         vespalib::eval::CellType                  cell_type,
-                                         const search::attribute::HnswIndexParams& params) const {
-    (void)vector_size;
+                                         vespalib::eval::CellType                            cell_type,
+                                         const search::attribute::HnswIndexParams&           params,
+                                         const std::optional<attribute::QuantizationParams>& quant_params) const {
     uint32_t        m = params.max_links_per_node();
     HnswIndexConfig cfg(m * 2, m, params.neighbors_to_explore_at_insert(), 10000, true);
+    auto dist_ff = make_distance_function_factory(params.distance_metric(), cell_type, vector_size, quant_params);
     if (multi_vector_index) {
-        return std::make_unique<HnswIndex<HnswIndexType::MULTI>>(
-            vectors, make_distance_function_factory(params.distance_metric(), cell_type),
-            make_random_level_generator(m), cfg);
+        return std::make_unique<HnswIndex<HnswIndexType::MULTI>>(vectors, std::move(dist_ff),
+                                                                 make_random_level_generator(m), cfg);
     } else {
-        return std::make_unique<HnswIndex<HnswIndexType::SINGLE>>(
-            vectors, make_distance_function_factory(params.distance_metric(), cell_type),
-            make_random_level_generator(m), cfg);
+        return std::make_unique<HnswIndex<HnswIndexType::SINGLE>>(vectors, std::move(dist_ff),
+                                                                  make_random_level_generator(m), cfg);
     }
 }
 

@@ -62,6 +62,7 @@ public class ApplicationData {
             .map(OptionalLong::getAsLong);
     }
 
+    /** The session ID that was last prepared or activated. */
     public Optional<Long> lastDeployedSession() {
         return Optional.of(lastDeployedSession)
                 .filter(OptionalLong::isPresent)

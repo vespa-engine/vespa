@@ -158,6 +158,7 @@ vespa_define_module(
     src/tests/features/nns_closeness
     src/tests/features/nns_distance
     src/tests/features/onnx_feature
+    src/tests/features/query_term_document_frequency
     src/tests/features/ranking_expression
     src/tests/features/raw_score
     src/tests/features/subqueries

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "attribute_usage_filter_config.h"
-#include "attribute_usage_stats.h"
+#include "attribute_usage_stats_and_load_info.h"
 
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 
@@ -13,7 +13,7 @@
 
 namespace proton {
 
-class IAttributeUsageListener;
+class IAttributeUsageAndLoadInfoListener;
 
 /**
  * Class used to populate per document type feed block metrics. Note that
@@ -28,20 +28,20 @@ public:
     using Config = AttributeUsageFilterConfig;
 
 private:
-    mutable Mutex                            _lock; // protect _attributeStats, _config
-    AttributeUsageStats                      _attributeStats;
-    Config                                   _config;
-    std::atomic<bool>                        _acceptWrite;
-    std::unique_ptr<IAttributeUsageListener> _listener;
+    mutable Mutex                                       _lock; // protect _attributeStats, _config
+    AttributeUsageStats                                 _attributeStats;
+    Config                                              _config;
+    std::atomic<bool>                                   _acceptWrite;
+    std::unique_ptr<IAttributeUsageAndLoadInfoListener> _listener;
 
     void recalcState(const Guard& guard); // called with _lock held
 public:
     AttributeUsageFilter();
     ~AttributeUsageFilter() override;
-    void setAttributeStats(AttributeUsageStats attributeStats_in);
+    void setAttributeStats(AttributeUsageStatsAndLoadInfo attribute_usage_stats_and_load_info) noexcept;
     AttributeUsageStats getAttributeUsageStats() const;
     void setConfig(Config config);
-    void set_listener(std::unique_ptr<IAttributeUsageListener> listener);
+    void set_listener(std::unique_ptr<IAttributeUsageAndLoadInfoListener> listener);
     bool acceptWriteOperation() const override;
     State getAcceptState() const override;
 };

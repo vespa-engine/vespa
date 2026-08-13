@@ -73,9 +73,20 @@ public class PhrasingSearcher extends Searcher {
         // the start index of each replace phrase until replacement
         for (int i = phrases.size()-1; i >= 0; i--) {
             PhraseMatcher.Phrase phrase = phrases.get(i);
-            if (phrase.getLength() > 1)
+            if (phrase.getLength() > 1 && ! hasLabeledItem(phrase))
                 phrase.replace();
         }
+    }
+
+    /**
+     * Words inside a phrase are not individually addressable as ranking terms, so phrasing a span
+     * where a word carries an explicit rank label would silently disable that label.
+     * Such spans are left as individual words.
+     */
+    private static boolean hasLabeledItem(PhraseMatcher.Phrase phrase) {
+        for (int i = 0; i < phrase.getLength(); i++)
+            if (phrase.getItem(i).getLabel() != null) return true;
+        return false;
     }
 
 }

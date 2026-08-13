@@ -26,6 +26,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TensorTransformTestCase extends AbstractSchemaTestCase {
 
@@ -108,6 +109,29 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
+    void testTensorFromLabelsWithOffsetTypeConstruction() throws ParseException {
+        var expression = "merge(tensorFromLabelsWithOffset(attribute(int_array_field), mylabel, myoffset), tensor<float>(mylabel{}, myoffset{}):{{mylabel:'0',myoffset:'0'}:1.0}, f(a,b)(a+b))";
+        var expected = "tensor<float>(mylabel{},myoffset{})";
+        for (var rankPropertyExpression : buildSearch(expression)) {
+            if (rankPropertyExpression.getFirst().equals("rankingExpression(testexpression).type")) {
+                String rankExpression = censorBindingHash(rankPropertyExpression.getSecond().replace(" ",""));
+                assertEquals(expected, rankExpression);
+                return;
+            }
+        }
+        fail("No 'rankingExpression(testexpression).type' property produced");
+    }
+
+    @Test
+    void testNumArgsInTensorFromLabelsWithOffsetTypeConstruction() throws ParseException {
+        var expressionWithTooFewArgsNum = "tensorFromLabelsWithOffset(attribute(int_array_field), mylabel)";
+        assertThrows(IllegalArgumentException.class, () -> buildSearch(expressionWithTooFewArgsNum));
+
+        var expressionWithTooManyArgsNum = "tensorFromLabelsWithOffset(attribute(int_array_field), mylabel, myoffset, toomany)";
+        assertThrows(IllegalArgumentException.class, () -> buildSearch(expressionWithTooManyArgsNum));
+    }
+
+    @Test
     void requireThatMaxAndMinWithTensorInQueryIsReplaced() throws ParseException {
         assertTransformedExpression("reduce(query(q),max,x)", "max(query(q),x)");
         assertTransformedExpression("max(query(n),x)", "max(query(n),x)");
@@ -148,6 +172,9 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
                 "            indexing: summary | attribute \n" +
                 "        }\n" +
                 "        field double_array_field type array<double> { \n" +
+                "            indexing: summary | attribute \n" +
+                "        }\n" +
+                "        field int_array_field type array<int> { \n" +
                 "            indexing: summary | attribute \n" +
                 "        }\n" +
                 "        field weightedset_field type weightedset<int> { \n" +

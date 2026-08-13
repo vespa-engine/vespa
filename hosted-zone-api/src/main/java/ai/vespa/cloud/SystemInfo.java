@@ -22,6 +22,7 @@ public class SystemInfo {
     public SystemInfo(ApplicationId application, Zone zone, Cluster cluster, Node node) {
         this(application, zone, new Cloud(""), cluster.id(), node);
     }
+
     @Deprecated(forRemoval = true)
     public SystemInfo(ApplicationId application, Zone zone, Cloud cloud, Cluster cluster, Node node) {
         this(application, zone, cloud, cluster.id(), node);

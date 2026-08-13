@@ -2,10 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;

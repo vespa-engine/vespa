@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -126,7 +127,8 @@ public class NodeResourceChangeValidatorTest {
                 hosts.add(new HostSpec("host" + (hostsCreated++),
                                        resources, resources, resources,
                                        ClusterMembership.from(cluster, i),
-                                       Optional.empty(), Optional.empty(), Optional.empty()));
+                                       Optional.empty(), Optional.empty(), Optional.empty(),
+                                       AzName.defaultName()));
             return hosts;
         }
 

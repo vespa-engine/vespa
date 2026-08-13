@@ -14,6 +14,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -100,7 +101,8 @@ public class VespaModelFactoryTest {
         var host = new HostSpec(hostName,
                                 NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
                                 ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
-                                Optional.empty(), Optional.empty(), Optional.empty());
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                AzName.defaultName());
         var mockProvisioner = new MockProvisioner(List.of(host));
         ModelContext modelContext = createMockModelContext(null, services, mockProvisioner, routingClusterName);
         Model model = VespaModelFactory.createTestFactory().createModel(modelContext);

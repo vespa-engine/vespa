@@ -135,7 +135,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
-import static com.yahoo.vespa.model.container.http.Client.Permission.WRITE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -265,7 +264,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         var sidecars = new ArrayList<SidecarSpec>();
-
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
             var sidecarImage = SidecarImages.readFromPropertiesFile().getOrThrow("triton");
@@ -284,7 +282,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             sidecars.add(spec);
         }
-
         return sidecars;
     }
 
@@ -598,14 +595,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .flatMap(elem -> getClient(elem, deployState).stream())
                     .toList();
             boolean atLeastOneClientWithCertificate = clients.stream().anyMatch(client -> !client.certificates().isEmpty());
-            boolean atLeastOneClientWithWriteToken = deployState.featureFlags().tokenAuthForDeploy() &&
-                clients.stream()
-                    .filter(client -> !client.tokens().isEmpty())
-                    .anyMatch(client -> client.permissions().contains(WRITE));
-
-            if (!atLeastOneClientWithCertificate && !atLeastOneClientWithWriteToken)
-                throw new IllegalArgumentException("At least one client must require a certificate" +
-                        (deployState.featureFlags().tokenAuthForDeploy() ? " or a write token" : ""));
+            if (!atLeastOneClientWithCertificate)
+                throw new IllegalArgumentException("At least one client must require a certificate");
 
             List<String> duplicates = clients.stream().collect(Collectors.groupingBy(Client::id))
                     .entrySet().stream().filter(entry -> entry.getValue().size() > 1)
@@ -719,19 +710,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             boolean isPublic = state.zone().system().isPublicCloudLike();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (isPublic) {
-                if (clientCertificates.isEmpty()) {
-                    boolean hasTokenClients = state.featureFlags().tokenAuthForDeploy() &&
-                            cluster.getClients().stream()
-                                    .filter(c -> !c.internal())
-                                    .anyMatch(c -> !c.tokens().isEmpty());
-                    if (!hasTokenClients)
-                        throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                                   "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
-                    builder.clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
-                } else {
-                    builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
-                            .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
-                }
+                if (clientCertificates.isEmpty())
+                    throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
+                                                               "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
+                builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
+                        .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
             } else {
                 builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem");
                 var needAuth = cluster.getHttp().getAccessControl()
@@ -1170,7 +1153,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             applyPerContainerGCOptions(nodes, context, cluster, null);
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
-
             var xmlGcOptions = extractJvmOptions(nodes, cluster, nodesElement, context);
             applyDefaultPreload(nodes, nodesElement);
             var envVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT)).entrySet();
@@ -1254,7 +1236,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             false,
                                             context.clusterInfo().build(),
                                             sidecars);
-            return createNodesFromHosts(hosts, cluster, context.getDeployState());
+            return createNodesFromHosts(hosts, nodesSpec.cluster(), cluster, context.getDeployState());
         }
         else {
             return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
@@ -1293,7 +1275,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                       getZooKeeper(containerElement) != null,
                                                                                       context.clusterInfo().build(),
                                                                                       sidecars);
-            return createNodesFromHosts(hosts, cluster, context.getDeployState());
+            return createNodesFromHosts(hosts, nodesSpecification.cluster(), cluster, context.getDeployState());
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("In " + cluster, e);
@@ -1313,12 +1295,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
                                                              Capacity.fromRequiredNodeType(type),
                                                              context.getDeployState());
-        return createNodesFromHosts(hosts, cluster, context.getDeployState());
+        return createNodesFromHosts(hosts, clusterSpec, cluster, context.getDeployState());
     }
 
     private List<ApplicationContainer> createNodesFromHosts(Map<HostResource, ClusterMembership> hosts,
+                                                            ClusterSpec clusterSpec,
                                                             ApplicationContainerCluster cluster,
                                                             DeployState deployState) {
+        cluster.setSpec(clusterSpec);
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
@@ -1337,6 +1321,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             nodes.add(new ContainerServiceBuilder("container." + nodeIndex, nodeIndex).build(deployState, cluster, nodeElem));
             nodeIndex++;
         }
+        cluster.setSpec(ClusterSpec.request(ClusterSpec.Type.container, cluster.id()).vespaVersion(deployState.getVespaVersion()).build());
         return nodes;
     }
 

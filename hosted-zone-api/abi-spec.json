@@ -78,7 +78,9 @@
     ],
     "methods" : [
       "public void <init>(int)",
+      "public void <init>(int, java.lang.String)",
       "public int index()",
+      "public java.lang.String availabilityZone()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],

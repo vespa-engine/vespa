@@ -157,6 +157,11 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-opentelemetry</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>testutil</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
