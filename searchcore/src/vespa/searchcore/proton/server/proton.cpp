@@ -140,11 +140,9 @@ DiskMemUsageSampler::Config diskMemUsageSamplerConfig(const ProtonConfig& proton
             proton.writefilter.reservedDiskSpaceFactor,
             proton.writefilter.reservedMemoryFactor,
             AttributeUsageFilterConfig(proton.writefilter.attribute.addressSpaceLimit),
-            proton.logWarningOnDiskCapacityChange,
             vespalib::from_s(proton.writefilter.sampleinterval),
             hwInfo,
-            should_resample_disk_capacity,
-            proton.resampleDiskCapacity};
+            should_resample_disk_capacity};
 }
 
 uint32_t computeRpcTransportThreads(const ProtonConfig& cfg, const vespalib::HwInfo::Cpu& cpuInfo) {
