@@ -67,6 +67,17 @@ public class TextInputTestCase {
     }
 
     @Test
+    void labelIsPropagatedToParsedTerms() {
+        Item root = parse("select foo from bar where title contains ({label:\"t1\"} text(\"new york\"))").getRoot();
+        assertInstanceOf(WeakAndItem.class, root);
+        WeakAndItem weakAnd = (WeakAndItem) root;
+        assertEquals(2, weakAnd.getItemCount());
+        for (Item term : weakAnd.items()) {
+            assertEquals("t1", term.getLabel());
+        }
+    }
+
+    @Test
     void allowEmptyReturnsNullItem() {
         Item root = parse("select foo from bar where title contains ([{allowEmpty:true}] text(@q))", "q", "").getRoot();
         assertInstanceOf(NullItem.class, root);
