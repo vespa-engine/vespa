@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-08-08
+Last updated: 2026-08-14
 
 ---
 
@@ -242,20 +242,20 @@ Last updated: 2026-08-08
 
 ---
 
-## csv 3.3.5 — BSD 2
+## csv 3.3.6 — BSD 2
 
 - Homepage: <https://github.com/ruby/csv>
 - Copyright 2007-2017 Yukihiro Matsumoto
 - Copyright 2017 pavel
-- Copyright 2005-2016 James Edward Gray II. All rights reserved
-- Copyright 2018 Kouhei Sutou
 - Copyright 2018 Vladislav
+- Copyright 2018 Kouhei Sutou
 - Copyright 2017-2018 Steven Daniels
 - Copyright 2017 Espartaco Palma
 - Copyright 2018 Tomohiro Ogoke
 - Copyright 2017 Marcus Stollsteimer
-- Copyright 2017 Olivier Lacan
+- Copyright 2005-2016 James Edward Gray II
 - Copyright 2017 SHIBATA Hiroshi
+- Copyright 2017 Olivier Lacan
 - Copyright 2018 Mitsutaka Mimura
 
 ---
@@ -391,52 +391,9 @@ Last updated: 2026-08-08
 
 ---
 
-## github.com/klauspost/compress v1.18.7 — Apache 2.0
-
-- Homepage: <https://pkg.go.dev/github.com/klauspost/compress@v1.18.7>
-- Copyright 2011 The Snappy-Go Authors
-- Copyright 2016 The filepathx Authors
-- Copyright 2015 Klaus Post
-- Copyright 2016-2017 The New York Times Company
-- Copyright 2012 The Go Authors
-- Copyright 2019 Klaus Post
-
----
-
-## github.com/klauspost/compress v1.18.7 — BSD 3
-
-- Homepage: <https://pkg.go.dev/github.com/klauspost/compress@v1.18.7>
-- Copyright 2011 The Snappy-Go Authors
-- Copyright 2016 The filepathx Authors
-- Copyright 2015 Klaus Post
-- Copyright 2016-2017 The New York Times Company
-- Copyright 2012 The Go Authors
-- Copyright 2019 Klaus Post
-
----
-
-## github.com/klauspost/compress v1.18.7 — MIT
-
-- Homepage: <https://pkg.go.dev/github.com/klauspost/compress@v1.18.7>
-- Copyright 2011 The Snappy-Go Authors
-- Copyright 2016 The filepathx Authors
-- Copyright 2015 Klaus Post
-- Copyright 2016-2017 The New York Times Company
-- Copyright 2012 The Go Authors
-- Copyright 2019 Klaus Post
-
----
-
 ## github.com/mattn/go-colorable v0.1.15 — MIT
 
 - Homepage: <https://pkg.go.dev/github.com/mattn/go-colorable@v0.1.15>
-- Copyright 2016 Yasuhiro Matsumoto
-
----
-
-## github.com/mattn/go-runewidth v0.0.24 — MIT
-
-- Homepage: <https://pkg.go.dev/github.com/mattn/go-runewidth@v0.0.24>
 - Copyright 2016 Yasuhiro Matsumoto
 
 ---
@@ -496,6 +453,13 @@ Last updated: 2026-08-08
 
 ---
 
+## golang.org/x/net v0.58.0 — Golang BSD + Patents
+
+- Homepage: <https://pkg.go.dev/golang.org/x/net@v0.58.0>
+- Copyright 2009 The Go Authors
+
+---
+
 ## golang.org/x/term v0.45.0 — Golang BSD + Patents
 
 - Homepage: <https://pkg.go.dev/golang.org/x/term@v0.45.0>
@@ -503,9 +467,9 @@ Last updated: 2026-08-08
 
 ---
 
-## golang.org/x/text v0.40.0 — Golang BSD + Patents
+## golang.org/x/text v0.41.0 — Golang BSD + Patents
 
-- Homepage: <https://pkg.go.dev/golang.org/x/text@v0.40.0>
+- Homepage: <https://pkg.go.dev/golang.org/x/text@v0.41.0>
 - Copyright 2009 The Go Authors
 
 ---
@@ -568,10 +532,9 @@ Last updated: 2026-08-08
 
 ---
 
-## html-proofer 5.2.1 — MIT
+## html-proofer 5.2.2 — MIT
 
 - Homepage: <https://github.com/gjtorikian/html-proofer>
-- Copyright 2013 Garen Torikian
 
 ---
 
@@ -597,7 +560,7 @@ Last updated: 2026-08-08
 
 ---
 
-## io-event 1.16.1 — MIT
+## io-event 1.16.4 — MIT
 
 - Homepage: <https://github.com/socketry/io-event>
 -  by Wander Hillen
@@ -660,14 +623,14 @@ Last updated: 2026-08-08
 
 ---
 
-## json 2.19.5 — BSD 2
+## json 2.19.9 — BSD 2
 
 - Homepage: <https://github.com/ruby/json>
 - Copyright 1993-2013 Yukihiro Matsumoto
 
 ---
 
-## json 2.19.5 — Ruby
+## json 2.19.9 — Ruby
 
 - Homepage: <https://github.com/ruby/json>
 - Copyright 1993-2013 Yukihiro Matsumoto
@@ -794,12 +757,12 @@ Last updated: 2026-08-08
 
 ---
 
-## nokogiri 1.19.3 — MIT
+## nokogiri 1.19.4 — MIT
 
 - Homepage: <https://nokogiri.org>
 - Copyright 2008-2023 Mike Dalessio
-- Copyright 1995-2017 Jean-loup Gailly and Mark Adler
 - Copyright 1998-2012 Daniel Veillard
+- Copyright 1995-2017 Jean-loup Gailly and Mark Adler
 - Copyright 2001-2003 Thai Open Source Software Center Ltd
 - Copyright 2001-2002 SourceForge ISO-RELAX Project
 - Copyright 2001-2002 Thomas Broyer
@@ -925,14 +888,14 @@ Last updated: 2026-08-08
 
 ---
 
-## react 19.2.7 — MIT
+## react 19.2.8 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
 
 ---
 
-## react-dom 19.2.7 — MIT
+## react-dom 19.2.8 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
@@ -1203,7 +1166,7 @@ Last updated: 2026-08-08
 
 ---
 
-## zeitwerk 2.8.2 — MIT
+## zeitwerk 2.8.3 — MIT
 
 - Homepage: <https://github.com/fxn/zeitwerk>
 - Copyright 2019 Xavier Noria
