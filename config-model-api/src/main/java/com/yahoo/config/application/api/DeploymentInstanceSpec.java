@@ -336,6 +336,11 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         return zoneEndpoints;
     }
 
+    /** The container cluster ids targeted by zone and private endpoints. */
+    public Set<ClusterSpec.Id> zoneEndpointClusters() {
+        return zoneEndpoints.keySet();
+    }
+
     /** The zone endpoints in the given zone, possibly default values. */
     public Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints(ZoneId zone) {
         return zoneEndpoints.keySet().stream()
