@@ -3,9 +3,12 @@
 #include "string_search_context.hpp"
 
 #include "string_matcher.h"
+#include "string_range_matcher.h"
 
 namespace search::attribute {
 
 template class StringSearchContextT<StringMatcher>;
+
+template class StringSearchContextT<StringRangeMatcher>;
 
 } // namespace search::attribute

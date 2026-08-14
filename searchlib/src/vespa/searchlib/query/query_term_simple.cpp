@@ -156,6 +156,11 @@ template <> QueryTermSimple::RangeResult<int64_t> QueryTermSimple::getRange() co
     return getIntegerRange<int64_t>();
 }
 
+template <> QueryTermSimple::RangeResult<std::string> QueryTermSimple::getRange() const noexcept {
+    // TODO
+    return QueryTermSimple::RangeResult<std::string>();
+}
+
 bool QueryTermSimple::getAsIntegerTerm(int64_t& lower, int64_t& upper) const noexcept {
     lower = NEG_MIN_I64;
     upper = POS_MAX_I64;
