@@ -11,6 +11,8 @@
 
 #include <xxhash.h>
 
+#include <limits>
+
 using namespace search::expression;
 
 namespace search::aggregation {
@@ -84,67 +86,72 @@ AggregationResult& AggregationResult::setExpression(ExpressionNode::UP expr) {
 }
 
 void CountAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    (void)result;
-    (void)useForInit;
+    if (useForInit) {
+        _count.set(result);
+    }
 }
 
 void SumAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    if (isReady(_sum.get(), result)) {
-        return;
+    if (!isReady(_sum.get(), result)) {
+        _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
     }
-    _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
     if (useForInit) {
         _sum->set(result);
     }
 }
 
-MinAggregationResult::MinAggregationResult() = default;
+MinAggregationResult::MinAggregationResult()
+    : AggregationResult(), _min(FloatResultNode(std::numeric_limits<double>::max())) {
+}
 MinAggregationResult::MinAggregationResult(const SingleResultNode& min) : AggregationResult(), _min(min) {
 }
 MinAggregationResult::~MinAggregationResult() = default;
 
 void MinAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    if (isReady(_min.get(), result)) {
-        return;
+    if (!isReady(_min.get(), result)) {
+        _min = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
+        if (!useForInit) {
+            _min->setMax();
+        }
     }
-    _min = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-    if (!useForInit) {
-        _min->setMax();
-    } else {
+    if (useForInit) {
         _min->set(result);
     }
 }
 
-MaxAggregationResult::MaxAggregationResult() = default;
+MaxAggregationResult::MaxAggregationResult()
+    : AggregationResult(), _max(FloatResultNode(-std::numeric_limits<double>::max())) {
+}
 MaxAggregationResult::MaxAggregationResult(const SingleResultNode& max) : AggregationResult(), _max(max) {
 }
 MaxAggregationResult::~MaxAggregationResult() = default;
 
 void MaxAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    if (isReady(_max.get(), result)) {
-        return;
+    if (!isReady(_max.get(), result)) {
+        _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
+        if (!useForInit) {
+            _max->setMin(); /// Should figure out how to set min too for float.
+        }
     }
-    _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-    if (!useForInit) {
-        _max->setMin(); /// Should figure out how to set min too for float.
-    } else {
+    if (useForInit) {
         _max->set(result);
     }
 }
 
 void AverageAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    if (_sum.get()) {
-        return;
+    if (!_sum.get()) {
+        _sum = std::make_unique<FloatResultNode>();
     }
-    _sum = std::make_unique<FloatResultNode>();
     if (useForInit) {
         _sum->set(result);
+        _count = 1;
     }
 }
 
 void XorAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    (void)result;
-    (void)useForInit;
+    if (useForInit) {
+        _xor.set(result);
+    }
 }
 
 void SumAggregationResult::onMerge(const AggregationResult& b) {
@@ -213,6 +220,8 @@ void MinAggregationResult::onReset() {
     _min->setMax();
 }
 
+AverageAggregationResult::AverageAggregationResult() : AggregationResult(), _sum(FloatResultNode(0.0)), _count(0) {
+}
 AverageAggregationResult::~AverageAggregationResult() = default;
 
 void AverageAggregationResult::onMerge(const AggregationResult& b) {
@@ -307,7 +316,8 @@ Deserializer& SumAggregationResult::onDeserialize(Deserializer& is) {
     return is >> _sum;
 }
 
-SumAggregationResult::SumAggregationResult() = default;
+SumAggregationResult::SumAggregationResult() : AggregationResult(), _sum(FloatResultNode(0.0)) {
+}
 
 SumAggregationResult::SumAggregationResult(NumericResultNode::UP sum) : AggregationResult(), _sum(sum.release()) {
 }
