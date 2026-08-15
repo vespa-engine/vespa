@@ -31,9 +31,8 @@ public class QuantileAggregationResult extends AggregationResult {
     // Leave a byte to make it easier to change the sketch in the future.
     private byte extension;
 
-
     /**
-     * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
+     * Constructs an empty result node.
      */
     public QuantileAggregationResult() {
         this.quantiles = List.of();
