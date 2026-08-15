@@ -59,7 +59,7 @@ public:
     void aggregate(DocId docId, HitRank rank);
     AggregationResult& setExpression(ExpressionNode::UP expr);
     // only used by unit tests:
-    AggregationResult& setResult(const ResultNode::CP& result) {
+    AggregationResult& resultForUnitTest(const ResultNode::CP& result) {
         if (result.get()) {
             initForUnitTest(*result);
         }

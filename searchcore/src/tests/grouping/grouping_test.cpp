@@ -157,7 +157,7 @@ GroupingLevel createGL(ExpressionNode::UP expr, ExpressionNode::UP result) {
 GroupingLevel createGL(ExpressionNode::UP expr, ExpressionNode::UP resultExpr, ResultNode::UP result) {
     GroupingLevel l;
     l.setExpression(std::move(expr));
-    l.addResult(SumAggregationResult().setExpression(std::move(resultExpr)).setResult(result.release()));
+    l.addResult(SumAggregationResult().setExpression(std::move(resultExpr)).resultForUnitTest(result.release()));
     return l;
 }
 GroupingLevel createGL(size_t maxGroups, ExpressionNode::UP expr) {
@@ -385,7 +385,7 @@ TEST(GroupingTest, testSessionManager) {
         .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2"), MU<Int64ResultNode>(0)))
         .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3"), MU<Int64ResultNode>(0)))
         .setRoot(Group().addResult(
-            SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(0))));
+            SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).resultForUnitTest(Int64ResultNode(0))));
 
     auto            r1 = std::make_shared<Grouping>(request1);
     GroupingContext initContext(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
@@ -464,13 +464,13 @@ TEST(GroupingTest, test_grouping_fork_and_join) {
 
     Grouping expect;
     expect
-        .setRoot(
-            Group()
-                .addResult(
-                    SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(189)))
-                .addChild(Group().setId(Int64ResultNode(21)).setRank(40.0))
-                .addChild(Group().setId(Int64ResultNode(22)).setRank(150.0))
-                .addChild(Group().setId(Int64ResultNode(32)).setRank(100.0)))
+        .setRoot(Group()
+                     .addResult(SumAggregationResult()
+                                    .setExpression(MU<AttributeNode>("attr0"))
+                                    .resultForUnitTest(Int64ResultNode(189)))
+                     .addChild(Group().setId(Int64ResultNode(21)).setRank(40.0))
+                     .addChild(Group().setId(Int64ResultNode(22)).setRank(150.0))
+                     .addChild(Group().setId(Int64ResultNode(32)).setRank(100.0)))
         .addLevel(createGL(3, MU<AttributeNode>("attr0")))
         .setFirstLevel(0)
         .setLastLevel(1);
