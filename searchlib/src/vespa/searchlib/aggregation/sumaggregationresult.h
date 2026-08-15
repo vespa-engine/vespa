@@ -19,7 +19,8 @@ public:
 
 private:
     const ResultNode& onGetRank() const override { return getSum(); }
-    void onPrepare(const ResultNode& result, bool useForInit) override;
+    void onPrepare(const ResultNode& result) override;
+    void initForUnitTest(const ResultNode& result) override;
     NumericResultNode::CP _sum;
 };
 

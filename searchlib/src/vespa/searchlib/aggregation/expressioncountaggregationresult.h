@@ -22,7 +22,7 @@ class ExpressionCountAggregationResult : public AggregationResult {
     expression::Int64ResultNode _rank;
 
     const ResultNode& onGetRank() const override { return _rank; }
-    void onPrepare(const ResultNode&, bool) override {}
+    void onPrepare(const ResultNode&) override {}
 
 public:
     DECLARE_AGGREGATIONRESULT(ExpressionCountAggregationResult);

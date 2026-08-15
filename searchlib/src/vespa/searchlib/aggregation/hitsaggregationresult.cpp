@@ -29,9 +29,8 @@ HitsAggregationResult::HitsAggregationResult(const HitsAggregationResult&) = def
 HitsAggregationResult& HitsAggregationResult::operator=(const HitsAggregationResult&) = default;
 HitsAggregationResult::~HitsAggregationResult() = default;
 
-void HitsAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
+void HitsAggregationResult::onPrepare(const ResultNode& result) {
     (void)result;
-    (void)useForInit;
 }
 
 void HitsAggregationResult::onMerge(const AggregationResult& b) {
