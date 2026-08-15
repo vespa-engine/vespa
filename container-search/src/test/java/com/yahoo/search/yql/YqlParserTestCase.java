@@ -1040,6 +1040,26 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testLabelWrapper() {
+        assertParse("select foo from bar where labeled(a contains \"A\", \"mylabel\", 2.5)",
+                "LABEL_WRAPPER(mylabel,2.5) a:A");
+        // the child may be any expression
+        assertParse("select foo from bar where labeled(a contains \"A\" or b contains \"B\", \"mylabel\", 1.0)",
+                "LABEL_WRAPPER(mylabel,1.0) (OR a:A b:B)");
+        // an integer score is fine too
+        assertParse("select foo from bar where labeled(a contains \"A\", \"mylabel\", 3)",
+                "LABEL_WRAPPER(mylabel,3.0) a:A");
+    }
+
+    @Test
+    void testLabelWrapperRequiresThreeArgumentsWithANumericScore() {
+        assertParseFail("select foo from bar where labeled(a contains \"A\", \"mylabel\")",
+                new IllegalArgumentException("Expected 3 arguments, got 2."));
+        assertParseFail("select foo from bar where labeled(a contains \"A\", \"mylabel\", \"heavy\")",
+                new IllegalArgumentException("Expected a number as the label score, got heavy."));
+    }
+
+    @Test
     void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")",
                 "WEAKAND a:A b:B");
@@ -1449,11 +1469,11 @@ public class YqlParserTestCase {
         yql.properties().set("yql", "select * from sources * where urlfield.hostname contains uri(\"google.com\")");
         assertUrlQuery("urlfield.hostname", yql, false, true, true);
     }
-    
+
     @Test
     void testUriTokenization() {
         //Tokenizer should match searchlib URL::IsTokenChar
-        
+
         // '-' or '_' are token characters, not separators
         assertEquals(List.of("my-subdomain", "example", "com"), YqlParser.tokenizeUri("my-subdomain.example.com"));
         assertEquals(List.of("foo_bar", "example", "com"), YqlParser.tokenizeUri("foo_bar.example.com"));

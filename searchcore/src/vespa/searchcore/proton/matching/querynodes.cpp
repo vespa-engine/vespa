@@ -79,6 +79,12 @@ void ProtonTermData::resolveFromChildren(const std::vector<Node*>& subterms) {
     }
 }
 
+void ProtonTermData::resolve_no_field() {
+    const FieldInfo& info = FieldInfo::no_field();
+    _fields.clear();
+    _fields.emplace_back(info.name(), info.id(), false);
+}
+
 void ProtonTermData::allocateTerms(MatchDataLayout& mdl) {
     for (size_t i = 0; i < _fields.size(); ++i) {
         _fields[i]._field_spec.setHandle(mdl.allocTermField(_fields[i].getFieldId()));
@@ -154,6 +160,7 @@ template struct ProtonTerm<search::query::WordAlternatives>;
 
 ProtonAndNot::~ProtonAndNot() = default;
 ProtonEquiv::~ProtonEquiv() = default;
+ProtonLabelWrapper::~ProtonLabelWrapper() = default;
 ProtonWordAlternatives::~ProtonWordAlternatives() = default;
 ProtonSameElement::~ProtonSameElement() = default;
 ProtonNearestNeighborTerm::~ProtonNearestNeighborTerm() = default;

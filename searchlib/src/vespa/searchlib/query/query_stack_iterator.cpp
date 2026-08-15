@@ -55,6 +55,7 @@ void QueryStackIterator::Data::clear() {
     term_view = {};
     integerTerm = 0;
 
+    label_score = 0;
     distanceThreshold = 0;
     scoreThreshold = 0;
     thresholdBoostFactor = 0;

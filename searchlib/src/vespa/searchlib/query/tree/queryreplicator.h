@@ -112,6 +112,11 @@ private:
         visitNodes(node.getChildren());
     }
 
+    void visit(LabelWrapper& node) override {
+        _builder.add_label_wrapper(node.getId(), node.getLabelScore());
+        visitNodes(node.getChildren());
+    }
+
     void visit(NumberTerm& node) override {
         copyState(node, _builder.addNumberTerm(node.getTerm(), node.getView(), node.getId(), node.getWeight()));
     }

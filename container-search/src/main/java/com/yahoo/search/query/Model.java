@@ -6,6 +6,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.LocaleFactory;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.LabelWrapperItem;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.processing.IllegalInputException;
@@ -575,6 +576,12 @@ public class Model implements Cloneable {
             // This is tested before descending, as phrases are viewed
             // as leaf nodes in the ranking code in the backend
             terms.add(root);
+            if (root instanceof LabelWrapperItem c) {
+                // ... but a label wrapper is not a leaf: its child subtree is ranked as usual
+                for (Iterator<Item> i = c.getItemIterator(); i.hasNext();) {
+                    collectTaggableItems(i.next(), terms);
+                }
+            }
         } else if (root instanceof CompositeItem c) {
             for (Iterator<Item> i = c.getItemIterator(); i.hasNext();) {
                 collectTaggableItems(i.next(), terms);

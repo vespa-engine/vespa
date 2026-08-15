@@ -44,6 +44,7 @@ public:
         std::string_view term_view;
         int64_t          integerTerm = 0;
 
+        double label_score = 0;
         double distanceThreshold = 0;
         double scoreThreshold = 0;
         double thresholdBoostFactor = 0;
@@ -115,6 +116,9 @@ public:
 
     /** Get the term in the current item */
     std::string_view getTerm() const noexcept { return _d.term_view; }
+
+    /** The label score of the current item (label wrapper) */
+    [[nodiscard]] double get_label_score() const noexcept { return _d.label_score; }
 
     int64_t getIntegerTerm() const noexcept { return _d.integerTerm; }
 

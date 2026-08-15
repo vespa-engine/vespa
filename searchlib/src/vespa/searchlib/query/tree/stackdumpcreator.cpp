@@ -202,6 +202,14 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(Rank& node) override { createIntermediate(node, ParseItem::ITEM_RANK); }
 
+    void visit(LabelWrapper& node) override {
+        append_type_and_features(ParseItem::ITEM_LABEL_WRAPPER, static_cast<uint8_t>(ParseItem::IF_UNIQUEID));
+        appendCompressedPositiveNumber(node.getId());
+        appendCompressedPositiveNumber(node.getChildren().size());
+        appendDouble(node.getLabelScore());
+        visitNodes(node.getChildren());
+    }
+
     template <typename T> void appendTerm(const TermBase<T>& node);
 
     void createTermNode(const Term& node, ParseItem::ItemType type) {

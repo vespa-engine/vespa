@@ -98,6 +98,20 @@ TEST(TermDataExtractorTest, requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm
     }
 }
 
+TEST(TermDataExtractorTest, requireThatLabelWrapperIsAddedWithoutHidingItsChild) {
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    query_builder.add_label_wrapper(id[0], 2.5);
+    query_builder.addStringTerm("term1", field, id[1], Weight(0));
+    Node::UP node = query_builder.build();
+
+    vector<const ITermData*> term_data;
+    TermDataExtractor::extractTerms(*node, term_data);
+    // Unlike other term data the wrapper is not a ranking leaf, so its child is added too
+    ASSERT_EQ(2u, term_data.size());
+    EXPECT_EQ(id[0], term_data[0]->getUniqueId());
+    EXPECT_EQ(id[1], term_data[1]->getUniqueId());
+}
+
 TEST(TermDataExtractorTest, requireThatUnrankedTermsAreSkipped) {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);

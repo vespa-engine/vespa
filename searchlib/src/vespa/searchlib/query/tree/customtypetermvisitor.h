@@ -23,6 +23,7 @@ private:
     void visit(typename NodeTypes::ONear& n) override { visitChildren(n); }
     void visit(typename NodeTypes::Or& n) override { visitChildren(n); }
     void visit(typename NodeTypes::Rank& n) override { visitChildren(n); }
+    void visit(typename NodeTypes::LabelWrapper& n) override { visitChildren(n); }
     void visit(typename NodeTypes::WeakAnd& n) override { visitChildren(n); }
     void visit(typename NodeTypes::SameElement& n) override { visitChildren(n); }
 

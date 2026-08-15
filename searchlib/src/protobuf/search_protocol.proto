@@ -145,6 +145,12 @@ message ItemAndNot {
 message ItemRank {
     repeated QueryTreeItem children = 1;
 }
+message ItemLabelWrapper {
+    QueryTreeItem child = 1;
+    // the label is mapped to this id via the "vespa.label.<label>.id" rank property
+    int32 unique_id = 2;
+    double score = 3;
+}
 message ItemNear {
     int32 distance = 1;
     repeated QueryTreeItem children = 2;
@@ -409,6 +415,7 @@ message QueryTreeItem {
         ItemNearestNeighbor item_nearest_neighbor = 36;
         ItemGeoLocationTerm item_geo_location_term = 37;
         ItemPredicateQuery item_predicate_query = 38;
+        ItemLabelWrapper item_label_wrapper = 39;
 
         // unfinished, only inside QRS: item_multi_term
         // not used anymore: item_any

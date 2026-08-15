@@ -61,6 +61,8 @@ public:
     ProtonTermData& operator=(const ProtonTermData&) = delete;
     ~ProtonTermData() override;
     void resolveFromChildren(const std::vector<search::query::Node*>& children);
+    // clear fields, and use just the reserved "no field"
+    void resolve_no_field();
     void allocateTerms(search::fef::MatchDataLayout& mdl);
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
     // clear fields, and use just the provided entry:
@@ -133,6 +135,23 @@ struct ProtonAndNot final : public search::query::SimpleAndNot {
     ~ProtonAndNot() override;
 };
 
+/*
+ * A label wrapper is term data so that rank features can address it by label, but it
+ * searches no field of its own: it holds the reserved "no field" and exposes its score
+ * as the raw score of that handle.
+ */
+struct ProtonLabelWrapper final : public search::query::LabelWrapper, public ProtonTermData {
+    using search::query::LabelWrapper::LabelWrapper;
+    ~ProtonLabelWrapper() override;
+
+    void resolve() { ProtonTermData::resolve_no_field(); }
+
+    // ITermData interface
+    [[nodiscard]] uint32_t getPhraseLength() const final { return 1; }
+    [[nodiscard]] search::query::Weight getWeight() const final { return search::query::Weight(100); }
+    [[nodiscard]] uint32_t getUniqueId() const final { return search::query::LabelWrapper::getId(); }
+};
+
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     using ProtonTermBase::ProtonTermBase;
     ~ProtonEquiv() override;
@@ -194,6 +213,7 @@ struct ProtonNodeTypes {
     using PrefixTerm = ProtonPrefixTerm;
     using RangeTerm = ProtonRangeTerm;
     using Rank = ProtonRank;
+    using LabelWrapper = ProtonLabelWrapper;
     using StringTerm = ProtonStringTerm;
     using SubstringTerm = ProtonSubstringTerm;
     using SuffixTerm = ProtonSuffixTerm;

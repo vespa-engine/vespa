@@ -16,8 +16,9 @@
 #include <vespa/vdslib/container/searchresult.h>
 
 namespace search::streaming {
+class LabelWrapperQueryNode;
 class QueryTermData;
-}
+} // namespace search::streaming
 
 namespace streaming {
 
@@ -51,6 +52,7 @@ private:
     void resolve_fields_from_term(search::streaming::QueryTermData& qtd, const search::streaming::QueryTerm& term);
     void add_same_element_descendant_terms(search::streaming::SameElementQueryNode& same_element);
     void maybe_add_query_term(search::streaming::QueryTerm& term);
+    void add_label_wrapper(search::streaming::LabelWrapperQueryNode& wrapper);
     void initQueryEnvironment();
     void initHitCollector(size_t wantedHitCount, bool use_sort_blob);
     void setupRankProgram(search::fef::RankProgram& program);
