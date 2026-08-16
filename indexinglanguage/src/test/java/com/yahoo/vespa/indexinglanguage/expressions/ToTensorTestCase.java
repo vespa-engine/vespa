@@ -6,6 +6,8 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -108,9 +110,63 @@ public class ToTensorTestCase {
             exp.resolve(type);
             fail("Expected exception");
         } catch (VerificationException e) {
-            assertEquals("Invalid expression 'to_tensor chunk': Expected an array of tensors as input, but got string",
+            assertEquals("Invalid expression 'to_tensor chunk': Expected an array of tensors or numbers as input, but got string",
                          e.getMessage());
         }
+    }
+
+    @Test
+    public void requireThatArrayOfFloatsIsConverted() throws ParseException {
+        var type = scalarDocumentType(com.yahoo.document.DataType.FLOAT, "tensor<float>(chunk[3])");
+        var exp = Expression.fromString("input scalars | to_tensor chunk | attribute combined");
+
+        Document input = new Document(type, "id:scheme:mytype::");
+        var array = new Array<FloatFieldValue>(type.getField("scalars").getDataType());
+        array.add(new FloatFieldValue(1));
+        array.add(new FloatFieldValue(2));
+        array.add(new FloatFieldValue(3));
+        input.setFieldValue("scalars", array);
+
+        Document output = Expression.execute(exp, input);
+        assertEquals(Tensor.from("tensor<float>(chunk[3]):[1, 2, 3]"),
+                     ((TensorFieldValue)output.getFieldValue("combined")).getTensor().get());
+    }
+
+    @Test
+    public void requireThatArrayOfIntsIsConverted() throws ParseException {
+        var type = scalarDocumentType(com.yahoo.document.DataType.INT, "tensor(chunk[2])");
+        var exp = Expression.fromString("input scalars | to_tensor chunk | attribute combined");
+
+        Document input = new Document(type, "id:scheme:mytype::");
+        var array = new Array<IntegerFieldValue>(type.getField("scalars").getDataType());
+        array.add(new IntegerFieldValue(6));
+        array.add(new IntegerFieldValue(9));
+        input.setFieldValue("scalars", array);
+
+        Document output = Expression.execute(exp, input);
+        assertEquals(Tensor.from("tensor(chunk[2]):[6, 9]"),
+                     ((TensorFieldValue)output.getFieldValue("combined")).getTensor().get());
+    }
+
+    @Test
+    public void requireThatScalarInputRequiresSingleDimensionOutput() throws ParseException {
+        var type = scalarDocumentType(com.yahoo.document.DataType.FLOAT, "tensor(chunk[2],x[2])");
+        var exp = Expression.fromString("input scalars | to_tensor chunk | attribute combined");
+        try {
+            exp.resolve(type);
+            fail("Expected exception");
+        } catch (VerificationException e) {
+            assertEquals("Invalid expression 'to_tensor chunk': The input is an array of numbers, so this can only " +
+                         "produce a tensor with the single dimension 'chunk', but tensor(chunk[2],x[2]) is required",
+                         e.getMessage());
+        }
+    }
+
+    private DocumentType scalarDocumentType(com.yahoo.document.DataType elementType, String combinedTypeSpec) {
+        var type = new DocumentType("mytype");
+        type.addField("scalars", new ArrayDataType(elementType));
+        type.addField("combined", new TensorDataType(TensorType.fromSpec(combinedTypeSpec)));
+        return type;
     }
 
     private DocumentType documentType(String elementTypeSpec, String combinedTypeSpec) {
