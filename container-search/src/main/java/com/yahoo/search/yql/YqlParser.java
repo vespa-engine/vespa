@@ -66,6 +66,7 @@ import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -1565,8 +1566,15 @@ public class YqlParser implements Parser {
         assertHasOperator(spec, ExpressionOperator.CALL);
         assertHasFunctionName(spec, RANGE);
 
-        IntItem range = instantiateRangeItem(spec.getArgument(1), spec);
-        return leafStyleSettings(spec, range);
+        List<OperatorNode<ExpressionOperator>> args = spec.getArgument(1);
+
+        if (!args.isEmpty() && indexFactsSession.getIndex(getIndex(args.get(0))).isString()) {
+            return instantiateStringRangeItem(args, spec);
+        } else {
+            IntItem range = instantiateIntRangeItem(args, spec);
+            return leafStyleSettings(spec, range);
+        }
+
     }
 
     private static Number negate(Number x) {
@@ -1587,11 +1595,48 @@ public class YqlParser implements Parser {
         }
     }
 
-    private IntItem instantiateRangeItem(List<OperatorNode<ExpressionOperator>> args,
-                                         OperatorNode<ExpressionOperator> spec) {
+    private Item instantiateStringRangeItem(List<OperatorNode<ExpressionOperator>> args,
+                                            OperatorNode<ExpressionOperator> spec) {
         Preconditions.checkArgument(args.size() == 3,
                 "Expected 3 arguments, got %s.", args.size());
 
+        var left_arg = args.get(1);
+        boolean left_infinity = left_arg.getOperator() == ExpressionOperator.READ_FIELD && left_arg.getArgument(1).toString().equals("Infinity");
+        String left_string = null;
+        if (!left_infinity) {
+            left_string = left_arg.getArgument(1).toString();
+        }
+        var right_arg = args.get(2);
+        boolean right_infinity = right_arg.getOperator() == ExpressionOperator.READ_FIELD && right_arg.getArgument(1).toString().equals("Infinity");
+        String right_string = null;
+        if (!right_infinity) {
+            right_string = right_arg.getArgument(1).toString();
+        }
+        String bounds = getAnnotation(spec, BOUNDS, String.class, null,
+                "whether bounds should be open or closed");
+        if (bounds == null) {
+            return new StringRangeItem(left_string, true, right_string, true, getIndex(args.get(0)), true);
+        } else {
+            switch (bounds) {
+                case BOUNDS_OPEN -> {
+                    return new StringRangeItem(left_string, false, right_string, false, getIndex(args.get(0)), true);
+                }
+                case BOUNDS_LEFT_OPEN -> {
+                    return new StringRangeItem(left_string, false, right_string, true, getIndex(args.get(0)), true);
+                }
+                case BOUNDS_RIGHT_OPEN -> {
+                    return new StringRangeItem(left_string, true, right_string, true, getIndex(args.get(0)), true);
+                }
+                default ->
+                        throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
+            }
+        }
+    }
+
+    private IntItem instantiateIntRangeItem(List<OperatorNode<ExpressionOperator>> args,
+                                         OperatorNode<ExpressionOperator> spec) {
+        Preconditions.checkArgument(args.size() == 3,
+                "Expected 3 arguments, got %s.", args.size());
         Number lowerArg = getRangeBound(args.get(1));
         Number upperArg = getRangeBound(args.get(2));
         String bounds = getAnnotation(spec, BOUNDS, String.class, null,
