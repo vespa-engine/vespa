@@ -2402,6 +2402,7 @@ public class YqlParser implements Parser {
         private final Boolean normalizeCase;
         private final Boolean accentDrop;
         private final Boolean usePositionData;
+        private final String label;
 
         public AnnotationPropagator(OperatorNode<ExpressionOperator> ast) {
             isRanked = getAnnotation(ast, RANKED, Boolean.class, null, RANKED_DESCRIPTION);
@@ -2410,6 +2411,7 @@ public class YqlParser implements Parser {
             normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class, null, NORMALIZE_CASE_DESCRIPTION);
             accentDrop = getAnnotation(ast, ACCENT_DROP, Boolean.class, null, ACCENT_DROP_DESCRIPTION);
             usePositionData = getAnnotation(ast, USE_POSITION_DATA, Boolean.class, null, USE_POSITION_DATA_DESCRIPTION);
+            label = getAnnotation(ast, LABEL, String.class, null, "item label");
         }
 
         @Override
@@ -2429,6 +2431,9 @@ public class YqlParser implements Parser {
                 }
             }
             if (item instanceof TaggableItem) {
+                if (label != null && item.getLabel() == null) {
+                    item.setLabel(label);
+                }
                 if (isRanked != null) {
                     item.setRanked(isRanked);
                 }
