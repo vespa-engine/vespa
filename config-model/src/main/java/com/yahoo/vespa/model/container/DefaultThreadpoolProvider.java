@@ -18,23 +18,25 @@ import java.util.logging.Level;
 public class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolConfig.Producer {
 
     private final ContainerCluster<?> cluster;
-    private final ContainerThreadpool.UserOptions userOptions;
+    private final ContainerThreadpool.ApplicationSettings applicationSettings;
 
     public DefaultThreadpoolProvider(ContainerCluster<?> cluster) {
         this(null, cluster, null);
     }
 
-    public DefaultThreadpoolProvider(DeployState ds, ContainerCluster<?> cluster, ContainerThreadpool.UserOptions userOptions) {
+    public DefaultThreadpoolProvider(DeployState ds,
+                                     ContainerCluster<?> cluster,
+                                     ContainerThreadpool.ApplicationSettings applicationSettings) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.fromStrings(
                         "default-threadpool",
                         ThreadPoolProvider.class.getName(),
                         null)));
         this.cluster = cluster;
-        this.userOptions = userOptions;
+        this.applicationSettings = applicationSettings;
 
-        if (this.userOptions != null) {
-            warnOnTruncation(ds, userOptions);
+        if (this.applicationSettings != null) {
+            warnOnTruncation(ds, applicationSettings);
         }
     }
 
@@ -60,16 +62,16 @@ public class DefaultThreadpoolProvider extends SimpleComponent implements Thread
 
         // Convert from config model to ThreadpoolConfig.
         // TODO: While ThreadpoolConfig exists, we must support this conversion since it uses ints. Will be removed in Vespa 9.
-        if (userOptions != null) {
-            boolean neg = userOptions.isRelative();
-            if (userOptions.max() != null) {
-                maxThreads = (int) Math.round(neg ? -userOptions.max() : userOptions.max());
+        if (applicationSettings != null) {
+            boolean neg = applicationSettings.isRelative();
+            if (applicationSettings.max() != null) {
+                maxThreads = (int) Math.round(neg ? -applicationSettings.max() : applicationSettings.max());
             }
-            if (userOptions.min() != null) {
-                minThreads = (int) Math.round(neg ? -userOptions.min() : userOptions.min());
+            if (applicationSettings.min() != null) {
+                minThreads = (int) Math.round(neg ? -applicationSettings.min() : applicationSettings.min());
             }
-            if (userOptions.queueSize() != null) {
-                queueSize = (int) Math.round(neg ? -userOptions.queueSize() : userOptions.queueSize());
+            if (applicationSettings.queueSize() != null) {
+                queueSize = (int) Math.round(neg ? -applicationSettings.queueSize() : applicationSettings.queueSize());
             }
         }
 
@@ -77,10 +79,10 @@ public class DefaultThreadpoolProvider extends SimpleComponent implements Thread
     }
 
     // TODO: While ThreadpoolConfig exists, we must support this conversion. Will be removed in Vespa 9.
-    private void warnOnTruncation(DeployState ds, ContainerThreadpool.UserOptions userOptions) {
-        if (userOptions.max() != null) checkTruncation(ds, userOptions.max(), "max");
-        if (userOptions.min() != null) checkTruncation(ds, userOptions.min(), "threads");
-        if (userOptions.queueSize() != null) checkTruncation(ds, userOptions.queueSize(), "queue");
+    private void warnOnTruncation(DeployState ds, ContainerThreadpool.ApplicationSettings applicationSettings) {
+        if (applicationSettings.max() != null) checkTruncation(ds, applicationSettings.max(), "max");
+        if (applicationSettings.min() != null) checkTruncation(ds, applicationSettings.min(), "threads");
+        if (applicationSettings.queueSize() != null) checkTruncation(ds, applicationSettings.queueSize(), "queue");
     }
 
     private void checkTruncation(DeployState ds, Double value, String part) {

@@ -17,20 +17,21 @@ import java.util.logging.Level;
  *
  * @author johsol
  */
-public class ContainerThreadpoolOptionsBuilder {
-    public static ContainerThreadpool.UserOptions build(DeployState ds, Element parent) {
-        var options = new ContainerThreadpool.UserOptions(null, null, null, false);
+public class ContainerThreadpoolSettingsBuilder {
+
+    public static ContainerThreadpool.ApplicationSettings build(DeployState ds, Element parent) {
+        var options = new ContainerThreadpool.ApplicationSettings(null, null, null, false);
         var threadpoolElem = XmlHelper.getOptionalChild(parent, "threadpool").orElse(null);
         if (threadpoolElem == null)
             return options;
 
-        // TODO Vespa 9 Remove min-threads, max-threads and queue-size
+        // TODO: Vespa 9 Remove min-threads, max-threads and queue-size
 
-        // TODO Vespa 9 Remove variable pool size (aka 'boost')
-        //      It's rarely used and the semantics are confusing.
-        //      The number of threads are scaled up after the queue is full, which is surprising,
-        //      as one would expect the pool size to scale before queuing up tasks.
-        //      This is a Java limitation in the thread pool class from the standard library.
+        // TODO: Vespa 9 Remove variable pool size (aka 'boost')
+        //       It's rarely used and the semantics are confusing.
+        //       The number of threads are scaled up after the queue is full, which is surprising,
+        //       as one would expect the pool size to scale before queuing up tasks.
+        //       This is a Java limitation in the thread pool class from the standard library.
         Double max = null;
         Double min = null;
         Double queue = null;
@@ -89,7 +90,8 @@ public class ContainerThreadpoolOptionsBuilder {
             throw new IllegalArgumentException("For <threadpool>: <queue> must be positive.");
         if (min != null && max != null && min > max)
             throw new IllegalArgumentException("For <threadpool>: 'max' on <threads> must be greater than <threads>.");
-        options = new ContainerThreadpool.UserOptions(max, min, queue, isRelative);
+        options = new ContainerThreadpool.ApplicationSettings(max, min, queue, isRelative);
         return options;
     }
+
 }
