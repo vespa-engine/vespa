@@ -49,10 +49,19 @@ public class LoadBalancer {
             case LATENCY_AMORTIZED_OVER_TIME -> new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(seed), scoreboard);
         };
 
-        this.remoteGroups = groups.stream()
-                                  .filter(group -> ! group.availabilityZone().equals(localAvailabilityZone))
-                                  .map(Group::id)
-                                  .collect(Collectors.toUnmodifiableSet());
+
+        // If any node don't have a proper AZ assigned, fall back to non-AZ-aware routing.
+        // TODO: Remove when there are no applications with a mixture of nodes having and not having an AZ
+        if (localAvailabilityZone.equals("default") ||
+            groups.stream().flatMap(group -> group.nodes().stream()).anyMatch(node -> node.availabilityZone().equals("default"))) {
+            this.remoteGroups = Set.of();
+        }
+        else {
+            this.remoteGroups = groups.stream()
+                                      .filter(group -> !group.availabilityZone().equals(localAvailabilityZone))
+                                      .map(Group::id)
+                                      .collect(Collectors.toUnmodifiableSet());
+        }
     }
 
     /**
