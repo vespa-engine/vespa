@@ -805,6 +805,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_IN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NUMERIC_IN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType LABEL_WRAPPER",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_RANGE",
       "public final int code"
     ]
   },
@@ -1707,6 +1708,33 @@
       "public com.yahoo.prelude.query.StringInItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.StringRangeItem" : {
+    "superClass" : "com.yahoo.prelude.query.TermItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, boolean, java.lang.String, boolean, java.lang.String, boolean)",
+      "public final java.lang.String getLeftEndpoint()",
+      "public final java.lang.String getRightEndpoint()",
+      "public final int getHitLimit()",
+      "public final void setHitLimit(int)",
+      "public java.lang.String getRawWord()",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public java.lang.String stringValue()",
+      "public void setValue(java.lang.String)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String getIndexedString()",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "public int getNumWords()",
+      "public boolean isStemmed()",
+      "public boolean isWords()"
     ],
     "fields" : [ ]
   },
