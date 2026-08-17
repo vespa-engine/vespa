@@ -134,7 +134,7 @@ MaxAggregationResult::~MaxAggregationResult() = default;
 void MaxAggregationResult::onPrepare(const ResultNode& result) {
     if (!isReady(_max.get(), result)) {
         _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-        _max->setMin(); /// Should figure out how to set min too for float.
+        _max->setMin();
     }
 }
 
