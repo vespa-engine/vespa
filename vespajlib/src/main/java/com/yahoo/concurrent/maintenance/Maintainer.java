@@ -67,6 +67,78 @@ public abstract class Maintainer implements Runnable {
         this(name, interval, clock, jobControl, jobMetrics, clusterHostnames, ignoreCollision, 1.0, true);
     }
 
+    /**
+     * Called once each time this maintenance job should run.
+     *
+     * @return the degree to which the run successFactor deviated from the successFactorBaseline given in the constructor:
+     *         -1 means complete failure, 0 means the same degree of success as the baseline, 1 means complete success.
+     *         Most maintainers can simply use {@link #asSuccessFactorDeviation} to return this.
+     */
+    protected abstract double maintain();
+
+    /** Run this while holding the job lock, as necessary */
+    public final void doMaintain(boolean force) {
+        if (!force && !jobControl.isActive(name())) return;
+        log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
+
+        double successFactorDeviation = -1;
+        long startTime = clock.millis();
+        try {
+            if (acquireLock) {
+                try (var lock = jobControl.lockJob(name())) {
+                    successFactorDeviation = maintain();
+                } catch (UncheckedTimeoutException e) {
+                    if (ignoreCollision)
+                        successFactorDeviation = 0;
+                    else
+                        log.log(Level.WARNING, this + " collided with another run. Will retry in " + interval);
+                }
+            } else {
+                successFactorDeviation = maintain();
+            }
+        }  catch (Throwable e) {
+            log.log(Level.WARNING, this + " failed. Will retry in " + interval, e);
+        } finally {
+            long endTime = clock.millis();
+            jobMetrics.completed(name(), successFactorDeviation, endTime - startTime);
+        }
+        log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
+    }
+
+    /** Convenience methods to convert attempts and failures into a success factor deviation from the baseline, and return   */
+    protected final double asSuccessFactorDeviation(int attempts, int failures) {
+        double factor = attempts == 0 ? 1.0 : 1 - (double) failures / attempts;
+        return new BigDecimal(factor - successFactorBaseline).setScale(5, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    /** Returns the interval at which this job is set to run */
+    protected Duration interval() { return interval; }
+
+    /** Returns the simple name of this job */
+    public final String name() {
+        return name == null ? this.getClass().getSimpleName() : name;
+    }
+
+    /** Returns the initial delay of this calculated from cluster index of the hostname of this node, and the maintainer name. */
+    Duration staggeredDelay(Duration interval, String hostname, List<String> clusterHostnames) {
+        Objects.requireNonNull(clusterHostnames);
+        if ( ! clusterHostnames.contains(hostname))
+            return interval;
+
+        Instant now = clock.instant();
+        long nodeOffset = clusterHostnames.indexOf(hostname) * interval.toMillis() / clusterHostnames.size();
+        long maintainerOffset = getClass().getName().hashCode() % interval.toMillis();
+        long totalOffset = nodeOffset + maintainerOffset;
+        return Duration.ofMillis(Math.floorMod(totalOffset - now.toEpochMilli(), interval.toMillis()));
+    }
+
+    private static Duration requireInterval(Duration interval) {
+        Objects.requireNonNull(interval);
+        if (interval.isNegative() || interval.isZero())
+            throw new IllegalArgumentException("Interval must be positive, but was " + interval);
+        return interval;
+    }
+
     @Override
     public void run() {
         doMaintain(false);
@@ -99,82 +171,5 @@ public abstract class Maintainer implements Runnable {
 
     @Override
     public final String toString() { return name(); }
-
-    /**
-     * Called once each time this maintenance job should run.
-     *
-     * @return the degree to which the run successFactor deviated from the successFactorBaseline
-     *             - a number between -1 (no success), to 0 (complete success) measured against the
-     *             successFactorBaseline, or higher if the success factor is higher than the successFactorBaseline.
-     *         The default successFactorBaseline is 1.0.
-     *         If a maintainer is expected to fail sometimes, the successFactorBaseline should be set to a lower value.
-     *
-     *         Note that this indicates whether something is wrong, so e.g. if the call did nothing because it should do
-     *         nothing, 0.0 should be returned.
-     */
-    protected abstract double maintain();
-
-    /** Convenience methods to convert attempts and failures into a success factor deviation from the baseline, and return   */
-    protected final double asSuccessFactorDeviation(int attempts, int failures) {
-        double factor = attempts == 0 ? 1.0 : 1 - (double) failures / attempts;
-        return new BigDecimal(factor - successFactorBaseline).setScale(5, RoundingMode.HALF_UP).doubleValue();
-    }
-
-    /** Returns the interval at which this job is set to run */
-    protected Duration interval() { return interval; }
-
-    /** Run this while holding the job lock, as necessary */
-    public final void doMaintain(boolean force) {
-        if (!force && !jobControl.isActive(name())) return;
-        log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
-
-        double successFactorDeviation = -1;
-        long startTime = clock.millis();
-        try {
-            if (acquireLock) {
-                try (var lock = jobControl.lockJob(name())) {
-                    successFactorDeviation = maintain();
-                } catch (UncheckedTimeoutException e) {
-                    if (ignoreCollision)
-                        successFactorDeviation = 0;
-                    else
-                        log.log(Level.WARNING, this + " collided with another run. Will retry in " + interval);
-                }
-            } else {
-                successFactorDeviation = maintain();
-            }
-        }  catch (Throwable e) {
-            log.log(Level.WARNING, this + " failed. Will retry in " + interval, e);
-        } finally {
-            long endTime = clock.millis();
-            jobMetrics.completed(name(), successFactorDeviation, endTime - startTime);
-        }
-        log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
-    }
-
-    /** Returns the simple name of this job */
-    public final String name() {
-        return name == null ? this.getClass().getSimpleName() : name;
-    }
-
-    /** Returns the initial delay of this calculated from cluster index of the hostname of this node, and the maintainer name. */
-    Duration staggeredDelay(Duration interval, String hostname, List<String> clusterHostnames) {
-        Objects.requireNonNull(clusterHostnames);
-        if ( ! clusterHostnames.contains(hostname))
-            return interval;
-
-        Instant now = clock.instant();
-        long nodeOffset = clusterHostnames.indexOf(hostname) * interval.toMillis() / clusterHostnames.size();
-        long maintainerOffset = getClass().getName().hashCode() % interval.toMillis();
-        long totalOffset = nodeOffset + maintainerOffset;
-        return Duration.ofMillis(Math.floorMod(totalOffset - now.toEpochMilli(), interval.toMillis()));
-    }
-
-    private static Duration requireInterval(Duration interval) {
-        Objects.requireNonNull(interval);
-        if (interval.isNegative() || interval.isZero())
-            throw new IllegalArgumentException("Interval must be positive, but was " + interval);
-        return interval;
-    }
 
 }
