@@ -7,21 +7,14 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.OnnxModelCost;
-import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SidecarSpec;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
@@ -36,7 +29,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
-import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
@@ -2671,61 +2663,6 @@ public class ModelProvisioningTest {
         var memoryPercentage = cluster.getMemoryPercentage();
         assertTrue(memoryPercentage.isPresent());
         assertEquals(new ContainerCluster.JvmMemoryPercentage(33, OptionalInt.of(27), OptionalDouble.of(1.105)), memoryPercentage.get());
-    }
-
-    @Test
-    public void testAddTritonSidecar() {
-        var services = """
-                <?xml version='1.0' encoding='utf-8' ?>
-                <services>
-                  <container version='1.0' id='container1'>
-                    <nodes count='1'/>
-                    <component id="modernbert" type="hugging-face-embedder">
-                        <transformer-model model-id="nomic-ai-modernbert"></transformer-model>
-                    </component>
-                  </container>
-                </services>
-                """;
-
-        var properties = new TestProperties();
-        // Triton sidecar is enabled with a feature flag.
-        properties.setUseTriton(true);
-
-        var tester = new VespaModelTester();
-        tester.addHosts(1);
-        tester.setModelProperties(properties);
-        // Sidecars are provisioned in Cloud only.
-        tester.setHosted(true);
-
-        var zone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
-
-        // Triton sidecar is enabled only for apps with ONNX models.
-        // Mocking OnnModelCost since DisabledOnnxModelCost used by default returns no models.
-        var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
-            @Override
-            public Map<String, ModelInfo> models() {
-                return Map.of("modernbert", new ModelInfo("modernbert", 1, 1, OnnxModelOptions.empty()));
-            }
-        };
-
-        var deployStateBuilder = deployStateWithClusterEndpoints("container1").onnxModelCost(mockModelCost);
-        var model = tester.createModel(zone, services, true, deployStateBuilder);
-
-        var clusterSpec = model.provisioned().clusters().get(ClusterSpec.Id.from("container1"));
-        assertFalse(clusterSpec.sidecars().isEmpty());
-        var expectedSidecarSpec = SidecarSpec.builder()
-                .id(0)
-                .name("triton")
-                .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.12-py3"))
-                .hasImageMirror(true)
-                .minCpu(1)
-                .hasGpu(false)
-                .volumeMounts(List.of("/models"))
-                .command(List.of("tritonserver", "--model-repository=/models", "--model-control-mode=explicit"))
-                .livenessProbe(new SidecarProbe(new SidecarProbe.HttpGetAction("/v2/health/live", 8000), 10, 5, 2, 3))
-                .build();
-        var actualSidecarSpec = clusterSpec.sidecars().get(0);
-        assertEquals(expectedSidecarSpec, actualSidecarSpec);
     }
 
     @Test

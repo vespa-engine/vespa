@@ -30,6 +30,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.Validator;
+import com.yahoo.vespa.model.container.xml.SidecarProvider;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -55,6 +56,7 @@ public class VespaModelFactory implements ModelFactory {
     private final Clock clock;
     private final Version version;
     private final List<Validator> additionalValidators;
+    private final Optional<SidecarProvider> sidecarProvider;
 
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
@@ -63,12 +65,19 @@ public class VespaModelFactory implements ModelFactory {
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
+        List<SidecarProvider> sidecarProviders = new ArrayList<>();
         for (ConfigModelPlugin plugin : pluginRegistry.allComponents()) {
             if (plugin instanceof ConfigModelBuilder p) {
                 modelBuilders.add(p);
             }
+            if (plugin instanceof SidecarProvider s) {
+                sidecarProviders.add(s);
+            }
         }
+        if (sidecarProviders.size() > 1)
+            throw new IllegalStateException("At most one sidecar provider may be registered, got " + sidecarProviders);
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
+        this.sidecarProvider = sidecarProviders.stream().findFirst();
         this.modelImporters = List.of(
                 new VespaImporter(),
                 new OnnxImporter(),
@@ -96,6 +105,7 @@ public class VespaModelFactory implements ModelFactory {
         }
         this.modelImporters = List.of();
         this.additionalValidators = List.of();
+        this.sidecarProvider = Optional.empty();
         this.zone = zone;
         this.clock = clock;
     }
@@ -195,6 +205,7 @@ public class VespaModelFactory implements ModelFactory {
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
             .onnxModelCost(modelContext.onnxModelCost());
+        sidecarProvider.ifPresent(builder::sidecarProvider);
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);

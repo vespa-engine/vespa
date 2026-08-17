@@ -1444,7 +1444,6 @@
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",
-      "public java.lang.Object sidecarsForTest()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag useTritonFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
       "public int searchCoreMaxOutstandingMoveOps()",

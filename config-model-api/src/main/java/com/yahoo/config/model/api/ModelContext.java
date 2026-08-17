@@ -120,7 +120,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
-        @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> useTritonFlag() { return () -> false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.721") default int searchCoreMaxOutstandingMoveOps() { return 100; }
