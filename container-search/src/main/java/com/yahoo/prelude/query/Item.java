@@ -59,7 +59,9 @@ public abstract class Item implements Cloneable {
         FALSE(29),
         FUZZY(30),
         STRING_IN(31),
-        NUMERIC_IN(32);
+        NUMERIC_IN(32),
+        // 33 is UNDEF
+        STRING_RANGE(34);
 
         public final int code;
 

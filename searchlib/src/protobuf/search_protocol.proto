@@ -257,6 +257,16 @@ message ItemFloatingPointRangeTerm {
     uint32 diversity_cutoff_groups = 13;
 }
 
+message ItemStringRangeTerm {
+    TermItemProperties properties = 1;
+    string left = 2;
+    string right = 3;
+    bool left_closed = 4;
+    bool right_closed = 5;
+    bool has_range_limit = 6;
+    int32 range_limit = 7;
+}
+
 // multi-terms:
 message ItemStringIn {
     TermItemProperties properties = 1;
@@ -409,6 +419,8 @@ message QueryTreeItem {
         ItemNearestNeighbor item_nearest_neighbor = 36;
         ItemGeoLocationTerm item_geo_location_term = 37;
         ItemPredicateQuery item_predicate_query = 38;
+
+        ItemStringRangeTerm item_string_range_term = 39;
 
         // unfinished, only inside QRS: item_multi_term
         // not used anymore: item_any
