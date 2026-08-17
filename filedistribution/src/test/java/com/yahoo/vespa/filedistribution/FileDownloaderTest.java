@@ -38,6 +38,7 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -196,6 +197,28 @@ public class FileDownloaderTest {
         assertDownloadStatus(fileReference, 1.0);
 
         assertEquals(timesToFail, responseHandler.failedTimes);
+    }
+
+    @Test
+    public void getFileWhenPermissionDenied() {
+        // Use a much longer timeout than the test should ever take: if the denial were treated as a
+        // retryable failure instead of failing fast, this test would time out waiting for getFile() instead
+        // of throwing promptly.
+        fileDownloader = createDownloader(connection, Duration.ofSeconds(30));
+
+        MockConnection.PermissionDeniedResponseHandler responseHandler = new MockConnection.PermissionDeniedResponseHandler();
+        connection.setResponseHandler(responseHandler);
+
+        FileReference fileReference = new FileReference("deniedFileReference");
+        FileReferenceDownloadPermissionDeniedException exception = assertThrows(
+                FileReferenceDownloadPermissionDeniedException.class,
+                () -> getFile(fileReference));
+        assertTrue(exception.getMessage(), exception.getMessage().contains("Peer is not allowed to access file reference"));
+
+        // Denial must exit the retry loop on the very first RPC round trip, not after retrying for the
+        // full download timeout.
+        assertEquals(1, responseHandler.requestCount);
+        assertFalse(fileDownloader.isDownloading(fileReference));
     }
 
     @Test
@@ -494,6 +517,20 @@ public class FileDownloaderTest {
                         request.returnValues().add(new Int32Value(0));
                         request.returnValues().add(new StringValue("OK"));
                     }
+                }
+            }
+        }
+
+        private static class PermissionDeniedResponseHandler implements MockConnection.ResponseHandler {
+
+            int requestCount = 0;
+
+            @Override
+            public void request(Request request) {
+                if (request.methodName().equals("filedistribution.serveFile")) {
+                    requestCount++;
+                    request.setError(FileReferenceDownloader.jrtErrorUnauthorized,
+                                      "Peer is not allowed to access file reference " + request.parameters().get(0).asString());
                 }
             }
         }
