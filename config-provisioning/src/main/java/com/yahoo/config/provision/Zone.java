@@ -90,7 +90,7 @@ public class Zone {
         return region;
     }
 
-    /** Returns the availability zones this contains, or the empty list if this is a single-az region */
+    /** Returns the availability zones this contains, which is always at least one. */
     public List<AzName> availabilityZones() {
         return availabilityZones;
     }
