@@ -31,6 +31,7 @@ import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
+import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
@@ -438,6 +439,12 @@ public class YqlParserTestCase {
                 "userInput(\"new york\"))");
         PhraseItem phrase = (PhraseItem) query.getRoot();
         assertEquals("t1", phrase.getLabel());
+        // The words of a phrase are not separate terms in the backend, so labeling them would have no effect
+        // beyond forcing a unique id onto them
+        for (Item word : phrase.items()) {
+            assertNull(word.getLabel());
+            assertFalse(((TaggableItem) word).hasUniqueID());
+        }
     }
 
     @Test
