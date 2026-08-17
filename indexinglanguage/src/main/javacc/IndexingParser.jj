@@ -48,6 +48,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ChunkExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Components;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.DocumentIdExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExactExpression;
@@ -253,6 +254,7 @@ TOKEN :
     <CHUNK: "chunk"> |
     <CLEAR_STATE: "clear_state"> |
     <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
+    <DOCUMENT_ID: "documentid"> |
     <ECHO: "echo"> |
     <ELSE: "else"> |
     <EMBED: "embed"> |
@@ -409,6 +411,7 @@ Expression value() :
       val = busy_waitExp()          |
       val = chunkExp()              |
       val = clearStateExp()         |
+      val = documentIdExp()         |
       val = echoExp()               |
       val = embedExp()              |
       val = generateExp()           |
@@ -509,6 +512,15 @@ Expression clearStateExp() : { }
 {
     ( <CLEAR_STATE> )
     { return new ClearStateExpression(); }
+}
+
+Expression documentIdExp() :
+{
+    String val = null;
+}
+{
+    ( <DOCUMENT_ID> [ val = identifier() ] )
+    { return new DocumentIdExpression(val); }
 }
 
 Expression echoExp() : { }
@@ -1004,6 +1016,7 @@ String identifier() :
         <CHUNK>                  |
         <CLEAR_STATE>            |
         <CREATE_IF_NON_EXISTENT> |
+        <DOCUMENT_ID>            |
         <ECHO>                   |
         <EXACT>                  |
         <ELSE>                   |
