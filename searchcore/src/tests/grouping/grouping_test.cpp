@@ -7,6 +7,8 @@
 #include <vespa/searchcore/grouping/groupingsession.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchlib/aggregation/maxaggregationresult.h>
+#include <vespa/searchlib/aggregation/minaggregationresult.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
@@ -342,6 +344,148 @@ TEST(GroupingTest, testGroupingSession) {
         session.continueExecution(context);
         ASSERT_TRUE(session.finished());
     }
+}
+
+// A multi-pass session keeps its own copy of the grouping and leaves the request object behind as
+// merge target for continueExecution(). Aggregation results at the root level are merged (not
+// copied) into that target, so it must have been prepared with a result node of the proper type.
+// Corresponds to "all(output(min(attr0)) all(group(attr1) each(output(count()))))".
+TEST(GroupingTest, testSessionWithRootLevelAggregationResult) {
+    DoomFixture f1;
+    MyWorld     world;
+    Grouping    request;
+    request.setId(0)
+        .setFirstLevel(0)
+        .setLastLevel(0)
+        .setRoot(Group().addResult(MinAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+        .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")));
+
+    auto            r = std::make_shared<Grouping>(request);
+    GroupingContext initContext(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    initContext.addGrouping(r);
+    // The request has a fallback result node for min() until the session prepares it
+    const AggregationResult& rootMin = r->getRoot().getAggregationResult(0);
+    EXPECT_TRUE(rootMin.getResult() != nullptr);
+    EXPECT_EQ("search::expression::FloatResultNode", std::string(rootMin.getResult()->getClass().name()));
+
+    SessionId       id("foo");
+    GroupingSession session(id, initContext, world.attributeContext, &world.documentType);
+    ASSERT_TRUE(rootMin.getResult() != nullptr);
+    // attr0 is a single int32 attribute, so the result node must be an integer, not the fallback
+    EXPECT_EQ("search::expression::Int64ResultNode", std::string(rootMin.getResult()->getClass().name()));
+
+    RankedHit hit;
+    hit._docId = 3;
+    session.getGroupingManager().groupInRelevanceOrder(7, &hit, 1);
+    session.continueExecution(initContext);
+    ASSERT_TRUE(!session.finished());
+
+    EXPECT_EQ(3, static_cast<const MinAggregationResult&>(rootMin).getMin().getInteger()); // attr0 == docid
+}
+
+// Same bug as testSessionWithRootLevelAggregationResult, but with two root-level aggregation
+// results on the same request; both must independently get their proper (non-fallback) result
+// node type, not just the first one visited by select().
+TEST(GroupingTest, testSessionWithMultipleRootLevelAggregationResults) {
+    DoomFixture f1;
+    MyWorld     world;
+    Grouping    request;
+    request.setId(0)
+        .setFirstLevel(0)
+        .setLastLevel(0)
+        .setRoot(Group()
+                     .addResult(MinAggregationResult().setExpression(MU<AttributeNode>("attr0")))
+                     .addResult(MaxAggregationResult().setExpression(MU<AttributeNode>("attr1"))))
+        .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")));
+
+    auto            r = std::make_shared<Grouping>(request);
+    GroupingContext initContext(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    initContext.addGrouping(r);
+    const AggregationResult& rootMin = r->getRoot().getAggregationResult(0);
+    const AggregationResult& rootMax = r->getRoot().getAggregationResult(1);
+    ASSERT_TRUE(rootMin.getResult() != nullptr);
+    ASSERT_TRUE(rootMax.getResult() != nullptr);
+    EXPECT_EQ("search::expression::FloatResultNode", std::string(rootMin.getResult()->getClass().name()));
+    EXPECT_EQ("search::expression::FloatResultNode", std::string(rootMax.getResult()->getClass().name()));
+
+    SessionId       id("foo");
+    GroupingSession session(id, initContext, world.attributeContext, &world.documentType);
+    // attr0 and attr1 are both single int32 attributes, so both results must be integers
+    EXPECT_EQ("search::expression::Int64ResultNode", std::string(rootMin.getResult()->getClass().name()));
+    EXPECT_EQ("search::expression::Int64ResultNode", std::string(rootMax.getResult()->getClass().name()));
+
+    RankedHit hit;
+    hit._docId = 3;
+    session.getGroupingManager().groupInRelevanceOrder(7, &hit, 1);
+    session.continueExecution(initContext);
+    ASSERT_TRUE(!session.finished());
+
+    EXPECT_EQ(3, static_cast<const MinAggregationResult&>(rootMin).getMin().getInteger()); // attr0 == docid
+    EXPECT_EQ(6, static_cast<const MaxAggregationResult&>(rootMax).getMax().getInteger()); // attr1 == docid*2
+}
+
+// Same setup as testSessionWithRootLevelAggregationResult, but continued across all passes of a
+// multi-level grouping (mirrors the pass structure of testGroupingSession). The root-level
+// aggregation result is only merged into during the first pass (later passes are "frozen" at the
+// root level), so it must keep the value and type it got there for the remainder of the session.
+TEST(GroupingTest, testSessionWithRootLevelAggregationResultAcrossPasses) {
+    DoomFixture f1;
+    MyWorld     world;
+    Grouping    request;
+    request.setId(0)
+        .setFirstLevel(0)
+        .setLastLevel(0)
+        .setRoot(Group().addResult(MinAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+        .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+        .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
+
+    auto            r = std::make_shared<Grouping>(request);
+    GroupingContext initContext(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    initContext.addGrouping(r);
+    const AggregationResult& rootMin = r->getRoot().getAggregationResult(0);
+
+    SessionId       id("foo");
+    GroupingSession session(id, initContext, world.attributeContext, &world.documentType);
+    EXPECT_EQ("search::expression::Int64ResultNode", std::string(rootMin.getResult()->getClass().name()));
+
+    RankedHit hit;
+    hit._docId = 3;
+    session.getGroupingManager().groupInRelevanceOrder(7, &hit, 1);
+
+    // First pass: root level (0) is merged, since firstLevel == 0 here.
+    session.continueExecution(initContext);
+    ASSERT_TRUE(!session.finished());
+    EXPECT_EQ("search::expression::Int64ResultNode", std::string(rootMin.getResult()->getClass().name()));
+    EXPECT_EQ(3, static_cast<const MinAggregationResult&>(rootMin).getMin().getInteger()); // attr0 == docid
+
+    // Second pass: a fresh request object, root level is now frozen (firstLevel == 1) so it is
+    // not touched again; the result already delivered in the first pass must remain intact.
+    {
+        GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+        auto            r2 = std::make_shared<Grouping>(request);
+        r2->setFirstLevel(1);
+        r2->setLastLevel(1);
+        context.addGrouping(r2);
+
+        session.continueExecution(context);
+        ASSERT_TRUE(!session.finished());
+    }
+    EXPECT_EQ("search::expression::Int64ResultNode", std::string(rootMin.getResult()->getClass().name()));
+    EXPECT_EQ(3, static_cast<const MinAggregationResult&>(rootMin).getMin().getInteger());
+
+    // Third (last) pass: session should be marked as finished, first-pass result still intact.
+    {
+        GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+        auto            r3 = std::make_shared<Grouping>(request);
+        r3->setFirstLevel(2);
+        r3->setLastLevel(2);
+        context.addGrouping(r3);
+
+        session.continueExecution(context);
+        ASSERT_TRUE(session.finished());
+    }
+    EXPECT_EQ("search::expression::Int64ResultNode", std::string(rootMin.getResult()->getClass().name()));
+    EXPECT_EQ(3, static_cast<const MinAggregationResult&>(rootMin).getMin().getInteger());
 }
 
 TEST(GroupingTest, testEmptySessionId) {
