@@ -19,4 +19,5 @@ public class DomContentSearchBuilder {
         builder.setVisibilityDelay(searchElement.childAsDouble("visibility-delay"));
         return builder.build();
     }
+
 }
