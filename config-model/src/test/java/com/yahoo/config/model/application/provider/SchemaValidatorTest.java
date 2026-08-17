@@ -43,10 +43,27 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
+    private static final String servicesWithPluginElement = "<?xml version='1.0' encoding='utf-8' ?>\n" +
+            "<services>\n" +
+            "  <admin version='2.0'>\n" +
+            "    <adminserver hostalias='node1' />\n" +
+            "  </admin>\n" +
+            "  <my-model version='1.0'>\n" +
+            "    <cluster id='default' />\n" +
+            "    <some-setting enabled='true'>text</some-setting>\n" +
+            "  </my-model>\n" +
+            "</services>\n";
+
     @Test
     void testXMLParse() throws IOException {
         SchemaValidator validator = createValidator();
         validator.validate(new StringReader(okServices));
+    }
+
+    @Test
+    void testPluginModelElementIsAccepted() throws IOException {
+        SchemaValidator validator = createValidator();
+        validator.validate(new StringReader(servicesWithPluginElement));
     }
 
     @Test

@@ -189,6 +189,14 @@ public class Flags {
             APPLICATION
     );
 
+    public static final UnboundBooleanFlag CLOUD_COMPONENT_SYNTHESIS = defineFeatureFlag(
+            "cloud-component-synthesis", false,
+            List.of("sebasabe"), "2026-08-17", "2028-08-17",
+            "Whether cloud config model plugins may synthesize container components at model build time",
+            "Takes effect at redeployment",
+            TENANT_ID
+    );
+
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
             List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-09-01",

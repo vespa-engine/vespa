@@ -84,6 +84,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double searchNodeReservedMemoryFactor = 0.0;
     private boolean failWhenConfiguringIndexedMapOfArray = true;
     private boolean fastMapSearch = false;
+    private boolean cloudComponentSynthesis = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -146,6 +147,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
     @Override public boolean fastMapSearch() { return fastMapSearch; }
+    @Override public boolean cloudComponentSynthesis() { return cloudComponentSynthesis; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -374,6 +376,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties fastMapSearch(boolean value) {
         this.fastMapSearch = value;
+        return this;
+    }
+
+    public TestProperties cloudComponentSynthesis(boolean value) {
+        this.cloudComponentSynthesis = value;
         return this;
     }
 
