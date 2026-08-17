@@ -387,6 +387,38 @@ public:
         return true;
     }
 
+    bool handle(const ItemStringRangeTerm& item) {
+        auto d = fillTermProperties(item.properties());
+        auto spec = std::make_unique<StringRangeSpec>();
+        spec->left = item.left();
+        spec->left_closed = item.left_closed();
+        spec->left_unbounded = false;
+        spec->right = item.right();
+        spec->right_closed = item.right_closed();
+        spec->right_unbounded = false;
+
+        if (item.has_range_limit()) {
+            spec->range_limit = item.range_limit();
+        }
+        // if (item.with_diversity()) {
+        //     spec->diversityAttribute = item.diversity_attribute();
+        //     spec->maxPerGroup = item.diversity_max_per_group();
+        //     if (item.with_diversity_cutoff()) {
+        //         spec->diversityCutoffGroups = item.diversity_cutoff_groups();
+        //         spec->diversityCutoffStrict = item.diversity_cutoff_strict();
+        //     }
+        // }
+
+        query::StringRange string_range(std::move(spec));
+        auto&              term = _builder.addStringRangeTerm(string_range, d.index_view, d.uniqueId, d.weight);
+        (void)term;
+        // if (d.noRankFlag)
+        // term.setRanked(false);
+        // if (d.noPositionDataFlag)
+        // term.setPositionData(false);
+        return true;
+    }
+
     bool handle(const ItemSameElement& item) {
         auto                  d = fillTermProperties(item.properties());
         uint32_t              arity = item.children_size();
@@ -685,6 +717,8 @@ public:
             return handle(qti.item_integer_range_term());
         case IC::kItemFloatingPointRangeTerm:
             return handle(qti.item_floating_point_range_term());
+        case IC::kItemStringRangeTerm:
+            return handle(qti.item_string_range_term());
 
         case IC::kItemWeightedSetOfString:
             return handle(qti.item_weighted_set_of_string());

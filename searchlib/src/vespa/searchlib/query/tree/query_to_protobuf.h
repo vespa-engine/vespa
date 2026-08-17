@@ -338,6 +338,9 @@ private:
             }
         }
     }
+    void visit(StringRangeTerm& /*node*/) override {
+        // TODO
+    }
 
     void visit(StringTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_word_term();

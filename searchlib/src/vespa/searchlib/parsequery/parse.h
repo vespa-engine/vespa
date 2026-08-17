@@ -65,6 +65,7 @@ public:
         ITEM_STRING_IN = 31,
         ITEM_NUMERIC_IN = 32,
         ITEM_UNDEF = 33,
+        ITEM_STRING_RANGE = 34
     };
 
     /*

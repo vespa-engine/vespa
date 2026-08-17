@@ -15,6 +15,7 @@ class Or;
 class Phrase;
 class PrefixTerm;
 class RangeTerm;
+class StringRangeTerm;
 class Rank;
 class StringTerm;
 class SubstringTerm;
@@ -48,6 +49,7 @@ struct QueryVisitor {
     virtual void visit(SameElement& node) = 0;
     virtual void visit(PrefixTerm&) = 0;
     virtual void visit(RangeTerm&) = 0;
+    virtual void visit(StringRangeTerm&) = 0;
     virtual void visit(Rank&) = 0;
     virtual void visit(StringTerm&) = 0;
     virtual void visit(SubstringTerm&) = 0;

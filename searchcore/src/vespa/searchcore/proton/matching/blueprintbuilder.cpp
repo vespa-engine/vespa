@@ -201,6 +201,7 @@ protected:
     void visit(ProtonLocationTerm& n) override { buildTerm(n); }
     void visit(ProtonPrefixTerm& n) override { buildTerm(n); }
     void visit(ProtonRangeTerm& n) override { buildTerm(n); }
+    void visit(ProtonStringRangeTerm& n) override { buildTerm(n); }
     void visit(ProtonStringTerm& n) override { buildTerm(n); }
     void visit(ProtonSubstringTerm& n) override { buildTerm(n); }
     void visit(ProtonSuffixTerm& n) override { buildTerm(n); }

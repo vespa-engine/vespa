@@ -74,6 +74,7 @@ using search::query::PrefixTerm;
 using search::query::RangeTerm;
 using search::query::RegExpTerm;
 using search::query::StackDumpCreator;
+using search::query::StringRangeTerm;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
@@ -657,6 +658,28 @@ public:
         auto range_spec = spec ? std::make_unique<NumericRangeSpec>(*spec) : std::make_unique<NumericRangeSpec>();
         auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(range_spec));
         setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term), scParams));
+    }
+
+    void visit(StringRangeTerm& /*n*/) override {
+        // TODO
+        // const NumericRangeSpec* spec = n.getTerm().getSpec();
+        // SearchContextParams     scParams = createContextParams(_field.isFilter());
+
+        // if (spec && spec->with_diversity()) {
+        //     const IAttributeVector* diversity(
+        //             getRequestContext().getAttribute(std::string(spec->diversityAttribute)));
+        //     if (!check_valid_diversity_attr(diversity)) {
+        //         setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
+        //         return;
+        //     }
+        //     scParams.diversityAttribute(diversity)
+        //             .diversityCutoffGroups(spec->diversityCutoffGroups)
+        //             .diversityCutoffStrict(spec->diversityCutoffStrict);
+        // }
+
+        // auto range_spec = spec ? std::make_unique<NumericRangeSpec>(*spec) : std::make_unique<NumericRangeSpec>();
+        // auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(range_spec));
+        // setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term), scParams));
     }
 
     void visit(StringTerm& n) override { visitTerm(n); }

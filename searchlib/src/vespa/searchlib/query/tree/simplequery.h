@@ -100,6 +100,11 @@ struct SimpleRangeTerm : RangeTerm {
         : RangeTerm(term, std::move(view), id, weight) {}
     ~SimpleRangeTerm() override;
 };
+struct SimpleStringRangeTerm : StringRangeTerm {
+    SimpleStringRangeTerm(const Type& term, std::string view, int32_t id, Weight weight)
+        : StringRangeTerm(term, std::move(view), id, weight) {}
+    ~SimpleStringRangeTerm() override;
+};
 struct SimpleStringTerm : StringTerm {
     SimpleStringTerm(const Type& term, std::string view, int32_t id, Weight weight)
         : StringTerm(term, std::move(view), id, weight) {}
@@ -154,6 +159,7 @@ struct SimpleQueryNodeTypes {
     using SameElement = SimpleSameElement;
     using PrefixTerm = SimplePrefixTerm;
     using RangeTerm = SimpleRangeTerm;
+    using StringRangeTerm = SimpleStringRangeTerm;
     using Rank = SimpleRank;
     using StringTerm = SimpleStringTerm;
     using SubstringTerm = SimpleSubstringTerm;

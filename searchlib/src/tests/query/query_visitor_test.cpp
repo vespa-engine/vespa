@@ -35,6 +35,7 @@ public:
     void visit(SameElement&) override { isVisited<SameElement>() = true; }
     void visit(PrefixTerm&) override { isVisited<PrefixTerm>() = true; }
     void visit(RangeTerm&) override { isVisited<RangeTerm>() = true; }
+    void visit(StringRangeTerm&) override { isVisited<StringRangeTerm>() = true; }
     void visit(Rank&) override { isVisited<Rank>() = true; }
     void visit(StringTerm&) override { isVisited<StringTerm>() = true; }
     void visit(SubstringTerm&) override { isVisited<SubstringTerm>() = true; }

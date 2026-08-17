@@ -52,6 +52,7 @@ struct DumpQuery : QueryVisitor {
     }
     void visit(PrefixTerm&) override {}
     void visit(RangeTerm&) override {}
+    void visit(StringRangeTerm&) override {}
     void visit(Rank&) override {}
     void visit(StringTerm& n) override {
         out.printf("%*s%s %s%s%s\n", indent, "", "Term", n.getTerm().c_str(),

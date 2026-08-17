@@ -76,6 +76,10 @@ struct MyRangeTerm : InitTerm<RangeTerm> {
     ~MyRangeTerm() override;
 };
 
+struct MyStringRangeTerm : InitTerm<StringRangeTerm> {
+    ~MyStringRangeTerm() override;
+};
+
 struct MyStringTerm : InitTerm<StringTerm> {
     ~MyStringTerm() override;
 };
@@ -178,6 +182,8 @@ MyPrefixTerm::~MyPrefixTerm() = default;
 
 MyRangeTerm::~MyRangeTerm() = default;
 
+MyStringRangeTerm::~MyStringRangeTerm() = default;
+
 MyStringTerm::~MyStringTerm() = default;
 
 MySubstrTerm::~MySubstrTerm() = default;
@@ -221,6 +227,7 @@ struct MyQueryNodeTypes {
     using SameElement = MySameElement;
     using PrefixTerm = MyPrefixTerm;
     using RangeTerm = MyRangeTerm;
+    using StringRangeTerm = MyStringRangeTerm;
     using Rank = MyRank;
     using StringTerm = MyStringTerm;
     using SubstringTerm = MySubstrTerm;
@@ -260,6 +267,7 @@ public:
     void visit(MySameElement&) override { setVisited<MySameElement>(); }
     void visit(MyPrefixTerm&) override { setVisited<MyPrefixTerm>(); }
     void visit(MyRangeTerm&) override { setVisited<MyRangeTerm>(); }
+    void visit(MyStringRangeTerm&) override { setVisited<MyStringRangeTerm>(); }
     void visit(MyRank&) override { setVisited<MyRank>(); }
     void visit(MyStringTerm&) override { setVisited<MyStringTerm>(); }
     void visit(MySubstrTerm&) override { setVisited<MySubstrTerm>(); }
