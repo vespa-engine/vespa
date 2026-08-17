@@ -1465,6 +1465,7 @@
       "public boolean protonResampleDiskCapacity()",
       "public boolean fastMapSearch()",
       "public boolean relaxStrictlyIncreasingClusterStateVersions()"
+      "public boolean pluginModelElements()"
     ],
     "fields" : [ ]
   },

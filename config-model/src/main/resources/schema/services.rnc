@@ -14,9 +14,16 @@ start = element services {
    Admin? &
    Content* &
    ContainerCluster* &
-   Routing?
+   Routing? &
+   PluginModelElement*
 }
 | Admin
 | Content
 | ContainerCluster
+
+PluginModelElement = element * - (services | legacy | config | admin | content | container | routing) {
+   PluginElementContent
+}
+PluginElementContent = (attribute * { text } | text | PluginElement)*
+PluginElement = element * { PluginElementContent }
 

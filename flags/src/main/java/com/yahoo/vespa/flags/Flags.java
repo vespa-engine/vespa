@@ -189,6 +189,14 @@ public class Flags {
             APPLICATION
     );
 
+    public static final UnboundBooleanFlag PLUGIN_MODEL_ELEMENTS = defineFeatureFlag(
+            "plugin-model-elements", false,
+            List.of("sebasabe"), "2026-08-17", "2028-08-17",
+            "Whether to allow top-level services.xml elements that are handled by config model plugins",
+            "Takes effect at redeployment",
+            TENANT_ID
+    );
+
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
             List.of("glebashnik"), "2025-04-30", "2026-09-01",
