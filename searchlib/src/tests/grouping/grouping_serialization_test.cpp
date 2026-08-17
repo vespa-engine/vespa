@@ -215,7 +215,9 @@ TEST(GroupingSerializationTest, testAggregatorResults) {
     f.checkObject(
         SumAggregationResult().setExpression(MU<AttributeNode>("attributeA")).resultForUnitTest(Int64ResultNode(7)));
     f.checkObject(XorAggregationResult().setXor(Int64ResultNode(7)).setExpression(MU<AttributeNode>("attributeA")));
-    f.checkObject(CountAggregationResult().setCount(7).setExpression(MU<AttributeNode>("attributeA")));
+    f.checkObject(CountAggregationResult()
+                      .setExpression(MU<AttributeNode>("attributeA"))
+                      .resultForUnitTest(Int64ResultNode(7)));
     f.checkObject(
         MinAggregationResult().setExpression(MU<AttributeNode>("attributeA")).resultForUnitTest(Int64ResultNode(7)));
     f.checkObject(

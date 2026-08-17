@@ -1530,14 +1530,16 @@ TEST(GroupingTest,
         Group().addResult(CountAggregationResult().setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))));
     {
         Group expect;
-        expect.addResult(
-            CountAggregationResult().setCount(3).setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0))));
+        expect.addResult(CountAggregationResult()
+                             .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))
+                             .resultForUnitTest(Int64ResultNode(3)));
 
         EXPECT_TRUE(testAggregation(ctx, request, expect));
     }
     {
-        Group expect = Group().addResult(
-            CountAggregationResult().setCount(1).setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0))));
+        Group expect = Group().addResult(CountAggregationResult()
+                                             .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))
+                                             .resultForUnitTest(Int64ResultNode(1)));
 
         EXPECT_TRUE(testAggregation(ctx, request.setTopN(1), expect));
     }
@@ -1570,7 +1572,9 @@ TEST(GroupingTest, testCount) {
         Group().addResult(CountAggregationResult().setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))));
 
     Group expect;
-    expect.addResult(CountAggregationResult().setCount(3).setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0))));
+    expect.addResult(CountAggregationResult()
+                         .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))
+                         .resultForUnitTest(Int64ResultNode(3)));
 
     EXPECT_TRUE(testAggregation(ctx, request, expect));
 }
