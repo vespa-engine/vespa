@@ -2404,6 +2404,9 @@ public class YqlParser implements Parser {
         private final Boolean usePositionData;
         private final String label;
 
+        /** The item which has been given the label on the branch currently being visited, if any. */
+        private Item labeledItem = null;
+
         public AnnotationPropagator(OperatorNode<ExpressionOperator> ast) {
             isRanked = getAnnotation(ast, RANKED, Boolean.class, null, RANKED_DESCRIPTION);
             filter = getAnnotation(ast, FILTER, Boolean.class, null, FILTER_DESCRIPTION);
@@ -2431,8 +2434,12 @@ public class YqlParser implements Parser {
                 }
             }
             if (item instanceof TaggableItem) {
-                if (label != null && item.getLabel() == null) {
+                // Label only the outermost taggable item on each branch: items below it (such as the words of a
+                // phrase) are not separate terms in the backend ranking framework, so a label there is never
+                // resolvable - it would only force a meaningless unique id onto the item.
+                if (label != null && labeledItem == null && item.getLabel() == null) {
                     item.setLabel(label);
+                    labeledItem = item;
                 }
                 if (isRanked != null) {
                     item.setRanked(isRanked);
@@ -2442,6 +2449,13 @@ public class YqlParser implements Parser {
                 }
             }
             return true;
+        }
+
+        @Override
+        public void onExit(Item item) {
+            if (item == labeledItem) {
+                labeledItem = null;
+            }
         }
 
     }
