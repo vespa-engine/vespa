@@ -118,7 +118,8 @@ public final class Capacity {
     @Override
     public String toString() {
         return (required ? "required " : "") +
-               (min.equals(max) ? min : "between " + min + " and " + max);
+               (min.equals(max) ? min : "between " + min + " and " + max) +
+               (maxCostFactor != 1.0 ? " max-cost-factor: " + maxCostFactor : "");
     }
 
     /** Create a non-required, failable capacity request */

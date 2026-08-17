@@ -45,6 +45,7 @@ import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.LabelWrapperItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.GeoLocationItem;
@@ -192,6 +193,7 @@ public class YqlParser implements Parser {
     public static final String HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "hnsw.targetHitsMaxAdjustmentFactor"; // for post-filter, default 20
     public static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
     public static final String LABEL = "label";
+    public static final String LABELED = "labeled";
     public static final String NEAR = "near";
     public static final String NEAREST_NEIGHBOR = "nearestNeighbor";
     public static final String EXCLUSION_DISTANCE = "exclusionDistance";
@@ -472,6 +474,7 @@ public class YqlParser implements Parser {
             case NEAREST_NEIGHBOR: return buildNearestNeighbor(ast);
             case PREDICATE: return buildPredicate(ast);
             case RANK: return buildRank(ast, currentField);
+            case LABELED: return buildLabelWrapper(ast, currentField);
             case WEAK_AND: return buildWeakAnd(ast);
             case USER_INPUT: return buildUserInput(ast, currentField);
             case NON_EMPTY: return ensureNonEmpty(ast);
@@ -490,6 +493,7 @@ public class YqlParser implements Parser {
                                                          NEAREST_NEIGHBOR,
                                                          PREDICATE,
                                                          RANK,
+                                                         LABELED,
                                                          WEAK_AND,
                                                          USER_INPUT,
                                                          NON_EMPTY);
@@ -1515,6 +1519,18 @@ public class YqlParser implements Parser {
         return itemAnnotations(spec, convertVarArgs(spec, 1, new RankItem(), currentField));
     }
 
+    private CompositeItem buildLabelWrapper(OperatorNode<ExpressionOperator> ast, String currentField) {
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        Preconditions.checkArgument(args.size() == 3, "Expected 3 arguments, got %s.", args.size());
+        String label = fetchLiteral(args.get(1));
+        Object score = fetchLiteralOrRef(args.get(2));
+        Preconditions.checkArgument(score instanceof Number,
+                                    "Expected a number as the label score, got %s.", score);
+        LabelWrapperItem item = new LabelWrapperItem(label, ((Number) score).doubleValue());
+        item.addItem(convertExpression(args.get(0), currentField));
+        return itemAnnotations(ast, item);
+    }
+
     private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, CompositeItem out,
                                          String currentField) {
         Iterable<OperatorNode<ExpressionOperator>> args = ast.getArgument(argIdx);
@@ -2386,6 +2402,10 @@ public class YqlParser implements Parser {
         private final Boolean normalizeCase;
         private final Boolean accentDrop;
         private final Boolean usePositionData;
+        private final String label;
+
+        /** The item which has been given the label on the branch currently being visited, if any. */
+        private Item labeledItem = null;
 
         public AnnotationPropagator(OperatorNode<ExpressionOperator> ast) {
             isRanked = getAnnotation(ast, RANKED, Boolean.class, null, RANKED_DESCRIPTION);
@@ -2394,6 +2414,7 @@ public class YqlParser implements Parser {
             normalizeCase = getAnnotation(ast, NORMALIZE_CASE, Boolean.class, null, NORMALIZE_CASE_DESCRIPTION);
             accentDrop = getAnnotation(ast, ACCENT_DROP, Boolean.class, null, ACCENT_DROP_DESCRIPTION);
             usePositionData = getAnnotation(ast, USE_POSITION_DATA, Boolean.class, null, USE_POSITION_DATA_DESCRIPTION);
+            label = getAnnotation(ast, LABEL, String.class, null, "item label");
         }
 
         @Override
@@ -2413,6 +2434,13 @@ public class YqlParser implements Parser {
                 }
             }
             if (item instanceof TaggableItem) {
+                // Label only the outermost taggable item on each branch: items below it (such as the words of a
+                // phrase) are not separate terms in the backend ranking framework, so a label there is never
+                // resolvable - it would only force a meaningless unique id onto the item.
+                if (label != null && labeledItem == null && item.getLabel() == null) {
+                    item.setLabel(label);
+                    labeledItem = item;
+                }
                 if (isRanked != null) {
                     item.setRanked(isRanked);
                 }
@@ -2421,6 +2449,13 @@ public class YqlParser implements Parser {
                 }
             }
             return true;
+        }
+
+        @Override
+        public void onExit(Item item) {
+            if (item == labeledItem) {
+                labeledItem = null;
+            }
         }
 
     }

@@ -334,7 +334,8 @@ void NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index
     MatchDataLayout         mdl;
     IndexEnvironment        index_env;
     auto&                   fields = index_env.getFields();
-    for (uint32_t field_id = 0; field_id <= max_field_id; ++field_id) {
+    // Field id 0 is the "no field" already held first in the index environment.
+    for (uint32_t field_id = fields.size(); field_id <= max_field_id; ++field_id) {
         fields.emplace_back(FieldType::INDEX, CollectionType::SINGLE, std::format("field{}", field_id), field_id);
     }
 

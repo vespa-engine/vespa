@@ -81,7 +81,10 @@ void trace_global_filter_decision(uint32_t trace_level, search::engine::Trace* t
 Node::UP inject(Node::UP query, Node::UP to_inject) {
     if (auto* my_and = dynamic_cast<search::query::And*>(query.get())) {
         my_and->append(std::move(to_inject));
-    } else if (dynamic_cast<search::query::Rank*>(query.get()) || dynamic_cast<search::query::AndNot*>(query.get())) {
+    } else if (dynamic_cast<search::query::Rank*>(query.get()) ||
+               dynamic_cast<search::query::LabelWrapper*>(query.get()) ||
+               dynamic_cast<search::query::AndNot*>(query.get()))
+    {
         auto& root = static_cast<search::query::Intermediate&>(*query);
         root.prepend(inject(root.stealFirst(), std::move(to_inject)));
     } else {

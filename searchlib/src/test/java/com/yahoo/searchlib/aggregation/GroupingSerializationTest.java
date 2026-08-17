@@ -210,7 +210,7 @@ public class GroupingSerializationTest {
                     .setExpression(new AttributeNode("attributeA")));
             t.assertMatch(new MaxAggregationResult(new IntegerResultNode(7))
                     .setExpression(new AttributeNode("attributeA")));
-            t.assertMatch(new AverageAggregationResult(new IntegerResultNode(7), 0)
+            t.assertMatch(new AverageAggregationResult(new IntegerResultNode(7), 1)
                     .setExpression(new AttributeNode("attributeA")));
             SparseSketch sketch = new SparseSketch();
             sketch.aggregate(1955583074);

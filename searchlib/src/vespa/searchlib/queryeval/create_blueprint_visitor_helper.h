@@ -70,6 +70,7 @@ public:
     void visit(query::ONear&) override { illegalVisit(); }
     void visit(query::Or&) override { illegalVisit(); }
     void visit(query::Rank&) override { illegalVisit(); }
+    void visit(query::LabelWrapper&) override { illegalVisit(); }
     void visit(query::WeakAnd&) override { illegalVisit(); }
     void visit(query::SameElement&) override { illegalVisit(); }
 

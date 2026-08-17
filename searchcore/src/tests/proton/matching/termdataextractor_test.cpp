@@ -61,9 +61,9 @@ Node::UP getQuery(const ViewResolver& resolver) {
     Node::UP node = query_builder.build();
 
     fef_test::IndexEnvironment index_environment;
-    index_environment.getFields().push_back(FieldInfo(FieldType::INDEX, CollectionType::SINGLE, field, 0));
-    index_environment.getFields().push_back(FieldInfo(FieldType::INDEX, CollectionType::SINGLE, "foo", 1));
-    index_environment.getFields().push_back(FieldInfo(FieldType::INDEX, CollectionType::SINGLE, "bar", 2));
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, field);
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, "bar");
 
     ResolveViewVisitor visitor(resolver, index_environment);
     node->accept(visitor);
@@ -96,6 +96,20 @@ TEST(TermDataExtractorTest, requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm
         EXPECT_EQ(id[i], term_data[i]->getUniqueId());
         EXPECT_EQ(2u, term_data[i]->numFields());
     }
+}
+
+TEST(TermDataExtractorTest, requireThatLabelWrapperIsAddedWithoutHidingItsChild) {
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    query_builder.add_label_wrapper(id[0], 2.5);
+    query_builder.addStringTerm("term1", field, id[1], Weight(0));
+    Node::UP node = query_builder.build();
+
+    vector<const ITermData*> term_data;
+    TermDataExtractor::extractTerms(*node, term_data);
+    // Unlike other term data the wrapper is not a ranking leaf, so its child is added too
+    ASSERT_EQ(2u, term_data.size());
+    EXPECT_EQ(id[0], term_data[0]->getUniqueId());
+    EXPECT_EQ(id[1], term_data[1]->getUniqueId());
 }
 
 TEST(TermDataExtractorTest, requireThatUnrankedTermsAreSkipped) {

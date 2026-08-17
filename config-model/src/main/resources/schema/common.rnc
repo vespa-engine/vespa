@@ -29,6 +29,7 @@ Resources = element resources {
     attribute disk-speed { xsd:string }? &
     attribute storage-type { xsd:string }? &
     attribute architecture { xsd:string }? &
+    attribute max-cost-factor { xsd:double { minInclusive = "1.0" } }? &
     GpuResources?
 }
 

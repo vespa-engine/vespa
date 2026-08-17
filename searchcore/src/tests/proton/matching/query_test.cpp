@@ -111,7 +111,7 @@ void setupIndexEnvironments() {
     resolved_index_env.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, resolved_field2,
                                                 field_id + 1);
 
-    attribute_index_env.getFields().emplace_back(FieldType::ATTRIBUTE, CollectionType::SINGLE, field, 0);
+    attribute_index_env.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, field);
     FieldInfo loc_field_info = FieldInfo(FieldType::ATTRIBUTE, CollectionType::SINGLE,
                                          PositionDataType::getZCurveFieldName(loc_field), field_id + 1);
     plain_index_env.getFields().push_back(loc_field_info);
@@ -644,9 +644,9 @@ TEST(QueryTest, requireThatQueryGluesEverythingTogether) {
 
 void checkQueryAddsLocation(const string& loc_in, const string& loc_out) {
     fef_test::IndexEnvironment index_environment;
-    index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field, 0);
-    index_environment.getFields().emplace_back(FieldType::ATTRIBUTE, CollectionType::SINGLE,
-                                               PositionDataType::getZCurveFieldName(loc_field), 1);
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, field);
+    index_environment.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE,
+                               PositionDataType::getZCurveFieldName(loc_field));
 
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm(string_term, field, 1, Weight(2));
@@ -1024,6 +1024,74 @@ TEST(QueryTest, requireThatSameElementIteratorsCanBeBuilt) {
     ASSERT_TRUE(iterator);
     EXPECT_TRUE(!iterator->seek(4));
     EXPECT_TRUE(iterator->seek(8));
+}
+
+Node::UP buildLabelWrapperQueryTree(double score, const ViewResolver& resolver,
+                                    const search::fef::IIndexEnvironment& idxEnv) {
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    query_builder.add_label_wrapper(7, score);
+    query_builder.addStringTerm(string_term, field, 1, Weight(2));
+    Node::UP           node = query_builder.build();
+    ResolveViewVisitor visitor(resolver, idxEnv);
+    node->accept(visitor);
+    return node;
+}
+
+TEST(QueryTest, label_wrapper_is_term_data_for_the_reserved_no_field) {
+    Node::UP node = buildLabelWrapperQueryTree(2.5, ViewResolver(), plain_index_env);
+    auto*    wrapper = dynamic_cast<ProtonLabelWrapper*>(node.get());
+    ASSERT_TRUE(wrapper != nullptr);
+
+    // Addressable by unique id, so that "vespa.label.<label>.id" can reach it
+    EXPECT_EQ(7u, wrapper->getUniqueId());
+    EXPECT_EQ(1u, wrapper->getPhraseLength());
+
+    // Exactly one field entry, and it is the reserved "no field" rather than any
+    // field of the child, so per-field features cannot see the wrapper
+    ASSERT_EQ(1u, wrapper->numFields());
+    EXPECT_EQ(search::fef::FieldInfo::no_field().id(), wrapper->field(0).getFieldId());
+    EXPECT_TRUE(plain_index_env.getField(wrapper->field(0).getFieldId())->is_no_field());
+    EXPECT_EQ(nullptr, wrapper->lookupField(field_id));
+
+    MatchDataLayout         mdl;
+    MatchDataReserveVisitor visitor(mdl);
+    node->accept(visitor);
+    EXPECT_NE(search::fef::IllegalHandle, wrapper->field(0).getHandle());
+    // one for the wrapper, one for the child term
+    MatchData::UP match_data = mdl.createMatchData();
+    EXPECT_EQ(2u, match_data->getNumTermFields());
+}
+
+TEST(QueryTest, label_wrapper_exposes_its_score_as_a_raw_score) {
+    Fixture  f;
+    Node::UP node = buildLabelWrapperQueryTree(2.5, ViewResolver(), plain_index_env);
+    auto*    wrapper = dynamic_cast<ProtonLabelWrapper*>(node.get());
+    ASSERT_TRUE(wrapper != nullptr);
+
+    FakeSearchContext context(10);
+    context.addIdx(0).idx(0).getFake().addResult(field, string_term, FakeResult().doc(4).pos(0).doc(8).pos(1));
+
+    SearchIterator::UP iterator = f.getIterator(*node, context);
+    ASSERT_TRUE(iterator);
+    auto handle = wrapper->field(0).getHandle();
+    ASSERT_NE(search::fef::IllegalHandle, handle);
+    const auto* tfmd = f._match_data->resolveTermField(handle);
+    ASSERT_TRUE(tfmd != nullptr);
+
+    // matching is decided by the child alone
+    EXPECT_FALSE(iterator->seek(3));
+    ASSERT_TRUE(iterator->seek(4));
+    iterator->unpack(4);
+    EXPECT_EQ(4u, tfmd->getDocId());
+    EXPECT_EQ(2.5, tfmd->getRawScore());
+
+    ASSERT_TRUE(iterator->seek(8));
+    iterator->unpack(8);
+    EXPECT_EQ(8u, tfmd->getDocId());
+    EXPECT_EQ(2.5, tfmd->getRawScore());
+
+    // no ranking data for a document the child does not match
+    EXPECT_FALSE(tfmd->has_ranking_data(9));
 }
 
 TEST(QueryTest, andnot_below_same_element_is_elementwise) {

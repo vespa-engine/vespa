@@ -129,6 +129,12 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testLabelWrapper() {
+        parseAndConfirm("labeled(description contains \"a\", \"mylabel\", 2.5)");
+        parseAndConfirm("labeled((description contains \"a\" OR title contains \"b\"), \"my \\\"quoted\\\" label\", 1.0)");
+    }
+
+    @Test
     void testAndNot() {
         parseAndConfirm("(description contains \"a\") AND !(title contains \"that\")");
     }

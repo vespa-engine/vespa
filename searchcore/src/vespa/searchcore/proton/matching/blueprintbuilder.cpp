@@ -11,6 +11,7 @@
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/label_wrapper_blueprint.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/vespalib/util/issue.h>
@@ -123,6 +124,21 @@ private:
         _result = std::move(eq);
     }
 
+    void buildLabelWrapper(ProtonLabelWrapper& n) {
+        // The reserved "no field" is resolved unconditionally, so this should always hold;
+        // fall back to a plain rank if it somehow does not, losing only the raw score.
+        if (n.numFields() != 1) {
+            buildIntermediate(new RankBlueprint(), n);
+            return;
+        }
+        auto handle = n.field(0).getHandle(); // Records in HandleRecorder
+        if (handle == search::fef::IllegalHandle) {
+            buildIntermediate(new RankBlueprint(), n);
+            return;
+        }
+        buildIntermediate(new LabelWrapperBlueprint(handle, n.getLabelScore()), n);
+    }
+
     void buildSameElement(ProtonSameElement& n) {
         if (n.numFields() == 1) {
             auto se = std::make_unique<SameElementBlueprint>(n.field(0).fieldSpec(), n.descendants_index_handles,
@@ -180,6 +196,7 @@ protected:
     void visit(ProtonEquiv& n) override { buildEquiv(n); }
     void visit(ProtonWordAlternatives& n) override { buildWordAlternatives(n); }
     void visit(ProtonRank& n) override { buildIntermediate(new RankBlueprint(), n); }
+    void visit(ProtonLabelWrapper& n) override { buildLabelWrapper(n); }
     void visit(ProtonNear& n) override {
         buildIntermediate(new NearBlueprint(n.getDistance(), n.num_negative_terms(), n.exclusion_distance(),
                                             _requestContext.get_element_gap_inspector()),

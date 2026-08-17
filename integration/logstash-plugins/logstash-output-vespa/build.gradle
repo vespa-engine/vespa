@@ -1,5 +1,6 @@
 import java.nio.file.Files
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import groovy.ant.FileNameFinder
 
 buildscript {
     repositories {
@@ -24,8 +25,8 @@ apply from: LOGSTASH_CORE_PATH + "/../rubyUtils.gradle"
 // ===========================================================================
 // plugin info
 // ===========================================================================
-group                      'org.logstashplugins' // must match the package of the main plugin class
-version                    "${file("VERSION").text.trim()}" // read from required VERSION file
+group                      = 'org.logstashplugins' // must match the package of the main plugin class
+version                    = "${file("VERSION").text.trim()}" // read from required VERSION file
 description                = "Output plugin for Vespa"
 pluginInfo.licenses        = ['Apache-2.0'] // list of SPDX license IDs
 pluginInfo.longDescription = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using \$LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
@@ -66,7 +67,7 @@ dependencies {
     implementation "org.yaml:snakeyaml:${snakeYamlVersion}"
 
     testImplementation 'org.jruby:jruby-complete:9.4.15.0'
-    testImplementation 'org.jruby:jruby-core:10.1.0.0'
+    testImplementation 'org.jruby:jruby-core:10.1.1.0'
     testImplementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.23.0'
@@ -91,19 +92,24 @@ tasks.withType(JavaCompile) {
 
 tasks.register("vendor"){
     dependsOn shadowJar
+    def projectGroup = project.group
+    def projectVersion = project.version
+    def projectName = project.name
     doLast {
         String vendorPathPrefix = "vendor/jar-dependencies"
-        String projectGroupPath = project.group.replaceAll('\\.', '/')
-        File projectJarFile = file("${vendorPathPrefix}/${projectGroupPath}/${pluginInfo.pluginFullName()}/${project.version}/${pluginInfo.pluginFullName()}-${project.version}.jar")
+        String projectGroupPath = projectGroup.replaceAll('\\.', '/')
+        File projectJarFile = file("${vendorPathPrefix}/${projectGroupPath}/${pluginInfo.pluginFullName()}/${projectVersion}/${pluginInfo.pluginFullName()}-${projectVersion}.jar")
         projectJarFile.mkdirs()
-        Files.copy(file("$buildDir/libs/${project.name}-${project.version}.jar").toPath(), projectJarFile.toPath(), REPLACE_EXISTING)
-        validatePluginJar(projectJarFile, project.group)
+        Files.copy(layout.buildDirectory.file("libs/${projectName}-${projectVersion}.jar").get().asFile.toPath(), projectJarFile.toPath(), REPLACE_EXISTING)
+        validatePluginJar(projectJarFile, projectGroup)
     }
 }
 
 tasks.register("generateRubySupportFiles") {
+    def pluginDescription = project.description
+    def pluginGroup = project.group
     doLast {
-        generateRubySupportFilesForPlugin(project.description, project.group, version)
+        generateRubySupportFilesForPlugin(pluginDescription, pluginGroup, version)
     }
 }
 
@@ -121,11 +127,11 @@ tasks.register("removeObsoleteJars") {
 tasks.register("gem"){
     dependsOn = [downloadAndInstallJRuby, removeObsoleteJars, vendor, generateRubySupportFiles]
     doLast {
-        buildGem(projectDir, buildDir, pluginInfo.pluginFullName() + ".gemspec")
+        buildGem(projectDir, layout.buildDirectory.get().asFile, pluginInfo.pluginFullName() + ".gemspec")
     }
 }
 
 task integrationTest(type: Exec) {
-    workingDir 'integration-test'
+    workingDir = file('integration-test')
     commandLine './run_tests.sh'
 }

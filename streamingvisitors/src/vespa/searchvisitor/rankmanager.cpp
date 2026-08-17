@@ -61,13 +61,14 @@ IndexEnvPrototype::IndexEnvPrototype() : _tableManager(), _prototype(_tableManag
 }
 
 void IndexEnvPrototype::detectFields(const vespa::config::search::vsm::VsmfieldsConfig& fields) {
-    for (uint32_t i = 0; i < fields.fieldspec.size(); ++i) {
-        const VsmfieldsConfig::Fieldspec& fs = fields.fieldspec[i];
+    for (const auto& fs : fields.fieldspec) {
         bool isAttribute = (fs.fieldtype == VsmfieldsConfig::Fieldspec::Fieldtype::ATTRIBUTE);
-        LOG(debug, "Adding field of type '%s' and name '%s' with id '%u' the index environment.",
-            isAttribute ? "ATTRIBUTE" : "INDEX", fs.name.c_str(), i);
-        // This id must match the vsm specific field id
+        // The assigned id must match the vsm specific field id, cf.
+        // FieldSearchSpecMap::buildFromConfig(), which reads it back from here.
         _prototype.addField(fs.name, isAttribute, to_data_type(fs.searchmethod));
+        LOG(debug, "Added field of type '%s' and name '%s' with id '%u' to the index environment.",
+            isAttribute ? "ATTRIBUTE" : "INDEX", fs.name.c_str(),
+            _prototype.getFieldByName(fs.name) != nullptr ? _prototype.getFieldByName(fs.name)->id() : 0u);
     }
 }
 
@@ -108,7 +109,7 @@ FieldIdTList buildFieldSet(const VsmfieldsConfig::Documenttype::Index&       ci,
                 ifm.push_back(info->id());
             } else {
                 LOG(warning,
-                    "Field '%s' is not registred in the index environment. "
+                    "Field '%s' is not registered in the index environment. "
                     "Cannot add to index view.",
                     cf.name.c_str());
             }

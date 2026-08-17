@@ -87,6 +87,32 @@ public class ItemLabelTestCase {
     }
 
     @Test
+    final void testLabelWrapperIsTaggedButNotTreatedAsALeaf() {
+        WordItem w1 = new WordItem("w1");
+        WordItem w2 = new WordItem("w2");
+        LabelWrapperItem wrapper = new LabelWrapperItem("my_label", 2.5);
+        AndItem and = new AndItem();
+        Query query = new Query();
+
+        w2.setLabel("below_wrapper");
+        wrapper.addItem(w2);
+        and.addItem(w1);
+        and.addItem(wrapper);
+        query.getModel().getQueryTree().setRoot(and);
+        query.prepare();
+
+        // The wrapper itself is taggable, so its label reaches the back-end
+        assertTrue(wrapper.getUniqueID() > 0);
+        assertEquals(String.valueOf(wrapper.getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label.my_label.id").get(0));
+
+        // ... and unlike other taggable items it is descended into, so its child is tagged as well
+        assertTrue(w2.getUniqueID() > 0);
+        assertEquals(String.valueOf(w2.getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label.below_wrapper.id").get(0));
+    }
+
+    @Test
     final void testSharedLabelEncodesAllUniqueIds() {
         WordItem w1 = new WordItem("w1");
         WordItem w2 = new WordItem("w2");

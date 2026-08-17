@@ -80,6 +80,10 @@ struct SimpleWordAlternatives : WordAlternatives {
 struct SimpleRank : Rank {
     ~SimpleRank() override;
 };
+struct SimpleLabelWrapper : LabelWrapper {
+    SimpleLabelWrapper(int32_t id, double score) : LabelWrapper(id, score) {}
+    ~SimpleLabelWrapper() override;
+};
 struct SimpleNumberTerm : NumberTerm {
     SimpleNumberTerm(Type term, std::string view, int32_t id, Weight weight)
         : NumberTerm(term, std::move(view), id, weight) {}
@@ -155,6 +159,7 @@ struct SimpleQueryNodeTypes {
     using PrefixTerm = SimplePrefixTerm;
     using RangeTerm = SimpleRangeTerm;
     using Rank = SimpleRank;
+    using LabelWrapper = SimpleLabelWrapper;
     using StringTerm = SimpleStringTerm;
     using SubstringTerm = SimpleSubstringTerm;
     using SuffixTerm = SimpleSuffixTerm;

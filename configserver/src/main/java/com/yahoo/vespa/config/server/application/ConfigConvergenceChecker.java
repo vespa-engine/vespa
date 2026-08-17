@@ -103,15 +103,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return checkConvergence(application, timeoutPerService, new HostsToCheck(Set.of()));
     }
 
-    /**
-     * Checks services except those which defer config changes until restart in the given application.
-     * Returns the minimum current generation of those services.
-     */
-    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application, Set<String> hostnames) {
-        Duration timeoutPerService = Duration.ofSeconds(10);
-        return checkConvergence(application, timeoutPerService, new HostsToCheck(hostnames));
-    }
-
     private ServiceListResponse checkConvergence(Application application, Duration timeoutPerService, HostsToCheck hostsToCheck) {
         Map<ServiceInfo, ServiceGenerationResult> results = getServiceGenerations(collectServicesToCheck(application, hostsToCheck), timeoutPerService);
         long wantedGeneration = application.getApplicationGeneration();

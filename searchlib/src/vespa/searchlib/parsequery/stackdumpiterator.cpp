@@ -126,6 +126,12 @@ bool SimpleQueryStackDumpIterator::readNext() {
         _d.index_view = std::string_view();
         break;
 
+    case ParseItem::ITEM_LABEL_WRAPPER:
+        _d.arity = readCompressedPositiveInt(p);
+        _d.label_score = read_value<double>(p);
+        _d.index_view = std::string_view();
+        break;
+
     case ParseItem::ITEM_NEAR:
     case ParseItem::ITEM_ONEAR:
         _d.arity = readCompressedPositiveInt(p);

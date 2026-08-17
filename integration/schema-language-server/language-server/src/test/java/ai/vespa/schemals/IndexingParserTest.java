@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.DocumentIdExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ChunkExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
@@ -68,6 +69,15 @@ public class IndexingParserTest {
             PackBitsExpression.class,
             AttributeExpression.class,
             IndexExpression.class}, "input text | chunk fixed-length 1024 | embed | pack_bits | attribute | index");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+                StatementExpression.class,
+                DocumentIdExpression.class,
+                AttributeExpression.class}, "documentid namespace | attribute");
+        assertEqualsParsedFlattened(new Class<?>[] {
+                StatementExpression.class,
+                DocumentIdExpression.class,
+                AttributeExpression.class}, "documentid | attribute");
     }
 
     private static void assertEqualsParsedFlattened(Class<?>[] expectedFlattened, String input) {

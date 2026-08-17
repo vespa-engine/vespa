@@ -31,6 +31,7 @@ import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
+import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
@@ -417,6 +418,32 @@ public class YqlParserTestCase {
         assertEquals(2, near.getItemCount());
         for (Item leaf : near.items()) {
             assertEquals("t1", leaf.getLabel());
+        }
+    }
+
+    @Test
+    void testLabelOnUserInputIsInheritedByEachParsedTerm() {
+        QueryTree query = parse("select foo from bar where " +
+                "({label: \"t1\"}userInput(\"new york\"))");
+        WeakAndItem weakAnd = (WeakAndItem) query.getRoot();
+        assertEquals(2, weakAnd.getItemCount());
+        for (Item term : weakAnd.items()) {
+            assertEquals("t1", term.getLabel());
+        }
+    }
+
+    @Test
+    void testLabelOnUserInputPhraseIsAppliedToParsedPhrase() {
+        QueryTree query = parse("select foo from bar where " +
+                "({label: \"t1\", grammar.syntax: \"none\", grammar.composite: \"phrase\"}" +
+                "userInput(\"new york\"))");
+        PhraseItem phrase = (PhraseItem) query.getRoot();
+        assertEquals("t1", phrase.getLabel());
+        // The words of a phrase are not separate terms in the backend, so labeling them would have no effect
+        // beyond forcing a unique id onto them
+        for (Item word : phrase.items()) {
+            assertNull(word.getLabel());
+            assertFalse(((TaggableItem) word).hasUniqueID());
         }
     }
 
@@ -1040,6 +1067,26 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testLabelWrapper() {
+        assertParse("select foo from bar where labeled(a contains \"A\", \"mylabel\", 2.5)",
+                "LABEL_WRAPPER(mylabel,2.5) a:A");
+        // the child may be any expression
+        assertParse("select foo from bar where labeled(a contains \"A\" or b contains \"B\", \"mylabel\", 1.0)",
+                "LABEL_WRAPPER(mylabel,1.0) (OR a:A b:B)");
+        // an integer score is fine too
+        assertParse("select foo from bar where labeled(a contains \"A\", \"mylabel\", 3)",
+                "LABEL_WRAPPER(mylabel,3.0) a:A");
+    }
+
+    @Test
+    void testLabelWrapperRequiresThreeArgumentsWithANumericScore() {
+        assertParseFail("select foo from bar where labeled(a contains \"A\", \"mylabel\")",
+                new IllegalArgumentException("Expected 3 arguments, got 2."));
+        assertParseFail("select foo from bar where labeled(a contains \"A\", \"mylabel\", \"heavy\")",
+                new IllegalArgumentException("Expected a number as the label score, got heavy."));
+    }
+
+    @Test
     void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")",
                 "WEAKAND a:A b:B");
@@ -1449,11 +1496,11 @@ public class YqlParserTestCase {
         yql.properties().set("yql", "select * from sources * where urlfield.hostname contains uri(\"google.com\")");
         assertUrlQuery("urlfield.hostname", yql, false, true, true);
     }
-    
+
     @Test
     void testUriTokenization() {
         //Tokenizer should match searchlib URL::IsTokenChar
-        
+
         // '-' or '_' are token characters, not separators
         assertEquals(List.of("my-subdomain", "example", "com"), YqlParser.tokenizeUri("my-subdomain.example.com"));
         assertEquals(List.of("foo_bar", "example", "com"), YqlParser.tokenizeUri("foo_bar.example.com"));

@@ -330,7 +330,7 @@ void Benchmark::runAttributeMatch(Config& cfg) {
     MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
     mdb->setWeight("foo", 0, 0);
     mdb->apply(0);
-    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 0);
+    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 1);
 
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
@@ -461,7 +461,7 @@ void Benchmark::runNativeAttributeMatch(Config& cfg) {
     mdb->setWeight("foo", 0, 0);
     mdb->apply(0);
 
-    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 0);
+    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 1);
 
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;

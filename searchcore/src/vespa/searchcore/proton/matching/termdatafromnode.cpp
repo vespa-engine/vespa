@@ -21,6 +21,7 @@ struct TermDataFromTermVisitor : public search::query::CustomTypeVisitor<ProtonN
     void visit(ProtonONear&) override {}
     void visit(ProtonOr&) override {}
     void visit(ProtonRank&) override {}
+    void visit(ProtonLabelWrapper&) override {}
     void visit(ProtonWeakAnd&) override {}
     void visit(ProtonSameElement&) override {}
     void visit(ProtonTrue&) override {}

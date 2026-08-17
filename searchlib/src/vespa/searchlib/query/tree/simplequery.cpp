@@ -33,6 +33,7 @@ SimpleDotProduct::~SimpleDotProduct() = default;
 SimpleWandTerm::~SimpleWandTerm() = default;
 
 SimpleRank::~SimpleRank() = default;
+SimpleLabelWrapper::~SimpleLabelWrapper() = default;
 
 SimpleNumberTerm::~SimpleNumberTerm() = default;
 

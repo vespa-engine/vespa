@@ -66,6 +66,7 @@ bool JuniperQueryAdapter::Traverse(juniper::IQueryVisitor* v) const {
                 rc = skipItem(iterator);
             break;
         case search::ParseItem::ITEM_RANK:
+        case search::ParseItem::ITEM_LABEL_WRAPPER:
             if (!v->VisitRANK(&item, iterator.getArity()))
                 rc = skipItem(iterator);
             break;

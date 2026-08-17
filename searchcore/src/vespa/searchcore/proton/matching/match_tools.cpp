@@ -232,7 +232,9 @@ MatchToolsFactory::MatchToolsFactory(
         if (degradationParams.enabled()) {
             trace.addEvent(5, "Setup match phase limiter");
             const search::fef::FieldInfo* fieldInfo = indexEnv.getFieldByName(attribute);
-            uint32_t                      field_id = fieldInfo != nullptr ? fieldInfo->id() : 0;
+            // Falling back to the "no field" id means no query item can match,
+            // which is what we want when the degradation attribute is unknown.
+            uint32_t field_id = fieldInfo != nullptr ? fieldInfo->id() : search::fef::FieldInfo::no_field().id();
             _rangeLocator = std::make_unique<LocateRangeItemFromQuery>(*_query.peekRoot(), field_id);
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), *_rangeLocator,
                                                                  searchContext.getAttributes(), _requestContext,

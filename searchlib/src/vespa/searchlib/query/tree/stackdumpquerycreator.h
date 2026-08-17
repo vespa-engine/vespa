@@ -68,6 +68,8 @@ private:
             builder.addAnd(arity);
         } else if (type == ParseItem::ITEM_RANK) {
             builder.addRank(arity);
+        } else if (type == ParseItem::ITEM_LABEL_WRAPPER) {
+            builder.add_label_wrapper(queryStack.getUniqueId(), queryStack.get_label_score());
         } else if (type == ParseItem::ITEM_OR) {
             builder.addOr(arity);
         } else if (type == ParseItem::ITEM_WORD_ALTERNATIVES) {

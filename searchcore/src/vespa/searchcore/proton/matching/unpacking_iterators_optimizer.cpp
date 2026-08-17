@@ -48,6 +48,7 @@ struct TermExpander : QueryVisitor {
     void visit(PrefixTerm&) override {}
     void visit(RangeTerm&) override {}
     void visit(Rank&) override {}
+    void visit(LabelWrapper&) override {}
     void visit(StringTerm&) override {}
     void visit(SubstringTerm&) override {}
     void visit(SuffixTerm&) override {}

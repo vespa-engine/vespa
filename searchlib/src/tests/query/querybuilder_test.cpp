@@ -3,10 +3,12 @@
 
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/query/proto_tree_converter.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/point.h>
+#include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -15,6 +17,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("querybuilder_test");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+
+#include <vespa/searchlib/query/proto_tree_converter.hpp>
 
 using search::SerializedQueryTree;
 using search::SimpleQueryStackDumpIterator;
@@ -446,6 +450,11 @@ struct MyRank : Rank {
     ~MyRank() override;
 };
 
+struct MyLabelWrapper : LabelWrapper {
+    using LabelWrapper::LabelWrapper;
+    ~MyLabelWrapper() override;
+};
+
 struct MyNumberTerm : NumberTerm {
     MyNumberTerm(Type t, const string& f, int32_t i, Weight w) : NumberTerm(t, f, i, w) {}
     ~MyNumberTerm() override;
@@ -549,6 +558,7 @@ MyDotProduct::~MyDotProduct() = default;
 MyWandTerm::~MyWandTerm() = default;
 
 MyRank::~MyRank() = default;
+MyLabelWrapper::~MyLabelWrapper() = default;
 
 MyNumberTerm::~MyNumberTerm() = default;
 
@@ -594,6 +604,7 @@ struct MyQueryNodeTypes {
     using PrefixTerm = MyPrefixTerm;
     using RangeTerm = MyRangeTerm;
     using Rank = MyRank;
+    using LabelWrapper = MyLabelWrapper;
     using StringTerm = MyStringTerm;
     using SubstringTerm = MySubstringTerm;
     using SuffixTerm = MySuffixTerm;
@@ -792,6 +803,54 @@ TEST(QueryBuilderTest, fuzzy_node_can_be_created) {
     }
 }
 
+TEST(QueryBuilderTest, label_wrapper_node_survives_stack_dump_round_trip) {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    builder.add_label_wrapper(id[3], 2.5);
+    builder.addStringTerm(str[0], view[0], id[0], weight[0]);
+    Node::UP node = builder.build();
+
+    auto stackDump = StackDumpCreator::create(*node);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+    auto iterator = serializedQueryTree->makeIterator();
+
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
+    auto*    wrapper = as_node<LabelWrapper>(new_node.get());
+    EXPECT_EQ(id[3], wrapper->getId());
+    EXPECT_EQ(2.5, wrapper->getLabelScore());
+    ASSERT_EQ(1u, wrapper->getChildren().size());
+    auto* string_term = as_node<StringTerm>(wrapper->getChildren()[0]);
+    EXPECT_TRUE(checkTerm(string_term, str[0], view[0], id[0], weight[0]));
+}
+
+TEST(QueryBuilderTest, label_wrapper_node_survives_protobuf_round_trip) {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    builder.add_label_wrapper(id[3], 2.5);
+    builder.addStringTerm(str[0], view[0], id[0], weight[0]);
+    Node::UP node = builder.build();
+
+    QueryToProtobuf converter;
+    auto            protoQueryTree = converter.serialize(*node);
+    auto            serializedQueryTree =
+        SerializedQueryTree::fromProtobuf(std::make_unique<decltype(protoQueryTree)>(protoQueryTree));
+
+    // via ProtoTreeConverter
+    auto  new_node = serializedQueryTree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
+    auto* wrapper = as_node<LabelWrapper>(new_node.get());
+    EXPECT_EQ(id[3], wrapper->getId());
+    EXPECT_EQ(2.5, wrapper->getLabelScore());
+    ASSERT_EQ(1u, wrapper->getChildren().size());
+    EXPECT_TRUE(checkTerm(as_node<StringTerm>(wrapper->getChildren()[0]), str[0], view[0], id[0], weight[0]));
+
+    // via ProtoTreeIterator
+    auto iterator = serializedQueryTree->makeIterator();
+    new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
+    wrapper = as_node<LabelWrapper>(new_node.get());
+    EXPECT_EQ(id[3], wrapper->getId());
+    EXPECT_EQ(2.5, wrapper->getLabelScore());
+    ASSERT_EQ(1u, wrapper->getChildren().size());
+    EXPECT_TRUE(checkTerm(as_node<StringTerm>(wrapper->getChildren()[0]), str[0], view[0], id[0], weight[0]));
+}
+
 TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(0);
@@ -809,7 +868,7 @@ TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
 }
 
 TEST(QueryBuilderTest, control_size_of_SimpleQueryStackDumpIterator) {
-    EXPECT_EQ(184u, sizeof(SimpleQueryStackDumpIterator));
+    EXPECT_EQ(192u, sizeof(SimpleQueryStackDumpIterator));
 }
 
 TEST(QueryBuilderTest, test_query_parsing_error) {

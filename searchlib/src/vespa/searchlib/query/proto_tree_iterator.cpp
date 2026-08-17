@@ -48,6 +48,8 @@ void walk(const QueryTreeItem& item, std::vector<TreeItem>& target) {
         return walk_children(item.item_and_not().children(), target);
     case IC::kItemRank:
         return walk_children(item.item_rank().children(), target);
+    case IC::kItemLabelWrapper:
+        return walk(item.item_label_wrapper().child(), target);
     case IC::kItemNear:
         return walk_children(item.item_near().children(), target);
     case IC::kItemOnear:
@@ -112,6 +114,14 @@ bool handle(const ItemAndNot& item, QueryStackIterator::Data& _d) {
 bool handle(const ItemRank& item, QueryStackIterator::Data& _d) {
     _d.itemType = ParseItem::ItemType::ITEM_RANK;
     _d.arity = item.children_size();
+    return true;
+}
+
+bool handle(const ItemLabelWrapper& item, QueryStackIterator::Data& _d) {
+    _d.itemType = ParseItem::ItemType::ITEM_LABEL_WRAPPER;
+    _d.arity = 1;
+    _d.uniqueId = item.unique_id();
+    _d.label_score = item.score();
     return true;
 }
 
@@ -461,6 +471,8 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_and_not(), _d);
     case IC::kItemRank:
         return handle(qsi.item_rank(), _d);
+    case IC::kItemLabelWrapper:
+        return handle(qsi.item_label_wrapper(), _d);
     case IC::kItemNear:
         return handle(qsi.item_near(), _d);
     case IC::kItemOnear:

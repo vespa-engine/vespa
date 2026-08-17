@@ -63,7 +63,7 @@
         <antlr4.vespa.version>4.13.2</antlr4.vespa.version>
         <apache.httpclient.vespa.version>4.5.14</apache.httpclient.vespa.version>
         <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
-        <apache.httpclient5.vespa.version>5.6.2</apache.httpclient5.vespa.version>
+        <apache.httpclient5.vespa.version>5.6.4</apache.httpclient5.vespa.version>
         <apache.httpcore5.vespa.version>5.4.3</apache.httpcore5.vespa.version>
         <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
         <asm.vespa.version>9.10.1</asm.vespa.version>
@@ -114,12 +114,11 @@
         <jieba.vespa.version>1.0.2</jieba.vespa.version>
         <jimfs.vespa.version>1.3.1</jimfs.vespa.version>
         <jna.vespa.version>5.19.0</jna.vespa.version>
-        <joda-time.vespa.version>2.14.3</joda-time.vespa.version>
         <junit.vespa.version>5.10.2</junit.vespa.version>
         <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <jllama.vespa.version>4.7.10</jllama.vespa.version>
-        <kotlin.vespa.version>2.1.21</kotlin.vespa.version>
+        <kotlin.vespa.version>2.4.10</kotlin.vespa.version>
         <kotlin-stdlib-common.vespa.version>1.9.25</kotlin-stdlib-common.vespa.version>
         <luben.zstd.vespa.version>1.5.7-13</luben.zstd.vespa.version>
         <lucene.vespa.version>9.12.3</lucene.vespa.version>
@@ -131,13 +130,13 @@
         <micrometer.vespa.version>1.17.0</micrometer.vespa.version>
         <mockito.vespa.version>5.23.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.1</mojo-executor.vespa.version>
-        <netty.vespa.version>4.2.16.Final</netty.vespa.version>
-        <netty-tcnative.vespa.version>2.0.78.Final</netty-tcnative.vespa.version>
+        <netty.vespa.version>4.2.17.Final</netty.vespa.version>
+        <netty-tcnative.vespa.version>2.0.81.Final</netty-tcnative.vespa.version>
         <okhttp.vespa.version>4.12.0</okhttp.vespa.version>
         <onnxruntime.vespa.version>1.26.0</onnxruntime.vespa.version>
         <openai-java.vespa.version>1.6.1</openai-java.vespa.version>
         <opentelemetry.vespa.version>1.63.0</opentelemetry.vespa.version>
-        <opennlp.vespa.version>2.5.10</opennlp.vespa.version>
+        <opennlp.vespa.version>2.5.11</opennlp.vespa.version>
         <opentest4j.vespa.version>1.3.0</opentest4j.vespa.version>
         <org.apache.datasketches.vespa.version>7.0.1</org.apache.datasketches.vespa.version>
         <org.apache.datasketches.memory.vespa.version>4.1.0</org.apache.datasketches.memory.vespa.version>
@@ -164,7 +163,7 @@
         <velocity.vespa.version>2.4.1</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
         <wiremock.vespa.version>3.13.2</wiremock.vespa.version>
-        <woodstox.vespa.version>7.2.1</woodstox.vespa.version>
+        <woodstox.vespa.version>7.2.2</woodstox.vespa.version>
         <stax2-api.vespa.version>4.2.2</stax2-api.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.27ea1</zero-allocation-hashing.vespa.version>
@@ -193,7 +192,7 @@
         <maven-failsafe-plugin.vespa.version>3.5.6</maven-failsafe-plugin.vespa.version>
         <maven-gpg-plugin.vespa.version>3.2.8</maven-gpg-plugin.vespa.version>
         <maven-install-plugin.vespa.version>3.1.4</maven-install-plugin.vespa.version>
-        <maven-jar-plugin.vespa.version>3.5.0</maven-jar-plugin.vespa.version>
+        <maven-jar-plugin.vespa.version>3.5.1</maven-jar-plugin.vespa.version>
         <maven-javadoc-plugin.vespa.version>3.12.0</maven-javadoc-plugin.vespa.version>
         <maven-plugin-api.vespa.version>${maven-core.vespa.version}</maven-plugin-api.vespa.version>
         <maven-plugin-tools.vespa.version>3.15.2</maven-plugin-tools.vespa.version>

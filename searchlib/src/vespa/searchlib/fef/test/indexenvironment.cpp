@@ -19,6 +19,9 @@ const FieldInfo* IndexEnvironment::getField(uint32_t id) const {
 }
 
 const FieldInfo* IndexEnvironment::getFieldByName(const string& name) const {
+    if (name.empty()) {
+        return nullptr; // the "no field" is not name addressable
+    }
     for (const auto& field : _fields) {
         if (field.name() == name) {
             return &field;

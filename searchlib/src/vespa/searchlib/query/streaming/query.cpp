@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "query.h"
 
+#include "label_wrapper_query_node.h"
 #include "near_query_node.h"
 #include "onear_query_node.h"
 #include "query_builder.h"
@@ -128,6 +129,8 @@ std::unique_ptr<QueryConnector> QueryConnector::create(ParseItem::ItemType      
         return std::make_unique<ONearQueryNode>(factory.get_element_gap_inspector());
     case search::ParseItem::ITEM_RANK:
         return std::make_unique<RankWithQueryNode>();
+    case search::ParseItem::ITEM_LABEL_WRAPPER:
+        return std::make_unique<LabelWrapperQueryNode>(factory.create());
     default:
         return nullptr;
     }

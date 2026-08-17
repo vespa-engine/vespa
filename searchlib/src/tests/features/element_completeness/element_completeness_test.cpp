@@ -123,7 +123,7 @@ TEST(ElementCompletenessTest, require_that_default_config_parameters_are_correct
     DummyDependencyHandler       deps(f1);
     f1.setName(vespalib::make_string("%s(foo)", f1.getBaseName().c_str()));
     EXPECT_TRUE(((Blueprint&)f1).setup(f2.indexEnv, std::vector<std::string>(1, "foo")));
-    EXPECT_EQ(0u, f1.getParams().fieldId);
+    EXPECT_EQ(1u, f1.getParams().fieldId);
     EXPECT_EQ(0.5, f1.getParams().fieldCompletenessImportance);
 }
 

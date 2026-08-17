@@ -5,7 +5,8 @@
 #include "distance_calculator_bundle.h"
 #include "utils.h"
 
-#include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchcommon/common/datatype.h>
+#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/util/stash.h>
@@ -76,7 +77,7 @@ ClosenessBlueprint::ClosenessBlueprint()
       _scaleDistance(5.0 * 9013.305), // default value (about 5 km)
       _halfResponse(1),
       _arg_string(),
-      _attr_id(search::index::Schema::UNKNOWN_FIELD_ID),
+      _attr_id(fef::IllegalFieldId),
       _use_geo_pos(false),
       _use_nns_tensor(false),
       _use_item_label(false) {

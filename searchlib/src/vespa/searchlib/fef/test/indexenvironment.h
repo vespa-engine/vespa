@@ -64,6 +64,11 @@ public:
     /** Returns a reference to the list of fields of this. */
     std::vector<FieldInfo>& getFields() { return _fields; }
 
+    /** Adds a new field to the list of fields of this. */
+    void addField(FieldType type, FieldInfo::CollectionType collection, const std::string& name) {
+        _fields.emplace_back(type, collection, name, _fields.size());
+    }
+
     /** Returns a const reference to the list of fields of this. */
     const std::vector<FieldInfo>& getFields() const { return _fields; }
 
@@ -86,7 +91,7 @@ public:
 
 private:
     Properties             _properties;
-    std::vector<FieldInfo> _fields;
+    std::vector<FieldInfo> _fields{FieldInfo::no_field()};
     AttributeMap           _attrMap;
     TableManager           _tableMan;
     ConstantsMap           _constants;

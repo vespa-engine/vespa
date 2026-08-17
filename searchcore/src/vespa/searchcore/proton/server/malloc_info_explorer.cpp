@@ -3,8 +3,8 @@
 #include "malloc_info_explorer.h"
 
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/detect_malloc_impl.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <cassert>
 #include <cstdio>
