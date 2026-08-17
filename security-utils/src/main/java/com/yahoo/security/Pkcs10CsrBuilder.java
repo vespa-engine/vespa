@@ -34,9 +34,13 @@ import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
 public class Pkcs10CsrBuilder {
 
     /**
-     * BouncyCastle 1.85 and later enforce the RFC 5280 ub-common-name upper bound (64) when parsing a DN string.
-     * Athenz role certificates legitimately carry longer common names ('{@code <domain>:role.<role>}'), so encode
-     * the common name without that check. Produces the same encoding as {@link BCStyle} for names within the bound.
+     * BouncyCastle 1.85 and later enforce the RFC 5280 ub-common-name upper bound (64) when encoding a DN string.
+     * That enforcement is deliberate (https://github.com/bcgit/bc-java/issues/750): a longer common name is not
+     * RFC compliant. Athenz role certificate subjects are '{@code <domain>:role.<role>}', which exceeds the bound,
+     * is not ours to shorten, and is already in use, so opt out of the check for the common name rather than fail
+     * to request the certificate. Common names within the bound are encoded exactly as {@link BCStyle} does.
+     * Handing the {@link X500Principal} to the request builder would also avoid the check, but reverses the RDN
+     * order of the subject.
      */
     private static final X500NameStyle LENIENT_COMMON_NAME_STYLE = new BCStyle() {
         @Override
