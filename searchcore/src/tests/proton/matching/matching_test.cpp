@@ -790,7 +790,7 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
                                     .normalize();
             EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
         }
-        // and slicing a cell out of it evaluates in the backend 
+        // and slicing a cell out of it evaluates in the backend
         EXPECT_FLOAT_EQ(values[slice_idx].as_double(), t1_score);
     }
 }
@@ -999,7 +999,7 @@ TEST_F(MatchingTest, require_that_grouping_is_performed_with_multi_threaded_matc
             gresult.deserialize(is);
             Grouping gexpect;
             gexpect.setRoot(Group().addResult(
-                SumAggregationResult().setExpression(createAttr()).setResult(Int64ResultNode(4500))));
+                SumAggregationResult().setExpression(createAttr()).resultForUnitTest(Int64ResultNode(4500))));
             EXPECT_EQ(gexpect.root().asString(), gresult.root().asString());
         }
         EXPECT_GT(world.matchingStats.groupingTimeAvg(), 0.0000001);

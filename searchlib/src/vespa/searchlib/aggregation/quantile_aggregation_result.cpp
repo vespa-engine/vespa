@@ -40,11 +40,13 @@ void QuantileAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) c
     visit(visitor, "extension", _extension);
 }
 
-void QuantileAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
+void QuantileAggregationResult::onPrepare(const ResultNode& result) {
     (void)result;
-    if (useForInit) {
-        LOG(warning, "useForInit was true. Should not happen for QuantileAggregationResult.");
-    }
+}
+
+void QuantileAggregationResult::initForUnitTest(const ResultNode& result) {
+    (void)result;
+    LOG(warning, "initForUnitTest was called. Should not happen for QuantileAggregationResult.");
 }
 
 void QuantileAggregationResult::onMerge(const AggregationResult& b) {

@@ -20,7 +20,8 @@ public:
 
 private:
     const ResultNode& onGetRank() const override { return getAverage(); }
-    void onPrepare(const ResultNode& result, bool useForInit) override;
+    void onPrepare(const ResultNode& result) override;
+    void initForUnitTest(const ResultNode& result) override;
     NumericResultNode::CP         _sum;
     uint64_t                      _count;
     mutable NumericResultNode::CP _averageScratchPad;
