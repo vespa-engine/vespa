@@ -1,6 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.configserver.option;
 
+import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneInfo;
+
 import java.time.Duration;
 import java.util.Optional;
 
@@ -29,9 +36,20 @@ public interface ConfigOptions {
     Optional<String> environment();
     Optional<String> region();
     Optional<String> system();
-    default Optional<String> cloud() { return Optional.empty(); }
+    Optional<String> cloud();
     Optional<Boolean> useVespaVersionInRequest();
     String zooKeeperSnapshotMethod();
     Integer zookeeperJuteMaxBuffer(); // in bytes
+
+    default ZoneInfo toZoneInfo() {
+        if (!hostedVespa().orElse(false)) return ZoneInfo.from(Zone.defaultZone());
+
+        return new ZoneInfo(cloud().map(CloudName::from).orElse(CloudName.DEFAULT),
+                            system().map(SystemName::from).orElse(SystemName.defaultSystem()),
+                            environment().map(Environment::from).orElse(Environment.defaultEnvironment()),
+                            region().map(RegionName::from).orElse(RegionName.defaultName()));
+    }
+
+
 
 }

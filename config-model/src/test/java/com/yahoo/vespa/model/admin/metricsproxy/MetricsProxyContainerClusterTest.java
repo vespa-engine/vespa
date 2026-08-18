@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_FILE;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.zoneString;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_INSTANCE;
@@ -103,7 +102,7 @@ public class MetricsProxyContainerClusterTest {
         ApplicationDimensionsConfig config = getApplicationDimensionsConfig(hostedModel);
 
         assertEquals(Zone.defaultZone().system().value(), config.dimensions(AppDimensionNames.SYSTEM));
-        assertEquals(zoneString(Zone.defaultZone()), config.dimensions(PublicDimensions.ZONE));
+        assertEquals(Zone.defaultZone().systemLocalValue(), config.dimensions(PublicDimensions.ZONE));
         assertEquals(MY_TENANT, config.dimensions(AppDimensionNames.TENANT));
         assertEquals(MY_APPLICATION, config.dimensions(AppDimensionNames.APPLICATION));
         assertEquals(MY_INSTANCE, config.dimensions(AppDimensionNames.INSTANCE));

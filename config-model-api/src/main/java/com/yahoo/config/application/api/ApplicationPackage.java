@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -129,7 +130,7 @@ public interface ApplicationPackage {
      * Returns information about a file
      *
      * @param relativePath the relative path of the file within this application package.
-     * @return information abut the file, returned whether or not the file exists
+     * @return information abut the file, returned whether the file exists or not
      */
     ApplicationFile getFile(Path relativePath);
 
@@ -224,16 +225,21 @@ public interface ApplicationPackage {
      */
     Collection<NamedReader> getSchemas();
 
+    @Deprecated // TODO: Remove after August 2026
+    default ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
+        return preprocess(ZoneInfo.from(zone), logger);
+    }
+
     /**
      * Preprocess an application for a given zone and return a new application package pointing to the preprocessed
-     * application package. This is the entry point for the multi environment application package support. This method
+     * application package. This is the entry point for the multienvironment application package support. This method
      * will not mutate the existing application package.
      *
-     * @param zone a valid {@link Zone} instance, used to decide which parts of services to keep and remove
+     * @param zone a valid {@link ZoneInfo} instance, used to decide which parts of services to keep and remove
      * @param logger a {@link DeployLogger} to add output that will be returned to the user
      * @return a new application package instance pointing to a new location
      */
-    default ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
+    default ApplicationPackage preprocess(ZoneInfo zone, DeployLogger logger) throws IOException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");
     }
 

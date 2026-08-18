@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import org.junit.Rule;
@@ -43,7 +44,7 @@ public class FilesApplicationPackageTest {
 
         Zone zone = new Zone(Cloud.builder().name(CloudName.AWS).build(),
                              SystemName.Public, Environment.dev, RegionName.defaultName());
-        ApplicationPackage processed = app.preprocess(zone,
+        ApplicationPackage processed = app.preprocess(ZoneInfo.from(zone),
                                                       new BaseDeployLogger());
         assertTrue(new File(appDir, ".preprocessed").exists());
         String expectedServices = """
@@ -134,7 +135,7 @@ public class FilesApplicationPackageTest {
         Files.delete(new File(appDir, "services.xml").toPath());
         FilesApplicationPackage app = FilesApplicationPackage.fromDir(appDir, Map.of());
         var exception = assertThrows(IllegalArgumentException.class,
-                                     () -> app.preprocess(new Zone(Environment.dev, RegionName.defaultName()), new BaseDeployLogger()));
+                                     () -> app.preprocess(ZoneInfo.from(new Zone(Environment.dev, RegionName.defaultName())), new BaseDeployLogger()));
         String message = exception.getMessage();
         assertTrue(message.startsWith("services.xml does not exist in application package"));
         assertTrue(message.contains("There are 4 files in the directory"));

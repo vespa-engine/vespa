@@ -244,7 +244,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private Map<String, String> applicationDimensions() {
         Map<String, String> dimensions = new LinkedHashMap<>();
         dimensions.put(SYSTEM, getZone().system().value());
-        dimensions.put(PublicDimensions.ZONE, zoneString(getZone()));
+        dimensions.put(PublicDimensions.ZONE, getZone().systemLocalValue());
         dimensions.put(PublicDimensions.APPLICATION_ID, serializeWithDots(applicationId));
         dimensions.put(TENANT, applicationId.tenant().value());
         dimensions.put(APPLICATION, applicationId.application().value());
@@ -256,10 +256,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     // ApplicationId uses ':' as separator.
     private static String serializeWithDots(ApplicationId applicationId) {
         return applicationId.serializedForm().replace(':', '.');
-    }
-
-    static String zoneString(Zone zone) {
-        return zone.environment().value() + "." + zone.region().value();
     }
 
 }
