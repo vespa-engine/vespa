@@ -18,6 +18,9 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
         auto               comp_left = _enumStore.make_folded_comparator(left.c_str());
         auto               comp_right = _enumStore.make_folded_comparator(right.c_str());
         this->lookupRange(comp_left, comp_right);
+        if (this->_uniqueValues == 1u) {
+            this->lookupSingle();
+        }
     }
 }
 
