@@ -103,7 +103,7 @@ public class Zone {
 
     /** Do not use */
     public static Zone defaultZone() {
-        return new Zone(Cloud.defaultCloud(), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
+        return new Zone(Cloud.defaultCloud(), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName(), List.of());
     }
 
     @Override

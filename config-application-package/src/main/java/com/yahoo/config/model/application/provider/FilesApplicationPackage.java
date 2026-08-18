@@ -18,6 +18,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
@@ -472,7 +473,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     @Override
-    public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
+    public ApplicationPackage preprocess(ZoneInfo zone, DeployLogger logger) throws IOException {
         return preprocessor.preprocess(zone);
     }
 

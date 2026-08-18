@@ -6,16 +6,11 @@ import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.model.ZoneInfo;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions.ConfigServer;
@@ -54,7 +49,7 @@ public class ConfigserverCluster extends TreeConfigProducer
         // If we are in a config server cluster the correct zone is propagated through cloud config options,
         // not through config to deployment options (see StandaloneContainerApplication.java),
         // so we need to propagate the zone options into the container from here
-        containerCluster.setZone(ZoneInfo.from(options));
+        containerCluster.setZone(options.toZoneInfo());
     }
 
     @Override

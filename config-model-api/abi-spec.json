@@ -127,7 +127,8 @@
       "public java.util.Map getFileRegistries()",
       "public java.util.Map legacyOverrides()",
       "public abstract java.util.Collection getSchemas()",
-      "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.Zone, com.yahoo.config.application.api.DeployLogger)"
+      "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.Zone, com.yahoo.config.application.api.DeployLogger)",
+      "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.zone.ZoneInfo, com.yahoo.config.application.api.DeployLogger)"
     ],
     "fields" : [
       "public static final java.lang.String HOSTS",
