@@ -32,6 +32,9 @@ public:
     StringRangeMatcher(StringRangeMatcher&&) noexcept;
     ~StringRangeMatcher();
 
+    const std::string& get_left() const { return _left; }
+    const std::string& get_right() const { return _right; }
+
 protected:
     bool isValid() const;
     bool match(const char* src) const;
