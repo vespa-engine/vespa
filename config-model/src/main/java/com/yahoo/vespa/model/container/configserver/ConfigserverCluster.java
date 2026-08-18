@@ -15,6 +15,7 @@ import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.ZoneInfo;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions.ConfigServer;
@@ -53,10 +54,7 @@ public class ConfigserverCluster extends TreeConfigProducer
         // If we are in a config server cluster the correct zone is propagated through cloud config options,
         // not through config to deployment options (see StandaloneContainerApplication.java),
         // so we need to propagate the zone options into the container from here
-        Environment environment = options.environment().isPresent() ? Environment.from(options.environment().get()) : Environment.defaultEnvironment();
-        RegionName region = options.region().isPresent() ? RegionName.from(options.region().get()) : RegionName.defaultName();
-        SystemName system = options.system().isPresent() ? SystemName.from(options.system().get()) : SystemName.defaultSystem();
-        containerCluster.setZone(new Zone(system, environment, region));
+        containerCluster.setZone(ZoneInfo.from(options));
     }
 
     @Override

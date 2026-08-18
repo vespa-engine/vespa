@@ -70,6 +70,10 @@ public class TestOptions implements ConfigOptions {
     public Optional<String> system() { return Optional.empty(); }
 
     @Override
+    public Optional<String> cloud() { return Optional.empty(); }
+
+
+    @Override
     public Optional<Boolean> useVespaVersionInRequest() { return useVespaVersionInRequest; }
 
     @Override

@@ -41,6 +41,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.ZoneInfo;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
@@ -166,7 +167,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ApplicationMetaData applicationMetaData = null;
 
     /** The zone this is deployed in, or the default zone if not on hosted Vespa */
-    private Zone zone;
+    private ZoneInfo zone;
 
     private String jvmGCOptions = null;
 
@@ -180,7 +181,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
-        this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
+        this.zone = ZoneInfo.from(deployState != null ? deployState.zone() : Zone.defaultZone());
         this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
         this.compressionType = "zstd";
         opentelemetrySdk = deployState.featureFlags().opentelemetrySdk();
@@ -213,10 +214,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(getName()); }
 
-    public void setZone(Zone zone) {
-        this.zone = zone;
-    }
-    public Zone getZone() {
+    public void setZone(ZoneInfo zone) { this.zone = zone; }
+
+    public ZoneInfo getZone() {
         return zone;
     }
 
@@ -697,7 +697,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         builder.system(zone.system().value());
         builder.environment(zone.environment().value());
         builder.region(zone.region().value());
-        builder.cloud(zone.cloud().name().value());
+        builder.cloud(zone.cloud().value());
     }
 
     @Override
