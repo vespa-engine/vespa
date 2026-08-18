@@ -26,10 +26,10 @@ bool StringRangeMatcher::isValid() const {
 bool StringRangeMatcher::match(const char* src) const {
     if (_cased) {
         return FoldedStringCompare::compareFolded<false, false>(_left.c_str(), src) < 0 &&
-               FoldedStringCompare::compare(src, _right.c_str()) < 0;
+               FoldedStringCompare::compareFolded<false, false>(src, _right.c_str()) < 0;
     } else {
         return FoldedStringCompare::compareFolded<true, true>(_left.c_str(), src) < 0 &&
-               FoldedStringCompare::compare(src, _right.c_str()) < 0;
+               FoldedStringCompare::compareFolded<true, true>(src, _right.c_str()) < 0;
     }
 }
 
