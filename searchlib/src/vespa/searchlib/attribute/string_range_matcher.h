@@ -21,8 +21,10 @@ class StringRangeMatcher {
 private:
     std::unique_ptr<QueryTermSimple> _query_term;
 
-    std::string _low;
-    std::string _high;
+    std::string _left;
+    std::string _right;
+
+    bool _cased;
 
 public:
     StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased,
