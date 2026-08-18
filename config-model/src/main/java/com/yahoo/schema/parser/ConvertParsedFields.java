@@ -253,7 +253,7 @@ public class ConvertParsedFields {
     }
 
     private void convertFastMapSearch(Schema schema, SDField field) {
-        if (!(field.getDataType() instanceof MapDataType)) {
+        if (!(field.getDataType() instanceof MapDataType mapType)) {
             throw new IllegalArgumentException(
                     String.format(
                             "For schema '%s', field '%s': 'map: fast-search' requires a map field, but the type is %s.",
@@ -261,6 +261,8 @@ public class ConvertParsedFields {
                             field.getName(),
                             field.getDataType().getName()));
         }
+        validateFastMapSubtype(schema, field, mapType.getKeyType(), "key");
+        validateFastMapSubtype(schema, field, mapType.getValueType(), "value");
         if (!properties.featureFlags().fastMapSearch()) {
             throw new IllegalArgumentException(
                     String.format("For schema '%s', field '%s': 'map: fast-search' is an unfinished feature that " +
@@ -269,6 +271,23 @@ public class ConvertParsedFields {
                                   field.getName()));
         }
         field.setFastMapSearch(true);
+    }
+
+    private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String keyOrValue) {
+        if (!isSupportedFastMapKeyValueType(type)) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "For schema '%s', field '%s': 'map: fast-search' requires %s to be of type string or int, but the type is %s.",
+                            schema.getName(),
+                            field.getName(),
+                            keyOrValue,
+                            type.getName()));
+        }
+    }
+
+    private boolean isSupportedFastMapKeyValueType(DataType dataType) {
+        return dataType.equals(DataType.STRING)
+                || dataType.equals(DataType.INT);
     }
 
     private void convertStructField(Schema schema, SDField field, ParsedField parsed) {
