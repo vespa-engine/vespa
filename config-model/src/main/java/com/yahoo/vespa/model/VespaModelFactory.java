@@ -19,6 +19,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.SidecarProvider;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
@@ -30,7 +31,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.Validator;
-import com.yahoo.vespa.model.container.xml.SidecarProvider;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -62,22 +62,19 @@ public class VespaModelFactory implements ModelFactory {
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<Validator> additionalValidators,
+                             ComponentRegistry<SidecarProvider> sidecarProviders,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
-        List<SidecarProvider> sidecarProviders = new ArrayList<>();
         for (ConfigModelPlugin plugin : pluginRegistry.allComponents()) {
             if (plugin instanceof ConfigModelBuilder p) {
                 modelBuilders.add(p);
             }
-            if (plugin instanceof SidecarProvider s) {
-                sidecarProviders.add(s);
-            }
         }
-        if (sidecarProviders.size() > 1)
-            throw new IllegalStateException("At most one sidecar provider may be registered, got " + sidecarProviders);
+        if (sidecarProviders.allComponents().size() > 1)
+            throw new IllegalStateException("At most one sidecar provider may be registered, got " + sidecarProviders.allComponents());
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
-        this.sidecarProvider = sidecarProviders.stream().findFirst();
+        this.sidecarProvider = sidecarProviders.allComponents().stream().findFirst();
         this.modelImporters = List.of(
                 new VespaImporter(),
                 new OnnxImporter(),
@@ -87,6 +84,13 @@ public class VespaModelFactory implements ModelFactory {
         this.additionalValidators = List.copyOf(additionalValidators.allComponents());
 
         this.clock = Clock.systemUTC();
+    }
+
+    /** Creates a factory without a sidecar provider, for deployment forms without sidecar support. */
+    public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
+                             ComponentRegistry<Validator> additionalValidators,
+                             Zone zone) {
+        this(pluginRegistry, additionalValidators, new ComponentRegistry<>(), zone);
     }
 
     // For testing only

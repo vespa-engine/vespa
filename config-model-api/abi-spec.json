@@ -1878,6 +1878,19 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.SidecarProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.util.List getSidecars(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.NodeResources, boolean)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.config.model.api.SuperModel" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

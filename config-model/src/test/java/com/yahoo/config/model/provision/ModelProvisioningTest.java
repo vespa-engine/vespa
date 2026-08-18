@@ -7,14 +7,19 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.OnnxModelCost;
+import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SidecarSpec;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
@@ -2663,6 +2668,58 @@ public class ModelProvisioningTest {
         var memoryPercentage = cluster.getMemoryPercentage();
         assertTrue(memoryPercentage.isPresent());
         assertEquals(new ContainerCluster.JvmMemoryPercentage(33, OptionalInt.of(27), OptionalDouble.of(1.105)), memoryPercentage.get());
+    }
+
+    @Test
+    public void testSidecarsFromSidecarProviderAreProvisioned() {
+        var services = """
+                <?xml version='1.0' encoding='utf-8' ?>
+                <services>
+                  <container version='1.0' id='container1'>
+                    <nodes count='1'/>
+                    <component id="modernbert" type="hugging-face-embedder">
+                        <transformer-model model-id="nomic-ai-modernbert"></transformer-model>
+                    </component>
+                  </container>
+                </services>
+                """;
+
+        var properties = new TestProperties();
+        // Triton is enabled with a feature flag.
+        properties.setUseTriton(true);
+
+        var tester = new VespaModelTester();
+        tester.addHosts(1);
+        tester.setModelProperties(properties);
+        // Sidecars are provisioned in Cloud only.
+        tester.setHosted(true);
+
+        var zone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
+
+        // Triton is enabled only for apps with ONNX models.
+        // Mocking OnnxModelCost since DisabledOnnxModelCost used by default returns no models.
+        var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
+            @Override
+            public Map<String, ModelInfo> models() {
+                return Map.of("modernbert", new ModelInfo("modernbert", 1, 1, OnnxModelOptions.empty()));
+            }
+        };
+
+        // What the sidecar containers look like is decided by the sidecar provider, injected e.g. in hosted Vespa.
+        var sidecar = SidecarSpec.builder()
+                .id(0)
+                .name("test-sidecar")
+                .image(DockerImage.fromString("example.com/test/sidecar:1.0"))
+                .minCpu(1)
+                .build();
+
+        var deployStateBuilder = deployStateWithClusterEndpoints("container1")
+                .onnxModelCost(mockModelCost)
+                .sidecarProvider((clusterId, minNodeResources, needTriton) -> needTriton ? List.of(sidecar) : List.of());
+        var model = tester.createModel(zone, services, true, deployStateBuilder);
+
+        var clusterSpec = model.provisioned().clusters().get(ClusterSpec.Id.from("container1"));
+        assertEquals(List.of(sidecar), clusterSpec.sidecars());
     }
 
     @Test

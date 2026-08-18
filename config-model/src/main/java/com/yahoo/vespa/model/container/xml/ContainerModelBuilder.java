@@ -266,7 +266,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (deployState.getSidecarProvider().isEmpty()) return List.of();
 
         var sidecars = deployState.getSidecarProvider().get()
-                .getSidecars(cluster, nodesSpecification, deployState, shouldUseTriton(cluster, deployState));
+                .getSidecars(cluster.id(),
+                             nodesSpecification.minResources().nodeResources(),
+                             shouldUseTriton(cluster, deployState));
         if (sidecars.stream().map(SidecarSpec::id).distinct().count() < sidecars.size()
                 || sidecars.stream().map(SidecarSpec::name).distinct().count() < sidecars.size())
             throw new IllegalArgumentException("Sidecars in " + cluster + " must have unique ids and names: " + sidecars);

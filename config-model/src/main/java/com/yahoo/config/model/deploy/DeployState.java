@@ -20,6 +20,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
+import com.yahoo.config.model.api.SidecarProvider;
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -44,7 +45,6 @@ import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
-import com.yahoo.vespa.model.container.xml.SidecarProvider;
 
 import java.io.File;
 import java.io.FileNotFoundException;

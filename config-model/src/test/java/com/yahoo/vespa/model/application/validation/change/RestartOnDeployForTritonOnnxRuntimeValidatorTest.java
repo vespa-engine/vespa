@@ -145,7 +145,7 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
             };
             deployStateBuilder.onnxModelCost(mockModelCost);
             deployStateBuilder.zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()));
-            deployStateBuilder.sidecarProvider((cluster, nodes, state, needTriton) -> List.of());
+            deployStateBuilder.sidecarProvider((clusterId, minNodeResources, needTriton) -> List.of());
         }
 
         return deployStateBuilder;
