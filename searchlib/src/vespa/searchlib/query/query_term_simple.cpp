@@ -218,6 +218,16 @@ QueryTermSimple::QueryTermSimple(Type type, std::unique_ptr<NumericRangeSpec> ra
     _numeric_range = std::move(range);
 }
 
+QueryTermSimple::QueryTermSimple(Type type, std::unique_ptr<StringRangeSpec> range)
+    : _type(type),
+      _valid(range),
+      _fuzzy_prefix_match(false),
+      _term("<range>"),
+      _fuzzy_max_edit_distance(0),
+      _fuzzy_prefix_lock_length(0) {
+    _string_range = std::move(range);
+}
+
 std::string QueryTermSimple::getClassName() const {
     return vespalib::getClassName(*this);
 }

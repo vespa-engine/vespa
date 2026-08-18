@@ -3,6 +3,7 @@
 
 #include "numeric_range_spec.h"
 #include "query_normalization.h"
+#include "string_range_spec.h"
 
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/memory.h>
@@ -36,6 +37,7 @@ public:
     QueryTermSimple& operator=(QueryTermSimple&&) = delete;
     QueryTermSimple(const string& term_, Type type);
     QueryTermSimple(Type type, std::unique_ptr<NumericRangeSpec> range);
+    QueryTermSimple(Type type, std::unique_ptr<StringRangeSpec> range);
     virtual ~QueryTermSimple();
 
     /**
@@ -75,6 +77,7 @@ public:
 private:
     static NumericRangeSpec           emptyNumericRange;
     std::unique_ptr<NumericRangeSpec> _numeric_range = {};
+    std::unique_ptr<StringRangeSpec>  _string_range = {};
     bool getRangeInternal(int64_t& low, int64_t& high) const noexcept;
     template <typename N> RangeResult<N> getIntegerRange() const noexcept;
     template <typename N> RangeResult<N> getFloatRange() const noexcept;
