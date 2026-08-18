@@ -46,7 +46,7 @@ SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP                     
     if (qTerm && qTerm->getRange<std::string>().valid) {
         return std::make_unique<attribute::SingleEnumSearchContext<
             const char*, attribute::StringSearchContextT<attribute::StringRangeMatcher>>>(
-            attribute::StringRangeMatcher(std::move(qTerm), false, vespalib::FuzzyMatchingAlgorithm::BruteForce),
+            attribute::StringRangeMatcher(std::move(qTerm), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce),
             *this, this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
     } else {
         return std::make_unique<attribute::SingleStringEnumHintSearchContext>(
