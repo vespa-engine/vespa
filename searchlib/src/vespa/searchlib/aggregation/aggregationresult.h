@@ -90,7 +90,7 @@ private:
         }
     }
     virtual void onPrepare(const ResultNode& result) = 0;
-    // only used by unit tests, via setResult():
+    // only used by unit tests, via resultForUnitTest():
     virtual void initForUnitTest(const ResultNode& result) { onPrepare(result); }
     virtual void onMerge(const AggregationResult& b) = 0;
     virtual void onReset() = 0;
