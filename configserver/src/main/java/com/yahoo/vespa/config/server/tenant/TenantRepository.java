@@ -230,6 +230,8 @@ public class TenantRepository {
                                                                   TimeUnit.SECONDS);
     }
 
+    public Zone zone() { return zone; }
+
     private ExecutorService createModelBuilderExecutor() {
         final long GB = 1024*1024*1024;
         long maxHeap = Runtime.getRuntime().maxMemory();

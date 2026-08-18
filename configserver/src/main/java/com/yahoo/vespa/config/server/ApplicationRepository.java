@@ -1312,9 +1312,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Zone zone() {
-        return new Zone(SystemName.from(configserverConfig.system()),
-                        Environment.from(configserverConfig.environment()),
-                        RegionName.from(configserverConfig.region()));
+        return tenantRepository.zone();
     }
 
     public Clock clock() { return clock; }
