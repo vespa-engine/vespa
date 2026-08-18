@@ -593,7 +593,7 @@ func extractError(reader io.Reader) string {
 		// If message is longer than the limit, break colons with newline.
 		message := response["message"].(string)
 		if len(message) > 120 {
-			return strings.ReplaceAll(message, ": ", ":\n")
+			return strings.ReplaceAll(message, ": ", ":\n\t")
 		} else {
 			return message
 		}
