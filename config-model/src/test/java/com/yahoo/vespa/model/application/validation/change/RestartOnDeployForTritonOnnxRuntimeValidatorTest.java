@@ -136,7 +136,6 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
     private static DeployState.Builder deployStateBuilder(boolean useTriton) {
         var deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setUseTriton(useTriton));
 
-        // Need a model and cloud to enable Triton.
         if (useTriton) {
             var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
                 @Override
@@ -146,6 +145,7 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
             };
             deployStateBuilder.onnxModelCost(mockModelCost);
             deployStateBuilder.zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()));
+            deployStateBuilder.sidecarProvider((clusterId, minNodeResources, needTriton) -> List.of());
         }
 
         return deployStateBuilder;

@@ -19,6 +19,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.SidecarProvider;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
@@ -55,11 +56,13 @@ public class VespaModelFactory implements ModelFactory {
     private final Clock clock;
     private final Version version;
     private final List<Validator> additionalValidators;
+    private final Optional<SidecarProvider> sidecarProvider;
 
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<Validator> additionalValidators,
+                             ComponentRegistry<SidecarProvider> sidecarProviders,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
@@ -68,7 +71,10 @@ public class VespaModelFactory implements ModelFactory {
                 modelBuilders.add(p);
             }
         }
+        if (sidecarProviders.allComponents().size() > 1)
+            throw new IllegalStateException("At most one sidecar provider may be registered, got " + sidecarProviders.allComponents());
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
+        this.sidecarProvider = sidecarProviders.allComponents().stream().findFirst();
         this.modelImporters = List.of(
                 new VespaImporter(),
                 new OnnxImporter(),
@@ -78,6 +84,13 @@ public class VespaModelFactory implements ModelFactory {
         this.additionalValidators = List.copyOf(additionalValidators.allComponents());
 
         this.clock = Clock.systemUTC();
+    }
+
+    /** Creates a factory without a sidecar provider, for deployment forms without sidecar support. */
+    protected VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
+                                ComponentRegistry<Validator> additionalValidators,
+                                Zone zone) {
+        this(pluginRegistry, additionalValidators, new ComponentRegistry<>(), zone);
     }
 
     // For testing only
@@ -96,6 +109,7 @@ public class VespaModelFactory implements ModelFactory {
         }
         this.modelImporters = List.of();
         this.additionalValidators = List.of();
+        this.sidecarProvider = Optional.empty();
         this.zone = zone;
         this.clock = clock;
     }
@@ -195,6 +209,7 @@ public class VespaModelFactory implements ModelFactory {
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
             .onnxModelCost(modelContext.onnxModelCost());
+        sidecarProvider.ifPresent(builder::sidecarProvider);
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);

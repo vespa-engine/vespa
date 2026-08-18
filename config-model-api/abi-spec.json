@@ -1445,7 +1445,6 @@
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",
-      "public java.lang.Object sidecarsForTest()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag useTritonFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
       "public int searchCoreMaxOutstandingMoveOps()",
@@ -1876,6 +1875,19 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.SidecarProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.util.List getSidecars(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.NodeResources, boolean)"
     ],
     "fields" : [ ]
   },
