@@ -6,6 +6,9 @@
 #include "singlestringpostattribute.h"
 #include "string_direct_posting_store_adapter.hpp"
 #include "string_posting_search_context.hpp"
+#include "string_range_matcher.h"
+#include "string_range_posting_search_context.h"
+#include "string_range_posting_search_context.hpp"
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
@@ -122,13 +125,22 @@ template <typename B>
 std::unique_ptr<attribute::SearchContext>
 SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP                     qTerm,
                                                  const attribute::SearchContextParams& params) const {
-    using BaseSC = attribute::SingleStringEnumSearchContext;
-    using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
-    bool   cased = this->get_match_is_cased();
-    auto   docid_limit = this->getCommittedDocIdLimit();
-    BaseSC base_sc(std::move(qTerm), cased, params.fuzzy_matching_algorithm(), *this,
-                   this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
-    return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
+    bool cased = this->get_match_is_cased();
+    auto docid_limit = this->getCommittedDocIdLimit();
+    if (qTerm && qTerm->get_string_range_spec()) {
+        using BaseSC = attribute::SingleStringEnumSearchContextT<attribute::StringRangeMatcher>;
+        using SC = attribute::StringRangePostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
+        BaseSC base_sc(std::move(qTerm), cased, params.fuzzy_matching_algorithm(), *this,
+                       this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
+        return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
+
+    } else {
+        using BaseSC = attribute::SingleStringEnumSearchContext;
+        using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
+        BaseSC base_sc(std::move(qTerm), cased, params.fuzzy_matching_algorithm(), *this,
+                       this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
+        return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
+    }
 }
 
 } // namespace search
