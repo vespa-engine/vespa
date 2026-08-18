@@ -87,9 +87,9 @@ public class VespaModelFactory implements ModelFactory {
     }
 
     /** Creates a factory without a sidecar provider, for deployment forms without sidecar support. */
-    public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
-                             ComponentRegistry<Validator> additionalValidators,
-                             Zone zone) {
+    protected VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
+                                ComponentRegistry<Validator> additionalValidators,
+                                Zone zone) {
         this(pluginRegistry, additionalValidators, new ComponentRegistry<>(), zone);
     }
 
