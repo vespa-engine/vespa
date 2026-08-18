@@ -156,6 +156,7 @@ vespa_add_library(searchlib_attribute OBJECT
     string_matcher.cpp
     string_posting_search_context.cpp
     string_range_matcher.cpp
+    string_range_posting_search_context.cpp
     string_search_context.cpp
     string_search_helper.cpp
     string_sort_blob_writer.cpp
