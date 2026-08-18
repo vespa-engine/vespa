@@ -861,7 +861,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (threadpoolElement == null) {
             cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(cluster));
         } else {
-            var options = ContainerThreadpoolOptionsBuilder.build(deployState, spec);
+            var options = ContainerThreadpoolSettingsBuilder.build(deployState, spec);
             cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(deployState, cluster, options));
         }
     }
@@ -1345,7 +1345,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                         searchElement);
         cluster.addComponent(searchHandler);
 
-        // Add as child to SearchHandler to get the correct chains config.
+        // Add as child to SearchHandler to get the correct 'chains' config.
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 

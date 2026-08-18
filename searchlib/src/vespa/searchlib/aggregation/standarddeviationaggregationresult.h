@@ -22,7 +22,7 @@ public:
 
 private:
     const ResultNode& onGetRank() const noexcept override { return getStandardDeviation(); }
-    void onPrepare(const ResultNode&, bool) override {};
+    void onPrepare(const ResultNode&) override {};
     const expression::NumericResultNode& getStandardDeviation() const noexcept;
 
     uint64_t                                _count;

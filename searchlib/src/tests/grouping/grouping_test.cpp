@@ -168,7 +168,7 @@ std::unique_ptr<AggregationResult> prepareAggr(const AggregationResult& aggr, Ex
 std::unique_ptr<ExpressionNode> prepareAggr(const AggregationResult& aggr, ExpressionNode::UP expr,
                                             const ResultNode& r) {
     auto prepared = prepareAggr(aggr, std::move(expr));
-    prepared->setResult(r);
+    prepared->resultForUnitTest(r);
     return prepared;
 }
 
@@ -378,64 +378,72 @@ TEST(GroupingTest, testAggregationLevels) {
 
     Group notDone;
     notDone.addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")));
-    // Hmm, do not need to prepare more than the levels needed.    .setResult(Int64ResultNode(0)));
+    // Hmm, do not need to prepare more than the levels needed.    .resultForUnitTest(Int64ResultNode(0)));
 
     Group done0;
-    done0.addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(20)))
-        .addChild(
-            Group()
-                .setId(Int64ResultNode(11))
-                .addResult(
-                    SumAggregationResult().setExpression(MU<AttributeNode>("attr2")).setResult(Int64ResultNode(0))));
+    done0
+        .addResult(
+            SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).resultForUnitTest(Int64ResultNode(20)))
+        .addChild(Group()
+                      .setId(Int64ResultNode(11))
+                      .addResult(SumAggregationResult()
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .resultForUnitTest(Int64ResultNode(0))));
 
     Group done1;
-    done1.addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(20)))
-        .addChild(
-            Group()
-                .setId(Int64ResultNode(11))
-                .addResult(
-                    SumAggregationResult().setExpression(MU<AttributeNode>("attr2")).setResult(Int64ResultNode(24)))
-                .addChild(Group()
-                              .setId(Int64ResultNode(12))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("attr3"))
-                                             .setResult(Int64ResultNode(0)))));
+    done1
+        .addResult(
+            SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).resultForUnitTest(Int64ResultNode(20)))
+        .addChild(Group()
+                      .setId(Int64ResultNode(11))
+                      .addResult(SumAggregationResult()
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .resultForUnitTest(Int64ResultNode(24)))
+                      .addChild(Group()
+                                    .setId(Int64ResultNode(12))
+                                    .addResult(SumAggregationResult()
+                                                   .setExpression(MU<AttributeNode>("attr3"))
+                                                   .resultForUnitTest(Int64ResultNode(0)))));
 
     Group done2;
-    done2.addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(20)))
-        .addChild(
-            Group()
-                .setId(Int64ResultNode(11))
-                .addResult(
-                    SumAggregationResult().setExpression(MU<AttributeNode>("attr2")).setResult(Int64ResultNode(24)))
-                .addChild(Group()
-                              .setId(Int64ResultNode(12))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("attr3"))
-                                             .setResult(Int64ResultNode(26)))
-                              .addChild(Group()
-                                            .setId(Int64ResultNode(13))
-                                            .addResult(SumAggregationResult()
-                                                           .setExpression(MU<AttributeNode>("attr1"))
-                                                           .setResult(Int64ResultNode(0))))));
+    done2
+        .addResult(
+            SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).resultForUnitTest(Int64ResultNode(20)))
+        .addChild(Group()
+                      .setId(Int64ResultNode(11))
+                      .addResult(SumAggregationResult()
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .resultForUnitTest(Int64ResultNode(24)))
+                      .addChild(Group()
+                                    .setId(Int64ResultNode(12))
+                                    .addResult(SumAggregationResult()
+                                                   .setExpression(MU<AttributeNode>("attr3"))
+                                                   .resultForUnitTest(Int64ResultNode(26)))
+                                    .addChild(Group()
+                                                  .setId(Int64ResultNode(13))
+                                                  .addResult(SumAggregationResult()
+                                                                 .setExpression(MU<AttributeNode>("attr1"))
+                                                                 .resultForUnitTest(Int64ResultNode(0))))));
 
     Group done3;
-    done3.addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).setResult(Int64ResultNode(20)))
-        .addChild(
-            Group()
-                .setId(Int64ResultNode(11))
-                .addResult(
-                    SumAggregationResult().setExpression(MU<AttributeNode>("attr2")).setResult(Int64ResultNode(24)))
-                .addChild(Group()
-                              .setId(Int64ResultNode(12))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("attr3"))
-                                             .setResult(Int64ResultNode(26)))
-                              .addChild(Group()
-                                            .setId(Int64ResultNode(13))
-                                            .addResult(SumAggregationResult()
-                                                           .setExpression(MU<AttributeNode>("attr1"))
-                                                           .setResult(Int64ResultNode(22))))));
+    done3
+        .addResult(
+            SumAggregationResult().setExpression(MU<AttributeNode>("attr0")).resultForUnitTest(Int64ResultNode(20)))
+        .addChild(Group()
+                      .setId(Int64ResultNode(11))
+                      .addResult(SumAggregationResult()
+                                     .setExpression(MU<AttributeNode>("attr2"))
+                                     .resultForUnitTest(Int64ResultNode(24)))
+                      .addChild(Group()
+                                    .setId(Int64ResultNode(12))
+                                    .addResult(SumAggregationResult()
+                                                   .setExpression(MU<AttributeNode>("attr3"))
+                                                   .resultForUnitTest(Int64ResultNode(26)))
+                                    .addChild(Group()
+                                                  .setId(Int64ResultNode(13))
+                                                  .addResult(SumAggregationResult()
+                                                                 .setExpression(MU<AttributeNode>("attr1"))
+                                                                 .resultForUnitTest(Int64ResultNode(22))))));
 
     { // level 0 only
         Grouping request = baseRequest.unchain().setFirstLevel(0).setLastLevel(0);
@@ -712,22 +720,23 @@ TEST(GroupingTest, testAggregationGroupCapping) {
  * smoke test.
  **/
 TEST(GroupingTest, testMergeSimpleSum) {
-    Grouping a = Grouping().setRoot(
-        Group()
-            .setId(NullResultNode())
-            .addResult(
-                SumAggregationResult().setExpression(MU<AttributeNode>("foo")).setResult(Int64ResultNode(20))));
+    Grouping a = Grouping().setRoot(Group()
+                                        .setId(NullResultNode())
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("foo"))
+                                                       .resultForUnitTest(Int64ResultNode(20))));
 
-    Grouping b = Grouping().setRoot(
-        Group()
-            .setId(NullResultNode())
-            .addResult(
-                SumAggregationResult().setExpression(MU<AttributeNode>("foo")).setResult(Int64ResultNode(30))));
+    Grouping b = Grouping().setRoot(Group()
+                                        .setId(NullResultNode())
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("foo"))
+                                                       .resultForUnitTest(Int64ResultNode(30))));
 
-    Group expect =
-        Group()
-            .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("foo")).setResult(Int64ResultNode(50)));
+    Group expect = Group()
+                       .setId(NullResultNode())
+                       .addResult(SumAggregationResult()
+                                      .setExpression(MU<AttributeNode>("foo"))
+                                      .resultForUnitTest(Int64ResultNode(50)));
 
     EXPECT_TRUE(testMerge(a, b, expect));
 }
@@ -741,142 +750,149 @@ TEST(GroupingTest, Verify_that_frozen_levels_are_not_touched_during_merge) {
     Group a =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(5)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(15)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(30))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(20))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(5)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(15)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(30))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(20))))));
 
     Group b =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(5)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(15)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(30))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(20))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(5)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(15)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(30))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(20))))));
 
     Group expect_all =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(10)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(20)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(30)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(30))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(40))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(10)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(20)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(30)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(30))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(40))))));
 
     Group expect_0 =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(5)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(20)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(30)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(30))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(40))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(5)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(20)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(30)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(30))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(40))))));
 
     Group expect_1 =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(5)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(30)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(30))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(40))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(5)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(30)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(30))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(40))))));
 
     Group expect_2 =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(5)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(15)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(30))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(40))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(5)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(15)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(30))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(40))))));
 
     Group expect_3 =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(5)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(15)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(30))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(20))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(5)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(15)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(30))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(20))))));
 
     EXPECT_TRUE(testMerge(request.unchain().setFirstLevel(0).setLastLevel(3).setRoot(a),
                           request.unchain().setFirstLevel(0).setLastLevel(3).setRoot(b), expect_all));
@@ -964,221 +980,224 @@ TEST(GroupingTest, testMergeTrees) {
     Group a =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(100)))
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(100)))
             .addChild(Group().setId(Int64ResultNode(4)).setRank(RawRank(10)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(5))
-                    .setRank(RawRank(5)) // merged with 200 rank node
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(100)))
-                    .addChild(Group().setId(Int64ResultNode(4)).setRank(RawRank(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(5))
-                                  .setRank(RawRank(500))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group().setId(Int64ResultNode(4)).setRank(RawRank(10)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(5))
-                                                .setRank(RawRank(200))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))))
+            .addChild(Group()
+                          .setId(Int64ResultNode(5))
+                          .setRank(RawRank(5)) // merged with 200 rank node
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(100)))
+                          .addChild(Group().setId(Int64ResultNode(4)).setRank(RawRank(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(5))
+                                        .setRank(RawRank(500))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group().setId(Int64ResultNode(4)).setRank(RawRank(10)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(5))
+                                                      .setRank(RawRank(200))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))))
             .addChild(Group().setId(Int64ResultNode(9)).setRank(RawRank(10)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .setRank(RawRank(100))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(100)))
-                    // dummy child would be picked up here
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(15))
-                                  .setRank(RawRank(200))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group().setId(Int64ResultNode(14)).setRank(RawRank(10)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(15))
-                                                .setRank(RawRank(300))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .setRank(RawRank(100))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(100)))
+                          // dummy child would be picked up here
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(15))
+                                        .setRank(RawRank(200))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group().setId(Int64ResultNode(14)).setRank(RawRank(10)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(15))
+                                                      .setRank(RawRank(300))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))))
             .addChild(Group().setId(Int64ResultNode(14)).setRank(RawRank(10)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(15))
-                    .setRank(RawRank(300))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(100)))
-                    .addChild(Group().setId(Int64ResultNode(19)).setRank(RawRank(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .setRank(RawRank(100))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))));
+            .addChild(Group()
+                          .setId(Int64ResultNode(15))
+                          .setRank(RawRank(300))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(100)))
+                          .addChild(Group().setId(Int64ResultNode(19)).setRank(RawRank(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .setRank(RawRank(100))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))));
 
     Group b =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(100)))
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(100)))
             .addChild(Group().setId(Int64ResultNode(4)).setRank(RawRank(10)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(5))
-                    .setRank(RawRank(200))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(100)))
-                    .addChild(Group().setId(Int64ResultNode(9)).setRank(RawRank(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(10))
-                                  .setRank(RawRank(400))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group().setId(Int64ResultNode(9)).setRank(RawRank(10)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(10))
-                                                .setRank(RawRank(100))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))))
+            .addChild(Group()
+                          .setId(Int64ResultNode(5))
+                          .setRank(RawRank(200))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(100)))
+                          .addChild(Group().setId(Int64ResultNode(9)).setRank(RawRank(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(10))
+                                        .setRank(RawRank(400))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group().setId(Int64ResultNode(9)).setRank(RawRank(10)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(10))
+                                                      .setRank(RawRank(100))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))))
             .addChild(Group().setId(Int64ResultNode(9)).setRank(RawRank(10)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .setRank(RawRank(100))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(100)))
-                    // dummy child would be picket up here
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(15))
-                                  .setRank(RawRank(200))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .setRank(RawRank(100))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(100)))
+                          // dummy child would be picket up here
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(15))
+                                        .setRank(RawRank(200))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))))
             .addChild(Group().setId(Int64ResultNode(14)).setRank(RawRank(10)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(15))
-                    .setRank(RawRank(5)) // merged with 300 rank node
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(100)))
-                    .addChild(Group().setId(Int64ResultNode(19)).setRank(RawRank(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .setRank(RawRank(5)) // merged with 100 rank node
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group().setId(Int64ResultNode(19)).setRank(RawRank(10)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(20))
-                                                .setRank(RawRank(500))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100)))))
-                    .addChild(Group().setId(Int64ResultNode(24)).setRank(RawRank(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(25))
-                                  .setRank(RawRank(300))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group().setId(Int64ResultNode(24)).setRank(RawRank(10)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(25))
-                                                .setRank(RawRank(400))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))));
+            .addChild(Group()
+                          .setId(Int64ResultNode(15))
+                          .setRank(RawRank(5)) // merged with 300 rank node
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(100)))
+                          .addChild(Group().setId(Int64ResultNode(19)).setRank(RawRank(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .setRank(RawRank(5)) // merged with 100 rank node
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group().setId(Int64ResultNode(19)).setRank(RawRank(10)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(20))
+                                                      .setRank(RawRank(500))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100)))))
+                          .addChild(Group().setId(Int64ResultNode(24)).setRank(RawRank(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(25))
+                                        .setRank(RawRank(300))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group().setId(Int64ResultNode(24)).setRank(RawRank(10)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(25))
+                                                      .setRank(RawRank(400))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))));
 
     Group expect =
         Group()
             .setId(NullResultNode())
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(200)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(5))
-                    .setRank(RawRank(200))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(200)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(5))
-                                  .setRank(RawRank(500))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(5))
-                                                .setRank(RawRank(200))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100)))))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(10))
-                                  .setRank(RawRank(400))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(10))
-                                                .setRank(RawRank(100))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .setRank(RawRank(100))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(200)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(15))
-                                  .setRank(RawRank(200))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(200)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(15))
-                                                .setRank(RawRank(300))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(15))
-                    .setRank(RawRank(300))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(200)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(20))
-                                  .setRank(RawRank(100))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(200)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(20))
-                                                .setRank(RawRank(500))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100)))))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(25))
-                                  .setRank(RawRank(300))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(25))
-                                                .setRank(RawRank(400))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(200)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(5))
+                          .setRank(RawRank(200))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(200)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(5))
+                                        .setRank(RawRank(500))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(5))
+                                                      .setRank(RawRank(200))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100)))))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(10))
+                                        .setRank(RawRank(400))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(10))
+                                                      .setRank(RawRank(100))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .setRank(RawRank(100))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(200)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(15))
+                                        .setRank(RawRank(200))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(200)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(15))
+                                                      .setRank(RawRank(300))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))))
+            .addChild(Group()
+                          .setId(Int64ResultNode(15))
+                          .setRank(RawRank(300))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(200)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(20))
+                                        .setRank(RawRank(100))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(200)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(20))
+                                                      .setRank(RawRank(500))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100)))))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(25))
+                                        .setRank(RawRank(300))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(25))
+                                                      .setRank(RawRank(400))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))));
 
     EXPECT_TRUE(testMerge(request.unchain().setRoot(a), request.unchain().setRoot(b), expect));
     EXPECT_TRUE(testMerge(request.unchain().setRoot(b), request.unchain().setRoot(a), expect));
@@ -1351,131 +1370,132 @@ TEST(GroupingTest, testPartialMerging) {
     // Cached result
     Group cached =
         Group()
-            .addResult(SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(110)))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(5))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(10)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(13))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(14))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))))
-            .addChild(
-                Group()
-                    .setId(Int64ResultNode(10))
-                    .addResult(
-                        SumAggregationResult().setExpression(MU<AttributeNode>("s1")).setResult(Int64ResultNode(100)))
-                    .addChild(Group()
-                                  .setId(Int64ResultNode(15))
-                                  .addResult(SumAggregationResult()
-                                                 .setExpression(MU<AttributeNode>("s2"))
-                                                 .setResult(Int64ResultNode(100)))
-                                  .addChild(Group()
-                                                .setId(Int64ResultNode(22))
-                                                .addResult(SumAggregationResult()
-                                                               .setExpression(MU<AttributeNode>("s3"))
-                                                               .setResult(Int64ResultNode(100))))));
+            .addResult(
+                SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(110)))
+            .addChild(Group()
+                          .setId(Int64ResultNode(5))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(10)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(13))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(14))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))))
+            .addChild(Group()
+                          .setId(Int64ResultNode(10))
+                          .addResult(SumAggregationResult()
+                                         .setExpression(MU<AttributeNode>("s1"))
+                                         .resultForUnitTest(Int64ResultNode(100)))
+                          .addChild(Group()
+                                        .setId(Int64ResultNode(15))
+                                        .addResult(SumAggregationResult()
+                                                       .setExpression(MU<AttributeNode>("s2"))
+                                                       .resultForUnitTest(Int64ResultNode(100)))
+                                        .addChild(Group()
+                                                      .setId(Int64ResultNode(22))
+                                                      .addResult(SumAggregationResult()
+                                                                     .setExpression(MU<AttributeNode>("s3"))
+                                                                     .resultForUnitTest(Int64ResultNode(100))))));
 
     { // Merge lastlevel 0
         Grouping request = baseRequest.unchain().setFirstLevel(0).setLastLevel(0);
         Group    incoming = Group().addResult(
-            SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(0)));
+            SumAggregationResult().setExpression(MU<AttributeNode>("s0")).resultForUnitTest(Int64ResultNode(0)));
 
-        Group expected =
-            Group()
-                .addResult(
-                    SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(110)))
-                .addChild(Group()
-                              .setId(Int64ResultNode(5))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(10))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))));
+        Group expected = Group()
+                             .addResult(SumAggregationResult()
+                                            .setExpression(MU<AttributeNode>("s0"))
+                                            .resultForUnitTest(Int64ResultNode(110)))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(5))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(10))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))));
         EXPECT_TRUE(testPartialMerge(request.unchain().setRoot(incoming),
                                      request.unchain().setLastLevel(3).setRoot(cached), expected));
     }
     {
         // Merge existing tree. Assume we got modified data down again.
         Grouping request = baseRequest.unchain().setFirstLevel(1).setLastLevel(1);
-        Group    incoming =
-            Group()
-                .addResult(
-                    SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(200)))
-                .addChild(Group()
-                              .setId(Int64ResultNode(3))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(5))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(7))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(10))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(33))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))));
-        Group expected =
-            Group()
-                .addResult(
-                    SumAggregationResult().setExpression(MU<AttributeNode>("s0")).setResult(Int64ResultNode(200)))
-                .addChild(Group()
-                              .setId(Int64ResultNode(3))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(5))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(10)))
-                              .addChild(Group()
-                                            .setId(Int64ResultNode(13))
-                                            .addResult(SumAggregationResult()
-                                                           .setExpression(MU<AttributeNode>("s2"))
-                                                           .setResult(Int64ResultNode(0)))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(7))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(10))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(100)))
-                              .addChild(Group()
-                                            .setId(Int64ResultNode(15))
-                                            .addResult(SumAggregationResult()
-                                                           .setExpression(MU<AttributeNode>("s2"))
-                                                           .setResult(Int64ResultNode(0)))))
-                .addChild(Group()
-                              .setId(Int64ResultNode(33))
-                              .addResult(SumAggregationResult()
-                                             .setExpression(MU<AttributeNode>("s1"))
-                                             .setResult(Int64ResultNode(0))));
+        Group    incoming = Group()
+                             .addResult(SumAggregationResult()
+                                            .setExpression(MU<AttributeNode>("s0"))
+                                            .resultForUnitTest(Int64ResultNode(200)))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(3))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(5))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(7))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(10))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(33))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))));
+        Group expected = Group()
+                             .addResult(SumAggregationResult()
+                                            .setExpression(MU<AttributeNode>("s0"))
+                                            .resultForUnitTest(Int64ResultNode(200)))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(3))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(5))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(10)))
+                                           .addChild(Group()
+                                                         .setId(Int64ResultNode(13))
+                                                         .addResult(SumAggregationResult()
+                                                                        .setExpression(MU<AttributeNode>("s2"))
+                                                                        .resultForUnitTest(Int64ResultNode(0)))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(7))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(10))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(100)))
+                                           .addChild(Group()
+                                                         .setId(Int64ResultNode(15))
+                                                         .addResult(SumAggregationResult()
+                                                                        .setExpression(MU<AttributeNode>("s2"))
+                                                                        .resultForUnitTest(Int64ResultNode(0)))))
+                             .addChild(Group()
+                                           .setId(Int64ResultNode(33))
+                                           .addResult(SumAggregationResult()
+                                                          .setExpression(MU<AttributeNode>("s1"))
+                                                          .resultForUnitTest(Int64ResultNode(0))));
         EXPECT_TRUE(testPartialMerge(request.unchain().setRoot(incoming),
                                      request.unchain().setFirstLevel(0).setLastLevel(3).setRoot(cached), expected));
     }
@@ -1510,14 +1530,16 @@ TEST(GroupingTest,
         Group().addResult(CountAggregationResult().setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))));
     {
         Group expect;
-        expect.addResult(
-            CountAggregationResult().setCount(3).setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0))));
+        expect.addResult(CountAggregationResult()
+                             .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))
+                             .resultForUnitTest(Int64ResultNode(3)));
 
         EXPECT_TRUE(testAggregation(ctx, request, expect));
     }
     {
-        Group expect = Group().addResult(
-            CountAggregationResult().setCount(1).setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0))));
+        Group expect = Group().addResult(CountAggregationResult()
+                                             .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))
+                                             .resultForUnitTest(Int64ResultNode(1)));
 
         EXPECT_TRUE(testAggregation(ctx, request.setTopN(1), expect));
     }
@@ -1550,7 +1572,9 @@ TEST(GroupingTest, testCount) {
         Group().addResult(CountAggregationResult().setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))));
 
     Group expect;
-    expect.addResult(CountAggregationResult().setCount(3).setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0))));
+    expect.addResult(CountAggregationResult()
+                         .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)))
+                         .resultForUnitTest(Int64ResultNode(3)));
 
     EXPECT_TRUE(testAggregation(ctx, request, expect));
 }

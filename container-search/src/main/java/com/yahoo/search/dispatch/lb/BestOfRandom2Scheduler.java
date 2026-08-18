@@ -35,10 +35,9 @@ class BestOfRandom2Scheduler implements GroupScheduler {
     private TrackedGroup selectBestOf2(Set<Integer> rejectedGroups, boolean requireCoverage) {
         List<Integer> candidates = new ArrayList<>(scoreboard.size());
         for (TrackedGroup group : scoreboard.values()) {
-            if (rejectedGroups == null || !rejectedGroups.contains(group.id())) {
-                if (!requireCoverage || group.group().hasSufficientCoverage()) {
-                    candidates.add(group.id());
-                }
+            if (rejectedGroups.contains(group.id())) continue;
+            if (!requireCoverage || group.group().hasSufficientCoverage()) {
+                candidates.add(group.id());
             }
         }
         TrackedGroup candA = selectRandom(candidates);

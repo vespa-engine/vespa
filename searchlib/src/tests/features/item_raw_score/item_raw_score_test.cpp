@@ -158,4 +158,38 @@ TEST(ItemRawScoreTest, require_that_stale_raw_score_is_ignored) {
     EXPECT_EQ(0.0, f2.getScore(10));
 }
 
+TEST(ItemRawScoreTest, require_that_raw_scores_of_all_items_with_the_label_are_summed) {
+    MultiLabel  f1("label", {1, 2});
+    RankFixture f2(2, 2, f1);
+    f2.setFooScore(0, 10, 1.0);
+    f2.setFooScore(1, 10, 2.0);
+    EXPECT_EQ(3.0, f2.getScore(10));
+}
+
+TEST(ItemRawScoreTest, require_that_labeled_items_in_different_fields_are_summed) {
+    MultiLabel  f1("label", {1, 3});
+    RankFixture f2(2, 2, f1);
+    f2.setFooScore(0, 10, 1.0);
+    f2.setFooScore(1, 10, 2.0);
+    f2.setBarScore(0, 10, 5.0);
+    f2.setBarScore(1, 10, 6.0);
+    EXPECT_EQ(6.0, f2.getScore(10));
+}
+
+TEST(ItemRawScoreTest, require_that_stale_raw_score_of_a_labeled_item_is_ignored) {
+    MultiLabel  f1("label", {1, 2});
+    RankFixture f2(2, 2, f1);
+    f2.setFooScore(0, 10, 1.0);
+    f2.setFooScore(1, 5, 2.0);
+    EXPECT_EQ(1.0, f2.getScore(10));
+}
+
+TEST(ItemRawScoreTest, require_that_non_existing_unique_ids_in_a_label_are_ignored) {
+    MultiLabel  f1("label", {1, 42});
+    RankFixture f2(2, 2, f1);
+    f2.setFooScore(0, 10, 1.0);
+    f2.setFooScore(1, 10, 2.0);
+    EXPECT_EQ(1.0, f2.getScore(10));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

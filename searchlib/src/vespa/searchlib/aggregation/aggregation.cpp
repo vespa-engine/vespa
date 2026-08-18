@@ -81,23 +81,26 @@ void AggregationResult::Configure::execute(vespalib::Identifiable& obj) {
 
 AggregationResult& AggregationResult::setExpression(ExpressionNode::UP expr) {
     _expressionTree = std::make_shared<ExpressionTree>(std::move(expr));
-    prepare(_expressionTree->getResult(), false);
+    prepare(_expressionTree->getResult());
     return *this;
 }
 
-void CountAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    if (useForInit) {
-        _count.set(result);
-    }
+void CountAggregationResult::onPrepare(const ResultNode&) {
 }
 
-void SumAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
+void CountAggregationResult::initForUnitTest(const ResultNode& result) {
+    _count.set(result);
+}
+
+void SumAggregationResult::onPrepare(const ResultNode& result) {
     if (!isReady(_sum.get(), result)) {
         _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
     }
-    if (useForInit) {
-        _sum->set(result);
-    }
+}
+
+void SumAggregationResult::initForUnitTest(const ResultNode& result) {
+    onPrepare(result);
+    _sum->set(result);
 }
 
 MinAggregationResult::MinAggregationResult()
@@ -107,16 +110,18 @@ MinAggregationResult::MinAggregationResult(const SingleResultNode& min) : Aggreg
 }
 MinAggregationResult::~MinAggregationResult() = default;
 
-void MinAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
+void MinAggregationResult::onPrepare(const ResultNode& result) {
     if (!isReady(_min.get(), result)) {
         _min = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-        if (!useForInit) {
-            _min->setMax();
-        }
+        _min->setMax();
     }
-    if (useForInit) {
-        _min->set(result);
+}
+
+void MinAggregationResult::initForUnitTest(const ResultNode& result) {
+    if (!isReady(_min.get(), result)) {
+        _min = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
     }
+    _min->set(result);
 }
 
 MaxAggregationResult::MaxAggregationResult()
@@ -126,32 +131,37 @@ MaxAggregationResult::MaxAggregationResult(const SingleResultNode& max) : Aggreg
 }
 MaxAggregationResult::~MaxAggregationResult() = default;
 
-void MaxAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
+void MaxAggregationResult::onPrepare(const ResultNode& result) {
     if (!isReady(_max.get(), result)) {
         _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-        if (!useForInit) {
-            _max->setMin(); /// Should figure out how to set min too for float.
-        }
-    }
-    if (useForInit) {
-        _max->set(result);
+        _max->setMin();
     }
 }
 
-void AverageAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
+void MaxAggregationResult::initForUnitTest(const ResultNode& result) {
+    if (!isReady(_max.get(), result)) {
+        _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
+    }
+    _max->set(result);
+}
+
+void AverageAggregationResult::onPrepare(const ResultNode&) {
     if (!_sum.get()) {
         _sum = std::make_unique<FloatResultNode>();
     }
-    if (useForInit) {
-        _sum->set(result);
-        _count = 1;
-    }
 }
 
-void XorAggregationResult::onPrepare(const ResultNode& result, bool useForInit) {
-    if (useForInit) {
-        _xor.set(result);
-    }
+void AverageAggregationResult::initForUnitTest(const ResultNode& result) {
+    onPrepare(result);
+    _sum->set(result);
+    _count = 1;
+}
+
+void XorAggregationResult::onPrepare(const ResultNode&) {
+}
+
+void XorAggregationResult::initForUnitTest(const ResultNode& result) {
+    _xor.set(result);
 }
 
 void SumAggregationResult::onMerge(const AggregationResult& b) {

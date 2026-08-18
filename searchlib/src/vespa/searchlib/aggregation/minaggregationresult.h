@@ -19,7 +19,8 @@ public:
 
 private:
     const ResultNode& onGetRank() const override { return getMin(); }
-    void onPrepare(const ResultNode& result, bool useForInit) override;
+    void onPrepare(const ResultNode& result) override;
+    void initForUnitTest(const ResultNode& result) override;
     SingleResultNode::CP _min;
 };
 

@@ -90,12 +90,7 @@ public class FileDownloader implements AutoCloseable {
     public Optional<File> getFile(FileReferenceDownload fileReferenceDownload) {
         try {
             return getFutureFile(fileReferenceDownload).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (ExecutionException e) {
-            fileReferenceDownloader.failedDownloading(fileReferenceDownload.fileReference());
-            if (e.getCause() instanceof FileReferenceDownloadPermissionDeniedException permissionDenied)
-                throw permissionDenied;
-            return Optional.empty();
-        } catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fileReferenceDownloader.failedDownloading(fileReferenceDownload.fileReference());
             return Optional.empty();
         }

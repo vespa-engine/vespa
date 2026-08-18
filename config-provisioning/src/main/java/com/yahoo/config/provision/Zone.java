@@ -90,7 +90,10 @@ public class Zone {
         return region;
     }
 
-    /** Returns the availability zones this contains, or the empty list if this is a single-az region */
+    /**
+     * Returns the availability zones this contains.
+     * A cloud zone always has at least one AvailabilityZone, while in self-hosted systems this is empty.
+     */
     public List<AzName> availabilityZones() {
         return availabilityZones;
     }

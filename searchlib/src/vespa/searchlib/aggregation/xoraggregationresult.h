@@ -20,7 +20,8 @@ public:
 
 private:
     const ResultNode& onGetRank() const override { return getXor(); }
-    void onPrepare(const ResultNode& result, bool useForInit) override;
+    void onPrepare(const ResultNode& result) override;
+    void initForUnitTest(const ResultNode& result) override;
     Int64ResultNode _xor;
 };
 

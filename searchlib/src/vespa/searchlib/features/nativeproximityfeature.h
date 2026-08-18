@@ -46,7 +46,11 @@ public:
         QueryTerm first;
         QueryTerm second;
         feature_t connectedness;
-        TermPair(QueryTerm f, QueryTerm s, feature_t c) : first(f), second(s), connectedness(c) {}
+        feature_t term_pair_weight;
+        feature_t forward_scale;
+        feature_t reverse_scale;
+        TermPair(QueryTerm f, QueryTerm s, feature_t c, feature_t weight) noexcept
+            : first(f), second(s), connectedness(c), term_pair_weight(weight), forward_scale(0), reverse_scale(0) {}
     };
     using TermPairVector = std::vector<TermPair>;
     /**
@@ -56,7 +60,8 @@ public:
         uint32_t       fieldId;
         TermPairVector pairs;
         feature_t      divisor;
-        FieldSetup(uint32_t fid) : fieldId(fid), pairs(), divisor(0) {}
+        feature_t      field_scale;
+        FieldSetup(uint32_t fid) : fieldId(fid), pairs(), divisor(0), field_scale(0) {}
     };
 
 private:
@@ -88,11 +93,11 @@ public:
 private:
     const NativeProximityParams& _params;
     std::span<const FieldSetup>  _setups;
-    uint32_t                     _totalFieldWeight;
+    feature_t                    _total_field_scale;
     const fef::MatchData*        _md;
 
     feature_t calculateScoreForField(const FieldSetup& fs, uint32_t docId);
-    feature_t calculateScoreForPair(const TermPair& pair, uint32_t fieldId, uint32_t docId);
+    feature_t calculateScoreForPair(const TermPair& pair, const NativeProximityParam& param, uint32_t docId);
 
     void handle_bind_match_data(const fef::MatchData& md) override;
 

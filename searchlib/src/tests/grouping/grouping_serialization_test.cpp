@@ -213,15 +213,18 @@ TEST(GroupingSerializationTest, testFunctionNodes) {
 TEST(GroupingSerializationTest, testAggregatorResults) {
     Fixture f("testAggregatorResults");
     f.checkObject(
-        SumAggregationResult().setExpression(MU<AttributeNode>("attributeA")).setResult(Int64ResultNode(7)));
+        SumAggregationResult().setExpression(MU<AttributeNode>("attributeA")).resultForUnitTest(Int64ResultNode(7)));
     f.checkObject(XorAggregationResult().setXor(Int64ResultNode(7)).setExpression(MU<AttributeNode>("attributeA")));
-    f.checkObject(CountAggregationResult().setCount(7).setExpression(MU<AttributeNode>("attributeA")));
+    f.checkObject(CountAggregationResult()
+                      .setExpression(MU<AttributeNode>("attributeA"))
+                      .resultForUnitTest(Int64ResultNode(7)));
     f.checkObject(
-        MinAggregationResult().setExpression(MU<AttributeNode>("attributeA")).setResult(Int64ResultNode(7)));
+        MinAggregationResult().setExpression(MU<AttributeNode>("attributeA")).resultForUnitTest(Int64ResultNode(7)));
     f.checkObject(
-        MaxAggregationResult().setExpression(MU<AttributeNode>("attributeA")).setResult(Int64ResultNode(7)));
-    f.checkObject(
-        AverageAggregationResult().setExpression(MU<AttributeNode>("attributeA")).setResult(FloatResultNode(7.0)));
+        MaxAggregationResult().setExpression(MU<AttributeNode>("attributeA")).resultForUnitTest(Int64ResultNode(7)));
+    f.checkObject(AverageAggregationResult()
+                      .setExpression(MU<AttributeNode>("attributeA"))
+                      .resultForUnitTest(FloatResultNode(7.0)));
     ExpressionCountAggregationResult expression_count;
     expression_count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67))).aggregate(DocId(42), HitRank(21));
     f.checkObject(expression_count);
