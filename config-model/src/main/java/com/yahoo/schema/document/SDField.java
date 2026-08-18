@@ -53,7 +53,7 @@ public class SDField extends Field implements ImmutableSDField {
     /** Use this field for modifying index-structure, even if it doesn't have any indexing code */
     private boolean indexStructureField = false;
 
-    /** Whether a fast search structure should be built the synthetic key value field */
+    /** Whether a synthetic key+value field should be built (with fast search structure) */
     private boolean fastMapSearch = false;
 
     /** The indexing statements to be applied to this value during indexing */
