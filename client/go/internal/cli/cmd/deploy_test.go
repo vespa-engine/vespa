@@ -270,7 +270,7 @@ func TestDeployApplicationPackageErrorWithUnexpectedJson(t *testing.T) {
 
 func TestDeployApplicationPackageErrorWithExpectedFormat(t *testing.T) {
 	assertApplicationPackageError(t, "deploy", 400,
-		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
+		"Invalid XML, error in services.xml: element \"nosuch\" not allowed here",
 		`{
          "error-code": "INVALID_APPLICATION_PACKAGE",
          "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
@@ -279,7 +279,7 @@ func TestDeployApplicationPackageErrorWithExpectedFormat(t *testing.T) {
 
 func TestPrepareApplicationPackageErrorWithExpectedFormat(t *testing.T) {
 	assertApplicationPackageError(t, "prepare", 400,
-		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
+		"Invalid XML, error in services.xml: element \"nosuch\" not allowed here",
 		`{
          "error-code": "INVALID_APPLICATION_PACKAGE",
          "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
