@@ -157,8 +157,18 @@ template <> QueryTermSimple::RangeResult<int64_t> QueryTermSimple::getRange() co
 }
 
 template <> QueryTermSimple::RangeResult<std::string> QueryTermSimple::getRange() const noexcept {
-    // TODO
-    return QueryTermSimple::RangeResult<std::string>();
+    if (!_string_range) {
+        QueryTermSimple::RangeResult<std::string> res;
+        res.valid = false;
+        return res;
+    } else {
+        QueryTermSimple::RangeResult<std::string> res;
+        res.low = _string_range->left;
+        res.high = _string_range->right;
+        res.valid = true;
+        res.adjusted = false;
+        return res;
+    }
 }
 
 bool QueryTermSimple::getAsIntegerTerm(int64_t& lower, int64_t& upper) const noexcept {

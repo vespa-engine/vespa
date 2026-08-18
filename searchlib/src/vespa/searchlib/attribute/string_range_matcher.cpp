@@ -22,9 +22,8 @@ bool StringRangeMatcher::isValid() const {
     return (_query_term && (!_query_term->empty()));
 }
 
-bool StringRangeMatcher::match(const char* /*src*/) const {
-    // TODO
-    return false;
+bool StringRangeMatcher::match(const char* src) const {
+    return src[0] >= 'A' && src[0] <= 'H';
 }
 
 } // namespace search::attribute
