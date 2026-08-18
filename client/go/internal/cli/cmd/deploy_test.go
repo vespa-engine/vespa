@@ -270,16 +270,26 @@ func TestDeployApplicationPackageErrorWithUnexpectedJson(t *testing.T) {
 
 func TestDeployApplicationPackageErrorWithExpectedFormat(t *testing.T) {
 	assertApplicationPackageError(t, "deploy", 400,
-		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
+		"Invalid XML, error in services.xml: element \"nosuch\" not allowed here",
 		`{
          "error-code": "INVALID_APPLICATION_PACKAGE",
          "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
      }`)
 }
 
+// Tests that we only do special format over 120 characters.
+func TestDeployApplicationPackageErrorWithExpectedFormatLong(t *testing.T) {
+	assertApplicationPackageError(t, "deploy", 400,
+		"Invalid XML, error in services.xml:\n\telement \"nosuch\" not allowed here. Invalid XML, error in services.xml:\n\telement \"nosuch\" not allowed here. Invalid XML, error in services.xml:\n\telement \"nosuch\" not allowed here.",
+		`{
+         "error-code": "INVALID_APPLICATION_PACKAGE",
+         "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here. Invalid XML, error in services.xml: element \"nosuch\" not allowed here. Invalid XML, error in services.xml: element \"nosuch\" not allowed here."
+     }`)
+}
+
 func TestPrepareApplicationPackageErrorWithExpectedFormat(t *testing.T) {
 	assertApplicationPackageError(t, "prepare", 400,
-		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
+		"Invalid XML, error in services.xml: element \"nosuch\" not allowed here",
 		`{
          "error-code": "INVALID_APPLICATION_PACKAGE",
          "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
