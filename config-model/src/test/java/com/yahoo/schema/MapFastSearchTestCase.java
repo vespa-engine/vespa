@@ -70,7 +70,7 @@ public class MapFastSearchTestCase {
     }
 
     private static boolean fastMapSearchOf(String field, boolean flagEnabled) throws ParseException {
-        return fieldIn(build(getSd(field), flagEnabled), "m").isFastMapSearch();
+        return fieldIn(build(getSd(field), flagEnabled), "m").hasFastMapSearch();
     }
 
     private static SDField fieldIn(Schema schema, String fieldName) {
