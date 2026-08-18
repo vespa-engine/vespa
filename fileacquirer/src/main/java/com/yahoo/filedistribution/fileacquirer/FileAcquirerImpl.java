@@ -42,7 +42,6 @@ class FileAcquirerImpl implements FileAcquirer {
         public static final int baseErrorCode = 0x10000;
         public static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
         public static final int fileReferenceNotFound = baseFileProviderErrorCode;
-        public static final int fileReferencePermissionDenied = baseFileProviderErrorCode + 1;
 
     }
 

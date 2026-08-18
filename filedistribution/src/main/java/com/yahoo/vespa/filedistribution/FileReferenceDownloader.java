@@ -40,20 +40,7 @@ public class FileReferenceDownloader {
     private static final Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
     private static final Set<CompressionType> defaultAcceptedCompressionTypes = Set.of(lz4, none, zstd);
 
-    private enum DownloadResult { SUCCESS, TIMEOUT, FAILURE, PERMISSION_DENIED }
-
-    private record RpcResult(DownloadResult result, String message) {
-        private static RpcResult of(DownloadResult result) { return new RpcResult(result, null); }
-    }
-
-    // Duplicated from MultiTenantRpcAuthorizer.JrtErrorCode (configserver module; this module can't depend on it)
-    // TODO: Consider moving this to a common module to avoid duplication
-    static final int jrtErrorUnauthorized = 0x20001;
-    static final int jrtErrorAuthorizationFailed = 0x20002;
-
-    private static boolean isAuthorizationError(int errorCode) {
-        return errorCode == jrtErrorUnauthorized || errorCode == jrtErrorAuthorizationFailed;
-    }
+    private enum DownloadResult { SUCCESS, TIMEOUT, FAILURE }
 
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
@@ -113,15 +100,9 @@ public class FileReferenceDownloader {
             log.log(Level.FINE, "Wait until download of " + fileReference + " has started, retryCount " + retryCount +
                     ", timeout " + timeout + " (request from " + fileReferenceDownload.client() + ")");
             if ( ! timeout.isNegative()) {
-                var rpcResult = startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout);
-                if (rpcResult.result() == DownloadResult.SUCCESS) return;
-                if (rpcResult.result() == DownloadResult.PERMISSION_DENIED) {
-                    fileReferenceDownload.future().completeExceptionally(
-                            new FileReferenceDownloadPermissionDeniedException(fileReference, rpcResult.message()));
-                    downloads.remove(fileReference);
-                    return;
-                }
-                if (rpcResult.result() == DownloadResult.TIMEOUT && maxTimeoutsBeforeClose > 0) {
+                var result = startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout);
+                if (result == DownloadResult.SUCCESS) return;
+                if (result == DownloadResult.TIMEOUT && maxTimeoutsBeforeClose > 0) {
                     timeoutCount++;
                     if (timeoutCount >= maxTimeoutsBeforeClose) {
                         log.log(Level.INFO, "RPC request for " + fileReference + " timed out " + timeoutCount +
@@ -179,13 +160,13 @@ public class FileReferenceDownloader {
 
                     log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec.host());
                     downloads.add(fileReferenceDownload);
-                    var rpcResult = startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
-                    if (rpcResult.result() == DownloadResult.TIMEOUT && maxTimeoutsBeforeClose > 0) {
+                    var result = startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
+                    if (result == DownloadResult.TIMEOUT && maxTimeoutsBeforeClose > 0) {
                         connection.closeConnection();
                     }
                     // Need to explicitly remove from downloads if downloading has not started.
                     // If downloading *has* started FileReceiver will take care of that when download has completed or failed
-                    if (rpcResult.result() != DownloadResult.SUCCESS)
+                    if (result != DownloadResult.SUCCESS)
                         downloads.remove(fileReference);
                 });
         }
@@ -195,7 +176,7 @@ public class FileReferenceDownloader {
         downloads.remove(fileReference);
     }
 
-    private RpcResult startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection, Duration timeout) {
+    private DownloadResult startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection, Duration timeout) {
         Request request = createRequest(fileReferenceDownload);
         connection.invokeSync(request, timeout);
 
@@ -208,24 +189,19 @@ public class FileReferenceDownloader {
 
             if (errorCode == 0) {
                 log.log(Level.FINE, () -> "Found " + fileReference + " available at " + address);
-                return RpcResult.of(DownloadResult.SUCCESS);
+                return DownloadResult.SUCCESS;
             } else {
                 var error = FileApiErrorCodes.get(errorCode);
                 var errorDescription = error == null ? "Unknown error" : error.description();
                 log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed (" + errorDescription + ")");
-                return RpcResult.of(DownloadResult.FAILURE);
+                return DownloadResult.FAILURE;
             }
-        } else if (isAuthorizationError(request.errorCode())) {
-            log.log(logLevel, "Downloading " + fileReference + " from " + address +
-                    " (client " + fileReferenceDownload.client() + ") denied:" +
-                    " error code " + request.errorCode() + " (" + request.errorMessage() + ")");
-            return new RpcResult(DownloadResult.PERMISSION_DENIED, request.errorMessage());
         } else {
             log.log(logLevel, "Downloading " + fileReference + " from " + address +
                     " (client " + fileReferenceDownload.client() + ") failed:" +
                     " error code " + request.errorCode() + " (" + request.errorMessage() + ")." +
                     " (retry " + retryCount + ", rpc timeout " + timeout + ")");
-            return RpcResult.of(request.errorCode() == ErrorCode.TIMEOUT ? DownloadResult.TIMEOUT : DownloadResult.FAILURE);
+            return request.errorCode() == ErrorCode.TIMEOUT ? DownloadResult.TIMEOUT : DownloadResult.FAILURE;
         }
     }
 
