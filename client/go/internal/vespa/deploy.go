@@ -590,13 +590,13 @@ func extractError(reader io.Reader) string {
 	var response map[string]interface{}
 	json.Unmarshal(responseData, &response)
 	if response["error-code"] == "INVALID_APPLICATION_PACKAGE" {
-	    // If message is longer than the limit, break colons with newline.
-	    message := response["message"].(string)
-	    if len(message) > 120 {
-	        return strings.ReplaceAll(message, ": ", ":\n")
-	    } else {
-	        return message
-	    }
+		// If message is longer than the limit, break colons with newline.
+		message := response["message"].(string)
+		if len(message) > 120 {
+			return strings.ReplaceAll(message, ": ", ":\n")
+		} else {
+			return message
+		}
 	} else {
 		var prettyJSON bytes.Buffer
 		parseError := json.Indent(&prettyJSON, responseData, "", "    ")
