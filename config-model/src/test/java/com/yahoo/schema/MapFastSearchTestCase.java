@@ -45,8 +45,8 @@ public class MapFastSearchTestCase {
         String fields = joinLines("field plain type map<string, string> { }",
                                   "field fast type map<string, string> { map: fast-search }");
         var schema = build(getSd(fields), true);
-        assertFalse(fieldIn(schema, "plain").isFastMapSearch());
-        assertTrue(fieldIn(schema, "fast").isFastMapSearch());
+        assertFalse(fieldIn(schema, "plain").hasFastMapSearch());
+        assertTrue(fieldIn(schema, "fast").hasFastMapSearch());
     }
 
     @Test
@@ -57,6 +57,20 @@ public class MapFastSearchTestCase {
                        "For schema 'test', field 'm': 'map: fast-search' requires a map field, but the type is Array<string>.");
         assertRejected("field m type weightedset<string> { map: fast-search }", true,
                        "For schema 'test', field 'm': 'map: fast-search' requires a map field, but the type is WeightedSet<string>.");
+    }
+
+    @Test
+    void requireFastMapRejectedForUnsupportedKeyAndValueTypes() throws ParseException {
+        assertRejected("field m type map<double, string> { map: fast-search }", true,
+                       "For schema 'test', field 'm': 'map: fast-search' requires key to be of type string or int, but the type is double.");
+        assertRejected("field m type map<string, bool> { map: fast-search }", true,
+                       "For schema 'test', field 'm': 'map: fast-search' requires value to be of type string or int, but the type is bool.");
+    }
+
+    @Test
+    void requireFastMapAcceptsIntAndStringKeyAndValue() throws ParseException {
+        assertTrue(fastMapSearchOf("field m type map<int, string> { map: fast-search }", true));
+        assertTrue(fastMapSearchOf("field m type map<string, int> { map: fast-search }", true));
     }
 
     private static void assertRejected(String field, boolean flagEnabled, String expectedMessage) throws ParseException {
