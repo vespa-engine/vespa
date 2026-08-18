@@ -44,10 +44,9 @@ SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP                     
     bool cased = this->get_match_is_cased();
     auto docid_limit = this->getCommittedDocIdLimit();
     if (qTerm && qTerm->getRange<std::string>().valid) {
-        return std::make_unique<attribute::SingleEnumSearchContext<
-            const char*, attribute::StringSearchContextT<attribute::StringRangeMatcher>>>(
-            attribute::StringRangeMatcher(std::move(qTerm), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce),
-            *this, this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
+        return std::make_unique<attribute::SingleStringEnumSearchContextT<attribute::StringRangeMatcher>>(
+            std::move(qTerm), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce, *this,
+            this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
     } else {
         return std::make_unique<attribute::SingleStringEnumHintSearchContext>(
             std::move(qTerm), cased, params.fuzzy_matching_algorithm(), *this,
