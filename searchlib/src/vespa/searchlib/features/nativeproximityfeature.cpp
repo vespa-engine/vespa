@@ -57,13 +57,6 @@ NativeProximityExecutorSharedState::NativeProximityExecutorSharedState(const IQu
             FieldSetup setup(entry.first);
             generateTermPairs(env, entry.second, _params.slidingWindow, setup);
             if (!setup.pairs.empty()) {
-                const auto& param = params.vector[entry.first];
-                for (auto& pair : setup.pairs) {
-                    pair.forward_scale = pair.term_pair_weight * param.proximityImportance / param.maxTableSum;
-                    pair.reverse_scale = pair.term_pair_weight * (1 - param.proximityImportance) / param.maxTableSum;
-                }
-                setup.field_scale = (setup.divisor > 0) ? static_cast<feature_t>(param.fieldWeight) / setup.divisor
-                                                        : static_cast<feature_t>(param.fieldWeight);
                 _setups.push_back(std::move(setup));
                 _total_field_weight += params.vector[entry.first].fieldWeight;
             }
@@ -87,43 +80,48 @@ void NativeProximityExecutorSharedState::generateTermPairs(const IQueryEnvironme
             connectedness /= (j - i);
             if (terms[i].termData()->getWeight().percent() != 0 ||
                 terms[j].termData()->getWeight().percent() != 0) { // only consider term pairs with contribution
-                feature_t term_pair_weight = (terms[i].significance() * terms[i].termData()->getWeight().percent() +
-                                              terms[j].significance() * terms[j].termData()->getWeight().percent()) *
-                                             connectedness;
-                pairs.emplace_back(terms[i], terms[j], connectedness, term_pair_weight);
-                setup.divisor += term_pair_weight;
+                pairs.push_back(TermPair(terms[i], terms[j], connectedness));
+                setup.divisor += (terms[i].significance() * terms[i].termData()->getWeight().percent() +
+                                  terms[j].significance() * terms[j].termData()->getWeight().percent()) *
+                                 connectedness;
             }
         }
     }
 }
 
 feature_t NativeProximityExecutor::calculateScoreForField(const FieldSetup& fs, uint32_t docId) {
-    feature_t   score = 0;
-    const auto& param = _params.vector[fs.fieldId];
+    feature_t score = 0;
     for (size_t i = 0; i < fs.pairs.size(); ++i) {
-        score += calculateScoreForPair(fs.pairs[i], param, docId);
+        score += calculateScoreForPair(fs.pairs[i], fs.fieldId, docId);
     }
-    return score * fs.field_scale;
+    score *= _params.vector[fs.fieldId].fieldWeight;
+    if (fs.divisor > 0) {
+        score /= fs.divisor;
+    }
+    return score;
 }
 
-feature_t NativeProximityExecutor::calculateScoreForPair(const TermPair& pair, const NativeProximityParam& param,
-                                                         uint32_t docId) {
+feature_t NativeProximityExecutor::calculateScoreForPair(const TermPair& pair, uint32_t fieldId, uint32_t docId) {
+    const NativeProximityParam&    param = _params.vector[fieldId];
     TermDistanceCalculator::Result result;
     const QueryTerm&               a = pair.first;
     const QueryTerm&               b = pair.second;
     TermDistanceCalculator::run(a, b, param._element_gap, *_md, docId, result);
-    uint32_t forwardIdx = result.forwardDist > 0 ? result.forwardDist - 1 : 0;
-    uint32_t reverseIdx = result.reverseDist > 0 ? result.reverseDist - 1 : 0;
-    return param.proximityTable->get(forwardIdx) * pair.forward_scale +
-           param.revProximityTable->get(reverseIdx) * pair.reverse_scale;
+    uint32_t  forwardIdx = result.forwardDist > 0 ? result.forwardDist - 1 : 0;
+    uint32_t  reverseIdx = result.reverseDist > 0 ? result.reverseDist - 1 : 0;
+    feature_t forwardScore = param.proximityTable->get(forwardIdx) * param.proximityImportance;
+    feature_t reverseScore = param.revProximityTable->get(reverseIdx) * (1 - param.proximityImportance);
+    feature_t termPairWeight = pair.connectedness * (a.significance() * a.termData()->getWeight().percent() +
+                                                     b.significance() * b.termData()->getWeight().percent());
+    feature_t score = (forwardScore + reverseScore) * termPairWeight / param.maxTableSum;
+    return score;
 }
 
 NativeProximityExecutor::NativeProximityExecutor(const NativeProximityExecutorSharedState& shared_state)
     : FeatureExecutor(),
       _params(shared_state.get_params()),
       _setups(shared_state.get_setups()),
-      _total_field_scale(shared_state.get_total_field_weight() > 0 ? 1.0 / shared_state.get_total_field_weight()
-                                                                   : 1.0),
+      _totalFieldWeight(shared_state.get_total_field_weight()),
       _md(nullptr) {
     auto& fields = shared_state.get_fields();
     for (const auto& entry : fields) {
@@ -139,7 +137,10 @@ void NativeProximityExecutor::execute(uint32_t docId) {
     for (size_t i = 0; i < _setups.size(); ++i) {
         score += calculateScoreForField(_setups[i], docId);
     }
-    outputs().set_number(0, score * _total_field_scale);
+    if (_totalFieldWeight > 0) {
+        score /= _totalFieldWeight;
+    }
+    outputs().set_number(0, score);
 }
 
 void NativeProximityExecutor::handle_bind_match_data(const fef::MatchData& md) {

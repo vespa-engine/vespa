@@ -33,14 +33,13 @@ NativeFieldMatchExecutorSharedState::NativeFieldMatchExecutorSharedState(const I
                 const ITermFieldData& tfd = iter.get();
                 uint32_t              fieldId = tfd.getFieldId();
                 if (_params.considerField(fieldId)) { // only consider fields with contribution
-                    const auto& param = _params.vector[fieldId];
-                    totalFieldWeight += param.fieldWeight;
-                    qt.handles().push_back({tfd.getHandle(), &tfd, &param, param.fieldWeight / param.maxTableSum});
+                    totalFieldWeight += _params.vector[fieldId].fieldWeight;
+                    qt.handles().emplace_back(tfd.getHandle(), &tfd);
                 }
             }
             if (!qt.handles().empty()) {
                 _query_terms.push_back(qt);
-                _divisor += qt.query_weight() * totalFieldWeight;
+                _divisor += (qt.significance() * qt.termData()->getWeight().percent() * totalFieldWeight);
             }
         }
     }
@@ -48,58 +47,53 @@ NativeFieldMatchExecutorSharedState::NativeFieldMatchExecutorSharedState(const I
 
 NativeFieldMatchExecutorSharedState::~NativeFieldMatchExecutorSharedState() = default;
 
-feature_t NativeFieldMatchExecutor::calculateScore(const MyQueryTerm& qt, uint32_t docId, size_t& tfmd_idx) {
+feature_t NativeFieldMatchExecutor::calculateScore(const MyQueryTerm& qt, uint32_t docId) {
     feature_t termScore = 0;
     for (size_t i = 0; i < qt.handles().size(); ++i) {
-        const auto&                  handle = qt.handles()[i];
-        const TermFieldMatchData*    tfmd = _tfmds[tfmd_idx++];
-        const NativeFieldMatchParam& param = *handle.param;
+        TermFieldHandle              tfh = qt.handles()[i].first;
+        const TermFieldMatchData*    tfmd = _md->resolveTermField(tfh);
+        const NativeFieldMatchParam& param = _params.vector[tfmd->getFieldId()];
         if (tfmd->has_ranking_data(docId)) { // do we have a hit
             FieldPositionsIterator pos = tfmd->getIterator();
             if (pos.valid()) {
                 uint32_t fieldLength = getFieldLength(param, pos.getFieldLength());
                 termScore += ((getFirstOccBoost(param, pos.getPosition(), fieldLength) * param.firstOccImportance) +
                               (getNumOccBoost(param, pos.size(), fieldLength) * (1 - param.firstOccImportance))) *
-                             handle.field_scale;
+                             param.fieldWeight / param.maxTableSum;
             }
         }
     }
-    return termScore * qt.query_weight();
+    termScore *= (qt.significance() * qt.termData()->getWeight().percent());
+    return termScore;
 }
 
 NativeFieldMatchExecutor::NativeFieldMatchExecutor(const NativeFieldMatchExecutorSharedState& shared_state)
     : FeatureExecutor(),
       _params(shared_state.get_params()),
       _queryTerms(shared_state.get_query_terms()),
-      _score_scale(shared_state.get_divisor() > 0 ? 1.0 / shared_state.get_divisor() : 1.0),
-      _tfmds() {
-    size_t num_handles = 0;
+      _divisor(shared_state.get_divisor()),
+      _md(nullptr) {
     for (const auto& qt : _queryTerms) {
         for (const auto& handle : qt.handles()) {
             // Record that we need normal term field match data
-            (void)handle.term_field->getHandle(MatchDataDetails::Normal);
-            ++num_handles;
+            (void)handle.second->getHandle(MatchDataDetails::Normal);
         }
     }
-    _tfmds.reserve(num_handles);
 }
 
 void NativeFieldMatchExecutor::execute(uint32_t docId) {
     feature_t score = 0;
-    size_t    tfmd_idx = 0;
     for (size_t i = 0; i < _queryTerms.size(); ++i) {
-        score += calculateScore(_queryTerms[i], docId, tfmd_idx);
+        score += calculateScore(_queryTerms[i], docId);
     }
-    outputs().set_number(0, score * _score_scale);
+    if (_divisor > 0) {
+        score /= _divisor;
+    }
+    outputs().set_number(0, score);
 }
 
 void NativeFieldMatchExecutor::handle_bind_match_data(const fef::MatchData& md) {
-    _tfmds.clear();
-    for (const auto& qt : _queryTerms) {
-        for (const auto& handle : qt.handles()) {
-            _tfmds.push_back(md.resolveTermField(handle.tfh));
-        }
-    }
+    _md = &md;
 }
 
 NativeFieldMatchBlueprint::NativeFieldMatchBlueprint()
