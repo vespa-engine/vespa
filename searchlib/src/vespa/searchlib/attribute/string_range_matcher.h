@@ -41,19 +41,7 @@ public:
 protected:
     bool isValid() const;
     bool match(const char* src) const;
-    bool isPrefix() const { HDR_ABORT("should not be reached"); }
-    bool isRegex() const { HDR_ABORT("should not be reached"); }
-    bool isCased() const { HDR_ABORT("should not be reached"); }
-    bool isFuzzy() const { HDR_ABORT("should not be reached"); }
-    const vespalib::Regex& getRegex() const { HDR_ABORT("should not be reached"); }
-    const vespalib::FuzzyMatcher& getFuzzyMatcher() const { HDR_ABORT("should not be reached"); }
     const QueryTermUCS4* get_query_term_ptr() const noexcept { HDR_ABORT("should not be reached"); }
-
-    template <typename DictionaryConstIteratorType>
-    bool is_fuzzy_match(const char* /*word*/, DictionaryConstIteratorType& /*itr*/,
-                        const DfaStringComparator::DataStoreType& /*data_store*/) const {
-        HDR_ABORT("should not be reached");
-    }
 
     void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 };
