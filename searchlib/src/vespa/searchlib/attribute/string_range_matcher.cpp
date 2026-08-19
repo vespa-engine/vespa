@@ -16,7 +16,8 @@ StringRangeMatcher::StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_te
 }
 
 StringRangeMatcher::StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased)
-    : _query_term(std::move(query_term)), _range_spec(nullptr), _cased(cased) {
+    : _query_term(std::move(query_term)), _query_term_ucs4(nullptr), _range_spec(nullptr), _cased(cased) {
+    _query_term_ucs4 = dynamic_cast<QueryTermUCS4*>(_query_term.get());
     if (_query_term) {
         _range_spec = _query_term->get_string_range_spec();
     }
@@ -36,6 +37,10 @@ bool StringRangeMatcher::match(const char* src) const {
     } else {
         return match_internal<true>(src);
     }
+}
+
+const QueryTermUCS4* StringRangeMatcher::get_query_term_ptr() const noexcept {
+    return _query_term_ucs4;
 }
 
 void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,

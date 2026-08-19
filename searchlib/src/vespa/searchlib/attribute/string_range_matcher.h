@@ -24,6 +24,7 @@ class EnumHintSearchContext;
 class StringRangeMatcher {
 private:
     std::unique_ptr<QueryTermSimple> _query_term;
+    const QueryTermUCS4*             _query_term_ucs4;
     const StringRangeSpec*           _range_spec;
     bool                             _cased;
 
@@ -34,12 +35,12 @@ public:
     StringRangeMatcher(StringRangeMatcher&&) noexcept;
     ~StringRangeMatcher();
 
-    const StringRangeSpec* get_string_range_spec() const { return _range_spec; }
+    [[nodiscard]] const StringRangeSpec* get_string_range_spec() const { return _range_spec; }
 
 protected:
-    bool isValid() const;
+    [[nodiscard]] bool isValid() const;
     bool match(const char* src) const;
-    const QueryTermUCS4* get_query_term_ptr() const noexcept { HDR_ABORT("should not be reached"); }
+    [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept;
 
     void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 
