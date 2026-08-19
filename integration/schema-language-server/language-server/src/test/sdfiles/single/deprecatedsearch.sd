@@ -1,0 +1,8 @@
+# Uses the deprecated "search" keyword to open the schema instead of "schema".
+search deprecatedsearch {
+    document deprecatedsearch {
+        field title type string {
+            indexing: index | summary
+        }
+    }
+}
