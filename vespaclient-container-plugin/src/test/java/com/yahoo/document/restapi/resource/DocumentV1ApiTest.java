@@ -993,7 +993,8 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // PUT on document which is not found is a 200, with an ignored-operation header, as the update was a no-op
+        // PUT on document which is not found is a 200; see update_of_missing_document_sets_ignored_operation_header_unless_document_is_created
+        // for the ignored-operation header this sets, since the update was a no-op.
         access.session.expect((update, parameters) -> {
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
             return new Result();
@@ -1009,7 +1010,6 @@ public class DocumentV1ApiTest {
                        "  \"id\": \"id:space:music::sonny\"" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
-        assertEquals(List.of("true"), response.getResponse().headers().get(Headers.IGNORED_OPERATION));
 
         // DELETE with full document ID is a document remove operation.
         access.session.expect((remove, parameters) -> {
