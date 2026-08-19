@@ -127,7 +127,7 @@ SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP              
                                                  const attribute::SearchContextParams& params) const {
     bool cased = this->get_match_is_cased();
     auto docid_limit = this->getCommittedDocIdLimit();
-    if (qTerm && qTerm->getRange<std::string>().valid) {
+    if (qTerm && qTerm->get_string_range_spec()) {
         using BaseSC = attribute::SingleStringEnumSearchContextT<attribute::StringRangeMatcher>;
         using SC = attribute::StringRangePostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
         BaseSC base_sc(std::move(qTerm), cased, params.fuzzy_matching_algorithm(), *this,
