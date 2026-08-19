@@ -5,7 +5,6 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
-#include <vespa/vespalib/util/binary_hamming_distance.h>
 
 #include <algorithm>
 #include <array>
@@ -31,7 +30,8 @@ void my_sum_max_inv_hamming_op(InterpretedFunction::State& state, uint64_t vec_s
             for (const int8_t* document = document_cells.data();
                  document < document_cells.data() + document_cells.size(); document += vec_size)
             {
-                float my_inv_hamming = 1.0f / (1.0f + binary_hamming_distance(query, document, vec_size));
+                float my_inv_hamming =
+                    1.0f / (1.0f + hwaccelerated::binary_hamming_distance(query, document, vec_size));
                 max_inv_hamming = aggr::Max<float>::combine(max_inv_hamming, my_inv_hamming);
             }
             result += max_inv_hamming;
@@ -139,22 +139,37 @@ const TensorFunction* check_inv(const TensorFunction& expr) {
     return nullptr;
 }
 
-bool check_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
-                  const std::string& sum_dim, const std::string& max_dim, const std::string& ham_dim) {
-    return (res_type.is_double() && (query.dimensions().size() == 2) && (query.cell_type() == CellType::INT8) &&
-            (document.dimensions().size() == 2) && (document.cell_type() == CellType::INT8) &&
-            query.has_dimension(sum_dim) && (query.stride_of(ham_dim) == 1) && document.has_dimension(max_dim) &&
-            (document.stride_of(ham_dim) == 1));
+bool is_mapped_dim(const ValueType& type, const std::string& dim) {
+    size_t npos = ValueType::Dimension::npos;
+    size_t idx = type.dimension_index(dim);
+    return (idx != npos) && type.dimensions()[idx].is_mapped();
 }
 
+// requirements shared by the plain and the chunked optimization: a double result, an
+// int8 query holding the sum dimension, and int8 cells with the hamming dimension
+// innermost in both inputs. What differs is the shape of the document; see below.
+bool check_common_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
+                         const std::string& sum_dim, const std::string& ham_dim) {
+    return (res_type.is_double() && (query.dimensions().size() == 2) && (query.cell_type() == CellType::INT8) &&
+            query.has_dimension(sum_dim) && (query.stride_of(ham_dim) == 1) &&
+            (document.cell_type() == CellType::INT8) && (document.stride_of(ham_dim) == 1));
+}
+
+// the document holds the max dimension, which may be either mapped or indexed
+bool check_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
+                  const std::string& sum_dim, const std::string& max_dim, const std::string& ham_dim) {
+    return (check_common_params(res_type, query, document, sum_dim, ham_dim) && (document.dimensions().size() == 2) &&
+            document.has_dimension(max_dim));
+}
+
+// the document groups its vectors into chunks, so both the max dimension and the
+// chunk dimension must be mapped
 bool check_chunked_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
                           const std::string& sum_dim, const std::string& max_dim, const std::string& chunk_dim,
                           const std::string& ham_dim) {
-    return (res_type.is_double() && (query.dimensions().size() == 2) && (query.cell_type() == CellType::INT8) &&
-            (document.dimensions().size() == 3) && (document.count_mapped_dimensions() == 2) &&
-            (document.cell_type() == CellType::INT8) && query.has_dimension(sum_dim) &&
-            (query.stride_of(ham_dim) == 1) && document.has_dimension(max_dim) && document.has_dimension(chunk_dim) &&
-            (document.stride_of(ham_dim) == 1));
+    return (check_common_params(res_type, query, document, sum_dim, ham_dim) && (document.dimensions().size() == 3) &&
+            (document.count_mapped_dimensions() == 2) && is_mapped_dim(document, max_dim) &&
+            is_mapped_dim(document, chunk_dim));
 }
 
 size_t get_dim_size(const ValueType& type, const std::string& dim) {
@@ -164,7 +179,8 @@ size_t get_dim_size(const ValueType& type, const std::string& dim) {
     return type.dimensions()[idx].size;
 }
 
-// the document has exactly two mapped dimensions; the chunk dimension is either the first or the second
+// check_chunked_params has verified that the document has exactly two mapped
+// dimensions and that the chunk dimension is one of them
 size_t get_chunk_dim(const ValueType& document, const std::string& chunk_dim) {
     return (document.mapped_dimensions()[0].name == chunk_dim) ? 0 : 1;
 }
