@@ -23,7 +23,7 @@ import java.util.HashSet;
 /**
  * Vespa map. Backed by and parametrized by FieldValue
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends CompositeFieldValue implements java.util.Map<K,V> {
 
