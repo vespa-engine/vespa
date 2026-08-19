@@ -16,6 +16,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
@@ -198,7 +199,10 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                                      .filter(DeploymentSpec.ChangeBlocker::blocksVersions)
                                                      .map(DeploymentSpec.ChangeBlocker::window)
                                                      .map(window -> window.dateRange().start()
-                                                                          .map(date -> date.atStartOfDay(window.zone())
+                                                                          .map(date -> date.atTime(window.dateRange()
+                                                                                                          .startTime()
+                                                                                                          .orElse(LocalTime.MIN))
+                                                                                           .atZone(window.zone())
                                                                                            .toInstant())
                                                                           .orElse(now))
                                                      .distinct();

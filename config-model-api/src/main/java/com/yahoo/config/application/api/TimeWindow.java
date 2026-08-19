@@ -7,6 +7,7 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -71,7 +72,7 @@ public class TimeWindow {
         LocalDateTime dt = LocalDateTime.ofInstant(instant, zone);
         return days.contains(dt.getDayOfWeek()) &&
                hours.contains(dt.getHour()) &&
-               dateRange.includes(dt.toLocalDate());
+               dateRange.includes(dt);
     }
 
     @Override
@@ -166,18 +167,23 @@ public class TimeWindow {
         }
     }
 
-    /** A range of local dates, which may be unbounded */
+    /** A range of local dates, which may be unbounded. The start and end may optionally carry a time of day */
     public static class LocalDateRange {
 
         private final Optional<LocalDate> start;
+        private final Optional<LocalTime> startTime;
         private final Optional<LocalDate> end;
+        private final Optional<LocalTime> endTime;
 
-        private LocalDateRange(Optional<LocalDate> start, Optional<LocalDate> end) {
+        private LocalDateRange(Optional<LocalDate> start, Optional<LocalTime> startTime,
+                                Optional<LocalDate> end, Optional<LocalTime> endTime) {
             this.start = Objects.requireNonNull(start);
+            this.startTime = Objects.requireNonNull(startTime);
             this.end = Objects.requireNonNull(end);
-            if (start.isPresent() && end.isPresent() && start.get().isAfter(end.get())) {
-                throw new IllegalArgumentException("Invalid date range: start date " + start.get() +
-                                                   " is after end date " + end.get());
+            this.endTime = Objects.requireNonNull(endTime);
+            if (start.isPresent() && end.isPresent() && startInclusive().isAfter(endInclusive())) {
+                throw new IllegalArgumentException("Invalid date range: start date " + boundString(start, startTime) +
+                                                   " is after end date " + boundString(end, endTime));
             }
         }
 
@@ -186,9 +192,19 @@ public class TimeWindow {
             return start;
         }
 
+        /** Returns the time of day the starting date of this begins at, if any. Defaults to the start of the day */
+        public Optional<LocalTime> startTime() {
+            return startTime;
+        }
+
         /** Returns the ending date of this (inclusive), if any */
         public Optional<LocalDate> end() {
             return end;
+        }
+
+        /** Returns the time of day the ending date of this ends at, if any. Defaults to the end of the day */
+        public Optional<LocalTime> endTime() {
+            return endTime;
         }
 
         /** Return days of week found in this range */
@@ -201,30 +217,55 @@ public class TimeWindow {
             return days;
         }
 
-        /** Returns whether includes the given date */
-        private boolean includes(LocalDate date) {
-            if (start.isPresent() && date.isBefore(start.get())) return false;
-            if (end.isPresent() && date.isAfter(end.get())) return false;
+        /** Returns whether this includes the given date and time */
+        private boolean includes(LocalDateTime dateTime) {
+            if (start.isPresent() && dateTime.isBefore(startInclusive())) return false;
+            if (end.isPresent() && dateTime.isAfter(endInclusive())) return false;
             return true;
+        }
+
+        /** Returns the earliest point in time included by this, or the minimum possible point in time if unbounded */
+        private LocalDateTime startInclusive() {
+            return start.map(date -> date.atTime(startTime.orElse(LocalTime.MIN))).orElse(LocalDateTime.MIN);
+        }
+
+        /** Returns the latest point in time included by this, or the maximum possible point in time if unbounded */
+        private LocalDateTime endInclusive() {
+            return end.map(date -> date.atTime(endTime.orElse(LocalTime.MAX))).orElse(LocalDateTime.MAX);
         }
 
         @Override
         public String toString() {
-            return "date range [" + start.map(LocalDate::toString).orElse("any date") +
-                   ", " + end.map(LocalDate::toString).orElse("any date") + "]";
+            return "date range [" + boundString(start, startTime) + ", " + boundString(end, endTime) + "]";
+        }
+
+        private static String boundString(Optional<LocalDate> date, Optional<LocalTime> time) {
+            return date.map(d -> time.<String>map(t -> d + "T" + t).orElseGet(d::toString))
+                       .orElse("any date");
         }
 
         private static LocalDateRange from(String start, String end) {
             try {
-                return new LocalDateRange(optionalDate(start), optionalDate(end));
+                Bound startBound = parseBound(start);
+                Bound endBound = parseBound(end);
+                return new LocalDateRange(startBound.date(), startBound.time(), endBound.date(), endBound.time());
             } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Could not parse date range '" + start + "' and '" + end + "'", e);
             }
         }
 
-        private static Optional<LocalDate> optionalDate(String date) {
-            return Optional.of(date).filter(s -> !s.isEmpty()).map(LocalDate::parse);
+        /** Parse a date, optionally followed by a time of day, e.g. "2022-01-15" or "2022-01-15T08:00" */
+        private static Bound parseBound(String date) {
+            if (date.isEmpty()) return new Bound(Optional.empty(), Optional.empty());
+            String normalized = date.replace(' ', 'T');
+            if (normalized.indexOf('T') < 0) {
+                return new Bound(Optional.of(LocalDate.parse(normalized)), Optional.empty());
+            }
+            LocalDateTime dateTime = LocalDateTime.parse(normalized);
+            return new Bound(Optional.of(dateTime.toLocalDate()), Optional.of(dateTime.toLocalTime()));
         }
+
+        private record Bound(Optional<LocalDate> date, Optional<LocalTime> time) {}
 
     }
 
