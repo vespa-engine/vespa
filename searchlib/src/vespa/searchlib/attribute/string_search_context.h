@@ -35,7 +35,7 @@ public:
     const QueryTermUCS4* queryTerm() const override;
     bool valid() const override;
 
-    void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
+    void set_and_setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 };
 
 using StringSearchContext = StringSearchContextT<StringMatcher>;
