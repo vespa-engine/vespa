@@ -1625,7 +1625,7 @@ public class YqlParser implements Parser {
                     return new StringRangeItem(left_string, false, right_string, true, getIndex(args.get(0)), true);
                 }
                 case BOUNDS_RIGHT_OPEN -> {
-                    return new StringRangeItem(left_string, true, right_string, true, getIndex(args.get(0)), true);
+                    return new StringRangeItem(left_string, true, right_string, false, getIndex(args.get(0)), true);
                 }
                 default ->
                         throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
