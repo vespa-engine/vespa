@@ -2,6 +2,9 @@
 
 #include "string_range_matcher.h"
 
+#include "enumhintsearchcontext.h"
+#include "enumstore.h"
+
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/util/foldedstringcompare.h>
 
@@ -30,6 +33,13 @@ bool StringRangeMatcher::match(const char* src) const {
     } else {
         return FoldedStringCompare::compareFolded<true, true>(_left.c_str(), src) < 0 &&
                FoldedStringCompare::compareFolded<true, true>(src, _right.c_str()) < 0;
+    }
+}
+
+void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& /*enum_store*/,
+                                            EnumHintSearchContext& /*enum_hint_sc*/) {
+    if (isValid()) {
+        // TODO
     }
 }
 

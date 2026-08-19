@@ -9,9 +9,12 @@
 
 namespace search {
 class QueryTermSimple;
-}
+template <class EntryT> class EnumStoreT;
+} // namespace search
 
 namespace search::attribute {
+
+class EnumHintSearchContext;
 
 /*
  * Class used to determine if an attribute vector string value is a match for
@@ -51,6 +54,8 @@ protected:
                         const DfaStringComparator::DataStoreType& /*data_store*/) const {
         HDR_ABORT("should not be reached");
     }
+
+    void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 };
 
 } // namespace search::attribute
