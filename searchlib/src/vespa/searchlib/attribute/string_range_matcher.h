@@ -34,8 +34,7 @@ public:
     StringRangeMatcher(StringRangeMatcher&&) noexcept;
     ~StringRangeMatcher();
 
-    const std::string& get_left() const { return _range_spec->left; }
-    const std::string& get_right() const { return _range_spec->right; }
+    const StringRangeSpec* get_string_range_spec() const { return _range_spec; }
 
 protected:
     bool isValid() const;
