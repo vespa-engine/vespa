@@ -41,26 +41,10 @@ bool StringSearchContextT<Matcher>::valid() const {
 }
 
 template <typename Matcher>
-void StringSearchContextT<Matcher>::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,
-                                                       EnumHintSearchContext&         enum_hint_sc) {
+void StringSearchContextT<Matcher>::set_and_setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,
+                                                               EnumHintSearchContext&         enum_hint_sc) {
     _plsc = &enum_hint_sc;
-    if (valid()) {
-        if (this->isPrefix()) {
-            auto comp = enum_store.make_folded_comparator_prefix(queryTerm()->getTerm());
-            enum_hint_sc.lookupRange(comp, comp);
-        } else if (this->isRegex()) {
-            std::string prefix(vespalib::RegexpUtil::get_prefix(queryTerm()->getTerm()));
-            auto        comp = enum_store.make_folded_comparator_prefix(prefix.c_str());
-            enum_hint_sc.lookupRange(comp, comp);
-        } else if (this->isFuzzy()) {
-            std::string prefix(this->getFuzzyMatcher().getPrefix());
-            auto        comp = enum_store.make_folded_comparator_prefix(prefix.c_str());
-            enum_hint_sc.lookupRange(comp, comp);
-        } else {
-            auto comp = enum_store.make_folded_comparator(queryTerm()->getTerm());
-            enum_hint_sc.lookupTerm(comp);
-        }
-    }
+    this->setup_enum_hint_sc(enum_store, enum_hint_sc);
 }
 
 } // namespace search::attribute
