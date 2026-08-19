@@ -38,16 +38,18 @@ bool StringRangeMatcher::match(const char* src) const {
     }
 }
 
-void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& /*enum_store*/,
-                                            EnumHintSearchContext& /*enum_hint_sc*/) {
+void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,
+                                            EnumHintSearchContext&         enum_hint_sc) {
     if (isValid()) {
-        // TODO
+        auto comp_left = enum_store.make_folded_comparator(_range_spec->left.c_str());
+        auto comp_right = enum_store.make_folded_comparator(_range_spec->right.c_str());
+        enum_hint_sc.lookupRange(comp_left, comp_right);
     }
 }
 
 template <bool fold>
 bool StringRangeMatcher::match_internal(const char* src) const {
-    if (_range_spec) {
+    if (isValid()) {
         return (_range_spec->left_unbounded ||
                 (_range_spec->left_closed
                      ? FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left.c_str(), src) <= 0
