@@ -38,6 +38,7 @@ public class Processing {
                 LiteralBoost::new,
                 TagType::new,
                 ValidateFieldTypesDocumentsOnly::new,
+                CreateFastMapSearch::new,
                 IndexingInputs::new,
                 OptimizeIlscript::new,
                 ValidateFieldWithIndexSettingsCreatesIndex::new,
