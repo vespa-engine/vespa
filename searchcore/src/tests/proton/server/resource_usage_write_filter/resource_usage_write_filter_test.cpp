@@ -52,6 +52,10 @@ public:
     }
 };
 
+ProcessMemoryStats make_normal_process_memory_stats() {
+    return ProcessMemoryStats(297, 298, 300);
+}
+
 } // namespace
 
 struct ResourceUsageWriteFilterTest : public ::testing::Test {
@@ -62,7 +66,7 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test {
 
     ResourceUsageWriteFilterTest()
         : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0))), _notifier(_filter) {
-        _notifier.set_resource_usage(ResourceUsage(), ProcessMemoryStats(297, 298, 300), DiskUsage(20, 100),
+        _notifier.set_resource_usage(ResourceUsage(), make_normal_process_memory_stats(), DiskUsage(20, 100),
                                      ReservedDiskSpaceAndMemory());
     }
 
@@ -90,7 +94,25 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test {
                                      ReservedDiskSpaceAndMemory());
     }
 
-    void notify_attribute_usage(const AttributeUsageStats& usage) { _notifier.notify_attribute_usage(usage, 0); }
+    void trigger_memory_limit_for_flush() {
+        // 300 memory used, 610 memory reserved for flush => 910
+        _notifier.set_resource_usage(ResourceUsage(), make_normal_process_memory_stats(), _notifier.disk_usage(),
+                                     ReservedDiskSpaceAndMemory(0, 0, 610, 0));
+    }
+
+    void notify_attribute_usage(const AttributeUsageStats& usage, size_t reserved_memory_for_attribute_load) {
+        _notifier.notify_attribute_usage(usage, reserved_memory_for_attribute_load);
+    }
+
+    void notify_attribute_usage(const AttributeUsageStats& usage) { notify_attribute_usage(usage, 0); }
+
+    void trigger_memory_limit_for_attribute_load() {
+        // 300 memory used, 620 memory reserved for attribute load => 920
+        _notifier.set_resource_usage(ResourceUsage(), make_normal_process_memory_stats(), _notifier.disk_usage(),
+                                     ReservedDiskSpaceAndMemory());
+        MyAttributeStats stats;
+        notify_attribute_usage(stats, 620);
+    }
 };
 
 TEST_F(ResourceUsageWriteFilterTest, default_filter_allows_write) {
@@ -104,7 +126,7 @@ TEST_F(ResourceUsageWriteFilterTest, stats_are_wired_through) {
 }
 
 void assertResourceUsage(double usage, double limit, double utilization, const ResourceUsageWithLimit& state) {
-    EXPECT_EQ(usage, state.usage());
+    EXPECT_DOUBLE_EQ(usage, state.usage());
     EXPECT_EQ(limit, state.limit());
     EXPECT_DOUBLE_EQ(utilization, state.utilization());
 }
@@ -160,6 +182,34 @@ TEST_F(ResourceUsageWriteFilterTest, memory_limit_can_be_reached) {
               "rss: { mapped: 898, anonymous: 900}, "
               "physicalMemory: 1000, memoryUsed: 0.9, memoryLimit: 0.8}}");
     assertResourceUsage(0.9, 0.8, 1.125, _notifier.usageState().memoryState());
+}
+
+TEST_F(ResourceUsageWriteFilterTest, memory_limit_can_be_reached_due_to_reserved_memory_for_flush) {
+    EXPECT_TRUE(_notifier.setConfig(Config(0.8, 1.0, 0.0, 1.0, AttributeUsageFilterConfig())));
+    assertResourceUsage(0.3, 0.8, 0.375, _notifier.usageState().memoryState());
+    trigger_memory_limit_for_flush();
+    testWrite("memoryLimitReached: { "
+              "action: \"add more content nodes\", "
+              "reason: \"memory used (0.91) > memory limit (0.8)\", "
+              "stats: { "
+              "virt: 297, "
+              "rss: { mapped: 298, anonymous: 300}, "
+              "physicalMemory: 1000, memoryUsed: 0.91, memoryLimit: 0.8}}");
+    assertResourceUsage(0.91, 0.8, 1.1375, _notifier.usageState().memoryState());
+}
+
+TEST_F(ResourceUsageWriteFilterTest, memory_limit_can_be_reached_doe_to_reserved_memory_for_attribute_load) {
+    EXPECT_TRUE(_notifier.setConfig(Config(0.8, 1.0, 0.0, 1.0, AttributeUsageFilterConfig())));
+    assertResourceUsage(0.3, 0.8, 0.375, _notifier.usageState().memoryState());
+    trigger_memory_limit_for_attribute_load();
+    testWrite("memoryLimitReached: { "
+              "action: \"add more content nodes\", "
+              "reason: \"memory used (0.92) > memory limit (0.8)\", "
+              "stats: { "
+              "virt: 297, "
+              "rss: { mapped: 298, anonymous: 300}, "
+              "physicalMemory: 1000, memoryUsed: 0.92, memoryLimit: 0.8}}");
+    assertResourceUsage(0.92, 0.8, 1.15, _notifier.usageState().memoryState());
 }
 
 TEST_F(ResourceUsageWriteFilterTest, transient_memory_is_subtracted_from_reported_memory) {
