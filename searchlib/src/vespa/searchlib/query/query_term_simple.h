@@ -44,6 +44,7 @@ public:
      * Extracts the content of this query term as a range with low and high values.
      */
     template <typename N> RangeResult<N> getRange() const noexcept;
+    const StringRangeSpec* get_string_range_spec() const noexcept;
     int getRangeLimit() const noexcept { return activeRange().rangeLimit; }
     size_t getMaxPerGroup() const noexcept { return activeRange().maxPerGroup; }
     size_t getDiversityCutoffGroups() const noexcept { return activeRange().diversityCutoffGroups; }
