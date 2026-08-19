@@ -285,6 +285,7 @@ class JettyCluster implements Cluster {
         @Override public int code() { return response.getStatus(); }
         @Override public byte[] body() { return content; }
         @Override public String contentType() { return response.getHeaders().get(HttpHeader.CONTENT_TYPE); }
+        @Override public String header(String name) { return response.getHeaders().get(name); }
     }
 
     private static class EndpointClient {

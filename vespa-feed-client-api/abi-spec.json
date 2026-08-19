@@ -205,7 +205,9 @@
       "public abstract int code()",
       "public abstract byte[] body()",
       "public java.lang.String contentType()",
-      "public static ai.vespa.feed.client.HttpResponse of(int, byte[])"
+      "public java.lang.String header(java.lang.String)",
+      "public static ai.vespa.feed.client.HttpResponse of(int, byte[])",
+      "public static ai.vespa.feed.client.HttpResponse of(int, byte[], java.util.Map)"
     ],
     "fields" : [ ]
   },
@@ -379,7 +381,8 @@
       "public abstract ai.vespa.feed.client.Result$Type type()",
       "public abstract ai.vespa.feed.client.DocumentId documentId()",
       "public abstract java.util.Optional resultMessage()",
-      "public abstract java.util.Optional traceMessage()"
+      "public abstract java.util.Optional traceMessage()",
+      "public abstract boolean ignored()"
     ],
     "fields" : [ ]
   },

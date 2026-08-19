@@ -51,6 +51,7 @@ class HttpFeedClient implements FeedClient {
     private static final Logger log = Logger.getLogger(HttpFeedClient.class.getName());
 
     private static final Duration maxTimeout = Duration.ofMinutes(15);
+    private static final String IGNORED_OPERATION_HEADER = "X-Vespa-Ignored-Operation";
     private static final JsonFactory jsonParserFactory = new JsonFactoryBuilder()
             .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
             .build();
@@ -290,7 +291,8 @@ class HttpFeedClient implements FeedClient {
         if (outcome == Outcome.vespaFailure)
             throw new ResultException(documentId, mat.message, mat.trace);
 
-        return new ResultImpl(toResultType(outcome), documentId, mat.message, mat.trace);
+        boolean ignored = "true".equals(response.header(IGNORED_OPERATION_HEADER));
+        return new ResultImpl(toResultType(outcome), documentId, mat.message, mat.trace, ignored);
     }
 
     static String getPath(DocumentId documentId) {

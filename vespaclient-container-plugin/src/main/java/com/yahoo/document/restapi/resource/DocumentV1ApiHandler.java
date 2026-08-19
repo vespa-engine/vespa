@@ -37,6 +37,7 @@ import com.yahoo.documentapi.DocumentResponse;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response.Outcome;
 import com.yahoo.documentapi.Result;
+import com.yahoo.documentapi.UpdateResponse;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorControlSession;
 import com.yahoo.documentapi.VisitorDataHandler;
@@ -958,7 +959,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         try (JsonResponse jsonResponse = JsonResponse.createWithPathAndId(path, handler, tensorOptions)) {
             jsonResponse.writeTrace(response.getTrace());
             if (response.isSuccess()) {
-                boolean ignoredOperation = (response.outcome() == Outcome.IGNORED);
+                boolean ignoredOperation = (response.outcome() == Outcome.IGNORED)
+                        || (response instanceof UpdateResponse && ! ((UpdateResponse) response).wasFound());
                 Document docOrNull = (response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null;
                 callback.onSuccess(docOrNull, jsonResponse, ignoredOperation);
             } else {
