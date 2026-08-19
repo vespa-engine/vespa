@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 
@@ -53,11 +54,13 @@ void my_max_sum_max_inv_hamming_op(InterpretedFunction::State& state, uint64_t p
     const Value& document = state.peek(0);
     auto         document_cells = document.cells().unsafe_typify<int8_t>();
     if ((query_cells.size() > 0) && (document_cells.size() > 0)) {
-        size_t                               num_query_vectors = query_cells.size() / param.vec_size;
-        size_t                               max_distance = param.vec_size * 8;
+        size_t num_query_vectors = query_cells.size() / param.vec_size;
+        // distances are bounded by vec_size * 8, so they fit in uint32_t for any vector
+        // length that can occur; the inner loop below is bound by the size of this array
+        auto                                 max_distance = static_cast<uint32_t>(param.vec_size * 8);
         size_t                               num_chunks = 0;
         std::unordered_map<uint32_t, size_t> chunk_index;
-        std::vector<size_t>                  min_distances;
+        std::vector<uint32_t>                min_distances;
         std::array<string_id, 2>             address;
         std::array<string_id*, 2>            address_ref = {&address[0], &address[1]};
         size_t                               subspace = 0;
@@ -68,22 +71,22 @@ void my_max_sum_max_inv_hamming_op(InterpretedFunction::State& state, uint64_t p
             if (inserted) {
                 min_distances.resize(++num_chunks * num_query_vectors, max_distance);
             }
-            size_t*       chunk_distances = min_distances.data() + (pos->second * num_query_vectors);
+            uint32_t*     chunk_distances = min_distances.data() + (pos->second * num_query_vectors);
             const int8_t* document_vector = document_cells.data() + (subspace * param.vec_size);
             for (size_t i = 0; i < num_query_vectors; ++i) {
                 if (chunk_distances[i] != 0) {
                     const int8_t* query_vector = query_cells.data() + (i * param.vec_size);
-                    chunk_distances[i] = std::min(
-                        chunk_distances[i],
+                    auto          distance = static_cast<uint32_t>(
                         hwaccelerated::binary_hamming_distance(query_vector, document_vector, param.vec_size));
+                    chunk_distances[i] = std::min(chunk_distances[i], distance);
                 }
             }
         }
         // sum in float to match the cell type of the per-chunk tensor produced by generic evaluation
         float max_chunk_score = aggr::Max<float>::null_value();
         for (size_t chunk = 0; chunk < num_chunks; ++chunk) {
-            const size_t* chunk_distances = min_distances.data() + (chunk * num_query_vectors);
-            float         chunk_score = 0.0f;
+            const uint32_t* chunk_distances = min_distances.data() + (chunk * num_query_vectors);
+            float           chunk_score = 0.0f;
             for (size_t i = 0; i < num_query_vectors; ++i) {
                 chunk_score += 1.0f / (1.0f + chunk_distances[i]);
             }
