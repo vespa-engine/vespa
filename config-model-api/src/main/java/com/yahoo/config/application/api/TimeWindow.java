@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.yahoo.config.provision.LocalDateTimeRange;
 import com.yahoo.text.Text;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
@@ -174,6 +175,7 @@ public class TimeWindow {
         private final Optional<LocalTime> startTime;
         private final Optional<LocalDate> end;
         private final Optional<LocalTime> endTime;
+        private final LocalDateTimeRange range;
 
         private LocalDateRange(Optional<LocalDate> start, Optional<LocalTime> startTime,
                                 Optional<LocalDate> end, Optional<LocalTime> endTime) {
@@ -181,10 +183,7 @@ public class TimeWindow {
             this.startTime = Objects.requireNonNull(startTime);
             this.end = Objects.requireNonNull(end);
             this.endTime = Objects.requireNonNull(endTime);
-            if (start.isPresent() && end.isPresent() && startInclusive().isAfter(endInclusive())) {
-                throw new IllegalArgumentException("Invalid date range: start date " + boundString(start, startTime) +
-                                                   " is after end date " + boundString(end, endTime));
-            }
+            this.range = new LocalDateTimeRange(start, startTime, end, endTime); // Validates that the range is non-inverted
         }
 
         /** Returns the starting date of this (inclusive), if any */
@@ -219,29 +218,23 @@ public class TimeWindow {
 
         /** Returns whether this includes the given date and time */
         private boolean includes(LocalDateTime dateTime) {
-            if (start.isPresent() && dateTime.isBefore(startInclusive())) return false;
-            if (end.isPresent() && dateTime.isAfter(endInclusive())) return false;
-            return true;
+            return range.includes(dateTime);
         }
 
         /** Returns the earliest point in time included by this, or the minimum possible point in time if unbounded */
         private LocalDateTime startInclusive() {
-            return start.map(date -> date.atTime(startTime.orElse(LocalTime.MIN))).orElse(LocalDateTime.MIN);
+            return range.startInclusive();
         }
 
         /** Returns the latest point in time included by this, or the maximum possible point in time if unbounded */
         private LocalDateTime endInclusive() {
-            return end.map(date -> date.atTime(endTime.orElse(LocalTime.MAX))).orElse(LocalDateTime.MAX);
+            return range.endInclusive();
         }
 
         @Override
         public String toString() {
-            return "date range [" + boundString(start, startTime) + ", " + boundString(end, endTime) + "]";
-        }
-
-        private static String boundString(Optional<LocalDate> date, Optional<LocalTime> time) {
-            return date.map(d -> time.<String>map(t -> d + "T" + t).orElseGet(d::toString))
-                       .orElse("any date");
+            return "date range [" + LocalDateTimeRange.boundString(start, startTime) + ", " +
+                   LocalDateTimeRange.boundString(end, endTime) + "]";
         }
 
         private static LocalDateRange from(String start, String end) {

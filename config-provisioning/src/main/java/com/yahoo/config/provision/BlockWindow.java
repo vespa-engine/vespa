@@ -4,7 +4,6 @@ package com.yahoo.config.provision;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -34,6 +33,7 @@ public record BlockWindow(boolean revision, boolean version, boolean maintenance
                        List<DayOfWeek> days, List<Integer> hours, ZoneId zone,
                        Optional<LocalDate> fromDate, Optional<LocalDate> toDate,
                        Optional<LocalTime> fromTime, Optional<LocalTime> toTime) {
+        new LocalDateTimeRange(fromDate, fromTime, toDate, toTime); // Validates that the range is non-inverted
         this.revision    = revision;
         this.version     = version;
         this.maintenance = maintenance;
@@ -65,10 +65,7 @@ public record BlockWindow(boolean revision, boolean version, boolean maintenance
         var zonedDateTime = instant.atZone(zone);
         if (!days.contains(zonedDateTime.getDayOfWeek())) return false;
         if (!hours.contains(zonedDateTime.getHour())) return false;
-        LocalDateTime dateTime = zonedDateTime.toLocalDateTime();
-        if (fromDate.isPresent() && dateTime.isBefore(fromDate.get().atTime(fromTime.orElse(LocalTime.MIN)))) return false;
-        if (toDate.isPresent() && dateTime.isAfter(toDate.get().atTime(toTime.orElse(LocalTime.MAX)))) return false;
-        return true;
+        return new LocalDateTimeRange(fromDate, fromTime, toDate, toTime).includes(zonedDateTime.toLocalDateTime());
     }
 
 }
