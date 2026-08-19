@@ -12,10 +12,14 @@ namespace search::attribute {
 
 StringRangeMatcher::StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased,
                                        vespalib::FuzzyMatchingAlgorithm /*fuzzy_matching_algorithm*/)
-    : _query_term(std::move(query_term)), _left(), _right(), _cased(cased) {
-    QueryTermSimple::RangeResult<std::string> res = _query_term->getRange<std::string>();
-    _left = std::move(res.low);
-    _right = std::move(res.high);
+    : StringRangeMatcher(std::move(query_term), cased) {
+}
+
+StringRangeMatcher::StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased)
+    : _query_term(std::move(query_term)), _range_spec(nullptr), _cased(cased) {
+    if (_query_term) {
+        _range_spec = _query_term->get_string_range_spec();
+    }
 }
 
 StringRangeMatcher::StringRangeMatcher(StringRangeMatcher&&) noexcept = default;
@@ -23,16 +27,14 @@ StringRangeMatcher::StringRangeMatcher(StringRangeMatcher&&) noexcept = default;
 StringRangeMatcher::~StringRangeMatcher() = default;
 
 bool StringRangeMatcher::isValid() const {
-    return (_query_term && (!_query_term->empty()));
+    return _query_term && (!_query_term->empty()) && _range_spec;
 }
 
 bool StringRangeMatcher::match(const char* src) const {
     if (_cased) {
-        return FoldedStringCompare::compareFolded<false, false>(_left.c_str(), src) < 0 &&
-               FoldedStringCompare::compareFolded<false, false>(src, _right.c_str()) < 0;
+        return match_internal<false>(src);
     } else {
-        return FoldedStringCompare::compareFolded<true, true>(_left.c_str(), src) < 0 &&
-               FoldedStringCompare::compareFolded<true, true>(src, _right.c_str()) < 0;
+        return match_internal<true>(src);
     }
 }
 
@@ -40,6 +42,22 @@ void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& /*enu
                                             EnumHintSearchContext& /*enum_hint_sc*/) {
     if (isValid()) {
         // TODO
+    }
+}
+
+template <bool fold>
+bool StringRangeMatcher::match_internal(const char* src) const {
+    if (_range_spec) {
+        return (_range_spec->left_unbounded ||
+                (_range_spec->left_closed
+                     ? FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left.c_str(), src) <= 0
+                     : FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left.c_str(), src) < 0)) &&
+               (_range_spec->right_unbounded ||
+                (_range_spec->right_closed
+                     ? FoldedStringCompare::compareFolded<fold, fold>(src, _range_spec->right.c_str()) <= 0
+                     : FoldedStringCompare::compareFolded<fold, fold>(src, _range_spec->right.c_str()) < 0));
+    } else {
+        return true;
     }
 }
 
