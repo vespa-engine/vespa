@@ -11,10 +11,10 @@ template <typename BaseSC, typename AttrT, typename DataT>
 StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchContext(BaseSC&&     base_sc,
                                                                                        bool         useBitVector,
                                                                                        const AttrT& toBeSearched)
-    : Parent(std::move(base_sc), useBitVector, toBeSearched) {
-    if (this->valid()) {
-        const std::string& left = this->get_left();
-        const std::string& right = this->get_right();
+    : Parent(std::move(base_sc), useBitVector, toBeSearched), _range_spec(this->get_string_range_spec()) {
+    if (this->valid() && _range_spec) {
+        const std::string& left = _range_spec->left;
+        const std::string& right = _range_spec->right;
         auto               comp_left = _enumStore.make_folded_comparator(left.c_str());
         auto               comp_right = _enumStore.make_folded_comparator(right.c_str());
         this->lookupRange(comp_left, comp_right);
