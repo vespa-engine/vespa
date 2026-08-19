@@ -53,7 +53,9 @@ public class FileDistributionRpcServerTest {
                                                         new Supervisor(new Transport()),
                                                         downloadDirectory,
                                                         Duration.ofSeconds(30), // Much longer than this test should ever take
-                                                        Duration.ofMillis(10));
+                                                        Duration.ofMillis(10),
+                                                        0,
+                                                        Duration.ZERO); // No permission-denied grace period: fail on the first denial
         serverSupervisor = new Supervisor(new Transport());
         rpcServer = new FileDistributionRpcServer(serverSupervisor, downloader);
         acceptor = serverSupervisor.listen(new Spec(0));

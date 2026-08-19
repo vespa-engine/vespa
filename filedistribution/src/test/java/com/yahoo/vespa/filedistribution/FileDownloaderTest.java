@@ -201,10 +201,10 @@ public class FileDownloaderTest {
 
     @Test
     public void getFileWhenPermissionDenied() {
-        // Use a much longer timeout than the test should ever take: if the denial were treated as a
-        // retryable failure instead of failing fast, this test would time out waiting for getFile() instead
-        // of throwing promptly.
-        fileDownloader = createDownloader(connection, Duration.ofSeconds(30));
+        // Zero grace period: a denial must be treated as permanent on the very first RPC round trip,
+        // not retried at all.
+        fileDownloader = new FileDownloader(connection, supervisor, downloadDir,
+                                            Duration.ofSeconds(30), sleepBetweenRetries, 0, Duration.ZERO);
 
         MockConnection.PermissionDeniedResponseHandler responseHandler = new MockConnection.PermissionDeniedResponseHandler();
         connection.setResponseHandler(responseHandler);
@@ -215,10 +215,59 @@ public class FileDownloaderTest {
                 () -> getFile(fileReference));
         assertTrue(exception.getMessage(), exception.getMessage().contains("Peer is not allowed to access file reference"));
 
-        // Denial must exit the retry loop on the very first RPC round trip, not after retrying for the
-        // full download timeout.
+        // With no grace period, denial must exit the retry loop on the very first RPC round trip, not after
+        // retrying for the full download timeout.
         assertEquals(1, responseHandler.requestCount);
         assertFalse(fileDownloader.isDownloading(fileReference));
+    }
+
+    @Test
+    public void getFileWhenPermissionDeniedOutlastsGracePeriod() {
+        // Short grace period so the test runs fast, but long enough to observe more than one retry.
+        fileDownloader = new FileDownloader(connection, supervisor, downloadDir,
+                                            Duration.ofSeconds(30), sleepBetweenRetries, 0, Duration.ofMillis(100));
+
+        MockConnection.PermissionDeniedResponseHandler responseHandler = new MockConnection.PermissionDeniedResponseHandler();
+        connection.setResponseHandler(responseHandler);
+
+        FileReference fileReference = new FileReference("deniedFileReference");
+        FileReferenceDownloadPermissionDeniedException exception = assertThrows(
+                FileReferenceDownloadPermissionDeniedException.class,
+                () -> getFile(fileReference));
+        assertTrue(exception.getMessage(), exception.getMessage().contains("Peer is not allowed to access file reference"));
+
+        // A denial that persists for the whole grace period must still end up permanent, but only after
+        // being retried rather than failing on the very first attempt.
+        assertTrue("Expected more than one request, got " + responseHandler.requestCount, responseHandler.requestCount > 1);
+        assertFalse(fileDownloader.isDownloading(fileReference));
+    }
+
+    @Test
+    public void getFileWhenPermissionDeniedIsTransient() throws IOException {
+        // A denial that clears up before the grace period elapses must not fail the download -
+        // this is the eventual-consistency race the grace period exists to ride out.
+        fileDownloader = new FileDownloader(connection, supervisor, downloadDir,
+                                            Duration.ofSeconds(2), sleepBetweenRetries, 0, Duration.ofSeconds(1));
+
+        int timesToDeny = 3;
+        MockConnection.PermissionDeniedThenFoundResponseHandler responseHandler =
+                new MockConnection.PermissionDeniedThenFoundResponseHandler(timesToDeny);
+        connection.setResponseHandler(responseHandler);
+
+        FileReference fileReference = new FileReference("temporarilyDeniedFileReference");
+        // The RPC retries past the transient denials and the download "starts", but since no file content
+        // has been pushed yet, getFile() still times out waiting for it - it must NOT throw
+        // FileReferenceDownloadPermissionDeniedException, which is what the grace period prevents.
+        assertFalse(getFile(fileReference).isPresent());
+        assertTrue("Expected more than one request, got " + responseHandler.requestCount,
+                   responseHandler.requestCount > timesToDeny);
+
+        // Receives fileReference, should return and make it available to caller - proving the earlier
+        // denials did not permanently fail the download.
+        String filename = "abc.jar";
+        receiveFile(fileReference, filename, FileReferenceData.Type.file, "some content");
+        Optional<File> downloadedFile = getFile(fileReference);
+        assertTrue(downloadedFile.isPresent());
     }
 
     @Test
@@ -531,6 +580,30 @@ public class FileDownloaderTest {
                     requestCount++;
                     request.setError(FileReferenceDownloader.jrtErrorUnauthorized,
                                       "Peer is not allowed to access file reference " + request.parameters().get(0).asString());
+                }
+            }
+        }
+
+        private static class PermissionDeniedThenFoundResponseHandler implements MockConnection.ResponseHandler {
+
+            private final int timesToDeny;
+            int requestCount = 0;
+
+            PermissionDeniedThenFoundResponseHandler(int timesToDeny) {
+                this.timesToDeny = timesToDeny;
+            }
+
+            @Override
+            public void request(Request request) {
+                if (request.methodName().equals("filedistribution.serveFile")) {
+                    requestCount++;
+                    if (requestCount <= timesToDeny) {
+                        request.setError(FileReferenceDownloader.jrtErrorUnauthorized,
+                                          "Peer is not allowed to access file reference " + request.parameters().get(0).asString());
+                    } else {
+                        request.returnValues().add(new Int32Value(0));
+                        request.returnValues().add(new StringValue("OK"));
+                    }
                 }
             }
         }

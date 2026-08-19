@@ -55,6 +55,16 @@ public class FileReferenceDownloader {
         return errorCode == jrtErrorUnauthorized || errorCode == jrtErrorAuthorizationFailed;
     }
 
+    // A denial can be a transient side effect of the config server not yet having registered file reference
+    // ownership for a just-activated application generation, rather than a durable authorization problem.
+    // Retry through this grace period before treating the denial as permanent.
+    // Undocumented on purpose, might change or be removed at any time
+    private static final Duration defaultPermissionDeniedGracePeriod;
+    static {
+        var graceSeconds = System.getenv("VESPA_FILE_DOWNLOAD_PERMISSION_DENIED_GRACE_PERIOD_SECONDS");
+        defaultPermissionDeniedGracePeriod = Duration.ofSeconds(graceSeconds == null ? 10 : Long.parseLong(graceSeconds));
+    }
+
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                          new DaemonThreadFactory("filereference downloader"));
@@ -66,6 +76,7 @@ public class FileReferenceDownloader {
     private final File downloadDirectory;
     private final AtomicBoolean shutDown = new AtomicBoolean(false);
     private final int maxTimeoutsBeforeClose;
+    private final Duration permissionDeniedGracePeriod;
 
     FileReferenceDownloader(ConnectionPool connectionPool,
                             Downloads downloads,
@@ -84,12 +95,25 @@ public class FileReferenceDownloader {
                             Duration backoffInitialTime,
                             File downloadDirectory,
                             int maxTimeoutsBeforeClose) {
+        this(connectionPool, downloads, timeout, backoffInitialTime, downloadDirectory, maxTimeoutsBeforeClose,
+             defaultPermissionDeniedGracePeriod);
+    }
+
+    // Package-private, for tests: allows overriding the permission-denied grace period.
+    FileReferenceDownloader(ConnectionPool connectionPool,
+                            Downloads downloads,
+                            Duration timeout,
+                            Duration backoffInitialTime,
+                            File downloadDirectory,
+                            int maxTimeoutsBeforeClose,
+                            Duration permissionDeniedGracePeriod) {
         this.connectionPool = connectionPool;
         this.downloads = downloads;
         this.downloadTimeout = timeout;
         this.backoffInitialTime = backoffInitialTime;
         this.downloadDirectory = downloadDirectory;
         this.maxTimeoutsBeforeClose = maxTimeoutsBeforeClose;
+        this.permissionDeniedGracePeriod = permissionDeniedGracePeriod;
         // Undocumented on purpose, might change or be removed at any time
         var timeoutString = Optional.ofNullable(System.getenv("VESPA_FILE_DOWNLOAD_RPC_TIMEOUT"));
         this.rpcTimeout = timeoutString.map(t -> Duration.ofSeconds(Integer.parseInt(t)));
@@ -100,6 +124,7 @@ public class FileReferenceDownloader {
         FileReference fileReference = fileReferenceDownload.fileReference();
         int retryCount = 0;
         int timeoutCount = 0;
+        Instant permissionDeniedSince = null;
         Connection connection = connectionPool.getCurrent();
         do {
             if (retryCount > 0)
@@ -116,12 +141,17 @@ public class FileReferenceDownloader {
                 var rpcResult = startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout);
                 if (rpcResult.result() == DownloadResult.SUCCESS) return;
                 if (rpcResult.result() == DownloadResult.PERMISSION_DENIED) {
-                    fileReferenceDownload.future().completeExceptionally(
-                            new FileReferenceDownloadPermissionDeniedException(fileReference, rpcResult.message()));
-                    downloads.remove(fileReference);
-                    return;
-                }
-                if (rpcResult.result() == DownloadResult.TIMEOUT && maxTimeoutsBeforeClose > 0) {
+                    // File reference ownership may not yet be registered on the config server right after an
+                    // application generation is activated - retry for a grace period before giving up, so that
+                    // a transient race doesn't get treated the same as a durable authorization denial.
+                    if (permissionDeniedSince == null) permissionDeniedSince = Instant.now();
+                    if (!Duration.between(permissionDeniedSince, Instant.now()).minus(permissionDeniedGracePeriod).isNegative()) {
+                        fileReferenceDownload.future().completeExceptionally(
+                                new FileReferenceDownloadPermissionDeniedException(fileReference, rpcResult.message()));
+                        downloads.remove(fileReference);
+                        return;
+                    }
+                } else if (rpcResult.result() == DownloadResult.TIMEOUT && maxTimeoutsBeforeClose > 0) {
                     timeoutCount++;
                     if (timeoutCount >= maxTimeoutsBeforeClose) {
                         log.log(Level.INFO, "RPC request for " + fileReference + " timed out " + timeoutCount +
