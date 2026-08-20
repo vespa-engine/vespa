@@ -1253,7 +1253,7 @@ TEST_F(MatchingTest, require_that_zero_hit_grouping_still_groups_with_feature_so
         gresult.deserialize(is);
         Grouping gexpect;
         gexpect.setRoot(Group().addResult(
-            SumAggregationResult().setExpression(createAttr()).setResult(Int64ResultNode(4500))));
+            SumAggregationResult().setExpression(createAttr()).resultForUnitTest(Int64ResultNode(4500))));
         EXPECT_EQ(gexpect.root().asString(), gresult.root().asString());
     }
 }
