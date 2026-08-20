@@ -37,7 +37,7 @@ public:
 
     [[nodiscard]] const StringRangeSpec* get_string_range_spec() const { return _range_spec; }
 
-protected:
+public:
     [[nodiscard]] bool isValid() const;
     bool match(const char* src) const;
     [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept;
