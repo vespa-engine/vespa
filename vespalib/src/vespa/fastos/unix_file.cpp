@@ -37,6 +37,23 @@ namespace {
 constexpr uint64_t ONE_G = 1000 * 1000 * 1000;
 }
 
+FastOS_UNIX_File::FastOS_UNIX_File() : FastOS_UNIX_File(nullptr) {
+}
+
+FastOS_UNIX_File::FastOS_UNIX_File(const char* filename)
+    : FastOS_FileInterface(filename),
+      _mmapbase(nullptr),
+      _mmaplen(0),
+      _filedes(-1),
+      _mmapFlags(0),
+      _mmapEnabled(false) {
+}
+
+FastOS_UNIX_File::~FastOS_UNIX_File() {
+    bool ok = Close();
+    assert(ok);
+}
+
 ssize_t FastOS_UNIX_File::Read(void* buffer, size_t len) {
     return File_RW_Ops::read(_filedes, buffer, len);
 }
