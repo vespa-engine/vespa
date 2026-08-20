@@ -12,7 +12,7 @@ class GenericHeader;
 namespace search::common {
 
 /*
- * Create and freeze times for files, measured in microseconds since epoch for utc clock.
+ * Create and freeze times for files, measured in microseconds since epoch for system clock.
  */
 class CreateAndFreezeTimes {
     std::chrono::system_clock::time_point _create_time;
@@ -30,8 +30,8 @@ public:
         return _create_time != std::chrono::system_clock::time_point() &&
                _freeze_time != std::chrono::system_clock::time_point();
     }
-    [[nodiscard]] static int64_t to_utc_us(std::chrono::system_clock::time_point system_time);
-    [[nodiscard]] static std::chrono::system_clock::time_point from_utc_us(uint64_t us);
+    [[nodiscard]] static int64_t to_system_us(std::chrono::system_clock::time_point system_time);
+    [[nodiscard]] static std::chrono::system_clock::time_point from_system_us(int64_t us);
     void merge(const CreateAndFreezeTimes& rhs) noexcept;
     [[nodiscard]] std::chrono::steady_clock::duration get_flush_duration() const;
     [[nodiscard]] static std::chrono::steady_clock::duration
