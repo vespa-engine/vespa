@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include "string_search_helper.h"
+#include "string_range_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
-#include <vespa/vespalib/util/hdr_abort.h>
 
 namespace search {
-class QueryTermSimple;
 template <class EntryT> class EnumStoreT;
 } // namespace search
 
@@ -24,9 +23,7 @@ class EnumHintSearchContext;
 class StringRangeMatcher {
 private:
     std::unique_ptr<QueryTermSimple> _query_term;
-    const QueryTermUCS4*             _query_term_ucs4;
-    const StringRangeSpec*           _range_spec;
-    bool                             _cased;
+    StringRangeSearchHelper          _helper;
 
 public:
     StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased,
@@ -35,18 +32,16 @@ public:
     StringRangeMatcher(StringRangeMatcher&&) noexcept;
     ~StringRangeMatcher();
 
-    [[nodiscard]] const StringRangeSpec* get_string_range_spec() const { return _range_spec; }
+    [[nodiscard]] const StringRangeSpec* get_string_range_spec() const { return _helper.get_string_range_spec(); }
 
-public:
-    [[nodiscard]] bool isValid() const;
-    bool match(const char* src) const;
-    [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept;
+protected:
+    [[nodiscard]] bool isValid() const { return _helper.is_valid(); }
+    [[nodiscard]] bool match(const char* src) const { return _helper.is_match(src); }
+    [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept {
+        return dynamic_cast<QueryTermUCS4*>(_query_term.get());
+    }
 
     void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
-
-private:
-    template <bool fold>
-    bool match_internal(const char* src) const;
 };
 
 } // namespace search::attribute
