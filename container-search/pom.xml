@@ -83,6 +83,27 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- OpenTelemetry API only (Span, SpanKind, Context); provided at runtime by the container-opentelemetry bundle. -->
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <!-- Telemetry seam (Telemetry/ScopedTracer); must stay provided, as compile scope would break config-model-fat. -->
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-opentelemetry</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- InMemorySpanExporter + SdkTracerProvider for asserting on emitted spans in tests (also pulls in the SDK);
+         version managed by the opentelemetry-bom. -->
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-sdk-testing</artifactId>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>

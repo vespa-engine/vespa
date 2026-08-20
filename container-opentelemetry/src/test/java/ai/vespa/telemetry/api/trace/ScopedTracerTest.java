@@ -5,6 +5,7 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -47,8 +48,8 @@ class ScopedTracerTest {
     }
 
     @Test
-    void inSpan_returns_body_value_and_ends_span_without_error_status() {
-        String result = tracer.inSpan("success", SpanKind.INTERNAL, Context.root(), () -> "body-value");
+    void instrument_returns_body_value_and_ends_span_without_error_status() {
+        String result = tracer.instrument("success", SpanKind.INTERNAL, Context.root(), () -> "body-value");
 
         assertEquals("body-value", result);
         SpanData span = onlySpan();
@@ -60,19 +61,19 @@ class ScopedTracerTest {
     }
 
     @Test
-    void inSpan_makes_the_span_current_for_the_body() {
+    void instrument_makes_the_span_current_for_the_body() {
         AtomicReference<Span> seen = new AtomicReference<>();
-        tracer.inSpan("current", SpanKind.INTERNAL, Context.root(), () -> seen.set(Span.current()));
+        tracer.instrument("current", SpanKind.INTERNAL, Context.root(), () -> seen.set(Span.current()));
 
         assertEquals(onlySpan().getSpanId(), seen.get().getSpanContext().getSpanId());
     }
 
     @Test
-    void inSpan_records_exception_sets_error_status_ends_span_and_propagates() {
+    void instrument_records_exception_sets_error_status_ends_span_and_propagates() {
         IllegalStateException boom = new IllegalStateException("boom");
 
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
-                () -> tracer.inSpan("failing", SpanKind.INTERNAL, Context.root(), () -> { throw boom; }));
+                () -> tracer.instrument("failing", SpanKind.INTERNAL, Context.root(), () -> { throw boom; }));
 
         assertSame(boom, thrown);
         SpanData span = onlySpan();
@@ -84,9 +85,9 @@ class ScopedTracerTest {
     }
 
     @Test
-    void inSpan_runnable_overload_runs_body_and_ends_span() {
+    void instrument_runnable_form_runs_body_and_ends_span() {
         AtomicReference<String> ran = new AtomicReference<>();
-        tracer.inSpan("runnable", SpanKind.INTERNAL, Context.root(), (Runnable) () -> ran.set("ran"));
+        tracer.instrument("runnable", SpanKind.INTERNAL, Context.root(), () -> ran.set("ran"));
 
         assertEquals("ran", ran.get());
         SpanData span = onlySpan();
@@ -148,6 +149,29 @@ class ScopedTracerTest {
     @Test
     void otelTracer_returns_the_underlying_tracer() {
         assertSame(tracer.otelTracer(), tracer.otelTracer());
+    }
+
+    @Test
+    void startSpan_never_throws_and_returns_a_non_recording_span_when_creation_fails() {
+        ScopedTracer failing = new ScopedTracer(name -> { throw new RuntimeException("boom"); });
+
+        Span span = failing.startSpan("x", SpanKind.INTERNAL, Context.root());
+
+        assertFalse(span.getSpanContext().isValid(), "a failed span creation must yield an invalid span");
+        assertFalse(span.isRecording());
+        span.end();   // must be a safe no-op
+    }
+
+    @Test
+    void instrument_still_runs_the_body_when_span_creation_fails() {
+        ScopedTracer failing = new ScopedTracer(name -> { throw new RuntimeException("boom"); });
+        AtomicReference<String> ran = new AtomicReference<>();
+
+        String result = failing.instrument("x", SpanKind.INTERNAL, Context.root(),
+                                       () -> { ran.set("ran"); return "body-value"; });
+
+        assertEquals("ran", ran.get(), "instrumentation failure must not skip the body");
+        assertEquals("body-value", result);
     }
 
     private SpanData onlySpan() {
