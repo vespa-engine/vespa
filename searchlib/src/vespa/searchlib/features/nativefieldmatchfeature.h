@@ -35,15 +35,24 @@ public:
  */
 class NativeFieldMatchExecutorSharedState : public fef::Anything {
 public:
-    using WrappedHandle = std::pair<fef::TermFieldHandle, const fef::ITermFieldData*>;
+    struct WrappedHandle {
+        fef::TermFieldHandle         tfh;
+        const fef::ITermFieldData*   term_field;
+        const NativeFieldMatchParam* param;
+        feature_t                    field_scale;
+    };
     using HandleVector = std::vector<WrappedHandle>;
     class MyQueryTerm : public QueryTerm {
     private:
         HandleVector _handles; // field match handles
+        feature_t    _query_weight;
+
     public:
-        MyQueryTerm(const QueryTerm& qt) : QueryTerm(qt), _handles() {}
+        MyQueryTerm(const QueryTerm& qt)
+            : QueryTerm(qt), _handles(), _query_weight(qt.significance() * qt.termData()->getWeight().percent()) {}
         HandleVector& handles() { return _handles; }
         const HandleVector& handles() const { return _handles; }
+        feature_t query_weight() const { return _query_weight; }
     };
 
 private:
@@ -66,12 +75,12 @@ public:
 class NativeFieldMatchExecutor : public fef::FeatureExecutor {
 private:
     using MyQueryTerm = NativeFieldMatchExecutorSharedState::MyQueryTerm;
-    const NativeFieldMatchParams& _params;
-    std::span<const MyQueryTerm>  _queryTerms;
-    feature_t                     _divisor;
-    const fef::MatchData*         _md;
+    const NativeFieldMatchParams&               _params;
+    std::span<const MyQueryTerm>                _queryTerms;
+    feature_t                                   _score_scale;
+    std::vector<const fef::TermFieldMatchData*> _tfmds;
 
-    VESPA_DLL_LOCAL feature_t calculateScore(const MyQueryTerm& qt, uint32_t docId);
+    VESPA_DLL_LOCAL feature_t calculateScore(const MyQueryTerm& qt, uint32_t docId, size_t& tfmd_idx);
 
     uint32_t getFieldLength(const NativeFieldMatchParam& param, uint32_t fieldLength) const {
         if (param.averageFieldLength != NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH) {
