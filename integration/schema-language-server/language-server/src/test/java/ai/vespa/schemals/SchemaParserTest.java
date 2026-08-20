@@ -1,6 +1,7 @@
 package ai.vespa.schemals;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.net.URI;
@@ -11,11 +12,13 @@ import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import com.yahoo.io.IOUtils;
 
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
@@ -244,6 +247,7 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/elementwise.sd",
             "src/test/sdfiles/single/embed.sd",
             "src/test/sdfiles/single/foreach.sd",
+            "src/test/sdfiles/single/linguistics.sd",
             "src/test/sdfiles/single/rankprofilebuiltin.sd",
             "src/test/sdfiles/single/structinfieldset.sd",
             "src/test/sdfiles/single/subqueries.sd",
@@ -352,4 +356,31 @@ public class SchemaParserTest {
                      .map(testCase -> DynamicTest.dynamicTest(testCase.filePath(), () -> checkFileFails(testCase.filePath(), testCase.expectedErrors())));
     }
 
+    private List<Diagnostic> deprecatedSearchDiagnostics(List<Diagnostic> diagnostics) {
+        return diagnostics.stream()
+                          .filter(diag -> diag.getCode() != null && diag.getCode().isRight())
+                          .filter(diag -> diag.getCode().getRight().equals(DiagnosticCode.DEPRECATED_TOKEN_SEARCH.ordinal()))
+                          .toList();
+    }
+
+    /**
+     * "search" is only deprecated as the keyword opening a schema. Inside a linguistics profile it is a
+     * regular keyword, and warning about it there would also offer a quick fix that corrupts the schema.
+     */
+    @Test
+    void searchInLinguisticsProfileIsNotDeprecated() throws Exception {
+        var parseResult = parseFile("src/test/sdfiles/single/linguistics.sd");
+        List<Diagnostic> deprecated = deprecatedSearchDiagnostics(parseResult.diagnostics());
+        assertTrue(deprecated.isEmpty(),
+                   "Expected no deprecation warning for search inside linguistics, got: "
+                 + Utils.constructDiagnosticMessage(deprecated, 1));
+    }
+
+    @Test
+    void searchAsSchemaKeywordIsDeprecated() throws Exception {
+        var parseResult = parseFile("src/test/sdfiles/single/deprecatedsearch.sd");
+        assertEquals(1, deprecatedSearchDiagnostics(parseResult.diagnostics()).size(),
+                     "Expected search used as the schema keyword to be reported as deprecated"
+                   + Utils.constructDiagnosticMessage(parseResult.diagnostics(), 1));
+    }
 }

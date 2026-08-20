@@ -13,6 +13,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldOutsideDoc;
 import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.Node;
@@ -34,10 +35,21 @@ public class IdentifyDeprecatedToken extends Identifier<SchemaNode> {
         put(TokenType.SEARCH,             new DeprecatedToken("Use schema instead.", DiagnosticCode.DEPRECATED_TOKEN_SEARCH));
     }};
 
+    /**
+     * A token in {@link #deprecatedTokens} is not necessarily deprecated wherever it occurs.
+     * The <code>search</code> keyword is only deprecated (in favour of <code>schema</code>) when used to open a schema.
+     * It is a regular, non-deprecated keyword elsewhere, e.g. in
+     * <code>linguistics { profile { search: myProfile } }</code>.
+     */
+    private static boolean isDeprecatedUsage(SchemaNode node) {
+        if (node.getSchemaType() != TokenType.SEARCH) return true;
+        return node.getParent() != null && node.getParent().isASTInstance(rootSchema.class);
+    }
+
     @Override
     public void identify(SchemaNode node, List<Diagnostic> diagnostics) {
         DeprecatedToken entry = deprecatedTokens.get(node.getSchemaType());
-        if (entry != null) {
+        if (entry != null && isDeprecatedUsage(node)) {
             diagnostics.add(
                 new SchemaDiagnostic.Builder()
                     .setRange(node.getRange())
