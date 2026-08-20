@@ -4,6 +4,7 @@
 
 #include "numeric_range_matcher.h"
 #include "numeric_search_context.h"
+#include "string_range_matcher.h"
 #include "string_search_context.h"
 
 namespace search::attribute {
@@ -15,5 +16,7 @@ template class SingleEnumSearchContext<int32_t, NumericSearchContext<NumericRang
 template class SingleEnumSearchContext<int64_t, NumericSearchContext<NumericRangeMatcher<int64_t>>>;
 template class SingleEnumSearchContext<float, NumericSearchContext<NumericRangeMatcher<float>>>;
 template class SingleEnumSearchContext<double, NumericSearchContext<NumericRangeMatcher<double>>>;
+
+template class SingleEnumSearchContext<const char*, attribute::StringSearchContextT<attribute::StringRangeMatcher>>;
 
 } // namespace search::attribute
