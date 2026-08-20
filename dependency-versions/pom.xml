@@ -133,7 +133,7 @@
         <netty.vespa.version>4.2.17.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.81.Final</netty-tcnative.vespa.version>
         <okhttp.vespa.version>4.12.0</okhttp.vespa.version>
-        <onnxruntime.vespa.version>1.26.0</onnxruntime.vespa.version>
+        <onnxruntime.vespa.version>1.29.0</onnxruntime.vespa.version>
         <openai-java.vespa.version>1.6.1</openai-java.vespa.version>
         <opentelemetry.vespa.version>1.63.0</opentelemetry.vespa.version>
         <opennlp.vespa.version>2.5.11</opennlp.vespa.version>
