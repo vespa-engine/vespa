@@ -120,7 +120,10 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public void <init>(java.lang.String)"
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.time.Duration, java.time.Duration)",
+      "public java.util.Optional retryAfter()",
+      "public java.util.Optional giveUpAfter()"
     ],
     "fields" : [ ]
   },
