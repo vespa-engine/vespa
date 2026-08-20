@@ -59,10 +59,17 @@ public class FileReferenceDownloader {
     // ownership for a just-activated application generation, rather than a durable authorization problem.
     // Retry through this grace period before treating the denial as permanent.
     // Undocumented on purpose, might change or be removed at any time
-    private static final Duration defaultPermissionDeniedGracePeriod;
+    static final Duration defaultPermissionDeniedGracePeriod;
     static {
         var graceSeconds = System.getenv("VESPA_FILE_DOWNLOAD_PERMISSION_DENIED_GRACE_PERIOD_SECONDS");
         defaultPermissionDeniedGracePeriod = Duration.ofSeconds(graceSeconds == null ? 10 : Long.parseLong(graceSeconds));
+    }
+
+    // Undocumented on purpose, might change or be removed at any time
+    static final int defaultMaxTimeoutsBeforeClose;
+    static {
+        var maxTimeouts = System.getenv("VESPA_FILE_DOWNLOAD_MAX_TIMEOUTS_BEFORE_CLOSE");
+        defaultMaxTimeoutsBeforeClose = maxTimeouts == null ? 0 : Integer.parseInt(maxTimeouts);
     }
 
     private final ExecutorService downloadExecutor =
@@ -83,10 +90,7 @@ public class FileReferenceDownloader {
                             Duration timeout,
                             Duration backoffInitialTime,
                             File downloadDirectory) {
-        this(connectionPool, downloads, timeout, backoffInitialTime, downloadDirectory,
-             Optional.ofNullable(System.getenv("VESPA_FILE_DOWNLOAD_MAX_TIMEOUTS_BEFORE_CLOSE"))
-                     .map(Integer::parseInt)
-                     .orElse(0));
+        this(connectionPool, downloads, timeout, backoffInitialTime, downloadDirectory, defaultMaxTimeoutsBeforeClose);
     }
 
     FileReferenceDownloader(ConnectionPool connectionPool,
