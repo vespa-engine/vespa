@@ -7,7 +7,7 @@
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
-#include <vespa/searchlib/attribute/string_range_matcher.h>
+#include <vespa/searchlib/attribute/string_range_search_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/casts.h>
 
@@ -541,117 +541,74 @@ TEST_F(StringAttributeTest, test_fuzzy_match) {
     EXPECT_FALSE(helper.isMatch("vvv"));
 }
 
-attribute::StringRangeMatcher make_range_matcher(std::unique_ptr<StringRangeSpec> range_spec, bool cased) {
-    return attribute::StringRangeMatcher(
-        std::make_unique<QueryTermUCS4>(QueryTermSimple::Type::WORD, std::move(range_spec)), cased);
-}
-
 TEST_F(StringAttributeTest, test_range_match_cased) {
-    auto matcher =
-        make_range_matcher(std::make_unique<StringRangeSpec>("BAR", true, false, "FOO", true, false), true);
+    auto range_spec = std::make_unique<StringRangeSpec>("BAR", true, false, "FOO", true, false);
+    attribute::StringRangeSearchHelper helper(range_spec.get(), true);
 
     // "BAR", "FOO", "bar", "foo"
-    EXPECT_TRUE(matcher.match("BAR"));
-    EXPECT_TRUE(matcher.match("FOO"));
-    EXPECT_FALSE(matcher.match("bar"));
-    EXPECT_FALSE(matcher.match("foo"));
+    EXPECT_TRUE(helper.is_match("BAR"));
+    EXPECT_TRUE(helper.is_match("FOO"));
+    EXPECT_FALSE(helper.is_match("bar"));
+    EXPECT_FALSE(helper.is_match("foo"));
 }
 
-TEST_F(StringAttributeTest, test_range_match_uncased) {
-    auto matcher =
-        make_range_matcher(std::make_unique<StringRangeSpec>("BAR", true, false, "FOO", true, false), false);
+TEST_F(StringAttributeTest, test_range_is_match_uncased) {
+    auto range_spec = std::make_unique<StringRangeSpec>("BAR", true, false, "FOO", true, false);
+    attribute::StringRangeSearchHelper helper(range_spec.get(), false);
 
     // "BAR", "bar", "FOO", "foo"
-    EXPECT_TRUE(matcher.match("BAR"));
-    EXPECT_TRUE(matcher.match("bar"));
-    EXPECT_TRUE(matcher.match("FOO"));
-    EXPECT_TRUE(matcher.match("foo"));
+    EXPECT_TRUE(helper.is_match("BAR"));
+    EXPECT_TRUE(helper.is_match("bar"));
+    EXPECT_TRUE(helper.is_match("FOO"));
+    EXPECT_TRUE(helper.is_match("foo"));
 }
 
-TEST_F(StringAttributeTest, test_range_match) {
-    // ["Abb", "Add"]
+namespace {
+void verify_range(const StringRangeSpec* range, bool aaa, bool abb, bool acc, bool add, bool aee) {
     for (bool cased : {true, false}) {
-        auto matcher =
-            make_range_matcher(std::make_unique<StringRangeSpec>("Abb", true, false, "Add", true, false), cased);
+        attribute::StringRangeSearchHelper helper(range, cased);
 
-        EXPECT_FALSE(matcher.match("Aaa"));
-        EXPECT_TRUE(matcher.match("Abb"));
-        EXPECT_TRUE(matcher.match("Acc"));
-        EXPECT_TRUE(matcher.match("Add"));
-        EXPECT_FALSE(matcher.match("Aee"));
+        EXPECT_EQ(aaa, helper.is_match("Aaa"));
+        EXPECT_EQ(abb, helper.is_match("Abb"));
+        EXPECT_EQ(acc, helper.is_match("Acc"));
+        EXPECT_EQ(add, helper.is_match("Add"));
+        EXPECT_EQ(aee, helper.is_match("Aee"));
     }
+}
+} // namespace
+
+TEST_F(StringAttributeTest, test_range_is_match) {
+    // ["Abb", "Add"]
+    auto closed_range = std::make_unique<StringRangeSpec>("Abb", true, false, "Add", true, false);
+    verify_range(closed_range.get(), false, true, true, true, false);
 
     // ("Abb", "Add"]
-    for (bool cased : {true, false}) {
-        auto matcher =
-            make_range_matcher(std::make_unique<StringRangeSpec>("Abb", false, false, "Add", true, false), cased);
+    auto left_open_range = std::make_unique<StringRangeSpec>("Abb", false, false, "Add", true, false);
+    verify_range(left_open_range.get(), false, false, true, true, false);
 
-        EXPECT_FALSE(matcher.match("Aaa"));
-        EXPECT_FALSE(matcher.match("Abb"));
-        EXPECT_TRUE(matcher.match("Acc"));
-        EXPECT_TRUE(matcher.match("Add"));
-        EXPECT_FALSE(matcher.match("Aee"));
-    }
+    // ["Abb", "Add")
+    auto right_open_range = std::make_unique<StringRangeSpec>("Abb", true, false, "Add", false, false);
+    verify_range(right_open_range.get(), false, true, true, false, false);
 
     // ("Abb", "Add")
-    for (bool cased : {true, false}) {
-        auto matcher =
-            make_range_matcher(std::make_unique<StringRangeSpec>("Abb", false, false, "Add", false, false), cased);
-
-        EXPECT_FALSE(matcher.match("Aaa"));
-        EXPECT_FALSE(matcher.match("Abb"));
-        EXPECT_TRUE(matcher.match("Acc"));
-        EXPECT_FALSE(matcher.match("Add"));
-        EXPECT_FALSE(matcher.match("Aee"));
-    }
+    auto open_range = std::make_unique<StringRangeSpec>("Abb", false, false, "Add", false, false);
+    verify_range(open_range.get(), false, false, true, false, false);
 
     // (\infty, "Add")
-    for (bool cased : {true, false}) {
-        auto matcher =
-            make_range_matcher(std::make_unique<StringRangeSpec>("Abb", false, true, "Add", false, false), cased);
-
-        EXPECT_TRUE(matcher.match("Aaa"));
-        EXPECT_TRUE(matcher.match("Abb"));
-        EXPECT_TRUE(matcher.match("Acc"));
-        EXPECT_FALSE(matcher.match("Add"));
-        EXPECT_FALSE(matcher.match("Aee"));
-    }
+    auto left_unbounded_range = std::make_unique<StringRangeSpec>("Abb", false, true, "Add", false, false);
+    verify_range(left_unbounded_range.get(), true, true, true, false, false);
 
     // ("Abb", \infty)
-    for (bool cased : {true, false}) {
-        auto matcher =
-            make_range_matcher(std::make_unique<StringRangeSpec>("Abb", false, false, "Add", false, true), cased);
-
-        EXPECT_FALSE(matcher.match("Aaa"));
-        EXPECT_FALSE(matcher.match("Abb"));
-        EXPECT_TRUE(matcher.match("Acc"));
-        EXPECT_TRUE(matcher.match("Add"));
-        EXPECT_TRUE(matcher.match("Aee"));
-    }
+    auto right_unbounded_range = std::make_unique<StringRangeSpec>("Abb", false, false, "Add", false, true);
+    verify_range(right_unbounded_range.get(), false, false, true, true, true);
 
     // (\infty, \infty)
-    for (bool cased : {true, false}) {
-        auto matcher =
-            make_range_matcher(std::make_unique<StringRangeSpec>("Abb", false, true, "Add", false, true), cased);
-
-        EXPECT_TRUE(matcher.match("Aaa"));
-        EXPECT_TRUE(matcher.match("Abb"));
-        EXPECT_TRUE(matcher.match("Acc"));
-        EXPECT_TRUE(matcher.match("Add"));
-        EXPECT_TRUE(matcher.match("Aee"));
-    }
+    auto all_strings_range = std::make_unique<StringRangeSpec>("Abb", false, true, "Add", false, true);
+    verify_range(all_strings_range.get(), true, true, true, true, true);
 
     // ["Add", "Abb"] = \varnothing
-    for (bool cased : {true, false}) {
-        auto matcher =
-            make_range_matcher(std::make_unique<StringRangeSpec>("Add", true, false, "Abb", true, false), cased);
-
-        EXPECT_FALSE(matcher.match("Aaa"));
-        EXPECT_FALSE(matcher.match("Abb"));
-        EXPECT_FALSE(matcher.match("Acc"));
-        EXPECT_FALSE(matcher.match("Add"));
-        EXPECT_FALSE(matcher.match("Aee"));
-    }
+    auto empty_range = std::make_unique<StringRangeSpec>("Add", true, false, "Abb", true, false);
+    verify_range(empty_range.get(), false, false, false, false, false);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
