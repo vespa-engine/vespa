@@ -203,10 +203,10 @@ TEST(AttributeWeightedSetBlueprintTest, attribute_weighted_set_single_token_filt
               "search::attribute::NumericMatcher<long> > >",
               normalize_class_name(ws.createSearch(adapter, "integer", false)->getClassName()));
     EXPECT_EQ("search::FilterAttributeIteratorStrict<search::attribute::SingleEnumSearchContext<char const*, "
-              "search::attribute::StringSearchContext> >",
+              "search::attribute::StringSearchContextT<search::attribute::StringMatcher> > >",
               normalize_class_name(ws.createSearch(adapter, "string", true)->getClassName()));
     EXPECT_EQ("search::FilterAttributeIteratorT<search::attribute::SingleEnumSearchContext<char const*, "
-              "search::attribute::StringSearchContext> >",
+              "search::attribute::StringSearchContextT<search::attribute::StringMatcher> > >",
               normalize_class_name(ws.createSearch(adapter, "string", false)->getClassName()));
     EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", true));
     EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", false));
