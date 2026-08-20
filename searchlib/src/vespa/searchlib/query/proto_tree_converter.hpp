@@ -392,8 +392,31 @@ public:
         return true;
     }
 
-    bool handle(const ItemStringRangeTerm& /*item*/) {
-        // TODO
+    bool handle(const ItemStringRangeTerm& item) {
+        auto d = fillTermProperties(item.properties());
+        auto spec = std::make_unique<StringRangeSpec>();
+        if (item.has_lower_limit()) {
+            spec->left = item.lower_limit();
+            spec->left_unbounded = false;
+        } else {
+            spec->left_unbounded = true;
+        }
+        spec->left_closed = item.lower_inclusive();
+        if (item.has_upper_limit()) {
+            spec->right = item.upper_limit();
+            spec->right_unbounded = false;
+        } else {
+            spec->right_unbounded = true;
+        }
+
+        query::StringRange string_range(std::move(spec));
+        auto&              term = _builder.addStringRangeTerm(string_range, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) {
+            term.setRanked(false);
+        }
+        if (d.noPositionDataFlag) {
+            term.setPositionData(false);
+        }
         return true;
     }
 

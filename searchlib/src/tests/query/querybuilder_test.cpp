@@ -475,6 +475,11 @@ struct MyRangeTerm : RangeTerm {
     ~MyRangeTerm() override;
 };
 
+struct MyStringRangeTerm : StringRangeTerm {
+    MyStringRangeTerm(const Type& t, const string& f, int32_t i, Weight w) : StringRangeTerm(t, f, i, w) {}
+    ~MyStringRangeTerm() override;
+};
+
 struct MyStringTerm : StringTerm {
     MyStringTerm(const Type& t, const string& f, int32_t i, Weight w) : StringTerm(t, f, i, w) {}
     ~MyStringTerm() override;
@@ -568,6 +573,8 @@ MyPrefixTerm::~MyPrefixTerm() = default;
 
 MyRangeTerm::~MyRangeTerm() = default;
 
+MyStringRangeTerm::~MyStringRangeTerm() = default;
+
 MyStringTerm::~MyStringTerm() = default;
 
 MySubstringTerm::~MySubstringTerm() = default;
@@ -603,6 +610,7 @@ struct MyQueryNodeTypes {
     using SameElement = MySameElement;
     using PrefixTerm = MyPrefixTerm;
     using RangeTerm = MyRangeTerm;
+    using StringRangeTerm = MyStringRangeTerm;
     using Rank = MyRank;
     using LabelWrapper = MyLabelWrapper;
     using StringTerm = MyStringTerm;
