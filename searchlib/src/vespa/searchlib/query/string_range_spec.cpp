@@ -8,4 +8,8 @@
 #include <cmath>
 #include <cstdlib>
 
-namespace search {} // namespace search
+namespace search {
+
+StringRangeSpec::~StringRangeSpec() = default;
+
+} // namespace search

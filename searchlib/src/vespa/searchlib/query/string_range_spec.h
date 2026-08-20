@@ -21,6 +21,8 @@ struct StringRangeSpec {
     bool        right_unbounded = false;
     int32_t     range_limit = 0;
 
+    ~StringRangeSpec();
+
     bool has_range_limit() const noexcept { return range_limit != 0; }
 
     constexpr auto operator<=>(const StringRangeSpec& rhs) const noexcept = default;
