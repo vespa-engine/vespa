@@ -17,6 +17,7 @@ using search::query::PredicateQuery;
 using search::query::PrefixTerm;
 using search::query::RangeTerm;
 using search::query::RegExpTerm;
+using search::query::StringRangeTerm;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
@@ -53,6 +54,7 @@ public:
     void visit(LocationTerm& n) override { visitTerm(n); }
     void visit(PrefixTerm& n) override { visitTerm(n); }
     void visit(RangeTerm& n) override { visitTerm(n); }
+    void visit(StringRangeTerm& n) override { visitTerm(n); }
     void visit(StringTerm& n) override { visitTerm(n); }
     void visit(SubstringTerm& n) override { visitTerm(n); }
     void visit(SuffixTerm& n) override { visitTerm(n); }

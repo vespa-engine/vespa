@@ -33,6 +33,7 @@ WordAlternatives::WordAlternatives(std::unique_ptr<TermVector> terms, const std:
 NumberTerm::~NumberTerm() = default;
 PrefixTerm::~PrefixTerm() = default;
 RangeTerm::~RangeTerm() = default;
+StringRangeTerm::~StringRangeTerm() = default;
 StringTerm::~StringTerm() = default;
 SubstringTerm::~SubstringTerm() = default;
 SuffixTerm::~SuffixTerm() = default;

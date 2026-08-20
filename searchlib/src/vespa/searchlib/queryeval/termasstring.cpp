@@ -36,6 +36,7 @@ using search::query::RangeTerm;
 using search::query::Rank;
 using search::query::RegExpTerm;
 using search::query::SameElement;
+using search::query::StringRangeTerm;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
@@ -52,6 +53,12 @@ namespace search::queryeval {
 namespace {
 
 string_view termAsString(const search::query::Range& term, string& scratchPad) {
+    vespalib::asciistream os;
+    scratchPad = (os << term).view();
+    return scratchPad;
+}
+
+string_view termAsString(const search::query::StringRange& term, string& scratchPad) {
     vespalib::asciistream os;
     scratchPad = (os << term).view();
     return scratchPad;
@@ -105,6 +112,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(LocationTerm& n) override { visitTerm(n); }
     void visit(PrefixTerm& n) override { visitTerm(n); }
     void visit(RangeTerm& n) override { visitTerm(n); }
+    void visit(StringRangeTerm& n) override { visitTerm(n); }
     void visit(StringTerm& n) override { visitTerm(n); }
     void visit(SubstringTerm& n) override { visitTerm(n); }
     void visit(SuffixTerm& n) override { visitTerm(n); }

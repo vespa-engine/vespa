@@ -177,6 +177,7 @@ using ProtonPhrase = ProtonTerm<search::query::Phrase>;
 
 using ProtonPrefixTerm = ProtonTerm<search::query::PrefixTerm>;
 using ProtonRangeTerm = ProtonTerm<search::query::RangeTerm>;
+using ProtonStringRangeTerm = ProtonTerm<search::query::StringRangeTerm>;
 using ProtonStringTerm = ProtonTerm<search::query::StringTerm>;
 using ProtonSubstringTerm = ProtonTerm<search::query::SubstringTerm>;
 using ProtonSuffixTerm = ProtonTerm<search::query::SuffixTerm>;
@@ -212,6 +213,7 @@ struct ProtonNodeTypes {
     using SameElement = ProtonSameElement;
     using PrefixTerm = ProtonPrefixTerm;
     using RangeTerm = ProtonRangeTerm;
+    using StringRangeTerm = ProtonStringRangeTerm;
     using Rank = ProtonRank;
     using LabelWrapper = ProtonLabelWrapper;
     using StringTerm = ProtonStringTerm;
@@ -236,6 +238,7 @@ extern template struct ProtonTerm<search::query::NumberTerm>;
 extern template struct ProtonTerm<search::query::Phrase>;
 extern template struct ProtonTerm<search::query::PrefixTerm>;
 extern template struct ProtonTerm<search::query::RangeTerm>;
+extern template struct ProtonTerm<search::query::StringRangeTerm>;
 extern template struct ProtonTerm<search::query::StringTerm>;
 extern template struct ProtonTerm<search::query::SubstringTerm>;
 extern template struct ProtonTerm<search::query::SuffixTerm>;
