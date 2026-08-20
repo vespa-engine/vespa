@@ -5,12 +5,12 @@ go 1.26.2
 require (
 	github.com/briandowns/spinner v1.23.2
 	github.com/fatih/color v1.19.0
-	github.com/fxamacker/cbor/v2 v2.9.2
+	github.com/fxamacker/cbor/v2 v2.9.3
 	github.com/go-json-experiment/json v0.0.0-20260520185125-572e7c383686
 	github.com/klauspost/compress v1.19.2
 	github.com/mattn/go-colorable v0.1.15
 	github.com/mattn/go-isatty v0.0.24
-	github.com/mattn/go-runewidth v0.0.27
+	github.com/mattn/go-runewidth v0.0.28
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10

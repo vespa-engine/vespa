@@ -890,7 +890,8 @@ void fieldBody(ParsedField field) : { }
       summaryInField(field) |
       summaryTo(field) |
       weight(field) |
-      weightedset(field.getType()) )
+      weightedset(field.getType()) |
+      map(field) )
 }
 
 /**
@@ -1017,6 +1018,27 @@ void weightedsetBody(ParsedType type) : { }
 {
     ( <CREATE_IF_NONEXISTENT> { type.setCreateIfNonExistent(true); }
       | <REMOVE_IF_ZERO>      { type.setRemoveIfZero(true); } )
+}
+
+/**
+ * This rule consumes a map statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void map(ParsedField field) : { }
+{
+    <MAP> ( (<COLON> mapBody(field))
+                | (lbrace() (mapBody(field) (<NL>)*)* <RBRACE>) )
+}
+
+/**
+ * This rule consumes one body item of a map block.
+ *
+ * @param field The field to modify.
+ */
+void mapBody(ParsedField field) : { }
+{
+    ( <FAST_SEARCH> { field.setFastMapSearch(true); } )
 }
 
 /**

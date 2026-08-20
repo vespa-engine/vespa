@@ -3,7 +3,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcorespi/index/index_manager_stats.h>
@@ -23,6 +22,7 @@
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
+#include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
@@ -45,6 +45,7 @@ using document::FieldValue;
 using document::StringFieldValue;
 using proton::index::IndexConfig;
 using proton::index::IndexManager;
+using search::FileKit;
 using search::SerialNum;
 using search::TuneFileAttributes;
 using search::TuneFileIndexing;
@@ -309,7 +310,7 @@ set<uint32_t> readDiskIds(const string& dir, const string& type) {
 
 TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
     using seconds = std::chrono::seconds;
-    FastOS_StatInfo stat;
+    vespalib::system_time modified_time;
     {
         addDocument(docid);
 
@@ -324,8 +325,12 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
         runAsMaster([&]() { flushTask = target.initFlush(2, std::make_shared<search::FlushToken>()); });
         flushTask->run();
         EXPECT_FALSE(target.can_flush(2));
-        EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
-        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
+        std::filesystem::path index_flush_1_path("test_data/index.flush.1");
+        std::error_code       ec;
+        ASSERT_TRUE(std::filesystem::exists(index_flush_1_path, ec));
+        ASSERT_FALSE(ec);
+        modified_time = FileKit::getModificationTime(index_flush_1_path.string());
+        EXPECT_EQ(modified_time, target.getLastFlushTime());
         EXPECT_EQ(2u, target.getFlushedSerialNum());
 
         sources = get_source_collection();
@@ -344,7 +349,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
     { // verify last flush time when loading disk index
         resetIndexManager();
         IndexFlushTarget target(_index_manager->getMaintainer());
-        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
+        EXPECT_EQ(modified_time, target.getLastFlushTime());
         EXPECT_EQ(2u, target.getFlushedSerialNum());
 
         // updated serial number & flush time when nothing to flush
@@ -354,7 +359,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
         runAsMaster([&]() { task = target.initFlush(3, std::make_shared<search::FlushToken>()); });
         EXPECT_FALSE(task);
         EXPECT_EQ(3u, target.getFlushedSerialNum());
-        EXPECT_LT(stat._modifiedTime, target.getLastFlushTime());
+        EXPECT_LT(modified_time, target.getLastFlushTime());
         EXPECT_NEAR(now.count(), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()).count(), 2);
     }
 }
@@ -423,8 +428,9 @@ TEST_F(IndexManagerTest, require_that_remove_document_updates_selector) {
 TEST_F(IndexManagerTest, require_that_source_selector_is_flushed) {
     addDocument(docid);
     flushIndexManager();
-    FastOS_File file((index_dir + "/index.flush.1/selector.dat").c_str());
-    ASSERT_TRUE(file.OpenReadOnlyExisting());
+    std::error_code ec;
+    ASSERT_TRUE(std::filesystem::exists(std::filesystem::path(index_dir + "/index.flush.1/selector.dat"), ec));
+    ASSERT_FALSE(ec);
 }
 
 VESPA_THREAD_STACK_TAG(invert_executor)
@@ -690,8 +696,9 @@ TEST_F(IndexManagerTest, require_that_existing_indexes_are_to_be_fusioned_on_sta
 TEST_F(IndexManagerTest, require_that_serial_number_is_written_on_flush) {
     addDocument(docid);
     flushIndexManager();
-    FastOS_File file((index_dir + "/index.flush.1/serial.dat").c_str());
-    EXPECT_TRUE(file.OpenReadOnly());
+    std::error_code ec;
+    ASSERT_TRUE(std::filesystem::exists(std::filesystem::path(index_dir + "/index.flush.1/serial.dat"), ec));
+    ASSERT_FALSE(ec);
 }
 
 TEST_F(IndexManagerTest, require_that_serial_number_is_copied_on_fusion) {
@@ -703,8 +710,9 @@ TEST_F(IndexManagerTest, require_that_serial_number_is_copied_on_fusion) {
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
     _index_manager->getMaintainer().runFusion(fusion_spec, std::make_shared<search::FlushToken>());
-    FastOS_File file((index_dir + "/index.fusion.2/serial.dat").c_str());
-    EXPECT_TRUE(file.OpenReadOnly());
+    std::error_code ec;
+    ASSERT_TRUE(std::filesystem::exists(std::filesystem::path(index_dir + "/index.fusion.2/serial.dat"), ec));
+    ASSERT_FALSE(ec);
 }
 
 TEST_F(IndexManagerTest, require_that_serial_number_is_read_on_load) {

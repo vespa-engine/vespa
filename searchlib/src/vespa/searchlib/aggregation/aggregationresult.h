@@ -38,6 +38,8 @@ public:
     using ResultNode = expression::ResultNode;
     DECLARE_NBO_SERIALIZE;
     DECLARE_ABSTRACT_AGGREGATIONRESULT(AggregationResult);
+    // Note: copy is shallow wrt. _expressionTree (see below); search::grouping::GroupingSession
+    // relies on that sharing to fix up merge-target result types after a copy is re-configured.
     AggregationResult(const AggregationResult&);
     AggregationResult& operator=(const AggregationResult&);
     AggregationResult(AggregationResult&&) = default;
@@ -106,6 +108,10 @@ private:
         (void)rank;
         onAggregate(result);
     }
+    // Shared (not deep-copied) by the default copy constructor above: a copy and its
+    // original keep resolving to the same ExpressionTree instance, so configuring one
+    // (e.g. via Configure) also fixes up the result type the other's getExpression()
+    // reports, even though each AggregationResult's own result node stays independent.
     std::shared_ptr<expression::ExpressionTree> _expressionTree;
     uint32_t                                    _tag;
 };

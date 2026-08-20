@@ -37,6 +37,23 @@ namespace {
 constexpr uint64_t ONE_G = 1000 * 1000 * 1000;
 }
 
+FastOS_UNIX_File::FastOS_UNIX_File() : FastOS_UNIX_File(nullptr) {
+}
+
+FastOS_UNIX_File::FastOS_UNIX_File(const char* filename)
+    : FastOS_FileInterface(filename),
+      _mmapbase(nullptr),
+      _mmaplen(0),
+      _filedes(-1),
+      _mmapFlags(0),
+      _mmapEnabled(false) {
+}
+
+FastOS_UNIX_File::~FastOS_UNIX_File() {
+    bool ok = Close();
+    assert(ok);
+}
+
 ssize_t FastOS_UNIX_File::Read(void* buffer, size_t len) {
     return File_RW_Ops::read(_filedes, buffer, len);
 }
@@ -228,16 +245,16 @@ bool FastOS_UNIX_File::Close() {
     bool ok = true;
 
     if (_filedes >= 0) {
-        do {
-            ok = (close(_filedes) == 0);
-        } while (!ok && errno == EINTR);
-
         if (_mmapbase != nullptr) {
             madvise(_mmapbase, _mmaplen, MADV_DONTNEED);
             munmap(static_cast<char*>(_mmapbase), _mmaplen);
             _mmapbase = nullptr;
             _mmaplen = 0;
         }
+
+        do {
+            ok = (close(_filedes) == 0);
+        } while (!ok && errno == EINTR);
 
         _filedes = -1;
     }

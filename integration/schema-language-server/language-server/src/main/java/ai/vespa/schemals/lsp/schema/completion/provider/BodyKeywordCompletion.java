@@ -17,7 +17,9 @@ import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
 import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
+import ai.vespa.schemals.parser.ast.LBRACE;
 import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.RootRankProfile;
 import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.attributeElm;
@@ -30,6 +32,7 @@ import ai.vespa.schemals.parser.ast.globalPhase;
 import ai.vespa.schemals.parser.ast.hnswIndex;
 import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.indexOutsideDoc;
+import ai.vespa.schemals.parser.ast.linguisticsElm;
 import ai.vespa.schemals.parser.ast.onnxModel;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rankProfile;
@@ -82,6 +85,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
             FixedKeywordBodies.INDEX.getBodySnippet(),
             CompletionUtils.constructSnippet("indexing", "indexing: ", "indexing:"),
             CompletionUtils.constructSnippet("indexing", "indexing {\n\t$0\n}", "indexing {}"),
+            CompletionUtils.constructSnippet("linguistics", "linguistics {\n\tprofile: $0\n}"),
             FixedKeywordBodies.MATCH.getColonSnippet(),
             FixedKeywordBodies.MATCH.getBodySnippet(),
             CompletionUtils.constructSnippet("normalizing", "normalizing: "),
@@ -244,6 +248,34 @@ public class BodyKeywordCompletion implements CompletionProvider {
         }
     }};
 
+    private static final List<CompletionItem> linguisticsBodySnippets = List.of(
+        CompletionUtils.constructSnippet("profile", "profile: $0", "profile:"),
+        CompletionUtils.constructSnippet("profile", "profile {\n\tindex: $1\n\tsearch: $0\n}", "profile {}")
+    );
+
+    private static final List<CompletionItem> linguisticsProfileBodySnippets = List.of(
+        CompletionUtils.constructSnippet("index", "index: $0"),
+        CompletionUtils.constructSnippet("search", "search: $0")
+    );
+
+    /**
+     * A linguistics element holds two nested bodies, <code>linguistics { profile { ... } }</code>,
+     * which the grammar represents as a single flat node. Which keywords are valid therefore depends on
+     * the brace depth at the cursor rather than on the enclosing AST class alone.
+     */
+    private static List<CompletionItem> linguisticsCompletionItems(Node linguisticsNode, Position position) {
+        int braceDepth = 0;
+        for (Node child : linguisticsNode) {
+            if (CSTUtils.positionLT(position, child.getRange().getStart())) break;
+            if (child.isASTInstance(openLbrace.class) || child.isASTInstance(LBRACE.class)) ++braceDepth;
+            else if (child.isASTInstance(RBRACE.class)) --braceDepth;
+        }
+
+        if (braceDepth == 1) return linguisticsBodySnippets;
+        if (braceDepth == 2) return linguisticsProfileBodySnippets;
+        return List.of();
+    }
+
     @Override
     public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         Position searchPos = context.startOfWord();
@@ -262,6 +294,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
         if (searchNode == null) return List.of();
 
         if (searchNode.isASTInstance(openLbrace.class))searchNode = searchNode.getParent();
+
+        if (searchNode.isASTInstance(linguisticsElm.class)) return linguisticsCompletionItems(searchNode, searchPos);
 
         List<CompletionItem> result = bodyKeywordSnippets.get(searchNode.getASTClass());
         if (result == null) return List.of();
