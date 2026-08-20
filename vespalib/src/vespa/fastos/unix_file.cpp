@@ -245,16 +245,16 @@ bool FastOS_UNIX_File::Close() {
     bool ok = true;
 
     if (_filedes >= 0) {
-        do {
-            ok = (close(_filedes) == 0);
-        } while (!ok && errno == EINTR);
-
         if (_mmapbase != nullptr) {
             madvise(_mmapbase, _mmaplen, MADV_DONTNEED);
             munmap(static_cast<char*>(_mmapbase), _mmaplen);
             _mmapbase = nullptr;
             _mmaplen = 0;
         }
+
+        do {
+            ok = (close(_filedes) == 0);
+        } while (!ok && errno == EINTR);
 
         _filedes = -1;
     }
