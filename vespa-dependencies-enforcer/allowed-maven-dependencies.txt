@@ -170,6 +170,7 @@ org.apache.zookeeper:zookeeper:3.9.5
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.assertj:assertj-core:${assertj.vespa.version}
 org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}
+org.bouncycastle:bcprov-jdk18on:${bouncycastle.bcprov.vespa.version}
 org.bouncycastle:bcprov-jdk18on:${bouncycastle.vespa.version}
 org.bouncycastle:bcutil-jdk18on:${bouncycastle.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
