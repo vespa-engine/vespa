@@ -536,7 +536,10 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_nearest_neighbor(), _d);
     case IC::kItemGeoLocationTerm:
         return handle(qsi.item_geo_location_term(), _d, _serialized_term);
-
+    case IC::kItemStringRangeTerm:
+        // TODO
+        throw std::runtime_error("Unhandled string range item in ProtoTreeIterator::handle_item");
+        return false;
     case IC::ITEM_NOT_SET:
         return false;
     }

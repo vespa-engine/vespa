@@ -12,6 +12,7 @@ vespa_add_library(searchlib_query_tree OBJECT
     simplequery.cpp
     stackdumpcreator.cpp
     stackdumpquerycreator.cpp
+    string_range.cpp
     string_term_vector.cpp
     term.cpp
     termnodes.cpp
