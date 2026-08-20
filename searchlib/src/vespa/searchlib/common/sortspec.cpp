@@ -41,16 +41,17 @@ ConstBufferRef LowercaseConverter::onConvert(const ConstBufferRef& src) const {
 FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending,
                              std::shared_ptr<BlobConverter> converter) noexcept
     : FieldSortSpec(field, ascending ? SortOrder::ASCENDING : SortOrder::DESCENDING, std::move(converter),
-                    sortspec::MissingPolicy::DEFAULT, {}) {
+                    sortspec::MissingPolicy::DEFAULT, {}, false) {
 }
 
 FieldSortSpec::FieldSortSpec(std::string_view field, SortOrder sort_order, std::shared_ptr<BlobConverter> converter,
-                             MissingPolicy missing_policy, std::string missing_value) noexcept
+                             MissingPolicy missing_policy, std::string missing_value, bool is_rank_feature) noexcept
     : _field(field),
       _sort_order(sort_order),
       _converter(std::move(converter)),
       _missing_policy(missing_policy),
-      _missing_value(std::move(missing_value)) {
+      _missing_value(std::move(missing_value)),
+      _is_rank_feature(is_rank_feature) {
 }
 
 FieldSortSpec::~FieldSortSpec() = default;
@@ -196,6 +197,23 @@ void decode_missing(Tokenizer& tokenizer, MissingPolicy& missing_policy, std::st
     tokenizer.expect_char(')');
 }
 
+bool is_schema_identifier(std::string_view name) {
+    if (name.empty()) {
+        return false;
+    }
+    auto valid_first = [](char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'; };
+    auto valid_rest = [&](char c) { return valid_first(c) || (c >= '0' && c <= '9'); };
+    if (!valid_first(name.front())) {
+        return false;
+    }
+    for (size_t i = 1; i < name.size(); ++i) {
+        if (!valid_rest(name[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 SortSpec::SortSpec(const std::string& spec, const ConverterFactory& ucaFactory) : _spec(spec), _field_sort_specs() {
@@ -206,6 +224,7 @@ SortSpec::SortSpec(const std::string& spec, const ConverterFactory& ucaFactory) 
         std::shared_ptr<BlobConverter> converter;
         auto                           func = tokenizer.token();
         bool                           in_missing = false;
+        bool                           is_rank_feature = false;
         if (tokenizer.peek() == '(' && func == "missing") {
             in_missing = true;
             tokenizer.step();
@@ -213,7 +232,18 @@ SortSpec::SortSpec(const std::string& spec, const ConverterFactory& ucaFactory) 
         }
         if (tokenizer.peek() == '(') {
             tokenizer.step();
-            if (func == "uca") {
+            if (func == "feature") {
+                if (in_missing) {
+                    throw std::runtime_error("Cannot use missing() with feature(...) sorting");
+                }
+                attr = tokenizer.token();
+                tokenizer.expect_char(')');
+                if (!is_schema_identifier(attr)) {
+                    throw std::runtime_error(
+                        make_string("Illegal feature name '%s' for sorting", std::string(attr).c_str()));
+                }
+                is_rank_feature = true;
+            } else if (func == "uca") {
                 attr = tokenizer.token();
                 tokenizer.expect_char(',');
                 auto             locale = tokenizer.token();
@@ -239,7 +269,8 @@ SortSpec::SortSpec(const std::string& spec, const ConverterFactory& ucaFactory) 
         if (in_missing) {
             decode_missing(tokenizer, missing_policy, missing_value);
         }
-        _field_sort_specs.emplace_back(attr, order, std::move(converter), missing_policy, std::move(missing_value));
+        _field_sort_specs.emplace_back(attr, order, std::move(converter), missing_policy, std::move(missing_value),
+                                       is_rank_feature);
     }
 }
 

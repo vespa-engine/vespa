@@ -8,6 +8,8 @@
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/doom.h>
 
+#include <string_view>
+
 #define INSERT_SORT_LEVEL 80
 
 namespace search::attribute {
@@ -57,21 +59,49 @@ public:
 
 //-----------------------------------------------------------------------------
 
+/**
+ * Supplies numeric feature keys while FastS encodes sort blobs.
+ * After binding, the provider must remain alive until consumed(). During
+ * encoding, seek() is called once per hit in non-decreasing docid order;
+ * get() reads the row bound by the most recent seek(). consumed() ends the
+ * binding and permits the provider to release its storage.
+ */
+class INumericSortValueProvider {
+public:
+    static constexpr uint32_t invalid_ordinal = ~0u;
+    virtual ~INumericSortValueProvider() = default;
+    virtual uint32_t ordinal(std::string_view public_name) const = 0;
+    virtual void seek(uint32_t docid) = 0;
+    virtual double get(uint32_t ordinal) const = 0;
+    virtual void consumed() = 0;
+};
+
 class FastS_SortSpec : public FastS_IResultSorter {
 private:
     friend class MultilevelSortTest;
 
 public:
-    enum { ASC_VECTOR = 0, DESC_VECTOR = 1, ASC_RANK = 2, DESC_RANK = 3, ASC_DOCID = 4, DESC_DOCID = 5 };
+    enum {
+        ASC_VECTOR = 0,
+        DESC_VECTOR = 1,
+        ASC_RANK = 2,
+        DESC_RANK = 3,
+        ASC_DOCID = 4,
+        DESC_DOCID = 5,
+        ASC_FEATURE = 6,
+        DESC_FEATURE = 7
+    };
 
     struct VectorRef {
         VectorRef(uint32_t type, const search::attribute::IAttributeVector* vector,
-                  std::unique_ptr<search::attribute::ISortBlobWriter> writer) noexcept;
+                  std::unique_ptr<search::attribute::ISortBlobWriter> writer,
+                  uint32_t feature_ordinal = INumericSortValueProvider::invalid_ordinal) noexcept;
         uint32_t                                            _type;
         const search::attribute::IAttributeVector*          _vector;
         std::unique_ptr<search::attribute::ISortBlobWriter> _writer;
+        uint32_t                                            _feature_ordinal;
         bool has_ascending_sort_order() const {
-            return _type == ASC_VECTOR || _type == ASC_RANK || _type == ASC_DOCID;
+            return _type == ASC_VECTOR || _type == ASC_RANK || _type == ASC_DOCID || _type == ASC_FEATURE;
         }
     };
 
@@ -87,14 +117,15 @@ private:
     using BinarySortData = std::vector<uint8_t, vespalib::allocator_large<uint8_t>>;
     using SortDataArray = std::vector<SortData, vespalib::allocator_large<SortData>>;
     using ConverterFactory = search::common::ConverterFactory;
-    std::string              _documentmetastore;
-    uint16_t                 _partitionId;
-    vespalib::Doom           _doom;
-    const ConverterFactory&  _ucaFactory;
-    search::common::SortSpec _sortSpec;
-    VectorRefList            _vectors;
-    BinarySortData           _binarySortData;
-    SortDataArray            _sortDataArray;
+    std::string                _documentmetastore;
+    uint16_t                   _partitionId;
+    vespalib::Doom             _doom;
+    const ConverterFactory&    _ucaFactory;
+    search::common::SortSpec   _sortSpec;
+    VectorRefList              _vectors;
+    BinarySortData             _binarySortData;
+    SortDataArray              _sortDataArray;
+    INumericSortValueProvider* _numeric_provider;
 
     bool Add(search::attribute::IAttributeContext& vecMan, const search::common::FieldSortSpec& field_sort_spec);
     void initSortData(const search::RankedHit* a, uint32_t n);
@@ -116,6 +147,7 @@ public:
     void copySortData(uint32_t offset, uint32_t n, uint32_t* idx, char* buf);
     void freeSortData();
     void initWithoutSorting(const search::RankedHit* hits, uint32_t hitCnt);
+    void bind_numeric_provider(INumericSortValueProvider& provider);
 };
 
 //-----------------------------------------------------------------------------

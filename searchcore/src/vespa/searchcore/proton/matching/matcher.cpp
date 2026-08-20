@@ -14,6 +14,8 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
+#include <vespa/searchlib/common/converters.h>
+#include <vespa/searchlib/common/sortspec.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/searchrequest.h>
@@ -24,8 +26,10 @@
 #include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/limited_thread_bundle_wrapper.h>
 
+#include <algorithm>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -52,6 +56,7 @@ using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Doom;
 using vespalib::FeatureSet;
+using vespalib::Issue;
 using vespalib::make_string_short::fmt;
 
 namespace proton::matching {
@@ -104,6 +109,47 @@ SearchReply::UP handleGroupingSession(SessionManager& sessionMgr, GroupingContex
         sessionMgr.insert(std::move(groupingSession));
     }
     return reply;
+}
+
+struct DummyConverterFactory : search::common::ConverterFactory {
+    search::common::BlobConverter::UP create(std::string_view, std::string_view) const override { return {}; }
+};
+
+struct SelectedSortFeatures {
+    bool                     parse_failed = false;
+    std::vector<std::string> public_names;
+};
+
+SelectedSortFeatures select_sort_features(const std::string& sort_spec, const RankSetup& rank_setup) {
+    SelectedSortFeatures selected;
+    if (sort_spec.find("feature(") == std::string::npos) {
+        return selected;
+    }
+    try {
+        DummyConverterFactory    dummy;
+        search::common::SortSpec spec(sort_spec, dummy);
+        for (const auto& field : spec) {
+            if (!field._is_rank_feature) {
+                continue;
+            }
+            if (std::find(selected.public_names.begin(), selected.public_names.end(), field._field) !=
+                selected.public_names.end()) {
+                continue;
+            }
+            if (!rank_setup.has_sort_feature(field._field)) {
+                Issue::report("sort spec: rank feature '%s' is not an allowed sort feature", field._field.c_str());
+                selected.parse_failed = true;
+                selected.public_names.clear();
+                return selected;
+            }
+            selected.public_names.push_back(field._field);
+        }
+    } catch (const std::exception& e) {
+        Issue::report("Failed parsing sortspec '%s': %s", sort_spec.c_str(), e.what());
+        selected.parse_failed = true;
+        selected.public_names.clear();
+    }
+    return selected;
 }
 
 } // namespace
@@ -329,6 +375,11 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             return reply;
         }
 
+        auto selected_sort = select_sort_features(request.sortSpec, *_rankSetup);
+        if (selected_sort.parse_failed) {
+            return reply;
+        }
+
         const Properties& rankProperties = request.propertiesMap.rankProperties();
         uint32_t          heapSize = HeapSize::lookup(rankProperties, _rankSetup->getHeapSize());
         uint32_t          arraySize = ArraySize::lookup(rankProperties, _rankSetup->getArraySize());
@@ -343,8 +394,25 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
                            willNeedRanking(request, groupingContext, first_phase_rank_score_drop_limit,
                                            mtf->query().needs_ranking()));
 
-        ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId, request.sortSpec,
-                           params.offset, params.hits);
+        const bool ordered_hits_needed = (params.hits != 0) || !groupingContext.empty();
+        if (!selected_sort.public_names.empty() && ordered_hits_needed) {
+            mtf->prepare_and_install_sort_features(selected_sort.public_names);
+            if (mtf->get_request_context().getDoom().soft_doom()) {
+                reply->coverage.degradeTimeout();
+                vespalib::Issue::report("Search request soft doomed during query setup and initialization.");
+                return reply;
+            }
+        }
+
+        std::string sort_spec = request.sortSpec;
+        // With neither hits nor grouping there is nothing to order; suppress the
+        // sort so the empty partial result does not advertise sort data.
+        if (!selected_sort.public_names.empty() && !ordered_hits_needed) {
+            sort_spec.clear();
+        }
+
+        ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId, sort_spec, params.offset,
+                           params.hits);
 
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
         vespalib::LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);

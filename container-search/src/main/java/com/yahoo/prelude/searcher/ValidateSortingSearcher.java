@@ -3,17 +3,22 @@ package com.yahoo.prelude.searcher;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
+import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.vespa.config.search.AttributesConfig;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,23 +34,37 @@ import static com.yahoo.prelude.querytransform.NormalizingSearcher.ACCENT_REMOVA
 @After(ACCENT_REMOVAL)
 public class ValidateSortingSearcher extends Searcher {
 
-    // TODO: Use SchemaInfo instead and validate with streaming as well
-
+    // TODO: Move attribute-sort metadata and validation to SchemaInfo,
+    // including validation of streaming schemas.
     private final boolean isStreaming;
 
     private Map<String, AttributesConfig.Attribute> attributeNames = null;
     private String clusterName = "";
+    private final Map<String, DocumentdbInfoConfig.Documentdb.Mode.Enum> schemaModes;
 
-    public ValidateSortingSearcher(ClusterConfig clusterConfig, AttributesConfig attributesConfig) {
+    public ValidateSortingSearcher(ClusterConfig clusterConfig,
+                                   AttributesConfig attributesConfig,
+                                   DocumentdbInfoConfig documentdbInfoConfig) {
         initAttributeNames(attributesConfig);
         setClusterName(clusterConfig.clusterName());
         isStreaming = clusterConfig.indexMode() == ClusterConfig.IndexMode.Enum.STREAMING;
+        schemaModes = schemaModesFrom(documentdbInfoConfig);
+    }
+
+    private static Map<String, DocumentdbInfoConfig.Documentdb.Mode.Enum> schemaModesFrom(DocumentdbInfoConfig config) {
+        Map<String, DocumentdbInfoConfig.Documentdb.Mode.Enum> modes = new LinkedHashMap<>();
+        for (DocumentdbInfoConfig.Documentdb docDb : config.documentdb()) {
+            if (docDb.mode() == DocumentdbInfoConfig.Documentdb.Mode.Enum.STORE_ONLY)
+                continue;
+            modes.put(docDb.name(), docDb.mode());
+        }
+        return Map.copyOf(modes);
     }
 
     @Override
     public Result search(Query query, Execution execution) {
-        ErrorMessage error = validate(query);
-        if (! isStreaming && error != null)
+        ErrorMessage error = validate(query, execution.context().schemaInfo());
+        if (error != null)
             return new Result(query, error);
         return execution.search(query);
     }
@@ -69,7 +88,7 @@ public class ValidateSortingSearcher extends Searcher {
         setAttributeNames(attributes);
     }
 
-    private ErrorMessage validate(Query query) {
+    private ErrorMessage validate(Query query, SchemaInfo schemaInfo) {
         Sorting sorting = query.getRanking().getSorting();
         List<Sorting.FieldOrder> l = (sorting != null) ? sorting.fieldOrders() : null;
 
@@ -87,6 +106,12 @@ public class ValidateSortingSearcher extends Searcher {
         }
 
         for (Sorting.FieldOrder f : l) {
+            if (f.getSorter() instanceof Sorting.FeatureSorter) {
+                ErrorMessage featureError = validateFeatureSort(query, schemaInfo, f.getFieldName());
+                if (featureError != null)
+                    return featureError;
+                continue;
+            }
             String name = f.getFieldName();
             if ("[rank]".equals(name) || "[docid]".equals(name)) {
                 // built-in constants
@@ -155,8 +180,32 @@ public class ValidateSortingSearcher extends Searcher {
                     }
                 }
             } else {
+                if (isStreaming)
+                    continue;
                 return ErrorMessage.createInvalidQueryParameter("Cluster '" + getClusterName() +
                                                                 "' has no sortable attribute named '" + name + "'");
+            }
+        }
+        return null;
+    }
+
+    private ErrorMessage validateFeatureSort(Query query, SchemaInfo schemaInfo, String featureName) {
+        String profileName = query.getRanking().getProfile();
+        for (Schema schema : schemaInfo.newSession(query).schemas()) {
+            var mode = schemaModes.get(schema.name());
+            if (mode == null)
+                continue;
+            if (mode != DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX) {
+                return ErrorMessage.createInvalidQueryParameter(
+                        "Cluster '" + getClusterName() + "' cannot sort by feature(" + featureName +
+                        ") because schema '" + schema.name() + "' is not indexed");
+            }
+            RankProfile profile = schema.rankProfiles().get(profileName);
+            if (profile == null || ! profile.sortFeatures().contains(featureName)) {
+                return ErrorMessage.createInvalidQueryParameter(
+                        "Cluster '" + getClusterName() + "' cannot sort by feature(" + featureName +
+                        "): rank profile '" + profileName + "' in schema '" + schema.name() +
+                        "' does not allow it");
             }
         }
         return null;

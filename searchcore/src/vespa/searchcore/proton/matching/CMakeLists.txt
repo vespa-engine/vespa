@@ -36,6 +36,7 @@ vespa_add_library(searchcore_matching STATIC
     search_session.cpp
     session_manager_explorer.cpp
     sessionmanager.cpp
+    sort_feature_store.cpp
     tag_needed_handles.cpp
     termdataextractor.cpp
     termdatafromnode.cpp

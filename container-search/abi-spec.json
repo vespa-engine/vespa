@@ -6045,6 +6045,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.query.Sorting$FeatureSorter" : {
+    "superClass" : "com.yahoo.search.query.Sorting$AttributeSorter",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String toSerialForm()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.query.Sorting$LowerCaseSorter" : {
     "superClass" : "com.yahoo.search.query.Sorting$AttributeSorter",
     "interfaces" : [ ],
@@ -6165,7 +6179,8 @@
       "public static final java.lang.String STRENGTH_PRIMARY",
       "public static final java.lang.String UCA",
       "public static final java.lang.String RAW",
-      "public static final java.lang.String LOWERCASE"
+      "public static final java.lang.String LOWERCASE",
+      "public static final java.lang.String FEATURE"
     ]
   },
   "com.yahoo.search.query.Trace" : {
@@ -9297,6 +9312,7 @@
       "public com.yahoo.search.schema.RankProfile$Builder setTotalKeepRankCount(int)",
       "public com.yahoo.search.schema.RankProfile$Builder setMatchPhase(com.yahoo.search.schema.MatchPhase)",
       "public com.yahoo.search.schema.RankProfile$Builder setSecondPhase(com.yahoo.search.schema.SecondPhase)",
+      "public com.yahoo.search.schema.RankProfile$Builder addSortFeature(java.lang.String)",
       "public com.yahoo.search.schema.RankProfile build()"
     ],
     "fields" : [ ]
@@ -9337,6 +9353,7 @@
       "public java.util.OptionalInt totalKeepRankCount()",
       "public com.yahoo.search.schema.MatchPhase matchPhase()",
       "public com.yahoo.search.schema.SecondPhase secondPhase()",
+      "public java.util.List sortFeatures()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"

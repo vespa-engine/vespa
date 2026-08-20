@@ -11,6 +11,7 @@
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 
+#include <map>
 #include <optional>
 
 namespace search::fef {
@@ -39,62 +40,64 @@ public:
     };
 
 private:
-    const BlueprintFactory&          _factory;
-    const IIndexEnvironment&         _indexEnv;
-    BlueprintResolver::SP            _first_phase_resolver;
-    BlueprintResolver::SP            _second_phase_resolver;
-    BlueprintResolver::SP            _match_resolver;
-    BlueprintResolver::SP            _summary_resolver;
-    BlueprintResolver::SP            _dumpResolver;
-    std::string                      _firstPhaseRankFeature;
-    std::string                      _secondPhaseRankFeature;
-    std::string                      _degradationAttribute;
-    double                           _termwise_limit;
-    uint32_t                         _numThreads;
-    uint32_t                         _minHitsPerThread;
-    uint32_t                         _numSearchPartitions;
-    uint32_t                         _heapSize;
-    uint32_t                         _arraySize;
-    uint32_t                         _estimatePoint;
-    uint32_t                         _estimateLimit;
-    uint32_t                         _degradationMaxHits;
-    double                           _degradationMaxFilterCoverage;
-    double                           _degradationSamplePercentage;
-    double                           _degradationPostFilterMultiplier;
-    std::optional<feature_t>         _first_phase_rank_score_drop_limit;
-    std::optional<feature_t>         _second_phase_rank_score_drop_limit;
-    std::vector<std::string>         _match_features;
-    std::vector<std::string>         _summaryFeatures;
-    std::vector<std::string>         _dumpFeatures;
-    Warnings                         _warnings;
-    StringStringMap                  _feature_rename_map;
-    bool                             _sort_blueprints_by_cost;
-    bool                             _ignoreDefaultRankFeatures;
-    bool                             _compiled;
-    bool                             _compileError;
-    bool                             _degradationAscendingOrder;
-    std::string                      _diversityAttribute;
-    uint32_t                         _diversityMinGroups;
-    double                           _diversityCutoffFactor;
-    std::string                      _diversityCutoffStrategy;
-    bool                             _softTimeoutEnabled;
-    double                           _softTimeoutTailCost;
-    double                           _global_filter_lower_limit;
-    double                           _global_filter_upper_limit;
-    double                           _filter_first_upper_limit;
-    double                           _filter_first_exploration;
-    double                           _exploration_slack;
-    bool                             _prefetch_tensors;
-    double                           _target_hits_max_adjustment_factor;
-    double                           _weakand_stop_word_adjust_limit;
-    double                           _weakand_stop_word_drop_limit;
-    bool                             _weakand_allow_drop_all;
-    vespalib::FuzzyMatchingAlgorithm _fuzzy_matching_algorithm;
-    MutateOperation                  _mutateOnMatch;
-    MutateOperation                  _mutateOnFirstPhase;
-    MutateOperation                  _mutateOnSecondPhase;
-    MutateOperation                  _mutateOnSummary;
-    bool                             _mutateAllowQueryOverride;
+    const BlueprintFactory&                      _factory;
+    const IIndexEnvironment&                     _indexEnv;
+    BlueprintResolver::SP                        _first_phase_resolver;
+    BlueprintResolver::SP                        _second_phase_resolver;
+    BlueprintResolver::SP                        _match_resolver;
+    BlueprintResolver::SP                        _summary_resolver;
+    BlueprintResolver::SP                        _dumpResolver;
+    std::string                                  _firstPhaseRankFeature;
+    std::string                                  _secondPhaseRankFeature;
+    std::string                                  _degradationAttribute;
+    double                                       _termwise_limit;
+    uint32_t                                     _numThreads;
+    uint32_t                                     _minHitsPerThread;
+    uint32_t                                     _numSearchPartitions;
+    uint32_t                                     _heapSize;
+    uint32_t                                     _arraySize;
+    uint32_t                                     _estimatePoint;
+    uint32_t                                     _estimateLimit;
+    uint32_t                                     _degradationMaxHits;
+    double                                       _degradationMaxFilterCoverage;
+    double                                       _degradationSamplePercentage;
+    double                                       _degradationPostFilterMultiplier;
+    std::optional<feature_t>                     _first_phase_rank_score_drop_limit;
+    std::optional<feature_t>                     _second_phase_rank_score_drop_limit;
+    std::vector<std::string>                     _match_features;
+    std::vector<std::string>                     _summaryFeatures;
+    std::vector<std::string>                     _dumpFeatures;
+    std::vector<std::string>                     _sort_features;
+    std::map<std::string, BlueprintResolver::SP> _sort_resolver_by_public;
+    Warnings                                     _warnings;
+    StringStringMap                              _feature_rename_map;
+    bool                                         _sort_blueprints_by_cost;
+    bool                                         _ignoreDefaultRankFeatures;
+    bool                                         _compiled;
+    bool                                         _compileError;
+    bool                                         _degradationAscendingOrder;
+    std::string                                  _diversityAttribute;
+    uint32_t                                     _diversityMinGroups;
+    double                                       _diversityCutoffFactor;
+    std::string                                  _diversityCutoffStrategy;
+    bool                                         _softTimeoutEnabled;
+    double                                       _softTimeoutTailCost;
+    double                                       _global_filter_lower_limit;
+    double                                       _global_filter_upper_limit;
+    double                                       _filter_first_upper_limit;
+    double                                       _filter_first_exploration;
+    double                                       _exploration_slack;
+    bool                                         _prefetch_tensors;
+    double                                       _target_hits_max_adjustment_factor;
+    double                                       _weakand_stop_word_adjust_limit;
+    double                                       _weakand_stop_word_drop_limit;
+    bool                                         _weakand_allow_drop_all;
+    vespalib::FuzzyMatchingAlgorithm             _fuzzy_matching_algorithm;
+    MutateOperation                              _mutateOnMatch;
+    MutateOperation                              _mutateOnFirstPhase;
+    MutateOperation                              _mutateOnSecondPhase;
+    MutateOperation                              _mutateOnSummary;
+    bool                                         _mutateAllowQueryOverride;
 
     void compileAndCheckForErrors(BlueprintResolver& bp);
 
@@ -411,6 +414,13 @@ public:
      * @param dumpFeature full feature name of a dump feature
      **/
     void addDumpFeature(const std::string& dumpFeature);
+    /**
+     * Adds the backend name of a rank feature allowed as a sort key.
+     *
+     * @param sort_feature full backend feature name
+     **/
+    void add_sort_feature(const std::string& sort_feature);
+    const std::vector<std::string>& get_sort_features() const { return _sort_features; }
 
     /**
      * Returns a const view of the dump features added.
@@ -451,6 +461,17 @@ public:
     RankProgram::UP create_match_program() const { return std::make_unique<RankProgram>(_match_resolver); }
     RankProgram::UP create_summary_program() const { return std::make_unique<RankProgram>(_summary_resolver); }
     RankProgram::UP create_dump_program() const { return std::make_unique<RankProgram>(_dumpResolver); }
+
+    bool has_sort_feature(const std::string& public_name) const {
+        return _sort_resolver_by_public.contains(public_name);
+    }
+    RankProgram::UP create_sort_program(const std::string& public_name) const;
+
+    /**
+     * Prepare shared state only for the unique resolvers selected by public name.
+     **/
+    void prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
+                                   const std::vector<std::string>& selected_public_names) const;
 
     /**
      * Here you can do some preprocessing. State must be stored in the IObjectStore.

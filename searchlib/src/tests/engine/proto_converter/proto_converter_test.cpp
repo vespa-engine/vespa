@@ -101,6 +101,14 @@ TEST_F(SearchRequestTest, require_that_sorting_is_converted) {
     EXPECT_EQ(request.sortSpec, "+foo -bar");
 }
 
+TEST_F(SearchRequestTest, require_that_feature_sorting_is_converted) {
+    auto* sort_field = proto.add_sorting();
+    sort_field->set_ascending(true);
+    sort_field->set_field("feature(foo)");
+    convert();
+    EXPECT_EQ(request.sortSpec, "+feature(foo)");
+}
+
 TEST_F(SearchRequestTest, require_that_session_key_is_converted) {
     proto.set_session_key("my-session");
     convert();

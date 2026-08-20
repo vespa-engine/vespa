@@ -91,6 +91,7 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.AttributeSorter;
+import com.yahoo.search.query.Sorting.FeatureSorter;
 import com.yahoo.search.query.Sorting.FieldOrder;
 import com.yahoo.search.query.Sorting.LowerCaseSorter;
 import com.yahoo.search.query.Sorting.Order;
@@ -1262,6 +1263,8 @@ public class YqlParser implements Parser {
                 sorter = new LowerCaseSorter(field);
             } else if (Sorting.RAW.equals(function)) {
                 sorter = new RawSorter(field);
+            } else if (Sorting.FEATURE.equals(function)) {
+                sorter = new FeatureSorter(field);
             } else if (Sorting.UCA.equals(function)) {
                 if (locale != null) {
                     UcaSorter.Strength ucaStrength = UcaSorter.Strength.UNDEFINED;
@@ -1296,7 +1299,7 @@ public class YqlParser implements Parser {
                     sorter = new UcaSorter(field);
                 }
             } else {
-                throw newUnexpectedArgumentException(function, "lowercase", "raw", "uca");
+                throw newUnexpectedArgumentException(function, "lowercase", "raw", "uca", "feature");
             }
             switch ((SortOperator) op.getOperator()) {
                 case ASC -> sortingInit.add(new FieldOrder(sorter, Order.ASCENDING));

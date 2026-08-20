@@ -51,6 +51,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +65,8 @@ public class RankProfile implements Cloneable {
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
     public final static String GLOBAL_PHASE = "globalphase";
+
+    private static final Pattern SCHEMA_IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     /** The schema-unique name of this rank profile */
     private final String name;
@@ -135,6 +138,8 @@ public class RankProfile implements Cloneable {
     private final List<String> inheritedMatchFeaturesProfileNames = new ArrayList<>();
 
     private Set<ReferenceNode> rankFeatures;
+
+    private Set<ReferenceNode> sortFeatures;
 
     /** The properties of this - a multimap */
     private Map<String, List<RankProperty>> rankProperties = new LinkedHashMap<>();
@@ -718,6 +723,33 @@ public class RankProfile implements Cloneable {
         }
     }
 
+    /** Returns a read-only view of the sort features to use in this profile. This is never null */
+    public Set<ReferenceNode> getSortFeatures() {
+        if (sortFeatures != null) return Collections.unmodifiableSet(sortFeatures);
+        return uniquelyInherited(RankProfile::getSortFeatures, f -> ! f.isEmpty(), "sort-features")
+                .orElse(Set.of());
+    }
+
+    /**
+     * Adds the content of the given feature list to the internal list of sort features.
+     * Each entry must be a bare schema identifier.
+     */
+    public void addSortFeatures(FeatureList features) {
+        if (sortFeatures == null)
+            sortFeatures = new LinkedHashSet<>();
+        for (ReferenceNode feature : features) {
+            validateSortFeature(feature);
+            sortFeatures.add(feature);
+        }
+    }
+
+    private void validateSortFeature(ReferenceNode feature) {
+        var reference = feature.reference();
+        if ( ! reference.isIdentifier() || ! SCHEMA_IDENTIFIER.matcher(reference.name()).matches())
+            throw new IllegalArgumentException("sort-features entries must be bare schema identifiers " +
+                                               "([A-Za-z_][A-Za-z0-9_]*), got '" + feature + "'");
+    }
+
     /** Returns a read only flattened list view of the rank properties to use in this profile. This is never null. */
     public List<RankProperty> getRankProperties() {
         List<RankProperty> properties = new ArrayList<>();
@@ -1199,6 +1231,7 @@ public class RankProfile implements Cloneable {
             clone.summaryFeatures = summaryFeatures != null ? new LinkedHashSet<>(this.summaryFeatures) : null;
             clone.matchFeatures = matchFeatures != null ? new LinkedHashSet<>(this.matchFeatures) : null;
             clone.rankFeatures = rankFeatures != null ? new LinkedHashSet<>(this.rankFeatures) : null;
+            clone.sortFeatures = sortFeatures != null ? new LinkedHashSet<>(this.sortFeatures) : null;
             clone.rankProperties = new LinkedHashMap<>(this.rankProperties);
             clone.inputs = new LinkedHashMap<>(this.inputs);
             clone.functions = new LinkedHashMap<>(this.functions);
@@ -1259,6 +1292,9 @@ public class RankProfile implements Cloneable {
         }
         for (ReferenceNode sf : getSummaryFeatures()) {
             verifyNoNormalizers("summary-feature " + sf, sf, allNormalizers, context);
+        }
+        for (ReferenceNode sortFeature : getSortFeatures()) {
+            verifyNoNormalizers("sort-feature " + sortFeature, sortFeature, allNormalizers, context);
         }
         if (globalPhaseRanking != null) {
             var needInputs = new HashSet<String>();
