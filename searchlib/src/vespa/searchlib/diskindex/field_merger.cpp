@@ -419,6 +419,7 @@ bool FieldMerger::merge_postings_finish() {
         }
     }
     _readers.clear();
+    _word_num_mappings.clear();
     if (!_writer->close()) {
         throw IllegalArgumentException(
             make_string("Could not close output posocc + dictionary in %s", _field_dir.c_str()));
