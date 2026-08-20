@@ -5,10 +5,11 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
-#include <vespa/vespalib/util/binary_hamming_distance.h>
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
+#include <span>
 #include <unordered_map>
 #include <vector>
 
@@ -31,7 +32,8 @@ void my_sum_max_inv_hamming_op(InterpretedFunction::State& state, uint64_t vec_s
             for (const int8_t* document = document_cells.data();
                  document < document_cells.data() + document_cells.size(); document += vec_size)
             {
-                float my_inv_hamming = 1.0f / (1.0f + binary_hamming_distance(query, document, vec_size));
+                float my_inv_hamming =
+                    1.0f / (1.0f + hwaccelerated::binary_hamming_distance(query, document, vec_size));
                 max_inv_hamming = aggr::Max<float>::combine(max_inv_hamming, my_inv_hamming);
             }
             result += max_inv_hamming;
@@ -46,52 +48,118 @@ struct ChunkedParam {
     ChunkedParam(size_t vec_size_in, size_t chunk_dim_in) : vec_size(vec_size_in), chunk_dim(chunk_dim_in) {}
 };
 
-void my_max_sum_max_inv_hamming_op(InterpretedFunction::State& state, uint64_t param_in) {
-    const auto&  param = unwrap_param<ChunkedParam>(param_in);
-    double       result = 0.0;
-    auto         query_cells = state.peek(1).cells().unsafe_typify<int8_t>();
-    const Value& document = state.peek(0);
-    auto         document_cells = document.cells().unsafe_typify<int8_t>();
-    if ((query_cells.size() > 0) && (document_cells.size() > 0)) {
-        size_t                               num_query_vectors = query_cells.size() / param.vec_size;
-        size_t                               max_distance = param.vec_size * 8;
-        size_t                               num_chunks = 0;
-        std::unordered_map<uint32_t, size_t> chunk_index;
-        std::vector<size_t>                  min_distances;
-        std::array<string_id, 2>             address;
-        std::array<string_id*, 2>            address_ref = {&address[0], &address[1]};
-        size_t                               subspace = 0;
-        auto                                 view = document.index().create_view({});
+/**
+ * Keeps the smallest hamming distance from every query vector to each chunk of the
+ * document, then scores each chunk like SumMaxInvHammingFunction scores a whole
+ * document and keeps the best score. Every member function is defined inline and the
+ * object is a local that never escapes the op below, so this groups the loops and
+ * their state without adding anything for the compiler to pay for.
+ **/
+class ChunkedScorer {
+private:
+    const ChunkedParam&                  _param;
+    std::span<const int8_t>              _query_cells;
+    std::span<const int8_t>              _document_cells;
+    const Value::Index&                  _index;
+    size_t                               _num_query_vectors;
+    uint32_t                             _max_distance;
+    size_t                               _num_chunks;
+    std::unordered_map<uint32_t, size_t> _chunk_index;
+    std::vector<uint32_t>                _min_distances;
+
+    const int8_t* query_vector(size_t i) const noexcept { return _query_cells.data() + (i * _param.vec_size); }
+
+    const int8_t* document_vector(size_t subspace) const noexcept {
+        return _document_cells.data() + (subspace * _param.vec_size);
+    }
+
+    uint32_t* distances_for(size_t chunk) noexcept { return _min_distances.data() + (chunk * _num_query_vectors); }
+    const uint32_t* distances_for(size_t chunk) const noexcept {
+        return _min_distances.data() + (chunk * _num_query_vectors);
+    }
+
+    // the ordinal of the chunk with this label, adding it if it is new; this may grow
+    // _min_distances, so distances_for() must not be called until after it returns
+    size_t chunk_ordinal(string_id label) {
+        auto [pos, inserted] = _chunk_index.try_emplace(label.value(), _num_chunks);
+        if (inserted) {
+            _min_distances.resize(++_num_chunks * _num_query_vectors, _max_distance);
+        }
+        return pos->second;
+    }
+
+    // the hamming call is an indirect call through the dispatch table, so anything read
+    // through 'this' across it must be reloaded; hoist what the loop needs up front
+    void update_chunk(uint32_t* distances, const int8_t* doc_vector) const noexcept {
+        const int8_t* query = _query_cells.data();
+        const size_t  vec_size = _param.vec_size;
+        const size_t  num_query_vectors = _num_query_vectors;
+        for (size_t i = 0; i < num_query_vectors; ++i) {
+            if (distances[i] != 0) {
+                auto distance = static_cast<uint32_t>(
+                    hwaccelerated::binary_hamming_distance(query + (i * vec_size), doc_vector, vec_size));
+                distances[i] = std::min(distances[i], distance);
+            }
+        }
+    }
+
+    void scan_document() {
+        std::array<string_id, 2>  address;
+        std::array<string_id*, 2> address_ref = {&address[0], &address[1]};
+
+        size_t subspace = 0;
+        auto   view = _index.create_view({});
+
         view->lookup({});
         while (view->next_result(address_ref, subspace)) {
-            auto [pos, inserted] = chunk_index.try_emplace(address[param.chunk_dim].value(), num_chunks);
-            if (inserted) {
-                min_distances.resize(++num_chunks * num_query_vectors, max_distance);
-            }
-            size_t*       chunk_distances = min_distances.data() + (pos->second * num_query_vectors);
-            const int8_t* document_vector = document_cells.data() + (subspace * param.vec_size);
-            for (size_t i = 0; i < num_query_vectors; ++i) {
-                if (chunk_distances[i] != 0) {
-                    const int8_t* query_vector = query_cells.data() + (i * param.vec_size);
-                    chunk_distances[i] = std::min(
-                        chunk_distances[i],
-                        hwaccelerated::binary_hamming_distance(query_vector, document_vector, param.vec_size));
-                }
-            }
+            size_t chunk = chunk_ordinal(address[_param.chunk_dim]);
+            update_chunk(distances_for(chunk), document_vector(subspace));
         }
-        // sum in float to match the cell type of the per-chunk tensor produced by generic evaluation
-        float max_chunk_score = aggr::Max<float>::null_value();
-        for (size_t chunk = 0; chunk < num_chunks; ++chunk) {
-            const size_t* chunk_distances = min_distances.data() + (chunk * num_query_vectors);
-            float         chunk_score = 0.0f;
-            for (size_t i = 0; i < num_query_vectors; ++i) {
-                chunk_score += 1.0f / (1.0f + chunk_distances[i]);
-            }
-            max_chunk_score = aggr::Max<float>::combine(max_chunk_score, chunk_score);
-        }
-        result = max_chunk_score;
     }
-    state.pop_pop_push(state.stash.create<DoubleValue>(result));
+
+    // sum in float to match the cell type of the per-chunk tensor produced by generic evaluation
+    float chunk_score(size_t chunk) const noexcept {
+        const uint32_t* distances = distances_for(chunk);
+        float           score = 0.0f;
+        for (size_t i = 0; i < _num_query_vectors; ++i) {
+            score += 1.0f / (1.0f + distances[i]);
+        }
+        return score;
+    }
+
+    float best_chunk_score() const noexcept {
+        float result = aggr::Max<float>::null_value();
+        for (size_t chunk = 0; chunk < _num_chunks; ++chunk) {
+            result = aggr::Max<float>::combine(result, chunk_score(chunk));
+        }
+        return result;
+    }
+
+public:
+    ChunkedScorer(const Value& query, const Value& document, const ChunkedParam& param)
+        : _param(param),
+          _query_cells(query.cells().unsafe_typify<int8_t>()),
+          _document_cells(document.cells().unsafe_typify<int8_t>()),
+          _index(document.index()),
+          _num_query_vectors(_query_cells.size() / param.vec_size),
+          // distances are bounded by vec_size * 8, so they fit in uint32_t for any
+          // reasonable vector length that can occur
+          _max_distance(static_cast<uint32_t>(param.vec_size * 8)),
+          _num_chunks(0) {}
+
+    double score() {
+        if (_query_cells.empty() || _document_cells.empty()) {
+            return 0.0;
+        }
+        scan_document();
+        return best_chunk_score();
+    }
+};
+
+void my_max_sum_max_inv_hamming_op(InterpretedFunction::State& state, uint64_t param_in) {
+    const auto&   param = unwrap_param<ChunkedParam>(param_in);
+    ChunkedScorer scorer(state.peek(1), state.peek(0), param);
+    state.pop_pop_push(state.stash.create<DoubleValue>(scorer.score()));
 }
 
 const Reduce* check_reduce(const TensorFunction& expr, Aggr aggr) {
@@ -139,22 +207,37 @@ const TensorFunction* check_inv(const TensorFunction& expr) {
     return nullptr;
 }
 
-bool check_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
-                  const std::string& sum_dim, const std::string& max_dim, const std::string& ham_dim) {
-    return (res_type.is_double() && (query.dimensions().size() == 2) && (query.cell_type() == CellType::INT8) &&
-            (document.dimensions().size() == 2) && (document.cell_type() == CellType::INT8) &&
-            query.has_dimension(sum_dim) && (query.stride_of(ham_dim) == 1) && document.has_dimension(max_dim) &&
-            (document.stride_of(ham_dim) == 1));
+bool is_mapped_dim(const ValueType& type, const std::string& dim) {
+    size_t npos = ValueType::Dimension::npos;
+    size_t idx = type.dimension_index(dim);
+    return (idx != npos) && type.dimensions()[idx].is_mapped();
 }
 
+// requirements shared by the plain and the chunked optimization: a double result, an
+// int8 query holding the sum dimension, and int8 cells with the hamming dimension
+// innermost in both inputs. What differs is the shape of the document; see below.
+bool check_common_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
+                         const std::string& sum_dim, const std::string& ham_dim) {
+    return (res_type.is_double() && (query.dimensions().size() == 2) && (query.cell_type() == CellType::INT8) &&
+            query.has_dimension(sum_dim) && (query.stride_of(ham_dim) == 1) &&
+            (document.cell_type() == CellType::INT8) && (document.stride_of(ham_dim) == 1));
+}
+
+// the document holds the max dimension, which may be either mapped or indexed
+bool check_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
+                  const std::string& sum_dim, const std::string& max_dim, const std::string& ham_dim) {
+    return (check_common_params(res_type, query, document, sum_dim, ham_dim) && (document.dimensions().size() == 2) &&
+            document.has_dimension(max_dim));
+}
+
+// the document groups its vectors into chunks, so both the max dimension and the
+// chunk dimension must be mapped
 bool check_chunked_params(const ValueType& res_type, const ValueType& query, const ValueType& document,
                           const std::string& sum_dim, const std::string& max_dim, const std::string& chunk_dim,
                           const std::string& ham_dim) {
-    return (res_type.is_double() && (query.dimensions().size() == 2) && (query.cell_type() == CellType::INT8) &&
-            (document.dimensions().size() == 3) && (document.count_mapped_dimensions() == 2) &&
-            (document.cell_type() == CellType::INT8) && query.has_dimension(sum_dim) &&
-            (query.stride_of(ham_dim) == 1) && document.has_dimension(max_dim) && document.has_dimension(chunk_dim) &&
-            (document.stride_of(ham_dim) == 1));
+    return (check_common_params(res_type, query, document, sum_dim, ham_dim) && (document.dimensions().size() == 3) &&
+            (document.count_mapped_dimensions() == 2) && is_mapped_dim(document, max_dim) &&
+            is_mapped_dim(document, chunk_dim));
 }
 
 size_t get_dim_size(const ValueType& type, const std::string& dim) {
@@ -164,7 +247,8 @@ size_t get_dim_size(const ValueType& type, const std::string& dim) {
     return type.dimensions()[idx].size;
 }
 
-// the document has exactly two mapped dimensions; the chunk dimension is either the first or the second
+// check_chunked_params has verified that the document has exactly two mapped
+// dimensions and that the chunk dimension is one of them
 size_t get_chunk_dim(const ValueType& document, const std::string& chunk_dim) {
     return (document.mapped_dimensions()[0].name == chunk_dim) ? 0 : 1;
 }
