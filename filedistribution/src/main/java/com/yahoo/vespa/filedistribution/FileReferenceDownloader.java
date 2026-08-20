@@ -128,6 +128,8 @@ public class FileReferenceDownloader {
         FileReference fileReference = fileReferenceDownload.fileReference();
         int retryCount = 0;
         int timeoutCount = 0;
+        // Intentionally not reset on a non-denial result: the clock bounds how long we tolerate any sign of a
+        // denial for this download attempt, regardless of what other retries/connections report in between.
         Instant permissionDeniedSince = null;
         Connection connection = connectionPool.getCurrent();
         do {
