@@ -542,8 +542,8 @@ TEST_F(StringAttributeTest, test_fuzzy_match) {
 }
 
 TEST_F(StringAttributeTest, test_range_match_cased) {
-    auto range_spec = std::make_unique<StringRangeSpec>("BAR", true, false, "FOO", true, false);
-    attribute::StringRangeSearchHelper helper(range_spec.get(), true);
+    StringRangeSpec                    range = {"BAR", true, false, "FOO", true, false};
+    attribute::StringRangeSearchHelper helper(&range, true);
 
     // "BAR", "FOO", "bar", "foo"
     EXPECT_TRUE(helper.is_match("BAR"));
@@ -552,9 +552,9 @@ TEST_F(StringAttributeTest, test_range_match_cased) {
     EXPECT_FALSE(helper.is_match("foo"));
 }
 
-TEST_F(StringAttributeTest, test_range_is_match_uncased) {
-    auto range_spec = std::make_unique<StringRangeSpec>("BAR", true, false, "FOO", true, false);
-    attribute::StringRangeSearchHelper helper(range_spec.get(), false);
+TEST_F(StringAttributeTest, test_range_match_uncased) {
+    StringRangeSpec                    range = {"BAR", true, false, "FOO", true, false};
+    attribute::StringRangeSearchHelper helper(&range, false);
 
     // "BAR", "bar", "FOO", "foo"
     EXPECT_TRUE(helper.is_match("BAR"));
@@ -564,9 +564,9 @@ TEST_F(StringAttributeTest, test_range_is_match_uncased) {
 }
 
 namespace {
-void verify_range(const StringRangeSpec* range, bool aaa, bool abb, bool acc, bool add, bool aee) {
+void verify_range(const StringRangeSpec& range, bool aaa, bool abb, bool acc, bool add, bool aee) {
     for (bool cased : {true, false}) {
-        attribute::StringRangeSearchHelper helper(range, cased);
+        attribute::StringRangeSearchHelper helper(&range, cased);
 
         EXPECT_EQ(aaa, helper.is_match("Aaa"));
         EXPECT_EQ(abb, helper.is_match("Abb"));
@@ -579,36 +579,28 @@ void verify_range(const StringRangeSpec* range, bool aaa, bool abb, bool acc, bo
 
 TEST_F(StringAttributeTest, test_range_is_match) {
     // ["Abb", "Add"]
-    auto closed_range = std::make_unique<StringRangeSpec>("Abb", true, false, "Add", true, false);
-    verify_range(closed_range.get(), false, true, true, true, false);
+    verify_range({"Abb", true, false, "Add", true, false}, false, true, true, true, false);
 
     // ("Abb", "Add"]
-    auto left_open_range = std::make_unique<StringRangeSpec>("Abb", false, false, "Add", true, false);
-    verify_range(left_open_range.get(), false, false, true, true, false);
+    verify_range({"Abb", false, false, "Add", true, false}, false, false, true, true, false);
 
     // ["Abb", "Add")
-    auto right_open_range = std::make_unique<StringRangeSpec>("Abb", true, false, "Add", false, false);
-    verify_range(right_open_range.get(), false, true, true, false, false);
+    verify_range({"Abb", true, false, "Add", false, false}, false, true, true, false, false);
 
     // ("Abb", "Add")
-    auto open_range = std::make_unique<StringRangeSpec>("Abb", false, false, "Add", false, false);
-    verify_range(open_range.get(), false, false, true, false, false);
+    verify_range({"Abb", false, false, "Add", false, false}, false, false, true, false, false);
 
     // (\infty, "Add")
-    auto left_unbounded_range = std::make_unique<StringRangeSpec>("Abb", false, true, "Add", false, false);
-    verify_range(left_unbounded_range.get(), true, true, true, false, false);
+    verify_range({"Abb", false, true, "Add", false, false}, true, true, true, false, false);
 
     // ("Abb", \infty)
-    auto right_unbounded_range = std::make_unique<StringRangeSpec>("Abb", false, false, "Add", false, true);
-    verify_range(right_unbounded_range.get(), false, false, true, true, true);
+    verify_range({"Abb", false, false, "Add", false, true}, false, false, true, true, true);
 
     // (\infty, \infty)
-    auto all_strings_range = std::make_unique<StringRangeSpec>("Abb", false, true, "Add", false, true);
-    verify_range(all_strings_range.get(), true, true, true, true, true);
+    verify_range({"Abb", false, true, "Add", false, true}, true, true, true, true, true);
 
     // ["Add", "Abb"] = \varnothing
-    auto empty_range = std::make_unique<StringRangeSpec>("Add", true, false, "Abb", true, false);
-    verify_range(empty_range.get(), false, false, false, false, false);
+    verify_range({"Add", true, false, "Abb", true, false}, false, false, false, false, false);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
