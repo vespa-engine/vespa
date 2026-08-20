@@ -146,6 +146,7 @@ template struct ProtonTerm<search::query::NumberTerm>;
 template struct ProtonTerm<search::query::Phrase>;
 template struct ProtonTerm<search::query::PrefixTerm>;
 template struct ProtonTerm<search::query::RangeTerm>;
+template struct ProtonTerm<search::query::StringRangeTerm>;
 template struct ProtonTerm<search::query::StringTerm>;
 template struct ProtonTerm<search::query::SubstringTerm>;
 template struct ProtonTerm<search::query::SuffixTerm>;

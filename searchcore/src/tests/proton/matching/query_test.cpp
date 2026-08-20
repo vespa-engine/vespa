@@ -237,6 +237,7 @@ public:
     void visit(ProtonLocationTerm& n) override { checkNode(n, 0, true); }
     void visit(ProtonPrefixTerm& n) override { checkNode(n, 1, false); }
     void visit(ProtonRangeTerm& n) override { checkNode(n, 2, false); }
+    void visit(ProtonStringRangeTerm& n) override { checkNode(n, 2, false); }
     void visit(ProtonStringTerm& n) override { checkNode(n, 2, false); }
     void visit(ProtonSubstringTerm& n) override { checkNode(n, 0, true); }
     void visit(ProtonSuffixTerm& n) override { checkNode(n, 2, false); }
@@ -355,6 +356,7 @@ public:
     void visit(ProtonLocationTerm&) override {}
     void visit(ProtonPrefixTerm&) override {}
     void visit(ProtonRangeTerm&) override {}
+    void visit(ProtonStringRangeTerm&) override {}
 
     void visit(ProtonStringTerm& n) override {
         const ITermData& term_data = n;

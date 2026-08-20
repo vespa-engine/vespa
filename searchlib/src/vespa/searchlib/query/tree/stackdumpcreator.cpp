@@ -253,6 +253,8 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(RangeTerm& node) override { createTerm(node, ParseItem::ITEM_NUMTERM); }
 
+    void visit(StringRangeTerm& node) override { createTerm(node, ParseItem::ITEM_STRING_RANGE); }
+
     void visit(StringTerm& node) override { createTerm(node, ParseItem::ITEM_TERM); }
 
     void visit(SubstringTerm& node) override { createTerm(node, ParseItem::ITEM_SUBSTRINGTERM); }
