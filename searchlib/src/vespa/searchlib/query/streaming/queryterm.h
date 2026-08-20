@@ -74,6 +74,7 @@ public:
         : QueryTerm(std::move(resultBase), term, std::move(index), type,
                     (type == Type::EXACTSTRINGTERM) ? Normalizing::LOWERCASE : Normalizing::LOWERCASE_AND_FOLD) {}
     QueryTerm(Type type, string index, std::unique_ptr<NumericRangeSpec> range);
+    QueryTerm(Type type, string index, std::unique_ptr<StringRangeSpec> range);
     QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, string_view term, string index, Type type,
               Normalizing normalizing);
     QueryTerm(const QueryTerm&) = delete;
