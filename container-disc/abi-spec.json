@@ -404,6 +404,7 @@
       "public void setInRotation(java.lang.Boolean)",
       "public void addToRotation(java.lang.String)",
       "public void removeFromRotation(java.lang.String)",
+      "public void setLivenessOk(boolean)",
       "public boolean isInRotation()"
     ],
     "fields" : [ ]

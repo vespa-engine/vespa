@@ -69,6 +69,8 @@ public class DocumentProcessingTask implements Runnable {
             if (DocumentProcessor.Progress.LATER.equals(progress) && !processings.isEmpty()) {
                 DocumentProcessor.LaterProgress laterProgress = (DocumentProcessor.LaterProgress) progress;
                 docprocHandler.submit(this, laterProgress.getDelay());
+            } else {
+                docprocHandler.recordCompleted();
             }
         } catch (Error error) {
             try {
