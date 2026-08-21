@@ -2753,6 +2753,40 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.ArgmaxAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public com.yahoo.search.grouping.request.GroupingExpression getKey()",
+      "public void resolveLevel(int)",
+      "public void visit(com.yahoo.search.grouping.request.ExpressionVisitor)",
+      "public com.yahoo.search.grouping.request.ArgmaxAggregator copy()",
+      "public java.lang.String toString()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.ArgminAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public com.yahoo.search.grouping.request.GroupingExpression getKey()",
+      "public void resolveLevel(int)",
+      "public void visit(com.yahoo.search.grouping.request.ExpressionVisitor)",
+      "public com.yahoo.search.grouping.request.ArgminAggregator copy()",
+      "public java.lang.String toString()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.ArrayAtLookup" : {
     "superClass" : "com.yahoo.search.grouping.request.DocumentValue",
     "interfaces" : [ ],

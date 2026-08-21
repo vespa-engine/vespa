@@ -223,6 +223,9 @@ public class GroupingSerializationTest {
                     .updateSketch(7)
                     .updateSketch(8)
                     .setExpression(new ConstantNode(new IntegerResultNode(8))));
+            t.assertMatch(new ArgminAggregationResult(new IntegerResultNode(5), new IntegerResultNode(7))
+                    .setKeyExpression(new ConstantNode(new IntegerResultNode(5)))
+                    .setExpression(new ConstantNode(new IntegerResultNode(7))));
         }
     }
 

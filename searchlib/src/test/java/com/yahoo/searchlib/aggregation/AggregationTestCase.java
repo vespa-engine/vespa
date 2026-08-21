@@ -23,6 +23,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author baldersheim
@@ -41,6 +42,55 @@ public class AggregationTestCase {
         assertEquals(7, b.getSum().getInteger());
         b.merge(a);
         assertEquals(14, b.getSum().getInteger());
+    }
+
+    @Test
+    public void testArgminAggregationResult() {
+        ArgminAggregationResult a = new ArgminAggregationResult(new FloatResultNode(5.0), new IntegerResultNode(6));
+        a.setKeyExpression(new AttributeNode("attributeB"));
+        a.setExpression(new AttributeNode("attributeA"));
+        assertTrue(a.hasValue());
+        assertEquals(5.0, a.getKey().getFloat(), delta);
+        assertEquals(6, a.getValue().getInteger());
+
+        ArgminAggregationResult b = (ArgminAggregationResult)serializeDeserialize(a);
+        assertTrue(b.hasValue());
+        assertEquals(5.0, b.getKey().getFloat(), delta);
+        assertEquals(6, b.getValue().getInteger());
+        assertEquals(a.getKeyExpression(), b.getKeyExpression());
+
+        // The hit with the smallest key wins, no matter which side of the merge it is on.
+        ArgminAggregationResult c = new ArgminAggregationResult(new FloatResultNode(3.0), new IntegerResultNode(7));
+        c.setKeyExpression(new AttributeNode("attributeB"));
+        c.setExpression(new AttributeNode("attributeA"));
+        b.merge(c);
+        assertEquals(3.0, b.getKey().getFloat(), delta);
+        assertEquals(7, b.getValue().getInteger());
+        c.merge(a);
+        assertEquals(3.0, c.getKey().getFloat(), delta);
+        assertEquals(7, c.getValue().getInteger());
+    }
+
+    @Test
+    public void testArgminAggregationResultWithoutValue() {
+        ArgminAggregationResult empty = new ArgminAggregationResult();
+        empty.setKeyExpression(new AttributeNode("attributeB"));
+        empty.setExpression(new AttributeNode("attributeA"));
+        assertFalse(empty.hasValue());
+        assertFalse(((ArgminAggregationResult)serializeDeserialize(empty)).hasValue());
+
+        // An empty result never wins, and is filled in by whatever it merges with.
+        ArgminAggregationResult a = new ArgminAggregationResult(new FloatResultNode(1.0), new IntegerResultNode(8));
+        a.setKeyExpression(new AttributeNode("attributeB"));
+        a.setExpression(new AttributeNode("attributeA"));
+        a.merge(empty);
+        assertEquals(1.0, a.getKey().getFloat(), delta);
+        assertEquals(8, a.getValue().getInteger());
+
+        empty.merge(a);
+        assertTrue(empty.hasValue());
+        assertEquals(1.0, empty.getKey().getFloat(), delta);
+        assertEquals(8, empty.getValue().getInteger());
     }
 
     @Test
