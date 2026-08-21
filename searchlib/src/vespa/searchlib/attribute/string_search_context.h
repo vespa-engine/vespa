@@ -27,8 +27,6 @@ protected:
     using MatcherType = Matcher;
 
 public:
-    StringSearchContextT(const AttributeVector& to_be_searched, std::unique_ptr<QueryTermSimple> query_term,
-                         bool cased, vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm);
     StringSearchContextT(const AttributeVector& to_be_searched, Matcher&& matcher);
     StringSearchContextT(StringSearchContextT&&) noexcept;
     ~StringSearchContextT() override;
