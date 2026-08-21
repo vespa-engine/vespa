@@ -33,8 +33,6 @@ protected:
     static unsigned int CalcAccessFlags(unsigned int openFlags);
 
 public:
-    static bool Stat(const char* filename, FastOS_StatInfo* statInfo);
-
     static int GetMaximumFilenameLength(const char* pathName);
     static int GetMaximumPathLength(const char* pathName);
 
@@ -74,6 +72,5 @@ public:
     bool SetSize(int64_t newSize) override;
     void dropFromCache() const override;
 
-    static int64_t GetFreeDiskSpace(const char* path);
     static int count_open_files();
 };

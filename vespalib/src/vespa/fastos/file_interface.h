@@ -2,7 +2,7 @@
 //************************************************************************
 /**
  * @file
- * Class definitions for FastOS_File and FastOS_StatInfo.
+ * Class definitions for FastOS_File.
  *
  * @author  Div, Oivind H. Danielsen
  */
@@ -427,45 +427,4 @@ public:
      * Will drop whatever is in the FS cache when called. Does not have effect in the future.
      **/
     virtual void dropFromCache() const;
-};
-
-/**
- * The class serves as a container for information returned by
- * @ref FastOS_File::Stat().
- */
-class FastOS_StatInfo {
-public:
-    /**
-     * Possible error codes.
-     */
-    enum StatError {
-        Ok,          //!< ok
-        Unknown,     //!< unknown error
-        FileNotFound //!< file not found error
-    };
-
-    StatError _error;
-
-    /**
-     * Is it a regular file? This field is only valid if @ref _error is
-     * @ref Ok.
-     */
-    bool _isRegular;
-
-    /**
-     * Is it a directory? This field is only valid if @ref _error is
-     * @ref Ok.
-     */
-    bool _isDirectory;
-
-    /**
-     * File size. This field is only valid if @ref _error is
-     * @ref Ok.
-     */
-    int64_t _size;
-
-    /**
-     * Time of last modification in seconds.
-     */
-    vespalib::system_time _modifiedTime;
 };
