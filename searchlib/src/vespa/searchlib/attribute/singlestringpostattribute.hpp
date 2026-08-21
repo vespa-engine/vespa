@@ -126,7 +126,7 @@ SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP              
     using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
     bool   cased = this->get_match_is_cased();
     auto   docid_limit = this->getCommittedDocIdLimit();
-    BaseSC base_sc(std::move(qTerm), cased, params.fuzzy_matching_algorithm(), *this,
+    BaseSC base_sc(attribute::StringMatcher(std::move(qTerm), cased, params.fuzzy_matching_algorithm()), *this,
                    this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
     return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
 }

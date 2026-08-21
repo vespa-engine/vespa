@@ -16,11 +16,9 @@ namespace search::attribute {
 template <typename M, typename Matcher>
 class MultiStringEnumSearchContextT : public MultiEnumSearchContext<const char*, StringSearchContextT<Matcher>, M> {
 public:
-    MultiStringEnumSearchContextT(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
-                                  vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
-                                  const AttributeVector&           toBeSearched,
-                                  MultiValueMappingReadView<M>     mv_mapping_read_view,
-                                  const EnumStoreT<const char*>&   enum_store);
+    MultiStringEnumSearchContextT(Matcher&& matcher, const AttributeVector& toBeSearched,
+                                  MultiValueMappingReadView<M>   mv_mapping_read_view,
+                                  const EnumStoreT<const char*>& enum_store);
     MultiStringEnumSearchContextT(MultiStringEnumSearchContextT&& rhs) noexcept = default;
     ~MultiStringEnumSearchContextT() override;
 };

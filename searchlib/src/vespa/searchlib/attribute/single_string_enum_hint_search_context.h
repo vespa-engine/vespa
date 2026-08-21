@@ -18,9 +18,7 @@ template <typename Matcher>
 class SingleStringEnumHintSearchContextT : public SingleStringEnumSearchContextT<Matcher>,
                                            public EnumHintSearchContext {
 public:
-    SingleStringEnumHintSearchContextT(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
-                                       vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
-                                       const AttributeVector&           toBeSearched,
+    SingleStringEnumHintSearchContextT(Matcher&& matcher, const AttributeVector& toBeSearched,
                                        typename SingleStringEnumHintSearchContextT::EnumIndices enum_indices,
                                        const EnumStoreT<const char*>& enum_store, uint64_t num_values);
     ~SingleStringEnumHintSearchContextT() override;

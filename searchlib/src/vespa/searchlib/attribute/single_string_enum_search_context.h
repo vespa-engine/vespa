@@ -16,9 +16,7 @@ namespace search::attribute {
 template <typename Matcher>
 class SingleStringEnumSearchContextT : public SingleEnumSearchContext<const char*, StringSearchContextT<Matcher>> {
 public:
-    SingleStringEnumSearchContextT(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
-                                   vespalib::FuzzyMatchingAlgorithm                     fuzzy_matching_algorithm,
-                                   const AttributeVector&                               toBeSearched,
+    SingleStringEnumSearchContextT(Matcher&& matcher, const AttributeVector& toBeSearched,
                                    typename SingleStringEnumSearchContextT::EnumIndices enum_indices,
                                    const EnumStoreT<const char*>&                       enum_store);
     SingleStringEnumSearchContextT(SingleStringEnumSearchContextT&&) noexcept;

@@ -10,11 +10,10 @@ namespace search::attribute {
 
 template <typename Matcher>
 SingleStringEnumSearchContextT<Matcher>::SingleStringEnumSearchContextT(
-    std::unique_ptr<QueryTermSimple> qTerm, bool cased, vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
-    const AttributeVector& toBeSearched, typename SingleStringEnumSearchContextT::EnumIndices enum_indices,
-    const EnumStoreT<const char*>& enum_store)
-    : SingleEnumSearchContext<const char*, StringSearchContextT<Matcher>>(
-          Matcher(std::move(qTerm), cased, fuzzy_matching_algorithm), toBeSearched, enum_indices, enum_store) {
+    Matcher&& matcher, const AttributeVector& toBeSearched,
+    typename SingleStringEnumSearchContextT::EnumIndices enum_indices, const EnumStoreT<const char*>& enum_store)
+    : SingleEnumSearchContext<const char*, StringSearchContextT<Matcher>>(std::move(matcher), toBeSearched,
+                                                                          enum_indices, enum_store) {
 }
 
 template <typename Matcher>

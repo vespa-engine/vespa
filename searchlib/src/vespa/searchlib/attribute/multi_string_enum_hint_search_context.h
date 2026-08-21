@@ -18,10 +18,8 @@ template <typename M, typename Matcher>
 class MultiStringEnumHintSearchContextT : public MultiStringEnumSearchContextT<M, Matcher>,
                                           public EnumHintSearchContext {
 public:
-    MultiStringEnumHintSearchContextT(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
-                                      vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
-                                      const AttributeVector&           toBeSearched,
-                                      MultiValueMappingReadView<M>     mv_mapping_read_view,
+    MultiStringEnumHintSearchContextT(Matcher&& matcher, const AttributeVector& toBeSearched,
+                                      MultiValueMappingReadView<M>   mv_mapping_read_view,
                                       const EnumStoreT<const char*>& enum_store, uint32_t doc_id_limit,
                                       uint64_t num_values);
     ~MultiStringEnumHintSearchContextT() override;
