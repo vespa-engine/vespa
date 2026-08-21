@@ -14,7 +14,7 @@ MultiStringEnumHintSearchContext<M>::MultiStringEnumHintSearchContext(
     : MultiStringEnumSearchContext<M>(std::move(qTerm), cased, fuzzy_matching_algorithm, toBeSearched,
                                       mv_mapping_read_view, enum_store),
       EnumHintSearchContext(enum_store.get_dictionary(), doc_id_limit, num_values) {
-    this->setup_enum_hint_sc(enum_store, *this);
+    this->set_and_setup_enum_hint_sc(enum_store, *this);
 }
 
 template <typename M> MultiStringEnumHintSearchContext<M>::~MultiStringEnumHintSearchContext() = default;

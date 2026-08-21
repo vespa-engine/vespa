@@ -24,6 +24,10 @@ QueryTermUCS4::QueryTermUCS4(Type type, std::unique_ptr<NumericRangeSpec> range)
     : QueryTermSimple(type, std::move(range)), _termUCS4(nullptr), _cachedTermLen(0) {
 }
 
+QueryTermUCS4::QueryTermUCS4(Type type, std::unique_ptr<StringRangeSpec> range)
+    : QueryTermSimple(type, std::move(range)), _termUCS4(nullptr), _cachedTermLen(0) {
+}
+
 QueryTermUCS4::QueryTermUCS4(const string& termS, Type type)
     : QueryTermSimple(termS, type), _termUCS4(nullptr), _cachedTermLen(0) {
     vespalib::Utf8Reader r(termS);

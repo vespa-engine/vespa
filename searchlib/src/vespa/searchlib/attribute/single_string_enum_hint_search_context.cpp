@@ -13,7 +13,7 @@ SingleStringEnumHintSearchContext::SingleStringEnumHintSearchContext(
     : SingleStringEnumSearchContext(std::move(qTerm), cased, fuzzy_matching_algorithm, toBeSearched, enum_indices,
                                     enum_store),
       EnumHintSearchContext(enum_store.get_dictionary(), enum_indices.size(), num_values) {
-    setup_enum_hint_sc(enum_store, *this);
+    set_and_setup_enum_hint_sc(enum_store, *this);
 }
 
 SingleStringEnumHintSearchContext::~SingleStringEnumHintSearchContext() = default;
