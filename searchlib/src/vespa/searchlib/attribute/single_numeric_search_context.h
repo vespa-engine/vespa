@@ -34,14 +34,14 @@ public:
             return -1;
         const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
         weight = 1;
-        return this->match(v) ? 0 : -1;
+        return this->matcher().match(v) ? 0 : -1;
     }
 
     int32_t find(DocId docId, int elemId) const {
         if (elemId != 0)
             return -1;
         const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
-        return this->match(v) ? 0 : -1;
+        return this->matcher().match(v) ? 0 : -1;
     }
 
     std::unique_ptr<queryeval::SearchIterator> createFilterIterator(fef::TermFieldMatchData* matchData,

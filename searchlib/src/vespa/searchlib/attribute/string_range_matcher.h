@@ -32,7 +32,6 @@ public:
 
     [[nodiscard]] const StringRangeSpec* get_string_range_spec() const { return _helper.get_string_range_spec(); }
 
-protected:
     [[nodiscard]] bool isValid() const { return _helper.is_valid(); }
     [[nodiscard]] bool match(const char* src) const { return _helper.is_match(src); }
     [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept {

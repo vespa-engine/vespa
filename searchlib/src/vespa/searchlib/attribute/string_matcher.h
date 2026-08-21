@@ -30,7 +30,6 @@ public:
     StringMatcher(StringMatcher&&) noexcept;
     ~StringMatcher();
 
-protected:
     bool isValid() const;
     bool match(const char* src) const { return _helper.isMatch(src); }
     bool isPrefix() const { return _helper.isPrefix(); }

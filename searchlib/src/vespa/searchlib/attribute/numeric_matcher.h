@@ -19,7 +19,7 @@ private:
     T    _value;
     bool _valid;
 
-protected:
+public:
     NumericMatcher(const QueryTermSimple& queryTerm, bool avoidUndefinedInRange);
     bool isValid() const { return _valid; }
     bool match(T v) const { return v == _value; }
