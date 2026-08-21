@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 public class RequestUtils {
     public static final String JDISC_REQUEST_X509CERT = "jdisc.request.X509Certificate";
     public static final String JDISC_REQUEST_SSLSESSION = "jdisc.request.SSLSession";
+    public static final String JDISC_REQUEST_OTEL_CONTEXT = "jdisc.request.otel.context";
     public static final String JDISC_REQUEST_CHAIN = "jdisc.request.chain";
     public static final String JDISC_RESPONSE_CHAIN = "jdisc.response.chain";
 
