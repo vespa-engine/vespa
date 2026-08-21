@@ -15,6 +15,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.SidecarProvider;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
@@ -265,10 +266,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         if (deployState.getSidecarProvider().isEmpty()) return List.of();
 
+        var neededSidecars = shouldUseTriton(cluster, deployState) ? Set.of(SidecarProvider.TRITON) : Set.<String>of();
         var sidecars = deployState.getSidecarProvider().get()
-                .getSidecars(cluster.id(),
+                .getSidecars(deployState.getProperties().applicationId(),
+                             deployState.getVespaVersion(),
+                             cluster.id(),
                              nodesSpecification.minResources().nodeResources(),
-                             shouldUseTriton(cluster, deployState));
+                             neededSidecars);
         if (sidecars.stream().map(SidecarSpec::id).distinct().count() < sidecars.size()
                 || sidecars.stream().map(SidecarSpec::name).distinct().count() < sidecars.size())
             throw new IllegalArgumentException("Sidecars in " + cluster + " must have unique ids and names: " + sidecars);
