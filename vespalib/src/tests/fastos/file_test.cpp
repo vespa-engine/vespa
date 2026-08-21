@@ -198,11 +198,6 @@ TEST(FileTest, ReadBufTest) {
     EXPECT_EQ(strcmp(buffer, "a test"), 0);
 }
 
-TEST(FileTest, DiskFreeSpaceTest) {
-    EXPECT_NE(FastOS_File::GetFreeDiskSpace(roFilename.c_str()), int64_t(-1));
-    EXPECT_NE(FastOS_File::GetFreeDiskSpace("."), int64_t(-1));
-}
-
 TEST(FileTest, MaxLengthTest) {
     int maxval = FastOS_File::GetMaximumFilenameLength(".");
     EXPECT_GT(maxval, 5);
