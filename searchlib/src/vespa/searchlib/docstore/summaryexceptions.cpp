@@ -4,6 +4,8 @@
 
 #include <vespa/fastos/file_interface.h>
 
+#include <cerrno>
+
 using vespalib::getLastErrorString;
 using vespalib::IoException;
 using vespalib::make_string;
