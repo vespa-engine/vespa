@@ -9,8 +9,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/time.h>
-
+#include <cstdint>
 #include <string>
 
 inline constexpr int FASTOS_FILE_OPEN_READ = (1 << 0);
