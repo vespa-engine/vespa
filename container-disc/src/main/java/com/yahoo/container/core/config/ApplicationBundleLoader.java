@@ -64,6 +64,11 @@ public class ApplicationBundleLoader {
     public synchronized void useBundles(List<FileReference> newFileReferences) {
         if (! readyForNewBundles)
             throw new IllegalStateException("Bundles must be committed or reverted before using new bundles.");
+        // Must be cleared before mutating state below: if installBundles() throws partway through (e.g. one
+        // of several bundles fails to download), completeGeneration() still needs to see this generation as
+        // in progress, so it reverts to a consistent state instead of silently skipping cleanup and leaving
+        // orphaned/untracked bundles behind.
+        readyForNewBundles = false;
 
         obsoleteBundles = removeObsoleteReferences(newFileReferences);
         osgi.allowDuplicateBundles(obsoleteBundles.values());
@@ -72,8 +77,6 @@ public class ApplicationBundleLoader {
         BundleStarter.startBundles(activeBundles.values());
 
         if (obsoleteBundles.size() > 0 || newFileReferences.size() > 0) log.info(installedBundlesMessage());
-
-        readyForNewBundles = false;
     }
 
     /**
@@ -166,7 +169,11 @@ public class ApplicationBundleLoader {
 
     private Map<FileReference, Bundle> installWithFileDistribution(Set<FileReference> bundlesToInstall,
                                                                    FileAcquirerBundleInstaller bundleInstaller) {
-        var newBundles = new LinkedHashMap<FileReference, Bundle>();
+        // Assign directly to the field - rather than only via the return value on full success - so that if
+        // installing one bundle throws partway through the loop, completeGeneration() can still see (and
+        // revert) exactly the bundles installed so far in this attempt, instead of losing track of them.
+        var newBundles = new LinkedHashMap<FileReference, Bundle>(bundlesFromNewGeneration);
+        bundlesFromNewGeneration = newBundles;
 
         for (FileReference reference : bundlesToInstall) {
             try {
