@@ -1046,12 +1046,37 @@ TEST_F(RankSetupTest, sort_features_prepare_only_selected_public_names) {
     EXPECT_TRUE(rs.has_sort_feature("countprepare"));
     EXPECT_TRUE(rs.has_sort_feature("value(2)"));
     QueryEnvironment queryEnv;
-    rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(2)"});
+    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(2)"}));
     EXPECT_EQ(0, CountPrepareBlueprint::prepares);
-    rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"countprepare"});
+    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"countprepare"}));
     EXPECT_EQ(1, CountPrepareBlueprint::prepares);
-    rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"countprepare", "countprepare"});
+    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"countprepare", "countprepare"}));
     EXPECT_EQ(2, CountPrepareBlueprint::prepares);
+}
+
+TEST_F(RankSetupTest, an_unknown_sort_feature_is_reported_rather_than_fatal) {
+    RankSetup rs(_factory, _indexEnv);
+    rs.setFirstPhaseRank("value(1)");
+    rs.add_sort_feature("value(2)");
+    ASSERT_TRUE(rs.compile());
+    EXPECT_FALSE(rs.has_sort_feature("value(3)"));
+
+    // A name that was never added as a sort feature, and one that exists as a
+    // rank feature but was not selected for sorting.
+    EXPECT_FALSE(rs.create_sort_program("value(3)"));
+    EXPECT_FALSE(rs.create_sort_program("value(1)"));
+
+    QueryEnvironment queryEnv;
+    EXPECT_FALSE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(3)"}));
+    EXPECT_FALSE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(2)", "value(3)"}));
+}
+
+TEST_F(RankSetupTest, preparing_no_sort_features_succeeds) {
+    RankSetup rs(_factory, _indexEnv);
+    rs.setFirstPhaseRank("value(1)");
+    ASSERT_TRUE(rs.compile());
+    QueryEnvironment queryEnv;
+    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {}));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

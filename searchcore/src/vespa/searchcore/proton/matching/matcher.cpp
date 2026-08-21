@@ -133,7 +133,8 @@ SelectedSortFeatures select_sort_features(const std::string& sort_spec, const Ra
                 continue;
             }
             if (std::find(selected.public_names.begin(), selected.public_names.end(), field._field) !=
-                selected.public_names.end()) {
+                selected.public_names.end())
+            {
                 continue;
             }
             if (!rank_setup.has_sort_feature(field._field)) {
@@ -396,7 +397,11 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
 
         const bool ordered_hits_needed = (params.hits != 0) || !groupingContext.empty();
         if (!selected_sort.public_names.empty() && ordered_hits_needed) {
-            mtf->prepare_and_install_sort_features(selected_sort.public_names);
+            if (!mtf->prepare_and_install_sort_features(selected_sort.public_names)) {
+                Issue::report("sort spec '%s': rank feature sort values are unavailable; failing the query",
+                              request.sortSpec.c_str());
+                return reply;
+            }
             if (mtf->get_request_context().getDoom().soft_doom()) {
                 reply->coverage.degradeTimeout();
                 vespalib::Issue::report("Search request soft doomed during query setup and initialization.");
@@ -425,15 +430,27 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             master.match(request.trace(), params, limitedThreadBundle, *mtf, rp, _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));
         my_stats.add_query_setup_stats(setup_stats);
-        reply = std::move(result->_reply);
-        updateCoverage(reply->coverage, mtf->match_limiter(), my_stats, metaStore, bucketdb);
+        // Sorting on a rank feature whose values turned out to be unavailable cannot
+        // be silently downgraded to another order; fail the query closed instead.
+        const bool sort_feature_failed = rp.sort_feature_failed();
+        if (sort_feature_failed) {
+            Issue::report("sort spec '%s': rank feature sort values were not available; failing the query",
+                          request.sortSpec.c_str());
+            reply = std::make_unique<SearchReply>();
+            initCoverage(reply->coverage, metaStore, bucketdb);
+        } else {
+            reply = std::move(result->_reply);
+            updateCoverage(reply->coverage, mtf->match_limiter(), my_stats, metaStore, bucketdb);
+        }
 
         LOG(debug,
             "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%" PRIu64 ", rankprofile=%s",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount,
             request.ranking.c_str());
 
-        if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
+        if (!sort_feature_failed && shouldCacheSearchSession &&
+            ((result->_numFs4Hits != 0) || shouldCacheGroupingSession))
+        {
             auto session = std::make_shared<SearchSession>(sessionId, request.getStartTime(), request.getTimeOfDoom(),
                                                            std::move(mtf), std::move(owned_objects));
             session->releaseEnumGuards();

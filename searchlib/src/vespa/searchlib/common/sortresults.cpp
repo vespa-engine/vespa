@@ -10,6 +10,9 @@
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
 
+#include <cassert>
+#include <cmath>
+
 using vespalib::Issue;
 
 #include <vespa/log/log.h>
@@ -243,12 +246,18 @@ void FastS_SortSpec::initSortData(const RankedHit* hits, uint32_t n) {
     _binarySortData.resize((fixedWidth + variableWidth) * n);
     _sortDataArray.resize(n);
 
+    // Feature levels need a provider bound by bind_numeric_provider() and not
+    // yet consumed by an earlier sort. Without one the levels encode as a
+    // placeholder and the query must be failed.
+    const bool seek_features = has_feature && (_numeric_provider != nullptr);
+    if (has_feature && !seek_features) {
+        Issue::report("sort spec: no sort values available for the rank feature sort levels");
+        _feature_values_failed = true;
+    }
+
     size_t offset = 0;
     for (uint32_t i(0), idx(0); (i < n) && !_doom.hard_doom(); ++i) {
-        if (has_feature) {
-            if (_numeric_provider == nullptr) {
-                abort();
-            }
+        if (seek_features) {
             _numeric_provider->seek(hits[i].getDocId());
         }
         uint32_t len = 0;
@@ -266,9 +275,20 @@ void FastS_SortSpec::initSortData(const RankedHit* hits, uint32_t n) {
         idx += len;
     }
     if (_numeric_provider != nullptr) {
+        // A provider that ran out of sort values leaves the encoded blobs
+        // ordered by a placeholder; remember it so the query can be failed.
+        if (_numeric_provider->failed()) {
+            _feature_values_failed = true;
+        }
         _numeric_provider->consumed();
         _numeric_provider = nullptr;
     }
+}
+
+double FastS_SortSpec::feature_value(uint32_t ordinal) const {
+    // A missing provider is recorded as a failure by the caller; encode a
+    // placeholder so the blob layout stays as the widths were computed.
+    return (_numeric_provider != nullptr) ? _numeric_provider->get(ordinal) : -HUGE_VAL;
 }
 
 int FastS_SortSpec::initSortData(const VectorRef& vec, const RankedHit& hit, size_t offset) {
@@ -312,12 +332,12 @@ int FastS_SortSpec::initSortData(const VectorRef& vec, const RankedHit& hit, siz
             written = serializeForSort<convertForSort<search::HitRank, false>>(hit.getRank(), mySortData, available);
             break;
         case ASC_FEATURE:
-            written = serializeForSort<convertForSort<double, true>>(_numeric_provider->get(vec._feature_ordinal),
-                                                                     mySortData, available);
+            written = serializeForSort<convertForSort<double, true>>(feature_value(vec._feature_ordinal), mySortData,
+                                                                     available);
             break;
         case DESC_FEATURE:
-            written = serializeForSort<convertForSort<double, false>>(_numeric_provider->get(vec._feature_ordinal),
-                                                                      mySortData, available);
+            written = serializeForSort<convertForSort<double, false>>(feature_value(vec._feature_ordinal), mySortData,
+                                                                      available);
             break;
         case ASC_VECTOR:
             written = vec._writer->write(hit.getDocId(), mySortData, available);
@@ -341,25 +361,31 @@ FastS_SortSpec::FastS_SortSpec(std::string_view documentmetastore, uint32_t part
       _ucaFactory(ucaFactory),
       _sortSpec(),
       _vectors(),
-      _numeric_provider(nullptr) {
+      _numeric_provider(nullptr),
+      _feature_values_failed(false) {
 }
 
-void FastS_SortSpec::bind_numeric_provider(INumericSortValueProvider& provider) {
-    _numeric_provider = &provider;
+bool FastS_SortSpec::bind_numeric_provider(INumericSortValueProvider* provider) {
+    _numeric_provider = provider;
     auto spec = _sortSpec.begin();
     for (auto& vec : _vectors) {
-        if (spec == _sortSpec.end()) {
-            abort();
-        }
+        assert(spec != _sortSpec.end());
         if (spec->_is_rank_feature) {
-            uint32_t ordinal = provider.ordinal(spec->_field);
+            uint32_t ordinal =
+                (provider != nullptr) ? provider->ordinal(spec->_field) : INumericSortValueProvider::invalid_ordinal;
             if (ordinal == INumericSortValueProvider::invalid_ordinal) {
-                abort();
+                Issue::report("sort spec: no sort value available for rank feature '%s'", spec->_field.c_str());
+                _numeric_provider = nullptr;
+                // Leave the object unusable for sorting even if the caller ignores
+                // the return value and sorts anyway.
+                _feature_values_failed = true;
+                return false;
             }
             vec._feature_ordinal = ordinal;
         }
         ++spec;
     }
+    return true;
 }
 
 FastS_SortSpec::~FastS_SortSpec() {

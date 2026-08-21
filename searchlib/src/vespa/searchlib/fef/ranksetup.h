@@ -465,13 +465,22 @@ public:
     bool has_sort_feature(const std::string& public_name) const {
         return _sort_resolver_by_public.contains(public_name);
     }
+
+    /**
+     * Creates the program evaluating the named sort feature. Returns nullptr if
+     * the name is not an allowed sort feature; callers reaching this with a name
+     * they have not checked with has_sort_feature() must fail the query rather
+     * than order the hits some other way.
+     **/
     RankProgram::UP create_sort_program(const std::string& public_name) const;
 
     /**
      * Prepare shared state only for the unique resolvers selected by public name.
+     * Returns false, having prepared nothing further, if one of the names is not
+     * an allowed sort feature.
      **/
-    void prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
-                                   const std::vector<std::string>& selected_public_names) const;
+    [[nodiscard]] bool prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
+                                                 const std::vector<std::string>& selected_public_names) const;
 
     /**
      * Here you can do some preprocessing. State must be stored in the IObjectStore.

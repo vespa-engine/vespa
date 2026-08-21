@@ -187,7 +187,14 @@ public:
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter& match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
-    void prepare_and_install_sort_features(const std::vector<std::string>& public_names);
+
+    /**
+     * Prepares shared state for the selected sort features and arms the match
+     * tools to record them. Returns false, having installed nothing, if one of
+     * the names is not an allowed sort feature; the caller must then fail the
+     * query rather than order the hits some other way.
+     **/
+    [[nodiscard]] bool prepare_and_install_sort_features(const std::vector<std::string>& public_names);
     bool should_diversify() const { return _diversityParams.enabled(); }
     std::unique_ptr<IDiversifier> createDiversifier(uint32_t heapSize) const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
