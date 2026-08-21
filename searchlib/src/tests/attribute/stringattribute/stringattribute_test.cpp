@@ -408,7 +408,7 @@ template <typename Attribute> void testSingleValue(Attribute& svsa, Config& cfg)
 TEST_F(StringAttributeTest, testSingleValue) {
     EXPECT_EQ(24u, sizeof(SearchContext));
     EXPECT_EQ(48u, sizeof(StringSearchHelper));
-    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContext));
+    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringMatcher>));
     {
         Config                     cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);

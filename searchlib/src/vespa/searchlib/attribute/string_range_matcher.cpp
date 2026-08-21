@@ -9,11 +9,6 @@
 
 namespace search::attribute {
 
-StringRangeMatcher::StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased,
-                                       vespalib::FuzzyMatchingAlgorithm /*fuzzy_matching_algorithm*/)
-    : StringRangeMatcher(std::move(query_term), cased) {
-}
-
 StringRangeMatcher::StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased)
     : _query_term(std::move(query_term)),
       _helper(_query_term ? _query_term->get_string_range_spec() : nullptr, cased) {

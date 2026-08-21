@@ -26,8 +26,6 @@ private:
     StringRangeSearchHelper          _helper;
 
 public:
-    StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased,
-                       vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm);
     StringRangeMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased);
     StringRangeMatcher(StringRangeMatcher&&) noexcept;
     ~StringRangeMatcher();

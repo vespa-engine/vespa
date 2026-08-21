@@ -13,13 +13,6 @@
 namespace search::attribute {
 
 template <typename Matcher>
-StringSearchContextT<Matcher>::StringSearchContextT(const AttributeVector&           to_be_searched,
-                                                    std::unique_ptr<QueryTermSimple> query_term, bool cased,
-                                                    vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm)
-    : SearchContext(to_be_searched), Matcher(std::move(query_term), cased, fuzzy_matching_algorithm) {
-}
-
-template <typename Matcher>
 StringSearchContextT<Matcher>::StringSearchContextT(const AttributeVector& to_be_searched, Matcher&& matcher)
     : SearchContext(to_be_searched), Matcher(std::move(matcher)) {
 }
