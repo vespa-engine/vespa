@@ -2,6 +2,7 @@
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
+#include <vespa/searchlib/aggregation/first_aggregation_result.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
@@ -11,6 +12,7 @@
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
+#include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -355,6 +357,91 @@ TEST(GroupingTest, testAggregationSimple) {
                              StringResultNode("15"), "min");
     testAggregationSimpleSum(ctx, MaxAggregationResult(), Int64ResultNode(15), FloatResultNode(15),
                              StringResultNode("7"), "max");
+}
+
+/**
+ * Test that the first aggregator keeps the value of the hit that ranks first, and that ties
+ * keep the hit that was aggregated first.
+ **/
+TEST(GroupingTest, first_aggregation_result_keeps_the_first_ranked_hit) {
+    FirstAggregationResult first;
+    EXPECT_FALSE(first.has_value());
+
+    first.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_TRUE(first.has_value());
+    EXPECT_EQ(10, first.first().getInteger());
+    EXPECT_EQ(5.0, first.hit_rank());
+
+    // A hit that ranks lower does not replace it.
+    first.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(4.0));
+    EXPECT_EQ(10, first.first().getInteger());
+
+    // Neither does one that ranks equally.
+    first.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(5.0));
+    EXPECT_EQ(10, first.first().getInteger());
+
+    // A hit that ranks higher does.
+    first.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(40))).aggregate(DocId(4), HitRank(6.0));
+    EXPECT_EQ(40, first.first().getInteger());
+    EXPECT_EQ(6.0, first.hit_rank());
+}
+
+TEST(GroupingTest, first_aggregation_result_takes_the_first_value_of_a_multivalue_result) {
+    auto values = MU<Int64ResultNodeVector>();
+    values->push_back(Int64ResultNode(30)).push_back(Int64ResultNode(10));
+
+    FirstAggregationResult first;
+    first.setExpression(MU<ConstantNode>(std::move(values))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_TRUE(first.has_value());
+    EXPECT_EQ(30, first.first().getInteger());
+}
+
+TEST(GroupingTest, first_aggregation_result_is_empty_after_reset) {
+    FirstAggregationResult first;
+    first.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    first.reset();
+    EXPECT_FALSE(first.has_value());
+    EXPECT_EQ(0, first.first().getInteger());
+
+    // After a reset any hit is taken, no matter how low it ranks.
+    first.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(-1.0));
+    EXPECT_TRUE(first.has_value());
+    EXPECT_EQ(20, first.first().getInteger());
+}
+
+/**
+ * Test that merging picks the hit that ranks first regardless of merge order, which is what
+ * keeping the rank of the winning hit in the result buys us.
+ **/
+TEST(GroupingTest, first_aggregation_result_merges_the_first_ranked_hit) {
+    FirstAggregationResult a;
+    a.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    FirstAggregationResult b;
+    b.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(7.0));
+    FirstAggregationResult empty;
+    empty.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30)));
+    EXPECT_FALSE(empty.has_value());
+
+    FirstAggregationResult a_then_b(a);
+    a_then_b.merge(b);
+    EXPECT_EQ(20, a_then_b.first().getInteger());
+    EXPECT_EQ(7.0, a_then_b.hit_rank());
+
+    FirstAggregationResult b_then_a(b);
+    b_then_a.merge(a);
+    EXPECT_EQ(20, b_then_a.first().getInteger());
+    EXPECT_EQ(7.0, b_then_a.hit_rank());
+
+    // An empty result never wins, and is filled in by whatever it merges with.
+    FirstAggregationResult a_then_empty(a);
+    a_then_empty.merge(empty);
+    EXPECT_EQ(10, a_then_empty.first().getInteger());
+
+    FirstAggregationResult empty_then_a(empty);
+    empty_then_a.merge(a);
+    EXPECT_TRUE(empty_then_a.has_value());
+    EXPECT_EQ(10, empty_then_a.first().getInteger());
+    EXPECT_EQ(5.0, empty_then_a.hit_rank());
 }
 
 /**

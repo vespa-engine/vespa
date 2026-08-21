@@ -23,6 +23,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author baldersheim
@@ -41,6 +42,50 @@ public class AggregationTestCase {
         assertEquals(7, b.getSum().getInteger());
         b.merge(a);
         assertEquals(14, b.getSum().getInteger());
+    }
+
+    @Test
+    public void testFirstAggregationResult() {
+        FirstAggregationResult a = new FirstAggregationResult(new IntegerResultNode(6), 5.0);
+        a.setExpression(new AttributeNode("attributeA"));
+        assertTrue(a.hasValue());
+        assertEquals(6, a.getFirst().getInteger());
+        assertEquals(5.0, a.getHitRank(), delta);
+
+        FirstAggregationResult b = (FirstAggregationResult)serializeDeserialize(a);
+        assertTrue(b.hasValue());
+        assertEquals(6, b.getFirst().getInteger());
+        assertEquals(5.0, b.getHitRank(), delta);
+
+        // The hit that ranks first wins, no matter which side of the merge it is on.
+        FirstAggregationResult c = new FirstAggregationResult(new IntegerResultNode(7), 9.0);
+        c.setExpression(new AttributeNode("attributeA"));
+        b.merge(c);
+        assertEquals(7, b.getFirst().getInteger());
+        assertEquals(9.0, b.getHitRank(), delta);
+        c.merge(a);
+        assertEquals(7, c.getFirst().getInteger());
+        assertEquals(9.0, c.getHitRank(), delta);
+    }
+
+    @Test
+    public void testFirstAggregationResultWithoutValue() {
+        FirstAggregationResult empty = new FirstAggregationResult();
+        empty.setExpression(new AttributeNode("attributeA"));
+        assertFalse(empty.hasValue());
+        assertFalse(((FirstAggregationResult)serializeDeserialize(empty)).hasValue());
+
+        // An empty result never wins, and is filled in by whatever it merges with.
+        FirstAggregationResult a = new FirstAggregationResult(new IntegerResultNode(8), 1.0);
+        a.setExpression(new AttributeNode("attributeA"));
+        a.merge(empty);
+        assertEquals(8, a.getFirst().getInteger());
+        assertEquals(1.0, a.getHitRank(), delta);
+
+        empty.merge(a);
+        assertTrue(empty.hasValue());
+        assertEquals(8, empty.getFirst().getInteger());
+        assertEquals(1.0, empty.getHitRank(), delta);
     }
 
     @Test

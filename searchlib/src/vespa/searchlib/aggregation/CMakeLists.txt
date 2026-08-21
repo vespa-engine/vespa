@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_aggregation OBJECT
     SOURCES
     aggregation.cpp
+    first_aggregation_result.cpp
     fs4hit.cpp
     group.cpp
     grouping.cpp

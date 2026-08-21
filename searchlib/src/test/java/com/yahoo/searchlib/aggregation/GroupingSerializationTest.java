@@ -223,6 +223,8 @@ public class GroupingSerializationTest {
                     .updateSketch(7)
                     .updateSketch(8)
                     .setExpression(new ConstantNode(new IntegerResultNode(8))));
+            t.assertMatch(new FirstAggregationResult(new IntegerResultNode(7), 21)
+                    .setExpression(new ConstantNode(new IntegerResultNode(7))));
         }
     }
 

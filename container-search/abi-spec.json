@@ -3138,6 +3138,19 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.FirstAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression)",
+      "public com.yahoo.search.grouping.request.FirstAggregator copy()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.FixedWidthFunction" : {
     "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
     "interfaces" : [ ],
