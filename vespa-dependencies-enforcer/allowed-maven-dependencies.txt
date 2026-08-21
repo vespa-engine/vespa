@@ -210,7 +210,7 @@ org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin.vespa.version}
 org.jetbrains.kotlin:kotlin-stdlib:${kotlin.vespa.version}
 org.jetbrains:annotations:17.0.0
 org.json:json:${org.json.vespa.version}
-org.jspecify:jspecify:1.0.0
+org.jspecify:jspecify:1.0.1
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.tenant.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}
 org.junit.jupiter:junit-jupiter-engine:${junit.vespa.tenant.version}
