@@ -1,4 +1,5 @@
-- The 'tensorFromStructs' rank feature.
-- Fix bugs related to the 'foreach' rank feature.
-- Publish to the Open VSX registry.
-- General stability improvements.
+- Added support for the 'documentid' indexing expression.
+- Added the 'queryTermDocumentFrequency' and 'numDocs' rank features, and label support for the 'bm25' rank feature.
+- Added the 'tensorFromLabelsWithOffset' rank feature.
+- Added support for tagged argument identifiers in ranking expressions and the 'optimize-model' onnx-model setting.
+- Fixed a bug caused by use of an internal IntelliJ API.
