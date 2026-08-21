@@ -13,7 +13,6 @@ using search::tags::FREEZE_TIME;
 using std::chrono::microseconds;
 using std::chrono::steady_clock;
 using std::chrono::system_clock;
-using std::chrono::utc_clock;
 
 namespace search::common {
 
