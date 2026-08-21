@@ -122,7 +122,7 @@ template <typename B>
 std::unique_ptr<attribute::SearchContext>
 SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP                     qTerm,
                                                  const attribute::SearchContextParams& params) const {
-    using BaseSC = attribute::SingleStringEnumSearchContext;
+    using BaseSC = attribute::SingleStringEnumSearchContextT<attribute::StringMatcher>;
     using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
     bool   cased = this->get_match_is_cased();
     auto   docid_limit = this->getCommittedDocIdLimit();

@@ -83,7 +83,7 @@ template <typename B, typename T>
 std::unique_ptr<attribute::SearchContext>
 MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP                     qTerm,
                                                    const attribute::SearchContextParams& params) const {
-    using BaseSC = attribute::MultiStringEnumSearchContext<T>;
+    using BaseSC = attribute::MultiStringEnumSearchContextT<T, attribute::StringMatcher>;
     using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, int32_t>;
     bool   cased = this->get_match_is_cased();
     auto   doc_id_limit = this->getCommittedDocIdLimit();

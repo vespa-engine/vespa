@@ -24,6 +24,4 @@ public:
     ~SingleStringEnumHintSearchContextT() override;
 };
 
-using SingleStringEnumHintSearchContext = SingleStringEnumHintSearchContextT<StringMatcher>;
-
 } // namespace search::attribute

@@ -41,7 +41,7 @@ SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP                     
                                           const attribute::SearchContextParams& params) const {
     bool cased = this->get_match_is_cased();
     auto docid_limit = this->getCommittedDocIdLimit();
-    return std::make_unique<attribute::SingleStringEnumHintSearchContext>(
+    return std::make_unique<attribute::SingleStringEnumHintSearchContextT<attribute::StringMatcher>>(
         attribute::StringMatcher(std::move(qTerm), cased, params.fuzzy_matching_algorithm()), *this,
         this->_enumIndices.make_read_view(docid_limit), this->_enumStore, this->getStatus().getNumValues());
 }

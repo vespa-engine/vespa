@@ -23,7 +23,4 @@ public:
     ~MultiStringEnumSearchContextT() override;
 };
 
-template <typename M>
-using MultiStringEnumSearchContext = MultiStringEnumSearchContextT<M, StringMatcher>;
-
 } // namespace search::attribute

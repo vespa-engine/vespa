@@ -46,7 +46,7 @@ MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP                   
                                             const attribute::SearchContextParams& params) const {
     bool cased = this->get_match_is_cased();
     auto doc_id_limit = this->getCommittedDocIdLimit();
-    return std::make_unique<attribute::MultiStringEnumHintSearchContext<M>>(
+    return std::make_unique<attribute::MultiStringEnumHintSearchContextT<M, attribute::StringMatcher>>(
         attribute::StringMatcher(std::move(qTerm), cased, params.fuzzy_matching_algorithm()), *this,
         this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore, doc_id_limit,
         this->getStatus().getNumValues());

@@ -36,6 +36,4 @@ public:
     void set_and_setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 };
 
-using StringSearchContext = StringSearchContextT<StringMatcher>;
-
 } // namespace search::attribute
