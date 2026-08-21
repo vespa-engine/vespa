@@ -61,9 +61,19 @@ public class ConfigServerMaintenance {
         }
     }
 
-    public void shutdown() {
+    /** Signals all maintainers to stop, without waiting for them to finish. */
+    public void signalShutdown() {
         maintainers.forEach(Maintainer::shutdown);
+    }
+
+    /** Waits for all maintainers to finish shutting down, signalling shutdown first if not already done. */
+    public void awaitShutdown() {
         maintainers.forEach(Maintainer::awaitShutdown);
+    }
+
+    public void shutdown() {
+        signalShutdown();
+        awaitShutdown();
     }
 
     public List<Maintainer> maintainers() { return List.copyOf(maintainers); }
