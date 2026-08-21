@@ -206,6 +206,7 @@ class JsonFeederTest {
                 @Override public DocumentId documentId() { return documentId; }
                 @Override public Optional<String> resultMessage() { return Optional.of("success"); }
                 @Override public Optional<String> traceMessage() { return Optional.empty(); }
+                @Override public boolean ignored() { return false; }
             });
         }
 

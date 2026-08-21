@@ -155,7 +155,7 @@ public class CliClient {
         else {
             successes.incrementAndGet();
             if (args.showSuccesses()) synchronized (printMonitor) {
-                systemError.println(result.documentId() + ": " + result.type());
+                systemError.println(result.documentId() + ": " + result.type() + (result.ignored() ? " (ignored)" : ""));
                 result.traceMessage().ifPresent(systemError::println);
                 result.resultMessage().ifPresent(systemError::println);
             }

@@ -20,4 +20,15 @@ public interface Result {
     DocumentId documentId();
     Optional<String> resultMessage();
     Optional<String> traceMessage();
+
+    /**
+     * Returns whether this operation was ignored by Vespa, i.e., it had no effect on the document.
+     * This is currently only possible for a (partial) update to a document that does not exist, and
+     * which does not specify that the document should be created if it is missing.
+     *
+     * This is declared without a default implementation so that custom {@link Result} implementations
+     * are forced to make an explicit choice, rather than silently reporting every operation as not ignored.
+     */
+    boolean ignored();
+
 }

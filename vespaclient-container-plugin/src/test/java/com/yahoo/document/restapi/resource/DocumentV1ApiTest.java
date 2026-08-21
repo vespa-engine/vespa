@@ -993,7 +993,8 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // PUT on document which is not found is a 200
+        // PUT on document which is not found is a 200; see update_of_missing_document_sets_ignored_operation_header_unless_document_is_created
+        // for the ignored-operation header this sets, since the update was a no-op.
         access.session.expect((update, parameters) -> {
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
             return new Result();
@@ -1171,6 +1172,41 @@ public class DocumentV1ApiTest {
         List<String> vals = response.getResponse().headers().get(Headers.IGNORED_OPERATION);
         assertEquals(1, vals.size());
         assertEquals("true", vals.get(0));
+    }
+
+    @Test
+    void update_of_missing_document_sets_ignored_operation_header_unless_document_is_created() {
+        var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal
+
+        // A partial update of a document which does not exist is a no-op, and the response says so.
+        access.session.expect((update, parameters) -> {
+            parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
+            return new Result();
+        });
+        var response = driver.sendRequest("http://localhost/document/v1/space/music/docid/sonny", PUT,
+                """
+                {
+                  "fields": {
+                    "artist": { "assign": "The Shivers" }
+                  }
+                }""");
+        assertEquals(200, response.getStatus());
+        assertEquals(List.of("true"), response.getResponse().headers().get(Headers.IGNORED_OPERATION));
+
+        // ... but not when the document is created as part of the update, since the operation was then not ignored.
+        access.session.expect((update, parameters) -> {
+            parameters.responseHandler().get().handleResponse(new UpdateResponse(0, true));
+            return new Result();
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/sonny?create=true", PUT,
+                """
+                {
+                  "fields": {
+                    "artist": { "assign": "The Shivers" }
+                  }
+                }""");
+        assertEquals(200, response.getStatus());
+        assertFalse(response.getResponse().headers().containsKey(Headers.IGNORED_OPERATION));
     }
 
     @Test

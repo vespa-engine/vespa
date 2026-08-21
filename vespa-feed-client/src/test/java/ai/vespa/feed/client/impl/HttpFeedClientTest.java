@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,6 +24,7 @@ import java.util.function.BiFunction;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -81,6 +83,25 @@ class HttpFeedClientTest {
         assertEquals(id, result.documentId());
         assertEquals(Optional.empty(), result.resultMessage());
         assertEquals(Optional.empty(), result.traceMessage());
+        assertFalse(result.ignored());
+
+        // An update of a document which does not exist is ignored, which is signalled by a response header.
+        dispatch.set((documentId, request) -> {
+            HttpResponse response = HttpResponse.of(200,
+                                                    ("""
+                                                     {
+                                                       "pathId": "/document/v1/ns/type/docid/0",
+                                                       "id": "id:ns:type::0"
+                                                     }""").getBytes(UTF_8),
+                                                    Map.of("X-Vespa-Ignored-Operation", "true"));
+            return CompletableFuture.completedFuture(response);
+        });
+        result = client.update(id,
+                               "json",
+                               OperationParameters.empty())
+                       .get();
+        assertEquals(Result.Type.success, result.type());
+        assertTrue(result.ignored());
 
         // Remove is a DELETE, and 412 OK is a conditionNotMet.
         dispatch.set((documentId, request) -> {
