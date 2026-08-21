@@ -581,6 +581,12 @@ public class GroupingParserTestCase {
                 "         each(output(sum(sold)) each(output(summary())))))");
 
         assertParse("all(group(artist) order(max(relevance) * count()) each(output(count())))");
+        assertParse("all(group(artist) order(first(relevance)) each(output(count())))");
+        assertParse("all(group(artist) each(output(first(popularity))))");
+        assertParse("all(group(artist) order(first(relevance, price)) each(output(first(relevance, price))))");
+        assertParse("all(group(artist) each(output(first(relevance, neg(price)))))");
+        // 'first' is a keyword, but must still be usable as a field name
+        assertParse("all(group(first) each(output(first(first))))");
         assertParse("all(group(artist) each(output(sum(popularity) / count())))");
         assertParse("all(group(artist) accuracy(0.1) each(output(sum(popularity) / count())))");
         assertParse("all(group(debugwait(artist, 3.3, true)))");

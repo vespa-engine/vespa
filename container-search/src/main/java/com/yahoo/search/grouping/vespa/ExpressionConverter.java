@@ -25,6 +25,7 @@ import com.yahoo.search.grouping.request.DivFunction;
 import com.yahoo.search.grouping.request.DocIdNsSpecificValue;
 import com.yahoo.search.grouping.request.DoubleValue;
 import com.yahoo.search.grouping.request.FilterExpression;
+import com.yahoo.search.grouping.request.FirstAggregator;
 import com.yahoo.search.grouping.request.FixedWidthFunction;
 import com.yahoo.search.grouping.request.GeoDistanceFunction;
 import com.yahoo.search.grouping.request.GroupingExpression;
@@ -65,8 +66,8 @@ import com.yahoo.search.grouping.request.ModFunction;
 import com.yahoo.search.grouping.request.MonthOfYearFunction;
 import com.yahoo.search.grouping.request.MulFunction;
 import com.yahoo.search.grouping.request.NegFunction;
-import com.yahoo.search.grouping.request.NotPredicate;
 import com.yahoo.search.grouping.request.NormalizeSubjectFunction;
+import com.yahoo.search.grouping.request.NotPredicate;
 import com.yahoo.search.grouping.request.NowFunction;
 import com.yahoo.search.grouping.request.OrFunction;
 import com.yahoo.search.grouping.request.OrPredicate;
@@ -102,6 +103,7 @@ import com.yahoo.searchlib.aggregation.AggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
 import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
+import com.yahoo.searchlib.aggregation.FirstAggregationResult;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.MaxAggregationResult;
 import com.yahoo.searchlib.aggregation.MinAggregationResult;
@@ -142,8 +144,8 @@ import com.yahoo.searchlib.expression.ModuloFunctionNode;
 import com.yahoo.searchlib.expression.MultiArgFunctionNode;
 import com.yahoo.searchlib.expression.MultiplyFunctionNode;
 import com.yahoo.searchlib.expression.NegateFunctionNode;
-import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.NormalizeSubjectFunctionNode;
+import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.NumElemFunctionNode;
 import com.yahoo.searchlib.expression.OrFunctionNode;
 import com.yahoo.searchlib.expression.OrPredicateNode;
@@ -253,6 +255,14 @@ class ExpressionConverter {
         if (exp instanceof SumAggregator aggregator) {
             return new SumAggregationResult()
                     .setExpression(toExpressionNode(aggregator.getExpression()));
+        }
+        if (exp instanceof FirstAggregator aggregator) {
+            FirstAggregationResult result = new FirstAggregationResult();
+            result.setExpression(toExpressionNode(aggregator.getExpression()));
+            if (aggregator.getKeyOrNull() != null) {
+                result.setKeyExpression(toExpressionNode(aggregator.getKeyOrNull()));
+            }
+            return result;
         }
         if (exp instanceof SummaryValue summaryValue) {
             String summaryName = summaryValue.getSummaryName();

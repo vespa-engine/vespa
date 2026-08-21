@@ -118,6 +118,7 @@ TOKEN :
     <EACH: "each"> |
     <EXP: "exp"> |
     <FILTER: "filter"> |
+    <FIRST: "first"> |
     <FIXEDWIDTH: "fixedwidth"> |
     <FLOOR: "floor"> |
     <GEO_DISTANCE: "geo_distance"> |
@@ -386,6 +387,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = debugWaitFunction(grp)        |
                    exp = divFunction(grp)              |
                    exp = docIdNsSpecificValue()        |
+                   exp = firstAggregator(grp)          |
                    exp = fixedWidthFunction(grp)       |
                    exp = geoDistanceFunction(grp)      |
                    exp = mathFunction(grp)             |
@@ -405,7 +407,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = sortFunction(grp)             |
                    exp = arrayAtLookup(grp)            |
                    exp = interpolatedLookup(grp)       |
-                   exp = quantilesExpression(grp)       |
+                   exp = quantilesExpression(grp)      |
                    exp = stddevAggregator(grp)         |
                    exp = stringValue()                 |
                    exp = strCatFunction(grp)           |
@@ -852,6 +854,17 @@ SumAggregator sumAggregator(GroupingOperation grp) :
     { return new SumAggregator(exp); }
 }
 
+FirstAggregator firstAggregator(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    GroupingExpression key = null;
+}
+{
+    ( <FIRST> lbrace() exp = exp(grp) [ comma() key = exp(grp) ] rbrace() )
+    { if (key == null) return new FirstAggregator(exp);
+      return new FirstAggregator(exp, key); }
+}
+
 SummaryValue summaryValue() :
 {
     String str = null;
@@ -1170,6 +1183,7 @@ String identifier() :
         <EACH> |
         <EXP> |
         <FILTER> |
+        <FIRST> |
         <FIXEDWIDTH> |
         <FLOOR> |
         <GEO_DISTANCE> |

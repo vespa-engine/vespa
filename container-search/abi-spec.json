@@ -3142,6 +3142,24 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.FirstAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression)",
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public com.yahoo.search.grouping.request.GroupingExpression getKeyOrNull()",
+      "public void resolveLevel(int)",
+      "public void visit(com.yahoo.search.grouping.request.ExpressionVisitor)",
+      "public com.yahoo.search.grouping.request.FirstAggregator copy()",
+      "public java.lang.String toString()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.FixedWidthFunction" : {
     "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
     "interfaces" : [ ],

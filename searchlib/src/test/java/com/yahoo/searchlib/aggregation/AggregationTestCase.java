@@ -23,6 +23,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author baldersheim
@@ -41,6 +42,63 @@ public class AggregationTestCase {
         assertEquals(7, b.getSum().getInteger());
         b.merge(a);
         assertEquals(14, b.getSum().getInteger());
+    }
+
+    @Test
+    public void testFirstAggregationResult() {
+        FirstAggregationResult a = new FirstAggregationResult(new IntegerResultNode(6), new FloatResultNode(5.0));
+        a.setExpression(new AttributeNode("attributeA"));
+        assertTrue(a.hasValue());
+        assertEquals(6, a.getFirst().getInteger());
+        assertEquals(5.0, a.getKey().getFloat(), delta);
+
+        FirstAggregationResult b = (FirstAggregationResult)serializeDeserialize(a);
+        assertTrue(b.hasValue());
+        assertEquals(6, b.getFirst().getInteger());
+        assertEquals(5.0, b.getKey().getFloat(), delta);
+
+        // The hit with the smallest key wins, no matter which side of the merge it is on.
+        FirstAggregationResult c = new FirstAggregationResult(new IntegerResultNode(7), new FloatResultNode(3.0));
+        c.setExpression(new AttributeNode("attributeA"));
+        b.merge(c);
+        assertEquals(7, b.getFirst().getInteger());
+        assertEquals(3.0, b.getKey().getFloat(), delta);
+        c.merge(a);
+        assertEquals(7, c.getFirst().getInteger());
+        assertEquals(3.0, c.getKey().getFloat(), delta);
+    }
+
+    @Test
+    public void testFirstAggregationResultWithKeyExpression() {
+        FirstAggregationResult a = new FirstAggregationResult(new IntegerResultNode(6), new IntegerResultNode(5));
+        a.setKeyExpression(new AttributeNode("attributeB"));
+        a.setExpression(new AttributeNode("attributeA"));
+
+        FirstAggregationResult b = (FirstAggregationResult)serializeDeserialize(a);
+        assertTrue(b.hasValue());
+        assertEquals(6, b.getFirst().getInteger());
+        assertEquals(5, b.getKey().getInteger());
+        assertEquals(a.getKeyExpression(), b.getKeyExpression());
+    }
+
+    @Test
+    public void testFirstAggregationResultWithoutValue() {
+        FirstAggregationResult empty = new FirstAggregationResult();
+        empty.setExpression(new AttributeNode("attributeA"));
+        assertFalse(empty.hasValue());
+        assertFalse(((FirstAggregationResult)serializeDeserialize(empty)).hasValue());
+
+        // An empty result never wins, and is filled in by whatever it merges with.
+        FirstAggregationResult a = new FirstAggregationResult(new IntegerResultNode(8), new FloatResultNode(1.0));
+        a.setExpression(new AttributeNode("attributeA"));
+        a.merge(empty);
+        assertEquals(8, a.getFirst().getInteger());
+        assertEquals(1.0, a.getKey().getFloat(), delta);
+
+        empty.merge(a);
+        assertTrue(empty.hasValue());
+        assertEquals(8, empty.getFirst().getInteger());
+        assertEquals(1.0, empty.getKey().getFloat(), delta);
     }
 
     @Test
