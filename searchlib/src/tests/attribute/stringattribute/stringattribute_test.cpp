@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
+#include <vespa/searchlib/attribute/string_range_search_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/casts.h>
 
@@ -407,7 +408,7 @@ template <typename Attribute> void testSingleValue(Attribute& svsa, Config& cfg)
 TEST_F(StringAttributeTest, testSingleValue) {
     EXPECT_EQ(24u, sizeof(SearchContext));
     EXPECT_EQ(48u, sizeof(StringSearchHelper));
-    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContext));
+    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringMatcher>));
     {
         Config                     cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);
@@ -538,6 +539,68 @@ TEST_F(StringAttributeTest, test_fuzzy_match) {
     EXPECT_TRUE(helper.isMatch("x"));
     EXPECT_TRUE(helper.isMatch("xvv"));
     EXPECT_FALSE(helper.isMatch("vvv"));
+}
+
+TEST_F(StringAttributeTest, test_range_match_cased) {
+    StringRangeSpec                    range = {"BAR", true, false, "FOO", true, false};
+    attribute::StringRangeSearchHelper helper(&range, true);
+
+    // "BAR", "FOO", "bar", "foo"
+    EXPECT_TRUE(helper.is_match("BAR"));
+    EXPECT_TRUE(helper.is_match("FOO"));
+    EXPECT_FALSE(helper.is_match("bar"));
+    EXPECT_FALSE(helper.is_match("foo"));
+}
+
+TEST_F(StringAttributeTest, test_range_match_uncased) {
+    StringRangeSpec                    range = {"BAR", true, false, "FOO", true, false};
+    attribute::StringRangeSearchHelper helper(&range, false);
+
+    // "BAR", "bar", "FOO", "foo"
+    EXPECT_TRUE(helper.is_match("BAR"));
+    EXPECT_TRUE(helper.is_match("bar"));
+    EXPECT_TRUE(helper.is_match("FOO"));
+    EXPECT_TRUE(helper.is_match("foo"));
+}
+
+namespace {
+void verify_range(const StringRangeSpec& range, bool aaa, bool abb, bool acc, bool add, bool aee) {
+    for (bool cased : {true, false}) {
+        attribute::StringRangeSearchHelper helper(&range, cased);
+
+        EXPECT_EQ(aaa, helper.is_match("Aaa"));
+        EXPECT_EQ(abb, helper.is_match("Abb"));
+        EXPECT_EQ(acc, helper.is_match("Acc"));
+        EXPECT_EQ(add, helper.is_match("Add"));
+        EXPECT_EQ(aee, helper.is_match("Aee"));
+    }
+}
+} // namespace
+
+TEST_F(StringAttributeTest, test_range_is_match) {
+    // ["Abb", "Add"]
+    verify_range({"Abb", true, false, "Add", true, false}, false, true, true, true, false);
+
+    // ("Abb", "Add"]
+    verify_range({"Abb", false, false, "Add", true, false}, false, false, true, true, false);
+
+    // ["Abb", "Add")
+    verify_range({"Abb", true, false, "Add", false, false}, false, true, true, false, false);
+
+    // ("Abb", "Add")
+    verify_range({"Abb", false, false, "Add", false, false}, false, false, true, false, false);
+
+    // (\infty, "Add")
+    verify_range({"Abb", false, true, "Add", false, false}, true, true, true, false, false);
+
+    // ("Abb", \infty)
+    verify_range({"Abb", false, false, "Add", false, true}, false, false, true, true, true);
+
+    // (\infty, \infty)
+    verify_range({"Abb", false, true, "Add", false, true}, true, true, true, true, true);
+
+    // ["Add", "Abb"] = \varnothing
+    verify_range({"Add", true, false, "Abb", true, false}, false, false, false, false, false);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
