@@ -28,6 +28,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 
 #include <atomic>
+#include <functional>
 #include <optional>
 
 namespace storage {
@@ -437,6 +438,9 @@ public:
 
     // Use only for testing
     framework::MetricUpdateHook& get_metric_update_hook_for_testing() { return *this; }
+    void set_before_join_queue_remap_hook_for_testing(std::function<void()> hook) {
+        _before_join_queue_remap_hook_for_testing = std::move(hook);
+    }
 
 private:
     ServiceLayerComponent                                    _component;
@@ -460,6 +464,7 @@ private:
     std::atomic<bool>                    _throttle_apply_bucket_diff_ops;
     std::optional<ActiveOperationsStats> _last_active_operations_stats;
     std::atomic<uint32_t>                _max_feed_op_batch_size;
+    std::function<void()>                _before_join_queue_remap_hook_for_testing;
 
     // Returns the index in the targets array we are sending to, or -1 if none of them match.
     int calculateTargetBasedOnDocId(const api::StorageMessage& msg, std::vector<RemapInfo*>& targets);

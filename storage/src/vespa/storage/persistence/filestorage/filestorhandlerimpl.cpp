@@ -736,6 +736,9 @@ void FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<
 }
 
 void FileStorHandlerImpl::remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target) {
+    if (_before_join_queue_remap_hook_for_testing) {
+        _before_join_queue_remap_hook_for_testing();
+    }
     remapQueue(source, target, FileStorHandlerImpl::JOIN);
 }
 
