@@ -71,6 +71,7 @@ public class SchemaInfoTester {
                                          .setSecondPhase(new SecondPhase.Builder().setRerankCount(201).build())
                                          .setKeepRankCount(401)
                                          .setMatchPhase(new MatchPhase.Builder().setMaxHits(801).build())
+                                         .addSortFeature("foo")
                                          .build())
                             .add(new RankProfile.Builder("withTotalParameters")
                                          .setSecondPhase(new SecondPhase.Builder().setTotalRerankCount(2001).build())
@@ -127,6 +128,7 @@ public class SchemaInfoTester {
         rankProfileWithParameters.rerankCount(201);
         rankProfileWithParameters.keepRankCount(401);
         rankProfileWithParameters.matchPhaseMaxHits(801);
+        rankProfileWithParameters.sortFeature("foo");
         schemaA.rankprofile(rankProfileWithParameters);
 
         var rankProfileWithTotalParameters = new SchemaInfoConfig.Schema.Rankprofile.Builder();

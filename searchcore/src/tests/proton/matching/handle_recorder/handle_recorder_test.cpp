@@ -92,4 +92,23 @@ TEST(HandleRecorderTest, tagging_of_matchdata_works) {
     check_tagging(*md->resolveTermField(3), false, false, true);
 }
 
+TEST(HandleRecorderTest, registration_attempted_is_set_even_for_already_present_handles) {
+    HandleRecorder recorder(HandleMap({{3, NormalMask}}));
+    EXPECT_FALSE(recorder.registration_attempted());
+    {
+        HandleRecorder::Binder binder(recorder);
+        register_normal_handle(3);
+    }
+    EXPECT_TRUE(recorder.registration_attempted());
+    EXPECT_EQ(HandleMap({{3, NormalMask}}), recorder.get_handles());
+}
+
+TEST(HandleRecorderTest, registration_attempted_stays_false_without_add) {
+    HandleRecorder recorder(HandleMap({{3, NormalMask}}));
+    {
+        HandleRecorder::Binder binder(recorder);
+    }
+    EXPECT_FALSE(recorder.registration_attempted());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

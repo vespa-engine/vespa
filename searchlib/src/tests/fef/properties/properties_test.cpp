@@ -262,6 +262,18 @@ TEST(PropertiesTest, test_stuff) {
             EXPECT_EQ(a[0], std::string("foo"));
             EXPECT_EQ(a[1], std::string("bar"));
         }
+        { // vespa.sort.feature
+            EXPECT_EQ(sort::Feature::NAME, std::string("vespa.sort.feature"));
+            EXPECT_EQ(sort::Feature::DEFAULT_VALUE.size(), 0u);
+            Properties p;
+            EXPECT_EQ(sort::Feature::lookup(p).size(), 0u);
+            p.add("vespa.sort.feature", "foo");
+            p.add("vespa.sort.feature", "rankingExpression(bar)");
+            std::vector<std::string> a = sort::Feature::lookup(p);
+            ASSERT_TRUE(a.size() == 2);
+            EXPECT_EQ(a[0], std::string("foo"));
+            EXPECT_EQ(a[1], std::string("rankingExpression(bar)"));
+        }
         { // vespa.dump.ignoredefaultfeatures
             EXPECT_EQ(dump::IgnoreDefaultFeatures::NAME, std::string("vespa.dump.ignoredefaultfeatures"));
             EXPECT_EQ(dump::IgnoreDefaultFeatures::DEFAULT_VALUE, "false");

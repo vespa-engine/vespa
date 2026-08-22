@@ -188,4 +188,20 @@ public class SortingDegraderTestCase {
         return new IndexFacts(new IndexModel(test));
     }
 
+    @Test
+    void testNoDegradingWhenLeadingFeatureSorter() {
+        Query query = new Query("?ranking.sorting=" +
+                                java.net.URLEncoder.encode("-feature(a1)", java.nio.charset.StandardCharsets.UTF_8));
+        execute(query);
+        assertNull(query.getRanking().getMatchPhase().getAttribute());
+    }
+
+    @Test
+    void testDegradingWhenLeadingAttributeBeforeFeature() {
+        Query query = new Query("?ranking.sorting=" +
+                                java.net.URLEncoder.encode("-a1 -feature(foo)", java.nio.charset.StandardCharsets.UTF_8));
+        execute(query);
+        assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
+    }
+
 }

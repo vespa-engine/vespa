@@ -11,6 +11,8 @@ import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -170,6 +172,94 @@ public class SortingTestCase {
                      failedSpec("missing(a,as,\"bad \\n default\")"));
         assertEquals("Unknown missing policy 'before' at [missing(a,before][,default)]",
                      failedSpec("missing(a,before,default)"));
+    }
+
+    @Test
+    void featureSortIsParsedAndSerializedCanonically() {
+        assertEquals("+feature(foo)", encodedSpec("feature(foo)"));
+        assertEquals("+feature(foo)", encodedSpec("+feature(foo)"));
+        assertEquals("-feature(foo)", encodedSpec("-feature(foo)"));
+        assertEquals("+feature(foo)", encodedSpec("FeAtUrE(foo)"));
+        assertEquals("+feature(foo) -feature(bar) +a", encodedSpec("+feature(foo) -feature(bar) +a"));
+        assertInstanceOf(Sorting.FeatureSorter.class, Sorting.fromString("feature(foo)").fieldOrders().get(0).getSorter());
+        assertEquals(Sorting.Order.ASCENDING, Sorting.fromString("feature(foo)").fieldOrders().get(0).getSortOrder());
+        assertEquals(Sorting.Order.DESCENDING, Sorting.fromString("-feature(foo)").fieldOrders().get(0).getSortOrder());
+    }
+
+    @Test
+    void featureSortUndefinedOrderIsNormalizedToAscending() {
+        var sorter = new Sorting.FeatureSorter("foo");
+        var order = new Sorting.FieldOrder(sorter, Sorting.Order.UNDEFINED);
+        assertEquals(Sorting.Order.ASCENDING, order.getSortOrder());
+        assertEquals("+feature(foo)", order.toSerialForm(true));
+
+        var attributeOrder = new Sorting.FieldOrder(new Sorting.AttributeSorter("a"), Sorting.Order.UNDEFINED);
+        assertEquals(Sorting.Order.UNDEFINED, attributeOrder.getSortOrder());
+        attributeOrder.setSorter(new Sorting.FeatureSorter("foo"));
+        assertEquals(Sorting.Order.ASCENDING, attributeOrder.getSortOrder());
+    }
+
+    @Test
+    void featureSortRejectsInvalidInput() {
+        assertEquals("Cannot use missing() with feature(...) sorting in 'missing(feature(foo),first)'",
+                     failedSpec("missing(feature(foo),first)"));
+        assertEquals("Illegal feature name 'foo-bar' for sorting. Requires '[A-Za-z_][A-Za-z0-9_]*'",
+                     failedSpec("feature(foo-bar)"));
+        assertEquals("Illegal feature name 'foo$' for sorting. Requires '[A-Za-z_][A-Za-z0-9_]*'",
+                     failedSpec("feature(foo$)"));
+        assertTrue(failedSpec("feature(bm25(title))").contains("Expected ')'"));
+        assertEquals("Illegal feature name 'foo.out' for sorting. Requires '[A-Za-z_][A-Za-z0-9_]*'",
+                     failedSpec("feature(foo.out)"));
+        assertEquals("Illegal feature name '' for sorting. Requires '[A-Za-z_][A-Za-z0-9_]*'",
+                     failedSpec("feature()"));
+    }
+
+    @Test
+    void featureSortEqualsAndHashDifferFromOtherSorters() {
+        var feature = new Sorting.FeatureSorter("foo");
+        var otherFeature = new Sorting.FeatureSorter("foo");
+        var different = new Sorting.FeatureSorter("bar");
+        var lowercase = new Sorting.LowerCaseSorter("foo");
+        assertEquals(feature, otherFeature);
+        assertEquals(feature.hashCode(), otherFeature.hashCode());
+        assertNotEquals(feature, different);
+        assertNotEquals(feature, lowercase);
+        assertNotEquals(feature.hashCode(), lowercase.hashCode());
+    }
+
+    @Test
+    void featureSortIsNotCanonicalizedAsAnAttributeAlias() {
+        Query query = new Query();
+        var schema = new SearchDefinition("test");
+        schema.addIndex(new Index("a"));
+        schema.addAlias("aliasOfA", "a");
+        Execution execution = new Execution(Execution.Context.createContextStub(new IndexFacts(new IndexModel(schema))));
+        query.getModel().setExecution(execution);
+        var sorting = new Sorting("feature(aliasOfA)", query);
+        assertEquals("aliasOfA", sorting.fieldOrders().get(0).getFieldName());
+        assertInstanceOf(Sorting.FeatureSorter.class, sorting.fieldOrders().get(0).getSorter());
+    }
+
+    @Test
+    void featureSortSerializesAsCompleteYqlFragment() {
+        Query query = new Query("?query=a&sorting=-feature(foo)");
+        assertTrue(query.yqlRepresentation().contains("order by [{\"function\": \"feature\"}]foo desc"),
+                   query.yqlRepresentation());
+        Query ascending = new Query("?query=a&sorting=%2Bfeature(foo)");
+        String yql = ascending.yqlRepresentation();
+        int orderBy = yql.indexOf("order by ");
+        assertTrue(orderBy >= 0, yql);
+        assertEquals("[{\"function\": \"feature\"}]foo", yql.substring(orderBy + "order by ".length()));
+    }
+
+    @Test
+    void featureSortFallbackCompareIsRejectedOnCustomHits() {
+        Query query = new Query("?query=a&sorting=-feature(foo)");
+        Result result = new Result(query);
+        result.hits().add(new Hit("id:ns:type::1", 1.0));
+        result.hits().add(new Hit("id:ns:type::2", 2.0));
+        var e = assertThrows(IllegalInputException.class, () -> result.hits().sort());
+        assertTrue(e.getMessage().contains("feature(foo)"), e.getMessage());
     }
 
 }

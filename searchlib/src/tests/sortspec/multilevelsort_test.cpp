@@ -469,4 +469,77 @@ TEST(SortTest, make_sort_blob_writer_throws_when_missing_value_is_illegal) {
     verify_make_sort_blob_writer_throws(BasicType::FLOAT, CollectionType::ARRAY, true);
 }
 
+class FakeNumericSortProvider : public INumericSortValueProvider {
+public:
+    FakeNumericSortProvider(std::vector<std::string> names, std::vector<std::vector<double>> by_docid)
+        : _names(std::move(names)), _by_docid(std::move(by_docid)) {}
+
+    uint32_t seek_count() const { return _seeks; }
+    uint32_t consumed_count() const { return _consumed; }
+
+    uint32_t ordinal(std::string_view public_name) const override {
+        for (uint32_t i = 0; i < _names.size(); ++i) {
+            if (_names[i] == public_name) {
+                return i;
+            }
+        }
+        return invalid_ordinal;
+    }
+    void seek(uint32_t docid) override {
+        ++_seeks;
+        if (_started && docid < _last_seek) {
+            ADD_FAILURE() << "backwards seek " << docid << " after " << _last_seek;
+        }
+        _started = true;
+        _last_seek = docid;
+        _bound_docid = docid;
+        _bound = true;
+    }
+    double get(uint32_t ord) const override {
+        if (!_bound || _bound_docid >= _by_docid.size() || ord >= _by_docid[_bound_docid].size()) {
+            ADD_FAILURE() << "get without a valid bound seek";
+            return 0.0;
+        }
+        return _by_docid[_bound_docid][ord];
+    }
+    void consumed() override { ++_consumed; }
+
+private:
+    std::vector<std::string>         _names;
+    std::vector<std::vector<double>> _by_docid;
+    uint32_t                         _seeks = 0;
+    uint32_t                         _consumed = 0;
+    uint32_t                         _last_seek = 0;
+    uint32_t                         _bound_docid = 0;
+    bool                             _bound = false;
+    bool                             _started = false;
+};
+
+TEST(SortTest, feature_sort_binds_provider_and_seeks_each_hit_once) {
+    search::uca::UcaConverterFactory ucaFactory;
+    search::AttributeManager         mgr;
+    search::AttributeContext         ac(mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("+feature(pri) -feature(sec) +[docid]", ac));
+
+    // Hits encoded in input (docid) order. Table observes ascending pri,
+    // descending sec, and +[docid] when pri and sec both tie (docs 3 and 4).
+    std::vector<std::vector<double>> by_docid(5);
+    by_docid[1] = {1.0, 10.0};
+    by_docid[2] = {1.0, 20.0};
+    by_docid[3] = {2.0, 10.0};
+    by_docid[4] = {2.0, 10.0};
+    FakeNumericSortProvider provider({"pri", "sec"}, std::move(by_docid));
+    sorter.bind_numeric_provider(provider);
+
+    RankedHit hits[4] = {RankedHit(1, 0.0), RankedHit(2, 0.0), RankedHit(3, 0.0), RankedHit(4, 0.0)};
+    sorter.sortResults(hits, 4, 4);
+    EXPECT_EQ(2u, hits[0].getDocId());
+    EXPECT_EQ(1u, hits[1].getDocId());
+    EXPECT_EQ(3u, hits[2].getDocId());
+    EXPECT_EQ(4u, hits[3].getDocId());
+    EXPECT_EQ(4u, provider.seek_count());
+    EXPECT_EQ(1u, provider.consumed_count());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -5,9 +5,12 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.Set;
 
 /**
  * Information about a rank profile
@@ -25,6 +28,7 @@ public class RankProfile {
     private final Map<String, InputType> inputs;
     private final MatchPhase  matchPhase;
     private final SecondPhase secondPhase;
+    private final List<String> sortFeatures;
 
     // Assigned when this is added to a schema
     private Schema schema = null;
@@ -39,6 +43,7 @@ public class RankProfile {
         this.totalKeepRankCount = builder.totalKeepRankCount;
         this.matchPhase = builder.matchPhase;
         this.secondPhase = builder.secondPhase;
+        this.sortFeatures = List.copyOf(builder.sortFeatures);
     }
 
     public String name() { return name; }
@@ -77,6 +82,9 @@ public class RankProfile {
     /** Returns information about the second phase reranking of this. */
     public SecondPhase secondPhase() { return secondPhase; }
 
+    /** Returns the public names of rank features that may be used as sorting keys. */
+    public List<String> sortFeatures() { return sortFeatures; }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
@@ -90,12 +98,13 @@ public class RankProfile {
         if ( ! other.totalKeepRankCount.equals(this.totalKeepRankCount)) return false;
         if ( ! other.matchPhase.equals(this.matchPhase)) return false;
         if ( ! other.secondPhase.equals(this.secondPhase)) return false;
+        if ( ! other.sortFeatures.equals(this.sortFeatures)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs, keepRankCount, totalKeepRankCount, matchPhase, secondPhase);
+        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs, keepRankCount, totalKeepRankCount, matchPhase, secondPhase, sortFeatures);
     }
 
     @Override
@@ -133,6 +142,7 @@ public class RankProfile {
         private OptionalInt totalKeepRankCount = OptionalInt.empty();
         private MatchPhase matchPhase = new MatchPhase.Builder().build();
         private SecondPhase secondPhase = new SecondPhase.Builder().build();
+        private final Set<String> sortFeatures = new LinkedHashSet<>();
 
         public Builder(String name) {
             this.name = Objects.requireNonNull(name);
@@ -172,6 +182,11 @@ public class RankProfile {
 
         public Builder setSecondPhase(SecondPhase secondPhase) {
             this.secondPhase = Objects.requireNonNull(secondPhase);
+            return this;
+        }
+
+        public Builder addSortFeature(String name) {
+            sortFeatures.add(Objects.requireNonNull(name));
             return this;
         }
 
