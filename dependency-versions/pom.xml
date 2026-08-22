@@ -127,7 +127,7 @@
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
         <maven-xml-impl.vespa.version>4.0.0-beta-5</maven-xml-impl.vespa.version>
         <mcp-sdk.vespa.version>0.18.4</mcp-sdk.vespa.version>
-        <micrometer.vespa.version>1.17.0</micrometer.vespa.version>
+        <micrometer.vespa.version>1.17.1</micrometer.vespa.version>
         <mockito.vespa.version>5.23.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.1</mojo-executor.vespa.version>
         <netty.vespa.version>4.2.17.Final</netty.vespa.version>
@@ -141,6 +141,7 @@
         <org.apache.datasketches.vespa.version>7.0.1</org.apache.datasketches.vespa.version>
         <org.apache.datasketches.memory.vespa.version>4.1.0</org.apache.datasketches.memory.vespa.version>
         <org.json.vespa.version>20240303</org.json.vespa.version>
+        <org.jspecify.vespa.version>1.0.1</org.jspecify.vespa.version>
         <at.yawk.lz4.vespa.version>1.11.2</at.yawk.lz4.vespa.version>
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
         <plexus-archiver.vespa.version>4.12.0</plexus-archiver.vespa.version>
