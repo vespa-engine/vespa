@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-08-21
+Last updated: 2026-08-23
 
 ---
 
@@ -437,26 +437,6 @@ Last updated: 2026-08-21
 
 - Homepage: <https://pkg.go.dev/github.com/x448/float16@v0.8.4>
 - Copyright 2019 Montgomery Edwards⁴⁴⁸ and Faye Amacker
-
----
-
-## go.yaml.in/yaml/v3 v3.0.4 — Apache 2.0
-
-- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.4>
-- Copyright 2011-2019 Canonical Ltd
-- Copyright 2011 when the project was ported over:
-- Copyright files of libyaml, and thus
-- Copyright 2006-2010 Kirill Simonov
-
----
-
-## go.yaml.in/yaml/v3 v3.0.4 — MIT
-
-- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.4>
-- Copyright 2011-2019 Canonical Ltd
-- Copyright 2011 when the project was ported over:
-- Copyright files of libyaml, and thus
-- Copyright 2006-2010 Kirill Simonov
 
 ---
 
@@ -948,8 +928,8 @@ Last updated: 2026-08-21
 ## rouge 4.7.0 — MIT
 
 - Homepage: <http://rouge.jneen.net/>
-- Copyright 2012 Jeanine Adkisson
 - Copyright 2006-2012 the respective authors
+- Copyright 2012 Jeanine Adkisson
 
 ---
 
