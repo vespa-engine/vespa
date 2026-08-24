@@ -32,4 +32,21 @@ public class FieldNameTestCase {
         assertEquals(new CatExpression(new InputExpression("foo"), new ConstantExpression(new StringFieldValue("bar"))),
                      Expression.fromString("input foo . 'bar'"));
     }
+
+    @Test
+    public void requireThatNonIdentifierOutputFieldNamesRoundTripThroughQuoting() throws ParseException {
+        // Names containing characters outside the identifier charset, such as the synthetic
+        // 'mymap$keyvalue' attribute, must be quoted when serialized to be re-parseable.
+        assertEquals("attribute \"mymap$keyvalue\"", new AttributeExpression("mymap$keyvalue").toString());
+        assertEquals(new AttributeExpression("mymap$keyvalue"), Expression.fromString("attribute \"mymap$keyvalue\""));
+        assertEquals(new AttributeExpression("mymap$keyvalue"),
+                     Expression.fromString(new AttributeExpression("mymap$keyvalue").toString()));
+        assertEquals(new IndexExpression("mymap$keyvalue"),
+                     Expression.fromString(new IndexExpression("mymap$keyvalue").toString()));
+        assertEquals(new SummaryExpression("mymap$keyvalue"),
+                     Expression.fromString(new SummaryExpression("mymap$keyvalue").toString()));
+        // Identifier and dotted names must stay unquoted, so existing configs serialize unchanged.
+        assertEquals("attribute foo", new AttributeExpression("foo").toString());
+        assertEquals("attribute foo.bar", new AttributeExpression("foo.bar").toString());
+    }
 }
