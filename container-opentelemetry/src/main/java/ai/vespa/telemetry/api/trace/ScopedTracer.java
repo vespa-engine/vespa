@@ -35,7 +35,9 @@ public final class ScopedTracer {
      *  non-throwing body infers {@code E = RuntimeException}. */
     public <T, E extends Exception> T instrument(String name, SpanKind kind, Context parent, ThrowingSupplier<T, E> body) throws E {
         Span span = startSpan(name, kind, parent);
-        try (Scope ignored = span.makeCurrent()) {
+        // NOT span.makeCurrent(): that is Context.current().with(span), which drops everything else in
+        // `parent` - including the Telemetry - so every span site below would go no-op.
+        try (Scope ignored = parent.with(span).makeCurrent()) {
             return body.get();
         } catch (Throwable t) {
             span.recordException(t);
