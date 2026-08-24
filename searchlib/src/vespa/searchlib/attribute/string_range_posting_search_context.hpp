@@ -5,6 +5,8 @@
 #include "posting_list_folded_search_context.hpp"
 #include "string_range_posting_search_context.h"
 
+#include <vespa/vespalib/datastore/infinity_unique_store_string_comparator.h>
+
 namespace search::attribute {
 
 template <typename BaseSC, typename AttrT, typename DataT>
@@ -13,11 +15,29 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
                                                                                        const AttrT& to_be_searched)
     : Parent(std::move(base_sc), use_bit_vector, to_be_searched), _range_spec(this->get_string_range_spec()) {
     if (this->valid() && _range_spec) {
-        const std::string& left = _range_spec->left;
-        const std::string& right = _range_spec->right;
-        auto               comp_left = _enumStore.make_folded_comparator(left.c_str());
-        auto               comp_right = _enumStore.make_folded_comparator(right.c_str());
-        this->lookupRange(comp_left, comp_right);
+        if (!_range_spec->left_unbounded && !_range_spec->right_unbounded) {
+            this->lookupRange(_enumStore.make_folded_comparator(_range_spec->left.c_str()),
+                              _enumStore.make_folded_comparator(_range_spec->right.c_str()));
+
+        } else if (!_range_spec->left_unbounded) {
+            this->lookupRange(
+                _enumStore.make_folded_comparator(_range_spec->left.c_str()),
+                vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
+                    _enumStore.get_data_store()));
+
+        } else if (!_range_spec->right_unbounded) {
+            this->lookupRange(
+                vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
+                    _enumStore.get_data_store()),
+                _enumStore.make_folded_comparator(_range_spec->right.c_str()));
+
+        } else {
+            this->lookupRange(
+                vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
+                    _enumStore.get_data_store()),
+                vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
+                    _enumStore.get_data_store()));
+        }
         if (this->_uniqueValues == 1u) {
             if (!this->_lowerDictItr.valid() || use_single_dictionary_entry(this->_lowerDictItr)) {
                 this->lookupSingle();
