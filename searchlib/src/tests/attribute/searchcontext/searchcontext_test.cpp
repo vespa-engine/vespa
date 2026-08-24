@@ -173,10 +173,16 @@ protected:
     ResultSetPtr performSearch(const queryeval::ExecuteInfo& executeInfo, const V& vec, const T& term,
                                TermType termType);
     template <typename V>
+    ResultSetPtr perform_search(const queryeval::ExecuteInfo& executeInfo, const V& vec,
+                                std::unique_ptr<QueryTermSimple> term);
+    template <typename V>
     void performSearch(const V& vec, const std::string& term, const DocSet& expected, TermType termType);
     template <typename V>
     void performSearch(const queryeval::ExecuteInfo& executeInfo, const V& vec, const std::string& term,
                        const DocSet& expected, TermType termType);
+    template <typename V>
+    void perform_search(const queryeval::ExecuteInfo& executeInfo, const V& vec,
+                        std::unique_ptr<QueryTermSimple> term, const DocSet& expected);
     void checkResultSet(const ResultSet& rs, const DocSet& exp, bool bitVector);
 
     template <typename T, typename A>
@@ -240,6 +246,9 @@ protected:
     void performRangeSearch(const VectorType& vec, const std::string& term, const DocSet& expected);
     template <typename VectorType, typename ValueType>
     void testRangeSearch(const AttributePtr& ptr, uint32_t numDocs, std::vector<ValueType> values);
+
+    // test lexical range search
+    void test_lexical_range_search(const std::string& name, const Config& cfg);
 
     // test case insensitive search
     void performCaseInsensitiveSearch(const StringAttribute& vec, const std::string& term, const DocSet& expected);
@@ -471,6 +480,18 @@ ResultSetPtr SearchContextTest::performSearch(const queryeval::ExecuteInfo& exec
 }
 
 template <typename V>
+ResultSetPtr SearchContextTest::perform_search(const queryeval::ExecuteInfo& executeInfo, const V& vec,
+                                               std::unique_ptr<QueryTermSimple> term) {
+    TermFieldMatchData dummy;
+    SearchContextPtr   sc =
+        (dynamic_cast<const AttributeVector&>(vec)).getSearch(std::move(term), attribute::SearchContextParams());
+    sc->fetchPostings(executeInfo, true);
+    SearchBasePtr sb = sc->createIterator(&dummy, true);
+    ResultSetPtr  rs = performSearch(*sb, vec.getNumDocs());
+    return rs;
+}
+
+template <typename V>
 void SearchContextTest::performSearch(const queryeval::ExecuteInfo& executeInfo, const V& vec,
                                       const std::string& term, const DocSet& expected, TermType termType) {
 #if 0
@@ -483,6 +504,21 @@ void SearchContextTest::performSearch(const queryeval::ExecuteInfo& executeInfo,
         checkResultSet(*rs, expected, false);
     }
 }
+
+template <typename V>
+void SearchContextTest::perform_search(const queryeval::ExecuteInfo& executeInfo, const V& vec,
+                                       std::unique_ptr<QueryTermSimple> term, const DocSet& expected) {
+#if 0
+    std::cout << "performSearch[" << term << "]: {";
+    std::copy(expected.begin(), expected.end(), std::ostream_iterator<uint32_t>(std::cout, ", "));
+    std::cout << "}, prefix(" << (prefix ? "true" : "false") << ")" << std::endl;
+#endif
+    { // strict search iterator
+        ResultSetPtr rs = perform_search(executeInfo, vec, std::move(term));
+        checkResultSet(*rs, expected, false);
+    }
+}
+
 template <typename V>
 void SearchContextTest::performSearch(const V& vec, const std::string& term, const DocSet& expected,
                                       TermType termType) {
@@ -1260,6 +1296,83 @@ TEST_F(SearchContextTest, test_range_search) {
             AttributePtr ptr = AttributeFactory::createAttribute(cfg.first, cfg.second);
             testRangeSearch<FloatingPointAttribute, double>(ptr, numDocs, values);
         }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Test lexical range search
+//-----------------------------------------------------------------------------
+
+namespace {
+std::string to_hex(uint32_t n) {
+    return std::format("{:016X}", n);
+}
+
+std::unique_ptr<QueryTermSimple> make_string_range_query_term(uint32_t left, bool left_closed, bool left_unbounded,
+                                                              uint32_t right, bool right_closed,
+                                                              bool right_unbounded) {
+    return std::make_unique<QueryTermUCS4>(
+        QueryTermSimple::Type::WORD, std::make_unique<StringRangeSpec>(to_hex(left), left_closed, left_unbounded,
+                                                                       to_hex(right), right_closed, right_unbounded));
+}
+
+DocSet make_range_doc_set(uint32_t n, uint32_t left, bool left_closed, bool left_unbounded, uint32_t right,
+                          bool right_closed, bool right_unbounded) {
+    uint32_t from = left_unbounded ? 1 : (left_closed ? left : left + 1);
+    uint32_t to = right_unbounded ? n : (right_closed ? right : right - 1);
+    DocSet   expected;
+    for (uint32_t i = from; i <= to; ++i) {
+        expected.put(i);
+    }
+    return expected;
+}
+} // namespace
+
+void SearchContextTest::test_lexical_range_search(const std::string& name, const Config& cfg) {
+    LOG(info, "test_lexical_range_search: vector '%s'", name.c_str());
+    const uint32_t n = 100;
+
+    AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(name, cfg);
+    auto&               attr = dynamic_cast<StringAttribute&>(*attr_ptr);
+    attr.addReservedDoc();
+    attr.addDocs(n);
+    for (uint32_t docid = 1; docid <= n; ++docid) {
+        attr.update(docid, to_hex(docid));
+    }
+    attr.commit(CommitParam::UpdateStats::FORCE);
+
+    for (uint32_t i = 1; i < n; ++i) {
+        for (uint32_t j = 1; j < n; ++j) {
+            perform_search(queryeval::ExecuteInfo::FULL, attr,
+                           make_string_range_query_term(i, true, false, j, true, false),
+                           make_range_doc_set(n, i, true, false, j, true, false));
+        }
+    }
+
+    // Long range of prefixes with unique strings that causes
+    // PostingListFoldedSearchContextT<DataT>::countHits() to populate
+    // partial vector of posting indexes, with scan resumed by
+    // fillArray or fillBitVector.
+    // auto&              vec = dynamic_cast<StringAttribute&>(*attr.get());
+    // uint32_t           old_size = attr->getNumDocs();
+    // constexpr uint32_t longrange_values =
+    //        search::attribute::PostingListFoldedSearchContextT<int32_t>::MAX_POSTING_INDEXES_SIZE + 100;
+    // attr->addDocs(longrange_values);
+    // DocSet exp_longrange;
+    // for (uint32_t i = 0; i < longrange_values; ++i) {
+    //    vespalib::asciistream ss;
+    //    ss << "lpref" << i;
+    //    std::string sss(ss.view());
+    //    exp_longrange.put(old_size + i);
+    //    vec.update(old_size + i, std::string(ss.view()).c_str());
+    //}
+    // attr->commit();
+    // performSearch(*attr, "lpref", exp_longrange, TermType::PREFIXTERM);
+}
+
+TEST_F(SearchContextTest, test_lexical_range_search) {
+    for (const auto& cfg : _stringCfg) {
+        test_lexical_range_search(cfg.first, cfg.second);
     }
 }
 
