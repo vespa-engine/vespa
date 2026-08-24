@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class QuotaValidator implements Validator {
 
     private static final Logger log = Logger.getLogger(QuotaValidator.class.getName());
-    private static final Capacity zeroCapacity = Capacity.from(new ClusterResources(0, 0, NodeResources.zero()));
+    private static final Capacity zeroCapacity = Capacity.from(new ClusterResources(0, 1, NodeResources.zero()));
 
     @Override
     public void validate(Context context) {

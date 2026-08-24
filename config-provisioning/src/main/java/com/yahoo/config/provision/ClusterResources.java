@@ -20,14 +20,20 @@ public class ClusterResources {
     private final NodeResources nodeResources;
 
     public ClusterResources(int nodes, int groups, NodeResources nodeResources) {
+        if (groups == 0 && nodes ==0) groups = 1; // TODO: Remove after September 2026
+        if (groups < 1)
+            throw new IllegalArgumentException("Groups must be at least 1");
         this.nodes = nodes;
-        this.groups = groups == 0 ? 1 : groups; // TODO: Throw on groups == 0 after February 2023
+        this.groups = groups;
         this.nodeResources = Objects.requireNonNull(nodeResources);
     }
 
-    /** Returns the total number of allocated nodes (over all groups) */
+    /** Returns the total number of allocated nodes (over all groups), which may be zero. */
     public int nodes() { return nodes; }
+
+    /** Returns the total number of node groups, which is at least 1 even if there are zero nodes. */
     public int groups() { return groups; }
+
     public NodeResources nodeResources() { return nodeResources; }
 
     public ClusterResources with(NodeResources resources) { return new ClusterResources(nodes, groups, resources); }
