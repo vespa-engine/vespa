@@ -24,7 +24,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 
 /**
- * Adds a "_fieldName_keyvalue" attribute to maps with fast-search enabled.
+ * Adds a "fieldName$keyvalue" attribute to maps with fast-search enabled.
  *
  * The attribute holds one string per map entry, on the form key + separator + value,
  * so that a key-value pair can be matched with a single lexical lookup.
@@ -91,7 +91,7 @@ public class CreateFastMapSearch extends Processor {
      * impossible to declare in a schema while still being a legal identifier in the indexing language.
      */
     static String keyValueFieldName(String fieldName) {
-        return "_" + fieldName + "_keyvalue";
+        return fieldName + "$keyvalue";
     }
 
     /** Builds "input mapField | for_each { get_field $key . separator . get_field $value } | attribute". */

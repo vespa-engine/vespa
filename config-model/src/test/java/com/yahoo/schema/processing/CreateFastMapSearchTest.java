@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests the synthetic key-value attribute created for map fields with 'map: fast-search'.
@@ -27,7 +28,7 @@ public class CreateFastMapSearchTest {
     void requireKeyValueFieldIsCreatedForFastSearchMap() throws ParseException {
         var schema = build(fastSearchMap("map<string, string>"));
 
-        SDField field = schema.getConcreteField("_foo_keyvalue");
+        SDField field = schema.getConcreteField("foo$keyvalue");
         assertNotNull(field, "Expected a synthetic key-value field");
         assertEquals(DataType.getArray(DataType.STRING), field.getDataType());
     }
@@ -36,7 +37,7 @@ public class CreateFastMapSearchTest {
     void requireKeyValueAttributeIsAFastSearchStringArray() throws ParseException {
         var schema = build(fastSearchMap("map<string, string>"));
 
-        Attribute attribute = schema.getConcreteField("_foo_keyvalue").getAttributes().get("_foo_keyvalue");
+        Attribute attribute = schema.getConcreteField("foo$keyvalue").getAttributes().get("foo$keyvalue");
         assertNotNull(attribute);
         assertEquals(Attribute.Type.STRING, attribute.getType());
         assertEquals(Attribute.CollectionType.ARRAY, attribute.getCollectionType());
@@ -47,7 +48,7 @@ public class CreateFastMapSearchTest {
     void requireKeyValueFieldIsCreatedForIntKeysAndValues() throws ParseException {
         for (String type : new String[] { "map<int, string>", "map<string, int>", "map<int, int>" }) {
             var schema = build(fastSearchMap(type));
-            assertNotNull(schema.getConcreteField("_foo_keyvalue"), "Expected key-value field for " + type);
+            assertNotNull(schema.getConcreteField("foo$keyvalue"), "Expected key-value field for " + type);
         }
     }
 
@@ -57,8 +58,8 @@ public class CreateFastMapSearchTest {
 
         var internal = schema.fieldSets().builtInFieldSets().get(BuiltInFieldSets.INTERNAL_FIELDSET_NAME);
         assertNotNull(internal);
-        assertTrue(internal.getFieldNames().contains("_foo_keyvalue"),
-                   "Expected _foo_keyvalue in " + internal.getFieldNames());
+        assertTrue(internal.getFieldNames().contains("foo$keyvalue"),
+                   "Expected foo$keyvalue in " + internal.getFieldNames());
     }
 
     @Test
@@ -67,7 +68,7 @@ public class CreateFastMapSearchTest {
                                      "  indexing: summary",
                                      "}"));
 
-        assertNull(schema.getConcreteField("_foo_keyvalue"));
+        assertNull(schema.getConcreteField("foo$keyvalue"));
     }
 
     @Test
@@ -76,7 +77,7 @@ public class CreateFastMapSearchTest {
                                      "  indexing: summary",
                                      "}"));
 
-        assertNull(schema.getConcreteField("_foo_keyvalue"));
+        assertNull(schema.getConcreteField("foo$keyvalue"));
     }
 
     @Test
@@ -93,9 +94,9 @@ public class CreateFastMapSearchTest {
                                      "  indexing: summary",
                                      "}"));
 
-        assertNotNull(schema.getConcreteField("_foo_keyvalue"));
-        assertNotNull(schema.getConcreteField("_bar_keyvalue"));
-        assertNull(schema.getConcreteField("_baz_keyvalue"));
+        assertNotNull(schema.getConcreteField("foo$keyvalue"));
+        assertNotNull(schema.getConcreteField("bar$keyvalue"));
+        assertNull(schema.getConcreteField("baz$keyvalue"));
     }
 
     /**
@@ -103,17 +104,10 @@ public class CreateFastMapSearchTest {
      * so that a user cannot declare a field colliding with it.
      */
     @Test
-    void requireUsersCannotDeclareTheKeyValueFieldName() {
-        try {
-            build(joinLines("field _foo_keyvalue type array<string> {",
-                            "  indexing: attribute",
-                            "}"));
-            throw new AssertionError("Expected exception");
-        }
-        catch (IllegalArgumentException | ParseException e) {
-            assertTrue(e.getMessage().contains("Not a legal field name"),
-                       "Unexpected message: " + e.getMessage());
-        }
+void requireUsersCannotDeclareTheKeyValueFieldName() {
+        assertThrows(ParseException.class, () -> build(joinLines("field foo$keyvalue type array<string> {",
+                        "  indexing: attribute",
+                        "}")));
     }
 
     private static String fastSearchMap(String type) {
