@@ -30,10 +30,6 @@ void CountAggregationResult::onReset() {
     setCount(0);
 }
 
-void SumAggregationResult::onReset() {
-    _sum.reset(static_cast<NumericResultNode*>(_sum->getClass().create()));
-}
-
 void CountAggregationResult::onMerge(const AggregationResult& b) {
     _count.add(static_cast<const CountAggregationResult&>(b)._count);
 }

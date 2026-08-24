@@ -165,6 +165,10 @@ void SumAggregationResult::onAggregate(const ResultNode& result) {
     }
 }
 
+void SumAggregationResult::onReset() {
+    _sum.reset(static_cast<NumericResultNode*>(_sum->getClass().create()));
+}
+
 void MaxAggregationResult::onMerge(const AggregationResult& b) {
     _max->max(*static_cast<const MaxAggregationResult&>(b)._max);
 }
