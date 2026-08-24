@@ -22,7 +22,10 @@ void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_
                                             EnumHintSearchContext&         enum_hint_sc) {
     if (_helper.is_valid()) {
         auto* range_spec = _helper.get_string_range_spec();
-        // TODO respect unbounded ranges and test
+        // This is used to eliminate searches that do not yield any results.
+        // We do not use the possible (half-)openness of the range here: If we do not get any result here,
+        // we do not have any results for the closed range and, hence, also not any hits if the range is (half-)open.
+        // TODO Use unboundedness
         auto comp_left = enum_store.make_folded_comparator(range_spec->left.c_str());
         auto comp_right = enum_store.make_folded_comparator(range_spec->right.c_str());
         enum_hint_sc.lookupRange(comp_left, comp_right);
