@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
 import com.yahoo.vespa.model.container.configserver.option.ConfigOptions.ConfigServer;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -24,6 +25,7 @@ import static com.yahoo.config.model.api.ModelContext.FeatureFlags;
  * Represents a config server cluster.
  *
  * @author Ulf Lilleengen
+ * @author hmusum
  */
 public class ConfigserverCluster extends TreeConfigProducer
         implements
@@ -175,6 +177,7 @@ public class ConfigserverCluster extends TreeConfigProducer
         }
         builder.zookeeperLocalhostAffinity(true);
         builder.juteMaxBuffer(options.zookeeperJuteMaxBuffer());
+        builder.zookeeperSessionTimeoutSeconds((int) (options.zookeeperSessionTimeout().orElse(Duration.ofSeconds(120)).toSeconds()));
     }
 
 }

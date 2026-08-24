@@ -21,6 +21,7 @@ import com.yahoo.vespa.model.container.configserver.option.ConfigOptions;
 import com.yahoo.vespa.model.container.xml.ConfigServerContainerModelBuilder;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -137,6 +138,13 @@ public class ConfigserverClusterTest {
         assertEquals(2181, config.server().get(0).port());
         assertEquals(120, config.zookeeperSessionTimeoutSeconds());
         assertTrue(config.zookeeperLocalhostAffinity());
+    }
+
+    @Test
+    void testCuratorConfig_zookeeperSessionTimeoutSeconds_from_config_options() {
+        TestOptions testOptions = createTestOptions(List.of(), List.of()).zookeeperSessionTimeout(Duration.ofSeconds(60));
+        CuratorConfig config = getConfig(CuratorConfig.class, testOptions);
+        assertEquals(60, config.zookeeperSessionTimeoutSeconds());
     }
 
     @Test

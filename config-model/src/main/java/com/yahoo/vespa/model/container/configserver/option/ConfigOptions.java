@@ -32,6 +32,7 @@ public interface ConfigOptions {
     ConfigServer[] allConfigServers();
     int[] configServerZookeeperIds();
     Optional<Duration> zookeeperBarrierTimeout();
+    Optional<Duration> zookeeperSessionTimeout();
     Optional<Duration> applicationLockTimeoutSeconds();
     Optional<String> environment();
     Optional<String> region();

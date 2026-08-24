@@ -264,6 +264,13 @@ public class Flags {
             INSTANCE_ID
     );
 
+    public static final UnboundIntFlag ZOOKEEPER_SESSION_TIMEOUT_SECONDS = defineIntFlag(
+            "zookeeper-session-timeout-seconds", 120,
+            List.of("hmusum"), "2026-08-24", "2027-02-13",
+            "Zookeeper session timeout in seconds for Zookeeper/Curator client running in config server",
+            "Takes effect at redeployment"
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
