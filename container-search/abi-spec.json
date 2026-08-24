@@ -2057,7 +2057,10 @@
       "final"
     ],
     "methods" : [
+      "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, double)",
+      "public java.lang.String word()",
+      "public double exactness()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
@@ -2088,6 +2091,7 @@
       "public java.util.List getAlternatives()",
       "public void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void addTerm(java.lang.String, double)",
+      "public void add(com.yahoo.prelude.query.WordAlternativesItem$Alternative)",
       "public com.yahoo.prelude.query.WordAlternativesItem clone()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
