@@ -35,9 +35,11 @@ public:
     GroupingManager(GroupingContext& groupingContext) noexcept : _groupingContext(groupingContext) {}
 
     /**
+     * Used only in unit tests.
+     *
      * @return true if this manager is holding an empty grouping request.
      **/
-    bool empty() const;
+    [[nodiscard]] bool empty() const;
 
     /**
      * Initialize underlying context with attribute bindings.

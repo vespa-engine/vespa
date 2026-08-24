@@ -32,6 +32,7 @@ public:
 
     /**
      * Create a new grouping context from a byte buffer.
+     *
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
@@ -40,8 +41,6 @@ public:
 
     /**
      * Create a new grouping context from a byte buffer.
-     * @param groupSpec The grouping specification to use for initialization.
-     * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
     GroupingContext(const BitVector& validLids, const std::atomic<steady_time>& now_ref, steady_time timeOfDoom);
 
@@ -77,7 +76,7 @@ public:
     /**
      * Check whether this context contains any groupings.
      **/
-    bool empty() const noexcept { return _groupingList.empty(); }
+    [[nodiscard]] bool empty() const noexcept { return _groupingList.empty(); }
 
     /**
      * Obtain the grouping result.
@@ -92,22 +91,25 @@ public:
      * @return number of fs4 hits.
      */
     size_t countFS4Hits();
+
     /**
      * Will inject the distribution key in the FS4Hits aggregated so far.
      *
-     * @param the distribution key.
+     * @param distributionKey the distribution key.
      */
     void setDistributionKey(uint32_t distributionKey);
+
     /**
      * Obtain the time of doom.
      */
-    steady_time getTimeOfDoom() const noexcept { return _timeOfDoom; }
-    bool hasExpired() const noexcept { return _now_ref.load(std::memory_order_relaxed) > _timeOfDoom; }
+    [[nodiscard]] steady_time getTimeOfDoom() const noexcept { return _timeOfDoom; }
+    [[nodiscard]] bool hasExpired() const noexcept { return _now_ref.load(std::memory_order_relaxed) > _timeOfDoom; }
+
     /**
      * Figure out if ranking is necessary for any of the grouping requests here.
      * @return true if ranking is required.
      */
-    bool needRanking() const noexcept;
+    [[nodiscard]] bool needRanking() const noexcept;
 
     void groupUnordered(const RankedHit* searchResults, uint32_t binSize, const search::BitVector* overflow);
     void groupInRelevanceOrder(const RankedHit* searchResults, uint32_t binSize);
