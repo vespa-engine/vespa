@@ -91,7 +91,7 @@ public class CreateFastMapSearch extends Processor {
      * impossible to declare in a schema while still being a legal identifier in the indexing language.
      */
     static String keyValueFieldName(String fieldName) {
-        return "_" + fieldName + "_keyvalue";
+        return fieldName + "$keyvalue";
     }
 
     /** Builds "input mapField | for_each { get_field $key . separator . get_field $value } | attribute". */
