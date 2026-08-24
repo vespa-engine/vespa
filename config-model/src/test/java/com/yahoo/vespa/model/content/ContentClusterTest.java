@@ -1778,6 +1778,45 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
+    void strictly_increasing_cluster_state_versions_config_is_disabled_with_a_single_config_server_when_flag_is_enabled() throws Exception {
+        // Self-hosted deployments with a single config server also get a single cluster controller,
+        // so the version check can be relaxed there once the feature flag is enabled.
+        List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
+        String xml = """
+                <services>
+                  <admin version="2.0">
+                    <adminserver hostalias="node0" />
+                    <configservers>
+                      <configserver hostalias="node0"/>
+                    </configservers>
+                  </admin>
+                  <content version="1.0" id="bar">
+                    <redundancy>1</redundancy>
+                    <documents>
+                      <document type="type1" mode="store-only"/>
+                    </documents>
+                    <group>
+                      <node hostalias="node0" distribution-key="0" />
+                    </group>
+                  </content>
+                </services>
+                """;
+        var properties = new TestProperties().relaxStrictlyIncreasingClusterStateVersions(true);
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties);
+        VespaModel model = new VespaModelCreatorWithMockPkg(null, xml, sds).create(deployStateBuilder);
+        assertEquals(1, model.getAdmin().getClusterControllers().getContainers().size());
+
+        ContentCluster cc = model.getContentClusters().get("bar");
+        var builder = new StorServerConfig.Builder();
+        cc.getStorageCluster().getConfig(builder);
+        assertFalse(builder.build().require_strictly_increasing_cluster_state_versions());
+
+        builder = new StorServerConfig.Builder();
+        cc.getDistributorNodes().getConfig(builder);
+        assertFalse(builder.build().require_strictly_increasing_cluster_state_versions());
+    }
+
+    @Test
     void testResourceLimitsForSmallNodes() throws Exception {
         var services = """
                 <services>
