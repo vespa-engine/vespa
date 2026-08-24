@@ -21,7 +21,7 @@ import java.util.Set;
 public interface SidecarProvider {
 
     /** The name for the Triton sidecar. */
-    String TRITON = "triton";
+    String TRITON_SIDECAR_NAME = "triton";
 
     /**
      * Returns sidecars to run alongside the nodes of the given cluster. Invoked before node
@@ -38,7 +38,7 @@ public interface SidecarProvider {
      */
     default List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
                                           NodeResources minNodeResources, Set<String> neededSidecars) {
-        return getSidecars(clusterId, minNodeResources, neededSidecars.contains(TRITON));
+        return getSidecars(clusterId, minNodeResources, neededSidecars.contains(TRITON_SIDECAR_NAME));
     }
 
 }

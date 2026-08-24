@@ -266,7 +266,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
         if (deployState.getSidecarProvider().isEmpty()) return List.of();
 
-        var neededSidecars = shouldUseTriton(cluster, deployState) ? Set.of(SidecarProvider.TRITON) : Set.<String>of();
+        var neededSidecars = shouldUseTriton(cluster, deployState) ? Set.of(SidecarProvider.TRITON_SIDECAR_NAME) : Set.<String>of();
         var sidecars = deployState.getSidecarProvider().get()
                 .getSidecars(deployState.getProperties().applicationId(),
                              deployState.getVespaVersion(),
