@@ -6,6 +6,7 @@
 #include "enumerated_multi_value_read_view.h"
 #include "multi_string_enum_hint_search_context.h"
 #include "multistringattribute.h"
+#include "string_range_matcher.h"
 #include "string_sort_blob_writer.h"
 
 #include <vespa/searchcommon/attribute/config.h>
@@ -46,10 +47,17 @@ MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP                   
                                             const attribute::SearchContextParams& params) const {
     bool cased = this->get_match_is_cased();
     auto doc_id_limit = this->getCommittedDocIdLimit();
-    return std::make_unique<attribute::MultiStringEnumHintSearchContextT<M, attribute::StringMatcher>>(
-        attribute::StringMatcher(std::move(qTerm), cased, params.fuzzy_matching_algorithm()), *this,
-        this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore, doc_id_limit,
-        this->getStatus().getNumValues());
+    if (qTerm && qTerm->get_string_range_spec()) {
+        return std::make_unique<attribute::MultiStringEnumHintSearchContextT<M, attribute::StringRangeMatcher>>(
+            attribute::StringRangeMatcher(std::move(qTerm), cased), *this,
+            this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore, doc_id_limit,
+            this->getStatus().getNumValues());
+    } else {
+        return std::make_unique<attribute::MultiStringEnumHintSearchContextT<M, attribute::StringMatcher>>(
+            attribute::StringMatcher(std::move(qTerm), cased, params.fuzzy_matching_algorithm()), *this,
+            this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore, doc_id_limit,
+            this->getStatus().getNumValues());
+    }
 }
 
 template <typename B, typename M>
