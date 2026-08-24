@@ -264,6 +264,15 @@ public class Flags {
             INSTANCE_ID
     );
 
+    public static final UnboundBooleanFlag RELAX_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
+            "relax-strictly-increasing-cluster-state-versions", false,
+            List.of("hmusum"), "2026-08-24", "2027-01-24",
+            "Whether to allow disabling the requirement that cluster state versions are strictly " +
+            "increasing when a content cluster has only a single cluster controller configured.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

@@ -100,6 +100,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     private Integer maxNodesPerMerge;
     private final Zone zone;
     private final Optional<Integer> distributionBitsInPreviousModel;
+    private final boolean relaxStrictlyIncreasingClusterStateVersions;
+    private boolean singleClusterController = false;
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
     private DistributionMode distributionMode;
@@ -377,6 +379,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 }
                 clusterControllers = admin.getClusterControllers();
             }
+            contentCluster.singleClusterController = clusterControllers.getContainers().size() == 1;
+
             // Update node count so we can keep track of how many content nodes there are in total
             clusterControllers.updateNodeCount(contentCluster.getNodeCount());
 
@@ -467,6 +471,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         this.documentSelection = routingSelection;
         this.zone = deployState.zone();
         this.distributionBitsInPreviousModel = distributionBitsInPreviousModel(deployState, clusterId);
+        this.relaxStrictlyIncreasingClusterStateVersions = deployState.featureFlags().relaxStrictlyIncreasingClusterStateVersions();
     }
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(clusterId); }
@@ -601,6 +606,16 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     public boolean isHosted() {
         return isHosted;
+    }
+
+    /**
+     * Returns whether cluster state versions received by content nodes must be strictly increasing.
+     * This safety check can only be relaxed when the {@code relax-strictly-increasing-cluster-state-versions}
+     * feature flag is enabled AND this deployment has exactly one cluster controller configured, as the race
+     * condition it guards against requires more than one cluster controller to occur.
+     */
+    public boolean requireStrictlyIncreasingClusterStateVersions() {
+        return !(relaxStrictlyIncreasingClusterStateVersions && singleClusterController);
     }
 
     @Override

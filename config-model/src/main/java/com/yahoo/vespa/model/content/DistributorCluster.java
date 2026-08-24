@@ -163,6 +163,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         builder.root_folder("");
         builder.cluster_name(parent.getName());
         builder.is_distributor(true);
+        builder.require_strictly_increasing_cluster_state_versions(parent.requireStrictlyIncreasingClusterStateVersions());
     }
 
     public String getClusterName() {
