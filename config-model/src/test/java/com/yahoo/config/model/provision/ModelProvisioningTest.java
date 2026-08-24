@@ -2,6 +2,7 @@
 package com.yahoo.config.model.provision;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.component.Version;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -16,6 +17,8 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.model.api.SidecarProvider;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SidecarSpec;
@@ -2713,13 +2716,29 @@ public class ModelProvisioningTest {
                 .minCpu(1)
                 .build();
 
+        // The provider is invoked with the id of the application being deployed, so that implementations
+        // can differentiate sidecars per application.
+        var applicationSeenByProvider = new java.util.concurrent.atomic.AtomicReference<ApplicationId>();
+        var provider = new SidecarProvider() {
+            @Override
+            public List<SidecarSpec> getSidecars(ClusterSpec.Id clusterId, NodeResources minNodeResources, boolean needTriton) {
+                throw new AssertionError("The config model should invoke the application-aware method");
+            }
+            @Override
+            public List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
+                                                 NodeResources minNodeResources, Set<String> neededSidecars) {
+                applicationSeenByProvider.set(application);
+                return neededSidecars.contains(SidecarProvider.TRITON_SIDECAR_NAME) ? List.of(sidecar) : List.of();
+            }
+        };
         var deployStateBuilder = deployStateWithClusterEndpoints("container1")
                 .onnxModelCost(mockModelCost)
-                .sidecarProvider((clusterId, minNodeResources, needTriton) -> needTriton ? List.of(sidecar) : List.of());
+                .sidecarProvider(provider);
         var model = tester.createModel(zone, services, true, deployStateBuilder);
 
         var clusterSpec = model.provisioned().clusters().get(ClusterSpec.Id.from("container1"));
         assertEquals(List.of(sidecar), clusterSpec.sidecars());
+        assertEquals(ApplicationId.defaultId(), applicationSeenByProvider.get());
     }
 
     @Test

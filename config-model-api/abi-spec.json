@@ -1888,9 +1888,12 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract java.util.List getSidecars(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.NodeResources, boolean)"
+      "public abstract java.util.List getSidecars(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.NodeResources, boolean)",
+      "public java.util.List getSidecars(com.yahoo.config.provision.ApplicationId, com.yahoo.component.Version, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.NodeResources, java.util.Set)"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String TRITON_SIDECAR_NAME"
+    ]
   },
   "com.yahoo.config.model.api.SuperModel" : {
     "superClass" : "java.lang.Object",
