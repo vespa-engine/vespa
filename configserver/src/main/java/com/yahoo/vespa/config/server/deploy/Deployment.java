@@ -261,7 +261,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                         cb.window().hours(),
                         cb.window().zone(),
                         cb.window().dateRange().start(),
-                        cb.window().dateRange().end()))
+                        cb.window().dateRange().end(),
+                        cb.window().dateRange().startTime(),
+                        cb.window().dateRange().endTime()))
                 .toList();
 
         var telemetryExportConfig = session.telemetryExportConfig();

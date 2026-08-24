@@ -940,6 +940,42 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void deploymentSpecWithHourGranularChangeBlocker() {
+        // A one-off freeze from 2026-09-01 05:00 to 2026-09-04 08:00, Asia/Tokyo
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <instance id='default'>" +
+                "      <block-change revision='false' version='true' maintenance='true'" +
+                "                    from-date='2026-09-01T05:00' to-date='2026-09-04T08:00' time-zone='Asia/Tokyo'/>" +
+                "      <prod>" +
+                "         <region>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        var blocker = spec.requireInstance("default").changeBlocker().get(0);
+        assertFalse(blocker.blocksRevisions());
+        assertTrue(blocker.blocksVersions());
+        assertTrue(blocker.blocksMaintenance());
+
+        // Just before the block starts (04:59:59 JST)
+        assertTrue(spec.requireInstance("default").canUpgradeAt(Instant.parse("2026-08-31T19:59:59.00Z")));
+        // At the exact start of the block (05:00:00 JST)
+        assertFalse(spec.requireInstance("default").canUpgradeAt(Instant.parse("2026-08-31T20:00:00.00Z")));
+        // Well within the block
+        assertFalse(spec.requireInstance("default").canUpgradeAt(Instant.parse("2026-09-02T12:00:00.00Z")));
+        // At the exact end of the block (08:00:00 JST)
+        assertFalse(spec.requireInstance("default").canUpgradeAt(Instant.parse("2026-09-03T23:00:00.00Z")));
+        // Just after the block ends (08:00:01 JST)
+        assertTrue(spec.requireInstance("default").canUpgradeAt(Instant.parse("2026-09-03T23:00:01.00Z")));
+
+        // 75 hours blocked, not the 96 hours a day-granular block would cover
+        assertEquals(Duration.ofHours(75),
+                     Duration.between(Instant.parse("2026-08-31T20:00:00.00Z"), Instant.parse("2026-09-03T23:00:00.00Z")));
+    }
+
+    @Test
     public void changeBlockerInheritance() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +

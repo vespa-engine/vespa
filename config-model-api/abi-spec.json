@@ -745,7 +745,9 @@
     ],
     "methods" : [
       "public java.util.Optional start()",
+      "public java.util.Optional startTime()",
       "public java.util.Optional end()",
+      "public java.util.Optional endTime()",
       "public java.lang.String toString()"
     ],
     "fields" : [ ]
