@@ -1255,7 +1255,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
-                <version>${bouncycastle.vespa.version}</version>
+                <version>${bouncycastle.bcprov.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>

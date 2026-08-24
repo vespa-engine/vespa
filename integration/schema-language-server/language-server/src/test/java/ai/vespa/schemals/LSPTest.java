@@ -3,13 +3,16 @@ package ai.vespa.schemals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
@@ -21,10 +24,13 @@ import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.lsp.schema.completion.SchemaCompletion;
+import ai.vespa.schemals.lsp.schema.completion.provider.BodyKeywordCompletion;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
 import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
 import ai.vespa.schemals.schemadocument.DocumentManager;
@@ -98,4 +104,50 @@ public class LSPTest {
         }
     }
 
+    /**
+     * The linguistics element nests two bodies, linguistics { profile { ... } }, which the grammar
+     * flattens into a single node, so {@link BodyKeywordCompletion} has to tell them apart by brace depth.
+     */
+    @Test
+    void linguisticsCompletionTest() throws IOException, InvalidContextException {
+        String fileName = "src/test/sdfiles/single/linguistics.sd";
+        File file = new File(fileName);
+        String fileURI = file.toURI().toString();
+        String fileContent = IOUtils.readFile(file);
+
+        // The completion providers look up hover documentation relative to the server path when initialized.
+        SchemaLanguageServer.serverPath = Paths.get("target");
+
+        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        TestSchemaProgressHandler progressHandler = new TestSchemaProgressHandler();
+        ClientLogger logger = new TestLogger(messageHandler);
+        SchemaIndex schemaIndex = new SchemaIndex(logger);
+        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler, progressHandler);
+
+        scheduler.openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
+        DocumentManager document = scheduler.getDocument(fileURI);
+
+        // Positions are 0-indexed and point at the start of a line inside the given body.
+        assertEquals(List.of("profile", "profile"), completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(8, 16)),
+                     "Inside a linguistics body only profile should be suggested.");
+        assertEquals(List.of("index", "search"), completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(10, 20)),
+                     "Inside a linguistics profile body index and search should be suggested.");
+        assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(16, 12)).contains("linguistics"),
+                   "linguistics should be suggested in a field body.");
+    }
+
+    private List<String> completionLabelsAt(SchemaDocumentScheduler scheduler,
+                                            SchemaIndex schemaIndex,
+                                            TestSchemaMessageHandler messageHandler,
+                                            DocumentManager document,
+                                            Position position) throws InvalidContextException {
+        EventCompletionContext context = new EventCompletionContext(
+            scheduler, schemaIndex, messageHandler, document.getVersionedTextDocumentIdentifier(), position, null);
+        return SchemaCompletion.getCompletionItems(context, System.err)
+                               .stream()
+                               .map(CompletionItem::getLabel)
+                               .sorted()
+                               .toList();
+    }
 }

@@ -39,7 +39,7 @@ def updateVsCodeVersion(version: str):
 def main(args):
 
     if (len(args) != 2):
-        raise Exception("Expected one argument of either 'major', 'minor' or 'patch'")
+        raise Exception("Expected one argument of either 'major', 'minor', 'patch' or 'current'")
 
     releasesRaw = os.popen(f"gh release list --json tagName -q '[.[]|select(.tagName | startswith(\"{VERSION_PREFIX}\"))]'").read()
 
@@ -51,6 +51,10 @@ def main(args):
     latestRelease: str = releaseData[0]["tagName"]
     
     latestVersion = latestRelease[len(VERSION_PREFIX):]
+
+    if (args[1] == "current"):
+        print(f"VERSION={latestVersion}")
+        return
 
     newVersion = bumpVersion(latestVersion, args[1])
 

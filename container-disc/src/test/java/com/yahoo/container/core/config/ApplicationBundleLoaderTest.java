@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core.config;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.container.di.Osgi.GenerationStatus;
 import com.yahoo.jdisc.application.BsnVersion;
 import org.junit.jupiter.api.BeforeEach;
@@ -171,6 +172,38 @@ public class ApplicationBundleLoaderTest {
         Collection<Bundle> obsoleteBundles = bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
         assertTrue(obsoleteBundles.isEmpty());
         assertEquals(1, osgi.getCurrentBundles().size());
+    }
+
+    @Test
+    void a_failed_install_partway_through_a_reconfig_does_not_corrupt_state_for_the_next_one() {
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF));
+        bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
+
+        FileReference unknownRef = new FileReference("unknown-bundle");
+
+        // Reconfig tries to add a bundle that fails to install (e.g. simulating a file distribution
+        // download failure) alongside one that succeeds - useBundles() must abort with a RuntimeException
+        // partway through the loop, regardless of which of the two is attempted first.
+        assertThrows(RuntimeException.class,
+                     () -> bundleLoader.useBundles(List.of(BUNDLE_2_REF, unknownRef)));
+
+        // The failure must actually be handled as a generation failure - not silently skipped, which would
+        // leave readyForNewBundles stuck as "ready" and any bundle installed so far in this attempt
+        // orphaned/untracked, corrupting state for the next reconfig.
+        bundleLoader.completeGeneration(GenerationStatus.FAILURE);
+
+        // Only the previous generation's bundle-1 is active again.
+        assertEquals(1, bundleLoader.getActiveFileReferences().size());
+        assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
+
+        // A later reconfig attempt (e.g. once the underlying issue is resolved) must not be blocked by
+        // leftover state from the failed attempt.
+        bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
+        Collection<Bundle> obsoleteBundles = bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
+        assertTrue(obsoleteBundles.isEmpty());
+        assertEquals(2, bundleLoader.getActiveFileReferences().size());
+        assertEquals(BUNDLE_1_REF, bundleLoader.getActiveFileReferences().get(0));
+        assertEquals(BUNDLE_2_REF, bundleLoader.getActiveFileReferences().get(1));
     }
 
 }

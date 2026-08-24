@@ -156,6 +156,10 @@ template <> QueryTermSimple::RangeResult<int64_t> QueryTermSimple::getRange() co
     return getIntegerRange<int64_t>();
 }
 
+const StringRangeSpec* QueryTermSimple::get_string_range_spec() const noexcept {
+    return _string_range.get();
+}
+
 bool QueryTermSimple::getAsIntegerTerm(int64_t& lower, int64_t& upper) const noexcept {
     lower = NEG_MIN_I64;
     upper = POS_MAX_I64;
@@ -211,6 +215,16 @@ QueryTermSimple::QueryTermSimple(Type type, std::unique_ptr<NumericRangeSpec> ra
       _fuzzy_max_edit_distance(0),
       _fuzzy_prefix_lock_length(0) {
     _numeric_range = std::move(range);
+}
+
+QueryTermSimple::QueryTermSimple(Type type, std::unique_ptr<StringRangeSpec> range)
+    : _type(type),
+      _valid(range),
+      _fuzzy_prefix_match(false),
+      _term("<range>"),
+      _fuzzy_max_edit_distance(0),
+      _fuzzy_prefix_lock_length(0) {
+    _string_range = std::move(range);
 }
 
 std::string QueryTermSimple::getClassName() const {

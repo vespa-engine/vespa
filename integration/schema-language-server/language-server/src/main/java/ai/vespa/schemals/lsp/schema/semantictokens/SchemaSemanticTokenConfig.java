@@ -91,6 +91,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.INPUTS);
         add(TokenType.INTEROP_THREADS);
         add(TokenType.INTRAOP_THREADS);
+        add(TokenType.LINGUISTICS);
         add(TokenType.LOWER_BOUND);
         add(TokenType.MACRO);
         add(TokenType.MATCH);
@@ -105,6 +106,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.ONNX_MODEL);
         add(TokenType.OUTPUT);
         add(TokenType.POST_FILTER_THRESHOLD);
+        add(TokenType.PROFILE);
         add(TokenType.QUERY_COMMAND);
         add(TokenType.RANK);
         add(TokenType.RANK_FEATURES);
