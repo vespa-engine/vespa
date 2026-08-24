@@ -12,7 +12,7 @@ import java.util.Optional;
  * a time of day. A missing start or end date means the range is unbounded in that direction. A date
  * without a time defaults to the start (for the start date) or end (for the end date) of that day.
  *
- * @author olaa
+ * @author bragehk
  */
 public record LocalDateTimeRange(Optional<LocalDate> startDate, Optional<LocalTime> startTime,
                                   Optional<LocalDate> endDate, Optional<LocalTime> endTime) {
