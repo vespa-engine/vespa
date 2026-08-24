@@ -1461,7 +1461,8 @@
       "public boolean failWhenConfiguringIndexedMapOfArray()",
       "public boolean protonLogWarningOnDiskCapacityChange()",
       "public boolean protonResampleDiskCapacity()",
-      "public boolean fastMapSearch()"
+      "public boolean fastMapSearch()",
+      "public boolean relaxStrictlyIncreasingClusterStateVersions()"
     ],
     "fields" : [ ]
   },
