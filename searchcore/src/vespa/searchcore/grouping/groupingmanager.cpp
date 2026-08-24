@@ -29,7 +29,7 @@ using search::expression::ConfigureStaticParams;
 using search::expression::ExpressionNode;
 
 bool GroupingManager::empty() const {
-    return _groupingContext.getGroupingList().empty();
+    return _groupingContext.empty();
 }
 
 void GroupingManager::init(const IAttributeContext& attrCtx, const document::DocumentType* documentType) {
