@@ -24,7 +24,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 
 /**
- * Adds a "_fieldName_keyvalue" attribute to maps with fast-search enabled.
+ * Adds a "fieldName$keyvalue" attribute to maps with fast-search enabled.
  *
  * The attribute holds one string per map entry, on the form key + separator + value,
  * so that a key-value pair can be matched with a single lexical lookup.
