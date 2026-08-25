@@ -3,6 +3,7 @@ package ai.vespa.modelintegration.evaluator;
 
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
+import ai.onnxruntime.OrtLoggingLevel;
 import ai.onnxruntime.OrtSession;
 import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.yahoo.component.AbstractComponent;
@@ -100,6 +101,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
                 ? OrtSession.SessionOptions.OptLevel.ALL_OPT
                 : OrtSession.SessionOptions.OptLevel.NO_OPT;
         sessionOpts.setOptimizationLevel(optLevel);
+        sessionOpts.setSessionLogLevel(OrtLoggingLevel.ORT_LOGGING_LEVEL_INFO);
         var execMode = vespaOpts.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? PARALLEL : SEQUENTIAL;
         sessionOpts.setExecutionMode(execMode);
         sessionOpts.setInterOpNumThreads(execMode == PARALLEL ? vespaOpts.interOpThreads() : 1);
