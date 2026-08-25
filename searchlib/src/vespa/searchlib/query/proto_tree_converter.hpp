@@ -392,6 +392,11 @@ public:
         return true;
     }
 
+    bool handle(const ItemStringRangeTerm& /*item*/) {
+        // TODO
+        return true;
+    }
+
     bool handle(const ItemSameElement& item) {
         auto                  d = fillTermProperties(item.properties());
         uint32_t              arity = item.children_size();
@@ -692,6 +697,8 @@ public:
             return handle(qti.item_integer_range_term());
         case IC::kItemFloatingPointRangeTerm:
             return handle(qti.item_floating_point_range_term());
+        case IC::kItemStringRangeTerm:
+            return handle(qti.item_string_range_term());
 
         case IC::kItemWeightedSetOfString:
             return handle(qti.item_weighted_set_of_string());
