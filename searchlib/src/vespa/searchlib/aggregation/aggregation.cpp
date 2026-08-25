@@ -21,7 +21,6 @@ using vespalib::Serializer;
 
 IMPLEMENT_ABSTRACT_AGGREGATIONRESULT(AggregationResult, ExpressionNode);
 IMPLEMENT_AGGREGATIONRESULT(AverageAggregationResult, AggregationResult);
-IMPLEMENT_AGGREGATIONRESULT(XorAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(ExpressionCountAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(StandardDeviationAggregationResult, AggregationResult);
 
@@ -70,13 +69,6 @@ void AverageAggregationResult::initForUnitTest(const ResultNode& result) {
     _count = 1;
 }
 
-void XorAggregationResult::onPrepare(const ResultNode&) {
-}
-
-void XorAggregationResult::initForUnitTest(const ResultNode& result) {
-    _xor.set(result);
-}
-
 AverageAggregationResult::AverageAggregationResult() : AggregationResult(), _sum(FloatResultNode(0.0)), _count(0) {
 }
 AverageAggregationResult::~AverageAggregationResult() = default;
@@ -112,24 +104,6 @@ const NumericResultNode& AverageAggregationResult::getAverage() const {
     return *_averageScratchPad;
 }
 
-void XorAggregationResult::onMerge(const AggregationResult& b) {
-    _xor.xorOp(static_cast<const XorAggregationResult&>(b)._xor);
-}
-
-void XorAggregationResult::onAggregate(const ResultNode& result) {
-    if (result.isMultiValue()) {
-        for (size_t i(0), m(static_cast<const ResultNodeVector&>(result).size()); i < m; i++) {
-            _xor.xorOp(static_cast<const ResultNodeVector&>(result).get(i));
-        }
-    } else {
-        _xor.xorOp(result);
-    }
-}
-
-void XorAggregationResult::onReset() {
-    _xor = 0;
-}
-
 Serializer& AggregationResult::onSerialize(Serializer& os) const {
     return (os << *_expressionTree).put(_tag);
 }
@@ -162,21 +136,6 @@ void AverageAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) co
     AggregationResult::visitMembers(visitor);
     visit(visitor, "count", _count);
     visit(visitor, "sum", _sum);
-}
-
-Serializer& XorAggregationResult::onSerialize(Serializer& os) const {
-    AggregationResult::onSerialize(os);
-    return _xor.serialize(os);
-}
-
-Deserializer& XorAggregationResult::onDeserialize(Deserializer& is) {
-    AggregationResult::onDeserialize(is);
-    return _xor.deserialize(is);
-}
-
-void XorAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
-    AggregationResult::visitMembers(visitor);
-    visit(visitor, "xor", _xor);
 }
 
 namespace {

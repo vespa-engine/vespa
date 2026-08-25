@@ -17,5 +17,6 @@ vespa_add_library(searchlib_aggregation OBJECT
     rawrank.cpp
     sumaggregationresult.cpp
     vdshit.cpp
+    xoraggregationresult.cpp
     DEPENDS
 )
