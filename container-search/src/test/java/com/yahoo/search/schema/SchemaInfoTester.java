@@ -115,10 +115,10 @@ public class SchemaInfoTester {
         schemaA.name("a");
 
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field1").type("string")
-                                                                 .index(true).attribute(false).bitPacked(false)
+                                                                 .index(true).attribute(false).bitPacked(false).fastMapSearch(false)
                                                                  .alias("alias1").alias("alias2"));
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
-                                                                 .index(false).attribute(true).bitPacked(false));
+                                                                 .index(false).attribute(true).bitPacked(false).fastMapSearch(false));
 
         schemaA.rankprofile(rankProfileCommon);
 

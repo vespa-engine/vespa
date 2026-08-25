@@ -498,6 +498,7 @@ public class SDField extends Field implements ImmutableSDField {
     }
 
     /** Returns whether a fast search structure should be built for the synthetic key value field */
+    @Override
     public boolean hasFastMapSearch() {
         return fastMapSearch;
     }

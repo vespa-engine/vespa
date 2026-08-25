@@ -239,4 +239,9 @@ public class ImmutableImportedSDField implements ImmutableSDField {
         return importedField.targetField().hasFullIndexingDocprocRights();
     }
 
+    @Override
+    public boolean hasFastMapSearch() {
+        return importedField.targetField().hasFastMapSearch();
+    }
+
 }

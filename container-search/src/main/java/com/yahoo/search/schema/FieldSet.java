@@ -46,6 +46,11 @@ public class FieldSet implements FieldInfo {
         return randomFieldInThis().isIndex();
     }
 
+    @Override
+    public boolean hasFastMapSearch() {
+        return false;
+    }
+
     void setSchema(Schema schema) {
         if ( this.schema != null)
             throw new IllegalStateException("Cannot add field set '" + name + "' to schema '" + schema.name() +

@@ -11,6 +11,7 @@ schema[].field[].alias[] string
 schema[].field[].attribute bool
 schema[].field[].index bool
 schema[].field[].bitPacked bool
+schema[].field[].fastMapSearch bool default=false
 
 ## Field sets
 schema[].fieldset[].name string
