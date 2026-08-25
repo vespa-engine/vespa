@@ -10,9 +10,12 @@ vespa_add_library(searchlib_aggregation OBJECT
     hit.cpp
     hitlist.cpp
     hitsaggregationresult.cpp
+    maxaggregationresult.cpp
+    minaggregationresult.cpp
     modifiers.cpp
     quantile_aggregation_result.cpp
     rawrank.cpp
+    sumaggregationresult.cpp
     vdshit.cpp
     DEPENDS
 )
