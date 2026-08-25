@@ -21,6 +21,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Transforms a subset of the Elasticsearch Query DSL into a Vespa query tree.
+ *
+ * If the {@code elasticsearch.query} query property is set, its value is
+ * parsed as JSON and the Elasticsearch {@code query} object is translated into
+ * Vespa query items, replacing the root of the query tree.
+ */
 public class ElasticsearchQueryTransformer extends Searcher {
 
     private static final ObjectMapper mapper = new ObjectMapper();
