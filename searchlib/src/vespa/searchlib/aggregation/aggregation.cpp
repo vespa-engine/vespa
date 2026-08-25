@@ -40,7 +40,6 @@ using vespalib::Deserializer;
 using vespalib::Serializer;
 
 IMPLEMENT_ABSTRACT_AGGREGATIONRESULT(AggregationResult, ExpressionNode);
-IMPLEMENT_AGGREGATIONRESULT(MaxAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(MinAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(AverageAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(XorAggregationResult, AggregationResult);
@@ -101,27 +100,6 @@ void MinAggregationResult::initForUnitTest(const ResultNode& result) {
     _min->set(result);
 }
 
-MaxAggregationResult::MaxAggregationResult()
-    : AggregationResult(), _max(FloatResultNode(-std::numeric_limits<double>::max())) {
-}
-MaxAggregationResult::MaxAggregationResult(const SingleResultNode& max) : AggregationResult(), _max(max) {
-}
-MaxAggregationResult::~MaxAggregationResult() = default;
-
-void MaxAggregationResult::onPrepare(const ResultNode& result) {
-    if (!isReady(_max.get(), result)) {
-        _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-        _max->setMin();
-    }
-}
-
-void MaxAggregationResult::initForUnitTest(const ResultNode& result) {
-    if (!isReady(_max.get(), result)) {
-        _max = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-    }
-    _max->set(result);
-}
-
 void AverageAggregationResult::onPrepare(const ResultNode&) {
     if (!_sum.get()) {
         _sum = std::make_unique<FloatResultNode>();
@@ -139,23 +117,6 @@ void XorAggregationResult::onPrepare(const ResultNode&) {
 
 void XorAggregationResult::initForUnitTest(const ResultNode& result) {
     _xor.set(result);
-}
-
-void MaxAggregationResult::onMerge(const AggregationResult& b) {
-    _max->max(*static_cast<const MaxAggregationResult&>(b)._max);
-}
-
-void MaxAggregationResult::onAggregate(const ResultNode& result) {
-    if (result.isMultiValue()) {
-        static_cast<const ResultNodeVector&>(result).flattenMax(*_max);
-    } else {
-        _max->max(result);
-    }
-}
-
-void MaxAggregationResult::onReset() {
-    _max.reset(static_cast<SingleResultNode*>(_max->getClass().create()));
-    _max->setMin();
 }
 
 void MinAggregationResult::onMerge(const AggregationResult& b) {
@@ -259,21 +220,6 @@ Deserializer& MinAggregationResult::onDeserialize(Deserializer& is) {
 void MinAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
     AggregationResult::visitMembers(visitor);
     visit(visitor, "min", _min);
-}
-
-Serializer& MaxAggregationResult::onSerialize(Serializer& os) const {
-    AggregationResult::onSerialize(os);
-    return os << _max;
-}
-
-Deserializer& MaxAggregationResult::onDeserialize(Deserializer& is) {
-    AggregationResult::onDeserialize(is);
-    return is >> _max;
-}
-
-void MaxAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
-    AggregationResult::visitMembers(visitor);
-    visit(visitor, "max", _max);
 }
 
 Serializer& AverageAggregationResult::onSerialize(Serializer& os) const {
