@@ -1331,9 +1331,8 @@ DocSet make_range_doc_set(uint32_t n, uint32_t left, bool left_closed, bool left
 void SearchContextTest::test_lexical_range_search(const std::string& name, const Config& cfg) {
     LOG(info, "test_lexical_range_search: vector '%s'", name.c_str());
     constexpr uint32_t n = 15;
-    // constexpr uint32_t n = search::attribute::PostingListFoldedSearchContextT<int32_t>::MAX_POSTING_INDEXES_SIZE +
-    // 100
 
+    // docid i gets hexadecimal string representation of i
     AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(name, cfg);
     auto&               attr = dynamic_cast<StringAttribute&>(*attr_ptr);
     attr.addReservedDoc();
@@ -1343,43 +1342,59 @@ void SearchContextTest::test_lexical_range_search(const std::string& name, const
     }
     attr.commit(CommitParam::UpdateStats::FORCE);
 
-    // unbounded intervals
-    for (uint32_t i = 1; i < n; ++i) {
-        // left-unbounded, right-closed
+    // test unbounded intervals
+    for (uint32_t i = 1; i <= n; ++i) {
+        // (-\infty, i]
+        // (lower bound 5 is ignored)
         perform_search(queryeval::ExecuteInfo::FULL, attr,
-                       make_string_range_query_term(42, false, true, i, true, false),
-                       make_range_doc_set(n, 42, false, true, i, true, false));
-        // left-closed, right-unbounded
+                       make_string_range_query_term(5, false, true, i, true, false),
+                       make_range_doc_set(n, 5, false, true, i, true, false));
+        // [i, \infty)
+        // (upped bound 10 is ignored)
         perform_search(queryeval::ExecuteInfo::FULL, attr,
-                       make_string_range_query_term(42, true, false, i, false, true),
-                       make_range_doc_set(n, 42, true, false, i, false, true));
-        // all strings
-        perform_search(queryeval::ExecuteInfo::FULL, attr,
-                       make_string_range_query_term(42, false, true, i, false, true),
-                       make_range_doc_set(n, 42, false, true, i, false, true));
+                       make_string_range_query_term(i, true, false, 10, false, true),
+                       make_range_doc_set(n, i, true, false, 10, false, true));
     }
 
+    // (-\infty, \infty)
+    // bounds 5 and 10 are ignored
+    perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(5, false, true, 10, false, true),
+                   make_range_doc_set(n, 5, false, true, 10, false, true));
+
     // bounded intervals
-    for (uint32_t i = 1; i < n; ++i) {
-        for (uint32_t j = 1; j < n; ++j) {
-            // closed
+    for (uint32_t i = 1; i <= n; ++i) {
+        for (uint32_t j = 1; j <= n; ++j) {
+            // [i, j]
             perform_search(queryeval::ExecuteInfo::FULL, attr,
                            make_string_range_query_term(i, true, false, j, true, false),
                            make_range_doc_set(n, i, true, false, j, true, false));
-            // left-open
+            // (i, j]
             perform_search(queryeval::ExecuteInfo::FULL, attr,
                            make_string_range_query_term(i, false, false, j, true, false),
                            make_range_doc_set(n, i, false, false, j, true, false));
-            // right-open
+            // [i, j)
             perform_search(queryeval::ExecuteInfo::FULL, attr,
                            make_string_range_query_term(i, true, false, j, false, false),
                            make_range_doc_set(n, i, true, false, j, false, false));
-            // open
+            // (i, j)
             perform_search(queryeval::ExecuteInfo::FULL, attr,
                            make_string_range_query_term(i, false, false, j, false, false),
                            make_range_doc_set(n, i, false, false, j, false, false));
         }
     }
+
+    // Long range, cf. testPrefixSearch
+    constexpr uint32_t longrange_values =
+        search::attribute::PostingListFoldedSearchContextT<int32_t>::MAX_POSTING_INDEXES_SIZE + 100;
+    attr.addDocs(longrange_values);
+    for (uint32_t docid = n + 1; docid <= n + longrange_values; ++docid) {
+        attr.update(docid, to_hex(docid));
+    }
+    attr.commit(CommitParam::UpdateStats::FORCE);
+    // [n + 1, n + longrange_values]
+    perform_search(queryeval::ExecuteInfo::FULL, attr,
+                   make_string_range_query_term(n + 1, true, false, n + longrange_values, true, false),
+                   make_range_doc_set(n + longrange_values, n + 1, true, false, n + longrange_values, true, false));
 }
 
 TEST_F(SearchContextTest, test_lexical_range_search) {
