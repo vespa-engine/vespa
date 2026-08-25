@@ -13,7 +13,8 @@ public class FastMapSearch {
     static final String KEY_VALUE_SEPARATOR = String.valueOf((char) 0x7F);
 
     /**
-     * Returns the separator used to separate key and value in the synthetic attribute created for fast map search.
+     * Returns the separator used between the key and value in each synthetic
+     * fast map search attribute value.
      */
     public static String keyValueSeparator() {
         return KEY_VALUE_SEPARATOR;
@@ -21,8 +22,8 @@ public class FastMapSearch {
 
     /**
      * The synthetic attribute is named &lt;field&gt;$keyvalue. The dollar sign makes the name
-     * impossible to write in queries or declare in a schema while still being a legal identifier
-     * in the indexing language.
+     * an illegal identifier, preventing it from being declared as a schema field, while still
+     * allowing it to be referenced as a quoted attribute name.
      */
     public static String toKeyValueFieldName(String fieldName) {
         return fieldName + "$keyvalue";
