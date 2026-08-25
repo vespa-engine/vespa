@@ -6,6 +6,7 @@
 #include "single_string_enum_hint_search_context.h"
 #include "singleenumattribute.hpp"
 #include "singlestringattribute.h"
+#include "string_range_matcher.h"
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
@@ -41,9 +42,15 @@ SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP                     
                                           const attribute::SearchContextParams& params) const {
     bool cased = this->get_match_is_cased();
     auto docid_limit = this->getCommittedDocIdLimit();
-    return std::make_unique<attribute::SingleStringEnumHintSearchContextT<attribute::StringMatcher>>(
-        attribute::StringMatcher(std::move(qTerm), cased, params.fuzzy_matching_algorithm()), *this,
-        this->_enumIndices.make_read_view(docid_limit), this->_enumStore, this->getStatus().getNumValues());
+    if (qTerm && qTerm->get_string_range_spec()) {
+        return std::make_unique<attribute::SingleStringEnumHintSearchContextT<attribute::StringRangeMatcher>>(
+            attribute::StringRangeMatcher(std::move(qTerm), cased), *this,
+            this->_enumIndices.make_read_view(docid_limit), this->_enumStore, this->getStatus().getNumValues());
+    } else {
+        return std::make_unique<attribute::SingleStringEnumHintSearchContextT<attribute::StringMatcher>>(
+            attribute::StringMatcher(std::move(qTerm), cased, params.fuzzy_matching_algorithm()), *this,
+            this->_enumIndices.make_read_view(docid_limit), this->_enumStore, this->getStatus().getNumValues());
+    }
 }
 
 } // namespace search
