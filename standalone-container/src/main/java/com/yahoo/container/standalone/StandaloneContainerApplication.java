@@ -267,7 +267,10 @@ public class StandaloneContainerApplication implements Application {
 
     private static ZoneInfo getZone() {
         if (!isConfigServer()) return ZoneInfo.from(Zone.defaultZone());
-        return new ConfigEnvironmentVariables().toZoneInfo();
+
+        var environment = new ConfigEnvironmentVariables();
+        if (!environment.hostedVespa().orElse(false)) return ZoneInfo.from(Zone.defaultZone());
+        return environment.toZoneInfo();
     }
 
     private static DeployState createDeployState(ApplicationPackage applicationPackage, FileRegistry fileRegistry,

@@ -42,8 +42,6 @@ public interface ConfigOptions {
     Integer zookeeperJuteMaxBuffer(); // in bytes
 
     default ZoneInfo toZoneInfo() {
-        if (!hostedVespa().orElse(false)) return ZoneInfo.from(Zone.defaultZone());
-
         return new ZoneInfo(cloud().map(CloudName::from).orElse(CloudName.DEFAULT),
                             system().map(SystemName::from).orElse(SystemName.defaultSystem()),
                             environment().map(Environment::from).orElse(Environment.defaultEnvironment()),
