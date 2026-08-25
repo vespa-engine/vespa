@@ -11,6 +11,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
+import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
@@ -32,9 +33,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * @author johsol
  */
 public class CreateFastMapSearch extends Processor {
-
-    /** DEL cannot occur in a map key and is accepted by Text.isTextCharacter. */
-    static final String KEY_VALUE_SEPARATOR = String.valueOf((char) 0x7F);
 
     private final SDDocumentType repo;
 
@@ -58,7 +56,7 @@ public class CreateFastMapSearch extends Processor {
             if (!shouldCreateFastMapAttribute(field)) {
                 continue;
             }
-            SDField keyValueField = createFastMapField(field, keyValueFieldName(field.getName()), validate);
+            SDField keyValueField = createFastMapField(field, FastMapSearch.toKeyValueFieldName(field.getName()), validate);
             schema.addExtraField(keyValueField);
             schema.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, keyValueField.getName());
         }
@@ -86,14 +84,6 @@ public class CreateFastMapSearch extends Processor {
         return field;
     }
 
-    /**
-     * The synthetic attribute is named _&lt;field&gt;_keyvalue. The leading underscore makes the name
-     * impossible to declare in a schema while still being a legal identifier in the indexing language.
-     */
-    static String keyValueFieldName(String fieldName) {
-        return fieldName + "$keyvalue";
-    }
-
     /** Builds "input mapField | for_each { get_field $key . separator . get_field $value } | attribute". */
     private static ScriptExpression keyValueScript(SDField inputField, String fieldName) {
         return new ScriptExpression(
@@ -105,7 +95,7 @@ public class CreateFastMapSearch extends Processor {
                                 new StatementExpression(new Expression[] {
                                         new CatExpression(
                                                 new GetFieldExpression("$key"),
-                                                new ConstantExpression(new StringFieldValue(KEY_VALUE_SEPARATOR)),
+                                                new ConstantExpression(new StringFieldValue(FastMapSearch.keyValueSeparator())),
                                                 new GetFieldExpression("$value")) })),
                         new AttributeExpression(fieldName)));
     }
