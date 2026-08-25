@@ -20,9 +20,9 @@ public class ClusterResources {
     private final NodeResources nodeResources;
 
     public ClusterResources(int nodes, int groups, NodeResources nodeResources) {
-        if (groups == 0 && nodes ==0) groups = 1; // TODO: Remove after September 2026
+        if (groups == 0 && nodes == 0) groups = 1; // TODO: Remove after September 2026
         if (groups < 1)
-            throw new IllegalArgumentException("Groups must be at least 1");
+            throw new IllegalArgumentException("Groups must be at least 1, but is " + groups);
         this.nodes = nodes;
         this.groups = groups;
         this.nodeResources = Objects.requireNonNull(nodeResources);

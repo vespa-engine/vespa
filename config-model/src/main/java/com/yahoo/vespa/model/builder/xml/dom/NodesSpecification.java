@@ -155,11 +155,10 @@ public class NodesSpecification {
 
         if (nodes.from().orElse(1) < 1)
             throw new IllegalArgumentException("Min node resources cannot be less than 1, but is " + nodes.from().getAsInt());
-
         // Find the tightest possible limits for groups to avoid falsely concluding we are autoscaling
         // when only specifying group size
-        int defaultMinGroups =                           nodes.from().orElse(1) / groupSize.to().orElse(nodes.from().orElse(1));
-        int defaultMaxGroups = groupSize.isEmpty() ? 1 : nodes.to().orElse(1) / groupSize.from().orElse(1);
+        int defaultMinGroups = (int)Math.ceil(1.0 * nodes.from().orElse(1) / groupSize.to().orElse(nodes.from().orElse(1)));
+        int defaultMaxGroups = (int)Math.ceil(1.0 * (groupSize.isEmpty() ? 1 : nodes.to().orElse(1)) / groupSize.from().orElse(1));
 
         // Allow use of groups and group-size if count is not specified
         if (groupsAndGroupSizeButNoNodeCount(groups, groupSize, nodes))
