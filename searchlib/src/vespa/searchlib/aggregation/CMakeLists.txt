@@ -13,6 +13,7 @@ vespa_add_library(searchlib_aggregation OBJECT
     modifiers.cpp
     quantile_aggregation_result.cpp
     rawrank.cpp
+    sumaggregationresult.cpp
     vdshit.cpp
     DEPENDS
 )

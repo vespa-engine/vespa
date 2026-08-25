@@ -40,7 +40,6 @@ using vespalib::Deserializer;
 using vespalib::Serializer;
 
 IMPLEMENT_ABSTRACT_AGGREGATIONRESULT(AggregationResult, ExpressionNode);
-IMPLEMENT_AGGREGATIONRESULT(SumAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(MaxAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(MinAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(AverageAggregationResult, AggregationResult);
@@ -79,17 +78,6 @@ AggregationResult& AggregationResult::setExpression(ExpressionNode::UP expr) {
     _expressionTree = std::make_shared<ExpressionTree>(std::move(expr));
     prepare(_expressionTree->getResult());
     return *this;
-}
-
-void SumAggregationResult::onPrepare(const ResultNode& result) {
-    if (!isReady(_sum.get(), result)) {
-        _sum = createAndEnsureWanted<NumericResultNode, FloatResultNode>(result);
-    }
-}
-
-void SumAggregationResult::initForUnitTest(const ResultNode& result) {
-    onPrepare(result);
-    _sum->set(result);
 }
 
 MinAggregationResult::MinAggregationResult()
@@ -151,22 +139,6 @@ void XorAggregationResult::onPrepare(const ResultNode&) {
 
 void XorAggregationResult::initForUnitTest(const ResultNode& result) {
     _xor.set(result);
-}
-
-void SumAggregationResult::onMerge(const AggregationResult& b) {
-    _sum->add(*static_cast<const SumAggregationResult&>(b)._sum);
-}
-
-void SumAggregationResult::onAggregate(const ResultNode& result) {
-    if (result.isMultiValue()) {
-        static_cast<const ResultNodeVector&>(result).flattenSum(*_sum);
-    } else {
-        _sum->add(result);
-    }
-}
-
-void SumAggregationResult::onReset() {
-    _sum.reset(static_cast<NumericResultNode*>(_sum->getClass().create()));
 }
 
 void MaxAggregationResult::onMerge(const AggregationResult& b) {
@@ -272,28 +244,6 @@ void AggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
 void AggregationResult::selectMembers(const vespalib::ObjectPredicate& predicate,
                                       vespalib::ObjectOperation&       operation) {
     _expressionTree->select(predicate, operation);
-}
-
-Serializer& SumAggregationResult::onSerialize(Serializer& os) const {
-    AggregationResult::onSerialize(os);
-    return os << _sum;
-}
-
-Deserializer& SumAggregationResult::onDeserialize(Deserializer& is) {
-    AggregationResult::onDeserialize(is);
-    return is >> _sum;
-}
-
-SumAggregationResult::SumAggregationResult() : AggregationResult(), _sum(FloatResultNode(0.0)) {
-}
-
-SumAggregationResult::SumAggregationResult(NumericResultNode::UP sum) : AggregationResult(), _sum(sum.release()) {
-}
-SumAggregationResult::~SumAggregationResult() = default;
-
-void SumAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
-    AggregationResult::visitMembers(visitor);
-    visit(visitor, "sum", _sum);
 }
 
 Serializer& MinAggregationResult::onSerialize(Serializer& os) const {
