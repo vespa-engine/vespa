@@ -1330,7 +1330,9 @@ DocSet make_range_doc_set(uint32_t n, uint32_t left, bool left_closed, bool left
 
 void SearchContextTest::test_lexical_range_search(const std::string& name, const Config& cfg) {
     LOG(info, "test_lexical_range_search: vector '%s'", name.c_str());
-    const uint32_t n = 100;
+    constexpr uint32_t n = 15;
+    // constexpr uint32_t n = search::attribute::PostingListFoldedSearchContextT<int32_t>::MAX_POSTING_INDEXES_SIZE +
+    // 100
 
     AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(name, cfg);
     auto&               attr = dynamic_cast<StringAttribute&>(*attr_ptr);
@@ -1341,33 +1343,43 @@ void SearchContextTest::test_lexical_range_search(const std::string& name, const
     }
     attr.commit(CommitParam::UpdateStats::FORCE);
 
+    // unbounded intervals
+    for (uint32_t i = 1; i < n; ++i) {
+        // left-unbounded, right-closed
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(42, false, true, i, true, false),
+                       make_range_doc_set(n, 42, false, true, i, true, false));
+        // left-closed, right-unbounded
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(42, true, false, i, false, true),
+                       make_range_doc_set(n, 42, true, false, i, false, true));
+        // all strings
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(42, false, true, i, false, true),
+                       make_range_doc_set(n, 42, false, true, i, false, true));
+    }
+
+    // bounded intervals
     for (uint32_t i = 1; i < n; ++i) {
         for (uint32_t j = 1; j < n; ++j) {
+            // closed
             perform_search(queryeval::ExecuteInfo::FULL, attr,
                            make_string_range_query_term(i, true, false, j, true, false),
                            make_range_doc_set(n, i, true, false, j, true, false));
+            // left-open
+            perform_search(queryeval::ExecuteInfo::FULL, attr,
+                           make_string_range_query_term(i, false, false, j, true, false),
+                           make_range_doc_set(n, i, false, false, j, true, false));
+            // right-open
+            perform_search(queryeval::ExecuteInfo::FULL, attr,
+                           make_string_range_query_term(i, true, false, j, false, false),
+                           make_range_doc_set(n, i, true, false, j, false, false));
+            // open
+            perform_search(queryeval::ExecuteInfo::FULL, attr,
+                           make_string_range_query_term(i, false, false, j, false, false),
+                           make_range_doc_set(n, i, false, false, j, false, false));
         }
     }
-
-    // Long range of prefixes with unique strings that causes
-    // PostingListFoldedSearchContextT<DataT>::countHits() to populate
-    // partial vector of posting indexes, with scan resumed by
-    // fillArray or fillBitVector.
-    // auto&              vec = dynamic_cast<StringAttribute&>(*attr.get());
-    // uint32_t           old_size = attr->getNumDocs();
-    // constexpr uint32_t longrange_values =
-    //        search::attribute::PostingListFoldedSearchContextT<int32_t>::MAX_POSTING_INDEXES_SIZE + 100;
-    // attr->addDocs(longrange_values);
-    // DocSet exp_longrange;
-    // for (uint32_t i = 0; i < longrange_values; ++i) {
-    //    vespalib::asciistream ss;
-    //    ss << "lpref" << i;
-    //    std::string sss(ss.view());
-    //    exp_longrange.put(old_size + i);
-    //    vec.update(old_size + i, std::string(ss.view()).c_str());
-    //}
-    // attr->commit();
-    // performSearch(*attr, "lpref", exp_longrange, TermType::PREFIXTERM);
 }
 
 TEST_F(SearchContextTest, test_lexical_range_search) {
