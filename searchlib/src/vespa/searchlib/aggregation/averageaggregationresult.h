@@ -10,9 +10,18 @@ namespace search::aggregation {
 class AverageAggregationResult : public AggregationResult {
 public:
     using NumericResultNode = expression::NumericResultNode;
+
+private:
+    NumericResultNode::CP         _sum;
+    uint64_t                      _count;
+    mutable NumericResultNode::CP _averageScratchPad;
+
+public:
     DECLARE_AGGREGATIONRESULT(AverageAggregationResult);
+
     AverageAggregationResult();
     ~AverageAggregationResult() override;
+
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     const NumericResultNode& getAverage() const;
     const NumericResultNode& getSum() const { return *_sum; }
@@ -22,9 +31,6 @@ private:
     const ResultNode& onGetRank() const override { return getAverage(); }
     void onPrepare(const ResultNode& result) override;
     void initForUnitTest(const ResultNode& result) override;
-    NumericResultNode::CP         _sum;
-    uint64_t                      _count;
-    mutable NumericResultNode::CP _averageScratchPad;
 };
 
 } // namespace search::aggregation

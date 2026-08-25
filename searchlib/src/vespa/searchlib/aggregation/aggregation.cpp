@@ -20,7 +20,6 @@ using vespalib::Deserializer;
 using vespalib::Serializer;
 
 IMPLEMENT_ABSTRACT_AGGREGATIONRESULT(AggregationResult, ExpressionNode);
-IMPLEMENT_AGGREGATIONRESULT(AverageAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(ExpressionCountAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(StandardDeviationAggregationResult, AggregationResult);
 
@@ -57,53 +56,6 @@ AggregationResult& AggregationResult::setExpression(ExpressionNode::UP expr) {
     return *this;
 }
 
-void AverageAggregationResult::onPrepare(const ResultNode&) {
-    if (!_sum.get()) {
-        _sum = std::make_unique<FloatResultNode>();
-    }
-}
-
-void AverageAggregationResult::initForUnitTest(const ResultNode& result) {
-    onPrepare(result);
-    _sum->set(result);
-    _count = 1;
-}
-
-AverageAggregationResult::AverageAggregationResult() : AggregationResult(), _sum(FloatResultNode(0.0)), _count(0) {
-}
-AverageAggregationResult::~AverageAggregationResult() = default;
-
-void AverageAggregationResult::onMerge(const AggregationResult& b) {
-    const auto& avg(static_cast<const AverageAggregationResult&>(b));
-    _sum->add(*avg._sum);
-    _count += avg._count;
-}
-
-void AverageAggregationResult::onAggregate(const ResultNode& result) {
-    if (result.isMultiValue()) {
-        static_cast<const ResultNodeVector&>(result).flattenSum(*_sum);
-        _count += static_cast<const ResultNodeVector&>(result).size();
-    } else {
-        _sum->add(result);
-        _count++;
-    }
-}
-
-void AverageAggregationResult::onReset() {
-    _count = 0;
-    _sum.reset(static_cast<NumericResultNode*>(_sum->getClass().create()));
-}
-
-const NumericResultNode& AverageAggregationResult::getAverage() const {
-    _averageScratchPad = _sum;
-    if (_count > 0) {
-        _averageScratchPad->divide(Int64ResultNode(_count));
-    } else {
-        _averageScratchPad->set(Int64ResultNode(0));
-    }
-    return *_averageScratchPad;
-}
-
 Serializer& AggregationResult::onSerialize(Serializer& os) const {
     return (os << *_expressionTree).put(_tag);
 }
@@ -120,22 +72,6 @@ void AggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
 void AggregationResult::selectMembers(const vespalib::ObjectPredicate& predicate,
                                       vespalib::ObjectOperation&       operation) {
     _expressionTree->select(predicate, operation);
-}
-
-Serializer& AverageAggregationResult::onSerialize(Serializer& os) const {
-    AggregationResult::onSerialize(os);
-    return os.put(_count) << _sum;
-}
-
-Deserializer& AverageAggregationResult::onDeserialize(Deserializer& is) {
-    AggregationResult::onDeserialize(is);
-    return is.get(_count) >> _sum;
-}
-
-void AverageAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
-    AggregationResult::visitMembers(visitor);
-    visit(visitor, "count", _count);
-    visit(visitor, "sum", _sum);
 }
 
 namespace {
