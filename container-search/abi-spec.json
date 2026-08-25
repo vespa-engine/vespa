@@ -9122,6 +9122,7 @@
       "public com.yahoo.search.schema.Field$Builder setAttribute(boolean)",
       "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
       "public com.yahoo.search.schema.Field$Builder setBitPacked(boolean)",
+      "public com.yahoo.search.schema.Field$Builder setFastMapSearch(boolean)",
       "public com.yahoo.search.schema.Field build()"
     ],
     "fields" : [ ]
@@ -9200,6 +9201,7 @@
       "public java.util.Set aliases()",
       "public boolean isAttribute()",
       "public boolean isIndex()",
+      "public boolean hasFastMapSearch()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -9218,7 +9220,8 @@
       "public abstract java.lang.String name()",
       "public abstract com.yahoo.search.schema.Field$Type type()",
       "public abstract boolean isAttribute()",
-      "public abstract boolean isIndex()"
+      "public abstract boolean isIndex()",
+      "public abstract boolean hasFastMapSearch()"
     ],
     "fields" : [ ]
   },
@@ -9248,6 +9251,7 @@
       "public com.yahoo.search.schema.Field$Type type()",
       "public boolean isAttribute()",
       "public boolean isIndex()",
+      "public boolean hasFastMapSearch()",
       "public java.util.Set fieldNames()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
