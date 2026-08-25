@@ -532,7 +532,7 @@ void MatchThread::run() {
             if (matchTools->getDoom().hard_doom()) {
                 store->consumed();
             } else {
-                store->finalize_permutation();
+                store->ensure_sorted_for_read();
                 if (resultContext->sort->hasSortData()) {
                     resultContext->sort->sortSpec.bind_numeric_provider(*store);
                 }

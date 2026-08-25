@@ -9,7 +9,7 @@
 
 using proton::matching::SortFeatureStore;
 
-TEST(SortFeatureStoreTest, records_and_consumes_monotonic_rows_in_order) {
+TEST(SortFeatureStoreTest, rows_recorded_in_docid_order_are_read_in_order) {
     SortFeatureStore store({"foo", "bar"});
     EXPECT_EQ(0u, store.ordinal("foo"));
     EXPECT_EQ(1u, store.ordinal("bar"));
@@ -21,9 +21,9 @@ TEST(SortFeatureStoreTest, records_and_consumes_monotonic_rows_in_order) {
     store.record(10, r0);
     store.record(20, r1);
     store.record(30, r2);
-    EXPECT_TRUE(store.monotonic());
     EXPECT_EQ(3u, store.num_rows());
 
+    store.ensure_sorted_for_read();
     store.seek(10);
     EXPECT_EQ(1.5, store.get(0));
     EXPECT_EQ(2.5, store.get(1));
@@ -35,7 +35,7 @@ TEST(SortFeatureStoreTest, records_and_consumes_monotonic_rows_in_order) {
     EXPECT_EQ(5.5, store.get(0));
 }
 
-TEST(SortFeatureStoreTest, sequential_consume_skips_unrequested_rows) {
+TEST(SortFeatureStoreTest, seek_skips_unrequested_rows) {
     SortFeatureStore store({"foo"});
     const double     a[] = {1.0};
     const double     b[] = {2.0};
@@ -43,13 +43,14 @@ TEST(SortFeatureStoreTest, sequential_consume_skips_unrequested_rows) {
     store.record(10, a);
     store.record(20, b);
     store.record(30, c);
+    store.ensure_sorted_for_read();
     store.seek(10);
     EXPECT_EQ(1.0, store.get(0));
     store.seek(30);
     EXPECT_EQ(3.0, store.get(0));
 }
 
-TEST(SortFeatureStoreTest, permutation_is_built_only_for_non_monotonic_rows) {
+TEST(SortFeatureStoreTest, out_of_order_rows_are_read_in_docid_order) {
     SortFeatureStore store({"foo"});
     const double     a[] = {1.0};
     const double     b[] = {2.0};
@@ -57,8 +58,8 @@ TEST(SortFeatureStoreTest, permutation_is_built_only_for_non_monotonic_rows) {
     store.record(30, a);
     store.record(10, b);
     store.record(20, c);
-    EXPECT_FALSE(store.monotonic());
-    store.finalize_permutation();
+    store.ensure_sorted_for_read();
+    store.ensure_sorted_for_read(); // Preparation is idempotent.
     store.seek(10);
     EXPECT_EQ(2.0, store.get(0));
     store.seek(20);
@@ -73,6 +74,7 @@ TEST(SortFeatureStoreTest, sanitizes_non_finite_values_and_consumed_clears_stora
     const double     inf[] = {std::numeric_limits<double>::infinity()};
     store.record(1, nan);
     store.record(2, inf);
+    store.ensure_sorted_for_read();
     store.seek(1);
     EXPECT_EQ(-HUGE_VAL, store.get(0));
     store.seek(2);
@@ -91,6 +93,7 @@ TEST(SortFeatureStoreTest, grows_across_chunk_boundaries) {
         store.record(i + 1, value);
     }
     EXPECT_EQ(n, store.num_rows());
+    store.ensure_sorted_for_read();
     store.seek(1);
     EXPECT_EQ(0.0, store.get(0));
     store.seek(n);

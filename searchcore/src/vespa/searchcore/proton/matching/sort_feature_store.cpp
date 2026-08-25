@@ -23,24 +23,24 @@ double sanitize(double value) {
 SortFeatureStore::SortFeatureStore(std::vector<std::string> public_names)
     : _num_features(public_names.size()),
       _rows(0),
-      _monotonic(true),
+      _recorded_in_docid_order(true),
       _last_docid(0),
       _seek_row(~0u),
       _consume_pos(0),
       _bound_docid(0),
       _bound(false),
-      _consumed(false),
+      _phase(Phase::recording),
       _public_names(std::move(public_names)),
       _chunks(),
-      _perm() {
+      _read_order() {
 }
 
 void SortFeatureStore::record(uint32_t docid, std::span<const double> values) {
-    if (_consumed || values.size() != _num_features) {
+    if (_phase != Phase::recording || values.size() != _num_features) {
         abort();
     }
     if (_rows > 0 && docid < _last_docid) {
-        _monotonic = false;
+        _recorded_in_docid_order = false;
     }
     _last_docid = docid;
     if (_chunks.empty() || _chunks.back()->used == chunk_rows) {
@@ -59,13 +59,18 @@ void SortFeatureStore::record(uint32_t docid, std::span<const double> values) {
     ++_rows;
 }
 
-void SortFeatureStore::finalize_permutation() {
-    if (_consumed || _monotonic || _rows == 0 || !_perm.empty()) {
+void SortFeatureStore::ensure_sorted_for_read() {
+    if (_phase != Phase::recording) {
         return;
     }
-    _perm.resize(_rows);
-    std::iota(_perm.begin(), _perm.end(), 0u);
-    std::sort(_perm.begin(), _perm.end(), [this](uint32_t a, uint32_t b) { return row_docid(a) < row_docid(b); });
+    _phase = Phase::reading;
+    if (_recorded_in_docid_order || _rows == 0) {
+        return;
+    }
+    _read_order.resize(_rows);
+    std::iota(_read_order.begin(), _read_order.end(), 0u);
+    std::sort(_read_order.begin(), _read_order.end(),
+              [this](uint32_t a, uint32_t b) { return row_docid(a) < row_docid(b); });
 }
 
 uint32_t SortFeatureStore::ordinal(std::string_view public_name) const {
@@ -78,7 +83,7 @@ uint32_t SortFeatureStore::ordinal(std::string_view public_name) const {
 }
 
 uint32_t SortFeatureStore::ordered_row(uint32_t pos) const noexcept {
-    return _perm.empty() ? pos : _perm[pos];
+    return _read_order.empty() ? pos : _read_order[pos];
 }
 
 uint32_t SortFeatureStore::row_docid(uint32_t row) const {
@@ -94,7 +99,7 @@ const double* SortFeatureStore::row_values(uint32_t row) const {
 }
 
 void SortFeatureStore::seek(uint32_t docid) {
-    if (_consumed) {
+    if (_phase != Phase::reading) {
         abort();
     }
     if (_bound) {
@@ -131,18 +136,18 @@ double SortFeatureStore::get(uint32_t ordinal) const {
 }
 
 void SortFeatureStore::consumed() {
-    if (_consumed) {
+    if (_phase == Phase::consumed) {
         return;
     }
-    _consumed = true;
+    _phase = Phase::consumed;
     clear_storage();
 }
 
 void SortFeatureStore::clear_storage() {
     // vector::clear() keeps capacity. Swap-with-empty releases 4 bytes per
-    // permutation row (and the chunk buffers) before FastS radix scratch.
+    // read-order index row (and the chunk buffers) before FastS radix scratch.
     std::vector<std::unique_ptr<Chunk>>().swap(_chunks);
-    std::vector<uint32_t>().swap(_perm);
+    std::vector<uint32_t>().swap(_read_order);
     _rows = 0;
     _seek_row = ~0u;
     _consume_pos = 0;
