@@ -7,6 +7,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/expression/resultvector.h>
 
+#include <vespa/searchlib/aggregation/aggregation.hpp>
 #include <vespa/vespalib/objects/visit.hpp>
 
 #include <xxhash.h>
@@ -38,12 +39,7 @@ std::unique_ptr<Wanted> createAndEnsureWanted(const ResultNode& result) {
 using vespalib::Deserializer;
 using vespalib::Serializer;
 
-#define IMPLEMENT_ABSTRACT_AGGREGATIONRESULT(cclass, base)                 \
-    IMPLEMENT_IDENTIFIABLE_ABSTRACT_NS2(search, aggregation, cclass, base)
-#define IMPLEMENT_AGGREGATIONRESULT(cclass, base) IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, cclass, base)
-
 IMPLEMENT_ABSTRACT_AGGREGATIONRESULT(AggregationResult, ExpressionNode);
-IMPLEMENT_AGGREGATIONRESULT(CountAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(SumAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(MaxAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(MinAggregationResult, AggregationResult);
@@ -83,13 +79,6 @@ AggregationResult& AggregationResult::setExpression(ExpressionNode::UP expr) {
     _expressionTree = std::make_shared<ExpressionTree>(std::move(expr));
     prepare(_expressionTree->getResult());
     return *this;
-}
-
-void CountAggregationResult::onPrepare(const ResultNode&) {
-}
-
-void CountAggregationResult::initForUnitTest(const ResultNode& result) {
-    _count.set(result);
 }
 
 void SumAggregationResult::onPrepare(const ResultNode& result) {
@@ -178,22 +167,6 @@ void SumAggregationResult::onAggregate(const ResultNode& result) {
 
 void SumAggregationResult::onReset() {
     _sum.reset(static_cast<NumericResultNode*>(_sum->getClass().create()));
-}
-
-void CountAggregationResult::onMerge(const AggregationResult& b) {
-    _count.add(static_cast<const CountAggregationResult&>(b)._count);
-}
-
-void CountAggregationResult::onAggregate(const ResultNode& result) {
-    if (result.isMultiValue()) {
-        _count += static_cast<const ResultNodeVector&>(result).size();
-    } else {
-        ++_count;
-    }
-}
-
-void CountAggregationResult::onReset() {
-    setCount(0);
 }
 
 void MaxAggregationResult::onMerge(const AggregationResult& b) {
@@ -299,21 +272,6 @@ void AggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
 void AggregationResult::selectMembers(const vespalib::ObjectPredicate& predicate,
                                       vespalib::ObjectOperation&       operation) {
     _expressionTree->select(predicate, operation);
-}
-
-Serializer& CountAggregationResult::onSerialize(Serializer& os) const {
-    AggregationResult::onSerialize(os);
-    return _count.serialize(os);
-}
-
-Deserializer& CountAggregationResult::onDeserialize(Deserializer& is) {
-    AggregationResult::onDeserialize(is);
-    return _count.deserialize(is);
-}
-
-void CountAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
-    AggregationResult::visitMembers(visitor);
-    visit(visitor, "count", _count);
 }
 
 Serializer& SumAggregationResult::onSerialize(Serializer& os) const {

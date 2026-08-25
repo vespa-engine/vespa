@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/expression/resultvector.h>
 
+#include <vespa/searchlib/aggregation/aggregation.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 #include <vespa/vespalib/objects/serializer.hpp>
 
@@ -17,7 +18,7 @@ using expression::ResultNodeVector;
 using vespalib::Deserializer;
 using vespalib::Serializer;
 
-IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, QuantileAggregationResult, AggregationResult);
+IMPLEMENT_AGGREGATIONRESULT(QuantileAggregationResult, AggregationResult);
 
 QuantileAggregationResult::QuantileAggregationResult() {
     _no_rank.reset(new FloatResultNode(0));
