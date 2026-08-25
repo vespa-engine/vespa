@@ -19,6 +19,7 @@ public class Field implements FieldInfo {
     private final boolean isAttribute;
     private final boolean isIndex;
     private final boolean bitPacked;
+    private final boolean fastMapSearch;
     private final Set<String> aliases;
 
     public Field(Builder builder) {
@@ -27,6 +28,7 @@ public class Field implements FieldInfo {
         this.isAttribute = builder.isAttribute;
         this.isIndex = builder.isIndex;
         this.bitPacked = builder.isBitPacked;
+        this.fastMapSearch = builder.fastMapSearch;
         this.aliases = Set.copyOf(builder.aliases);
     }
 
@@ -45,6 +47,11 @@ public class Field implements FieldInfo {
     /** Returns whether this field is an index, i.e. does indexing: index. */
     @Override
     public boolean isIndex() { return isIndex; }
+
+    @Override
+    public boolean hasFastMapSearch() {
+        return fastMapSearch;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -156,6 +163,7 @@ public class Field implements FieldInfo {
         private boolean isAttribute;
         private boolean isIndex;
         private boolean isBitPacked;
+        private boolean fastMapSearch;
 
         public Builder(String name, String typeString) {
             this.name = name;
@@ -179,6 +187,11 @@ public class Field implements FieldInfo {
 
         public Builder setBitPacked(boolean isBitPacked) {
             this.isBitPacked = isBitPacked;
+            return this;
+        }
+
+        public Builder setFastMapSearch(boolean fastMapSearch) {
+            this.fastMapSearch = fastMapSearch;
             return this;
         }
 

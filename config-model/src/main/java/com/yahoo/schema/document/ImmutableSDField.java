@@ -39,6 +39,8 @@ public interface ImmutableSDField {
 
     boolean usesStructOrMap();
 
+    boolean hasFastMapSearch();
+
     /**
      * Whether this field at some time was configured to do attributing.
      *

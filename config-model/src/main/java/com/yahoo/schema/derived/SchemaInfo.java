@@ -126,6 +126,7 @@ public final class SchemaInfo extends Derived {
         fieldBuilder.attribute(field.doesAttributing());
         fieldBuilder.index(field.doesIndexing());
         fieldBuilder.bitPacked(field.doesBitPacking());
+        fieldBuilder.fastMapSearch(field.hasFastMapSearch());
         schemaBuilder.field(fieldBuilder);
     }
 
