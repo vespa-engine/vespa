@@ -11,6 +11,7 @@ vespa_add_library(searchlib_aggregation OBJECT
     hitlist.cpp
     hitsaggregationresult.cpp
     maxaggregationresult.cpp
+    minaggregationresult.cpp
     modifiers.cpp
     quantile_aggregation_result.cpp
     rawrank.cpp

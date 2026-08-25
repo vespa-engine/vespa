@@ -12,35 +12,14 @@
 
 #include <xxhash.h>
 
-#include <limits>
-
 using namespace search::expression;
 
 namespace search::aggregation {
-
-namespace {
-
-bool isReady(const ResultNode* myRes, const ResultNode& ref) {
-    return (myRes != nullptr && myRes->getClass().id() == ref.getClass().id());
-}
-
-template <typename Wanted, typename Fallback>
-std::unique_ptr<Wanted> createAndEnsureWanted(const ResultNode& result) {
-    std::unique_ptr<ResultNode> tmp = result.createBaseType();
-    if (dynamic_cast<Wanted*>(tmp.get()) != nullptr) {
-        return std::unique_ptr<Wanted>(static_cast<Wanted*>(tmp.release()));
-    } else {
-        return std::make_unique<Fallback>();
-    }
-}
-
-} // namespace
 
 using vespalib::Deserializer;
 using vespalib::Serializer;
 
 IMPLEMENT_ABSTRACT_AGGREGATIONRESULT(AggregationResult, ExpressionNode);
-IMPLEMENT_AGGREGATIONRESULT(MinAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(AverageAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(XorAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(ExpressionCountAggregationResult, AggregationResult);
@@ -79,27 +58,6 @@ AggregationResult& AggregationResult::setExpression(ExpressionNode::UP expr) {
     return *this;
 }
 
-MinAggregationResult::MinAggregationResult()
-    : AggregationResult(), _min(FloatResultNode(std::numeric_limits<double>::max())) {
-}
-MinAggregationResult::MinAggregationResult(const SingleResultNode& min) : AggregationResult(), _min(min) {
-}
-MinAggregationResult::~MinAggregationResult() = default;
-
-void MinAggregationResult::onPrepare(const ResultNode& result) {
-    if (!isReady(_min.get(), result)) {
-        _min = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-        _min->setMax();
-    }
-}
-
-void MinAggregationResult::initForUnitTest(const ResultNode& result) {
-    if (!isReady(_min.get(), result)) {
-        _min = createAndEnsureWanted<SingleResultNode, FloatResultNode>(result);
-    }
-    _min->set(result);
-}
-
 void AverageAggregationResult::onPrepare(const ResultNode&) {
     if (!_sum.get()) {
         _sum = std::make_unique<FloatResultNode>();
@@ -117,23 +75,6 @@ void XorAggregationResult::onPrepare(const ResultNode&) {
 
 void XorAggregationResult::initForUnitTest(const ResultNode& result) {
     _xor.set(result);
-}
-
-void MinAggregationResult::onMerge(const AggregationResult& b) {
-    _min->min(*static_cast<const MinAggregationResult&>(b)._min);
-}
-
-void MinAggregationResult::onAggregate(const ResultNode& result) {
-    if (result.isMultiValue()) {
-        static_cast<const ResultNodeVector&>(result).flattenMin(*_min);
-    } else {
-        _min->min(result);
-    }
-}
-
-void MinAggregationResult::onReset() {
-    _min.reset(static_cast<SingleResultNode*>(_min->getClass().create()));
-    _min->setMax();
 }
 
 AverageAggregationResult::AverageAggregationResult() : AggregationResult(), _sum(FloatResultNode(0.0)), _count(0) {
@@ -205,21 +146,6 @@ void AggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
 void AggregationResult::selectMembers(const vespalib::ObjectPredicate& predicate,
                                       vespalib::ObjectOperation&       operation) {
     _expressionTree->select(predicate, operation);
-}
-
-Serializer& MinAggregationResult::onSerialize(Serializer& os) const {
-    AggregationResult::onSerialize(os);
-    return os << _min;
-}
-
-Deserializer& MinAggregationResult::onDeserialize(Deserializer& is) {
-    AggregationResult::onDeserialize(is);
-    return is >> _min;
-}
-
-void MinAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) const {
-    AggregationResult::visitMembers(visitor);
-    visit(visitor, "min", _min);
 }
 
 Serializer& AverageAggregationResult::onSerialize(Serializer& os) const {
