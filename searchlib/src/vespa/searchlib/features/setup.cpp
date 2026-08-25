@@ -34,6 +34,7 @@
 #include "item_raw_score_feature.h"
 #include "jarowinklerdistancefeature.h"
 #include "matchcountfeature.h"
+#include "matches_for_labels_feature.h"
 #include "matchesfeature.h"
 #include "matchfeature.h"
 #include "max_reduce_prod_join_replacer.h"
@@ -111,6 +112,7 @@ void setup_search_features(fef::IBlueprintRegistry& registry) {
     registry.addPrototype(std::make_shared<MatchBlueprint>());
     registry.addPrototype(std::make_shared<MatchCountBlueprint>());
     registry.addPrototype(std::make_shared<MatchesBlueprint>());
+    registry.addPrototype(std::make_shared<MatchesForLabelsBlueprint>());
     registry.addPrototype(std::make_shared<NativeAttributeMatchBlueprint>());
     registry.addPrototype(std::make_shared<NativeDotProductBlueprint>());
     registry.addPrototype(std::make_shared<NativeFieldMatchBlueprint>());

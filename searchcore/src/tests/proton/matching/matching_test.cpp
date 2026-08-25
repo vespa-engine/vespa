@@ -314,6 +314,12 @@ struct MyWorld {
         config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
     }
 
+    void setup_matches_for_labels_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels(f1)");
+        config.add(indexproperties::match::Feature::NAME,
+                   "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    }
+
     void setup_feature_renames() {
         config.add(indexproperties::feature_rename::Rename::NAME, "matches(f1)");
         config.add(indexproperties::feature_rename::Rename::NAME, "foobar");
@@ -792,6 +798,49 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
         }
         // and slicing a cell out of it evaluates in the backend
         EXPECT_FLOAT_EQ(values[slice_idx].as_double(), t1_score);
+    }
+}
+
+TEST_F(MatchingTest, require_that_matches_for_labels_reports_matching_labels_and_slice) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // two terms matching the same documents in field f1
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(10).doc(20).doc(30));
+    world.setup_matches_for_labels_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_two_term_and_stack_dump("f1", "foo", "bar"));
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_GT(reply->hits.size(), 0u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 2u);
+    auto feature_index = [&names](const std::string& name) {
+        for (size_t i = 0; i < names.size(); ++i) {
+            if (names[i] == name) {
+                return i;
+            }
+        }
+        ADD_FAILURE() << "match feature '" << name << "' not found";
+        return names.size();
+    };
+    size_t tensor_idx = feature_index("matches_for_labels(f1)");
+    ASSERT_LT(tensor_idx, names.size());
+    size_t slice_idx = feature_index("rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    ASSERT_LT(slice_idx, names.size());
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        ASSERT_TRUE(values[tensor_idx].is_data());
+        {
+            nbostream buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
+            // both labeled terms hit; cells are 1, not BM25 scores
+            TensorSpec expect = TensorSpec("tensor<float>(label{})").add({{"label", "t1"}}, 1).add({{"label", "t2"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        // slicing a cell out of it evaluates in the backend
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), 1.0);
     }
 }
 

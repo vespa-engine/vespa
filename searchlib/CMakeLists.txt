@@ -153,6 +153,7 @@ vespa_define_module(
     src/tests/features/imported_dot_product
     src/tests/features/internal_max_reduce_prod_join_feature
     src/tests/features/item_raw_score
+    src/tests/features/matches_for_labels
     src/tests/features/max_reduce_prod_join_replacer
     src/tests/features/native_dot_product
     src/tests/features/nns_closeness

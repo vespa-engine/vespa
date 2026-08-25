@@ -199,6 +199,12 @@ public class BuiltInFunctions {
                 new IntegerArgument()
             ))
         )));
+        put("matches_for_labels", new GenericFunction("matches_for_labels",
+            new FunctionSignature(new FieldArgument(FieldArgument.AnyFieldType,
+                                                    FieldArgument.IndexAttributeType, "field"), Set.of(
+                "",
+                "out"
+            ))));
         put("termDistance", new GenericFunction("termDistance", new FunctionSignature(List.of(
             new FieldArgument(),
             new ExpressionArgument("x"),

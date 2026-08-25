@@ -344,6 +344,8 @@ public class SchemaParserTest {
             new BadFileTestCase("src/test/sdfiles/single/elementwisebm25labelbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/featuresinheritance.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/foreachbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/matchesforlabelsargsbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/matchesforlabelssummarybad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 6),
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),

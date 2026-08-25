@@ -4,6 +4,11 @@ schema bm25label {
             indexing: index
             index: enable-bm25
         }
+        # Attribute is legal for matches_for_labels; bm25_for_labels on an
+        # attribute is the sibling fixture bm25forlabelsattrbad.sd.
+        field tags type string {
+            indexing: attribute
+        }
     }
 
     rank-profile ordinary {
@@ -45,6 +50,20 @@ schema bm25label {
     rank-profile for-labels {
         first-phase {
             expression: reduce(bm25_for_labels(title), sum, label)
+        }
+    }
+
+    # matches_for_labels is independent of enable-bm25; these profiles pin the
+    # SLS signatures (index + attribute), not the bm25 names above.
+    rank-profile matches-for-labels {
+        first-phase {
+            expression: reduce(matches_for_labels(title), sum, label)
+        }
+    }
+
+    rank-profile matches-for-labels-attr {
+        first-phase {
+            expression: reduce(matches_for_labels(tags), max, label)
         }
     }
 }
