@@ -10,10 +10,16 @@ namespace search::aggregation {
 
 // Aggregator that calculates the population standard deviation
 class StandardDeviationAggregationResult : public AggregationResult {
+    uint64_t                                _count;
+    expression::FloatResultNode             _sum;
+    expression::FloatResultNode             _sumOfSquared;
+    mutable expression::FloatResultNode::CP _stdDevScratchPad;
+
 public:
     DECLARE_AGGREGATIONRESULT(StandardDeviationAggregationResult);
+
     StandardDeviationAggregationResult();
-    ~StandardDeviationAggregationResult();
+    ~StandardDeviationAggregationResult() override;
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     double getSum() const noexcept { return _sum.getFloat(); }
@@ -24,11 +30,6 @@ private:
     const ResultNode& onGetRank() const noexcept override { return getStandardDeviation(); }
     void onPrepare(const ResultNode&) override {};
     const expression::NumericResultNode& getStandardDeviation() const noexcept;
-
-    uint64_t                                _count;
-    expression::FloatResultNode             _sum;
-    expression::FloatResultNode             _sumOfSquared;
-    mutable expression::FloatResultNode::CP _stdDevScratchPad;
 };
 
 } // namespace search::aggregation
