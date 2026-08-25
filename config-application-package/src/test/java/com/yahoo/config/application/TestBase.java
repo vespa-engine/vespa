@@ -30,4 +30,5 @@ public class TestBase {
         Document output = Xml.getDocument(document);
         assertDocument(expectedDocument, output);
     }
+
 }

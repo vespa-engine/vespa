@@ -62,4 +62,38 @@ public class PreprocessingTest {
         tester.assertHosts(expectedHosts);
     }
 
+    /** Replicates the config/multienvironment system test */
+    @Test
+    public void testStandalonePreprocessing() {
+        var tester = new PreprocessingTester("src/test/resources/multienv", temporaryFolder);
+
+        tester.preprocess(new ZoneInfo(CloudName.DEFAULT, SystemName.defaultSystem(), Environment.dev, RegionName.defaultName()));
+        String expectedDevServices = """
+                                     <services version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+                                       <admin version='2.0'>
+                                         <adminserver hostalias="node0" />
+                                         <config name="cloud.config.log.logd">
+                                           <logserver>
+                                             <rpcport>4099</rpcport>
+                                           </logserver>
+                                         </config>
+                                       </admin>
+                                     </services>""";
+        tester.assertServices(expectedDevServices);
+
+        tester.preprocess(new ZoneInfo(CloudName.DEFAULT, SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()));
+        String expectedProdServices = """
+                                      <services version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+                                        <admin version='2.0'>
+                                          <adminserver hostalias="node0" />
+                                          <config name="cloud.config.log.logd">
+                                            <logserver>
+                                              <rpcport>5000</rpcport>
+                                            </logserver>
+                                          </config>
+                                        </admin>
+                                      </services>""";
+        tester.assertServices(expectedProdServices);
+    }
+
 }

@@ -28,9 +28,8 @@ public class PreprocessingTester {
         try {
             this.applicationPackagePath = applicationPackagePath;
             this.applicationDir = temporaryFolder.newFolder();
-            IOUtils.copyDirectory(new File("src/test/resources/multienvapp"), applicationDir);
+            IOUtils.copyDirectory(new File(applicationPackagePath), applicationDir);
             assertTrue(new File(applicationDir, "services.xml").exists());
-            assertTrue(new File(applicationDir, "hosts.xml").exists());
             this.application = FilesApplicationPackage.fromDir(applicationDir, Map.of());
         }
         catch (IOException e) {

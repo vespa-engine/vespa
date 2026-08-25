@@ -1,0 +1,8 @@
+<admin version='2.0'>
+    <adminserver hostalias="node0" />
+    <config name="cloud.config.log.logd">
+        <logserver>
+            <rpcport>${logserver.rpcport}</rpcport>
+        </logserver>
+    </config>
+</admin>
