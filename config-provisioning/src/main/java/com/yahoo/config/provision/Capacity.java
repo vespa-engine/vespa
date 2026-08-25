@@ -115,6 +115,11 @@ public final class Capacity {
         return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
+    /** Returns true if the given resources are allowed by the constraints of this. */
+    public boolean allows(ClusterResources resources) {
+        return resources.isWithin(min, max) && groupSize.includes(resources.nodes() / resources.groups());
+    }
+
     @Override
     public String toString() {
         return (required ? "required " : "") +
