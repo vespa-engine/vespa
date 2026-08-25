@@ -4,6 +4,7 @@ vespa_add_library(searchlib_aggregation OBJECT
     aggregation.cpp
     averageaggregationresult.cpp
     countaggregationresult.cpp
+    expressioncountaggregationresult.cpp
     fs4hit.cpp
     group.cpp
     grouping.cpp
