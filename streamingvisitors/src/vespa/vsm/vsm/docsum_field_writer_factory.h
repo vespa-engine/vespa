@@ -20,8 +20,8 @@ public:
                              const vespa::config::search::vsm::VsmfieldsConfig& vsm_fields_config);
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<search::docsummary::DocsumFieldWriter>
-    create_docsum_field_writer(const std::string& field_name, const std::string& command,
-                               const std::string& source) override;
+    create_docsum_field_writer(const std::string& field_name, const std::string& command, const std::string& source,
+                               std::span<const std::string> struct_fields) override;
 };
 
 } // namespace vsm

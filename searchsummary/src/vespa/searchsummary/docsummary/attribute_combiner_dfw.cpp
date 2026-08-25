@@ -28,9 +28,10 @@ bool AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateInd
     return true;
 }
 
-std::unique_ptr<DocsumFieldWriter> AttributeCombinerDFW::create(const std::string& fieldName,
-                                                                IAttributeContext& attrCtx) {
-    StructFieldsResolver structFields(fieldName, attrCtx, true);
+std::unique_ptr<DocsumFieldWriter> AttributeCombinerDFW::create(const std::string&           fieldName,
+                                                                IAttributeContext&           attrCtx,
+                                                                std::span<const std::string> struct_fields) {
+    StructFieldsResolver structFields(fieldName, attrCtx, struct_fields);
     if (structFields.has_error()) {
         return {};
     } else if (structFields.is_map_of_struct()) {

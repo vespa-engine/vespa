@@ -11,6 +11,7 @@
 #include <vespa/searchsummary/docsummary/docsum_field_writer_commands.h>
 #include <vespa/searchsummary/docsummary/empty_dfw.h>
 #include <vespa/searchsummary/docsummary/summary_elements_selector.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vsm/config/config-vsmfields.h>
 
 #include <algorithm>
@@ -24,6 +25,7 @@ using search::docsummary::IDocsumEnvironment;
 using search::docsummary::IQueryTermFilterFactory;
 using search::docsummary::SummaryElementsSelector;
 using vespa::config::search::vsm::VsmfieldsConfig;
+using vespalib::Issue;
 
 namespace vsm {
 
@@ -56,14 +58,22 @@ DocsumFieldWriterFactory::DocsumFieldWriterFactory(
 
 DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
-std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
-                                                                                        const std::string& command,
-                                                                                        const std::string& source) {
+std::unique_ptr<DocsumFieldWriter>
+DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name, const std::string& command,
+                                                     const std::string&           source,
+                                                     std::span<const std::string> struct_fields) {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     using namespace search::docsummary;
     if ((command == command::positions) || (command == command::abs_distance)) {
         fieldWriter = std::make_unique<EmptyDFW>();
     } else if ((command == command::attribute) || (command == command::attribute_combiner)) {
+        if (!struct_fields.empty()) {
+            // The struct fields are combined from the document, not from attributes, so the selection
+            // made in the document-summary is not used. See StructFieldsResolver for the indexed case.
+            Issue::report("Ignoring the selection of struct fields for summary field '%s': selecting a subset "
+                          "of the struct fields is not supported for streaming search",
+                          field_name.c_str());
+        }
         if (!source.empty() && source != field_name) {
             fieldWriter = std::make_unique<CopyDFW>(source);
         }
@@ -75,7 +85,8 @@ std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field
             throw_missing_source(command);
         }
     } else {
-        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source);
+        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source,
+                                                                                        struct_fields);
     }
     return fieldWriter;
 }

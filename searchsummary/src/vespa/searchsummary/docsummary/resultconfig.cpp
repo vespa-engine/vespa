@@ -14,6 +14,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <atomic>
+#include <span>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.resultconfig");
@@ -122,12 +123,15 @@ bool ResultConfig::readConfig(const SummaryConfig& cfg, const std::string& confi
             std::string field_name = field.name;
             std::string command = field.command;
             std::string source_name = field.source;
+            // config::StringVector is a contiguous range of std::string, so this converts without a copy
+            // and keeps the config type from spreading past this boundary.
+            std::span<const std::string> struct_fields = field.structFields;
             LOG(info, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), field_name.c_str());
             auto factory = [&]() -> std::unique_ptr<DocsumFieldWriter> {
                 if (!command.empty()) {
                     try {
                         return docsum_field_writer_factory.create_docsum_field_writer(field_name, command,
-                                                                                      source_name);
+                                                                                      source_name, struct_fields);
                     } catch (const vespalib::IllegalArgumentException& ex) {
                         LOG(error,
                             "Exception during setup of summary result class '%s': field='%s', command='%s', "

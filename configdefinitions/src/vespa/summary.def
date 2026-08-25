@@ -14,5 +14,8 @@ classes[].fields[].name string
 classes[].fields[].command string default=""
 # The name of the source field used by the command.
 classes[].fields[].source string default=""
+# The names of struct sub-fields to include in the output;
+# an empty list means all sub-fields are included.
+classes[].fields[].struct_fields[] string
 classes[].fields[].elements.select enum { ALL, BY_MATCH, BY_SUMMARY_FEATURE } default=ALL
 classes[].fields[].elements.summary_feature string default=""

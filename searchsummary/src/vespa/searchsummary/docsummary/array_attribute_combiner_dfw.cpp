@@ -28,21 +28,27 @@ namespace {
 class ArrayAttributeFieldWriterState : public DocsumFieldWriterState {
     // AttributeFieldWriter instances are owned by stash passed to constructor
     std::vector<AttributeFieldWriter*> _writers;
+    // Attributes for the struct sub-fields which are not written. They are only used to determine how many
+    // elements the array has, so that selecting a subset of the sub-fields does not change which elements
+    // are present. See StructFieldsResolver::get_element_count_attributes().
+    std::vector<const IAttributeVector*> _element_count_attributes;
 
 public:
     ArrayAttributeFieldWriterState(const std::vector<std::string>& fieldNames,
-                                   const std::vector<std::string>& attributeNames, IAttributeContext& context,
-                                   vespalib::Stash& stash, bool is_map_of_scalar);
+                                   const std::vector<std::string>& attributeNames,
+                                   const std::vector<std::string>& element_count_attribute_names,
+                                   IAttributeContext& context, vespalib::Stash& stash, bool is_map_of_scalar);
     ~ArrayAttributeFieldWriterState() override;
+    uint32_t fetch(uint32_t docId);
     void insert_element(uint32_t element_index, Cursor& array);
     void insertField(uint32_t docId, ElementIds selected_elements, vespalib::slime::Inserter& target) override;
 };
 
-ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector<std::string>& fieldNames,
-                                                               const std::vector<std::string>& attributeNames,
-                                                               IAttributeContext& context, vespalib::Stash& stash,
-                                                               bool is_map_of_scalar)
-    : DocsumFieldWriterState(), _writers() {
+ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(
+    const std::vector<std::string>& fieldNames, const std::vector<std::string>& attributeNames,
+    const std::vector<std::string>& element_count_attribute_names, IAttributeContext& context, vespalib::Stash& stash,
+    bool is_map_of_scalar)
+    : DocsumFieldWriterState(), _writers(), _element_count_attributes() {
     size_t fields = fieldNames.size();
     _writers.reserve(fields);
     for (uint32_t field = 0; field < fields; ++field) {
@@ -51,6 +57,24 @@ ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector
             _writers.emplace_back(&AttributeFieldWriter::create(fieldNames[field], *attr, stash, is_map_of_scalar));
         }
     }
+    _element_count_attributes.reserve(element_count_attribute_names.size());
+    for (const auto& attribute_name : element_count_attribute_names) {
+        const IAttributeVector* attr = context.getAttribute(attribute_name);
+        if (attr != nullptr) {
+            _element_count_attributes.emplace_back(attr);
+        }
+    }
+}
+
+uint32_t ArrayAttributeFieldWriterState::fetch(uint32_t docId) {
+    uint32_t elems = 0;
+    for (auto& writer : _writers) {
+        elems = std::max(elems, writer->fetch(docId));
+    }
+    for (const auto* attr : _element_count_attributes) {
+        elems = std::max(elems, attr->getValueCount(docId));
+    }
+    return elems;
 }
 
 ArrayAttributeFieldWriterState::~ArrayAttributeFieldWriterState() = default;
@@ -64,10 +88,7 @@ void ArrayAttributeFieldWriterState::insert_element(uint32_t element_index, Curs
 
 void ArrayAttributeFieldWriterState::insertField(uint32_t docId, ElementIds selected_elements,
                                                  vespalib::slime::Inserter& target) {
-    uint32_t elems = 0;
-    for (auto& writer : _writers) {
-        elems = std::max(elems, writer->fetch(docId));
-    }
+    uint32_t elems = fetch(docId);
     if (elems == 0) {
         return;
     }
@@ -96,6 +117,7 @@ ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const StructFieldsResolver&
     : AttributeCombinerDFW(),
       _fields(fields_resolver.get_array_fields()),
       _attributeNames(fields_resolver.get_array_attributes()),
+      _element_count_attribute_names(fields_resolver.get_element_count_attributes()),
       _is_map_of_scalar(fields_resolver.is_map_of_scalar()) {
 }
 
@@ -103,7 +125,8 @@ ArrayAttributeCombinerDFW::~ArrayAttributeCombinerDFW() = default;
 
 DocsumFieldWriterState* ArrayAttributeCombinerDFW::allocFieldWriterState(IAttributeContext& context,
                                                                          vespalib::Stash&   stash) const {
-    return &stash.create<ArrayAttributeFieldWriterState>(_fields, _attributeNames, context, stash, _is_map_of_scalar);
+    return &stash.create<ArrayAttributeFieldWriterState>(_fields, _attributeNames, _element_count_attribute_names,
+                                                         context, stash, _is_map_of_scalar);
 }
 
 } // namespace search::docsummary
