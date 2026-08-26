@@ -100,6 +100,7 @@ public class ParsedRankingConverter {
 
         parsed.getMatchFeatures().forEach(profile::addMatchFeatures);
         parsed.getRankFeatures().forEach(profile::addRankFeatures);
+        parsed.getSortFeatures().forEach(profile::addSortFeatures);
         parsed.getSummaryFeatures().forEach(profile::addSummaryFeatures);
         parsed.getInheritedMatchFeatures().forEach(profile::addInheritedMatchFeatures);
         parsed.getInheritedSummaryFeatures().forEach(profile::addInheritedSummaryFeatures);

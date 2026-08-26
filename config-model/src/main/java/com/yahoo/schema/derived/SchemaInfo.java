@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -202,6 +203,9 @@ public final class SchemaInfo extends Derived {
             rankProfile.getTotalKeepRankCount().ifPresent(rankProfileConfig::totalKeepRankCount);
             rankProfile.getRerankCount().ifPresent(rankProfileConfig::rerankCount);
             rankProfile.getTotalRerankCount().ifPresent(rankProfileConfig::totalRerankCount);
+            for (String sortFeature : rankProfile.sortFeatures()) {
+                rankProfileConfig.sortFeature(sortFeature);
+            }
             for (var input : rankProfile.inputs().entrySet()) {
                 var inputConfig = new SchemaInfoConfig.Schema.Rankprofile.Input.Builder();
                 inputConfig.name(input.getKey().toString());
@@ -249,6 +253,7 @@ public final class SchemaInfo extends Derived {
         private final Optional<Integer> totalRerankCount;
         private final boolean useSignificanceModel;
         private final Map<Reference, RankProfile.Input> inputs;
+        private final List<String> sortFeatures;
 
         public RankProfileInfo(RankProfile profile) {
             this.name = profile.name();
@@ -264,6 +269,7 @@ public final class SchemaInfo extends Derived {
             this.rerankCount = profile.getRerankCount();
             this.totalRerankCount = profile.getTotalRerankCount();
             useSignificanceModel = profile.useSignificanceModel();
+            this.sortFeatures = profile.getSortFeatures().stream().map(feature -> feature.getName()).toList();
         }
 
         public String name() { return name; }
@@ -277,6 +283,7 @@ public final class SchemaInfo extends Derived {
         public Optional<Integer> getTotalRerankCount() { return totalRerankCount; }
         public boolean useSignificanceModel() { return useSignificanceModel; }
         public Map<Reference, RankProfile.Input> inputs() { return inputs; }
+        public List<String> sortFeatures() { return sortFeatures; }
 
     }
 

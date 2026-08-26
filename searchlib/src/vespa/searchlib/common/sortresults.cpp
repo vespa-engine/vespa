@@ -157,8 +157,9 @@ FastS_DefaultResultSorter FastS_DefaultResultSorter::_instance;
 //-----------------------------------------------------------------------------
 
 FastS_SortSpec::VectorRef::VectorRef(uint32_t type, const search::attribute::IAttributeVector* vector,
-                                     std::unique_ptr<search::attribute::ISortBlobWriter> writer) noexcept
-    : _type(type), _vector(vector), _writer(std::move(writer)) {
+                                     std::unique_ptr<search::attribute::ISortBlobWriter> writer,
+                                     uint32_t                                            feature_ordinal) noexcept
+    : _type(type), _vector(vector), _writer(std::move(writer)), _feature_ordinal(feature_ordinal) {
 }
 
 bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_sort_spec) {
@@ -168,7 +169,9 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
     uint32_t                type = ASC_VECTOR;
     const IAttributeVector* vector(nullptr);
 
-    if ((field_sort_spec._field.size() == 6) && (field_sort_spec._field == "[rank]")) {
+    if (field_sort_spec._is_rank_feature) {
+        type = (field_sort_spec.is_ascending()) ? ASC_FEATURE : DESC_FEATURE;
+    } else if ((field_sort_spec._field.size() == 6) && (field_sort_spec._field == "[rank]")) {
         type = (field_sort_spec.is_ascending()) ? ASC_RANK : DESC_RANK;
     } else if ((field_sort_spec._field.size() == 7) && (field_sort_spec._field == "[docid]")) {
         type = (field_sort_spec.is_ascending()) ? ASC_DOCID : DESC_DOCID;
@@ -188,7 +191,8 @@ bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_s
         }
     }
 
-    auto sort_blob_writer = make_sort_blob_writer(vector, field_sort_spec);
+    auto sort_blob_writer = field_sort_spec._is_rank_feature ? std::unique_ptr<search::attribute::ISortBlobWriter>()
+                                                             : make_sort_blob_writer(vector, field_sort_spec);
     if (vector != nullptr && !sort_blob_writer) {
         return false;
     }
@@ -205,13 +209,25 @@ void FastS_SortSpec::initSortData(const RankedHit* hits, uint32_t n) {
     freeSortData();
     size_t fixedWidth = 0;
     size_t variableWidth = 0;
+    bool   has_feature = false;
     for (const auto& vec : _vectors) {
-        if (vec._type >= ASC_DOCID) { // doc id
+        switch (vec._type) {
+        case ASC_DOCID:
+        case DESC_DOCID:
             fixedWidth +=
                 (vec._vector != nullptr) ? vec._vector->getFixedWidth() : sizeof(uint32_t) + sizeof(uint16_t);
-        } else if (vec._type >= ASC_RANK) { // rank value
+            break;
+        case ASC_RANK:
+        case DESC_RANK:
             fixedWidth += sizeof(search::HitRank);
-        } else {
+            break;
+        case ASC_FEATURE:
+        case DESC_FEATURE:
+            fixedWidth += sizeof(double);
+            has_feature = true;
+            break;
+        case ASC_VECTOR:
+        case DESC_VECTOR: {
             size_t numBytes = vec._vector->getFixedWidth();
             if (numBytes == 0) { // string
                 variableWidth += 11;
@@ -220,6 +236,8 @@ void FastS_SortSpec::initSortData(const RankedHit* hits, uint32_t n) {
             } else {
                 fixedWidth += (1 + numBytes);
             }
+            break;
+        }
         }
     }
     _binarySortData.resize((fixedWidth + variableWidth) * n);
@@ -227,6 +245,12 @@ void FastS_SortSpec::initSortData(const RankedHit* hits, uint32_t n) {
 
     size_t offset = 0;
     for (uint32_t i(0), idx(0); (i < n) && !_doom.hard_doom(); ++i) {
+        if (has_feature) {
+            if (_numeric_provider == nullptr) {
+                abort();
+            }
+            _numeric_provider->seek(hits[i].getDocId());
+        }
         uint32_t len = 0;
         for (const auto& vec : _vectors) {
             int written = initSortData(vec, hits[i], offset);
@@ -240,6 +264,10 @@ void FastS_SortSpec::initSortData(const RankedHit* hits, uint32_t n) {
         sd._len = len;
         sd._pos = 0;
         idx += len;
+    }
+    if (_numeric_provider != nullptr) {
+        _numeric_provider->consumed();
+        _numeric_provider = nullptr;
     }
 }
 
@@ -283,6 +311,14 @@ int FastS_SortSpec::initSortData(const VectorRef& vec, const RankedHit& hit, siz
         case DESC_RANK:
             written = serializeForSort<convertForSort<search::HitRank, false>>(hit.getRank(), mySortData, available);
             break;
+        case ASC_FEATURE:
+            written = serializeForSort<convertForSort<double, true>>(_numeric_provider->get(vec._feature_ordinal),
+                                                                     mySortData, available);
+            break;
+        case DESC_FEATURE:
+            written = serializeForSort<convertForSort<double, false>>(_numeric_provider->get(vec._feature_ordinal),
+                                                                      mySortData, available);
+            break;
         case ASC_VECTOR:
             written = vec._writer->write(hit.getDocId(), mySortData, available);
             break;
@@ -304,7 +340,26 @@ FastS_SortSpec::FastS_SortSpec(std::string_view documentmetastore, uint32_t part
       _doom(doom),
       _ucaFactory(ucaFactory),
       _sortSpec(),
-      _vectors() {
+      _vectors(),
+      _numeric_provider(nullptr) {
+}
+
+void FastS_SortSpec::bind_numeric_provider(INumericSortValueProvider& provider) {
+    _numeric_provider = &provider;
+    auto spec = _sortSpec.begin();
+    for (auto& vec : _vectors) {
+        if (spec == _sortSpec.end()) {
+            abort();
+        }
+        if (spec->_is_rank_feature) {
+            uint32_t ordinal = provider.ordinal(spec->_field);
+            if (ordinal == INumericSortValueProvider::invalid_ordinal) {
+                abort();
+            }
+            vec._feature_ordinal = ordinal;
+        }
+        ++spec;
+    }
 }
 
 FastS_SortSpec::~FastS_SortSpec() {

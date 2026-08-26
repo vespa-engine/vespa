@@ -43,6 +43,8 @@ schema[].rankprofile[].rerankCount int default=-1
 # The second-phase rerank count across all nodes, or -1 to use rerankCount
 schema[].rankprofile[].totalRerankCount int default=-1
 schema[].rankprofile[].significance.useModel bool default=false
+# Public names of rank features that may be used as sorting keys
+schema[].rankprofile[].sortFeature[] string
 # The name of an input (query rank feature) accepted by this profile
 schema[].rankprofile[].input[].name string
 # The tensor type of an input (query rank feature) accepted by this profile

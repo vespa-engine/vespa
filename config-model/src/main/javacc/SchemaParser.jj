@@ -325,6 +325,8 @@ TOKEN :
 | < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER_WITH_DASH> ("," (" ")* <IDENTIFIER_WITH_DASH>)* ) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SORTFEATURES_SL: "sort-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < SORTFEATURES_ML: "sort-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
 | < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
@@ -1882,6 +1884,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | prefetchTensors(profile)
       | targetHitsMaxAdjustmentFactor(profile)
       | rankFeatures(profile)
+      | sortFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
       | globalPhase(profile)
@@ -2367,6 +2370,20 @@ void rankFeatures(ParsedRankProfile profile) :
                                                            token.image.lastIndexOf("}")).trim(); } )
     {
         profile.addRankFeatures(getFeatureList(features));
+    }
+}
+
+/** Consumes a sort-features block of a rank profile */
+void sortFeatures(ParsedRankProfile profile) :
+{
+    String features;
+}
+{
+    ( <SORTFEATURES_SL> { features = token.image.substring(token.image.indexOf(":") + 1).trim(); } |
+      <SORTFEATURES_ML> { features = token.image.substring(token.image.indexOf("{") + 1,
+                                                           token.image.lastIndexOf("}")).trim(); } )
+    {
+        profile.addSortFeatures(getFeatureList(features));
     }
 }
 

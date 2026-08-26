@@ -45,6 +45,7 @@ import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Alias;
 import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Command;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Sorting.AttributeSorter;
+import com.yahoo.search.query.Sorting.FeatureSorter;
 import com.yahoo.search.query.Sorting.FieldOrder;
 import com.yahoo.search.query.Sorting.LowerCaseSorter;
 import com.yahoo.search.query.Sorting.Order;
@@ -1247,6 +1248,26 @@ public class YqlParserTestCase {
         String got = query.yqlRepresentation(true);
         // note: above code does not transfer selection or source, so we get '*' here:
         assertEquals("select * from sources * where price < 100 order by \"[rank]\" limit 5", got);
+    }
+
+    @Test
+    void testFeatureSortAnnotationRoundTrip() {
+        var newTree = parse("select foo from bar where title contains \"madonna\" order by {\"function\": \"feature\"}foo desc");
+        FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
+        assertEquals("foo", fieldOrder.getFieldName());
+        assertEquals(Order.DESCENDING, fieldOrder.getSortOrder());
+        assertEquals(FeatureSorter.class, fieldOrder.getSorter().getClass());
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(newTree.getRoot());
+        query.getRanking().setSorting(parser.getSorting());
+        String emitted = query.yqlRepresentation(true);
+        assertEquals("select * from sources * where title contains \"madonna\" order by [{\"function\": \"feature\"}]foo desc",
+                     emitted);
+        parse(emitted);
+        FieldOrder roundTripped = parser.getSorting().fieldOrders().get(0);
+        assertEquals("foo", roundTripped.getFieldName());
+        assertEquals(Order.DESCENDING, roundTripped.getSortOrder());
+        assertEquals(FeatureSorter.class, roundTripped.getSorter().getClass());
     }
 
     @Test

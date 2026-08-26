@@ -30,6 +30,7 @@ public class Sorting implements Cloneable {
     public static final String UCA = "uca";
     public static final String RAW = "raw";
     public static final String LOWERCASE = "lowercase";
+    public static final String FEATURE = "feature";
     static final String MISSING = "missing";
 
     private final List<FieldOrder> fieldOrders = new ArrayList<>(2);
@@ -82,7 +83,13 @@ public class Sorting implements Cloneable {
             AttributeSorter sorter;
             if (tokenizer.peek() == '(') {
                 tokenizer.step();
-                if (LOWERCASE.equalsIgnoreCase(functionName)) {
+                if (FEATURE.equalsIgnoreCase(functionName)) {
+                    if (inMissing) {
+                        throw new IllegalInputException("Cannot use missing() with feature(...) sorting in '" + rawSortSpec + "'");
+                    }
+                    sorter = new FeatureSorter(tokenizer.token());
+                    tokenizer.expectChar(')');
+                } else if (LOWERCASE.equalsIgnoreCase(functionName)) {
                     sorter = new LowerCaseSorter(canonic(tokenizer.token(), indexFacts));
                     tokenizer.expectChar(')');
                 } else if (RAW.equalsIgnoreCase(functionName)) {
@@ -333,6 +340,35 @@ public class Sorting implements Cloneable {
         }
     }
 
+    public static class FeatureSorter extends AttributeSorter {
+
+        private static final Pattern SCHEMA_IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
+
+        public FeatureSorter(String fieldName) {
+            super(validateFeatureName(fieldName));
+        }
+
+        private static String validateFeatureName(String fieldName) {
+            if ( ! SCHEMA_IDENTIFIER.matcher(fieldName).matches())
+                throw new IllegalInputException("Illegal feature name '" + fieldName + "' for sorting. Requires '" + SCHEMA_IDENTIFIER.pattern() + "'");
+            return fieldName;
+        }
+
+        @Override
+        public String toSerialForm() { return FEATURE + "(" + getName() + ')'; }
+
+        @Override
+        public int hashCode() { return 1 + 5 * super.hashCode(); }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof FeatureSorter)) {
+                return false;
+            }
+            return super.equals(other);
+        }
+    }
+
     public static class UcaSorter extends AttributeSorter {
 
         public enum Strength { PRIMARY, SECONDARY, TERTIARY, QUATERNARY, IDENTICAL, UNDEFINED };
@@ -529,7 +565,7 @@ public class Sorting implements Cloneable {
          */
         FieldOrder(AttributeSorter fieldSorter, Order sortOrder, MissingPolicy missingPolicy, String missingValue) {
             this.fieldSorter = fieldSorter;
-            this.sortOrder = sortOrder;
+            this.sortOrder = normalizeFeatureOrder(fieldSorter, sortOrder);
             this.missingValueSettings = new MissingValueSettings(missingPolicy, missingValue);
         }
 
@@ -544,7 +580,16 @@ public class Sorting implements Cloneable {
          * Returns the sorter of this attribute
          */
         public AttributeSorter getSorter() { return fieldSorter; }
-        public void setSorter(AttributeSorter sorter) { fieldSorter = sorter; }
+        public void setSorter(AttributeSorter sorter) {
+            fieldSorter = sorter;
+            sortOrder = normalizeFeatureOrder(sorter, sortOrder);
+        }
+
+        private static Order normalizeFeatureOrder(AttributeSorter sorter, Order order) {
+            if (sorter instanceof FeatureSorter && order == Order.UNDEFINED)
+                return Order.ASCENDING;
+            return order;
+        }
 
         /**
          * Returns the sorting order of this attribute
