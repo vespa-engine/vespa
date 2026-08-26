@@ -2,7 +2,9 @@
 vespa_add_library(searchlib_aggregation OBJECT
     SOURCES
     aggregation.cpp
+    averageaggregationresult.cpp
     countaggregationresult.cpp
+    expressioncountaggregationresult.cpp
     fs4hit.cpp
     group.cpp
     grouping.cpp
@@ -15,7 +17,9 @@ vespa_add_library(searchlib_aggregation OBJECT
     modifiers.cpp
     quantile_aggregation_result.cpp
     rawrank.cpp
+    standarddeviationaggregationresult.cpp
     sumaggregationresult.cpp
     vdshit.cpp
+    xoraggregationresult.cpp
     DEPENDS
 )

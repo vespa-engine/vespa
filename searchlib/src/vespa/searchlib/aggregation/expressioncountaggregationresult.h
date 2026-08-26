@@ -21,16 +21,16 @@ class ExpressionCountAggregationResult : public AggregationResult {
     HyperLogLog<PRECISION>      _hll;
     expression::Int64ResultNode _rank;
 
-    const ResultNode& onGetRank() const override { return _rank; }
+    [[nodiscard]] const ResultNode& onGetRank() const override { return _rank; }
     void onPrepare(const ResultNode&) override {}
 
 public:
     DECLARE_AGGREGATIONRESULT(ExpressionCountAggregationResult);
     ExpressionCountAggregationResult();
-    ~ExpressionCountAggregationResult();
+    ~ExpressionCountAggregationResult() override;
 
     void visitMembers(vespalib::ObjectVisitor&) const override {}
-    const Sketch<PRECISION, uint32_t>& getSketch() const { return _hll.getSketch(); }
+    [[nodiscard]] const Sketch<PRECISION, uint32_t>& getSketch() const { return _hll.getSketch(); }
 };
 
 } // namespace search::aggregation
