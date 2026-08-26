@@ -29,20 +29,21 @@ import java.util.concurrent.ThreadLocalRandom;
  * This takes these query parameter arguments:
  * <ul>
  *     <li>rate.id - (String) the id of the client from rate limiting perspective
- *     <li>rate.cost - (Double) the cost Double of this query. This is read after executing the query and hence can be set
- *     by downstream searchers inspecting the result to allow differencing the cost of various queries. Default is 1.
- *     <li>rate.quota - (Double) the cost per second a particular id is allowed to consume. By default this is across
- *                       all nodes of the cluster (i.e, this is invariant with cluster size), set the config variable
- *                       localRate to true to make this be rate per node.
+ *     <li>rate.cost - (Double) the cost Double of this query. This is read after executing the query
+ *                     and hence can be set by downstream searchers inspecting the result to allow
+ *                     differencing the cost of various queries. Default is 1.
+ *     <li>rate.quota - (Double) the cost per second a particular id is allowed to consume. By default, this is across
+ *                      all nodes of the cluster (i.e, this is invariant with cluster size), set the config variable
+ *                      localRate to true to make this be rate per node.
  *     <li>rate.idDimension - (String) the name of the rate-id dimension used when logging metrics.
- *                                 If this is not specified, the metric will be logged without dimensions.
+ *                            If this is not specified, the metric will be logged without dimensions.
  *     <li>rate.dryRun - (Boolean) emit metrics on rejected requests but don't actually reject them
  * </ul>
  * <p>
  * Whenever quota is exceeded for an id this searcher will reject queries from that id by
  * returning a result containing a status 429 error.
  * <p>
- * If rate.id or rate.quota is not set in Query.properties this searcher will do nothing.
+ * If either 'rate.id' or 'rate.quota' is not set in Query.properties this searcher will do nothing.
  * <p>
  * Metrics: This will emit the count metric requestsOverQuota with the dimension [rate.idDimension=rate.id]
  * counting rejected requests.
@@ -131,28 +132,33 @@ public class RateLimitingSearcher extends Searcher {
             requestCapacity(id, rate);
         }
 
-        if (rate == 0 || getAllocatedCapacity(id) <= 0) { // we are still over rate: reject
-            String idDim = query.properties().getString(idDimensionKey, null);
-            if (idDim == null) {
-                overQuotaCounter.add(1);
-            } else {
-                overQuotaCounter.add(1, createContext(idDim, id));
-            }
-            if ( ! query.properties().getBoolean(dryRunKey, false))
-                return new Result(query, new ErrorMessage(429, "Too many requests", "Allowed rate: " + rate + "/s"));
-        }
+        boolean reject = rate == 0 || getAllocatedCapacity(id) <= 0;
+        boolean dryRun = query.properties().getBoolean(dryRunKey, false);
 
-        Result result = execution.search(query);
-        addAllocatedCapacity(id, - query.properties().getDouble(costKey, 1.0));
+        if (reject)
+            increaseRejectMetric(id, query);
 
-        if (getAllocatedCapacity(id) <= 0) // make sure we ask for more with 100% probability when first running out
+        Result result;
+        if (reject && !dryRun)
+            result = new Result(query, new ErrorMessage(429, "Too many requests", "Allowed rate: " + rate + "/s"));
+        else
+            result = execution.search(query);
+
+        if (! reject)
+            addAllocatedCapacity(id, - query.properties().getDouble(costKey, 1.0));
+
+        if (! reject && getAllocatedCapacity(id) <= 0) // make sure we ask for more with 100% probability when first running out
             requestCapacity(id, rate);
 
         return result;
     }
 
-    private Point createContext(String dimensionName, String dimensionValue) {
-        return overQuotaCounter.builder().set(dimensionName, dimensionValue).build();
+    private void increaseRejectMetric(String id, Query query) {
+        String idDimension = query.properties().getString(idDimensionKey, null);
+        if (idDimension == null)
+            overQuotaCounter.add(1);
+        else
+            overQuotaCounter.add(1, overQuotaCounter.builder().set(idDimension, id).build());
     }
 
     private double getAllocatedCapacity(String id) {

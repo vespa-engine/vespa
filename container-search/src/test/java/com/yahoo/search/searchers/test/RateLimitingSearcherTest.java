@@ -24,7 +24,7 @@ public class RateLimitingSearcherTest {
         var tester = new RateLimitingTester(false);
         assertEquals(2, tester.tryRequests("id1"), "'rate/nodes' request are available initially");
         assertTrue(tester.executeWasAllowed("id1", true), "However, don't reject if we dryRun");
-        tester.clock().advance(Duration.ofMillis(1500)); // causes 2 new requests to become available
+        tester.clock().advance(Duration.ofMillis(1000)); // causes 2 new requests to become available
         assertEquals(2, tester.tryRequests("id1"), "'rate' new requests became available");
 
         assertEquals(2, tester.tryRequests("id2"), "Another id");
@@ -47,8 +47,26 @@ public class RateLimitingSearcherTest {
 
         // check metrics
         Map<Point, UntypedMetric> map = tester.metrics().getSnapshot().getMapForMetric("requestsOverQuota");
-        assertEquals(tester.requestsToTry - 2 + 1 + tester.requestsToTry - 2 + 3, map.get(tester.metrics().point("id", "id1")).getCount());
-        assertEquals(tester.requestsToTry - 2 + tester.requestsToTry - 4,         map.get(tester.metrics().point("id", "id2")).getCount());
+        assertEquals(tester.requestsToTry - 2 + 1 + tester.requestsToTry - 2 + 3,
+                     map.get(tester.metrics().point("id", "id1")).getCount());
+        assertEquals(tester.requestsToTry - 2 + tester.requestsToTry - 4,
+                     map.get(tester.metrics().point("id", "id2")).getCount());
+    }
+
+    @Test
+    void testRateLimitingDryRun() {
+        var tester = new RateLimitingTester(false);
+        for (int i = 0; i < 2; i++)
+            assertTrue(tester.executeWasAllowed("id1", true));
+
+        assertFalse(tester.executeWasAllowed("id1", false), "Out of capacity");
+
+        // Should not push us further below quota even they are not rejected in dryRun mode
+        for (int i = 0; i < 10; i++)
+            assertTrue(tester.executeWasAllowed("id1", true));
+
+        tester.clock().advance(Duration.ofMillis(1000));
+        assertEquals(2, tester.tryRequests("id1"), "2 new requests should have become available");
     }
 
     /** The purpose of this test is simply to verify that cost is picked up after executing the query */

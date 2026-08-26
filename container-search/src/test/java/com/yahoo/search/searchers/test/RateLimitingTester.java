@@ -37,6 +37,8 @@ public class RateLimitingTester {
      * Try many requests and return how many was allowed.
      * This is to avoid testing the exact pattern of request/deny which does not matter
      * and is determined by floating point arithmetic details when capacity is close to zero.
+     *
+     * @return the number of requests that was allowed
      */
     public int tryRequests(String id) {
         int allowedCount = 0;
