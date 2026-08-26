@@ -11,7 +11,6 @@
 #include <vespa/searchsummary/docsummary/docsum_field_writer_commands.h>
 #include <vespa/searchsummary/docsummary/empty_dfw.h>
 #include <vespa/searchsummary/docsummary/summary_elements_selector.h>
-#include <vespa/vespalib/util/issue.h>
 #include <vespa/vsm/config/config-vsmfields.h>
 
 #include <algorithm>
@@ -26,7 +25,6 @@ using search::docsummary::IDocsumEnvironment;
 using search::docsummary::IQueryTermFilterFactory;
 using search::docsummary::SummaryElementsSelector;
 using vespa::config::search::vsm::VsmfieldsConfig;
-using vespalib::Issue;
 
 namespace vsm {
 
@@ -67,16 +65,10 @@ std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field
     if ((command == command::positions) || (command == command::abs_distance)) {
         fieldWriter = std::make_unique<EmptyDFW>();
     } else if ((command == command::attribute) || (command == command::attribute_combiner)) {
-        // A declared combiner shape is redundant here rather than unhonoured: the struct is built from
-        // the document, whose type already fixes the shape, so there is nothing to deduce and nothing
-        // to report.
-        if (!struct_fields.empty()) {
-            // The struct fields are combined from the document, not from attributes, so the selection
-            // made in the document-summary is not used. See StructFieldsResolver for the indexed case.
-            Issue::report("Ignoring the selection of struct fields for summary field '%s': selecting a subset "
-                          "of the struct fields is not supported for streaming search",
-                          field_name.c_str());
-        }
+        // The struct fields are combined from the document, not from attributes, so neither the struct
+        // field selection nor the declared shape is used here. The shape is already fixed by the type of
+        // the field in the document, and the selection is applied when filling the summary field, see
+        // DocsumFilter::init().
         if (!source.empty() && source != field_name) {
             fieldWriter = std::make_unique<CopyDFW>(source);
         }

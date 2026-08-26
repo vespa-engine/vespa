@@ -165,7 +165,7 @@ bool ResultConfig::readConfig(const SummaryConfig& cfg, const std::string& confi
                 auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
                 auto writer = factory();
                 elements_selector.maybe_apply_to(*res_class_matching_elements_fields);
-                if (!resClass->addConfigEntry(field_name, elements_selector, std::move(writer))) {
+                if (!resClass->addConfigEntry(field_name, elements_selector, std::move(writer), struct_fields)) {
                     LOG(error, "%s %s.fields: duplicate name '%s'", configId.c_str(), cfg_class.name.c_str(),
                         field_name.c_str());
                     rc = false;
@@ -177,7 +177,7 @@ bool ResultConfig::readConfig(const SummaryConfig& cfg, const std::string& confi
                 auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
                 auto writer = factory();
                 elements_selector.maybe_apply_to(*union_of_all_matching_elements_fields);
-                unionOfAll->addConfigEntry(field_name, elements_selector, std::move(writer));
+                unionOfAll->addConfigEntry(field_name, elements_selector, std::move(writer), struct_fields);
             }
         }
     }

@@ -15,6 +15,7 @@
 #include <vespa/vespalib/util/issue.h>
 
 #include <cassert>
+#include <span>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.docsumfilter");
@@ -70,7 +71,7 @@ FieldPath copyPathButFirst(const FieldPath& rhs) {
 }
 
 void prepareFieldSpec(DocsumFieldSpec& spec, const DocsumTools::FieldSpec& toolsSpec, const FieldMap& fieldMap,
-                      const FieldPathMapT& fieldPathMap) {
+                      const FieldPathMapT& fieldPathMap, std::span<const std::string> struct_fields) {
     { // setup output field
         const std::string& name = toolsSpec.getOutputName();
         LOG(debug, "prepareFieldSpec: output field name '%s'", name.c_str());
@@ -109,7 +110,20 @@ void prepareFieldSpec(DocsumFieldSpec& spec, const DocsumTools::FieldSpec& tools
         } else {
             Issue::report("Could not find input summary field '%s'", name.c_str());
         }
-        SlimeFillerFilter::add_remaining(filter, name);
+        if (struct_fields.empty()) {
+            SlimeFillerFilter::add_remaining(filter, name);
+        }
+    }
+    if (filter && !struct_fields.empty()) {
+        // A document-summary selects a subset of the struct fields of this field. The names are relative
+        // to the summary field, e.g. "value.s2a" for the "s2a" sub-field of the value struct of a map,
+        // and are used as given: a name which is no sub-field of the field just matches nothing here,
+        // rejecting it belongs to the config model. Narrowing the filter built from the input names above
+        // would not do: when every struct field of a field is summarized it is left out of
+        // vsmsummary.cfg, the input name is then the field itself, and add_remaining() clears the filter.
+        for (const auto& struct_field : struct_fields) {
+            filter->add(struct_field);
+        }
     }
     if (filter && !filter->empty()) {
         spec.set_filter(std::move(filter));
@@ -317,7 +331,7 @@ void DocsumFilter::init(const FieldMap& fieldMap, const FieldPathMapT& fieldPath
                 const DocsumTools::FieldSpec& toolsSpec = inputSpecs[i];
                 _fields.push_back(DocsumFieldSpec(toolsSpec.getCommand()));
                 LOG(debug, "About to prepare field spec for summary field '%s'", entry.name().c_str());
-                prepareFieldSpec(_fields.back(), toolsSpec, fieldMap, fieldPathMap);
+                prepareFieldSpec(_fields.back(), toolsSpec, fieldMap, fieldPathMap, entry.struct_fields());
             }
             assert(entryCnt == _fields.size());
         }
