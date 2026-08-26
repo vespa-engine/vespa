@@ -356,11 +356,11 @@ public class SessionPreparerTest {
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
         SessionZooKeeperClient zkClient = createSessionZooKeeperClient();
-        assertEquals(expected, zkClient.readCloudAccount().get());
+        assertEquals(expected, zkClient.readCloudAccount());
 
         ModelContext modelContext = modelFactory.getModelContext();
-        Optional<CloudAccount> accountFromModel = modelContext.properties().cloudAccount();
-        assertEquals(Optional.of(expected), accountFromModel);
+        CloudAccount accountFromModel = modelContext.properties().getCloudAccount();
+        assertEquals(expected, accountFromModel);
     }
 
     @Test

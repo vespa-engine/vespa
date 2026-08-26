@@ -546,7 +546,7 @@ public class ApplicationHandlerTest {
                                                  Optional.of(uncheck(() -> InetAddress.getByName("4.3.2.1"))),
                                                  Optional.of(DomainName.of("fluster.tld")),
                                                  false,
-                                                 CloudAccount.empty));
+                                                 CloudAccount.unspecified()));
         availability = new Availability(EndpointsChecker.Status.available, "Endpoints are ready");
         ApplicationHandler handler = createApplicationHandler();
         HttpRequest request = createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/verify-endpoints",

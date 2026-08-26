@@ -27,6 +27,7 @@ import org.w3c.dom.Node;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.ToDoubleFunction;
 
@@ -62,8 +63,8 @@ public class NodesSpecification {
     /** The repo part of a docker image (without tag), optional */
     private final Optional<DockerImage> dockerImageRepo;
 
-    /** The cloud account to use for nodes in this spec, if any */
-    private final Optional<CloudAccount> cloudAccount;
+    /** The cloud account to use for nodes in this spec */
+    private final CloudAccount cloudAccount;
 
     /** The cloud resource tags to apply to nodes in this spec */
     private final CloudResourceTags cloudResourceTags;
@@ -84,7 +85,7 @@ public class NodesSpecification {
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
-                               Optional<CloudAccount> cloudAccount,
+                               CloudAccount cloudAccount,
                                CloudResourceTags cloudResourceTags,
                                List<AzName> availabilityZones,
                                boolean specifiesNodeCount,
@@ -113,7 +114,7 @@ public class NodesSpecification {
         this.canFail = canFail;
         this.exclusive = exclusive;
         this.dockerImageRepo = dockerImageRepo;
-        this.cloudAccount = cloudAccount;
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.cloudResourceTags = cloudResourceTags;
         this.availabilityZones = List.copyOf(availabilityZones);
         this.specifiesNodeCount = specifiesNodeCount;
@@ -122,7 +123,7 @@ public class NodesSpecification {
 
     static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
-                                     Optional<CloudAccount> cloudAccount,
+                                     CloudAccount cloudAccount,
                                      CloudResourceTags cloudResourceTags,
                                      List<AzName> availabilityZones) {
         var resolvedElement = resolveElement(nodesElement);
@@ -192,7 +193,7 @@ public class NodesSpecification {
                       context.getDeployState().getWantedNodeVespaVersion(),
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
-                      context.getDeployState().getProperties().cloudAccount(),
+                      context.getDeployState().getProperties().getCloudAccount(),
                       context.getDeployState().getProperties().cloudResourceTags(),
                       context.availabilityZones());
     }
@@ -212,7 +213,7 @@ public class NodesSpecification {
                                   context.getDeployState().getWantedNodeVespaVersion(),
                                   nodesElement,
                                   context.getDeployState().getWantedDockerImageRepo(),
-                                  context.getDeployState().getProperties().cloudAccount(),
+                                  context.getDeployState().getProperties().getCloudAccount(),
                                   context.getDeployState().getProperties().cloudResourceTags(),
                                   context.availabilityZones()));
     }
@@ -229,7 +230,7 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
                                       false,
@@ -248,7 +249,7 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
                                       false,
@@ -278,7 +279,7 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
                                       false,

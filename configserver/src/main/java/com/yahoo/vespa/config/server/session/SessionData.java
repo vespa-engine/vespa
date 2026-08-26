@@ -48,7 +48,7 @@ public record SessionData(ApplicationId applicationId,
                           List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
-                          Optional<CloudAccount> cloudAccount,
+                          CloudAccount cloudAccount,
                           CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens,
                           ActivationTriggers activationTriggers,
@@ -104,7 +104,8 @@ public record SessionData(ApplicationId applicationId,
         Cursor operatorCertificatesArray = object.setArray(OPERATOR_CERTIFICATES_PATH);
         OperatorCertificateSerializer.toSlime(operatorCertificates, operatorCertificatesArray);
 
-        cloudAccount.ifPresent(account -> object.setString(CLOUD_ACCOUNT_PATH, account.value()));
+        if (! cloudAccount.isUnspecified())
+            object.setString(CLOUD_ACCOUNT_PATH, cloudAccount.value());
 
         if ( ! cloudResourceTags.isEmpty())
             CloudResourceTagsSerializer.toSlime(cloudResourceTags, object.setObject(CLOUD_RESOURCE_TAGS_PATH));
@@ -135,7 +136,7 @@ public record SessionData(ApplicationId applicationId,
                                TenantVaultSerializer.listFromSlime(cursor.field(TENANT_VAULTS_PATH)),
                                TenantSecretStoreSerializer.listFromSlime(cursor.field(TENANT_SECRET_STORES_PATH)),
                                OperatorCertificateSerializer.fromSlime(cursor.field(OPERATOR_CERTIFICATES_PATH)),
-                               optionalString(cursor.field(CLOUD_ACCOUNT_PATH)).map(CloudAccount::from),
+                               optionalString(cursor.field(CLOUD_ACCOUNT_PATH)).map(CloudAccount::from).orElse(CloudAccount.unspecified()),
                                CloudResourceTagsSerializer.fromSlime(cursor.field(CLOUD_RESOURCE_TAGS_PATH)),
                                DataplaneTokenSerializer.fromSlime(cursor.field(DATAPLANE_TOKENS_PATH)),
                                ActivationTriggersSerializer.fromSlime(cursor.field(ACTIVATION_TRIGGERS_PATH)),

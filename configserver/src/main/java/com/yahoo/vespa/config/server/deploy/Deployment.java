@@ -353,7 +353,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .cloudResourceTags(session.getCloudResourceTags());
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
             session.getAthenzDomain().ifPresent(params::athenzDomain);
-            session.getCloudAccount().ifPresent(params::cloudAccount);
+            params.cloudAccount(session.getCloudAccount());
 
             return params.build();
         });

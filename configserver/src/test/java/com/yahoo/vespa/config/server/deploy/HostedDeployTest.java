@@ -628,7 +628,7 @@ public class HostedDeployTest {
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
         assertTrue(deployment.isPresent());
         deployment.get().activate();
-        assertEquals(cloudAccount, ((Deployment) deployment.get()).session().getCloudAccount().get());
+        assertEquals(cloudAccount, ((Deployment) deployment.get()).session().getCloudAccount());
     }
 
     @Test

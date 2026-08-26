@@ -200,7 +200,12 @@ public interface ModelContext {
 
         List<String> environmentVariables();
 
-        default Optional<CloudAccount> cloudAccount() { return Optional.empty(); }
+        /** TODO: Remove after September 2026 */
+        @Deprecated
+        default Optional<CloudAccount> cloudAccount() { return Optional.of(getCloudAccount()); }
+
+        @SuppressWarnings("deprecated")
+        default CloudAccount getCloudAccount() { return cloudAccount().orElse(CloudAccount.unspecified()); }
 
         default CloudResourceTags cloudResourceTags() { return CloudResourceTags.empty(); }
 

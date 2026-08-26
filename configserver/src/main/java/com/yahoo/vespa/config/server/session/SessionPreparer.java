@@ -433,7 +433,7 @@ public class SessionPreparer {
                                        List<TenantVault> tenantVaults,
                                        List<TenantSecretStore> tenantSecretStores,
                                        List<X509Certificate> operatorCertificates,
-                                       Optional<CloudAccount> cloudAccount,
+                                       CloudAccount cloudAccount,
                                        CloudResourceTags cloudResourceTags,
                                        List<DataplaneToken> dataplaneTokens,
                                        ActivationTriggers activationTriggers,
