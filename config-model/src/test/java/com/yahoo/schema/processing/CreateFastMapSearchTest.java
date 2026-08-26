@@ -100,14 +100,27 @@ public class CreateFastMapSearchTest {
     }
 
     /**
-     * The leading underscore is what keeps the synthetic name out of reach of schema authors,
-     * so that a user cannot declare a field colliding with it.
+     * The dollar is what keeps the synthetic name out of reach of schema authors.
      */
     @Test
-void requireUsersCannotDeclareTheKeyValueFieldName() {
+    void requireUsersCannotDeclareTheKeyValueFieldName() {
         assertThrows(ParseException.class, () -> build(joinLines("field foo$keyvalue type array<string> {",
                         "  indexing: attribute",
                         "}")));
+    }
+
+    @Test
+    void requireErrorWhenAnotherFieldCreatesTheKeyValueAttribute() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> build(joinLines("field foo type map<string, string> {",
+                                                           "  indexing: summary",
+                                                           "  map: fast-search",
+                                                           "}",
+                                                           "field other type array<string> {",
+                                                           "  indexing: attribute \"foo$keyvalue\"",
+                                                           "}")));
+        assertTrue(exception.getMessage().contains("Incompatible map attribute 'foo$keyvalue' already created"),
+                   "Unexpected message: " + exception.getMessage());
     }
 
     private static String fastSearchMap(String type) {
