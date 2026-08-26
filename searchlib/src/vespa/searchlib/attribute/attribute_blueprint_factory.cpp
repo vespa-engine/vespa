@@ -661,15 +661,9 @@ public:
     }
 
     void visit(StringRangeTerm& n) override {
-        const StringRangeSpec* spec = n.getTerm().getSpec();
-        if (spec == nullptr || !_attr.isStringType()) {
-            Issue::report("Trying to apply a string range to the non-string attribute vector '%s'.",
-                          _attr.getName().c_str());
-            setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
-            return;
-        }
-        auto term =
-            std::make_unique<QueryTermUCS4>(QueryTermSimple::Type::WORD, std::make_unique<StringRangeSpec>(*spec));
+        const StringRangeSpec* spec = n.getTerm().get_spec();
+        auto spec_for_term = spec ? std::make_unique<StringRangeSpec>(*spec) : std::make_unique<StringRangeSpec>();
+        auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(spec_for_term));
         setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term),
                                                             createContextParams(_field.isFilter())));
     }

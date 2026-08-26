@@ -23,7 +23,7 @@ public:
     StringRange& operator=(StringRange&& other) noexcept = default;
     ~StringRange();
 
-    const StringRangeSpec* getSpec() const noexcept { return _spec.get(); }
+    const StringRangeSpec* get_spec() const noexcept { return _spec.get(); }
 };
 
 bool operator==(const StringRange& r1, const StringRange& r2);

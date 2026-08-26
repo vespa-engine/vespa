@@ -349,7 +349,7 @@ private:
     }
 
     void visit(StringRangeTerm& node) override {
-        const auto* spec = node.getTerm().getSpec();
+        const auto* spec = node.getTerm().get_spec();
         if (spec == nullptr) {
             return;
         }

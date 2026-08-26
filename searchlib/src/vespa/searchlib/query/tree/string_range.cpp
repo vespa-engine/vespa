@@ -18,8 +18,8 @@ StringRange& StringRange::operator=(const StringRange& other) {
 StringRange::~StringRange() = default;
 
 bool operator==(const StringRange& r1, const StringRange& r2) {
-    const StringRangeSpec* s1 = r1.getSpec();
-    const StringRangeSpec* s2 = r2.getSpec();
+    const StringRangeSpec* s1 = r1.get_spec();
+    const StringRangeSpec* s2 = r2.get_spec();
     if (s1 == s2) {
         return true;
     }
