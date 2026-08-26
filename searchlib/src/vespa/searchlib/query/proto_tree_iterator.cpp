@@ -284,6 +284,10 @@ bool handle(const ItemFloatingPointRangeTerm& item, QueryStackIterator::Data& _d
     _d.term_view = tmp;
     return true;
 }
+bool handle(const ItemStringRangeTerm& /*item*/, QueryStackIterator::Data& /*_d*/, std::string& /*tmp*/) {
+    // TODO
+    return true;
+}
 
 bool handle(const ItemSameElement& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
@@ -525,6 +529,8 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_integer_range_term(), _d, _serialized_term);
     case IC::kItemFloatingPointRangeTerm:
         return handle(qsi.item_floating_point_range_term(), _d, _serialized_term);
+    case IC::kItemStringRangeTerm:
+        return handle(qsi.item_string_range_term(), _d, _serialized_term);
 
     case IC::kItemWeightedSetOfString:
         return handle(qsi.item_weighted_set_of_string(), _d);
