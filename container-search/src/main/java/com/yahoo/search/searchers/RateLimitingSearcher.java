@@ -5,6 +5,7 @@ import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 
+import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Counter;
 import com.yahoo.metrics.simple.Point;
@@ -16,7 +17,6 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.RateLimitingConfig;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.yolean.chain.Provides;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -51,7 +51,6 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author bratseth
  */
-@SuppressWarnings("removal")
 @Provides(RateLimitingSearcher.RATE_LIMITING)
 public class RateLimitingSearcher extends Searcher {
 
