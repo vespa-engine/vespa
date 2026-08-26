@@ -10,6 +10,7 @@
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <cassert>
@@ -252,6 +253,11 @@ class QueryNodeConverter : public QueryVisitor {
     void visit(PrefixTerm& node) override { createTerm(node, ParseItem::ITEM_PREFIXTERM); }
 
     void visit(RangeTerm& node) override { createTerm(node, ParseItem::ITEM_NUMTERM); }
+
+    void visit(StringRangeTerm&) override {
+        // The query stack dump is a legacy serialization that string ranges are not part of.
+        vespalib::Issue::report("string range terms cannot be serialized to a query stack dump");
+    }
 
     void visit(StringTerm& node) override { createTerm(node, ParseItem::ITEM_TERM); }
 

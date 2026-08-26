@@ -42,6 +42,12 @@ const int      max_distance = 20;
 const uint32_t x_aspect = 0;
 const Location location(position, max_distance, x_aspect);
 
+StringRange make_string_range(std::string left, bool left_closed, bool left_unbounded, std::string right,
+                              bool right_closed, bool right_unbounded) {
+    return StringRange(std::make_unique<search::StringRangeSpec>(std::move(left), left_closed, left_unbounded,
+                                                                 std::move(right), right_closed, right_unbounded));
+}
+
 PredicateQueryTerm::UP getPredicateQueryTerm() {
     auto pqt = std::make_unique<PredicateQueryTerm>();
     pqt->addFeature("key", "value");
@@ -356,6 +362,7 @@ struct AbstractTypes {
     using Phrase = search::query::Phrase;
     using PrefixTerm = search::query::PrefixTerm;
     using RangeTerm = search::query::RangeTerm;
+    using StringRangeTerm = search::query::StringRangeTerm;
     using Rank = search::query::Rank;
     using StringTerm = search::query::StringTerm;
     using SubstringTerm = search::query::SubstringTerm;
@@ -475,6 +482,11 @@ struct MyRangeTerm : RangeTerm {
     ~MyRangeTerm() override;
 };
 
+struct MyStringRangeTerm : StringRangeTerm {
+    MyStringRangeTerm(const Type& t, const string& f, int32_t i, Weight w) : StringRangeTerm(t, f, i, w) {}
+    ~MyStringRangeTerm() override;
+};
+
 struct MyStringTerm : StringTerm {
     MyStringTerm(const Type& t, const string& f, int32_t i, Weight w) : StringTerm(t, f, i, w) {}
     ~MyStringTerm() override;
@@ -568,6 +580,8 @@ MyPrefixTerm::~MyPrefixTerm() = default;
 
 MyRangeTerm::~MyRangeTerm() = default;
 
+MyStringRangeTerm::~MyStringRangeTerm() = default;
+
 MyStringTerm::~MyStringTerm() = default;
 
 MySubstringTerm::~MySubstringTerm() = default;
@@ -603,6 +617,7 @@ struct MyQueryNodeTypes {
     using SameElement = MySameElement;
     using PrefixTerm = MyPrefixTerm;
     using RangeTerm = MyRangeTerm;
+    using StringRangeTerm = MyStringRangeTerm;
     using Rank = MyRank;
     using LabelWrapper = MyLabelWrapper;
     using StringTerm = MyStringTerm;
@@ -849,6 +864,40 @@ TEST(QueryBuilderTest, label_wrapper_node_survives_protobuf_round_trip) {
     EXPECT_EQ(2.5, wrapper->getLabelScore());
     ASSERT_EQ(1u, wrapper->getChildren().size());
     EXPECT_TRUE(checkTerm(as_node<StringTerm>(wrapper->getChildren()[0]), str[0], view[0], id[0], weight[0]));
+}
+
+std::vector<StringRange> string_ranges() {
+    return {make_string_range("abba", true, false, "zztop", false, false),
+            make_string_range("", true, true, "zztop", true, false),
+            make_string_range("abba", false, false, "", false, true),
+            make_string_range("", false, true, "", false, true)};
+}
+
+TEST(QueryBuilderTest, string_range_node_survives_protobuf_round_trip) {
+    for (const auto& expected : string_ranges()) {
+        QueryBuilder<SimpleQueryNodeTypes> builder;
+        builder.add_string_range_term(expected, view[9], id[9], weight[9]);
+        Node::UP node = builder.build();
+
+        QueryToProtobuf converter;
+        auto            protoQueryTree = converter.serialize(*node);
+        auto            serializedQueryTree =
+            SerializedQueryTree::fromProtobuf(std::make_unique<decltype(protoQueryTree)>(protoQueryTree));
+
+        auto new_node = serializedQueryTree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
+        EXPECT_TRUE(checkTerm(as_node<StringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
+    }
+}
+
+TEST(QueryBuilderTest, string_range_node_can_be_replicated) {
+    for (const auto& expected : string_ranges()) {
+        QueryBuilder<SimpleQueryNodeTypes> builder;
+        builder.add_string_range_term(expected, view[9], id[9], weight[9]);
+        Node::UP node = builder.build();
+
+        Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::replicate(*node);
+        EXPECT_TRUE(checkTerm(as_node<MyStringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
+    }
 }
 
 TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {

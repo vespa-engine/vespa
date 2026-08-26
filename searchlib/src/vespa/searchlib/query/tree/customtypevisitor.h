@@ -13,7 +13,7 @@ namespace search::query {
  *
  * The traits class must define the following types:
  * And, AndNot, Equiv, NumberTerm, Near, ONear, Or,
- * Phrase, PrefixTerm, RangeTerm, Rank, LabelWrapper, StringTerm, SubstringTerm,
+ * Phrase, PrefixTerm, RangeTerm, StringRangeTerm, Rank, LabelWrapper, StringTerm, SubstringTerm,
  * SuffixTerm, WeakAnd, WeightedSetTerm, DotProduct, RegExpTerm
  *
  * See customtypevisitor_test.cpp for an example.
@@ -38,6 +38,7 @@ public:
     virtual void visit(typename NodeTypes::SameElement&) = 0;
     virtual void visit(typename NodeTypes::PrefixTerm&) = 0;
     virtual void visit(typename NodeTypes::RangeTerm&) = 0;
+    virtual void visit(typename NodeTypes::StringRangeTerm&) = 0;
     virtual void visit(typename NodeTypes::Rank&) = 0;
     virtual void visit(typename NodeTypes::LabelWrapper&) = 0;
     virtual void visit(typename NodeTypes::StringTerm&) = 0;
@@ -71,6 +72,7 @@ private:
     using TSameElement = typename NodeTypes::SameElement;
     using TPrefixTerm = typename NodeTypes::PrefixTerm;
     using TRangeTerm = typename NodeTypes::RangeTerm;
+    using TStringRangeTerm = typename NodeTypes::StringRangeTerm;
     using TRank = typename NodeTypes::Rank;
     using TLabelWrapper = typename NodeTypes::LabelWrapper;
     using TStringTerm = typename NodeTypes::StringTerm;
@@ -101,6 +103,7 @@ private:
     void visit(SameElement& n) override { visit(static_cast<TSameElement&>(n)); }
     void visit(PrefixTerm& n) override { visit(static_cast<TPrefixTerm&>(n)); }
     void visit(RangeTerm& n) override { visit(static_cast<TRangeTerm&>(n)); }
+    void visit(StringRangeTerm& n) override { visit(static_cast<TStringRangeTerm&>(n)); }
     void visit(Rank& n) override { visit(static_cast<TRank&>(n)); }
     void visit(LabelWrapper& n) override { visit(static_cast<TLabelWrapper&>(n)); }
     void visit(StringTerm& n) override { visit(static_cast<TStringTerm&>(n)); }

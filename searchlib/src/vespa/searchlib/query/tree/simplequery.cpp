@@ -42,6 +42,7 @@ SimpleLocationTerm::~SimpleLocationTerm() = default;
 SimplePrefixTerm::~SimplePrefixTerm() = default;
 
 SimpleRangeTerm::~SimpleRangeTerm() = default;
+SimpleStringRangeTerm::~SimpleStringRangeTerm() = default;
 
 SimpleStringTerm::~SimpleStringTerm() = default;
 
