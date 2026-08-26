@@ -42,10 +42,11 @@ const int      max_distance = 20;
 const uint32_t x_aspect = 0;
 const Location location(position, max_distance, x_aspect);
 
-StringRange make_string_range(std::string left, bool left_closed, bool left_unbounded, std::string right,
-                              bool right_closed, bool right_unbounded) {
-    return StringRange(std::make_unique<search::StringRangeSpec>(std::move(left), left_closed, left_unbounded,
-                                                                 std::move(right), right_closed, right_unbounded));
+std::vector<StringRange> string_ranges() {
+    return {StringRange(std::make_unique<search::StringRangeSpec>("aaa", true, false, "zzz", false, false)),
+            StringRange(std::make_unique<search::StringRangeSpec>("", true, true, "zzz", true, false)),
+            StringRange(std::make_unique<search::StringRangeSpec>("aaa", false, false, "", false, true)),
+            StringRange(std::make_unique<search::StringRangeSpec>("", false, true, "", false, true))};
 }
 
 PredicateQueryTerm::UP getPredicateQueryTerm() {
@@ -866,13 +867,6 @@ TEST(QueryBuilderTest, label_wrapper_node_survives_protobuf_round_trip) {
     EXPECT_TRUE(checkTerm(as_node<StringTerm>(wrapper->getChildren()[0]), str[0], view[0], id[0], weight[0]));
 }
 
-std::vector<StringRange> string_ranges() {
-    return {make_string_range("abba", true, false, "zztop", false, false),
-            make_string_range("", true, true, "zztop", true, false),
-            make_string_range("abba", false, false, "", false, true),
-            make_string_range("", false, true, "", false, true)};
-}
-
 TEST(QueryBuilderTest, string_range_node_survives_protobuf_round_trip) {
     for (const auto& expected : string_ranges()) {
         QueryBuilder<SimpleQueryNodeTypes> builder;
@@ -880,11 +874,11 @@ TEST(QueryBuilderTest, string_range_node_survives_protobuf_round_trip) {
         Node::UP node = builder.build();
 
         QueryToProtobuf converter;
-        auto            protoQueryTree = converter.serialize(*node);
-        auto            serializedQueryTree =
-            SerializedQueryTree::fromProtobuf(std::make_unique<decltype(protoQueryTree)>(protoQueryTree));
+        auto            proto_query_tree = converter.serialize(*node);
+        auto            serialized_query_tree =
+            SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto_query_tree)>(proto_query_tree));
 
-        auto new_node = serializedQueryTree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
+        auto new_node = serialized_query_tree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
         EXPECT_TRUE(checkTerm(as_node<StringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
     }
 }
