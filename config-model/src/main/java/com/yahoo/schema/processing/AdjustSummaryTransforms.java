@@ -11,6 +11,8 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.logging.Level;
+
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
 
 /**
@@ -62,6 +64,11 @@ public class AdjustSummaryTransforms extends Processor {
      * combiner transform. If the summary field only requests a subset of the struct sub-fields (via
      * struct-field selection in a document-summary), only that subset needs to be usable as struct field
      * attributes. The selection itself is validated in {@link SummaryStructFieldSelectValidator}.
+     *
+     * A selection whose sub-fields are not attributes is still legal: streaming search applies it when
+     * filling the summary field and needs no attributes at all for that. It is only indexed search which
+     * can apply a selection solely through the attribute combiner, so that combination is warned about
+     * rather than rejected - the same schema may well be used by a streaming cluster.
      */
     private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, String docsumName, Schema schema, boolean validate) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {
@@ -72,10 +79,11 @@ public class AdjustSummaryTransforms extends Processor {
             if (isComplexFieldWithOnlyStructFieldAttributes(source, selectedFields)) {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
             } else if (!selectedFields.isEmpty() && validate) {
-                throw new IllegalArgumentException("For schema '" + schema.getName() + "', document-summary '" +
-                        docsumName + "', summary field '" + summaryField.getName() + "': the selected struct " +
-                        "fields " + selectedFields + " cannot be used as struct field attributes for source " +
-                        "field '" + sourceFieldName + "'");
+                deployLogger.logApplicationPackage(Level.WARNING, "For schema '" + schema.getName() +
+                        "', document-summary '" + docsumName + "', summary field '" + summaryField.getName() +
+                        "': the selected struct fields " + selectedFields + " cannot all be used as struct " +
+                        "field attributes for source field '" + sourceFieldName + "', so the selection only " +
+                        "takes effect for streaming search");
             }
         }
     }
