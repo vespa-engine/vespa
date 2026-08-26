@@ -4,6 +4,7 @@
 
 #include "docsumapi.h"
 #include "monitorapi.h"
+#include "search_protocol_proto.h"
 #include "searchapi.h"
 
 #include <vespa/fnet/frt/require_capabilities.h>

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/engine/search_protocol_proto.h>
+#include <google/protobuf/message.h>
 
 namespace search::common {
 
