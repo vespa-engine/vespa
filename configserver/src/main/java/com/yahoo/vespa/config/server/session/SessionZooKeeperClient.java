@@ -386,17 +386,20 @@ public class SessionZooKeeperClient {
                       .orElse(List.of());
     }
 
-    public void writeCloudAccount(Optional<CloudAccount> cloudAccount) {
-        if (cloudAccount.isPresent()) {
-            byte[] data = uncheck(() -> SlimeUtils.toJsonBytes(CloudAccountSerializer.toSlime(cloudAccount.get())));
+    public void writeCloudAccount(CloudAccount cloudAccount) {
+        if ( ! cloudAccount.isUnspecified()) {
+            byte[] data = uncheck(() -> SlimeUtils.toJsonBytes(CloudAccountSerializer.toSlime(cloudAccount)));
             curator.set(cloudAccountPath(), data);
         } else {
             curator.delete(cloudAccountPath());
         }
     }
 
-    public Optional<CloudAccount> readCloudAccount() {
-        return curator.getData(cloudAccountPath()).map(SlimeUtils::jsonToSlime).map(slime -> CloudAccountSerializer.fromSlime(slime.get()));
+    public CloudAccount readCloudAccount() {
+        return curator.getData(cloudAccountPath())
+                      .map(SlimeUtils::jsonToSlime)
+                      .map(slime -> CloudAccountSerializer.fromSlime(slime.get()))
+                      .orElse(CloudAccount.unspecified());
     }
 
     public void writeCloudResourceTags(CloudResourceTags cloudResourceTags) {

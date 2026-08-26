@@ -1525,6 +1525,7 @@
       "public java.util.List tlsCiphersOverride()",
       "public abstract java.util.List environmentVariables()",
       "public java.util.Optional cloudAccount()",
+      "public com.yahoo.config.provision.CloudAccount getCloudAccount()",
       "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags()",
       "public boolean allowUserFilters()",
       "public java.time.Duration endpointConnectionTtl()",

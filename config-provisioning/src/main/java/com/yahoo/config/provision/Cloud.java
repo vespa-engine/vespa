@@ -93,7 +93,7 @@ public class Cloud {
         private boolean allowHostSharing = true;
         private boolean allowEnclave = false;
         private boolean requireAccessControl = false;
-        private CloudAccount account = CloudAccount.empty;
+        private CloudAccount account = CloudAccount.unspecified();
         private Optional<String> snapshotPrivateKeySecretName = Optional.empty();
 
         public Builder() {}

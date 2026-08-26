@@ -292,7 +292,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<TenantVault> tenantVaults;
         private final List<TenantSecretStore> tenantSecretStores;
         private final List<X509Certificate> operatorCertificates;
-        private final Optional<CloudAccount> cloudAccount;
+        private final CloudAccount cloudAccount;
         private final CloudResourceTags cloudResourceTags;
         private final List<DataplaneToken> dataplaneTokens;
 
@@ -309,7 +309,7 @@ public class ModelContextImpl implements ModelContext {
                           List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
-                          Optional<CloudAccount> cloudAccount,
+                          CloudAccount cloudAccount,
                           CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId, modelVersion);
@@ -354,7 +354,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<TenantVault> tenantVaults() { return tenantVaults; }
         @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
         @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
-        @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
+        @Override public CloudAccount getCloudAccount() { return cloudAccount; }
         @Override public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
         @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
         @Override public boolean allowDisableMtls() { return flag(PermanentFlags.ALLOW_DISABLE_MTLS).value(); }

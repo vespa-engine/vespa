@@ -232,11 +232,11 @@ public class ClusterInfoTest {
         CloudAccount account = CloudAccount.from("gcp:foobar");
         assertEquals(Duration.ofHours(24), requestedCapacityIn(account, gcp, "default", "us-east-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
         assertEquals(Duration.ZERO, requestedCapacityIn(account, gcp, "default", "us-north-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
-        assertEquals(Duration.ZERO, requestedCapacityIn(CloudAccount.empty, gcp, "default", "us-west-1", servicesXml, deploymentXml).get(new Id("testcontainer")).clusterInfo().hostTTL());
+        assertEquals(Duration.ZERO, requestedCapacityIn(CloudAccount.unspecified(), gcp, "default", "us-west-1", servicesXml, deploymentXml).get(new Id("testcontainer")).clusterInfo().hostTTL());
     }
 
     private Map<ClusterSpec.Id, Capacity> requestedCapacityIn(String instance, String region, String servicesXml, String deploymentXml) throws Exception {
-        return requestedCapacityIn(null, Cloud.defaultCloud(), instance, region, servicesXml, deploymentXml);
+        return requestedCapacityIn(CloudAccount.unspecified(), Cloud.defaultCloud(), instance, region, servicesXml, deploymentXml);
     }
 
     private Map<ClusterSpec.Id, Capacity> requestedCapacityIn(CloudAccount account, Cloud cloud, String instance, String region, String servicesXml, String deploymentXml) throws Exception {

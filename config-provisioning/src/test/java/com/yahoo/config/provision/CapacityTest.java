@@ -23,7 +23,7 @@ public class CapacityTest {
                       IntRange.empty(),
                       false,
                       true,
-                      Optional.empty(),
+                      CloudAccount.unspecified(),
                       ClusterInfo.empty());
         assertValidationFailure(new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
                                new ClusterResources(2, 2, new NodeResources(1, 2, 3, 4)));
@@ -45,14 +45,14 @@ public class CapacityTest {
                      assertThrows(IllegalArgumentException.class,
                                   () -> Capacity.from(new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
                                                       new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
-                                                      IntRange.empty(), false, true, Optional.empty(), new ClusterInfo.Builder().hostTTL(Duration.ofSeconds(1)).build()))
+                                                      IntRange.empty(), false, true, CloudAccount.unspecified(), new ClusterInfo.Builder().hostTTL(Duration.ofSeconds(1)).build()))
                              .getMessage());
     }
 
     private void assertValidationFailure(ClusterResources min, ClusterResources max) {
         assertEquals("The max capacity must be larger than the min capacity, but got min " + min + " and max " + max,
                      assertThrows(IllegalArgumentException.class,
-                                  () -> Capacity.from(min, max, IntRange.empty(), false, true, Optional.empty(), ClusterInfo.empty()))
+                                  () -> Capacity.from(min, max, IntRange.empty(), false, true, CloudAccount.unspecified(), ClusterInfo.empty()))
                              .getMessage());
     }
 
