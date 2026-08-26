@@ -37,7 +37,8 @@ import org.junit.jupiter.api.function.ThrowingSupplier;
 class TritonOnnxRuntimeTest {
 
     private static TritonServerContainer tritonContainer;
-    private final OnnxEvaluatorOptions.Builder optsBuilder = new OnnxEvaluatorOptions.Builder(8);
+    private final OnnxEvaluatorOptions.Builder optsBuilder =
+            new OnnxEvaluatorOptions.Builder(8).setOptimizeModel(true);
 
     // Used by most of the test. Some use their own.
     @BeforeAll
@@ -63,6 +64,12 @@ class TritonOnnxRuntimeTest {
     void load_model_with_execution_mode() throws IOException {
         var opts = optsBuilder.setExecutionMode(OnnxEvaluatorOptions.ExecutionMode.PARALLEL).build();
         assertLoadModel("src/test/triton/config_with_execution_mode.pbtxt", opts);
+    }
+
+    @Test
+    void load_model_without_optimization() throws IOException {
+        var opts = optsBuilder.setOptimizeModel(false).build();
+        assertLoadModel("src/test/triton/config_without_optimization.pbtxt", opts);
     }
 
     @Test

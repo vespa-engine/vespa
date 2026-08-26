@@ -265,6 +265,16 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             configBuilder.setDynamicBatching(dynamicBatchingBuilder.build());
         }
 
+        // Triton's ONNX Runtime backend enables all optimizations when the graph optimization level is unspecified,
+        // and maps level 2 to disabling all optimizations (ORT_DISABLE_ALL).
+        if (!options.optimizeModel()) {
+            configBuilder.setOptimization(ModelConfigOuterClass.ModelOptimizationPolicy.newBuilder()
+                    .setGraph(ModelConfigOuterClass.ModelOptimizationPolicy.Graph.newBuilder()
+                            .setLevel(2)
+                            .build())
+                    .build());
+        }
+
         return configBuilder.build().toString();
     }
 
