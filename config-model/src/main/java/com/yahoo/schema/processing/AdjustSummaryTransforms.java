@@ -35,7 +35,7 @@ public class AdjustSummaryTransforms extends Processor {
             for (var summaryField : summary.getSummaryFields().values()) {
                 makeDocumentIdTransformIfAppropriate(summaryField);
                 makeAttributeTransformIfAppropriate(summaryField, schema);
-                makeAttributeCombinerTransformIfAppropriate(summaryField, schema);
+                makeAttributeCombinerTransformIfAppropriate(summaryField, summary.name(), schema, validate);
                 makeAttributeTokensTransformIfAppropriate(summaryField, summary.name(), schema);
                 makeCopyTransformIfAppropriate(summaryField, schema);
             }
@@ -57,13 +57,25 @@ public class AdjustSummaryTransforms extends Processor {
         summaryField.setTransform(SummaryTransform.ATTRIBUTE);
     }
 
-    /** If the source is a complex field with only struct field attributes then make this use the attribute combiner transform */
-    private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, Schema schema) {
+    /**
+     * If the source is a complex field with only struct field attributes then make this use the attribute
+     * combiner transform. If the summary field only requests a subset of the struct sub-fields (via
+     * struct-field selection in a document-summary), only that subset needs to be usable as struct field
+     * attributes. The selection itself is validated in {@link SummaryStructFieldSelectValidator}.
+     */
+    private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, String docsumName, Schema schema, boolean validate) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {
             String sourceFieldName = summaryField.getSingleSource();
             ImmutableSDField source = schema.getField(sourceFieldName);
-            if (source != null && isComplexFieldWithOnlyStructFieldAttributes(source)) {
+            if (source == null) return;
+            var selectedFields = summaryField.getStructFields();
+            if (isComplexFieldWithOnlyStructFieldAttributes(source, selectedFields)) {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
+            } else if (!selectedFields.isEmpty() && validate) {
+                throw new IllegalArgumentException("For schema '" + schema.getName() + "', document-summary '" +
+                        docsumName + "', summary field '" + summaryField.getName() + "': the selected struct " +
+                        "fields " + selectedFields + " cannot be used as struct field attributes for source " +
+                        "field '" + sourceFieldName + "'");
             }
         }
     }

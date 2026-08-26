@@ -1172,7 +1172,7 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
 	    psf.setHasExplicitType();
 	}
     }
-    (summaryItem(psf) (<NL>)*)* <RBRACE>
+    (summaryInDocumentItem(psf) (<NL>)*)* <RBRACE>
     {
         var old = docsum.addField(psf);
         if (old != null) {
@@ -1252,6 +1252,20 @@ void summaryItem(ParsedSummaryField field) : { }
 }
 
 /**
+ * This rule consumes an item of a summary field block inside a document-summary.
+ * These are the items allowed in any summary field block, plus struct-field selection,
+ * which is only allowed here.
+ *
+ * @param field The field to modify.
+ */
+void summaryInDocumentItem(ParsedSummaryField field) : { }
+{
+    ( summaryItem(field)
+      | summaryStructFieldSelect(field)
+    )
+}
+
+/**
  * This rule consumes a transform statement for a summary field element.
  *
  * @param field            The field to modify.
@@ -1285,6 +1299,22 @@ void summaryElementsBy(ParsedSummaryField field) :
         }
         field.setSelectElementsBySummaryFeature(featureList.get(0).toString());
     }
+}
+
+/**
+ * This rule consumes a struct-field selection statement for a summary field,
+ * used to select a subset of the sub-fields of a struct (or array/map of
+ * struct) to include in the summary. Only allowed for a summary field inside
+ * a document-summary.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryStructFieldSelect(ParsedSummaryField field) :
+{
+    String str;
+}
+{
+    <STRUCT_FIELD> <COLON> str = identifier() { field.addStructFieldSelect(str); }
 }
 
 /**

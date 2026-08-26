@@ -23,6 +23,7 @@ public class ParsedSummaryField extends ParsedBlock {
     private boolean hasExplicitType = false;
     private final List<String> sources = new ArrayList<>();
     private final List<String> destinations = new ArrayList<>();
+    private final List<String> structFieldSelect = new ArrayList<>();
     private String selectElementsBySummaryFeature = null;
 
     public ParsedSummaryField(String name, ParsedType type) {
@@ -34,6 +35,7 @@ public class ParsedSummaryField extends ParsedBlock {
     ParsedType getType() { return type; }
     List<String> getDestinations() { return List.copyOf(destinations); }
     List<String> getSources() { return List.copyOf(sources); }
+    List<String> getStructFieldSelect() { return List.copyOf(structFieldSelect); }
     boolean getBolded() { return isBold; }
     boolean getDynamic() { return isDyn; }
     boolean getFull() { return isFull; }
@@ -44,6 +46,7 @@ public class ParsedSummaryField extends ParsedBlock {
 
     public void addDestination(String dst) { destinations.add(dst); }
     public void addSource(String src) { sources.add(src); }
+    public void addStructFieldSelect(String name) { structFieldSelect.add(name); }
     public void setBold(boolean value) { this.isBold = value; }
     public void setDynamic() { this.isDyn = true; }
     public void setFull() { this.isFull = true; }

@@ -15,6 +15,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -68,7 +69,7 @@ public class SummaryClass extends Derived {
     private void deriveImplicitFields(DocumentSummary summary, Map<String, SummaryClassField> fields) {
         if (summary.name().equals("default")) {
             addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryElementsSelector.selectAll(),
-                    SummaryTransform.DOCUMENT_ID, "", Combiner_shape.INFER, fields);
+                    SummaryTransform.DOCUMENT_ID, "", List.of(), Combiner_shape.INFER, fields);
         }
     }
 
@@ -78,7 +79,7 @@ public class SummaryClass extends Derived {
                 accessingDiskSummary = true;
             }
             addField(summaryField.getName(), summaryField.getDataType(), summaryField.getElementsSelector(), summaryField.getTransform(),
-                    getSource(summaryField, schema), getCombinerShape(summaryField, schema), fields);
+                    getSource(summaryField, schema), summaryField.getStructFields(), getCombinerShape(summaryField, schema), fields);
         }
     }
 
@@ -86,6 +87,7 @@ public class SummaryClass extends Derived {
                           SummaryElementsSelector elementsSelector,
                           SummaryTransform transform,
                           String source,
+                          List<String> structFields,
                           Combiner_shape.Enum combinerShape,
                           Map<String, SummaryClassField> fields) {
         if (fields.containsKey(name)) {
@@ -95,7 +97,8 @@ public class SummaryClass extends Derived {
                                                                   ". " + "Declared as type " + sf.getType() + " and " + type);
             }
         } else {
-            fields.put(name, new SummaryClassField(name, type, elementsSelector, transform, source, combinerShape, rawAsBase64));
+            fields.put(name, new SummaryClassField(name, type, elementsSelector, transform, source, combinerShape,
+                                                  rawAsBase64, structFields));
         }
     }
 
@@ -125,6 +128,7 @@ public class SummaryClass extends Derived {
                     name(field.getName()).
                     command(field.getCommand()).
                     source(field.getSource()).
+                    struct_fields(field.getStructFields()).
                     combiner_shape(field.getCombinerShape()).
                     elements(convertElementsSelector(field.getElementsSelector())));
         }
@@ -148,6 +152,9 @@ public class SummaryClass extends Derived {
      *
      * INFER, which is what a source that resolves to none of the shapes gets, leaves the backend deducing
      * the shape from the names of the struct field attributes, as it did before it could be told.
+     *
+     * When the summary field only selects some of the struct sub-fields, the shape is resolved from those,
+     * matching the eligibility check which made this an attribute combiner in the first place.
      */
     static Combiner_shape.Enum getCombinerShape(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() != SummaryTransform.ATTRIBUTECOMBINER) return Combiner_shape.INFER;
@@ -159,8 +166,9 @@ public class SummaryClass extends Derived {
                                                                   : summaryField.getName();
         ImmutableSDField source = schema.getField(sourceName);
         if (source == null) return Combiner_shape.INFER;
-        if (isArrayOfSimpleStruct(source)) return Combiner_shape.ARRAY_OF_STRUCT;
-        if (isMapOfSimpleStruct(source)) return Combiner_shape.MAP_OF_STRUCT;
+        var selectedFields = summaryField.getStructFields();
+        if (isArrayOfSimpleStruct(source, selectedFields)) return Combiner_shape.ARRAY_OF_STRUCT;
+        if (isMapOfSimpleStruct(source, selectedFields)) return Combiner_shape.MAP_OF_STRUCT;
         if (isMapOfPrimitiveType(source)) return Combiner_shape.MAP_OF_SCALAR;
         return Combiner_shape.INFER;
     }
