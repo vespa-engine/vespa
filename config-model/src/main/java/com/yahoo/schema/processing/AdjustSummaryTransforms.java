@@ -11,8 +11,6 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import java.util.logging.Level;
-
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
 
 /**
@@ -37,7 +35,7 @@ public class AdjustSummaryTransforms extends Processor {
             for (var summaryField : summary.getSummaryFields().values()) {
                 makeDocumentIdTransformIfAppropriate(summaryField);
                 makeAttributeTransformIfAppropriate(summaryField, schema);
-                makeAttributeCombinerTransformIfAppropriate(summaryField, summary.name(), schema, validate);
+                makeAttributeCombinerTransformIfAppropriate(summaryField, schema);
                 makeAttributeTokensTransformIfAppropriate(summaryField, summary.name(), schema);
                 makeCopyTransformIfAppropriate(summaryField, schema);
             }
@@ -65,12 +63,12 @@ public class AdjustSummaryTransforms extends Processor {
      * struct-field selection in a document-summary), only that subset needs to be usable as struct field
      * attributes. The selection itself is validated in {@link SummaryStructFieldSelectValidator}.
      *
-     * A selection whose sub-fields are not attributes is still legal: streaming search applies it when
-     * filling the summary field and needs no attributes at all for that. It is only indexed search which
-     * can apply a selection solely through the attribute combiner, so that combination is warned about
-     * rather than rejected - the same schema may well be used by a streaming cluster.
+     * A selection whose sub-fields are not attributes leaves the transform alone: streaming search applies
+     * it when filling the summary field and needs no attributes at all for that. Whether the mode this
+     * schema ends up in can honour it is decided by SummaryStructFieldSelectAttributesValidator, which
+     * unlike a schema processor knows the mode of each cluster using the schema.
      */
-    private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, String docsumName, Schema schema, boolean validate) {
+    private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {
             String sourceFieldName = summaryField.getSingleSource();
             ImmutableSDField source = schema.getField(sourceFieldName);
@@ -78,12 +76,6 @@ public class AdjustSummaryTransforms extends Processor {
             var selectedFields = summaryField.getStructFields();
             if (isComplexFieldWithOnlyStructFieldAttributes(source, selectedFields)) {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
-            } else if (!selectedFields.isEmpty() && validate) {
-                deployLogger.logApplicationPackage(Level.WARNING, "For schema '" + schema.getName() +
-                        "', document-summary '" + docsumName + "', summary field '" + summaryField.getName() +
-                        "': the selected struct fields " + selectedFields + " cannot all be used as struct " +
-                        "field attributes for source field '" + sourceFieldName + "', so the selection only " +
-                        "takes effect for streaming search");
             }
         }
     }
