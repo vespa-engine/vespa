@@ -73,7 +73,8 @@ public class CreateFastMapSearch extends Processor {
      */
     private SDField createFastMapField(SDField inputField, String fieldName, boolean validate) {
         if (validate && (schema.getConcreteField(fieldName) != null || schema.getAttribute(fieldName) != null)) {
-            throw newProcessException(schema, null, "Incompatible map attribute '" + fieldName + "' already created.");
+            throw newProcessException(schema.getName(), inputField.getName(),
+                                      "Incompatible map attribute '" + fieldName + "' already created.");
         }
 
         SDField field = new SDField(repo, fieldName, DataType.getArray(DataType.STRING));
