@@ -27,9 +27,7 @@ public class IndexFieldNames extends Processor {
         if ( ! validate) return;
 
         for (SDField field : schema.allConcreteFields()) {
-            // extra field is set by fields created by processors: e.g. CreatePositionZCurve
-            // and CreateFastMapSearch.
-            if (field.isExtraField()) {
+            if (field.hasFastMapSearch()) {
                 continue;
             }
             if ( ! field.getName().matches(FIELD_NAME_REGEXP) &&  ! legalDottedPositionField(field)) {
