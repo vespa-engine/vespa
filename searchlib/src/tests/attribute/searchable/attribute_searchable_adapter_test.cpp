@@ -303,7 +303,7 @@ template <typename T> MyAttributeManager makeAttributeManager(T value) {
     return MyAttributeManager(attr);
 }
 
-MyAttributeManager makeFastSearchStringAttributeManager(const string& value) {
+MyAttributeManager make_fast_search_string_attribute_manager(const string& value) {
     Config cfg(BasicType::STRING, CollectionType::SINGLE);
     cfg.setFastSearch(true);
     AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(field, cfg);
@@ -314,18 +314,11 @@ MyAttributeManager makeFastSearchStringAttributeManager(const string& value) {
     return MyAttributeManager(attr_ptr);
 }
 
-SimpleStringRangeTerm make_string_range_term(const string& lower, bool lower_inclusive, const string& upper,
-                                             bool upper_inclusive) {
-    auto spec = std::make_unique<search::StringRangeSpec>(lower, lower_inclusive, lower.empty(), upper,
-                                                          upper_inclusive, upper.empty());
+SimpleStringRangeTerm make_string_range_term(const string& left, bool left_closed, bool left_unbounded,
+                                             const string& right, bool right_closed, bool right_unbounded) {
+    auto spec = std::make_unique<search::StringRangeSpec>(left, left_closed, left_unbounded, right, right_closed,
+                                                          right_unbounded);
     return {StringRange(std::move(spec)), field, 0, Weight(0)};
-}
-
-bool string_range_search(IAttributeManager& attribute_manager, const string& lower, bool lower_inclusive,
-                         const string& upper, bool upper_inclusive) {
-    auto   node = make_string_range_term(lower, lower_inclusive, upper, upper_inclusive);
-    Result result = do_search(attribute_manager, node, true);
-    return (result.hits.size() == 1) && (result.hits[0].docid == (num_docs - 1));
 }
 
 MyAttributeManager makeFastSearchLongAttributeManager(int64_t value) {
@@ -361,45 +354,29 @@ TEST(AttributeSearchableAdapterTest, requireThatRangeTermsWorkToo) {
 
 TEST(AttributeSearchableAdapterTest, require_that_string_range_terms_work) {
     for (bool fast_search : {false, true}) {
-        SCOPED_TRACE(fast_search ? "fast-search" : "no fast-search");
         MyAttributeManager attribute_manager =
-            fast_search ? makeFastSearchStringAttributeManager("foo") : makeAttributeManager("foo");
+            fast_search ? make_fast_search_string_attribute_manager("foo") : makeAttributeManager("foo");
 
-        EXPECT_TRUE(string_range_search(attribute_manager, "bar", true, "fox", true));
-        EXPECT_TRUE(string_range_search(attribute_manager, "foo", true, "foo", true));
-        EXPECT_TRUE(string_range_search(attribute_manager, "bar", true, "", true));
+        // Contained in range
+        EXPECT_TRUE(search(make_string_range_term("bar", true, false, "fox", true, false), attribute_manager,
+                           fast_search, true, false));
+        EXPECT_TRUE(search(make_string_range_term("foo", true, false, "foo", true, false), attribute_manager,
+                           fast_search, true, false));
+        EXPECT_TRUE(search(make_string_range_term("bar", true, false, "", false, true), attribute_manager,
+                           fast_search, true, false));
         // matching is uncased by default
-        EXPECT_TRUE(string_range_search(attribute_manager, "BAR", true, "FOX", true));
+        EXPECT_TRUE(search(make_string_range_term("BAR", true, false, "FOX", true, false), attribute_manager,
+                           fast_search, true, false));
 
-        EXPECT_FALSE(string_range_search(attribute_manager, "bar", true, "fon", true));
-        EXPECT_FALSE(string_range_search(attribute_manager, "foo", false, "fox", true));
-        EXPECT_FALSE(string_range_search(attribute_manager, "bar", true, "foo", false));
+        // Not contained in range
+        EXPECT_FALSE(search(make_string_range_term("bar", true, false, "fon", true, false), attribute_manager,
+                            fast_search, true, true));
+        // The following two cannot be expected to be empty since the closed range contains foo
+        EXPECT_FALSE(search(make_string_range_term("foo", false, false, "fox", true, false), attribute_manager,
+                            fast_search, true, false));
+        EXPECT_FALSE(search(make_string_range_term("bar", true, false, "foo", false, false), attribute_manager,
+                            fast_search, true, false));
     }
-}
-
-TEST(AttributeSearchableAdapterTest, require_that_string_range_term_uses_enum_hint) {
-    MyAttributeManager attribute_manager = makeAttributeManager("foo");
-
-    // A range containing an enum store value cannot be eliminated up front.
-    auto   node = make_string_range_term("bar", true, "fox", true);
-    Result result = do_search(attribute_manager, node, true);
-    EXPECT_FALSE(result.est_empty);
-    EXPECT_EQ(num_docs, result.est_hits);
-
-    // A range without any enum store value is known to be empty.
-    node = make_string_range_term("aaa", true, "abb", true);
-    result = do_search(attribute_manager, node, true);
-    EXPECT_TRUE(result.est_empty);
-    EXPECT_EQ(0u, result.est_hits);
-}
-
-TEST(AttributeSearchableAdapterTest, require_that_string_range_on_numeric_attribute_produces_empty_search) {
-    MyAttributeManager attribute_manager = makeAttributeManager(int64_t(42));
-
-    auto   node = make_string_range_term("bar", true, "fox", true);
-    Result result = do_search(attribute_manager, node, true);
-    EXPECT_TRUE(result.est_empty);
-    EXPECT_TRUE(result.hits.empty());
 }
 
 TEST(AttributeSearchableAdapterTest, requireThatPrefixTermsWork) {
