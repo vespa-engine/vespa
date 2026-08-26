@@ -11,10 +11,12 @@
 namespace search::features {
 
 /**
- * Blueprint for the match bits in a given field of the terms carrying each query item label,
- * exposed as a mapped tensor<float>(label{}) with the query item labels as cell labels. A label
- * gets a cell only when it actually matches, i.e. when it is carried by at least one query term
- * searching the given field and at least one of those terms matched the document in that field.
+ * Blueprint for matches_for_labels(field).
+ *
+ * Output is a mapped tensor<float>(label{}) of match bits for one field.
+ * A query item label gets a cell (value 1) only if at least one term carrying
+ * that label searched this field and matched the document. Other labels are
+ * omitted.
  */
 class MatchesForLabelsBlueprint : public fef::Blueprint {
 private:

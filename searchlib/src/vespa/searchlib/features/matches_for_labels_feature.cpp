@@ -112,8 +112,9 @@ std::vector<TermFieldHandle> collect_field_handles(const std::vector<const ITerm
         if (tfd == nullptr) {
             continue;
         }
-        // Only the match docid is needed; request the cheaper available details.
-        // Tests cannot pin this: SimpleTermFieldData::getHandle discards requested details.
+        // Only the document ID is needed, so request the cheaper Interleaved details.
+        // SimpleTermFieldData discards the requested detail level, so tests cannot
+        // distinguish this from Normal.
         TermFieldHandle handle = tfd->getHandle(MatchDataDetails::Interleaved);
         if (handle != IllegalHandle) {
             handles.push_back(handle);

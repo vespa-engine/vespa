@@ -52,7 +52,8 @@ TEST(MatchesForLabelsBlueprintTest, setup_fails_for_invalid_parameter_lists) {
     MatchesForLabelsBlueprintFixture f;
     EXPECT_FALSE(f.try_setup({}));
     EXPECT_FALSE(f.try_setup({"foo", "bar"}));
-    EXPECT_FALSE(f.try_setup({"foo", "0"})); // discriminates vs matches's optional number
+    // wrong parameter number; unlike matches, there is no term-index overload
+    EXPECT_FALSE(f.try_setup({"foo", "0"}));
     EXPECT_FALSE(f.try_setup({"unknown"}));
 }
 
@@ -94,7 +95,7 @@ struct MatchesForLabelsFixture {
         EXPECT_TRUE(test.setup());
         match_data = test.createMatchDataBuilder();
     }
-    void hit_index(uint32_t term_id, uint32_t field_id, uint32_t doc_id = 1) {
+    void prepare_term(uint32_t term_id, uint32_t field_id, uint32_t doc_id = 1) {
         auto* tfmd = match_data->getTermFieldMatchData(term_id, field_id);
         ASSERT_TRUE(tfmd != nullptr);
         tfmd->reset(doc_id);
@@ -104,36 +105,35 @@ struct MatchesForLabelsFixture {
 
 MatchesForLabelsFixture::~MatchesForLabelsFixture() = default;
 
-TEST(MatchesForLabelsExecutorTest, one_label_one_term_that_hits_gives_one_cell) {
+TEST(MatchesForLabelsExecutorTest, label_with_one_term_gives_one_cell) {
     MatchesForLabelsFixture f;
     f.add_label("x", {11});
     f.setup();
-    f.hit_index(0, 1);
+    f.prepare_term(0, 1);
     EXPECT_EQ(empty_spec().add(label_addr("x"), 1), f.execute());
 }
 
-TEST(MatchesForLabelsExecutorTest, one_label_two_terms_in_the_field_is_any_of) {
+TEST(MatchesForLabelsExecutorTest, label_with_multiple_terms_in_the_field_is_any_of) {
     MatchesForLabelsFixture f;
     f.add_label("x", {11, 12});
     f.setup();
-    f.hit_index(0, 1);
+    f.prepare_term(0, 1);
     EXPECT_EQ(empty_spec().add(label_addr("x"), 1), f.execute());
 }
 
-TEST(MatchesForLabelsExecutorTest, two_labels_only_one_hits_leaves_the_other_absent) {
+TEST(MatchesForLabelsExecutorTest, label_not_matching_the_document_is_absent) {
     MatchesForLabelsFixture f;
     f.add_label("x", {11});
     f.add_label("y", {12});
     f.setup();
-    f.hit_index(0, 1);
+    f.prepare_term(0, 1);
     EXPECT_EQ(empty_spec().add(label_addr("x"), 1), f.execute());
 }
 
 TEST(MatchesForLabelsExecutorTest, query_without_labels_gives_empty_tensor) {
     MatchesForLabelsFixture f;
     f.setup();
-    f.hit_index(0, 1);
-    // createExecutor's ConstantTensorRefExecutor path (no vespa.label.* at all)
+    f.prepare_term(0, 1);
     EXPECT_EQ(empty_spec(), f.execute());
 }
 
@@ -142,41 +142,39 @@ TEST(MatchesForLabelsExecutorTest, no_label_matching_the_document_gives_empty_te
     f.add_label("x", {11});
     f.add_label("y", {12});
     f.setup();
-    // execute()'s _empty_output path (labels exist, none hit this document)
     EXPECT_EQ(empty_spec(), f.execute());
 }
 
-TEST(MatchesForLabelsExecutorTest, label_whose_only_term_searches_another_field_is_absent) {
+TEST(MatchesForLabelsExecutorTest, label_whose_terms_search_another_field_is_absent) {
     MatchesForLabelsFixture f;
     f.add_label("x", {13});
     f.setup();
-    f.hit_index(2, 2);
+    f.prepare_term(2, 2);
     EXPECT_EQ(empty_spec(), f.execute());
 }
 
-TEST(MatchesForLabelsExecutorTest, label_whose_only_term_is_on_no_field_is_absent) {
+TEST(MatchesForLabelsExecutorTest, label_whose_term_is_on_no_field_is_absent) {
     MatchesForLabelsFixture f;
-    auto& qe = f.test.getQueryEnv();
-    qe.getTerms().push_back(SimpleTermData());
-    SimpleTermData& td = qe.getTerms().back();
-    td.setUniqueId(14);
-    auto& tfd = td.addField(FieldInfo::no_field().id()); // id 0
-    tfd.setHandle(qe.getLayout().allocTermField(tfd.getFieldId()));
-    ASSERT_NE(tfd.getHandle(), IllegalHandle);
+    auto& query_env = f.test.getQueryEnv();
+    query_env.getTerms().push_back(SimpleTermData());
+    SimpleTermData& term = query_env.getTerms().back();
+    term.setUniqueId(14);
+    auto& term_field = term.addField(FieldInfo::no_field().id()); // field id 0
+    term_field.setHandle(query_env.getLayout().allocTermField(term_field.getFieldId()));
+    ASSERT_NE(term_field.getHandle(), IllegalHandle);
     f.add_label("x", {14});
     f.setup();
-    f.hit_index(0, 1);
+    f.prepare_term(0, 1);
     EXPECT_EQ(empty_spec(), f.execute());
 }
 
-// Predicate pin: has_ranking_data is false when HIDDEN_FROM_RANKING is set.
-// A YQL {label} on a near/onear/sameElement child is not this case — ranking
-// unpack clears the flag, so that child is ranking-visible (cell 1).
+// A term in a non-contributing query branch may have match data for this
+// document while remaining hidden from ranking. It must not produce a cell.
 TEST(MatchesForLabelsExecutorTest, hidden_from_ranking_gives_empty_tensor) {
     MatchesForLabelsFixture f;
     f.add_label("x", {11});
     f.setup();
-    f.hit_index(0, 1);
+    f.prepare_term(0, 1);
     auto* tfmd = f.match_data->getTermFieldMatchData(0, 1);
     ASSERT_TRUE(tfmd != nullptr);
     tfmd->set_hidden_from_ranking();
@@ -208,7 +206,7 @@ struct MatchesForLabelsAttributeFixture {
 
 MatchesForLabelsAttributeFixture::~MatchesForLabelsAttributeFixture() = default;
 
-TEST(MatchesForLabelsExecutorTest, attribute_field_is_one_on_hit_and_empty_on_other_docid) {
+TEST(MatchesForLabelsExecutorTest, attribute_field_match_gives_one_cell_only_for_matching_docid) {
     MatchesForLabelsAttributeFixture f;
     f.add_label("x", {11});
     f.setup();
