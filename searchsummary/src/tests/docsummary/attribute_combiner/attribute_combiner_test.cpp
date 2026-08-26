@@ -23,6 +23,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::getUndefined;
 using search::docsummary::AttributeCombinerDFW;
+using search::docsummary::CombinerShape;
 using search::docsummary::DocsumFieldWriter;
 using search::docsummary::GetDocsumsState;
 using search::docsummary::GetDocsumsStateCallback;
@@ -47,10 +48,12 @@ struct AttributeCombinerTest : public ::testing::Test {
     AttributeCombinerTest();
     ~AttributeCombinerTest() override;
     void set_field(const std::string& field_name, bool filter_elements,
-                   const std::vector<std::string>& struct_fields = {});
+                   const std::vector<std::string>& struct_fields = {},
+                   CombinerShape                   declared_shape = CombinerShape::INFER);
     std::unique_ptr<DocsumFieldWriter> try_create(const std::string&              field_name,
-                                                  const std::vector<std::string>& struct_fields = {}) const {
-        return AttributeCombinerDFW::create(field_name, *state._attrCtx, struct_fields);
+                                                  const std::vector<std::string>& struct_fields = {},
+                                                  CombinerShape declared_shape = CombinerShape::INFER) const {
+        return AttributeCombinerDFW::create(field_name, *state._attrCtx, struct_fields, declared_shape);
     }
     void assertWritten(const std::string& exp, uint32_t docId);
     bool has_field(const std::string& field_name) const { return matching_elements_fields->has_field(field_name); }
@@ -86,6 +89,10 @@ AttributeCombinerTest::AttributeCombinerTest()
     attrs.build_string_attribute("mixed.name", {{"n1.1", "n1.2"}, {"n2"}, {}, {}, {}});
     attrs.build_int_attribute("mixed.val", BasicType::Type::INT8, {{10, 11}, {20}, {}, {}, {}});
     attrs.build_string_attribute("mixed.tags", {{"t1"}, {"t2"}, {}, {}, {}}, CollectionType::WSET);
+    // "pair" has exactly the two sub-fields which make a map of scalar indistinguishable from an array
+    // of struct when the shape is deduced. The empty value of document 1 is what tells them apart.
+    attrs.build_string_attribute("pair.key", {{"k1"}, {"k2"}, {}, {}, {}});
+    attrs.build_string_attribute("pair.value", {{""}, {"v2"}, {}, {}, {}});
 
     callback.add_matching_elements(1, "array", {1});
     callback.add_matching_elements(3, "array", {0});
@@ -105,7 +112,7 @@ AttributeCombinerTest::AttributeCombinerTest()
 AttributeCombinerTest::~AttributeCombinerTest() = default;
 
 void AttributeCombinerTest::set_field(const std::string& field_name, bool filter_elements,
-                                      const std::vector<std::string>& struct_fields) {
+                                      const std::vector<std::string>& struct_fields, CombinerShape declared_shape) {
     if (filter_elements) {
         elements_selector = std::make_unique<SummaryElementsSelector>(
             SummaryElementsSelector::select_by_match(field_name, mapper.get_struct_fields(field_name)));
@@ -113,7 +120,7 @@ void AttributeCombinerTest::set_field(const std::string& field_name, bool filter
         elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
     }
     elements_selector->maybe_apply_to(*matching_elements_fields);
-    writer = try_create(field_name, struct_fields);
+    writer = try_create(field_name, struct_fields, declared_shape);
     ASSERT_TRUE(writer);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     // assign() rather than resize(), so that a second set_field() in the same test does not reuse the
@@ -278,6 +285,49 @@ TEST_F(AttributeCombinerTest, require_that_matching_elements_are_kept_when_a_sub
     assertWritten("[ { key: 'k3.1', value: { fval: 130.0 } } ]", 3);
     assertWritten("[ { key: 'k4.2', value: { fval: 141.0 } } ]", 4);
     assertWritten("null", 5);
+}
+
+TEST_F(AttributeCombinerTest, require_that_a_declared_shape_selects_the_writer_it_names) {
+    set_field("array", false, {}, CombinerShape::ARRAY_OF_STRUCT);
+    assertWritten("[ { flag: true, fval: 110.0, name: 'n1.1', val: 10}, { flag: false, name: 'n1.2', val: 11}]", 1);
+    set_field("smap", false, {}, CombinerShape::MAP_OF_STRUCT);
+    assertWritten("[ { key: 'k1.1', value: { flag: true, fval: 110.0, name: 'n1.1', val: 10} }, { key: 'k1.2', "
+                  "value: { flag: false, name: 'n1.2', val: 11} }]",
+                  1);
+    set_field("map", false, {}, CombinerShape::MAP_OF_SCALAR);
+    assertWritten("[ { key: 'k1.1', value: 'n1.1' }, { key: 'k1.2', value: 'n1.2'}]", 1);
+}
+
+TEST_F(AttributeCombinerTest, require_that_a_declared_shape_which_the_attributes_do_not_match_is_ignored) {
+    // Reported and then resolved as if no shape had been declared. Config and attributes disagreeing can
+    // only come from a config model which disagrees with this backend, and failing the field would cost
+    // the whole node its summary config.
+    set_field("array", false, {}, CombinerShape::MAP_OF_STRUCT);
+    assertWritten("[ { flag: true, fval: 110.0, name: 'n1.1', val: 10}, { flag: false, name: 'n1.2', val: 11}]", 1);
+    set_field("array", false, {}, CombinerShape::MAP_OF_SCALAR);
+    assertWritten("[ { flag: true, fval: 110.0, name: 'n1.1', val: 10}, { flag: false, name: 'n1.2', val: 11}]", 1);
+    set_field("smap", false, {}, CombinerShape::ARRAY_OF_STRUCT);
+    assertWritten("[ { key: 'k1.1', value: { flag: true, fval: 110.0, name: 'n1.1', val: 10} }, { key: 'k1.2', "
+                  "value: { flag: false, name: 'n1.2', val: 11} }]",
+                  1);
+}
+
+TEST_F(AttributeCombinerTest, require_that_a_declared_shape_decides_whether_an_empty_value_is_kept) {
+    // As a map of scalar the empty value is kept, so that the key/value pair stays complete. As an array
+    // of struct an empty string is simply absent, like any other sub-field without a value.
+    set_field("pair", false, {}, CombinerShape::MAP_OF_SCALAR);
+    assertWritten("[ { key: 'k1', value: '' } ]", 1);
+    set_field("pair", false, {}, CombinerShape::ARRAY_OF_STRUCT);
+    assertWritten("[ { key: 'k1' } ]", 1);
+    // Deduced, "pair" is taken for a map of scalar, which is what declaring the shape is there to fix.
+    set_field("pair", false);
+    assertWritten("[ { key: 'k1', value: '' } ]", 1);
+}
+
+TEST_F(AttributeCombinerTest, require_that_a_struct_field_selection_is_validated_against_the_resolved_shape) {
+    // "value.name" is only selectable for a map of struct. Declaring "array" as one does not make it one:
+    // the declared shape is checked, so the selection is still validated against an array of struct.
+    EXPECT_FALSE(try_create("array", {"value.name"}, CombinerShape::MAP_OF_STRUCT));
 }
 
 TEST_F(AttributeCombinerTest,

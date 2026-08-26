@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "combiner_shape.h"
 #include "docsum_field_writer.h"
 
 #include <memory>
@@ -40,7 +41,8 @@ public:
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
     static std::unique_ptr<DocsumFieldWriter> create(const std::string&                    fieldName,
                                                      search::attribute::IAttributeContext& attrCtx,
-                                                     std::span<const std::string>          struct_fields);
+                                                     std::span<const std::string>          struct_fields,
+                                                     CombinerShape                         declared_shape);
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
                       search::common::ElementIds selected_elements, vespalib::slime::Inserter& target) const override;
 };

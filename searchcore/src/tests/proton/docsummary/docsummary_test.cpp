@@ -125,8 +125,8 @@ namespace proton {
 class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWriterFactory {
 public:
     std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string&, const std::string&,
-                                                                  const std::string&,
-                                                                  std::span<const std::string>) override {
+                                                                  const std::string&, std::span<const std::string>,
+                                                                  search::docsummary::CombinerShape) override {
         return {};
     }
 };

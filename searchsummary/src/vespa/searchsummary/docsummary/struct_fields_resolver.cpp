@@ -18,7 +18,8 @@ using vespalib::Issue;
 namespace search::docsummary {
 
 StructFieldsResolver::StructFieldsResolver(const std::string& field_name, const IAttributeContext& attr_ctx,
-                                           std::span<const std::string> selected_struct_fields)
+                                           std::span<const std::string> selected_struct_fields,
+                                           CombinerShape                declared_shape)
     : _field_name(field_name),
       _map_key_attribute(),
       _map_value_fields(),
@@ -59,10 +60,9 @@ StructFieldsResolver::StructFieldsResolver(const std::string& field_name, const 
         }
     }
     // The shape of the field is what it is regardless of which sub-fields are selected, so it must be
-    // determined before the selection is applied. Both uses_attribute() and the choice of writer made by
+    // settled before the selection is applied. Both uses_attribute() and the choice of writer made by
     // AttributeCombinerDFW::create() depend on it.
-    _is_map_of_struct = !_map_value_fields.empty();
-    _is_map_of_scalar = _has_map_key && _has_map_value && (_array_fields.size() == 2u) && !_is_map_of_struct;
+    resolve_shape(declared_shape);
     StringVector unselected_array_fields;
     if (!selected_struct_fields.empty()) {
         apply_struct_field_selection(selected_struct_fields, unselected_array_fields);
@@ -105,11 +105,61 @@ StructFieldsResolver::StructFieldsResolver(const std::string& field_name, const 
                           _map_key_attribute.c_str());
             _error = true;
         } else if (_array_fields.size() != 1u) {
-            Issue::report("StructFieldsResolver: Could not determine if field '%s' is array or map of struct",
-                          field_name.c_str());
+            if (declared_shape == CombinerShape::MAP_OF_STRUCT) {
+                Issue::report("StructFieldsResolver: Field '%s' is configured as a map of struct, but has struct "
+                              "field attributes besides '%s.key' which are not sub-fields of '%s.value'",
+                              field_name.c_str(), field_name.c_str(), field_name.c_str());
+            } else {
+                Issue::report("StructFieldsResolver: Could not determine if field '%s' is array or map of struct",
+                              field_name.c_str());
+            }
             _error = true;
         }
     }
+}
+
+void StructFieldsResolver::resolve_shape(CombinerShape declared_shape) {
+    // What the attributes which are actually present say. This is the answer for CombinerShape::INFER,
+    // and the fallback whenever a declared shape disagrees with them.
+    bool has_value_sub_fields = !_map_value_fields.empty();
+    bool looks_like_map_of_scalar =
+        _has_map_key && _has_map_value && (_array_fields.size() == 2u) && !has_value_sub_fields;
+    switch (declared_shape) {
+    case CombinerShape::ARRAY_OF_STRUCT:
+        if (!has_value_sub_fields) {
+            _is_map_of_struct = false;
+            _is_map_of_scalar = false;
+            return;
+        }
+        Issue::report("StructFieldsResolver: Field '%s' is configured as an array of struct, but has "
+                      "'%s.value.<name>' struct field attributes; deducing its shape instead",
+                      _field_name.c_str(), _field_name.c_str());
+        break;
+    case CombinerShape::MAP_OF_STRUCT:
+        if (has_value_sub_fields) {
+            _is_map_of_struct = true;
+            _is_map_of_scalar = false;
+            return;
+        }
+        Issue::report("StructFieldsResolver: Field '%s' is configured as a map of struct, but has no "
+                      "'%s.value.<name>' struct field attribute; deducing its shape instead",
+                      _field_name.c_str(), _field_name.c_str());
+        break;
+    case CombinerShape::MAP_OF_SCALAR:
+        if (looks_like_map_of_scalar) {
+            _is_map_of_struct = false;
+            _is_map_of_scalar = true;
+            return;
+        }
+        Issue::report("StructFieldsResolver: Field '%s' is configured as a map of scalar, but does not have "
+                      "exactly the struct field attributes '%s.key' and '%s.value'; deducing its shape instead",
+                      _field_name.c_str(), _field_name.c_str(), _field_name.c_str());
+        break;
+    case CombinerShape::INFER:
+        break;
+    }
+    _is_map_of_struct = has_value_sub_fields;
+    _is_map_of_scalar = looks_like_map_of_scalar;
 }
 
 void StructFieldsResolver::apply_struct_field_selection(std::span<const std::string> selected_struct_fields,

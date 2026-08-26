@@ -26,7 +26,7 @@ public:
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<DocsumFieldWriter>
     create_docsum_field_writer(const std::string& field_name, const std::string& command, const std::string& source,
-                               std::span<const std::string> struct_fields) override;
+                               std::span<const std::string> struct_fields, CombinerShape declared_shape) override;
 };
 
 } // namespace search::docsummary

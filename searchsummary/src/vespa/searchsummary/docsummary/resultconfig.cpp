@@ -2,6 +2,7 @@
 
 #include "resultconfig.h"
 
+#include "combiner_shape.h"
 #include "docsum_field_writer.h"
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
@@ -37,6 +38,21 @@ SummaryElementsSelector make_summary_elements_selector(const SummaryConfig::Clas
     case Select::ALL:
     default:
         return SummaryElementsSelector::select_all();
+    }
+}
+
+CombinerShape make_combiner_shape(SummaryConfig::Classes::Fields::CombinerShape shape) {
+    using ConfigShape = SummaryConfig::Classes::Fields::CombinerShape;
+    switch (shape) {
+    case ConfigShape::ARRAY_OF_STRUCT:
+        return CombinerShape::ARRAY_OF_STRUCT;
+    case ConfigShape::MAP_OF_STRUCT:
+        return CombinerShape::MAP_OF_STRUCT;
+    case ConfigShape::MAP_OF_SCALAR:
+        return CombinerShape::MAP_OF_SCALAR;
+    case ConfigShape::INFER:
+    default:
+        return CombinerShape::INFER;
     }
 }
 
@@ -126,12 +142,13 @@ bool ResultConfig::readConfig(const SummaryConfig& cfg, const std::string& confi
             // config::StringVector is a contiguous range of std::string, so this converts without a copy
             // and keeps the config type from spreading past this boundary.
             std::span<const std::string> struct_fields = field.structFields;
+            auto                         declared_shape = make_combiner_shape(field.combinerShape);
             LOG(info, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), field_name.c_str());
             auto factory = [&]() -> std::unique_ptr<DocsumFieldWriter> {
                 if (!command.empty()) {
                     try {
-                        return docsum_field_writer_factory.create_docsum_field_writer(field_name, command,
-                                                                                      source_name, struct_fields);
+                        return docsum_field_writer_factory.create_docsum_field_writer(
+                            field_name, command, source_name, struct_fields, declared_shape);
                     } catch (const vespalib::IllegalArgumentException& ex) {
                         LOG(error,
                             "Exception during setup of summary result class '%s': field='%s', command='%s', "

@@ -18,6 +18,7 @@
 
 using search::MatchingElementsFields;
 using search::Normalizing;
+using search::docsummary::CombinerShape;
 using search::docsummary::CopyDFW;
 using search::docsummary::DocsumFieldWriter;
 using search::docsummary::EmptyDFW;
@@ -58,15 +59,17 @@ DocsumFieldWriterFactory::DocsumFieldWriterFactory(
 
 DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
-std::unique_ptr<DocsumFieldWriter>
-DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name, const std::string& command,
-                                                     const std::string&           source,
-                                                     std::span<const std::string> struct_fields) {
+std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field_writer(
+    const std::string& field_name, const std::string& command, const std::string& source,
+    std::span<const std::string> struct_fields, CombinerShape declared_shape) {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     using namespace search::docsummary;
     if ((command == command::positions) || (command == command::abs_distance)) {
         fieldWriter = std::make_unique<EmptyDFW>();
     } else if ((command == command::attribute) || (command == command::attribute_combiner)) {
+        // A declared combiner shape is redundant here rather than unhonoured: the struct is built from
+        // the document, whose type already fixes the shape, so there is nothing to deduce and nothing
+        // to report.
         if (!struct_fields.empty()) {
             // The struct fields are combined from the document, not from attributes, so the selection
             // made in the document-summary is not used. See StructFieldsResolver for the indexed case.
@@ -85,8 +88,8 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
             throw_missing_source(command);
         }
     } else {
-        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source,
-                                                                                        struct_fields);
+        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(
+            field_name, command, source, struct_fields, declared_shape);
     }
     return fieldWriter;
 }

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "combiner_shape.h"
+
 #include <span>
 #include <string>
 #include <vector>
@@ -35,6 +37,15 @@ private:
     bool         _error;
 
     /**
+     * Settle whether this field is an array of struct, a map of scalar or a map of struct. A declared
+     * shape is checked against the attributes which are actually present, and a mismatch is reported
+     * and then resolved as if the shape had not been declared at all: config saying one thing and the
+     * attributes another can only come from a config model which disagrees with this backend, and
+     * failing the field would cost the whole node its summary config.
+     */
+    void resolve_shape(CombinerShape declared_shape);
+
+    /**
      * Restrict this field to the given sub-fields, reporting an issue and failing the field if the
      * selection names something which is not a sub-field of it, or leaves a map without any value
      * sub-fields. The array sub-fields left out by the selection are returned in unselected_array_fields;
@@ -48,7 +59,7 @@ private:
 
 public:
     StructFieldsResolver(const std::string& field_name, const search::attribute::IAttributeContext& attr_ctx,
-                         std::span<const std::string> selected_struct_fields);
+                         std::span<const std::string> selected_struct_fields, CombinerShape declared_shape);
     ~StructFieldsResolver();
     bool is_map_of_scalar() const { return _is_map_of_scalar; }
     bool is_map_of_struct() const { return _is_map_of_struct; }
