@@ -5,8 +5,10 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.processing.DynamicSummaryTransformUtils;
 import com.yahoo.vespa.config.search.SummaryConfig;
+import com.yahoo.vespa.config.search.SummaryConfig.Classes.Fields.Combiner_shape;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -15,6 +17,10 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Level;
+
+import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
+import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isMapOfPrimitiveType;
+import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
 
 /**
  * A summary derived from a search definition.
@@ -61,7 +67,8 @@ public class SummaryClass extends Derived {
     /** MUST be called after all other fields are added */
     private void deriveImplicitFields(DocumentSummary summary, Map<String, SummaryClassField> fields) {
         if (summary.name().equals("default")) {
-            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryElementsSelector.selectAll(), SummaryTransform.DOCUMENT_ID, "", fields);
+            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryElementsSelector.selectAll(),
+                    SummaryTransform.DOCUMENT_ID, "", Combiner_shape.INFER, fields);
         }
     }
 
@@ -71,7 +78,7 @@ public class SummaryClass extends Derived {
                 accessingDiskSummary = true;
             }
             addField(summaryField.getName(), summaryField.getDataType(), summaryField.getElementsSelector(), summaryField.getTransform(),
-                    getSource(summaryField, schema), fields);
+                    getSource(summaryField, schema), getCombinerShape(summaryField, schema), fields);
         }
     }
 
@@ -79,6 +86,7 @@ public class SummaryClass extends Derived {
                           SummaryElementsSelector elementsSelector,
                           SummaryTransform transform,
                           String source,
+                          Combiner_shape.Enum combinerShape,
                           Map<String, SummaryClassField> fields) {
         if (fields.containsKey(name)) {
             SummaryClassField sf = fields.get(name);
@@ -87,7 +95,7 @@ public class SummaryClass extends Derived {
                                                                   ". " + "Declared as type " + sf.getType() + " and " + type);
             }
         } else {
-            fields.put(name, new SummaryClassField(name, type, elementsSelector, transform, source, rawAsBase64));
+            fields.put(name, new SummaryClassField(name, type, elementsSelector, transform, source, combinerShape, rawAsBase64));
         }
     }
 
@@ -117,6 +125,7 @@ public class SummaryClass extends Derived {
                     name(field.getName()).
                     command(field.getCommand()).
                     source(field.getSource()).
+                    combiner_shape(field.getCombinerShape()).
                     elements(convertElementsSelector(field.getElementsSelector())));
         }
         return classBuilder;
@@ -129,6 +138,31 @@ public class SummaryClass extends Derived {
     @Override
     public String toString() {
         return "summary class '" + getName() + "'";
+    }
+
+    /**
+     * Returns which shape the attribute combiner should write for the given summary field. The shape is
+     * resolved from the source field here, rather than where the transform is set, because
+     * AdjustSummaryTransforms, ImplicitSummaries and AddDataTypeAndTransformToSummaryOfImportedFields all
+     * set ATTRIBUTECOMBINER independently of each other.
+     *
+     * INFER, which is what a source that resolves to none of the shapes gets, leaves the backend deducing
+     * the shape from the names of the struct field attributes, as it did before it could be told.
+     */
+    static Combiner_shape.Enum getCombinerShape(SummaryField summaryField, Schema schema) {
+        if (summaryField.getTransform() != SummaryTransform.ATTRIBUTECOMBINER) return Combiner_shape.INFER;
+        // The same field the backend resolves from the configured source, cf. getSource() below emitting a
+        // source only for an explicit one, and DocsumFieldWriterFactory falling back to the field name.
+        // getSingleSource() alone will not do: for an implicit summary field it is one of the struct
+        // sub-fields, since those are its sources.
+        String sourceName = summaryField.hasExplicitSingleSource() ? summaryField.getSingleSource()
+                                                                  : summaryField.getName();
+        ImmutableSDField source = schema.getField(sourceName);
+        if (source == null) return Combiner_shape.INFER;
+        if (isArrayOfSimpleStruct(source)) return Combiner_shape.ARRAY_OF_STRUCT;
+        if (isMapOfSimpleStruct(source)) return Combiner_shape.MAP_OF_STRUCT;
+        if (isMapOfPrimitiveType(source)) return Combiner_shape.MAP_OF_SCALAR;
+        return Combiner_shape.INFER;
     }
 
     /** Returns the command name of a transform */
