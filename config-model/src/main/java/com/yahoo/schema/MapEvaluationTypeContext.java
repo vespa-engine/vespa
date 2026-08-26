@@ -297,7 +297,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     /**
-     * There are 8 features which may return (non-empty) tensor type:
+     * There are 9 features which may return (non-empty) tensor type:
      * - tensorFromLabels
      * - tensorFromLabelsWithOffset
      * - tensorFromWeightedSet
@@ -306,6 +306,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
      * - elementwise
      * - queryTermDocumentFrequency
      * - bm25_for_labels
+     * - matches_for_labels
      * This returns the type of those features if this is a reference to either of them, or empty otherwise.
      */
     private Optional<TensorType> tensorFeatureType(Reference reference) {
@@ -314,7 +315,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 throw new IllegalArgumentException(reference.name() + " must have one argument");
             return Optional.of(new TensorType.Builder(TensorType.Value.FLOAT).mapped("term").build());
         }
-        if (reference.name().equals("bm25_for_labels")) {
+        if (reference.name().equals("bm25_for_labels") || reference.name().equals("matches_for_labels")) {
             if (reference.arguments().size() != 1)
                 throw new IllegalArgumentException(reference.name() + " must have one argument");
             return Optional.of(new TensorType.Builder(TensorType.Value.FLOAT).mapped("label").build());
