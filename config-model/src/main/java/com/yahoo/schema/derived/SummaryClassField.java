@@ -128,6 +128,7 @@ public class SummaryClassField {
             return Type.TENSOR;
         } else if (fieldType instanceof CollectionDataType) {
             if (transform != null && transform.equals(SummaryTransform.POSITIONS)) {
+                // Unreachable in practice, see SummaryTransform.POSITIONS.
                 return Type.XMLSTRING;
             } else {
                 return Type.JSONSTRING;

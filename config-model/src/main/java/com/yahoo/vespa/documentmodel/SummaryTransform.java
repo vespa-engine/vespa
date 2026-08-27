@@ -12,6 +12,11 @@ public enum SummaryTransform {
     NONE("none"),
     ATTRIBUTE("attribute"),
     BOLDED("bolded"),
+    // DISTANCE and POSITIONS are unreachable in practice: no code constructs a SummaryField with
+    // either transform. They used to be set by auto-created ".distance"/".position" summary fields
+    // in v7 legacy geo position mode; that field-creation code was removed, but the values (and the
+    // code checking for them, e.g. in AdjustPositionSummaryFields, ImplicitSummaries, SummaryClass)
+    // were kept for now.
     DISTANCE("distance"),
     DYNAMICBOLDED("dynamicbolded"),
     DYNAMICTEASER("dynamicteaser"),

@@ -86,23 +86,6 @@ public class ImplicitSummaries extends Processor {
             addedSummaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
         }
 
-        // Position attributes
-        if (field.doesSummarying()) {
-            for (Attribute attribute : field.getAttributes().values()) {
-                if ( ! attribute.isPosition()) continue;
-                var distField = field.getSummaryField(AdjustPositionSummaryFields.getDistanceSummaryFieldName(fieldName));
-                if (distField != null) {
-                    DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
-                    attributePrefetchSummary.add(distField);
-                }
-                var posField = field.getSummaryField(AdjustPositionSummaryFields.getPositionSummaryFieldName(fieldName));
-                if (posField != null) {
-                    DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
-                    attributePrefetchSummary.add(posField);
-                }
-            }
-        }
-
         // Explicits
         for (SummaryField summaryField : field.getSummaryFields().values()) {
             // Make sure we fetch from attribute here too
@@ -148,6 +131,7 @@ public class ImplicitSummaries extends Processor {
 
     // Returns whether this is valid. Warns if invalid and ignorable. Throws if not ignorable.
     private boolean isValid(SummaryField summaryField, Schema schema, boolean validate) {
+        // DISTANCE/POSITIONS transforms are unreachable in practice, see SummaryTransform.
         if (summaryField.getTransform() == SummaryTransform.DISTANCE ||
             summaryField.getTransform() == SummaryTransform.POSITIONS) {
             int sourceCount = summaryField.getSourceCount();

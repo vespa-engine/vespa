@@ -27,6 +27,7 @@ public class ParsedSummaryField extends ParsedBlock {
 
     public ParsedSummaryField(String name, ParsedType type) {
         super(name, "summary field");
+        verifyThat(! name.contains("."), "invalid name, must not contain '.'");
         this.type = type;
     }
 
