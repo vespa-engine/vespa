@@ -5,11 +5,11 @@
 #include <memory>
 #include <span>
 #include <string>
-#include <vector>
 
 namespace search::docsummary {
 
 class DocsumFieldWriter;
+class SlimeFillerFilter;
 class SummaryElementsSelector;
 
 /**
@@ -20,7 +20,7 @@ private:
     std::string                              _name;
     std::unique_ptr<SummaryElementsSelector> _elements_selector;
     std::unique_ptr<DocsumFieldWriter>       _writer;
-    std::vector<std::string>                 _struct_fields;
+    std::unique_ptr<SlimeFillerFilter>       _struct_fields_filter;
     bool                                     _generated;
 
 public:
@@ -33,11 +33,12 @@ public:
     const std::string& name() const noexcept { return _name; }
 
     /**
-     * The names of the struct sub-fields to include in the output, relative to this field, e.g.
-     * "value.s2a" for a map of struct. An empty vector means all sub-fields are included. Owned rather
-     * than referenced, since the summary config it comes from need not outlive this.
+     * The filter matching the struct sub-fields to include in the output, or nullptr when all of them
+     * are. Built from the names in the summary config, which are relative to this field, e.g.
+     * "value.s2a" for a map of struct. Owned rather than referenced, since the summary config it comes
+     * from need not outlive this.
      */
-    const std::vector<std::string>& struct_fields() const noexcept { return _struct_fields; }
+    const SlimeFillerFilter* struct_fields_filter() const noexcept { return _struct_fields_filter.get(); }
     DocsumFieldWriter* writer() const noexcept { return _writer.get(); }
     const SummaryElementsSelector& elements_selector() const noexcept { return *_elements_selector; };
     bool is_generated() const { return _generated; }

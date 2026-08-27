@@ -69,7 +69,7 @@ std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field
         fieldWriter = std::make_unique<EmptyDFW>();
     } else if (command == command::copy) {
         if (!source.empty()) {
-            fieldWriter = std::make_unique<CopyDFW>(source);
+            fieldWriter = std::make_unique<CopyDFW>(source, struct_fields);
         } else {
             throw_missing_source(command);
         }

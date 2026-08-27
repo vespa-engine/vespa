@@ -147,6 +147,7 @@ namespace {
 
 using search::common::ElementIds;
 using search::docsummary::DynamicDocsumWriter;
+using search::docsummary::GetDocsumsState;
 using search::docsummary::ResultConfig;
 using search::docsummary::SummaryElementsSelector;
 using search::docsummary::test::SlimeValue;
@@ -161,8 +162,8 @@ StructDataType make_elem_type(const Field& name_field, const Field& weight_field
 }
 
 /*
- * A document type with an array of struct field and a map of struct field, and the field id map and
- * field path map needed by DocsumFilter for those two fields.
+ * A document type with an array of struct field, a map of struct field and a map of int field, and the
+ * field id map and field path map needed by DocsumFilter for those three fields.
  */
 struct MyDocType {
     const Field          _name_field;
@@ -170,8 +171,10 @@ struct MyDocType {
     const StructDataType _elem_type;
     const ArrayDataType  _elem_array_type;
     const MapDataType    _elem_map_type;
+    const MapDataType    _int_map_type;
     const Field          _elem_array_field;
     const Field          _elem_map_field;
+    const Field          _int_map_field;
     DocumentType         _document_type;
 
     MyDocType()
@@ -180,11 +183,14 @@ struct MyDocType {
           _elem_type(make_elem_type(_name_field, _weight_field)),
           _elem_array_type(_elem_type),
           _elem_map_type(*DataType::STRING, _elem_type),
+          _int_map_type(*DataType::STRING, *DataType::INT),
           _elem_array_field("elem_array", 3, _elem_array_type),
           _elem_map_field("elem_map", 4, _elem_map_type),
+          _int_map_field("int_map", 5, _int_map_type),
           _document_type("test") {
         _document_type.addField(_elem_array_field);
         _document_type.addField(_elem_map_field);
+        _document_type.addField(_int_map_field);
     }
     ~MyDocType() = default;
 
@@ -206,10 +212,17 @@ struct MyDocType {
         ret->put(StringFieldValue("@bar"), *make_elem("bar", 20));
         return ret;
     }
+    std::unique_ptr<MapFieldValue> make_int_map() const {
+        auto ret = std::make_unique<MapFieldValue>(_int_map_type);
+        ret->put(StringFieldValue("@foo"), IntFieldValue(10));
+        ret->put(StringFieldValue("@bar"), IntFieldValue(20));
+        return ret;
+    }
     std::unique_ptr<document::Document> make_test_doc() const {
         auto ret = document::Document::make_without_repo(_document_type, DocumentId("id::test::1"));
         ret->setValue("elem_array", *make_elem_array());
         ret->setValue("elem_map", *make_elem_map());
+        ret->setValue("int_map", *make_int_map());
         return ret;
     }
     FieldPath make_field_path(const std::string& path) const {
@@ -238,8 +251,8 @@ protected:
     ~StructFieldsDocsumTest() override;
 
     /*
-     * Renders the given summary field the way streaming search does, when the document-summary selects
-     * the given subset of the struct fields.
+     * Renders the given summary field the way streaming search does, when the requested document-summary
+     * selects the given subset of the struct fields.
      */
     std::string render(const std::string& field_name, const std::vector<std::string>& struct_fields);
     void assertRendered(const std::string& exp, const std::string& field_name,
@@ -251,6 +264,7 @@ SharedFieldPathMap make_field_path_map(const MyDocType& doc_type) {
     ret->emplace_back(); // field id 0 is the "no field"
     ret->emplace_back(doc_type.make_field_path("elem_array"));
     ret->emplace_back(doc_type.make_field_path("elem_map"));
+    ret->emplace_back(doc_type.make_field_path("int_map"));
     return ret;
 }
 
@@ -262,18 +276,26 @@ StructFieldsDocsumTest::StructFieldsDocsumTest()
     _field_map.add("no_field", 0);
     _field_map.add("elem_array", 1);
     _field_map.add("elem_map", 2);
+    _field_map.add("int_map", 3);
 }
 
 StructFieldsDocsumTest::~StructFieldsDocsumTest() = default;
 
 std::string StructFieldsDocsumTest::render(const std::string&              field_name,
                                            const std::vector<std::string>& struct_fields) {
+    // Two document-summaries, as in a real streaming schema: the default one, which vsmsummary.cfg is
+    // derived from and which is the only one DocsumFilter knows about, and the requested one, which is
+    // where the selection of struct fields is made.
     auto  result_config = std::make_unique<ResultConfig>();
-    auto* result_class = result_config->addResultClass("default", 0);
-    result_class->addConfigEntry(field_name, SummaryElementsSelector::select_all(), {}, struct_fields);
+    auto* default_class = result_config->addResultClass("default", 0);
+    default_class->addConfigEntry(field_name, SummaryElementsSelector::select_all(), {}, {});
+    auto* requested_class = result_config->addResultClass("requested", 1);
+    requested_class->addConfigEntry(field_name, SummaryElementsSelector::select_all(), {}, struct_fields);
     result_config->set_default_result_class_id(0);
-    auto tools = std::make_shared<DocsumTools>();
-    tools->set_writer(std::make_unique<DynamicDocsumWriter>(std::move(result_config)));
+    auto  writer = std::make_unique<DynamicDocsumWriter>(std::move(result_config));
+    auto& writer_ref = *writer;
+    auto  tools = std::make_shared<DocsumTools>();
+    tools->set_writer(std::move(writer));
     VsmsummaryConfigBuilder vsm_summary;
     vsm_summary.outputclass = "default";
     tools->obtainFieldNames(std::make_shared<VsmsummaryConfig>(vsm_summary));
@@ -281,11 +303,12 @@ std::string StructFieldsDocsumTest::render(const std::string&              field
     MyDocSumCache cache(_doc);
     DocsumFilter  filter(tools, cache);
     filter.init(_field_map, *_field_path_map);
-    auto document = filter.get_document(0);
-    EXPECT_TRUE(document);
+    GetDocsumsStateCallback        callback;
+    GetDocsumsState                state(callback);
+    auto                           rci = writer_ref.resolveClassInfo("requested", {});
     vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
-    document->insert_summary_field(field_name, ElementIds::select_all(), inserter);
+    writer_ref.insertDocsum(rci, 0, state, filter, inserter);
     vespalib::SimpleBuffer buf;
     vespalib::slime::JsonFormat::encode(slime, buf, true);
     return buf.get().make_string();
@@ -301,22 +324,30 @@ void StructFieldsDocsumTest::assertRendered(const std::string& exp, const std::s
 }
 
 TEST_F(StructFieldsDocsumTest, all_struct_fields_are_rendered_without_selection) {
-    assertRendered("[{name:'foo',weight:10},{name:'bar',weight:20}]", "elem_array", {});
-    assertRendered("[{key:'@foo',value:{name:'foo',weight:10}},{key:'@bar',value:{name:'bar',weight:20}}]",
+    assertRendered("{elem_array:[{name:'foo',weight:10},{name:'bar',weight:20}]}", "elem_array", {});
+    assertRendered("{elem_map:[{key:'@foo',value:{name:'foo',weight:10}},{key:'@bar',value:{name:'bar',weight:20}}]}",
                    "elem_map", {});
 }
 
 TEST_F(StructFieldsDocsumTest, selected_struct_fields_of_array_of_struct_are_rendered) {
-    assertRendered("[{name:'foo'},{name:'bar'}]", "elem_array", {"name"});
-    assertRendered("[{weight:10},{weight:20}]", "elem_array", {"weight"});
+    assertRendered("{elem_array:[{name:'foo'},{name:'bar'}]}", "elem_array", {"name"});
+    assertRendered("{elem_array:[{weight:10},{weight:20}]}", "elem_array", {"weight"});
 }
 
 TEST_F(StructFieldsDocsumTest, selected_struct_fields_of_map_of_struct_are_rendered) {
-    assertRendered("[{key:'@foo',value:{name:'foo'}},{key:'@bar',value:{name:'bar'}}]", "elem_map", {"value.name"});
+    assertRendered("{elem_map:[{key:'@foo',value:{name:'foo'}},{key:'@bar',value:{name:'bar'}}]}", "elem_map",
+                   {"value.name"});
 }
 
 TEST_F(StructFieldsDocsumTest, only_the_key_of_a_map_can_be_selected) {
-    assertRendered("[{key:'@foo'},{key:'@bar'}]", "elem_map", {"key"});
+    assertRendered("{elem_map:[{key:'@foo'},{key:'@bar'}]}", "elem_map", {"key"});
+}
+
+TEST_F(StructFieldsDocsumTest, key_and_value_of_a_map_of_scalar_are_selected_on_their_own) {
+    assertRendered("{int_map:[{key:'@foo',value:10},{key:'@bar',value:20}]}", "int_map", {});
+    assertRendered("{int_map:[{key:'@foo'},{key:'@bar'}]}", "int_map", {"key"});
+    // Unlike the key of a map of struct, this one is left out when it is not selected.
+    assertRendered("{int_map:[{value:10},{value:20}]}", "int_map", {"value"});
 }
 
 } // namespace

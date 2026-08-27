@@ -65,12 +65,13 @@ std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field
     if ((command == command::positions) || (command == command::abs_distance)) {
         fieldWriter = std::make_unique<EmptyDFW>();
     } else if ((command == command::attribute) || (command == command::attribute_combiner)) {
-        // The struct fields are combined from the document, not from attributes, so neither the struct
-        // field selection nor the declared shape is used here. The shape is already fixed by the type of
-        // the field in the document, and the selection is applied when filling the summary field, see
-        // DocsumFilter::init().
+        // The struct fields are combined from the document, not from attributes, so the declared shape is
+        // not used here: it is already fixed by the type of the field in the document. The selection is
+        // applied when filling the summary field, either by the writer below or, when the field is its own
+        // source and there is no writer, by DynamicDocsumWriter passing the selection of the requested
+        // document-summary to IDocsumStoreDocument::insert_summary_field().
         if (!source.empty() && source != field_name) {
-            fieldWriter = std::make_unique<CopyDFW>(source);
+            fieldWriter = std::make_unique<CopyDFW>(source, struct_fields);
         }
     } else if (command == command::geo_position) {
     } else if ((command == command::tokens) || (command == command::attribute_tokens)) {
