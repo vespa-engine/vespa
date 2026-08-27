@@ -14,7 +14,7 @@ vespa_suppress_warnings_for_protobuf_sources(SOURCES ${storageapi_PROTOBUF_SRCS}
 
 # protoc explicitly annotates methods with inline, which triggers -Werror=inline when
 # the header file grows over a certain size.
-set_source_files_properties(protocolserialization7.cpp PROPERTIES COMPILE_FLAGS "-Wno-inline")
+vespa_compile_flag_for(protocolserialization7.cpp "-Wno-inline")
 
 vespa_add_library(storageapi_mbusprot OBJECT
     SOURCES
