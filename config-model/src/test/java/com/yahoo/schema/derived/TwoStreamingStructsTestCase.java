@@ -18,17 +18,18 @@ public class TwoStreamingStructsTestCase extends AbstractExportingTestCase {
     void testTwoStreamingStructsExporting() throws ParseException, IOException {
 
         String root = "src/test/derived/twostreamingstructs";
+        String name = "twostreamingstructs";
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(root + "/streamingstruct.sd");
         builder.addSchemaFile(root + "/whatever.sd");
         builder.build(true);
-        assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), root);
+        assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), name);
 
         builder = new ApplicationBuilder();
         builder.addSchemaFile(root + "/streamingstruct.sd");
         builder.addSchemaFile(root + "/whatever.sd");
         builder.build(true);
-        assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), root);
+        assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), name);
     }
 
 }
