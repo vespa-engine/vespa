@@ -7,6 +7,7 @@ import com.yahoo.prelude.query.StringRangeItem;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -55,6 +56,15 @@ public class StringRangeItemTestCase {
         assertEquals("fruit:[;]", new StringRangeItem(null, null, "fruit").toString());
     }
 
+    /** Quotes and backslashes in a bound must not be confusable with the syntax of the expression. */
+    @Test
+    void testBoundsAreEscaped() {
+        assertEquals("fruit:[\"a\\\"b\";\"c\\\\d\"]",
+                     new StringRangeItem("a\"b", "c\\d", "fruit").toString());
+        assertEquals("fruit:[\"a\\\";\\\"b\";]",
+                     new StringRangeItem("a\";\"b", null, "fruit").toString());
+    }
+
     @Test
     void testEquality() {
         assertEquals(new StringRangeItem("apple", "pear", "fruit"), new StringRangeItem("apple", "pear", "fruit"));
@@ -76,12 +86,31 @@ public class StringRangeItemTestCase {
         assertFalse(range == clone);
     }
 
-    /** The legacy query stack format has no representation of string ranges. */
+    /** The legacy query stack format has no representation of string ranges, so the expression is sent as a term. */
     @Test
-    void testEncodingToTheQueryStackIsRejected() {
+    void testEncodingToTheQueryStackWritesTheExpressionAsATerm() {
         StringRangeItem range = new StringRangeItem("apple", "pear", "fruit");
-        assertThrows(UnsupportedOperationException.class,
-                     () -> range.encode(ByteBuffer.allocate(128), new SerializationContext(1.0)));
+        ByteBuffer buffer = ByteBuffer.allocate(128);
+        assertEquals(1, range.encode(buffer, new SerializationContext(1.0)));
+        String encoded = new String(buffer.array(), 0, buffer.position(), StandardCharsets.UTF_8);
+        assertTrue(encoded.contains("fruit"), encoded);
+        assertTrue(encoded.endsWith("[\"apple\";\"pear\"]"), encoded);
+    }
+
+    /** A range has no single value which can be set from a string. */
+    @Test
+    void testSetValueIsRejected() {
+        StringRangeItem range = new StringRangeItem("apple", "pear", "fruit");
+        assertThrows(UnsupportedOperationException.class, () -> range.setValue("apple"));
+    }
+
+    /** No linguistic processing applies to the bounds of a range. */
+    @Test
+    void testIsNotSubjectToLinguisticProcessing() {
+        StringRangeItem range = new StringRangeItem("apple", "pear", "fruit");
+        assertFalse(range.isWords());
+        assertFalse(range.isNormalizable());
+        assertTrue(range.isStemmed());
     }
 
 }

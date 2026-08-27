@@ -1712,7 +1712,7 @@
     "fields" : [ ]
   },
   "com.yahoo.prelude.query.StringRangeItem" : {
-    "superClass" : "com.yahoo.prelude.query.SimpleIndexedItem",
+    "superClass" : "com.yahoo.prelude.query.TermItem",
     "interfaces" : [ ],
     "attributes" : [
       "public"
@@ -1726,12 +1726,15 @@
       "public boolean isToInclusive()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public int getTermCount()",
       "public int getNumWords()",
       "public java.lang.String getIndexedString()",
+      "public java.lang.String stringValue()",
+      "public java.lang.String getRawWord()",
+      "public void setValue(java.lang.String)",
+      "public boolean isStemmed()",
+      "public boolean isWords()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
-      "protected void appendBodyString(java.lang.StringBuilder)",
-      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"

@@ -20,7 +20,7 @@ import java.util.Objects;
  *
  * @author boeker
  */
-public class StringRangeItem extends SimpleIndexedItem {
+public class StringRangeItem extends TermItem {
 
     /** The lower bound of this range, or null if it is unbounded */
     private final String from;
@@ -55,11 +55,12 @@ public class StringRangeItem extends SimpleIndexedItem {
      * @param indexName the field to search
      */
     public StringRangeItem(String from, boolean fromInclusive, String to, boolean toInclusive, String indexName) {
+        super(indexName, false);
         this.from = from;
         this.fromInclusive = fromInclusive;
         this.to = to;
         this.toInclusive = toInclusive;
-        setIndexName(indexName);
+        setNormalizable(false);
     }
 
     /** Returns the lower bound of this range, or null if it is unbounded */
@@ -81,44 +82,75 @@ public class StringRangeItem extends SimpleIndexedItem {
     public String getName() { return "STRING_RANGE"; }
 
     @Override
-    public int getTermCount() { return 1; }
-
-    @Override
     public int getNumWords() { return 1; }
 
-    /** Returns the expression of this range, e.g <code>["a";"b"&gt;</code> */
+    /**
+     * Returns the expression of this range, e.g <code>["a";"b"&gt;</code>, where an unbounded end is written as
+     * nothing and a bound is written in quotes, with backslashes and quotes in it backslash escaped, such that
+     * the bounds can always be told apart from the syntax of the expression.
+     */
     @Override
     public String getIndexedString() {
         StringBuilder b = new StringBuilder();
         b.append(fromInclusive ? '[' : '<');
-        if (from != null)
-            b.append('"').append(from).append('"');
+        appendBound(from, b);
         b.append(';');
-        if (to != null)
-            b.append('"').append(to).append('"');
+        appendBound(to, b);
         b.append(toInclusive ? ']' : '>');
         return b.toString();
     }
+
+    private static void appendBound(String bound, StringBuilder b) {
+        if (bound == null) return; // Unbounded: Written as nothing, which no quoted bound can be confused with
+        b.append('"');
+        for (int i = 0; i < bound.length(); i++) {
+            char c = bound.charAt(i);
+            if (c == '\\' || c == '"')
+                b.append('\\');
+            b.append(c);
+        }
+        b.append('"');
+    }
+
+    /** Same as {@link #getIndexedString} */
+    @Override
+    public String stringValue() { return getIndexedString(); }
+
+    /** Same as {@link #getIndexedString}: A range has no raw form separate from its expression */
+    @Override
+    public String getRawWord() { return getIndexedString(); }
+
+    /**
+     * The bounds of a range cannot be set from a single string.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public void setValue(String value) {
+        throw new UnsupportedOperationException("Cannot setValue(" + value + ") on " + getName());
+    }
+
+    /** A range is matched as-is, so no stemming applies to it */
+    @Override
+    public boolean isStemmed() { return true; }
+
+    /** A range is not text, so no linguistic processing applies to it */
+    @Override
+    public boolean isWords() { return false; }
 
     /** String ranges use an empty heading instead of "STRING_RANGE ", like numerical ranges do */
     @Override
     protected void appendHeadingString(StringBuilder buffer) {}
 
-    @Override
-    protected void appendBodyString(StringBuilder buffer) {
-        appendIndexString(buffer);
-        buffer.append(getIndexedString());
-    }
-
     /**
-     * String ranges are not part of the legacy query stack dump format, which the backend only accepts
-     * from clients which do not support them.
-     *
-     * @throws UnsupportedOperationException always
+     * String ranges are not part of the legacy query stack dump format, which the backend only accepts from
+     * clients which do not support them: The range expression is written as the term, as for numerical ranges,
+     * but the backend will not interpret it as a range.
      */
     @Override
-    public int encode(ByteBuffer buffer, SerializationContext context) {
-        throw new UnsupportedOperationException("String range items cannot be serialized to the query stack format");
+    protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        super.encodeThis(buffer, context); // takes care of index bytes
+        putString(getIndexedString(), buffer);
     }
 
     @Override
