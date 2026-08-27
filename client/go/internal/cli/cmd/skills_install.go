@@ -25,7 +25,7 @@ func newSkillsInstallCmd(cli *CLI) *cobra.Command {
 		Short: "Install Vespa AI-assistant skills",
 		Long: `Install Vespa AI-assistant skills for one or more agent harnesses.
 
-Skills are downloaded from https://github.com/vespaai-playground/skills and
+Skills are downloaded from https://github.com/vespa-engine/skills and
 copied into the directory the chosen harness(es) discover automatically. Run
 'vespa skills list' to see available skills.
 

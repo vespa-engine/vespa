@@ -24,7 +24,7 @@ func TestMaybePromptSkillsInstallDeclines(t *testing.T) {
 
 	require.Nil(t, cli.Run("config", "get"))
 	assert.Contains(t, stdout.String(), "Install them for Claude Code, Codex, Antigravity CLI or Cursor?")
-	assert.Contains(t, stderr.String(), "You can install these later by running 'vespa skills install', or by running 'npx skills add vespaai-playground/skills'")
+	assert.Contains(t, stderr.String(), "You can install these later by running 'vespa skills install', or by running 'npx skills add vespa-engine/skills'")
 	assert.FileExists(t, marker)
 
 	// Running another command again should not prompt a second time.

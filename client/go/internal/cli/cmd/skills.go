@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	skillsRepoOwner = "vespaai-playground"
+	skillsRepoOwner = "vespa-engine"
 	skillsRepoName  = "skills"
 	skillsRepoRef   = "main"
 )
@@ -93,7 +93,7 @@ func (c *CLI) maybePromptSkillsInstall(cmd *cobra.Command) {
 		return
 	}
 	if !yes {
-		c.printHelpfulInfo("You can install these later by running 'vespa skills install', or by running 'npx skills add vespaai-playground/skills'")
+		c.printHelpfulInfo("You can install these later by running 'vespa skills install', or by running 'npx skills add vespa-engine/skills'")
 		return
 	}
 	if err := runSkillsInstall(c, nil, nil, false, false, false); err != nil {
@@ -109,7 +109,7 @@ func newSkillsCmd() *cobra.Command {
 
 Skills teach AI coding assistants how to work with Vespa: schema authoring,
 application packages, queries, feeding and more. Skills are downloaded from
-https://github.com/vespaai-playground/skills and installed for one or more
+https://github.com/vespa-engine/skills and installed for one or more
 agent harnesses: Claude Code, Codex, Cursor and Antigravity CLI.`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,

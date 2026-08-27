@@ -20,7 +20,7 @@ type skillMeta struct {
 	description string
 }
 
-// skillsSource fetches and caches the vespaai-playground/skills archive from GitHub.
+// skillsSource fetches and caches the vespa-engine/skills archive from GitHub.
 type skillsSource struct {
 	cli     *CLI
 	noCache bool
