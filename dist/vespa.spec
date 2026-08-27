@@ -474,7 +474,7 @@ getent passwd %{_vespa_user} >/dev/null || \
 %if 0%{?el8} || 0%{?el9}
 # TODO Hardcoded toolset version, should be detected in a better way.
 mkdir -p /opt/rh
-ln -sf /opt/rh/gcc-toolset-14 /opt/rh/gcc-toolset
+ln -sf /opt/rh/gcc-toolset-15 /opt/rh/gcc-toolset
 %endif
 echo "pathmunge %{_prefix}/bin" > /etc/profile.d/vespa.sh
 echo "export VESPA_HOME=%{_prefix}" >> /etc/profile.d/vespa.sh
