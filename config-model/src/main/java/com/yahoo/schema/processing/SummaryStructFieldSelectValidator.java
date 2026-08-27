@@ -22,7 +22,7 @@ import static com.yahoo.schema.document.ComplexAttributeFieldUtils.localStructFi
  * Iterates all summary fields selecting a subset of the struct fields of their source ("struct-field" in a
  * document-summary) and validates that the source field type supports it, that the selection is not
  * combined with a summary transform which would ignore it, that the selected struct fields exist, and
- * that a selection from a map picks both the key and something from the value.
+ * that a selection from a map has a shape which is currently allowed.
  *
  * @author arnej
  */
@@ -35,12 +35,12 @@ public class SummaryStructFieldSelectValidator extends Processor {
     private static final String VALUE = "value";
 
     /**
-     * For now a selection from a map of primitive type to primitive type must name both the key and the
-     * value, since that is the only shape the backend is known to handle. This makes such a selection
-     * pointless, as it can then only be the full set of struct fields. Set this to false (and drop the
-     * tests covering it) when the backend can produce the other shapes.
+     * Must a selection from a map of primitive type to primitive type name both the key and the
+     * value, since that is the only shape which will give a map back?
+     * Then it is pointless, as it can then only be the full set of fields.
+     * Make this false to see what it looks like.
      */
-    private static final boolean PRIMITIVE_MAP_SELECTION_MUST_BE_KEY_AND_VALUE = true;
+    private static final boolean PRIMITIVE_MAP_SELECTION_MUST_BE_KEY_AND_VALUE = false;
 
     /**
      * For now a selection from a map of primitive type to struct must name the key and at least one
