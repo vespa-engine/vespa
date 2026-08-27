@@ -185,6 +185,11 @@ typename NodeTypes::RangeTerm* createRangeTerm(const Range& term, const std::str
     return new typename NodeTypes::RangeTerm(term, view, id, weight);
 }
 template <class NodeTypes>
+typename NodeTypes::StringRangeTerm* createStringRangeTerm(const StringRange& term, const std::string& view,
+                                                           int32_t id, Weight weight) {
+    return new typename NodeTypes::StringRangeTerm(term, view, id, weight);
+}
+template <class NodeTypes>
 typename NodeTypes::StringTerm* createStringTerm(const std::string& term, const std::string& view, int32_t id,
                                                  Weight weight) {
     return new typename NodeTypes::StringTerm(term, view, id, weight);
@@ -369,6 +374,11 @@ public:
     typename NodeTypes::RangeTerm& addRangeTerm(const Range& range, const string& view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createRangeTerm<NodeTypes>(range, view, id, weight));
+    }
+    typename NodeTypes::StringRangeTerm& add_string_range_term(const StringRange& range, const string& view,
+                                                               int32_t id, Weight weight) {
+        adjustWeight(weight);
+        return addTerm(createStringRangeTerm<NodeTypes>(range, view, id, weight));
     }
     typename NodeTypes::StringTerm& addStringTerm(const string& term, const string& view, int32_t id, Weight weight) {
         adjustWeight(weight);

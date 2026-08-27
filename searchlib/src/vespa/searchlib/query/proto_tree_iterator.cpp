@@ -284,8 +284,11 @@ bool handle(const ItemFloatingPointRangeTerm& item, QueryStackIterator::Data& _d
     _d.term_view = tmp;
     return true;
 }
-bool handle(const ItemStringRangeTerm& /*item*/, QueryStackIterator::Data& /*_d*/, std::string& /*tmp*/) {
-    // TODO
+bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
+    // The range itself is not exposed here, as the query stack is only used by consumers
+    // that do not support string ranges.
+    fillTermProperties(item.properties(), _d);
+    _d.itemType = ParseItem::ItemType::ITEM_STRING_RANGE_TERM;
     return true;
 }
 
@@ -530,7 +533,7 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
     case IC::kItemFloatingPointRangeTerm:
         return handle(qsi.item_floating_point_range_term(), _d, _serialized_term);
     case IC::kItemStringRangeTerm:
-        return handle(qsi.item_string_range_term(), _d, _serialized_term);
+        return handle(qsi.item_string_range_term(), _d);
 
     case IC::kItemWeightedSetOfString:
         return handle(qsi.item_weighted_set_of_string(), _d);

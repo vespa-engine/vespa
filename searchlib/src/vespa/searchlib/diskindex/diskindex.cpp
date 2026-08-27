@@ -198,6 +198,7 @@ public:
     void visit(LocationTerm& n) override { visitTerm(n); }
     void visit(PrefixTerm& n) override { visitTerm(n); }
     void visit(RangeTerm& n) override { visitTerm(n); }
+    void visit(StringRangeTerm& n) override { not_supported(n); }
     void visit(StringTerm& n) override { visitTerm(n); }
     void visit(SubstringTerm& n) override { visitTerm(n); }
     void visit(SuffixTerm& n) override { visitTerm(n); }
