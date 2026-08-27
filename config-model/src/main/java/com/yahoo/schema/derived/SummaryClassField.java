@@ -50,7 +50,6 @@ public class SummaryClassField {
         RAW("raw"),
         LONGSTRING("longstring"),
         LONGDATA("longdata"),
-        XMLSTRING("xmlstring"),
         FEATUREDATA("featuredata"),
         JSONSTRING("jsonstring"),
         TENSOR("tensor");
@@ -127,12 +126,7 @@ public class SummaryClassField {
         } else if (fval instanceof TensorFieldValue) {
             return Type.TENSOR;
         } else if (fieldType instanceof CollectionDataType) {
-            if (transform != null && transform.equals(SummaryTransform.POSITIONS)) {
-                // Unreachable in practice, see SummaryTransform.POSITIONS.
-                return Type.XMLSTRING;
-            } else {
-                return Type.JSONSTRING;
-            }
+            return Type.JSONSTRING;
         } else if (fieldType instanceof MapDataType) {
             return Type.JSONSTRING;
         } else if (fieldType instanceof NewDocumentReferenceDataType) {
