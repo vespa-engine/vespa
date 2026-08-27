@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -116,16 +117,16 @@ class TritonOnnxClientTest {
                     "attention_mask", Tensor.from("tensor<float>(d0[1],d1[5]):[1.0, 1.0, 1.0, 1.0, 1.0]"),
                     "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[5]):[0.0, 0.0, 0.0, 0.0, 0.0]"));
 
-            assertThrows(TimeoutException.class,
-                    () -> tritonClient.evaluate(MODEL_NAME, metadata, inputs, "output_0", Duration.ofMillis(1)));
-        }
-    }
+            // Pausing the container guarantees that the server cannot answer, and we get a timeout.
+            var dockerClient = tritonContainer.getDockerClient();
+            dockerClient.pauseContainerCmd(tritonContainer.getContainerId()).exec();
 
-    @Test
-    void is_healthy_after_loading_model() {
-        try (var tritonClient = createTritonClient()) {
-            tritonClient.loadModel(MODEL_NAME);
-            assertTrue(tritonClient.isHealthy());
+            try {
+                assertThrows(TimeoutException.class,
+                        () -> tritonClient.evaluate(MODEL_NAME, metadata, inputs, "output_0", Duration.ofMillis(200)));
+            } finally {
+                dockerClient.unpauseContainerCmd(tritonContainer.getContainerId()).exec();
+            }
         }
     }
 
@@ -222,13 +223,18 @@ class TritonOnnxClientTest {
         try (var tritonClient = createTritonClient()) {
             var client = spy(tritonClient);
 
-            when(client.isModelReady(modelName)).thenReturn(true).thenReturn(false);
+            doReturn(
+                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
+                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
+                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
+                    TritonOnnxClient.ModelActivity.INACTIVE)
+                    .when(client).modelActivity(modelName);
             var exception = new TritonOnnxClient.TritonException("Unload failed");
             doThrow(exception).doThrow(exception).doNothing().when(client).unloadModel(modelName);
 
             client.unloadUntilModelNotReady(modelName);
 
-            verify(client, times(2)).isModelReady(modelName);
+            verify(client, times(4)).modelActivity(modelName);
             verify(client, times(3)).unloadModel(modelName);
         }
     }
@@ -240,16 +246,37 @@ class TritonOnnxClientTest {
         try (var tritonClient = createTritonClient()) {
             var client = spy(tritonClient);
 
-            when(client.isModelReady(modelName))
-                    .thenReturn(true)
-                    .thenReturn(true)
-                    .thenReturn(false);
+            doReturn(
+                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
+                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
+                    TritonOnnxClient.ModelActivity.LOADED_OR_LOADING,
+                    TritonOnnxClient.ModelActivity.INACTIVE)
+                    .when(client).modelActivity(modelName);
             doNothing().when(client).unloadModel(modelName);
 
             client.unloadUntilModelNotReady(modelName);
 
-            verify(client, times(3)).isModelReady(modelName);
+            verify(client, times(4)).modelActivity(modelName);
             verify(client, times(1)).unloadModel(modelName);
+        }
+    }
+
+    @Test
+    void unloadUntilModelNotReady_waits_for_an_already_unloading_model() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            doReturn(
+                    TritonOnnxClient.ModelActivity.UNLOADING,
+                    TritonOnnxClient.ModelActivity.INACTIVE)
+                    .when(client).modelActivity(modelName);
+
+            client.unloadUntilModelNotReady(modelName);
+
+            verify(client, times(2)).modelActivity(modelName);
+            verify(client, times(0)).unloadModel(modelName);
         }
     }
 
@@ -260,13 +287,14 @@ class TritonOnnxClientTest {
         try (var tritonClient = createTritonClient()) {
             var client = spy(tritonClient);
 
-            when(client.isModelReady(modelName)).thenReturn(true);
+            doReturn(TritonOnnxClient.ModelActivity.LOADED_OR_LOADING)
+                    .when(client).modelActivity(modelName);
             var exception = new TritonOnnxClient.TritonException("Unload failed");
             doThrow(exception).when(client).unloadModel(modelName);
 
             assertThrows(TritonOnnxClient.TritonException.class, () -> client.unloadUntilModelNotReady(modelName));
 
-            verify(client, times(1)).isModelReady(modelName);
+            verify(client, times(5)).modelActivity(modelName);
             verify(client, times(5)).unloadModel(modelName);
         }
     }
@@ -278,12 +306,13 @@ class TritonOnnxClientTest {
         try (var tritonClient = createTritonClient()) {
             var client = spy(tritonClient);
 
-            when(client.isModelReady(modelName)).thenReturn(true);
+            doReturn(TritonOnnxClient.ModelActivity.LOADED_OR_LOADING)
+                    .when(client).modelActivity(modelName);
             doNothing().when(client).unloadModel(modelName);
 
             assertThrows(TritonOnnxClient.TritonException.class, () -> client.unloadUntilModelNotReady(modelName));
 
-            verify(client, times(6)).isModelReady(modelName);
+            verify(client, times(6)).modelActivity(modelName);
             verify(client, times(1)).unloadModel(modelName);
         }
     }

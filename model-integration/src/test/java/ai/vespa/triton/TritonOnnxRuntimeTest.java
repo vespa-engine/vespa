@@ -4,8 +4,9 @@ package ai.vespa.triton;
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
-import com.yahoo.container.protect.ProcessTerminator;
+import com.yahoo.io.IOUtils;
 import com.yahoo.text.Text;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -17,8 +18,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,6 +41,8 @@ import org.junit.jupiter.api.function.ThrowingSupplier;
 @ExtendWith(ContainerEnvironmentAvailableCondition.class)
 class TritonOnnxRuntimeTest {
 
+    private static final String MODEL_PATH = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+
     private static TritonServerContainer tritonContainer;
     private final OnnxEvaluatorOptions.Builder optsBuilder = new OnnxEvaluatorOptions.Builder(8);
 
@@ -45,6 +52,7 @@ class TritonOnnxRuntimeTest {
         tritonContainer = new TritonServerContainer();
         tritonContainer.start();
     }
+
 
     @Test
     void load_model_with_defaults() throws IOException {
@@ -169,50 +177,92 @@ class TritonOnnxRuntimeTest {
             assertModelRepo(client, 0, Map.of(modelName1, false, modelName2, false));
         } finally {
             runtime.deconstruct();
+            client.close();
         }
     }
 
     @Test
-    void clean_model_repository_when_runtime_is_created() throws IOException {
+    void restore_requested_model_when_it_was_removed_independently() {
         var opts = optsBuilder.build();
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
+        var client = createClient();
+        var runtime = createRuntime();
 
-        var modelBaseName = "dummy_transformer";
-        var modelPath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
-        var modelName = TritonOnnxRuntime.generateModelName(modelPath, opts);
+        try {
+            var firstEvaluator = runtime.evaluatorOf(MODEL_PATH, opts);
+            assertModelRepo(client, 1, Map.of(modelName, true));
+
+            // Simulate an external unload and repository cleanup while Vespa still references the model.
+            client.unloadUntilModelNotReady(modelName);
+            assertTrue(IOUtils.recursiveDeleteDir(
+                    tritonContainer.getModelRepositoryPath().resolve(modelName).toFile()));
+            assertModelRepo(client, 0, Map.of(modelName, false));
+
+            var secondEvaluator = runtime.evaluatorOf(MODEL_PATH, opts);
+            assertModelRepo(client, 1, Map.of(modelName, true));
+
+            secondEvaluator.close();
+            firstEvaluator.close();
+        } finally {
+            runtime.deconstruct();
+            client.close();
+        }
+    }
+
+    @Test
+    void clean_model_repository_when_runtime_is_created() {
+        var opts = optsBuilder.build();
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
 
         var client = createClient();
         var runtime = createRuntime();
 
-        runtime.evaluatorOf(modelPath, opts);
-        assertModelRepo(client, 1, Map.of(modelName, true));
+        try {
+            var evaluator = runtime.evaluatorOf(MODEL_PATH, opts);
+            try {
+                assertModelRepo(client, 1, Map.of(modelName, true));
 
-        createRuntime();
-        assertModelRepo(client, 0, Map.of(modelName, false));
+                // A runtime is only constructed at container start, so leftovers are from a previous run.
+                var newRuntime = createRuntime();
+                try {
+                    assertModelRepo(client, 0, Map.of(modelName, false));
+                } finally {
+                    newRuntime.deconstruct();
+                }
+            } finally {
+                evaluator.close();
+            }
+        } finally {
+            runtime.deconstruct();
+            client.close();
+        }
     }
 
     private TritonOnnxClient createClient() {
-        var tritonConfig = new TritonConfig.Builder()
-                .target(tritonContainer.getGrpcEndpoint())
-                .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
-                .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
-                .build();
-        return new TritonOnnxClient(tritonConfig);
+        return new TritonOnnxClient(testConfig(TritonConfig.ModelControlMode.EXPLICIT));
     }
 
     private TritonOnnxRuntime createRuntime() {
-        var tritonConfig = new TritonConfig.Builder()
+        return new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT));
+    }
+
+    private static TritonConfig testConfig(TritonConfig.ModelControlMode.Enum mode) {
+        return new TritonConfig.Builder()
                 .target(tritonContainer.getGrpcEndpoint())
-                .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
+                .modelControlMode(mode)
                 .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
                 .build();
-        return new TritonOnnxRuntime(tritonConfig);
     }
 
     private void assertModelRepo(TritonOnnxClient client, int numFiles, Map<String, Boolean> modelReady) {
-        var repoFiles = tritonContainer.getModelRepositoryPath().toFile().list();
-        assertNotNull(repoFiles);
-        assertEquals(numFiles, repoFiles.length);
+        assertRepoFileCount(tritonContainer, numFiles);
         modelReady.forEach((modelName, isReady) -> assertEquals(isReady, client.isModelReady(modelName)));
+    }
+
+    private static void assertRepoFileCount(TritonServerContainer container, int expected) {
+        var repoFiles = container.getModelRepositoryPath().toFile().list();
+        assertNotNull(repoFiles);
+        assertEquals(expected, repoFiles.length);
     }
 
     // expectedConfigPath == null means we expect an error during model loading
@@ -257,90 +307,75 @@ class TritonOnnxRuntimeTest {
         assertEquals(normalizedExpected, normalizedActual);
     }
 
+    // Simulates deploying a faulty model followed by a working one.
+    // The faulty model must fail with an exception, not kill the process, and leave no state behind.
+    // The working model must load even though Triton still tracks the unrelated failed model.
     @Test
-    void die_when_triton_server_is_unreachable() {
-        var config = new TritonConfig.Builder()
-                .target("localhost:9999")  // Non-existent server
-                .build();
-        var mockTerminator = new MockProcessTerminator();
-
-        var runtime = new TritonOnnxRuntime(config, mockTerminator);
-        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+    void recover_when_faulty_model_is_replaced_by_working_model() throws IOException {
+        var faultyModelPath = Files.createTempFile("faulty_model", ".onnx");
+        Files.writeString(faultyModelPath, "this is not a valid onnx model");
+        var runtime = createRuntime();
         var opts = optsBuilder.build();
 
-        assertThrows(MockProcessTerminationException.class, () -> runtime.evaluatorOf(modelPath, opts));
-        assertEquals(1, mockTerminator.dieRequests);
-        assertTrue(mockTerminator.lastMessage.contains("can't be reached"));
-        assertTrue(mockTerminator.lastMessage.contains("localhost:9999"));
+        try {
+            var exception = assertThrows(
+                    TritonOnnxClient.TritonException.class,
+                    () -> runtime.evaluatorOf(faultyModelPath.toString(), opts));
+            var message = Exceptions.toMessageString(exception);
+            assertTrue(message.contains("faulty_model"), message);
+            assertTrue(message.contains("failed"), message);
+            assertTrue(message.contains("Protobuf parsing failed"), message);
+
+            // The failed model must not leave files behind in the model repository.
+            assertRepoFileCount(tritonContainer, 0);
+
+            var evaluator = assertDoesNotThrow(() -> runtime.evaluatorOf(MODEL_PATH, opts));
+            assertNotNull(evaluator);
+            evaluator.close();
+        } finally {
+            runtime.deconstruct();
+            Files.deleteIfExists(faultyModelPath);
+        }
     }
 
+    // Hammers concurrent create and close of the same model from multiple threads,
+    // exercising the deadlock and adoption races between evaluatorOf and evaluator close.
+    // A deadlock fails the test through the future timeouts.
     @Test
-    void die_when_triton_server_is_unhealthy() {
-        var config = new TritonConfig.Builder()
-                .target(tritonContainer.getGrpcEndpoint())
-                .build();
-        
-        var mockClient = new TritonOnnxClient(config) {
-            @Override
-            public boolean isHealthy() {
-                return false;
+    void concurrent_create_and_close_of_the_same_model() throws Exception {
+        var opts = optsBuilder.build();
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
+        var client = createClient();
+        var runtime = createRuntime();
+        var threads = 4;
+        var iterations = 25;
+        var executor = Executors.newFixedThreadPool(threads);
+
+        try {
+            try {
+                var futures = new ArrayList<Future<?>>();
+
+                for (int thread = 0; thread < threads; thread++) {
+                    futures.add(executor.submit(() -> {
+                        for (int i = 0; i < iterations; i++) {
+                            runtime.evaluatorOf(MODEL_PATH, opts).close();
+                        }
+                        return null;
+                    }));
+                }
+
+                for (var future : futures) {
+                    future.get(120, TimeUnit.SECONDS);
+                }
+            } finally {
+                executor.shutdownNow();
+                runtime.deconstruct();
             }
-        };
-        
-        var mockTerminator = new MockProcessTerminator();
-        var runtime = new TritonOnnxRuntime(config, mockClient, mockTerminator);
-        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
-        var opts = optsBuilder.build();
 
-        assertThrows(MockProcessTerminationException.class, () -> runtime.evaluatorOf(modelPath, opts));
-        assertEquals(1, mockTerminator.dieRequests);
-        assertTrue(mockTerminator.lastMessage.contains("not healthy"));
-        assertTrue(mockTerminator.lastMessage.contains(tritonContainer.getGrpcEndpoint()));
-    }
-
-    @Test
-    void not_die_when_triton_server_is_healthy() {
-        var config = new TritonConfig.Builder()
-                .target(tritonContainer.getGrpcEndpoint())
-                .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
-                .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
-                .build();
-
-        var mockTerminator = new MockProcessTerminator();
-        var runtime = new TritonOnnxRuntime(config, mockTerminator);
-
-        var modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
-        var opts = optsBuilder.build();
-
-        // Verify that evaluatorOf succeeds when server is healthy
-        var evaluator = assertDoesNotThrow(() -> runtime.evaluatorOf(modelPath, opts));
-        assertNotNull(evaluator);
-        assertEquals(0, mockTerminator.dieRequests);
-
-        evaluator.close();
-        runtime.deconstruct();
-    }
-
-    private static class MockProcessTerminator extends ProcessTerminator {
-        public int dieRequests = 0;
-        public String lastMessage = null;
-
-        @Override
-        public void logAndDie(String message, boolean dumpThreads) {
-            dieRequests++;
-            lastMessage = message;
-            throw new MockProcessTerminationException("Simulated process termination: " + message);
-        }
-
-        @Override
-        public void logAndDie(String message) {
-            logAndDie(message, false);
+            assertModelRepo(client, 0, Map.of(modelName, false));
+        } finally {
+            client.close();
         }
     }
 
-    private static class MockProcessTerminationException extends RuntimeException {
-        public MockProcessTerminationException(String message) {
-            super(message);
-        }
-    }
 }
