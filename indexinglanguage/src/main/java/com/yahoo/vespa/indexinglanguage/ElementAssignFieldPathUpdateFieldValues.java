@@ -3,8 +3,6 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.FieldPath;
@@ -14,8 +12,8 @@ import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
 
-import java.util.Iterator;
-import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Adapter for running an element assign, e.g. <code>"my_array[3]": {"assign": "foo"}</code>,
@@ -26,12 +24,19 @@ import java.util.Map;
  *
  * <p>The element cannot be applied to an empty document, since assigning to an array index
  * beyond the array size is a no-op. Instead the element is wrapped as a single-element array
- * in the target field of a partial document, the script processes that document, and the
- * processed element is unwrapped into a new assign to the original element index.</p>
+ * in the target field of a partial document (see {@link FieldPathUpdateHelper#newElementAssignPartialDocument}),
+ * the script processes that document, and the processed element is unwrapped into a new assign
+ * to the original element index.</p>
+ *
+ * <p>Only the field targeted by the update is reconstructed. The script may also write derived
+ * fields from the same input, but nothing guarantees those are element-wise aligned with the
+ * target field, so no element assign is emitted for them.</p>
  *
  * @author johsol
  */
 public class ElementAssignFieldPathUpdateFieldValues implements UpdateFieldValues {
+
+    private static final Logger log = Logger.getLogger(ElementAssignFieldPathUpdateFieldValues.class.getName());
 
     private final DocumentFieldValues adapter;
     private final Expression optimizedExpression;
@@ -45,42 +50,35 @@ public class ElementAssignFieldPathUpdateFieldValues implements UpdateFieldValue
         this.update = update;
     }
 
-    /** Creates a partial document holding the assigned element as a single-element array in the target field. */
-    @SuppressWarnings("unchecked")
-    public static Document newPartialDocument(DocumentType docType, DocumentId docId, AssignFieldPathUpdate update) {
-        Document doc = new Document(docType, docId);
-        Field field = update.getFieldPath().get(0).getFieldRef();
-        Array<FieldValue> array = (Array<FieldValue>)field.getDataType().createFieldValue();
-        array.add(update.getNewValue().clone());
-        doc.setFieldValue(field, array);
-        return doc;
-    }
-
     @Override
     public DocumentUpdate getOutput() {
         Document doc = adapter.getFullOutput();
         DocumentUpdate out = new DocumentUpdate(doc.getDataType(), doc.getId());
-        for (Iterator<Map.Entry<Field, FieldValue>> it = doc.iterator(); it.hasNext();) {
-            Map.Entry<Field, FieldValue> entry = it.next();
-            if (!(entry.getValue() instanceof Array<?> array) || array.size() != 1) {
-                // An element assign can only be reconstructed from a single processed element.
-                continue;
-            }
-            String path = entry.getKey().getName() + "[" + elementIndex() + "]";
-            AssignFieldPathUpdate processed = new AssignFieldPathUpdate(update.getDocumentType(), path,
-                                                                        update.getOriginalWhereClause(),
-                                                                        array.getFieldValue(0));
+        FieldValue processed = doc.getFieldValue(targetField());
+        if (processed instanceof Array<?> array && array.size() == 1) {
+            String path = targetField().getName() + "[" + elementIndex() + "]";
+            AssignFieldPathUpdate assign = new AssignFieldPathUpdate(update.getDocumentType(), path,
+                                                                     array.getFieldValue(0));
             // Carry over the flags of the update as fed: the script processes the value only, and
             // e.g. removeIfZero decides whether an assigned zero removes the element instead.
-            processed.setCreateMissingPath(update.getCreateMissingPath());
-            processed.setRemoveIfZero(update.getRemoveIfZero());
-            out.addFieldPathUpdate(processed);
-        }
-        if (out.fieldPathUpdates().isEmpty()) {
-            // The script produced no usable output for this field; keep the update as fed.
+            assign.setCreateMissingPath(update.getCreateMissingPath());
+            assign.setRemoveIfZero(update.getRemoveIfZero());
+            out.addFieldPathUpdate(assign);
+        } else {
+            // The script did not output a single processed element for the target field, e.g. because
+            // it writes the input to other fields only. Pass the update on as fed, but be loud about
+            // it: this is the unprocessed value reaching the backend which this class exists to prevent.
+            log.log(Level.WARNING, () -> "Indexing script for field '" + targetField().getName() + "' of " +
+                                         doc.getId() + " did not produce a processed element for '" +
+                                         update.getOriginalFieldPath() + "', got " + processed +
+                                         ". Passing the element assign on unprocessed.");
             out.addFieldPathUpdate(update);
         }
         return out;
+    }
+
+    private Field targetField() {
+        return update.getFieldPath().get(0).getFieldRef();
     }
 
     private int elementIndex() {
@@ -110,6 +108,11 @@ public class ElementAssignFieldPathUpdateFieldValues implements UpdateFieldValue
     @Override
     public FieldValues setOutputValue(String fieldName, FieldValue fieldValue, Expression exp) {
         return adapter.setOutputValue(fieldName, fieldValue, exp);
+    }
+
+    @Override
+    public String toString() {
+        return "element assign field values for '" + update.getOriginalFieldPath() + "': " + adapter;
     }
 
 }
