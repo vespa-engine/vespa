@@ -27,21 +27,10 @@ public class IndexFieldNames extends Processor {
         if ( ! validate) return;
 
         for (SDField field : schema.allConcreteFields()) {
-            if ( ! field.getName().matches(FIELD_NAME_REGEXP) &&  ! legalDottedPositionField(field)) {
+            if ( ! field.getName().matches(FIELD_NAME_REGEXP) && !field.isInternalField()) {
                 fail(schema, field, " Not a legal field name. Legal expression: " + FIELD_NAME_REGEXP);
             }
         }
-    }
-
-    /**
-     * In {@link CreatePositionZCurve} we add some .position and .distance fields for pos fields. Make an exception for those for now.
-     * TODO Vespa 9: delete this method.
-     *
-     * @param field an {@link com.yahoo.schema.document.SDField}
-     * @return true if allowed
-     */
-    private boolean legalDottedPositionField(SDField field) {
-        return field.getName().endsWith(".position") || field.getName().endsWith(".distance");
     }
 
 }

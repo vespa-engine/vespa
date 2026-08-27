@@ -127,6 +127,9 @@ public class SDField extends Field implements ImmutableSDField {
     private boolean wasConfiguredToDoAttributing = false;
     private boolean wasConfiguredToDoIndexing = false;
 
+    /** For internal fields generated synthetically.  */
+    private boolean isInternalField = false;
+
     /**
      * Creates a new field. This method is only used to create reserved fields.
      *
@@ -202,6 +205,14 @@ public class SDField extends Field implements ImmutableSDField {
     @Override
     public boolean isExtraField() {
         return isExtraField;
+    }
+
+    public boolean isInternalField() {
+        return isInternalField;
+    }
+
+    public void setInternalField(boolean internalField) {
+        isInternalField = internalField;
     }
 
     public boolean isDocumentField() { return ! isExtraField; }

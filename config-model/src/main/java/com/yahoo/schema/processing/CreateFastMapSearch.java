@@ -82,6 +82,7 @@ public class CreateFastMapSearch extends Processor {
         attribute.setFastSearch(true);
         field.addAttribute(attribute);
         field.setIndexingScript(schema.getName(), keyValueScript(inputField, fieldName));
+        field.setInternalField(true);
         return field;
     }
 
