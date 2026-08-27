@@ -14,6 +14,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -121,6 +122,41 @@ public class CreateFastMapSearchTest {
                                                            "}")));
         assertTrue(exception.getMessage().contains("Incompatible map attribute 'foo$keyvalue' already created"),
                    "Unexpected message: " + exception.getMessage());
+    }
+
+    /**
+     * A child schema sees the parent's key-value field through inheritance. It must reuse
+     * that field rather than derive it again, while still deriving its own fast-search maps.
+     */
+    @Test
+    void requireInheritedFastSearchMapIsNotDerivedAgain() throws ParseException {
+        var builder = new ApplicationBuilder(new TestProperties().fastMapSearch(true));
+        builder.addSchema(joinLines("schema parent {",
+                                    "  document parent {",
+                                    fastSearchMap("map<string, string>"),
+                                    "  }",
+                                    "}"));
+        builder.addSchema(joinLines("schema child inherits parent {",
+                                    "  document child inherits parent {",
+                                    "    field bar type map<string, string> {",
+                                    "      indexing: summary",
+                                    "      map: fast-search",
+                                    "    }",
+                                    "  }",
+                                    "}"));
+        builder.build(true);
+        Schema parent = builder.getSchema("parent");
+        Schema child = builder.getSchema("child");
+
+        // The inherited key-value field is the parent's, not a copy made by the child. A copy would
+        // shadow the parent's field, since own extra fields are looked up before inherited ones.
+        SDField inherited = child.getConcreteField("foo$keyvalue");
+        assertNotNull(inherited, "Expected child to see the inherited key-value field");
+        assertSame(parent.getConcreteField("foo$keyvalue"), inherited);
+
+        // The child's own fast-search map is still derived, and only in the child.
+        assertNotNull(child.getConcreteField("bar$keyvalue"), "Expected key-value field for the child's own map");
+        assertNull(parent.getConcreteField("bar$keyvalue"));
     }
 
     private static String fastSearchMap(String type) {
