@@ -94,7 +94,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.28.1",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
