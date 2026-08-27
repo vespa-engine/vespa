@@ -255,6 +255,25 @@ public class SchemaParserTestCase {
     }
 
     @Test
+    void struct_field_select_can_list_several_fields_on_one_line() throws Exception {
+        String input = """
+          schema foo {
+            document foo {
+            }
+            document-summary bar {
+              summary baz {
+                struct-field: one, two
+                struct-field: three
+              }
+            }
+          }""";
+        var schema = parseString(input);
+        var summaryFields = schema.getDocumentSummaries().get(0).getSummaryFields();
+        assertEquals(1, summaryFields.size());
+        assertEquals(List.of("one", "two", "three"), summaryFields.get(0).getStructFieldSelect());
+    }
+
+    @Test
     void struct_field_select_is_only_allowed_in_document_summary() {
         String input = """
           schema foo {

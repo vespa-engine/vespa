@@ -82,8 +82,7 @@ schema structsummaries {
     # subset of the struct fields, where the full set is not usable as attributes:
     document-summary three {
         summary b {
-            struct-field: s1a
-            struct-field: s1d
+            struct-field: s1a, s1d
         }
     }
 

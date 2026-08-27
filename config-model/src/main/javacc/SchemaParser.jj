@@ -1304,8 +1304,9 @@ void summaryElementsBy(ParsedSummaryField field) :
 /**
  * This rule consumes a struct-field selection statement for a summary field,
  * used to select a subset of the sub-fields of a struct (or array/map of
- * struct) to include in the summary. Only allowed for a summary field inside
- * a document-summary.
+ * struct) to include in the summary. Several sub-fields may be listed,
+ * separated by commas, and the statement may be repeated. Only allowed for a
+ * summary field inside a document-summary.
  *
  * @param field The summary field to modify.
  */
@@ -1315,6 +1316,7 @@ void summaryStructFieldSelect(ParsedSummaryField field) :
 }
 {
     <STRUCT_FIELD> <COLON> str = identifier() { field.addStructFieldSelect(str); }
+    (             <COMMA> str = identifier() { field.addStructFieldSelect(str); } )*
 }
 
 /**
