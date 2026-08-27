@@ -107,7 +107,7 @@ public class FieldValuesFactory {
             // than failing the entire update.
             return new IdentityFieldPathUpdateFieldValues(elementAssign, newDocumentAdapter(complete, true));
         }
-        Document partial = ElementAssignFieldPathUpdateFieldValues.newPartialDocument(docType, docId, elementAssign);
+        Document partial = FieldPathUpdateHelper.newElementAssignPartialDocument(docId, elementAssign);
         return new ElementAssignFieldPathUpdateFieldValues(expression, newDocumentAdapter(partial, true), elementAssign);
     }
 

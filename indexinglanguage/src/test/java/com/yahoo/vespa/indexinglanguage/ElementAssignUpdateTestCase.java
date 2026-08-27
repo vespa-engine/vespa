@@ -103,6 +103,28 @@ public class ElementAssignUpdateTestCase {
     }
 
     /**
+     * The element is processed in a single-element array regardless of its index, so an index beyond
+     * any plausible array size must still be processed and come back out at the same index. The backend
+     * decides whether the assign is a no-op against the stored document.
+     */
+    @Test
+    public void requireThatElementIndexIsPreserved() throws ParseException {
+        DocumentType docType = newDocumentType();
+        DocumentUpdate upd = new DocumentUpdate(docType, "id:scheme:my_type::");
+        upd.addFieldPathUpdate(new AssignFieldPathUpdate(docType, "my_str[1000]", "",
+                                                         new StringFieldValue("HELLO")));
+
+        upd = Expression.execute(Expression.fromString("input my_str | for_each { lowercase } | index my_str"), upd);
+
+        assertNotNull(upd);
+        assertEquals(1, upd.fieldPathUpdates().size());
+        AssignFieldPathUpdate out = (AssignFieldPathUpdate)upd.fieldPathUpdates().iterator().next();
+        assertEquals("my_str[1000]", out.getOriginalFieldPath());
+        assertEquals(1000, out.getFieldPath().get(1).getLookupIndex());
+        assertEquals(new StringFieldValue("hello"), out.getNewValue());
+    }
+
+    /**
      * The script processes the assigned value only, so the flags deciding how the assign is applied
      * must survive it. An assigned zero with removeIfZero set removes the element instead of setting it.
      */
