@@ -113,6 +113,8 @@ MatchThread::Context::Context(std::optional<double> first_phase_rank_score_drop_
       dropped() {
 }
 
+MatchThread::Context::~Context() = default;
+
 template <MatchThread::RankDropLimitE use_rank_drop_limit> bool MatchThread::Context::rankHit(uint32_t docId) {
     double score = (*_score_feature).as_number(docId);
     // convert NaN and Inf scores to -Inf
@@ -448,6 +450,10 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
         return;
     size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
     result->sort(*context.sort->sorter, sortLimit);
+    if (context.sort->sortSpec.feature_values_failed()) {
+        // The hits are not in the requested order; the matcher fails the query.
+        resultProcessor.note_sort_feature_failure();
+    }
     if (doom.hard_doom())
         return;
     if (hasGrouping) {
@@ -520,7 +526,12 @@ void MatchThread::run() {
      */
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time_s = vespalib::to_s(match_time.elapsed());
-    resultContext = resultProcessor.createThreadContext(matchTools->getDoom(), thread_id, _distributionKey);
+    // The store is handed over even when its values will never be read, so that
+    // binding a doomed or otherwise unused query fails only on a genuinely
+    // unavailable feature.
+    SortFeatureStore* sort_store = matchTools->sort_store();
+    resultContext =
+        resultProcessor.createThreadContext(matchTools->getDoom(), thread_id, _distributionKey, sort_store);
     {
         trace->addEvent(5, "Wait for result processing token");
         WaitTimer               get_token_timer(wait_time_s);
@@ -528,14 +539,15 @@ void MatchThread::run() {
             matchTools->getDoom(), scheduler.total_size(thread_id), result->getNumHits(),
             resultContext->sort->hasSortData(), bool(resultContext->grouping)));
         get_token_timer.done();
-        if (SortFeatureStore* store = matchTools->sort_store()) {
-            if (matchTools->getDoom().hard_doom()) {
-                store->consumed();
+        // The recorded values are of no use once we are past the hard deadline or
+        // when the selected sorter does not read them; releasing them here frees
+        // the storage before the sorter allocates its own scratch. Otherwise the
+        // store must be in docid order before result processing seeks in it.
+        if (sort_store) {
+            if (matchTools->getDoom().hard_doom() || !resultContext->sort->hasSortData()) {
+                sort_store->consumed();
             } else {
-                store->ensure_sorted_for_read();
-                if (resultContext->sort->hasSortData()) {
-                    resultContext->sort->sortSpec.bind_numeric_provider(*store);
-                }
+                sort_store->ensure_sorted_for_read();
             }
         }
         trace->addEvent(5, "Start result processing");

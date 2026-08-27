@@ -84,6 +84,7 @@ private:
         Context(std::optional<double> first_phase_rank_score_drop_limit, MatchTools& tools, HitCollector& hits,
                 uint32_t num_threads, std::optional<LazyValue> score_feature, SortFeatureStore* sort_store,
                 std::span<const LazyValue> sort_seeds, bool sort_needs_unpack) __attribute__((noinline));
+        ~Context();
         template <RankDropLimitE use_rank_drop_limit> bool rankHit(uint32_t docId);
         void addHit(uint32_t docId) { _hits.addHit(docId, search::zero_rank_value); }
         void record_sort(uint32_t docId);

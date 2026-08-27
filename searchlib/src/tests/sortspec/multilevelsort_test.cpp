@@ -502,6 +502,8 @@ public:
         }
         return _by_docid[_bound_docid][ord];
     }
+    void set_failed() { _failed = true; }
+    bool failed() const noexcept override { return _failed; }
     void consumed() override { ++_consumed; }
 
 private:
@@ -513,6 +515,7 @@ private:
     uint32_t                         _bound_docid = 0;
     bool                             _bound = false;
     bool                             _started = false;
+    bool                             _failed = false;
 };
 
 TEST(SortTest, feature_sort_binds_provider_and_seeks_each_hit_once) {
@@ -530,7 +533,7 @@ TEST(SortTest, feature_sort_binds_provider_and_seeks_each_hit_once) {
     by_docid[3] = {2.0, 10.0};
     by_docid[4] = {2.0, 10.0};
     FakeNumericSortProvider provider({"pri", "sec"}, std::move(by_docid));
-    sorter.bind_numeric_provider(provider);
+    ASSERT_TRUE(sorter.bind_numeric_provider(&provider));
 
     RankedHit hits[4] = {RankedHit(1, 0.0), RankedHit(2, 0.0), RankedHit(3, 0.0), RankedHit(4, 0.0)};
     sorter.sortResults(hits, 4, 4);
@@ -540,6 +543,107 @@ TEST(SortTest, feature_sort_binds_provider_and_seeks_each_hit_once) {
     EXPECT_EQ(4u, hits[3].getDocId());
     EXPECT_EQ(4u, provider.seek_count());
     EXPECT_EQ(1u, provider.consumed_count());
+}
+
+TEST(SortTest, binding_fails_when_a_sort_feature_is_not_available) {
+    search::uca::UcaConverterFactory ucaFactory;
+    search::AttributeManager         mgr;
+    search::AttributeContext         ac(mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("+feature(pri) -feature(gone)", ac));
+
+    FakeNumericSortProvider provider({"pri"}, std::vector<std::vector<double>>(5));
+    EXPECT_FALSE(sorter.bind_numeric_provider(&provider));
+    EXPECT_TRUE(sorter.feature_values_failed());
+}
+
+TEST(SortTest, binding_fails_when_a_sort_feature_has_no_provider) {
+    search::uca::UcaConverterFactory ucaFactory;
+    search::AttributeManager         mgr;
+    search::AttributeContext         ac(mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("+feature(pri)", ac));
+
+    EXPECT_FALSE(sorter.bind_numeric_provider(nullptr));
+    EXPECT_TRUE(sorter.feature_values_failed());
+}
+
+TEST(SortTest, a_provider_that_runs_out_of_sort_values_fails_the_sort) {
+    search::uca::UcaConverterFactory ucaFactory;
+    search::AttributeManager         mgr;
+    search::AttributeContext         ac(mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("+feature(pri)", ac));
+
+    std::vector<std::vector<double>> by_docid(3);
+    by_docid[1] = {1.0};
+    by_docid[2] = {2.0};
+    FakeNumericSortProvider provider({"pri"}, std::move(by_docid));
+    ASSERT_TRUE(sorter.bind_numeric_provider(&provider));
+    EXPECT_FALSE(sorter.feature_values_failed());
+
+    provider.set_failed();
+    RankedHit hits[2] = {RankedHit(1, 0.0), RankedHit(2, 0.0)};
+    sorter.sortResults(hits, 2, 2);
+    // The blobs were encoded and consumed, but the order cannot be trusted.
+    EXPECT_TRUE(sorter.feature_values_failed());
+    EXPECT_EQ(1u, provider.consumed_count());
+}
+
+TEST(SortTest, a_successful_feature_sort_is_not_a_value_failure) {
+    search::uca::UcaConverterFactory ucaFactory;
+    search::AttributeManager         mgr;
+    search::AttributeContext         ac(mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("+feature(pri)", ac));
+
+    std::vector<std::vector<double>> by_docid(3);
+    by_docid[1] = {2.0};
+    by_docid[2] = {1.0};
+    FakeNumericSortProvider provider({"pri"}, std::move(by_docid));
+    ASSERT_TRUE(sorter.bind_numeric_provider(&provider));
+
+    RankedHit hits[2] = {RankedHit(1, 0.0), RankedHit(2, 0.0)};
+    sorter.sortResults(hits, 2, 2);
+    EXPECT_EQ(2u, hits[0].getDocId());
+    EXPECT_EQ(1u, hits[1].getDocId());
+    EXPECT_FALSE(sorter.feature_values_failed());
+}
+
+TEST(SortTest, sorting_twice_on_a_feature_fails_rather_than_reusing_consumed_values) {
+    search::uca::UcaConverterFactory ucaFactory;
+    search::AttributeManager         mgr;
+    search::AttributeContext         ac(mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("+feature(pri)", ac));
+
+    std::vector<std::vector<double>> by_docid(3);
+    by_docid[1] = {2.0};
+    by_docid[2] = {1.0};
+    FakeNumericSortProvider provider({"pri"}, std::move(by_docid));
+    ASSERT_TRUE(sorter.bind_numeric_provider(&provider));
+
+    RankedHit hits[2] = {RankedHit(1, 0.0), RankedHit(2, 0.0)};
+    sorter.sortResults(hits, 2, 2);
+    ASSERT_FALSE(sorter.feature_values_failed());
+    EXPECT_EQ(1u, provider.consumed_count());
+
+    // The values were released by the first sort; a second one has nothing to
+    // encode and must not be presented as ordered by the feature.
+    sorter.sortResults(hits, 2, 2);
+    EXPECT_TRUE(sorter.feature_values_failed());
+    EXPECT_EQ(1u, provider.consumed_count());
+}
+
+TEST(SortTest, binding_a_null_provider_is_ok_without_sort_features) {
+    search::uca::UcaConverterFactory ucaFactory;
+    search::AttributeManager         mgr;
+    search::AttributeContext         ac(mgr);
+    FastS_SortSpec                   sorter("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
+    ASSERT_TRUE(sorter.Init("+[rank] -[docid]", ac));
+
+    EXPECT_TRUE(sorter.bind_numeric_provider(nullptr));
+    EXPECT_FALSE(sorter.feature_values_failed());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

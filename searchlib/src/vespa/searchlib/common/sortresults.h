@@ -65,6 +65,12 @@ public:
  * encoding, seek() is called once per hit in non-decreasing docid order;
  * get() reads the row bound by the most recent seek(). consumed() ends the
  * binding and permits the provider to release its storage.
+ *
+ * A provider that cannot honour a seek() records the fact and keeps going,
+ * returning placeholder values from get(); failed() then stays true for the
+ * rest of the encoding. The resulting sort blobs are meaningless, so the
+ * caller must fail the query rather than present the hits in some other
+ * order. Check failed() after encoding, before consumed().
  */
 class INumericSortValueProvider {
 public:
@@ -73,6 +79,7 @@ public:
     virtual uint32_t ordinal(std::string_view public_name) const = 0;
     virtual void seek(uint32_t docid) = 0;
     virtual double get(uint32_t ordinal) const = 0;
+    virtual bool failed() const noexcept = 0;
     virtual void consumed() = 0;
 };
 
@@ -126,8 +133,10 @@ private:
     BinarySortData             _binarySortData;
     SortDataArray              _sortDataArray;
     INumericSortValueProvider* _numeric_provider;
+    bool                       _feature_values_failed;
 
     bool Add(search::attribute::IAttributeContext& vecMan, const search::common::FieldSortSpec& field_sort_spec);
+    double feature_value(uint32_t ordinal) const;
     void initSortData(const search::RankedHit* a, uint32_t n);
     int initSortData(const VectorRef& vec, const search::RankedHit& hit, size_t offset);
 
@@ -147,7 +156,25 @@ public:
     void copySortData(uint32_t offset, uint32_t n, uint32_t* idx, char* buf);
     void freeSortData();
     void initWithoutSorting(const search::RankedHit* hits, uint32_t hitCnt);
-    void bind_numeric_provider(INumericSortValueProvider& provider);
+
+    /**
+     * Resolves the feature ordinals of the rank feature sort levels, if any.
+     * The provider may be null; it is only required when the sort spec has
+     * rank feature levels. Returns false (leaving this object unbound and
+     * unusable for sorting) if a rank feature level has no sort value
+     * available. The caller cannot order the hits as requested and is expected
+     * to fail the query rather than to sort them some other way.
+     **/
+    [[nodiscard]] bool bind_numeric_provider(INumericSortValueProvider* provider);
+
+    /**
+     * True if a rank feature sort level could not be bound, or if the bound
+     * provider could not supply the sort values of every hit while the sort
+     * blobs were encoded. The encoded blobs order the hits by a placeholder
+     * value rather than by the requested rank features, so the caller is
+     * expected to fail the query.
+     **/
+    [[nodiscard]] bool feature_values_failed() const noexcept { return _feature_values_failed; }
 };
 
 //-----------------------------------------------------------------------------

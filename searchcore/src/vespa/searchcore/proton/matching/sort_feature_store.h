@@ -29,7 +29,7 @@ namespace proton::matching {
 class SortFeatureStore : public INumericSortValueProvider {
 public:
     SortFeatureStore(std::vector<std::string> public_names);
-    ~SortFeatureStore() override = default;
+    ~SortFeatureStore() override;
 
     uint32_t num_features() const noexcept { return _num_features; }
     uint32_t num_rows() const noexcept { return _rows; }
@@ -40,10 +40,11 @@ public:
     uint32_t ordinal(std::string_view public_name) const override;
     void seek(uint32_t docid) override;
     double get(uint32_t ordinal) const override;
+    bool failed() const noexcept override { return _phase == Phase::failed; }
     void consumed() override;
 
 private:
-    enum class Phase { recording, reading, consumed };
+    enum class Phase { recording, reading, consumed, failed };
 
     static constexpr uint32_t chunk_rows = 1024;
 
@@ -57,6 +58,8 @@ private:
     uint32_t row_docid(uint32_t row) const;
     const double* row_values(uint32_t row) const;
     void clear_storage();
+    void fail(const char* reason, uint32_t docid);
+    const char* current_phase() const noexcept;
 
     uint32_t                            _num_features;
     uint32_t                            _rows;

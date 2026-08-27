@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/matching/querynodes.h>
+#include <vespa/searchcore/proton/matching/result_processor.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
@@ -18,6 +19,7 @@
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -1803,6 +1805,64 @@ TEST_F(MatchingTest, weak_and_stop_word_strategy_is_resolved_correctly) {
     EXPECT_TRUE(stop_words.should_drop(501));
     EXPECT_FALSE(stop_words.keep_all());
     EXPECT_TRUE(stop_words.allow_drop_all());
+}
+
+namespace {
+
+struct FakeSortValueProvider : INumericSortValueProvider {
+    std::vector<std::string> names;
+    explicit FakeSortValueProvider(std::vector<std::string> names_in) : names(std::move(names_in)) {}
+    uint32_t ordinal(std::string_view public_name) const override {
+        for (uint32_t i = 0; i < names.size(); ++i) {
+            if (names[i] == public_name) {
+                return i;
+            }
+        }
+        return invalid_ordinal;
+    }
+    void seek(uint32_t) override {}
+    double get(uint32_t) const override { return 0.0; }
+    bool failed() const noexcept override { return false; }
+    void consumed() override {}
+};
+
+} // namespace
+
+TEST(SortBindingTest, feature_sort_binds_when_all_values_are_available) {
+    MockAttributeContext  ac;
+    FakeSortValueProvider provider({"by_a1"});
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", &provider);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_TRUE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, feature_sort_binding_fails_when_a_value_is_unavailable) {
+    MockAttributeContext  ac;
+    FakeSortValueProvider provider({"by_a1"});
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1) +feature(gone)", &provider);
+    EXPECT_TRUE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, feature_sort_binding_fails_without_a_provider) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", nullptr);
+    EXPECT_TRUE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, sort_without_features_needs_no_provider) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+[rank]", nullptr);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_TRUE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, failed_attribute_sort_is_not_a_feature_binding_failure) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+no_such_attribute", nullptr);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

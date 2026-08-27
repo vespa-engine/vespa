@@ -100,4 +100,99 @@ TEST(SortFeatureStoreTest, grows_across_chunk_boundaries) {
     EXPECT_EQ(double(n - 1), store.get(0));
 }
 
+TEST(SortFeatureStoreTest, successful_consumption_is_not_a_failure) {
+    SortFeatureStore store({"foo"});
+    const double     a[] = {1.0};
+    store.record(10, a);
+    store.ensure_sorted_for_read();
+    store.seek(10);
+    EXPECT_EQ(1.0, store.get(0));
+    EXPECT_FALSE(store.failed());
+    store.consumed();
+    EXPECT_FALSE(store.failed());
+}
+
+TEST(SortFeatureStoreTest, seek_for_an_unrecorded_docid_fails_gracefully) {
+    SortFeatureStore store({"foo"});
+    const double     a[] = {1.0};
+    const double     b[] = {2.0};
+    store.record(10, a);
+    store.record(30, b);
+    store.ensure_sorted_for_read();
+    store.seek(20);
+    EXPECT_TRUE(store.failed());
+    EXPECT_EQ(-HUGE_VAL, store.get(0));
+}
+
+TEST(SortFeatureStoreTest, backwards_seek_fails_gracefully) {
+    SortFeatureStore store({"foo"});
+    const double     a[] = {1.0};
+    const double     b[] = {2.0};
+    store.record(10, a);
+    store.record(20, b);
+    store.ensure_sorted_for_read();
+    store.seek(20);
+    EXPECT_FALSE(store.failed());
+    store.seek(10);
+    EXPECT_TRUE(store.failed());
+    EXPECT_EQ(-HUGE_VAL, store.get(0));
+}
+
+TEST(SortFeatureStoreTest, seek_past_the_last_recorded_row_fails_gracefully) {
+    SortFeatureStore store({"foo"});
+    const double     a[] = {1.0};
+    store.record(10, a);
+    store.ensure_sorted_for_read();
+    store.seek(20);
+    EXPECT_TRUE(store.failed());
+    EXPECT_EQ(-HUGE_VAL, store.get(0));
+}
+
+TEST(SortFeatureStoreTest, seek_without_any_recorded_row_fails_gracefully) {
+    SortFeatureStore store({"foo"});
+    store.ensure_sorted_for_read();
+    store.seek(1);
+    EXPECT_TRUE(store.failed());
+    EXPECT_EQ(-HUGE_VAL, store.get(0));
+}
+
+TEST(SortFeatureStoreTest, seek_after_release_fails_gracefully) {
+    SortFeatureStore store({"foo"});
+    const double     a[] = {1.0};
+    store.record(10, a);
+    store.ensure_sorted_for_read();
+    store.consumed();
+    store.seek(10);
+    EXPECT_TRUE(store.failed());
+    EXPECT_EQ(-HUGE_VAL, store.get(0));
+}
+
+TEST(SortFeatureStoreTest, seek_before_preparing_for_read_fails_gracefully) {
+    SortFeatureStore store({"foo"});
+    const double     a[] = {1.0};
+    store.record(10, a);
+    store.seek(10);
+    EXPECT_TRUE(store.failed());
+    EXPECT_EQ(-HUGE_VAL, store.get(0));
+}
+
+TEST(SortFeatureStoreTest, failure_is_sticky_across_later_seeks_and_release) {
+    SortFeatureStore store({"foo"});
+    const double     a[] = {1.0};
+    const double     b[] = {2.0};
+    store.record(10, a);
+    store.record(20, b);
+    store.ensure_sorted_for_read();
+    store.seek(15);
+    EXPECT_TRUE(store.failed());
+    // A subsequent seek that would have been satisfiable does not clear the failure.
+    store.seek(20);
+    EXPECT_TRUE(store.failed());
+    EXPECT_EQ(-HUGE_VAL, store.get(0));
+    store.consumed();
+    EXPECT_TRUE(store.failed());
+    // Failure does not keep the storage alive for the rest of the query.
+    EXPECT_EQ(0u, store.num_rows());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

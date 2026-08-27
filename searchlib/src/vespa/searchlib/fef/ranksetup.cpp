@@ -8,10 +8,10 @@
 #include "indexproperties.h"
 
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
-#include <cstdlib>
 
 using vespalib::make_string_short::fmt;
 
@@ -310,19 +310,21 @@ void RankSetup::prepareSharedState(const IQueryEnvironment& queryEnv, IObjectSto
 RankProgram::UP RankSetup::create_sort_program(const std::string& public_name) const {
     auto it = _sort_resolver_by_public.find(public_name);
     if (it == _sort_resolver_by_public.end() || !it->second) {
-        abort();
+        vespalib::Issue::report("'%s' is not an allowed sort feature", public_name.c_str());
+        return {};
     }
     return std::make_unique<RankProgram>(it->second);
 }
 
-void RankSetup::prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
+bool RankSetup::prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
                                           const std::vector<std::string>& selected_public_names) const {
     assert(_compiled && !_compileError);
     std::vector<const BlueprintResolver*> prepared;
     for (const auto& public_name : selected_public_names) {
         auto it = _sort_resolver_by_public.find(public_name);
         if (it == _sort_resolver_by_public.end() || !it->second) {
-            abort();
+            vespalib::Issue::report("'%s' is not an allowed sort feature", public_name.c_str());
+            return false;
         }
         const BlueprintResolver* resolver = it->second.get();
         if (std::find(prepared.begin(), prepared.end(), resolver) != prepared.end()) {
@@ -333,6 +335,7 @@ void RankSetup::prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IOb
             spec.blueprint->prepareSharedState(queryEnv, objectStore);
         }
     }
+    return true;
 }
 
 std::string RankSetup::getJoinedWarnings() const {
