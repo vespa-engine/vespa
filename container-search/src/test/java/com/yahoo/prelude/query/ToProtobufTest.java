@@ -680,6 +680,74 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithStringRangeItem() {
+        assertConvertsToJson(new StringRangeItem("apple", "pear", "myindex"), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "lowerLimit": "apple",
+                "upperLimit": "pear",
+                "lowerInclusive": true,
+                "upperInclusive": true
+              }
+            }
+            """);
+    }
+
+    @Test
+    void testConvertFromQueryWithOpenStringRangeItem() {
+        assertConvertsToJson(new StringRangeItem("apple", false, "pear", false, "myindex"), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "lowerLimit": "apple",
+                "upperLimit": "pear"
+              }
+            }
+            """);
+    }
+
+    @Test
+    void testConvertFromQueryWithUnboundedStringRangeItems() {
+        assertConvertsToJson(new StringRangeItem("apple", null, "myindex"), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "lowerLimit": "apple",
+                "lowerInclusive": true,
+                "upperInclusive": true
+              }
+            }
+            """);
+        assertConvertsToJson(new StringRangeItem(null, "pear", "myindex"), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "upperLimit": "pear",
+                "lowerInclusive": true,
+                "upperInclusive": true
+              }
+            }
+            """);
+    }
+
+    /** The empty string is a bound, and must be distinguishable from an unbounded end of the range. */
+    @Test
+    void testConvertFromQueryWithEmptyStringBound() {
+        assertConvertsToJson(new StringRangeItem("", "pear", "myindex"), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "lowerLimit": "",
+                "upperLimit": "pear",
+                "lowerInclusive": true,
+                "upperInclusive": true
+              }
+            }
+            """);
+    }
+
+    @Test
     void testConvertFromQueryWithNumericInItem() {
         NumericInItem numericIn = new NumericInItem("myindex");
         numericIn.addToken(42L);

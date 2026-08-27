@@ -1445,6 +1445,7 @@
       "public boolean useLegacyWandQueryParsing()",
       "public boolean useSimpleAnnotations()",
       "public boolean sendOldQueryStack()",
+      "public boolean allowStringRanges()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",

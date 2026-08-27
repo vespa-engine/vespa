@@ -59,6 +59,9 @@
   "com.yahoo.prelude.query.StringInItem" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],
+  "com.yahoo.prelude.query.StringRangeItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
   "com.yahoo.prelude.query.TermItem" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],

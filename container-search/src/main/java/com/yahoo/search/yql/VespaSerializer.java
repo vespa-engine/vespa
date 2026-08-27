@@ -107,6 +107,7 @@ import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -917,6 +918,57 @@ public class VespaSerializer {
         }
     }
 
+    private static class StringRangeSerializer extends Serializer<StringRangeItem> {
+
+        @Override
+        void onExit(StringBuilder destination, StringRangeItem item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, StringRangeItem range, Boolean includeField) {
+            String annotations = leafAnnotations(range);
+            String boundsAnnotation = boundsAnnotation(range);
+            boolean annotated = !annotations.isEmpty() || !boundsAnnotation.isEmpty();
+
+            if (annotated) {
+                destination.append("({").append(annotations);
+                if (!annotations.isEmpty() && !boundsAnnotation.isEmpty())
+                    destination.append(", ");
+                destination.append(boundsAnnotation).append("}");
+            }
+            destination.append(RANGE).append('(')
+                       .append(normalizeIndexName(range.getIndexName()))
+                       .append(", ");
+            appendBound(destination, range.getFrom(), true);
+            destination.append(", ");
+            appendBound(destination, range.getTo(), false);
+            destination.append(')');
+            if (annotated) {
+                destination.append(')');
+            }
+            return false;
+        }
+
+        private static String boundsAnnotation(StringRangeItem range) {
+            boolean leftOpen = !range.isFromInclusive();
+            boolean rightOpen = !range.isToInclusive();
+            if (leftOpen && rightOpen) return BOUNDS + ": \"" + BOUNDS_OPEN + "\"";
+            if (leftOpen) return BOUNDS + ": \"" + BOUNDS_LEFT_OPEN + "\"";
+            if (rightOpen) return BOUNDS + ": \"" + BOUNDS_RIGHT_OPEN + "\"";
+            return "";
+        }
+
+        private static void appendBound(StringBuilder destination, String bound, boolean isLower) {
+            if (bound == null) {
+                destination.append(isLower ? "-Infinity" : "Infinity");
+            } else {
+                destination.append('"');
+                escape(bound, destination);
+                destination.append('"');
+            }
+        }
+
+    }
+
     private static class RankSerializer extends Serializer<RankItem> {
 
         @Override
@@ -1352,6 +1404,7 @@ public class VespaSerializer {
         dispatchBuilder.put(UriItem.class, new UriSerializer());
         dispatchBuilder.put(FuzzyItem.class, new FuzzySerializer());
         dispatchBuilder.put(StringInItem.class, new StringInSerializer());
+        dispatchBuilder.put(StringRangeItem.class, new StringRangeSerializer());
         dispatchBuilder.put(NumericInItem.class, new NumericInSerializer());
         dispatch = ImmutableMap.copyOf(dispatchBuilder);
     }

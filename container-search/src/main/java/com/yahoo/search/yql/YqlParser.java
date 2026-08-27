@@ -67,6 +67,7 @@ import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -1584,8 +1585,23 @@ public class YqlParser implements Parser {
         assertHasOperator(spec, ExpressionOperator.CALL);
         assertHasFunctionName(spec, RANGE);
 
-        IntItem range = instantiateRangeItem(spec.getArgument(1), spec);
-        return leafStyleSettings(spec, range);
+        List<OperatorNode<ExpressionOperator>> args = spec.getArgument(1);
+        Preconditions.checkArgument(args.size() == 3, "Expected 3 arguments, got %s.", args.size());
+
+        if (isLexicalRange(args.get(0)))
+            return leafStyleSettings(spec, instantiateStringRangeItem(args, spec));
+        return leafStyleSettings(spec, instantiateRangeItem(args, spec));
+    }
+
+    /**
+     * Returns whether a range over the given field is a lexical range over strings rather than a numerical range.
+     * Fields which are not strings, and all fields when string ranges are turned off, produce numerical ranges.
+     */
+    private boolean isLexicalRange(OperatorNode<ExpressionOperator> field) {
+        if ( ! environment.getParserSettings().allowStringRanges()) return false;
+
+        Index index = indexFactsSession.getIndex(indexNameExpander.expand(getIndex(field)));
+        return index.isString() && ! index.isNumerical() && ! index.isInteger();
     }
 
     private static Number negate(Number x) {
@@ -1639,6 +1655,58 @@ public class YqlParser implements Parser {
             }
             return new IntItem(from, to, getIndex(args.get(0)));
         }
+    }
+
+    private StringRangeItem instantiateStringRangeItem(List<OperatorNode<ExpressionOperator>> args,
+                                                      OperatorNode<ExpressionOperator> spec) {
+        String field = getIndex(args.get(0));
+        if (getAnnotation(spec, HIT_LIMIT, Integer.class, null, "hit limit") != null)
+            throw new IllegalArgumentException("'" + HIT_LIMIT + "' is not supported by ranges over the string " +
+                                               "field '" + field + "'");
+
+        String lower = getStringRangeBound(args.get(1), field, true);
+        String upper = getStringRangeBound(args.get(2), field, false);
+        String bounds = getAnnotation(spec, BOUNDS, String.class, null,
+                                      "whether bounds should be open or closed");
+        if (bounds == null)
+            return new StringRangeItem(lower, true, upper, true, field);
+        return switch (bounds) {
+            case BOUNDS_OPEN -> new StringRangeItem(lower, false, upper, false, field);
+            case BOUNDS_LEFT_OPEN -> new StringRangeItem(lower, false, upper, true, field);
+            case BOUNDS_RIGHT_OPEN -> new StringRangeItem(lower, true, upper, false, field);
+            default -> throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
+        };
+    }
+
+    /**
+     * Returns a bound of a lexical range, or null if that bound is unbounded, which is written as
+     * <code>-Infinity</code> for the lower and <code>Infinity</code> for the upper bound.
+     *
+     * @param isLower whether this is the lower bound of the range
+     */
+    private String getStringRangeBound(OperatorNode<ExpressionOperator> bound, String field, boolean isLower) {
+        if (bound.getOperator() == ExpressionOperator.NEGATE) {
+            OperatorNode<ExpressionOperator> negated = bound.getArgument(0);
+            if (isInfinity(negated) && isLower) return null;
+            throw new IllegalArgumentException("Expected a string argument (or " + (isLower ? "'-Infinity'" : "'Infinity'") +
+                                               ") to the range over the string field '" + field + "' but got '" +
+                                               bound + "'");
+        }
+        if (isInfinity(bound)) {
+            if (isLower)
+                throw new IllegalArgumentException("The lower bound of the range over the string field '" + field +
+                                                   "' is unbounded when it is '-Infinity', not 'Infinity'");
+            return null;
+        }
+        if (bound.getOperator() == ExpressionOperator.LITERAL && ! (bound.getArgument(0) instanceof String))
+            throw new IllegalArgumentException("Expected a string argument to the range over the string field '" +
+                                               field + "' but got '" + bound.getArgument(0) + "'");
+        return getStringContents(bound);
+    }
+
+    private static boolean isInfinity(OperatorNode<ExpressionOperator> bound) {
+        return bound.getOperator() == ExpressionOperator.READ_FIELD
+               && bound.getArgument(1).toString().equals("Infinity");
     }
 
     private Number getRangeBound(OperatorNode<ExpressionOperator> bound) {

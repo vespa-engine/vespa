@@ -52,6 +52,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
     private final ApplicationPackage app;
     private final boolean useLegacyWandQueryParsing;
     private final boolean sendOldQueryStack;
+    private final boolean allowStringRanges;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
@@ -64,6 +65,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
         this.owningCluster = cluster;
         this.useLegacyWandQueryParsing = deployState.featureFlags().useLegacyWandQueryParsing();
         this.sendOldQueryStack = deployState.featureFlags().sendOldQueryStack();
+        this.allowStringRanges = deployState.featureFlags().allowStringRanges();
 
         owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class, SEARCH_AND_DOCPROC_BUNDLE));
@@ -173,12 +175,14 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
     @Override
     public void getConfig(QrSearchersConfig.Builder builder) {
         searchClusters.forEach(sc -> builder.searchcluster(sc.getQrSearcherConfig()));
-        if (useLegacyWandQueryParsing) {
-            builder.parserSettings(cfg -> cfg
-                                   .keepImplicitAnds(true)
-                                   .keepSegmentAnds(true)
-                                   .keepIdeographicPunctuation(true));
-        }
+        builder.parserSettings(cfg -> {
+            if (useLegacyWandQueryParsing) {
+                cfg.keepImplicitAnds(true)
+                   .keepSegmentAnds(true)
+                   .keepIdeographicPunctuation(true);
+            }
+            cfg.allowStringRanges(allowStringRanges);
+        });
         builder.sendOldQueryStack(sendOldQueryStack);
     }
 

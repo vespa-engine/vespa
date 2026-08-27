@@ -99,7 +99,8 @@ public class SchemaInfo {
         return new ParserSettings(cfg.keepImplicitAnds(),
                                   cfg.markSegmentAnds(),
                                   cfg.keepSegmentAnds(),
-                                  cfg.keepIdeographicPunctuation());
+                                  cfg.keepIdeographicPunctuation(),
+                                  cfg.allowStringRanges());
     }
 
     /** only for unit tests */

@@ -22,13 +22,15 @@ public final class ParserEnvironment {
     public record ParserSettings(boolean keepImplicitAnds,
                                  boolean markSegmentAnds,
                                  boolean keepSegmentAnds,
-                                 boolean keepIdeographicPunctuation)
+                                 boolean keepIdeographicPunctuation,
+                                 boolean allowStringRanges)
     {
         public ParserSettings() {
             this(/*keepImplicitAnds    = */ true,
                  /*markSegmentAnds     = */ false,
                  /*keepSegmentAnds     = */ false,
-                 /*ideographicPunct    = */ false);
+                 /*ideographicPunct    = */ false,
+                 /*allowStringRanges   = */ false);
         }
     }
 

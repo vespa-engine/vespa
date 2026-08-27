@@ -28,6 +28,7 @@ import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -842,6 +843,111 @@ public class YqlParserTestCase {
     void testRangeIllegalArguments() {
         assertParseFail("select foo from bar where range(baz,cox,8)",
                 new IllegalArgumentException("Expected a numerical argument (or 'Infinity') to range but got 'cox'"));
+    }
+
+    @Test
+    void testStringRange() {
+        parser = stringRangeParser(true);
+        assertParse("select foo from bar where range(title, \"a\", \"b\")", "title:[\"a\";\"b\"]");
+        assertInstanceOf(StringRangeItem.class, parse("select foo from bar where range(title, \"a\", \"b\")").getRoot());
+
+        StringRangeItem range = (StringRangeItem)parse("select foo from bar where range(title, \"a\", \"b\")").getRoot();
+        assertEquals("a", range.getFrom());
+        assertEquals("b", range.getTo());
+        assertTrue(range.isFromInclusive());
+        assertTrue(range.isToInclusive());
+    }
+
+    @Test
+    void testStringRangeBounds() {
+        parser = stringRangeParser(true);
+        assertParse("select foo from bar where {bounds: \"open\"}range(title, \"a\", \"b\")", "title:<\"a\";\"b\">");
+        assertParse("select foo from bar where {bounds: \"leftOpen\"}range(title, \"a\", \"b\")", "title:<\"a\";\"b\"]");
+        assertParse("select foo from bar where {bounds: \"rightOpen\"}range(title, \"a\", \"b\")", "title:[\"a\";\"b\">");
+    }
+
+    @Test
+    void testUnboundedStringRange() {
+        parser = stringRangeParser(true);
+        assertParse("select foo from bar where range(title, \"a\", Infinity)", "title:[\"a\";]");
+        assertParse("select foo from bar where range(title, -Infinity, \"b\")", "title:[;\"b\"]");
+        assertParse("select foo from bar where range(title, -Infinity, Infinity)", "title:[;]");
+    }
+
+    @Test
+    void testStringRangeWithEmptyBound() {
+        parser = stringRangeParser(true);
+        StringRangeItem range = (StringRangeItem)parse("select foo from bar where range(title, \"\", \"b\")").getRoot();
+        assertEquals("", range.getFrom());
+        assertEquals("b", range.getTo());
+    }
+
+    @Test
+    void testStringRangeFromUserProperty() {
+        parser = stringRangeParser(true);
+        var query = new Query.Builder().build();
+        query.properties().set("lower", "a");
+        parser.setUserQuery(query);
+        assertParse("select foo from bar where range(title, @lower, \"b\")", "title:[\"a\";\"b\"]");
+    }
+
+    /** Numerical fields keep producing numerical ranges when string ranges are turned on. */
+    @Test
+    void testNumericalRangeWhenStringRangesAreAllowed() {
+        parser = stringRangeParser(true);
+        assertParse("select foo from bar where range(year, 1, 8)", "year:[1;8]");
+    }
+
+    /** Without the feature turned on, a range over a string field is parsed as a numerical range, and fails. */
+    @Test
+    void testStringRangeIsRejectedWhenNotAllowed() {
+        parser = stringRangeParser(false);
+        assertThrows(ClassCastException.class,
+                     () -> parse("select foo from bar where range(title, \"a\", \"b\")"));
+    }
+
+    @Test
+    void testStringRangeIllegalArguments() {
+        parser = stringRangeParser(true);
+        assertParseFail("select foo from bar where range(title, 1, \"b\")",
+                        new IllegalArgumentException("Expected a string argument to the range over the string " +
+                                                     "field 'title' but got '1'"));
+        assertParseFail("select foo from bar where range(title, Infinity, \"b\")",
+                        new IllegalArgumentException("The lower bound of the range over the string field 'title' " +
+                                                     "is unbounded when it is '-Infinity', not 'Infinity'"));
+        assertParseFail("select foo from bar where {hitLimit: 38}range(title, \"a\", \"b\")",
+                        new IllegalArgumentException("'hitLimit' is not supported by ranges over the string " +
+                                                     "field 'title'"));
+    }
+
+    @Test
+    void testStringRangeSerialization() {
+        parser = stringRangeParser(true);
+        assertSerialization("select foo from bar where range(title, \"a\", \"b\")",
+                            "range(title, \"a\", \"b\")");
+        assertSerialization("select foo from bar where {bounds: \"open\"}range(title, \"a\", \"b\")",
+                            "({bounds: \"open\"}range(title, \"a\", \"b\"))");
+        assertSerialization("select foo from bar where range(title, \"a\", Infinity)",
+                            "range(title, \"a\", Infinity)");
+        assertSerialization("select foo from bar where range(title, -Infinity, \"b\")",
+                            "range(title, -Infinity, \"b\")");
+    }
+
+    private void assertSerialization(String yqlQuery, String expectedSerialization) {
+        assertEquals(expectedSerialization, VespaSerializer.serialize(parse(yqlQuery)));
+    }
+
+    private static YqlParser stringRangeParser(boolean allowStringRanges) {
+        var settings = new ParserEnvironment.ParserSettings(true, false, false, false, allowStringRanges);
+        return new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForStringRangeTest())
+                                                    .setParserSettings(settings));
+    }
+
+    private static IndexFacts createIndexFactsForStringRangeTest() {
+        SearchDefinition sd = new SearchDefinition("default");
+        sd.addIndex(new Index("title").addCommand("string").addCommand("attribute"));
+        sd.addIndex(new Index("year").addCommand("numerical").addCommand("integer").addCommand("attribute"));
+        return new IndexFacts(new IndexModel(sd));
     }
 
     @Test

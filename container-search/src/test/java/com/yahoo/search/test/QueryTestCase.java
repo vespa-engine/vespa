@@ -1059,14 +1059,14 @@ public class QueryTestCase {
     }
 
     private static void useParserSettings(Query query) {
-        var lqp = new ParserSettings(true, true, true, true);
+        var lqp = new ParserSettings(true, true, true, true, false);
         var schemaStub = SchemaInfo.createStub(lqp);
         var ctx = Execution.Context.createContextStub(schemaStub);
         query.getModel().getExecution().context().populateFrom(ctx);
     }
 
     private static void disableParserSettings(Query query) {
-        var lqp = new ParserSettings(false, false, false, false);
+        var lqp = new ParserSettings(false, false, false, false, false);
         var schemaStub = SchemaInfo.createStub(lqp);
         var ctx = Execution.Context.createContextStub(schemaStub);
         query.getModel().getExecution().context().populateFrom(ctx);

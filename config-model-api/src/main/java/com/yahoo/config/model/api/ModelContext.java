@@ -117,6 +117,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean sendOldQueryStack() { return false; }
+        @ModelFeatureFlag(owners = {"boeker"}) default boolean allowStringRanges() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }

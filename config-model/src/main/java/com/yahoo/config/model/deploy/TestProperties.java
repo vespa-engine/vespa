@@ -86,6 +86,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean failWhenConfiguringIndexedMapOfArray = true;
     private boolean fastMapSearch = false;
     private boolean relaxStrictlyIncreasingClusterStateVersions = false;
+    private boolean allowStringRanges = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -149,6 +150,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
     @Override public boolean fastMapSearch() { return fastMapSearch; }
     @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return relaxStrictlyIncreasingClusterStateVersions; }
+    @Override public boolean allowStringRanges() { return allowStringRanges; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -377,6 +379,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties fastMapSearch(boolean value) {
         this.fastMapSearch = value;
+        return this;
+    }
+
+    public TestProperties allowStringRanges(boolean value) {
+        this.allowStringRanges = value;
         return this;
     }
 

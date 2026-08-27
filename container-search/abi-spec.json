@@ -805,6 +805,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_IN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NUMERIC_IN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType LABEL_WRAPPER",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_RANGE",
       "public final int code"
     ]
   },
@@ -1707,6 +1708,33 @@
       "public com.yahoo.prelude.query.StringInItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.StringRangeItem" : {
+    "superClass" : "com.yahoo.prelude.query.SimpleIndexedItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, boolean, java.lang.String, boolean, java.lang.String)",
+      "public java.lang.String getFrom()",
+      "public boolean isFromInclusive()",
+      "public java.lang.String getTo()",
+      "public boolean isToInclusive()",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public int getTermCount()",
+      "public int getNumWords()",
+      "public java.lang.String getIndexedString()",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -6330,14 +6358,15 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public void <init>(boolean, boolean, boolean, boolean)",
+      "public void <init>(boolean, boolean, boolean, boolean, boolean)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
       "public boolean keepImplicitAnds()",
       "public boolean markSegmentAnds()",
       "public boolean keepSegmentAnds()",
-      "public boolean keepIdeographicPunctuation()"
+      "public boolean keepIdeographicPunctuation()",
+      "public boolean allowStringRanges()"
     ],
     "fields" : [ ]
   },

@@ -180,6 +180,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag ALLOW_STRING_RANGES = defineFeatureFlag(
+            "allow-string-ranges", false,
+            List.of("boeker"), "2026-08-27", "2027-06-01",
+            "Whether the range() operator in YQL may be used on string fields, producing a lexical range",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
             List.of("glebashnik"), "2025-04-25", "2026-09-01",
