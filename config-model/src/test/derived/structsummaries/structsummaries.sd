@@ -91,23 +91,24 @@ schema structsummaries {
         summary c {}
     }
 
-    # only the key, or only the value, of a map of primitive type:
+    # the key and the value of a map of primitive type, which is all a selection from such a map can be:
     document-summary five {
         summary d {
-            struct-field: key
+            struct-field: key, value
         }
     }
 
+    # all the sub-fields of the value struct of a map:
     document-summary six {
-        summary d {
-            struct-field: value
+        summary e {
+            struct-field: key, value.s2a, value.s2b
         }
     }
 
     # only one sub-field of the value struct of a map:
     document-summary seven {
         summary e {
-            struct-field: value.s2a
+            struct-field: key, value.s2a
         }
     }
 

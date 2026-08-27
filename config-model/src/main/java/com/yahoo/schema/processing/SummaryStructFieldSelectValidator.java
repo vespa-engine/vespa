@@ -21,11 +21,33 @@ import static com.yahoo.schema.document.ComplexAttributeFieldUtils.localStructFi
 /**
  * Iterates all summary fields selecting a subset of the struct fields of their source ("struct-field" in a
  * document-summary) and validates that the source field type supports it, that the selection is not
- * combined with a summary transform which would ignore it, and that the selected struct fields exist.
+ * combined with a summary transform which would ignore it, that the selected struct fields exist, and
+ * that a selection from a map picks both the key and something from the value.
  *
  * @author arnej
  */
 public class SummaryStructFieldSelectValidator extends Processor {
+
+    /** The name selecting the key of a map. */
+    private static final String KEY = "key";
+
+    /** The name selecting the value of a map of primitive type; sub-fields of a struct value are "value.&lt;name&gt;". */
+    private static final String VALUE = "value";
+
+    /**
+     * For now a selection from a map of primitive type to primitive type must name both the key and the
+     * value, since that is the only shape the backend is known to handle. This makes such a selection
+     * pointless, as it can then only be the full set of struct fields. Set this to false (and drop the
+     * tests covering it) when the backend can produce the other shapes.
+     */
+    private static final boolean PRIMITIVE_MAP_SELECTION_MUST_BE_KEY_AND_VALUE = true;
+
+    /**
+     * For now a selection from a map of primitive type to struct must name the key and at least one
+     * sub-field of the value struct, since that is the only shape the backend is known to handle. Set this
+     * to false (and drop the tests covering it) when the backend can produce the other shapes.
+     */
+    private static final boolean STRUCT_MAP_SELECTION_MUST_BE_KEY_AND_VALUE = true;
 
     public SummaryStructFieldSelectValidator(Schema schema, DeployLogger deployLogger,
                                              RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
@@ -70,6 +92,37 @@ public class SummaryStructFieldSelectValidator extends Processor {
                                      "', expected one of " + validNames);
             }
         }
+        if (sourceField.getDataType() instanceof MapDataType mapType) {
+            validateMapSelection(summary, field, validNames, mapType);
+        }
+    }
+
+    /**
+     * Validates the temporary restriction that a selection from a map must name the key and at least one
+     * field from the value; see {@link #PRIMITIVE_MAP_SELECTION_MUST_BE_KEY_AND_VALUE} and
+     * {@link #STRUCT_MAP_SELECTION_MUST_BE_KEY_AND_VALUE}. All the names are known to be valid here, so
+     * they are either "key" or the value (as "value" or "value.&lt;name&gt;").
+     */
+    private void validateMapSelection(DocumentSummary summary, SummaryField field, Set<String> validNames,
+                                      MapDataType mapType) {
+        boolean restricted = (mapType.getValueType() instanceof StructDataType)
+                             ? STRUCT_MAP_SELECTION_MUST_BE_KEY_AND_VALUE
+                             : PRIMITIVE_MAP_SELECTION_MUST_BE_KEY_AND_VALUE;
+        if (!restricted) return;
+        var selected = field.getStructFields();
+        if (!selected.contains(KEY)) {
+            fail(summary, field, "a 'struct-field' selection for a map must include '" + KEY + "'");
+        }
+        if (selected.stream().allMatch(KEY::equals)) {
+            fail(summary, field, "a 'struct-field' selection for a map must include at least one field " +
+                                 "from the value, one of " + valueNames(validNames));
+        }
+    }
+
+    private static Set<String> valueNames(Set<String> validNames) {
+        var names = new LinkedHashSet<>(validNames);
+        names.remove(KEY);
+        return names;
     }
 
     private static boolean isArrayOfStructOrMap(ImmutableSDField field) {
@@ -87,13 +140,13 @@ public class SummaryStructFieldSelectValidator extends Processor {
     private static Set<String> selectableNames(ImmutableSDField field) {
         var names = new LinkedHashSet<String>();
         if (field.getDataType() instanceof MapDataType mapType) {
-            names.add("key");
+            names.add(KEY);
             if (mapType.getValueType() instanceof StructDataType) {
-                for (var valueField : field.getStructField("value").getStructFields()) {
+                for (var valueField : field.getStructField(VALUE).getStructFields()) {
                     names.add(localStructFieldName(field, valueField));
                 }
             } else {
-                names.add("value");
+                names.add(VALUE);
             }
         } else {
             for (var structField : field.getStructFields()) {

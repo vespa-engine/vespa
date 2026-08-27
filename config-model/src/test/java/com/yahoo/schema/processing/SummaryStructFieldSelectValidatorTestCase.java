@@ -53,12 +53,12 @@ public class SummaryStructFieldSelectValidatorTestCase {
                                            "}"),
                                  joinLines("document-summary my_summary {",
                                            "  summary my_field {",
-                                           "    struct-field: key",
+                                           "    struct-field: key, value",
                                            "  }",
                                            "}"));
         var summaryField = schema.getSummary("my_summary").getSummaryField("my_field");
         assertEquals(SummaryTransform.ATTRIBUTECOMBINER, summaryField.getTransform());
-        assertEquals(List.of("key"), summaryField.getStructFields());
+        assertEquals(List.of("key", "value"), summaryField.getStructFields());
     }
 
     @Test
@@ -71,12 +71,12 @@ public class SummaryStructFieldSelectValidatorTestCase {
                                            "}"),
                                  joinLines("document-summary my_summary {",
                                            "  summary my_field {",
-                                           "    struct-field: value.name",
+                                           "    struct-field: key, value.name",
                                            "  }",
                                            "}"));
         var summaryField = schema.getSummary("my_summary").getSummaryField("my_field");
         assertEquals(SummaryTransform.ATTRIBUTECOMBINER, summaryField.getTransform());
-        assertEquals(List.of("value.name"), summaryField.getStructFields());
+        assertEquals(List.of("key", "value.name"), summaryField.getStructFields());
     }
 
     @Test
@@ -100,6 +100,67 @@ public class SummaryStructFieldSelectValidatorTestCase {
     }
 
     @Test
+    void struct_field_select_for_map_must_include_the_key() {
+        var exception = assertThrows(IllegalArgumentException.class, () ->
+                buildSchema(joinLines("field my_field type map<string, elem> {",
+                                      "  indexing: summary",
+                                      "  struct-field key { indexing: attribute }",
+                                      "  struct-field value.name { indexing: attribute }",
+                                      "  struct-field value.weight { indexing: attribute }",
+                                      "}"),
+                            joinLines("document-summary my_summary {",
+                                      "  summary my_field {",
+                                      "    struct-field: value.name",
+                                      "  }",
+                                      "}")));
+        assertTrue(exception.getMessage().contains("For schema 'test', document-summary 'my_summary', " +
+                                                   "summary field 'my_field': a 'struct-field' selection for a map " +
+                                                   "must include 'key'"),
+                   exception.getMessage());
+    }
+
+    @Test
+    void struct_field_select_for_map_must_include_a_field_from_the_value() {
+        var exception = assertThrows(IllegalArgumentException.class, () ->
+                buildSchema(joinLines("field my_field type map<string, elem> {",
+                                      "  indexing: summary",
+                                      "  struct-field key { indexing: attribute }",
+                                      "  struct-field value.name { indexing: attribute }",
+                                      "  struct-field value.weight { indexing: attribute }",
+                                      "}"),
+                            joinLines("document-summary my_summary {",
+                                      "  summary my_field {",
+                                      "    struct-field: key",
+                                      "  }",
+                                      "}")));
+        assertTrue(exception.getMessage().contains("For schema 'test', document-summary 'my_summary', " +
+                                                   "summary field 'my_field': a 'struct-field' selection for a map " +
+                                                   "must include at least one field from the value, " +
+                                                   "one of [value.name, value.weight]"),
+                   exception.getMessage());
+    }
+
+    @Test
+    void struct_field_select_for_map_of_primitive_type_must_include_both_the_key_and_the_value() {
+        var exception = assertThrows(IllegalArgumentException.class, () ->
+                buildSchema(joinLines("field my_field type map<string, int> {",
+                                      "  indexing: summary",
+                                      "  struct-field key { indexing: attribute }",
+                                      "  struct-field value { indexing: attribute }",
+                                      "}"),
+                            joinLines("document-summary my_summary {",
+                                      "  summary my_field {",
+                                      "    struct-field: key",
+                                      "  }",
+                                      "}")));
+        assertTrue(exception.getMessage().contains("For schema 'test', document-summary 'my_summary', " +
+                                                   "summary field 'my_field': a 'struct-field' selection for a map " +
+                                                   "must include at least one field from the value, " +
+                                                   "one of [value]"),
+                   exception.getMessage());
+    }
+
+    @Test
     void struct_field_select_can_exclude_a_value_field_which_is_not_usable_as_an_attribute() throws ParseException {
         var schema = buildSchema(joinLines("field my_field type map<string, elem> {",
                                            "  indexing: summary",
@@ -108,7 +169,7 @@ public class SummaryStructFieldSelectValidatorTestCase {
                                            "}"),
                                  joinLines("document-summary my_summary {",
                                            "  summary my_field {",
-                                           "    struct-field: value.name",
+                                           "    struct-field: key, value.name",
                                            "  }",
                                            "}"));
         var summaryField = schema.getSummary("my_summary").getSummaryField("my_field");
