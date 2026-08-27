@@ -381,6 +381,7 @@ public class YqlParser implements Parser {
         try {
             annotationStack.addFirst(ast);
             ast = rewriteIndexedAccess(ast);
+            ast = rewriteMapAccess(ast);
             return switch (ast.getOperator()) {
                 case AND -> buildAnd(ast, currentField);
                 case OR -> buildOr(ast, currentField);
@@ -449,6 +450,54 @@ public class YqlParser implements Parser {
                 List.of(SAME_ELEMENT),
                 List.of(value));
         sameElement.putAnnotation(ELEMENT_FILTER, List.of(elementIndex));
+
+        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
+    }
+
+    /**
+     * Recognizes and rewrites from:
+     *      field{'key'} = value
+     * to:
+     *      field contains sameElement(key contains 'key', value contains value)
+     * <p>
+     * Expected input: EQ( MAPREF ( field_name, key ), value )
+     */
+    private OperatorNode<ExpressionOperator> rewriteMapAccess(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() != ExpressionOperator.EQ) {
+            return ast;
+        }
+
+        OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
+        OperatorNode<ExpressionOperator> value = ast.getArgument(1);
+        if (lhs.getOperator() != ExpressionOperator.MAPREF) {
+            return ast;
+        }
+
+        OperatorNode<ExpressionOperator> field = lhs.getArgument(0);
+        OperatorNode<ExpressionOperator> key = lhs.getArgument(1);
+        if (key.getOperator() != ExpressionOperator.LITERAL) {
+            throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
+        }
+
+        // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
+        key = toLiteralString(key);
+        value = toLiteralString(value);
+
+        OperatorNode<ExpressionOperator> keyMatch = OperatorNode.create(
+                ast.getLocation(),
+                ExpressionOperator.CONTAINS,
+                OperatorNode.create(lhs.getLocation(), ExpressionOperator.READ_FIELD, "", "key"),
+                key);
+        OperatorNode<ExpressionOperator> valueMatch = OperatorNode.create(
+                ast.getLocation(),
+                ExpressionOperator.CONTAINS,
+                OperatorNode.create(lhs.getLocation(), ExpressionOperator.READ_FIELD, "", "value"),
+                value);
+        OperatorNode<ExpressionOperator> sameElement = OperatorNode.create(
+                ast.getLocation(),
+                ExpressionOperator.CALL,
+                List.of(SAME_ELEMENT),
+                List.of(keyMatch, valueMatch));
 
         return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
     }

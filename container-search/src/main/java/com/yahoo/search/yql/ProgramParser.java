@@ -631,7 +631,7 @@ final class ProgramParser {
                 }
                 return OperatorNode.create(toLocation(scope, expressionList.isEmpty()? parseTree:expressionList.get(0)), ExpressionOperator.ARRAY, values);
             }
-            // dereferencedExpression: primaryExpression(indexref[in_select]| propertyref)*
+            // dereferencedExpression: primaryExpression(indexref[in_select]| propertyref | mapref[in_select])*
             case yqlplusParser.RULE_dereferenced_expression: {
                 Dereferenced_expressionContext dereferencedExpression = (Dereferenced_expressionContext) parseTree;
                 Iterator<ParseTree> it = dereferencedExpression.children.iterator();
@@ -641,6 +641,9 @@ final class ProgramParser {
                     if (getParseTreeIndex(defTree) == yqlplusParser.RULE_propertyref) {
                         // DOT nm=ID
                         result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.PROPREF, result, defTree.getChild(1).getText());
+                    } else if (getParseTreeIndex(defTree) == yqlplusParser.RULE_mapref) {
+                        // LBRACE key=expression RBRACE
+                        result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.MAPREF, result, convertExpr(defTree.getChild(1), scope));
                     } else {
                         // indexref
                         result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.INDEX, result, convertExpr(defTree.getChild(1), scope));
