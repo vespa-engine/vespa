@@ -548,17 +548,55 @@ public class IndexingProcessorTestCase {
         assertEquals(new StringFieldValue("HELLO"), assign.getNewValue());
     }
 
+    /**
+     * The script for a field includes every statement taking only that field as input, including
+     * ones writing derived fields. Nothing guarantees a derived field is element-wise aligned with
+     * the target field, so only the element of the target field is reconstructed.
+     */
+    @Test
+    public void requireThatElementAssignEmitsOnlyTheTargetField() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index a",
+                                         "input a | for_each { lowercase } | index c");
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
+        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
+
+        DocumentUpdate output = (DocumentUpdate)tester.process(input);
+        assertEquals(1, output.fieldPathUpdates().size());
+        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
+        assertEquals("a[2]", assign.getOriginalFieldPath());
+        assertEquals(new StringFieldValue("hello"), assign.getNewValue());
+        assertTrue(output.fieldUpdates().isEmpty());
+    }
+
+    /** When the script routes the target field elsewhere only, there is no processed element to emit. */
+    @Test
+    public void requireThatElementAssignIsPassedOnWhenScriptDoesNotOutputTargetField() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index c");
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
+        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
+
+        DocumentUpdate output = (DocumentUpdate)tester.process(input);
+        assertEquals(1, output.fieldPathUpdates().size());
+        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
+        assertEquals("a[2]", assign.getOriginalFieldPath());
+        assertEquals(new StringFieldValue("HELLO"), assign.getNewValue());
+    }
+
     private static IndexingProcessorTester elementAssignTester(String... ilscriptContents) {
         var documentTypes = new DocumentTypeManager();
         var test = new DocumentType("test");
         test.addField("a", DataType.getArray(DataType.STRING));
         test.addField("b", DataType.STRING);
+        test.addField("c", DataType.getArray(DataType.STRING));
         documentTypes.register(test);
 
         var ilscript = new IlscriptsConfig.Ilscript.Builder()
                                                    .doctype("test")
                                                    .docfield("a")
-                                                   .docfield("b");
+                                                   .docfield("b")
+                                                   .docfield("c");
 
         for (String content : ilscriptContents) {
             ilscript.content(content);
