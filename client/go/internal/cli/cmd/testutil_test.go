@@ -26,6 +26,9 @@ func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Bu
 	// that are not specifically testing that warning.
 	require.Nil(t, os.MkdirAll(homeDir, 0o700))
 	require.Nil(t, os.WriteFile(filepath.Join(homeDir, "config.yaml"), []byte("default_config_scope: global\n"), 0o600))
+	// Pre-set the skills-install marker to suppress the one-time prompt in all tests that are not specifically
+	// testing that prompt.
+	require.Nil(t, os.WriteFile(filepath.Join(homeDir, skillsPromptedMarker), []byte("1\n"), 0o600))
 	env := []string{"VESPA_CLI_HOME=" + homeDir, "VESPA_CLI_CACHE_DIR=" + cacheDir}
 	env = append(env, envVars...)
 	var (
