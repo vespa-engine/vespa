@@ -1,0 +1,16 @@
+{
+    "tests": [
+        {
+            "name": "container cpu check",
+            "metric": "cpu-utilization-container",
+            "time": 5,
+            "max": 10
+        },
+        {
+            "name": "content cpu check",
+            "metric": "cpu-utilization-content",
+            "time": 5,
+            "max": 10
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+name: cpu check
+metric: cpu-utilization-container
+time: 5
+max: 85

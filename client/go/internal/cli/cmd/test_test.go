@@ -90,6 +90,33 @@ func TestProductionTest(t *testing.T) {
 	assertRequests([]*http.Request{createRequest("GET", "https://my.service:123/path?query=wohoo", "")}, client, t)
 }
 
+func TestProductionMetricTestYAML(t *testing.T) {
+	cli, stdout, stderr := newTestCLI(t)
+	assert.Nil(t, cli.Run("test", "testdata/tests/production-test/metric-test.yaml"))
+	assert.Equal(t, "cpu check: OK (evaluated against live metrics after deployment)\n\nSuccess: 1 test OK\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
+}
+
+func TestProductionMetricTestSuiteJSON(t *testing.T) {
+	cli, stdout, stderr := newTestCLI(t)
+	assert.Nil(t, cli.Run("test", "testdata/tests/production-test/metric-suite.json"))
+	assert.Equal(t, "container cpu check: OK (evaluated against live metrics after deployment)\n"+
+		"content cpu check: OK (evaluated against live metrics after deployment)\n\nSuccess: 2 tests OK\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
+}
+
+func TestProductionMetricTestInvalidPreset(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	assert.NotNil(t, cli.Run("test", "testdata/tests/production-test/metric-invalid-preset.yaml"))
+	assert.Contains(t, stderr.String(), "'not-a-real-metric' is not a known metric preset")
+}
+
+func TestProductionMetricTestMissingBounds(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	assert.NotNil(t, cli.Run("test", "testdata/tests/production-test/metric-missing-bounds.json"))
+	assert.Contains(t, stderr.String(), "at least one of 'min' and 'max' is required")
+}
+
 func TestTestWithoutAssertions(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("test", "testdata/tests/system-test/foo/query.json"))
