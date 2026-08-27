@@ -580,26 +580,26 @@ public class YqlParserTestCase {
 
     @Test
     void testMapAccessRewritesToSameElement() {
-        // my_map{'foo'} = 'bar' should rewrite to my_map contains sameElement(key contains 'foo', value contains 'bar')
-        assertParse("select * from sources * where my_map{'foo'} = 'bar'",
+        // my_map{'foo'} contains 'bar' should rewrite to my_map contains sameElement(key contains 'foo', value contains 'bar')
+        assertParse("select * from sources * where my_map{'foo'} contains 'bar'",
                     "my_map:{key:foo value:bar}");
 
-        // Non-string values are converted to string, as in the indexed access rewrite.
+        // Numeric values use '=', as for plain fields, and are converted to string as in the indexed access rewrite.
         assertParse("select * from sources * where my_map{'foo'} = 10",
                     "my_map:{key:foo value:10}");
 
         // Numeric keys are converted to string, for maps with numeric key types.
-        assertParse("select * from sources * where my_map{1} = 'bar'",
+        assertParse("select * from sources * where my_map{1} contains 'bar'",
                     "my_map:{key:1 value:bar}");
 
         // The rewritten tree serializes and re-parses to the same tree.
-        assertCanonicalParse("select * from sources * where my_map{'foo'} = 'bar'",
+        assertCanonicalParse("select * from sources * where my_map{'foo'} contains 'bar'",
                              "my_map:{key:foo value:bar}");
     }
 
     @Test
     void testMapAccessRequiresLiteralKey() {
-        assertParseFail("select * from sources * where my_map{key_field} = 'bar'",
+        assertParseFail("select * from sources * where my_map{key_field} contains 'bar'",
                         new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));
     }
 

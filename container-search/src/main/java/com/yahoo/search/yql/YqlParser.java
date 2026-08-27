@@ -456,14 +456,15 @@ public class YqlParser implements Parser {
 
     /**
      * Recognizes and rewrites from:
-     *      field{'key'} = value
+     *      field{'key'} contains 'value'   (string values)
+     *      field{'key'} = value            (numeric values)
      * to:
      *      field contains sameElement(key contains 'key', value contains value)
      * <p>
-     * Expected input: EQ( MAPREF ( field_name, key ), value )
+     * Expected input: CONTAINS( MAPREF ( field_name, key ), value ) or EQ( MAPREF ( field_name, key ), value )
      */
     private OperatorNode<ExpressionOperator> rewriteMapAccess(OperatorNode<ExpressionOperator> ast) {
-        if (ast.getOperator() != ExpressionOperator.EQ) {
+        if (ast.getOperator() != ExpressionOperator.CONTAINS && ast.getOperator() != ExpressionOperator.EQ) {
             return ast;
         }
 
