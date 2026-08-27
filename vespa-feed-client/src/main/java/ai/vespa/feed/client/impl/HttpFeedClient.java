@@ -75,7 +75,13 @@ class HttpFeedClient implements FeedClient {
         this.requestStrategy = requestStrategy;
         this.speedTest = builder.speedTest;
         this.nanoClock = builder.nanoClock;
-        verifyConnection(builder, clusterFactory);
+        try {
+            verifyConnection(builder, clusterFactory);
+        }
+        catch (Throwable t) {
+            if (requestStrategy != null) requestStrategy.destroy();
+            throw t;
+        }
     }
 
     @Override
@@ -163,11 +169,11 @@ class HttpFeedClient implements FeedClient {
             HttpResponse response = future.get(timeout.plus(Duration.ofSeconds(5)).getSeconds(), TimeUnit.SECONDS);
             if (response.code() != 200) {
                 String message;
-                if (response.body() != null) switch (response.contentType()) {
-                    case "application/json": message = parseMessage(response.body()); break;
-                    case "text/plain": message = new String(response.body(), UTF_8); break;
-                    default: message = response.toString(); break;
-                }
+                if (response.body() != null) message = switch (response.contentType()) {
+                    case "application/json" -> parseMessage(response.body());
+                    case "text/plain" -> new String(response.body(), UTF_8);
+                    default -> response.toString();
+                };
                 else message = response.toString();
 
                 // Old server ignores ?dryRun=true, but getting this particular error message means everything else is OK.
@@ -203,11 +209,11 @@ class HttpFeedClient implements FeedClient {
     private enum Outcome { success, conditionNotMet, vespaFailure, transportFailure };
 
     static Result.Type toResultType(Outcome outcome) {
-        switch (outcome) {
-            case success: return Result.Type.success;
-            case conditionNotMet: return Result.Type.conditionNotMet;
-            default: throw new IllegalArgumentException("No corresponding result type for '" + outcome + "'");
-        }
+        return switch (outcome) {
+            case success -> Result.Type.success;
+            case conditionNotMet -> Result.Type.conditionNotMet;
+            default -> throw new IllegalArgumentException("No corresponding result type for '" + outcome + "'");
+        };
     }
 
     private static class MessageAndTrace {
@@ -269,15 +275,12 @@ class HttpFeedClient implements FeedClient {
     }
 
     static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
-        Outcome outcome;
-        switch (response.code()) {
-            case 200: outcome = Outcome.success; break;
-            case 412: outcome = Outcome.conditionNotMet; break;
-            case 502:
-            case 504:
-            case 507: outcome = Outcome.vespaFailure; break;
-            default: outcome = Outcome.transportFailure; break;
-        }
+        Outcome outcome = switch (response.code()) {
+            case 200 -> Outcome.success;
+            case 412 -> Outcome.conditionNotMet;
+            case 502, 504, 507 -> Outcome.vespaFailure;
+            default -> Outcome.transportFailure;
+        };
 
         MessageAndTrace mat = parse(documentId, response.body());
 
@@ -316,12 +319,7 @@ class HttpFeedClient implements FeedClient {
     }
 
     static String encode(String raw) {
-        try {
-            return URLEncoder.encode(raw, UTF_8.name());
-        }
-        catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException(e);
-        }
+        return URLEncoder.encode(raw, UTF_8);
     }
 
     static String getQuery(OperationParameters params, boolean speedTest) {
