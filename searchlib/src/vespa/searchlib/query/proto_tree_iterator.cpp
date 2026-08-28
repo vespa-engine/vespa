@@ -285,10 +285,20 @@ bool handle(const ItemFloatingPointRangeTerm& item, QueryStackIterator::Data& _d
     return true;
 }
 bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
-    // The range itself is not exposed here, as the query stack is only used by consumers
-    // that do not support string ranges.
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_STRING_RANGE_TERM;
+    auto spec = std::make_unique<StringRangeSpec>();
+    spec->left_unbounded = !item.has_lower_limit();
+    spec->right_unbounded = !item.has_upper_limit();
+    if (item.has_lower_limit()) {
+        spec->left = item.lower_limit();
+    }
+    if (item.has_upper_limit()) {
+        spec->right = item.upper_limit();
+    }
+    spec->left_closed = item.lower_inclusive();
+    spec->right_closed = item.upper_inclusive();
+    _d.stringRangeSpec = std::move(spec);
     return true;
 }
 

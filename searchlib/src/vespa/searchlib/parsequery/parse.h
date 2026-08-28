@@ -98,6 +98,17 @@ public:
         IFLAG_PREFIX_MATCH = 0x00000010
     };
 
+    /**
+     * Bits of the extra flag byte following the generic term header
+     * of an ITEM_STRING_RANGE_TERM item.
+     */
+    enum StringRangeTermFlags {
+        SRT_LEFT_UNBOUNDED = 0x01,
+        SRT_RIGHT_UNBOUNDED = 0x02,
+        SRT_LEFT_CLOSED = 0x04,
+        SRT_RIGHT_CLOSED = 0x08,
+    };
+
     /** Extra information on each item (creator id) coded in bit 3 of flags */
     static inline ItemCreator GetCreator(uint8_t flags) { return static_cast<ItemCreator>((flags >> 3) & 0x01); }
 

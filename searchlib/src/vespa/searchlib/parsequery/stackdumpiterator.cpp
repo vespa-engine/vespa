@@ -200,6 +200,10 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_NUMERIC_IN:
         read_numeric_in(p);
         break;
+    case ParseItem::ITEM_STRING_RANGE_TERM:
+        _d.index_view = read_string_view(p);
+        read_string_range_term(p);
+        break;
     default:
         // Unknown item, so report that no more are available
         return false;
@@ -281,6 +285,23 @@ void SimpleQueryStackDumpIterator::read_numeric_in(const char*& p) {
         terms->addTerm(read_value<int64_t>(p));
     }
     _d.termVector = std::move(terms);
+}
+
+void SimpleQueryStackDumpIterator::read_string_range_term(const char*& p) {
+    uint8_t flags = read_value<uint8_t>(p);
+    auto    spec = std::make_unique<StringRangeSpec>();
+    spec->left_unbounded = (flags & ParseItem::SRT_LEFT_UNBOUNDED) != 0;
+    spec->right_unbounded = (flags & ParseItem::SRT_RIGHT_UNBOUNDED) != 0;
+    spec->left_closed = (flags & ParseItem::SRT_LEFT_CLOSED) != 0;
+    spec->right_closed = (flags & ParseItem::SRT_RIGHT_CLOSED) != 0;
+    if (!spec->left_unbounded) {
+        spec->left = std::string(read_string_view(p));
+    }
+    if (!spec->right_unbounded) {
+        spec->right = std::string(read_string_view(p));
+    }
+    _d.stringRangeSpec = std::move(spec);
+    _d.arity = 0;
 }
 
 } // namespace search

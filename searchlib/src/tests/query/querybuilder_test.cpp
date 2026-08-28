@@ -878,7 +878,28 @@ TEST(QueryBuilderTest, string_range_node_survives_protobuf_round_trip) {
         auto            serialized_query_tree =
             SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto_query_tree)>(proto_query_tree));
 
+        // via ProtoTreeConverter
         auto new_node = serialized_query_tree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
+        EXPECT_TRUE(checkTerm(as_node<StringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
+
+        // via ProtoTreeIterator -> StackDumpQueryCreator
+        auto iterator = serialized_query_tree->makeIterator();
+        new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
+        EXPECT_TRUE(checkTerm(as_node<StringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
+    }
+}
+
+TEST(QueryBuilderTest, string_range_node_survives_stack_dump_round_trip) {
+    for (const auto& expected : string_ranges()) {
+        QueryBuilder<SimpleQueryNodeTypes> builder;
+        builder.add_string_range_term(expected, view[9], id[9], weight[9]);
+        Node::UP node = builder.build();
+
+        auto stackDump = StackDumpCreator::create(*node);
+        auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+        auto iterator = serializedQueryTree->makeIterator();
+
+        Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
         EXPECT_TRUE(checkTerm(as_node<StringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
     }
 }
@@ -911,7 +932,7 @@ TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
 }
 
 TEST(QueryBuilderTest, control_size_of_SimpleQueryStackDumpIterator) {
-    EXPECT_EQ(192u, sizeof(SimpleQueryStackDumpIterator));
+    EXPECT_EQ(200u, sizeof(SimpleQueryStackDumpIterator));
 }
 
 TEST(QueryBuilderTest, test_query_parsing_error) {
