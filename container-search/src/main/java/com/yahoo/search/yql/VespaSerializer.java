@@ -107,6 +107,7 @@ import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -917,6 +918,61 @@ public class VespaSerializer {
         }
     }
 
+    private static class StringRangeSerializer extends Serializer<StringRangeItem> {
+
+        @Override
+        void onExit(StringBuilder destination, StringRangeItem item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, StringRangeItem range, Boolean includeField) {
+            String leafAnnotations = leafAnnotations(range);
+            String boundsAnnotation = boundsAnnotation(range);
+            String annotations = leafAnnotations + (!leafAnnotations.isEmpty() && !boundsAnnotation.isEmpty() ? ", " : "") + boundsAnnotation;
+            if (!annotations.isEmpty()) {
+                destination.append("{").append(annotations).append("}");
+            }
+
+            // range
+            destination.append(RANGE).append('(')
+                    .append(normalizeIndexName(range.getIndexName()))
+                    .append(", ");
+
+            // from
+            String from = range.getFrom();
+            if (from != null) {
+                destination.append("\"");
+                escape(from, destination);
+                destination.append("\"");
+            } else {
+                destination.append("-Infinity");
+            }
+            destination.append(", ");
+
+            // to
+            String to = range.getTo();
+            if (to!= null) {
+                destination.append("\"");
+                escape(to, destination);
+                destination.append("\"");
+            } else {
+                destination.append("Infinity");
+            }
+
+            destination.append(")");
+
+            return false;
+        }
+
+        private static String boundsAnnotation(StringRangeItem range) {
+            boolean leftOpen = !range.isFromInclusive();
+            boolean rightOpen = !range.isToInclusive();
+            if (leftOpen && rightOpen) return BOUNDS + ": \"" + BOUNDS_OPEN + "\"";
+            if (leftOpen) return BOUNDS + ": \"" + BOUNDS_LEFT_OPEN + "\"";
+            if (rightOpen) return BOUNDS + ": \"" + BOUNDS_RIGHT_OPEN + "\"";
+            return "";
+        }
+    }
+
     private static class RankSerializer extends Serializer<RankItem> {
 
         @Override
@@ -1322,6 +1378,7 @@ public class VespaSerializer {
         dispatchBuilder.put(EquivItem.class, new EquivSerializer());
         dispatchBuilder.put(ExactStringItem.class, new WordSerializer());
         dispatchBuilder.put(IntItem.class, new NumberSerializer());
+        dispatchBuilder.put(StringRangeItem.class, new StringRangeSerializer());
         dispatchBuilder.put(GeoLocationItem.class, new GeoLocationSerializer());
         dispatchBuilder.put(BoolItem.class, new BoolSerializer());
         dispatchBuilder.put(TrueItem.class, new TrueSerializer());
