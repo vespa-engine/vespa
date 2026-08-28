@@ -13,9 +13,6 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
 import com.yahoo.language.process.TimeoutException;
-import grpc.health.v1.HealthGrpc;
-import grpc.health.v1.HealthOuterClass.HealthCheckRequest;
-import grpc.health.v1.HealthOuterClass.HealthCheckResponse;
 import inference.GRPCInferenceServiceGrpc;
 import inference.GrpcService;
 import io.grpc.ManagedChannel;
@@ -35,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -56,10 +52,18 @@ public class TritonOnnxClient implements AutoCloseable {
     private static final int MAX_MODEL_UNLOAD_ATTEMPTS = 5;
     private static final int MAX_MODEL_UNLOAD_WAIT_MILLIS = 1000;
 
+    // Deadline for status checks.
+    private static final Duration STATUS_CHECK_TIMEOUT = Duration.ofSeconds(10);
+
+    // Deadline for unload requests.
+    private static final Duration UNLOAD_TIMEOUT = Duration.ofMinutes(1);
+
+    // Deadline for load requests: generous, since loading a large model takes minutes.
+    private static final Duration LOAD_TIMEOUT = Duration.ofMinutes(5);
+
     private static final Logger log = Logger.getLogger(TritonOnnxClient.class.getName());
 
     private final GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub grpcInferenceStub;
-    private final HealthGrpc.HealthBlockingV2Stub grpcHealthStub;
     private final Duration defaultTimeout;
 
     public static class TritonException extends RuntimeException {
@@ -84,7 +88,6 @@ public class TritonOnnxClient implements AutoCloseable {
                 .maxInboundMessageSize(MAX_INBOUND_MESSAGE_SIZE_MIB * 1024 * 1024)
                 .build();
         this.grpcInferenceStub = GRPCInferenceServiceGrpc.newBlockingV2Stub(ch);
-        this.grpcHealthStub = HealthGrpc.newBlockingV2Stub(ch);
         this.defaultTimeout = Duration.ofMillis(config.timeout());
     }
 
@@ -107,7 +110,8 @@ public class TritonOnnxClient implements AutoCloseable {
     public ModelMetadata getModelMetadata(String modelName) {
         var request =
                 GrpcService.ModelMetadataRequest.newBuilder().setName(modelName).build();
-        var response = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(request), "Failed to get model metadata");
+        var response = invokeGrpc(grpcInferenceStub.withDeadlineAfter(defaultTimeout),
+                s -> s.modelMetadata(request), "Failed to get model metadata");
         var inputs = toTensorTypes(response.getInputsList());
         var outputs = toTensorTypes(response.getOutputsList());
         return new ModelMetadata(inputs, outputs, response.getInputsList());
@@ -117,15 +121,45 @@ public class TritonOnnxClient implements AutoCloseable {
         var request =
                 GrpcService.ModelReadyRequest.newBuilder().setName(modelName).build();
         var response = invokeGrpc(
-                grpcInferenceStub, invocation -> invocation.modelReady(request), "Failed to check model ready");
+                statusStub(), invocation -> invocation.modelReady(request), "Failed to check model ready");
         return response.getReady();
     }
 
-    public boolean isHealthy() {
-        var req = HealthCheckRequest.newBuilder().build();
-        var response = invokeGrpc(grpcHealthStub, s -> s.check(req), "Failed to check Triton health");
-        log.fine(() -> "Triton health status: " + response.getStatus());
-        return response.getStatus() == HealthCheckResponse.ServingStatus.SERVING;
+    private GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub statusStub() {
+        return grpcInferenceStub.withDeadlineAfter(STATUS_CHECK_TIMEOUT);
+    }
+
+    enum ModelActivity {
+        INACTIVE,
+        LOADED_OR_LOADING,
+        UNLOADING
+    }
+
+    // Package-private for tests.
+    ModelActivity modelActivity(String modelName) {
+        boolean unloading = false;
+
+        for (var model : getRepositoryIndex()) {
+            if (!modelName.equals(model.getName())) {
+                continue;
+            }
+
+            if ("READY".equals(model.getState()) || "LOADING".equals(model.getState())) {
+                return ModelActivity.LOADED_OR_LOADING;
+            }
+
+            if ("UNLOADING".equals(model.getState())) {
+                unloading = true;
+            }
+        }
+
+        return unloading ? ModelActivity.UNLOADING : ModelActivity.INACTIVE;
+    }
+
+    private List<GrpcService.RepositoryIndexResponse.ModelIndex> getRepositoryIndex() {
+        var request = GrpcService.RepositoryIndexRequest.newBuilder().build();
+        var response = invokeGrpc(statusStub(), s -> s.repositoryIndex(request), "Failed to get repository index");
+        return response.getModelsList();
     }
 
     public void loadModel(String modelName) {
@@ -133,7 +167,8 @@ public class TritonOnnxClient implements AutoCloseable {
         var request = GrpcService.RepositoryModelLoadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
-        invokeGrpc(grpcInferenceStub, s -> s.repositoryModelLoad(request), "Failed to load model");
+        invokeGrpc(grpcInferenceStub.withDeadlineAfter(LOAD_TIMEOUT),
+                s -> s.repositoryModelLoad(request), "Failed to load model");
     }
 
     public void unloadModel(String modelName) {
@@ -141,24 +176,20 @@ public class TritonOnnxClient implements AutoCloseable {
         var request = GrpcService.RepositoryModelUnloadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
-        invokeGrpc(grpcInferenceStub, s -> s.repositoryModelUnload(request), "Failed to unload model");
+        invokeGrpc(grpcInferenceStub.withDeadlineAfter(UNLOAD_TIMEOUT),
+                s -> s.repositoryModelUnload(request), "Failed to unload model");
     }
 
     public void unloadAllModels() {
         log.fine(() -> "Unloading all models");
-        var request =
-                GrpcService.RepositoryIndexRequest.newBuilder().setReady(true).build();
-        var response = invokeGrpc(grpcInferenceStub, s -> s.repositoryIndex(request), "Failed to get repository index");
 
-        for (var modelIndex : response.getModelsList()) {
-            var modelName = modelIndex.getName();
-
-            try {
-                unloadModel(modelName);
-            } catch (TritonException e) {
-                log.log(Level.SEVERE, e, () -> "Failed to unload model " + modelName);
-            }
-        }
+        getRepositoryIndex().stream()
+                .filter(model -> "READY".equals(model.getState())
+                        || "LOADING".equals(model.getState())
+                        || "UNLOADING".equals(model.getState()))
+                .map(GrpcService.RepositoryIndexResponse.ModelIndex::getName)
+                .distinct()
+                .forEach(this::unloadUntilModelNotReady);
     }
 
     /**
@@ -167,12 +198,16 @@ public class TritonOnnxClient implements AutoCloseable {
      * and the model can be loaded.
      */
     public void loadUntilModelReady(String modelName) {
-        if (isModelReady(modelName)) {
-            return;
+        try {
+            if (isModelReady(modelName)) {
+                return;
+            }
+        } catch (TritonException | TimeoutException e) {
+            // A failure must not abort before the first attempt to load the model.
         }
 
         boolean isLoaded = false;
-        TritonException lastException = null;
+        RuntimeException lastException = null;
         long startMillis = System.currentTimeMillis();
 
         for (int attempt = 0; attempt < MAX_MODEL_LOAD_ATTEMPTS; attempt++) {
@@ -185,7 +220,7 @@ public class TritonOnnxClient implements AutoCloseable {
                 if (isModelReady(modelName)) {
                     return;
                 }
-            } catch (TritonException e) {
+            } catch (TritonException | TimeoutException e) {
                 lastException = e;
             }
 
@@ -205,30 +240,31 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     /**
-     * Makes several attempts to unload the model and check until it's not ready.
-     * This helps to mitigate a timing issue because of the delay between model unload request and the model not ready
-     * so that model files can be deleted.
+     * Makes several attempts to unload the model and waits until it is completely inactive.
      */
     public void unloadUntilModelNotReady(String modelName) {
-        if (!isModelReady(modelName)) {
-            return;
-        }
-
-        boolean isUnloaded = false;
-        TritonException lastException = null;
+        boolean unloadRequested = false;
+        RuntimeException lastException = null;
         long startMillis = System.currentTimeMillis();
 
         for (int attempt = 0; attempt < MAX_MODEL_UNLOAD_ATTEMPTS; attempt++) {
             try {
-                if (!isUnloaded) { // We only need one successful unload request.
-                    unloadModel(modelName);
-                    isUnloaded = true;
-                }
+                var activity = modelActivity(modelName);
 
-                if (!isModelReady(modelName)) {
+                if (activity == ModelActivity.INACTIVE) {
                     return;
                 }
-            } catch (TritonException e) {
+
+                // If Triton is already unloading the model, only poll.
+                if (!unloadRequested && activity != ModelActivity.UNLOADING) {
+                    unloadModel(modelName);
+                    unloadRequested = true;
+
+                    if (modelActivity(modelName) == ModelActivity.INACTIVE) {
+                        return;
+                    }
+                }
+            } catch (TritonException | TimeoutException e) {
                 lastException = e;
             }
 
