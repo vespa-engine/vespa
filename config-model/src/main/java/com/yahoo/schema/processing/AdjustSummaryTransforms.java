@@ -63,10 +63,10 @@ public class AdjustSummaryTransforms extends Processor {
      * struct-field selection in a document-summary), only that subset needs to be usable as struct field
      * attributes. The selection itself is validated in {@link SummaryStructFieldSelectValidator}.
      *
-     * A selection whose sub-fields are not attributes leaves the transform alone: streaming search applies
-     * it when filling the summary field and needs no attributes at all for that. Whether the mode this
-     * schema ends up in can honour it is decided by SummaryStructFieldSelectAttributesValidator, which
-     * unlike a schema processor knows the mode of each cluster using the schema.
+     * A selection whose sub-fields are not attributes leaves the transform alone, which is fine in every
+     * mode: the field is then filled from the stored document, and the selection is applied when the
+     * summary field is written, by the copy transform below or, when the field is its own source and gets
+     * no transform at all, from the summary config of the requested document-summary.
      */
     private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {

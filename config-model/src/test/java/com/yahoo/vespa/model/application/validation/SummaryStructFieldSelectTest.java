@@ -18,13 +18,17 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * Tests that a struct field selection ("struct-field" in a document-summary) is accepted in every mode,
+ * whether or not the selected struct fields are struct field attributes. When they are, the selection is
+ * applied by the attribute combiner; when they are not, the summary field is filled from the stored
+ * document and the selection is applied there. The selection itself is validated in
+ * {@link com.yahoo.schema.processing.SummaryStructFieldSelectValidator}.
+ *
  * @author arnej
  */
-public class SummaryStructFieldSelectAttributesValidatorTest {
+public class SummaryStructFieldSelectTest {
 
     /** A struct field selection over sub-fields which are struct field attributes. */
     private static String schemaWithAttributes() {
@@ -69,14 +73,8 @@ public class SummaryStructFieldSelectAttributesValidatorTest {
     }
 
     @Test
-    void selection_without_struct_field_attributes_is_rejected_for_indexed_search() {
-        var exception = assertThrows(IllegalArgumentException.class,
-                                    () -> createModelAndValidate(schemaWithoutAttributes(), DocType.index("test")));
-        assertTrue(exception.getMessage().contains(
-                "For cluster 'mycluster', schema 'test', document-summary 'sel', summary field 'elem_array': " +
-                "the selected struct fields [name] of source field 'elem_array' cannot all be used as struct " +
-                "field attributes"),
-                   exception.getMessage());
+    void selection_without_struct_field_attributes_is_allowed_for_indexed_search() throws IOException, SAXException {
+        createModelAndValidate(schemaWithoutAttributes(), DocType.index("test"));
     }
 
     @Test

@@ -161,7 +161,9 @@ public class SummaryClass extends Derived {
         // The same field the backend resolves from the configured source, cf. getSource() below emitting a
         // source only for an explicit one, and DocsumFieldWriterFactory falling back to the field name.
         // getSingleSource() alone will not do: for an implicit summary field it is one of the struct
-        // sub-fields, since those are its sources.
+        // sub-fields, since those are its sources. This is therefore not the same resolution as the one
+        // SummaryStructFieldSelectValidator makes when validating a struct field selection; see the
+        // comment there for why the difference is harmless.
         String sourceName = summaryField.hasExplicitSingleSource() ? summaryField.getSingleSource()
                                                                   : summaryField.getName();
         ImmutableSDField source = schema.getField(sourceName);

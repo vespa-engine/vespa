@@ -97,7 +97,6 @@ public class Validation {
         new SearchDataTypeValidator().validate(execution);
         new ComplexFieldsWithStructFieldAttributesValidator().validate(execution);
         new ComplexFieldsWithStructFieldIndexesValidator().validate(execution);
-        new SummaryStructFieldSelectAttributesValidator().validate(execution);
         new StreamingValidator().validate(execution);
         new RankSetupValidator(validationParameters.ignoreValidationErrors()).validate(execution);
         new NoPrefixForIndexes().validate(execution);

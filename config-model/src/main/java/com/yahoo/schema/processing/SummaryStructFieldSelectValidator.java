@@ -24,6 +24,11 @@ import static com.yahoo.schema.document.ComplexAttributeFieldUtils.localStructFi
  * combined with a summary transform which would ignore it, that the selected struct fields exist, and
  * that a selection from a map has a shape which is currently allowed.
  *
+ * This is all the validation there is: a selection is applied in every mode, either by the attribute
+ * combiner when the selected sub-fields are struct field attributes, or when the summary field is filled
+ * from the stored document when they are not. The transforms which can be assigned to a summary field
+ * after this all honour a selection, which is why they are restricted here.
+ *
  * @author arnej
  */
 public class SummaryStructFieldSelectValidator extends Processor {
@@ -35,10 +40,11 @@ public class SummaryStructFieldSelectValidator extends Processor {
     private static final String VALUE = "value";
 
     /**
-     * Must a selection from a map of primitive type to primitive type name both the key and the
-     * value, since that is the only shape which will give a map back?
-     * Then it is pointless, as it can then only be the full set of fields.
-     * Make this false to see what it looks like.
+     * Must a selection from a map of primitive type to primitive type name both the key and the value?
+     * That is the only selection which gives a map back, but it is also the full set of names which can be
+     * selected for such a field, so requiring it would leave the selection with nothing to say. It is
+     * therefore not required: naming only the key, or only the value, gives an array of objects holding
+     * just that sub-field. Set this to true (and drop the tests covering it) to disallow that again.
      */
     private static final boolean PRIMITIVE_MAP_SELECTION_MUST_BE_KEY_AND_VALUE = false;
 
@@ -68,6 +74,13 @@ public class SummaryStructFieldSelectValidator extends Processor {
     }
 
     private void processSummaryField(DocumentSummary summary, SummaryField field) {
+        // The source is resolved the way AdjustSummaryTransforms does it, since that is what decides
+        // whether the selection becomes an attribute combiner and is applied at all. Note that
+        // SummaryClass.getCombinerShape resolves it differently, falling back to the name of the summary
+        // field, because by then an implicit summary field has the struct sub-fields as its sources. The
+        // two only disagree for a summary field with several sources or a dotted one, which is not a field
+        // a selection can be applied to anyway: there the shape ends up as INFER and the backend deduces
+        // it.
         var sourceField = schema.getField(field.getSingleSource());
         if (sourceField == null) return; // this case is handled in SummaryFieldsMustHaveValidSource
 
