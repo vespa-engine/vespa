@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-08-27
+Last updated: 2026-08-28
 
 ---
 
@@ -86,7 +86,7 @@ Last updated: 2026-08-27
 
 ---
 
-## @ungap/structured-clone 1.3.4 — ISC
+## @ungap/structured-clone 1.4.0 — ISC
 
 - Homepage: <https://github.com/ungap/structured-clone#readme>
 - Copyright 2021 Andrea Giammarchi
