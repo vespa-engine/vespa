@@ -6025,6 +6025,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.query.Sorting$FeatureSorter" : {
+    "superClass" : "com.yahoo.search.query.Sorting$AttributeSorter",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String toSerialForm()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.query.Sorting$FieldOrder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -6046,20 +6060,6 @@
       "public boolean equals(java.lang.Object)",
       "public com.yahoo.search.query.Sorting$FieldOrder clone()",
       "public bridge synthetic java.lang.Object clone()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.search.query.Sorting$FeatureSorter" : {
-    "superClass" : "com.yahoo.search.query.Sorting$AttributeSorter",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(java.lang.String)",
-      "public java.lang.String toSerialForm()",
-      "public int hashCode()",
-      "public boolean equals(java.lang.Object)"
     ],
     "fields" : [ ]
   },
@@ -9139,6 +9139,20 @@
       "public com.yahoo.search.schema.Field$Builder setBitPacked(boolean)",
       "public com.yahoo.search.schema.Field$Builder setFastMapSearch(boolean)",
       "public com.yahoo.search.schema.Field build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$MapFieldType" : {
+    "superClass" : "com.yahoo.search.schema.Field$Type",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.Field$Type, com.yahoo.search.schema.Field$Type)",
+      "public com.yahoo.search.schema.Field$Type keyType()",
+      "public com.yahoo.search.schema.Field$Type valueType()",
+      "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],
     "fields" : [ ]
   },
