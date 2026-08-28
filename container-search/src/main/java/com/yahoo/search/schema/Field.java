@@ -3,6 +3,7 @@ package com.yahoo.search.schema;
 
 import com.yahoo.tensor.TensorType;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -114,7 +115,7 @@ public class Field implements FieldInfo {
             if (typeString.equals("long"))
                 return new Type(Kind.LONG);
             if (typeString.startsWith("map<"))
-                return new Type(Kind.MAP); // TODO: Model as subclass
+                return MapFieldType.from(typeString);
             if (typeString.equals("position"))
                 return new Type(Kind.POSITION);
             if (typeString.equals("predicate"))
@@ -153,6 +154,34 @@ public class Field implements FieldInfo {
             return tensorType.toString();
         }
 
+    }
+
+    public static class MapFieldType extends Type {
+
+        private final Type keyType;
+        private final Type valueType;
+
+        public MapFieldType(Type keyType, Type valueType) {
+            super(Kind.MAP);
+            this.keyType = keyType;
+            this.valueType = valueType;
+        }
+
+        public Type keyType() {
+            return keyType;
+        }
+
+        public Type valueType() {
+            return valueType;
+        }
+
+        public static Type from(String typeString) {
+            typeString = typeString.substring("map<".length());
+            typeString = typeString.substring(0, typeString.lastIndexOf(">"));
+            // we can split on first comma, since key can only be primitive type.
+            String[] parts = Arrays.stream(typeString.split(",", 2)).map(String::trim).toArray(String[]::new);
+            return new MapFieldType(Type.from(parts[0]), Type.from(parts[1]));
+        }
     }
 
     public static class Builder {
