@@ -155,7 +155,12 @@ public class CreateFastMapSearchTest {
         assertNotNull(child.getConcreteField("bar$keyvalue"), "Expected key-value field for the child's own map");
         assertNull(parent.getConcreteField("bar$keyvalue"));
     }
-
+    private static String fastSearchMap(String name, String valueType) {
+        return joinLines("field " + name + " type map<string," + valueType + "> {",
+                         "  indexing: summary",
+                         "  map: fast-search",
+                         "}");
+    }
     private static String fastSearchMap(String type) {
         return joinLines("field foo type " + type + " {",
                          "  indexing: summary",
