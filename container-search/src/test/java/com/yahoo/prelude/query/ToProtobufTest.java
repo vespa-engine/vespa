@@ -680,6 +680,49 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithStringRangeItem() {
+        assertConvertsToJson(new StringRangeItem("aaa", true, "zzz", true, "myindex", true), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "lowerLimit": "aaa",
+                "upperLimit": "zzz",
+                "lowerInclusive": true,
+                "upperInclusive": true
+              }
+            }
+            """);
+        assertConvertsToJson(new StringRangeItem("", true, "zzz", true, "myindex", true), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "lowerLimit": "",
+                "upperLimit": "zzz",
+                "lowerInclusive": true,
+                "upperInclusive": true
+              }
+            }
+            """);
+        assertConvertsToJson(new StringRangeItem(null, false, "zzz", true, "myindex", true), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "upperLimit": "zzz",
+                "upperInclusive": true
+              }
+            }
+            """);
+        assertConvertsToJson(new StringRangeItem("aaa", false, null, false, "myindex", true), """
+            {
+              "itemStringRangeTerm": {
+                "properties": {"index": "myindex"},
+                "lowerLimit": "aaa"
+              }
+            }
+            """);
+    }
+
+    @Test
     void testConvertFromQueryWithNumericInItem() {
         NumericInItem numericIn = new NumericInItem("myindex");
         numericIn.addToken(42L);
