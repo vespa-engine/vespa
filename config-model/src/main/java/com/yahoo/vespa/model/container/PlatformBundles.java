@@ -160,6 +160,7 @@ public class PlatformBundles {
     // This is a hack to allow users to declare components from the model-integration bundle without naming the bundle.
     private static final Set<String> modelIntegrationComponents = Set.of(
             ai.vespa.llm.clients.OpenAI.class.getName(),
+            ai.vespa.llm.clients.OrcaRouter.class.getName(),
             ai.vespa.llm.clients.LocalLLM.class.getName(),
             LanguageModelFieldGenerator.class.getName()
     );
