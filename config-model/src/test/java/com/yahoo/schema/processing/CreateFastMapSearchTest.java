@@ -133,15 +133,12 @@ public class CreateFastMapSearchTest {
         var builder = new ApplicationBuilder(new TestProperties().fastMapSearch(true));
         builder.addSchema(joinLines("schema parent {",
                                     "  document parent {",
-                                    fastSearchMap("map<string, string>"),
+                                    fastSearchMap("foo", "string"),
                                     "  }",
                                     "}"));
         builder.addSchema(joinLines("schema child inherits parent {",
                                     "  document child inherits parent {",
-                                    "    field bar type map<string, string> {",
-                                    "      indexing: summary",
-                                    "      map: fast-search",
-                                    "    }",
+                                    fastSearchMap("bar", "string"),
                                     "  }",
                                     "}"));
         builder.build(true);
