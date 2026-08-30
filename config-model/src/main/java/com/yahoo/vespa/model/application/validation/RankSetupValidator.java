@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.config.text.StringUtilities.escape;
+
 /**
  * Validates rank setup for all content clusters (rank-profiles, index-schema, attributes configs), validation is done
  * by running the binary 'vespa-verify-ranksetup-bin'
@@ -143,8 +145,9 @@ public class RankSetupValidator implements Validator {
         for (DistributableResource model : resources) {
             String modelPath = getFileRepositoryPath(model.getFilePath().getName(), model.getFileReference());
             int index = config.size() / 2;
-            config.add(Text.format("file[%d].ref \"%s\"", index, model.getFileReference()));
-            config.add(Text.format("file[%d].path \"%s\"", index, modelPath));
+            // Escape values the same way the canonical config serializer does (see StringNode.toString).
+            config.add(Text.format("file[%d].ref \"%s\"", index, escape(model.getFileReference())));
+            config.add(Text.format("file[%d].path \"%s\"", index, escape(modelPath)));
             log.log(Level.FINE, index + ": " + model.getPathType() + " -> " + model.getName() + " -> " + modelPath + " -> " + model.getFileReference());
         }
     }
