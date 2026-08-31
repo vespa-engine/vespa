@@ -869,6 +869,13 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testStringRangeProvidesOrigin() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var string_range = (StringRangeItem)parse("select foo from sources default where ({origin: {original:\"foo\", offset: 0, length: 3}}range(string, \"aaa\", \"zzz\"))").getRoot();
+        assertEquals("foo", string_range.getRawWord());
+    }
+
+    @Test
     void testNear() {
         assertParse("select foo from bar where description contains near(\"a\", \"b\")",
                 "NEAR(2) description:a description:b");

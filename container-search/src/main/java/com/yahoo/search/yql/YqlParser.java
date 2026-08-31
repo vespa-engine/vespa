@@ -1626,7 +1626,7 @@ public class YqlParser implements Parser {
         String bounds = getAnnotation(spec, BOUNDS, String.class, null,
                 "whether bounds should be open or closed");
         if (bounds == null) {
-            return new StringRangeItem(left, true, right, true, getIndex(args.get(0)), true);
+            return new StringRangeItem(left, true, right, true, getIndex(args.get(0)), true, getSubstring(spec));
         } else {
             boolean leftClosed = true;
             boolean rightClosed = true;
@@ -1644,7 +1644,7 @@ public class YqlParser implements Parser {
                 default ->
                         throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
             }
-            return new StringRangeItem(left, leftClosed, right, rightClosed, getIndex(args.get(0)), true);
+            return new StringRangeItem(left, leftClosed, right, rightClosed, getIndex(args.get(0)), true, getSubstring(spec));
         }
     }
 

@@ -1718,7 +1718,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, boolean, java.lang.String, boolean, java.lang.String, boolean)",
+      "public void <init>(java.lang.String, boolean, java.lang.String, boolean, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public final java.lang.String getFrom()",
       "public final boolean isFromInclusive()",
       "public final java.lang.String getTo()",

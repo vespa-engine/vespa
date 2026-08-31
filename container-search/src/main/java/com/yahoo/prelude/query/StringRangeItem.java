@@ -29,8 +29,8 @@ public class StringRangeItem extends TermItem {
     /**
      * Create a StringRangeItem.
      */
-    public StringRangeItem(String from, boolean fromInclusive, String to, boolean toInclusive, String indexName, boolean isFromQuery) {
-        super(indexName, isFromQuery);
+    public StringRangeItem(String from, boolean fromInclusive, String to, boolean toInclusive, String indexName, boolean isFromQuery, Substring origin) {
+        super(indexName, isFromQuery, origin);
         this.from = from;
         this.fromInclusive = fromInclusive && from != null; // Negative infinity cannot be included
         this.to = to;
@@ -69,7 +69,11 @@ public class StringRangeItem extends TermItem {
 
     @Override
     public String getRawWord() {
-        return getIndexedString();
+        if (getOrigin() == null) {
+            return stringValue();
+        } else {
+            return getOrigin().getValue();
+        }
     }
 
     @Override

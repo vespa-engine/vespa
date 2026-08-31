@@ -681,7 +681,7 @@ public class ToProtobufTest {
 
     @Test
     void testConvertFromQueryWithStringRangeItem() {
-        assertConvertsToJson(new StringRangeItem("aaa", true, "zzz", true, "myindex", true), """
+        assertConvertsToJson(new StringRangeItem("aaa", true, "zzz", true, "myindex", true, null), """
             {
               "itemStringRangeTerm": {
                 "properties": {"index": "myindex"},
@@ -692,7 +692,7 @@ public class ToProtobufTest {
               }
             }
             """);
-        assertConvertsToJson(new StringRangeItem("", true, "zzz", true, "myindex", true), """
+        assertConvertsToJson(new StringRangeItem("", true, "zzz", true, "myindex", true, null), """
             {
               "itemStringRangeTerm": {
                 "properties": {"index": "myindex"},
@@ -703,7 +703,7 @@ public class ToProtobufTest {
               }
             }
             """);
-        assertConvertsToJson(new StringRangeItem(null, false, "zzz", true, "myindex", true), """
+        assertConvertsToJson(new StringRangeItem(null, false, "zzz", true, "myindex", true, null), """
             {
               "itemStringRangeTerm": {
                 "properties": {"index": "myindex"},
@@ -712,7 +712,7 @@ public class ToProtobufTest {
               }
             }
             """);
-        assertConvertsToJson(new StringRangeItem("aaa", false, null, false, "myindex", true), """
+        assertConvertsToJson(new StringRangeItem("aaa", false, null, false, "myindex", true, null), """
             {
               "itemStringRangeTerm": {
                 "properties": {"index": "myindex"},
