@@ -195,4 +195,22 @@ public final class Text {
 	return String.format(Locale.US, format, args);
     }
 
+    /**
+     * Returns the value as exactly 8 hex digits in excess notation: Biased by 2^31, such that the
+     * strings sort in the same order as the values, also across zero:
+     * Integer.MIN_VALUE becomes "00000000", 0 becomes "80000000".
+     */
+    public static String toExcessHex8(int value) {
+        return format("%08x", value ^ Integer.MIN_VALUE);
+    }
+
+    /**
+     * Returns the value as exactly 16 hex digits in excess notation: Biased by 2^63, such that the
+     * strings sort in the same order as the values, also across zero:
+     * Long.MIN_VALUE becomes "0000000000000000", 0 becomes "8000000000000000".
+     */
+    public static String toExcessHex16(long value) {
+        return format("%016x", value ^ Long.MIN_VALUE);
+    }
+
 }
