@@ -276,28 +276,47 @@
     "fields" : [ ]
   },
   "ai.vespa.llm.clients.OpenAI" : {
-    "superClass" : "ai.vespa.llm.clients.ConfigurableLanguageModel",
+    "superClass" : "ai.vespa.llm.clients.OpenAICompatibleClient",
     "interfaces" : [ ],
     "attributes" : [
       "public"
     ],
     "methods" : [
       "public void <init>(ai.vespa.llm.clients.LlmClientConfig, ai.vespa.secret.Secrets)",
+      "protected java.lang.String defaultApiKey()",
+      "protected java.lang.String defaultEndpoint()",
+      "protected java.lang.String defaultModel()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.OpenAICompatibleClient" : {
+    "superClass" : "ai.vespa.llm.clients.ConfigurableLanguageModel",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.clients.LlmClientConfig, ai.vespa.secret.Secrets)",
       "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
-      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)",
+      "protected abstract java.lang.String defaultApiKey()",
+      "protected abstract java.lang.String defaultEndpoint()",
+      "protected abstract java.lang.String defaultModel()"
     ],
     "fields" : [ ]
   },
   "ai.vespa.llm.clients.OrcaRouter" : {
-    "superClass" : "ai.vespa.llm.clients.ConfigurableLanguageModel",
+    "superClass" : "ai.vespa.llm.clients.OpenAICompatibleClient",
     "interfaces" : [ ],
     "attributes" : [
       "public"
     ],
     "methods" : [
       "public void <init>(ai.vespa.llm.clients.LlmClientConfig, ai.vespa.secret.Secrets)",
-      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
-      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+      "protected java.lang.String defaultApiKey()",
+      "protected java.lang.String defaultEndpoint()",
+      "protected java.lang.String defaultModel()"
     ],
     "fields" : [ ]
   },
