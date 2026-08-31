@@ -45,8 +45,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>
  * If either 'rate.id' or 'rate.quota' is not set in Query.properties this searcher will do nothing.
  * <p>
- * Metrics: This will emit the count metric requestsOverQuota with the dimension [rate.idDimension=rate.id]
- * counting rejected requests.
+ * Metrics: This will emit the count metrics requests and requestsOverQuota, both with the dimension
+ * [rate.idDimension=rate.id]. requests counts all requests checked by this searcher, and requestsOverQuota
+ * counts the subset of those that were rejected (or would have been rejected, in dryRun mode).
  * <p>
  * Ordering: This searcher Provides rateLimiting
  *
@@ -64,6 +65,7 @@ public class RateLimitingSearcher extends Searcher {
     public static final CompoundName idDimensionKey = CompoundName.from("rate.idDimension");
     public static final CompoundName dryRunKey = CompoundName.from("rate.dryRun");
 
+    private static final String requestsMetricName = ContainerMetrics.REQUESTS.baseName();
     private static final String requestsOverQuotaMetricName = ContainerMetrics.REQUESTS_OVER_QUOTA.baseName();
 
     /** Used to divide quota by nodes. Assumption: All nodes get the same share of traffic. */
@@ -78,6 +80,7 @@ public class RateLimitingSearcher extends Searcher {
     private final ThreadLocal<Map<String, Double>> allocatedCapacity = new ThreadLocal<>();
 
     /** For emitting metrics */
+    private final Counter requestsCounter;
     private final Counter overQuotaCounter;
 
     /**
@@ -106,6 +109,7 @@ public class RateLimitingSearcher extends Searcher {
 
         this.nodeCount = clusterInfoConfig.nodeCount();
 
+        this.requestsCounter = metric.declareCounter(requestsMetricName);
         this.overQuotaCounter = metric.declareCounter(requestsOverQuotaMetricName);
     }
 
@@ -117,6 +121,8 @@ public class RateLimitingSearcher extends Searcher {
             query.trace(false, 6, "Skipping rate limiting check. Need both " + idKey + " and " + quotaKey + " set");
             return execution.search(query);
         }
+
+        increaseMetric(requestsCounter, id, query);
 
         if ( ! localRate)
             rate = rate / nodeCount;
@@ -136,7 +142,7 @@ public class RateLimitingSearcher extends Searcher {
         boolean dryRun = query.properties().getBoolean(dryRunKey, false);
 
         if (reject)
-            increaseRejectMetric(id, query);
+            increaseMetric(overQuotaCounter, id, query);
 
         Result result;
         if (reject && !dryRun)
@@ -153,12 +159,12 @@ public class RateLimitingSearcher extends Searcher {
         return result;
     }
 
-    private void increaseRejectMetric(String id, Query query) {
+    private void increaseMetric(Counter counter, String id, Query query) {
         String idDimension = query.properties().getString(idDimensionKey, null);
         if (idDimension == null)
-            overQuotaCounter.add(1);
+            counter.add(1);
         else
-            overQuotaCounter.add(1, overQuotaCounter.builder().set(idDimension, id).build());
+            counter.add(1, counter.builder().set(idDimension, id).build());
     }
 
     private double getAllocatedCapacity(String id) {
