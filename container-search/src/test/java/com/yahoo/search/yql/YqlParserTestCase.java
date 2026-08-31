@@ -28,6 +28,7 @@ import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -867,6 +868,36 @@ public class YqlParserTestCase {
     void testRangeIllegalArguments() {
         assertParseFail("select foo from bar where range(baz,cox,8)",
                 new IllegalArgumentException("Expected a numerical argument (or 'Infinity') to range but got 'cox'"));
+    }
+
+    @Test
+    void testStringRange() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\"]", parse("select foo from sources default where range(string,'aaa','zzz')").toString());
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\"]", parse("select foo from sources default where range(string,\"aaa\",\"zzz\")").toString());
+        assertEquals("STRING_RANGE string:<\"aaa\";\"zzz\"]", parse("select foo from sources default where ({bounds:\"leftOpen\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\">", parse("select foo from sources default where ({bounds:\"rightOpen\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:<\"aaa\";\"zzz\">", parse("select foo from sources default where ({bounds:\"open\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:<-Infinity;\"zzz\"]", parse("select foo from sources default where range(string,-Infinity,\"zzz\")").toString());
+        assertEquals("STRING_RANGE string:<-Infinity;Infinity>", parse("select foo from sources default where range(string,-Infinity,Infinity)").toString());
+    }
+
+    @Test
+    void testStringRangeIllegalArguments() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParseFail("select foo from sources default where ({bounds:\"foo\"}range(string,\"aaa\",\"zzz\"))", new IllegalArgumentException("Expected open, leftOpen or rightOpen, got foo."));
+        assertParseFail("select foo from sources default where range(string,aaa,\"zzz\")", new IllegalArgumentException("Expected -Infinity or a quoted string for left string range bound but got aaa."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\",zzz)", new IllegalArgumentException("Expected Infinity or a quoted string for right string range bound but got zzz."));
+        assertParseFail("select foo from sources default where range(string,Infinity,\"zzz\")", new IllegalArgumentException("Expected -Infinity or a quoted string for left string range bound but got Infinity."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\",-Infinity)", new IllegalArgumentException("Expected Infinity or a quoted string for right string range bound but got -Infinity."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\")", new IllegalArgumentException("Expected 3 arguments, got 2."));
+    }
+
+    @Test
+    void testStringRangeProvidesOrigin() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var string_range = (StringRangeItem)parse("select foo from sources default where ({origin: {original:\"foo\", offset: 0, length: 3}}range(string, \"aaa\", \"zzz\"))").getRoot();
+        assertEquals("foo", string_range.getRawWord());
     }
 
     @Test

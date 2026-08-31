@@ -67,6 +67,7 @@ import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -1634,8 +1635,19 @@ public class YqlParser implements Parser {
         assertHasOperator(spec, ExpressionOperator.CALL);
         assertHasFunctionName(spec, RANGE);
 
-        IntItem range = instantiateRangeItem(spec.getArgument(1), spec);
-        return leafStyleSettings(spec, range);
+        List<OperatorNode<ExpressionOperator>> args = spec.getArgument(1);
+        Preconditions.checkArgument(args.size() == 3,
+                "Expected 3 arguments, got %s.", args.size());
+
+        var index = indexFactsSession.getIndex(indexNameExpander.expand(getIndex(args.get(0))));
+        if (index.isString() && !index.isInteger() && !index.isNumerical()) {
+            StringRangeItem range = instantiateStringRangeItem(args, spec);
+            return leafStyleSettings(spec, range);
+        } else {
+            IntItem range = instantiateIntRangeItem(args, spec);
+            return leafStyleSettings(spec, range);
+        }
+
     }
 
     private static Number negate(Number x) {
@@ -1656,11 +1668,69 @@ public class YqlParser implements Parser {
         }
     }
 
-    private IntItem instantiateRangeItem(List<OperatorNode<ExpressionOperator>> args,
-                                         OperatorNode<ExpressionOperator> spec) {
-        Preconditions.checkArgument(args.size() == 3,
-                "Expected 3 arguments, got %s.", args.size());
+    private StringRangeItem instantiateStringRangeItem(List<OperatorNode<ExpressionOperator>> args,
+                                            OperatorNode<ExpressionOperator> spec) {
+        // Pre-condition: args.size() == 3
+        String left = getLeftStringRangeBound(args.get(1));
+        String right = getRightStringRangeBound(args.get(2));
+        String bounds = getAnnotation(spec, BOUNDS, String.class, null,
+                "whether bounds should be open or closed");
+        if (bounds == null) {
+            return new StringRangeItem(left, true, right, true, getIndex(args.get(0)), true, getSubstring(spec));
+        } else {
+            boolean leftClosed = true;
+            boolean rightClosed = true;
+            switch (bounds) {
+                case BOUNDS_OPEN -> {
+                    leftClosed = false;
+                    rightClosed = false;
+                }
+                case BOUNDS_LEFT_OPEN -> {
+                    leftClosed = false;
+                }
+                case BOUNDS_RIGHT_OPEN -> {
+                    rightClosed = false;
+                }
+                default ->
+                        throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
+            }
+            return new StringRangeItem(left, leftClosed, right, rightClosed, getIndex(args.get(0)), true, getSubstring(spec));
+        }
+    }
 
+    private String getLeftStringRangeBound(OperatorNode<ExpressionOperator> bound) {
+        if (bound.getOperator() == ExpressionOperator.NEGATE && isInfinity(bound.getArgument(0))) {
+            return null;
+        } else if (bound.getOperator() == ExpressionOperator.LITERAL) { // String in quotes
+            return bound.getArgument(0).toString();
+        } else {
+            String asString = bound.getArguments().length > 1 ? bound.getArgument(1).toString() : bound.toString(); // Try to make the error a bit prettier
+            throw new IllegalArgumentException("Expected -Infinity or a quoted string for left string range bound but got " + asString + ".");
+        }
+    }
+
+    private String getRightStringRangeBound(OperatorNode<ExpressionOperator> bound) {
+        if (isInfinity(bound)) {
+            return null;
+        } else if (bound.getOperator() == ExpressionOperator.LITERAL) { // String in quotes
+            return bound.getArgument(0).toString();
+        } else {
+            // Try to make the error a bit prettier
+            String asString = (bound.getOperator() == ExpressionOperator.NEGATE && isInfinity(bound.getArgument(0))) ? "-Infinity"
+                    : (bound.getArguments().length > 1 ? bound.getArgument(1).toString() : bound.toString());
+            throw new IllegalArgumentException("Expected Infinity or a quoted string for right string range bound but got " + asString + ".");
+        }
+    }
+
+    private boolean isInfinity(OperatorNode<ExpressionOperator> bound) {
+        return bound.getOperator() == ExpressionOperator.READ_FIELD
+                && bound.getArguments().length > 0
+                && bound.getArgument(1).toString().equals("Infinity");
+    }
+
+    private IntItem instantiateIntRangeItem(List<OperatorNode<ExpressionOperator>> args,
+                                         OperatorNode<ExpressionOperator> spec) {
+        // Pre-condition: args.size() == 3
         Number lowerArg = getRangeBound(args.get(1));
         Number upperArg = getRangeBound(args.get(2));
         String bounds = getAnnotation(spec, BOUNDS, String.class, null,
