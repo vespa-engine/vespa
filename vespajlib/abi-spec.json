@@ -3506,7 +3506,9 @@
       "public static java.lang.String stripInvalidCharacters(java.lang.String)",
       "public static java.lang.String truncate(java.lang.String, int)",
       "public static java.lang.String substringByCodepoints(java.lang.String, int, int)",
-      "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])"
+      "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])",
+      "public static java.lang.String toExcessHex8(int)",
+      "public static java.lang.String toExcessHex16(long)"
     ],
     "fields" : [ ]
   },
