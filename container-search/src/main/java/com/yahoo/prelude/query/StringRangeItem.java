@@ -123,8 +123,7 @@ public class StringRangeItem extends TermItem {
      */
     @Override
     protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
-        super.encodeThis(buffer, context); // takes care of index bytes
-        // Not implemented
+        throw new UnsupportedOperationException("Cannot encodeThis(" + buffer + ", " + context + ") on " + getName());
     }
 
     @Override
