@@ -360,6 +360,9 @@ public class ConvertParsedFields {
         for (String destination : parsed.getDestinations()) {
             summary.addDestination(destination);
         }
+        for (String structField : parsed.getStructFieldSelect()) {
+            summary.addStructField(structField);
+        }
         summary.setImplicit(false);
     }
 

@@ -18,8 +18,11 @@ import com.yahoo.document.datatypes.Raw;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.vespa.config.search.SummaryConfig.Classes.Fields.Combiner_shape;
 import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
+
+import java.util.List;
 
 /**
  * A summary field derived from a search definition
@@ -33,6 +36,8 @@ public class SummaryClassField {
     private final String command;
     private final String source;
     private final SummaryElementsSelector elementsSelector;
+    private final Combiner_shape.Enum combinerShape;
+    private final List<String> structFields;
 
     /** The summary field type enumeration */
     public enum Type {
@@ -70,12 +75,15 @@ public class SummaryClassField {
         }
     }
 
-    public SummaryClassField(String name, DataType type, SummaryElementsSelector elementsSelector, SummaryTransform transform, String source, boolean rawAsBase64) {
+    public SummaryClassField(String name, DataType type, SummaryElementsSelector elementsSelector, SummaryTransform transform,
+                             String source, Combiner_shape.Enum combinerShape, boolean rawAsBase64, List<String> structFields) {
         this.name = name;
         this.type = convertDataType(type, transform, rawAsBase64);
         this.elementsSelector = elementsSelector;
         this.command = SummaryClass.getCommand(transform);
         this.source = source;
+        this.combinerShape = combinerShape;
+        this.structFields = List.copyOf(structFields);
     }
 
     public String getName() { return name; }
@@ -87,6 +95,10 @@ public class SummaryClassField {
     public String getSource() { return source; }
 
     public SummaryElementsSelector getElementsSelector() { return elementsSelector; }
+
+    public Combiner_shape.Enum getCombinerShape() { return combinerShape; }
+
+    public List<String> getStructFields() { return structFields; }
 
     /** Converts to the right summary field type from a field datatype and a transform*/
     public static Type convertDataType(DataType fieldType, SummaryTransform transform, boolean rawAsBase64) {

@@ -7,6 +7,7 @@ import com.yahoo.text.Text;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.io.File;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -232,6 +233,61 @@ public class SchemaParserTestCase {
         assertRankProfileWithOutOfRangeThrows("weakand { stopword-limit: 1.1 }");
         assertRankProfileWithOutOfRangeThrows("weakand { adjust-target: -0.1 }");
         assertRankProfileWithOutOfRangeThrows("weakand { adjust-target: 1.1 }");
+    }
+
+    @Test
+    void struct_field_select_can_be_parsed_in_document_summary() throws Exception {
+        String input = """
+          schema foo {
+            document foo {
+            }
+            document-summary bar {
+              summary baz {
+                struct-field: one
+                struct-field: two
+              }
+            }
+          }""";
+        var schema = parseString(input);
+        var summaryFields = schema.getDocumentSummaries().get(0).getSummaryFields();
+        assertEquals(1, summaryFields.size());
+        assertEquals(List.of("one", "two"), summaryFields.get(0).getStructFieldSelect());
+    }
+
+    @Test
+    void struct_field_select_can_list_several_fields_on_one_line() throws Exception {
+        String input = """
+          schema foo {
+            document foo {
+            }
+            document-summary bar {
+              summary baz {
+                struct-field: one, two
+                struct-field: three
+              }
+            }
+          }""";
+        var schema = parseString(input);
+        var summaryFields = schema.getDocumentSummaries().get(0).getSummaryFields();
+        assertEquals(1, summaryFields.size());
+        assertEquals(List.of("one", "two", "three"), summaryFields.get(0).getStructFieldSelect());
+    }
+
+    @Test
+    void struct_field_select_is_only_allowed_in_document_summary() {
+        String input = """
+          schema foo {
+            document foo {
+              field bar type array<mystruct> {
+                summary {
+                  struct-field: one
+                }
+              }
+            }
+          }""";
+        var e = assertThrows(ParseException.class, () -> parseString(input));
+        assertTrue(e.getMessage().contains("Encountered \" \"struct-field\" \"struct-field\"\" at line 5"),
+                   e.getMessage());
     }
 
     @Test
