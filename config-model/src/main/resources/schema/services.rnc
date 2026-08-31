@@ -4,6 +4,7 @@ include "admin.rnc"
 include "content.rnc"
 include "routing.rnc"
 include "containercluster.rnc"
+include "commerce-discovery.rnc"
 
 start = element services {
    attribute version { "1.0" }? &
@@ -14,7 +15,8 @@ start = element services {
    Admin? &
    Content* &
    ContainerCluster* &
-   Routing?
+   Routing? &
+   CommerceDiscovery?
 }
 | Admin
 | Content

@@ -1,0 +1,22 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+CommerceDiscovery = CommerceDiscoveryV1
+
+CommerceDiscoveryV1 = element commerce-discovery {
+   attribute version { "1.0" } &
+   CommerceDiscoveryProduct? &
+   CommerceDiscoveryCategory? &
+   element variant-presentation { empty }? &
+   element ranking-tags-registry { empty }?
+}
+
+CommerceDiscoveryProduct = element product {
+   attribute document-type { text }? &
+   attribute namespace { text }? &
+   attribute id-field { text }?
+}
+
+CommerceDiscoveryCategory = element category {
+   attribute document-type { text }? &
+   attribute namespace { text }? &
+   attribute id-field { text }?
+}
