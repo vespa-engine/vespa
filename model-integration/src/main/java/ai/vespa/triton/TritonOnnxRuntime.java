@@ -310,10 +310,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                                 .build());
 
         if (options.batchingMaxSize() > 1) {
-            var dynamicBatchingBuilder = ModelConfigOuterClass.ModelDynamicBatching.newBuilder();
-            options.batchingMaxDelay()
-                    .ifPresent(delay -> dynamicBatchingBuilder.setMaxQueueDelayMicroseconds(delay.toMillis() * 1000L));
-            configBuilder.setDynamicBatching(dynamicBatchingBuilder.build());
+            configBuilder.setDynamicBatching(ModelConfigOuterClass.ModelDynamicBatching.newBuilder().build());
         }
 
         // Triton's ONNX Runtime backend enables all optimizations when the graph optimization level is unspecified,

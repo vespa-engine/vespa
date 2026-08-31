@@ -6,7 +6,6 @@ instance_group {
   kind: KIND_CPU
 }
 dynamic_batching {
-  max_queue_delay_microseconds: 100000
 }
 parameters {
   key: "enable_mem_arena"
