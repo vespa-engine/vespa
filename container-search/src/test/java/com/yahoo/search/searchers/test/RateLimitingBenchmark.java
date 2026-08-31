@@ -32,6 +32,7 @@ import java.util.function.Supplier;
 public class RateLimitingBenchmark {
 
     private final int clientCount = 10;
+    private boolean exponentialLoad = true; // exponential or linearly growing with client number
     private final int threadCount = 250;
     private final int epochs = 100; // the number of times the sequence of load types are repeated
     private final int totalQueriesPerThread = 4 * 1000 * 10;
@@ -69,10 +70,14 @@ public class RateLimitingBenchmark {
         this.metric = new MetricReceiver.MockReceiver();
 
         chain = new Chain<>("test", new RateLimitingSearcher(new RateLimitingConfig(rateLimitingConfig),
-                                    new ClusterInfoConfig(clusterInfoConfig), metric));
+                                                                 new ClusterInfoConfig(clusterInfoConfig), metric));
 
         for (int i = 0; i < clientCount ; i++)
             requestCounters.put(toClientId(i), new RequestCounts());
+    }
+
+    private double targetRateOf(int clientId) {
+        return exponentialLoad ? Math.pow(4, clientId) : (1 + clientId) * 4;
     }
 
     public void run() throws InterruptedException {
@@ -82,16 +87,26 @@ public class RateLimitingBenchmark {
 
         metricSnapshot = metric.getSnapshot();
         double totalAttemptedRate = 0;
-        for (int i=0; i < clientCount; i++) {
+        double unweightedAccuracySum = 0;
+        double weightedAccuracySum = 0;
+        for (int i = 0; i < clientCount; i++) {
             double attemptedRate = requestCounters.get(toClientId(i)).attempted.get() * 1000d / totalTime;
+            double targetAllowedRate = targetRateOf(i);
             double allowedRate = requestCounters.get(toClientId(i)).allowed.get() * 1000d / totalTime;
+            double actualTarget = Math.min(attemptedRate, targetAllowedRate);
+            double accuracy = Math.min(actualTarget, allowedRate) / Math.max(actualTarget, allowedRate);
             System.out.println(String.format(Locale.ENGLISH,
-                                             "Client %1$2d:  Attempted rate: %2$10.2f.  Target allowed rate: %3$10.2f.  Allowed rate: %4$10.2f.  Rejected requests: %5$8d",
-                                             i, attemptedRate, Math.pow(4, i), allowedRate, rejectedRequests(i)));
+                                             "Client %1$2d:  Attempted rate: %2$10.2f.  Target allowed rate: %3$10.2f.  Allowed rate: %4$10.2f.  Rejected requests: %5$8d.  Accuracy: %6$10.2f",
+                                             i, attemptedRate, targetAllowedRate, allowedRate, rejectedRequests(i), accuracy));
             totalAttemptedRate += attemptedRate;
+            unweightedAccuracySum += accuracy;
+            weightedAccuracySum += accuracy * attemptedRate;
         }
-        System.out.println(String.format(Locale.ENGLISH, "\nTotal attempted rate: %1$10.2f seconds", totalAttemptedRate));
-        System.out.println(String.format(Locale.ENGLISH, "\nTotal time: %1$8.2f seconds", totalTime/1000.0));
+        System.out.println("");
+        System.out.println(String.format(Locale.ENGLISH, "Total attempted rate: %1$10.2f", totalAttemptedRate));
+        System.out.println(String.format(Locale.ENGLISH, "Total time:           %1$10.2f seconds", totalTime/1000.0));
+        System.out.println(String.format(Locale.ENGLISH, "Unweighted accuracy:  %1$10.2f", (unweightedAccuracySum / clientCount)));
+        System.out.println(String.format(Locale.ENGLISH, "Weighted accuracy:    %1$10.2f", (weightedAccuracySum / totalAttemptedRate)));
     }
 
     private void runWorkers() {
@@ -146,7 +161,7 @@ public class RateLimitingBenchmark {
         }
 
         private void issueRequests(Supplier<Integer> clientNumberSupplier) throws InterruptedException {
-            for (int i = 0; i< totalQueriesPerThread/(epochs * sequences); i++) {
+            for (int i = 0; i < totalQueriesPerThread/(epochs * sequences); i++) {
                 int clientNumber = clientNumberSupplier.get();
                 requestCounters.get(toClientId(clientNumber)).addRequest(executeWasAllowed(chain, clientNumber));
                 if ( ! isInPeak())
@@ -185,7 +200,7 @@ public class RateLimitingBenchmark {
         Query query = new Query();
         query.properties().set("rate.id", toClientId(id));
         query.properties().set("rate.cost", 1);
-        query.properties().set("rate.quota", Math.pow(4, id));
+        query.properties().set("rate.quota", targetRateOf(id));
         query.properties().set("rate.idDimension", "id");
         Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
         if (result.hits().getError() != null && result.hits().getError().getCode() == 429)
@@ -193,7 +208,6 @@ public class RateLimitingBenchmark {
         else
             return true;
     }
-
 
     public static void main(String[] args) throws InterruptedException {
         new RateLimitingBenchmark().run();

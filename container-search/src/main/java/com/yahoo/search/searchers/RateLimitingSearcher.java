@@ -8,7 +8,6 @@ import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Counter;
-import com.yahoo.metrics.simple.Point;
 
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -168,9 +167,7 @@ public class RateLimitingSearcher extends Searcher {
     }
 
     private double getAllocatedCapacity(String id) {
-        Double value = allocatedCapacity.get().get(id);
-        if (value == null) return 0;
-        return value;
+        return allocatedCapacity.get().getOrDefault(id, 0.0);
     }
 
     private void addAllocatedCapacity(String id, double newCapacity) {
@@ -188,7 +185,7 @@ public class RateLimitingSearcher extends Searcher {
 
     /**
      * This keeps track of the current "capacity" (total cost) available to each client (rate id)
-     * across all threads. Capacity is supplied at the rate per second given by the clients quota.
+     * across all threads. Capacity is supplied at the rate per second given by the client's quota.
      * When all the capacity is spent, no further capacity will be handed out, leading to request rejection.
      * Capacity has a max value it will never exceed to avoid clients saving capacity for future overspending.
      */
