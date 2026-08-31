@@ -135,9 +135,6 @@ public class SummaryClass extends Derived {
     static String getCommand(SummaryTransform transform) {
         if (transform == SummaryTransform.NONE) {
             return "";
-        } else if (transform == SummaryTransform.DISTANCE) {
-            // Unreachable in practice, see SummaryTransform.DISTANCE.
-            return "absdist";
         } else if (transform.isDynamic()) {
             return "dynamicteaser";
         } else {
@@ -153,9 +150,7 @@ public class SummaryClass extends Derived {
         if (summaryField.getTransform() == SummaryTransform.ATTRIBUTE ||
                 (summaryField.getTransform() == SummaryTransform.ATTRIBUTECOMBINER && summaryField.hasExplicitSingleSource()) ||
                 summaryField.getTransform() == SummaryTransform.COPY ||
-                summaryField.getTransform() == SummaryTransform.DISTANCE || // unreachable in practice, see SummaryTransform.DISTANCE
                 summaryField.getTransform() == SummaryTransform.GEOPOS ||
-                summaryField.getTransform() == SummaryTransform.POSITIONS || // unreachable in practice, see SummaryTransform.POSITIONS
                 summaryField.getTransform() == SummaryTransform.TOKENS ||
                 summaryField.getTransform() == SummaryTransform.ATTRIBUTE_TOKENS)
         {

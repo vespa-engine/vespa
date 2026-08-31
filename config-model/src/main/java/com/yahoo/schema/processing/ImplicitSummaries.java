@@ -131,22 +131,6 @@ public class ImplicitSummaries extends Processor {
 
     // Returns whether this is valid. Warns if invalid and ignorable. Throws if not ignorable.
     private boolean isValid(SummaryField summaryField, Schema schema, boolean validate) {
-        // DISTANCE/POSITIONS transforms are unreachable in practice, see SummaryTransform.
-        if (summaryField.getTransform() == SummaryTransform.DISTANCE ||
-            summaryField.getTransform() == SummaryTransform.POSITIONS) {
-            int sourceCount = summaryField.getSourceCount();
-            if (validate && sourceCount != 1) {
-                throw newProcessException(schema.getName(), summaryField.getName(),
-                                          "Expected 1 source field, got " + sourceCount + ".");
-            }
-            String sourceName = summaryField.getSingleSource();
-            if (validate && schema.getAttribute(sourceName) == null) {
-                throw newProcessException(schema.getName(), summaryField.getName(),
-                                          "Summary source attribute '" + sourceName + "' not found.");
-            }
-            return true;
-        }
-
         String fieldName = summaryField.getSourceField();
         SDField sourceField = schema.getConcreteField(fieldName);
         if (validate && sourceField == null) {
