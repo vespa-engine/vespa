@@ -1041,6 +1041,13 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.CommerceDiscoverySchemaProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [ "public", "interface", "abstract" ],
+    "methods" : [ "public abstract java.util.List schemas(com.yahoo.config.application.api.ApplicationPackage)" ],
+    "fields" : [ ]
+  },
   "com.yahoo.config.model.api.ConfigChangeAction$Type" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],
