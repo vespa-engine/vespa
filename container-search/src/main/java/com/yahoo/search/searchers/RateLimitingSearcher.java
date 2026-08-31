@@ -20,7 +20,6 @@ import com.yahoo.search.searchchain.Execution;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A simple rate limiter.
@@ -88,9 +87,6 @@ public class RateLimitingSearcher extends Searcher {
      */
     private final double capacityIncrement;
 
-    /** How often to check for new capacity if we have run out */
-    private final double recheckForCapacityProbability;
-
     @Inject
     public RateLimitingSearcher(RateLimitingConfig rateLimitingConfig, ClusterInfoConfig clusterInfoConfig, MetricReceiver metric) {
         this(rateLimitingConfig, clusterInfoConfig, metric, Clock.systemUTC());
@@ -102,7 +98,6 @@ public class RateLimitingSearcher extends Searcher {
                                 MetricReceiver metric,
                                 Clock clock) {
         this.capacityIncrement = rateLimitingConfig.capacityIncrement();
-        this.recheckForCapacityProbability = rateLimitingConfig.recheckForCapacityProbability();
         this.availableCapacity = new AvailableCapacity(rateLimitingConfig.maxAvailableCapacity(), clock);
         this.localRate = rateLimitingConfig.localRate();
 
@@ -131,11 +126,8 @@ public class RateLimitingSearcher extends Searcher {
         if (allocatedCapacity.get().get(id) == null) // new id in this thread
             requestCapacity(id, rate);
 
-        // Check if there is capacity available. Cannot check for exact cost as it may be computed after execution
-        // no capacity means we're over rate. Only recheck occasionally to limit synchronization.
-        if (getAllocatedCapacity(id) <= 0 && ThreadLocalRandom.current().nextDouble() < recheckForCapacityProbability) {
+        if (getAllocatedCapacity(id) <= 0)
             requestCapacity(id, rate);
-        }
 
         boolean reject = rate == 0 || getAllocatedCapacity(id) <= 0;
         boolean dryRun = query.properties().getBoolean(dryRunKey, false);

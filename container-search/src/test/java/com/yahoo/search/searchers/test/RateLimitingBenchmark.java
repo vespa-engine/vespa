@@ -56,12 +56,10 @@ public class RateLimitingBenchmark {
         /* Defaults:
         rateLimitingConfig.maxAvailableCapacity(10000);
         rateLimitingConfig.capacityIncrement(1000);
-        rateLimitingConfig.recheckForCapacityProbability(0.001);
         */
 
         rateLimitingConfig.maxAvailableCapacity(10000);
         rateLimitingConfig.capacityIncrement(1000);
-        rateLimitingConfig.recheckForCapacityProbability(0.001);
 
         ClusterInfoConfig.Builder clusterInfoConfig = new ClusterInfoConfig.Builder();
         clusterInfoConfig.clusterId("testCluster");
