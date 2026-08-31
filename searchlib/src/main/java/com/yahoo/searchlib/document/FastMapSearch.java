@@ -29,4 +29,11 @@ public class FastMapSearch {
         return fieldName + "$keyvalue";
     }
 
+    /**
+     * Combine key and value with separator. Expecting key and value to already be encoded.
+     */
+    public static String toKeyValueTerm(String encodedKey, String encodedValue) {
+        return encodedKey + keyValueSeparator() + encodedValue;
+    }
+
 }
