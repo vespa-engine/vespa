@@ -125,6 +125,13 @@ void ClosestTest::assert_closest(const Labels& labels, const std::string& featur
     assert_closest(labels, feature_name, "[1,10]", exp_specs[1]);
 }
 
+// This avoids GTest fallback printing trying to hex-dump all sizeof(TestParam) bytes,
+// which includes _padding bytes_ that by definition are not initialized. This causes
+// Valgrind to scream into the night. See https://github.com/google/googletest/issues/3805
+void PrintTo(const TestParam& p, std::ostream* os) {
+    *os << p.to_test_name();
+}
+
 namespace {
 struct MyPrintTestParams {
     std::string operator()(const testing::TestParamInfo<TestParam>& info) const { return info.param.to_test_name(); }
