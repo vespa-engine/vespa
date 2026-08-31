@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -84,7 +83,6 @@ class TritonOnnxRuntimeTest {
     void load_model_with_batching() throws IOException {
         var opts = optsBuilder
                 .setBatchingMaxSize(10)
-                .setBatchingMaxDelay(Duration.ofMillis(100))
                 .build();
         assertLoadModel("src/test/triton/config_with_batching.pbtxt", opts);
     }
