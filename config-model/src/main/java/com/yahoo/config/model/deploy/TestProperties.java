@@ -86,6 +86,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean failWhenConfiguringIndexedMapOfArray = true;
     private boolean fastMapSearch = false;
     private boolean relaxStrictlyIncreasingClusterStateVersions = false;
+    private boolean commerceDiscovery = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -149,6 +150,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
     @Override public boolean fastMapSearch() { return fastMapSearch; }
     @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return relaxStrictlyIncreasingClusterStateVersions; }
+    @Override public boolean commerceDiscovery() { return commerceDiscovery; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -382,6 +384,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties relaxStrictlyIncreasingClusterStateVersions(boolean value) {
         this.relaxStrictlyIncreasingClusterStateVersions = value;
+        return this;
+    }
+
+    public TestProperties commerceDiscovery(boolean value) {
+        this.commerceDiscovery = value;
         return this;
     }
 
