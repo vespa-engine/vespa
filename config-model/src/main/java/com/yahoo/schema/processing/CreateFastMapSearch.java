@@ -56,7 +56,15 @@ public class CreateFastMapSearch extends Processor {
             if (!shouldCreateFastMapAttribute(field)) {
                 continue;
             }
-            SDField keyValueField = createFastMapField(field, FastMapSearch.toKeyValueFieldName(field.getName()), validate);
+
+            String fieldName = FastMapSearch.toKeyValueFieldName(field.getName());
+            // Inheritance: there is a parent that has already made the attribute.
+            var existing = schema.getConcreteField(fieldName);
+            if (existing != null && existing.isInternalField()) {
+                continue;
+            }
+
+            SDField keyValueField = createFastMapField(field, fieldName, validate);
             schema.addExtraField(keyValueField);
             schema.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, keyValueField.getName());
         }
