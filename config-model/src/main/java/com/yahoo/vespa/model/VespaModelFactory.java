@@ -14,6 +14,7 @@ import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.CommerceDiscoverySchemaProvider;
 import com.yahoo.config.model.api.ConfigModelPlugin;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
@@ -57,12 +58,14 @@ public class VespaModelFactory implements ModelFactory {
     private final Version version;
     private final List<Validator> additionalValidators;
     private final Optional<SidecarProvider> sidecarProvider;
+    private final Optional<CommerceDiscoverySchemaProvider> commerceDiscoverySchemaProvider;
 
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<Validator> additionalValidators,
                              ComponentRegistry<SidecarProvider> sidecarProviders,
+                             ComponentRegistry<CommerceDiscoverySchemaProvider> commerceDiscoverySchemaProviders,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
@@ -75,6 +78,10 @@ public class VespaModelFactory implements ModelFactory {
             throw new IllegalStateException("At most one sidecar provider may be registered, got " + sidecarProviders.allComponents());
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.sidecarProvider = sidecarProviders.allComponents().stream().findFirst();
+        if (commerceDiscoverySchemaProviders.allComponents().size() > 1)
+            throw new IllegalStateException("At most one commerce discovery schema provider may be registered, got " +
+                                            commerceDiscoverySchemaProviders.allComponents());
+        this.commerceDiscoverySchemaProvider = commerceDiscoverySchemaProviders.allComponents().stream().findFirst();
         this.modelImporters = List.of(
                 new VespaImporter(),
                 new OnnxImporter(),
@@ -90,7 +97,7 @@ public class VespaModelFactory implements ModelFactory {
     protected VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                                 ComponentRegistry<Validator> additionalValidators,
                                 Zone zone) {
-        this(pluginRegistry, additionalValidators, new ComponentRegistry<>(), zone);
+        this(pluginRegistry, additionalValidators, new ComponentRegistry<>(), new ComponentRegistry<>(), zone);
     }
 
     // For testing only
@@ -110,6 +117,7 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = List.of();
         this.additionalValidators = List.of();
         this.sidecarProvider = Optional.empty();
+        this.commerceDiscoverySchemaProvider = Optional.empty();
         this.zone = zone;
         this.clock = clock;
     }
@@ -210,6 +218,9 @@ public class VespaModelFactory implements ModelFactory {
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
             .onnxModelCost(modelContext.onnxModelCost());
         sidecarProvider.ifPresent(builder::sidecarProvider);
+        if (modelContext.properties().hostedVespa() && modelContext.properties().featureFlags().commerceDiscovery())
+            commerceDiscoverySchemaProvider.ifPresent(provider ->
+                    builder.additionalSchemas(provider.schemas(modelContext.applicationPackage())));
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);

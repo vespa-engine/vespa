@@ -7,6 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.io.reader.NamedReader;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
@@ -346,6 +347,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<ValidationOverrides> validationOverrides = Optional.empty();
         private OnnxModelCost onnxModelCost = OnnxModelCost.disabled();
         private Optional<SidecarProvider> sidecarProvider = Optional.empty();
+        private List<NamedReader> additionalSchemas = List.of();
 
         public Builder() {}
 
@@ -470,6 +472,11 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder additionalSchemas(List<NamedReader> schemas) {
+            this.additionalSchemas = List.copyOf(schemas);
+            return this;
+        }
+
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -478,9 +485,10 @@ public class DeployState implements ConfigDefinitionStore {
             if (queryProfiles == null)
                 queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
-            Application application = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
-                                                             rankProfileRegistry, queryProfiles.getRegistry())
-                    .build(! validationParameters.ignoreValidationErrors());
+            ApplicationBuilder applicationBuilder = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
+                                                                            rankProfileRegistry, queryProfiles.getRegistry());
+            additionalSchemas.forEach(applicationBuilder::addSchema);
+            Application application = applicationBuilder.build(! validationParameters.ignoreValidationErrors());
             return new DeployState(application,
                                    rankProfileRegistry,
                                    fileRegistry,
