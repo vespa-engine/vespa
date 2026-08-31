@@ -40,13 +40,13 @@ public class SummaryStructFieldSelectValidator extends Processor {
     private static final String VALUE = "value";
 
     /**
-     * Must a selection from a map of primitive type to primitive type name both the key and the value?
-     * That is the only selection which gives a map back, but it is also the full set of names which can be
-     * selected for such a field, so requiring it would leave the selection with nothing to say. It is
-     * therefore not required: naming only the key, or only the value, gives an array of objects holding
-     * just that sub-field. Set this to true (and drop the tests covering it) to disallow that again.
+     * For now a selection from a map of primitive type to primitive type must name both the key and the
+     * value, since that is the only shape which gives a map back. This makes such a selection pointless,
+     * as it can then only be the full set of names which can be selected for such a field. Set this to
+     * false (and drop the tests covering it) to allow naming only the key, or only the value, which gives
+     * an array of objects holding just that sub-field.
      */
-    private static final boolean PRIMITIVE_MAP_SELECTION_MUST_BE_KEY_AND_VALUE = false;
+    private static final boolean PRIMITIVE_MAP_SELECTION_MUST_BE_KEY_AND_VALUE = true;
 
     /**
      * For now a selection from a map of primitive type to struct must name the key and at least one
