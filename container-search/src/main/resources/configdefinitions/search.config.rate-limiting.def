@@ -11,10 +11,7 @@ capacityIncrement double default=1000
 # A good number may be capacityIncrement * 10
 maxAvailableCapacity double default=10000
 
-# The probability per request that we check for more quota when we have run out.
-# A higher number means less probability of rejecting a request unnecessarily
-# but also more thread contention.
-# A good number may be 1 / (maxAvailableCapacity * average-cost)
+# Deprecated and ignored, will be removed on Vespa 9
 recheckForCapacityProbability double default=0.001
 
 # Set to true to interpret the rate.quota given in the query as a node-local value
