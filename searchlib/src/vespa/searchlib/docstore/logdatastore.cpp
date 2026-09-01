@@ -99,12 +99,12 @@ LogDataStore::LogDataStore(vespalib::Executor& executor, const std::string& dirN
       _last_name_id(0),
       _frozen_prev_modification_time(),
       _frozen_prev_persisted_serial_num(0) {
-    // Reserve space for 1TB summary in order to avoid locking.
+    // Reserve space for 2TB summary in order to avoid locking.
     // Even if we have reserved 16 bits for file id there is no chance that we will even get close to that.
-    // Size of files grows with disk size, so 8k files should be more than sufficient.
+    // Size of files grows with disk size, so 16k files should be more than sufficient.
     // File ids are reused so there should be no chance of running empty.
     static_assert(LidInfo::getFileIdLimit() == 65536u);
-    _fileChunks.reserve(8_Ki);
+    _fileChunks.reserve(16_Ki);
 
     preload();
     updateLidMap(getLastFileChunkDocIdLimit());
