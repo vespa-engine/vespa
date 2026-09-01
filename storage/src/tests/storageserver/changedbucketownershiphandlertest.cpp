@@ -148,10 +148,6 @@ void ChangedBucketOwnershipHandlerTest::SetUp() {
 
 namespace {
 
-template <typename Set, typename K> bool has(const Set& s, const K& key) {
-    return s.find(key) != s.end();
-}
-
 template <typename Vec> bool hasAbortedAllOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v) {
     for (auto& b : v) {
         if (!cmd->shouldAbort(makeDocumentBucket(b))) {
