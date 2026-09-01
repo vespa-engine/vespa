@@ -52,6 +52,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.DocumentIdExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExactExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionValueExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExpressionList;
@@ -260,6 +261,7 @@ TOKEN :
     <EMBED: "embed"> |
     <GENERATE: "generate"> |
     <EXACT: "exact"> |
+    <EXHEX8_ENCODE: "exhex8encode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
     <GET_FIELD: "get_field"> |
@@ -417,6 +419,7 @@ Expression value() :
       val = generateExp()           |
       val = exactExp()              |
       val = executionValueExp()     |
+      val = exHex8EncodeExp()       |
       val = flattenExp()            |
       val = forEachExp()            |
       val = getFieldExp()           |
@@ -556,6 +559,12 @@ Expression exactExp() :
 {
     ( <EXACT> [ config = annotatorConfig() ] )
     { return new ExactExpression(config); }
+}
+
+Expression exHex8EncodeExp() : { }
+{
+    ( <EXHEX8_ENCODE> )
+    { return new ExcessHex8EncodeExpression(); }
 }
 
 Expression flattenExp() : { }
