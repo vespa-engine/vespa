@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-08-28
+Last updated: 2026-09-01
 
 ---
 
@@ -826,6 +826,15 @@ Last updated: 2026-08-28
 ## org.eclipse.lsp4j 0.24.0 — Eclipse 2.0
 
 - Homepage: <https://github.com/eclipse-lsp4j/lsp4j>
+
+---
+
+## org.jsoup 1.23.2 — MIT
+
+- Homepage: <https://jsoup.org/>
+- Copyright 2009-2026 Jonathan Hedley <https://jsoup.org/>
+- Copyright 2009-2026 a href
+- Jonathan Hedley
 
 ---
 
