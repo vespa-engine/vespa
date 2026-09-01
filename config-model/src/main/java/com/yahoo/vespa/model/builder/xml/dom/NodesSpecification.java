@@ -125,7 +125,8 @@ public class NodesSpecification {
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
                                      CloudAccount cloudAccount,
                                      CloudResourceTags cloudResourceTags,
-                                     List<AzName> availabilityZones) {
+                                     List<AzName> availabilityZones,
+                                     DeployState deployState) {
         var resolvedElement = resolveElement(nodesElement);
         var resourceConstraints = toResourceConstraints(resolvedElement);
         var maxCostFactor = resolvedElement.optionalChild("resources")
@@ -141,7 +142,7 @@ public class NodesSpecification {
                                       resolvedElement.booleanAttribute("required", false),
                                       canFail,
                                       resolvedElement.booleanAttribute("exclusive", false),
-                                      dockerImageToUse(resolvedElement, dockerImageRepo),
+                                      dockerImageToUse(resolvedElement, dockerImageRepo, deployState),
                                       cloudAccount,
                                       cloudResourceTags,
                                       availabilityZones,
@@ -195,7 +196,8 @@ public class NodesSpecification {
                       context.getDeployState().getWantedDockerImageRepo(),
                       context.getDeployState().getProperties().getCloudAccount(),
                       context.getDeployState().getProperties().cloudResourceTags(),
-                      context.availabilityZones());
+                      context.availabilityZones(),
+                      context.getDeployState());
     }
 
     /**
@@ -215,7 +217,8 @@ public class NodesSpecification {
                                   context.getDeployState().getWantedDockerImageRepo(),
                                   context.getDeployState().getProperties().getCloudAccount(),
                                   context.getDeployState().getProperties().cloudResourceTags(),
-                                  context.availabilityZones()));
+                                  context.availabilityZones(),
+                                  context.getDeployState()));
     }
 
     /** Returns a requirement from <code>count</code> non-dedicated nodes in one group. */
@@ -290,6 +293,7 @@ public class NodesSpecification {
     public ClusterResources maxResources() { return max; }
     public IntRange groupSize() { return groupSize; }
     public double maxCostFactor() { return maxCostFactor; }
+    public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     /**
      * Returns whether this requires dedicated nodes.
@@ -499,9 +503,13 @@ public class NodesSpecification {
         return new IllegalArgumentException("referenced service '" + referenceId + "' is not defined");
     }
 
-    private static Optional<DockerImage> dockerImageToUse(ModelElement nodesElement, Optional<DockerImage> dockerImage) {
+    private static Optional<DockerImage> dockerImageToUse(ModelElement nodesElement, Optional<DockerImage> dockerImage, DeployState deployState) {
         String dockerImageFromElement = nodesElement.stringAttribute("docker-image");
-        return dockerImageFromElement == null ? dockerImage : Optional.of(DockerImage.fromString(dockerImageFromElement));
+        if (dockerImageFromElement == null) return dockerImage;
+        var system = deployState.zone().system();
+        if (deployState.isHosted() && (system.isPublicCloudLike() || system.isKubernetesLike()))
+            throw new IllegalArgumentException("Specifying 'docker-image' on <nodes> is not supported in Vespa Cloud");
+        return Optional.of(DockerImage.fromString(dockerImageFromElement));
     }
 
     /** Parses a value ("value") or value range ("[min-value, max-value]") */
