@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 
 #include <algorithm>
+#include <iterator>
 #include <span>
 
 using search::common::ElementIds;

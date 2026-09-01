@@ -8,6 +8,7 @@
 
 #include <cctype>
 #include <climits>
+#include <cstdlib>
 
 namespace vespalib {
 

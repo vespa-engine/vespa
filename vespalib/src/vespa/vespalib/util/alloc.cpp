@@ -14,6 +14,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <cstdlib>
 #include <map>
 #include <mutex>
 #include <system_error>

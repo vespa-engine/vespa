@@ -10,6 +10,7 @@
 #include "result.h"
 
 #include <cassert>
+#include <cstdlib>
 #include <vector>
 
 #include <vespa/log/log.h>
