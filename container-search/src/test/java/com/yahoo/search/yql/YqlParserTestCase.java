@@ -15,6 +15,7 @@ import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
@@ -571,12 +572,26 @@ public class YqlParserTestCase {
         assertEquals("ints", se.getFieldName());
         assertEquals(List.of(1), se.getElementFilter());
         assertEquals(1, se.getItemCount());
+        IntItem intValue = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("2", intValue.getNumber());
 
+        // Doubles are also numeric equality terms.
+        qt = parse("select * from sources * where doubles[0] = 1.5");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("doubles", se.getFieldName());
+        assertEquals(List.of(0), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+        IntItem doubleValue = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("1.5", doubleValue.getNumber());
+
+        // Booleans have no typed item form and become word terms, not TrueItem/FalseItem.
         qt = parse("select * from sources * where bools[0] = true");
         se = (SameElementItem) qt.getRoot();
         assertEquals("bools", se.getFieldName());
         assertEquals(List.of(0), se.getElementFilter());
         assertEquals(1, se.getItemCount());
+        WordItem boolValue = assertInstanceOf(WordItem.class, se.getItem(0));
+        assertEquals("true", boolValue.getWord());
     }
 
     @Test
@@ -585,17 +600,31 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where my_map{'foo'} contains 'bar'",
                     "my_map:{key:foo value:bar}");
 
-        // Numeric values use '=', as for plain fields, and are converted to string as in the indexed access rewrite.
+        // Numeric values use '=', as for plain fields, and become numeric equality terms.
         assertParse("select * from sources * where my_map{'foo'} = 10",
                     "my_map:{key:foo value:10}");
+        assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{'foo'} = 10").getRoot()).getItem(1));
 
-        // Numeric keys are converted to string, for maps with numeric key types.
+        // Numeric keys become numeric equality terms, for maps with numeric key types.
         assertParse("select * from sources * where my_map{1} contains 'bar'",
                     "my_map:{key:1 value:bar}");
+        assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{1} contains 'bar'").getRoot()).getItem(0));
+
+        // Boolean values have no typed item form and become word terms.
+        assertParse("select * from sources * where my_map{'foo'} = true",
+                    "my_map:{key:foo value:true}");
+        assertInstanceOf(WordItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{'foo'} = true").getRoot()).getItem(1));
 
         // The rewritten tree serializes and re-parses to the same tree.
         assertCanonicalParse("select * from sources * where my_map{'foo'} contains 'bar'",
                              "my_map:{key:foo value:bar}");
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = 10",
+                             "my_map:{key:foo value:10}");
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = true",
+                             "my_map:{key:foo value:true}");
     }
 
     @Test

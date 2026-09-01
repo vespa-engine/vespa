@@ -442,8 +442,6 @@ public class YqlParser implements Parser {
             throw newUnexpectedArgumentException(index, ExpressionOperator.LITERAL);
         }
 
-        // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
-        value = toLiteralString(value);
         int elementIndex = convertToElementId(index.getArgument(0));
         OperatorNode<ExpressionOperator> sameElement = OperatorNode.create(
                 ast.getLocation(),
@@ -461,6 +459,8 @@ public class YqlParser implements Parser {
      *      field{'key'} = value            (numeric values)
      * to:
      *      field contains sameElement(key contains 'key', value contains value)
+     * where a numeric key or value becomes an equality match (key = 'key', value = value)
+     * instead of a contains match, preserving its type.
      * <p>
      * Expected input: CONTAINS( MAPREF ( field_name, key ), value ) or EQ( MAPREF ( field_name, key ), value )
      */
@@ -481,20 +481,8 @@ public class YqlParser implements Parser {
             throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
         }
 
-        // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
-        key = toLiteralString(key);
-        value = toLiteralString(value);
-
-        OperatorNode<ExpressionOperator> keyMatch = OperatorNode.create(
-                ast.getLocation(),
-                ExpressionOperator.CONTAINS,
-                OperatorNode.create(lhs.getLocation(), ExpressionOperator.READ_FIELD, "", "key"),
-                key);
-        OperatorNode<ExpressionOperator> valueMatch = OperatorNode.create(
-                ast.getLocation(),
-                ExpressionOperator.CONTAINS,
-                OperatorNode.create(lhs.getLocation(), ExpressionOperator.READ_FIELD, "", "value"),
-                value);
+        OperatorNode<ExpressionOperator> keyMatch = makeMapComponentMatch("key", key);
+        OperatorNode<ExpressionOperator> valueMatch = makeMapComponentMatch("value", value);
         OperatorNode<ExpressionOperator> sameElement = OperatorNode.create(
                 ast.getLocation(),
                 ExpressionOperator.CALL,
@@ -504,7 +492,27 @@ public class YqlParser implements Parser {
         return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
     }
 
-    // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
+    /**
+     * Builds the match condition for the key or value component of a map entry.
+     * The map access sugar has no operator per component, so the literal's type must decide
+     * it here: numeric literals become equality matches (numeric terms), everything else
+     * becomes contains matches, on string form since contains requires a string literal.
+     */
+    private static OperatorNode<ExpressionOperator> makeMapComponentMatch(String component, OperatorNode<ExpressionOperator> term) {
+        OperatorNode<ExpressionOperator> componentField =
+                OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
+        if (isNumberLiteral(term)) {
+            return OperatorNode.create(term.getLocation(), ExpressionOperator.EQ, componentField, term);
+        }
+        return OperatorNode.create(term.getLocation(), ExpressionOperator.CONTAINS, componentField, toLiteralString(term));
+    }
+
+    /** Returns true if ast is a number literal. */
+    private static boolean isNumberLiteral(OperatorNode<ExpressionOperator> ast) {
+        return ast.getOperator() == ExpressionOperator.LITERAL && ast.getArgument(0) instanceof Number;
+    }
+
+    /** Converts non-string literals which have no typed item form, such as booleans, to string literals. */
     private static OperatorNode<ExpressionOperator> toLiteralString(OperatorNode<ExpressionOperator> ast) {
         if (ast.getOperator() == ExpressionOperator.LITERAL && !(ast.getArgument(0) instanceof String)) {
             return OperatorNode.create(ast.getLocation(), ExpressionOperator.LITERAL, ast.getArgument(0).toString());
@@ -663,14 +671,19 @@ public class YqlParser implements Parser {
 
     private Item buildLiteralOrNested(OperatorNode<ExpressionOperator> ast, String currentField) {
         var literalOrNested = ast.getArgument(0);
+        if (currentField != null) {
+            // A bare literal inside sameElement is a term matching the element value:
+            // numbers become numeric equality terms, everything else word terms on string form.
+            if (literalOrNested instanceof Number number) {
+                return (Item)leafStyleSettings(ast, new IntItem(number.toString(), ""));
+            }
+            return instantiateWordItem("", toLiteralString(ast), null);
+        }
         if (Boolean.TRUE.equals(literalOrNested)) {
             return new TrueItem();
         }
         else if (Boolean.FALSE.equals(literalOrNested)) {
             return new FalseItem();
-        }
-        else if (currentField != null) {
-            return instantiateWordItem("", ast, null);
         }
         throw newUnexpectedArgumentException(literalOrNested, ExpressionOperator.LITERAL);
     }
