@@ -270,16 +270,6 @@ int countUnfilledEntries(const std::vector<api::ApplyBucketDiffCommand::Entry>& 
     return std::count_if(diff.begin(), diff.end(), [](auto& e) { return !e.filled(); });
 };
 
-/**
- * Get the smallest value that is dividable by blocksize, but is not
- * smaller than value.
- */
-template <typename T> T align(T value, uint32_t blocksize) {
-    value += blocksize - 1;
-    value -= value % blocksize;
-    return value;
-}
-
 api::StorageMessageAddress createAddress(const std::string* clusterName, uint16_t node) {
     return api::StorageMessageAddress::create(clusterName, lib::NodeType::STORAGE, node);
 }

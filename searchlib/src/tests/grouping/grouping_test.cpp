@@ -293,12 +293,6 @@ template <typename T> ExpressionNode::UP createAggr(ExpressionNode::UP e) {
     return aggr;
 }
 
-template <typename T> ExpressionNode::UP createAggr(SingleResultNode::UP r, ExpressionNode::UP e) {
-    std::unique_ptr<T> aggr = MU<T>(std::move(r));
-    aggr->setExpression(std::move(e));
-    return aggr;
-}
-
 template <typename T> ExpressionNode::UP createNumAggr(NumericResultNode::UP r, ExpressionNode::UP e) {
     std::unique_ptr<T> aggr = MU<T>(std::move(r));
     aggr->setExpression(std::move(e));

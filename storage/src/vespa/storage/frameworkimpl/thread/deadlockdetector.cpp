@@ -228,12 +228,6 @@ struct ThreadStatusWriter : DeadLockDetector::ThreadVisitor {
 
     ThreadStatusWriter(ThreadTable& table, vespalib::steady_time time) : _table(table), _time(time) {}
 
-    template <typename T> std::string toS(const T& val) {
-        vespalib::asciistream ost;
-        ost << val;
-        return ost.str();
-    }
-
     void visitThread(const framework::Thread& thread, DeadLockDetector::State& /*state*/) override {
         _table._table.addRow(thread.getId());
         uint32_t    i = _table._table.getRowCount() - 1;
