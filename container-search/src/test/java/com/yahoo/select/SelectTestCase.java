@@ -12,6 +12,7 @@ import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
+import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.PhraseItem;
@@ -808,6 +809,7 @@ public class SelectTestCase {
         var intTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}");
         var intSameElement = assertInstanceOf(SameElementItem.class, intTree.getRoot());
         assertEquals(List.of(0), intSameElement.getElementFilter());
+        assertInstanceOf(IntItem.class, intSameElement.getItem(0));
 
         // String value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 1, \"value\": \"hello\" }}",
