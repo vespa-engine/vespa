@@ -3,7 +3,9 @@
 
 if test -x /usr/bin/setarch
 then
-    setarch $(arch) -R ${VALGRIND} ./searchlib_verify_feature_test_app
+    # shellcheck disable=SC2086
+    setarch "$(arch)" -R ${VALGRIND} ./searchlib_verify_feature_test_app
 else
+    # shellcheck disable=SC2086
     ${VALGRIND} ./searchlib_verify_feature_test_app
 fi
