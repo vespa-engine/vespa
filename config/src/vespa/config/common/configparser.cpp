@@ -8,6 +8,7 @@
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
+#include <cstdlib>
 #include <string>
 
 namespace config {

@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <charconv>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.shared_string_repo");

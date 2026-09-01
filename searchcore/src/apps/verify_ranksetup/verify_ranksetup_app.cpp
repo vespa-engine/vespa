@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/signalhandler.h>
 
+#include <cstdlib>
 #include <cstring>
 
 #include <vespa/log/log.h>

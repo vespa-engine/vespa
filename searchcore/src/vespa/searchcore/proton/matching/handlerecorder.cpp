@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 
 using search::fef::MatchData;
 using search::fef::MatchDataDetails;

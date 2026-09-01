@@ -8,6 +8,7 @@
 #include <vespa/juniper/query_item.h>
 
 #include <cassert>
+#include <cstdlib>
 #include <vector>
 
 #include <vespa/log/log.h>
