@@ -24,6 +24,10 @@ public class FastMapSearchTest {
     public void testToKeyValueTerm() {
         assertEquals("key" + FastMapSearch.keyValueSeparator() + "value",
                      FastMapSearch.toKeyValueTerm("key", "value"));
+        assertEquals("key" + FastMapSearch.keyValueSeparator() + "8000002a",
+                     FastMapSearch.toKeyValue8Term("key", 42));
+        assertEquals("key" + FastMapSearch.keyValueSeparator() + "800000000000002a",
+                     FastMapSearch.toKeyValue16Term("key", (long) 42));
     }
 
 }
