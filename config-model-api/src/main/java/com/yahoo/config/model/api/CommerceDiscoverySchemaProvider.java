@@ -10,7 +10,8 @@ import java.util.List;
  * Provides the platform-owned Vespa Commerce Discovery schemas. Consulted for every application
  * built in hosted Vespa when the {@code commerce-discovery} feature flag is enabled for the
  * application — whether the application uses the {@code <commerce-discovery>} services.xml
- * element is for the implementation to decide. At most one provider may be registered.
+ * element is not checked by the caller. Provider implementations must detect it from the
+ * application package. At most one provider may be registered.
  *
  * @author sebasabe
  */
