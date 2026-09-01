@@ -6,6 +6,7 @@ import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.prelude.query.WordItem;
 import org.junit.jupiter.api.Test;
 
