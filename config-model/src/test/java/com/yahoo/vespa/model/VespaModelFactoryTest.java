@@ -141,8 +141,25 @@ public class VespaModelFactoryTest {
         };
     }
 
+    /** Self-hosted has no builder for the element; the error must say Vespa Cloud is required. */
     @Test
-    /** Lock in feature flag and hosted as gating for schema providers for now */
+    void commerceDiscoveryWithoutABuilderFailsWithATailoredMessage() {
+        var services = """
+                <services version="1.0">
+                    <commerce-discovery version="1.0"/>
+                </services>""";
+        Throwable exception = assertThrows(IllegalArgumentException.class, () ->
+                VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
+                    @Override
+                    public ApplicationPackage applicationPackage() {
+                        return new MockApplicationPackage.Builder().withServices(services).build();
+                    }
+                }));
+        assertTrue(exception.getMessage().contains("requires Vespa Cloud"), exception.getMessage());
+    }
+
+    /** Lock in feature flag and hosted as gating for schema providers for now. */
+    @Test
     void commerceDiscoverySchemaProviderIsConsultedOnlyInHostedVespaWithTheFlagEnabled() {
         assertFalse(schemaProviderConsulted(false, false));
         assertFalse(schemaProviderConsulted(true, false));
