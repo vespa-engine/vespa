@@ -28,7 +28,7 @@ public class FastMapSearcherTest {
     @Test
     public void requireWordItemMadeCorrectly() {
         FastMapSearcher searcher = new FastMapSearcher();
-        var word = searcher.makeFastMapSearchWordItem("foo", "bar", "baz");
+        var word = searcher.makeWord("foo", "bar", "baz");
 
         var arr = word.getWord().toCharArray();
         assertEquals('f', arr[0]);
@@ -71,7 +71,7 @@ public class FastMapSearcherTest {
 
     @Test
     public void requireIntValueEncodedInExcessHex() {
-        String expected = "intvaluemap$keyvalue:foo" + FastMapSearch.keyValueSeparator() + FastMapSearch.encodeInt(10);
+        String expected = "intvaluemap$keyvalue:" + FastMapSearch.toKeyValue8Term("foo", 10);
 
         // The value arrives as an IntItem
         assertRewritten(expected, sameElement("intvaluemap", new WordItem("foo", "key"), new IntItem("10", "value")));
@@ -80,14 +80,8 @@ public class FastMapSearcherTest {
         assertRewritten(expected, sameElement("intvaluemap", new WordItem("foo", "key"), new WordItem("10", "value")));
 
         // Negative values encode across zero
-        assertRewritten("intvaluemap$keyvalue:foo" + FastMapSearch.keyValueSeparator() + FastMapSearch.encodeInt(-3),
+        assertRewritten("intvaluemap$keyvalue:" + FastMapSearch.toKeyValue8Term("foo", -3),
                         sameElement("intvaluemap", new WordItem("foo", "key"), new IntItem("-3", "value")));
-    }
-
-    @Test
-    public void requireIntKeyEncodedInExcessHex() {
-        assertRewritten("intkeymap$keyvalue:" + FastMapSearch.encodeInt(7) + FastMapSearch.keyValueSeparator() + "bar",
-                        sameElement("intkeymap", new IntItem("7", "key"), new WordItem("bar", "value")));
     }
 
     @Test

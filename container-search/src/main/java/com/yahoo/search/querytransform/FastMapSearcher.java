@@ -20,7 +20,6 @@ import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.searchlib.document.FastMapSearch;
-import com.yahoo.text.Text;
 
 /**
  * When a field has fast map search enabled, this class transforms queries on
@@ -32,6 +31,8 @@ import com.yahoo.text.Text;
 @After(PhaseNames.TRANSFORMED_QUERY)
 public class FastMapSearcher extends Searcher {
 
+    private boolean hasRewritten = false;
+
     @Override
     public Result search(Query query, Execution execution) {
         var schemaInfo = execution.context().schemaInfo();
@@ -41,10 +42,13 @@ public class FastMapSearcher extends Searcher {
     }
 
     private void rewriteFastMapSearch(Query query, SchemaInfo.Session session) {
+        hasRewritten = false;
         Item root = query.getModel().getQueryTree().getRoot();
         Item possibleNewRoot = rewriteFastMapSearchVisit(root, session);
         if (root != possibleNewRoot) {
             query.getModel().getQueryTree().setRoot(possibleNewRoot);
+        }
+        if (hasRewritten) {
             query.trace("rewrote sameElement to fast-map lookup", true, 2);
         }
     }
@@ -65,6 +69,7 @@ public class FastMapSearcher extends Searcher {
             if (mapType != null) {
                 WordItem rewritten = tryMakeFastMapItem(sameElementItem, mapType);
                 if (rewritten != null) {
+                    hasRewritten = true;
                     return rewritten;
                 }
             }
@@ -92,25 +97,46 @@ public class FastMapSearcher extends Searcher {
         if (!sameElementItem.getElementFilter().isEmpty()) {
             return null; // element filter used for arrays.
         }
+
         if (sameElementItem.getItemCount() != 2) {
             return null;
         }
 
+        // resolve which is key and which is value.
         Item first = sameElementItem.getItem(0);
         Item second = sameElementItem.getItem(1);
-        TermItem key = termWithIndex("key", first, second);
-        TermItem value = termWithIndex("value", first, second);
-        if (key == null || value == null) {
+        TermItem keyItem = termWithIndex("key", first, second);
+        TermItem valueItem = termWithIndex("value", first, second);
+        if (keyItem == null || valueItem == null) {
             return null;
         }
 
-        String encodedKey = encodeExactTerm(key, mapType.keyType().kind());
-        String encodedValue = encodeExactTerm(value, mapType.valueType().kind());
-        if (encodedKey == null || encodedValue == null) {
+        // only support string keys for now.
+        if (mapType.keyType().kind() != Field.Type.Kind.STRING) {
             return null;
         }
 
-        return makeFastMapSearchWordItem(encodedKey, encodedValue, sameElementItem.getFieldName());
+        String fieldName = sameElementItem.getFieldName();
+
+        if (mapType.valueType().kind() == Field.Type.Kind.STRING) {
+            var key = getString(keyItem);
+            var value = getString(valueItem);
+            if (key == null || value == null) {
+                return null;
+            }
+            return makeWord(key, value, fieldName);
+        }
+
+        if (mapType.valueType().kind() == Field.Type.Kind.INT) {
+            var key = getString(keyItem);
+            var value = getInteger(valueItem);
+            if (key == null || value == null) {
+                return null;
+            }
+            return makeWord(key, value, fieldName);
+        }
+
+        return null;
     }
 
     /** Returns the first of the two items which is a term with the given index name, or null. */
@@ -124,40 +150,41 @@ public class FastMapSearcher extends Searcher {
         return null;
     }
 
-    /**
-     * Returns the encoded form of a term which matches exactly one key or value of the
-     * given kind, or null if the term cannot be part of a fast map lookup: A subclass of
-     * WordItem such as PrefixItem, or an int range, matches more than one exact value.
-     */
-    private static String encodeExactTerm(TermItem term, Field.Type.Kind kind) {
-        if (kind == Field.Type.Kind.STRING) {
-            if (term.getClass() == WordItem.class || term instanceof ExactStringItem) {
-                return ((WordItem) term).getWord();
-            }
-            return null;
-        }
-        if (kind == Field.Type.Kind.INT) {
-            String number;
-            if (term instanceof IntItem intItem) {
-                number = intItem.getNumber();
-            } else if (term.getClass() == WordItem.class) {
-                number = ((WordItem) term).getWord();
-            } else {
-                return null;
-            }
-            try {
-                return Text.toExcessHex8(Integer.parseInt(number.trim()));
-            } catch (NumberFormatException e) {
-                return null; // a range expression, or not an int: fall back to regular sameElement
-            }
+    /** Gets value as string or null. */
+    private String getString(TermItem term) {
+        if (term.getClass() == WordItem.class || term instanceof ExactStringItem) {
+            return ((WordItem) term).getWord();
         }
         return null;
     }
 
+    /** Gets value as integer or null. */
+    private Integer getInteger(TermItem term) {
+       String number;
+       if (term instanceof IntItem intItem) {
+           number = intItem.getNumber();
+       } else if (term.getClass() == WordItem.class) {
+           number = ((WordItem) term).getWord();
+       } else {
+           return null;
+       }
+       try {
+           return Integer.parseInt(number.trim());
+       } catch (NumberFormatException e) {
+           return null; // a range expression, or not an int: fall back to regular sameElement
+       }
+    }
+
     /** Package-private for unit testing. */
-    WordItem makeFastMapSearchWordItem(String encodedKey, String encodedValue, String fieldName) {
-        return new WordItem(FastMapSearch.toKeyValueTerm(encodedKey, encodedValue),
-                FastMapSearch.toKeyValueFieldName(fieldName), false);
+    WordItem makeWord(String key, String value, String fieldName) {
+        return new WordItem(FastMapSearch.toKeyValueTerm(key, value),
+                            FastMapSearch.toKeyValueFieldName(fieldName), false);
+    }
+
+    /** Package-private for unit testing. */
+    WordItem makeWord(String key, Integer value, String fieldName) {
+        return new WordItem(FastMapSearch.toKeyValue8Term(key, value),
+                            FastMapSearch.toKeyValueFieldName(fieldName), false);
     }
 
     /** Returns the map type of the given field if it has fast map search enabled, and null otherwise. */
