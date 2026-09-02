@@ -66,7 +66,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundStringFlag DEPLOYMENT_METRICS_CONSUMER = defineStringFlag(
-            "deployment-metrics-consumer", "Vespa",
+            "deployment-metrics-consumer", "cluster-deployment-metrics",
             List.of("hmusum"), "2026-07-10", "2026-12-01",
             "Selects which metrics-proxy consumer the config server uses when fetching " +
             "metrics for cluster deployment metrics aggregation. Valid values: Vespa, cluster-deployment-metrics",

@@ -47,7 +47,7 @@ public class DeploymentMetricsRetrieverTest {
     }
 
     @Test
-    public void defaultConsumerIsVespa() {
+    public void defaultConsumerIsClusterDeploymentMetrics() {
         MockModel mockModel = new MockModel(mockHosts());
         MockDeploymentMetricsRetriever mockMetricsRetriever = new MockDeploymentMetricsRetriever();
         Application application = new Application(mockModel, null, 0,
@@ -57,7 +57,7 @@ public class DeploymentMetricsRetrieverTest {
                 new DeploymentMetricsRetriever(mockMetricsRetriever, NodeSuspensionProvider.EMPTY, new InMemoryFlagSource());
         clusterMetricsRetriever.getMetrics(application);
 
-        assertTrue(mockMetricsRetriever.hosts.stream().allMatch(uri -> uri.getQuery().equals("consumer=Vespa")));
+        assertTrue(mockMetricsRetriever.hosts.stream().allMatch(uri -> uri.getQuery().equals("consumer=cluster-deployment-metrics")));
     }
 
     @Test
@@ -68,12 +68,12 @@ public class DeploymentMetricsRetrieverTest {
                                                   null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
         InMemoryFlagSource flagSource = new InMemoryFlagSource()
-                .withStringFlag(Flags.DEPLOYMENT_METRICS_CONSUMER.id(), "cluster-deployment-metrics");
+                .withStringFlag(Flags.DEPLOYMENT_METRICS_CONSUMER.id(), "Vespa");
         DeploymentMetricsRetriever clusterMetricsRetriever =
                 new DeploymentMetricsRetriever(mockMetricsRetriever, NodeSuspensionProvider.EMPTY, flagSource);
         clusterMetricsRetriever.getMetrics(application);
 
-        assertTrue(mockMetricsRetriever.hosts.stream().allMatch(uri -> uri.getQuery().equals("consumer=cluster-deployment-metrics")));
+        assertTrue(mockMetricsRetriever.hosts.stream().allMatch(uri -> uri.getQuery().equals("consumer=Vespa")));
     }
 
     @Test
