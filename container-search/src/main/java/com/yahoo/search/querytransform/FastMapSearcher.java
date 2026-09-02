@@ -39,13 +39,11 @@ public class FastMapSearcher extends Searcher {
         return execution.search(query);
     }
 
-    /** Package-private for unit tests. */
-    class Rewriter {
+    private class Rewriter {
 
         private boolean hasRewritten;
 
-        /** Package-private for unit tests. */
-        Rewriter() {
+        private Rewriter() {
             hasRewritten = false;
         }
 
@@ -63,10 +61,8 @@ public class FastMapSearcher extends Searcher {
 
         /**
          * Rewrite sameElement for fast map search.
-         *
-         * Package-private for unit testing.
          */
-        Item rewriteFastMapSearchVisit(Item item, SchemaInfo.Session session) {
+        private Item rewriteFastMapSearchVisit(Item item, SchemaInfo.Session session) {
             if (item == null) {
                 return null;
             }
