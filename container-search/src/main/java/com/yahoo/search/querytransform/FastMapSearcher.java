@@ -196,10 +196,7 @@ public class FastMapSearcher extends Searcher {
     /** Returns the map type of the given field if it has fast map search enabled, and null otherwise. */
     private static Field.MapFieldType fastMapSearchType(String fieldName, SchemaInfo.Session session) {
         FieldInfo info = session.fieldInfo(fieldName).orElse(null);
-        if (info == null || !info.hasFastMapSearch()) {
-            return null;
-        }
-        if (info.type() instanceof Field.MapFieldType mapType) {
+        if (info != null && info.hasFastMapSearch() && info.type() instanceof Field.MapFieldType mapType) {
             return mapType;
         }
         return null;
