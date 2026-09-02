@@ -107,7 +107,7 @@ using Terms = std::vector<Term>;
 namespace {
 
 struct Ident {
-    template <typename T> T operator()(const T& t) const noexcept { return t; }
+    template <typename T> [[maybe_unused]] T operator()(const T& t) const noexcept { return t; }
 };
 
 struct NumericOrder {
@@ -117,7 +117,8 @@ struct NumericOrder {
     ref_t operator[](size_t idx) const noexcept { return idx; }
 };
 
-template <typename F, typename Order> auto assemble(const F& f, const Order& order) -> std::vector<decltype(f(0))> {
+template <typename F, typename Order> [[maybe_unused]] auto assemble(const F& f, const Order& order)
+    -> std::vector<decltype(f(0))> {
     std::vector<decltype(f(0))> result;
     result.reserve(order.size());
     for (size_t i = 0; i < order.size(); ++i) {
@@ -181,7 +182,7 @@ template <typename Input> struct MaxSkipOrder {
 namespace {
 
 template <typename ITR, typename F>
-std::string do_stringify(const std::string& title, ITR begin, ITR end, const F& f) {
+[[maybe_unused]] std::string do_stringify(const std::string& title, ITR begin, ITR end, const F& f) {
     std::string result = vespalib::make_string("[%s]{", title.c_str());
     for (ITR pos = begin; pos != end; ++pos) {
         if (pos != begin) {
