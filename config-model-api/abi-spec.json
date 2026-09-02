@@ -1044,8 +1044,14 @@
   "com.yahoo.config.model.api.CommerceDiscoverySchemaProvider" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
-    "attributes" : [ "public", "interface", "abstract" ],
-    "methods" : [ "public abstract java.util.List schemas(com.yahoo.config.application.api.ApplicationPackage)" ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.util.List schemas(com.yahoo.config.application.api.ApplicationPackage)"
+    ],
     "fields" : [ ]
   },
   "com.yahoo.config.model.api.ConfigChangeAction$Type" : {
@@ -1457,14 +1463,9 @@
       "public int maxContentNodeMaintenanceOpConcurrency()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag useTritonFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
-      "public int searchCoreMaxOutstandingMoveOps()",
-      "public double docprocHandlerThreadpool()",
       "public boolean requireExplicitDocprocCluster()",
-      "public boolean applyOnRestartForApplicationMetadataConfig()",
-      "public java.util.OptionalInt metricsProxyHeapSizeInMib()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
-      "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
       "public double searchNodeReservedMemoryFactor()",
       "public boolean forceDisableOnnxModelOptimization()",
       "public boolean failWhenConfiguringIndexedMapOfArray()",
@@ -1748,6 +1749,7 @@
       "public com.yahoo.config.model.api.OnnxModelOptions withIntraOpThreads(java.lang.Integer)",
       "public com.yahoo.config.model.api.OnnxModelOptions withGpuDevice(com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
       "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxSize(java.lang.Integer)",
+      "public java.util.Optional batchingMaxDelay()",
       "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxDelay(java.time.Duration)",
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactorType(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactor(java.lang.Double)",
@@ -1761,7 +1763,6 @@
       "public java.util.Optional intraOpThreads()",
       "public java.util.Optional gpuDevice()",
       "public java.util.Optional batchingMaxSize()",
-      "public java.util.Optional batchingMaxDelay()",
       "public java.util.Optional concurrencyFactorType()",
       "public java.util.Optional concurrencyFactor()",
       "public java.util.Optional modelConfigOverride()",
