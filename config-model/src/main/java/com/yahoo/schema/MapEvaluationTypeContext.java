@@ -315,9 +315,14 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 throw new IllegalArgumentException(reference.name() + " must have one argument");
             return Optional.of(new TensorType.Builder(TensorType.Value.FLOAT).mapped("term").build());
         }
-        if (reference.name().equals("bm25_for_labels") || reference.name().equals("matches_for_labels")) {
+        if (reference.name().equals("bm25_for_labels")) {
             if (reference.arguments().size() != 1)
                 throw new IllegalArgumentException(reference.name() + " must have one argument");
+            return Optional.of(new TensorType.Builder(TensorType.Value.FLOAT).mapped("label").build());
+        }
+        if (reference.name().equals("matches_for_labels")) {
+            if (reference.arguments().size() > 1)
+                throw new IllegalArgumentException(reference.name() + " must have zero or one argument");
             return Optional.of(new TensorType.Builder(TensorType.Value.FLOAT).mapped("label").build());
         }
         if ( ! reference.name().equals("tensorFromLabels") &&
