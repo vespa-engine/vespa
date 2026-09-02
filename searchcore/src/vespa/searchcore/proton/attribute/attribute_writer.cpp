@@ -327,7 +327,7 @@ void PutTask::run() {
     _wc.consider_build_field_paths(_doc);
     DocumentFieldExtractor field_extractor(_doc);
     const auto&            fields = _wc.getFields();
-    for (auto field : fields) {
+    for (const auto& field : fields) {
         if (_allAttributes || field.is_non_authoritative()) {
             AttributeVector& attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
