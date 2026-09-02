@@ -499,8 +499,7 @@ public class YqlParser implements Parser {
      * becomes contains matches, on string form since contains requires a string literal.
      */
     private static OperatorNode<ExpressionOperator> makeMapComponentMatch(String component, OperatorNode<ExpressionOperator> term) {
-        OperatorNode<ExpressionOperator> componentField =
-                OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
+        var componentField = OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
         if (isNumberLiteral(term)) {
             return OperatorNode.create(term.getLocation(), ExpressionOperator.EQ, componentField, term);
         }
