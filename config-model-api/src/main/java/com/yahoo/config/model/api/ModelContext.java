@@ -96,10 +96,10 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedConcurrency() { return 0.5; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int maxUnCommittedMemory() { return 130000; }
-        @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
         @ModelFeatureFlag(owners = {"onur"}) default OpenTelemetryConfiguration opentelemetrySdk() { return OpenTelemetryConfiguration.disabled(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default int heapSizePercentage(Optional<String> clusterId) { return  0;}
-        @ModelFeatureFlag(owners = {"bjorncs"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
+        @ModelFeatureFlag(owners = {"hmusum"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.75; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }

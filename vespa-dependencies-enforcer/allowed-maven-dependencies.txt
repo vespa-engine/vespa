@@ -170,6 +170,7 @@ org.apache.zookeeper:zookeeper:3.9.5
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.assertj:assertj-core:${assertj.vespa.version}
 org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}
+org.bouncycastle:bcprov-jdk18on:${bouncycastle.bcprov.vespa.version}
 org.bouncycastle:bcprov-jdk18on:${bouncycastle.vespa.version}
 org.bouncycastle:bcutil-jdk18on:${bouncycastle.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
@@ -209,7 +210,7 @@ org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin.vespa.version}
 org.jetbrains.kotlin:kotlin-stdlib:${kotlin.vespa.version}
 org.jetbrains:annotations:17.0.0
 org.json:json:${org.json.vespa.version}
-org.jspecify:jspecify:1.0.0
+org.jspecify:jspecify:${org.jspecify.vespa.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.tenant.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}
 org.junit.jupiter:junit-jupiter-engine:${junit.vespa.tenant.version}

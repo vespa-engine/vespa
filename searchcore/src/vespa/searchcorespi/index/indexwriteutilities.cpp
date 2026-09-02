@@ -5,7 +5,6 @@
 #include "indexreadutilities.h"
 
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -141,12 +140,11 @@ void IndexWriteUtilities::updateDiskIndexSchema(const std::string& indexDir, con
     if (!newSchema->saveToFile(schemaTmpName)) {
         LOG(error, "Could not save schema to '%s'", schemaTmpName.c_str());
     }
-    FastOS_StatInfo statInfo;
-    bool            statres;
-    statres = FastOS_File::Stat(schemaOrigName.c_str(), &statInfo);
-    if (!statres) {
-        if (statInfo._error != FastOS_StatInfo::FileNotFound) {
-            LOG(error, "Failed to stat orig schema '%s': %s", schemaOrigName.c_str(), getLastErrorString().c_str());
+    std::error_code ec;
+    auto            schema_orig_exists = std::filesystem::exists(std::filesystem::path(schemaOrigName), ec);
+    if (!schema_orig_exists) {
+        if (ec) {
+            LOG(error, "Failed to stat orig schema '%s': %s", schemaOrigName.c_str(), ec.message().c_str());
         }
         int linkres = ::link(schemaName.c_str(), schemaOrigName.c_str());
         if (linkres != 0) {

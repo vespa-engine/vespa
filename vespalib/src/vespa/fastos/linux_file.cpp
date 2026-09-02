@@ -32,6 +32,9 @@ using vespalib::getLastErrorString;
 const size_t FastOS_Linux_File::_directIOFileAlign = 4096;
 const size_t FastOS_Linux_File::_directIOMemAlign = 4096;
 
+FastOS_Linux_File::FastOS_Linux_File() : FastOS_Linux_File(nullptr) {
+}
+
 FastOS_Linux_File::FastOS_Linux_File(const char* filename)
     : FastOS_UNIX_File(filename), _cachedSize(-1), _filePointer(-1) {
 }

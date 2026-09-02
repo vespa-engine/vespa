@@ -1,0 +1,22 @@
+schema linguistics {
+    document linguistics {
+        field combined_keywords_suggestions type string {
+            indexing {
+                "de" | set_language;
+                input combined_keywords_suggestions | index | summary;
+            }
+            linguistics {
+                profile {
+                    index: de_index_unstemmed
+                    search: de_search_stemmed
+                }
+            }
+        }
+        field title type string {
+            indexing: index | summary
+            linguistics {
+                profile: de_index_and_search
+            }
+        }
+    }
+}

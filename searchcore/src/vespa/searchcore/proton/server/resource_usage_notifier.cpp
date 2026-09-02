@@ -75,7 +75,8 @@ double ResourceUsageNotifier::get_relative_reserved_disk_space(const Guard&) con
 }
 
 double ResourceUsageNotifier::get_relative_reserved_memory(const Guard&) const {
-    return static_cast<double>(_reserved_disk_space_and_memory.reserved_memory()) / _hwInfo.memory().sizeBytes();
+    return static_cast<double>(_reserved_disk_space_and_memory.reserved_memory(_reserved_memory_for_attribute_load)) /
+           _hwInfo.memory().sizeBytes();
 }
 
 double ResourceUsageNotifier::get_relative_transient_memory_usage(const Guard&) const {

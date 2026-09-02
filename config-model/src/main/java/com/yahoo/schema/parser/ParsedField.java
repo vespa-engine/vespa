@@ -25,6 +25,7 @@ public class ParsedField extends ParsedBlock {
     private int overrideId = 0;
     private boolean isLiteral = false;
     private boolean isNormal = false;
+    private boolean fastMapSearch = false;
     private Integer weight;
     private String normalizing = null;
     private String searchLinguisticsProfile;
@@ -52,6 +53,7 @@ public class ParsedField extends ParsedBlock {
     boolean hasFilter() { return this.isFilter; }
     boolean hasLiteral() { return this.isLiteral; }
     boolean hasNormal() { return this.isNormal; }
+    boolean getFastMapSearch() { return this.fastMapSearch; }
     boolean hasIdOverride() { return overrideId != 0; }
     int idOverride() { return overrideId; }
     List<DictionaryOption> getDictionaryOptions() { return List.copyOf(dictionaryOptions); }
@@ -121,6 +123,7 @@ public class ParsedField extends ParsedBlock {
     }
 
     public void setBolding(boolean value) { this.hasBolding = value; }
+    public void setFastMapSearch(boolean value) { this.fastMapSearch = value; }
     public void setFilter(boolean value) { this.isFilter = value; }
     public void setId(int id) { this.overrideId = id; }
     public void setLiteral(boolean value) { this.isLiteral = value; }

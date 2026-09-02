@@ -2,6 +2,8 @@
 package com.yahoo.search.dispatch.rpc;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
+import ai.vespa.telemetry.api.trace.TraceAttributes;
+import ai.vespa.telemetry.api.trace.OtelTracing;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.yahoo.collections.ListMap;
 import com.yahoo.compress.Compressor;
@@ -23,6 +25,10 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.BinaryView;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 
 /**
  * {@link FillInvoker} implementation using Protobuf over JRT
@@ -95,6 +102,14 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             return;
         }
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
+
+        // Span.current() is dispatch.fill, created by FillInvoker.fill one frame up. Set from here rather than
+        // from the base class because FillInvoker has no fields at all - none of these values exist there.
+        // numHitsToFill was just counted by hitsByNode() above.
+        Span.current().setAttribute(TraceAttributes.SCHEMA,     soleSchemaOf(result.getQuery()))
+                      .setAttribute(TraceAttributes.FILL_NODES, hitsByNode.size())
+                      .setAttribute(TraceAttributes.FILL_HITS,  numHitsToFill);
+
         int queueSize = Math.max(hitsByNode.size(), resourcePool.knownNodeIds().size());
         responses = new LinkedBlockingQueue<>(queueSize);
         sendFillRequestByNode(result, summaryClass, hitsByNode);
@@ -146,6 +161,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         } catch (TimeoutException e) {
             result.hits().addError(ErrorMessage.createTimeout("Summary data is incomplete: " + e.getMessage()));
         }
+        // After the catch, so a fill that timed out still reports how much it did manage to fetch - which is
+        // the number that says whether a slow fill was partial or total.
+        Span.current().setAttribute(TraceAttributes.FILL_HITS_FILLED, numOkFilledHits);
     }
 
     @Override
@@ -175,6 +193,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                                     double clientTimeout) {
         Client.NodeConnection node = resourcePool.getConnection(nodeId);
         if (node == null) {
+            // No span: nothing goes out on the wire here, and node.fill is a CLIENT span, which by
+            // OpenTelemetry's definition represents an outbound request that was actually made.
             String error = "Could not fill hits from unknown node " + nodeId;
             receive(Client.ResponseOrError.fromError(error), hits);
             result.hits().addError(ErrorMessage.createEmptyDocsums(error));
@@ -183,8 +203,33 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
         Query query = result.getQuery();
         Compressor.Compression compressionResult = compressor.compress(query, payload);
+
+        Span span = OtelTracing.startSpan(Context.current(), "node.fill", SpanKind.CLIENT);
+        // Every value is a parameter or a constant, so no isRecording() guard is warranted. There is no
+        // cluster, host or group here: the fill path carries only an integer node id, with no Node object -
+        // the enclosing cluster.fill span names the cluster.
+        span.setAttribute(TraceAttributes.CONTENT_NODE_KEY,    nodeId)
+            .setAttribute(TraceAttributes.RPC_SYSTEM,          "vespa_jrt")
+            .setAttribute(TraceAttributes.RPC_METHOD_KEY,      RPC_METHOD)
+            .setAttribute(TraceAttributes.FILL_HITS_REQUESTED, hits.size())
+            .setAttribute(TraceAttributes.FILL_RETRY,          hits.get(0).getDistributionKey() != nodeId);
+        
+        // End BEFORE enqueueing, as RpcSearchInvoker.receive does, so the same statement holds on both paths:
+        // the caller thread can never observe a response whose span is still recording. It also keeps the span
+        // ending even if receive() throws - responses is a BOUNDED queue and uses add(), which throws when full.
         node.request(RPC_METHOD, compressionResult.type(), payload.length, compressionResult.data(),
-                roe -> receive(roe, hits), clientTimeout);
+                roe -> { endSpan(span, roe); receive(roe, hits); }, clientTimeout);
+    }
+
+    /**
+     * Ends one node.fill span with the outcome the transport reported. Runs on a JRT transport thread, which is
+     * why it touches nothing but the span: {@code receive} below it only enqueues, and all decoding happens
+     * later on the caller thread.
+     */
+    private static void endSpan(Span span, Client.ResponseOrError<ProtobufResponse> response) {
+        if ( ! span.isRecording()) return;
+        response.error().ifPresent(error -> span.setStatus(StatusCode.ERROR, error));
+        span.end();
     }
 
     private ResponseAndHits getNextResponse(long timeLeftMs) throws InterruptedException {
@@ -298,6 +343,18 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         return List.of();
     }
 
+    /**
+     * The one schema this fill is restricted to, or null when it spans several or none.
+     *
+     * <p>Read from the query rather than from the {@code documentDb} field, even though the invoker holds one:
+     * {@code VespaBackend.getDocumentDatabase:123-130} falls back to the FIRST configured database when the
+     * restrict does not hold exactly one schema, so that field would report a confidently wrong name.</p>
+     */
+    private static String soleSchemaOf(Query query) {
+        Set<String> restrict = query.getModel().getRestrict();
+        return restrict != null && restrict.size() == 1 ? restrict.iterator().next() : null;
+    }
+
     private void throwTimeout() throws TimeoutException {
         throw new TimeoutException("Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
     }
@@ -346,12 +403,23 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     outstandingResponses--;
                 }
                 skippedHits.removeIf(hit -> !partialSummaryHandler.needFill(hit));
+
+                // Span.current() here IS dispatch.fill: FillInvoker.fill -> getFillResults -> processResponses
+                // -> maybeRetry is synchronous on one thread, so the span needs no plumbing to reach.
+                Span.current().setAttribute(TraceAttributes.FILL_SKIPPED,     numSkipped)
+                              .setAttribute(TraceAttributes.FILL_RETRIED,     true)
+                              .setAttribute(TraceAttributes.FILL_RETRY_NODES, retryMap.size())
+                              .setAttribute(TraceAttributes.FILL_UNFILLED,    skippedHits.size());
             }
         } else {
             result.getQuery().trace(false, 1, "Summary fetching got " + numSkipped + " empty docsums (of " + numHitsToFill + " hits), no retry");
             if (shouldLogNoRetry()) {
                 log.log(Level.WARNING, "Docsum fetch failed for " + numSkipped + " hits (" + numOkFilledHits + " ok hits), no retry");
             }
+            // Declined by the retry limit: these docsums are lost for this query. Recorded as retried=false
+            // rather than left absent, so "considered and declined" is distinguishable from "never needed".
+            Span.current().setAttribute(TraceAttributes.FILL_SKIPPED, numSkipped)
+                          .setAttribute(TraceAttributes.FILL_RETRIED, false);
         }
     }
 

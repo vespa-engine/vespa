@@ -10,7 +10,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author bjorncs
+ * @author Bjørn Christian Seime
  */
 public class ModelContextTest {
 

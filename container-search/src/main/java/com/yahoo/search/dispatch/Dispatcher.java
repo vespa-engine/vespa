@@ -266,7 +266,11 @@ public class Dispatcher extends AbstractComponent {
         return new VolatileItems(new LoadBalancer(searchCluster.groupList().groups(),
                                                   toLoadBalancerPolicy(dispatchConfig.distributionPolicy()),
                                                   localAvailabilityZone),
-                                 invokerFactories.create(rpcResourcePool, searchCluster.groupList(), dispatchConfig, qrSearchersConfig));
+                                 // Invokers of this generation resolve connections through a snapshot of the node set,
+                                 // so nodes removed by a later reconfiguration stay resolvable until this generation drains.
+                                 // The pool is null in some tests, which use invoker factories that don't need it.
+                                 invokerFactories.create(rpcResourcePool == null ? null : rpcResourcePool.snapshot(),
+                                                         searchCluster.groupList(), dispatchConfig, qrSearchersConfig));
     }
 
     private void initialWarmup(double warmupTime) {

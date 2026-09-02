@@ -8,6 +8,8 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.ContextKey;
 import org.eclipse.jetty.server.Request;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +20,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -147,6 +151,28 @@ public class HttpRequestFactoryTest {
                         .header("X-Foo", List.of())
                         .build());
         assertTrue(request.headers().isEmpty(), () -> "Found headers: " + request.headers());
+    }
+
+    @Test
+    void bridges_otel_context_into_jdisc_request_context() {
+        ContextKey<Object> marker = ContextKey.named("test-marker");
+        Context otelContext = Context.root().with(marker, new Object());
+        Request jettyRequest = JettyMockRequestBuilder.newBuilder()
+                .uri("https", "example.com", LOCAL_PORT, "/search", "query=value")
+                .remote("127.0.0.1", "localhost", 1234)
+                .localPort(LOCAL_PORT)
+                .attribute(JettyServerSpanHandler.OTEL_CONTEXT_REQUEST_ATTRIBUTE, otelContext)
+                .build();
+        HttpRequest request = HttpRequestFactory.newJDiscRequest(new MockContainer(), jettyRequest);
+        assertSame(otelContext, request.context().get(RequestUtils.JDISC_REQUEST_OTEL_CONTEXT));
+    }
+
+    @Test
+    void no_otel_context_entry_when_jetty_attribute_absent() {
+        HttpRequest request = HttpRequestFactory.newJDiscRequest(
+                new MockContainer(),
+                createMockRequest("https", "example.com", "/search", "query=value"));
+        assertFalse(request.context().containsKey(RequestUtils.JDISC_REQUEST_OTEL_CONTEXT));
     }
 
     private Request createMockRequest(String scheme, String host, String path, String query) {

@@ -106,6 +106,9 @@ private:
     GroupingMap                      _groupingMap;
     vespalib::steady_time            _timeOfDoom;
 
+    /** Prepare the aggregation results of the groupings we will use as merge target. */
+    void prepareMergeTargets(const GroupingList& requestList);
+
 public:
     using UP = std::unique_ptr<GroupingSession>;
 
