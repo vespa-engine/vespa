@@ -265,6 +265,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean fastMapSearch() { return flag(Flags.FAST_MAP_SEARCH).value(); }
         @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return flag(Flags.RELAX_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS).value(); }
         @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
+        @Override public boolean documentV1ReportWasFound() { return flag(Flags.DOCUMENT_V1_REPORT_WAS_FOUND).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

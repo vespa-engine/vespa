@@ -37,6 +37,7 @@ import com.yahoo.documentapi.DocumentResponse;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response.Outcome;
 import com.yahoo.documentapi.Result;
+import com.yahoo.documentapi.UpdateResponse;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorControlSession;
 import com.yahoo.documentapi.VisitorDataHandler;
@@ -191,6 +192,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final long maxThrottledAgeNS;
     private final long maxThrottledTotalBytes;
     private final long maxDocumentOperationRequestSizeBytes;
+    private final boolean reportWasFound;
     private final DocumentAccess access;
     private final AsyncSession asyncSession;
     private final Map<String, StorageCluster> clusters;
@@ -229,6 +231,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.maxThrottledAgeNS = (long) (executorConfig.maxThrottledAge() * 1_000_000_000.0);
         this.maxThrottledTotalBytes = calculateMaxThrottledTotalBytes(executorConfig);
         this.maxDocumentOperationRequestSizeBytes = (long) executorConfig.maxDocumentOperationRequestSizeMib() * 1024 * 1024;
+        this.reportWasFound = executorConfig.reportWasFound();
 
         log.info(Text.format("Operation queue: max-items=%d, max-age=%d ms, max-bytes=%s",
                 maxThrottled, Duration.ofNanos(maxThrottledAgeNS).toMillis(), BytesQuantity.ofBytes(maxThrottledTotalBytes).asPrettyString()));
@@ -949,11 +952,11 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         void onSuccess(Document document, JsonResponse response, boolean ignoredOperation) throws IOException;
     }
 
-    private static void handle(DocumentPath path,
-                               HttpRequest request,
-                               ResponseHandler handler,
-                               com.yahoo.documentapi.Response response,
-                               SuccessCallback callback) {
+    private void handle(DocumentPath path,
+                        HttpRequest request,
+                        ResponseHandler handler,
+                        com.yahoo.documentapi.Response response,
+                        SuccessCallback callback) {
         var tensorOptions = createTensorOptionsFromRequest(request); // request may be null; implies short form
         try (JsonResponse jsonResponse = JsonResponse.createWithPathAndId(path, handler, tensorOptions)) {
             jsonResponse.writeTrace(response.getTrace());
@@ -985,11 +988,17 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
-    private static void handleFeedOperation(DocumentPath path,
-                                            boolean fullyApplied,
-                                            ResponseHandler handler,
-                                            com.yahoo.documentapi.Response response) {
+    private void handleFeedOperation(DocumentPath path,
+                                     boolean fullyApplied,
+                                     ResponseHandler handler,
+                                     com.yahoo.documentapi.Response response) {
         handle(path, null, handler, response, (document, jsonResponse, ignoredOperation) -> {
+            // An update against a document which does not exist is a no-op, but still a success; tell the client
+            // whether the update actually had a document to apply itself to. Note that this is true also when the
+            // document was created as part of the update, since the operation then did take effect.
+            if (reportWasFound && response instanceof UpdateResponse update) {
+                jsonResponse.writeWasFound(update.wasFound());
+            }
             jsonResponse.commit(Status.OK, fullyApplied, ignoredOperation);
         });
     }
