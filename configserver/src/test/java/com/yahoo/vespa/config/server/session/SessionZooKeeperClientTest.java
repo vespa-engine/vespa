@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TenantName;
@@ -192,7 +193,7 @@ public class SessionZooKeeperClientTest {
                                              List.of(),
                                              List.of(),
                                              List.of(),
-                                             Optional.empty(),
+                                             CloudAccount.unspecified(),
                                              CloudResourceTags.empty(),
                                              List.of(),
                                              ActivationTriggers.empty(),

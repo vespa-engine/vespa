@@ -6,10 +6,6 @@ import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
@@ -53,10 +49,7 @@ public class ConfigserverCluster extends TreeConfigProducer
         // If we are in a config server cluster the correct zone is propagated through cloud config options,
         // not through config to deployment options (see StandaloneContainerApplication.java),
         // so we need to propagate the zone options into the container from here
-        Environment environment = options.environment().isPresent() ? Environment.from(options.environment().get()) : Environment.defaultEnvironment();
-        RegionName region = options.region().isPresent() ? RegionName.from(options.region().get()) : RegionName.defaultName();
-        SystemName system = options.system().isPresent() ? SystemName.from(options.system().get()) : SystemName.defaultSystem();
-        containerCluster.setZone(new Zone(system, environment, region));
+        containerCluster.setZone(options.toZoneInfo());
     }
 
     @Override

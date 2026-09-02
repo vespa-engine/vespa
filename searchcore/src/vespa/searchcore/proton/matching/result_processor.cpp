@@ -28,14 +28,21 @@ ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> rep
 ResultProcessor::Result::~Result() = default;
 
 ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom& doom, IAttributeContext& ac,
-                            const std::string& ss)
+                            const std::string& ss, INumericSortValueProvider* sort_value_provider)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
-      sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory) {
+      sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory),
+      _feature_binding_failed(false) {
     if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
-        sorter = &sortSpec;
+        if (sortSpec.bind_numeric_provider(sort_value_provider)) {
+            sorter = &sortSpec;
+        } else {
+            _feature_binding_failed = true;
+        }
     }
 }
+
+ResultProcessor::Sort::~Sort() = default;
 
 ResultProcessor::Context::Context(const search::BitVector& validLids, Sort::UP s, PartialResultUP r,
                                   GroupingContext::UP g)
@@ -69,7 +76,8 @@ ResultProcessor::ResultProcessor(IAttributeContext& attrContext, const search::I
       _sortSpec(sortSpec),
       _offset(offset),
       _hits(hits),
-      _wasMerged(false) {
+      _wasMerged(false),
+      _sort_feature_failed(false) {
     if (!_groupingContext.empty()) {
         _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext, nullptr);
     }
@@ -87,8 +95,12 @@ void ResultProcessor::prepareThreadContextCreation(size_t num_threads) {
 }
 
 std::unique_ptr<ResultProcessor::Context>
-ResultProcessor::createThreadContext(const vespalib::Doom& hardDoom, size_t thread_id, uint32_t distributionKey) {
-    auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec);
+ResultProcessor::createThreadContext(const vespalib::Doom& hardDoom, size_t thread_id, uint32_t distributionKey,
+                                     INumericSortValueProvider* sort_value_provider) {
+    auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec, sort_value_provider);
+    if (sort->feature_binding_failed()) {
+        note_sort_feature_failure();
+    }
     auto result = std::make_unique<PartialResult>((_offset + _hits), sort->hasSortData());
     search::grouping::GroupingContext::UP groupingContext;
     if (_groupingSession) {

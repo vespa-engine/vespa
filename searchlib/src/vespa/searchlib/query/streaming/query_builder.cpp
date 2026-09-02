@@ -20,6 +20,7 @@
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
 #include <vespa/searchlib/queryeval/split_float.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <charconv>
 
@@ -261,6 +262,10 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
         break;
     case ParseItem::ITEM_SAME_ELEMENT:
         qn = build_same_element_term(factory, queryRep);
+        break;
+    case ParseItem::ITEM_STRING_RANGE_TERM:
+        // Lexical ranges are only implemented for attribute vectors, i.e. for indexed search.
+        vespalib::Issue::report("string range terms are not supported in streaming search");
         break;
     default:
         skip_unknown(queryRep);

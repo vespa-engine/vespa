@@ -232,7 +232,7 @@ public class CapacityPolicies {
 
     /** Returns whether the nodes requested can share physical host with other applications */
     public ClusterSpec decideExclusivity(Capacity capacity, ClusterSpec requestedCluster) {
-        if (capacity.cloudAccount().isPresent()) return requestedCluster.withExclusivity(true); // Implicit exclusive
+        if ( ! capacity.cloudAccount().isUnspecified()) return requestedCluster.withExclusivity(true); // Implicit exclusive
         boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
         return requestedCluster.withExclusivity(exclusive);
     }

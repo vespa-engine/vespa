@@ -208,6 +208,8 @@ private:
                 t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::Type::STRING, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMERIC_IN) {
                 t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::Type::INTEGER, view, id, weight);
+            } else if (type == ParseItem::ITEM_STRING_RANGE_TERM) {
+                t = &builder.add_string_range_term(StringRange(queryStack.get_string_range_spec()), view, id, weight);
             } else {
                 vespalib::Issue::report("query builder: Unable to create query tree from stack dump. node type = %d.",
                                         type);

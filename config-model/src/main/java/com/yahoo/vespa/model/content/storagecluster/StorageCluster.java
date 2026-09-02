@@ -27,10 +27,11 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
         MetricsmanagerConfig.Producer
 {
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<StorageCluster> {
+
         @Override
         protected StorageCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             ModelElement clusterElem = new ModelElement(producerSpec);
-            return new StorageCluster(ancestor,
+            return new StorageCluster((ContentCluster) ancestor,
                                       ContentCluster.getClusterId(clusterElem),
                                       new FileStorProducer.Builder().build(deployState.getProperties(), clusterElem),
                                       new StorServerProducer.Builder().build(clusterElem),
@@ -39,19 +40,21 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
         }
     }
 
+    private final ContentCluster parent;
     private final String clusterName;
     private final FileStorProducer fileStorProducer;
     private final StorServerProducer storServerProducer;
     private final StorVisitorProducer storVisitorProducer;
     private final PersistenceProducer persistenceProducer;
 
-    StorageCluster(TreeConfigProducer<?> parent,
+    StorageCluster(ContentCluster parent,
                    String clusterName,
                    FileStorProducer fileStorProducer,
                    StorServerProducer storServerProducer,
                    StorVisitorProducer storVisitorProducer,
                    PersistenceProducer persistenceProducer) {
         super(parent, "storage");
+        this.parent = parent;
         this.clusterName = clusterName;
         this.fileStorProducer = fileStorProducer;
         this.storServerProducer = storServerProducer;
@@ -83,6 +86,7 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
     @Override
     public void getConfig(StorServerConfig.Builder builder) {
         storServerProducer.getConfig(builder);
+        builder.require_strictly_increasing_cluster_state_versions(parent.requireStrictlyIncreasingClusterStateVersions());
     }
 
     @Override

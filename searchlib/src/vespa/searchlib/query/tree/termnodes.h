@@ -7,6 +7,7 @@
 #include "predicate_query_term.h"
 #include "querynodemixin.h"
 #include "range.h"
+#include "string_range.h"
 #include "term.h"
 #include "term_vector.h"
 
@@ -42,6 +43,15 @@ public:
     RangeTerm(const Type& term, const std::string& view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight) {}
     virtual ~RangeTerm() = 0;
+};
+
+//-----------------------------------------------------------------------------
+
+class StringRangeTerm : public QueryNodeMixin<StringRangeTerm, TermBase<StringRange>> {
+public:
+    StringRangeTerm(const Type& term, const std::string& view, int32_t id, Weight weight)
+        : QueryNodeMixinType(term, view, id, weight) {}
+    virtual ~StringRangeTerm() = 0;
 };
 
 //-----------------------------------------------------------------------------

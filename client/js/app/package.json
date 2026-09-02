@@ -24,7 +24,7 @@
     "@mantine/hooks": "5.10.5",
     "@mantine/notifications": "5.10.5",
     "@vitejs/plugin-react": "5.2.0",
-    "eslint": "9.39.2",
+    "eslint": "9.39.5",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-prettier": "5.5.5",
     "eslint-plugin-react": "7.37.5",
@@ -37,7 +37,7 @@
     "pretty-quick": "4.2.2",
     "react-router-dom": "7.18.2",
     "use-context-selector": "2.0.0",
-    "vite": "8.0.16",
-    "vitest": "4.1.10"
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
   }
 }

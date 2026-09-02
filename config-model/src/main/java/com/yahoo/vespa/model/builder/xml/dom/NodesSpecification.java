@@ -27,6 +27,7 @@ import org.w3c.dom.Node;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.ToDoubleFunction;
 
@@ -62,8 +63,8 @@ public class NodesSpecification {
     /** The repo part of a docker image (without tag), optional */
     private final Optional<DockerImage> dockerImageRepo;
 
-    /** The cloud account to use for nodes in this spec, if any */
-    private final Optional<CloudAccount> cloudAccount;
+    /** The cloud account to use for nodes in this spec */
+    private final CloudAccount cloudAccount;
 
     /** The cloud resource tags to apply to nodes in this spec */
     private final CloudResourceTags cloudResourceTags;
@@ -84,7 +85,7 @@ public class NodesSpecification {
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
-                               Optional<CloudAccount> cloudAccount,
+                               CloudAccount cloudAccount,
                                CloudResourceTags cloudResourceTags,
                                List<AzName> availabilityZones,
                                boolean specifiesNodeCount,
@@ -113,7 +114,7 @@ public class NodesSpecification {
         this.canFail = canFail;
         this.exclusive = exclusive;
         this.dockerImageRepo = dockerImageRepo;
-        this.cloudAccount = cloudAccount;
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.cloudResourceTags = cloudResourceTags;
         this.availabilityZones = List.copyOf(availabilityZones);
         this.specifiesNodeCount = specifiesNodeCount;
@@ -122,9 +123,10 @@ public class NodesSpecification {
 
     static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
-                                     Optional<CloudAccount> cloudAccount,
+                                     CloudAccount cloudAccount,
                                      CloudResourceTags cloudResourceTags,
-                                     List<AzName> availabilityZones) {
+                                     List<AzName> availabilityZones,
+                                     DeployState deployState) {
         var resolvedElement = resolveElement(nodesElement);
         var resourceConstraints = toResourceConstraints(resolvedElement);
         var maxCostFactor = resolvedElement.optionalChild("resources")
@@ -140,7 +142,7 @@ public class NodesSpecification {
                                       resolvedElement.booleanAttribute("required", false),
                                       canFail,
                                       resolvedElement.booleanAttribute("exclusive", false),
-                                      dockerImageToUse(resolvedElement, dockerImageRepo),
+                                      dockerImageToUse(resolvedElement, dockerImageRepo, deployState),
                                       cloudAccount,
                                       cloudResourceTags,
                                       availabilityZones,
@@ -155,11 +157,10 @@ public class NodesSpecification {
 
         if (nodes.from().orElse(1) < 1)
             throw new IllegalArgumentException("Min node resources cannot be less than 1, but is " + nodes.from().getAsInt());
-
         // Find the tightest possible limits for groups to avoid falsely concluding we are autoscaling
         // when only specifying group size
-        int defaultMinGroups =                           nodes.from().orElse(1) / groupSize.to().orElse(nodes.from().orElse(1));
-        int defaultMaxGroups = groupSize.isEmpty() ? 1 : nodes.to().orElse(1) / groupSize.from().orElse(1);
+        int defaultMinGroups = (int)Math.ceil(1.0 * nodes.from().orElse(1) / groupSize.to().orElse(nodes.from().orElse(1)));
+        int defaultMaxGroups = (int)Math.ceil(1.0 * (groupSize.isEmpty() ? 1 : nodes.to().orElse(1)) / groupSize.from().orElse(1));
 
         // Allow use of groups and group-size if count is not specified
         if (groupsAndGroupSizeButNoNodeCount(groups, groupSize, nodes))
@@ -193,9 +194,10 @@ public class NodesSpecification {
                       context.getDeployState().getWantedNodeVespaVersion(),
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
-                      context.getDeployState().getProperties().cloudAccount(),
+                      context.getDeployState().getProperties().getCloudAccount(),
                       context.getDeployState().getProperties().cloudResourceTags(),
-                      context.availabilityZones());
+                      context.availabilityZones(),
+                      context.getDeployState());
     }
 
     /**
@@ -213,9 +215,10 @@ public class NodesSpecification {
                                   context.getDeployState().getWantedNodeVespaVersion(),
                                   nodesElement,
                                   context.getDeployState().getWantedDockerImageRepo(),
-                                  context.getDeployState().getProperties().cloudAccount(),
+                                  context.getDeployState().getProperties().getCloudAccount(),
                                   context.getDeployState().getProperties().cloudResourceTags(),
-                                  context.availabilityZones()));
+                                  context.availabilityZones(),
+                                  context.getDeployState()));
     }
 
     /** Returns a requirement from <code>count</code> non-dedicated nodes in one group. */
@@ -230,7 +233,7 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
                                       false,
@@ -249,7 +252,7 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
                                       false,
@@ -279,7 +282,7 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().getCloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
                                       false,
@@ -290,6 +293,7 @@ public class NodesSpecification {
     public ClusterResources maxResources() { return max; }
     public IntRange groupSize() { return groupSize; }
     public double maxCostFactor() { return maxCostFactor; }
+    public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     /**
      * Returns whether this requires dedicated nodes.
@@ -499,9 +503,13 @@ public class NodesSpecification {
         return new IllegalArgumentException("referenced service '" + referenceId + "' is not defined");
     }
 
-    private static Optional<DockerImage> dockerImageToUse(ModelElement nodesElement, Optional<DockerImage> dockerImage) {
+    private static Optional<DockerImage> dockerImageToUse(ModelElement nodesElement, Optional<DockerImage> dockerImage, DeployState deployState) {
         String dockerImageFromElement = nodesElement.stringAttribute("docker-image");
-        return dockerImageFromElement == null ? dockerImage : Optional.of(DockerImage.fromString(dockerImageFromElement));
+        if (dockerImageFromElement == null) return dockerImage;
+        var system = deployState.zone().system();
+        if (deployState.isHosted() && (system.isPublicCloudLike() || system.isKubernetesLike()))
+            throw new IllegalArgumentException("Specifying 'docker-image' on <nodes> is not supported in Vespa Cloud");
+        return Optional.of(DockerImage.fromString(dockerImageFromElement));
     }
 
     /** Parses a value ("value") or value range ("[min-value, max-value]") */

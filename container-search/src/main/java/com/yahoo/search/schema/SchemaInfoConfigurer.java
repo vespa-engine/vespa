@@ -26,6 +26,7 @@ class SchemaInfoConfigurer {
             fieldBuilder.setAttribute(fieldConfig.attribute());
             fieldBuilder.setIndex(fieldConfig.index());
             fieldBuilder.setBitPacked(fieldConfig.index());
+            fieldBuilder.setFastMapSearch(fieldConfig.fastMapSearch());
             for (var alias : fieldConfig.alias())
                 fieldBuilder.addAlias(alias);
             schemaBuilder.add(fieldBuilder.build());
@@ -42,6 +43,8 @@ class SchemaInfoConfigurer {
                 profileBuilder.setTotalKeepRankCount(profileConfig.totalKeepRankCount());
             for (var inputConfig : profileConfig.input())
                 profileBuilder.addInput(inputConfig.name(), RankProfile.InputType.fromSpec(inputConfig.type()));
+            for (String sortFeature : profileConfig.sortFeature())
+                profileBuilder.addSortFeature(sortFeature);
 
             var matchPhaseBuilder = new MatchPhase.Builder();
             if (profileConfig.matchPhaseMaxHits() >= 0)

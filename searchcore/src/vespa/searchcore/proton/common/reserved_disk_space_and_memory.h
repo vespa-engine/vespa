@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 
@@ -34,9 +35,11 @@ public:
     [[nodiscard]] size_t reserved_memory_for_memory_indexes() const noexcept {
         return _reserved_memory_for_memory_indexes;
     }
-    [[nodiscard]] size_t reserved_memory() const noexcept {
-        return _reserved_memory_for_flush + _reserved_memory_for_memory_indexes;
+    [[nodiscard]] size_t reserved_memory(size_t reserved_memory_for_attribute_load) const noexcept {
+        return std::max(_reserved_memory_for_flush, reserved_memory_for_attribute_load) +
+               _reserved_memory_for_memory_indexes;
     }
+    [[nodiscard]] size_t reserved_memory() const noexcept { return reserved_memory(0); }
 };
 
 } // namespace proton

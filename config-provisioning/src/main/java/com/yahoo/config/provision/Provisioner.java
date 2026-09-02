@@ -23,21 +23,7 @@ public interface Provisioner {
      */
     List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context);
 
-    /** Activates the allocation of nodes to this application captured in the 'hosts' argument. */
-    // TODO: Remove after August 2026
-    @Deprecated
-    default void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
-        var hostsByCluster = hosts.stream().collect(Collectors.groupingBy(host -> host.membership().get().id()));
-        var clusterHosts = hostsByCluster.values().stream()
-                                         .map(hostsInCluster -> new ClusterHosts(hostsInCluster.get(0).membership().get().cluster(),
-                                                                                 hostsInCluster))
-                                         .toList();
-        activate(clusterHosts, context, transaction);
-    }
-
-    default void activate(List<ClusterHosts> clusterHosts, ActivationContext context, ApplicationTransaction transaction) {
-        activate(clusterHosts.stream().flatMap(cluster -> cluster.hosts().stream()).toList(), context, transaction);
-    }
+    void activate(List<ClusterHosts> clusterHosts, ActivationContext context, ApplicationTransaction transaction);
 
     /** Transactionally remove an application under lock. */
     void remove(ApplicationTransaction transaction);

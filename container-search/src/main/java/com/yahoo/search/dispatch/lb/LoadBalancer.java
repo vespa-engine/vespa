@@ -49,8 +49,9 @@ public class LoadBalancer {
             case LATENCY_AMORTIZED_OVER_TIME -> new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(seed), scoreboard);
         };
 
+
         this.remoteGroups = groups.stream()
-                                  .filter(group -> ! group.availabilityZone().equals(localAvailabilityZone))
+                                  .filter(group -> !group.availabilityZone().equals(localAvailabilityZone))
                                   .map(Group::id)
                                   .collect(Collectors.toUnmodifiableSet());
     }

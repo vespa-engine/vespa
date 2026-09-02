@@ -228,7 +228,7 @@ public final class DeploymentSpec {
         return (zone.environment().isManuallyDeployed() ? devSpec.cloudAccounts
                                                         : instance(instance).map(spec -> spec.cloudAccounts(zone.environment(), zone.region())))
                 .orElse(cloudAccounts)
-                .getOrDefault(cloud, CloudAccount.empty);
+                .getOrDefault(cloud, CloudAccount.unspecified());
     }
 
     public Map<CloudName, CloudAccount> cloudAccounts() { return cloudAccounts; }

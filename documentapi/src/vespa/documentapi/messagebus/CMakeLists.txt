@@ -17,7 +17,7 @@ vespa_suppress_warnings_for_protobuf_sources(SOURCES ${documentapi_messagebus_PR
 
 # protoc explicitly annotates methods with inline, which triggers -Werror=inline when
 # the header file grows over a certain size.
-set_source_files_properties(routable_factories_8.cpp PROPERTIES COMPILE_FLAGS "-Wno-inline")
+vespa_compile_flag_for(routable_factories_8.cpp "-Wno-inline")
 
 vespa_add_library(documentapi_documentapimessagebus OBJECT
     SOURCES

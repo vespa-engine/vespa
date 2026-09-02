@@ -6,7 +6,6 @@
 #include "field_mergers_state.h"
 #include "fusion_input_index.h"
 
-#include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -96,21 +95,20 @@ bool Fusion::readSchemaFiles() {
 }
 
 bool Fusion::merge(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> flush_token) {
-    FastOS_StatInfo statInfo;
-    if (!FastOS_File::Stat(_fusion_out_index.get_path().c_str(), &statInfo)) {
-        if (statInfo._error != FastOS_StatInfo::FileNotFound) {
-            LOG(error, "Could not stat \"%s\"", _fusion_out_index.get_path().c_str());
-            return false;
-        }
+    std::error_code ec;
+    auto            status = std::filesystem::status(std::filesystem::path(_fusion_out_index.get_path()), ec);
+    if (std::filesystem::status_known(status) && !std::filesystem::exists(status)) {
+    } else if (ec) {
+        LOG(error, "Could not stat \"%s\": %s", _fusion_out_index.get_path().c_str(), ec.message().c_str());
+        return false;
+    } else if (!std::filesystem::is_directory(status)) {
+        LOG(error, "\"%s\" is not a directory", _fusion_out_index.get_path().c_str());
+        return false;
     } else {
-        if (!statInfo._isDirectory) {
-            LOG(error, "\"%s\" is not a directory", _fusion_out_index.get_path().c_str());
-            return false;
-        }
-        std::error_code ec;
         std::filesystem::remove_all(std::filesystem::path(_fusion_out_index.get_path()), ec);
         if (ec) {
-            LOG(error, "Failed to clean directory \"%s\"", _fusion_out_index.get_path().c_str());
+            LOG(error, "Failed to clean directory \"%s\": %s", _fusion_out_index.get_path().c_str(),
+                ec.message().c_str());
             return false;
         }
     }

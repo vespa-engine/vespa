@@ -20,7 +20,7 @@ public:
     };
 
 private:
-    void onPrepare(const ResultNode& result, bool useForInit) override;
+    void onPrepare(const ResultNode& result) override;
     void onAggregate(const ResultNode& result, DocId docId, HitRank rank) override;
     void onAggregate(const ResultNode& result, const document::Document& doc, HitRank rank) override;
     const ResultNode& onGetRank() const override;

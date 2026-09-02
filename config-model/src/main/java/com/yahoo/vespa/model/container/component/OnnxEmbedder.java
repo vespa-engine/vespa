@@ -23,6 +23,7 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
     final protected OnnxModelOptions onnxModelOptions;
     private final boolean forceDisableOptimization;
 
+    @SuppressWarnings("removal") // Retain deprecated batching max delay in config models for compatibility.
     protected OnnxEmbedder(String className, String bundle, Element xml, DeployState state) {
         super(className, bundle, xml);
         this.forceDisableOptimization = state.featureFlags().forceDisableOnnxModelOptimization();
@@ -82,6 +83,7 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
     }
 
     @Override
+    @SuppressWarnings("removal") // Retain deprecated batching max delay in generated config for compatibility.
     public void getConfig(OnnxEvaluatorConfig.Builder builder) {
         onnxModelOptions
                 .executionMode()

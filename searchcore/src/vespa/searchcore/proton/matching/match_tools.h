@@ -17,10 +17,15 @@
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/common/stringmap.h>
+#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/vespalib/util/doom.h>
+
+#include <span>
+#include <string>
+#include <vector>
 
 namespace vespalib {
 class ExecutionProfiler;
@@ -43,6 +48,8 @@ class RankSetup;
 
 namespace proton::matching {
 
+class SortFeatureStore;
+
 class MatchTools {
 private:
     using IRequestContext = search::queryeval::IRequestContext;
@@ -52,20 +59,26 @@ private:
     using Properties = search::fef::Properties;
     using RankProgram = search::fef::RankProgram;
     using RankSetup = search::fef::RankSetup;
+    using LazyValue = search::fef::LazyValue;
     using ExecutionProfiler = vespalib::ExecutionProfiler;
-    QueryLimiter&                    _queryLimiter;
-    const vespalib::Doom             _doom;
-    const Query&                     _query;
-    MaybeMatchPhaseLimiter&          _match_limiter;
-    const QueryEnvironment&          _queryEnv;
-    const RankSetup&                 _rankSetup;
-    const Properties&                _featureOverrides;
-    MatchData::UP                    _match_data;
-    std::unique_ptr<RankProgram>     _rank_program;
-    std::unique_ptr<SearchIterator>  _search;
-    HandleRecorder::HandleMap        _used_handles;
-    const HandleRecorder::HandleMap& _needed_handles;
-    bool                             _search_has_changed;
+    QueryLimiter&                             _queryLimiter;
+    const vespalib::Doom                      _doom;
+    const Query&                              _query;
+    MaybeMatchPhaseLimiter&                   _match_limiter;
+    const QueryEnvironment&                   _queryEnv;
+    const RankSetup&                          _rankSetup;
+    const Properties&                         _featureOverrides;
+    MatchData::UP                             _match_data;
+    std::unique_ptr<RankProgram>              _rank_program;
+    std::unique_ptr<SearchIterator>           _search;
+    HandleRecorder::HandleMap                 _used_handles;
+    const HandleRecorder::HandleMap&          _needed_handles;
+    std::vector<std::string>                  _sort_public_names;
+    std::vector<std::unique_ptr<RankProgram>> _sort_programs;
+    std::vector<LazyValue>                    _sort_seeds;
+    std::unique_ptr<SortFeatureStore>         _sort_store;
+    bool                                      _search_has_changed;
+    bool                                      _sort_needs_unpack;
     void setup(std::unique_ptr<RankProgram>, ExecutionProfiler* profiler, double termwise_limit = 1.0);
 
 public:
@@ -75,7 +88,7 @@ public:
     MatchTools(QueryLimiter& queryLimiter, const vespalib::Doom& doom, const Query& query,
                MaybeMatchPhaseLimiter& match_limiter_in, const QueryEnvironment& queryEnv, const MatchDataLayout& mdl,
                const RankSetup& rankSetup, const Properties& featureOverrides,
-               const HandleRecorder::HandleMap& needed_handles);
+               const HandleRecorder::HandleMap& needed_handles, std::vector<std::string> sort_public_names);
     ~MatchTools();
     const vespalib::Doom& getDoom() const { return _doom; }
     QueryLimiter& getQueryLimiter() { return _queryLimiter; }
@@ -88,10 +101,16 @@ public:
     void give_back_search(std::unique_ptr<SearchIterator> search_in) { _search = std::move(search_in); }
     void tag_search_as_changed() { _search_has_changed = true; }
     void setup_first_phase(ExecutionProfiler* profiler);
+    void setup_first_phase_and_sort(ExecutionProfiler* first_phase_profiler, bool match_with_ranking);
     void setup_second_phase(ExecutionProfiler* profiler);
     void setup_match_features();
     void setup_summary();
     void setup_dump();
+    void release_sort_programs();
+    bool has_sort_selection() const noexcept { return !_sort_public_names.empty(); }
+    SortFeatureStore* sort_store() const noexcept { return _sort_store.get(); }
+    std::span<const LazyValue> sort_seeds() const noexcept { return _sort_seeds; }
+    bool sort_needs_unpack() const noexcept { return _sort_needs_unpack; }
 
     // explicitly disallow re-using the search iterator tree (for now)
     //
@@ -146,6 +165,7 @@ private:
     IObjectStore*                      _object_store;
     const search::IDocumentMetaStore&  _metaStore;
     HandleRecorder::HandleMap          _needed_handles;
+    std::vector<std::string>           _sort_public_names;
 
     std::unique_ptr<AttributeOperationTask> createTask(std::string_view attribute, std::string_view operation) const;
 
@@ -167,6 +187,14 @@ public:
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter& match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
+
+    /**
+     * Prepares shared state for the selected sort features and arms the match
+     * tools to record them. Returns false, having installed nothing, if one of
+     * the names is not an allowed sort feature; the caller must then fail the
+     * query rather than order the hits some other way.
+     **/
+    [[nodiscard]] bool prepare_and_install_sort_features(const std::vector<std::string>& public_names);
     bool should_diversify() const { return _diversityParams.enabled(); }
     std::unique_ptr<IDiversifier> createDiversifier(uint32_t heapSize) const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }

@@ -30,7 +30,8 @@ int ResultClass::getIndexFromName(const std::string& name) const {
 }
 
 bool ResultClass::addConfigEntry(const std::string& name, const SummaryElementsSelector& elements_selector,
-                                 std::unique_ptr<DocsumFieldWriter> docsum_field_writer) {
+                                 std::unique_ptr<DocsumFieldWriter> docsum_field_writer,
+                                 std::span<const std::string>       struct_fields) {
     if (_nameMap.find(name) != _nameMap.end()) {
         return false;
     }
@@ -47,12 +48,13 @@ bool ResultClass::addConfigEntry(const std::string& name, const SummaryElementsS
     }
     e.set_elements_selector(elements_selector);
     e.set_writer(std::move(docsum_field_writer));
+    e.set_struct_fields(struct_fields);
     _entries.push_back(std::move(e));
     return true;
 }
 
 bool ResultClass::addConfigEntry(const std::string& name) {
-    return addConfigEntry(name, SummaryElementsSelector::select_all(), {});
+    return addConfigEntry(name, SummaryElementsSelector::select_all(), {}, {});
 }
 
 bool ResultClass::all_fields_generated(const vespalib::hash_set<std::string>& fields) const {

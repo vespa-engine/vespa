@@ -90,7 +90,10 @@ public class Zone {
         return region;
     }
 
-    /** Returns the availability zones this contains, or the empty list if this is a single-az region */
+    /**
+     * Returns the availability zones this contains.
+     * A cloud zone always has at least one AvailabilityZone, while in self-hosted systems this is empty.
+     */
     public List<AzName> availabilityZones() {
         return availabilityZones;
     }
@@ -100,7 +103,7 @@ public class Zone {
 
     /** Do not use */
     public static Zone defaultZone() {
-        return new Zone(Cloud.defaultCloud(), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
+        return new Zone(Cloud.defaultCloud(), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName(), List.of());
     }
 
     @Override

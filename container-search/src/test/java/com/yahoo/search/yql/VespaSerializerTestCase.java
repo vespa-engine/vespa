@@ -235,6 +235,19 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testStringRange() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        parseAndConfirm("range(string, \"aaa\", \"zzz\")");
+        parseAndConfirm("{bounds: \"leftOpen\"}range(string, \"aaa\", \"zzz\")");
+        parseAndConfirm("{bounds: \"rightOpen\"}range(string, \"aaa\", \"zzz\")");
+        parseAndConfirm("{bounds: \"open\"}range(string, \"aaa\", \"zzz\")");
+        parseAndConfirm("{filter: true, bounds: \"open\"}range(string, \"aaa\", \"zzz\")");
+        parseAndConfirm("{filter: true}range(string, \"aaa\", \"zzz\")");
+        parseAndConfirm("{bounds: \"open\"}range(string, -Infinity, Infinity)");
+        parseAndConfirm("{bounds: \"open\"}range(string, -Infinity, Infinity)");
+    }
+
+    @Test
     void testOrderedNear() {
         parseAndConfirm("title contains onear(\"a\", \"b\")");
     }

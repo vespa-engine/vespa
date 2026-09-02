@@ -57,6 +57,16 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         </services>
         """;
 
+    private static final String SERVICES_XML_WITH_TRITON_CONFIG = """
+        <services version='1.0'>
+          <container id='cluster1' version='1.0'>
+            <config name='ai.vespa.llm.clients.triton'>
+              <timeout>30000</timeout>
+            </config>
+          </container>
+        </services>
+        """;
+
     @Test
     void restart_when_triton_runtime_enabled() {
         var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, false);
@@ -94,6 +104,22 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         assertTrue(result.isEmpty());
     }
 
+    // TritonOnnxRuntime holds state shared across reconfigurations,
+    // so any change to its config requires a restart.
+    @Test
+    void restart_when_triton_config_changes() {
+        var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true);
+        var next = createModel(SERVICES_XML_WITH_TRITON_CONFIG, true);
+        var result = validateModel(previous, next);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).getMessage().contains("Triton config changed"));
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
+    }
+
     @Test
     void no_restart_when_triton_runtime_remains_disabled() {
         var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, false);
@@ -125,7 +151,10 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         return ValidationTester.validateChanges(
                 new RestartOnDeployForTritonOnnxRuntimeValidator(),
                 next,
-                deployStateBuilder(false).previousModel(current).build());
+                deployStateBuilder(false)
+                        .properties(new TestProperties().setHostedVespa(true))
+                        .previousModel(current)
+                        .build());
     }
 
     private static VespaModel createModel(String servicesXml, boolean useTriton) {
@@ -136,7 +165,6 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
     private static DeployState.Builder deployStateBuilder(boolean useTriton) {
         var deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setUseTriton(useTriton));
 
-        // Need a model and cloud to enable Triton.
         if (useTriton) {
             var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
                 @Override
@@ -146,6 +174,7 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
             };
             deployStateBuilder.onnxModelCost(mockModelCost);
             deployStateBuilder.zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()));
+            deployStateBuilder.sidecarProvider((clusterId, minNodeResources, needTriton) -> List.of());
         }
 
         return deployStateBuilder;

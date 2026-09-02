@@ -151,6 +151,7 @@ public enum ContainerMetrics implements VespaMetrics {
     
     TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT_PER_QUERY, "The total number of documents found to match queries"),
     EMPTY_RESULTS("empty_results", Unit.OPERATION, "Number of queries matching no documents"),
+    REQUESTS("requests", Unit.OPERATION, "The number of requests processed by the rate limiter"),
     REQUESTS_OVER_QUOTA("requestsOverQuota", Unit.OPERATION, "The number of requests rejected due to exceeding quota"),
     
     RELEVANCE_AT_1("relevance.at_1", Unit.SCORE, "The relevance of hit number 1"),

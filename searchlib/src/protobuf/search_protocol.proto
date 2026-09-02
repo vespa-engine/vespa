@@ -263,6 +263,15 @@ message ItemFloatingPointRangeTerm {
     uint32 diversity_cutoff_groups = 13;
 }
 
+// string range
+message ItemStringRangeTerm {
+    TermItemProperties properties = 1;
+    optional string lower_limit = 2;
+    optional string upper_limit = 3;
+    bool lower_inclusive = 4;
+    bool upper_inclusive = 5;
+}
+
 // multi-terms:
 message ItemStringIn {
     TermItemProperties properties = 1;
@@ -416,6 +425,8 @@ message QueryTreeItem {
         ItemGeoLocationTerm item_geo_location_term = 37;
         ItemPredicateQuery item_predicate_query = 38;
         ItemLabelWrapper item_label_wrapper = 39;
+
+        ItemStringRangeTerm item_string_range_term = 40;
 
         // unfinished, only inside QRS: item_multi_term
         // not used anymore: item_any

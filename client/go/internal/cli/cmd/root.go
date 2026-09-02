@@ -249,7 +249,13 @@ For detailed description of flags and configuration, see 'vespa help config'.
 	}
 	cli.configureSpinner()
 	cli.configureCommands()
-	cmd.PersistentPreRunE = cli.configureOutput
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if err := cli.configureOutput(cmd, args); err != nil {
+			return err
+		}
+		cli.maybePromptSkillsInstall(cmd) // Offer to install Vespa AI-assistant skills the first time any command is run
+		return nil
+	}
 	cmd.FParseErrWhitelist.UnknownFlags = true // Ignore unknown flags, so that we can pass them to external commands
 	return &cli, nil
 }
@@ -341,6 +347,7 @@ func (c *CLI) configureCommands() {
 	prodCmd := newProdCmd()
 	statusCmd := newStatusCmd(c, false)
 	applicationCmd := newApplicationCmd()
+	skillsCmd := newSkillsCmd()
 
 	certCmd.AddCommand(newCertAddCmd(c))                // auth cert add
 	authCmd.AddCommand(certCmd)                         // auth cert
@@ -384,6 +391,10 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(applicationCmd)                  // application
 	applicationCmd.AddCommand(newApplicationListCmd(c)) // list
 	applicationCmd.AddCommand(newApplicationShowCmd(c)) // show
+	skillsCmd.AddCommand(newSkillsListCmd(c))           // skills list
+	skillsCmd.AddCommand(newSkillsInstallCmd(c))        // skills install
+	skillsCmd.AddCommand(newSkillsUpdateCmd(c))         // skills update
+	rootCmd.AddCommand(skillsCmd)                       // skills
 }
 
 func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {

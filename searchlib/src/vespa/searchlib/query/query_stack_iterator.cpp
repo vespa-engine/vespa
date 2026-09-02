@@ -26,6 +26,9 @@ std::unique_ptr<query::PredicateQueryTerm> QueryStackIterator::getPredicateQuery
 std::unique_ptr<query::TermVector> QueryStackIterator::get_terms() {
     return std::move(_d.termVector);
 }
+std::unique_ptr<StringRangeSpec> QueryStackIterator::get_string_range_spec() {
+    return std::move(_d.stringRangeSpec);
+}
 
 std::string_view QueryStackIterator::DEFAULT_INDEX = "default";
 

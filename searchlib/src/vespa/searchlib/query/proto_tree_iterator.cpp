@@ -284,6 +284,23 @@ bool handle(const ItemFloatingPointRangeTerm& item, QueryStackIterator::Data& _d
     _d.term_view = tmp;
     return true;
 }
+bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
+    fillTermProperties(item.properties(), _d);
+    _d.itemType = ParseItem::ItemType::ITEM_STRING_RANGE_TERM;
+    auto spec = std::make_unique<StringRangeSpec>();
+    spec->left_unbounded = !item.has_lower_limit();
+    spec->right_unbounded = !item.has_upper_limit();
+    if (item.has_lower_limit()) {
+        spec->left = item.lower_limit();
+    }
+    if (item.has_upper_limit()) {
+        spec->right = item.upper_limit();
+    }
+    spec->left_closed = item.lower_inclusive();
+    spec->right_closed = item.upper_inclusive();
+    _d.stringRangeSpec = std::move(spec);
+    return true;
+}
 
 bool handle(const ItemSameElement& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
@@ -525,6 +542,8 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_integer_range_term(), _d, _serialized_term);
     case IC::kItemFloatingPointRangeTerm:
         return handle(qsi.item_floating_point_range_term(), _d, _serialized_term);
+    case IC::kItemStringRangeTerm:
+        return handle(qsi.item_string_range_term(), _d);
 
     case IC::kItemWeightedSetOfString:
         return handle(qsi.item_weighted_set_of_string(), _d);

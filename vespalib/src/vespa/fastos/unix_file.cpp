@@ -18,11 +18,6 @@
 
 #include <cassert>
 #include <sstream>
-#ifdef __linux__
-#include <sys/vfs.h>
-#else
-#include <sys/mount.h>
-#endif
 #ifdef __APPLE__
 #include <libproc.h>
 #include <sys/proc_info.h>
@@ -33,8 +28,21 @@ using fastos::File_RW_Ops;
 using vespalib::getErrorString;
 using vespalib::getLastErrorString;
 
-namespace {
-constexpr uint64_t ONE_G = 1000 * 1000 * 1000;
+FastOS_UNIX_File::FastOS_UNIX_File() : FastOS_UNIX_File(nullptr) {
+}
+
+FastOS_UNIX_File::FastOS_UNIX_File(const char* filename)
+    : FastOS_FileInterface(filename),
+      _mmapbase(nullptr),
+      _mmaplen(0),
+      _filedes(-1),
+      _mmapFlags(0),
+      _mmapEnabled(false) {
+}
+
+FastOS_UNIX_File::~FastOS_UNIX_File() {
+    bool ok = Close();
+    assert(ok);
 }
 
 ssize_t FastOS_UNIX_File::Read(void* buffer, size_t len) {
@@ -66,40 +74,6 @@ void FastOS_UNIX_File::ReadBuf(void* buffer, size_t length, int64_t readOffset) 
            << "' failed: " << errorString;
         throw std::runtime_error(os.str());
     }
-}
-
-bool FastOS_UNIX_File::Stat(const char* filename, FastOS_StatInfo* statInfo) {
-    bool rc = false;
-
-    struct stat stbuf{};
-    int         lstatres;
-
-    do {
-        lstatres = lstat(filename, &stbuf);
-    } while (lstatres == -1 && errno == EINTR);
-    if (lstatres == 0) {
-        statInfo->_error = FastOS_StatInfo::Ok;
-        statInfo->_isRegular = S_ISREG(stbuf.st_mode);
-        statInfo->_isDirectory = S_ISDIR(stbuf.st_mode);
-        statInfo->_size = static_cast<int64_t>(stbuf.st_size);
-        uint64_t modTimeNS = stbuf.st_mtime * ONE_G;
-#ifdef __linux__
-        modTimeNS += stbuf.st_mtim.tv_nsec;
-#elif defined(__APPLE__)
-        modTimeNS += stbuf.st_mtimespec.tv_nsec;
-#endif
-        statInfo->_modifiedTime = vespalib::system_time(
-            std::chrono::duration_cast<vespalib::system_time::duration>(std::chrono::nanoseconds(modTimeNS)));
-        rc = true;
-    } else {
-        if (errno == ENOENT) {
-            statInfo->_error = FastOS_StatInfo::FileNotFound;
-        } else {
-            statInfo->_error = FastOS_StatInfo::Unknown;
-        }
-    }
-
-    return rc;
 }
 
 int FastOS_UNIX_File::GetMaximumFilenameLength(const char* pathName) {
@@ -228,16 +202,16 @@ bool FastOS_UNIX_File::Close() {
     bool ok = true;
 
     if (_filedes >= 0) {
-        do {
-            ok = (close(_filedes) == 0);
-        } while (!ok && errno == EINTR);
-
         if (_mmapbase != nullptr) {
             madvise(_mmapbase, _mmaplen, MADV_DONTNEED);
             munmap(static_cast<char*>(_mmapbase), _mmaplen);
             _mmapbase = nullptr;
             _mmaplen = 0;
         }
+
+        do {
+            ok = (close(_filedes) == 0);
+        } while (!ok && errno == EINTR);
 
         _filedes = -1;
     }
@@ -276,16 +250,6 @@ bool FastOS_UNIX_File::SetSize(int64_t newSize) {
     }
 
     return rc;
-}
-
-int64_t FastOS_UNIX_File::GetFreeDiskSpace(const char* path) {
-    struct statfs statBuf{};
-    int           statVal = statfs(path, &statBuf);
-    if (statVal == 0) {
-        return int64_t(statBuf.f_bavail) * int64_t(statBuf.f_bsize);
-    }
-
-    return -1;
 }
 
 int FastOS_UNIX_File::count_open_files() {

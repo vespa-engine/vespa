@@ -19,7 +19,7 @@ public class MailTestCase extends AbstractExportingTestCase {
         String dir = "src/test/derived/mail/";
         ApplicationBuilder sb = new ApplicationBuilder();
         sb.addSchemaFile(dir + "mail.sd");
-        assertCorrectDeriving(sb, dir, new TestableDeployLogger());
+        assertCorrectDeriving(sb, "mail", new TestableDeployLogger());
     }
 
 }

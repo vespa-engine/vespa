@@ -82,6 +82,18 @@ public record OnnxModelOptions(
         return toBuilder().batchingMaxSize(batchingMaxSize).build();
     }
 
+    /**
+     * @deprecated Retained for compatibility with old config models. ONNX runtimes ignore this value.
+     */
+    @Deprecated(forRemoval = true)
+    public Optional<Duration> batchingMaxDelay() {
+        return batchingMaxDelay;
+    }
+
+    /**
+     * @deprecated Retained for compatibility with old config models. ONNX runtimes ignore this value.
+     */
+    @Deprecated(forRemoval = true)
     public OnnxModelOptions withBatchingMaxDelay(Duration batchingMaxDelay) {
         return toBuilder().batchingMaxDelay(batchingMaxDelay).build();
     }

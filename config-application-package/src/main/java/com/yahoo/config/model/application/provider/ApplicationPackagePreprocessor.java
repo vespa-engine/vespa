@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
@@ -53,7 +54,7 @@ class ApplicationPackagePreprocessor {
         this.inheritableApplications = inheritableApplications;
     }
 
-    public ApplicationPackage preprocess(Zone zone) throws IOException {
+    public ApplicationPackage preprocess(ZoneInfo zone) throws IOException {
         java.nio.file.Path tempDir = null;
         try {
             tempDir = Files.createTempDirectory(applicationPackage.getAppDir().getParentFile().toPath(), "preprocess-tempdir");
@@ -78,7 +79,7 @@ class ApplicationPackagePreprocessor {
         return preprocessedApp;
     }
 
-    private void preprocess(File appDir, File dir, Zone zone) throws IOException {
+    private void preprocess(File appDir, File dir, ZoneInfo zone) throws IOException {
         validateServicesFile();
         IOUtils.copyDirectory(appDir, dir, - 1,
                               (__, name) -> ! List.of(FilesApplicationPackage.preprocessed,
@@ -91,7 +92,7 @@ class ApplicationPackagePreprocessor {
                       applicationPackage.applicationFile(ApplicationPackage.HOSTS), zone);
     }
 
-    private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
+    private void preprocessXML(File destination, File inputXml, ZoneInfo zone) throws IOException {
         if ( ! inputXml.exists()) return;
         try {
             ApplicationName application = applicationPackage.getMetaData().getApplicationId().application();
@@ -102,7 +103,7 @@ class ApplicationPackagePreprocessor {
                                                     instance,
                                                     zone.environment(),
                                                     zone.region(),
-                                                    zone.cloud().name(),
+                                                    zone.cloud(),
                                                     applicationPackage.getDeploymentSpec().tags(instance, zone.environment()))
                                         .run();
 

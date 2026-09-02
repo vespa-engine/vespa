@@ -19,7 +19,7 @@ namespace search::docsummary {
  */
 class DocsumFieldWriterState {
 public:
-    virtual void insertField(uint32_t docId, search::common::ElementIds selected_elements,
+    virtual void insertField(uint32_t docId, common::ElementIds selected_elements,
                              vespalib::slime::Inserter& target) = 0;
     virtual ~DocsumFieldWriterState() = default;
 };

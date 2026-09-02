@@ -8,7 +8,10 @@
 #include "indexproperties.h"
 
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <algorithm>
 
 using vespalib::make_string_short::fmt;
 
@@ -56,6 +59,8 @@ RankSetup::RankSetup(const BlueprintFactory& factory, const IIndexEnvironment& i
       _match_features(),
       _summaryFeatures(),
       _dumpFeatures(),
+      _sort_features(),
+      _sort_resolver_by_public(),
       _warnings(),
       _feature_rename_map(),
       _sort_blueprints_by_cost(false),
@@ -102,6 +107,9 @@ void RankSetup::configure() {
     std::vector<std::string> dumpFeatures = dump::Feature::lookup(_indexEnv.getProperties());
     for (const auto& feature : dumpFeatures) {
         addDumpFeature(feature);
+    }
+    for (const auto& feature : sort::Feature::lookup(_indexEnv.getProperties())) {
+        add_sort_feature(feature);
     }
     for (const auto& rename : feature_rename::Rename::lookup(_indexEnv.getProperties())) {
         _feature_rename_map[rename.first] = rename.second;
@@ -179,6 +187,11 @@ void RankSetup::addDumpFeature(const std::string& dumpFeature) {
     _dumpFeatures.push_back(dumpFeature);
 }
 
+void RankSetup::add_sort_feature(const std::string& sort_feature) {
+    assert(!_compiled);
+    _sort_features.push_back(sort_feature);
+}
+
 void RankSetup::compileAndCheckForErrors(BlueprintResolver& bpr) {
     bool ok = bpr.compile();
     if (!ok) {
@@ -229,6 +242,49 @@ bool RankSetup::compile() {
     compileAndCheckForErrors(*_second_phase_resolver);
     compileAndCheckForErrors(*_match_resolver);
     compileAndCheckForErrors(*_summary_resolver);
+    std::map<std::string, BlueprintResolver::SP> unique_by_backend;
+    for (const auto& backend : _sort_features) {
+        auto                  existing = unique_by_backend.find(backend);
+        BlueprintResolver::SP resolver;
+        if (existing != unique_by_backend.end()) {
+            resolver = existing->second;
+        } else {
+            resolver = std::make_shared<BlueprintResolver>(_factory, _indexEnv);
+            resolver->addSeed(backend);
+            compileAndCheckForErrors(*resolver);
+            if (!_compileError) {
+                const auto& seeds = resolver->getSeedMap();
+                if (seeds.size() != 1) {
+                    _warnings.emplace_back(
+                        fmt("sort feature '%s' did not compile as a single seed", backend.c_str()));
+                    _compileError = true;
+                } else {
+                    auto        seed = seeds.begin()->second;
+                    const auto& specs = resolver->getExecutorSpecs();
+                    if (specs[seed.executor].output_types[seed.output].is_object()) {
+                        _warnings.emplace_back(
+                            fmt("sort feature '%s' must produce a double, not an object", backend.c_str()));
+                        _compileError = true;
+                    }
+                    for (const auto& spec : specs) {
+                        const auto& base = spec.blueprint->getBaseName();
+                        if (base == "firstPhaseRank" || base == "firstPhaseMax") {
+                            _warnings.emplace_back(
+                                fmt("sort feature '%s' cannot depend on %s", backend.c_str(), base.c_str()));
+                            _compileError = true;
+                        }
+                    }
+                }
+            }
+            unique_by_backend[backend] = resolver;
+        }
+        std::string public_name = backend;
+        auto        rename = _feature_rename_map.find(backend);
+        if (rename != _feature_rename_map.end()) {
+            public_name = rename->second;
+        }
+        _sort_resolver_by_public[public_name] = resolver;
+    }
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::DUMP);
     compileAndCheckForErrors(*_dumpResolver);
     _compiled = true;
@@ -249,6 +305,37 @@ void RankSetup::prepareSharedState(const IQueryEnvironment& queryEnv, IObjectSto
     for (const auto& spec : _summary_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
+}
+
+RankProgram::UP RankSetup::create_sort_program(const std::string& public_name) const {
+    auto it = _sort_resolver_by_public.find(public_name);
+    if (it == _sort_resolver_by_public.end() || !it->second) {
+        vespalib::Issue::report("'%s' is not an allowed sort feature", public_name.c_str());
+        return {};
+    }
+    return std::make_unique<RankProgram>(it->second);
+}
+
+bool RankSetup::prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
+                                          const std::vector<std::string>& selected_public_names) const {
+    assert(_compiled && !_compileError);
+    std::vector<const BlueprintResolver*> prepared;
+    for (const auto& public_name : selected_public_names) {
+        auto it = _sort_resolver_by_public.find(public_name);
+        if (it == _sort_resolver_by_public.end() || !it->second) {
+            vespalib::Issue::report("'%s' is not an allowed sort feature", public_name.c_str());
+            return false;
+        }
+        const BlueprintResolver* resolver = it->second.get();
+        if (std::find(prepared.begin(), prepared.end(), resolver) != prepared.end()) {
+            continue;
+        }
+        prepared.push_back(resolver);
+        for (const auto& spec : resolver->getExecutorSpecs()) {
+            spec.blueprint->prepareSharedState(queryEnv, objectStore);
+        }
+    }
+    return true;
 }
 
 std::string RankSetup::getJoinedWarnings() const {

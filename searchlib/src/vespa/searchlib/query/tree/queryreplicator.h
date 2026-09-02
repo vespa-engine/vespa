@@ -129,6 +129,11 @@ private:
         copyState(node, _builder.addPrefixTerm(node.getTerm(), node.getView(), node.getId(), node.getWeight()));
     }
 
+    void visit(StringRangeTerm& node) override {
+        copyState(node,
+                  _builder.add_string_range_term(node.getTerm(), node.getView(), node.getId(), node.getWeight()));
+    }
+
     void visit(RangeTerm& node) override {
         copyState(node, _builder.addRangeTerm(node.getTerm(), node.getView(), node.getId(), node.getWeight()));
     }

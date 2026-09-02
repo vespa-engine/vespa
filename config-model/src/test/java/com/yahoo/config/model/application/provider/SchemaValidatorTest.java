@@ -43,10 +43,35 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
+    private static final String servicesWithCommerceDiscovery = "<?xml version='1.0' encoding='utf-8' ?>\n" +
+            "<services>\n" +
+            "  <commerce-discovery version='1.0'>\n" +
+            "    <product document-type='model' namespace='model' id-field='id' />\n" +
+            "    <category id-field='id' />\n" +
+            "    <variant-presentation />\n" +
+            "    <ranking-tags-registry />\n" +
+            "  </commerce-discovery>\n" +
+            "</services>\n";
+
     @Test
     void testXMLParse() throws IOException {
         SchemaValidator validator = createValidator();
         validator.validate(new StringReader(okServices));
+    }
+
+    @Test
+    void testCommerceDiscoveryIsAccepted() throws IOException {
+        SchemaValidator validator = createValidator();
+        validator.validate(new StringReader(servicesWithCommerceDiscovery));
+    }
+
+    @Test
+    void testUnknownTopLevelElementIsRejected() {
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
+            SchemaValidator validator = createValidator();
+            validator.validate(new StringReader(servicesWithCommerceDiscovery.replace("commerce-discovery", "commerce-discoverh")));
+        });
+        assertTrue(exception.getMessage().contains("element \"commerce-discoverh\" not allowed"));
     }
 
     @Test

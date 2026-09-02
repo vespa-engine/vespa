@@ -6,9 +6,17 @@
 #include "docsumrequest.h"
 #include "monitorreply.h"
 #include "monitorrequest.h"
-#include "search_protocol_proto.h"
 #include "searchreply.h"
 #include "searchrequest.h"
+
+namespace searchlib::searchprotocol::protobuf {
+class SearchRequest;
+class SearchReply;
+class DocsumRequest;
+class DocsumReply;
+class MonitorRequest;
+class MonitorReply;
+} // namespace searchlib::searchprotocol::protobuf
 
 namespace search::engine {
 

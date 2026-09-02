@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "proto_converter.h"
+#include "search_protocol_proto.h"
 
 #include <vespa/searchlib/common/mapnames.h>
 #include <vespa/searchlib/common/proto_to_json.h>

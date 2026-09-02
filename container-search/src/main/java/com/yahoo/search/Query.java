@@ -880,6 +880,12 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                        .append('"');
                 }
                 yql.append("}]");
+            } else if (sorterType == Sorting.FeatureSorter.class) {
+                yql.append("[{\"")
+                   .append(YqlParser.SORTING_FUNCTION)
+                   .append("\": \"")
+                   .append(Sorting.FEATURE)
+                   .append("\"}]");
             }
             yql.append(maybeQuote(f.getFieldName()));
             if (f.getSortOrder() == Order.DESCENDING) {

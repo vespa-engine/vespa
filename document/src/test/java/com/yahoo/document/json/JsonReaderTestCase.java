@@ -2355,6 +2355,57 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_with_addresses() {
+        // 'addresses' is an alias for the fully-specified 'cells' array form, as documented at
+        // https://docs.vespa.ai/en/reference/schemas/document-json-format.html#tensor-modify
+        assertTensorModifyUpdate("{{x:a,y:b}:7.0, {x:c,y:d}:8.0}", TensorModifyUpdate.Operation.REPLACE, "sparse_tensor",
+                                 """
+                                 {
+                                   "operation": "replace",
+                                   "addresses": [
+                                     { "address": { "x": "a", "y": "b" }, "value": 7.0 },
+                                     { "address": { "x": "c", "y": "d" }, "value": 8.0 }
+                                   ]
+                                 }""");
+    }
+
+    @Test
+    public void tensor_modify_update_with_cells_before_operation() {
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.REPLACE, "sparse_tensor",
+                                 """
+                                 {
+                                   "cells": [
+                                     { "address": { "x": "a", "y": "b" }, "value": 2.0 }
+                                   ],
+                                   "operation": "replace"
+                                 }""");
+    }
+
+    @Test
+    public void tensor_modify_update_with_addresses_before_operation() {
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.REPLACE, "sparse_tensor",
+                                 """
+                                 {
+                                   "addresses": [
+                                     { "address": { "x": "a", "y": "b" }, "value": 2.0 }
+                                   ],
+                                   "operation": "replace"
+                                 }""");
+    }
+
+    @Test
+    public void tensor_modify_update_with_blocks_before_operation() {
+        assertTensorModifyUpdate("{{x:a,y:0}:1,{x:a,y:1}:2,{x:a,y:2}:3}", TensorModifyUpdate.Operation.REPLACE, "mixed_tensor",
+                                 """
+                                 {
+                                   "blocks": {
+                                     "a": [1,2,3]
+                                   },
+                                   "operation": "replace"
+                                 }""");
+    }
+
+    @Test
     public void tensor_modify_update_on_non_tensor_field_throws() {
         try {
             JsonReader reader = createReader("""

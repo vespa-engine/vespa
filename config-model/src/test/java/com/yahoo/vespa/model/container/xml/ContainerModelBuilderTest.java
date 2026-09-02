@@ -18,6 +18,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -602,7 +603,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(2, model.hostSystem().getHosts().size());
         assertEquals(List.of(cloudAccount), model.provisioned().capacities().values()
                                                  .stream()
-                                                 .map(capacity -> capacity.cloudAccount().get())
+                                                 .map(Capacity::cloudAccount)
                                                  .toList());
     }
 

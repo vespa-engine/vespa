@@ -86,6 +86,7 @@ public:
     void visit(query::LocationTerm& n) override = 0;
     void visit(query::PrefixTerm& n) override = 0;
     void visit(query::RangeTerm& n) override = 0;
+    void visit(query::StringRangeTerm& n) override = 0;
     void visit(query::StringTerm& n) override = 0;
     void visit(query::SubstringTerm& n) override = 0;
     void visit(query::SuffixTerm& n) override = 0;

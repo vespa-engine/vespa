@@ -53,6 +53,9 @@ public class SDField extends Field implements ImmutableSDField {
     /** Use this field for modifying index-structure, even if it doesn't have any indexing code */
     private boolean indexStructureField = false;
 
+    /** Whether a synthetic key+value field should be built (with fast search structure) */
+    private boolean fastMapSearch = false;
+
     /** The indexing statements to be applied to this value during indexing */
     private ScriptExpression indexingScript = new ScriptExpression();
 
@@ -123,6 +126,9 @@ public class SDField extends Field implements ImmutableSDField {
 
     private boolean wasConfiguredToDoAttributing = false;
     private boolean wasConfiguredToDoIndexing = false;
+
+    /** For internal fields generated synthetically.  */
+    private boolean isInternalField = false;
 
     /**
      * Creates a new field. This method is only used to create reserved fields.
@@ -199,6 +205,14 @@ public class SDField extends Field implements ImmutableSDField {
     @Override
     public boolean isExtraField() {
         return isExtraField;
+    }
+
+    public boolean isInternalField() {
+        return isInternalField;
+    }
+
+    public void setInternalField(boolean internalField) {
+        isInternalField = internalField;
     }
 
     public boolean isDocumentField() { return ! isExtraField; }
@@ -492,6 +506,16 @@ public class SDField extends Field implements ImmutableSDField {
 
     public void setIndexStructureField(boolean indexStructureField) {
         this.indexStructureField = indexStructureField;
+    }
+
+    /** Returns whether a fast search structure should be built for the synthetic key value field */
+    @Override
+    public boolean hasFastMapSearch() {
+        return fastMapSearch;
+    }
+
+    public void setFastMapSearch(boolean fastMapSearch) {
+        this.fastMapSearch = fastMapSearch;
     }
 
     @Override

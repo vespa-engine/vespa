@@ -183,6 +183,7 @@ TOKEN :
     <BUSY_WAIT: "busy_wait"> |
     <CASE: "case"> |
     <CASE_DEFAULT: "default"> |
+    <DOCUMENTID: "documentid"> |
     <CHUNK: "chunk"> |
     <CLEAR_STATE: "clear_state"> |
     <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
@@ -349,6 +350,7 @@ Expression value() :
       val = busy_waitExp()          |
       val = chunkExp()              |
       val = clearStateExp()         |
+      val = documentIdExp()         |
       val = echoExp()               |
       val = embedExp()              |
       val = exactExp()              |
@@ -456,6 +458,15 @@ Expression chunkExp() :
     {
         return new ChunkExpression(chunkers, chunkerId, arguments);
     }
+;
+
+Expression documentIdExp() :
+{
+    String part = null;
+}
+
+    ( <DOCUMENTID> [ SCAN(identifierStr) => (part = identifierStr()) ] )
+    { return new DocumentIdExpression(part); }
 ;
 
 Expression clearStateExp() : { }
@@ -963,6 +974,7 @@ String identifierStr() :
         <CHUNK>                  |
         <CLEAR_STATE>            |
         <CREATE_IF_NON_EXISTENT> |
+        <DOCUMENTID>             |
         <ECHO>                   |
         <EXACT>                  |
         <ELSE>                   |

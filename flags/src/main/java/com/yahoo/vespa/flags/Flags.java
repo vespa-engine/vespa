@@ -53,7 +53,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2026-08-27",
+            List.of("hakonhall"), "2025-03-19", "2026-11-27",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
@@ -66,7 +66,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundStringFlag DEPLOYMENT_METRICS_CONSUMER = defineStringFlag(
-            "deployment-metrics-consumer", "Vespa",
+            "deployment-metrics-consumer", "cluster-deployment-metrics",
             List.of("hmusum"), "2026-07-10", "2026-12-01",
             "Selects which metrics-proxy consumer the config server uses when fetching " +
             "metrics for cluster deployment metrics aggregation. Valid values: Vespa, cluster-deployment-metrics",
@@ -191,7 +191,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
-            List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-09-01",
+            List.of("glebashnik"), "2025-04-30", "2026-09-01",
             "Whether to use Triton as ONNX runtime",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
@@ -262,6 +262,23 @@ public class Flags {
             "Whether to enable fast map search for map fields in a schema.",
             "Takes effect at redeployment",
             INSTANCE_ID
+    );
+
+    public static final UnboundBooleanFlag RELAX_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
+            "relax-strictly-increasing-cluster-state-versions", false,
+            List.of("hmusum"), "2026-08-24", "2027-01-24",
+            "Whether to allow disabling the requirement that cluster state versions are strictly " +
+            "increasing when a content cluster has only a single cluster controller configured.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
+    public static final UnboundBooleanFlag COMMERCE_DISCOVERY = defineFeatureFlag(
+            "commerce-discovery", false,
+            List.of("sebasabe"), "2026-08-31", "2027-08-31",
+            "Whether the commerce-discovery element in services.xml is enabled",
+            "Takes effect at redeployment",
+            TENANT_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

@@ -56,16 +56,8 @@ public class FileDownloader implements AutoCloseable {
                           File downloadDirectory,
                           Duration timeout,
                           Duration backoffInitialTime) {
-        this.connectionPool = connectionPool;
-        this.supervisor = supervisor;
-        this.downloadDirectory = downloadDirectory;
-        this.timeout = timeout;
-        // Needed to receive RPC receiveFile* calls from server after starting download of file reference
-        new FileReceiver(supervisor, downloads, downloadDirectory);
-        this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout,
-                                                                    backoffInitialTime, downloadDirectory);
-        if (forceDownload)
-            log.log(Level.INFO, "Force download of file references (download even if file reference exists on disk)");
+        this(connectionPool, supervisor, downloadDirectory, timeout, backoffInitialTime,
+             FileReferenceDownloader.defaultMaxTimeoutsBeforeClose);
     }
 
     public FileDownloader(ConnectionPool connectionPool,
@@ -74,6 +66,18 @@ public class FileDownloader implements AutoCloseable {
                           Duration timeout,
                           Duration backoffInitialTime,
                           int maxTimeoutsBeforeClose) {
+        this(connectionPool, supervisor, downloadDirectory, timeout, backoffInitialTime, maxTimeoutsBeforeClose,
+             FileReferenceDownloader.defaultPermissionDeniedGracePeriod);
+    }
+
+    // For tests: allows overriding the permission-denied grace period.
+    public FileDownloader(ConnectionPool connectionPool,
+                          Supervisor supervisor,
+                          File downloadDirectory,
+                          Duration timeout,
+                          Duration backoffInitialTime,
+                          int maxTimeoutsBeforeClose,
+                          Duration permissionDeniedGracePeriod) {
         this.connectionPool = connectionPool;
         this.supervisor = supervisor;
         this.downloadDirectory = downloadDirectory;
@@ -82,7 +86,7 @@ public class FileDownloader implements AutoCloseable {
         new FileReceiver(supervisor, downloads, downloadDirectory);
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout,
                                                                     backoffInitialTime, downloadDirectory,
-                                                                    maxTimeoutsBeforeClose);
+                                                                    maxTimeoutsBeforeClose, permissionDeniedGracePeriod);
         if (forceDownload)
             log.log(Level.INFO, "Force download of file references (download even if file reference exists on disk)");
     }
@@ -90,7 +94,12 @@ public class FileDownloader implements AutoCloseable {
     public Optional<File> getFile(FileReferenceDownload fileReferenceDownload) {
         try {
             return getFutureFile(fileReferenceDownload).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (ExecutionException e) {
+            fileReferenceDownloader.failedDownloading(fileReferenceDownload.fileReference());
+            if (e.getCause() instanceof FileReferenceDownloadPermissionDeniedException permissionDenied)
+                throw permissionDenied;
+            return Optional.empty();
+        } catch (InterruptedException | TimeoutException e) {
             fileReferenceDownloader.failedDownloading(fileReferenceDownload.fileReference());
             return Optional.empty();
         }

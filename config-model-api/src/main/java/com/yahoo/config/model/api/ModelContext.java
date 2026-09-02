@@ -96,10 +96,10 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedConcurrency() { return 0.5; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int maxUnCommittedMemory() { return 130000; }
-        @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
         @ModelFeatureFlag(owners = {"onur"}) default OpenTelemetryConfiguration opentelemetrySdk() { return OpenTelemetryConfiguration.disabled(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default int heapSizePercentage(Optional<String> clusterId) { return  0;}
-        @ModelFeatureFlag(owners = {"bjorncs"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
+        @ModelFeatureFlag(owners = {"hmusum"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.75; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
@@ -120,7 +120,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
-        @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> useTritonFlag() { return () -> false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.721") default int searchCoreMaxOutstandingMoveOps() { return 100; }
@@ -137,6 +136,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
         @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonResampleDiskCapacity() { return true; }
         @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean relaxStrictlyIncreasingClusterStateVersions() { return false; }
+        @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -200,7 +201,12 @@ public interface ModelContext {
 
         List<String> environmentVariables();
 
-        default Optional<CloudAccount> cloudAccount() { return Optional.empty(); }
+        /** TODO: Remove after September 2026 */
+        @Deprecated
+        default Optional<CloudAccount> cloudAccount() { return Optional.of(getCloudAccount()); }
+
+        @SuppressWarnings("deprecated")
+        default CloudAccount getCloudAccount() { return cloudAccount().orElse(CloudAccount.unspecified()); }
 
         default CloudResourceTags cloudResourceTags() { return CloudResourceTags.empty(); }
 

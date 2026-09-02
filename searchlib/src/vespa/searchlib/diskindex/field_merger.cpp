@@ -9,7 +9,6 @@
 #include "fusion_output_index.h"
 #include "wordnummapper.h"
 
-#include <vespa/fastos/file.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -92,12 +91,12 @@ bool FieldMerger::clean_tmp_dirs() {
     uint32_t i = 0;
     for (;;) {
         std::string     tmpindexpath = createTmpPath(_field_dir, i);
-        FastOS_StatInfo statInfo;
-        if (!FastOS_File::Stat(tmpindexpath.c_str(), &statInfo)) {
-            if (statInfo._error == FastOS_StatInfo::FileNotFound) {
+        std::error_code ec;
+        if (!std::filesystem::exists(std::filesystem::path(tmpindexpath), ec)) {
+            if (!ec) {
                 break;
             }
-            LOG(error, "Failed to stat tmpdir %s", tmpindexpath.c_str());
+            LOG(error, "Failed to stat tmpdir %s: %s", tmpindexpath.c_str(), ec.message().c_str());
             return false;
         }
         i++;
@@ -108,7 +107,7 @@ bool FieldMerger::clean_tmp_dirs() {
         std::error_code ec;
         std::filesystem::remove_all(std::filesystem::path(tmpindexpath), ec);
         if (ec) {
-            LOG(error, "Failed to clean tmpdir %s", tmpindexpath.c_str());
+            LOG(error, "Failed to clean tmpdir %s: %s", tmpindexpath.c_str(), ec.message().c_str());
             return false;
         }
     }
@@ -420,6 +419,7 @@ bool FieldMerger::merge_postings_finish() {
         }
     }
     _readers.clear();
+    _word_num_mappings.clear();
     if (!_writer->close()) {
         throw IllegalArgumentException(
             make_string("Could not close output posocc + dictionary in %s", _field_dir.c_str()));

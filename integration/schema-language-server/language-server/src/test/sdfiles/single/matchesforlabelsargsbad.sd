@@ -1,0 +1,13 @@
+schema matchesforlabelsargsbad {
+    document matchesforlabelsargsbad {
+        field title type string {
+            indexing: index
+        }
+    }
+
+    rank-profile myprofile {
+        first-phase {
+            expression: reduce(matches_for_labels(title, 0), max, label)
+        }
+    }
+}

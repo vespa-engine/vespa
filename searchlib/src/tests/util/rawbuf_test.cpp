@@ -17,14 +17,6 @@ string getString(const RawBuf& buf) {
     return {buf.GetDrainPos(), buf.GetUsedLen()};
 }
 
-template <typename T>
-void checkAddNum(void (RawBuf::*addNum)(T, size_t, char), size_t num, size_t fieldw, char fill,
-                 const string& expected) {
-    RawBuf buf(10);
-    (buf.*addNum)(num, fieldw, fill);
-    EXPECT_EQ(expected, getString(buf));
-}
-
 TEST(RawBufTest, require_that_rawbuf_can_append_data_of_known_length) {
     RawBuf       buf(10);
     const string data("foo bar baz qux quux");

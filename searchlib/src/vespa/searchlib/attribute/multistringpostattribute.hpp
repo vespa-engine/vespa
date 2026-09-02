@@ -6,6 +6,8 @@
 #include "multistringpostattribute.h"
 #include "string_direct_posting_store_adapter.hpp"
 #include "string_posting_search_context.hpp"
+#include "string_range_matcher.h"
+#include "string_range_posting_search_context.hpp"
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
@@ -83,13 +85,21 @@ template <typename B, typename T>
 std::unique_ptr<attribute::SearchContext>
 MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP                     qTerm,
                                                    const attribute::SearchContextParams& params) const {
-    using BaseSC = attribute::MultiStringEnumSearchContext<T>;
-    using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, int32_t>;
-    bool   cased = this->get_match_is_cased();
-    auto   doc_id_limit = this->getCommittedDocIdLimit();
-    BaseSC base_sc(std::move(qTerm), cased, params.fuzzy_matching_algorithm(), *this,
-                   this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
-    return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
+    bool cased = this->get_match_is_cased();
+    auto doc_id_limit = this->getCommittedDocIdLimit();
+    if (qTerm && qTerm->get_string_range_spec()) {
+        using BaseSC = attribute::MultiStringEnumSearchContextT<T, attribute::StringRangeMatcher>;
+        using SC = attribute::StringRangePostingSearchContext<BaseSC, SelfType, int32_t>;
+        BaseSC base_sc(attribute::StringRangeMatcher(std::move(qTerm), cased), *this,
+                       this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
+        return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
+    } else {
+        using BaseSC = attribute::MultiStringEnumSearchContextT<T, attribute::StringMatcher>;
+        using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, int32_t>;
+        BaseSC base_sc(attribute::StringMatcher(std::move(qTerm), cased, params.fuzzy_matching_algorithm()), *this,
+                       this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
+        return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
+    }
 }
 
 template <typename B, typename T>

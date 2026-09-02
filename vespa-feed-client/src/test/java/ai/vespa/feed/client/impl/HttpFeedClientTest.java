@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
@@ -260,6 +261,26 @@ class HttpFeedClientTest {
                                    .setNanoClock(() -> 0),
                            () -> cluster,
                            null);
+    }
+
+    @Test
+    void testFailedHandshakeDestroysRequestStrategy() {
+        AtomicBoolean destroyed = new AtomicBoolean();
+        class MockRequestStrategy implements RequestStrategy {
+            @Override public OperationStats stats() { throw new UnsupportedOperationException(); }
+            @Override public void resetStats() { throw new UnsupportedOperationException(); }
+            @Override public FeedClient.CircuitBreaker.State circuitBreakerState() { throw new UnsupportedOperationException(); }
+            @Override public void destroy() { destroyed.set(true); }
+            @Override public void await() { throw new UnsupportedOperationException(); }
+            @Override public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) { throw new UnsupportedOperationException(); }
+        }
+        Cluster failingCluster = (request, vessel) -> vessel.completeExceptionally(new IOException("failed connecting"));
+        assertThrows(FeedException.class,
+                     () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))
+                                                      .setNanoClock(() -> 0),
+                                              () -> failingCluster,
+                                              new MockRequestStrategy()));
+        assertTrue(destroyed.get());
     }
 
 }

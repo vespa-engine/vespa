@@ -805,6 +805,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_IN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NUMERIC_IN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType LABEL_WRAPPER",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_RANGE",
       "public final int code"
     ]
   },
@@ -1710,6 +1711,33 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.prelude.query.StringRangeItem" : {
+    "superClass" : "com.yahoo.prelude.query.TermItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, boolean, java.lang.String, boolean, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
+      "public final java.lang.String getFrom()",
+      "public final boolean isFromInclusive()",
+      "public final java.lang.String getTo()",
+      "public final boolean isToInclusive()",
+      "public java.lang.String getIndexedString()",
+      "public java.lang.String getRawWord()",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public java.lang.String stringValue()",
+      "public void setValue(java.lang.String)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "public int getNumWords()",
+      "public boolean isStemmed()",
+      "public boolean isWords()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.Substring" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -2057,7 +2085,10 @@
       "final"
     ],
     "methods" : [
+      "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, double)",
+      "public java.lang.String word()",
+      "public double exactness()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
@@ -2088,6 +2119,7 @@
       "public java.util.List getAlternatives()",
       "public void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
       "public void addTerm(java.lang.String, double)",
+      "public void add(com.yahoo.prelude.query.WordAlternativesItem$Alternative)",
       "public com.yahoo.prelude.query.WordAlternativesItem clone()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -6021,6 +6053,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.query.Sorting$FeatureSorter" : {
+    "superClass" : "com.yahoo.search.query.Sorting$AttributeSorter",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String toSerialForm()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.query.Sorting$FieldOrder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -6165,7 +6211,8 @@
       "public static final java.lang.String STRENGTH_PRIMARY",
       "public static final java.lang.String UCA",
       "public static final java.lang.String RAW",
-      "public static final java.lang.String LOWERCASE"
+      "public static final java.lang.String LOWERCASE",
+      "public static final java.lang.String FEATURE"
     ]
   },
   "com.yahoo.search.query.Trace" : {
@@ -9118,7 +9165,22 @@
       "public com.yahoo.search.schema.Field$Builder setAttribute(boolean)",
       "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
       "public com.yahoo.search.schema.Field$Builder setBitPacked(boolean)",
+      "public com.yahoo.search.schema.Field$Builder setFastMapSearch(boolean)",
       "public com.yahoo.search.schema.Field build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$MapFieldType" : {
+    "superClass" : "com.yahoo.search.schema.Field$Type",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.Field$Type, com.yahoo.search.schema.Field$Type)",
+      "public com.yahoo.search.schema.Field$Type keyType()",
+      "public com.yahoo.search.schema.Field$Type valueType()",
+      "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],
     "fields" : [ ]
   },
@@ -9196,6 +9258,7 @@
       "public java.util.Set aliases()",
       "public boolean isAttribute()",
       "public boolean isIndex()",
+      "public boolean hasFastMapSearch()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -9214,7 +9277,8 @@
       "public abstract java.lang.String name()",
       "public abstract com.yahoo.search.schema.Field$Type type()",
       "public abstract boolean isAttribute()",
-      "public abstract boolean isIndex()"
+      "public abstract boolean isIndex()",
+      "public abstract boolean hasFastMapSearch()"
     ],
     "fields" : [ ]
   },
@@ -9244,6 +9308,7 @@
       "public com.yahoo.search.schema.Field$Type type()",
       "public boolean isAttribute()",
       "public boolean isIndex()",
+      "public boolean hasFastMapSearch()",
       "public java.util.Set fieldNames()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -9297,6 +9362,7 @@
       "public com.yahoo.search.schema.RankProfile$Builder setTotalKeepRankCount(int)",
       "public com.yahoo.search.schema.RankProfile$Builder setMatchPhase(com.yahoo.search.schema.MatchPhase)",
       "public com.yahoo.search.schema.RankProfile$Builder setSecondPhase(com.yahoo.search.schema.SecondPhase)",
+      "public com.yahoo.search.schema.RankProfile$Builder addSortFeature(java.lang.String)",
       "public com.yahoo.search.schema.RankProfile build()"
     ],
     "fields" : [ ]
@@ -9337,6 +9403,7 @@
       "public java.util.OptionalInt totalKeepRankCount()",
       "public com.yahoo.search.schema.MatchPhase matchPhase()",
       "public com.yahoo.search.schema.SecondPhase secondPhase()",
+      "public java.util.List sortFeatures()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"

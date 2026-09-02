@@ -79,7 +79,7 @@ public final class ConfigModelContext {
         ClusterInfo.Builder builder = new ClusterInfo.Builder();
         spec.hostTTL(properties().applicationId().instance(), deployState.zone().environment(), deployState.zone().region())
             .filter(ttl -> ! ttl.isZero())
-            .filter(__ -> deployState.getProperties().cloudAccount().map(account -> ! account.isUnspecified()).orElse(false))
+            .filter(__ -> ! deployState.getProperties().getCloudAccount().isUnspecified())
             .ifPresent(builder::hostTTL);
         spec.instance(properties().applicationId().instance())
             .flatMap(instance -> instance.bcp().groups().stream()

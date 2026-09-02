@@ -3,6 +3,7 @@ package com.yahoo.search.schema;
 
 import com.yahoo.tensor.TensorType;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -19,6 +20,7 @@ public class Field implements FieldInfo {
     private final boolean isAttribute;
     private final boolean isIndex;
     private final boolean bitPacked;
+    private final boolean fastMapSearch;
     private final Set<String> aliases;
 
     public Field(Builder builder) {
@@ -27,6 +29,7 @@ public class Field implements FieldInfo {
         this.isAttribute = builder.isAttribute;
         this.isIndex = builder.isIndex;
         this.bitPacked = builder.isBitPacked;
+        this.fastMapSearch = builder.fastMapSearch;
         this.aliases = Set.copyOf(builder.aliases);
     }
 
@@ -45,6 +48,11 @@ public class Field implements FieldInfo {
     /** Returns whether this field is an index, i.e. does indexing: index. */
     @Override
     public boolean isIndex() { return isIndex; }
+
+    @Override
+    public boolean hasFastMapSearch() {
+        return fastMapSearch;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -107,7 +115,7 @@ public class Field implements FieldInfo {
             if (typeString.equals("long"))
                 return new Type(Kind.LONG);
             if (typeString.startsWith("map<"))
-                return new Type(Kind.MAP); // TODO: Model as subclass
+                return MapFieldType.from(typeString);
             if (typeString.equals("position"))
                 return new Type(Kind.POSITION);
             if (typeString.equals("predicate"))
@@ -148,6 +156,34 @@ public class Field implements FieldInfo {
 
     }
 
+    public static class MapFieldType extends Type {
+
+        private final Type keyType;
+        private final Type valueType;
+
+        public MapFieldType(Type keyType, Type valueType) {
+            super(Kind.MAP);
+            this.keyType = keyType;
+            this.valueType = valueType;
+        }
+
+        public Type keyType() {
+            return keyType;
+        }
+
+        public Type valueType() {
+            return valueType;
+        }
+
+        public static Type from(String typeString) {
+            typeString = typeString.substring("map<".length());
+            typeString = typeString.substring(0, typeString.lastIndexOf(">"));
+            // we can split on first comma, since key can only be primitive type.
+            String[] parts = Arrays.stream(typeString.split(",", 2)).map(String::trim).toArray(String[]::new);
+            return new MapFieldType(Type.from(parts[0]), Type.from(parts[1]));
+        }
+    }
+
     public static class Builder {
 
         private final String name;
@@ -156,6 +192,7 @@ public class Field implements FieldInfo {
         private boolean isAttribute;
         private boolean isIndex;
         private boolean isBitPacked;
+        private boolean fastMapSearch;
 
         public Builder(String name, String typeString) {
             this.name = name;
@@ -179,6 +216,11 @@ public class Field implements FieldInfo {
 
         public Builder setBitPacked(boolean isBitPacked) {
             this.isBitPacked = isBitPacked;
+            return this;
+        }
+
+        public Builder setFastMapSearch(boolean fastMapSearch) {
+            this.fastMapSearch = fastMapSearch;
             return this;
         }
 

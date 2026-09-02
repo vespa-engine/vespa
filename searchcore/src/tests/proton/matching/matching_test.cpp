@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/matching/querynodes.h>
+#include <vespa/searchcore/proton/matching/result_processor.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
@@ -18,6 +19,7 @@
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -61,7 +63,9 @@ using namespace search::queryeval;
 using namespace search;
 
 using search::attribute::test::MockAttributeContext;
+using search::fef::indexproperties::hitcollector::FirstPhaseRankScoreDropLimit;
 using search::fef::indexproperties::hitcollector::HeapSize;
+using search::fef::indexproperties::hitcollector::SecondPhaseRankScoreDropLimit;
 using search::index::schema::DataType;
 using storage::spi::Timestamp;
 using vespalib::FeatureSet;
@@ -197,6 +201,28 @@ std::string make_two_term_and_stack_dump(const std::string& field, const std::st
     return StackDumpCreator::create(*builder.build());
 }
 
+size_t feature_index(const std::vector<std::string>& names, const std::string& name) {
+    for (size_t i = 0; i < names.size(); ++i) {
+        if (names[i] == name) {
+            return i;
+        }
+    }
+    ADD_FAILURE() << "match feature '" << name << "' not found";
+    return names.size();
+}
+
+// Three labeled query items: a term in f1, a term in f2 and a label wrapper
+// (which searches no field of its own) around a term in f1.
+std::string make_labeled_terms_and_wrapper_stack_dump() {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addAnd(3);
+    builder.addStringTerm("foo", "f1", 1, Weight(1));
+    builder.addStringTerm("baz", "f2", 2, Weight(1));
+    builder.add_label_wrapper(3, 1.0);
+    builder.addStringTerm("bar", "f1", 4, Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
 std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
     QueryBuilder<ProtonNodeTypes> builder;
     constexpr int                 child_count = 2;
@@ -279,6 +305,21 @@ struct MyWorld {
         sessionManager = std::make_shared<SessionManager>(100);
     }
 
+    void setup_sort_feature_by_a1() {
+        config.add(indexproperties::sort::Feature::NAME, "attribute(a1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "attribute(a1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "by_a1");
+    }
+
+    void setup_sort_feature_bm25() {
+        config.add(indexproperties::sort::Feature::NAME, "bm25(f1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "bm25(f1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "title_bm25");
+        // FakeIndexSearchable reports average field length 0. Override it so the
+        // synthetic BM25 scores are finite and exercise feature ordering.
+        config.add("bm25(f1).averageFieldLength", "10");
+    }
+
     void set_property(const std::string& name, const std::string& value) {
         Properties cfg;
         cfg.add(name, value);
@@ -312,6 +353,18 @@ struct MyWorld {
         config.add(indexproperties::match::Feature::NAME, "bm25(f1,\"label:t2\")");
         config.add(indexproperties::match::Feature::NAME, "bm25_for_labels(f1)");
         config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
+    }
+
+    void setup_matches_for_labels_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels(f1)");
+        config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    }
+
+    void setup_matches_for_labels_any_field_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels");
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels(f1)");
+        config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"matches_for_labels{label:t3}\")");
+        config.add(indexproperties::match::Feature::NAME, "itemRawScore(t3)");
     }
 
     void setup_feature_renames() {
@@ -755,20 +808,11 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
     ASSERT_GT(reply->hits.size(), 0u);
     const auto& names = reply->match_features.names;
     ASSERT_EQ(names.size(), 5u);
-    auto feature_index = [&names](const std::string& name) {
-        for (size_t i = 0; i < names.size(); ++i) {
-            if (names[i] == name) {
-                return i;
-            }
-        }
-        ADD_FAILURE() << "match feature '" << name << "' not found";
-        return names.size();
-    };
-    size_t full_idx = feature_index("bm25(f1)");
-    size_t t1_idx = feature_index("bm25(\"field:f1\",\"label:t1\")");
-    size_t t2_idx = feature_index("bm25(f1,\"label:t2\")");
-    size_t tensor_idx = feature_index("bm25_for_labels(f1)");
-    size_t slice_idx = feature_index("rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
+    size_t full_idx = feature_index(names, "bm25(f1)");
+    size_t t1_idx = feature_index(names, "bm25(\"field:f1\",\"label:t1\")");
+    size_t t2_idx = feature_index(names, "bm25(f1,\"label:t2\")");
+    size_t tensor_idx = feature_index(names, "bm25_for_labels(f1)");
+    size_t slice_idx = feature_index(names, "rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
     ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
     for (size_t i = 0; i < reply->hits.size(); ++i) {
         const auto* values = &reply->match_features.values[i * names.size()];
@@ -790,8 +834,97 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
                                     .normalize();
             EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
         }
-        // and slicing a cell out of it evaluates in the backend 
+        // and slicing a cell out of it evaluates in the backend
         EXPECT_FLOAT_EQ(values[slice_idx].as_double(), t1_score);
+    }
+}
+
+TEST_F(MatchingTest, require_that_matches_for_labels_reports_matching_labels_and_slice) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // two terms matching the same documents in field f1
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(10).doc(20).doc(30));
+    world.setup_matches_for_labels_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_two_term_and_stack_dump("f1", "foo", "bar"));
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_GT(reply->hits.size(), 0u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 2u);
+    size_t tensor_idx = feature_index(names, "matches_for_labels(f1)");
+    ASSERT_LT(tensor_idx, names.size());
+    size_t slice_idx = feature_index(names, "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    ASSERT_LT(slice_idx, names.size());
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        ASSERT_TRUE(values[tensor_idx].is_data());
+        {
+            nbostream buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
+            // both labeled terms hit; cells are 1, not BM25 scores
+            TensorSpec expect =
+                TensorSpec("tensor<float>(label{})").add({{"label", "t1"}}, 1).add({{"label", "t2"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        // slicing a cell out of it evaluates in the backend
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), 1.0);
+    }
+}
+
+TEST_F(MatchingTest, require_that_matches_for_labels_without_field_parameter_ignores_fields) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // one labeled term per field, plus a labeled wrapper around a term in f1
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f2", "baz", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(10).doc(20).doc(30));
+    world.setup_matches_for_labels_any_field_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_labeled_terms_and_wrapper_stack_dump());
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    rankProperties.add("vespa.label.t3.id", "3");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_GT(reply->hits.size(), 0u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 4u);
+    size_t any_field_idx = feature_index(names, "matches_for_labels");
+    ASSERT_LT(any_field_idx, names.size());
+    size_t f1_idx = feature_index(names, "matches_for_labels(f1)");
+    ASSERT_LT(f1_idx, names.size());
+    size_t slice_idx = feature_index(names, "rankingExpression(\"matches_for_labels{label:t3}\")");
+    ASSERT_LT(slice_idx, names.size());
+    size_t wrapper_score_idx = feature_index(names, "itemRawScore(t3)");
+    ASSERT_LT(wrapper_score_idx, names.size());
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        ASSERT_TRUE(values[any_field_idx].is_data());
+        {
+            nbostream buf(values[any_field_idx].as_data().data, values[any_field_idx].as_data().size);
+            // without a field parameter every label hits, including the wrapper
+            // that searches no field at all
+            TensorSpec expect = TensorSpec("tensor<float>(label{})")
+                                    .add({{"label", "t1"}}, 1)
+                                    .add({{"label", "t2"}}, 1)
+                                    .add({{"label", "t3"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        ASSERT_TRUE(values[f1_idx].is_data());
+        {
+            nbostream buf(values[f1_idx].as_data().data, values[f1_idx].as_data().size);
+            // with a field parameter only the term searching f1 hits; the f2 term
+            // and the field-less wrapper are left out
+            TensorSpec expect = TensorSpec("tensor<float>(label{})").add({{"label", "t1"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        // slicing the wrapper label out of the field-less feature evaluates in the backend
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), 1.0);
+        // the wrapper is unpacked, so its constant score is available as well
+        EXPECT_DOUBLE_EQ(values[wrapper_score_idx].as_double(), 1.0);
     }
 }
 
@@ -968,6 +1101,202 @@ TEST_F(MatchingTest, require_that_sortspec_can_be_used_with_multi_threaded_match
     }
 }
 
+TEST_F(MatchingTest, require_that_feature_sort_orders_hits_without_activating_ranking) {
+    for (size_t threads = 1; threads <= 16; ++threads) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setup_sort_feature_by_a1();
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = "-feature(by_a1)";
+        SearchReply::UP reply = world.performSearch(*request, threads);
+        ASSERT_EQ(9u, reply->hits.size());
+        EXPECT_EQ(9u, world.matchingStats.docsMatched());
+        EXPECT_EQ(0u, world.matchingStats.docsRanked());
+        EXPECT_EQ(0u, world.matchingStats.docsReRanked());
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+        EXPECT_EQ(zero_rank_value, reply->hits[0].metric);
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid);
+        EXPECT_FALSE(reply->sortIndex.empty());
+        EXPECT_FALSE(reply->sortData.empty());
+    }
+}
+
+TEST_F(MatchingTest, require_that_duplicate_feature_sort_clauses_share_an_ordinal) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) +feature(by_a1)";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+}
+
+TEST_F(MatchingTest, require_that_second_phase_is_not_run_for_unranked_feature_sort) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_EQ(0u, world.matchingStats.docsReRanked());
+}
+
+TEST_F(MatchingTest, require_that_second_phase_is_not_run_for_unranked_attribute_sort) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "+a1";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_EQ(0u, world.matchingStats.docsReRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::200").getGlobalId(), reply->hits[1].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::300").getGlobalId(), reply->hits[2].gid);
+    EXPECT_EQ(zero_rank_value, reply->hits[0].metric);
+}
+
+TEST_F(MatchingTest, require_that_attribute_sort_with_rank_still_reranks) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "+a1 -[rank]";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(9u, world.matchingStats.docsRanked());
+    EXPECT_EQ(3u, world.matchingStats.docsReRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[8].gid);
+}
+
+TEST_F(MatchingTest, require_that_unknown_sort_feature_fails_closed) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(nope)";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    EXPECT_TRUE(reply->hits.empty());
+    EXPECT_EQ(0u, reply->coverage.getCovered());
+    EXPECT_GT(reply->coverage.getActive(), 0u);
+}
+
+TEST_F(MatchingTest, require_that_zero_hit_feature_sort_returns_no_sort_data) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    request->maxhits = 0;
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    EXPECT_TRUE(reply->hits.empty());
+    EXPECT_EQ(9u, reply->totalHitCount);
+    EXPECT_EQ(9u, world.matchingStats.docsMatched());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_TRUE(reply->sortIndex.empty());
+    EXPECT_TRUE(reply->sortData.empty());
+}
+
+TEST_F(MatchingTest, require_that_feature_sort_with_rank_keeps_ranking) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) -[rank]";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(9u, world.matchingStats.docsRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(900.0, reply->hits[0].metric);
+}
+
+TEST_F(MatchingTest, require_that_first_phase_drop_skips_sort_rows) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) -[rank]";
+    request->propertiesMap.lookupCreate(MapNames::RANK).add(FirstPhaseRankScoreDropLimit::NAME, "550");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(4u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::700").getGlobalId(), reply->hits[2].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::600").getGlobalId(), reply->hits[3].gid);
+}
+
+TEST_F(MatchingTest, require_that_second_phase_drop_skips_unused_sort_rows) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) -[rank]";
+    request->propertiesMap.lookupCreate(MapNames::RANK).add(SecondPhaseRankScoreDropLimit::NAME, "1500");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(2u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+}
+
+TEST_F(MatchingTest, require_that_mixed_feature_attribute_rank_sort_tuple_works) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) +a1 -[rank]";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(9u, world.matchingStats.docsRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid);
+    EXPECT_EQ(900.0, reply->hits[0].metric);
+    EXPECT_FALSE(reply->sortData.empty());
+}
+
+TEST_F(MatchingTest, require_that_bm25_sort_feature_unpacks) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_bm25();
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    FakeResult spread;
+    // Interleaved num_occs/field_length, not pos(): BM25 reads getNumOccs().
+    // Identical TFs (or skipped unpack) would not produce this descending order.
+    for (uint32_t i = 1; i <= 9; ++i) {
+        spread.doc(i * 100).num_occs(i).field_length(10);
+    }
+    world.searchContext.idx(0).getFake().addResult("f1", "spread", spread);
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(title_bm25)";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid);
+    EXPECT_EQ(zero_rank_value, reply->hits[0].metric);
+    EXPECT_FALSE(reply->sortData.empty());
+}
+
 ExpressionNode::UP createAttr() {
     return std::make_unique<AttributeNode>("a1");
 }
@@ -999,10 +1328,49 @@ TEST_F(MatchingTest, require_that_grouping_is_performed_with_multi_threaded_matc
             gresult.deserialize(is);
             Grouping gexpect;
             gexpect.setRoot(Group().addResult(
-                SumAggregationResult().setExpression(createAttr()).setResult(Int64ResultNode(4500))));
+                SumAggregationResult().setExpression(createAttr()).resultForUnitTest(Int64ResultNode(4500))));
             EXPECT_EQ(gexpect.root().asString(), gresult.root().asString());
         }
         EXPECT_GT(world.matchingStats.groupingTimeAvg(), 0.0000001);
+    }
+}
+
+TEST_F(MatchingTest, require_that_zero_hit_grouping_still_groups_with_feature_sort_spec) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    request->maxhits = 0;
+    {
+        vespalib::nbostream     buf;
+        vespalib::NBOSerializer os(buf);
+        uint32_t                n = 1;
+        os << n;
+        Grouping grequest;
+        grequest.setRoot(Group().addResult(SumAggregationResult().setExpression(createAttr())));
+        grequest.serialize(os);
+        request->groupSpec.assign(buf.data(), buf.data() + buf.size());
+    }
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    EXPECT_TRUE(reply->hits.empty());
+    EXPECT_EQ(9u, reply->totalHitCount);
+    EXPECT_EQ(9u, world.matchingStats.docsMatched());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_GT(reply->coverage.getCovered(), 0u);
+    {
+        vespalib::nbostream     buf(&reply->groupResult[0], reply->groupResult.size());
+        vespalib::NBOSerializer is(buf);
+        uint32_t                n;
+        is >> n;
+        EXPECT_EQ(1u, n);
+        Grouping gresult;
+        gresult.deserialize(is);
+        Grouping gexpect;
+        gexpect.setRoot(Group().addResult(
+            SumAggregationResult().setExpression(createAttr()).resultForUnitTest(Int64ResultNode(4500))));
+        EXPECT_EQ(gexpect.root().asString(), gresult.root().asString());
     }
 }
 
@@ -1502,6 +1870,64 @@ TEST_F(MatchingTest, weak_and_stop_word_strategy_is_resolved_correctly) {
     EXPECT_TRUE(stop_words.should_drop(501));
     EXPECT_FALSE(stop_words.keep_all());
     EXPECT_TRUE(stop_words.allow_drop_all());
+}
+
+namespace {
+
+struct FakeSortValueProvider : INumericSortValueProvider {
+    std::vector<std::string> names;
+    explicit FakeSortValueProvider(std::vector<std::string> names_in) : names(std::move(names_in)) {}
+    uint32_t ordinal(std::string_view public_name) const override {
+        for (uint32_t i = 0; i < names.size(); ++i) {
+            if (names[i] == public_name) {
+                return i;
+            }
+        }
+        return invalid_ordinal;
+    }
+    void seek(uint32_t) override {}
+    double get(uint32_t) const override { return 0.0; }
+    bool failed() const noexcept override { return false; }
+    void consumed() override {}
+};
+
+} // namespace
+
+TEST(SortBindingTest, feature_sort_binds_when_all_values_are_available) {
+    MockAttributeContext  ac;
+    FakeSortValueProvider provider({"by_a1"});
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", &provider);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_TRUE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, feature_sort_binding_fails_when_a_value_is_unavailable) {
+    MockAttributeContext  ac;
+    FakeSortValueProvider provider({"by_a1"});
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1) +feature(gone)", &provider);
+    EXPECT_TRUE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, feature_sort_binding_fails_without_a_provider) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", nullptr);
+    EXPECT_TRUE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, sort_without_features_needs_no_provider) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+[rank]", nullptr);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_TRUE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, failed_attribute_sort_is_not_a_feature_binding_failure) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+no_such_attribute", nullptr);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

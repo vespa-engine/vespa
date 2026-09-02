@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-08-14
+Last updated: 2026-09-01
 
 ---
 
@@ -86,7 +86,7 @@ Last updated: 2026-08-14
 
 ---
 
-## @ungap/structured-clone 1.3.3 — ISC
+## @ungap/structured-clone 1.4.0 — ISC
 
 - Homepage: <https://github.com/ungap/structured-clone#readme>
 - Copyright 2021 Andrea Giammarchi
@@ -368,17 +368,17 @@ Last updated: 2026-08-14
 
 ---
 
-## github.com/fxamacker/cbor/v2 v2.9.2 — MIT
+## github.com/fxamacker/cbor/v2 v2.9.3 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.2>
+- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.3>
 - Copyright 2019-2024 Faye Amacker
 - Copyright 2019 Faye Amacker
 
 ---
 
-## github.com/go-json-experiment/json v0.0.0-20260520185125-572e7c383686 — BSD 3
+## github.com/go-json-experiment/json v0.0.0-20260820222146-c27c302e5fc3 — BSD 3
 
-- Homepage: <https://pkg.go.dev/github.com/go-json-experiment/json@v0.0.0-20260520185125-572e7c383686>
+- Homepage: <https://pkg.go.dev/github.com/go-json-experiment/json@v0.0.0-20260820222146-c27c302e5fc3>
 - Copyright 2020 The Go Authors
 
 ---
@@ -394,6 +394,20 @@ Last updated: 2026-08-14
 ## github.com/mattn/go-colorable v0.1.15 — MIT
 
 - Homepage: <https://pkg.go.dev/github.com/mattn/go-colorable@v0.1.15>
+- Copyright 2016 Yasuhiro Matsumoto
+
+---
+
+## github.com/mattn/go-isatty v0.0.24 — MIT
+
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-isatty@v0.0.24>
+- Copyright Yasuhiro MATSUMOTO <mattn.jp@gmail.com>
+
+---
+
+## github.com/mattn/go-runewidth v0.0.28 — MIT
+
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-runewidth@v0.0.28>
 - Copyright 2016 Yasuhiro Matsumoto
 
 ---
@@ -433,29 +447,47 @@ Last updated: 2026-08-14
 
 ---
 
-## go.yaml.in/yaml/v3 v3.0.4 — Apache 2.0
+## github.com/zalando/go-keyring v0.2.8 — MIT
 
-- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.4>
-- Copyright 2011-2019 Canonical Ltd
-- Copyright 2011 when the project was ported over:
-- Copyright files of libyaml, and thus
-- Copyright 2006-2010 Kirill Simonov
+- Homepage: <https://pkg.go.dev/github.com/zalando/go-keyring@v0.2.8>
+- Copyright 2016 Zalando SE
 
 ---
 
-## go.yaml.in/yaml/v3 v3.0.4 — MIT
+## go.yaml.in/yaml/v3 v3.0.5 — Apache 2.0
 
-- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.4>
+- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.5>
+-  and thus
+- Copyright files of libyaml
 - Copyright 2011-2019 Canonical Ltd
 - Copyright 2011 when the project was ported over:
-- Copyright files of libyaml, and thus
 - Copyright 2006-2010 Kirill Simonov
+- Copyright 2006-2011 Kirill Simonov
+
+---
+
+## go.yaml.in/yaml/v3 v3.0.5 — MIT
+
+- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.5>
+-  and thus
+- Copyright files of libyaml
+- Copyright 2011-2019 Canonical Ltd
+- Copyright 2011 when the project was ported over:
+- Copyright 2006-2010 Kirill Simonov
+- Copyright 2006-2011 Kirill Simonov
 
 ---
 
 ## golang.org/x/net v0.58.0 — Golang BSD + Patents
 
 - Homepage: <https://pkg.go.dev/golang.org/x/net@v0.58.0>
+- Copyright 2009 The Go Authors
+
+---
+
+## golang.org/x/sys v0.47.0 — Golang BSD + Patents
+
+- Homepage: <https://pkg.go.dev/golang.org/x/sys@v0.47.0>
 - Copyright 2009 The Go Authors
 
 ---
@@ -797,7 +829,7 @@ Last updated: 2026-08-14
 
 ---
 
-## org.jsoup 1.23.1 — MIT
+## org.jsoup 1.23.2 — MIT
 
 - Homepage: <https://jsoup.org/>
 - Copyright 2009-2026 Jonathan Hedley <https://jsoup.org/>

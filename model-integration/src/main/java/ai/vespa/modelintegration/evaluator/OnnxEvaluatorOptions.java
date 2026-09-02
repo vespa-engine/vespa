@@ -6,7 +6,6 @@ import net.jpountz.xxhash.XXHashFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,7 +24,6 @@ public record OnnxEvaluatorOptions(
         boolean gpuDeviceRequired,
         boolean optimizeModel,
         int batchingMaxSize,
-        Optional<Duration> batchingMaxDelay,
         int numModelInstances,
         Optional<Path> modelConfigOverride,
         int availableProcessors
@@ -65,11 +63,9 @@ public record OnnxEvaluatorOptions(
         if (config.gpuDevice() >= 0) {
             builder.setGpuDevice(config.gpuDevice());
         }
-        
-        if (config.batching().maxDelayMillis() > 0) {
-            builder.setBatchingMaxDelay(Duration.ofMillis(config.batching().maxDelayMillis()));
-        }
-        
+
+        // batching.maxDelayMillis is deprecated and intentionally ignored by both ONNX runtimes.
+
         return builder.build();
     }
 
@@ -102,7 +98,6 @@ public record OnnxEvaluatorOptions(
         private boolean gpuDeviceRequired;
         private boolean optimizeModel;
         private int batchingMaxSize;
-        private Optional<Duration> batchingMaxDelay;
         private int numModelInstances;
         private Optional<Path> modelConfigOverride;
 
@@ -122,7 +117,6 @@ public record OnnxEvaluatorOptions(
             gpuDeviceRequired = false;
             optimizeModel = false;
             batchingMaxSize = 1;
-            batchingMaxDelay = Optional.empty();
             numModelInstances = 1;
             modelConfigOverride = Optional.empty();
             
@@ -137,7 +131,6 @@ public record OnnxEvaluatorOptions(
             this.gpuDeviceRequired = options.gpuDeviceRequired();
             this.optimizeModel = options.optimizeModel();
             this.batchingMaxSize = options.batchingMaxSize();
-            this.batchingMaxDelay = options.batchingMaxDelay;
             this.numModelInstances = options.numModelInstances();
             this.modelConfigOverride = options.modelConfigOverride;
         }
@@ -201,11 +194,6 @@ public record OnnxEvaluatorOptions(
             return this;
         }
         
-        public Builder setBatchingMaxDelay(Duration maxDelay) {
-            this.batchingMaxDelay = Optional.of(maxDelay);
-            return this;
-        }
-
         public Builder setConcurrency(double concurrencyFactor, ConcurrencyFactorType concurrencyFactorType) {
             this.numModelInstances = calculateNumModelInstances(concurrencyFactor, concurrencyFactorType);
             return this;
@@ -235,7 +223,6 @@ public record OnnxEvaluatorOptions(
                     gpuDeviceRequired,
                     optimizeModel,
                     batchingMaxSize,
-                    batchingMaxDelay,
                     numModelInstances,
                     modelConfigOverride,
                     availableProcessors

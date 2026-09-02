@@ -53,11 +53,13 @@ using search::query::SimpleLocationTerm;
 using search::query::SimplePredicateQuery;
 using search::query::SimplePrefixTerm;
 using search::query::SimpleRangeTerm;
+using search::query::SimpleStringRangeTerm;
 using search::query::SimpleStringTerm;
 using search::query::SimpleSubstringTerm;
 using search::query::SimpleSuffixTerm;
 using search::query::SimpleWandTerm;
 using search::query::SimpleWeightedSetTerm;
+using search::query::StringRange;
 using search::query::StringTermVector;
 using search::query::Weight;
 using search::queryeval::Blueprint;
@@ -301,6 +303,24 @@ template <typename T> MyAttributeManager makeAttributeManager(T value) {
     return MyAttributeManager(attr);
 }
 
+MyAttributeManager make_fast_search_string_attribute_manager(const string& value) {
+    Config cfg(BasicType::STRING, CollectionType::SINGLE);
+    cfg.setFastSearch(true);
+    AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(field, cfg);
+    auto*               attr = static_cast<search::StringAttribute*>(attr_ptr.get());
+    add_docs(attr, num_docs);
+    attr->update(num_docs - 1, value);
+    attr->commit();
+    return MyAttributeManager(attr_ptr);
+}
+
+SimpleStringRangeTerm make_string_range_term(const string& left, bool left_closed, bool left_unbounded,
+                                             const string& right, bool right_closed, bool right_unbounded) {
+    auto spec = std::make_unique<search::StringRangeSpec>(left, left_closed, left_unbounded, right, right_closed,
+                                                          right_unbounded);
+    return {StringRange(std::move(spec)), field, 0, Weight(0)};
+}
+
 MyAttributeManager makeFastSearchLongAttributeManager(int64_t value) {
     Config cfg(BasicType::INT64, CollectionType::SINGLE);
     cfg.setFastSearch(true);
@@ -330,6 +350,33 @@ TEST(AttributeSearchableAdapterTest, requireThatRangeTermsWorkToo) {
     EXPECT_TRUE(!search("[10;23]", attribute_manager));
     EXPECT_TRUE(!search(">43", attribute_manager));
     EXPECT_TRUE(search("[10;]", attribute_manager));
+}
+
+TEST(AttributeSearchableAdapterTest, require_that_string_range_terms_work) {
+    for (bool fast_search : {false, true}) {
+        MyAttributeManager attribute_manager =
+            fast_search ? make_fast_search_string_attribute_manager("foo") : makeAttributeManager("foo");
+
+        // Contained in range
+        EXPECT_TRUE(search(make_string_range_term("bar", true, false, "fox", true, false), attribute_manager,
+                           fast_search, true, false));
+        EXPECT_TRUE(search(make_string_range_term("foo", true, false, "foo", true, false), attribute_manager,
+                           fast_search, true, false));
+        EXPECT_TRUE(search(make_string_range_term("bar", true, false, "", false, true), attribute_manager,
+                           fast_search, true, false));
+        // matching is uncased by default
+        EXPECT_TRUE(search(make_string_range_term("BAR", true, false, "FOX", true, false), attribute_manager,
+                           fast_search, true, false));
+
+        // Not contained in range
+        EXPECT_FALSE(search(make_string_range_term("bar", true, false, "fon", true, false), attribute_manager,
+                            fast_search, true, true));
+        // The following two cannot be expected to be empty since the closed range contains foo
+        EXPECT_FALSE(search(make_string_range_term("foo", false, false, "fox", true, false), attribute_manager,
+                            fast_search, true, false));
+        EXPECT_FALSE(search(make_string_range_term("bar", true, false, "foo", false, false), attribute_manager,
+                            fast_search, true, false));
+    }
 }
 
 TEST(AttributeSearchableAdapterTest, requireThatPrefixTermsWork) {

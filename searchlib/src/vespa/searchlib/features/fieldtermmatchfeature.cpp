@@ -101,9 +101,9 @@ bool FieldTermMatchBlueprint::setup(const search::fef::IIndexEnvironment&, const
     _termId = params[1].asInteger();
     describeOutput("firstPosition", "The first occurrence of this term.");
     describeOutput("lastPosition", "The last occurrence of this term.");
-    describeOutput("occurrences", "The number of occurrence of this term.");
-    describeOutput("weight", "The sum occurence weights of this term.");
-    describeOutput("exactness", "The average exactness this term.");
+    describeOutput("occurrences", "The number of occurrences of this term.");
+    describeOutput("weight", "The sum of occurrence weights of this term.");
+    describeOutput("exactness", "The average match exactness this term.");
     return true;
 }
 

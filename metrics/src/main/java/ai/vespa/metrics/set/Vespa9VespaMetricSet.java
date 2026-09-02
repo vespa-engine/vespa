@@ -260,6 +260,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.DOCUMENTS_TARGET_TOTAL.count());
         addMetric(metrics, ContainerMetrics.TOTAL_HITS_PER_QUERY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile));
         addMetric(metrics, ContainerMetrics.EMPTY_RESULTS.rate());
+        addMetric(metrics, ContainerMetrics.REQUESTS, EnumSet.of(rate, count));
         addMetric(metrics, ContainerMetrics.REQUESTS_OVER_QUOTA, EnumSet.of(rate, count));
 
         addMetric(metrics, ContainerMetrics.RELEVANCE_AT_1, EnumSet.of(sum, count));

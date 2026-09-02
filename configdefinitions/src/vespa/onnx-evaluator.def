@@ -10,12 +10,12 @@ gpuDevice int default=0
 # Controls ONNX graph optimization. Default is on.
 optimizeModel bool default=true
 
-# Controls dynamic batching that combines up to `maxSize` requests within `maxDelayMillis` into a single inference call.
-# This increases throughput at the cost of latency.
+# Controls dynamic batching that combines up to `maxSize` requests into a single inference call.
+# This increases throughput.
 # This is especially effective for generating embeddings during feeding on GPU.
-# `maxDelayMillis` is specified in milliseconds.
 # The default settings disables dynamic batching.
 batching.maxSize int default=1
+# TODO: Deprecated and ignored. Remove in Vespa 9.
 batching.maxDelayMillis long default=0
 
 # Concurrency creates several model instances for concurrent inference.

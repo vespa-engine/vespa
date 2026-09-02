@@ -138,6 +138,7 @@ bool JuniperQueryAdapter::Traverse(juniper::IQueryVisitor* v) const {
         case search::ParseItem::ITEM_FUZZY:
         case search::ParseItem::ITEM_STRING_IN:
         case search::ParseItem::ITEM_NUMERIC_IN:
+        case search::ParseItem::ITEM_STRING_RANGE_TERM:
             if (!v->VisitOther(&item, iterator.getArity())) {
                 rc = skipItem(iterator);
             }

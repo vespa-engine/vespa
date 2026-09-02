@@ -28,9 +28,11 @@ import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
+import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
@@ -44,6 +46,7 @@ import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Alias;
 import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Command;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Sorting.AttributeSorter;
+import com.yahoo.search.query.Sorting.FeatureSorter;
 import com.yahoo.search.query.Sorting.FieldOrder;
 import com.yahoo.search.query.Sorting.LowerCaseSorter;
 import com.yahoo.search.query.Sorting.Order;
@@ -421,6 +424,32 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testLabelOnUserInputIsInheritedByEachParsedTerm() {
+        QueryTree query = parse("select foo from bar where " +
+                "({label: \"t1\"}userInput(\"new york\"))");
+        WeakAndItem weakAnd = (WeakAndItem) query.getRoot();
+        assertEquals(2, weakAnd.getItemCount());
+        for (Item term : weakAnd.items()) {
+            assertEquals("t1", term.getLabel());
+        }
+    }
+
+    @Test
+    void testLabelOnUserInputPhraseIsAppliedToParsedPhrase() {
+        QueryTree query = parse("select foo from bar where " +
+                "({label: \"t1\", grammar.syntax: \"none\", grammar.composite: \"phrase\"}" +
+                "userInput(\"new york\"))");
+        PhraseItem phrase = (PhraseItem) query.getRoot();
+        assertEquals("t1", phrase.getLabel());
+        // The words of a phrase are not separate terms in the backend, so labeling them would have no effect
+        // beyond forcing a unique id onto them
+        for (Item word : phrase.items()) {
+            assertNull(word.getLabel());
+            assertFalse(((TaggableItem) word).hasUniqueID());
+        }
+    }
+
+    @Test
     void testCompoundItemAnnotations() {
         assertEquals("and", parse("select foo from bar where ({annotations: {scope: \"and\"}}(a contains \"A\" and b contains \"B\"))")
             .getRoot().getAnnotation("scope"));
@@ -548,6 +577,31 @@ public class YqlParserTestCase {
         assertEquals("bools", se.getFieldName());
         assertEquals(List.of(0), se.getElementFilter());
         assertEquals(1, se.getItemCount());
+    }
+
+    @Test
+    void testMapAccessRewritesToSameElement() {
+        // my_map{'foo'} contains 'bar' should rewrite to my_map contains sameElement(key contains 'foo', value contains 'bar')
+        assertParse("select * from sources * where my_map{'foo'} contains 'bar'",
+                    "my_map:{key:foo value:bar}");
+
+        // Numeric values use '=', as for plain fields, and are converted to string as in the indexed access rewrite.
+        assertParse("select * from sources * where my_map{'foo'} = 10",
+                    "my_map:{key:foo value:10}");
+
+        // Numeric keys are converted to string, for maps with numeric key types.
+        assertParse("select * from sources * where my_map{1} contains 'bar'",
+                    "my_map:{key:1 value:bar}");
+
+        // The rewritten tree serializes and re-parses to the same tree.
+        assertCanonicalParse("select * from sources * where my_map{'foo'} contains 'bar'",
+                             "my_map:{key:foo value:bar}");
+    }
+
+    @Test
+    void testMapAccessRequiresLiteralKey() {
+        assertParseFail("select * from sources * where my_map{key_field} contains 'bar'",
+                        new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));
     }
 
     @Test
@@ -814,6 +868,36 @@ public class YqlParserTestCase {
     void testRangeIllegalArguments() {
         assertParseFail("select foo from bar where range(baz,cox,8)",
                 new IllegalArgumentException("Expected a numerical argument (or 'Infinity') to range but got 'cox'"));
+    }
+
+    @Test
+    void testStringRange() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\"]", parse("select foo from sources default where range(string,'aaa','zzz')").toString());
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\"]", parse("select foo from sources default where range(string,\"aaa\",\"zzz\")").toString());
+        assertEquals("STRING_RANGE string:<\"aaa\";\"zzz\"]", parse("select foo from sources default where ({bounds:\"leftOpen\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\">", parse("select foo from sources default where ({bounds:\"rightOpen\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:<\"aaa\";\"zzz\">", parse("select foo from sources default where ({bounds:\"open\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:<-Infinity;\"zzz\"]", parse("select foo from sources default where range(string,-Infinity,\"zzz\")").toString());
+        assertEquals("STRING_RANGE string:<-Infinity;Infinity>", parse("select foo from sources default where range(string,-Infinity,Infinity)").toString());
+    }
+
+    @Test
+    void testStringRangeIllegalArguments() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParseFail("select foo from sources default where ({bounds:\"foo\"}range(string,\"aaa\",\"zzz\"))", new IllegalArgumentException("Expected open, leftOpen or rightOpen, got foo."));
+        assertParseFail("select foo from sources default where range(string,aaa,\"zzz\")", new IllegalArgumentException("Expected -Infinity or a quoted string for left string range bound but got aaa."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\",zzz)", new IllegalArgumentException("Expected Infinity or a quoted string for right string range bound but got zzz."));
+        assertParseFail("select foo from sources default where range(string,Infinity,\"zzz\")", new IllegalArgumentException("Expected -Infinity or a quoted string for left string range bound but got Infinity."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\",-Infinity)", new IllegalArgumentException("Expected Infinity or a quoted string for right string range bound but got -Infinity."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\")", new IllegalArgumentException("Expected 3 arguments, got 2."));
+    }
+
+    @Test
+    void testStringRangeProvidesOrigin() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var string_range = (StringRangeItem)parse("select foo from sources default where ({origin: {original:\"foo\", offset: 0, length: 3}}range(string, \"aaa\", \"zzz\"))").getRoot();
+        assertEquals("foo", string_range.getRawWord());
     }
 
     @Test
@@ -1223,6 +1307,26 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testFeatureSortAnnotationRoundTrip() {
+        var newTree = parse("select foo from bar where title contains \"madonna\" order by {\"function\": \"feature\"}foo desc");
+        FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
+        assertEquals("foo", fieldOrder.getFieldName());
+        assertEquals(Order.DESCENDING, fieldOrder.getSortOrder());
+        assertEquals(FeatureSorter.class, fieldOrder.getSorter().getClass());
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(newTree.getRoot());
+        query.getRanking().setSorting(parser.getSorting());
+        String emitted = query.yqlRepresentation(true);
+        assertEquals("select * from sources * where title contains \"madonna\" order by [{\"function\": \"feature\"}]foo desc",
+                     emitted);
+        parse(emitted);
+        FieldOrder roundTripped = parser.getSorting().fieldOrders().get(0);
+        assertEquals("foo", roundTripped.getFieldName());
+        assertEquals(Order.DESCENDING, roundTripped.getSortOrder());
+        assertEquals(FeatureSorter.class, roundTripped.getSorter().getClass());
+    }
+
+    @Test
     void testAnnotatedOrdering() {
         assertParse(
                 "select foo from bar where title contains \"madonna\""
@@ -1565,6 +1669,25 @@ public class YqlParserTestCase {
         assertParseFail("select * from sources * where mixed in (25)",
                 new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer " +
                         "and string fields. The fieldset mixed has both"));
+    }
+
+    /** Parameters passed as arrays in a POSTed JSON query are seen as JSON arrays here. */
+    @Test
+    void testInWithJsonArrayParameters() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        var query = new Query.Builder().build();
+        query.properties().set("foonumeric", "[26, 25, -11, 24]");
+        query.properties().set("foostring", "['this', \"might\", work]");
+
+        parser.setUserQuery(query);
+        assertNumericInItem("field", new long[]{-11, 24, 25, 26, 42},
+                            parse("select * from sources * where field in (42, @foonumeric)"));
+
+        parser.setUserQuery(query);
+        assertStringInItem("string", new String[]{"a", "might", "this", "work"},
+                           parse("select * from sources * where string in ('a', @foostring)"));
+        parser.setUserQuery(null);
     }
 
     // TODO: Put this in the documentation

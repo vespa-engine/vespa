@@ -253,7 +253,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean forwardAllLogLevels() { return flag(PermanentFlags.FORWARD_ALL_LOG_LEVELS).value(); }
         @Override public long zookeeperPreAllocSize() { return flag(PermanentFlags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB).value(); }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(PermanentFlags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
-        @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
         @Override public OptionalInt metricsProxyHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB).value()); }
         @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB); }
@@ -264,6 +263,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
         @Override public boolean fastMapSearch() { return flag(Flags.FAST_MAP_SEARCH).value(); }
+        @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return flag(Flags.RELAX_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS).value(); }
+        @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();
@@ -292,7 +293,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<TenantVault> tenantVaults;
         private final List<TenantSecretStore> tenantSecretStores;
         private final List<X509Certificate> operatorCertificates;
-        private final Optional<CloudAccount> cloudAccount;
+        private final CloudAccount cloudAccount;
         private final CloudResourceTags cloudResourceTags;
         private final List<DataplaneToken> dataplaneTokens;
 
@@ -309,7 +310,7 @@ public class ModelContextImpl implements ModelContext {
                           List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
-                          Optional<CloudAccount> cloudAccount,
+                          CloudAccount cloudAccount,
                           CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId, modelVersion);
@@ -354,7 +355,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<TenantVault> tenantVaults() { return tenantVaults; }
         @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
         @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
-        @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
+        @Override public CloudAccount getCloudAccount() { return cloudAccount; }
         @Override public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
         @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
         @Override public boolean allowDisableMtls() { return flag(PermanentFlags.ALLOW_DISABLE_MTLS).value(); }

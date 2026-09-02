@@ -17,6 +17,9 @@
 #include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/runnable.h>
 
+#include <optional>
+#include <span>
+
 namespace search::engine {
 class Trace;
 class RelativeTime;
@@ -34,6 +37,7 @@ namespace proton::matching {
 
 class MatchTools;
 class MatchToolsFactory;
+class SortFeatureStore;
 
 /**
  * Runs a single match thread and keeps track of local state.
@@ -78,9 +82,13 @@ private:
     class Context {
     public:
         Context(std::optional<double> first_phase_rank_score_drop_limit, MatchTools& tools, HitCollector& hits,
-                uint32_t num_threads) __attribute__((noinline));
-        template <RankDropLimitE use_rank_drop_limit> void rankHit(uint32_t docId);
+                uint32_t num_threads, std::optional<LazyValue> score_feature, SortFeatureStore* sort_store,
+                std::span<const LazyValue> sort_seeds, bool sort_needs_unpack) __attribute__((noinline));
+        ~Context();
+        template <RankDropLimitE use_rank_drop_limit> bool rankHit(uint32_t docId);
         void addHit(uint32_t docId) { _hits.addHit(docId, search::zero_rank_value); }
+        void record_sort(uint32_t docId);
+        bool sort_needs_unpack() const noexcept { return _sort_needs_unpack; }
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool isAtLimit() const { return matches == _matches_limit; }
         bool atSoftDoom() const { return _doom.soft_doom(); }
@@ -88,11 +96,15 @@ private:
         uint32_t matches;
 
     private:
-        uint32_t      _matches_limit;
-        LazyValue     _score_feature;
-        double        _first_phase_rank_score_drop_limit;
-        HitCollector& _hits;
-        const Doom    _doom;
+        uint32_t                   _matches_limit;
+        std::optional<LazyValue>   _score_feature;
+        double                     _first_phase_rank_score_drop_limit;
+        HitCollector&              _hits;
+        const Doom                 _doom;
+        SortFeatureStore*          _sort_store;
+        std::span<const LazyValue> _sort_seeds;
+        bool                       _sort_needs_unpack;
+        std::vector<double>        _sort_scratch;
 
     public:
         std::vector<uint32_t> dropped;
@@ -105,7 +117,8 @@ private:
     bool any_idle() const { return (idle_observer.get() > 0); }
     bool try_share(DocidRange& docid_range, uint32_t next_docid) __attribute__((noinline));
 
-    template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, RankDropLimitE use_rank_drop_limit>
+    template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, RankDropLimitE use_rank_drop_limit,
+              bool do_sort>
     uint32_t inner_match_loop(Context& context, MatchTools& tools, DocidRange& docid_range) __attribute__((noinline));
 
     template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work, RankDropLimitE use_rank_drop_limit>

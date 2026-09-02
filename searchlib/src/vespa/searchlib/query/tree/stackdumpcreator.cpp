@@ -253,6 +253,31 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(RangeTerm& node) override { createTerm(node, ParseItem::ITEM_NUMTERM); }
 
+    void visit(StringRangeTerm& node) override {
+        createTermNode(node, ParseItem::ITEM_STRING_RANGE_TERM);
+        const auto* spec = node.getTerm().get_spec();
+        bool        left_unbounded = (spec == nullptr) || spec->left_unbounded;
+        bool        right_unbounded = (spec == nullptr) || spec->right_unbounded;
+        bool        left_closed = (spec == nullptr) || spec->left_closed;
+        bool        right_closed = (spec == nullptr) || spec->right_closed;
+        uint8_t     flags = 0;
+        if (left_unbounded)
+            flags |= ParseItem::SRT_LEFT_UNBOUNDED;
+        if (right_unbounded)
+            flags |= ParseItem::SRT_RIGHT_UNBOUNDED;
+        if (left_closed)
+            flags |= ParseItem::SRT_LEFT_CLOSED;
+        if (right_closed)
+            flags |= ParseItem::SRT_RIGHT_CLOSED;
+        appendByte(flags);
+        if (!left_unbounded) {
+            appendString(spec->left);
+        }
+        if (!right_unbounded) {
+            appendString(spec->right);
+        }
+    }
+
     void visit(StringTerm& node) override { createTerm(node, ParseItem::ITEM_TERM); }
 
     void visit(SubstringTerm& node) override { createTerm(node, ParseItem::ITEM_SUBSTRINGTERM); }

@@ -75,7 +75,13 @@ class HttpFeedClient implements FeedClient {
         this.requestStrategy = requestStrategy;
         this.speedTest = builder.speedTest;
         this.nanoClock = builder.nanoClock;
-        verifyConnection(builder, clusterFactory);
+        try {
+            verifyConnection(builder, clusterFactory);
+        }
+        catch (Throwable t) {
+            if (requestStrategy != null) requestStrategy.destroy();
+            throw t;
+        }
     }
 
     @Override

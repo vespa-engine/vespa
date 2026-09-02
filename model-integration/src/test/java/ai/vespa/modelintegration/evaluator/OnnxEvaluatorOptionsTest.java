@@ -28,7 +28,6 @@ public class OnnxEvaluatorOptionsTest {
         assertEquals(2, options.intraOpThreads());
         assertEquals(2, options.gpuDeviceNumber());
         assertEquals(1, options.batchingMaxSize());
-        assertTrue(options.batchingMaxDelay().isEmpty());
         assertEquals(1, options.numModelInstances());
         assertTrue(options.modelConfigOverride().isEmpty());
     }
@@ -73,11 +72,13 @@ public class OnnxEvaluatorOptionsTest {
         assertEquals(8, options.intraOpThreads());
         assertEquals(2, options.gpuDeviceNumber());
         assertEquals(10, options.batchingMaxSize());
-        assertTrue(options.batchingMaxDelay().isPresent());
-        assertEquals(50, options.batchingMaxDelay().get().toMillis());
         assertEquals(3, options.numModelInstances());
         assertTrue(options.modelConfigOverride().isPresent());
         assertEquals(
                 "/path/to/config.pbtxt", options.modelConfigOverride().get().toString());
+
+        var configWithDifferentDelay = new OnnxEvaluatorConfig.Builder(config);
+        configWithDifferentDelay.batching.maxDelayMillis(100);
+        assertEquals(options, OnnxEvaluatorOptions.of(configWithDifferentDelay.build()));
     }
 }

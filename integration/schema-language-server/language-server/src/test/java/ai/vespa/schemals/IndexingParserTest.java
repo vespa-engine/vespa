@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.DocumentIdExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ChunkExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
@@ -75,6 +76,16 @@ public class IndexingParserTest {
             InputExpression.class,
             ToTensorExpression.class,
             AttributeExpression.class}, "input tensor_array | to_tensor chunk | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            DocumentIdExpression.class,
+            AttributeExpression.class}, "documentid namespace | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            DocumentIdExpression.class,
+            AttributeExpression.class}, "documentid | attribute");
     }
 
     private static void assertEqualsParsedFlattened(Class<?>[] expectedFlattened, String input) {

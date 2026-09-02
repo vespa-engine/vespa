@@ -35,6 +35,7 @@ import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.VaultReference;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
@@ -264,7 +265,7 @@ public class SessionPreparer {
         void preprocess(Optional<ApplicationVersions> activeApplicationVersions) {
             try {
                 validateXmlFeatures(applicationPackage, logger);
-                this.preprocessedApplicationPackage = applicationPackage.preprocess(zone, logger);
+                this.preprocessedApplicationPackage = applicationPackage.preprocess(ZoneInfo.from(zone), logger);
             } catch (IOException | RuntimeException e) {
                 var initialSession =  activeApplicationVersions.map(ApplicationVersions::applicationGeneration).map(String::valueOf).orElse("unknown");
                 throw new IllegalArgumentException("Error preprocessing application package for " + applicationId +
@@ -432,7 +433,7 @@ public class SessionPreparer {
                                        List<TenantVault> tenantVaults,
                                        List<TenantSecretStore> tenantSecretStores,
                                        List<X509Certificate> operatorCertificates,
-                                       Optional<CloudAccount> cloudAccount,
+                                       CloudAccount cloudAccount,
                                        CloudResourceTags cloudResourceTags,
                                        List<DataplaneToken> dataplaneTokens,
                                        ActivationTriggers activationTriggers,

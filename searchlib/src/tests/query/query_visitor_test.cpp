@@ -35,6 +35,7 @@ public:
     void visit(SameElement&) override { isVisited<SameElement>() = true; }
     void visit(PrefixTerm&) override { isVisited<PrefixTerm>() = true; }
     void visit(RangeTerm&) override { isVisited<RangeTerm>() = true; }
+    void visit(StringRangeTerm&) override { isVisited<StringRangeTerm>() = true; }
     void visit(Rank&) override { isVisited<Rank>() = true; }
     void visit(LabelWrapper&) override { isVisited<LabelWrapper>() = true; }
     void visit(StringTerm&) override { isVisited<StringTerm>() = true; }
@@ -80,6 +81,8 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<LocationTerm>(new SimpleLocationTerm(location, "field", 0, Weight(0)));
     checkVisit<PrefixTerm>(new SimplePrefixTerm("t", "field", 0, Weight(0)));
     checkVisit<RangeTerm>(new SimpleRangeTerm(Range(0, 1), "field", 0, Weight(0)));
+    checkVisit<StringRangeTerm>(
+        new SimpleStringRangeTerm(StringRange(std::make_unique<search::StringRangeSpec>()), "field", 0, Weight(0)));
     checkVisit<StringTerm>(new SimpleStringTerm("t", "field", 0, Weight(0)));
     checkVisit<SubstringTerm>(new SimpleSubstringTerm("t", "field", 0, Weight(0)));
     checkVisit<SuffixTerm>(new SimpleSuffixTerm("t", "field", 0, Weight(0)));

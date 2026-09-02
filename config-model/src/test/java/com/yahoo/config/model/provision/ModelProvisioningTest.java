@@ -2,6 +2,7 @@
 package com.yahoo.config.model.provision;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.component.Version;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -13,12 +14,12 @@ import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.model.api.SidecarProvider;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.SystemName;
@@ -36,7 +37,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
-import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
@@ -2674,7 +2674,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testAddTritonSidecar() {
+    public void testSidecarsFromSidecarProviderAreProvisioned() {
         var services = """
                 <?xml version='1.0' encoding='utf-8' ?>
                 <services>
@@ -2688,7 +2688,7 @@ public class ModelProvisioningTest {
                 """;
 
         var properties = new TestProperties();
-        // Triton sidecar is enabled with a feature flag.
+        // Triton is enabled with a feature flag.
         properties.setUseTriton(true);
 
         var tester = new VespaModelTester();
@@ -2699,8 +2699,8 @@ public class ModelProvisioningTest {
 
         var zone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
 
-        // Triton sidecar is enabled only for apps with ONNX models.
-        // Mocking OnnModelCost since DisabledOnnxModelCost used by default returns no models.
+        // Triton is enabled only for apps with ONNX models.
+        // Mocking OnnxModelCost since DisabledOnnxModelCost used by default returns no models.
         var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
             @Override
             public Map<String, ModelInfo> models() {
@@ -2708,24 +2708,37 @@ public class ModelProvisioningTest {
             }
         };
 
-        var deployStateBuilder = deployStateWithClusterEndpoints("container1").onnxModelCost(mockModelCost);
+        // What the sidecar containers look like is decided by the sidecar provider, injected e.g. in hosted Vespa.
+        var sidecar = SidecarSpec.builder()
+                .id(0)
+                .name("test-sidecar")
+                .image(DockerImage.fromString("example.com/test/sidecar:1.0"))
+                .minCpu(1)
+                .build();
+
+        // The provider is invoked with the id of the application being deployed, so that implementations
+        // can differentiate sidecars per application.
+        var applicationSeenByProvider = new java.util.concurrent.atomic.AtomicReference<ApplicationId>();
+        var provider = new SidecarProvider() {
+            @Override
+            public List<SidecarSpec> getSidecars(ClusterSpec.Id clusterId, NodeResources minNodeResources, boolean needTriton) {
+                throw new AssertionError("The config model should invoke the application-aware method");
+            }
+            @Override
+            public List<SidecarSpec> getSidecars(ApplicationId application, Version vespaVersion, ClusterSpec.Id clusterId,
+                                                 NodeResources minNodeResources, Set<String> neededSidecars) {
+                applicationSeenByProvider.set(application);
+                return neededSidecars.contains(SidecarProvider.TRITON_SIDECAR_NAME) ? List.of(sidecar) : List.of();
+            }
+        };
+        var deployStateBuilder = deployStateWithClusterEndpoints("container1")
+                .onnxModelCost(mockModelCost)
+                .sidecarProvider(provider);
         var model = tester.createModel(zone, services, true, deployStateBuilder);
 
         var clusterSpec = model.provisioned().clusters().get(ClusterSpec.Id.from("container1"));
-        assertFalse(clusterSpec.sidecars().isEmpty());
-        var expectedSidecarSpec = SidecarSpec.builder()
-                .id(0)
-                .name("triton")
-                .image(DockerImage.fromString("nvcr.io/nvidia/tritonserver:25.12-py3"))
-                .hasImageMirror(true)
-                .minCpu(1)
-                .hasGpu(false)
-                .volumeMounts(List.of("/models"))
-                .command(List.of("tritonserver", "--model-repository=/models", "--model-control-mode=explicit"))
-                .livenessProbe(new SidecarProbe(new SidecarProbe.HttpGetAction("/v2/health/live", 8000), 10, 5, 2, 3))
-                .build();
-        var actualSidecarSpec = clusterSpec.sidecars().get(0);
-        assertEquals(expectedSidecarSpec, actualSidecarSpec);
+        assertEquals(List.of(sidecar), clusterSpec.sidecars());
+        assertEquals(ApplicationId.defaultId(), applicationSeenByProvider.get());
     }
 
     @Test
@@ -2750,6 +2763,38 @@ public class ModelProvisioningTest {
 
         assertEquals("high-cpu", model.provisioned().clusters().get(ClusterSpec.Id.from("container1")).profile().get());
         assertEquals("large-storage", model.provisioned().clusters().get(ClusterSpec.Id.from("content1")).profile().get());
+    }
+
+    @Test
+    public void test_docker_image_on_nodes_is_rejected_in_public_systems() {
+        String xml = """
+                <?xml version='1.0' encoding='utf-8' ?>
+                <services>
+                  <container version='1.0' id='container1'>
+                    <nodes count='2'/>
+                  </container>
+                  <content version='1.0' id='content1'>
+                    <redundancy>1</redundancy>
+                    <documents/>
+                    <nodes count='2' docker-image='example.com/vespa/custom'/>
+                  </content>
+                </services>
+                """;
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(9);
+
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> tester.createModel(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()),
+                                                      xml, true, deployStateWithClusterEndpoints("container1")));
+        assertTrue(Exceptions.toMessageString(e).contains("Specifying 'docker-image' on <nodes> is not supported in Vespa Cloud"),
+                   Exceptions.toMessageString(e));
+
+        // The attribute is still honored in non-public hosted systems
+        VespaModel model = tester.createModel(new Zone(SystemName.main, Environment.prod, RegionName.defaultName()),
+                                              xml, true, deployStateWithClusterEndpoints("container1"));
+        assertEquals(Optional.of(DockerImage.fromString("example.com/vespa/custom")),
+                     model.provisioned().clusters().get(ClusterSpec.Id.from("content1")).dockerImageRepo());
     }
 
 }

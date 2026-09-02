@@ -7,20 +7,29 @@
 
 namespace search::aggregation {
 
+/**
+ * Aggregator that calculates the sum of the sub expression for each hit.
+ */
 class SumAggregationResult : public AggregationResult {
 public:
     using NumericResultNode = expression::NumericResultNode;
-    DECLARE_AGGREGATIONRESULT(SumAggregationResult);
-    SumAggregationResult();
-    SumAggregationResult(NumericResultNode::UP sum);
-    ~SumAggregationResult() override;
-    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
-    const NumericResultNode& getSum() const { return *_sum; }
 
 private:
-    const ResultNode& onGetRank() const override { return getSum(); }
-    void onPrepare(const ResultNode& result, bool useForInit) override;
     NumericResultNode::CP _sum;
+
+public:
+    DECLARE_AGGREGATIONRESULT(SumAggregationResult);
+    SumAggregationResult();
+    explicit SumAggregationResult(NumericResultNode::UP sum);
+    ~SumAggregationResult() override;
+
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    [[nodiscard]] const NumericResultNode& getSum() const { return *_sum; }
+
+private:
+    [[nodiscard]] const ResultNode& onGetRank() const override { return getSum(); }
+    void onPrepare(const ResultNode& result) override;
+    void initForUnitTest(const ResultNode& result) override;
 };
 
 } // namespace search::aggregation

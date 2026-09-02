@@ -81,6 +81,10 @@ struct MyRangeTerm : InitTerm<RangeTerm> {
     ~MyRangeTerm() override;
 };
 
+struct MyStringRangeTerm : InitTerm<StringRangeTerm> {
+    ~MyStringRangeTerm() override;
+};
+
 struct MyStringTerm : InitTerm<StringTerm> {
     ~MyStringTerm() override;
 };
@@ -183,6 +187,7 @@ MyLocationTerm::~MyLocationTerm() = default;
 MyPrefixTerm::~MyPrefixTerm() = default;
 
 MyRangeTerm::~MyRangeTerm() = default;
+MyStringRangeTerm::~MyStringRangeTerm() = default;
 
 MyStringTerm::~MyStringTerm() = default;
 
@@ -227,6 +232,7 @@ struct MyQueryNodeTypes {
     using SameElement = MySameElement;
     using PrefixTerm = MyPrefixTerm;
     using RangeTerm = MyRangeTerm;
+    using StringRangeTerm = MyStringRangeTerm;
     using Rank = MyRank;
     using LabelWrapper = MyLabelWrapper;
     using StringTerm = MyStringTerm;
@@ -267,6 +273,7 @@ public:
     void visit(MySameElement&) override { setVisited<MySameElement>(); }
     void visit(MyPrefixTerm&) override { setVisited<MyPrefixTerm>(); }
     void visit(MyRangeTerm&) override { setVisited<MyRangeTerm>(); }
+    void visit(MyStringRangeTerm&) override { setVisited<MyStringRangeTerm>(); }
     void visit(MyRank&) override { setVisited<MyRank>(); }
     void visit(MyLabelWrapper&) override { setVisited<MyLabelWrapper>(); }
     void visit(MyStringTerm&) override { setVisited<MyStringTerm>(); }
@@ -304,6 +311,7 @@ TEST(CustomTypeVisitorTest, all_query_nodes_are_visited) {
     requireThatNodeIsVisited<MyPhrase>();
     requireThatNodeIsVisited<MySameElement>();
     requireThatNodeIsVisited<MyRangeTerm>();
+    requireThatNodeIsVisited<MyStringRangeTerm>();
     requireThatNodeIsVisited<MyRank>();
     requireThatNodeIsVisited<MyLabelWrapper>();
     requireThatNodeIsVisited<MyNumberTerm>();

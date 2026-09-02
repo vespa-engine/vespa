@@ -960,6 +960,12 @@ public class SchemaTestCase {
                         second-phase {
                             rerank-count: 43
                         }
+                        function foo() {
+                            expression: attribute(test)
+                        }
+                        sort-features {
+                            foo
+                        }
                     }
                 }""";
         ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
@@ -968,10 +974,17 @@ public class SchemaTestCase {
         var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
         var schemaInfoConfigBuilder = new SchemaInfoConfig.Builder();
         derived.getSchemaInfo().getConfig(schemaInfoConfigBuilder);
-        var schemaInfoConfig = schemaInfoConfigBuilder.build().toString();
-        assertTrue(schemaInfoConfig.contains("rerankCount 43"));
-        assertTrue(schemaInfoConfig.contains("keepRankCount 1234"));
-        assertTrue(schemaInfoConfig.contains("matchPhaseMaxHits 456"));
+        var schemaInfoConfig = schemaInfoConfigBuilder.build();
+        var schemaInfoConfigText = schemaInfoConfig.toString();
+        assertTrue(schemaInfoConfigText.contains("rerankCount 43"));
+        assertTrue(schemaInfoConfigText.contains("keepRankCount 1234"));
+        assertTrue(schemaInfoConfigText.contains("matchPhaseMaxHits 456"));
+        var testProfile = schemaInfoConfig.schema().get(0).rankprofile().stream()
+                .filter(profile -> profile.name().equals("test"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(List.of("foo"), testProfile.sortFeature());
+        assertFalse(schemaInfoConfigText.contains("rankingExpression(foo)"));
     }
 
     @Test

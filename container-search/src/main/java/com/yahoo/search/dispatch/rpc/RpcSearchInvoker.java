@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
+import ai.vespa.telemetry.api.trace.TraceAttributes;
+import ai.vespa.telemetry.api.trace.OtelTracing;
 import com.yahoo.compress.Compressor;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.VespaBackend;
@@ -10,6 +12,11 @@ import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.rpc.Client.ProtobufResponse;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.ErrorMessage;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+
 
 import java.io.IOException;
 import java.util.Optional;
@@ -36,6 +43,10 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
 
     private Query query;
 
+    /** This invoker is already per-query-per-node, so it is the carrier: no lookup structure is needed.
+     *  Created on the worker thread, ended on whichever thread learns the outcome — Span is thread-safe. */
+    private Span span = Span.getInvalid();
+
     RpcSearchInvoker(VespaBackend searcher, CompressPayload compressor, Node node, RpcConnectionPool resourcePool, int maxHits, QrSearchersConfig qrSearchersConfig) {
         super(Optional.of(node));
         this.searcher = searcher;
@@ -50,6 +61,15 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
     @Override
     protected Object sendSearchRequest(Query query, double contentShare, Object incomingContext) {
         this.query = query;
+        span = OtelTracing.startSpan(Context.current(), "node.search", SpanKind.CLIENT);
+        // Set on the span FIELD, not Span.current(): this span is deliberately never made current. Every value
+        // here is a field read or a constant, so no isRecording() guard is warranted.
+        span.setAttribute(TraceAttributes.CONTENT_CLUSTER,   searcher.getName())
+            .setAttribute(TraceAttributes.CONTENT_NODE_KEY,  node.key())
+            .setAttribute(TraceAttributes.CONTENT_NODE_HOST, node.hostname())
+            .setAttribute(TraceAttributes.CONTENT_GROUP,     node.group())
+            .setAttribute(TraceAttributes.RPC_SYSTEM,        "vespa_jrt")
+            .setAttribute(TraceAttributes.RPC_METHOD_KEY,    RPC_METHOD);
 
         Client.NodeConnection nodeConnection = resourcePool.getConnection(node.key());
         if (nodeConnection == null) {
@@ -109,10 +129,35 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
 
     @Override
     protected void release() {
-        // nothing to release
+        // Ends the span on the two paths above that create it and then return WITHOUT sending anything: an
+        // unknown node connection, and a timeout detected before sending. Those never reach the transport, so
+        // receive() is never called for them and nothing else would end their span.
+        //
+        // It is NOT what covers a node that goes silent. JRT guarantees the response waiter is called exactly
+        // once for every request it accepts - InvocationClient.run() fires on the scheduled timeout and calls
+        // handleRequestDone - so a silent node still reaches receive(), with a TIMEOUT error. This method is
+        // then a no-op for it, since the span has already ended.
+        //
+        // Ends late - release() runs from close(), after the search has returned - which is accepted: on the
+        // paths it actually covers, no request was ever sent, so there is no round trip being mis-measured.
+        endSpan("ended without a response from node " + node.key() + " on " + node.hostname());
+    }
+
+    /**
+     * Ends the span once, whichever path gets here first. Idempotent by construction: {@code isRecording()}
+     * is false once a span has ended (SdkSpan:586-590) and a second {@code end()} is a logged no-op
+     * (SdkSpan:559-564). That matters because release() also runs for invokers that DID answer —
+     * InterleavedSearchInvoker.ejectInvoker calls it on every invoker it consumes — and must not restamp
+     * a finished span with an error.
+     */
+    private void endSpan(String error) {
+        if ( ! span.isRecording()) return;
+        if (error != null) span.setStatus(StatusCode.ERROR, error);
+        span.end();
     }
 
     public void receive(Client.ResponseOrError<ProtobufResponse> response) {
+        endSpan(response.error().orElse(null));   // may run on a JRT transport thread
         responses.add(response);
         responseAvailable();
     }

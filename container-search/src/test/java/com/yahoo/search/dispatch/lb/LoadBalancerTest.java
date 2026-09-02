@@ -92,23 +92,23 @@ public class LoadBalancerTest {
     @Test
     void test_adaptive_scheduler_weighted() {
         var scoreboard = createScoreBoard(5);
-        Random seq = sequence(0.0, 0.4379, 0.4380, 0.6569, 0.6570, 0.8029, 0.8030, 0.9124, 0.9125);
-        AdaptiveScheduler sched = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, seq, scoreboard);
+        Random sequence = sequence(0.0, 0.4379, 0.4380, 0.6569, 0.6570, 0.8029, 0.8030, 0.9124, 0.9125);
+        var scheduler = new AdaptiveScheduler(AdaptiveScheduler.Type.REQUESTS, sequence, scoreboard);
         int i = 0;
         for (TrackedGroup gs : scoreboard.values()) {
             gs.setDecayer(new AdaptiveScheduler.DecayByRequests(1, Duration.ofMillis((long)(0.1 * (i + 1)*1000.0))));
             i++;
         }
 
-        assertEquals(0, sched.takeNextGroup(null).get().id());
-        assertEquals(0, sched.takeNextGroup(null).get().id());
-        assertEquals(1, sched.takeNextGroup(null).get().id());
-        assertEquals(1, sched.takeNextGroup(null).get().id());
-        assertEquals(2, sched.takeNextGroup(null).get().id());
-        assertEquals(2, sched.takeNextGroup(null).get().id());
-        assertEquals(3, sched.takeNextGroup(null).get().id());
-        assertEquals(3, sched.takeNextGroup(null).get().id());
-        assertEquals(4, sched.takeNextGroup(null).get().id());
+        assertEquals(0, scheduler.takeNextGroup(null).get().id());
+        assertEquals(0, scheduler.takeNextGroup(null).get().id());
+        assertEquals(1, scheduler.takeNextGroup(null).get().id());
+        assertEquals(1, scheduler.takeNextGroup(null).get().id());
+        assertEquals(2, scheduler.takeNextGroup(null).get().id());
+        assertEquals(2, scheduler.takeNextGroup(null).get().id());
+        assertEquals(3, scheduler.takeNextGroup(null).get().id());
+        assertEquals(3, scheduler.takeNextGroup(null).get().id());
+        assertEquals(4, scheduler.takeNextGroup(null).get().id());
     }
 
     @Test
@@ -125,15 +125,15 @@ public class LoadBalancerTest {
                 );
         BestOfRandom2Scheduler sched = new BestOfRandom2Scheduler(seq, createScoreBoard(5));
 
-        assertEquals(0, allocate(sched.takeNextGroup(null).get()).id());
-        assertEquals(1, allocate(sched.takeNextGroup(null).get()).id());
-        assertEquals(0, allocate(sched.takeNextGroup(null).get()).id());
-        assertEquals(1, allocate(sched.takeNextGroup(null).get()).id());
-        assertEquals(2, allocate(sched.takeNextGroup(null).get()).id());
-        assertEquals(4, allocate(sched.takeNextGroup(null).get()).id());
-        assertEquals(4, allocate(sched.takeNextGroup(null).get()).id());
-        assertEquals(4, allocate(sched.takeNextGroup(null).get()).id());
-        assertEquals(0, allocate(sched.takeNextGroup(null).get()).id());
+        assertEquals(0, allocate(sched.takeNextGroup(Set.of()).get()).id());
+        assertEquals(1, allocate(sched.takeNextGroup(Set.of()).get()).id());
+        assertEquals(0, allocate(sched.takeNextGroup(Set.of()).get()).id());
+        assertEquals(1, allocate(sched.takeNextGroup(Set.of()).get()).id());
+        assertEquals(2, allocate(sched.takeNextGroup(Set.of()).get()).id());
+        assertEquals(4, allocate(sched.takeNextGroup(Set.of()).get()).id());
+        assertEquals(4, allocate(sched.takeNextGroup(Set.of()).get()).id());
+        assertEquals(4, allocate(sched.takeNextGroup(Set.of()).get()).id());
+        assertEquals(0, allocate(sched.takeNextGroup(Set.of()).get()).id());
     }
 
     @Test

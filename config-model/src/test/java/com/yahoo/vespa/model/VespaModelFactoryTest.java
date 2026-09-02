@@ -2,6 +2,10 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.component.ComponentId;
+import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.config.model.api.CommerceDiscoverySchemaProvider;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.config.model.MockModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -25,11 +29,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -133,6 +139,51 @@ public class VespaModelFactoryTest {
                     .setHostedVespa(true)
                     .setContainerEndpoints(Set.of(new ContainerEndpoint(clusterName, ApplicationClusterEndpoint.Scope.zone, List.of("tc.example.com")))); }
         };
+    }
+
+    /** Self-hosted has no builder for the element; the error must say Vespa Cloud is required. */
+    @Test
+    void commerceDiscoveryWithoutABuilderFailsWithATailoredMessage() {
+        var services = """
+                <services version="1.0">
+                    <commerce-discovery version="1.0"/>
+                </services>""";
+        Throwable exception = assertThrows(IllegalArgumentException.class, () ->
+                VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
+                    @Override
+                    public ApplicationPackage applicationPackage() {
+                        return new MockApplicationPackage.Builder().withServices(services).build();
+                    }
+                }));
+        assertTrue(exception.getMessage().contains("requires Vespa Cloud"), exception.getMessage());
+    }
+
+    /** Lock in feature flag and hosted as gating for schema providers for now. */
+    @Test
+    void commerceDiscoverySchemaProviderIsConsultedOnlyInHostedVespaWithTheFlagEnabled() {
+        assertFalse(schemaProviderConsulted(false, false));
+        assertFalse(schemaProviderConsulted(true, false));
+        assertFalse(schemaProviderConsulted(false, true));
+        assertTrue(schemaProviderConsulted(true, true));
+    }
+
+    private boolean schemaProviderConsulted(boolean hostedVespa, boolean flagEnabled) {
+        AtomicBoolean consulted = new AtomicBoolean(false);
+        CommerceDiscoverySchemaProvider provider = applicationPackage -> {
+            consulted.set(true);
+            return List.of();
+        };
+        var providers = new ComponentRegistry<CommerceDiscoverySchemaProvider>();
+        providers.register(ComponentId.fromString("test-provider"), provider);
+        var factory = new VespaModelFactory(new ComponentRegistry<>(), new ComponentRegistry<>(),
+                                            new ComponentRegistry<>(), providers, Zone.defaultZone());
+        factory.createModel(new MockModelContext() {
+            @Override
+            public Properties properties() {
+                return new TestProperties().setHostedVespa(hostedVespa).commerceDiscovery(flagEnabled);
+            }
+        });
+        return consulted.get();
     }
 
     ApplicationPackage createApplicationPackageThatFailsWhenValidating() {

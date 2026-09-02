@@ -171,6 +171,20 @@ public class ProtobufSerializationTest {
     }
 
     @Test
+    void feature_sort_is_serialized_as_opaque_field() {
+        Query q = new Query("?query=test&sorting=-feature(foo)");
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
+        assertEquals(1, req.getSortingCount());
+        assertEquals("feature(foo)", req.getSorting(0).getField());
+        assertFalse(req.getSorting(0).getAscending());
+
+        Query ascending = new Query("?query=test&sorting=feature(foo)");
+        var req2 = ProtobufSerialization.convertFromQuery(ascending, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
+        assertEquals("feature(foo)", req2.getSorting(0).getField());
+        assertTrue(req2.getSorting(0).getAscending());
+    }
+
+    @Test
     void soft_timeout_errors_use_timeout_error_code() {
         Query q = new Query("search/?query=test");
         SearchProtocol.SearchReply reply = SearchProtocol.SearchReply.newBuilder()

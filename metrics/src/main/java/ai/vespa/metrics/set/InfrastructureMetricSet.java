@@ -70,6 +70,9 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_CPU.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_MEMORY.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_DISK.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_SATURATION_CPU.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_SATURATION_MEMORY.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_SATURATION_DISK.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_BACKUP_AGE_FRACTION.last());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_SNAPSHOT_BUSY_SECONDS.max());
         addMetric(metrics, ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.max());
@@ -218,6 +221,10 @@ public class InfrastructureMetricSet {
 
         addMetric(metrics, ControllerMetrics.HUBSPOT_EXCEPTIONS.count());
         addMetric(metrics, ControllerMetrics.HUBSPOT_LAST_SUCCESS.last());
+        addMetric(metrics, ControllerMetrics.HUBSPOT_COMPANIES_UPDATED.last());
+        addMetric(metrics, ControllerMetrics.HUBSPOT_TENANTS_UPDATED.last());
+        addMetric(metrics, ControllerMetrics.HUBSPOT_TENANT_COMPANIES_UPDATED.last());
+        addMetric(metrics, ControllerMetrics.HUBSPOT_USERS_UPDATED.last());
 
         addMetric(metrics, ControllerMetrics.TENANT_CREATED_LAST_SUCCESS.last());
 

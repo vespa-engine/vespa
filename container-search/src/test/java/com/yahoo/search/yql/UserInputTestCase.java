@@ -393,6 +393,55 @@ public class UserInputTestCase {
         assertEquals("select * from sources * where (foo contains \"bamse\" AND foo contains phrase(\"bamse\", \"syntactic\", \"bamse\"))", query.yqlRepresentation());
     }
 
+    /** Parameters which are JSON objects are flattened into dotted properties when the query is parsed. */
+    @Test
+    void testJsonObjectReferenceInWand() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("q_terms.7128", "34");
+        builder.setParameter("q_terms.2622", "18");
+        builder.setParameter("yql", "select * from sources * where wand(terms, @q_terms)");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where wand(terms, {\"2622\": 18, \"7128\": 34})",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    void testJsonObjectReferenceInDotProduct() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("weights.a", "1");
+        builder.setParameter("weights.b", "2");
+        builder.setParameter("yql", "select * from sources * where dotProduct(terms, @weights)");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where dotProduct(terms, {\"a\": 1, \"b\": 2})",
+                     query.yqlRepresentation());
+    }
+
+    /** Keys containing dots survive the flattening, as only the parameter name prefix is removed. */
+    @Test
+    void testJsonObjectReferenceWithDottedKeys() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("weights.a.b", "1");
+        builder.setParameter("yql", "select * from sources * where dotProduct(terms, @weights)");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where dotProduct(terms, {\"a.b\": 1})",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    void testMissingReferenceInWand() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where wand(terms, @q_terms)");
+        assertQueryFails(builder);
+    }
+
+    @Test
+    void testJsonObjectReferenceWithNonIntegerWeight() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("q_terms.7128", "notANumber");
+        builder.setParameter("yql", "select * from sources * where wand(terms, @q_terms)");
+        assertQueryFails(builder);
+    }
+
     @Test
     void testReferenceInComparison() {
         URIBuilder builder = searchUri();

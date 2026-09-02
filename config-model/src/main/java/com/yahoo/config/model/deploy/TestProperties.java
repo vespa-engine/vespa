@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -70,7 +71,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
     private final Map<String, Integer> heapSizePercentage = new HashMap<>();
-    private Optional<CloudAccount> cloudAccount = Optional.empty();
+    private CloudAccount cloudAccount = CloudAccount.unspecified();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
     private boolean logserverOtelCol = false;
@@ -84,6 +85,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double searchNodeReservedMemoryFactor = 0.0;
     private boolean failWhenConfiguringIndexedMapOfArray = true;
     private boolean fastMapSearch = false;
+    private boolean relaxStrictlyIncreasingClusterStateVersions = false;
+    private boolean commerceDiscovery = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -129,7 +132,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return heapSizePercentage.getOrDefault(clusterId.orElse(""), defaultHeapSizePercentageOfAvailableMemory);
     }
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
-    @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
+    @Override public CloudAccount getCloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
@@ -146,6 +149,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
     @Override public boolean fastMapSearch() { return fastMapSearch; }
+    @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return relaxStrictlyIncreasingClusterStateVersions; }
+    @Override public boolean commerceDiscovery() { return commerceDiscovery; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -306,7 +311,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
 
     public TestProperties setCloudAccount(CloudAccount cloudAccount) {
-        this.cloudAccount = Optional.ofNullable(cloudAccount);
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
         return this;
     }
 
@@ -374,6 +379,16 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties fastMapSearch(boolean value) {
         this.fastMapSearch = value;
+        return this;
+    }
+
+    public TestProperties relaxStrictlyIncreasingClusterStateVersions(boolean value) {
+        this.relaxStrictlyIncreasingClusterStateVersions = value;
+        return this;
+    }
+
+    public TestProperties commerceDiscovery(boolean value) {
+        this.commerceDiscovery = value;
         return this;
     }
 

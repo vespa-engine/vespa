@@ -508,10 +508,6 @@ TEST(VespaDocumentSerializerTest, requireThatReserializationIsUnompressedIfUnmod
     EXPECT_EQ(value, value2);
 }
 
-template <typename T, int N> int arraysize(const T (&)[N]) {
-    return N;
-}
-
 TEST(VespaDocumentSerializerTest, requireThatDocumentCanBeSerialized) {
     const DocumentType& type = repo.getDocumentType();
 

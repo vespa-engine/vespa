@@ -127,7 +127,8 @@
       "public java.util.Map getFileRegistries()",
       "public java.util.Map legacyOverrides()",
       "public abstract java.util.Collection getSchemas()",
-      "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.Zone, com.yahoo.config.application.api.DeployLogger)"
+      "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.Zone, com.yahoo.config.application.api.DeployLogger)",
+      "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.zone.ZoneInfo, com.yahoo.config.application.api.DeployLogger)"
     ],
     "fields" : [
       "public static final java.lang.String HOSTS",
@@ -744,7 +745,9 @@
     ],
     "methods" : [
       "public java.util.Optional start()",
+      "public java.util.Optional startTime()",
       "public java.util.Optional end()",
+      "public java.util.Optional endTime()",
       "public java.lang.String toString()"
     ],
     "fields" : [ ]
@@ -1036,6 +1039,13 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.CommerceDiscoverySchemaProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [ "public", "interface", "abstract" ],
+    "methods" : [ "public abstract java.util.List schemas(com.yahoo.config.application.api.ApplicationPackage)" ],
     "fields" : [ ]
   },
   "com.yahoo.config.model.api.ConfigChangeAction$Type" : {
@@ -1445,7 +1455,6 @@
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",
-      "public java.lang.Object sidecarsForTest()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag useTritonFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
       "public int searchCoreMaxOutstandingMoveOps()",
@@ -1461,7 +1470,9 @@
       "public boolean failWhenConfiguringIndexedMapOfArray()",
       "public boolean protonLogWarningOnDiskCapacityChange()",
       "public boolean protonResampleDiskCapacity()",
-      "public boolean fastMapSearch()"
+      "public boolean fastMapSearch()",
+      "public boolean relaxStrictlyIncreasingClusterStateVersions()",
+      "public boolean commerceDiscovery()"
     ],
     "fields" : [ ]
   },
@@ -1522,6 +1533,7 @@
       "public java.util.List tlsCiphersOverride()",
       "public abstract java.util.List environmentVariables()",
       "public java.util.Optional cloudAccount()",
+      "public com.yahoo.config.provision.CloudAccount getCloudAccount()",
       "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags()",
       "public boolean allowUserFilters()",
       "public java.time.Duration endpointConnectionTtl()",
@@ -1878,6 +1890,22 @@
       "public java.lang.String toString()"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.SidecarProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.util.List getSidecars(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.NodeResources, boolean)",
+      "public java.util.List getSidecars(com.yahoo.config.provision.ApplicationId, com.yahoo.component.Version, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.NodeResources, java.util.Set)"
+    ],
+    "fields" : [
+      "public static final java.lang.String TRITON_SIDECAR_NAME"
+    ]
   },
   "com.yahoo.config.model.api.SuperModel" : {
     "superClass" : "java.lang.Object",

@@ -31,9 +31,11 @@
 #include <vespa/searchlib/fef/test/rankresult.h>
 #include <vespa/searchlib/fef/utils.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <iostream>
+#include <vector>
 
 using namespace search::fef;
 using namespace search::features;
@@ -496,6 +498,8 @@ TEST_F(RankSetupTest, rank_setup) {
     env.getProperties().add(match::Feature::NAME, "match_bar");
     env.getProperties().add(dump::Feature::NAME, "foo");
     env.getProperties().add(dump::Feature::NAME, "bar");
+    env.getProperties().add(sort::Feature::NAME, "value(1)");
+    env.getProperties().add(sort::Feature::NAME, "rankingExpression(foo)");
     env.getProperties().add(matching::NumThreadsPerSearch::NAME, "3");
     env.getProperties().add(matching::MinHitsPerThread::NAME, "8");
     env.getProperties().add(matchphase::DegradationAttribute::NAME, "mystaticrankattr");
@@ -544,6 +548,9 @@ TEST_F(RankSetupTest, rank_setup) {
     ASSERT_TRUE(rs.getDumpFeatures().size() == 2);
     EXPECT_EQ(rs.getDumpFeatures()[0], std::string("foo"));
     EXPECT_EQ(rs.getDumpFeatures()[1], std::string("bar"));
+    ASSERT_TRUE(rs.get_sort_features().size() == 2);
+    EXPECT_EQ(rs.get_sort_features()[0], std::string("value(1)"));
+    EXPECT_EQ(rs.get_sort_features()[1], std::string("rankingExpression(foo)"));
     EXPECT_EQ(rs.getNumThreadsPerSearch(), 3u);
     EXPECT_EQ(rs.getMinHitsPerThread(), 8u);
     EXPECT_EQ(rs.getDegradationAttribute(), "mystaticrankattr");
@@ -933,6 +940,143 @@ TEST_F(RankSetupTest, feature_normalization) {
             checkFeatures(exp, actual);
         }
     }
+}
+
+TEST_F(RankSetupTest, sort_features_compile_as_numeric_one_seed_resolvers) {
+    {
+        RankSetup rs(_factory, _indexEnv);
+        rs.setFirstPhaseRank("value(1)");
+        rs.add_sort_feature("value(2)");
+        ASSERT_TRUE(rs.compile());
+        EXPECT_TRUE(rs.has_sort_feature("value(2)"));
+        auto program = rs.create_sort_program("value(2)");
+        ASSERT_TRUE(program);
+        EXPECT_FALSE(rs.has_sort_feature("value(1)"));
+    }
+    {
+        RankSetup rs(_factory, _indexEnv);
+        rs.setFirstPhaseRank("value(1)");
+        rs.add_sort_feature("rankingExpression(\"tensor(x[3])(x)\")");
+        EXPECT_FALSE(rs.compile());
+    }
+}
+
+TEST_F(RankSetupTest, sort_features_reject_first_phase_rank_helpers) {
+    BlueprintFactory factory;
+    setup_search_features(factory);
+    {
+        RankSetup rs(factory, _indexEnv);
+        rs.setFirstPhaseRank("value(1)");
+        rs.add_sort_feature("firstPhaseRank");
+        EXPECT_FALSE(rs.compile());
+    }
+    {
+        RankSetup rs(factory, _indexEnv);
+        rs.setFirstPhaseRank("value(1)");
+        rs.add_sort_feature("firstPhaseMax");
+        EXPECT_FALSE(rs.compile());
+    }
+    {
+        RankSetup rs(factory, _indexEnv);
+        rs.setFirstPhaseRank("value(1)");
+        rs.add_sort_feature("firstPhase");
+        EXPECT_TRUE(rs.compile());
+    }
+    {
+        RankSetup rs(factory, _indexEnv);
+        rs.setFirstPhaseRank("value(1)");
+        rs.add_sort_feature("rankingExpression(\"firstPhaseRank\")");
+        EXPECT_FALSE(rs.compile());
+    }
+    {
+        RankSetup rs(factory, _indexEnv);
+        rs.setFirstPhaseRank("value(1)");
+        rs.add_sort_feature("rankingExpression(\"firstPhaseMax\")");
+        EXPECT_FALSE(rs.compile());
+    }
+}
+
+class RecordingIndexEnvironment : public search::fef::test::IndexEnvironment {
+public:
+    mutable std::vector<IIndexEnvironment::FeatureMotivation> hints;
+    FeatureMotivation getFeatureMotivation() const override {
+        return hints.empty() ? FeatureMotivation::UNKNOWN : hints.back();
+    }
+    void hintFeatureMotivation(FeatureMotivation motivation) const override { hints.push_back(motivation); }
+};
+
+TEST_F(RankSetupTest, sort_features_compile_under_rank_motivation) {
+    RecordingIndexEnvironment env;
+    RankSetup                 rs(_factory, env);
+    rs.setFirstPhaseRank("value(1)");
+    rs.add_sort_feature("value(2)");
+    ASSERT_TRUE(rs.compile());
+    ASSERT_GE(env.hints.size(), 2u);
+    EXPECT_EQ(env.hints.front(), IIndexEnvironment::RANK);
+    EXPECT_EQ(env.hints.back(), IIndexEnvironment::DUMP);
+}
+
+class CountPrepareBlueprint : public Blueprint {
+public:
+    static int prepares;
+    CountPrepareBlueprint() : Blueprint("countprepare") {}
+    void visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const override {}
+    Blueprint::UP createInstance() const override { return std::make_unique<CountPrepareBlueprint>(); }
+    bool setup(const IIndexEnvironment&, const StringVector&) override {
+        describeOutput("out", "dummy", FeatureType::number());
+        return true;
+    }
+    void prepareSharedState(const IQueryEnvironment&, IObjectStore&) const override { ++prepares; }
+    FeatureExecutor& createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const override {
+        return stash.create<SingleZeroValueExecutor>();
+    }
+};
+int CountPrepareBlueprint::prepares = 0;
+
+TEST_F(RankSetupTest, sort_features_prepare_only_selected_public_names) {
+    BlueprintFactory factory;
+    setup_search_features(factory);
+    factory.addPrototype(std::make_shared<CountPrepareBlueprint>());
+    CountPrepareBlueprint::prepares = 0;
+    RankSetup rs(factory, _indexEnv);
+    rs.setFirstPhaseRank("value(1)");
+    rs.add_sort_feature("countprepare");
+    rs.add_sort_feature("value(2)");
+    ASSERT_TRUE(rs.compile());
+    EXPECT_TRUE(rs.has_sort_feature("countprepare"));
+    EXPECT_TRUE(rs.has_sort_feature("value(2)"));
+    QueryEnvironment queryEnv;
+    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(2)"}));
+    EXPECT_EQ(0, CountPrepareBlueprint::prepares);
+    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"countprepare"}));
+    EXPECT_EQ(1, CountPrepareBlueprint::prepares);
+    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"countprepare", "countprepare"}));
+    EXPECT_EQ(2, CountPrepareBlueprint::prepares);
+}
+
+TEST_F(RankSetupTest, an_unknown_sort_feature_is_reported_rather_than_fatal) {
+    RankSetup rs(_factory, _indexEnv);
+    rs.setFirstPhaseRank("value(1)");
+    rs.add_sort_feature("value(2)");
+    ASSERT_TRUE(rs.compile());
+    EXPECT_FALSE(rs.has_sort_feature("value(3)"));
+
+    // A name that was never added as a sort feature, and one that exists as a
+    // rank feature but was not selected for sorting.
+    EXPECT_FALSE(rs.create_sort_program("value(3)"));
+    EXPECT_FALSE(rs.create_sort_program("value(1)"));
+
+    QueryEnvironment queryEnv;
+    EXPECT_FALSE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(3)"}));
+    EXPECT_FALSE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(2)", "value(3)"}));
+}
+
+TEST_F(RankSetupTest, preparing_no_sort_features_succeeds) {
+    RankSetup rs(_factory, _indexEnv);
+    rs.setFirstPhaseRank("value(1)");
+    ASSERT_TRUE(rs.compile());
+    QueryEnvironment queryEnv;
+    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {}));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

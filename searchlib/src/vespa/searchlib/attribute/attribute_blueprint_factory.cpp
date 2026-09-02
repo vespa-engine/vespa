@@ -74,6 +74,7 @@ using search::query::PrefixTerm;
 using search::query::RangeTerm;
 using search::query::RegExpTerm;
 using search::query::StackDumpCreator;
+using search::query::StringRangeTerm;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
@@ -657,6 +658,14 @@ public:
         auto range_spec = spec ? std::make_unique<NumericRangeSpec>(*spec) : std::make_unique<NumericRangeSpec>();
         auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(range_spec));
         setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term), scParams));
+    }
+
+    void visit(StringRangeTerm& n) override {
+        const StringRangeSpec* spec = n.getTerm().get_spec();
+        auto spec_for_term = spec ? std::make_unique<StringRangeSpec>(*spec) : std::make_unique<StringRangeSpec>();
+        auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(spec_for_term));
+        setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term),
+                                                            createContextParams(_field.isFilter())));
     }
 
     void visit(StringTerm& n) override { visitTerm(n); }

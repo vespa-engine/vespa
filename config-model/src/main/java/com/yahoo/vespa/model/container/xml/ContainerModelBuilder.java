@@ -15,6 +15,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.SidecarProvider;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
@@ -30,8 +31,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SidecarImages;
-import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
@@ -252,6 +251,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private boolean shouldUseTriton(ApplicationContainerCluster cluster, DeployState deployState) {
+        // The Triton runtime requires a sidecar provider, injected e.g. in hosted Vespa.
+        if (deployState.getSidecarProvider().isEmpty()) return false;
         var isPublicCloud = deployState.zone().system().isPublicCloudLike();
         var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
         var useTritonFeatureFlagValue = deployState.featureFlags()
@@ -263,26 +264,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
-        var sidecars = new ArrayList<SidecarSpec>();
-        if (shouldUseTriton(cluster, deployState)) {
-            var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
-            var sidecarImage = SidecarImages.readFromPropertiesFile().getOrThrow("triton");
+        if (deployState.getSidecarProvider().isEmpty()) return List.of();
 
-            var spec = SidecarSpec.builder()
-                    .id(0)
-                    .name("triton")
-                    .image(sidecarImage)
-                    .hasImageMirror(true)
-                    .minCpu(1) // Must have at least one CPU
-                    .hasGpu(hasGpu)
-                    .volumeMounts(List.of("/models"))
-                    .command(List.of("tritonserver", "--model-repository=/models", "--model-control-mode=explicit"))
-                    .livenessProbe(new SidecarProbe(new SidecarProbe.HttpGetAction("/v2/health/live", 8000), 10, 5, 2, 3))
-                    .build();
-
-            sidecars.add(spec);
-        }
-        return sidecars;
+        var neededSidecars = shouldUseTriton(cluster, deployState) ? Set.of(SidecarProvider.TRITON_SIDECAR_NAME) : Set.<String>of();
+        var sidecars = deployState.getSidecarProvider().get()
+                .getSidecars(deployState.getProperties().applicationId(),
+                             deployState.getVespaVersion(),
+                             cluster.id(),
+                             nodesSpecification.minResources().nodeResources(),
+                             neededSidecars);
+        if (sidecars.stream().map(SidecarSpec::id).distinct().count() < sidecars.size()
+                || sidecars.stream().map(SidecarSpec::name).distinct().count() < sidecars.size())
+            throw new IllegalArgumentException("Sidecars in " + cluster + " must have unique ids and names: " + sidecars);
+        return List.copyOf(sidecars);
     }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
@@ -871,7 +865,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (threadpoolElement == null) {
             cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(cluster));
         } else {
-            var options = ContainerThreadpoolOptionsBuilder.build(deployState, spec);
+            var options = ContainerThreadpoolSettingsBuilder.build(deployState, spec);
             cluster.setDefaultThreadpoolProvider(new DefaultThreadpoolProvider(deployState, cluster, options));
         }
     }
@@ -1355,7 +1349,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                         searchElement);
         cluster.addComponent(searchHandler);
 
-        // Add as child to SearchHandler to get the correct chains config.
+        // Add as child to SearchHandler to get the correct 'chains' config.
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
