@@ -394,7 +394,7 @@ public class YqlParser implements Parser {
                 case CONTAINS -> buildTermSearch(ast);
                 case MATCHES -> buildRegExpSearch(ast);
                 case CALL -> buildFunctionCallOrCompositeLeaf(ast, currentField);
-                case LITERAL -> buildLiteralExpression(ast, currentField);
+                case LITERAL, NEGATE -> buildLiteralExpression(ast, currentField);
                 case NOT -> buildNot(ast);
                 case IN -> buildIn(ast);
                 default -> throw newUnexpectedArgumentException(ast.getOperator(),
@@ -477,7 +477,7 @@ public class YqlParser implements Parser {
 
         OperatorNode<ExpressionOperator> field = lhs.getArgument(0);
         OperatorNode<ExpressionOperator> key = lhs.getArgument(1);
-        if (key.getOperator() != ExpressionOperator.LITERAL) {
+        if (key.getOperator() != ExpressionOperator.LITERAL && !isNumberLiteral(key)) {
             throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
         }
 
@@ -509,6 +509,9 @@ public class YqlParser implements Parser {
 
     /** Returns true if ast is a number literal. */
     private static boolean isNumberLiteral(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() == ExpressionOperator.NEGATE) {
+            return isNumberLiteral(ast.getArgument(0));
+        }
         return ast.getOperator() == ExpressionOperator.LITERAL && ast.getArgument(0) instanceof Number;
     }
 
@@ -673,22 +676,28 @@ public class YqlParser implements Parser {
      * When {@code currentField} is not null we are inside a sameElement.
      */
     private Item buildLiteralExpression(OperatorNode<ExpressionOperator> ast, String currentField) {
-        var literalOrNested = ast.getArgument(0);
         if (currentField != null) {
             // A bare literal inside sameElement is a term matching the element value:
-            // numbers become numeric equality terms, everything else word terms on string form.
-            if (literalOrNested instanceof Number number) {
-                return (Item)leafStyleSettings(ast, new IntItem(number.toString(), ""));
+            // numbers (possibly negated) become numeric equality terms, everything else word terms on string form.
+            if (isNumberLiteral(ast)) {
+                return (Item)leafStyleSettings(ast, new IntItem(getNumberAsString(ast), ""));
             }
-            return instantiateWordItem("", toLiteralString(ast), null);
+            if (ast.getOperator() == ExpressionOperator.LITERAL) {
+                return instantiateWordItem("", toLiteralString(ast), null);
+            }
+            throw newUnexpectedArgumentException(ast.getOperator(), ExpressionOperator.LITERAL);
         }
-        if (Boolean.TRUE.equals(literalOrNested)) {
+        if (ast.getOperator() != ExpressionOperator.LITERAL) {
+            throw newUnexpectedArgumentException(ast.getOperator(), ExpressionOperator.LITERAL);
+        }
+        var literal = ast.getArgument(0);
+        if (Boolean.TRUE.equals(literal)) {
             return new TrueItem();
         }
-        else if (Boolean.FALSE.equals(literalOrNested)) {
+        else if (Boolean.FALSE.equals(literal)) {
             return new FalseItem();
         }
-        throw newUnexpectedArgumentException(literalOrNested, ExpressionOperator.LITERAL);
+        throw newUnexpectedArgumentException(literal, ExpressionOperator.LITERAL);
     }
 
     @SuppressWarnings("deprecation")

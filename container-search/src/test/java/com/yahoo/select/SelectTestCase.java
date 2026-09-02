@@ -470,6 +470,12 @@ public class SelectTestCase {
 
         assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ { \"contains\" : [\"key\", \"a\"] }, {\"range\":[\"value.f2\",{\"=\":10}] } ]} ] }",
                 "baz:{key:a value.f2:10}");
+
+        // Negative numbers inside sameElement keep their sign.
+        assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ { \"contains\" : [\"key\", \"a\"] }, {\"equals\":[\"value\", -10] } ]} ] }",
+                "baz:{key:a value:-10}");
+        assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ {\"range\":[\"value\",{\">=\":-8, \"<=\":-1}] } ]} ] }",
+                "baz:{value:[-8;-1]}");
     }
 
     @Test
@@ -790,6 +796,8 @@ public class SelectTestCase {
         assertParse("{\"equals\": [\"public\",5]}", "public:5");
         assertParse("{\"equals\": {\"field\": \"public\", \"value\": true}}", "public:true");
         assertParse("{\"equals\": {\"field\": \"public\", \"value\": 5}}", "public:5");
+        assertParse("{\"equals\": [\"public\",-5]}", "public:-5");
+        assertParse("{\"equals\": {\"field\": \"public\", \"value\": -5}}", "public:-5");
     }
 
     @Test
@@ -818,6 +826,17 @@ public class SelectTestCase {
         // Double value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 3.14 }}",
                     "my_arr[0]:{3.14}");
+
+        // Negative values keep their sign and are numeric equality terms, as in YQL.
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": -42 }}",
+                    "my_arr[0]:{-42}");
+        var negativeTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": -42 }}");
+        var negativeSameElement = assertInstanceOf(SameElementItem.class, negativeTree.getRoot());
+        assertEquals(List.of(0), negativeSameElement.getElementFilter());
+        IntItem negativeValue = assertInstanceOf(IntItem.class, negativeSameElement.getItem(0));
+        assertEquals("-42", negativeValue.getNumber());
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": -3.14 }}",
+                    "my_arr[0]:{-3.14}");
     }
 
     @Test
