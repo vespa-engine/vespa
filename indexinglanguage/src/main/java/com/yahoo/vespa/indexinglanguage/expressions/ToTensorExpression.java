@@ -13,12 +13,11 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Iterator;
+import java.util.Optional;
 
 /**
  * Converts an array of tensors into a single tensor where the array index becomes
- * an additional indexed dimension, whose name is given as an argument.
- * Scalars (numbers) are treated as rank-0 tensors, so an array of numbers is
- * converted into a tensor with the given dimension as its single dimension.
+ * an additional dimension, whose name is given as an argument.
  *
  * @author bratseth
  */
@@ -73,24 +72,37 @@ public final class ToTensorExpression extends Expression {
     /** Verifies that the given input can produce the given output, where either may be unresolved (null). */
     private void validateInputAndOutput(DataType inputType, DataType outputType) {
         if (inputType == null || inputType instanceof AnyDataType) return;
-        if ( ! (outputType instanceof TensorDataType tensorDataType) || tensorDataType.getTensorType() == null) return;
-        if ( ! (inputType instanceof ArrayDataType arrayType)) return; // Invalid input: Reported by validateInputType
-        if (tensorDataType.getTensorType().dimension(dimension).isEmpty()) return; // Invalid output: Reported by validateOutputType
+        if ( ! (inputType instanceof ArrayDataType inputArrayType)) return; // Invalid input: Reported by validateInputType
+        if ( ! (outputType instanceof TensorDataType outputTensorType) || outputTensorType.getTensorType() == null) return;
+        if (outputTensorType.getTensorType().dimension(dimension).isEmpty()) return; // Invalid output: Reported by validateOutputType
 
-        TensorType impliedElementType = withoutDimension(tensorDataType.getTensorType());
-        if (arrayType.getNestedType() instanceof NumericDataType && impliedElementType.rank() > 0)
+        if ( ! valueTypeIsCompatible(inputArrayType.getNestedType(), outputTensorType.getTensorType().valueType()))
+            throw new VerificationException(this, "Input value type of " + inputArrayType +
+                                                  " is incompatible with output type " + outputTensorType.getTensorType());
+
+        TensorType impliedElementType = withoutDimension(outputTensorType.getTensorType());
+        if (inputArrayType.getNestedType() instanceof NumericDataType && impliedElementType.rank() > 0)
             throw new VerificationException(this, "The input is an array of numbers, so this can only produce a tensor " +
                                                   "with the single dimension '" + dimension + "', but " +
-                                                  tensorDataType.getTensorType() + " is required");
+                                                  outputTensorType.getTensorType() + " is required");
+    }
+
+    private boolean valueTypeIsCompatible(DataType inputArrayElementType, TensorType.Value outputValueType) {
+        if (outputValueType != TensorType.Value.INT8) return true; // Auto-convert between float precision types
+
+        // Otherwise require equivalence:
+        if (inputArrayElementType instanceof TensorDataType inputArrayElementTensorType)
+            return inputArrayElementTensorType.getTensorType().valueType() == TensorType.Value.INT8;
+        else
+            return inputArrayElementType.equals(DataType.BYTE);
     }
 
     private TensorType validateOutputType(DataType outputType) {
         if ( ! (outputType instanceof TensorDataType tensorDataType) || tensorDataType.getTensorType() == null)
             throw new VerificationException(this, "This produces a tensor, but " + outputType.getName() + " is required");
         TensorType tensorType = tensorDataType.getTensorType();
-        var addedDimension = tensorType.dimension(dimension);
-        if (addedDimension.isEmpty() || ! addedDimension.get().isIndexed())
-            throw new VerificationException(this, "This produces a tensor containing the indexed dimension '" +
+        if (tensorType.dimension(dimension).isEmpty())
+            throw new VerificationException(this, "This produces a tensor containing the dimension '" +
                                                   dimension + "', but " + tensorType + " is required");
         return tensorType;
     }
@@ -106,16 +118,16 @@ public final class ToTensorExpression extends Expression {
         }
 
         DataType elementType = array.getDataType().getNestedType();
-        if (elementType instanceof TensorDataType tensorDataType)
-            context.setCurrentValue(new TensorFieldValue(fromTensors(array, tensorDataType.getTensorType())));
-        else if (elementType instanceof NumericDataType numericType)
-            context.setCurrentValue(new TensorFieldValue(fromScalars(array, numericType)));
+        if (elementType instanceof TensorDataType elementTensorType)
+            context.setCurrentValue(new TensorFieldValue(fromTensors(array, elementTensorType.getTensorType())));
+        else if (elementType instanceof NumericDataType elementNumericType)
+            context.setCurrentValue(new TensorFieldValue(fromScalars(array, elementNumericType)));
         else
             throw new IllegalArgumentException("Expected an array of tensors or numbers, got " + array.getDataType().getName());
     }
 
     private Tensor fromTensors(Array<?> array, TensorType elementType) {
-        Tensor.Builder builder = Tensor.Builder.of(withDimension(elementType, array.size()));
+        Tensor.Builder builder = Tensor.Builder.of(withDimension(elementType, outputValueType(elementType), array.size()));
         for (int i = 0; i < array.size(); i++) {
             Tensor tensor = ((TensorFieldValue)array.get(i)).getTensor().orElse(null);
             if (tensor == null) continue;
@@ -137,28 +149,46 @@ public final class ToTensorExpression extends Expression {
     }
 
     private Tensor fromScalars(Array<?> array, NumericDataType elementType) {
-        TensorType type = new TensorType.Builder(valueTypeOf(elementType)).indexed(dimension, array.size()).build();
-        Tensor.Builder builder = Tensor.Builder.of(type);
+        var typeBuilder = new TensorType.Builder(outputValueType(elementType));
+        if (useMappedDimension())
+            typeBuilder.mapped(dimension);
+        else
+            typeBuilder.indexed(dimension, array.size());
+        Tensor.Builder builder = Tensor.Builder.of(typeBuilder.build());
         for (int i = 0; i < array.size(); i++)
             builder.cell().label(dimension, i).value(((NumericFieldValue)array.get(i)).getNumber().doubleValue());
         return builder.build();
     }
 
-    /** Returns the tensor value type to use for the given scalar type. */
-    private TensorType.Value valueTypeOf(NumericDataType elementType) {
+    private TensorType.Value outputValueType(TensorType elementType) {
+        if (outputType().isPresent()) return outputType().get().valueType();
+        // Otherwise derive from input
+        return elementType.valueType();
+    }
+
+    private TensorType.Value outputValueType(NumericDataType elementType) {
         if (getOutputType() instanceof TensorDataType outputType && outputType.getTensorType() != null)
             return outputType.getTensorType().valueType();
+        // Otherwise derive from input
         if (elementType.equals(DataType.FLOAT)) return TensorType.Value.FLOAT;
         if (elementType.equals(DataType.BYTE)) return TensorType.Value.INT8;
         return TensorType.Value.DOUBLE;
     }
 
-    /** Returns the given type with the dimension this adds, bound to the given size. */
-    private TensorType withDimension(TensorType type, long size) {
-        var builder = new TensorType.Builder(type.valueType());
+    private Optional<TensorType> outputType() {
+        if (getOutputType() instanceof TensorDataType outputType && outputType.getTensorType() != null)
+            return Optional.of(outputType.getTensorType());
+        else
+            return Optional.empty();
+    }
+
+    /** Returns the given type with the dimension this adds, bound to the given size if indexed. */
+    private TensorType withDimension(TensorType type, TensorType.Value valueType, long size) {
+        var builder = new TensorType.Builder(valueType);
         for (var typeDimension : type.dimensions())
             builder.dimension(typeDimension);
-        builder.dimension(TensorType.Dimension.indexed(dimension, size));
+        builder.dimension(useMappedDimension() ? TensorType.Dimension.mapped(dimension)
+                                               : TensorType.Dimension.indexed(dimension, size));
         return builder.build();
     }
 
@@ -169,6 +199,15 @@ public final class ToTensorExpression extends Expression {
             if ( ! typeDimension.name().equals(dimension))
                 builder.dimension(typeDimension);
         return builder.build();
+    }
+
+    private boolean useMappedDimension() {
+        if (getOutputType() instanceof TensorDataType outputType && outputType.getTensorType() != null) {
+            var addedDimension = outputType.getTensorType().dimension(dimension);
+            if (addedDimension.isPresent())
+                return addedDimension.get().isMapped();
+        }
+        return true;
     }
 
     @Override

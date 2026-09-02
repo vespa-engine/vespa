@@ -6,6 +6,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.DoubleFieldValue;
 import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
@@ -62,6 +63,37 @@ public class ToTensorTestCase {
     }
 
     @Test
+    public void requireThatArrayOfDenseTensorsIsConvertedToMappedDimension() throws ParseException {
+        var type = documentType("tensor(x[2])", "tensor(idx{},x[2])");
+        var exp = Expression.fromString("input tensors | to_tensor idx | attribute combined");
+
+        Document input = new Document(type, "id:scheme:mytype::");
+        var array = tensorArray(type, "tensor(x[2]):[1, 2]", "tensor(x[2]):[3, 4]", "tensor(x[2]):[5, 6]");
+        input.setFieldValue("tensors", array);
+
+        Document output = Expression.execute(exp, input);
+        assertEquals(Tensor.from("tensor(idx{},x[2]):{0: [1, 2], 1: [3, 4], 2: [5, 6]}"),
+                     ((TensorFieldValue)output.getFieldValue("combined")).getTensor().get());
+    }
+
+    @Test
+    public void requireThatArrayOfDoublesIsConvertedToMappedDimension() throws ParseException {
+        var type = scalarDocumentType(com.yahoo.document.DataType.DOUBLE, "tensor<float>(chunk{})");
+        var exp = Expression.fromString("input scalars | to_tensor chunk | attribute combined");
+
+        Document input = new Document(type, "id:scheme:mytype::");
+        var array = new Array<DoubleFieldValue>(type.getField("scalars").getDataType());
+        array.add(new DoubleFieldValue(1));
+        array.add(new DoubleFieldValue(2));
+        array.add(new DoubleFieldValue(3));
+        input.setFieldValue("scalars", array);
+
+        Document output = Expression.execute(exp, input);
+        assertEquals(Tensor.from("tensor<float>(chunk{}):{0: 1, 1: 2, 2: 3}"),
+                     ((TensorFieldValue)output.getFieldValue("combined")).getTensor().get());
+    }
+
+    @Test
     public void requireThatEmptyArrayProducesNoValue() throws ParseException {
         var type = documentType("tensor(x[2])", "tensor(chunk[2],x[2])");
         var exp = Expression.fromString("input tensors | to_tensor chunk | attribute combined");
@@ -81,8 +113,30 @@ public class ToTensorTestCase {
             exp.resolve(type);
             fail("Expected exception");
         } catch (VerificationException e) {
-            assertEquals("Invalid expression 'to_tensor chunk': This produces a tensor containing the indexed " +
+            assertEquals("Invalid expression 'to_tensor chunk': This produces a tensor containing the " +
                          "dimension 'chunk', but tensor(x[2],y[2]) is required",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    public void requireThatInt8ValueRequireByteInput() throws ParseException {
+        var type = scalarDocumentType(com.yahoo.document.DataType.DOUBLE, "tensor<int8>(x{})");
+        var exp = Expression.fromString("input scalars | to_tensor x | attribute combined");
+
+        Document input = new Document(type, "id:scheme:mytype::");
+        var array = new Array<DoubleFieldValue>(type.getField("scalars").getDataType());
+        array.add(new DoubleFieldValue(1));
+        array.add(new DoubleFieldValue(2));
+        array.add(new DoubleFieldValue(3));
+        input.setFieldValue("scalars", array);
+        try {
+            exp.resolve(type);
+            fail("Expected exception");
+        } catch (VerificationException e) {
+            assertEquals("Invalid expression 'to_tensor x': " +
+                         "Input value type of datatype Array<double> (code: -2054976470) " +
+                         "is incompatible with output type tensor<int8>(x{})",
                          e.getMessage());
         }
     }
