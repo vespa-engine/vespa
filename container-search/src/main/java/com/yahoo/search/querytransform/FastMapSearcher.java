@@ -41,11 +41,7 @@ public class FastMapSearcher extends Searcher {
 
     private class Rewriter {
 
-        private boolean hasRewritten;
-
-        private Rewriter() {
-            hasRewritten = false;
-        }
+        private boolean hasRewritten = false;
 
         /** Entry point for rewriting a query */
         private void rewriteFastMapSearch(Query query, SchemaInfo.Session session) {
