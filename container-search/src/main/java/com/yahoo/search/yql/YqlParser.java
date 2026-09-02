@@ -394,7 +394,7 @@ public class YqlParser implements Parser {
                 case CONTAINS -> buildTermSearch(ast);
                 case MATCHES -> buildRegExpSearch(ast);
                 case CALL -> buildFunctionCallOrCompositeLeaf(ast, currentField);
-                case LITERAL -> buildLiteralOrNested(ast, currentField);
+                case LITERAL -> buildLiteralExpression(ast, currentField);
                 case NOT -> buildNot(ast);
                 case IN -> buildIn(ast);
                 default -> throw newUnexpectedArgumentException(ast.getOperator(),
@@ -669,7 +669,10 @@ public class YqlParser implements Parser {
         return item;
     }
 
-    private Item buildLiteralOrNested(OperatorNode<ExpressionOperator> ast, String currentField) {
+    /**
+     * When {@code currentField} is not null we are inside a sameElement.
+     */
+    private Item buildLiteralExpression(OperatorNode<ExpressionOperator> ast, String currentField) {
         var literalOrNested = ast.getArgument(0);
         if (currentField != null) {
             // A bare literal inside sameElement is a term matching the element value:
