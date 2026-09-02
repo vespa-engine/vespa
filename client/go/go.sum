@@ -58,6 +58,8 @@ github.com/mattn/go-runewidth v0.0.27 h1:Feg/Oou5zI/wnpgDF6omIU0OokC9GxLC/WRknhV
 github.com/mattn/go-runewidth v0.0.27/go.mod h1:3qAiGCV4Koz/yuveO58qUefmUTRm8r0IGEXZ9jeHp/8=
 github.com/mattn/go-runewidth v0.0.28 h1:rPyg2ybwEKPebvpzVWe1gKBkH8EQFkxO4Y0hjBeLaBU=
 github.com/mattn/go-runewidth v0.0.28/go.mod h1:3qAiGCV4Koz/yuveO58qUefmUTRm8r0IGEXZ9jeHp/8=
+github.com/mattn/go-runewidth v0.0.29 h1:3oGF3R/S2N9DQ3ptftzVIvg2eicmojCzlwBEmqEPDfQ=
+github.com/mattn/go-runewidth v0.0.29/go.mod h1:3qAiGCV4Koz/yuveO58qUefmUTRm8r0IGEXZ9jeHp/8=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c/go.mod h1:7rwL4CYBLnjLxUqIJNnCWiEdr3bn6IUYi15bNlnbCCU=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
