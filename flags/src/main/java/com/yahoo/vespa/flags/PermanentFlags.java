@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.yahoo.vespa.flags.custom.ProfilingSettings;
 import com.yahoo.vespa.flags.custom.RoleList;
 import com.yahoo.vespa.flags.custom.SharedHost;
 
@@ -21,6 +22,7 @@ import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
+import static com.yahoo.vespa.flags.Dimension.ZONE_ID;
 
 /**
  * Definition for permanent feature flags
@@ -57,6 +59,23 @@ public class PermanentFlags {
                     "node resources of the host, the maximum number of containers, etc.",
             "Takes effect on next iteration of HostCapacityMaintainer.",
             __ -> true);
+
+    public static final UnboundJacksonFlag<ProfilingSettings> PYROSCOPE_PROFILING = defineJacksonFlag(
+            "pyroscope-profiling", ProfilingSettings.createDisabled(), ProfilingSettings.class,
+            "Which of the application's services to continuously profile with host-level eBPF " +
+                    "(pyroscope.ebpf), e.g. {\"enabled\": true, \"services\": [\"CONTAINER\", \"PROTON\"]}. " +
+                    "Only the listed services are profiled, and only for the applications this flag " +
+                    "is enabled for, so a shared host profiles nothing belonging to other tenants.",
+            "Takes effect on the next host-admin tick",
+            __ -> true,
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag PYROSCOPE_PROFILING_DISABLED = defineFeatureFlag(
+            "pyroscope-profiling-disabled", false,
+            "Force-disable continuous profiling, overriding the 'pyroscope-profiling' flag. Dimensioned " +
+                    "to allow disabling for a whole zone, a tenant, an application or a single host.",
+            "Takes effect on the next host-admin tick",
+            ZONE_ID, TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, NODE_TYPE);
 
     public static final UnboundListFlag<String> INACTIVE_MAINTENANCE_JOBS = defineListFlag(
             "inactive-maintenance-jobs", List.of(), String.class,
