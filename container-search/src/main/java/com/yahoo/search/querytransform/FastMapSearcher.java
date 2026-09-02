@@ -31,62 +31,72 @@ import com.yahoo.searchlib.document.FastMapSearch;
 @After(PhaseNames.TRANSFORMED_QUERY)
 public class FastMapSearcher extends Searcher {
 
-    private boolean hasRewritten = false;
-
     @Override
     public Result search(Query query, Execution execution) {
         var schemaInfo = execution.context().schemaInfo();
         var session = schemaInfo.newSession(query);
-        rewriteFastMapSearch(query, session);
+        new Rewriter().rewriteFastMapSearch(query, session);
         return execution.search(query);
     }
 
-    private void rewriteFastMapSearch(Query query, SchemaInfo.Session session) {
-        hasRewritten = false;
-        Item root = query.getModel().getQueryTree().getRoot();
-        Item possibleNewRoot = rewriteFastMapSearchVisit(root, session);
-        if (root != possibleNewRoot) {
-            query.getModel().getQueryTree().setRoot(possibleNewRoot);
-        }
-        if (hasRewritten) {
-            query.trace("rewrote sameElement to fast-map lookup", true, 2);
-        }
-    }
+    /** Package-private for unit tests. */
+    class Rewriter {
 
-    /**
-     * Rewrite sameElement for fast map search.
-     *
-     * Package-private for unit testing.
-     */
-    Item rewriteFastMapSearchVisit(Item item, SchemaInfo.Session session) {
-        if (item == null) {
-            return null;
+        private boolean hasRewritten;
+
+        /** Package-private for unit tests. */
+        Rewriter() {
+            hasRewritten = false;
         }
 
-        // handle sameelement rewrite
-        if (item instanceof SameElementItem sameElementItem) {
-            Field.MapFieldType mapType = fastMapSearchType(sameElementItem.getFieldName(), session);
-            if (mapType != null) {
-                WordItem rewritten = tryMakeFastMapItem(sameElementItem, mapType);
-                if (rewritten != null) {
-                    hasRewritten = true;
-                    return rewritten;
-                }
+        /** Entry point for rewriting a query */
+        private void rewriteFastMapSearch(Query query, SchemaInfo.Session session) {
+            Item root = query.getModel().getQueryTree().getRoot();
+            Item possibleNewRoot = rewriteFastMapSearchVisit(root, session);
+            if (root != possibleNewRoot) {
+                query.getModel().getQueryTree().setRoot(possibleNewRoot);
+            }
+            if (hasRewritten) {
+                query.trace("rewrote sameElement to fast-map lookup", true, 2);
             }
         }
 
-        // recursively try rewrite children.
-        if (item instanceof CompositeItem composite) {
-            for (int i = 0; i < composite.getItemCount(); i++) {
-                Item child = composite.getItem(i);
-                Item newChild = rewriteFastMapSearchVisit(child, session);
-                if (newChild != child) {
-                    composite.setItem(i, newChild);
+        /**
+         * Rewrite sameElement for fast map search.
+         *
+         * Package-private for unit testing.
+         */
+        Item rewriteFastMapSearchVisit(Item item, SchemaInfo.Session session) {
+            if (item == null) {
+                return null;
+            }
+
+            // handle sameelement rewrite
+            if (item instanceof SameElementItem sameElementItem) {
+                Field.MapFieldType mapType = fastMapSearchType(sameElementItem.getFieldName(), session);
+                if (mapType != null) {
+                    WordItem rewritten = tryMakeFastMapItem(sameElementItem, mapType);
+                    if (rewritten != null) {
+                        hasRewritten = true;
+                        return rewritten;
+                    }
                 }
             }
+
+            // recursively try rewrite children.
+            if (item instanceof CompositeItem composite) {
+                for (int i = 0; i < composite.getItemCount(); i++) {
+                    Item child = composite.getItem(i);
+                    Item newChild = rewriteFastMapSearchVisit(child, session);
+                    if (newChild != child) {
+                        composite.setItem(i, newChild);
+                    }
+                }
+            }
+
+            return item;
         }
 
-        return item;
     }
 
     /**
