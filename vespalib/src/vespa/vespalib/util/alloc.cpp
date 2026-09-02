@@ -29,11 +29,13 @@ namespace vespalib {
 
 namespace {
 
-std::atomic<bool>   _g_hasHugePageFailureJustHappened(false);
-bool                _g_SilenceCoreOnOOM(false);
-int                 _g_HugeFlags = 0;
-size_t              _g_MMapLogLimit = std::numeric_limits<size_t>::max();
-size_t              _g_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
+std::atomic<bool> _g_hasHugePageFailureJustHappened(false);
+bool              _g_SilenceCoreOnOOM(false);
+int               _g_HugeFlags = 0;
+size_t            _g_MMapLogLimit = std::numeric_limits<size_t>::max();
+#ifdef __linux__
+size_t _g_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
+#endif
 std::mutex          _g_lock;
 std::atomic<size_t> _g_mmapCount(0);
 
@@ -68,7 +70,9 @@ void initializeEnvironment() {
 #endif
     _g_SilenceCoreOnOOM = (getenv("VESPA_SILENCE_CORE_ON_OOM") != nullptr) ? true : false;
     _g_MMapLogLimit = readOptionalEnvironmentVar("VESPA_MMAP_LOG_LIMIT", std::numeric_limits<size_t>::max());
+#ifdef __linux__
     _g_MMapNoCoreLimit = readOptionalEnvironmentVar("VESPA_MMAP_NOCORE_LIMIT", std::numeric_limits<size_t>::max());
+#endif
 }
 
 class Initialize {
