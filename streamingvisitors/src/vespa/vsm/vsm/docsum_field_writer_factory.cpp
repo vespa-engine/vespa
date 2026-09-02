@@ -17,6 +17,7 @@
 
 using search::MatchingElementsFields;
 using search::Normalizing;
+using search::docsummary::CombinerShape;
 using search::docsummary::CopyDFW;
 using search::docsummary::DocsumFieldWriter;
 using search::docsummary::EmptyDFW;
@@ -56,16 +57,21 @@ DocsumFieldWriterFactory::DocsumFieldWriterFactory(
 
 DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
-std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
-                                                                                        const std::string& command,
-                                                                                        const std::string& source) {
+std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field_writer(
+    const std::string& field_name, const std::string& command, const std::string& source,
+    std::span<const std::string> struct_fields, CombinerShape declared_shape) {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     using namespace search::docsummary;
     if ((command == command::positions) || (command == command::abs_distance)) {
         fieldWriter = std::make_unique<EmptyDFW>();
     } else if ((command == command::attribute) || (command == command::attribute_combiner)) {
+        // The struct fields are combined from the document, not from attributes, so the declared shape is
+        // not used here: it is already fixed by the type of the field in the document. The selection is
+        // applied when filling the summary field, either by the writer below or, when the field is its own
+        // source and there is no writer, by DynamicDocsumWriter passing the selection of the requested
+        // document-summary to IDocsumStoreDocument::insert_summary_field().
         if (!source.empty() && source != field_name) {
-            fieldWriter = std::make_unique<CopyDFW>(source);
+            fieldWriter = std::make_unique<CopyDFW>(source, struct_fields);
         }
     } else if (command == command::geo_position) {
     } else if ((command == command::tokens) || (command == command::attribute_tokens)) {
@@ -75,7 +81,8 @@ std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field
             throw_missing_source(command);
         }
     } else {
-        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source);
+        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(
+            field_name, command, source, struct_fields, declared_shape);
     }
     return fieldWriter;
 }

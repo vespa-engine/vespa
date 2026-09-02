@@ -201,6 +201,28 @@ std::string make_two_term_and_stack_dump(const std::string& field, const std::st
     return StackDumpCreator::create(*builder.build());
 }
 
+size_t feature_index(const std::vector<std::string>& names, const std::string& name) {
+    for (size_t i = 0; i < names.size(); ++i) {
+        if (names[i] == name) {
+            return i;
+        }
+    }
+    ADD_FAILURE() << "match feature '" << name << "' not found";
+    return names.size();
+}
+
+// Three labeled query items: a term in f1, a term in f2 and a label wrapper
+// (which searches no field of its own) around a term in f1.
+std::string make_labeled_terms_and_wrapper_stack_dump() {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addAnd(3);
+    builder.addStringTerm("foo", "f1", 1, Weight(1));
+    builder.addStringTerm("baz", "f2", 2, Weight(1));
+    builder.add_label_wrapper(3, 1.0);
+    builder.addStringTerm("bar", "f1", 4, Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
 std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
     QueryBuilder<ProtonNodeTypes> builder;
     constexpr int                 child_count = 2;
@@ -335,8 +357,14 @@ struct MyWorld {
 
     void setup_matches_for_labels_match_features() {
         config.add(indexproperties::match::Feature::NAME, "matches_for_labels(f1)");
-        config.add(indexproperties::match::Feature::NAME,
-                   "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+        config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    }
+
+    void setup_matches_for_labels_any_field_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels");
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels(f1)");
+        config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"matches_for_labels{label:t3}\")");
+        config.add(indexproperties::match::Feature::NAME, "itemRawScore(t3)");
     }
 
     void setup_feature_renames() {
@@ -780,20 +808,11 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
     ASSERT_GT(reply->hits.size(), 0u);
     const auto& names = reply->match_features.names;
     ASSERT_EQ(names.size(), 5u);
-    auto feature_index = [&names](const std::string& name) {
-        for (size_t i = 0; i < names.size(); ++i) {
-            if (names[i] == name) {
-                return i;
-            }
-        }
-        ADD_FAILURE() << "match feature '" << name << "' not found";
-        return names.size();
-    };
-    size_t full_idx = feature_index("bm25(f1)");
-    size_t t1_idx = feature_index("bm25(\"field:f1\",\"label:t1\")");
-    size_t t2_idx = feature_index("bm25(f1,\"label:t2\")");
-    size_t tensor_idx = feature_index("bm25_for_labels(f1)");
-    size_t slice_idx = feature_index("rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
+    size_t full_idx = feature_index(names, "bm25(f1)");
+    size_t t1_idx = feature_index(names, "bm25(\"field:f1\",\"label:t1\")");
+    size_t t2_idx = feature_index(names, "bm25(f1,\"label:t2\")");
+    size_t tensor_idx = feature_index(names, "bm25_for_labels(f1)");
+    size_t slice_idx = feature_index(names, "rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
     ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
     for (size_t i = 0; i < reply->hits.size(); ++i) {
         const auto* values = &reply->match_features.values[i * names.size()];
@@ -835,18 +854,9 @@ TEST_F(MatchingTest, require_that_matches_for_labels_reports_matching_labels_and
     ASSERT_GT(reply->hits.size(), 0u);
     const auto& names = reply->match_features.names;
     ASSERT_EQ(names.size(), 2u);
-    auto feature_index = [&names](const std::string& name) {
-        for (size_t i = 0; i < names.size(); ++i) {
-            if (names[i] == name) {
-                return i;
-            }
-        }
-        ADD_FAILURE() << "match feature '" << name << "' not found";
-        return names.size();
-    };
-    size_t tensor_idx = feature_index("matches_for_labels(f1)");
+    size_t tensor_idx = feature_index(names, "matches_for_labels(f1)");
     ASSERT_LT(tensor_idx, names.size());
-    size_t slice_idx = feature_index("rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    size_t slice_idx = feature_index(names, "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
     ASSERT_LT(slice_idx, names.size());
     ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
     for (size_t i = 0; i < reply->hits.size(); ++i) {
@@ -855,11 +865,66 @@ TEST_F(MatchingTest, require_that_matches_for_labels_reports_matching_labels_and
         {
             nbostream buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
             // both labeled terms hit; cells are 1, not BM25 scores
-            TensorSpec expect = TensorSpec("tensor<float>(label{})").add({{"label", "t1"}}, 1).add({{"label", "t2"}}, 1);
+            TensorSpec expect =
+                TensorSpec("tensor<float>(label{})").add({{"label", "t1"}}, 1).add({{"label", "t2"}}, 1);
             EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
         }
         // slicing a cell out of it evaluates in the backend
         EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), 1.0);
+    }
+}
+
+TEST_F(MatchingTest, require_that_matches_for_labels_without_field_parameter_ignores_fields) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // one labeled term per field, plus a labeled wrapper around a term in f1
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f2", "baz", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(10).doc(20).doc(30));
+    world.setup_matches_for_labels_any_field_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_labeled_terms_and_wrapper_stack_dump());
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    rankProperties.add("vespa.label.t3.id", "3");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_GT(reply->hits.size(), 0u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 4u);
+    size_t any_field_idx = feature_index(names, "matches_for_labels");
+    ASSERT_LT(any_field_idx, names.size());
+    size_t f1_idx = feature_index(names, "matches_for_labels(f1)");
+    ASSERT_LT(f1_idx, names.size());
+    size_t slice_idx = feature_index(names, "rankingExpression(\"matches_for_labels{label:t3}\")");
+    ASSERT_LT(slice_idx, names.size());
+    size_t wrapper_score_idx = feature_index(names, "itemRawScore(t3)");
+    ASSERT_LT(wrapper_score_idx, names.size());
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        ASSERT_TRUE(values[any_field_idx].is_data());
+        {
+            nbostream buf(values[any_field_idx].as_data().data, values[any_field_idx].as_data().size);
+            // without a field parameter every label hits, including the wrapper
+            // that searches no field at all
+            TensorSpec expect = TensorSpec("tensor<float>(label{})")
+                                    .add({{"label", "t1"}}, 1)
+                                    .add({{"label", "t2"}}, 1)
+                                    .add({{"label", "t3"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        ASSERT_TRUE(values[f1_idx].is_data());
+        {
+            nbostream buf(values[f1_idx].as_data().data, values[f1_idx].as_data().size);
+            // with a field parameter only the term searching f1 hits; the f2 term
+            // and the field-less wrapper are left out
+            TensorSpec expect = TensorSpec("tensor<float>(label{})").add({{"label", "t1"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        // slicing the wrapper label out of the field-less feature evaluates in the backend
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), 1.0);
+        // the wrapper is unpacked, so its constant score is available as well
+        EXPECT_DOUBLE_EQ(values[wrapper_score_idx].as_double(), 1.0);
     }
 }
 

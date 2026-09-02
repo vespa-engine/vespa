@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <cerrno>
+#include <cstdlib>
 #include <mutex>
 
 #include <vespa/log/log.h>

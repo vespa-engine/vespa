@@ -6,6 +6,8 @@
 #include "juniperdebug.h"
 #include "query.h"
 
+#include <cstdlib>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.queryhandle");
 

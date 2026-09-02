@@ -12,11 +12,11 @@ namespace {
 /// TODO Currently we require that you have atleast one element in _nodes to avoid one extra branch
 /// However that means that empty unused hashtables are larger than necessary.
 /// This we should probably reconsider.
-template <typename Modulator> uint32_t computeModulo(size_t size) {
+template <typename Modulator> [[maybe_unused]] uint32_t computeModulo(size_t size) {
     return (size > 0) ? Modulator::selectHashTableSize(roundUp2inN(size) / 3) : 1;
 }
 
-template <typename NodeStore> NodeStore createStore(size_t size, uint32_t modulo) {
+template <typename NodeStore> [[maybe_unused]] NodeStore createStore(size_t size, uint32_t modulo) {
     size = (size > 0) ? roundUp2inN(std::max(size_t(modulo), roundUp2inN(size))) : 1;
     NodeStore store;
     store.reserve(size);

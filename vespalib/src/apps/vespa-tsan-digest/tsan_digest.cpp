@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cerrno>
 #include <map>
 #include <memory>
 #include <set>

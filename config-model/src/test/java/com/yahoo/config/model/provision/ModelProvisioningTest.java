@@ -2765,4 +2765,36 @@ public class ModelProvisioningTest {
         assertEquals("large-storage", model.provisioned().clusters().get(ClusterSpec.Id.from("content1")).profile().get());
     }
 
+    @Test
+    public void test_docker_image_on_nodes_is_rejected_in_public_systems() {
+        String xml = """
+                <?xml version='1.0' encoding='utf-8' ?>
+                <services>
+                  <container version='1.0' id='container1'>
+                    <nodes count='2'/>
+                  </container>
+                  <content version='1.0' id='content1'>
+                    <redundancy>1</redundancy>
+                    <documents/>
+                    <nodes count='2' docker-image='example.com/vespa/custom'/>
+                  </content>
+                </services>
+                """;
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(9);
+
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> tester.createModel(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()),
+                                                      xml, true, deployStateWithClusterEndpoints("container1")));
+        assertTrue(Exceptions.toMessageString(e).contains("Specifying 'docker-image' on <nodes> is not supported in Vespa Cloud"),
+                   Exceptions.toMessageString(e));
+
+        // The attribute is still honored in non-public hosted systems
+        VespaModel model = tester.createModel(new Zone(SystemName.main, Environment.prod, RegionName.defaultName()),
+                                              xml, true, deployStateWithClusterEndpoints("container1"));
+        assertEquals(Optional.of(DockerImage.fromString("example.com/vespa/custom")),
+                     model.provisioned().clusters().get(ClusterSpec.Id.from("content1")).dockerImageRepo());
+    }
+
 }

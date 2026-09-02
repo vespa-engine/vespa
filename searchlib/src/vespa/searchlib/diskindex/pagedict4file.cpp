@@ -9,6 +9,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
 
+#include <cerrno>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.pagedict4file");
 

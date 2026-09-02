@@ -1671,6 +1671,25 @@ public class YqlParserTestCase {
                         "and string fields. The fieldset mixed has both"));
     }
 
+    /** Parameters passed as arrays in a POSTed JSON query are seen as JSON arrays here. */
+    @Test
+    void testInWithJsonArrayParameters() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        var query = new Query.Builder().build();
+        query.properties().set("foonumeric", "[26, 25, -11, 24]");
+        query.properties().set("foostring", "['this', \"might\", work]");
+
+        parser.setUserQuery(query);
+        assertNumericInItem("field", new long[]{-11, 24, 25, 26, 42},
+                            parse("select * from sources * where field in (42, @foonumeric)"));
+
+        parser.setUserQuery(query);
+        assertStringInItem("string", new String[]{"a", "might", "this", "work"},
+                           parse("select * from sources * where string in ('a', @foostring)"));
+        parser.setUserQuery(null);
+    }
+
     // TODO: Put this in the documentation
     @Test
     public void testProgrammaticYqlParsing() {

@@ -520,6 +520,17 @@ TEST_F(SlimeFillerTest, insert_map_filtered) {
     expect_insert_filtered("null", map, {0, 1, 2, 3});
 }
 
+TEST_F(SlimeFillerTest, insert_map_of_scalar_with_selected_sub_field) {
+    auto              map = make_map();
+    SlimeFillerFilter key_only;
+    key_only.add("key");
+    expect_insert(R"([{"key":"key1"},{"key":"key2"},{"key":"key3"}])", map, key_only);
+    // The key of a map of scalar is an ordinary sub-field, left out when the filter does not include it.
+    SlimeFillerFilter value_only;
+    value_only.add("value");
+    expect_insert(R"([{"value":"value1"},{"value":"value2"},{"value":"value3"}])", map, value_only);
+}
+
 TEST_F(SlimeFillerTest, insert_struct) {
     auto nested = make_nested_value(0);
     // Field order depends on assigned field ids, cf. document::Field::calculateIdV7(), and symbol insertion order in
@@ -560,6 +571,13 @@ TEST_F(SlimeFillerTest, insert_struct_map) {
     expect_insert(
         R"([{"key":"key1","value":{"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}}},{"key":"key2","value":{"f":{"a":162},"a":142,"c":146,"d":{"a":162,"c":166}}},{"key":"key3","value":{"f":{"a":262},"a":242,"c":246,"d":{"a":262,"c":266}}}])",
         map, filter);
+    // The key of a map of struct is the key of the map, part of the output even when the filter, which
+    // selects sub-fields of the value struct, does not mention it.
+    SlimeFillerFilter one_value_field;
+    one_value_field.add("value.a");
+    expect_insert(
+        R"([{"key":"key1","value":{"a":42}},{"key":"key2","value":{"a":142}},{"key":"key3","value":{"a":242}}])", map,
+        one_value_field);
 }
 
 TEST_F(SlimeFillerTest, insert_string_with_callback) {

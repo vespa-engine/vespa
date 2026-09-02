@@ -2335,10 +2335,39 @@ public class YqlParser implements Parser {
             case ARRAY -> addLongItems(ast, out);
             case VARREF -> {
                 Preconditions.checkState(userQuery != null, "Query properties are not available");
-                ParameterListParser.addItemsFromString(userQuery.properties().getString(ast.getArgument(0, String.class)), out);
+                String name = ast.getArgument(0, String.class);
+                String value = userQuery.properties().getString(name);
+                if (value != null)
+                    ParameterListParser.addItemsFromString(value, out);
+                else
+                    addItemsFromSubProperties(name, out);
             }
             default -> throw newUnexpectedArgumentException(ast.getOperator(),
                                                             ExpressionOperator.ARRAY, ExpressionOperator.MAP);
+        }
+    }
+
+    /**
+     * Adds the items of a parameter which is passed as a JSON object. Such objects are flattened into
+     * dot-separated properties when the query is parsed, so the entries are read back as sub-properties
+     * of the parameter name.
+     */
+    private void addItemsFromSubProperties(String name, WeightedSetItem out) {
+        var entries = userQuery.properties().listProperties(name);
+        if (entries.isEmpty())
+            throw new IllegalArgumentException("No value found for query parameter '" + name + "'");
+        for (var entry : entries.entrySet())
+            out.addToken(entry.getKey(), toWeight(name, entry.getKey(), entry.getValue()));
+    }
+
+    private static int toWeight(String parameterName, String key, Object value) {
+        if (value instanceof Number number) return number.intValue();
+        try {
+            return Integer.parseInt(value.toString().trim());
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Expected an integer weight of '" + key + "' in query parameter '" +
+                                               parameterName + "', but got '" + value + "'");
         }
     }
 

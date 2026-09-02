@@ -6,6 +6,7 @@
 
 #include <cctype>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 
 namespace document::select::simple {

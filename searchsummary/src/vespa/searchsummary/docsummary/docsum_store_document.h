@@ -21,7 +21,8 @@ public:
     ~DocsumStoreDocument() override;
     DocsumStoreFieldValue get_field_value(const std::string& field_name) const override;
     void insert_summary_field(const std::string& field_name, search::common::ElementIds selected_elements,
-                              vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const override;
+                              vespalib::slime::Inserter& inserter, IStringFieldConverter* converter,
+                              const SlimeFillerFilter* struct_fields_filter) const override;
     void insert_juniper_field(const std::string& field_name, search::common::ElementIds selected_elements,
                               vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
     [[nodiscard]] bool insert_document_id(vespalib::slime::Inserter& inserter) const override;

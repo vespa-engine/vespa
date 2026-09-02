@@ -15,10 +15,12 @@ import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ParenthesisExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -85,17 +87,24 @@ public class CreateFastMapSearch extends Processor {
                                       "Incompatible map attribute '" + fieldName + "' already created.");
         }
 
+        // Data type of inputField is guaranteed to be a MapDataType by shouldCreateFastMapAttribute
+        var valueType = ((MapDataType)inputField.getDataType()).getValueType();
+
         SDField field = new SDField(repo, fieldName, DataType.getArray(DataType.STRING));
         Attribute attribute = new Attribute(fieldName, Attribute.Type.STRING, Attribute.CollectionType.ARRAY);
         attribute.setFastSearch(true);
         field.addAttribute(attribute);
-        field.setIndexingScript(schema.getName(), keyValueScript(inputField, fieldName));
+        field.setIndexingScript(schema.getName(), keyValueScript(inputField, fieldName, valueType));
         field.setInternalField(true);
         return field;
     }
 
-    /** Builds "input mapField | for_each { get_field $key . separator . get_field $value } | attribute". */
-    private static ScriptExpression keyValueScript(SDField inputField, String fieldName) {
+    /**
+     * Builds "input mapField | for_each { get_field $key . separator . VALUE_EXP } | attribute",
+     * where VALUE_EXP is "(get_field $value | exhex8encode)" if the value type is int
+     * and "get_field $value" otherwise (if the value type is string).
+     * */
+    private static ScriptExpression keyValueScript(SDField inputField, String fieldName, DataType valueType) {
         return new ScriptExpression(
                 new StatementExpression(
                         new InputExpression(inputField.getName()),
@@ -106,8 +115,22 @@ public class CreateFastMapSearch extends Processor {
                                         new CatExpression(
                                                 new GetFieldExpression("$key"),
                                                 new ConstantExpression(new StringFieldValue(FastMapSearch.keyValueSeparator())),
-                                                new GetFieldExpression("$value")) })),
+                                                valueExpression(valueType)) })),
                         new AttributeExpression(fieldName)));
+    }
+
+    /**
+     * Builds "(get_field $value | exhex8encode)" if the value type is int and
+     * "get_field $value" otherwise.
+     * */
+    private static Expression valueExpression(DataType valueType) {
+        var field = new GetFieldExpression("$value");
+
+        if (valueType == DataType.INT) {
+            return new ParenthesisExpression(new StatementExpression(field, new ExcessHex8EncodeExpression()));
+        } else { // DataType.STRING
+            return field;
+        }
     }
 
 }

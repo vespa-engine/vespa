@@ -222,6 +222,36 @@ func prodDeploy(pkgDir string, t *testing.T) {
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
+func TestProdDeployWithProductionTests(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	yamlTest := []byte("name: cpu check\nmetric: cpu-utilization-container\ntime: 5\nmax: 85\n")
+	writeTest(filepath.Join(pkgDir, "tests", "production-test", "metric-test.yaml"), yamlTest, t)
+	jsonTest := []byte(`{"tests":[{"name":"latency check","metric":"query-latency-p95","time":5,"max":500}]}`)
+	writeTest(filepath.Join(pkgDir, "tests", "production-test", "metric-suite.json"), jsonTest, t)
+
+	prodDeploy(pkgDir, t)
+}
+
+func TestProdDeployWithInvalidProductionTest(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	invalidTest := []byte("name: bogus\nmetric: not-a-real-metric\ntime: 5\nmax: 85\n")
+	writeTest(filepath.Join(pkgDir, "tests", "production-test", "invalid.yaml"), invalidTest, t)
+
+	cli, _, stderr := newTestCLI(t, "CI=true")
+	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
+	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+
+	assert.NotNil(t, cli.Run("prod", "deploy", "--add-cert", pkgDir))
+	assert.Contains(t, stderr.String(), "'not-a-real-metric' is not a known metric preset")
+}
+
 func TestProdDeployWithJava(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, true, false)

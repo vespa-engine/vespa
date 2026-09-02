@@ -66,7 +66,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundStringFlag DEPLOYMENT_METRICS_CONSUMER = defineStringFlag(
-            "deployment-metrics-consumer", "Vespa",
+            "deployment-metrics-consumer", "cluster-deployment-metrics",
             List.of("hmusum"), "2026-07-10", "2026-12-01",
             "Selects which metrics-proxy consumer the config server uses when fetching " +
             "metrics for cluster deployment metrics aggregation. Valid values: Vespa, cluster-deployment-metrics",
@@ -271,6 +271,14 @@ public class Flags {
             "increasing when a content cluster has only a single cluster controller configured.",
             "Takes effect at redeployment",
             INSTANCE_ID
+    );
+
+    public static final UnboundBooleanFlag COMMERCE_DISCOVERY = defineFeatureFlag(
+            "commerce-discovery", false,
+            List.of("sebasabe"), "2026-08-31", "2027-08-31",
+            "Whether the commerce-discovery element in services.xml is enabled",
+            "Takes effect at redeployment",
+            TENANT_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

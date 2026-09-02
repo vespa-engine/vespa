@@ -35,7 +35,12 @@ func newTestCmd(cli *CLI) *cobra.Command {
 
 Runs all JSON test files in the specified directory, or the single JSON test file specified.
 
-See https://docs.vespa.ai/en/reference/applications/testing.html for details.`,
+Production tests, found in tests/production-test, may also be YAML files. These check named
+metric presets rather than making requests, and are only validated locally: the actual pass/fail
+result is evaluated by Vespa Cloud against live metrics after deployment.
+
+See https://docs.vespa.ai/en/reference/applications/testing.html and
+https://docs.vespa.ai/en/reference/applications/testing-production.html for details.`,
 		Example: `$ vespa test src/test/application/tests/system-test
 $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 		Args:              cobra.ExactArgs(1),
@@ -81,35 +86,46 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waiter *Waiter) (int, []st
 		if err != nil {
 			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/applications/testing.html")
 		}
+		isProductionSuite := filepath.Base(rootPath) == "production-test"
 		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, authMethod: cli.selectAuthMethod(), clusters: map[string]*vespa.Service{}}
 		previousFailed := false
 		for _, test := range tests {
-			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
-				testPath := filepath.Join(rootPath, test.Name())
-				if previousFailed {
-					fmt.Fprintln(cli.Stdout, "")
-					previousFailed = false
-				}
-				failure, err := runTest(testPath, context, waiter)
-				if err != nil {
-					return 0, nil, err
-				}
-				if failure != "" {
-					failed = append(failed, failure)
-					previousFailed = true
-				}
-				count++
+			if test.IsDir() {
+				continue
 			}
+			ext := filepath.Ext(test.Name())
+			if ext != ".json" && !(isProductionSuite && (ext == ".yaml" || ext == ".yml")) {
+				continue
+			}
+			testPath := filepath.Join(rootPath, test.Name())
+			if previousFailed {
+				fmt.Fprintln(cli.Stdout, "")
+				previousFailed = false
+			}
+			n, failure, err := runTestFile(cli, testPath, isProductionSuite, context, waiter)
+			if err != nil {
+				return 0, nil, err
+			}
+			if failure != "" {
+				failed = append(failed, failure)
+				previousFailed = true
+			}
+			count += n
 		}
-	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, authMethod: cli.selectAuthMethod(), clusters: map[string]*vespa.Service{}}, waiter)
-		if err != nil {
-			return 0, nil, err
+	} else {
+		ext := filepath.Ext(stat.Name())
+		isProductionSuite := filepath.Base(filepath.Dir(rootPath)) == "production-test"
+		if ext == ".json" || (isProductionSuite && (ext == ".yaml" || ext == ".yml")) {
+			context := testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, authMethod: cli.selectAuthMethod(), clusters: map[string]*vespa.Service{}}
+			n, failure, err := runTestFile(cli, rootPath, isProductionSuite, context, waiter)
+			if err != nil {
+				return 0, nil, err
+			}
+			if failure != "" {
+				failed = append(failed, failure)
+			}
+			count += n
 		}
-		if failure != "" {
-			failed = append(failed, failure)
-		}
-		count++
 	}
 	if count == 0 {
 		return 0, nil, errHint(fmt.Errorf("failed to find any tests at %s", rootPath), "See https://docs.vespa.ai/en/reference/applications/testing.html")

@@ -45,12 +45,6 @@ constexpr uint32_t force_skip = 1;
 
 static FPFactoryInit init(std::make_pair("ZcFilterOcc", makeFPFactory<FPFactoryT<FakeZcFilterOcc>>));
 
-template <typename EC> static void writeZcBuf(EC& e, ZcBuf& buf) {
-    auto     view = buf.view();
-    uint32_t bytesOffset = reinterpret_cast<unsigned long>(view.data()) & 7;
-    e.writeBits(reinterpret_cast<const uint64_t*>(view.data() - bytesOffset), bytesOffset * 8, view.size() * 8);
-}
-
 FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord& fw)
     : FakePosting(fw.getName() + ".zcfilterocc"),
       _docIdsSize(0),

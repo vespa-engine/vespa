@@ -14,7 +14,6 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/stash.h>
 
-#include <algorithm>
 #include <cassert>
 
 using search::attribute::IAttributeContext;
@@ -78,12 +77,23 @@ void StructMapAttributeFieldWriterState::insert_element(uint32_t element_index, 
 
 void StructMapAttributeFieldWriterState::insertField(uint32_t docId, ElementIds selected_elements,
                                                      vespalib::slime::Inserter& target) {
+    // A map entry exists only if it has a key, so the key attribute alone determines how many entries the
+    // map has. The number of values is not taken into account, which matters in two ways:
+    //
+    // Struct field selection cannot change the entries: leaving out a value sub-field changes what is
+    // written for an entry, never which entries there are. Were the value counts taken into account, the
+    // number of entries would depend on which sub-fields happen to be selected.
+    //
+    // It is also a change from taking the largest count of the key and the values, as this did before it
+    // had to be independent of the selection. That only makes a difference for a document whose struct
+    // field attributes are out of sync, with more values for a sub-field than there are keys; the surplus
+    // entries, which used to be written with a defaulted key, are now left out.
     uint32_t elems = 0;
     if (_keyWriter) {
         elems = _keyWriter->fetch(docId);
     }
     for (auto& valueWriter : _valueWriters) {
-        elems = std::max(elems, valueWriter->fetch(docId));
+        valueWriter->fetch(docId); // Loads the values which print() below reads; the count is unused, see above.
     }
     if (elems == 0) {
         return;

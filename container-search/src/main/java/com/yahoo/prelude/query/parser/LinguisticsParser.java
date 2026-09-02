@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * A parser which delegates all tokenization and processing to the linguistics component.
  * The full string is given as-is to the linguistics component for tokenization, and
- * what comes back is assumes fully processed including stemming (if applicable).
+ * what comes back is assumed fully processed including stemming (if applicable).
  * The returned tokens are collected into a single parent item.
  *
  * @author bratseth

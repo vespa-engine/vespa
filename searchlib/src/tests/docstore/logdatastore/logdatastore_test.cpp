@@ -623,7 +623,7 @@ TEST_F(LogDataStoreTest, Control_static_memory_usage) {
     constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
     constexpr size_t string_size = sizeof(std::string);
     constexpr size_t lru_segment_overhead = 352;
-    EXPECT_EQ(74484 + mutex_size + 3 * string_size + lru_segment_overhead, usage.allocatedBytes());
+    EXPECT_EQ(140020 + mutex_size + 3 * string_size + lru_segment_overhead, usage.allocatedBytes());
     EXPECT_EQ(760u + mutex_size + 3 * string_size + lru_segment_overhead, usage.usedBytes());
 }
 
@@ -1089,7 +1089,7 @@ TEST_F(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage) {
     EXPECT_EQ(480u + 2 * sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::condition_variable) +
                   sizeof(std::string),
               sizeof(LogDataStore));
-    EXPECT_EQ(73924u + 3 * sizeof(std::string), usage.allocatedBytes());
+    EXPECT_EQ(139460u + 3 * sizeof(std::string), usage.allocatedBytes());
     EXPECT_EQ(200u + 3 * sizeof(std::string), usage.usedBytes());
 }
 

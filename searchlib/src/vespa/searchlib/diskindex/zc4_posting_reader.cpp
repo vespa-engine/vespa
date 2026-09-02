@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <cinttypes>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.zc4_posting_reader");

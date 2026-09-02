@@ -135,8 +135,11 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Iterable<ConfigMod
 
             Collection<ConfigModelBuilder> builders = configModelRegistry.resolve(xmlId);
 
-            if (builders.isEmpty())
+            if (builders.isEmpty()) {
+                if (tagName.equals("commerce-discovery"))
+                    throw new IllegalArgumentException("<commerce-discovery> requires Vespa Cloud");
                 throw new IllegalArgumentException("Could not resolve tag <" + tagName + " version=\"" + tagVersion + "\"> to a config model component");
+            }
 
             for (ConfigModelBuilder builder : builders) {
                 if ( ! model2Element.containsKey(builder)) {

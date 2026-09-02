@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iterator>
 #include <span>
 
 using search::common::ElementIds;

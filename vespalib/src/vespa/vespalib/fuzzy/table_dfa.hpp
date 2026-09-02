@@ -68,7 +68,8 @@ struct Position {
         return std::tie(edits, index) < std::tie(rhs.edits, rhs.index);
     }
     template <uint8_t N>
-    void add_elementary_transitions(const std::vector<bool>& bits, std::vector<Position>& dst) const {
+    [[maybe_unused]] void add_elementary_transitions(const std::vector<bool>& bits,
+                                                     std::vector<Position>&   dst) const {
         assert(bits.size() > index);
         if (!bits[index]) {
             dst.emplace_back(index, edits + 1);
@@ -121,7 +122,7 @@ struct State {
         }
         return min;
     }
-    template <uint8_t N> static State create(std::vector<Position> list_in) {
+    template <uint8_t N> [[maybe_unused]] static State create(std::vector<Position> list_in) {
         State result;
         auto  want = [&result](Position pos) {
             if (pos.edits > N) {
@@ -142,14 +143,14 @@ struct State {
         }
         return result;
     }
-    template <uint8_t N> State next(const std::vector<bool>& bits) const {
+    template <uint8_t N> [[maybe_unused]] State next(const std::vector<bool>& bits) const {
         std::vector<Position> tmp;
         for (const auto& pos : list) {
             pos.add_elementary_transitions<N>(bits, tmp);
         }
         return create<N>(std::move(tmp));
     }
-    template <uint8_t N> std::vector<uint8_t> make_edit_vector() const {
+    template <uint8_t N> [[maybe_unused]] std::vector<uint8_t> make_edit_vector() const {
         std::vector<uint8_t> result(window_size<N>(), N + 1);
         for (const auto& pos : list) {
             for (uint32_t i = 0; i < window_size<N>(); ++i) {
@@ -206,7 +207,7 @@ struct StateRepo {
 };
 [[maybe_unused]] StateRepo::~StateRepo() = default;
 
-template <uint8_t N> std::vector<bool> expand_bits(uint32_t value) {
+template <uint8_t N> [[maybe_unused]] std::vector<bool> expand_bits(uint32_t value) {
     static_assert(N < 10);
     std::vector<bool> result(window_size<N>());
     uint32_t          look_for = num_transitions<N>();
@@ -218,7 +219,7 @@ template <uint8_t N> std::vector<bool> expand_bits(uint32_t value) {
     return result;
 }
 
-template <uint8_t N> StateRepo make_state_repo() {
+template <uint8_t N> [[maybe_unused]] StateRepo make_state_repo() {
     StateRepo repo;
     for (uint32_t idx = 0; idx < repo.size(); ++idx) {
         const State& state = repo.idx_to_state(idx);
@@ -249,7 +250,7 @@ template <uint8_t N> struct Tfa {
     std::array<std::array<uint8_t, window_size<N>()>, num_states<N>()> edits;
 };
 
-template <uint8_t N> std::unique_ptr<Tfa<N>> make_tfa() {
+template <uint8_t N> [[maybe_unused]] std::unique_ptr<Tfa<N>> make_tfa() {
     auto      tfa = std::make_unique<Tfa<N>>();
     StateRepo repo;
     uint32_t  state_idx = 0;
@@ -275,7 +276,7 @@ template <uint8_t N> std::unique_ptr<Tfa<N>> make_tfa() {
     return tfa;
 }
 
-template <typename T> std::string format_vector(const std::vector<T>& vector, bool compact = false) {
+template <typename T> [[maybe_unused]] std::string format_vector(const std::vector<T>& vector, bool compact = false) {
     std::string str = compact ? "" : "[";
     for (size_t i = 0; i < vector.size(); ++i) {
         if (i > 0 && !compact) {

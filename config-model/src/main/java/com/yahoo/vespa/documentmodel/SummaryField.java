@@ -5,9 +5,11 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.vespa.objects.FieldBase;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,6 +42,13 @@ public class SummaryField extends FieldBase implements Cloneable {
     private Set<Source> sources = new java.util.LinkedHashSet<>();
 
     private Set<String> destinations  = new java.util.LinkedHashSet<>();
+
+    /**
+     * The names of the struct sub-fields to include in the output, when the source field is an array of
+     * struct, or a map. For a map the sub-fields are "key" and "value", where a value of struct type has
+     * its own sub-fields named "value.&lt;name&gt;". An empty list means all sub-fields are included.
+     */
+    private List<String> structFields = new ArrayList<>();
 
     /** True if this field was defined implicitly */
     private boolean implicit = false;
@@ -155,6 +164,20 @@ public class SummaryField extends FieldBase implements Cloneable {
         return destinations;
     }
 
+    public void addStructField(String name) {
+        if (!structFields.contains(name)) {
+            structFields.add(name);
+        }
+    }
+
+    /**
+     * Returns the names of the struct sub-fields to include in the output.
+     * An empty list means all sub-fields are included.
+     */
+    public List<String> getStructFields() {
+        return List.copyOf(structFields);
+    }
+
     public String toString(Collection<?> collection) {
         StringBuilder buffer=new StringBuilder();
         for (Iterator<?> i=collection.iterator(); i.hasNext(); ) {
@@ -246,6 +269,8 @@ public class SummaryField extends FieldBase implements Cloneable {
                 clone.sources = new LinkedHashSet<>(this.sources);
             if (this.destinations != null)
                 clone.destinations = new LinkedHashSet<>(destinations);
+            if (this.structFields != null)
+                clone.structFields = new ArrayList<>(structFields);
             clone.unresolvedType = unresolvedType;
             return clone;
         }
