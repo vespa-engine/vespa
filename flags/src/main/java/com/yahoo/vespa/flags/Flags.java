@@ -182,7 +182,7 @@ public class Flags {
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-09-01",
+            List.of("glebashnik"), "2025-04-25", "2026-12-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
@@ -191,7 +191,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
-            List.of("glebashnik"), "2025-04-30", "2026-09-01",
+            List.of("glebashnik"), "2025-04-30", "2026-12-01",
             "Whether to use Triton as ONNX runtime",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
@@ -199,21 +199,21 @@ public class Flags {
 
     public static final UnboundIntFlag METRICS_PROXY_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-heap-size-in-mib", 0,
-            List.of("hmusum"), "2026-04-29", "2026-09-01",
+            List.of("hmusum"), "2026-04-29", "2026-12-01",
             "Amount of memory (in MiB) to use for metrics proxy JVM heap on non-admin nodes. 0 means use the default.",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
     public static final UnboundIntFlag METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-admin-heap-size-in-mib", 0,
-            List.of("hmusum"), "2026-04-29", "2026-09-01",
+            List.of("hmusum"), "2026-04-29", "2026-12-01",
             "Amount of memory (in MiB) to use for metrics proxy JVM heap on admin nodes. 0 means use the default.",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag SEND_OLD_QUERY_STACK = defineFeatureFlag(
             "send-old-query-stack", false,
-            List.of("arnej"), "2026-05-07", "2026-09-01",
+            List.of("arnej"), "2026-05-07", "2026-12-01",
             "If true, send the old query stack format in addition to protobuf serialization.",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
