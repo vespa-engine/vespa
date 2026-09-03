@@ -7,6 +7,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.search.Query;
@@ -358,6 +359,96 @@ public class VespaSerializerTestCase {
 
         // Map sugar children keep their key/value indexes
         parseAndConfirm("my_map contains sameElement(key contains \"foo\", value = 10)", "my_map{\"foo\"} = 10");
+    }
+
+    @Test
+    void testSameElementWithNumericRangeChild() {
+        // A non-equality IntItem child with an empty index must also serialize as a bare
+        // range/comparison, not with a "default" field prefix (same bug as equality, for the
+        // open-bound and two-sided-range branches of NumberSerializer).
+        SameElementItem lowerBound = new SameElementItem("ints");
+        lowerBound.setElementFilter(List.of(1));
+        lowerBound.addItem(new IntItem(new com.yahoo.prelude.query.Limit(2, true), com.yahoo.prelude.query.Limit.POSITIVE_INFINITY, ""));
+        assertEquals("ints contains ({elementFilter:[1]} sameElement(_ >= 2))",
+                     VespaSerializer.serialize(lowerBound));
+
+        SameElementItem upperBound = new SameElementItem("ints");
+        upperBound.setElementFilter(List.of(1));
+        upperBound.addItem(new IntItem(com.yahoo.prelude.query.Limit.NEGATIVE_INFINITY, new com.yahoo.prelude.query.Limit(5, true), ""));
+        assertEquals("ints contains ({elementFilter:[1]} sameElement(_ <= 5))",
+                     VespaSerializer.serialize(upperBound));
+
+        SameElementItem range = new SameElementItem("ints");
+        range.setElementFilter(List.of(1));
+        range.addItem(new IntItem(new com.yahoo.prelude.query.Limit(2, true), new com.yahoo.prelude.query.Limit(5, true), ""));
+        assertEquals("ints contains ({elementFilter:[1]} sameElement(range(_, 2, 5)))",
+                     VespaSerializer.serialize(range));
+
+        // The serialized forms are stable: they parse back to themselves
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(_ >= 2))");
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(_ <= 5))");
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(range(_, 2, 5)))");
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(({bounds: \"leftOpen\"}range(_, 2, 5))))");
+    }
+
+    @Test
+    void testSameElementValuePlaceholder() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // Every syntax which requires a field name uses the "_" placeholder for the value of the element itself
+        parseAndConfirm("field contains sameElement(_ >= 2)");
+        parseAndConfirm("field contains sameElement(range(_, 2, 5))");
+        parseAndConfirm("field contains sameElement(_ = true)");
+        parseAndConfirm("string contains sameElement(range(_, \"a\", \"b\"))");
+        parseAndConfirm("string contains sameElement(_ matches \"f.*\")");
+        parseAndConfirm("field contains sameElement(_ in (1, 2))");
+        parseAndConfirm("string contains sameElement(_ in (\"a\", \"b\"))");
+
+        // Syntaxes which are valid without a field name keep serializing without one
+        parseAndConfirm("field contains sameElement(2)", "field contains sameElement(_ = 2)");
+        parseAndConfirm("string contains sameElement(\"foo\")", "string contains sameElement(_ contains \"foo\")");
+    }
+
+    @Test
+    void testSameElementWithOrChild() {
+        // A single AND or OR child supplies the parenthesis of the sameElement itself
+        parseAndConfirm("f contains sameElement(a contains \"x\" OR b contains \"y\")");
+        parseAndConfirm("f contains sameElement(a contains \"x\" AND b contains \"y\")");
+
+        // With more than one child, every child must be serialized, also when the first is an AND or OR
+        parseAndConfirm("f contains sameElement((a contains \"x\" OR b contains \"y\"), c contains \"z\")");
+        parseAndConfirm("f contains sameElement((a contains \"x\" AND b contains \"y\"), c contains \"z\")");
+    }
+
+    @Test
+    void testSameElementWithUriChild() {
+        // A uri() child inside sameElement keeps the name of the subfield it applies to
+        parseAndConfirm("f contains sameElement(url contains uri(\"http://foo.com\"))");
+        parseAndConfirm("f contains sameElement(url contains uri(\"http://foo.com\"), name contains \"x\")");
+
+        // A uri() on the element value itself has no subfield name to write
+        parseAndConfirm("f contains sameElement(uri(\"http://foo.com\"))");
+    }
+
+    @Test
+    void testRangeAnnotations() {
+        // A leaf annotation without a bounds annotation must not leave a trailing comma in the annotation block
+        IntItem closed = new IntItem(new Limit(2, true), new Limit(5, true), "field");
+        closed.setLabel("foo");
+        assertEquals("({label: \"foo\"}range(field, 2, 5))", VespaSerializer.serialize(closed));
+
+        // That form parses back to an inclusive RangeItem, which has its own (also stable) canonical form
+        parseAndConfirm("{label: \"foo\"}range(field, 2, 5)", "({label: \"foo\"}range(field, 2, 5))");
+        parseAndConfirm("{label: \"foo\"}range(field, 2, 5)");
+
+        // A bounds annotation alone, and both annotations together, separated by a comma
+        IntItem leftOpen = new IntItem(new Limit(2, false), new Limit(5, true), "field");
+        assertEquals("({bounds: \"leftOpen\"}range(field, 2, 5))", VespaSerializer.serialize(leftOpen));
+
+        IntItem both = new IntItem(new Limit(2, false), new Limit(5, true), "field");
+        both.setLabel("foo");
+        assertEquals("({label: \"foo\", bounds: \"leftOpen\"}range(field, 2, 5))", VespaSerializer.serialize(both));
+        parseAndConfirm("({label: \"foo\", bounds: \"leftOpen\"}range(field, 2, 5))");
     }
 
     @Test

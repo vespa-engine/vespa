@@ -125,6 +125,8 @@ public class YqlParser implements Parser {
 
     private static class IndexNameExpander {
         public String expand(String leaf) { return leaf; }
+        /** Returns the field whose element values the ELEMENT_VALUE placeholder refers to, or null if there is none here. */
+        public String elementValueField() { return null; }
     }
 
     private static final Integer DEFAULT_HITS = 10;
@@ -180,6 +182,8 @@ public class YqlParser implements Parser {
     public static final String DOCUMENT_FREQUENCY = "documentFrequency";
     public static final String DOT_PRODUCT = "dotProduct";
     public static final String ELEMENT_FILTER = "elementFilter";
+    /** Used in place of a field name inside sameElement to refer to the value of the element itself. */
+    public static final String ELEMENT_VALUE = "_";
     public static final String EQUIV = "equiv";
     public static final String FILTER = "filter";
     public static final String FREQUENCY = "frequency";
@@ -575,19 +579,19 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        return fillWeightedSet(ast, args.get(1), new WeightedSetItem(getIndex(args.get(0))));
+        return fillWeightedSet(ast, args.get(1), new WeightedSetItem(getFieldIndex(args.get(0), WEIGHTED_SET)));
     }
 
     private Item buildDotProduct(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
+        return fillWeightedSet(ast, args.get(1), new DotProductItem(getFieldIndex(args.get(0), DOT_PRODUCT)));
     }
 
     private Item buildIn(OperatorNode<ExpressionOperator> ast) {
         String field = getIndex(ast.getArgument(0));
-        var index = indexFactsSession.getIndex(indexNameExpander.expand(field));
+        var index = indexOf(field);
         boolean stringField = index.isString();
         if (!index.isInteger() && !stringField)
             throw new IllegalArgumentException("The in operator is only supported for integer and string fields. The field " +
@@ -741,7 +745,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.size() == 3, "Expected 3 arguments, got %s.", args.size());
 
         PredicateQueryItem item = new PredicateQueryItem();
-        item.setIndexName(getIndex(args.get(0)));
+        item.setIndexName(getFieldIndex(args.get(0), PREDICATE));
 
         addFeatures(args.get(1),
                    (key, value, subqueryBitmap) -> item.addFeature(key, (String) value, subqueryBitmap), PredicateQueryItem.ALL_SUB_QUERIES);
@@ -802,7 +806,7 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        WandItem out = new WandItem(getIndex(args.get(0)));
+        WandItem out = new WandItem(getFieldIndex(args.get(0), WAND));
         out.setTargetHits(buildTargetHits(ast));
         out.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         assignAnnotationAsDoubleIfNotNull(ast, SCORE_THRESHOLD, "score must be above this threshold for hit inclusion", out::setScoreThreshold);
@@ -865,15 +869,21 @@ public class YqlParser implements Parser {
     }
 
     private static class PrefixExpander extends IndexNameExpander {
+        private final String field;
         private final String prefix;
-        public PrefixExpander(String prefix) {
-            this.prefix = prefix + ".";
+        public PrefixExpander(String field) {
+            this.field = field;
+            this.prefix = field + ".";
         }
 
         @Override
         public String expand(String leaf) {
-            return prefix + leaf;
+            // An unset leaf name is the value of the element itself, which is a value of the field we are prefixing by
+            return leaf.isEmpty() ? field : prefix + leaf;
         }
+
+        @Override
+        public String elementValueField() { return field; }
     }
 
     private Item instantiateSameElementItem(String field, OperatorNode<ExpressionOperator> ast) {
@@ -884,12 +894,16 @@ public class YqlParser implements Parser {
 
         // All terms below sameElement are relative to this.
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
-        for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
-            // that is not necessary. This is an issue when having many elements
-            sameElement.addItem(convertExpression(term, field));
+        try {
+            for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+                // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
+                // that is not necessary. This is an issue when having many elements
+                sameElement.addItem(convertExpression(term, field));
+            }
         }
-        swapIndexCreator(prev);
+        finally {
+            swapIndexCreator(prev); // Also on a failed term, as this parser may be used again
+        }
         return sameElement;
     }
 
@@ -1663,7 +1677,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.size() == 3,
                 "Expected 3 arguments, got %s.", args.size());
 
-        var index = indexFactsSession.getIndex(indexNameExpander.expand(getIndex(args.get(0))));
+        var index = indexOf(getIndex(args.get(0)));
         if (index.isString() && !index.isInteger() && !index.isNumerical()) {
             StringRangeItem range = instantiateStringRangeItem(args, spec);
             return leafStyleSettings(spec, range);
@@ -2469,9 +2483,38 @@ public class YqlParser implements Parser {
 
     private String getIndex(OperatorNode<ExpressionOperator> operatorNode) {
         String index = fetchFieldName(operatorNode);
+        if (isElementValue(index)) return ""; // the element value has no field name of its own
         String expanded = indexNameExpander.expand(index);
         Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(index);
+    }
+
+    /**
+     * Returns the index of a field named as the argument of a syntax which applies to a field as a whole, such as
+     * dotProduct or predicate, and which therefore has no form taking the value of an element instead of a field.
+     */
+    private String getFieldIndex(OperatorNode<ExpressionOperator> operatorNode, String syntax) {
+        String index = getIndex(operatorNode);
+        Preconditions.checkArgument( ! index.isEmpty(),
+                                    "%s takes a field name, but got '%s', which is the value of the element of the " +
+                                    "enclosing sameElement rather than a field.", syntax, ELEMENT_VALUE);
+        return index;
+    }
+
+    /**
+     * Returns whether the given field name is the ELEMENT_VALUE placeholder in a context where it is meaningful,
+     * that is inside a sameElement, where it refers to the value of the element itself rather than to a subfield.
+     */
+    private boolean isElementValue(String field) {
+        return ELEMENT_VALUE.equals(field) && indexNameExpander.elementValueField() != null;
+    }
+
+    /**
+     * Returns the index of a field name as returned by {@link #getIndex}, where the empty name of the element
+     * value expands to the field of the enclosing sameElement, as element values have the type of that field.
+     */
+    private Index indexOf(String field) {
+        return indexFactsSession.getIndex(indexNameExpander.expand(field));
     }
 
     private Substring getSubstring(OperatorNode<ExpressionOperator> ast) {
