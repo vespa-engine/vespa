@@ -48,8 +48,7 @@ public class AllocatedHostsSerializerTest {
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
                                anyDiskSpeedNode,
-                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
+                               ClusterMembership.from("container/test/0/0"),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar")),
@@ -58,8 +57,7 @@ public class AllocatedHostsSerializerTest {
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
                                anyDiskSpeedNode,
-                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.empty()),
+                               ClusterMembership.from("container/test/0/0"),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.empty(),
@@ -68,8 +66,7 @@ public class AllocatedHostsSerializerTest {
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
                                anyDiskSpeedNode,
-                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.empty()),
+                               ClusterMembership.from("container/test/0/0"),
                                Optional.of(Version.fromString("3.4.5")),
                                Optional.empty(), Optional.empty(),
                                AzName.defaultName()));
@@ -77,8 +74,7 @@ public class AllocatedHostsSerializerTest {
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
                                anyDiskSpeedNode,
-                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.empty(), new ZoneEndpoint(true, true, List.of(AuthMethod.mtls, AuthMethod.token), List.of(new AllowedUrn(AccessType.awsPrivateLink, "burn")))),
+                               ClusterMembership.from("container/test/0/0"),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.empty(),
@@ -98,66 +94,12 @@ public class AllocatedHostsSerializerTest {
                                arm64Node,
                                arm64Node,
                                arm64Node,
-                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(),
-                                                      List.of(AzName.from("az1"), AzName.from("az"))),
+                               ClusterMembership.from("container/test/0/0"),
                                Optional.empty(),
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                       new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
                                Optional.empty(),
                                AzName.defaultName()));
-        hosts.add(new HostSpec("with-profile",
-                               smallSlowDiskSpeedNode,
-                               bigSlowDiskSpeedNode,
-                               anyDiskSpeedNode,
-                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), List.of(),
-                                                      Optional.of("large-storage")),
-                               Optional.empty(),
-                               Optional.empty(),
-                               Optional.empty(),
-                               AzName.defaultName()));
-        hosts.add(new HostSpec("with-sidecars",
-                smallSlowDiskSpeedNode,
-                bigSlowDiskSpeedNode,
-                anyDiskSpeedNode,
-                ClusterMembership.from(
-                        "container/test/0/0", Version.fromString("6.73.1"),
-                        Optional.empty(), List.of(
-                                SidecarSpec.builder()
-                                        .id(0)
-                                        .name("sidecar1")
-                                        .image(DockerImage.fromString("registry1/namespace1/repo1:tag1"))
-                                        .hasImageMirror(true)
-                                        .maxCpu(2)
-                                        .minCpu(1)
-                                        .memoryGiB(1)
-                                        .hasGpu(false)
-                                        .volumeMounts(List.of("/mount11", "/mount12"))
-                                        .envs(Map.of("VAR11", "val11", "VAR12", "val12"))
-                                        .command(List.of("run1", "--arg11", "val11", "--arg12", "--val12"))
-                                        .livenessProbe(new SidecarProbe(new SidecarProbe.HttpGetAction("/health", 8080), 10, 5, 2, 3))
-                                        .build(),
-                                SidecarSpec.builder()
-                                        .id(1)
-                                        .name("sidecar2")
-                                        .image(DockerImage.fromString("registry2/namespace2/repo2:tag2"))
-                                        .hasImageMirror(true)
-                                        .maxCpu(4)
-                                        .minCpu(2)
-                                        .memoryGiB(2)
-                                        .hasGpu(true)
-                                        .volumeMounts(List.of("/mount21", "/mount22"))
-                                        .envs(Map.of("VAR21", "val21", "VAR22", "val22"))
-                                        .command(List.of("run2", "--arg21", "val21", "--arg22", "--val22"))
-                                        .build()
-                        )
-                ),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                               AzName.defaultName()));
-
         assertAllocatedHosts(AllocatedHosts.withHosts(hosts));
     }
 
@@ -169,7 +111,6 @@ public class AllocatedHostsSerializerTest {
             HostSpec deserializedHost = requireHost(expectedHost.hostname(), deserializedHosts);
             assertEquals(expectedHost.hostname(), deserializedHost.hostname());
             assertEquals(expectedHost.membership(), deserializedHost.membership());
-            assertEquals(expectedHost.membership().map(m -> m.cluster().profile()), deserializedHost.membership().map(m -> m.cluster().profile()));
             assertEquals(expectedHost.realResources(), deserializedHost.realResources());
             assertEquals(expectedHost.advertisedResources(), deserializedHost.advertisedResources());
             assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
@@ -185,31 +126,6 @@ public class AllocatedHostsSerializerTest {
             if (host.hostname().equals(hostname))
                 return host;
         throw new IllegalArgumentException("No host " + hostname + " is present");
-    }
-
-    @Test
-    void testSidecarWithExecProbe() throws IOException {
-        var sidecarWithExecProbe = SidecarSpec.builder()
-                .id(0)
-                .name("sidecar-with-exec-probe")
-                .image(DockerImage.fromString("registry/namespace/repo:tag"))
-                .hasImageMirror(true)
-                .maxCpu(1)
-                .minCpu(0.5)
-                .memoryGiB(1)
-                .livenessProbe(new SidecarProbe(
-                        new SidecarProbe.ExecAction(List.of("cat", "/tmp/healthy")),
-                        5, 10, 1, 2))
-                .build();
-
-        var host = new HostSpec("host-with-exec-probe",
-                                smallSlowDiskSpeedNode, bigSlowDiskSpeedNode, anyDiskSpeedNode,
-                                ClusterMembership.from("container/test/0/0",
-                                                       Version.fromString("6.73.1"), Optional.empty(), List.of(sidecarWithExecProbe)),
-                                Optional.empty(), Optional.empty(), Optional.empty(),
-                                AzName.defaultName());
-
-        assertAllocatedHosts(AllocatedHosts.withHosts(Set.of(host)));
     }
 
 }
