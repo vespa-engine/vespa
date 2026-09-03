@@ -44,6 +44,15 @@ public class RestartOnDeployForSidecarValidatorTest {
         </services>
         """;
 
+    private static final String SELF_HOSTED_SERVICES_XML = """
+        <?xml version='1.0' encoding='utf-8' ?>
+        <services version='1.0'>
+          <container id='feed' version='1.0'>
+            <document-api/>
+          </container>
+        </services>
+        """;
+
     private static final SidecarSpec SIDECAR_1 = SidecarSpec.builder()
             .id(0)
             .name("triton")
@@ -129,6 +138,13 @@ public class RestartOnDeployForSidecarValidatorTest {
         assertRestartActionProperties(
                 result.get(0),
                 "Need to restart services in cluster 'feed' due to removed sidecars: 'triton'");
+    }
+
+    @Test
+    void validate_self_hosted_cluster_without_nodes_tag() {
+        var current = new VespaModelCreatorWithMockPkg(null, SELF_HOSTED_SERVICES_XML).create();
+        var next = new VespaModelCreatorWithMockPkg(null, SELF_HOSTED_SERVICES_XML).create();
+        assertEquals(List.of(), validate(current, next));
     }
 
     private List<ConfigChangeAction> validate(VespaModel current, VespaModel next) {

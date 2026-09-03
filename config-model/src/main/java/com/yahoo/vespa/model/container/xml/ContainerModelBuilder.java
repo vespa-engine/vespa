@@ -1050,6 +1050,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addStandaloneNode(ApplicationContainerCluster cluster, DeployState deployState) {
         ApplicationContainer container = new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), deployState);
+        cluster.setSpec(defaultSpec(cluster, deployState));
         cluster.addContainers(List.of(container));
     }
 
@@ -1238,6 +1239,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<ApplicationContainer> singleHostContainerCluster(ApplicationContainerCluster cluster, HostResource host, ConfigModelContext context) {
+        cluster.setSpec(defaultSpec(cluster, context.getDeployState()));
         ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, context.getDeployState());
         node.setHostResource(host);
         node.initService(context.getDeployState());
@@ -1315,8 +1317,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             nodes.add(new ContainerServiceBuilder("container." + nodeIndex, nodeIndex).build(deployState, cluster, nodeElem));
             nodeIndex++;
         }
-        cluster.setSpec(ClusterSpec.request(ClusterSpec.Type.container, cluster.id()).vespaVersion(deployState.getVespaVersion()).build());
+        cluster.setSpec(defaultSpec(cluster, deployState));
         return nodes;
+    }
+
+    /** The cluster spec to use for clusters which are not allocated from a node repository. */
+    private static ClusterSpec defaultSpec(ApplicationContainerCluster cluster, DeployState deployState) {
+        return ClusterSpec.request(ClusterSpec.Type.container, cluster.id()).vespaVersion(deployState.getVespaVersion()).build();
     }
 
     private static boolean useCpuSocketAffinity(Element nodesElement) {
