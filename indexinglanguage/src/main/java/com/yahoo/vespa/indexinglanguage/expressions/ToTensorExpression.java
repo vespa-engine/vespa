@@ -170,6 +170,8 @@ public final class ToTensorExpression extends Expression {
         if (getOutputType() instanceof TensorDataType outputType && outputType.getTensorType() != null)
             return outputType.getTensorType().valueType();
         // Otherwise derive from input
+        if (elementType.equals(DataType.INT)) return TensorType.Value.FLOAT;
+        if (elementType.equals(DataType.FLOAT16)) return TensorType.Value.BFLOAT16;
         if (elementType.equals(DataType.FLOAT)) return TensorType.Value.FLOAT;
         if (elementType.equals(DataType.BYTE)) return TensorType.Value.INT8;
         return TensorType.Value.DOUBLE;
