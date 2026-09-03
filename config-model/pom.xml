@@ -310,6 +310,14 @@
           <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
           <environmentVariables>
             <VESPA_HOME>/opt/vespa</VESPA_HOME>
+            <!--
+              This prevents implicit ONNX Posix telemetry initialization from potentially SIGSEGV'ing
+              unit tests during ORT session construction. This telemetry init will run regexes on the
+              command line string, and at least one of these trigger exponential backtracking (on the
+              stack!) in GCC's regex implementation. With a sufficiently large unit test runner command
+              line, this may crash the process.
+             -->
+            <ORT_DISABLE_TELEMETRY>1</ORT_DISABLE_TELEMETRY>
           </environmentVariables>
         </configuration>
       </plugin>
