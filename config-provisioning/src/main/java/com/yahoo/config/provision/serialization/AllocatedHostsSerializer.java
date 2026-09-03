@@ -8,14 +8,24 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SidecarProbe;
+import com.yahoo.config.provision.SidecarSpec;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -38,6 +48,13 @@ public class AllocatedHostsSerializer {
     private static final String hostSpecKey = "hostSpec";
     private static final String hostSpecHostNameKey = "hostName";
     private static final String hostSpecMembershipKey = "membership";
+    private static final String loadBalancerSettingsKey = "zoneEndpoint";
+    private static final String publicField = "public";
+    private static final String privateField = "private";
+    private static final String authMethodsField = "authMethods";
+    private static final String allowedUrnsField = "allowedUrns";
+    private static final String accessTypeField = "type";
+    private static final String urnField = "urn";
 
     private static final String realResourcesKey = "realResources";
     private static final String advertisedResourcesKey = "advertisedResources";
@@ -63,7 +80,10 @@ public class AllocatedHostsSerializer {
     /** Current version */
     private static final String hostSpecCurrentVespaVersionKey = "currentVespaVersion";
     private static final String hostSpecNetworkPortsKey = "ports";
+    private static final String sidecarsKey = "sidecars";
+    private static final String availabilityZonesKey = "azs";
     private static final String availabilityZoneKey = "az";
+    private static final String profileKey = "profile";
 
     public static byte[] toJson(AllocatedHosts allocatedHosts) throws IOException {
         Slime slime = new Slime();
@@ -81,7 +101,17 @@ public class AllocatedHostsSerializer {
         object.setString(hostSpecHostNameKey, host.hostname());
         host.membership().ifPresent(membership -> {
             object.setString(hostSpecMembershipKey, membership.stringValue());
-            object.setString(hostSpecVespaVersionKey, Version.emptyVersion.toString()); // TODO: Remove after Sept 2026
+            object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
+            if ( ! membership.cluster().zoneEndpoint().isDefault())
+                toSlime(object.setObject(loadBalancerSettingsKey), membership.cluster().zoneEndpoint());
+            membership.cluster().dockerImageRepo().ifPresent(repo -> object.setString(hostSpecDockerImageRepoKey, repo.untagged()));
+            
+            var sidecars = membership.cluster().sidecars();
+            if (!sidecars.isEmpty())
+                sidecarsToSlime(sidecars, object.setArray(sidecarsKey));
+
+            availabilityZonesToSlime(membership.cluster().availabilityZones(), object.setArray(availabilityZonesKey));
+            membership.cluster().profile().ifPresent(profile -> object.setString(profileKey, profile));
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));
         toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
@@ -89,7 +119,6 @@ public class AllocatedHostsSerializer {
         host.version().ifPresent(version -> object.setString(hostSpecCurrentVespaVersionKey, version.toFullString()));
         host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(hostSpecNetworkPortsKey)));
         object.setString(availabilityZoneKey, host.availabilityZone().value());
-        host.dockerImageRepo().ifPresent(repo -> object.setString(hostSpecDockerImageRepoKey, repo.untagged()));
     }
 
     private static void toSlime(NodeResources resources, Cursor resourcesObject) {
@@ -215,12 +244,151 @@ public class AllocatedHostsSerializer {
     }
 
     private static ClusterMembership membershipFromSlime(Inspector object) {
-        return ClusterMembership.from(object.field(hostSpecMembershipKey).asString());
+        return ClusterMembership.from(object.field(hostSpecMembershipKey).asString(),
+                                      Version.fromString(object.field(hostSpecVespaVersionKey).asString()),
+                                      object.field(hostSpecDockerImageRepoKey).valid()
+                                      ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
+                                      : Optional.empty(),
+                                      zoneEndpoint(object.field(loadBalancerSettingsKey)),
+                                      sidecars(object.field(sidecarsKey)),
+                                      availabilityZones(object.field(availabilityZonesKey)),
+                                      object.field(profileKey).valid() ? Optional.of(object.field(profileKey).asString()) : Optional.empty());
+    }
+
+    private static void sidecarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {
+        for (var sidecar : sidecars) {
+            var cursor = arrayCursor.addObject();
+            cursor.setLong("id", sidecar.id());
+            cursor.setString("name", sidecar.name());
+            cursor.setString("image", sidecar.image().asString());
+            cursor.setBool("hasImageMirror", sidecar.hasImageMirror());
+
+            var resourcesCursor = cursor.setObject("resources");
+            var resources = sidecar.resources();
+            resourcesCursor.setDouble("maxCpu", resources.maxCpu());
+            resourcesCursor.setDouble("minCpu", resources.minCpu());
+            resourcesCursor.setDouble("memoryGiB", resources.memoryGiB());
+            resourcesCursor.setBool("hasGpu", resources.hasGpu());
+
+            var volumeMountsCursor = cursor.setArray("volumeMounts");
+            sidecar.volumeMounts().forEach(volumeMountsCursor::addString);
+
+            var envsCursor = cursor.setObject("envs");
+            sidecar.envs().forEach(envsCursor::setString);
+
+            var commandCursor = cursor.setArray("command");
+            sidecar.command().forEach(commandCursor::addString);
+
+            sidecar.livenessProbe().ifPresent(probe -> sidecarProbeToSlime(probe, cursor.setObject("livenessProbe")));
+        }
+    }
+
+    private static void availabilityZonesToSlime(List<AzName> availabilityZones, Cursor arrayCursor) {
+        availabilityZones.forEach(az -> arrayCursor.addString(az.value()));
+    }
+
+    private static void toSlime(Cursor settingsObject, ZoneEndpoint settings) {
+        settingsObject.setBool(publicField, settings.isPublicEndpoint());
+        settingsObject.setBool(privateField, settings.isPrivateEndpoint());
+
+        Cursor authMethods = settingsObject.setArray(authMethodsField);
+        for(AuthMethod method : settings.authMethods()) {
+            authMethods.addString(method.name());
+        }
+
+        if (settings.isPrivateEndpoint()) {
+            Cursor allowedUrnsArray = settingsObject.setArray(allowedUrnsField);
+            for (AllowedUrn urn : settings.allowedUrns()) {
+                Cursor urnObject = allowedUrnsArray.addObject();
+                urnObject.setString(urnField, urn.urn());
+                urnObject.setString(accessTypeField,
+                                    switch (urn.type()) {
+                                        case awsPrivateLink -> "awsPrivateLink";
+                                        case gcpServiceConnect -> "gcpServiceConnect";
+                                    });
+            }
+        }
+    }
+
+    private static ZoneEndpoint zoneEndpoint(Inspector settingsObject) {
+        if ( ! settingsObject.valid()) return ZoneEndpoint.defaultEndpoint;
+        return new ZoneEndpoint(settingsObject.field(publicField).asBool(),
+                                settingsObject.field(privateField).asBool(),
+                                SlimeUtils.entriesStream(settingsObject.field(authMethodsField))
+                                        .map(value -> AuthMethod.valueOf(value.asString()))
+                                        .toList(),
+                                SlimeUtils.entriesStream(settingsObject.field(allowedUrnsField))
+                                          .map(urnObject -> new AllowedUrn(switch (urnObject.field(accessTypeField).asString()) {
+                                                                               case "awsPrivateLink" ->  AccessType.awsPrivateLink;
+                                                                               case "gcpServiceConnect" -> AccessType.gcpServiceConnect;
+                                                                               default -> throw new IllegalArgumentException("unknown service access type in '" + urnObject + "'");
+                                                                           },
+                                                                           urnObject.field(urnField).asString()))
+                                          .toList());
     }
 
     private static Optional<DockerImage> optionalDockerImage(Inspector inspector) {
         if ( ! inspector.valid()) return Optional.empty();
         return Optional.of(DockerImage.fromString(inspector.asString()));
+    }
+
+    private static List<SidecarSpec> sidecars(Inspector arrayInspector) {
+        var sidecars = new ArrayList<SidecarSpec>();
+
+        arrayInspector.traverse((ArrayTraverser) (specIdx, specInspector) -> {
+            var id = specInspector.field("id").asLong();
+            var name = specInspector.field("name").asString();
+            var image = DockerImage.fromString(specInspector.field("image").asString());
+
+            var resourcesInspector = specInspector.field("resources");
+            var maxCpu = resourcesInspector.field("maxCpu").asDouble();
+            var minCpu = resourcesInspector.field("minCpu").asDouble();
+            var memoryGiB = resourcesInspector.field("memoryGiB").asDouble();
+            var hasGpu = resourcesInspector.field("hasGpu").asBool();
+
+            var volumeMounts = new ArrayList<String>();
+            specInspector.field("volumeMounts").traverse((ArrayTraverser) (idx, elem) -> {
+                volumeMounts.add(elem.asString());
+            });
+
+            var envs = new HashMap<String, String>();
+            specInspector.field("envs").traverse((ObjectTraverser) (key, value) -> envs.put(key, value.asString()));
+
+            var command = new ArrayList<String>();
+            specInspector.field("command").traverse((ArrayTraverser) (idx, elem) -> command.add(elem.asString()));
+
+            var hasImageMirror = specInspector.field("hasImageMirror").asBool();
+
+            var builder = SidecarSpec.builder()
+                    .id(id)
+                    .name(name)
+                    .image(image)
+                    .maxCpu(maxCpu)
+                    .minCpu(minCpu)
+                    .memoryGiB(memoryGiB)
+                    .hasGpu(hasGpu)
+                    .volumeMounts(volumeMounts)
+                    .envs(envs)
+                    .command(command)
+                    .hasImageMirror(hasImageMirror);
+
+            var livenessProbeInspector = specInspector.field("livenessProbe");
+            if (livenessProbeInspector.valid()) {
+                builder.livenessProbe(sidecarProbeFromSlime(livenessProbeInspector));
+            }
+
+            var sidecar = builder.build();
+
+            sidecars.add(sidecar);
+        });
+
+        return sidecars;
+    }
+
+    private static List<AzName> availabilityZones(Inspector arrayInspector) {
+        List<AzName> availabilityZones = new ArrayList<>();
+        arrayInspector.traverse((ArrayTraverser) (index, az)-> availabilityZones.add(AzName.from(az.asString())));
+        return availabilityZones;
     }
 
     private static AzName availabilityZone(Inspector inspector) {
@@ -231,6 +399,53 @@ public class AllocatedHostsSerializer {
     private static Optional<String> optionalString(Inspector inspector) {
         if ( ! inspector.valid()) return Optional.empty();
         return Optional.of(inspector.asString());
+    }
+
+    private static void sidecarProbeToSlime(SidecarProbe probe, Cursor cursor) {
+        cursor.setLong("initialDelaySeconds", probe.initialDelaySeconds());
+        cursor.setLong("periodSeconds", probe.periodSeconds());
+        cursor.setLong("timeoutSeconds", probe.timeoutSeconds());
+        cursor.setLong("failureThreshold", probe.failureThreshold());
+
+        var actionCursor = cursor.setObject("action");
+        var action = probe.action();
+        
+        if (action instanceof SidecarProbe.HttpGetAction httpGet) {
+            actionCursor.setString("type", "httpGet");
+            actionCursor.setString("path", httpGet.path());
+            actionCursor.setLong("port", httpGet.port());
+        } else if (action instanceof SidecarProbe.ExecAction exec) {
+            actionCursor.setString("type", "exec");
+            var commandCursor = actionCursor.setArray("command");
+            for (String cmd : exec.command()) {
+                commandCursor.addString(cmd);
+            }
+        }
+    }
+
+    private static SidecarProbe sidecarProbeFromSlime(Inspector probeInspector) {
+        var initialDelaySeconds = (int) probeInspector.field("initialDelaySeconds").asLong();
+        var periodSeconds = (int) probeInspector.field("periodSeconds").asLong();
+        var timeoutSeconds = (int) probeInspector.field("timeoutSeconds").asLong();
+        var failureThreshold = (int) probeInspector.field("failureThreshold").asLong();
+
+        var actionInspector = probeInspector.field("action");
+        var type = actionInspector.field("type").asString();
+
+        SidecarProbe.Action action = switch (type) {
+            case "httpGet" -> new SidecarProbe.HttpGetAction(
+                    actionInspector.field("path").asString(),
+                    (int) actionInspector.field("port").asLong());
+            case "exec" -> {
+                var commandList = new ArrayList<String>();
+                actionInspector.field("command").traverse((ArrayTraverser) (idx, elem) ->
+                        commandList.add(elem.asString()));
+                yield new SidecarProbe.ExecAction(commandList);
+            }
+            default -> throw new IllegalArgumentException("Unknown probe action type: " + type);
+        };
+
+        return new SidecarProbe(action, initialDelaySeconds, periodSeconds, timeoutSeconds, failureThreshold);
     }
 
 }
