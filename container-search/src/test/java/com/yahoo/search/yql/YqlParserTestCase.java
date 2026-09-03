@@ -15,6 +15,7 @@ import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
@@ -496,6 +497,28 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSameElementWithBareNumericChild() {
+        // A bare number inside sameElement is a numeric equality term on the element value.
+        assertParse("select * from sources * where ints contains sameElement(2)", "ints:{2}");
+        assertParse("select * from sources * where ints contains sameElement(-2)", "ints:{-2}");
+        assertParse("select * from sources * where doubles contains sameElement(-1.5)", "doubles:{-1.5}");
+        IntItem value = assertInstanceOf(IntItem.class,
+                ((SameElementItem) parse("select * from sources * where ints contains sameElement(-2)").getRoot()).getItem(0));
+        assertEquals("-2", value.getNumber());
+        assertCanonicalParse("select * from sources * where ints contains sameElement(-2)", "ints:{-2}");
+
+        // With a space the minus is a negation of a positive literal rather than part of the number.
+        assertParse("select * from sources * where ints contains sameElement(- 2)", "ints:{-2}");
+        assertParse("select * from sources * where doubles contains sameElement(- 1.5)", "doubles:{-1.5}");
+
+        // A negated literal is only meaningful as a number.
+        assertParseFail("select * from sources * where strings contains sameElement(-'a')",
+                        new IllegalArgumentException("Expected LITERAL, got NEGATE."));
+        assertParseFail("select * from sources * where strings contains sameElement(-true)",
+                        new IllegalArgumentException("Expected LITERAL, got NEGATE."));
+    }
+
+    @Test
     void testSameElementWithNestedAnd() {
         assertParse("select * from sources * where myStringArray contains sameElement('a' and 'b' and near('c', 'd'))",
                     "myStringArray:{(AND a b (NEAR(2) c d))}");
@@ -571,12 +594,48 @@ public class YqlParserTestCase {
         assertEquals("ints", se.getFieldName());
         assertEquals(List.of(1), se.getElementFilter());
         assertEquals(1, se.getItemCount());
+        IntItem intValue = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("2", intValue.getNumber());
 
+        // Doubles are also numeric equality terms.
+        qt = parse("select * from sources * where doubles[0] = 1.5");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("doubles", se.getFieldName());
+        assertEquals(List.of(0), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+        IntItem doubleValue = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("1.5", doubleValue.getNumber());
+
+        // Negative numbers are numeric equality terms with the sign preserved.
+        qt = parse("select * from sources * where ints[1] = -2");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals(List.of(1), se.getElementFilter());
+        IntItem negativeValue = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("-2", negativeValue.getNumber());
+        assertParse("select * from sources * where ints[1] = -2", "ints[1]:{-2}");
+        assertCanonicalParse("select * from sources * where ints[1] = -2", "ints[1]:{-2}");
+
+        qt = parse("select * from sources * where doubles[0] = -1.5");
+        se = (SameElementItem) qt.getRoot();
+        IntItem negativeDouble = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("-1.5", negativeDouble.getNumber());
+        assertCanonicalParse("select * from sources * where doubles[0] = -1.5", "doubles[0]:{-1.5}");
+
+        // With a space the minus is a negation of a positive literal rather than part of the number.
+        assertParse("select * from sources * where ints[1] = - 2", "ints[1]:{-2}");
+        IntItem negatedValue = assertInstanceOf(IntItem.class,
+                ((SameElementItem) parse("select * from sources * where ints[1] = - 2").getRoot()).getItem(0));
+        assertEquals("-2", negatedValue.getNumber());
+        assertParse("select * from sources * where doubles[0] = - 1.5", "doubles[0]:{-1.5}");
+
+        // Booleans have no typed item form and become word terms, not TrueItem/FalseItem.
         qt = parse("select * from sources * where bools[0] = true");
         se = (SameElementItem) qt.getRoot();
         assertEquals("bools", se.getFieldName());
         assertEquals(List.of(0), se.getElementFilter());
         assertEquals(1, se.getItemCount());
+        WordItem boolValue = assertInstanceOf(WordItem.class, se.getItem(0));
+        assertEquals("true", boolValue.getWord());
     }
 
     @Test
@@ -585,23 +644,73 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where my_map{'foo'} contains 'bar'",
                     "my_map:{key:foo value:bar}");
 
-        // Numeric values use '=', as for plain fields, and are converted to string as in the indexed access rewrite.
+        // Numeric values use '=', as for plain fields, and become numeric equality terms.
         assertParse("select * from sources * where my_map{'foo'} = 10",
                     "my_map:{key:foo value:10}");
+        assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{'foo'} = 10").getRoot()).getItem(1));
 
-        // Numeric keys are converted to string, for maps with numeric key types.
+        // Negative numeric values are also numeric equality terms, with the sign preserved.
+        assertParse("select * from sources * where my_map{'foo'} = -10",
+                    "my_map:{key:foo value:-10}");
+        IntItem negativeValue = assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{'foo'} = -10").getRoot()).getItem(1));
+        assertEquals("-10", negativeValue.getNumber());
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = -10",
+                             "my_map:{key:foo value:-10}");
+        assertParse("select * from sources * where my_map{'foo'} = -1.5",
+                    "my_map:{key:foo value:-1.5}");
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = -1.5",
+                             "my_map:{key:foo value:-1.5}");
+
+        // Negative numeric keys, for maps with numeric key types.
+        assertParse("select * from sources * where my_map{-1} contains 'bar'",
+                    "my_map:{key:-1 value:bar}");
+        IntItem negativeKey = assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{-1} contains 'bar'").getRoot()).getItem(0));
+        assertEquals("-1", negativeKey.getNumber());
+        assertCanonicalParse("select * from sources * where my_map{-1} = -10",
+                             "my_map:{key:-1 value:-10}");
+
+        // With a space the minus is a negation of a positive literal rather than part of the number.
+        assertParse("select * from sources * where my_map{'foo'} = - 10",
+                    "my_map:{key:foo value:-10}");
+        assertParse("select * from sources * where my_map{- 1} contains 'bar'",
+                    "my_map:{key:-1 value:bar}");
+        assertParse("select * from sources * where my_map{- 1} = - 1.5",
+                    "my_map:{key:-1 value:-1.5}");
+        assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{- 1} = - 10").getRoot()).getItem(0));
+        assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{- 1} = - 10").getRoot()).getItem(1));
+
+        // Numeric keys become numeric equality terms, for maps with numeric key types.
         assertParse("select * from sources * where my_map{1} contains 'bar'",
                     "my_map:{key:1 value:bar}");
+        assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{1} contains 'bar'").getRoot()).getItem(0));
+
+        // Boolean values have no typed item form and become word terms.
+        assertParse("select * from sources * where my_map{'foo'} = true",
+                    "my_map:{key:foo value:true}");
+        assertInstanceOf(WordItem.class,
+                         ((SameElementItem) parse("select * from sources * where my_map{'foo'} = true").getRoot()).getItem(1));
 
         // The rewritten tree serializes and re-parses to the same tree.
         assertCanonicalParse("select * from sources * where my_map{'foo'} contains 'bar'",
                              "my_map:{key:foo value:bar}");
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = 10",
+                             "my_map:{key:foo value:10}");
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = true",
+                             "my_map:{key:foo value:true}");
     }
 
     @Test
     void testMapAccessRequiresLiteralKey() {
         assertParseFail("select * from sources * where my_map{key_field} contains 'bar'",
                         new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));
+        assertParseFail("select * from sources * where my_map{-'foo'} contains 'bar'",
+                        new IllegalArgumentException("Expected LITERAL, got NEGATE."));
     }
 
     @Test

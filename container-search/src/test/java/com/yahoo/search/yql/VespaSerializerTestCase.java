@@ -346,6 +346,21 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testSameElementWithNumericChild() {
+        // The ints[1] = 2 sugar produces an IntItem child with empty index, which must serialize as a bare number
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(2))", "ints[1] = 2");
+        parseAndConfirm("doubles contains ({elementFilter:[0]} sameElement(1.5))", "doubles[0] = 1.5");
+        parseAndConfirm("bools contains ({elementFilter:[0]} sameElement(\"true\"))", "bools[0] = true");
+
+        // The serialized forms are stable: they parse back to themselves
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(2))");
+        parseAndConfirm("doubles contains ({elementFilter:[0]} sameElement(1.5))");
+
+        // Map sugar children keep their key/value indexes
+        parseAndConfirm("my_map contains sameElement(key contains \"foo\", value = 10)", "my_map{\"foo\"} = 10");
+    }
+
+    @Test
     void testAnnotatedAndSegment() {
         AndSegmentItem andSegment = new AndSegmentItem("abc", true, false);
         andSegment.addItem(new WordItem("a", "indexNamePlaceholder"));

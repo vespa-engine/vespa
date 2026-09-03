@@ -376,7 +376,10 @@ public class VespaSerializer {
         @Override
         boolean serialize(StringBuilder destination, IntItem intItem, Boolean includeField) {
             if (intItem.getFromLimit().number().equals(intItem.getToLimit().number())) {
-                destination.append(normalizeIndexName(intItem.getIndexName())).append(" = ");
+                String indexName = normalizeIndexName(intItem.getIndexName(), includeField);
+                if ( ! indexName.isEmpty()) {
+                    destination.append(indexName).append(" = ");
+                }
                 annotatedNumberImage(intItem, intItem.getFromLimit().number().toString(), destination);
             } else if (intItem.getFromLimit().isInfinite()) {
                 destination.append(normalizeIndexName(intItem.getIndexName()));
