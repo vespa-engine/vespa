@@ -567,6 +567,33 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testElementValueIsRejectedWhereAFieldIsRequired() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // These apply to a field as a whole, so the value of an element is not something they can take
+        for (String syntax : List.of("dotProduct", "weightedSet", "wand")) {
+            assertParseFail("select * from sources * where string contains sameElement(" + syntax + "(_, {\"a\": 1}))",
+                            new IllegalArgumentException(syntax + " takes a field name, but got '_', which is the " +
+                                                         "value of the element of the enclosing sameElement rather " +
+                                                         "than a field."));
+        }
+        assertParseFail("select * from sources * where string contains sameElement(predicate(_, {\"a\":\"b\"}, {}))",
+                        new IllegalArgumentException("predicate takes a field name, but got '_', which is the value " +
+                                                     "of the element of the enclosing sameElement rather than a field."));
+    }
+
+    @Test
+    void testFailedSameElementTermDoesNotLeakTheFieldPrefix() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // A term which fails to convert must leave the index name expander as it found it, as the parser is usable after
+        assertParseFail("select * from sources * where string contains sameElement(nosuchfield contains \"a\")",
+                        new IllegalArgumentException("Field 'string.nosuchfield' does not exist."));
+        assertParse("select * from sources * where string contains sameElement(_ contains \"foo\")",
+                    "string:{foo}");
+    }
+
+    @Test
     void testSameElementWithNestedAnd() {
         assertParse("select * from sources * where myStringArray contains sameElement('a' and 'b' and near('c', 'd'))",
                     "myStringArray:{(AND a b (NEAR(2) c d))}");

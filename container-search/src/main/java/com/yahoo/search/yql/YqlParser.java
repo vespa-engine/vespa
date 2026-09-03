@@ -579,14 +579,14 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        return fillWeightedSet(ast, args.get(1), new WeightedSetItem(getIndex(args.get(0))));
+        return fillWeightedSet(ast, args.get(1), new WeightedSetItem(getFieldIndex(args.get(0), WEIGHTED_SET)));
     }
 
     private Item buildDotProduct(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
+        return fillWeightedSet(ast, args.get(1), new DotProductItem(getFieldIndex(args.get(0), DOT_PRODUCT)));
     }
 
     private Item buildIn(OperatorNode<ExpressionOperator> ast) {
@@ -745,7 +745,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.size() == 3, "Expected 3 arguments, got %s.", args.size());
 
         PredicateQueryItem item = new PredicateQueryItem();
-        item.setIndexName(getIndex(args.get(0)));
+        item.setIndexName(getFieldIndex(args.get(0), PREDICATE));
 
         addFeatures(args.get(1),
                    (key, value, subqueryBitmap) -> item.addFeature(key, (String) value, subqueryBitmap), PredicateQueryItem.ALL_SUB_QUERIES);
@@ -806,7 +806,7 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        WandItem out = new WandItem(getIndex(args.get(0)));
+        WandItem out = new WandItem(getFieldIndex(args.get(0), WAND));
         out.setTargetHits(buildTargetHits(ast));
         out.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         assignAnnotationAsDoubleIfNotNull(ast, SCORE_THRESHOLD, "score must be above this threshold for hit inclusion", out::setScoreThreshold);
@@ -894,12 +894,16 @@ public class YqlParser implements Parser {
 
         // All terms below sameElement are relative to this.
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
-        for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
-            // that is not necessary. This is an issue when having many elements
-            sameElement.addItem(convertExpression(term, field));
+        try {
+            for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+                // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
+                // that is not necessary. This is an issue when having many elements
+                sameElement.addItem(convertExpression(term, field));
+            }
         }
-        swapIndexCreator(prev);
+        finally {
+            swapIndexCreator(prev); // Also on a failed term, as this parser may be used again
+        }
         return sameElement;
     }
 
@@ -2483,6 +2487,18 @@ public class YqlParser implements Parser {
         String expanded = indexNameExpander.expand(index);
         Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(index);
+    }
+
+    /**
+     * Returns the index of a field named as the argument of a syntax which applies to a field as a whole, such as
+     * dotProduct or predicate, and which therefore has no form taking the value of an element instead of a field.
+     */
+    private String getFieldIndex(OperatorNode<ExpressionOperator> operatorNode, String syntax) {
+        String index = getIndex(operatorNode);
+        Preconditions.checkArgument( ! index.isEmpty(),
+                                    "%s takes a field name, but got '%s', which is the value of the element of the " +
+                                    "enclosing sameElement rather than a field.", syntax, ELEMENT_VALUE);
+        return index;
     }
 
     /**
