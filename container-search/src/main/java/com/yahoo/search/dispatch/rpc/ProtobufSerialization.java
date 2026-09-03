@@ -24,7 +24,6 @@ import com.yahoo.search.dispatch.LeanHit;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
-import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.Order;
@@ -36,32 +35,12 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
 public class ProtobufSerialization {
-
-    /**
-     * Returns true if protobuf query tree serialization is being performed in addition to the old format.
-     * During the transition period, this allows old format serialization to skip exceptions for features
-     * that are only supported in the protobuf format, since the backend will use the protobuf format when
-     * both are present.
-     */
-    public static boolean isProtobufAlsoSerialized() {
-        return isProtobufAlsoSerialized.get();
-    }
-
-    /**
-     * Sets whether protobuf query tree serialization is being performed in addition to the old format.
-     * This is used during the transition period to suppress exceptions in old format encoding for features
-     * only supported in protobuf, since the backend will prefer the protobuf format when both are present.
-     */
-    public static void setProtobufAlsoSerialized(boolean value) {
-        isProtobufAlsoSerialized.set(value);
-    }
 
     /*
      * This is a thread local buffer that is used as scratchpad during serialization.
@@ -71,14 +50,6 @@ public class ProtobufSerialization {
      * There is a limited number of threads that will use this so the upper bound should be fine.
      */
     private static final ThreadLocal<GrowableByteBuffer> threadLocalBuffer = ThreadLocal.withInitial(() -> new GrowableByteBuffer(4096));
-
-    /*
-     * Tracks whether protobuf query tree serialization is being performed in addition to the old format.
-     * Used during the transition period to allow old format serialization to skip exceptions for
-     * features that are only supported in the protobuf format, since the backend will use the
-     * protobuf format when both are present.
-     */
-    private static final ThreadLocal<Boolean> isProtobufAlsoSerialized = ThreadLocal.withInitial(() -> false);
 
     static byte[] serializeSearchRequest(Query query, int hits, String nodeId, double contentShare, double requestTimeout, QrSearchersConfig qrSearchersConfig) {
         return convertFromQuery(query, hits, nodeId, contentShare, requestTimeout, qrSearchersConfig).toByteArray();
@@ -103,10 +74,6 @@ public class ProtobufSerialization {
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
         var queryTree = query.getModel().getQueryTree();
         var context = new SerializationContext(contentShare);
-        if (qrSearchersConfig.sendOldQueryStack()) {
-            isProtobufAlsoSerialized.set(true);
-            builder.setQueryTreeBlob(serializeQueryTree(queryTree, context, scratchPad));
-        }
         builder.setQueryTree(queryTree.toProtobufQueryTree(context));
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
             // TODO verify that the session key is included whenever rank properties would have been
@@ -258,10 +225,6 @@ public class ProtobufSerialization {
         var featureMap = ranking.getFeatures().asMap();
 
         var context = SerializationContext.ignored(); // Not necessary to track content share for docsum requests
-        if (qrSearchersConfig.sendOldQueryStack()) {
-            isProtobufAlsoSerialized.set(true);
-            builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), context, scratchPad));
-        }
         builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree(context));
 
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
@@ -378,21 +341,6 @@ public class ProtobufSerialization {
             builder.addHits(hitBuilder);
         });
         return builder.build();
-    }
-
-    private static ByteString serializeQueryTree(QueryTree queryTree, SerializationContext context,
-                                                 GrowableByteBuffer scratchPad) {
-        while (true) {
-            try {
-                scratchPad.clear();
-                ByteBuffer treeBuffer = scratchPad.getByteBuffer();
-                queryTree.encode(treeBuffer, context);
-                return ByteString.copyFrom(treeBuffer.flip());
-            } catch (java.nio.BufferOverflowException e) {
-                scratchPad.clear();
-                scratchPad.grow(scratchPad.capacity()*2);
-            }
-        }
     }
 
     private static void mergeRankProperties(Ranking ranking,
