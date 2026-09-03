@@ -79,7 +79,7 @@ public class NearItem extends CompositeItem {
     protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
         super.encodeThis(buffer, context);
         IntegerCompressor.putCompressedPositiveNumber(distance, buffer);
-        if (numNegativeItems != 0 && !ProtobufSerialization.isProtobufAlsoSerialized()) {
+        if (numNegativeItems != 0) {
             throw new IllegalArgumentException("cannot serialize negative items in old protocol");
         }
     }
