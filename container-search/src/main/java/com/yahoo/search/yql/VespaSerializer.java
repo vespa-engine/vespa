@@ -327,8 +327,7 @@ public class VespaSerializer {
         boolean serialize(StringBuilder destination, UriItem uriItem, Scope scope) {
             String annotations = uriAnnotations(uriItem);
 
-            if (scope == Scope.ROOT) // A function argument is named by its function, and uri() has no sameElement form
-                destination.append(uriItem.getIndexName()).append(" contains ");
+            serializeField(uriItem, scope, destination);
             if (!annotations.isEmpty())
                 destination.append('(').append(annotations);
             destination.append(URI).append("(\"");
@@ -732,7 +731,7 @@ public class VespaSerializer {
                 destination.append("]} ");
             }
             destination.append(SAME_ELEMENT);
-            if (item.getItemCount() == 1 && item.getItem(0) instanceof AndItem || item.getItem(0) instanceof OrItem) {
+            if (item.getItemCount() == 1 && (item.getItem(0) instanceof AndItem || item.getItem(0) instanceof OrItem)) {
                 // serialize nested content without extra parenthesis
                 VespaSerializer.serialize(item.getItem(0), Scope.SAME_ELEMENT, destination);
             }

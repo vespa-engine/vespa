@@ -409,6 +409,27 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testSameElementWithOrChild() {
+        // A single AND or OR child supplies the parenthesis of the sameElement itself
+        parseAndConfirm("f contains sameElement(a contains \"x\" OR b contains \"y\")");
+        parseAndConfirm("f contains sameElement(a contains \"x\" AND b contains \"y\")");
+
+        // With more than one child, every child must be serialized, also when the first is an AND or OR
+        parseAndConfirm("f contains sameElement((a contains \"x\" OR b contains \"y\"), c contains \"z\")");
+        parseAndConfirm("f contains sameElement((a contains \"x\" AND b contains \"y\"), c contains \"z\")");
+    }
+
+    @Test
+    void testSameElementWithUriChild() {
+        // A uri() child inside sameElement keeps the name of the subfield it applies to
+        parseAndConfirm("f contains sameElement(url contains uri(\"http://foo.com\"))");
+        parseAndConfirm("f contains sameElement(url contains uri(\"http://foo.com\"), name contains \"x\")");
+
+        // A uri() on the element value itself has no subfield name to write
+        parseAndConfirm("f contains sameElement(uri(\"http://foo.com\"))");
+    }
+
+    @Test
     void testAnnotatedAndSegment() {
         AndSegmentItem andSegment = new AndSegmentItem("abc", true, false);
         andSegment.addItem(new WordItem("a", "indexNamePlaceholder"));
