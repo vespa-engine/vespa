@@ -19,7 +19,7 @@ struct Term {
 };
 
 struct State {
-    uint32_t field_length;
+    uint32_t element_length;
     uint32_t matched_terms;
     int      sum_term_weight;
     uint32_t last_pos;
@@ -27,14 +27,26 @@ struct State {
     uint32_t last_idx;
     uint32_t num_in_order;
 
-    State(uint32_t length, uint32_t first_pos, int32_t first_weight, uint32_t first_idx)
-        : field_length(length),
+    double proximity;
+    double order;
+    double query_coverage;
+    double field_coverage;
+    double element_weight;
+
+    State(uint32_t element_length_in, int32_t element_weight_in, uint32_t first_pos, int32_t first_weight,
+          uint32_t first_idx)
+        : element_length(element_length_in),
           matched_terms(1),
           sum_term_weight(first_weight),
           last_pos(first_pos),
           sum_proximity_score(0.0),
           last_idx(first_idx),
-          num_in_order(0) {}
+          num_in_order(0),
+          proximity(0.0),
+          order(0.0),
+          query_coverage(0.0),
+          field_coverage(0.0),
+          element_weight(element_weight_in) {}
 
     double proximity_score(uint32_t dist) {
         return (dist > 8) ? 0 : (1.0 - (((dist - 1) / 8.0) * ((dist - 1) / 8.0)));
@@ -51,20 +63,18 @@ struct State {
         sum_term_weight += weight;
     }
 
-    void calculateScore(int total_term_weight, double& score_out, double& proximity_out, double& order_out,
-                        double& query_coverage_out, double& field_coverage_out) {
-        double matches = std::min(field_length, matched_terms);
+    void calculate_scores(int total_term_weight) {
+        element_length = std::max(element_length, matched_terms);
+        double matches = matched_terms;
         if (matches < 2) {
-            proximity_out = proximity_score(field_length);
-            order_out = matches;
+            proximity = proximity_score(element_length);
+            order = matches;
         } else {
-            proximity_out = sum_proximity_score / (matches - 1);
-            order_out = num_in_order / (double)(matches - 1);
+            proximity = sum_proximity_score / (matches - 1);
+            order = num_in_order / (double)(matches - 1);
         }
-        query_coverage_out = sum_term_weight / (double)total_term_weight;
-        field_coverage_out = matches / (double)field_length;
-        score_out =
-            (0.35 * proximity_out) + (0.15 * order_out) + (0.30 * query_coverage_out) + (0.20 * field_coverage_out);
+        query_coverage = sum_term_weight / (double)total_term_weight;
+        field_coverage = matches / (double)element_length;
     }
 };
 
@@ -116,7 +126,8 @@ void TextSimilarityExecutor::execute(uint32_t docId) {
         return;
     }
     const Item& first = _queue.front();
-    State       state(first.pos->getElementLen(), first.pos->getPosition(), _weights[first.idx], first.idx);
+    State       state(first.pos->getElementLen(), first.pos->getElementWeight(), first.pos->getPosition(),
+                      _weights[first.idx], first.idx);
     _queue.pop_front();
     while (!_queue.empty()) {
         Item& item = _queue.front();
@@ -132,8 +143,13 @@ void TextSimilarityExecutor::execute(uint32_t docId) {
             }
         }
     }
-    state.calculateScore(_total_term_weight, *outputs().get_number_ptr(0), *outputs().get_number_ptr(1),
-                         *outputs().get_number_ptr(2), *outputs().get_number_ptr(3), *outputs().get_number_ptr(4));
+    state.calculate_scores(_total_term_weight);
+    *outputs().get_number_ptr(0) = (0.35 * state.proximity) + (0.15 * state.order) + (0.30 * state.query_coverage) +
+                                   (0.20 * state.field_coverage);
+    *outputs().get_number_ptr(1) = state.proximity;
+    *outputs().get_number_ptr(2) = state.order;
+    *outputs().get_number_ptr(3) = state.query_coverage;
+    *outputs().get_number_ptr(4) = state.field_coverage;
 }
 
 void TextSimilarityExecutor::handle_bind_match_data(const fef::MatchData& md) {
