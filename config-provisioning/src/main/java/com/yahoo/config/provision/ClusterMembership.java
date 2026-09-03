@@ -78,9 +78,7 @@ public class ClusterMembership {
                                           int group,
                                           int index,
                                           boolean retired) {
-        return type.name() + "/" + id.value() + "/" + group + "/" + index +
-               ( retired ? "/retired" : "") +
-               ( type.isContent() ? "/stateful" : "");
+        return type.name() + "/" + id.value() + "/" + group + "/" + index + ( retired ? "/retired" : "");
     }
 
     /** Returns the type of the cluster this belongs to. */
