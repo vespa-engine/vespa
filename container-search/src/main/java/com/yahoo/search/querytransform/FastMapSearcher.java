@@ -4,13 +4,17 @@ package com.yahoo.search.querytransform;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.schema.Field;
 import com.yahoo.search.schema.FieldInfo;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
@@ -31,93 +35,167 @@ public class FastMapSearcher extends Searcher {
     public Result search(Query query, Execution execution) {
         var schemaInfo = execution.context().schemaInfo();
         var session = schemaInfo.newSession(query);
-        rewriteFastMapSearch(query, session);
+        new Rewriter().rewriteFastMapSearch(query, session);
         return execution.search(query);
     }
 
-    private void rewriteFastMapSearch(Query query, SchemaInfo.Session session) {
-        Item root = query.getModel().getQueryTree().getRoot();
-        Item possibleNewRoot = rewriteFastMapSearchVisit(root, session);
-        if (root != possibleNewRoot) {
-            query.getModel().getQueryTree().setRoot(possibleNewRoot);
-            query.trace("rewrote sameElement to fast-map lookup", true, 2);
-        }
-    }
+    private class Rewriter {
 
-    /**
-     * Rewrite sameElement for fast map search.
-     *
-     * Package-private for unit testing.
-     */
-    Item rewriteFastMapSearchVisit(Item item, SchemaInfo.Session session) {
-        if (item == null) {
-            return null;
-        }
+        private boolean hasRewritten = false;
 
-        // handle sameelement rewrite
-        if (item instanceof SameElementItem sameElementItem) {
-            String fieldName = sameElementItem.getIndexName();
-            if (isFastMapSearch(fieldName, session)) {
-                var kv = KeyValue.parse(sameElementItem);
-                if (kv.hasKeyValue) {
-                    return makeFastMapSearchWordItem(kv.key, kv.value, fieldName);
-                }
+        /** Entry point for rewriting a query */
+        private void rewriteFastMapSearch(Query query, SchemaInfo.Session session) {
+            Item root = query.getModel().getQueryTree().getRoot();
+            Item possibleNewRoot = rewriteFastMapSearchVisit(root, session);
+            if (root != possibleNewRoot) {
+                query.getModel().getQueryTree().setRoot(possibleNewRoot);
+            }
+            if (hasRewritten) {
+                query.trace("rewrote sameElement to fast-map lookup", true, 2);
             }
         }
-
-        // recursively try rewrite children.
-        if (item instanceof CompositeItem composite) {
-            for (int i = 0; i < composite.getItemCount(); i++) {
-                Item child = composite.getItem(i);
-                Item newChild = rewriteFastMapSearchVisit(child, session);
-                if (newChild != child) {
-                    composite.setItem(i, newChild);
-                }
-            }
-        }
-
-        return item;
-    }
-
-    /**
-     * Parses key and value to string form.
-     */
-    private record KeyValue(boolean hasKeyValue, String key, String value) {
 
         /**
-         * Recognizes that same element has two elements called key and value, and
-         * that they are string items.
-         * TODO: extend to handle IntItem
+         * Rewrite sameElement for fast map search.
          */
-        static KeyValue parse(SameElementItem sameElementItem) {
-            if (sameElementItem.getItemCount() == 2) {
-                if (sameElementItem.getItem(0) instanceof WordItem item1
-                    && sameElementItem.getItem(1) instanceof WordItem item2) {
-                    if (isKeyValue(item1, item2)) {
-                        return new KeyValue(true, item1.getWord(), item2.getWord());
-                    } else if (isKeyValue(item2, item1)) {
-                        return new KeyValue(true,  item2.getWord(), item1.getWord());
+        private Item rewriteFastMapSearchVisit(Item item, SchemaInfo.Session session) {
+            if (item == null) {
+                return null;
+            }
+
+            // handle sameelement rewrite
+            if (item instanceof SameElementItem sameElementItem) {
+                Field.MapFieldType mapType = fastMapSearchType(sameElementItem.getFieldName(), session);
+                if (mapType != null) {
+                    WordItem rewritten = tryMakeFastMapItem(sameElementItem, mapType);
+                    if (rewritten != null) {
+                        hasRewritten = true;
+                        return rewritten;
                     }
                 }
             }
 
-            return new KeyValue(false, null, null);
+            // recursively try rewrite children.
+            if (item instanceof CompositeItem composite) {
+                for (int i = 0; i < composite.getItemCount(); i++) {
+                    Item child = composite.getItem(i);
+                    Item newChild = rewriteFastMapSearchVisit(child, session);
+                    if (newChild != child) {
+                        composite.setItem(i, newChild);
+                    }
+                }
+            }
+
+            return item;
         }
 
-        static boolean isKeyValue(WordItem key, WordItem value) {
-            return "key".equals(key.getIndexName()) && "value".equals(value.getIndexName());
+    }
+
+    /**
+     * Returns the single fast map lookup term equivalent to the given sameElement,
+     * or null if the sameElement cannot be expressed as one.
+     */
+    private WordItem tryMakeFastMapItem(SameElementItem sameElementItem, Field.MapFieldType mapType) {
+        if (!sameElementItem.getElementFilter().isEmpty()) {
+            return null; // element filter used for arrays.
         }
+
+        if (sameElementItem.getItemCount() != 2) {
+            return null;
+        }
+
+        // resolve which is key and which is value.
+        Item first = sameElementItem.getItem(0);
+        Item second = sameElementItem.getItem(1);
+        TermItem keyItem = termWithIndex("key", first, second);
+        TermItem valueItem = termWithIndex("value", first, second);
+        if (keyItem == null || valueItem == null) {
+            return null;
+        }
+
+        // only support string keys for now.
+        if (mapType.keyType().kind() != Field.Type.Kind.STRING) {
+            return null;
+        }
+
+        String fieldName = sameElementItem.getFieldName();
+
+        if (mapType.valueType().kind() == Field.Type.Kind.STRING) {
+            var key = getString(keyItem);
+            var value = getString(valueItem);
+            if (key == null || value == null) {
+                return null;
+            }
+            return makeWord(key, value, fieldName);
+        }
+
+        if (mapType.valueType().kind() == Field.Type.Kind.INT) {
+            var key = getString(keyItem);
+            var value = getInteger(valueItem);
+            if (key == null || value == null) {
+                return null;
+            }
+            return makeWord(key, value, fieldName);
+        }
+
+        return null;
+    }
+
+    /** Returns the first of the two items which is a term with the given index name, or null. */
+    private static TermItem termWithIndex(String indexName, Item first, Item second) {
+        if (first instanceof TermItem term && indexName.equals(term.getIndexName())) {
+            return term;
+        }
+        if (second instanceof TermItem term && indexName.equals(term.getIndexName())) {
+            return term;
+        }
+        return null;
+    }
+
+    /** Gets value as string or null. */
+    private String getString(TermItem term) {
+        if (term.getClass() == WordItem.class || term instanceof ExactStringItem) {
+            return ((WordItem) term).getWord();
+        }
+        return null;
+    }
+
+    /** Gets value as integer or null. */
+    private Integer getInteger(TermItem term) {
+       String number;
+       if (term instanceof IntItem intItem) {
+           number = intItem.getNumber();
+       } else if (term.getClass() == WordItem.class) {
+           number = ((WordItem) term).getWord();
+       } else {
+           return null;
+       }
+       try {
+           return Integer.parseInt(number.trim());
+       } catch (NumberFormatException e) {
+           return null; // a range expression, or not an int: fall back to regular sameElement
+       }
     }
 
     /** Package-private for unit testing. */
-    WordItem makeFastMapSearchWordItem(String key, String value, String fieldName) {
-        return new WordItem(key + FastMapSearch.keyValueSeparator() + value,
-                FastMapSearch.toKeyValueFieldName(fieldName), false);
+    WordItem makeWord(String key, String value, String fieldName) {
+        return new WordItem(FastMapSearch.toKeyValueTerm(key, value),
+                            FastMapSearch.toKeyValueFieldName(fieldName), false);
     }
 
-    /** Returns whether the given field has fast map search enabled. */
-    private boolean isFastMapSearch(String fieldName, SchemaInfo.Session session) {
-        return session.fieldInfo(fieldName).map(FieldInfo::hasFastMapSearch).orElse(false);
+    /** Package-private for unit testing. */
+    WordItem makeWord(String key, Integer value, String fieldName) {
+        return new WordItem(FastMapSearch.toKeyValue8Term(key, value),
+                            FastMapSearch.toKeyValueFieldName(fieldName), false);
+    }
+
+    /** Returns the map type of the given field if it has fast map search enabled, and null otherwise. */
+    private static Field.MapFieldType fastMapSearchType(String fieldName, SchemaInfo.Session session) {
+        FieldInfo info = session.fieldInfo(fieldName).orElse(null);
+        if (info != null && info.hasFastMapSearch() && info.type() instanceof Field.MapFieldType mapType) {
+            return mapType;
+        }
+        return null;
     }
 
 }
