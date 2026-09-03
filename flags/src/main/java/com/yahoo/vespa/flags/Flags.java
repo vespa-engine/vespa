@@ -218,13 +218,6 @@ public class Flags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundBooleanFlag TOKEN_AUTH_FOR_DEPLOY = defineFeatureFlag(
-            "token-auth-for-deploy", false,
-            List.of("bragehk"), "2026-05-19", "2026-09-01",
-            "Whether to activate token auth for vespa deploy",
-            "Takes effect at deployment",
-            TENANT_ID);
-
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_MEMORY_FACTOR = defineDoubleFlag(
         "searchnode-reserved-memory-factor", 0.0,
         List.of("toregge"), "2026-06-09", "2027-02-10",
@@ -242,19 +235,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID
     );
-
-    public static final UnboundBooleanFlag PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE = defineFeatureFlag(
-            "proton-log-warning-on-disk-capacity-change", true,
-            List.of("johsol"), "2026-07-06", "2026-09-01",
-            "Log a warning when sampled disk capacity changes. Escape hatch in case of log spam " +
-            "while working towards adding back resampling of disk capacity.",
-            "Takes effect at deployment");
-
-    public static final UnboundBooleanFlag PROTON_RESAMPLE_DISK_CAPACITY = defineFeatureFlag(
-            "proton-resample-disk-capacity", true,
-            List.of("johsol"), "2026-07-06", "2026-09-01",
-            "Resample disk capacity in proton.",
-            "Takes effect at deployment");
 
     public static final UnboundBooleanFlag FAST_MAP_SEARCH = defineFeatureFlag(
             "fast-map-search", false,
