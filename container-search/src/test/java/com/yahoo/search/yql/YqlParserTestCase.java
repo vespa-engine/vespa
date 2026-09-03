@@ -519,6 +519,54 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSameElementValuePlaceholder() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // "_" stands for the value of the element itself, so the term gets no field name of its own.
+        assertParse("select * from sources * where field contains ({elementFilter:[1]} sameElement(_ >= 2))",
+                    "field[1]:{[2;]}");
+        assertParse("select * from sources * where field contains sameElement(_ > 2)",
+                    "field:{>2}");
+        assertParse("select * from sources * where field contains sameElement(range(_, 2, 5))",
+                    "field:{[2;5]}");
+        assertParse("select * from sources * where field contains sameElement(_ = 2)",
+                    "field:{2}");
+        assertParse("select * from sources * where field contains sameElement(_ >= 2 and _ <= 5)",
+                    "field:{(AND [2;] [;5])}");
+        IntItem number = assertInstanceOf(IntItem.class,
+                ((SameElementItem) parse("select * from sources * where field contains sameElement(_ >= 2)").getRoot()).getItem(0));
+        assertEquals("", number.getIndexName());
+
+        // The element values have the type of the field of the sameElement, so a range on a string field
+        // is a string range even though the placeholder itself is not a field.
+        assertParse("select * from sources * where string contains sameElement(range(_, \"a\", \"b\"))",
+                    "string:{STRING_RANGE [\"a\";\"b\"]}");
+        StringRangeItem stringRange = assertInstanceOf(StringRangeItem.class,
+                ((SameElementItem) parse("select * from sources * where string contains sameElement(range(_, \"a\", \"b\"))").getRoot()).getItem(0));
+        assertEquals("", stringRange.getIndexName());
+
+        // It works with the other syntaxes taking a field name as well.
+        assertParse("select * from sources * where string contains sameElement(_ contains \"foo\")",
+                    "string:{foo}");
+        assertParse("select * from sources * where string contains sameElement(_ matches \"f.*\")",
+                    "string:{REGEXP f.*}");
+        assertParse("select * from sources * where field contains sameElement(_ in (1, 2))",
+                    "field:{NUMERIC_IN {1,2}}");
+        assertParse("select * from sources * where string contains sameElement(_ in (\"a\", \"b\"))",
+                    "string:{STRING_IN {\"a\",\"b\"}}");
+
+        // A boolean has no typed item form of its own, but is still a term on the element value.
+        assertParse("select * from sources * where field contains sameElement(_ = true)",
+                    "field:{true}");
+
+        // Outside sameElement the placeholder is an ordinary field name, so it must be a field.
+        assertParseFail("select * from sources * where _ >= 2",
+                        new IllegalArgumentException("Field '_' does not exist."));
+        assertParseFail("select * from sources * where field contains sameElement(string contains \"foo\")",
+                        new IllegalArgumentException("Field 'field.string' does not exist."));
+    }
+
+    @Test
     void testSameElementWithNestedAnd() {
         assertParse("select * from sources * where myStringArray contains sameElement('a' and 'b' and near('c', 'd'))",
                     "myStringArray:{(AND a b (NEAR(2) c d))}");

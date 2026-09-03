@@ -361,6 +361,54 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testSameElementWithNumericRangeChild() {
+        // A non-equality IntItem child with an empty index must also serialize as a bare
+        // range/comparison, not with a "default" field prefix (same bug as equality, for the
+        // open-bound and two-sided-range branches of NumberSerializer).
+        SameElementItem lowerBound = new SameElementItem("ints");
+        lowerBound.setElementFilter(List.of(1));
+        lowerBound.addItem(new IntItem(new com.yahoo.prelude.query.Limit(2, true), com.yahoo.prelude.query.Limit.POSITIVE_INFINITY, ""));
+        assertEquals("ints contains ({elementFilter:[1]} sameElement(_ >= 2))",
+                     VespaSerializer.serialize(lowerBound));
+
+        SameElementItem upperBound = new SameElementItem("ints");
+        upperBound.setElementFilter(List.of(1));
+        upperBound.addItem(new IntItem(com.yahoo.prelude.query.Limit.NEGATIVE_INFINITY, new com.yahoo.prelude.query.Limit(5, true), ""));
+        assertEquals("ints contains ({elementFilter:[1]} sameElement(_ <= 5))",
+                     VespaSerializer.serialize(upperBound));
+
+        SameElementItem range = new SameElementItem("ints");
+        range.setElementFilter(List.of(1));
+        range.addItem(new IntItem(new com.yahoo.prelude.query.Limit(2, true), new com.yahoo.prelude.query.Limit(5, true), ""));
+        assertEquals("ints contains ({elementFilter:[1]} sameElement(range(_, 2, 5)))",
+                     VespaSerializer.serialize(range));
+
+        // The serialized forms are stable: they parse back to themselves
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(_ >= 2))");
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(_ <= 5))");
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(range(_, 2, 5)))");
+        parseAndConfirm("ints contains ({elementFilter:[1]} sameElement(({bounds: \"leftOpen\"}range(_, 2, 5))))");
+    }
+
+    @Test
+    void testSameElementValuePlaceholder() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // Every syntax which requires a field name uses the "_" placeholder for the value of the element itself
+        parseAndConfirm("field contains sameElement(_ >= 2)");
+        parseAndConfirm("field contains sameElement(range(_, 2, 5))");
+        parseAndConfirm("field contains sameElement(_ = true)");
+        parseAndConfirm("string contains sameElement(range(_, \"a\", \"b\"))");
+        parseAndConfirm("string contains sameElement(_ matches \"f.*\")");
+        parseAndConfirm("field contains sameElement(_ in (1, 2))");
+        parseAndConfirm("string contains sameElement(_ in (\"a\", \"b\"))");
+
+        // Syntaxes which are valid without a field name keep serializing without one
+        parseAndConfirm("field contains sameElement(2)", "field contains sameElement(_ = 2)");
+        parseAndConfirm("string contains sameElement(\"foo\")", "string contains sameElement(_ contains \"foo\")");
+    }
+
+    @Test
     void testAnnotatedAndSegment() {
         AndSegmentItem andSegment = new AndSegmentItem("abc", true, false);
         andSegment.addItem(new WordItem("a", "indexNamePlaceholder"));
