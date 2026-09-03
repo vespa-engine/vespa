@@ -7,6 +7,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.search.Query;
@@ -427,6 +428,27 @@ public class VespaSerializerTestCase {
 
         // A uri() on the element value itself has no subfield name to write
         parseAndConfirm("f contains sameElement(uri(\"http://foo.com\"))");
+    }
+
+    @Test
+    void testRangeAnnotations() {
+        // A leaf annotation without a bounds annotation must not leave a trailing comma in the annotation block
+        IntItem closed = new IntItem(new Limit(2, true), new Limit(5, true), "field");
+        closed.setLabel("foo");
+        assertEquals("({label: \"foo\"}range(field, 2, 5))", VespaSerializer.serialize(closed));
+
+        // That form parses back to an inclusive RangeItem, which has its own (also stable) canonical form
+        parseAndConfirm("{label: \"foo\"}range(field, 2, 5)", "({label: \"foo\"}range(field, 2, 5))");
+        parseAndConfirm("{label: \"foo\"}range(field, 2, 5)");
+
+        // A bounds annotation alone, and both annotations together, separated by a comma
+        IntItem leftOpen = new IntItem(new Limit(2, false), new Limit(5, true), "field");
+        assertEquals("({bounds: \"leftOpen\"}range(field, 2, 5))", VespaSerializer.serialize(leftOpen));
+
+        IntItem both = new IntItem(new Limit(2, false), new Limit(5, true), "field");
+        both.setLabel("foo");
+        assertEquals("({label: \"foo\", bounds: \"leftOpen\"}range(field, 2, 5))", VespaSerializer.serialize(both));
+        parseAndConfirm("({label: \"foo\", bounds: \"leftOpen\"}range(field, 2, 5))");
     }
 
     @Test

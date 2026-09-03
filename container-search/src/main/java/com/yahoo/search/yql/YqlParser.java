@@ -878,7 +878,8 @@ public class YqlParser implements Parser {
 
         @Override
         public String expand(String leaf) {
-            return prefix + leaf;
+            // An unset leaf name is the value of the element itself, which is a value of the field we are prefixing by
+            return leaf.isEmpty() ? field : prefix + leaf;
         }
 
         @Override
@@ -2494,12 +2495,10 @@ public class YqlParser implements Parser {
 
     /**
      * Returns the index of a field name as returned by {@link #getIndex}, where the empty name of the element
-     * value resolves to the field of the enclosing sameElement, as element values have the type of that field.
+     * value expands to the field of the enclosing sameElement, as element values have the type of that field.
      */
     private Index indexOf(String field) {
-        return indexFactsSession.getIndex(field.isEmpty() && indexNameExpander.elementValueField() != null
-                                          ? indexNameExpander.elementValueField()
-                                          : indexNameExpander.expand(field));
+        return indexFactsSession.getIndex(indexNameExpander.expand(field));
     }
 
     private Substring getSubstring(OperatorNode<ExpressionOperator> ast) {

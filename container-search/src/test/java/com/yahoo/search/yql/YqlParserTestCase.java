@@ -2151,4 +2151,23 @@ public class YqlParserTestCase {
                 "Top-level field x is not exact, so should produce WordItem");
     }
 
+    @Test
+    void testElementValueUsesEnclosingFieldSettings() {
+        SearchDefinition sd = new SearchDefinition("default");
+        Index exactArray = new Index("exactArray");
+        exactArray.setExact(true, null);
+        exactArray.setString(true);
+        sd.addIndex(exactArray);
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(new IndexFacts(new IndexModel(sd))));
+
+        // The element value has no subfield name of its own, so it must resolve to the enclosing sameElement field
+        // rather than to a non-existent "exactArray." index, both as a bare literal and through the placeholder
+        for (String query : List.of("select * from sources * where exactArray contains sameElement(\"hello\")",
+                                    "select * from sources * where exactArray contains sameElement(_ contains \"hello\")")) {
+            SameElementItem sameElement = (SameElementItem) parse(query).getRoot();
+            assertInstanceOf(ExactStringItem.class, sameElement.getItem(0),
+                             "exactArray is exact, so its element value should produce ExactStringItem: " + query);
+        }
+    }
+
 }

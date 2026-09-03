@@ -427,7 +427,6 @@ public class VespaSerializer {
             boolean leftOpen = !intItem.getFromLimit().isInclusive();
             boolean rightOpen = !intItem.getToLimit().isInclusive();
             String boundsAnnotation = "";
-            int initLen;
 
             if (leftOpen && rightOpen) {
                 boundsAnnotation = BOUNDS + ": " + "\"" + BOUNDS_OPEN + "\"";
@@ -440,12 +439,10 @@ public class VespaSerializer {
             if (hasLeafAnnotation) {
                 destination.append("({");
             }
-            initLen = destination.length();
-            if (!annotations.isEmpty()) {
-                destination.append(annotations);
-            }
-            comma(destination, initLen);
+            int initLen = destination.length();
+            destination.append(annotations);
             if (!boundsAnnotation.isEmpty()) {
+                comma(destination, initLen); // Only if the leaf annotations above wrote something
                 destination.append(boundsAnnotation);
             }
             if (hasLeafAnnotation) {
