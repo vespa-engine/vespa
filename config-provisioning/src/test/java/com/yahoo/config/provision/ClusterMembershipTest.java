@@ -89,7 +89,7 @@ public class ClusterMembershipTest {
                                          .profile("large-storage")
                                          .build();
         ClusterMembership membership = ClusterMembership.from(cluster, 37);
-        assertEquals("content/id1/0/37", membership.stringValue());
+        assertEquals("content/id1/0/37/stateful", membership.stringValue());
     }
 
     @Test
@@ -131,7 +131,7 @@ public class ClusterMembershipTest {
         assertEquals(0, instance.group());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1/0/37", instance.stringValue());
+        assertEquals("content/id1/0/37/stateful", instance.stringValue());
     }
 
     private void assertContentServiceWithGroup(ClusterMembership instance) {
@@ -140,7 +140,7 @@ public class ClusterMembershipTest {
         assertEquals(4, instance.group());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1/4/37", instance.stringValue());
+        assertEquals("content/id1/4/37/stateful", instance.stringValue());
     }
 
     /** Serializing a spec without a group assigned works, but not deserialization */
@@ -149,7 +149,7 @@ public class ClusterMembershipTest {
         assertEquals("id1", instance.id().value());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1/0/37/retired", instance.stringValue());
+        assertEquals("content/id1/0/37/retired/stateful", instance.stringValue());
         // Legacy form:
         assertEquals(instance, ClusterMembership.from("content/id1/37/retired"));
     }
@@ -160,7 +160,7 @@ public class ClusterMembershipTest {
         assertEquals(4, instance.group());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1/4/37/retired", instance.stringValue());
+        assertEquals("content/id1/4/37/retired/stateful", instance.stringValue());
     }
 
 }
