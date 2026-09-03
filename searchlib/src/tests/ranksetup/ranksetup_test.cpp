@@ -998,12 +998,15 @@ TEST_F(RankSetupTest, sort_features_reject_first_phase_rank_helpers) {
 
 class RecordingIndexEnvironment : public search::fef::test::IndexEnvironment {
 public:
+    ~RecordingIndexEnvironment() override;
     mutable std::vector<IIndexEnvironment::FeatureMotivation> hints;
     FeatureMotivation getFeatureMotivation() const override {
         return hints.empty() ? FeatureMotivation::UNKNOWN : hints.back();
     }
     void hintFeatureMotivation(FeatureMotivation motivation) const override { hints.push_back(motivation); }
 };
+
+RecordingIndexEnvironment::~RecordingIndexEnvironment() = default;
 
 TEST_F(RankSetupTest, sort_features_compile_under_rank_motivation) {
     RecordingIndexEnvironment env;
