@@ -142,7 +142,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
     @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return () -> useTriton; }
-    @Override public OptionalInt metricsProxyHeapSizeInMib() { return metricsProxyHeapSizeInMib; }
     @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> metricsProxyHeapSizeInMib.orElse(0); }
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
