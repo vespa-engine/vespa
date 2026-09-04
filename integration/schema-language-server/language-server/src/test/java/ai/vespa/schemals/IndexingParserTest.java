@@ -23,6 +23,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.NormalizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.PackBitsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToTensorExpression;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 
@@ -71,13 +72,20 @@ public class IndexingParserTest {
             IndexExpression.class}, "input text | chunk fixed-length 1024 | embed | pack_bits | attribute | index");
 
         assertEqualsParsedFlattened(new Class<?>[] {
-                StatementExpression.class,
-                DocumentIdExpression.class,
-                AttributeExpression.class}, "documentid namespace | attribute");
+            StatementExpression.class,
+            InputExpression.class,
+            ToTensorExpression.class,
+            AttributeExpression.class}, "input tensor_array | to_tensor chunk | attribute");
+
         assertEqualsParsedFlattened(new Class<?>[] {
-                StatementExpression.class,
-                DocumentIdExpression.class,
-                AttributeExpression.class}, "documentid | attribute");
+            StatementExpression.class,
+            DocumentIdExpression.class,
+            AttributeExpression.class}, "documentid namespace | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            DocumentIdExpression.class,
+            AttributeExpression.class}, "documentid | attribute");
     }
 
     private static void assertEqualsParsedFlattened(Class<?>[] expectedFlattened, String input) {

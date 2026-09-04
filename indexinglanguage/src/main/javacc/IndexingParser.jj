@@ -104,6 +104,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ToIntegerExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToLongExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToStringExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToTensorExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToUriExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToWsetExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
@@ -312,6 +313,7 @@ TOKEN :
     <TO_POS: "to_pos"> |
     <TO_EPOCH_SECOND: "to_epoch_second"> |
     <TO_STRING: "to_string"> |
+    <TO_TENSOR: "to_tensor"> |
     <TO_URI: "to_uri"> |
     <TO_WSET: "to_wset"> |
     <TRIM: "trim"> |
@@ -466,6 +468,7 @@ Expression value() :
       val = toLongExp()             |
       val = toPosExp()              |
       val = toStringExp()           |
+      val = toTensorExp()           |
       val = toUriExp()              |
       val = toWsetExp()             |
       val = trimExp()               |
@@ -936,6 +939,15 @@ Expression toStringExp() : { }
     { return new ToStringExpression(); }
 }
 
+Expression toTensorExp() :
+{
+    String val;
+}
+{
+    ( <TO_TENSOR> val = identifier() )
+    { return new ToTensorExpression(val); }
+}
+
 Expression toUriExp() : { }
 {
     ( <TO_URI> )
@@ -1078,6 +1090,7 @@ String identifier() :
         <TO_LONG>                |
         <TO_POS>                 |
         <TO_STRING>              |
+        <TO_TENSOR>              |
         <TO_URI>                 |
         <TO_WSET>                |
         <TOKENIZE>               |

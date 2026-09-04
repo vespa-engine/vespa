@@ -53,6 +53,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ToIntegerExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToLongExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToStringExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToTensorExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToWsetExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TrimExpression;
@@ -131,6 +132,7 @@ public class ExpressionTestCase {
         assertExpression(ToLongExpression.class, "to_long");
         assertExpression(ToPositionExpression.class, "to_pos");
         assertExpression(ToStringExpression.class, "to_string");
+        assertExpression(ToTensorExpression.class, "to_tensor chunk");
         assertExpression(ToWsetExpression.class, "to_wset");
         assertExpression(ToBoolExpression.class, "to_bool");
         assertExpression(ToWsetExpression.class, "to_wset create_if_non_existent");
