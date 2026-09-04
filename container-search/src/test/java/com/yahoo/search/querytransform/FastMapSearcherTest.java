@@ -4,8 +4,10 @@ package com.yahoo.search.querytransform;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
@@ -19,6 +21,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for {@link FastMapSearcher}
@@ -86,9 +91,6 @@ public class FastMapSearcherTest {
 
     @Test
     public void requireFallbackWhenTermsDoNotMatchOneEntry() {
-        // A range matches more than one value
-        assertUntouched(sameElement("intvaluemap", new WordItem("foo", "key"), new IntItem("[5;10]", "value")));
-
         // Not parseable as an int for an int-valued map
         assertUntouched(sameElement("intvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
 
@@ -104,6 +106,64 @@ public class FastMapSearcherTest {
         SameElementItem keyOnly = new SameElementItem("mymap");
         keyOnly.addItem(new WordItem("foo", "key"));
         assertUntouched(keyOnly);
+    }
+
+    @Test
+    public void requireIntRangeRewrittenToLexicalRange() {
+        var searcher = new FastMapSearcher();
+
+        // A closed range becomes a closed lexical range over the encoded endpoints.
+        var closed = searcher.makeIntRange("foo", new IntItem("[5;10]", "value"), "intvaluemap");
+        assertEquals("intvaluemap$keyvalue", closed.getIndexName());
+        assertEquals(FastMapSearch.toKeyValue8Term("foo", 5), closed.getFrom());
+        assertEquals(FastMapSearch.toKeyValue8Term("foo", 10), closed.getTo());
+        assertTrue(closed.isFromInclusive());
+        assertTrue(closed.isToInclusive());
+
+        // Exclusive endpoints stay exclusive.
+        var open = searcher.makeIntRange("foo", intRange(new Limit(5, false), new Limit(10, false)), "intvaluemap");
+        assertFalse(open.isFromInclusive());
+        assertFalse(open.isToInclusive());
+
+        // An unbounded end becomes the extreme int value, so that the range cannot run past
+        // this key into the entries of the neighbouring keys.
+        var toInfinity = searcher.makeIntRange("foo", intRange(new Limit(5, true), Limit.POSITIVE_INFINITY), "intvaluemap");
+        assertEquals(FastMapSearch.toKeyValue8Term("foo", 5), toInfinity.getFrom());
+        assertEquals(FastMapSearch.toKeyValue8Term("foo", Integer.MAX_VALUE), toInfinity.getTo());
+        assertTrue(toInfinity.isToInclusive());
+
+        var fromInfinity = searcher.makeIntRange("foo", intRange(Limit.NEGATIVE_INFINITY, new Limit(10, true)), "intvaluemap");
+        assertEquals(FastMapSearch.toKeyValue8Term("foo", Integer.MIN_VALUE), fromInfinity.getFrom());
+        assertEquals(FastMapSearch.toKeyValue8Term("foo", 10), fromInfinity.getTo());
+        assertTrue(fromInfinity.isFromInclusive());
+
+        // Negative endpoints encode across zero and stay ordered.
+        var negative = searcher.makeIntRange("foo", intRange(new Limit(-10, true), new Limit(-5, true)), "intvaluemap");
+        assertTrue(negative.getFrom().compareTo(negative.getTo()) < 0);
+
+        // End to end, through the searcher.
+        String expected = "STRING_RANGE intvaluemap$keyvalue:[\"" + FastMapSearch.toKeyValue8Term("foo", 5) + "\";\""
+                          + FastMapSearch.toKeyValue8Term("foo", 10) + "\"]";
+        assertRewritten(expected, sameElement("intvaluemap", new WordItem("foo", "key"), new IntItem("[5;10]", "value")));
+    }
+
+    @Test
+    public void requireFallbackForRangesWhichAreNotPlainIntRanges() {
+        var searcher = new FastMapSearcher();
+
+        // A fractional endpoint has no exact int encoding.
+        assertNull(searcher.makeIntRange("foo", intRange(new Limit(1.5, true), new Limit(10, true)), "intvaluemap"));
+
+        // A hit limit counts entries in the value attribute, not in the synthetic one.
+        assertNull(searcher.makeIntRange("foo", new IntItem("[5;10;100]", "value"), "intvaluemap"));
+
+        // A range on a string-valued map is not an IntItem, and is left alone.
+        assertUntouched(sameElement("mymap", new WordItem("foo", "key"),
+                                    new StringRangeItem("a", true, "z", true, "value", false, null)));
+    }
+
+    private static IntItem intRange(Limit from, Limit to) {
+        return new IntItem(from, to, "value");
     }
 
     private static void assertRewritten(String expected, SameElementItem sameElement) {
