@@ -12,6 +12,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
+import com.yahoo.config.model.api.AdditionalDocuments;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -96,6 +97,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
     private final Optional<SidecarProvider> sidecarProvider;
+    private final AdditionalDocuments additionalDocuments;
 
     private DeployState(Application application,
                         RankProfileRegistry rankProfileRegistry,
@@ -120,7 +122,8 @@ public class DeployState implements ConfigDefinitionStore {
                         Reindexing reindexing,
                         Optional<ValidationOverrides> validationOverrides,
                         OnnxModelCost onnxModelCost,
-                        Optional<SidecarProvider> sidecarProvider) {
+                        Optional<SidecarProvider> sidecarProvider,
+                        AdditionalDocuments additionalDocuments) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.executor = executor;
@@ -150,6 +153,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.reindexing = reindexing;
         this.onnxModelCost = onnxModelCost;
         this.sidecarProvider = sidecarProvider;
+        this.additionalDocuments = additionalDocuments;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -312,6 +316,9 @@ public class DeployState implements ConfigDefinitionStore {
     /** Returns the sidecar provider to consult when building container clusters, if any. */
     public Optional<SidecarProvider> getSidecarProvider() { return sidecarProvider; }
 
+    /** Returns the document declarations to add to the application's content clusters, on top of its own. */
+    public AdditionalDocuments getAdditionalDocuments() { return additionalDocuments; }
+
     public boolean isHostedTenantApplication(ApplicationType type) {
         boolean isTesterApplication = getProperties().applicationId().instance().isTester();
         return isHosted() && type == ApplicationType.DEFAULT && !isTesterApplication
@@ -348,6 +355,7 @@ public class DeployState implements ConfigDefinitionStore {
         private OnnxModelCost onnxModelCost = OnnxModelCost.disabled();
         private Optional<SidecarProvider> sidecarProvider = Optional.empty();
         private List<NamedReader> additionalSchemas = List.of();
+        private AdditionalDocuments additionalDocuments = AdditionalDocuments.none();
 
         public Builder() {}
 
@@ -477,6 +485,11 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder additionalDocuments(AdditionalDocuments declarations) {
+            this.additionalDocuments = Objects.requireNonNull(declarations, "additional documents cannot be null");
+            return this;
+        }
+
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -512,7 +525,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    reindexing,
                                    validationOverrides,
                                    onnxModelCost,
-                                   sidecarProvider);
+                                   sidecarProvider,
+                                   additionalDocuments);
         }
 
     }
