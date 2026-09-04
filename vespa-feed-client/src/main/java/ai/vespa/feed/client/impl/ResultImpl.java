@@ -18,18 +18,21 @@ public class ResultImpl implements Result {
     private final DocumentId documentId;
     private final String resultMessage;
     private final String traceMessage;
+    private final Boolean wasFound;
 
-    ResultImpl(Type type, DocumentId documentId, String resultMessage, String traceMessage) {
+    ResultImpl(Type type, DocumentId documentId, String resultMessage, String traceMessage, Boolean wasFound) {
         this.type = type;
         this.documentId = documentId;
         this.resultMessage = resultMessage;
         this.traceMessage = traceMessage;
+        this.wasFound = wasFound;
     }
 
     @Override public Type type() { return type; }
     @Override public DocumentId documentId() { return documentId; }
     @Override public Optional<String> resultMessage() { return Optional.ofNullable(resultMessage); }
     @Override public Optional<String> traceMessage() { return Optional.ofNullable(traceMessage); }
+    @Override public Optional<Boolean> wasFound() { return Optional.ofNullable(wasFound); }
 
     @Override
     public String toString() {
@@ -38,6 +41,7 @@ public class ResultImpl implements Result {
                ", documentId=" + documentId +
                ", resultMessage='" + resultMessage + '\'' +
                ", traceMessage='" + traceMessage + '\'' +
+               ", wasFound=" + wasFound +
                '}';
     }
 

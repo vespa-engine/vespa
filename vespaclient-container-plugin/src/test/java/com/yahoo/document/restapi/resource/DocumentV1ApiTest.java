@@ -1173,6 +1173,57 @@ public class DocumentV1ApiTest {
         assertEquals("true", vals.get(0));
     }
 
+    /** Feeds an update against a document which the backing session reports as {@code wasFound}, and returns the response body. */
+    private String updateResponseBodyWithWasFoundReporting(boolean reportWasFound, boolean wasFound, String query) {
+        var handler = new DocumentV1ApiHandler(
+                clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
+                new DocumentOperationExecutorConfig.Builder(executorConfig).reportWasFound(reportWasFound).build(),
+                clusterConfig, bucketConfig);
+        var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal
+        access.session.expect((update, parameters) -> {
+            parameters.responseHandler().get().handleResponse(new UpdateResponse(0, wasFound));
+            return new Result();
+        });
+        var response = driver.sendRequest("http://localhost/document/v1/space/music/docid/sonny" + query, PUT,
+                """
+                {
+                  "fields": {
+                    "artist": { "assign": "The Shivers" }
+                  }
+                }""");
+        assertEquals(200, response.getStatus());
+        return response.readAll();
+    }
+
+    @Test
+    void update_of_missing_document_reports_was_found_when_enabled() {
+        // A partial update against a document which does not exist is a no-op, and the response says so.
+        assertSameJson("""
+                {
+                  "pathId": "/document/v1/space/music/docid/sonny",
+                  "id": "id:space:music::sonny",
+                  "wasFound": false
+                }""", updateResponseBodyWithWasFoundReporting(true, false, ""));
+
+        // ... but not when the document was created as part of the update, since the operation then took effect.
+        assertSameJson("""
+                {
+                  "pathId": "/document/v1/space/music/docid/sonny",
+                  "id": "id:space:music::sonny",
+                  "wasFound": true
+                }""", updateResponseBodyWithWasFoundReporting(true, true, "?create=true"));
+    }
+
+    @Test
+    void update_does_not_report_was_found_unless_enabled() {
+        // The field is gated behind config, since it adds a key to a response schema clients may have hard-coded.
+        assertSameJson("""
+                {
+                  "pathId": "/document/v1/space/music/docid/sonny",
+                  "id": "id:space:music::sonny"
+                }""", updateResponseBodyWithWasFoundReporting(false, false, ""));
+    }
+
     @Test
     void visit_with_application_jsonl_accept_header_returns_json_lines() {
         var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal

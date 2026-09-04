@@ -133,6 +133,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
+        @ModelFeatureFlag(owners = {"vekterli"}) default boolean documentV1ReportWasFound() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

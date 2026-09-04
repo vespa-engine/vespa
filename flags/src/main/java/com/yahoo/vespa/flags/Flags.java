@@ -261,6 +261,16 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundBooleanFlag DOCUMENT_V1_REPORT_WAS_FOUND = defineFeatureFlag(
+            "document-v1-report-was-found", false,
+            List.of("vekterli"), "2026-09-01", "2027-03-01",
+            "Whether the document/v1 API includes a 'wasFound' field in the JSON response to update " +
+            "operations, stating whether the update had an existing document to apply itself to. " +
+            "Gated since it adds a key to a response schema some clients may have hard-coded.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

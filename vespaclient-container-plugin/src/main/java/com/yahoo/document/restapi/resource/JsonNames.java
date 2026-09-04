@@ -26,4 +26,5 @@ class JsonNames {
     static final SerializedString SEVERITY         = new SerializedString("severity");
     static final SerializedString TEXT             = new SerializedString("text");
     static final SerializedString TOKEN            = new SerializedString("token");
+    static final SerializedString WAS_FOUND        = new SerializedString("wasFound");
 }
