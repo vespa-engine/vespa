@@ -50,7 +50,7 @@ size_t StrChrFieldSearcher::shortestTerm() const {
     size_t mintsz(_qtl.front()->termLen());
     for (auto it = _qtl.begin() + 1, mt = _qtl.end(); it != mt; it++) {
         const QueryTerm& qt = **it;
-        if (qt.isRegex() || qt.isFuzzy()) {
+        if (qt.isRegex() || qt.isFuzzy() || qt.is_string_range()) {
             return 0; // Must avoid "too short query term" optimization when using regex or fuzzy
         }
         mintsz = std::min(mintsz, qt.termLen());
