@@ -134,7 +134,7 @@ void FieldSearchSpec::reconfig(const QueryTerm& term) {
     case VsmfieldsConfig::Fieldspec::Searchmethod::SSE2UTF8:
         if ((term.isSubstring() && _arg1 != "substring") || (term.isSuffix() && _arg1 != "suffix") ||
             (term.isExactstring() && _arg1 != "exact") || (term.isPrefix() && _arg1 == "suffix") ||
-            (term.isRegex() || term.isFuzzy()))
+            (term.isRegex() || term.isFuzzy() || term.is_string_range()))
         {
             _searcher = std::make_unique<UTF8FlexibleStringFieldSearcher>(id());
             propagate_settings_to_searcher();

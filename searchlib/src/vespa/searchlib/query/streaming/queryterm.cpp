@@ -96,6 +96,20 @@ QueryTerm::QueryTerm(Type type, string index, std::unique_ptr<StringRangeSpec> s
       _fieldInfo() {
 }
 
+QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, string index, Type type,
+                     std::unique_ptr<StringRangeSpec> range_spec)
+    : QueryTermUCS4(type, std::move(range_spec)),
+      _hitList(),
+      _index(std::move(index)),
+      _result(org.release()),
+      _encoding(0x01),
+      _isRanked(true),
+      _filter(false),
+      _weight(100),
+      _uniqueId(0),
+      _fieldInfo() {
+}
+
 QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, string_view termS, string indexS, Type type,
                      Normalizing normalizing)
     : QueryTermUCS4(QueryNormalization::optional_fold(termS, type, normalizing), type),

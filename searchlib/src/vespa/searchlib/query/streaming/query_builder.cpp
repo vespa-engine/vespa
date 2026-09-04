@@ -160,7 +160,8 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
     case ParseItem::ITEM_SUFFIXTERM:
     case ParseItem::ITEM_PURE_WEIGHTED_STRING:
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-    case ParseItem::ITEM_FUZZY: {
+    case ParseItem::ITEM_FUZZY:
+    case ParseItem::ITEM_STRING_RANGE_TERM: {
         std::string index(queryRep.index_as_view());
         if (index.empty() &&
             ((type == ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == ParseItem::ITEM_PURE_WEIGHTED_LONG)) &&
@@ -195,6 +196,9 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
                                                  normalize_mode, queryRep.fuzzy_max_edit_distance(),
                                                  queryRep.fuzzy_prefix_lock_length(),
                                                  queryRep.has_prefix_match_semantics());
+            } else if (sTerm == TermType::STRING_RANGE) {
+                qt = std::make_unique<QueryTerm>(factory.create(), ssIndex, TermType::STRING_RANGE,
+                                                 queryRep.get_string_range_spec());
             } else [[likely]] {
                 qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm, normalize_mode);
             }
@@ -262,10 +266,6 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
         break;
     case ParseItem::ITEM_SAME_ELEMENT:
         qn = build_same_element_term(factory, queryRep);
-        break;
-    case ParseItem::ITEM_STRING_RANGE_TERM:
-        // Lexical ranges are only implemented for attribute vectors, i.e. for indexed search.
-        vespalib::Issue::report("string range terms are not supported in streaming search");
         break;
     default:
         skip_unknown(queryRep);

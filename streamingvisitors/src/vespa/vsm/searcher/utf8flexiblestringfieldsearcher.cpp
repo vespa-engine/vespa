@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "utf8flexiblestringfieldsearcher.h"
 
+#include "vespa/searchlib/attribute/string_range_search_helper.h"
+
 #include <vespa/searchlib/query/streaming/fuzzy_term.h>
 #include <vespa/searchlib/query/streaming/regexp_term.h>
 
@@ -48,6 +50,18 @@ size_t UTF8FlexibleStringFieldSearcher::match_fuzzy(const FieldRef& f, search::s
     return 1;
 }
 
+size_t UTF8FlexibleStringFieldSearcher::match_string_range(const FieldRef& f, search::streaming::QueryTerm& qt) {
+    search::attribute::StringRangeSearchHelper helper(qt.get_string_range_spec(),
+                                                      normalize_mode() == Normalizing::NONE);
+    // StringRangeSearchHelper takes a null-terminated string
+    // TODO Avoid having to copy the string
+    std::string copy({f.data(), f.size()});
+    if (helper.is_valid() && helper.is_match(copy.c_str())) {
+        addHit(qt, 0);
+    }
+    return 1;
+}
+
 size_t UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef& f, QueryTerm& qt) {
     if (qt.isPrefix()) {
         LOG(debug, "Use prefix match for prefix term '%s:%s'", qt.index().c_str(), qt.getTerm());
@@ -67,6 +81,9 @@ size_t UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef& f, QueryTerm& 
     } else if (qt.isFuzzy()) {
         LOG(debug, "Use fuzzy match for term '%s:%s'", qt.index().c_str(), qt.getTerm());
         return match_fuzzy(f, qt);
+    } else if (qt.is_string_range()) {
+        LOG(debug, "Use string-range match for term '%s:%s'", qt.index().c_str(), qt.getTerm());
+        return match_string_range(f, qt);
     } else {
         if (substring()) {
             LOG(debug, "Use substring match for term '%s:%s'", qt.index().c_str(), qt.getTerm());
