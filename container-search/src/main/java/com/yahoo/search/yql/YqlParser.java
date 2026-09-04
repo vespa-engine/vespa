@@ -383,6 +383,7 @@ public class YqlParser implements Parser {
             annotationStack.addFirst(ast);
             ast = rewriteIndexedAccess(ast);
             ast = rewriteMapAccess(ast);
+            ast = rewriteMapRange(ast);
             return switch (ast.getOperator()) {
                 case AND -> buildAnd(ast, currentField);
                 case OR -> buildOr(ast, currentField);
@@ -488,6 +489,49 @@ public class YqlParser implements Parser {
                 ExpressionOperator.CALL,
                 List.of(SAME_ELEMENT),
                 List.of(keyMatch, valueMatch));
+
+        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
+    }
+
+    /**
+     * Recognizes and rewrites from:
+     *      range(field{'key'}, lower, upper)
+     * to:
+     *      field contains sameElement(key contains 'key', range(value, lower, upper))
+     * where a numeric key becomes an equality match (key = 'key') instead of a contains
+     * match, as for the other map access sugar.
+     * <p>
+     * Expected input: CALL( [range], [ MAPREF ( field_name, key ), lower, upper ] )
+     */
+    private OperatorNode<ExpressionOperator> rewriteMapRange(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() != ExpressionOperator.CALL) {
+            return ast;
+        }
+        List<String> names = ast.getArgument(0);
+        if (names.size() != 1 || !RANGE.equals(names.get(0))) {
+            return ast;
+        }
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        if (args.isEmpty() || args.get(0).getOperator() != ExpressionOperator.MAPREF) {
+            return ast;
+        }
+        Preconditions.checkArgument(args.size() == 3, "Expected 3 arguments, got %s.", args.size());
+
+        OperatorNode<ExpressionOperator> mapRef = args.get(0);
+        OperatorNode<ExpressionOperator> field = mapRef.getArgument(0);
+        OperatorNode<ExpressionOperator> key = mapRef.getArgument(1);
+        if (key.getOperator() != ExpressionOperator.LITERAL && !isNumberLiteral(key)) {
+            throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
+        }
+
+        var valueField = OperatorNode.create(mapRef.getLocation(), ExpressionOperator.READ_FIELD, "", "value");
+        var valueRange = OperatorNode.create(ast.getLocation(), ExpressionOperator.CALL,
+                                             List.of(RANGE),
+                                             List.of(valueField, args.get(1), args.get(2)));
+        OperatorNode<ExpressionOperator> sameElement =
+                OperatorNode.create(ast.getLocation(), ExpressionOperator.CALL,
+                                    List.of(SAME_ELEMENT),
+                                    List.of(makeMapComponentMatch("key", key), valueRange));
 
         return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
     }

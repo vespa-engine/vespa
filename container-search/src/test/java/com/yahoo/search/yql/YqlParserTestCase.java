@@ -706,6 +706,53 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testMapRangeRewritesToSameElement() {
+        // range(my_map{'foo'}, 40, 50) should rewrite to
+        // my_map contains sameElement(key contains 'foo', range(value, 40, 50))
+        assertParse("select * from sources * where range(my_map{'foo'}, 40, 50)",
+                    "my_map:{key:foo value:[40;50]}");
+
+        SameElementItem se = (SameElementItem) parse("select * from sources * where range(my_map{'foo'}, 40, 50)").getRoot();
+        assertEquals("my_map", se.getFieldName());
+        assertEquals(2, se.getItemCount());
+        WordItem key = assertInstanceOf(WordItem.class, se.getItem(0));
+        assertEquals("foo", key.getWord());
+        assertEquals("key", key.getIndexName());
+        IntItem value = assertInstanceOf(IntItem.class, se.getItem(1));
+        assertEquals("value", value.getIndexName());
+
+        // The bounds annotation applies to the rewritten range.
+        assertParse("select * from sources * where ({bounds:\"open\"}range(my_map{'foo'}, 40, 50))",
+                    "my_map:{key:foo value:<40;50>}");
+        assertParse("select * from sources * where ({bounds:\"leftOpen\"}range(my_map{'foo'}, 40, 50))",
+                    "my_map:{key:foo value:<40;50]}");
+        assertParse("select * from sources * where ({bounds:\"rightOpen\"}range(my_map{'foo'}, 40, 50))",
+                    "my_map:{key:foo value:[40;50>}");
+
+        // Unbounded ends are kept as infinities.
+        assertParse("select * from sources * where range(my_map{'foo'}, 40, Infinity)",
+                    "my_map:{key:foo value:[40;]}");
+        assertParse("select * from sources * where range(my_map{'foo'}, -Infinity, 50)",
+                    "my_map:{key:foo value:[;50]}");
+
+        // Numeric keys become numeric equality terms, as for the other map access sugar.
+        assertParse("select * from sources * where range(my_map{1}, 40, 50)",
+                    "my_map:{key:1 value:[40;50]}");
+        assertInstanceOf(IntItem.class,
+                         ((SameElementItem) parse("select * from sources * where range(my_map{1}, 40, 50)").getRoot()).getItem(0));
+
+        // The rewritten tree serializes and re-parses to the same tree.
+        assertCanonicalParse("select * from sources * where range(my_map{'foo'}, 40, 50)",
+                             "my_map:{key:foo value:[40;50]}");
+    }
+
+    @Test
+    void testMapRangeRequiresLiteralKey() {
+        assertParseFail("select * from sources * where range(my_map{key_field}, 40, 50)",
+                        new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));
+    }
+
+    @Test
     void testMapAccessRequiresLiteralKey() {
         assertParseFail("select * from sources * where my_map{key_field} contains 'bar'",
                         new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));

@@ -7,8 +7,10 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
@@ -67,7 +69,7 @@ public class FastMapSearcher extends Searcher {
             if (item instanceof SameElementItem sameElementItem) {
                 Field.MapFieldType mapType = fastMapSearchType(sameElementItem.getFieldName(), session);
                 if (mapType != null) {
-                    WordItem rewritten = tryMakeFastMapItem(sameElementItem, mapType);
+                    TermItem rewritten = tryMakeFastMapItem(sameElementItem, mapType);
                     if (rewritten != null) {
                         hasRewritten = true;
                         return rewritten;
@@ -93,9 +95,10 @@ public class FastMapSearcher extends Searcher {
 
     /**
      * Returns the single fast map lookup term equivalent to the given sameElement,
-     * or null if the sameElement cannot be expressed as one.
+     * or null if the sameElement cannot be expressed as one. A single value becomes a
+     * word lookup, a range becomes a lexical range, both on the synthetic attribute.
      */
-    private WordItem tryMakeFastMapItem(SameElementItem sameElementItem, Field.MapFieldType mapType) {
+    private TermItem tryMakeFastMapItem(SameElementItem sameElementItem, Field.MapFieldType mapType) {
         if (!sameElementItem.getElementFilter().isEmpty()) {
             return null; // element filter used for arrays.
         }
@@ -131,11 +134,14 @@ public class FastMapSearcher extends Searcher {
 
         if (mapType.valueType().kind() == Field.Type.Kind.INT) {
             var key = getString(keyItem);
-            var value = getInteger(valueItem);
-            if (key == null || value == null) {
+            if (key == null) {
                 return null;
             }
-            return makeWord(key, value, fieldName);
+            var value = getInteger(valueItem);
+            if (value != null) {
+                return makeWord(key, value, fieldName);
+            }
+            return makeIntRange(key, valueItem, fieldName);
         }
 
         return null;
@@ -173,7 +179,7 @@ public class FastMapSearcher extends Searcher {
        try {
            return Integer.parseInt(number.trim());
        } catch (NumberFormatException e) {
-           return null; // a range expression, or not an int: fall back to regular sameElement
+           return null; // a range expression, or not an int: the caller tries the range form
        }
     }
 
@@ -181,6 +187,44 @@ public class FastMapSearcher extends Searcher {
     WordItem makeWord(String key, String value, String fieldName) {
         return new WordItem(FastMapSearch.toKeyValueTerm(key, value),
                             FastMapSearch.toKeyValueFieldName(fieldName), false);
+    }
+
+    /**
+     * Returns the lexical range over the synthetic attribute equivalent to the given numeric
+     * range on the value of one map key, or null if it cannot be expressed as one.
+     */
+    StringRangeItem makeIntRange(String key, TermItem valueItem, String fieldName) {
+        if (!(valueItem instanceof IntItem intItem)) {
+            return null;
+        }
+        if (intItem.getHitLimit() != 0) {
+            return null; // a hit limit counts entries in the value attribute, not the synthetic one
+        }
+        Limit fromLimit = intItem.getFromLimit();
+        Limit toLimit = intItem.getToLimit();
+        Integer from = toIntBound(fromLimit, Integer.MIN_VALUE);
+        Integer to = toIntBound(toLimit, Integer.MAX_VALUE);
+        if (from == null || to == null) {
+            return null;
+        }
+        return new StringRangeItem(FastMapSearch.toKeyValue8Term(key, from), fromLimit.isInclusive(),
+                                   FastMapSearch.toKeyValue8Term(key, to), toLimit.isInclusive(),
+                                   FastMapSearch.toKeyValueFieldName(fieldName), false, null);
+    }
+
+    /**
+     * Returns the int to encode for the given range endpoint, using the given value when the
+     * endpoint is unbounded, or null if the endpoint has no exact int form.
+     */
+    private static Integer toIntBound(Limit limit, int whenInfinite) {
+        if (limit.isInfinite()) {
+            return whenInfinite;
+        }
+        double value = limit.number().doubleValue();
+        if (value != Math.rint(value) || value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+            return null; // not an int endpoint: fall back to the regular sameElement
+        }
+        return (int) value;
     }
 
     /** Package-private for unit testing. */
