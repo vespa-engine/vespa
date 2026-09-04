@@ -220,11 +220,12 @@ public class FastMapSearcher extends Searcher {
         if (limit.isInfinite()) {
             return whenInfinite;
         }
-        double value = limit.number().doubleValue();
-        if (value != Math.rint(value) || value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+        int asInt = limit.number().intValue();
+        double asDouble = limit.number().doubleValue();
+        if (asDouble != (double)asInt)) {
             return null; // not an int endpoint: fall back to the regular sameElement
         }
-        return (int) value;
+        return asInt;
     }
 
     /** Package-private for unit testing. */
