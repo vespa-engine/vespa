@@ -113,6 +113,35 @@ std::tuple<uint8_t, uint32_t, bool, std::string_view> parse_fuzzy_params(std::st
     return {max_edits, prefix_length, prefix_match, term.substr(1)};
 }
 
+// "Parse" StringRangeSpec from string, only for testing
+// Format: left;closed;unbounded;right;closed;unbounded
+// Example: foo;true,false;bar;true;false
+// Assumption: Input is well-formed and neither left nor right contain a semicolon
+std::unique_ptr<search::StringRangeSpec> parse_string_range_params(std::string_view term) {
+    std::unique_ptr<search::StringRangeSpec> spec = std::make_unique<search::StringRangeSpec>();
+    std::string                              s(term);
+
+    spec->left = s.substr(0, s.find(';'));
+    s.erase(0, s.find(';') + 1);
+
+    spec->left_closed = (s.substr(0, s.find(';')) == "true");
+    s.erase(0, s.find(';') + 1);
+
+    spec->left_unbounded = (s.substr(0, s.find(';')) == "true");
+    s.erase(0, s.find(';') + 1);
+
+    spec->right = s.substr(0, s.find(';'));
+    s.erase(0, s.find(';') + 1);
+
+    spec->right_closed = (s.substr(0, s.find(';')) == "true");
+    s.erase(0, s.find(';') + 1);
+
+    spec->right_unbounded = (s.substr(0, s.find(';')) == "true");
+    s.erase(0, s.find(';') + 1);
+
+    return spec;
+}
+
 } // namespace
 
 class Query {
@@ -130,6 +159,9 @@ private:
                 qtv.push_back(std::make_unique<FuzzyTerm>(
                     eqnr.create(), std::string_view(actual_term.data(), actual_term.size()), effective_index,
                     TermType::FUZZYTERM, normalizing, max_edits, prefix_lock_length, prefix_match));
+            } else if (pt.second == TermType::STRING_RANGE) {
+                qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), effective_index, TermType::STRING_RANGE,
+                                                          parse_string_range_params(pt.first)));
             } else {
                 qtv.push_back(
                     std::make_unique<QueryTerm>(eqnr.create(), pt.first, effective_index, pt.second, normalizing));
@@ -168,6 +200,8 @@ public:
             return std::make_pair(term.substr(1), TermType::REGEXP);
         } else if (term[0] == '%') { // equally magic fuzzy enabler
             return std::make_pair(term.substr(1), TermType::FUZZYTERM);
+        } else if (term[0] == '~') { // equally magic string range
+            return std::make_pair(term.substr(1), TermType::STRING_RANGE);
         } else if (term[term.size() - 1] == '*') {
             return std::make_pair(term.substr(0, term.size() - 1), TermType::PREFIXTERM);
         } else {
@@ -857,6 +891,96 @@ TEST(SearcherTest, utf8_flexible_searcher_supports_fuzzy_prefix_matching_combine
     EXPECT_EQ(is_hit, search_string(fs, "%{p1,4}zoidber", "zoidburger"));
     EXPECT_EQ(no_hits, search_string(fs, "%{p1,4}zoidber", "zoidbananas"));
     EXPECT_EQ(is_hit, search_string(fs, "%{p2,4}zoidber", "zoidbananas"));
+}
+
+namespace {
+
+void verify_ranges(UTF8FlexibleStringFieldSearcher& fs) {
+    // Note: the ~ term prefix is a magic term-as-regex symbol used only for tests in this file
+    std::string closed_range("~09;true;false;0B;true;false");
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "08"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range, "09"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range, "0A"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range, "0B"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "0C"));
+
+    std::string left_open_range("~09;false;false;0B;true;false");
+    EXPECT_EQ(no_hits, search_string(fs, left_open_range, "08"));
+    EXPECT_EQ(no_hits, search_string(fs, left_open_range, "09"));
+    EXPECT_EQ(is_hit, search_string(fs, left_open_range, "0A"));
+    EXPECT_EQ(is_hit, search_string(fs, left_open_range, "0B"));
+    EXPECT_EQ(no_hits, search_string(fs, left_open_range, "0C"));
+
+    std::string right_open_range("~09;true;false;0B;false;false");
+    EXPECT_EQ(no_hits, search_string(fs, right_open_range, "08"));
+    EXPECT_EQ(is_hit, search_string(fs, right_open_range, "09"));
+    EXPECT_EQ(is_hit, search_string(fs, right_open_range, "0A"));
+    EXPECT_EQ(no_hits, search_string(fs, right_open_range, "0B"));
+    EXPECT_EQ(no_hits, search_string(fs, right_open_range, "0C"));
+
+    std::string open_range("~09;false;false;0B;false;false");
+    EXPECT_EQ(no_hits, search_string(fs, open_range, "08"));
+    EXPECT_EQ(no_hits, search_string(fs, open_range, "09"));
+    EXPECT_EQ(is_hit, search_string(fs, open_range, "0A"));
+    EXPECT_EQ(no_hits, search_string(fs, open_range, "0B"));
+    EXPECT_EQ(no_hits, search_string(fs, open_range, "0C"));
+
+    std::string left_unbounded_range("~;false;true;0B;true;false");
+    EXPECT_EQ(is_hit, search_string(fs, left_unbounded_range, "08"));
+    EXPECT_EQ(is_hit, search_string(fs, left_unbounded_range, "09"));
+    EXPECT_EQ(is_hit, search_string(fs, left_unbounded_range, "0A"));
+    EXPECT_EQ(is_hit, search_string(fs, left_unbounded_range, "0B"));
+    EXPECT_EQ(no_hits, search_string(fs, left_unbounded_range, "0C"));
+
+    std::string right_unbounded_range("~09;true;false;;false;true");
+    EXPECT_EQ(no_hits, search_string(fs, right_unbounded_range, "08"));
+    EXPECT_EQ(is_hit, search_string(fs, right_unbounded_range, "09"));
+    EXPECT_EQ(is_hit, search_string(fs, right_unbounded_range, "0A"));
+    EXPECT_EQ(is_hit, search_string(fs, right_unbounded_range, "0B"));
+    EXPECT_EQ(is_hit, search_string(fs, right_unbounded_range, "0C"));
+}
+
+} // namespace
+
+TEST(SearcherTest, utf8_flexible_searcher_handles_string_ranges_and_by_default_is_case_insensitive) {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    verify_ranges(fs);
+
+    // Verify that matching is case insensitive
+    std::string closed_range("~0B;true;false;0D;true;false");
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "0a"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range, "0b"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range, "0c"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range, "0d"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "0e"));
+
+    std::string closed_range_lowercase("~0b;true;false;0d;true;false");
+    EXPECT_EQ(no_hits, search_string(fs, closed_range_lowercase, "0A"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range_lowercase, "0B"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range_lowercase, "0C"));
+    EXPECT_EQ(is_hit, search_string(fs, closed_range_lowercase, "0D"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range_lowercase, "0E"));
+}
+
+TEST(SearcherTest, utf8_flexible_searcher_handles_case_sensitive_string_range_matching) {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    fs.normalize_mode(Normalizing::NONE);
+    verify_ranges(fs);
+
+    // Verify that matching is case sensitive
+    std::string closed_range("~0B;true;false;0D;true;false");
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "0a"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "0b"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "0c"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "0d"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range, "0e"));
+
+    std::string closed_range_lowercase("~0b;true;false;0d;true;false");
+    EXPECT_EQ(no_hits, search_string(fs, closed_range_lowercase, "0A"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range_lowercase, "0B"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range_lowercase, "0C"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range_lowercase, "0D"));
+    EXPECT_EQ(no_hits, search_string(fs, closed_range_lowercase, "0E"));
 }
 
 TEST(SearcherTest, bool_search) {
