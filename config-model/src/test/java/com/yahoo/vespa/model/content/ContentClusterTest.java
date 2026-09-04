@@ -3,6 +3,9 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.AdditionalDocuments;
+import com.yahoo.config.model.api.AdditionalDocuments.DocumentTypeDeclaration;
+import com.yahoo.config.model.api.AdditionalDocuments.Mode;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
@@ -22,8 +25,10 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
+import com.yahoo.io.reader.NamedReader;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.metrics.MetricsmanagerConfig;
+import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
@@ -53,6 +58,7 @@ import org.junit.jupiter.api.Test;
 import static com.yahoo.vespa.model.utils.ResourceUtils.GiB;
 import static com.yahoo.vespa.model.utils.ResourceUtils.GB;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -1970,6 +1976,76 @@ public class ContentClusterTest extends ContentBaseTest {
                 "    </engine>" +
                 "  </content>" +
                 " </services>", minGroupUpRatio, groupCount);
+    }
+
+    @Test
+    void additionalDocumentsAreDeclaredWithTheirModeAndDistribution() {
+        VespaModel model = modelWithAdditionalDocuments("<document type='product' mode='index'/>",
+                                                        additional(new DocumentTypeDeclaration("extra", Mode.STORE_ONLY, false),
+                                                                   new DocumentTypeDeclaration("other", Mode.INDEX, true)),
+                                                        "extra", "other");
+        ContentCluster content = model.getContentClusters().get("content");
+        assertEquals(Set.of("product", "extra", "other"), content.getDocumentDefinitions().keySet());
+        assertEquals(SchemaInfo.IndexMode.STORE_ONLY, indexModeOf(content, "extra"));
+        assertFalse(content.isGloballyDistributed(content.getDocumentDefinitions().get("extra")));
+        assertEquals(SchemaInfo.IndexMode.INDEX, indexModeOf(content, "other"));
+        assertTrue(content.isGloballyDistributed(content.getDocumentDefinitions().get("other")));
+    }
+
+    @Test
+    void theApplicationsOwnDeclarationOfAnAdditionalDocumentTypeWins() {
+        VespaModel model = modelWithAdditionalDocuments("<document type='extra' mode='index' global='true'/>",
+                                                        additional(new DocumentTypeDeclaration("extra", Mode.STREAMING, false)),
+                                                        "extra");
+        ContentCluster content = model.getContentClusters().get("content");
+        assertEquals(Set.of("extra"), content.getDocumentDefinitions().keySet());
+        assertEquals(SchemaInfo.IndexMode.INDEX, indexModeOf(content, "extra"));
+        assertTrue(content.isGloballyDistributed(content.getDocumentDefinitions().get("extra")));
+    }
+
+    @Test
+    void anAdditionalDocumentWithoutItsSchemaFailsNamingTheCause() {
+        Throwable thrown = assertThrows(IllegalArgumentException.class,
+                                        () -> modelWithAdditionalDocuments("<document type='product' mode='index'/>",
+                                                                           additional(new DocumentTypeDeclaration("extra", Mode.INDEX, true))));
+        assertEquals("Additional document declaration 'extra' has no schema: additional documents and additional " +
+                     "schemas must come from the same provider and match",
+                     Exceptions.toMessageString(thrown));
+    }
+
+    private static SchemaInfo.IndexMode indexModeOf(ContentCluster content, String schema) {
+        return content.getSearch().getSearchCluster().schemas().get(schema).getIndexMode();
+    }
+
+    private static AdditionalDocuments additional(DocumentTypeDeclaration... declarations) {
+        return new AdditionalDocuments(List.of(declarations));
+    }
+
+    private static VespaModel modelWithAdditionalDocuments(String documentsXml, AdditionalDocuments additional, String... additionalSchemas) {
+        String hosts = "<hosts><host name='mockhost'><alias>node1</alias></host></hosts>";
+        String services = "<services version='1.0'>" +
+                          "  <container id='default' version='1.0'>" +
+                          "    <search/>" +
+                          "    <document-api/>" +
+                          "    <nodes><node hostalias='node1'/></nodes>" +
+                          "  </container>" +
+                          "  <content id='content' version='1.0'>" +
+                          "    <redundancy>1</redundancy>" +
+                          "    <documents>" + documentsXml + "</documents>" +
+                          "    <nodes><node hostalias='node1' distribution-key='0'/></nodes>" +
+                          "  </content>" +
+                          "</services>";
+        List<NamedReader> schemas = new ArrayList<>();
+        for (String name : additionalSchemas)
+            schemas.add(new NamedReader(name + ".sd", new StringReader(schema(name))));
+        return new VespaModelCreatorWithMockPkg(hosts, services, List.of(schema("product")))
+                .create(new DeployState.Builder().properties(new TestProperties())
+                                                 .additionalSchemas(schemas)
+                                                 .additionalDocuments(additional));
+    }
+
+    private static String schema(String name) {
+        return "schema " + name + " { document " + name + " { field f type string { indexing: summary } } }";
     }
 
 }

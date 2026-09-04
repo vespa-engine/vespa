@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.content.cluster;
 import com.google.common.base.Preconditions;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.api.AdditionalDocuments;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -11,8 +12,10 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.documentmodel.DocumentTypeRepo;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.metrics.MetricsmanagerConfig;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
@@ -52,6 +55,7 @@ import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.Tuning;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -116,8 +120,10 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         }
 
         public ContentCluster build(ConfigModelContext context, Element w3cContentElement) {
-            ModelElement contentElement = new ModelElement(w3cContentElement);
             DeployState deployState = context.getDeployState();
+            addAdditionalDocuments(w3cContentElement, deployState.getAdditionalDocuments(),
+                                   deployState.getDocumentModel().getDocumentManager());
+            ModelElement contentElement = new ModelElement(w3cContentElement);
             ModelElement documentsElement = contentElement.child("documents");
             Map<String, NewDocumentType> documentDefinitions =
                     new SearchDefinitionBuilder().build(deployState.getDocumentModel().getDocumentManager(), documentsElement);
@@ -223,6 +229,39 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 index.setTuning(new Tuning(index));
             index.getTuning().dispatch = DomTuningDispatchBuilder.build(element, logger);
             index.setCoveragePolicy(CoveragePolicy.from(element.childAsString("coverage-policy")).policy());
+        }
+
+        /**
+         * Appends {@link AdditionalDocuments} as {@code <document>} elements to this cluster's {@code <documents>}
+         * before parsing, so they are read exactly like the application's own. Append only: types the application
+         * declares itself are skipped. Only this build's parsed tree is touched. Supplied by a provider in
+         * {@link com.yahoo.vespa.model.VespaModelFactory}, with matching schemas through
+         * {@link DeployState.Builder#additionalSchemas}; a type without its schema fails here by name.
+         */
+        private static void addAdditionalDocuments(Element contentElement, AdditionalDocuments additional, DocumentTypeRepo documentTypes) {
+            if (additional.isEmpty()) return;
+
+            Element documents = XML.getChild(contentElement, "documents");
+            if (documents == null)
+                throw new IllegalArgumentException("Additional document declarations need a <documents> element in <content>");
+
+            Set<String> declared = new HashSet<>();
+            for (Element document : XML.getChildren(documents, "document"))
+                declared.add(document.getAttribute("type"));
+            Document dom = contentElement.getOwnerDocument();
+            for (var declaration : additional.documents()) {
+                if (documentTypes.getDocumentType(declaration.type()) == null)
+                    throw new IllegalArgumentException("Additional document declaration '" + declaration.type() + "' has no " +
+                                                       "schema: additional documents and additional schemas must come from the " +
+                                                       "same provider and match");
+                if (declared.contains(declaration.type())) continue; // the application's own declaration wins
+                Element document = dom.createElement("document");
+                document.setAttribute("type", declaration.type());
+                document.setAttribute("mode", declaration.mode().xmlValue());
+                if (declaration.global())
+                    document.setAttribute("global", "true");
+                documents.appendChild(document);
+            }
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {
