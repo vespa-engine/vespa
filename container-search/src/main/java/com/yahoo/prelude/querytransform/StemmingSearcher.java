@@ -329,7 +329,7 @@ public class StemmingSearcher extends Searcher {
             var original = stems.getOrigin();
             if (index.getStemMode() != StemMode.ALL_STEMS)
                 terms.add(new Alternative(original.orElse(current.stringValue()), 1.0d));
-            stems.forEach(stem ->  terms.add(new Alternative(stem, 0.7d)));
+            stems.forEach(stem ->  terms.add(new Alternative(stem, stemExactness(stem, original))));
             WordAlternativesItem alternatives = new WordAlternativesItem(indexName, current.isFromQuery(), origin, terms);
             if (alternatives.getAlternatives().size() > 1) {
                 return alternatives;
@@ -339,6 +339,11 @@ public class StemmingSearcher extends Searcher {
         if (stems.get(0).isEmpty())
             return (TaggableItem)current;
         return singleStemSegment((Item)current, stems.get(0), indexName, origin);
+    }
+
+    private double stemExactness(String stem, Optional<String> original) {
+        if (original.isPresent() && original.get().equals(stem)) return 1.0;
+        return 0.7;
     }
 
     private Item maybeDropTerm(BlockItem current, StemContext context) {
