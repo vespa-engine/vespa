@@ -838,6 +838,7 @@
     "fields" : [
       "public static final enum com.yahoo.language.process.StemMode NONE",
       "public static final enum com.yahoo.language.process.StemMode DEFAULT",
+      "public static final enum com.yahoo.language.process.StemMode ALL_STEMS",
       "public static final enum com.yahoo.language.process.StemMode ALL",
       "public static final enum com.yahoo.language.process.StemMode SHORTEST",
       "public static final enum com.yahoo.language.process.StemMode BEST"

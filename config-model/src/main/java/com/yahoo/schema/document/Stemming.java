@@ -15,13 +15,16 @@ public enum Stemming {
      /** No stemming */
     NONE("none"),
 
-    /** select shortest possible stem */
+    /** Select shortest possible stem */
     SHORTEST("shortest"),
 
-    /** select the "best" stem alternative */
+    /** Select the "best" stem alternative */
     BEST("best"),
 
-    /** index multiple stems */
+    /** Index all stems, not the original */
+    ALL_STEMS("all-stems"),
+
+    /** Index all stems and the original */
     MULTIPLE("multiple");
 
     private final String name;
@@ -33,11 +36,14 @@ public enum Stemming {
      * @throws IllegalArgumentException if there is no stemming type with the given name
      */
     public static Stemming get(String stemmingName) {
-        try {
-            return Stemming.valueOf(stemmingName.toUpperCase(java.util.Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("'" + stemmingName + "' is not a valid stemming setting");
-        }
+        return switch (stemmingName) {
+            case "none" -> Stemming.NONE;
+            case "shortest" -> Stemming.SHORTEST;
+            case "best" -> Stemming.BEST;
+            case "all-stems" -> Stemming.ALL_STEMS;
+            case "multiple" -> Stemming.MULTIPLE;
+            default -> throw new IllegalArgumentException("'" + stemmingName + "' is not a valid stemming setting");
+        };
     }
 
     Stemming(String name) {
@@ -52,13 +58,13 @@ public enum Stemming {
     }
 
     public StemMode toStemMode() {
-        switch(this) {
-            case SHORTEST: return StemMode.SHORTEST;
-            case MULTIPLE: return StemMode.ALL;
-            case BEST : return StemMode.BEST;
-            case NONE: return StemMode.NONE;
-            default: throw new IllegalStateException("Inconvertible stem mode " + this);
-        }
+        return switch (this) {
+            case NONE -> StemMode.NONE;
+            case SHORTEST -> StemMode.SHORTEST;
+            case BEST -> StemMode.BEST;
+            case ALL_STEMS -> StemMode.ALL_STEMS;
+            case MULTIPLE -> StemMode.ALL;
+        };
     }
 
 }
