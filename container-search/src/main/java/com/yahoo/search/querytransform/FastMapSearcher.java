@@ -222,7 +222,7 @@ public class FastMapSearcher extends Searcher {
         }
         int asInt = limit.number().intValue();
         double asDouble = limit.number().doubleValue();
-        if (asDouble != (double)asInt)) {
+        if (asDouble != (double)asInt) {
             return null; // not an int endpoint: fall back to the regular sameElement
         }
         return asInt;
