@@ -77,6 +77,23 @@ public class Content extends ConfigModel {
      */
     public Optional<ApplicationContainerCluster> ownedIndexingCluster() { return ownedIndexingCluster; }
 
+    /** The chain a name refers to, if it exists and is either the built-in indexing
+     *  chain or a chain inheriting it and not named 'default'. */
+    private static DocprocChain resolveIndexingChain(ContentCluster cluster, ComponentRegistry<DocprocChain> allChains,
+                                                     String chainName) {
+        DocprocChain indexingChain = allChains.getComponent(chainName);
+        if (indexingChain == null)
+            throw new IllegalArgumentException(cluster + " refers to docproc chain '" + chainName +
+                                               "' for indexing, but this chain does not exist");
+        if (IndexingDocprocChain.NAME.equals(chainName)) return indexingChain; // the root: inherits nothing
+        if (indexingChain.getId().getName().equals("default"))
+            throw new IllegalArgumentException(cluster + " specifies the chain 'default' as indexing chain. " +
+                                               "As the 'default' chain is run by default, using it as the indexing chain " +
+                                               "will run it twice. Use a different name for the indexing chain.");
+        checkThatExplicitIndexingChainInheritsCorrectly(allChains, indexingChain.getChainSpecification());
+        return indexingChain;
+    }
+
     private static boolean containsIndexingChain(ComponentRegistry<DocprocChain> allChains, ChainSpecification chainSpec) {
         if (IndexingDocprocChain.NAME.equals(chainSpec.componentId.stringValue())) return true;
 
@@ -294,29 +311,9 @@ public class Content extends ConfigModel {
 
         private void addIndexingChainsTo(ContainerCluster<?> indexer, Content content, IndexingCluster indexingCluster) {
             addIndexingChain(indexer);
-            DocprocChain indexingChain;
             ComponentRegistry<DocprocChain> allChains = indexer.getDocprocChains().allChains();
-            if (indexingCluster.hasExplicitChain() && !indexingCluster.getChainName().equals(IndexingDocprocChain.NAME)) {
-                indexingChain = allChains.getComponent(indexingCluster.getChainName());
-                if (indexingChain == null) {
-                    throw new IllegalArgumentException(content.getCluster() + " refers to docproc " +
-                                                       "chain '" + indexingCluster.getChainName() +
-                                                       "' for indexing, but this chain does not exist");
-                }
-                else if (indexingChain.getId().getName().equals("default")) {
-                    throw new IllegalArgumentException(content.getCluster() + " specifies the chain " +
-                                                       "'default' as indexing chain. As the 'default' chain is run by default, " +
-                                                       "using it as the indexing chain will run it twice. " +
-                                                       "Use a different name for the indexing chain.");
-                }
-                else {
-                    checkThatExplicitIndexingChainInheritsCorrectly(allChains, indexingChain.getChainSpecification());
-                }
-            } else {
-                indexingChain = allChains.getComponent(IndexingDocprocChain.NAME);
-            }
-
-            indexingCluster.setChain(indexingChain);
+            String chainName = indexingCluster.hasExplicitChain() ? indexingCluster.getChainName() : IndexingDocprocChain.NAME;
+            indexingCluster.setChain(resolveIndexingChain(content.getCluster(), allChains, chainName));
         }
 
         private TreeConfigProducer<AnyConfigProducer> getDocProc(ApplicationConfigProducerRoot root) {
