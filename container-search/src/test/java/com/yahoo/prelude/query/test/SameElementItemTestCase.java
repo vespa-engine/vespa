@@ -6,6 +6,7 @@ import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.prelude.query.WordItem;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SameElementItemTestCase {
@@ -25,6 +27,43 @@ public class SameElementItemTestCase {
         s.addItem(new WordItem("c", "f2"));
         s.addItem(new WordItem("d", "f3"));
         assertEquals("structa:{f1:b f2:c f3:d}", s.toString());
+    }
+
+    @Test
+    void testEqualsConsidersElementFilter() {
+        SameElementItem a = new SameElementItem("structa");
+        a.addItem(new WordItem("b", "f1"));
+        SameElementItem b = new SameElementItem("structa");
+        b.addItem(new WordItem("b", "f1"));
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+
+        b.setElementFilter(List.of(1));
+        assertNotEquals(a, b);
+
+        a.setElementFilter(List.of(1));
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+
+        b.setElementFilter(List.of(2));
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testBinaryEncodingRejectsElementFilter() {
+        SameElementItem plain = new SameElementItem("structa");
+        plain.addItem(new WordItem("b", "f1"));
+        plain.encode(java.nio.ByteBuffer.allocate(1024), SerializationContext.ignored());
+
+        SameElementItem filtered = new SameElementItem("structa");
+        filtered.addItem(new WordItem("b", "f1"));
+        filtered.setElementFilter(List.of(1));
+        try {
+            filtered.encode(java.nio.ByteBuffer.allocate(1024), SerializationContext.ignored());
+            fail("expected encode to reject an element filter");
+        } catch (IllegalStateException expected) {
+            // The binary query stack cannot represent the filter; dropping it would over-match.
+        }
     }
 
     @Test
