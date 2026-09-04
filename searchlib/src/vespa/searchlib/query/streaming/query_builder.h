@@ -35,6 +35,8 @@ class QueryBuilder {
                                                 bool allow_rewrite);
     std::unique_ptr<QueryNode> build_same_element_term(const QueryNodeResultFactory& factory,
                                                        QueryStackIterator&           queryRep);
+    std::unique_ptr<QueryNode> build_string_range_term(const QueryNodeResultFactory& factory,
+                                                       QueryStackIterator&           queryRep);
     std::unique_ptr<QueryNode> build_and_not(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     static void skip_unknown(QueryStackIterator& queryRep);
 
