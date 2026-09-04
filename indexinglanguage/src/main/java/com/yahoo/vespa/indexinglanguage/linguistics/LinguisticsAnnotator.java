@@ -204,7 +204,8 @@ public class LinguisticsAnnotator {
             String stem = token.getStem(i);
             if (stem.length() > config.getMaxTokenLength()) continue;
             if (!termOccurrences.termCountBelowLimit(stem)) continue;
-            annotations.add(from, length, stem);
+            String payload = stem.equals(token.getOrig()) ? null : stem;
+            annotations.add(from, length, payload);
         }
     }
 
