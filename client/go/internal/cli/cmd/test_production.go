@@ -9,11 +9,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/fatih/color"
 	"gopkg.in/yaml.v3"
 )
-
 
 // Fetch all preset names. Documented at:
 // https://docs.vespa.ai/en/reference/applications/testing-production.html#metric-presets.
@@ -38,11 +40,35 @@ func loadMetricPresets(data []byte) map[string]struct{} {
 // metricTest is a single named production test, checking a metric preset against a min/max bound over
 // a time window.
 type metricTest struct {
-	Name   string   `json:"name" yaml:"name"`
-	Metric string   `json:"metric" yaml:"metric"`
-	Time   *int     `json:"time" yaml:"time"`
-	Min    *float64 `json:"min" yaml:"min"`
-	Max    *float64 `json:"max" yaml:"max"`
+	Name     string   `json:"name" yaml:"name"`
+	Metric   string   `json:"metric" yaml:"metric"`
+	Duration *string  `json:"duration" yaml:"duration"`
+	Min      *float64 `json:"min" yaml:"min"`
+	Max      *float64 `json:"max" yaml:"max"`
+}
+
+// durationPattern matches a duration in the format <number><s|m|h|d>, e.g. 30s, 5m, 1h, 2d.
+var durationPattern = regexp.MustCompile(`^([0-9]+)(s|m|h|d)$`)
+
+func parseTestDuration(s string) (time.Duration, error) {
+	matches := durationPattern.FindStringSubmatch(s)
+	if matches == nil {
+		return 0, fmt.Errorf("invalid duration '%s': must be a positive whole number followed by s, m, h or d, e.g. 30s, 5m, 1h, 2d", s)
+	}
+	n, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, err
+	}
+	if n <= 0 {
+		return 0, fmt.Errorf("invalid duration '%s': number must be positive", s)
+	}
+	unit := map[string]time.Duration{
+		"s": time.Second,
+		"m": time.Minute,
+		"h": time.Hour,
+		"d": 24 * time.Hour,
+	}[matches[2]]
+	return time.Duration(n) * unit, nil
 }
 
 type metricTestFile struct {
@@ -107,11 +133,11 @@ func validateMetricTest(t metricTest) error {
 	if _, ok := metricPresets[t.Metric]; !ok {
 		return fmt.Errorf("'%s' is not a known metric preset", t.Metric)
 	}
-	if t.Time == nil {
-		return fmt.Errorf("missing required field 'time'")
+	if t.Duration == nil {
+		return fmt.Errorf("missing required field 'duration'")
 	}
-	if *t.Time <= 0 {
-		return fmt.Errorf("field 'time' must be a positive whole number, got %d", *t.Time)
+	if _, err := parseTestDuration(*t.Duration); err != nil {
+		return err
 	}
 	if t.Min == nil && t.Max == nil {
 		return fmt.Errorf("at least one of 'min' and 'max' is required")

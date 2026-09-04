@@ -1,4 +1,4 @@
 name: bogus metric check
 metric: not-a-real-metric
-time: 5
+duration: 5m
 max: 10
