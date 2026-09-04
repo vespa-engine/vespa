@@ -77,6 +77,31 @@ public class Content extends ConfigModel {
      */
     public Optional<ApplicationContainerCluster> ownedIndexingCluster() { return ownedIndexingCluster; }
 
+    /**
+     * Sets the indexing chain of a content cluster after the model is built, same as
+     * {@code <document-processing chain="..."/>} would at build time, same validation.
+     * For builders that create their chain too late to name it in services.xml.
+     * A content cluster has one indexing chain, so binding a second one fails.
+     *
+     * @param cluster the content cluster
+     * @param indexer the container cluster doing indexing for it, which must already hold the chain
+     * @param chain   the chain to bind
+     */
+    public static void bindIndexingChain(ContentCluster cluster, ContainerCluster<?> indexer, DocprocChain chain) {
+        IndexingCluster indexingCluster = cluster.getSearch().getIndexingDocproc();
+        String indexerName = indexingCluster.getClusterName(cluster.getName());
+        String chainName = chain.getComponentId().stringValue();
+        if (indexingCluster.hasExplicitChain() && ! indexingCluster.getChainName().equals(chainName))
+            throw new IllegalArgumentException(cluster + " already binds indexing chain '" + indexingCluster.getChainName() +
+                                               "', and cannot also bind '" + chainName + "'");
+        if ( ! indexer.getName().equals(indexerName))
+            throw new IllegalArgumentException(cluster + " indexes through container cluster '" + indexerName +
+                                               "', but indexing chain '" + chainName + "' is in container cluster '" +
+                                               indexer.getName() + "'");
+        indexingCluster.setChain(resolveIndexingChain(cluster, indexer.getDocprocChains().allChains(), chainName));
+        indexingCluster.setChainName(chainName);
+    }
+
     /** The chain a name refers to, if it exists and is either the built-in indexing
      *  chain or a chain inheriting it and not named 'default'. */
     private static DocprocChain resolveIndexingChain(ContentCluster cluster, ComponentRegistry<DocprocChain> allChains,
