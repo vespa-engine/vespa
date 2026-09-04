@@ -25,6 +25,7 @@ private:
 
     size_t match_regexp(const FieldRef& f, search::streaming::QueryTerm& qt);
     size_t match_fuzzy(const FieldRef& f, search::streaming::QueryTerm& qt);
+    size_t match_string_range(const FieldRef& f, search::streaming::QueryTerm& qt);
 
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
