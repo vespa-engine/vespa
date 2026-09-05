@@ -3,6 +3,8 @@ package com.yahoo.schema.document;
 
 import com.yahoo.language.process.StemMode;
 
+import java.util.Locale;
+
 /**
  * The stemming setting of a field. This describes how the search engine
  * should transform content of this field into base forms (stems) to increase
@@ -36,7 +38,7 @@ public enum Stemming {
      * @throws IllegalArgumentException if there is no stemming type with the given name
      */
     public static Stemming get(String stemmingName) {
-        return switch (stemmingName) {
+        return switch (stemmingName.toLowerCase(Locale.ENGLISH)) {
             case "none" -> Stemming.NONE;
             case "shortest" -> Stemming.SHORTEST;
             case "best" -> Stemming.BEST;
