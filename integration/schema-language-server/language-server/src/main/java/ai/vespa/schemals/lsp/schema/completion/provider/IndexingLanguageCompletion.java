@@ -14,9 +14,9 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 
 /**
- * IndexingLangaugeProvider
+ * IndexingLanguageProvider
  */
-public class IndexingLangaugeCompletion implements CompletionProvider {
+public class IndexingLanguageCompletion implements CompletionProvider {
 
     private boolean matchCommon(EventCompletionContext context) {
         Position searchPos = context.startOfWord();
