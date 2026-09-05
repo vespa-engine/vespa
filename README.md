@@ -126,7 +126,7 @@ Use this if you only need to build the Java modules, otherwise follow the comple
 
 ### Run tests for shell scripts (on Mac)
 Shell scripts are tested with [BATS](https://bats-core.readthedocs.io/en/stable/).
-To run the tests locally, install the testing framework and its plugins.:
+To run the tests locally, install the testing framework and its plugins.
 ```bash
 brew install node
 sudo npm install -g bats bats-assert bats-support bats-mock
