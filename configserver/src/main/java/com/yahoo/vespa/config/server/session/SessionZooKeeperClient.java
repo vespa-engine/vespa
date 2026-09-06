@@ -26,7 +26,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.NotFoundException;
-import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.ConfigOverrideDefinitionRepo;
 import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
 import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
 import com.yahoo.vespa.config.server.session.Session.Status;
@@ -167,8 +167,8 @@ public class SessionZooKeeperClient {
         return new ZKApplicationPackage(fileManager, curator, sessionPath, maxNodeSize);
     }
 
-    public ConfigDefinitionRepo getUserConfigDefinitions() {
-        return new UserConfigDefinitionRepo(curator, sessionPath.append(USER_DEFCONFIGS_ZK_SUBPATH));
+    public ConfigDefinitionRepo getConfigOverrideDefinitions() {
+        return new ConfigOverrideDefinitionRepo(curator, sessionPath.append(USER_DEFCONFIGS_ZK_SUBPATH));
     }
 
     private Path applicationIdPath() {

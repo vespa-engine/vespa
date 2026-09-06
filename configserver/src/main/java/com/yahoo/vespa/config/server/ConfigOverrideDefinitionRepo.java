@@ -19,15 +19,15 @@ import java.util.logging.Logger;
 /**
  * @author hmusum
  */
-public class UserConfigDefinitionRepo implements ConfigDefinitionRepo {
-    private static final Logger log = Logger.getLogger(UserConfigDefinitionRepo.class.getName());
+public class ConfigOverrideDefinitionRepo implements ConfigDefinitionRepo {
+    private static final Logger log = Logger.getLogger(ConfigOverrideDefinitionRepo.class.getName());
 
     private final Map<ConfigDefinitionKey, ConfigDefinition> defs = new LinkedHashMap<>();
 
     // For testing only
-    public UserConfigDefinitionRepo() {}
+    public ConfigOverrideDefinitionRepo() {}
 
-    public UserConfigDefinitionRepo(Curator curator, Path appPath) {
+    public ConfigOverrideDefinitionRepo(Curator curator, Path appPath) {
         if (curator.exists(appPath)) {
             for (String nodeName : curator.getChildren(appPath)) {
                 String payload = curator.getData(appPath.append(nodeName))
@@ -37,7 +37,7 @@ public class UserConfigDefinitionRepo implements ConfigDefinitionRepo {
                 defs.put(dKey, new ConfigDefinition(dKey.getName(), Splitter.on("\n").splitToList(payload).toArray(new String[0])));
             }
         } else {
-            log.log(Level.WARNING, "Path " + appPath + " does not exist, not able to load add user config definitions");
+            log.log(Level.WARNING, "Path " + appPath + " does not exist, not able to load add config override definitions");
         }
     }
 

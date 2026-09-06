@@ -9,7 +9,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.producer.AnyConfigProducer;
-import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.config.model.producer.ConfigOverrides;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -55,10 +55,10 @@ public class UserConfiguredFiles implements Serializable {
      * Registers user configured files for a producer for file distribution.
      */
     public <PRODUCER extends AnyConfigProducer> void register(PRODUCER producer) {
-        UserConfigRepo userConfigs = producer.getUserConfigs();
+        ConfigOverrides configOverrides = producer.getConfigOverrides();
         Map<Path, FileReference> registeredFiles = new HashMap<>();
-        for (ConfigDefinitionKey key : userConfigs.configsProduced()) {
-            ConfigPayloadBuilder builder = userConfigs.get(key);
+        for (ConfigDefinitionKey key : configOverrides.configsProduced()) {
+            ConfigPayloadBuilder builder = configOverrides.get(key);
             try {
                 register(builder, registeredFiles, key);
             } catch (IllegalArgumentException e) {

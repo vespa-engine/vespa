@@ -121,7 +121,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 modelFactory.version(),
                 wantedNodeVespaVersion);
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
-        ServerCache serverCache = new ServerCache(configDefinitionRepo, zkClient.getUserConfigDefinitions());
+        ServerCache serverCache = new ServerCache(configDefinitionRepo, zkClient.getConfigOverrideDefinitions());
         return new Application(modelFactory.createModel(modelContext),
                                serverCache,
                                applicationGeneration,

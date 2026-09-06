@@ -9,14 +9,14 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.config.model.producer.ConfigOverrides;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Affinity;
 import com.yahoo.vespa.model.Client;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.SimpleConfigProducer;
-import com.yahoo.vespa.model.builder.UserConfigBuilder;
+import com.yahoo.vespa.model.builder.ConfigOverrideBuilder;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
@@ -102,11 +102,11 @@ public class VespaDomBuilder extends VespaModelBuilder {
         protected abstract T doBuild(DeployState deployState, TreeConfigProducer<P> ancestor, Element producerSpec);
 
         private void initializeProducer(AnyConfigProducer child, DeployState deployState, Element producerSpec) {
-            UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
+            ConfigOverrides configOverrides = ConfigOverrideBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
             // TODO: must be made to work:
-            //userConfigs.applyWarnings(child);
-            log.log(Level.FINE, () -> "Adding user configs " + userConfigs + " for " + producerSpec);
-            child.mergeUserConfigs(userConfigs);
+            //configOverrides.applyWarnings(child);
+            log.log(Level.FINE, () -> "Adding config overrides " + configOverrides + " for " + producerSpec);
+            child.mergeConfigOverrides(configOverrides);
         }
 
         private void initializeService(AbstractService t, DeployState deployState,

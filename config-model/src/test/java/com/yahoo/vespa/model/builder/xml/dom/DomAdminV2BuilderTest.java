@@ -185,9 +185,9 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Test
     void configOverridesCanBeUsedInAdmin() {
         Admin admin = buildAdmin(servicesOverride());
-        assertEquals(1, admin.getUserConfigs().size());
+        assertEquals(1, admin.getConfigOverrides().size());
         LogdConfig.Builder logdBuilder = new LogdConfig.Builder();
-        admin.addUserConfig(logdBuilder);
+        admin.addConfigOverride(logdBuilder);
         LogdConfig config = new LogdConfig(logdBuilder);
         assertEquals("foobar", config.logserver().host());
     }

@@ -324,7 +324,7 @@ public class EmbedderTestCase {
         ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
 
         Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
-        ConfigPayloadBuilder config = testComponent.getUserConfigs().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
+        ConfigPayloadBuilder config = testComponent.getConfigOverrides().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
         assertEquals("minilm-l6-v2 application-url \"\"", config.getObject("model").getValue());
         assertEquals("\"\" \"\" files/vocab.txt", config.getObject("vocab").getValue());
     }
@@ -336,7 +336,7 @@ public class EmbedderTestCase {
         ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
 
         Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
-        ConfigPayloadBuilder config = testComponent.getUserConfigs().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
+        ConfigPayloadBuilder config = testComponent.getConfigOverrides().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
         assertEquals("minilm-l6-v2 https://data.vespa-cloud.com/onnx_models/sentence_all_MiniLM_L6_v2.onnx \"\"",
                      config.getObject("model").getValue());
         assertEquals("\"\" \"\" files/vocab.txt", config.getObject("vocab").getValue());

@@ -26,7 +26,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
-import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.config.model.producer.ConfigOverrides;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
@@ -455,7 +455,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
 
     private static void populateConfigBuilder(Builder builder, ConfigProducer configProducer) {
         boolean found = configProducer.cascadeConfig(builder);
-        boolean foundOverride = configProducer.addUserConfig(builder);
+        boolean foundOverride = configProducer.addConfigOverride(builder);
         log.log(Level.FINE, () -> "Trying to get config for " + builder.getClass().getDeclaringClass().getName() +
                                   " for config id " + quote(configProducer.getConfigId()) +
                                   ", found=" + found + ", foundOverride=" + foundOverride);
@@ -561,9 +561,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
 
     private static Set<ConfigKey<?>> configsProduced(ConfigProducer cp) {
         Set<ConfigKey<?>> ret = ReflectionUtil.getAllConfigsProduced(cp.getClass(), cp.getConfigId());
-        UserConfigRepo userConfigs = cp.getUserConfigs();
-        for (ConfigDefinitionKey userKey : userConfigs.configsProduced()) {
-            ret.add(new ConfigKey<>(userKey.getName(), cp.getConfigId(), userKey.getNamespace()));
+        ConfigOverrides configOverrides = cp.getConfigOverrides();
+        for (ConfigDefinitionKey key : configOverrides.configsProduced()) {
+            ret.add(new ConfigKey<>(key.getName(), cp.getConfigId(), key.getNamespace()));
         }
         return ret;
     }

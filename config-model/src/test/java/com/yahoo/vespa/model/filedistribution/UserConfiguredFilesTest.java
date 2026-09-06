@@ -10,7 +10,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.config.model.producer.ConfigOverrides;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.config.ConfigDefinition;
@@ -98,8 +98,8 @@ public class UserConfiguredFilesTest {
         builder = new ConfigPayloadBuilder(def);
         Map<ConfigDefinitionKey, ConfigPayloadBuilder> builderMap = new HashMap<>();
         builderMap.put(key, builder);
-        UserConfigRepo testRepo = new UserConfigRepo(builderMap);
-        producer.setUserConfigs(testRepo);
+        ConfigOverrides testRepo = new ConfigOverrides(builderMap);
+        producer.setConfigOverrides(testRepo);
     }
 
     @Test

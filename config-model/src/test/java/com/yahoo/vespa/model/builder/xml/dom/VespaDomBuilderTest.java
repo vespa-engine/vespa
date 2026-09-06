@@ -69,7 +69,7 @@ public class VespaDomBuilderTest {
 
 
     @Test
-    void testUserConfigsWithNamespace() {
+    void testConfigOverridesWithNamespace() {
         VespaModel model = createModel(hosts, servicesWithNamespace);
 
         GenericConfig.GenericConfigBuilder builder =

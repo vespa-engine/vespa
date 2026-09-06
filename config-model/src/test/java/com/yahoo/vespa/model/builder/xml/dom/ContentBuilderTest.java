@@ -694,7 +694,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "</content>");
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
         content.getSearch().getSearchCluster().getSearchNode(0).cascadeConfig(builder);
-        content.getSearch().getSearchCluster().getSearchNode(0).addUserConfig(builder);
+        content.getSearch().getSearchCluster().getSearchNode(0).addConfigOverride(builder);
         ProtonConfig config = new ProtonConfig(builder);
         assertEquals(1, config.search().mmap().options().size());
         assertEquals(ProtonConfig.Search.Mmap.Options.POPULATE, config.search().mmap().options(0));
@@ -803,7 +803,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     private ProtonConfig getProtonConfig(ContentCluster content) {
         ProtonConfig.Builder configBuilder = new ProtonConfig.Builder();
         content.getSearch().getSearchCluster().getSearchNode(0).cascadeConfig(configBuilder);
-        content.getSearch().getSearchCluster().getSearchNode(0).addUserConfig(configBuilder);
+        content.getSearch().getSearchCluster().getSearchNode(0).addConfigOverride(configBuilder);
 
         return new ProtonConfig(configBuilder);
     }

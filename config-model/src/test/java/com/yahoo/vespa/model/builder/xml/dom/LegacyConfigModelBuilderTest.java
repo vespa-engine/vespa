@@ -25,7 +25,7 @@ public class LegacyConfigModelBuilderTest {
         ModelBuilder builder = new ModelBuilder();
         Model model = builder.build(TestDeployState.create(new MockApplicationPackage.Builder().withServices(services).build()),
                                     null, null, new MockRoot(), XML.getDocument(services).getDocumentElement());
-        assertEquals(1, model.getContext().getParentProducer().getUserConfigs().size());
+        assertEquals(1, model.getContext().getParentProducer().getConfigOverrides().size());
     }
 
     public static class Model extends ConfigModel {

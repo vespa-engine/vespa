@@ -61,7 +61,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
         if (cp == null) return null;
 
         cp.cascadeConfig(builder);
-        cp.addUserConfig(builder);
+        cp.addConfigOverride(builder);
         return builder;
     }
 

@@ -15,23 +15,23 @@ import java.util.function.Function;
 import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
- * Cache that holds configs and config definitions (builtin and user config definitions).
+ * Cache that holds configs and config definitions (builtin and config override definitions).
  *
  * @author vegardh
  */
 public class ServerCache {
 
     private final ConfigDefinitionRepo builtinConfigDefinitions;
-    private final ConfigDefinitionRepo userConfigDefinitions;
+    private final ConfigDefinitionRepo configOverrideDefinitions;
 
     // NOTE: The reason we do a double mapping here is to de-dupe configs that have the same checksum.
     private final Map<ConfigCacheKey, PayloadChecksum> checksums = new ConcurrentHashMap<>();
     private final Map<PayloadChecksum, ConfigResponse> checksumToConfig = new ConcurrentHashMap<>();
     private final Object [] stripedLocks = new Object[113];
 
-    public ServerCache(ConfigDefinitionRepo builtinConfigDefinitions, ConfigDefinitionRepo userConfigDefinitions) {
+    public ServerCache(ConfigDefinitionRepo builtinConfigDefinitions, ConfigDefinitionRepo configOverrideDefinitions) {
         this.builtinConfigDefinitions = builtinConfigDefinitions;
-        this.userConfigDefinitions = userConfigDefinitions;
+        this.configOverrideDefinitions = configOverrideDefinitions;
         for (int i = 0; i < stripedLocks.length; i++) {
             stripedLocks[i] = new Object();
         }
@@ -39,7 +39,7 @@ public class ServerCache {
 
     // For testing only
     public ServerCache() {
-        this(new StaticConfigDefinitionRepo(), new UserConfigDefinitionRepo());
+        this(new StaticConfigDefinitionRepo(), new ConfigOverrideDefinitionRepo());
     }
 
     private void put(ConfigCacheKey key, ConfigResponse config) {
@@ -75,7 +75,7 @@ public class ServerCache {
         StringBuilder sb = new StringBuilder();
         sb.append("Cache\n");
         sb.append("builtin defs: ").append(builtinConfigDefinitions.getConfigDefinitions().size()).append("\n");
-        sb.append("user defs:    ").append(userConfigDefinitions.getConfigDefinitions().size()).append("\n");
+        sb.append("user defs:    ").append(configOverrideDefinitions.getConfigDefinitions().size()).append("\n");
         sb.append("md5sums:      ").append(checksums.size()).append("\n");
         sb.append("md5ToConfig:  ").append(checksumToConfig.size()).append("\n");
 
@@ -83,7 +83,7 @@ public class ServerCache {
     }
 
     public ConfigDefinition getDef(ConfigDefinitionKey defKey) {
-        ConfigDefinition def = userConfigDefinitions.get(defKey);
+        ConfigDefinition def = configOverrideDefinitions.get(defKey);
         return (def != null) ? def : builtinConfigDefinitions.getConfigDefinitions().get(defKey);
     }
     

@@ -36,7 +36,7 @@ public abstract class AnyConfigProducer
 
     private TreeConfigProducer parent = null;
 
-    private UserConfigRepo userConfigs = new UserConfigRepo();
+    private ConfigOverrides configOverrides = new ConfigOverrides();
 
     protected static boolean stateIsHosted(DeployState deployState) {
         return (deployState != null) && deployState.isHosted();
@@ -83,15 +83,15 @@ public abstract class AnyConfigProducer
     }
 
     /**
-     * Sets the user configs for this producer.
+     * Sets the config overrides for this producer.
      *
-     * @param repo User configs repo.
+     * @param configOverrides Config overrides.
      */
-    public void setUserConfigs(UserConfigRepo repo) { this.userConfigs = repo; }
+    public void setConfigOverrides(ConfigOverrides configOverrides) { this.configOverrides = configOverrides; }
 
-    /** Returns the user configs of this */
+    /** Returns the config overrides of this */
     @Override
-    public UserConfigRepo getUserConfigs() { return userConfigs; }
+    public ConfigOverrides getConfigOverrides() { return configOverrides; }
 
     /**
      * ConfigProducers that must have a special config id should use
@@ -135,24 +135,24 @@ public abstract class AnyConfigProducer
     }
 
     @Override
-    public final boolean addUserConfig(ConfigInstance.Builder builder) {
+    public final boolean addConfigOverride(ConfigInstance.Builder builder) {
         boolean didApply = false;
         if (parent != null) {
-            didApply = parent.addUserConfig(builder);
+            didApply = parent.addConfigOverride(builder);
         }
 
-        log.log(Level.FINEST, () -> "User configs is: " + userConfigs.toString());
-        // TODO: What do we do with md5. Currently ignored for user configs?
+        log.log(Level.FINEST, () -> "Config overrides is: " + configOverrides.toString());
+        // TODO: What do we do with md5. Currently ignored for config overrides?
         ConfigDefinitionKey key = new ConfigDefinitionKey(builder.getDefName(), builder.getDefNamespace());
-        if (userConfigs.get(key) != null) {
+        if (configOverrides.get(key) != null) {
             log.log(Level.FINEST, () -> "Apply in " + configId);
-            applyUserConfig(builder, userConfigs.get(key));
+            applyConfigOverride(builder, configOverrides.get(key));
             didApply = true;
         }
         return didApply;
     }
 
-    private void applyUserConfig(ConfigInstance.Builder builder, ConfigPayloadBuilder payloadBuilder) {
+    private void applyConfigOverride(ConfigInstance.Builder builder, ConfigPayloadBuilder payloadBuilder) {
         ConfigInstance.Builder override;
         if (builder instanceof GenericConfig.GenericConfigBuilder) {
             // Means that the builder is unknown and that we should try to apply the payload without
@@ -250,8 +250,8 @@ public abstract class AnyConfigProducer
         return findInheritedClassLoader(getClass(), producerName);
     }
 
-    public void mergeUserConfigs(UserConfigRepo newRepo) {
-        userConfigs.merge(newRepo);
+    public void mergeConfigOverrides(ConfigOverrides newOverrides) {
+        configOverrides.merge(newOverrides);
     }
 
     // TODO: Make producers depend on AdminModel instead

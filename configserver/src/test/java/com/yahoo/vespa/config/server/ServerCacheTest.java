@@ -42,12 +42,12 @@ public class ServerCacheTest {
 
     @Before
     public void setup() {
-        UserConfigDefinitionRepo userConfigDefinitionRepo = new UserConfigDefinitionRepo();
-        userConfigDefinitionRepo.add(fooBarDefKey, def);
-        userConfigDefinitionRepo.add(fooBazDefKey, new com.yahoo.vespa.config.buildergen.ConfigDefinition("baz", new String[0]));
-        userConfigDefinitionRepo.add(fooBimDefKey, new ConfigDefinition("mynode", new String[0]));
+        ConfigOverrideDefinitionRepo configOverrideDefinitionRepo = new ConfigOverrideDefinitionRepo();
+        configOverrideDefinitionRepo.add(fooBarDefKey, def);
+        configOverrideDefinitionRepo.add(fooBazDefKey, new com.yahoo.vespa.config.buildergen.ConfigDefinition("baz", new String[0]));
+        configOverrideDefinitionRepo.add(fooBimDefKey, new ConfigDefinition("mynode", new String[0]));
 
-        cache = new ServerCache(new TestConfigDefinitionRepo(), userConfigDefinitionRepo);
+        cache = new ServerCache(new TestConfigDefinitionRepo(), configOverrideDefinitionRepo);
 
         cache.computeIfAbsent(fooBarCacheKey, (ConfigCacheKey key) -> createResponse(xxhash64));
         cache.computeIfAbsent(bazQuuxCacheKey, (ConfigCacheKey key) -> createResponse(xxhash64));

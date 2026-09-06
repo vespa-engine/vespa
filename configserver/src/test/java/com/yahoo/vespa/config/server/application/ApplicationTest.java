@@ -27,7 +27,7 @@ import com.yahoo.vespa.config.server.ModelStub;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
-import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.ConfigOverrideDefinitionRepo;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.model.VespaModel;
@@ -82,7 +82,7 @@ public class ApplicationTest {
     }
 
     private static ServerCache createCacheAndAddContent() {
-        UserConfigDefinitionRepo userDefs = new UserConfigDefinitionRepo();
+        ConfigOverrideDefinitionRepo userDefs = new ConfigOverrideDefinitionRepo();
 
         ConfigDefinitionKey key = new ConfigDefinitionKey(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE);
         com.yahoo.vespa.config.buildergen.ConfigDefinition def = getDef(key, SimpletypesConfig.CONFIG_DEF_SCHEMA);

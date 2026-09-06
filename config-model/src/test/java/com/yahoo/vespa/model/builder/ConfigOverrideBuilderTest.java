@@ -5,7 +5,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.ConfigDefinitionStore;
-import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.config.model.producer.ConfigOverrides;
 import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * @author Ulf Lilleengen
  */
-public class UserConfigBuilderTest {
+public class ConfigOverrideBuilderTest {
 
     private final ConfigDefinitionStore configDefinitionStore = defKey -> Optional.empty();
 
@@ -37,7 +37,7 @@ public class UserConfigBuilderTest {
                 "<config name=\"test.simpletypes\" version=\"1\">" +
                 "    <stringval>foolio</stringval>" +
                 "</config>");
-        UserConfigRepo map = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
+        ConfigOverrides map = ConfigOverrideBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
         assertFalse(map.isEmpty());
         ConfigDefinitionKey key = new ConfigDefinitionKey("simpletypes", "test");
         assertNotNull(map.get(key));
@@ -73,7 +73,7 @@ public class UserConfigBuilderTest {
     }
 
     private void assertArraysOfStructs(Element configRoot) {
-        UserConfigRepo map = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
+        ConfigOverrides map = ConfigOverrideBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
         assertFalse(map.isEmpty());
         ConfigDefinitionKey key = new ConfigDefinitionKey(SpecialtokensConfig.CONFIG_DEF_NAME, SpecialtokensConfig.CONFIG_DEF_NAMESPACE);
         assertNotNull(map.get(key));
@@ -90,7 +90,7 @@ public class UserConfigBuilderTest {
         Element configRoot = getDocument("<config name=\"is.unknown\">" +
                 "    <foo>1</foo>" +
                 "</config>");
-        UserConfigRepo repo = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
+        ConfigOverrides repo = ConfigOverrideBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
         ConfigPayloadBuilder builder = repo.get(new ConfigDefinitionKey("unknown", "is"));
         assertNotNull(builder);
     }

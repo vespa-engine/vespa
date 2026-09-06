@@ -3,7 +3,7 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
-import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.config.model.producer.ConfigOverrides;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -23,8 +23,8 @@ public interface ConfigProducer extends com.yahoo.config.ConfigInstance.Producer
     /** Returns the one and only HostSystem of the root node */
     HostSystem hostSystem();
 
-    /** Returns the user configs of this */
-    UserConfigRepo getUserConfigs();
+    /** Returns the config overrides of this */
+    ConfigOverrides getConfigOverrides();
     
     /** Returns this ConfigProducer's children (only 1st level) */
     default Map<String,? extends ConfigProducer> getChildren() { return Map.of(); }
@@ -57,12 +57,12 @@ public interface ConfigProducer extends com.yahoo.config.ConfigInstance.Producer
     boolean cascadeConfig(Builder builder);
 
     /**
-     * Adds user config override from this ConfigProducer to the existing builder
+     * Adds config override from this ConfigProducer to the existing builder
      *
-     * @param builder The ConfigBuilder to add user config overrides.
+     * @param builder The ConfigBuilder to add config overrides.
      * @return true if overrides were added, false if not.
      */
-    boolean addUserConfig(ConfigInstance.Builder builder);
+    boolean addConfigOverride(ConfigInstance.Builder builder);
 
     /**
      * check constraints depending on the state of the vespamodel graph.
