@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -20,7 +20,7 @@ public class FieldSet implements FieldInfo {
 
     private FieldSet(Builder builder) {
         this.name = builder.name;
-        this.fieldNames = Set.copyOf(builder.fieldNames);
+        this.fieldNames = new LinkedHashSet<>(builder.fieldNames);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class FieldSet implements FieldInfo {
     public static class Builder {
 
         private final String name;
-        private final Set<String> fieldNames = new HashSet<>();
+        private final Set<String> fieldNames = new LinkedHashSet<>();
 
         public Builder(String name) {
             this.name = name;

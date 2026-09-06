@@ -6382,6 +6382,8 @@
       "public com.yahoo.search.query.parser.ParserEnvironment setParserSettings(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)",
       "public com.yahoo.prelude.IndexFacts getIndexFacts()",
       "public com.yahoo.search.query.parser.ParserEnvironment setIndexFacts(com.yahoo.prelude.IndexFacts)",
+      "public com.yahoo.search.schema.SchemaInfo getSchemaInfo()",
+      "public com.yahoo.search.query.parser.ParserEnvironment setSchemaInfo(com.yahoo.search.schema.SchemaInfo)",
       "public com.yahoo.language.Linguistics getLinguistics()",
       "public com.yahoo.search.query.parser.ParserEnvironment setLinguistics(com.yahoo.language.Linguistics)",
       "public com.yahoo.language.process.SpecialTokens getSpecialTokens()",
@@ -9456,6 +9458,7 @@
       "public java.util.Collection schemas()",
       "public java.util.Optional schema(java.lang.String)",
       "public java.util.Optional fieldInfo(java.lang.String)",
+      "public java.util.Optional fieldSet(java.lang.String)",
       "public com.yahoo.search.schema.RankProfile$InputType rankProfileInput(java.lang.String, java.lang.String)"
     ],
     "fields" : [ ]
@@ -9473,6 +9476,7 @@
       "public java.util.Map clusters()",
       "public com.yahoo.search.query.parser.ParserEnvironment$ParserSettings parserSettings()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
+      "public com.yahoo.search.schema.SchemaInfo$Session newSession(java.util.Set, java.util.Set)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
