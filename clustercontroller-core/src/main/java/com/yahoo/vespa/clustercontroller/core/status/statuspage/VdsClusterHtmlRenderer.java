@@ -549,7 +549,7 @@ public class VdsClusterHtmlRenderer {
                     .append("5) PC - Premature crashes - Number of times node has crashed since last time it had " +
                             "been stable in up or down state for more than "
                             + RealTimer.printDuration(stableStateTimePeriode) + ".<br>\n")
-                    .append("6) ELW - Events last week - The number of events that has occured on this node the " +
+                    .append("6) ELW - Events last week - The number of events that has occurred on this node the " +
                             "last week. (Or shorter period if a week haven't passed since restart or more than " +
                             "max events to keep in node event log have happened during last week.)<br>\n")
                     .append("</font>\n");
