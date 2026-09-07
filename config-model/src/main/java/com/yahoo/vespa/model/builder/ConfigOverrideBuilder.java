@@ -37,11 +37,6 @@ public class ConfigOverrideBuilder {
                                      ConfigDefinitionStore configDefinitionStore, DeployLogger logger) {
         ConfigDefinitionKey key = DomConfigPayloadBuilder.parseConfigName(element);
 
-        // TODO: Change to WARNING, starting with INFO for now to avoid too much noise
-        logger.logApplicationPackage(Level.INFO, "Config override for '" + key + "' found. Config " +
-                                     "overrides are discouraged, an override may break deployment in a coming " +
-                                     "version and might have no or unintended effect");
-
         Optional<ConfigDefinition> def = configDefinitionStore.getConfigDefinition(key);
         if (def.isEmpty()) { // TODO: Fail instead of warn
             logger.logApplicationPackage(Level.WARNING, "Unable to find config definition '" + key.asFileName() +
