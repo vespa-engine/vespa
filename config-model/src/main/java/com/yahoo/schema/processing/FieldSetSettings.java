@@ -214,14 +214,7 @@ public class FieldSetSettings extends Processor {
         if (fieldSet.getFieldNames().size() < 2) return;
         Iterator<String> fieldNames = fieldSet.getFieldNames().iterator();
         var firstField = schema.getField(fieldNames.next());
-        while (fieldNames.hasNext()) {
-            var field = schema.getField(fieldNames.next());
-            if ( ! Objects.equals(field.getSearchLinguisticsProfile(), firstField.getSearchLinguisticsProfile()))
-                throw new IllegalArgumentException(forFieldSet(schema, fieldSet) +
-                                                   "Illegal mixing of linguistics search profiles: " +
-                                                   firstField + " sets '" + firstField.getSearchLinguisticsProfile() + "'" +
-                                                   ", while " + field + " sets '" + field.getSearchLinguisticsProfile() + "'");
-        }
+        // Will only be used when all fields share the same profile, see LinguisticsParser
         fieldSet.setLinguisticsProfile(firstField.getSearchLinguisticsProfile());
     }
 

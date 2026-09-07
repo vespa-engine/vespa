@@ -49,50 +49,7 @@ public class FieldSetSettingsTestCase {
         var e = assertThrows(IllegalArgumentException.class, () -> createFromStrings(new BaseDeployLogger(), childSd( "fieldset default { fields: ci, pt }"), parentSd()));
         assertEquals("For schema 'child', fieldset 'default': Illegal mixing of tensor fields ['pt'] and non-tensor fields ['ci']", e.getMessage());
     }
-
-    @Test
-    public void illegalLinguisticsProfileMix() {
-        var schema = """
-                schema test {
-                  document test {
-                    field s1 type string {
-                      indexing: index
-                      linguistics {
-                        profile: p1
-                      }
-                    }
-                    field s2 type string {
-                      indexing: index
-                      linguistics {
-                        profile {
-                          index: p2
-                          search: p1   # Legal combination with s1 since only the query side need to be consistent
-                        }
-                      }
-                    }
-                    field s3 type string {
-                      indexing: index
-                      linguistics {
-                        profile {
-                          index: p1
-                          search: p2   # Not legal combination with s1
-                        }
-                      }
-                    }
-                  }
-                  fieldset p1p2 {
-                    fields: s1, s2
-                  }
-                  fieldset p1p3 {
-                    fields: s1, s3
-                  }
-                }
-                """;
-        var e = assertThrows(IllegalArgumentException.class, () -> createFromStrings(new BaseDeployLogger(), schema));
-        assertEquals("For schema 'test', fieldset 'p1p3': Illegal mixing of linguistics search profiles" +
-                     ": field 's1' sets 'p1', while field 's3' sets 'p2'", e.getMessage());
-    }
-
+    
     @Test
     public void illegalLinguisticsTokensMix() {
         var schema = """
