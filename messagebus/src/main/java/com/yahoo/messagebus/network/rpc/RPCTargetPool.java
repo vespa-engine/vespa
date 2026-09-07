@@ -35,7 +35,7 @@ public class RPCTargetPool {
 
     /**
      * Constructs a new instance of this class, using the given {@link Timer} for detecting and closing connections that
-     * have expired according to the second paramter.
+     * have expired according to the second parameter.
      *
      * @param timer      The timer to use for connection expiration.
      * @param expireSecs The number of seconds until an idle connection is closed.
