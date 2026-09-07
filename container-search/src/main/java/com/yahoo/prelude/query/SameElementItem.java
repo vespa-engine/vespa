@@ -29,9 +29,7 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
         // The binary query stack format has no element filter field, and silently dropping the
         // filter would over-match, so refuse rather than produce a query with different semantics.
         if ( ! elementFilter.isEmpty()) {
-            throw new IllegalStateException("sameElement with an element filter cannot be serialized to the " +
-                                            "binary query stack. Turn off the send-old-query-stack option " +
-                                            "to use element filters.");
+            throw new IllegalStateException("cannot serialize sameElement with an element filter in old protocol");
         }
         super.encodeThis(buffer, context);
         putString(fieldName, buffer);
