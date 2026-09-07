@@ -249,6 +249,7 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/embed.sd",
             "src/test/sdfiles/single/foreach.sd",
             "src/test/sdfiles/single/linguistics.sd",
+            "src/test/sdfiles/single/mapcompletion.sd",
             "src/test/sdfiles/single/mapfastsearch.sd",
             "src/test/sdfiles/single/rankprofilebuiltin.sd",
             "src/test/sdfiles/single/sortfeatures.sd",
