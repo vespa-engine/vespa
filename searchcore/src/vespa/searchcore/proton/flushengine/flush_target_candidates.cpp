@@ -2,14 +2,13 @@
 
 #include "flush_target_candidates.h"
 
-#include "flush_target_candidate.h"
 #include "tls_stats.h"
+
+using proton::flushengine::PrepareRestartCostsConfig;
+using search::SerialNum;
 
 namespace proton {
 
-using search::SerialNum;
-
-using Config = PrepareRestartFlushStrategy::Config;
 using TlsReplayCost = FlushTargetCandidates::TlsReplayCost;
 
 namespace {
@@ -25,7 +24,7 @@ SerialNum calculateReplayStartSerial(std::span<const FlushTargetCandidate> candi
     return candidates[num_candidates].get_flushed_serial() + 1;
 }
 
-TlsReplayCost calculateTlsReplayCost(const flushengine::TlsStats& tlsStats, const Config& cfg,
+TlsReplayCost calculateTlsReplayCost(const flushengine::TlsStats& tlsStats, const PrepareRestartCostsConfig& cfg,
                                      SerialNum replayStartSerial) {
     SerialNum replayEndSerial = tlsStats.getLastSerial();
     SerialNum numTotalOperations = replayEndSerial - tlsStats.getFirstSerial() + 1;
@@ -35,8 +34,8 @@ TlsReplayCost calculateTlsReplayCost(const flushengine::TlsStats& tlsStats, cons
     double    numBytesPerOperation = (double)tlsStats.getNumBytes() / (double)numTotalOperations;
     SerialNum numOperationsToReplay = replayEndSerial + 1 - replayStartSerial;
     double    numBytesToReplay = numBytesPerOperation * numOperationsToReplay;
-    return TlsReplayCost((numBytesToReplay * cfg.tlsReplayByteCost),
-                         (numOperationsToReplay * cfg.tlsReplayOperationCost));
+    return TlsReplayCost((numBytesToReplay * cfg.tls_replay_byte_cost),
+                         (numOperationsToReplay * cfg.tls_replay_operation_cost));
 }
 
 double calculateFlushTargetsWriteCost(std::span<const FlushTargetCandidate> candidates, size_t num_candidates) {
@@ -58,7 +57,8 @@ double calculate_flush_targets_read_cost(std::span<const FlushTargetCandidate> c
 } // namespace
 
 FlushTargetCandidates::FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates, size_t num_candidates,
-                                             const flushengine::TlsStats& tlsStats, const Config& cfg)
+                                             const flushengine::TlsStats&     tlsStats,
+                                             const PrepareRestartCostsConfig& cfg)
     : _candidates(candidates),
       _num_candidates(std::min(num_candidates, _candidates.size())),
       _tlsReplayCost(

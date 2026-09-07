@@ -4,20 +4,18 @@
 
 #include "flushcontext.h"
 
+using proton::flushengine::PrepareRestartCostsConfig;
+
 namespace proton {
 
-FlushTargetCandidate::FlushTargetCandidate(std::shared_ptr<FlushContext> flush_context,
-                                           search::SerialNum current_serial, const Config& cfg)
+FlushTargetCandidate::FlushTargetCandidate(std::shared_ptr<FlushContext>    flush_context,
+                                           search::SerialNum                current_serial,
+                                           const PrepareRestartCostsConfig& cfg) noexcept
     : _flush_context(std::move(flush_context)),
-      _replay_operation_cost(_flush_context->getTarget()->get_replay_operation_cost() * cfg.tlsReplayOperationCost),
       _flushed_serial(_flush_context->getTarget()->getFlushedSerialNum()),
-      _current_serial(current_serial),
-      _replay_cost(_replay_operation_cost * (_current_serial - _flushed_serial)),
-      _approx_bytes_to_write_to_disk(_flush_context->getTarget()->getApproxBytesToWriteToDisk()),
-      _approx_bytes_to_read_from_disk(_flush_context->getTarget()->get_approx_bytes_to_read_from_disk()),
-      _write_cost(_approx_bytes_to_write_to_disk * cfg.flushTargetWriteCost),
-      _read_cost(_approx_bytes_to_read_from_disk * cfg.flush_target_read_cost),
-      _always_flush(_replay_cost >= _write_cost + _read_cost) {
+      _prepare_restart_costs(*_flush_context->getTarget(), current_serial, _flushed_serial, cfg),
+      _always_flush(_prepare_restart_costs.replay_cost() >=
+                    _prepare_restart_costs.write_cost() + _prepare_restart_costs.read_cost()) {
 }
 
 FlushTargetCandidate::~FlushTargetCandidate() = default;

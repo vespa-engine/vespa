@@ -21,20 +21,11 @@ using searchcorespi::IFlushTarget;
 
 using Config = PrepareRestartFlushStrategy::Config;
 using FlushContextsMap = std::map<std::string, FlushContext::List>;
-using FlushTargetCandidatesList = std::vector<FlushTargetCandidates::UP>;
 
 namespace {
 
 const std::string strategy_name("prepare_restart");
 
-}
-
-PrepareRestartFlushStrategy::Config::Config(double tlsReplayByteCost_, double tlsReplayOperationCost_,
-                                            double flushTargetWriteCost_, double flush_target_read_cost_)
-    : tlsReplayByteCost(tlsReplayByteCost_),
-      tlsReplayOperationCost(tlsReplayOperationCost_),
-      flushTargetWriteCost(flushTargetWriteCost_),
-      flush_target_read_cost(flush_target_read_cost_) {
 }
 
 PrepareRestartFlushStrategy::PrepareRestartFlushStrategy(const Config& cfg) : IFlushStrategy(), _cfg(cfg) {
