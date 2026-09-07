@@ -77,6 +77,7 @@ LOG_SETUP(".proton.server.proton");
 using CpuCategory = vespalib::CpuUsage::Category;
 
 using document::DocumentTypeRepo;
+using proton::flushengine::PrepareRestartCostsConfig;
 using proton::flushengine::SetStrategyResult;
 using search::DiskSpaceCalculator;
 using search::diskindex::IPostingListCache;
@@ -1093,7 +1094,11 @@ std::unique_ptr<vespalib::StateExplorer> Proton::get_child(std::string_view name
     } else if (name == DOCUMENT_DB) {
         return std::make_unique<DocumentDBMapExplorer>(_documentDBMap, _mutex);
     } else if (name == FLUSH_ENGINE && _flushEngine) {
-        return std::make_unique<FlushEngineExplorer>(*_flushEngine);
+        auto                      proton_config = getActiveConfigSnapshot()->getProtonConfigSP();
+        const auto&               cfg = proton_config->flush.preparerestart;
+        PrepareRestartCostsConfig prepare_restart_costs_config(cfg.replaycost, cfg.replayoperationcost, cfg.writecost,
+                                                               cfg.readcost);
+        return std::make_unique<FlushEngineExplorer>(*_flushEngine, prepare_restart_costs_config);
     } else if (name == TLS_NAME && _tls) {
         return std::make_unique<search::transactionlog::TransLogServerExplorer>(_tls->getTransLogServer());
     } else if (name == RESOURCE_USAGE && _diskMemUsageSampler && _persistenceEngine) {

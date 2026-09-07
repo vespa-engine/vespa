@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "prepare_restart_costs_config.h"
+
 #include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
@@ -13,10 +15,12 @@ class FlushEngine;
  */
 class FlushEngineExplorer : public vespalib::StateExplorer {
 private:
-    const FlushEngine& _engine;
+    const FlushEngine&                     _engine;
+    flushengine::PrepareRestartCostsConfig _prepare_restart_costs_config;
 
 public:
-    FlushEngineExplorer(const FlushEngine& engine);
+    FlushEngineExplorer(const FlushEngine&                     engine,
+                        flushengine::PrepareRestartCostsConfig prepare_restart_costs_config);
 
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
     std::vector<std::string> get_children_names() const override;
