@@ -118,9 +118,8 @@ public abstract class AbstractParser implements CustomParser {
      */
     protected AbstractParser(ParserEnvironment environment) {
         this.environment = ParserEnvironment.fromParserEnvironment(environment);
-        if (this.environment.getIndexFacts() == null) {
+        if (this.environment.getIndexFacts() == null)
             this.environment.setIndexFacts(new IndexFacts());
-        }
     }
 
     // TODO: Deprecate the unwanted method signatures below
