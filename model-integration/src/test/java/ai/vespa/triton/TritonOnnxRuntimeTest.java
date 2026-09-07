@@ -104,6 +104,14 @@ class TritonOnnxRuntimeTest {
     }
 
     @Test
+    void load_model_with_shared_session() throws IOException {
+        var opts = optsBuilder
+                .setConcurrency(2, OnnxEvaluatorOptions.ConcurrencyFactorType.ABSOLUTE)
+                .build();
+        assertLoadModel("src/test/triton/config_with_shared_session.pbtxt", opts, true);
+    }
+
+    @Test
     void load_model_with_model_config_override() throws IOException {
         var configPathInput = "src/test/triton/config_with_model_config_override_input.pbtxt";
         var configPathOutput = "src/test/triton/config_with_model_config_override_output.pbtxt";
@@ -111,6 +119,16 @@ class TritonOnnxRuntimeTest {
                 .setModelConfigOverride(Optional.of(Path.of(configPathInput)))
                 .build();
         assertLoadModel(configPathOutput, opts);
+    }
+
+    @Test
+    void load_model_with_model_config_override_and_shared_session() throws IOException {
+        var configPathInput = "src/test/triton/config_with_model_config_override_input.pbtxt";
+        var configPathOutput = "src/test/triton/config_with_model_config_override_shared_session_output.pbtxt";
+        var opts = optsBuilder
+                .setModelConfigOverride(Optional.of(Path.of(configPathInput)))
+                .build();
+        assertLoadModel(configPathOutput, opts, true);
     }
 
     @Test
@@ -133,11 +151,11 @@ class TritonOnnxRuntimeTest {
 
         var modelBaseName1 = "dummy_transformer";
         var modelPath1 = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName1);
-        var modelName1 = TritonOnnxRuntime.generateModelName(modelPath1, opts);
+        var modelName1 = TritonOnnxRuntime.generateModelName(modelPath1, opts, false);
 
         var modelBaseName2 = "dummy_transformer_mlm";
         var modelPath2 = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName2);
-        var modelName2 = TritonOnnxRuntime.generateModelName(modelPath2, opts);
+        var modelName2 = TritonOnnxRuntime.generateModelName(modelPath2, opts, false);
 
         var client = createClient();
         var runtime = createRuntime();
@@ -189,7 +207,7 @@ class TritonOnnxRuntimeTest {
     @Test
     void restore_requested_model_when_it_was_removed_independently() {
         var opts = optsBuilder.build();
-        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false);
         var client = createClient();
         var runtime = createRuntime();
 
@@ -217,7 +235,7 @@ class TritonOnnxRuntimeTest {
     @Test
     void clean_model_repository_when_runtime_is_created() {
         var opts = optsBuilder.build();
-        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false);
 
         var client = createClient();
         var runtime = createRuntime();
@@ -244,18 +262,23 @@ class TritonOnnxRuntimeTest {
     }
 
     private TritonOnnxClient createClient() {
-        return new TritonOnnxClient(testConfig(TritonConfig.ModelControlMode.EXPLICIT));
+        return new TritonOnnxClient(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false));
     }
 
     private TritonOnnxRuntime createRuntime() {
-        return new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT));
+        return createRuntime(false);
     }
 
-    private static TritonConfig testConfig(TritonConfig.ModelControlMode.Enum mode) {
+    private TritonOnnxRuntime createRuntime(boolean shareOnnxSessionBetweenInstances) {
+        return new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT, shareOnnxSessionBetweenInstances));
+    }
+
+    private static TritonConfig testConfig(TritonConfig.ModelControlMode.Enum mode, boolean shareOnnxSessionBetweenInstances) {
         return new TritonConfig.Builder()
                 .target(tritonContainer.getGrpcEndpoint())
                 .modelControlMode(mode)
                 .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
+                .shareOnnxSessionBetweenInstances(shareOnnxSessionBetweenInstances)
                 .build();
     }
 
@@ -272,12 +295,17 @@ class TritonOnnxRuntimeTest {
 
     // expectedConfigPath == null means we expect an error during model loading
     private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts) throws IOException {
+        assertLoadModel(expectedConfigPath, evalOpts, false);
+    }
+
+    private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts, boolean shareSession)
+            throws IOException {
         var modelBaseName = "dummy_transformer";
         var testModelFilePath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
-        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, evalOpts);
+        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, evalOpts, shareSession);
         var modelFilePath = Text.format("%s/1/model.onnx", modelName);
         var modelConfigPath = Text.format("%s/config.pbtxt", modelName);
-        var runtime = createRuntime();
+        var runtime = createRuntime(shareSession);
 
         try {
             ThrowingSupplier<OnnxEvaluator> evaluatorSupplier = () -> runtime.evaluatorOf(testModelFilePath, evalOpts);
@@ -297,6 +325,13 @@ class TritonOnnxRuntimeTest {
 
             var modelFile = tritonContainer.getModelRepositoryPath().resolve(modelFilePath);
             assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(modelFile));
+
+            // The stock image ignores the parameter, so only the generated config can be checked there.
+            if (shareSession && tritonContainer.supportsSessionSharing()) {
+                assertTrue(tritonContainer.getLogs().contains("Reusing session for instance: " + modelName),
+                           "Triton did not reuse the session between instances of " + modelName);
+            }
+
             evaluator.close();
         } finally {
             runtime.deconstruct();
@@ -306,7 +341,7 @@ class TritonOnnxRuntimeTest {
     // Removes hash from model name before comparing configs.
     // This is to avoid updating hash in all test config files every time options are changed.
     private void assertEqualConfigs(String expectedConfig, String actualConfig) {
-        var regex = "(name:\\s*\"\\w+)_[a-f0-9]{16}\"";
+        var regex = "(name:\\s*\"\\w+)_[a-f0-9]+\"";
         var normalizedExpected = expectedConfig.replaceFirst(regex, "$1\"");
         var normalizedActual = actualConfig.replaceFirst(regex, "$1\"");
         assertEquals(normalizedExpected, normalizedActual);
@@ -349,7 +384,7 @@ class TritonOnnxRuntimeTest {
     @Test
     void concurrent_create_and_close_of_the_same_model() throws Exception {
         var opts = optsBuilder.build();
-        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false);
         var client = createClient();
         var runtime = createRuntime();
         var threads = 4;

@@ -1,0 +1,43 @@
+name: "dummy_transformer_47d1bdde03c1063e"
+platform: "onnxruntime_onnx"
+max_batch_size: 1
+instance_group {
+  count: 2
+  kind: KIND_CPU
+}
+parameters {
+  key: "enable_mem_arena"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "enable_mem_pattern"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "execution_mode"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "inter_op_thread_count"
+  value {
+    string_value: "2"
+  }
+}
+parameters {
+  key: "intra_op_thread_count"
+  value {
+    string_value: "4"
+  }
+}
+parameters {
+  key: "share_session_between_instances"
+  value {
+    string_value: "true"
+  }
+}

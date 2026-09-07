@@ -44,6 +44,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
+    private final boolean shareSessionBetweenInstances;
     private final Path modelRepositoryPath;
 
     // The key is a model name containing hash of model content and options.
@@ -67,11 +68,12 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Injectable tritonClient for testing.
     // Takes ownership of the client: deconstruct() closes it.
     TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient) {
-        log.info("Creating Triton ONNX runtime");
-
         this.tritonClient = tritonClient;
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        shareSessionBetweenInstances = config.shareOnnxSessionBetweenInstances();
+        log.info("Creating Triton ONNX runtime with session sharing between model instances "
+                 + (shareSessionBetweenInstances ? "enabled" : "disabled"));
         modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
 
         if (isModelControlExplicit) {
@@ -85,7 +87,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        var modelName = generateModelName(modelPath, options);
+        var modelName = generateModelName(modelPath, options, shareSessionBetweenInstances);
         var modelReference = referenceModel(modelName, modelPath, options);
 
         try {
@@ -193,12 +195,13 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
     }
 
-    static String generateModelName(String modelPath, OnnxEvaluatorOptions options) {
+    static String generateModelName(String modelPath, OnnxEvaluatorOptions options, boolean shareSession) {
         var fileName = Paths.get(modelPath).getFileName().toString();
         var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
         var optionsHash = options.calculateHash();
-        var combinedHash = Long.toHexString(31 * modelHash + optionsHash);
+        var shareSessionHash = shareSession ? 1 : 0;
+        var combinedHash = Long.toHexString(31 * modelHash + optionsHash + shareSessionHash);
         return baseName + "_" + combinedHash; // add hash to avoid conflicts
     }
 
@@ -249,14 +252,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         Files.setPosixFilePermissions(path, modelPerms);
     }
 
-    private static String createModelConfig(String modelName, OnnxEvaluatorOptions options) {
+    private String createModelConfig(String modelName, OnnxEvaluatorOptions options) {
         return options.modelConfigOverride()
                 .map(path -> createModelConfigFromFile(path, modelName))
                 .orElseGet(() -> createModelConfigFromOptions(modelName, options))
                 .toString();
     }
 
-    private static String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
+    private String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
         // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is
         // not available.
         var deviceKind = options.gpuDeviceRequired()
@@ -309,6 +312,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                                 .setStringValue(Integer.toString(options.interOpThreads()))
                                 .build());
 
+        addSessionSharingParameter(configBuilder);
+
         if (options.batchingMaxSize() > 1) {
             configBuilder.setDynamicBatching(ModelConfigOuterClass.ModelDynamicBatching.newBuilder().build());
         }
@@ -326,7 +331,21 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         return configBuilder.build().toString();
     }
 
-    private static String createModelConfigFromFile(Path configPath, String modelName) {
+    // Sharing one session per device loads the model weights once per device instead of once per instance.
+    // The parameter is read by the patched ONNX Runtime backend in Vespa's Triton images and ignored by stock images.
+    private void addSessionSharingParameter(ModelConfigOuterClass.ModelConfig.Builder configBuilder) {
+        if (!shareSessionBetweenInstances) {
+            return;
+        }
+
+        configBuilder.putParameters(
+                "share_session_between_instances",
+                ModelConfigOuterClass.ModelParameter.newBuilder()
+                        .setStringValue("true")
+                        .build());
+    }
+
+    private String createModelConfigFromFile(Path configPath, String modelName) {
         String configStr;
 
         try {
@@ -344,7 +363,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
 
         // Replaces model name with the one that includes model content and options hash to avoid conflicts.
-        return config.toBuilder().setName(modelName).build().toString();
+        var configBuilder = config.toBuilder().setName(modelName);
+        addSessionSharingParameter(configBuilder);
+        return configBuilder.build().toString();
     }
 
     private void deleteAllModelFilesFromModelRepository() {

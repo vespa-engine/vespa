@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import ai.vespa.llm.clients.TritonConfig;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange;
 import com.yahoo.config.model.api.OnnxModelCost;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -120,6 +122,29 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
     }
 
+    // Session sharing is decided by a feature flag and written to the Triton config of the runtime component.
+    @Test
+    void session_sharing_feature_flag_is_written_to_triton_config() {
+        assertFalse(tritonConfig(createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, false)).shareOnnxSessionBetweenInstances());
+        assertTrue(tritonConfig(createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, true)).shareOnnxSessionBetweenInstances());
+    }
+
+    // Pins the restart marker on the session sharing field, which the feature flag flips.
+    @Test
+    void restart_when_triton_session_sharing_changes() {
+        var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, false);
+        var next = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, true);
+        var result = validateModel(previous, next);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).getMessage().contains("Triton config changed"));
+        assertTrue(result.get(0).getMessage().contains("shareOnnxSessionBetweenInstances"));
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+
+        var restartAction = (VespaRestartAction) result.get(0);
+        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, restartAction.configChange());
+    }
+
     @Test
     void no_restart_when_triton_runtime_remains_disabled() {
         var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, false);
@@ -151,19 +176,29 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         return ValidationTester.validateChanges(
                 new RestartOnDeployForTritonOnnxRuntimeValidator(),
                 next,
-                deployStateBuilder(false)
+                deployStateBuilder(false, false)
                         .properties(new TestProperties().setHostedVespa(true))
                         .previousModel(current)
                         .build());
     }
 
     private static VespaModel createModel(String servicesXml, boolean useTriton) {
-        var builder = deployStateBuilder(useTriton);
+        return createModel(servicesXml, useTriton, false);
+    }
+
+    private static VespaModel createModel(String servicesXml, boolean useTriton, boolean shareSession) {
+        var builder = deployStateBuilder(useTriton, shareSession);
         return new VespaModelCreatorWithMockPkg(null, servicesXml).create(builder);
     }
 
-    private static DeployState.Builder deployStateBuilder(boolean useTriton) {
-        var deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setUseTriton(useTriton));
+    // The cluster produces the config for all its Triton components.
+    private static TritonConfig tritonConfig(VespaModel model) {
+        return model.getConfig(TritonConfig.class, "cluster1");
+    }
+
+    private static DeployState.Builder deployStateBuilder(boolean useTriton, boolean shareSession) {
+        var deployStateBuilder = new DeployState.Builder().properties(
+                new TestProperties().setUseTriton(useTriton).setTritonShareOnnxSession(shareSession));
 
         if (useTriton) {
             var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
