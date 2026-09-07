@@ -26,6 +26,11 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
 
     @Override
     protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        // The binary query stack format has no element filter field, and silently dropping the
+        // filter would over-match, so refuse rather than produce a query with different semantics.
+        if ( ! elementFilter.isEmpty()) {
+            throw new IllegalStateException("cannot serialize sameElement with an element filter in old protocol");
+        }
         super.encodeThis(buffer, context);
         putString(fieldName, buffer);
     }
@@ -103,12 +108,13 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
     @Override
     public boolean equals(Object other) {
         if ( ! super.equals(other)) return false;
-        return Objects.equals(this.fieldName, ((SameElementItem)other).fieldName);
+        return Objects.equals(this.fieldName, ((SameElementItem)other).fieldName)
+               && Objects.equals(this.elementFilter, ((SameElementItem)other).elementFilter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), fieldName);
+        return Objects.hash(super.hashCode(), fieldName, elementFilter);
     }
 
     @Override
