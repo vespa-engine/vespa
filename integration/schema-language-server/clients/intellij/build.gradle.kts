@@ -40,8 +40,8 @@ dependencies {
   implementation("com.yahoo.vespa:searchlib:8-SNAPSHOT")
   implementation("com.yahoo.vespa:container-search:8-SNAPSHOT")
   implementation("com.yahoo.vespa:config-model-api:8-SNAPSHOT")
-  implementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-  implementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+  implementation("org.junit.jupiter:junit-jupiter-api:5.14.4")
+  implementation("org.junit.jupiter:junit-jupiter-engine:5.14.4")
   implementation("org.jsoup:jsoup:1.23.2")
   implementation("com.vladsch.flexmark:flexmark-html2md-converter:0.64.8")
 
