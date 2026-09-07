@@ -60,7 +60,7 @@ import ai.vespa.schemals.parser.ast.weightedsetElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 
-public class    BodyKeywordCompletion implements CompletionProvider {
+public class BodyKeywordCompletion implements CompletionProvider {
     // Currently key is the classLeafIdentifierString of a node with a body
     private static Map<Class<?>, List<CompletionItem>> bodyKeywordSnippets = new HashMap<>() {{
         put(rootSchema.class, List.of(
