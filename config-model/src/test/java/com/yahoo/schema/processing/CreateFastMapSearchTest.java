@@ -7,6 +7,7 @@ import com.yahoo.language.process.ProcessingException;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,47 @@ public class CreateFastMapSearchTest {
             assertEquals(Attribute.Type.STRING, attribute.getType());
             assertEquals(Attribute.CollectionType.ARRAY, attribute.getCollectionType());
             assertTrue(attribute.isFastSearch());
+        }
+    }
+
+    @Test
+    void requireKeyValueAttributeIsUncasedByDefault() throws ParseException {
+        for (String valueType : supportedValueTypes) {
+            var schema = build(fastSearchMap("foo", "string", valueType));
+
+            Attribute attribute = keyValueAttribute(schema, "foo");
+            assertEquals(Case.UNCASED, attribute.getCase());
+            assertNull(attribute.getDictionary(), "An uncased attribute keeps the default dictionary");
+        }
+    }
+
+    /** A cased key and value give a cased term, which needs a cased dictionary or the lookup would be folded. */
+    @Test
+    void requireKeyValueAttributeIsCasedWhenTheStringMapIsCased() throws ParseException {
+        var schema = build(casedFastSearchMap("foo", "string", true, true));
+
+        Attribute attribute = keyValueAttribute(schema, "foo");
+        assertEquals(Case.CASED, attribute.getCase());
+        assertNotNull(attribute.getDictionary());
+        assertEquals(Case.CASED, attribute.getDictionary().getMatch());
+    }
+
+    /** An int value is hex encoded the same way at index and query time, so only the key decides the casing. */
+    @Test
+    void requireKeyValueAttributeOfAnIntMapFollowsTheKeyCasing() throws ParseException {
+        assertEquals(Case.CASED, keyValueAttribute(build(casedFastSearchMap("foo", "int", true, false)), "foo").getCase());
+        assertEquals(Case.UNCASED, keyValueAttribute(build(casedFastSearchMap("foo", "int", false, false)), "foo").getCase());
+    }
+
+    @Test
+    void requireErrorWhenOnlyOneOfTheKeyAndValueOfAStringMapIsCased() {
+        for (boolean casedKey : new boolean[] { true, false }) {
+            var exception = assertThrows(IllegalArgumentException.class,
+                    () -> build(casedFastSearchMap("foo", "string", casedKey, !casedKey)));
+            assertTrue(exception.getMessage().contains("Map with fast search requires the same match casing " +
+                                                       "on the key and the value, but only the " +
+                                                       (casedKey ? "key" : "value") + " is cased."),
+                    "Unexpected message: " + exception.getMessage());
         }
     }
 
@@ -164,6 +206,28 @@ public class CreateFastMapSearchTest {
             assertNotNull(child.getConcreteField("bar$keyvalue"), "Expected key-value field for the child's own map");
             assertNull(parent.getConcreteField("bar$keyvalue"));
         }
+    }
+
+    private static Attribute keyValueAttribute(Schema schema, String mapName) {
+        String fieldName = mapName + "$keyvalue";
+        Attribute attribute = schema.getConcreteField(fieldName).getAttributes().get(fieldName);
+        assertNotNull(attribute);
+        return attribute;
+    }
+
+    private static String casedFastSearchMap(String name, String valueType, boolean casedKey, boolean casedValue) {
+        return joinLines("field " + name + " type map<string, " + valueType + "> {",
+                         "  indexing: summary",
+                         "  map: fast-search",
+                         "  struct-field key {",
+                         "    indexing: attribute",
+                         "    match: " + (casedKey ? "cased" : "uncased"),
+                         "  }",
+                         "  struct-field value {",
+                         "    indexing: attribute",
+                         "    match: " + (casedValue ? "cased" : "uncased"),
+                         "  }",
+                         "}");
     }
 
     private static String nonFastSearchMap(String name, String keyType, String valueType) {

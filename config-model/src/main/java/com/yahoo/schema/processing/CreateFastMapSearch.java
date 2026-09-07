@@ -9,6 +9,8 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.Dictionary;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.searchlib.document.FastMapSearch;
@@ -94,9 +96,44 @@ public class CreateFastMapSearch extends Processor {
         Attribute attribute = new Attribute(fieldName, Attribute.Type.STRING, Attribute.CollectionType.ARRAY);
         attribute.setFastSearch(true);
         field.addAttribute(attribute);
+        if (isCasedKeyValue(inputField, valueType, validate)) {
+            // Uncased is the default, so only a cased map has anything to set. The field must carry the
+            // casing too, as later processors derive attribute casing from it, and the dictionary must be
+            // cased or the lookup would be folded.
+            field.setMatchingCase(Case.CASED);
+            attribute.setCase(Case.CASED);
+            Dictionary dictionary = field.getOrSetDictionary();
+            dictionary.updateMatch(Case.CASED);
+            attribute.setDictionary(dictionary);
+        }
         field.setIndexingScript(schema.getName(), keyValueScript(inputField, fieldName, valueType));
         field.setInternalField(true);
         return field;
+    }
+
+    /**
+     * Returns whether the synthetic attribute of the given map field is matched cased. Key and value share one
+     * term, so a string value must be matched like the key. An int value is hex encoded, and so is matched the
+     * same way whichever casing the term has.
+     */
+    private boolean isCasedKeyValue(SDField inputField, DataType valueType, boolean validate) {
+        boolean casedKey = isCased(inputField, "key");
+        if (valueType != DataType.STRING) {
+            return casedKey;
+        }
+        boolean casedValue = isCased(inputField, "value");
+        if (validate && casedKey != casedValue) {
+            throw newProcessException(schema.getName(), inputField.getName(),
+                                      "Map with fast search requires the same match casing on the key and the value, " +
+                                      "but only the " + (casedKey ? "key" : "value") + " is cased.");
+        }
+        return casedKey;
+    }
+
+    /** Returns whether the named struct field of the given map field is matched cased. */
+    private static boolean isCased(SDField mapField, String structFieldName) {
+        SDField structField = mapField.getStructField(structFieldName);
+        return structField != null && structField.getMatching().getCase() == Case.CASED;
     }
 
     /**
