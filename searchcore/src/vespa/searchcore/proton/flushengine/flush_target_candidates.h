@@ -2,7 +2,8 @@
 #pragma once
 
 #include "flush_target_candidate.h"
-#include "prepare_restart_flush_strategy.h"
+#include "flushcontext.h"
+#include "prepare_restart_costs_config.h"
 
 #include <span>
 
@@ -36,13 +37,11 @@ private:
     double                                _flushTargetsWriteCost;
     double                                _flush_targets_read_cost;
 
-    using Config = PrepareRestartFlushStrategy::Config;
-
 public:
     using UP = std::unique_ptr<FlushTargetCandidates>;
 
     FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates, size_t num_candidates,
-                          const flushengine::TlsStats& tlsStats, const Config& cfg);
+                          const flushengine::TlsStats& tlsStats, const flushengine::PrepareRestartCostsConfig& cfg);
 
     TlsReplayCost getTlsReplayCost() const { return _tlsReplayCost; }
     double getFlushTargetsWriteCost() const { return _flushTargetsWriteCost; }
