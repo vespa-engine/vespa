@@ -303,6 +303,7 @@
       "public ai.vespa.llm.clients.TritonConfig$Builder target(java.lang.String)",
       "public ai.vespa.llm.clients.TritonConfig$Builder modelRepositoryPath(java.lang.String)",
       "public ai.vespa.llm.clients.TritonConfig$Builder modelControlMode(ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum)",
+      "public ai.vespa.llm.clients.TritonConfig$Builder shareOnnxSessionBetweenInstances(boolean)",
       "public ai.vespa.llm.clients.TritonConfig$Builder timeout(long)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
@@ -379,6 +380,7 @@
       "public java.lang.String target()",
       "public java.lang.String modelRepositoryPath()",
       "public ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum modelControlMode()",
+      "public boolean shareOnnxSessionBetweenInstances()",
       "public long timeout()"
     ],
     "fields" : [

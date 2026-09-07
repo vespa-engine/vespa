@@ -193,7 +193,15 @@ public class Flags {
             "use-triton", false,
             List.of("glebashnik"), "2025-04-30", "2026-12-01",
             "Whether to use Triton as ONNX runtime",
-            "Takes effect at redeployment",
+            "Takes effect at redeployment (requires restart)",
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
+    );
+
+    public static final UnboundBooleanFlag TRITON_SHARE_ONNX_SESSION = defineFeatureFlag(
+            "triton-share-onnx-session", false,
+            List.of("glebashnik"), "2026-09-04", "2026-12-01",
+            "Whether model instances in Triton share one ONNX Runtime session per device instead of each loading the model",
+            "Takes effect at redeployment (requires restart)",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
     );
 
