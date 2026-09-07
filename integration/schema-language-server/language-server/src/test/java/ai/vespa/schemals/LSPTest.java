@@ -1,6 +1,7 @@
 package ai.vespa.schemals;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,6 +18,8 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.SemanticTokensLegend;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +28,7 @@ import com.yahoo.io.IOUtils;
 
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventCompletionContext;
+import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.context.ParseContext;
@@ -32,7 +36,9 @@ import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.schema.completion.SchemaCompletion;
 import ai.vespa.schemals.lsp.schema.completion.provider.BodyKeywordCompletion;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
+import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
+import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
@@ -142,6 +148,99 @@ public class LSPTest {
                      "Inside a linguistics search body profile and tokens should be suggested.");
         assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(16, 12)).contains("linguistics"),
                    "linguistics should be suggested in a field body.");
+    }
+
+    /**
+     * 'map: fast-search' is only accepted by the config model on maps with string or int keys and values,
+     * so {@link BodyKeywordCompletion} should only suggest the map block in such fields.
+     */
+    @Test
+    void mapFastSearchCompletionTest() throws IOException, InvalidContextException {
+        String fileName = "src/test/sdfiles/single/mapcompletion.sd";
+        File file = new File(fileName);
+        String fileURI = file.toURI().toString();
+        String fileContent = IOUtils.readFile(file);
+
+        SchemaLanguageServer.serverPath = Paths.get("target");
+
+        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        TestSchemaProgressHandler progressHandler = new TestSchemaProgressHandler();
+        ClientLogger logger = new TestLogger(messageHandler);
+        SchemaIndex schemaIndex = new SchemaIndex(logger);
+        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler, progressHandler);
+
+        scheduler.openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
+        DocumentManager document = scheduler.getDocument(fileURI);
+
+        // Positions are 0-indexed and point at the empty line inside the given field body.
+        assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(4, 12)).contains("map"),
+                   "map should be suggested in a map<string, string> field.");
+        assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(8, 12)).contains("map"),
+                   "map should be suggested in a map<string, int> field.");
+        assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(12, 12)).contains("map"),
+                    "map should not be suggested in a map<string, long> field.");
+        assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(16, 12)).contains("map"),
+                    "map should not be suggested in a string field.");
+        assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(20, 12)).contains("map"),
+                    "map should not be suggested in an array<string> field.");
+        assertEquals(List.of("fast-search"), completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(24, 17)),
+                     "fast-search should be the only suggestion after 'map: '.");
+        assertEquals(List.of("fast-search"), completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(29, 16)),
+                     "fast-search should be the only suggestion inside a map block.");
+    }
+
+    /**
+     * 'map' is both a type constructor and the keyword opening a map settings block.
+     * It should be colored as a type in the former case and as a keyword in the latter.
+     */
+    @Test
+    void mapSemanticTokenTest() throws IOException, InvalidContextException {
+        String fileName = "src/test/sdfiles/single/mapcompletion.sd";
+        File file = new File(fileName);
+        String fileURI = file.toURI().toString();
+        String fileContent = IOUtils.readFile(file);
+
+        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        TestSchemaProgressHandler progressHandler = new TestSchemaProgressHandler();
+        ClientLogger logger = new TestLogger(messageHandler);
+        SchemaIndex schemaIndex = new SchemaIndex(logger);
+        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler, progressHandler);
+
+        scheduler.openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
+
+        // Building the legend also initializes the token type tables used when producing tokens.
+        SemanticTokensLegend legend = CommonSemanticTokens.getSemanticTokensRegistrationOptions().getLegend();
+        EventDocumentContext context = new EventDocumentContext(scheduler, schemaIndex, messageHandler, new TextDocumentIdentifier(fileURI));
+        List<Integer> data = SchemaSemanticTokens.getSemanticTokens(context).getData();
+
+        // Positions are 0-indexed: the 'map' of 'type map<string, string>' on line 2 and of 'map: fast-search' on line 24.
+        assertEquals(List.of("type"), semanticTokenTypesAt(data, legend, new Position(2, 33)),
+                     "map in a field type should be colored as a type.");
+        assertEquals(List.of("keyword"), semanticTokenTypesAt(data, legend, new Position(24, 12)),
+                     "map opening a map settings block should be colored as a keyword.");
+        assertEquals(List.of("keyword"), semanticTokenTypesAt(data, legend, new Position(28, 12)),
+                     "map opening a map settings block should be colored as a keyword.");
+        assertEquals(List.of("keyword"), semanticTokenTypesAt(data, legend, new Position(24, 17)),
+                     "fast-search in a map settings block should be colored as a keyword.");
+    }
+
+    /** Decodes the delta-encoded semantic token data and returns the type names of the tokens starting at the given position. */
+    private List<String> semanticTokenTypesAt(List<Integer> data, SemanticTokensLegend legend, Position position) {
+        List<String> ret = new ArrayList<>();
+        int line = 0;
+        int column = 0;
+        for (int i = 0; i + 4 < data.size(); i += 5) {
+            int deltaLine = data.get(i);
+            int deltaColumn = data.get(i + 1);
+            line += deltaLine;
+            column = (deltaLine == 0) ? column + deltaColumn : deltaColumn;
+            if (line == position.getLine() && column == position.getCharacter()) {
+                ret.add(legend.getTokenTypes().get(data.get(i + 3)));
+            }
+        }
+        return ret;
     }
 
     private List<String> completionLabelsAt(SchemaDocumentScheduler scheduler,

@@ -94,6 +94,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.LINGUISTICS);
         add(TokenType.LOWER_BOUND);
         add(TokenType.MACRO);
+        add(TokenType.MAP);
         add(TokenType.MATCH);
         add(TokenType.MATCH_FEATURES);
         add(TokenType.MATCH_PHASE);

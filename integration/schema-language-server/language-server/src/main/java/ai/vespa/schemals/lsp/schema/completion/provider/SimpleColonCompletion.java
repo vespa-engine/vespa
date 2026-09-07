@@ -20,6 +20,7 @@ public class SimpleColonCompletion implements CompletionProvider {
         FixedKeywordBodies.ATTRIBUTE,
         FixedKeywordBodies.DISTANCE_METRIC,
         FixedKeywordBodies.INDEX,
+        FixedKeywordBodies.MAP,
         FixedKeywordBodies.MATCH,
         FixedKeywordBodies.RANK,
         FixedKeywordBodies.RANK_TYPE,

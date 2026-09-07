@@ -2,17 +2,22 @@ package ai.vespa.schemals.lsp.schema.completion.provider;
 
 import java.nio.file.Path;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+
+import com.yahoo.schema.parser.ParsedType;
+import com.yahoo.schema.parser.ParsedType.Variant;
 
 import ai.vespa.schemals.SchemaLanguageServer;
 import ai.vespa.schemals.context.EventCompletionContext;
@@ -25,6 +30,7 @@ import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.RootRankProfile;
 import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.attributeElm;
+import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.dictionaryElm;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
@@ -36,6 +42,7 @@ import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.indexOutsideDoc;
 import ai.vespa.schemals.parser.ast.INDEX;
 import ai.vespa.schemals.parser.ast.linguisticsElm;
+import ai.vespa.schemals.parser.ast.mapElm;
 import ai.vespa.schemals.parser.ast.onnxModel;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.PROFILE;
@@ -53,7 +60,7 @@ import ai.vespa.schemals.parser.ast.weightedsetElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 
-public class BodyKeywordCompletion implements CompletionProvider {
+public class    BodyKeywordCompletion implements CompletionProvider {
     // Currently key is the classLeafIdentifierString of a node with a body
     private static Map<Class<?>, List<CompletionItem>> bodyKeywordSnippets = new HashMap<>() {{
         put(rootSchema.class, List.of(
@@ -229,6 +236,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
         put(weightedsetElm.class, FixedKeywordBodies.WEIGHTEDSET.completionItems());
 
+        put(mapElm.class, FixedKeywordBodies.MAP.completionItems());
+
         put(hnswIndex.class, FixedKeywordBodies.HNSW.completionItems());
 
         put(dictionaryElm.class, FixedKeywordBodies.DICTIONARY.completionItems());
@@ -240,18 +249,64 @@ public class BodyKeywordCompletion implements CompletionProvider {
         put(indexInsideField.class, FixedKeywordBodies.INDEX.completionItems());
         put(indexOutsideDoc.class, FixedKeywordBodies.INDEX.completionItems());
 
-        Path schemaHoverPath = SchemaLanguageServer.getDefaultDocumentationPath().resolve("schema");
-        // compute docs
         for (var entry : this.entrySet()) {
-            for (CompletionItem item : entry.getValue()) {
-                String markdownKey = item.getLabel().toUpperCase(Locale.ROOT).replaceAll("-", "_");
-                Optional<Hover> hover = SchemaHover.getFileHoverInformation(schemaHoverPath, markdownKey, new Range());
-                if (hover.isPresent() && hover.get().getContents().isRight()) {
-                    item.setDocumentation(hover.get().getContents().getRight());
-                }
-            }
+            withDocumentation(entry.getValue());
         }
     }};
+
+    /**
+     * Attaches hover documentation to each completion item, looked up by the item label.
+     * Returns the same list to allow use in field initializers.
+     */
+    private static List<CompletionItem> withDocumentation(List<CompletionItem> items) {
+        Path schemaHoverPath = SchemaLanguageServer.getDefaultDocumentationPath().resolve("schema");
+        for (CompletionItem item : items) {
+            String markdownKey = item.getLabel().toUpperCase(Locale.ROOT).replaceAll("-", "_");
+            Optional<Hover> hover = SchemaHover.getFileHoverInformation(schemaHoverPath, markdownKey, new Range());
+            if (hover.isPresent() && hover.get().getContents().isRight()) {
+                item.setDocumentation(hover.get().getContents().getRight());
+            }
+        }
+        return items;
+    }
+
+    /**
+     * The config model only accepts 'map: fast-search' on maps whose key and value types are among these,
+     * see CreateFastMapSearch and ConvertParsedFields in config-model.
+     */
+    private static final Set<String> FAST_MAP_SEARCH_KEY_VALUE_TYPES = Set.of("string", "int");
+
+    /** Snippets for the map settings block, only offered in fields where fast map search is allowed. */
+    private static final List<CompletionItem> mapFieldSnippets = withDocumentation(List.of(
+        FixedKeywordBodies.MAP.getColonSnippet(),
+        FixedKeywordBodies.MAP.getBodySnippet()
+    ));
+
+    private static boolean isFastMapSearchKeyValueType(ParsedType type) {
+        return type != null
+            && type.getVariant() == Variant.BUILTIN
+            && FAST_MAP_SEARCH_KEY_VALUE_TYPES.contains(type.name());
+    }
+
+    /**
+     * Returns true if the given field element has a map type on which 'map: fast-search' can be set.
+     */
+    private static boolean supportsFastMapSearch(Node fieldNode) {
+        for (Node child : fieldNode) {
+            if (!child.isASTInstance(dataType.class)) {
+                continue;
+            }
+            if (!(child.getSchemaNode().getOriginalSchemaNode() instanceof dataType typeNode)) {
+                return false;
+            }
+            ParsedType type = typeNode.getParsedType();
+            if (type == null || type.getVariant() != Variant.MAP) {
+                return false;
+            }
+            return isFastMapSearchKeyValueType(type.mapKeyType()) && isFastMapSearchKeyValueType(type.mapValueType());
+        }
+        return false;
+    }
 
     private static final String TOKENS_MODE_CHOICE = "${1|original,first-alternative,alternatives,original-and-alternatives|}";
 
@@ -327,6 +382,12 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
         List<CompletionItem> result = bodyKeywordSnippets.get(searchNode.getASTClass());
         if (result == null) return List.of();
+
+        if (searchNode.isASTInstance(fieldElm.class) && supportsFastMapSearch(searchNode)) {
+            List<CompletionItem> withMap = new ArrayList<>(result);
+            withMap.addAll(mapFieldSnippets);
+            return withMap;
+        }
         return result;
     }
 }
