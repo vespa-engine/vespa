@@ -171,6 +171,12 @@ class JsonResponse implements StreamableJsonResponse {
         // Severity is not included in the legacy format
     }
 
+    /** Writes whether an update operation had an existing document to apply itself to. */
+    synchronized void writeWasFound(boolean wasFound) throws IOException {
+        json.writeFieldName(JsonNames.WAS_FOUND);
+        json.writeBoolean(wasFound);
+    }
+
     @Override
     public synchronized void writeDocumentCount(long count) throws IOException {
         json.writeFieldName(JsonNames.DOCUMENT_COUNT);

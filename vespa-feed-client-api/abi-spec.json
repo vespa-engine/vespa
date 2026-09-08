@@ -379,7 +379,8 @@
       "public abstract ai.vespa.feed.client.Result$Type type()",
       "public abstract ai.vespa.feed.client.DocumentId documentId()",
       "public abstract java.util.Optional resultMessage()",
-      "public abstract java.util.Optional traceMessage()"
+      "public abstract java.util.Optional traceMessage()",
+      "public java.util.Optional wasFound()"
     ],
     "fields" : [ ]
   },

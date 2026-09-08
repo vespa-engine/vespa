@@ -110,6 +110,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final int transport_connections_per_target;
     private final boolean tritonShareOnnxSession;
     private int maxDocumentOperationRequestSizeMib = new DocumentOperationExecutorConfig.Builder().build().maxDocumentOperationRequestSizeMib();
+    private final boolean documentV1ReportWasFound;
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
@@ -164,6 +165,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         onnxModelCostCalculator = deployState.onnxModelCost().newCalculator(
                 deployState.getApplicationPackage(), deployState.getProperties().applicationId(), ClusterSpec.Id.from(clusterId));
         logger = deployState.getDeployLogger();
+        documentV1ReportWasFound = deployState.featureFlags().documentV1ReportWasFound();
     }
 
     public ClusterSpec getSpec() { return spec; }
@@ -458,6 +460,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(DocumentOperationExecutorConfig.Builder builder) {
         builder.maxDocumentOperationRequestSizeMib(maxDocumentOperationRequestSizeMib);
+        builder.reportWasFound(documentV1ReportWasFound);
     }
 
     @Override

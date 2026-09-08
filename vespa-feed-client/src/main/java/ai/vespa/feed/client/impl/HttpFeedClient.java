@@ -219,15 +219,18 @@ class HttpFeedClient implements FeedClient {
     private static class MessageAndTrace {
         final String message;
         final String trace;
-        MessageAndTrace(String message, String trace) {
+        final Boolean wasFound;
+        MessageAndTrace(String message, String trace, Boolean wasFound) {
             this.message = message;
             this.trace = trace;
+            this.wasFound = wasFound;
         }
     }
 
     static MessageAndTrace parse(DocumentId documentId, byte[] json) {
         String message = null;
         String trace = null;
+        Boolean wasFound = null;
         try (JsonParser parser = jsonParserFactory.createParser(json)) {
             if (parser.nextToken() != JsonToken.START_OBJECT)
                 throw new ResultParseException(
@@ -240,6 +243,9 @@ class HttpFeedClient implements FeedClient {
                 switch (name) {
                     case "message":
                         message = parser.nextTextValue();
+                        break;
+                    case "wasFound":
+                        wasFound = parser.nextBooleanValue();
                         break;
                     case "trace":
                         if (parser.nextToken() != JsonToken.START_ARRAY)
@@ -271,7 +277,7 @@ class HttpFeedClient implements FeedClient {
             throw new ResultParseException(documentId, e);
         }
 
-        return new MessageAndTrace(message, trace);
+        return new MessageAndTrace(message, trace, wasFound);
     }
 
     static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
@@ -296,7 +302,7 @@ class HttpFeedClient implements FeedClient {
         if (outcome == Outcome.vespaFailure)
             throw new ResultException(documentId, mat.message, mat.trace);
 
-        return new ResultImpl(toResultType(outcome), documentId, mat.message, mat.trace);
+        return new ResultImpl(toResultType(outcome), documentId, mat.message, mat.trace, mat.wasFound);
     }
 
     static String getPath(DocumentId documentId) {

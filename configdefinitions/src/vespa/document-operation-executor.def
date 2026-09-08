@@ -19,3 +19,7 @@ maxThrottledBytes double default=-0.25
 
 # Maximum document POST or PUT request size in MiB, 
 maxDocumentOperationRequestSizeMib int default=100
+
+# Whether responses to document/v1 update operations include a "wasFound" field stating whether
+# the update had an existing document to apply itself to.
+reportWasFound bool default=false

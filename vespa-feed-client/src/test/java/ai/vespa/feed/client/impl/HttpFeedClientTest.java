@@ -82,6 +82,33 @@ class HttpFeedClientTest {
         assertEquals(id, result.documentId());
         assertEquals(Optional.empty(), result.resultMessage());
         assertEquals(Optional.empty(), result.traceMessage());
+        assertEquals(Optional.empty(), result.wasFound()); // Not reported by this response.
+
+        // An update against a document which does not exist is a success, but a no-op, which "wasFound" reports.
+        dispatch.set((documentId, request) -> CompletableFuture.completedFuture(
+                HttpResponse.of(200,
+                                ("""
+                                 {
+                                   "pathId": "/document/v1/ns/type/docid/0",
+                                   "id": "id:ns:type::0",
+                                   "wasFound": false
+                                 }""").getBytes(UTF_8))));
+        result = client.update(id, "json", OperationParameters.empty()).get();
+        assertEquals(Result.Type.success, result.type());
+        assertEquals(Optional.of(false), result.wasFound());
+
+        // ... and is true when the update did have a document to apply itself to.
+        dispatch.set((documentId, request) -> CompletableFuture.completedFuture(
+                HttpResponse.of(200,
+                                ("""
+                                 {
+                                   "pathId": "/document/v1/ns/type/docid/0",
+                                   "id": "id:ns:type::0",
+                                   "wasFound": true
+                                 }""").getBytes(UTF_8))));
+        result = client.update(id, "json", OperationParameters.empty()).get();
+        assertEquals(Result.Type.success, result.type());
+        assertEquals(Optional.of(true), result.wasFound());
 
         // Remove is a DELETE, and 412 OK is a conditionNotMet.
         dispatch.set((documentId, request) -> {
