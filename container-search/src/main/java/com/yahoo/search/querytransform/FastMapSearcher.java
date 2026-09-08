@@ -144,6 +144,18 @@ public class FastMapSearcher extends Searcher {
             return makeIntRange(key, valueItem, fieldName);
         }
 
+        if (mapType.valueType().kind() == Field.Type.Kind.LONG) {
+            var key = getString(keyItem);
+            if (key == null) {
+                return null;
+            }
+            var value = getLong(valueItem);
+            if (value != null) {
+                return makeWord(key, value, fieldName);
+            }
+            return makeLongRange(key, valueItem, fieldName);
+        }
+
         return null;
     }
 
@@ -168,12 +180,8 @@ public class FastMapSearcher extends Searcher {
 
     /** Gets value as integer or null. */
     private Integer getInteger(TermItem term) {
-       String number;
-       if (term instanceof IntItem intItem) {
-           number = intItem.getNumber();
-       } else if (term.getClass() == WordItem.class) {
-           number = ((WordItem) term).getWord();
-       } else {
+       String number = getNumberString(term);
+       if (number == null) {
            return null;
        }
        try {
@@ -181,6 +189,30 @@ public class FastMapSearcher extends Searcher {
        } catch (NumberFormatException e) {
            return null; // a range expression, or not an int: the caller tries the range form
        }
+    }
+
+    /** Gets value as long or null. */
+    private Long getLong(TermItem term) {
+        String number = getNumberString(term);
+        if (number == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(number.trim());
+        } catch (NumberFormatException e) {
+            return null; // a range expression, or not a long: the caller tries the range form
+        }
+    }
+
+    /** Returns the text of a numeric or word term, or null if the term is neither. */
+    private static String getNumberString(TermItem term) {
+        if (term instanceof IntItem intItem) {
+            return intItem.getNumber();
+        }
+        if (term.getClass() == WordItem.class) {
+            return ((WordItem) term).getWord();
+        }
+        return null;
     }
 
     /** Package-private for unit testing. */
@@ -231,6 +263,56 @@ public class FastMapSearcher extends Searcher {
     /** Package-private for unit testing. */
     WordItem makeWord(String key, Integer value, String fieldName) {
         return new WordItem(FastMapSearch.toKeyValue8Term(key, value),
+                            FastMapSearch.toKeyValueFieldName(fieldName), false);
+    }
+
+    /**
+     * Returns the lexical range over the synthetic attribute equivalent to the given numeric
+     * range on the long value of one map key, or null if it cannot be expressed as one.
+     */
+    StringRangeItem makeLongRange(String key, TermItem valueItem, String fieldName) {
+        if (!(valueItem instanceof IntItem intItem)) {
+            return null;
+        }
+        if (intItem.getHitLimit() != 0) {
+            return null; // a hit limit counts entries in the value attribute, not the synthetic one
+        }
+        Limit fromLimit = intItem.getFromLimit();
+        Limit toLimit = intItem.getToLimit();
+        Long from = toLongBound(fromLimit, Long.MIN_VALUE);
+        Long to = toLongBound(toLimit, Long.MAX_VALUE);
+        if (from == null || to == null) {
+            return null;
+        }
+        return new StringRangeItem(FastMapSearch.toKeyValue16Term(key, from), fromLimit.isInclusive(),
+                                   FastMapSearch.toKeyValue16Term(key, to), toLimit.isInclusive(),
+                                   FastMapSearch.toKeyValueFieldName(fieldName), false, null);
+    }
+
+    /**
+     * Returns the long to encode for the given range endpoint, using the given value when the
+     * endpoint is unbounded, or null if the endpoint has no exact long form.
+     */
+    private static Long toLongBound(Limit limit, long whenInfinite) {
+        if (limit.isInfinite()) {
+            return whenInfinite;
+        }
+        Number number = limit.number();
+        if (number instanceof Long || number instanceof Integer) {
+            return number.longValue();
+        }
+        // A fractional or out-of-range endpoint has no exact long form. Every double in the long
+        // range which equals its own rounding is an integer, and is cast exactly.
+        double asDouble = number.doubleValue();
+        if (asDouble != Math.rint(asDouble) || asDouble < -0x1p63 || asDouble >= 0x1p63) {
+            return null; // fall back to the regular sameElement
+        }
+        return (long) asDouble;
+    }
+
+    /** Package-private for unit testing. */
+    WordItem makeWord(String key, Long value, String fieldName) {
+        return new WordItem(FastMapSearch.toKeyValue16Term(key, value),
                             FastMapSearch.toKeyValueFieldName(fieldName), false);
     }
 
