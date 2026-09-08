@@ -213,4 +213,15 @@ public final class Text {
         return format("%016x", value ^ Long.MIN_VALUE);
     }
 
+    /**
+     * Returns true if the string contains any control characters (0x00-0x1F and 0x7F), false otherwise.
+     */
+    public static boolean containsControlCharacter(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < 0x20 || c == 0x7F) return true;
+        }
+        return false;
+    }
+
 }
