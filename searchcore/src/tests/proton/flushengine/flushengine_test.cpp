@@ -54,6 +54,7 @@ class SimpleGetSerialNum : public IGetSerialNum {
 class SimpleTlsStatsFactory : public flushengine::ITlsStatsFactory {
     flushengine::TlsStatsMap create() override {
         vespalib::hash_map<std::string, flushengine::TlsStats> map;
+        map.insert(std::make_pair("handler", TlsStats(1000000, 2, 200)));
         return flushengine::TlsStatsMap(std::move(map));
     }
 };
@@ -855,7 +856,7 @@ TEST(FlushEngineTest, require_that_state_explorer_can_list_flush_targets) {
     target->_initDone.await(LONG_TIMEOUT);
     target->_taskStart.await(LONG_TIMEOUT);
 
-    FlushEngineExplorer explorer(f.engine);
+    FlushEngineExplorer explorer(f.engine, PrepareRestartCostsConfig(1.0, 1.0, 1.0, 1.0));
     Slime               state;
     SlimeInserter       inserter(state);
     explorer.get_state(inserter, true);

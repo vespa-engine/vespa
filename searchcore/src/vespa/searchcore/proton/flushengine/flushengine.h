@@ -239,6 +239,7 @@ public:
     const std::shared_ptr<flushengine::FlushHistory>& get_flush_history() const noexcept { return _flush_history; }
     void configure(uint64_t max_summary_file_size, size_t each_max_memory, size_t global_max_memory);
     ReservedDiskSpaceAndMemory get_reserved_disk_space_and_memory() const override;
+    flushengine::ITlsStatsFactory& get_tls_stats_factory() const noexcept { return *_tlsStatsFactory; }
 };
 
 } // namespace proton
