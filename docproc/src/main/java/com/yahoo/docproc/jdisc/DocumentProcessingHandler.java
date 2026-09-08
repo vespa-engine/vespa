@@ -10,6 +10,7 @@ import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
+import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.docproc.AbstractConcreteDocumentFactory;
 import com.yahoo.docproc.CallStack;
@@ -27,8 +28,10 @@ import com.yahoo.messagebus.jdisc.MbusRequest;
 import com.yahoo.processing.execution.chain.ChainRegistry;
 
 import java.util.TimerTask;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -50,6 +53,9 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
             new ScheduledThreadPoolExecutor(2, new DaemonThreadFactory("docproc-later-"));
     private final ContainerDocumentConfig containerDocConfig;
     private final DocumentTypeManager documentTypeManager;
+    private final AtomicLong submittedCount = new AtomicLong();
+    private final AtomicLong completedCount = new AtomicLong();
+    private final ScheduledFuture<?> livenessWatchdogFuture;
 
     private DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
                                       ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
@@ -58,7 +64,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                       ChainsModel chainsModel, SchemaMap schemaMap,
                                       Metric metric,
                                       ContainerDocumentConfig containerDocConfig,
-                                      ContainerThreadPool threadPool) {
+                                      ContainerThreadPool threadPool,
+                                      VipStatus vipStatus,
+                                      boolean livenessCheckEnabled,
+                                      double livenessSampleIntervalSeconds,
+                                      double livenessStalledThresholdSeconds) {
         this.docprocServiceRegistry = docprocServiceRegistry;
         this.docFactoryRegistry = docFactoryRegistry;
         this.containerDocConfig = containerDocConfig;
@@ -77,6 +87,16 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                 docprocServiceRegistry.register(service.getId(), service);
             }
         }
+
+        if (livenessCheckEnabled) {
+            DocprocLivenessWatchdog watchdog = new DocprocLivenessWatchdog(
+                    submittedCount::get, completedCount::get, vipStatus::setLivenessOk,
+                    livenessSampleIntervalSeconds, livenessStalledThresholdSeconds);
+            long intervalMillis = Math.max(1, Math.round(livenessSampleIntervalSeconds * 1000));
+            livenessWatchdogFuture = laterExecutor.scheduleAtFixedRate(watchdog, intervalMillis, intervalMillis, TimeUnit.MILLISECONDS);
+        } else {
+            livenessWatchdogFuture = null;
+        }
     }
 
     DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
@@ -87,7 +107,9 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
         this(docprocServiceRegistry, documentProcessorComponentRegistry, docFactoryRegistry,
              params.getDocumentTypeManager(), params.getChainsModel(), params.getSchemaMap(),
              params.getMetric(),
-             params.getContainerDocConfig(), threadPool);
+             params.getContainerDocConfig(), threadPool,
+             params.getVipStatus(), params.isLivenessCheckEnabled(),
+             params.getLivenessSampleIntervalSeconds(), params.getLivenessStalledThresholdSeconds());
     }
 
     @Inject
@@ -99,7 +121,8 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                      DocprocConfig docprocConfig,
                                      ContainerDocumentConfig containerDocConfig,
                                      Metric metric,
-                                     ContainerThreadPool threadPool) {
+                                     ContainerThreadPool threadPool,
+                                     VipStatus vipStatus) {
         this(new ComponentRegistry<>(),
              documentProcessorComponentRegistry, docFactoryRegistry,
                 new DocumentProcessingHandlerParameters()
@@ -107,7 +130,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                      .setDocumentTypeManager(documentTypeManager)
                      .setChainsModel(buildFromConfig(chainsConfig)).setSchemaMap(configureMapping(mappingConfig))
                      .setMetric(metric)
-                     .setContainerDocumentConfig(containerDocConfig),
+                     .setContainerDocumentConfig(containerDocConfig)
+                     .setVipStatus(vipStatus)
+                     .setLivenessCheckEnabled(docprocConfig.livenessCheckEnabled())
+                     .setLivenessSampleIntervalSeconds(docprocConfig.livenessSampleIntervalSeconds())
+                     .setLivenessStalledThresholdSeconds(docprocConfig.livenessStalledThresholdSeconds()),
                 threadPool);
 
         // Set simple annotations flag
@@ -118,6 +145,9 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
 
     @Override
     protected void destroy() {
+        if (livenessWatchdogFuture != null) {
+            livenessWatchdogFuture.cancel(false);
+        }
         laterExecutor.shutdown();
         if ( ! laterExecutor.getQueue().isEmpty()) {
             // This should not happen, as container should keep this alive until all requests are served.
@@ -181,6 +211,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
         }
 
         DocumentProcessingTask task = new DocumentProcessingTask(requestContext, this, service, service.getThreadPoolExecutor());
+        submittedCount.incrementAndGet();
         task.submit();
         return null;
     }
@@ -188,6 +219,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     void submit(DocumentProcessingTask task, long delay) {
         LaterTimerTask timerTask = new LaterTimerTask(task, delay);
         laterExecutor.schedule(timerTask, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /** Records that a document processing request has run to completion (successfully or not). */
+    void recordCompleted() {
+        completedCount.incrementAndGet();
     }
 
     private static class LaterTimerTask extends TimerTask {
