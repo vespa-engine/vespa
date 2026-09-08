@@ -279,7 +279,7 @@ public class ConvertParsedFields {
         if (!isSupportedFastMapKeyValueType(type)) {
             throw new IllegalArgumentException(
                     String.format(
-                            "For schema '%s', field '%s': 'map: fast-search' requires %s to be of type string or int, but the type is %s.",
+                            "For schema '%s', field '%s': 'map: fast-search' requires %s to be of type string, int or long, but the type is %s.",
                             schema.getName(),
                             field.getName(),
                             keyOrValue,
@@ -289,7 +289,8 @@ public class ConvertParsedFields {
 
     private boolean isSupportedFastMapKeyValueType(DataType dataType) {
         return dataType.equals(DataType.STRING)
-                || dataType.equals(DataType.INT);
+                || dataType.equals(DataType.INT)
+                || dataType.equals(DataType.LONG);
     }
 
     private void convertStructField(Schema schema, SDField field, ParsedField parsed) {

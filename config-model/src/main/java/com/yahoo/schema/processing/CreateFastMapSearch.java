@@ -17,6 +17,7 @@ import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
@@ -113,7 +114,7 @@ public class CreateFastMapSearch extends Processor {
 
     /**
      * Returns whether the synthetic attribute of the given map field is matched cased. Key and value share one
-     * term, so a string value must be matched like the key. An int value is hex encoded, and so is matched the
+     * term, so a string value must be matched like the key. An int or long value is hex encoded, and so is matched the
      * same way whichever casing the term has.
      */
     private boolean isCasedKeyValue(SDField inputField, DataType valueType, boolean validate) {
@@ -138,7 +139,8 @@ public class CreateFastMapSearch extends Processor {
 
     /**
      * Builds "input mapField | for_each { get_field $key . separator . VALUE_EXP } | attribute",
-     * where VALUE_EXP is "(get_field $value | exhex8encode)" if the value type is int
+     * where VALUE_EXP is "(get_field $value | exhex8encode)" if the value type is int,
+     * "(get_field $value | exhex16encode)" if the value type is long,
      * and "get_field $value" otherwise (if the value type is string).
      * */
     private static ScriptExpression keyValueScript(SDField inputField, String fieldName, DataType valueType) {
@@ -157,7 +159,8 @@ public class CreateFastMapSearch extends Processor {
     }
 
     /**
-     * Builds "(get_field $value | exhex8encode)" if the value type is int and
+     * Builds "(get_field $value | exhex8encode)" if the value type is int,
+     * "(get_field $value | exhex16encode)" if the value type is long, and
      * "get_field $value" otherwise.
      * */
     private static Expression valueExpression(DataType valueType) {
@@ -165,6 +168,8 @@ public class CreateFastMapSearch extends Processor {
 
         if (valueType == DataType.INT) {
             return new ParenthesisExpression(new StatementExpression(field, new ExcessHex8EncodeExpression()));
+        } else if (valueType == DataType.LONG) {
+            return new ParenthesisExpression(new StatementExpression(field, new ExcessHex16EncodeExpression()));
         } else { // DataType.STRING
             return field;
         }
