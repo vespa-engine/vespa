@@ -122,6 +122,7 @@ public class Validation {
         new HnswValidator().validate(execution);
         new EmbedExpressionValidator().validate(execution);
         new MaxDocumentSizeValidator().validate(execution);
+        new QuantizedTensorValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {
