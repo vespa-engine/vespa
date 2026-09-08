@@ -7,6 +7,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.Lock;
 import com.yahoo.concurrent.Locks;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
@@ -126,11 +127,15 @@ public class FileDirectory extends AbstractComponent {
     }
 
     public FileReference addFile(File source) throws IOException {
+        return addFile(source, Optional.empty());
+    }
+
+    public FileReference addFile(File source, Optional<ApplicationId> owner) throws IOException {
         Long hash = computeHash(source);
         FileReference fileReference = fileReferenceFromHash(hash);
 
         try (Lock lock = locks.lock(fileReference)) {
-            return addFile(source, fileReference, hash);
+            return addFile(source, fileReference, hash, owner);
         }
     }
 
@@ -156,15 +161,15 @@ public class FileDirectory extends AbstractComponent {
     }
 
     // Check if we should add file, it might already exist
-    private boolean shouldAddFile(File source, Long hashOfFileToBeAdded) throws IOException {
+    private boolean shouldAddFile(File source, Long hashOfFileToBeAdded, Optional<ApplicationId> owner) throws IOException {
         FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
         File destinationDir = destinationDir(fileReference);
         if ( ! destinationDir.exists()) return true;
 
         File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
         if ( ! existingFile.exists() || ! computeHash(existingFile).equals(hashOfFileToBeAdded)) {
-            log.log(WARNING, "Directory for file reference '" + fileReference.value() +
-                    "' has content that does not match its hash, deleting everything in " +
+            log.log(WARNING, "Directory for file reference '" + fileReference.value() + "'" + ownerSuffix(owner) +
+                    " has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
             deleteDirRecursively(destinationDir);
             return true;
@@ -185,13 +190,13 @@ public class FileDirectory extends AbstractComponent {
     }
 
     // Pre-condition: Destination dir does not exist
-    private FileReference addFile(File source, FileReference reference, Long hash) throws IOException {
-        if ( ! shouldAddFile(source, hash)) return reference;
+    private FileReference addFile(File source, FileReference reference, Long hash, Optional<ApplicationId> owner) throws IOException {
+        if ( ! shouldAddFile(source, hash, owner)) return reference;
 
         ensureRootExist();
         Path tempDestinationDir = uncheck(() -> Files.createTempDirectory(root.toPath(), "writing"));
         try {
-            logfileInfo(source);
+            logfileInfo(source, owner);
 
             // Copy files to temp dir
             File tempDestination = new File(tempDestinationDir.toFile(), source.getName());
@@ -213,11 +218,15 @@ public class FileDirectory extends AbstractComponent {
         }
     }
 
-    private void logfileInfo(File file ) throws IOException {
+    private void logfileInfo(File file, Optional<ApplicationId> owner) throws IOException {
         BasicFileAttributes basicFileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-        log.log(FINE, () -> "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
+        log.log(FINE, () -> "Adding file " + file.getAbsolutePath() + ownerSuffix(owner) + " (created " + basicFileAttributes.creationTime() +
                 ", modified " + basicFileAttributes.lastModifiedTime() +
                 ", size " + basicFileAttributes.size() + ")");
+    }
+
+    private static String ownerSuffix(Optional<ApplicationId> owner) {
+        return owner.map(id -> " for application '" + id.toFullString() + "'").orElse("");
     }
 
     private static void copyFile(File source, File dest) throws IOException {
