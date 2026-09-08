@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
 import com.yahoo.schema.document.GeoPos;
+import com.yahoo.schema.document.QuantizationParams;
 import com.yahoo.schema.parser.ConvertParsedTypes.TypeResolver;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.Schema;
@@ -108,6 +109,9 @@ public class ConvertParsedFields {
         attribute.setFastAccess(parsed.getFastAccess());
         attribute.setMutable(parsed.getMutable());
         attribute.setEnableOnlyBitVector(parsed.getEnableOnlyBitVector());
+        if (parsed.hasQuantization()) {
+            attribute.setQuantizationParams(QuantizationParams.ofBits(parsed.quantization().bits()));
+        }
 
         // attribute.setTensorType(?)
 

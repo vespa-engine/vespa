@@ -23,6 +23,7 @@ public class ParsedAttribute extends ParsedBlock {
     private final Map<String, String> aliases = new LinkedHashMap<>();
     private ParsedSorting sortSettings = null;
     private String distanceMetric = null;
+    private ParsedQuantization quantization = null;
 
     public ParsedAttribute(String name) {
         super(name, "attribute");
@@ -60,4 +61,12 @@ public class ParsedAttribute extends ParsedBlock {
     public void setFastSearch(boolean value) { this.enableFastSearch = value; }
     public void setMutable(boolean value) { this.enableMutable = value; }
     public void setPaged(boolean value) { this.enablePaged = value; }
+
+    public void setQuantization(ParsedQuantization quantization) {
+        verifyThat(this.quantization == null, "already has quantization");
+        this.quantization = quantization;
+    }
+    public boolean hasQuantization() { return this.quantization != null; }
+    public ParsedQuantization quantization() { return this.quantization; }
+
 }
