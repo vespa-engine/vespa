@@ -3099,8 +3099,6 @@ String identifierWithDash() :
     | <MIN_HITS_PER_THREAD>
     | <MULTI_THREADED_INDEXING>
     | <NEIGHBORS_TO_EXPLORE_AT_INSERT>
-    | <QUANTIZATION>
-    | <BITS>
     | <NUM_SEARCH_PARTITIONS>
     | <NUM_THREADS_PER_SEARCH>
     | <OMIT_SUMMARY_FEATURES>
@@ -3151,6 +3149,7 @@ String identifier() : { }
       | <AS>
       | <ASCENDING>
       | <ATTRIBUTE>
+      | <BITS>
       | <BOLDING>
       | <BTREE>
       | <CASED>
@@ -3218,6 +3217,7 @@ String identifier() : { }
       | <PRIMARY>
       | <PROFILE>
       | <PROPERTIES>
+      | <QUANTIZATION>
       | <QUATERNARY>
       | <QUERY>
       | <RANK>

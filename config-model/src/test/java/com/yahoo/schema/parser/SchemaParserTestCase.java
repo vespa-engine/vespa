@@ -383,6 +383,18 @@ public class SchemaParserTestCase {
         }
     }
 
+    @Test
+    void quantization_parser_tokens_can_be_used_as_identifiers() {
+        String schema = """
+              schema foo {
+                document foo {
+                  field bits type int {}
+                  field quantization type int {}
+                }
+              }""";
+        assertDoesNotThrow(() -> parseString(schema));
+    }
+
     void checkFileParses(String fileName) throws Exception {
         var schema = parseFile(fileName);
         assertNotNull(schema);
