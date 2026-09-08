@@ -85,6 +85,10 @@ public class FileDirectory extends AbstractComponent {
     public Optional<File> getFile(FileReference reference) {
         ensureRootExist();
         File dir = new File(getPath(reference));
+        if (dir.toPath().normalize().equals(root.toPath().normalize())) {
+            log.log(WARNING, "File reference '" + reference.value() + "' resolves to the file reference root itself, refusing to serve it");
+            return Optional.empty();
+        }
         if (!dir.exists()) {
             // This is common when config server has not yet received the file from the server the app was deployed on
             log.log(FINEST, "File reference '" + reference.value() + "' ('" + dir.getAbsolutePath() + "') does not exist.");

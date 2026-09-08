@@ -6,6 +6,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHashFactory;
 
@@ -61,7 +62,7 @@ public class FileDBRegistry implements FileRegistry {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = entryDelimiterPattern.split(line);
-                if (parts.length < 2)
+                if (parts.length != 2)
                     throw new IllegalArgumentException("Cannot split '" + line + "' into two parts");
                 refs.put(parts[0], new FileReference(parts[1]));
             }
@@ -75,6 +76,8 @@ public class FileDBRegistry implements FileRegistry {
     public synchronized FileReference addFile(String relativePath) {
         if (relativePath.startsWith("/"))
             throw new IllegalArgumentException(relativePath + " is not relative");
+        if (Text.containsControlCharacter(relativePath))
+            throw new IllegalArgumentException(relativePath + " contains illegal control character(s)");
 
         Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(relativePath));
         return cachedReference.orElseGet(() -> {
@@ -137,6 +140,9 @@ public class FileDBRegistry implements FileRegistry {
 
         builder.append(HostName.getLocalhost()).append('\n');
         for (FileRegistry.Entry entry : entries) {
+            if (Text.containsControlCharacter(entry.relativePath) || Text.containsControlCharacter(entry.reference.value()))
+                throw new IllegalArgumentException("File registry entry '" + entry.relativePath +
+                                                     "' contains illegal control character(s)");
             builder.append(entry.relativePath).append(entryDelimiter).append(entry.reference.value()).append('\n');
         }
 

@@ -2,6 +2,7 @@
 package com.yahoo.compress;
 
 import com.yahoo.path.Path;
+import com.yahoo.text.Text;
 import com.yahoo.yolean.Exceptions;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -130,6 +131,9 @@ public class ArchiveStreamReader implements AutoCloseable {
             if (part.isEmpty() || (!allowDotSegment && part.equals(".")) || part.equals("..")) {
                 throw new IllegalArgumentException("Unexpected non-normalized path found in zip content: '" + name + "'");
             }
+        }
+        if (Text.containsControlCharacter(name)) {
+            throw new IllegalArgumentException("Unexpected control character found in zip content path: '" + name + "'");
         }
         return name;
     }
