@@ -151,7 +151,7 @@ public class LSPTest {
     }
 
     /**
-     * 'map: fast-search' is only accepted by the config model on maps with string or int keys and values,
+     * 'map: fast-search' is only accepted by the config model on maps with string, int or long keys and values,
      * so {@link BodyKeywordCompletion} should only suggest the map block in such fields.
      */
     @Test
@@ -178,8 +178,8 @@ public class LSPTest {
                    "map should be suggested in a map<string, string> field.");
         assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(8, 12)).contains("map"),
                    "map should be suggested in a map<string, int> field.");
-        assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(12, 12)).contains("map"),
-                    "map should not be suggested in a map<string, long> field.");
+        assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(12, 12)).contains("map"),
+                   "map should be suggested in a map<string, long> field.");
         assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(16, 12)).contains("map"),
                     "map should not be suggested in a string field.");
         assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(20, 12)).contains("map"),
@@ -188,6 +188,8 @@ public class LSPTest {
                      "fast-search should be the only suggestion after 'map: '.");
         assertEquals(List.of("fast-search"), completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(29, 16)),
                      "fast-search should be the only suggestion inside a map block.");
+        assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(34, 12)).contains("map"),
+                    "map should not be suggested in a map<string, double> field.");
     }
 
     /**

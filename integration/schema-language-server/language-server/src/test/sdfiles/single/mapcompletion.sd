@@ -30,5 +30,8 @@ schema mapcompletion {
 
             }
         }
+        field double_values type map<string, double> {
+            indexing: summary
+        }
     }
 }
