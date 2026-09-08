@@ -220,7 +220,7 @@ public class SessionPreparer {
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
             this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
             this.athenzDomain = params.athenzDomain();
-            this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir, Optional.of(applicationId));
+            this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    flagSource,
                                                                    containerEndpoints,
