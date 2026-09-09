@@ -105,7 +105,11 @@ void ArgminAggregationResult::update_value(const ResultNode& result) {
     if (_has_value && _scratch_key->cmp(*_key) >= 0) {
         return;
     }
-    _value->set(result);
+    if (result.isMultiValue()) {
+        _value.reset(result.clone());
+    } else {
+        _value->set(result);
+    }
     _key->set(*_scratch_key);
     _has_value = true;
 }
