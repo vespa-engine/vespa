@@ -48,6 +48,7 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -944,8 +945,6 @@ public class SelectParser implements Parser {
         Map<Integer, Inspector> children = childMap(value);
         Inspector annotations = getAnnotations(value);
 
-        boolean[] equals = {false};
-
         String field;
         Inspector boundInspector;
         if (children.get(0).type() == STRING){
@@ -955,6 +954,48 @@ public class SelectParser implements Parser {
             field = getIndex(children.get(1).asString());
             boundInspector = children.get(0);
         }
+
+        var index = indexOf(field);
+        if (index.isString() && !index.isInteger() && !index.isNumerical())
+            return leafStyleSettings(annotations, buildStringRange(field, boundInspector, annotations));
+        else
+            return leafStyleSettings(annotations, buildIntRange(field, boundInspector));
+    }
+
+    /**
+     * Builds a lexical range over a string field, e.g. {"range": ["title", {">=": "aaa", "<": "zzz"}]}.
+     * Omitting a bound makes the interval unbounded in that direction, as -Infinity and Infinity do in YQL,
+     * such that an empty bound object matches everything.
+     */
+    private StringRangeItem buildStringRange(String field, Inspector boundInspector, Inspector annotations) {
+        String[] bounds = {null, null};
+        boolean[] inclusive = {false, false};
+        boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
+            if (bound.type() != STRING) {
+                throw new IllegalArgumentException("The field '" + field + "' is a string field, but the argument "
+                                                   + bound + " to range is of type " + bound.type());
+            }
+            switch (operator) {
+                case "=" -> {
+                    bounds[0] = bounds[1] = bound.asString();
+                    inclusive[0] = inclusive[1] = true;
+                }
+                case ">=", ">" -> {
+                    bounds[0] = bound.asString();
+                    inclusive[0] = operator.equals(">=");
+                }
+                case "<=", "<" -> {
+                    bounds[1] = bound.asString();
+                    inclusive[1] = operator.equals("<=");
+                }
+                default -> throw newUnexpectedArgumentException(operator, "=", "<", "<=", ">", ">=");
+            }
+        });
+        return new StringRangeItem(bounds[0], inclusive[0], bounds[1], inclusive[1], field, true, getOrigin(annotations));
+    }
+
+    private IntItem buildIntRange(String field, Inspector boundInspector) {
+        boolean[] equals = {false};
         Number[] bounds = {null, null};
         String[] operators = {null, null};
         boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
@@ -993,7 +1034,7 @@ public class SelectParser implements Parser {
             range = instantiateRangeItem(bounds[0], bounds[1], field, operators[0].equals(">"), operators[1].equals("<"));
         }
 
-        return leafStyleSettings(annotations, range);
+        return range;
     }
 
     private IntItem buildGreaterThanOrEquals(String field, String bound) {
@@ -1725,6 +1766,11 @@ public class SelectParser implements Parser {
         String expanded = indexNameExpander.expand(field);
         Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(field);
+    }
+
+    /** Returns the index of a field name as returned by {@link #getIndex}. */
+    private Index indexOf(String field) {
+        return indexFactsSession.getIndex(indexNameExpander.expand(field));
     }
 
     private static void assertHasOperator(String key, String expectedKey) {
