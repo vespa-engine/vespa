@@ -260,6 +260,13 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundIntFlag APPLICATION_UPDATE_ROLLOUT_PERCENT = defineIntFlag(
+            "application-update-rollout-percent", 0,
+            List.of("gjoranv"), "2026-09-09", "2027-03-08",
+            "Temporary percentage of applications selected for rollout, from 0 to 100",
+            "Takes effect on the next prepare. Lowering the percentage can restore previous behavior.",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
