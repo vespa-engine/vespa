@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import net.jpountz.lz4.LZ4FrameOutputStream;
@@ -19,6 +20,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * @author baldersheim
@@ -28,11 +30,17 @@ public class ApplicationFileManager implements AddFileInterface {
     private final File applicationDir;
     private final FileDirectory fileDirectory;
     private final boolean isHosted;
+    private final Optional<ApplicationId> owner;
 
     ApplicationFileManager(File applicationDir, FileDirectory fileDirectory, boolean isHosted) {
+        this(applicationDir, fileDirectory, isHosted, Optional.empty());
+    }
+
+    ApplicationFileManager(File applicationDir, FileDirectory fileDirectory, boolean isHosted, Optional<ApplicationId> owner) {
         this.applicationDir = applicationDir;
         this.fileDirectory = fileDirectory;
         this.isHosted = isHosted;
+        this.owner = owner;
     }
 
     @Override
@@ -42,7 +50,7 @@ public class ApplicationFileManager implements AddFileInterface {
     }
 
     private FileReference addFile(File file) throws IOException {
-        return fileDirectory.addFile(file);
+        return fileDirectory.addFile(file, owner);
     }
 
     @Override
