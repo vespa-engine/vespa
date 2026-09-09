@@ -100,7 +100,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     private Integer maxNodesPerMerge;
     private final Zone zone;
     private final Optional<Integer> distributionBitsInPreviousModel;
-    private final boolean relaxStrictlyIncreasingClusterStateVersions;
     private boolean singleClusterController = false;
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
@@ -471,7 +470,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         this.documentSelection = routingSelection;
         this.zone = deployState.zone();
         this.distributionBitsInPreviousModel = distributionBitsInPreviousModel(deployState, clusterId);
-        this.relaxStrictlyIncreasingClusterStateVersions = deployState.featureFlags().relaxStrictlyIncreasingClusterStateVersions();
     }
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(clusterId); }
@@ -610,12 +608,11 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     /**
      * Returns whether cluster state versions received by content nodes must be strictly increasing.
-     * This safety check can only be relaxed when the {@code relax-strictly-increasing-cluster-state-versions}
-     * feature flag is enabled AND this deployment has exactly one cluster controller configured, as the race
-     * condition it guards against requires more than one cluster controller to occur.
+     * This safety check can only be relaxed when this deployment has exactly one cluster controller configured,
+     * as the race condition it guards against requires more than one cluster controller to occur.
      */
     public boolean requireStrictlyIncreasingClusterStateVersions() {
-        return !(relaxStrictlyIncreasingClusterStateVersions && singleClusterController);
+        return !singleClusterController;
     }
 
     @Override

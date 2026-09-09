@@ -86,7 +86,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double searchNodeReservedMemoryFactor = 0.0;
     private boolean failWhenConfiguringIndexedMapOfArray = true;
     private boolean fastMapSearch = false;
-    private boolean relaxStrictlyIncreasingClusterStateVersions = false;
     private boolean commerceDiscovery = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -150,7 +149,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
     @Override public boolean fastMapSearch() { return fastMapSearch; }
-    @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return relaxStrictlyIncreasingClusterStateVersions; }
     @Override public boolean commerceDiscovery() { return commerceDiscovery; }
 
 
@@ -385,11 +383,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties fastMapSearch(boolean value) {
         this.fastMapSearch = value;
-        return this;
-    }
-
-    public TestProperties relaxStrictlyIncreasingClusterStateVersions(boolean value) {
-        this.relaxStrictlyIncreasingClusterStateVersions = value;
         return this;
     }
 
