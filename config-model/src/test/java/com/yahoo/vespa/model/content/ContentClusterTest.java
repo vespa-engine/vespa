@@ -1680,26 +1680,6 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(warnings, "");
     }
 
-    private void checkStrictlyIncreasingClusterStateVersionConfig(boolean expected) throws Exception {
-        var cc = createOneNodeCluster(false);
-
-        // stor-server config should be the same for both distributors and storage nodes
-        var builder = new StorServerConfig.Builder();
-        cc.getStorageCluster().getConfig(builder);
-        var cfg = builder.build();
-        assertEquals(expected, cfg.require_strictly_increasing_cluster_state_versions());
-
-        builder = new StorServerConfig.Builder();
-        cc.getDistributorNodes().getConfig(builder);
-        cfg = builder.build();
-        assertEquals(expected, cfg.require_strictly_increasing_cluster_state_versions());
-    }
-
-    @Test
-    void strictly_increasing_cluster_state_versions_config() throws Exception {
-        checkStrictlyIncreasingClusterStateVersionConfig(true);
-    }
-
     private void checkStrictlyIncreasingClusterStateVersionConfigForZone(Zone zone, boolean expected) throws Exception {
         String xml = new ContentClusterBuilder().docTypes("test").getXml();
         var cc = createWithZone(xml, zone);
@@ -1723,7 +1703,7 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_stays_enabled_with_multiple_cluster_controllers_even_when_flag_is_enabled() {
+    void strictly_increasing_cluster_state_versions_config_is_enabled_with_multiple_cluster_controllers() {
         // Self-hosted deployments with more than one config server get one cluster controller per config server.
         // The version check must never be disabled when there is more than one cluster controller, regardless of the flag.
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
@@ -1764,7 +1744,7 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_is_disabled_with_a_single_config_server_when_flag_is_enabled() throws Exception {
+    void strictly_increasing_cluster_state_versions_config_is_disabled_with_a_single_config_server() throws Exception {
         // Self-hosted deployments with a single config server also get a single cluster controller,
         // so the version check can be relaxed there once the feature flag is enabled.
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
