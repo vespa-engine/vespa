@@ -53,7 +53,7 @@ namespace {
 [[nodiscard]] double calculate_flush_targets_read_cost(std::span<const FlushTargetCandidate> candidates,
                                                        size_t num_candidates) noexcept {
     double result = 0;
-    for (size_t i = 0; i < num_candidates; ++i) {
+    for (size_t i = 0; i < candidates.size(); ++i) {
         if (i < num_candidates || candidates[i].get_always_flush()) {
             result += candidates[i].get_read_cost();
         }
@@ -64,7 +64,7 @@ namespace {
 [[nodiscard]] double calculate_flush_targets_replay_cost(std::span<const FlushTargetCandidate> candidates,
                                                          size_t num_candidates) noexcept {
     double result = 0;
-    for (size_t i = 0; i < num_candidates; ++i) {
+    for (size_t i = 0; i < candidates.size(); ++i) {
         if (i >= num_candidates && !candidates[i].get_always_flush()) {
             result += candidates[i].replay_cost();
         }
