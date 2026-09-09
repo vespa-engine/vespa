@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
+import java.util.List;
+
 /**
- * This result holds nothing.
+ * This result holds a list of results.
  *
  * @author baldersheim
  * @author Simon Thoresen Hult
@@ -44,4 +46,9 @@ public abstract class ResultNodeVector extends ResultNode {
     public abstract ResultNodeVector add(ResultNode r);
 
     public abstract int size();
+
+    /**
+     * Returns the elements of this vector.
+     */
+    public abstract List<? extends ResultNode> getVector();
 }

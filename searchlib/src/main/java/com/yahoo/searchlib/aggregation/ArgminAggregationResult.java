@@ -12,7 +12,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * This is an aggregated result holding the value of the aggregating expression for the hit whose key expression
  * evaluated to the smallest value: argmin(key, value). argmax(key, value) is the same result with a negated key
- * expression.
+ * expression. The value is forwarded as is, so it may be a single value or a multi-value result.
  *
  * @author johsol
  */
@@ -21,7 +21,7 @@ public class ArgminAggregationResult extends AggregationResult {
     public static final int classId = registerClass(0x4000 + 183, ArgminAggregationResult.class, ArgminAggregationResult::new);
     private ExpressionNode keyExpression = null;
     private SingleResultNode key = new FloatResultNode(0.0);
-    private SingleResultNode value = new FloatResultNode(0.0);
+    private ResultNode value = new FloatResultNode(0.0);
     private boolean hasValue = false;
 
     /**
@@ -32,7 +32,7 @@ public class ArgminAggregationResult extends AggregationResult {
     /**
      * Constructs an instance of this class with the given key and value.
      */
-    public ArgminAggregationResult(SingleResultNode key, SingleResultNode value) {
+    public ArgminAggregationResult(SingleResultNode key, ResultNode value) {
         setKey(key);
         setValue(value);
     }
@@ -55,14 +55,14 @@ public class ArgminAggregationResult extends AggregationResult {
     /**
      * Returns the value of the hit with the smallest key.
      */
-    public final SingleResultNode getValue() {
+    public final ResultNode getValue() {
         return value;
     }
 
     /**
      * Sets the value of the hit with the smallest key, marking this as holding a value.
      */
-    public final ArgminAggregationResult setValue(SingleResultNode value) {
+    public final ArgminAggregationResult setValue(ResultNode value) {
         this.value = value;
         this.hasValue = true;
         return this;
@@ -115,7 +115,7 @@ public class ArgminAggregationResult extends AggregationResult {
         keyExpression = (ExpressionNode)deserializeOptional(buf);
         hasValue = buf.getByte(null) != 0;
         key = (SingleResultNode)deserializeOptional(buf);
-        value = (SingleResultNode)deserializeOptional(buf);
+        value = (ResultNode)deserializeOptional(buf);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class ArgminAggregationResult extends AggregationResult {
             return;
         }
         key = (SingleResultNode)rhs.key.clone();
-        value = (SingleResultNode)rhs.value.clone();
+        value = (ResultNode)rhs.value.clone();
         hasValue = true;
     }
 
@@ -139,7 +139,7 @@ public class ArgminAggregationResult extends AggregationResult {
             obj.key = (SingleResultNode)key.clone();
         }
         if (value != null) {
-            obj.value = (SingleResultNode)value.clone();
+            obj.value = (ResultNode)value.clone();
         }
         return obj;
     }

@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.prelude.hitfield.RawBase64;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.Continuation;
@@ -43,9 +45,12 @@ import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.NullResultNode;
+import com.yahoo.searchlib.expression.NumericResultNode;
 import com.yahoo.searchlib.expression.RawBucketResultNode;
 import com.yahoo.searchlib.expression.RawResultNode;
 import com.yahoo.searchlib.expression.ResultNode;
+import com.yahoo.searchlib.expression.ResultNodeVector;
+import com.yahoo.searchlib.expression.SingleResultNode;
 import com.yahoo.searchlib.expression.StringBucketResultNode;
 import com.yahoo.searchlib.expression.StringResultNode;
 import com.yahoo.search.Query;
@@ -259,6 +264,40 @@ class ResultBuilder {
             return value;
         }
 
+        /**
+         * Converts a result that may be either a single value or a multi-value result. A multi-value result becomes
+         * an {@link Inspector} array so that renderers output it as an array.
+         */
+        private static Object newResultValue(ResultNode result) {
+            if (result instanceof ResultNodeVector vector) {
+                Value.ArrayValue array = new Value.ArrayValue(vector.size());
+                for (ResultNode element : vector.getVector()) {
+                    array.add(newInspector(element));
+                }
+                return array;
+            }
+            if (result instanceof SingleResultNode single) {
+                return single.getValue();
+            }
+            return result.getString();
+        }
+
+        private static Inspector newInspector(ResultNode result) {
+            if (result instanceof FloatResultNode floatNode) {
+                return new Value.DoubleValue(floatNode.getFloat());
+            }
+            if (result instanceof NumericResultNode numeric) {
+                return new Value.LongValue(numeric.getInteger());
+            }
+            if (result instanceof RawResultNode raw) {
+                return new Value.DataValue(raw.getRaw());
+            }
+            if (result instanceof BoolResultNode bool) {
+                return new Value.BoolValue(bool.getValue());
+            }
+            return new Value.StringValue(result.getString());
+        }
+
         private Object newResult(ExpressionNode execResult, int tag) {
             if (execResult instanceof AverageAggregationResult) {
                 return ((AverageAggregationResult)execResult).getAverage().getNumber();
@@ -270,7 +309,7 @@ class ResultBuilder {
                 long count = ((ExpressionCountAggregationResult)execResult).getEstimatedUniqueCount();
                 return correctExpressionCountEstimate(count, tag);
             } else if (execResult instanceof ArgminAggregationResult) {
-                return ((ArgminAggregationResult)execResult).getValue().getValue();
+                return newResultValue(((ArgminAggregationResult)execResult).getValue());
             } else if (execResult instanceof MaxAggregationResult) {
                 return ((MaxAggregationResult)execResult).getMax().getValue();
             } else if (execResult instanceof MinAggregationResult) {

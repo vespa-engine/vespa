@@ -10,6 +10,7 @@ import com.yahoo.searchlib.expression.DocumentFieldNode;
 import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.IntegerResultNodeVector;
 import com.yahoo.searchlib.expression.MD5BitFunctionNode;
 import com.yahoo.searchlib.expression.MinFunctionNode;
 import com.yahoo.searchlib.expression.XorBitFunctionNode;
@@ -69,6 +70,31 @@ public class AggregationTestCase {
         c.merge(a);
         assertEquals(3.0, c.getKey().getFloat(), delta);
         assertEquals(7, c.getValue().getInteger());
+    }
+
+    @Test
+    public void testArgminAggregationResultWithMultivalueResult() {
+        IntegerResultNodeVector values = new IntegerResultNodeVector();
+        values.add(new IntegerResultNode(6)).add(new IntegerResultNode(7));
+        ArgminAggregationResult a = new ArgminAggregationResult(new FloatResultNode(5.0), values);
+        a.setKeyExpression(new AttributeNode("attributeB"));
+        a.setExpression(new AttributeNode("attributeA"));
+        assertTrue(a.hasValue());
+        assertEquals(values, a.getValue());
+
+        // The multi-value result survives serialization as is.
+        ArgminAggregationResult b = (ArgminAggregationResult)serializeDeserialize(a);
+        assertTrue(b.hasValue());
+        assertEquals(5.0, b.getKey().getFloat(), delta);
+        assertEquals(values, b.getValue());
+
+        // A smaller key replaces the whole multi-value result.
+        IntegerResultNodeVector other = new IntegerResultNodeVector();
+        other.add(new IntegerResultNode(8));
+        ArgminAggregationResult c = new ArgminAggregationResult(new FloatResultNode(3.0), other);
+        b.merge(c);
+        assertEquals(3.0, b.getKey().getFloat(), delta);
+        assertEquals(other, b.getValue());
     }
 
     @Test
