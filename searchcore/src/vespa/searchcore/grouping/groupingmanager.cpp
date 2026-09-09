@@ -4,8 +4,8 @@
 
 #include "groupingcontext.h"
 
+#include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
-#include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>

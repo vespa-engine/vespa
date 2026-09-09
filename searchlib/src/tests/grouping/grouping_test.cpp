@@ -6,9 +6,9 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/argmin_aggregation_result.h>
+#include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
-#include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/predicates.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
