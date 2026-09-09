@@ -54,6 +54,8 @@ public class RequestBuilderTestCase {
 
     @Test
     void requireThatAllAggregationResulsAreSupported() {
+        assertLayout("all(group(a) each(output(argmax(b, c))))", "[[{ Attribute, result = [Argmin] }]]");
+        assertLayout("all(group(a) each(output(argmin(b, c))))", "[[{ Attribute, result = [Argmin] }]]");
         assertLayout("all(group(a) each(output(avg(b))))", "[[{ Attribute, result = [Average] }]]");
         assertLayout("all(group(a) each(output(count())))", "[[{ Attribute, result = [Count] }]]");
         assertLayout("all(group(a) each(output(max(b))))", "[[{ Attribute, result = [Max] }]]");

@@ -97,6 +97,8 @@ TOKEN :
     <ALIAS: "alias"> |
     <ALL: "all"> |
     <AND: "and"> |
+    <ARGMAX: "argmax"> |
+    <ARGMIN: "argmin"> |
     <ARRAY: "array"> |
     <AS: "as"> |
     <AT: "at"> |
@@ -378,6 +380,8 @@ GroupingExpression value(GroupingOperation grp) :
       ( ( lbrace() exp = exp(grp) rbrace() )           |
                    exp = addFunction(grp)              |
                    exp = andFunction(grp)              |
+                   exp = argmaxAggregator(grp)         |
+                   exp = argminAggregator(grp)         |
                    exp = attributeFunction()           |
                    exp = avgExpression(grp)            |
                    exp = catFunction(grp)              |
@@ -405,7 +409,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = sortFunction(grp)             |
                    exp = arrayAtLookup(grp)            |
                    exp = interpolatedLookup(grp)       |
-                   exp = quantilesExpression(grp)       |
+                   exp = quantilesExpression(grp)      |
                    exp = stddevAggregator(grp)         |
                    exp = stringValue()                 |
                    exp = strCatFunction(grp)           |
@@ -852,6 +856,24 @@ SumAggregator sumAggregator(GroupingOperation grp) :
     { return new SumAggregator(exp); }
 }
 
+ArgmaxAggregator argmaxAggregator(GroupingOperation grp) :
+{
+    GroupingExpression key, exp;
+}
+{
+    ( <ARGMAX> lbrace() key = exp(grp) comma() exp = exp(grp) rbrace() )
+    { return new ArgmaxAggregator(key, exp); }
+}
+
+ArgminAggregator argminAggregator(GroupingOperation grp) :
+{
+    GroupingExpression key, exp;
+}
+{
+    ( <ARGMIN> lbrace() key = exp(grp) comma() exp = exp(grp) rbrace() )
+    { return new ArgminAggregator(key, exp); }
+}
+
 SummaryValue summaryValue() :
 {
     String str = null;
@@ -1149,6 +1171,8 @@ String identifier() :
         <ALIAS> |
         <ALL> |
         <AND> |
+        <ARGMAX> |
+        <ARGMIN> |
         <ARRAY> |
         <AS> |
         <AT> |

@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_aggregation OBJECT
     SOURCES
     aggregation.cpp
+    argmin_aggregation_result.cpp
     averageaggregationresult.cpp
     countaggregationresult.cpp
     expressioncountaggregationresult.cpp

@@ -71,6 +71,8 @@ public class GroupingParserTestCase {
                 "alias",
                 "all",
                 "and",
+                "argmax",
+                "argmin",
                 "array",
                 "as",
                 "at",
@@ -581,6 +583,12 @@ public class GroupingParserTestCase {
                 "         each(output(sum(sold)) each(output(summary())))))");
 
         assertParse("all(group(artist) order(max(relevance) * count()) each(output(count())))");
+        assertParse("all(group(artist) order(argmin(price, relevance)) each(output(argmin(price, relevance))))");
+        assertParse("all(group(artist) order(-argmin(price, relevance())) each(output(argmin(price, relevance()))))");
+        assertParse("all(group(artist) each(output(argmax(popularity, price))))");
+        assertParse("all(group(artist) each(output(argmin(neg(price), popularity))))");
+        // 'argmin' and 'argmax' are keywords, but must still be usable as field names
+        assertParse("all(group(argmin) each(output(argmin(argmin, argmax))))");
         assertParse("all(group(artist) each(output(sum(popularity) / count())))");
         assertParse("all(group(artist) accuracy(0.1) each(output(sum(popularity) / count())))");
         assertParse("all(group(debugwait(artist, 3.3, true)))");
