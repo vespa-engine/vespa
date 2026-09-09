@@ -14,10 +14,14 @@ public class SecretNameTest {
     @Test
     void testSecretName() {
         SecretName.of("foo-bar");
-        SecretName.of("-");
         SecretName.of("0");
         SecretName.of("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde");
         assertThrows(IllegalArgumentException.class, () -> SecretName.of(""));
+        assertThrows(IllegalArgumentException.class, () -> SecretName.of("-"));
+        assertThrows(IllegalArgumentException.class, () -> SecretName.of("."));
+        assertThrows(IllegalArgumentException.class, () -> SecretName.of(".."));
+        assertThrows(IllegalArgumentException.class, () -> SecretName.of(".foo"));
+        assertThrows(IllegalArgumentException.class, () -> SecretName.of("foo.-bar"));
 
         // TODO: enable when all secrets are < 64 characters
         //assertThrows(IllegalArgumentException.class, () -> SecretName.of("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"));
@@ -33,6 +37,9 @@ public class SecretNameTest {
         assertFalse(SecretName.isValid("dev/aws_access_key_id"));
         assertFalse(SecretName.isValid(""));
         assertFalse(SecretName.isValid("foo bar"));
+        assertFalse(SecretName.isValid("."));
+        assertFalse(SecretName.isValid(".."));
+        assertFalse(SecretName.isValid("-"));
     }
 
 }
