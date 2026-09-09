@@ -24,6 +24,7 @@ import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
 import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.IntegerResultNodeVector;
 import com.yahoo.searchlib.expression.MD5BitFunctionNode;
 import com.yahoo.searchlib.expression.MaxFunctionNode;
 import com.yahoo.searchlib.expression.MinFunctionNode;
@@ -226,6 +227,11 @@ public class GroupingSerializationTest {
             t.assertMatch(new ArgminAggregationResult(new IntegerResultNode(5), new IntegerResultNode(7))
                     .setKeyExpression(new ConstantNode(new IntegerResultNode(5)))
                     .setExpression(new ConstantNode(new IntegerResultNode(7))));
+            IntegerResultNodeVector argminValues = new IntegerResultNodeVector();
+            argminValues.add(new IntegerResultNode(7)).add(new IntegerResultNode(8));
+            t.assertMatch(new ArgminAggregationResult(new IntegerResultNode(5), argminValues)
+                    .setKeyExpression(new ConstantNode(new IntegerResultNode(5)))
+                    .setExpression(new ConstantNode((IntegerResultNodeVector)argminValues.clone())));
         }
     }
 
