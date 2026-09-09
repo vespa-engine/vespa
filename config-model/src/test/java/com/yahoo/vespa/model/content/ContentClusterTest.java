@@ -1324,14 +1324,9 @@ public class ContentClusterTest extends ContentBaseTest {
 
 
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {
-        return createWithZone(clusterXml, zone, false);
-    }
-
-    private ContentCluster createWithZone(String clusterXml, Zone zone, boolean relaxStrictlyIncreasingClusterStateVersions) throws Exception {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .zone(zone);
-        var properties = new TestProperties().setHostedVespa(true)
-                .relaxStrictlyIncreasingClusterStateVersions(relaxStrictlyIncreasingClusterStateVersions);
+        var properties = new TestProperties().setHostedVespa(true);
         deployStateBuilder.properties(properties);
 
         List<String> schemas = SchemaBuilder.createSchemas("test");
@@ -1705,11 +1700,9 @@ public class ContentClusterTest extends ContentBaseTest {
         checkStrictlyIncreasingClusterStateVersionConfig(true);
     }
 
-    private void checkStrictlyIncreasingClusterStateVersionConfigForZone(Zone zone,
-                                                                         boolean relaxStrictlyIncreasingClusterStateVersions,
-                                                                         boolean expected) throws Exception {
+    private void checkStrictlyIncreasingClusterStateVersionConfigForZone(Zone zone, boolean expected) throws Exception {
         String xml = new ContentClusterBuilder().docTypes("test").getXml();
-        var cc = createWithZone(xml, zone, relaxStrictlyIncreasingClusterStateVersions);
+        var cc = createWithZone(xml, zone);
 
         // stor-server config should be the same for both distributors and storage nodes
         var builder = new StorServerConfig.Builder();
@@ -1724,20 +1717,13 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_is_disabled_with_a_single_cluster_controller_when_flag_is_enabled() throws Exception {
+    void strictly_increasing_cluster_state_versions_config_is_disabled_with_a_single_cluster_controller() throws Exception {
         // Dev zones get a single dedicated cluster controller, so the version check is unnecessary there,
-        // but only once the relax-strictly-increasing-cluster-state-versions feature flag is enabled.
-        checkStrictlyIncreasingClusterStateVersionConfigForZone(new Zone(Environment.dev, RegionName.from("us-east-3")), true, false);
+        checkStrictlyIncreasingClusterStateVersionConfigForZone(new Zone(Environment.dev, RegionName.from("us-east-3")), false);
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_stays_enabled_with_a_single_cluster_controller_when_flag_is_disabled() throws Exception {
-        // The relaxation must never happen unless explicitly enabled through the feature flag.
-        checkStrictlyIncreasingClusterStateVersionConfigForZone(new Zone(Environment.dev, RegionName.from("us-east-3")), false, true);
-    }
-
-    @Test
-    void strictly_increasing_cluster_state_versions_config_stays_enabled_with_multiple_cluster_controllers_even_when_flag_is_enabled() throws Exception {
+    void strictly_increasing_cluster_state_versions_config_stays_enabled_with_multiple_cluster_controllers_even_when_flag_is_enabled() {
         // Self-hosted deployments with more than one config server get one cluster controller per config server.
         // The version check must never be disabled when there is more than one cluster controller, regardless of the flag.
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
@@ -1762,7 +1748,7 @@ public class ContentClusterTest extends ContentBaseTest {
                   </content>
                 </services>
                 """;
-        var properties = new TestProperties().relaxStrictlyIncreasingClusterStateVersions(true);
+        var properties = new TestProperties();
         DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties);
         VespaModel model = new VespaModelCreatorWithMockPkg(null, xml, sds).create(deployStateBuilder);
         assertTrue(model.getAdmin().getClusterControllers().getContainers().size() > 1);
@@ -1801,7 +1787,7 @@ public class ContentClusterTest extends ContentBaseTest {
                   </content>
                 </services>
                 """;
-        var properties = new TestProperties().relaxStrictlyIncreasingClusterStateVersions(true);
+        var properties = new TestProperties();
         DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties);
         VespaModel model = new VespaModelCreatorWithMockPkg(null, xml, sds).create(deployStateBuilder);
         assertEquals(1, model.getAdmin().getClusterControllers().getContainers().size());
