@@ -96,13 +96,16 @@ FlushContext::List findBestTargetsToFlush(const FlushContext::List&    unsortedF
     FlushTargetCandidates bestSet(candidates, 0, tlsStats, cfg);
     for (size_t numCandidates = 1; numCandidates <= candidates.size(); ++numCandidates) {
         FlushTargetCandidates nextSet(candidates, numCandidates, tlsStats, cfg);
-        LOG(debug,
-            "findBestTargetsToFlush(): Created candidate set: "
-            "flushTargets=[%s], tlsReplayBytesCost=%f, tlsReplayOperationsCost=%f, "
-            "flushTargetsWriteCost=%f, flush_targets_read_cost=%f, totalCost=%f",
-            toString(nextSet.getCandidates()).c_str(), nextSet.getTlsReplayCost().bytesCost,
-            nextSet.getTlsReplayCost().operationsCost, nextSet.getFlushTargetsWriteCost(),
-            nextSet.get_flush_targets_read_cost(), nextSet.getTotalCost());
+        if (LOG_WOULD_LOG(debug)) {
+            LOG(debug,
+                "findBestTargetsToFlush(): Created candidate set: "
+                "flushTargets=[%s], tlsReplayBytesCost=%f, tlsReplayOperationsCost=%f, "
+                "flush_targets_replay_cost=%f, "
+                "flushTargetsWriteCost=%f, flush_targets_read_cost=%f, totalCost=%f",
+                toString(nextSet.getCandidates()).c_str(), nextSet.getTlsReplayCost().bytesCost,
+                nextSet.getTlsReplayCost().operationsCost, nextSet.get_flush_targets_replay_cost(),
+                nextSet.getFlushTargetsWriteCost(), nextSet.get_flush_targets_read_cost(), nextSet.getTotalCost());
+        }
         if (nextSet.getTotalCost() < bestSet.getTotalCost()) {
             bestSet = nextSet;
         }
@@ -110,10 +113,11 @@ FlushContext::List findBestTargetsToFlush(const FlushContext::List&    unsortedF
     LOG(info,
         "findBestTargetsToFlush(): Best candidate set: "
         "flushTargets=[%s], tlsReplayBytesCost=%f, tlsReplayOperationsCost=%f, "
+        "flush_targets_replay_cost=%f, "
         "flushTargetsWriteCost=%f, flush_targets_read_cost=%f, totalCost=%f",
         toString(bestSet.getCandidates()).c_str(), bestSet.getTlsReplayCost().bytesCost,
-        bestSet.getTlsReplayCost().operationsCost, bestSet.getFlushTargetsWriteCost(),
-        bestSet.get_flush_targets_read_cost(), bestSet.getTotalCost());
+        bestSet.getTlsReplayCost().operationsCost, bestSet.get_flush_targets_replay_cost(),
+        bestSet.getFlushTargetsWriteCost(), bestSet.get_flush_targets_read_cost(), bestSet.getTotalCost());
     return bestSet.getCandidates();
 }
 

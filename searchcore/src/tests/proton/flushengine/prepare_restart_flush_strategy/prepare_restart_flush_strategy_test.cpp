@@ -299,7 +299,7 @@ TEST(PrepareRestartFlushStrategyTest,
 TEST(PrepareRestartFlushStrategyTest, require_that_expensive_to_replay_target_is_flushed) {
     FlushStrategyFixture f(Config(2.0, 1.0, 4.0, 4.0));
     FlushContext::List   targets = f.getFlushTargets(
-        ContextsBuilder().add("foo", 10, 249).add("bar", 60, 150).add("baz", 60, 150, 12.0).build(), f._tlsStatsMap);
+        ContextsBuilder().add("foo", 10, 249).add("bar", 60, 300).add("baz", 60, 300, 24.0).build(), f._tlsStatsMap);
     EXPECT_EQ("[foo,baz]", toString(targets));
 }
 
