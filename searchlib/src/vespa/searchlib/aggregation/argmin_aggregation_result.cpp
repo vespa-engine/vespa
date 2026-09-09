@@ -30,7 +30,7 @@ ArgminAggregationResult::ArgminAggregationResult()
       _has_value(false) {
 }
 
-ArgminAggregationResult::ArgminAggregationResult(const SingleResultNode& key, const SingleResultNode& value)
+ArgminAggregationResult::ArgminAggregationResult(const SingleResultNode& key, const ResultNode& value)
     : AggregationResult(),
       _key_tree(std::make_shared<ExpressionTree>()),
       _key(key),
@@ -53,11 +53,14 @@ ArgminAggregationResult& ArgminAggregationResult::set_key_expression(ExpressionN
 
 void ArgminAggregationResult::onPrepare(const ResultNode& result) {
     if (!is_ready(_value.get(), result)) {
-        _value = create_and_ensure_wanted<SingleResultNode, FloatResultNode>(result);
+        _value.reset(static_cast<ResultNode*>(result.getClass().create()));
     }
     const ResultNode* key_result = (_key_tree->getRoot() != nullptr) ? _key_tree->getResult() : nullptr;
-    if (key_result != nullptr && !is_ready(_key.get(), *key_result)) {
-        _key = create_and_ensure_wanted<SingleResultNode, FloatResultNode>(*key_result);
+    if (key_result != nullptr) {
+        auto wanted_key = create_and_ensure_wanted<SingleResultNode, FloatResultNode>(*key_result);
+        if (!is_ready(_key.get(), *wanted_key)) {
+            _key = std::move(wanted_key);
+        }
     } else if (_key.get() == nullptr) {
         _key = std::make_unique<FloatResultNode>();
     }
@@ -68,7 +71,7 @@ void ArgminAggregationResult::onPrepare(const ResultNode& result) {
 
 void ArgminAggregationResult::initForUnitTest(const ResultNode& result) {
     onPrepare(result);
-    _value->set(result);
+    _value.reset(result.clone());
     _has_value = true;
 }
 
@@ -77,31 +80,32 @@ bool ArgminAggregationResult::fill_scratch_key() {
     if (key == nullptr) {
         return false;
     }
+    // Setting scratch key to max (inf) to disallows nan, but allow infinity.
+    _scratch_key->setMax();
     if (key->isMultiValue()) {
-        const auto& values = static_cast<const ResultNodeVector&>(*key);
-        if (values.empty()) {
-            return false;
+        bool ok = false;
+        const auto& key_values = static_cast<const ResultNodeVector&>(*key);
+        for (const auto& key_value : key_values) {
+            if (key_value.getFloat() <= _scratch_key->getFloat()) {
+                _scratch_key->set(key_value);
+                ok = true;
+            }
         }
-        _scratch_key->set(values.get(0));
+        return ok;
     } else {
-        _scratch_key->set(*key);
+        if (key->getFloat() <= _scratch_key->getFloat()) {
+            _scratch_key->set(*key);
+            return true;
+        }
     }
-    return true;
+    return false;
 }
 
 void ArgminAggregationResult::update_value(const ResultNode& result) {
     if (_has_value && _scratch_key->cmp(*_key) >= 0) {
         return;
     }
-    if (result.isMultiValue()) {
-        const auto& values = static_cast<const ResultNodeVector&>(result);
-        if (values.empty()) {
-            return;
-        }
-        _value->set(values.get(0));
-    } else {
-        _value->set(result);
-    }
+    _value->set(result);
     _key->set(*_scratch_key);
     _has_value = true;
 }
@@ -137,7 +141,7 @@ void ArgminAggregationResult::onMerge(const AggregationResult& b) {
 }
 
 void ArgminAggregationResult::onReset() {
-    _value.reset(static_cast<SingleResultNode*>(_value->getClass().create()));
+    _value.reset(static_cast<ResultNode*>(_value->getClass().create()));
     _key.reset(static_cast<SingleResultNode*>(_key->getClass().create()));
     _has_value = false;
 }

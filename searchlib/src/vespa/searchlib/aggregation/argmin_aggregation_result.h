@@ -23,14 +23,14 @@ private:
     std::shared_ptr<ExpressionTree> _key_tree;
     SingleResultNode::CP            _key;         // key of the winning hit
     SingleResultNode::CP            _scratch_key; // candidate key, not serialized
-    SingleResultNode::CP            _value;       // value of the winning hit
+    ResultNode::CP                  _value;
     bool                            _has_value;
 
 public:
     DECLARE_AGGREGATIONRESULT(ArgminAggregationResult);
 
     ArgminAggregationResult();
-    ArgminAggregationResult(const SingleResultNode& key, const SingleResultNode& value);
+    ArgminAggregationResult(const SingleResultNode& key, const ResultNode& value);
     ~ArgminAggregationResult() override;
 
     ArgminAggregationResult& set_key_expression(ExpressionNode::UP key);
@@ -39,7 +39,7 @@ public:
     void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;
 
     [[nodiscard]] const SingleResultNode& key() const noexcept { return *_key; }
-    [[nodiscard]] const SingleResultNode& value() const noexcept { return *_value; }
+    [[nodiscard]] const ResultNode& value() const noexcept { return *_value; }
     [[nodiscard]] bool has_value() const noexcept { return _has_value; }
 
 private:
