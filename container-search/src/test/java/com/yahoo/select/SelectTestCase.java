@@ -20,6 +20,7 @@ import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -594,6 +595,66 @@ public class SelectTestCase {
     void testRangeIllegalArguments() {
         assertParseFail("{ \"range\": [\"baz\", { \">=\": \"cox\", \"<=\": -1 }] }",
                 new IllegalArgumentException("Expected a numeric argument to range, but got the string 'cox'"));
+    }
+
+    @Test
+    void testStringRange() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParse("{ \"range\": [\"string\", { \">=\": \"aaa\", \"<=\": \"zzz\" }] }",
+                    "STRING_RANGE string:[\"aaa\";\"zzz\"]");
+        assertParse("{ \"range\": [\"string\", { \">\": \"aaa\", \"<=\": \"zzz\" }] }",
+                    "STRING_RANGE string:<\"aaa\";\"zzz\"]");
+        assertParse("{ \"range\": [\"string\", { \">=\": \"aaa\", \"<\": \"zzz\" }] }",
+                    "STRING_RANGE string:[\"aaa\";\"zzz\">");
+        assertParse("{ \"range\": [\"string\", { \">\": \"aaa\", \"<\": \"zzz\" }] }",
+                    "STRING_RANGE string:<\"aaa\";\"zzz\">");
+        assertParse("{ \"range\": [\"string\", { \"=\": \"aaa\" }] }",
+                    "STRING_RANGE string:[\"aaa\";\"aaa\"]");
+    }
+
+    @Test
+    void testUnboundedStringRange() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParse("{ \"range\": [\"string\", { \"<=\": \"zzz\" }] }",
+                    "STRING_RANGE string:<-Infinity;\"zzz\"]");
+        assertParse("{ \"range\": [\"string\", { \"<\": \"zzz\" }] }",
+                    "STRING_RANGE string:<-Infinity;\"zzz\">");
+        assertParse("{ \"range\": [\"string\", { \">=\": \"aaa\" }] }",
+                    "STRING_RANGE string:[\"aaa\";Infinity>");
+        assertParse("{ \"range\": [\"string\", { \">\": \"aaa\" }] }",
+                    "STRING_RANGE string:<\"aaa\";Infinity>");
+
+        // Unbounded in both directions, as range(string, -Infinity, Infinity) in YQL: matches everything
+        assertParse("{ \"range\": [\"string\", { }] }",
+                    "STRING_RANGE string:<-Infinity;Infinity>");
+    }
+
+    @Test
+    void testStringRangeStyleSettings() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        QueryTree parsed = parseWhere("{ \"range\": { \"children\": [\"string\", { \">=\": \"aaa\", \"<=\": \"zzz\" }], " +
+                                      "\"attributes\": { \"filter\": true, \"label\": \"myLabel\" } } }");
+        StringRangeItem range = (StringRangeItem)parsed.getRoot();
+        assertTrue(range.isFilter());
+        assertEquals("myLabel", range.getLabel());
+    }
+
+    @Test
+    void testStringRangeProvidesOrigin() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        QueryTree parsed = parseWhere("{ \"range\": { \"children\": [\"string\", { \">=\": \"aaa\", \"<=\": \"zzz\" }], " +
+                                      "\"attributes\": { \"origin\": { \"original\": \"foo\", \"offset\": 0, \"length\": 3 } } } }");
+        StringRangeItem range = (StringRangeItem)parsed.getRoot();
+        assertEquals("foo", range.getRawWord());
+    }
+
+    @Test
+    void testStringRangeIllegalArguments() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParseFail("{ \"range\": [\"string\", { \">=\": 1, \"<=\": \"zzz\" }] }",
+                        new IllegalArgumentException("The field 'string' is a string field, but the argument 1 to range is of type LONG"));
+        assertParseFail("{ \"range\": [\"string\", { \"<>\": \"zzz\" }] }",
+                        new IllegalArgumentException("Expected =, <, <=, > or >=, got <>."));
     }
 
     @Test
