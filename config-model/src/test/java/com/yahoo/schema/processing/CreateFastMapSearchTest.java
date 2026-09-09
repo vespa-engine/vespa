@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author johsol
  */
 public class CreateFastMapSearchTest {
-    private static String[] supportedValueTypes = { "string", "int" };
+    private static String[] supportedValueTypes = { "string", "int", "long" };
 
     @Test
     void requireKeyValueFieldIsCreatedForFastSearchMap() throws ParseException {
@@ -74,11 +74,13 @@ public class CreateFastMapSearchTest {
         assertEquals(Case.CASED, attribute.getDictionary().getMatch());
     }
 
-    /** An int value is hex encoded the same way at index and query time, so only the key decides the casing. */
+    /** An int or long value is hex encoded the same way at index and query time, so only the key decides the casing. */
     @Test
-    void requireKeyValueAttributeOfAnIntMapFollowsTheKeyCasing() throws ParseException {
-        assertEquals(Case.CASED, keyValueAttribute(build(casedFastSearchMap("foo", "int", true, false)), "foo").getCase());
-        assertEquals(Case.UNCASED, keyValueAttribute(build(casedFastSearchMap("foo", "int", false, false)), "foo").getCase());
+    void requireKeyValueAttributeOfANumericMapFollowsTheKeyCasing() throws ParseException {
+        for (String valueType : new String[] { "int", "long" }) {
+            assertEquals(Case.CASED, keyValueAttribute(build(casedFastSearchMap("foo", valueType, true, false)), "foo").getCase());
+            assertEquals(Case.UNCASED, keyValueAttribute(build(casedFastSearchMap("foo", valueType, false, false)), "foo").getCase());
+        }
     }
 
     @Test
@@ -107,6 +109,14 @@ public class CreateFastMapSearchTest {
 
         String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
         assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex8encode) } | attribute \"foo$keyvalue\"; }", script);
+    }
+
+    @Test
+    void requireKeyValueAttributeHasCorrectIndexingScriptForLongValues() throws ParseException {
+        var schema = build(fastSearchMap("foo", "string", "long"));
+
+        String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
+        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16encode) } | attribute \"foo$keyvalue\"; }", script);
     }
 
     @Test

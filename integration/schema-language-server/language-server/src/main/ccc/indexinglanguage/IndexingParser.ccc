@@ -192,6 +192,7 @@ TOKEN :
     <EMBED: "embed"> |
     <EXACT: "exact"> |
     <EXHEX8_ENCODE: "exhex8encode"> |
+    <EXHEX16_ENCODE: "exhex16encode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
     <GENERATE: "generate"> |
@@ -356,6 +357,7 @@ Expression value() :
       val = embedExp()              |
       val = exactExp()              |
       val = exHex8EncodeExp()       |
+      val = exHex16EncodeExp()      |
       val = flattenExp()            |
       val = forEachExp()            |
       val = generateExp()           |
@@ -510,6 +512,11 @@ Expression exHex8EncodeExp() : { }
  
     ( <EXHEX8_ENCODE> )
     { return new ExcessHex8EncodeExpression(); }
+;
+
+Expression exHex16EncodeExp() : { }
+    ( <EXHEX16_ENCODE> )
+    { return new ExcessHex16EncodeExpression(); }
 ;
 
 Expression flattenExp() : { }

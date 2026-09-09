@@ -53,6 +53,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExactExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8EncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionValueExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExpressionList;
@@ -263,6 +264,7 @@ TOKEN :
     <GENERATE: "generate"> |
     <EXACT: "exact"> |
     <EXHEX8_ENCODE: "exhex8encode"> |
+    <EXHEX16_ENCODE: "exhex16encode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
     <GET_FIELD: "get_field"> |
@@ -422,6 +424,7 @@ Expression value() :
       val = exactExp()              |
       val = executionValueExp()     |
       val = exHex8EncodeExp()       |
+      val = exHex16EncodeExp()      |
       val = flattenExp()            |
       val = forEachExp()            |
       val = getFieldExp()           |
@@ -568,6 +571,12 @@ Expression exHex8EncodeExp() : { }
 {
     ( <EXHEX8_ENCODE> )
     { return new ExcessHex8EncodeExpression(); }
+}
+
+Expression exHex16EncodeExp() : { }
+{
+    ( <EXHEX16_ENCODE> )
+    { return new ExcessHex16EncodeExpression(); }
 }
 
 Expression flattenExp() : { }
