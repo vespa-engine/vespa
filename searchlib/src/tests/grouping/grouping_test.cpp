@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <limits>
 
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_test");
@@ -441,7 +442,11 @@ TEST(GroupingTest, argmin_aggregation_result_with_negated_key_selects_the_larges
     EXPECT_EQ(-7, res.key().getInteger());
 }
 
-TEST(GroupingTest, argmin_aggregation_result_takes_the_first_value_of_a_multivalue_result) {
+/**
+ * Test that a multi-value result is forwarded as is: the aggregator does not care what the value
+ * is, it only selects which hit it is taken from.
+ **/
+TEST(GroupingTest, argmin_aggregation_result_forwards_a_multivalue_result) {
     auto values = MU<Int64ResultNodeVector>();
     values->push_back(Int64ResultNode(30)).push_back(Int64ResultNode(10));
 
@@ -449,7 +454,134 @@ TEST(GroupingTest, argmin_aggregation_result_takes_the_first_value_of_a_multival
     argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
     argmin.setExpression(MU<ConstantNode>(std::move(values))).aggregate(DocId(1), HitRank(5.0));
     EXPECT_TRUE(argmin.has_value());
+    ASSERT_TRUE(argmin.value().isMultiValue());
+    const auto& value = static_cast<const ResultNodeVector&>(argmin.value());
+    ASSERT_EQ(2u, value.size());
+    EXPECT_EQ(30, value.get(0).getInteger());
+    EXPECT_EQ(10, value.get(1).getInteger());
+
+    // A later hit with a smaller key replaces the whole multi-value result.
+    auto other = MU<Int64ResultNodeVector>();
+    other->push_back(Int64ResultNode(7));
+    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(3)));
+    argmin.setExpression(MU<ConstantNode>(std::move(other))).aggregate(DocId(2), HitRank(5.0));
+    const auto& replaced = static_cast<const ResultNodeVector&>(argmin.value());
+    ASSERT_EQ(1u, replaced.size());
+    EXPECT_EQ(7, replaced.get(0).getInteger());
+}
+
+/**
+ * Test that a multi-value key is represented by its smallest element, so that a hit is selected
+ * when any of its key elements is smaller than the current key.
+ **/
+TEST(GroupingTest, argmin_aggregation_result_uses_the_smallest_element_of_a_multivalue_key) {
+    auto keys = MU<Int64ResultNodeVector>();
+    keys->push_back(Int64ResultNode(9)).push_back(Int64ResultNode(2)).push_back(Int64ResultNode(5));
+
+    ArgminAggregationResult argmin;
+    argmin.set_key_expression(MU<ConstantNode>(std::move(keys)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_TRUE(argmin.has_value());
+    EXPECT_EQ(10, argmin.value().getInteger());
+    EXPECT_EQ(2, argmin.key().getInteger());
+
+    // Only the smallest element matters: {3, 100} loses to 2.
+    auto larger = MU<Int64ResultNodeVector>();
+    larger->push_back(Int64ResultNode(3)).push_back(Int64ResultNode(100));
+    argmin.set_key_expression(MU<ConstantNode>(std::move(larger)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
+    EXPECT_EQ(10, argmin.value().getInteger());
+
+    // {100, 1} wins because of the 1.
+    auto smaller = MU<Int64ResultNodeVector>();
+    smaller->push_back(Int64ResultNode(100)).push_back(Int64ResultNode(1));
+    argmin.set_key_expression(MU<ConstantNode>(std::move(smaller)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(5.0));
     EXPECT_EQ(30, argmin.value().getInteger());
+    EXPECT_EQ(1, argmin.key().getInteger());
+}
+
+TEST(GroupingTest, argmin_aggregation_result_skips_hits_with_an_empty_multivalue_key) {
+    ArgminAggregationResult argmin;
+    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNodeVector>()));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_FALSE(argmin.has_value());
+}
+
+/**
+ * Test that a NaN key, which is how an undefined floating point attribute shows up, never selects a
+ * hit: not on its own, and not as an element of a multi-value key.
+ **/
+TEST(GroupingTest, argmin_aggregation_result_never_selects_a_nan_key) {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+
+    ArgminAggregationResult argmin;
+    argmin.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(nan)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_FALSE(argmin.has_value());
+
+    // A multi-value key consisting only of NaN is skipped too.
+    auto all_nan = MU<FloatResultNodeVector>();
+    all_nan->push_back(FloatResultNode(nan)).push_back(FloatResultNode(nan));
+    argmin.set_key_expression(MU<ConstantNode>(std::move(all_nan)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
+    EXPECT_FALSE(argmin.has_value());
+
+    // NaN elements are ignored, the remaining elements decide.
+    auto some_nan = MU<FloatResultNodeVector>();
+    some_nan->push_back(FloatResultNode(nan)).push_back(FloatResultNode(4.0)).push_back(FloatResultNode(nan));
+    argmin.set_key_expression(MU<ConstantNode>(std::move(some_nan)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(5.0));
+    EXPECT_TRUE(argmin.has_value());
+    EXPECT_EQ(30, argmin.value().getInteger());
+    EXPECT_EQ(4.0, argmin.key().getFloat());
+
+    // A regular key wins over a NaN key no matter the order.
+    argmin.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(nan)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(40))).aggregate(DocId(4), HitRank(5.0));
+    EXPECT_EQ(30, argmin.value().getInteger());
+}
+
+TEST(GroupingTest, argmin_aggregation_result_selects_a_negative_infinity_key) {
+    const double inf = std::numeric_limits<double>::infinity();
+
+    ArgminAggregationResult argmin;
+    argmin.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(1.0)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_EQ(10, argmin.value().getInteger());
+
+    argmin.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(-inf)));
+    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
+    EXPECT_EQ(20, argmin.value().getInteger());
+    EXPECT_EQ(-inf, argmin.key().getFloat());
+}
+
+/**
+ * Test that an undefined floating point attribute (NaN) is never selected, also when the key is
+ * negated to express argmax.
+ **/
+TEST(GroupingTest, argmin_aggregation_result_skips_undefined_float_attribute_keys) {
+    AggregationContext ctx;
+    ctx.result().add(0).add(1).add(2);
+    ctx.add(IntAttrBuilder("value").add(10).add(20).add(30).sp());
+    ctx.add(FloatAttrBuilder("key").add(getUndefined<double>()).add(3.0).add(5.0).sp());
+
+    ArgminAggregationResult argmin;
+    argmin.set_key_expression(MU<AttributeNode>("key"));
+    argmin.setExpression(MU<AttributeNode>("value"));
+    ArgminAggregationResult argmax;
+    argmax.set_key_expression(MU<NegateFunctionNode>(MU<AttributeNode>("key")));
+    argmax.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmin).addResult(argmax));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits(), ctx.result().size());
+
+    const auto& min_res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_EQ(20, min_res.value().getInteger()); // docid 1 has the smallest defined key
+    const auto& max_res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(1));
+    EXPECT_EQ(30, max_res.value().getInteger()); // docid 2 has the largest defined key
 }
 
 TEST(GroupingTest, argmin_aggregation_result_is_empty_after_reset) {
