@@ -17,7 +17,7 @@
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
-#include <vespa/searchlib/aggregation/modifiers.h>
+#include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/attribute/array_bool_ext_attribute.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
