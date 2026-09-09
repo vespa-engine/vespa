@@ -29,10 +29,26 @@ public class Group {
     private volatile long targetActiveDocuments = 0;
     private volatile boolean isBalanced = true;
 
+    private static String azOf(List<Node> nodes) {
+        String found = null;
+        for (Node n : nodes) {
+            String az = n.availabilityZone();
+            if (found == null) {
+                found = az;
+            } else if (! found.equals(az)) {
+                log.warning("group of content nodes has conflicting availability zones: "
+                            + found + " != " + az);
+                found = null;
+                break;
+            }
+        }
+        return (found == null) ? Node.UNKNOWN_AVAILABILITY_ZONE : found;
+    }
+
     public Group(int id, List<Node> nodes) {
         this.id = id;
         this.nodes = List.copyOf(nodes);
-        this.availabilityZone = nodes.isEmpty() ? "default" : nodes.get(0).availabilityZone();
+        this.availabilityZone = azOf(nodes);
 
         int index = 0;
         for (var node: nodes) {

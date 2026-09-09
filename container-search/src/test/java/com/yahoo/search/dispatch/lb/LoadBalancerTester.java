@@ -97,6 +97,42 @@ public class LoadBalancerTester {
         assertLb(List.of(0,   0, 50, 50), loadBalance(List.of(g0, g1, g2, g3), List.of(g0, g1), "az1"));
     }
 
+    /**
+     * Asserts that the availability zone preference is disabled entirely unless this container and
+     * every group has a zone, as a zone which is only known for some of them cannot be trusted.
+     */
+    void assertFallbackToAzUnawareLoadBalancing() {
+        Node n1 = new Node("test", 0, "test-node1", 0, true, "az1");
+        Node n2 = new Node("test", 1, "test-node2", 1, true, "az1");
+        Node n3 = new Node("test", 2, "test-node3", 2, true, "az2");
+        Node n4 = new Node("test", 3, "test-node4", 3, true, "az2");
+        Group g0 = new Group(0, List.of(n1));
+        Group g1 = new Group(1, List.of(n2));
+        Group g2 = new Group(2, List.of(n3));
+        Group g3 = new Group(3, List.of(n4));
+
+        // With a zone known for this container and for every group, only the local groups are used.
+        assertLb(List.of(50, 50,  0,  0), loadBalance(withSufficientCoverage(g0, g1, g2, g3), "az1"));
+
+        // This container has no zone configured, so every group is eligible.
+        assertLb(List.of(25, 25, 25, 25), loadBalance(withSufficientCoverage(g0, g1, g2, g3),
+                                                      Node.UNKNOWN_AVAILABILITY_ZONE));
+
+        // A group has no zone because none is configured for its node: every group is eligible.
+        Group unzoned = new Group(0, List.of(new Node("test", 0, "test-node1", 0, true)));
+        assertLb(List.of(25, 25, 25, 25), loadBalance(withSufficientCoverage(unzoned, g1, g2, g3), "az1"));
+
+        // A group has no zone because its nodes disagree on one: every group is eligible.
+        Group conflicted = new Group(0, List.of(n1, new Node("test", 4, "test-node5", 0, true, "az2")));
+        assertLb(List.of(25, 25, 25, 25), loadBalance(withSufficientCoverage(conflicted, g1, g2, g3), "az1"));
+    }
+
+    private static List<Group> withSufficientCoverage(Group... groups) {
+        for (Group group : groups)
+            group.setHasSufficientCoverage(true);
+        return List.of(groups);
+    }
+
     /** Asserts that the expected number of requests per group matches the actual. */
     public void assertLb(List<Integer> expected, List<Integer> actual) {
         if ( deviationPercentage == 0.0) { // Give better assert failure messages
