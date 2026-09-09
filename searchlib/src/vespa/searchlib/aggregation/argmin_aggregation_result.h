@@ -34,6 +34,7 @@ public:
     ~ArgminAggregationResult() override;
 
     ArgminAggregationResult& set_key_expression(ExpressionNode::UP key);
+    [[nodiscard]] const ExpressionNode* key_expression() const noexcept { return _key_tree->getRoot(); }
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;

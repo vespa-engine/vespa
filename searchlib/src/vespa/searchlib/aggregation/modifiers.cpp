@@ -45,6 +45,9 @@ void AttributeNodeReplacer::execute(vespalib::Identifiable& obj) {
         auto& a(static_cast<AggregationResult&>(obj));
         replaceRecurse(a.getExpression(),
                        [&a](ExpressionNodeUP replacement) { a.setExpression(std::move(replacement)); });
+        // Matching this object stops the selection from descending on its own, so visit the members
+        // explicitly to reach any additional expression trees held by the aggregation result.
+        a.selectMembers(*this, *this);
     } else if (obj.getClass().inherits(MultiArgFunctionNode::classId)) {
         MultiArgFunctionNode::ExpressionNodeVector& v(static_cast<MultiArgFunctionNode&>(obj).expressionNodeVector());
         for (auto& e : v) {

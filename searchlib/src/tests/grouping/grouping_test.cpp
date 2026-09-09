@@ -1,5 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/argmin_aggregation_result.h>
@@ -14,6 +17,7 @@
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <vespa/searchlib/expression/negatefunctionnode.h>
 #include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -2070,6 +2074,64 @@ TEST(GroupingTest, test_that_attributes_can_be_unconditionally_converted_to_docu
     aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
     attrRequest.select(attr2DocumentAccessor, attr2DocumentAccessor);
     EXPECT_TRUE(attrRequest.getRoot().getAggregationResult(0).getExpression()->inherits(DocumentFieldNode::classId));
+}
+
+/**
+ * Test that the key expression of argmin is converted along with the value expression, which is what
+ * streaming search relies on to read the key from the document rather than from an attribute.
+ **/
+TEST(GroupingTest, argmin_key_expression_is_converted_to_a_document_field_node) {
+    ArgminAggregationResult argmin;
+    argmin.set_key_expression(MU<AttributeNode>("key"));
+    argmin.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmin));
+    aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
+    request.select(attr2DocumentAccessor, attr2DocumentAccessor);
+
+    const auto& res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_TRUE(res.getExpression()->inherits(DocumentFieldNode::classId));
+    ASSERT_TRUE(res.key_expression() != nullptr);
+    EXPECT_TRUE(res.key_expression()->inherits(DocumentFieldNode::classId));
+}
+
+/**
+ * Test the streaming search flow end to end: the attribute nodes of both the key and the value expression
+ * are rewritten to document field nodes, the grouping is configured with the document type, and the
+ * documents are aggregated directly. The hit with the smallest key must be selected.
+ **/
+TEST(GroupingTest, argmin_aggregation_result_selects_by_document_field_key_when_aggregating_documents) {
+    search::test::DocBuilder builder([](auto& header, auto& doc) noexcept {
+        doc.addField("key", header.intTypeRef());
+        doc.addField("value", header.intTypeRef());
+    });
+    auto make_doc = [&builder](uint32_t id, int32_t key, int32_t value) {
+        auto doc = builder.make_document("id:ns:searchdocument::" + std::to_string(id));
+        doc->setValue("key", document::IntFieldValue(key));
+        doc->setValue("value", document::IntFieldValue(value));
+        return doc;
+    };
+
+    ArgminAggregationResult argmin;
+    argmin.set_key_expression(MU<AttributeNode>("key"));
+    argmin.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmin));
+    aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
+    request.select(attr2DocumentAccessor, attr2DocumentAccessor);
+    request.configureStaticStuff(ConfigureStaticParams(nullptr, &builder.get_document_type()));
+    request.preAggregate(false);
+    request.aggregate(*make_doc(1, 7, 10), HitRank(1.0));
+    request.aggregate(*make_doc(2, 3, 20), HitRank(1.0));
+    request.aggregate(*make_doc(3, 5, 30), HitRank(1.0));
+    request.postAggregate();
+
+    const auto& res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_TRUE(res.has_value());
+    EXPECT_EQ(20, res.value().getInteger()); // document 2 has the smallest key
+    EXPECT_EQ(3, res.key().getInteger());
 }
 
 TEST(GroupingTest, test_bad_grouping) {
