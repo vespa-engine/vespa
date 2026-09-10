@@ -93,9 +93,10 @@ FlushContext::List findBestTargetsToFlush(const FlushContext::List&    unsortedF
     }
     sortByOldestFlushedSerialNumber(candidates);
 
-    FlushTargetCandidates bestSet(candidates, 0, tlsStats, cfg);
+    FlushTargetCandidates bestSet(candidates, tlsStats, cfg);
+    auto                  nextSet = bestSet;
     for (size_t numCandidates = 1; numCandidates <= candidates.size(); ++numCandidates) {
-        FlushTargetCandidates nextSet(candidates, numCandidates, tlsStats, cfg);
+        nextSet.inc_num_candidates(tlsStats, cfg);
         if (LOG_WOULD_LOG(debug)) {
             LOG(debug,
                 "findBestTargetsToFlush(): Created candidate set: "
