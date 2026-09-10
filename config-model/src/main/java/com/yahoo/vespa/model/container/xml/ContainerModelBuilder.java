@@ -1529,7 +1529,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
      */
      private static class JvmOptions {
 
-        private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,+*-]+");
+        private static final Pattern validPattern = Pattern.compile("-[-\\w=:./,+*]+");
         // debug port will not be available in hosted, don't allow
         private static final Pattern invalidInHostedPattern = Pattern.compile("-Xrunjdwp:transport=.*");
 
@@ -1606,8 +1606,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
      */
     private static class JvmGcOptions {
 
-        private static final Pattern validPattern = Pattern.compile("-XX:[+-]*[a-zA-z0-9=]+");
-        private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[a-zA-z0-9=]+");
+        private static final Pattern validPattern = Pattern.compile("-XX:[+-]*[\\w=]+");
+        private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[\\w=]+");
 
         private final DeployState deployState;
         private final String clusterName;
