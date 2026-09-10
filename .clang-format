@@ -1,5 +1,6 @@
 ---
 Language: Cpp
+InsertBraces: true
 AccessModifierOffset: -4
 ColumnLimit: 118
 IndentWidth: 4
