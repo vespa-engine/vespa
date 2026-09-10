@@ -41,8 +41,7 @@ private:
 public:
     using UP = std::unique_ptr<FlushTargetCandidates>;
 
-    FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates, size_t num_candidates,
-                          const flushengine::TlsStats&                  tlsStats,
+    FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates, const flushengine::TlsStats& tlsStats,
                           const flushengine::PrepareRestartCostsConfig& cfg) noexcept;
 
     [[nodiscard]] TlsReplayCost getTlsReplayCost() const noexcept { return _tlsReplayCost; }
@@ -53,6 +52,9 @@ public:
         return getTlsReplayCost().totalCost() + getFlushTargetsWriteCost() + get_flush_targets_read_cost();
     }
     [[nodiscard]] FlushContext::List getCandidates() const;
+    [[nodiscard]] size_t get_num_candidates() const noexcept { return _num_candidates; }
+    void inc_num_candidates(const flushengine::TlsStats&                  tlsStats,
+                            const flushengine::PrepareRestartCostsConfig& cfg) noexcept;
 };
 
 } // namespace proton

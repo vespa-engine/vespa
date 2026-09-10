@@ -136,7 +136,11 @@ public:
     }
     FlushTargetCandidates build() const {
         setup_candidates();
-        return {_candidates, _numCandidates, _tlsStats, _cfg};
+        FlushTargetCandidates result(_candidates, _tlsStats, _cfg);
+        while (result.get_num_candidates() < _numCandidates) {
+            result.inc_num_candidates(_tlsStats, _cfg);
+        }
+        return result;
     }
 };
 
