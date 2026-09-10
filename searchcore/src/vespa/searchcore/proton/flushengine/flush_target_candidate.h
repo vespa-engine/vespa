@@ -25,6 +25,7 @@ public:
     ~FlushTargetCandidate();
     [[nodiscard]] const std::shared_ptr<FlushContext>& get_flush_context() const noexcept { return _flush_context; }
     [[nodiscard]] search::SerialNum get_flushed_serial() const noexcept { return _flushed_serial; }
+    [[nodiscard]] double replay_cost() const noexcept { return _prepare_restart_costs.replay_cost(); }
     [[nodiscard]] double get_write_cost() const noexcept { return _prepare_restart_costs.write_cost(); }
     [[nodiscard]] double get_read_cost() const noexcept { return _prepare_restart_costs.read_cost(); }
     [[nodiscard]] bool get_always_flush() const noexcept { return _always_flush; }
