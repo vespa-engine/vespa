@@ -261,14 +261,18 @@ class QueryNodeConverter : public QueryVisitor {
         bool        left_closed = (spec == nullptr) || spec->left_closed;
         bool        right_closed = (spec == nullptr) || spec->right_closed;
         uint8_t     flags = 0;
-        if (left_unbounded)
+        if (left_unbounded) {
             flags |= ParseItem::SRT_LEFT_UNBOUNDED;
-        if (right_unbounded)
+        }
+        if (right_unbounded) {
             flags |= ParseItem::SRT_RIGHT_UNBOUNDED;
-        if (left_closed)
+        }
+        if (left_closed) {
             flags |= ParseItem::SRT_LEFT_CLOSED;
-        if (right_closed)
+        }
+        if (right_closed) {
             flags |= ParseItem::SRT_RIGHT_CLOSED;
+        }
         appendByte(flags);
         if (!left_unbounded) {
             appendString(spec->left);
@@ -276,6 +280,7 @@ class QueryNodeConverter : public QueryVisitor {
         if (!right_unbounded) {
             appendString(spec->right);
         }
+        appendCompressedNumber(spec->range_limit);
     }
 
     void visit(StringTerm& node) override { createTerm(node, ParseItem::ITEM_TERM); }

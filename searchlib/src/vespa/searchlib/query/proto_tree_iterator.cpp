@@ -298,6 +298,7 @@ bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
     }
     spec->left_closed = item.lower_inclusive();
     spec->right_closed = item.upper_inclusive();
+    spec->range_limit = item.range_limit();
     _d.stringRangeSpec = std::move(spec);
     return true;
 }
