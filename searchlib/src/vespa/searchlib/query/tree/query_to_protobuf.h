@@ -363,6 +363,9 @@ private:
         }
         item->set_lower_inclusive(spec->left_closed);
         item->set_upper_inclusive(spec->right_closed);
+        if (spec->has_range_limit()) {
+            item->set_range_limit(spec->range_limit);
+        }
     }
 
     void visit(StringTerm& node) override {

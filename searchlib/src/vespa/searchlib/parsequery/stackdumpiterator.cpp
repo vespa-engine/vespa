@@ -300,6 +300,7 @@ void SimpleQueryStackDumpIterator::read_string_range_term(const char*& p) {
     if (!spec->right_unbounded) {
         spec->right = std::string(read_string_view(p));
     }
+    spec->range_limit = static_cast<int32_t>(readCompressedInt(p));
     _d.stringRangeSpec = std::move(spec);
     _d.arity = 0;
 }
