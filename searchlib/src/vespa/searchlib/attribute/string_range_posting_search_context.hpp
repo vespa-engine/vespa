@@ -38,6 +38,20 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
                 vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     _enumStore.get_data_store()));
         }
+        if (!this->_dictionary.get_has_btree_dictionary()) {
+            return;
+        }
+        if (_range_spec->range_limit != 0) {
+            // If we the interval is open at a side (and not unbounded on that side),
+            // we have to add one since the end point might be filtered out later in use_dictionary_entry.
+            // Otherwise, we risk returning too few hits.
+            // The hitLimit annotations means that we should return "at least hitLimit" many hits,
+            // so returning more is fine.
+            int32_t sign = _range_spec->range_limit < 0 ? -1 : 1;
+            this->applyRangeLimit(_range_spec->range_limit +
+                                  sign * ((!_range_spec->left_closed || _range_spec->left_unbounded) +
+                                          (!_range_spec->right_closed || _range_spec->right_unbounded)));
+        }
         if (this->_uniqueValues == 1u) {
             if (!this->_lowerDictItr.valid() || use_single_dictionary_entry(this->_lowerDictItr)) {
                 this->lookupSingle();

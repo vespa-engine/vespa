@@ -13,13 +13,16 @@ namespace search {
  */
 
 struct StringRangeSpec {
+    // The actual string range/interval
     std::string left;
     bool        left_closed = true;
     bool        left_unbounded = false;
     std::string right;
     bool        right_closed = true;
     bool        right_unbounded = false;
-    int32_t     range_limit = 0;
+
+    // The range limit from the hitLimit annotation
+    int32_t range_limit = 0;
 
     ~StringRangeSpec();
 
