@@ -4,6 +4,7 @@
 #include <vespa/searchlib/expression/constantnode.h>
 #include <vespa/searchlib/expression/filter_predicate_node.h>
 #include <vespa/searchlib/expression/floatresultnode.h>
+#include <vespa/searchlib/expression/in_predicate_node.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/expression/istrue_predicate_node.h>
 #include <vespa/searchlib/expression/not_predicate_node.h>
@@ -40,6 +41,9 @@ public:
                                                            bool lower_inclusive, bool upper_inclusive);
 
     static std::unique_ptr<FilterPredicateNode> make_istrue(std::unique_ptr<ExpressionNode> result_node);
+
+    template <typename... Nodes>
+    static std::unique_ptr<FilterPredicateNode> make_in(std::unique_ptr<ExpressionNode> result_node, Nodes... nodes);
 
     static std::unique_ptr<FilterPredicateNode> make_not(std::unique_ptr<FilterPredicateNode> filter_node);
 
@@ -83,6 +87,14 @@ std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_range(double
 std::unique_ptr<FilterPredicateNode>
 FilterPredicateNodesTest::make_istrue(std::unique_ptr<ExpressionNode> result_node) {
     return std::make_unique<IsTruePredicateNode>(std::move(result_node));
+}
+
+template <typename... Nodes>
+std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_in(std::unique_ptr<ExpressionNode> result_node,
+                                                                       Nodes... nodes) {
+    std::vector<std::unique_ptr<ExpressionNode>> args;
+    (args.emplace_back(std::move(nodes)), ...);
+    return std::make_unique<InPredicateNode>(std::move(result_node), std::move(args));
 }
 
 std::unique_ptr<FilterPredicateNode>
@@ -202,6 +214,19 @@ TEST_F(FilterPredicateNodesTest, test_and_three_arguments) {
     EXPECT_FALSE(set_node(make_and(make_regex("foo", make_result("foo")), make_regex("bar", make_result("bar")),
                                    make_regex("baz", make_result("foobar"))))
                      .evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_in_string_match) {
+    EXPECT_TRUE(set_node(make_in(make_result("foo"), make_result("foo"))).evaluate());
+    EXPECT_TRUE(set_node(make_in(make_result("foo"), make_result("bar"), make_result("foo"))).evaluate());
+    EXPECT_FALSE(set_node(make_in(make_result("foo"), make_result("bar"), make_result("baz"))).evaluate());
+    EXPECT_FALSE(set_node(make_in(make_result("foo"), make_result("foobar"))).evaluate());
+    EXPECT_FALSE(set_node(make_in(make_result("foo.*"), make_result("foobar"))).evaluate());
+}
+
+TEST_F(FilterPredicateNodesTest, test_in_numeric_match) {
+    EXPECT_TRUE(set_node(make_in(make_result(6.0), make_result(6.0))).evaluate());
+    EXPECT_FALSE(set_node(make_in(make_result(6.0), make_result(7.0))).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_istrue_with_true_value) {

@@ -23,6 +23,7 @@ import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
+import com.yahoo.searchlib.expression.InPredicateNode;
 import com.yahoo.searchlib.expression.IsTruePredicateNode;
 import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.OrPredicateNode;
@@ -863,6 +864,14 @@ public class RequestBuilderTestCase {
     }
 
     @Test
+    void require_that_in_filter_layout_is_correct() {
+        assertLayout("all(group(a) filter(in(a, \"foo\")) each(output(count())))",
+                "[[{ Attribute, filter = [In [Attribute, Constant]], result = [Count] }]]");
+        assertLayout("all(group(a) filter(in(a, \"foo\", 2, b)) each(output(count())))",
+                "[[{ Attribute, filter = [In [Attribute, Constant, Constant, Attribute]], result = [Count] }]]");
+    }
+
+    @Test
     void require_that_filter_predicate_layout_is_correct() {
         // Not[Regex]
         assertLayout("all(group(a) filter(not regex(\".*suffix$\", a)) each(output(count())))",
@@ -1185,6 +1194,10 @@ public class RequestBuilderTestCase {
             } else if (filterExp instanceof IsTruePredicateNode itn) {
                 var expression = itn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return String.format("IsTrue [%s]", expression);
+            } else if (filterExp instanceof InPredicateNode ipn) {
+                var expression = ipn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
+                var args = ipn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
+                return String.format("In [%s, %s]", expression, args);
             } else if (filterExp instanceof NotPredicateNode npn) {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
                 return String.format(Locale.ROOT, "Not [%s]", simpleName);
