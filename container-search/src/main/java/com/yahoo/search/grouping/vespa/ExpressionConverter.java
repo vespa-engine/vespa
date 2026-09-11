@@ -32,6 +32,7 @@ import com.yahoo.search.grouping.request.GeoDistanceFunction;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.request.HourOfDayFunction;
+import com.yahoo.search.grouping.request.InPredicate;
 import com.yahoo.search.grouping.request.InfiniteValue;
 import com.yahoo.search.grouping.request.InterpolatedLookup;
 import com.yahoo.search.grouping.request.IsTruePredicate;
@@ -133,6 +134,7 @@ import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.GeoDistanceFunctionNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
+import com.yahoo.searchlib.expression.InPredicateNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.InterpolatedLookupNode;
@@ -293,6 +295,9 @@ class ExpressionConverter {
             return new RangePredicateNode(rp.getLower(), rp.getUpper(), toExpressionNode(rp.getExpression()), rp.getLowerInclusive(), rp.getUpperInclusive());
         } else if (expression instanceof IsTruePredicate rp) {
             return new IsTruePredicateNode(toExpressionNode(rp.getExpression()));
+        } else if (expression instanceof InPredicate ip) {
+            var args = ip.getArgs().stream().map(this::toExpressionNode).toList();
+            return new InPredicateNode(toExpressionNode(ip.getExpression()), args);
         } else if (expression instanceof NotPredicate np) {
             return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else if (expression instanceof OrPredicate op) {

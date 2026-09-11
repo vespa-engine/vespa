@@ -655,6 +655,16 @@ public class GroupingParserTestCase {
                 () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, false, true)) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, true, true)) each(output(count())))"));
 
+        assertAll("filter with in",
+                () -> assertParse("all(group(foo) filter(in(foo, \"bar\")) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(in(foo, \"bar\", \"baz\")) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(in(foo, 1, 2, 3)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(in(foo, bar)) each(output(count())))"));
+        assertIllegalArgument("all(group(foo) filter(in(sum(foo), 1)) each(output(count())))",
+                "In predicate cannot be used with an aggregator");
+        assertIllegalArgument("all(group(foo) filter(in(foo, sum(bar))) each(output(count())))",
+                "In predicate cannot be used with an aggregator");
+
         assertAll("filter with alias",
                 () -> assertParse(
                         "all(group($myalias=foo) filter(regex(\".*mysubstring.*\", $myalias)) each(output(count())))",
