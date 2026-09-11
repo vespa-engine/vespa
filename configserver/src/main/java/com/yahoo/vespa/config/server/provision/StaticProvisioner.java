@@ -46,10 +46,6 @@ public class StaticProvisioner implements HostProvisioner {
     }
 
     private boolean matches(ClusterMembership nodeMembership, ClusterSpec requestedCluster) {
-        if (requestedCluster.group().isPresent()) {
-            if (requestedCluster.group().get().index() != nodeMembership.group())
-                return false;
-        }
         return nodeMembership.id().equals(requestedCluster.id()) &&
                nodeMembership.type().equals(requestedCluster.type());
     }

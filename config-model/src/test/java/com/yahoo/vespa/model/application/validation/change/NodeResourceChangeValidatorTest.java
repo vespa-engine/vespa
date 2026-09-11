@@ -126,7 +126,7 @@ public class NodeResourceChangeValidatorTest {
             for (int i = 0; i < capacity.minResources().nodes(); i++)
                 hosts.add(new HostSpec("host" + (hostsCreated++),
                                        resources, resources, resources,
-                                       ClusterMembership.from(cluster, i),
+                                       ClusterMembership.from(cluster, 0, i),
                                        Optional.empty(), Optional.empty(), Optional.empty(),
                                        AzName.defaultName()));
             return hosts;
