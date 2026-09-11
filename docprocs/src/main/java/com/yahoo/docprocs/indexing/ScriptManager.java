@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Holds, per document type, the indexing language scripts to run for each input field,
@@ -100,6 +101,12 @@ class ScriptManager {
             InputExpression.FieldPathOptimizer fieldPathOptimizer = new InputExpression.FieldPathOptimizer(documentType);
             List<StatementExpression> allStatements = new ArrayList<>(ilscript.content().size());
             Map<String, DocumentScript> fieldScripts = new HashMap<>(ilscript.content().size());
+            Set<String> fastMapSearchFields =
+                    ilscript.complexfield()
+                            .stream()
+                            .filter(field -> field.why() == IlscriptsConfig.Ilscript.Complexfield.Why.FAST_MAP_SEARCH)
+                            .map(IlscriptsConfig.Ilscript.Complexfield::name)
+                            .collect(Collectors.toUnmodifiableSet());
             for (String content : ilscript.content()) {
                 StatementExpression statement = parse(documentType, parserContext, content);
                 allStatements.add(statement);
@@ -125,14 +132,14 @@ class ScriptManager {
                     } else {
                         fieldScript = new ScriptExpression(statement);
                     }
-                    fieldScripts.put(fieldName, new DocumentScript(documentType, List.of(fieldName), fieldScript));
+                    fieldScripts.put(fieldName, new DocumentScript(documentType, List.of(fieldName), fieldScript, fastMapSearchFields));
                 }
             }
 
             // One script that runs them all.
             var allScript = new ScriptExpression(allStatements);
             allScript.select(fieldPathOptimizer, fieldPathOptimizer);
-            fieldScripts.put(FULL, new DocumentScript(documentType, ilscript.docfield(), allScript));
+            fieldScripts.put(FULL, new DocumentScript(documentType, ilscript.docfield(), allScript, fastMapSearchFields));
             documentFieldScripts.put(ilscript.doctype(), Collections.unmodifiableMap(fieldScripts));
         }
         return Collections.unmodifiableMap(documentFieldScripts);
