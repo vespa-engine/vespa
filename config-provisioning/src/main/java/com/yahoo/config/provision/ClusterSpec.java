@@ -18,9 +18,6 @@ public final class ClusterSpec {
     private final Type type;
     private final Id id;
 
-    /** The group id of these hosts, or empty if this represents a request for hosts */
-    private final Optional<Group> groupId;
-
     private final Version vespaVersion;
     private final boolean exclusive;
     private final Optional<DockerImage> dockerImageRepo;
@@ -30,12 +27,11 @@ public final class ClusterSpec {
     private final List<AzName> availabilityZones;
     private final String profile;
 
-    private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
+    private ClusterSpec(Type type, Id id, Version vespaVersion, boolean exclusive,
                         Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful,
                         List<SidecarSpec> sidecars, List<AzName> availabilityZones, String profile) {
         this.type = type;
         this.id = id;
-        this.groupId = groupId;
         this.vespaVersion = Objects.requireNonNull(vespaVersion, "vespaVersion cannot be null");
         this.exclusive = exclusive;
         if (dockerImageRepo.isPresent() && dockerImageRepo.get().tag().isPresent())
@@ -68,9 +64,6 @@ public final class ClusterSpec {
     /** Returns the version of Vespa that we want this cluster to run */
     public Version vespaVersion() { return vespaVersion; }
 
-    /** Returns the group within the cluster this specifies, or empty to specify the whole cluster */
-    public Optional<Group> group() { return groupId; }
-
     /**
      * Returns whether the physical hosts running the nodes of this application can
      * also run nodes of other applications. Using exclusive nodes for containers increases security and cost.
@@ -97,23 +90,18 @@ public final class ClusterSpec {
         return Optional.ofNullable(profile);
     }
 
-    public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones, profile);
-    }
-
     public ClusterSpec withExclusivity(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+        return new ClusterSpec(type, id, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                                stateful, sidecars, availabilityZones, profile);
     }
 
     public ClusterSpec withAvailabilityZones(List<AzName> availabilityZones) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+        return new ClusterSpec(type, id, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                                stateful, sidecars, availabilityZones, profile);
     }
 
     public ClusterSpec withSidecars(List<SidecarSpec> sidecars) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+        return new ClusterSpec(type, id, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                                stateful, sidecars, availabilityZones, profile);
     }
 
@@ -147,7 +135,6 @@ public final class ClusterSpec {
         private final Type type;
         private final Id id;
 
-        private Optional<Group> groupId = Optional.empty();
         private Optional<DockerImage> dockerImageRepo = Optional.empty();
         private Version vespaVersion;
         private boolean exclusive = false;
@@ -164,13 +151,8 @@ public final class ClusterSpec {
         }
 
         public ClusterSpec build() {
-            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+            return new ClusterSpec(type, id, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                                    stateful, sidecars, availabilityZones, profile);
-        }
-
-        public Builder group(Group groupId) {
-            this.groupId = Optional.ofNullable(groupId);
-            return this;
         }
 
         public Builder vespaVersion(Version vespaVersion) {
@@ -234,7 +216,6 @@ public final class ClusterSpec {
                stateful == that.stateful &&
                type == that.type &&
                id.equals(that.id) &&
-               groupId.equals(that.groupId) &&
                vespaVersion.equals(that.vespaVersion) &&
                dockerImageRepo.equals(that.dockerImageRepo) &&
                zoneEndpoint.equals(that.zoneEndpoint) &&
@@ -245,7 +226,7 @@ public final class ClusterSpec {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+        return Objects.hash(type, id, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                             stateful, sidecars, availabilityZones, profile);
     }
 

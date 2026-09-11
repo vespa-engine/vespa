@@ -39,7 +39,7 @@ public class SingleNodeProvisioner implements HostProvisioner {
         host = new Host(HostName.getLocalhost());
         this.hostSpec = new HostSpec(host.hostname(),
                                      flavor.resources(), flavor.resources(), flavor.resources(),
-                                     ClusterMembership.from(ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).group(ClusterSpec.Group.from(0)).vespaVersion("1").build(), 0),
+                                     ClusterMembership.from(ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("1").build(), 0, 0),
                                      Optional.empty(), Optional.empty(), Optional.empty(),
                                      AzName.defaultName());
     }
@@ -54,7 +54,7 @@ public class SingleNodeProvisioner implements HostProvisioner {
         List<HostSpec> hosts = new ArrayList<>();
         hosts.add(new HostSpec(host.hostname(),
                                NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                               ClusterMembership.from(cluster.with(Optional.of(ClusterSpec.Group.from(0))), counter++),
+                               ClusterMembership.from(cluster, 0, counter++),
                                Optional.empty(), Optional.empty(), Optional.empty(),
                                AzName.defaultName()));
         return hosts;
