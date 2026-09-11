@@ -3370,6 +3370,21 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.InPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression, java.util.List)",
+      "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
+      "public java.util.List getArgs()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.Infinite" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
