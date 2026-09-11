@@ -50,6 +50,9 @@ void AverageAggregationResult::onAggregate(const ResultNode& result) {
         static_cast<const ResultNodeVector&>(result).flattenSum(*_sum);
         _count += static_cast<const ResultNodeVector&>(result).size();
     } else {
+        if (std::isnan(result.getFloat())) {
+            return;
+        }
         _sum->add(result);
         _count++;
     }
