@@ -931,14 +931,16 @@ void SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute* ia,
         ia->append(3, 10, 50);
     }
     ia->commit(CommitParam::UpdateStats::FORCE);
-    if (!extra)
+    if (!extra) {
         return;
+    }
     ia->addDocs(20);
     for (uint32_t d = 4; d < 24; ++d) {
-        if (ia->getCollectionType() == CollectionType::SINGLE)
+        if (ia->getCollectionType() == CollectionType::SINGLE) {
             ia->update(d, 10);
-        else
+        } else {
             ia->append(d, 10, 1);
+        }
     }
     ia->commit(CommitParam::UpdateStats::FORCE);
 }
@@ -1309,11 +1311,12 @@ std::string to_hex(uint32_t n) {
 }
 
 std::unique_ptr<QueryTermSimple> make_string_range_query_term(uint32_t left, bool left_closed, bool left_unbounded,
-                                                              uint32_t right, bool right_closed,
-                                                              bool right_unbounded) {
+                                                              uint32_t right, bool right_closed, bool right_unbounded,
+                                                              int32_t range_limit = 0) {
     return std::make_unique<QueryTermUCS4>(
-        QueryTermSimple::Type::WORD, std::make_unique<StringRangeSpec>(to_hex(left), left_closed, left_unbounded,
-                                                                       to_hex(right), right_closed, right_unbounded));
+        QueryTermSimple::Type::WORD,
+        std::make_unique<StringRangeSpec>(to_hex(left), left_closed, left_unbounded, to_hex(right), right_closed,
+                                          right_unbounded, range_limit));
 }
 
 DocSet make_range_doc_set(uint32_t n, uint32_t left, bool left_closed, bool left_unbounded, uint32_t right,
@@ -1381,6 +1384,55 @@ void SearchContextTest::test_lexical_range_search(const std::string& name, const
                            make_string_range_query_term(i, false, false, j, false, false),
                            make_range_doc_set(n, i, false, false, j, false, false));
         }
+    }
+
+    if (cfg.fastSearch()) {
+        // Test range_limit. More sophisticated testing in system test.
+
+        // Bounded, ascending
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, true, false, 1),
+                       make_range_doc_set(n, 2, true, false, 2, true, false));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, true, false, 2),
+                       make_range_doc_set(n, 2, true, false, 3, true, false));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, false, false, 8, true, false, 2),
+                       make_range_doc_set(n, 3, true, false, 4, true, false));
+
+        // Bounded, descending
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, true, false, -1),
+                       make_range_doc_set(n, 8, true, false, 8, true, false));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, true, false, -2),
+                       make_range_doc_set(n, 7, true, false, 8, true, false));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, false, false, -2),
+                       make_range_doc_set(n, 6, true, false, 7, true, false));
+
+        // Unbounded, ascending: can yield more than the range limit
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, false, true, 8, true, false, 1),
+                       make_range_doc_set(n, 1, true, false, name == "s-fs-str" ? 1 : 2, true, false));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, false, true, 8, true, false, 2),
+                       make_range_doc_set(n, 1, true, false, name == "s-fs-str" ? 2 : 3, true, false));
+        // Unbounded, descending: can yield more than the range limit
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, false, true, -1),
+                       make_range_doc_set(n, name == "ws-fs-str" ? 15 : 14, true, false, 15, true, false));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, false, true, -2),
+                       make_range_doc_set(n, name == "ws-fs-str" ? 14 : 13, true, false, 15, true, false));
+    } else {
+        // Check that the range limit is ignored
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, true, false, 1),
+                       make_range_doc_set(n, 2, true, false, 8, true, false));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(2, true, false, 8, true, false, -1),
+                       make_range_doc_set(n, 2, true, false, 8, true, false));
     }
 
     // Long range, cf. testPrefixSearch
@@ -1719,8 +1771,9 @@ void SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const std
         for (uint32_t i = 0; i < 14; ++i) {
             if (i < 5) {
                 EXPECT_EQ(i + 1, array[i].getDocId());
-            } else
+            } else {
                 EXPECT_EQ(i + 2, array[i].getDocId());
+            }
         }
     }
     ValueType buf;

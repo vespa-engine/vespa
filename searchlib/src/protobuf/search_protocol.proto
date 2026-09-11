@@ -270,6 +270,7 @@ message ItemStringRangeTerm {
     optional string upper_limit = 3;
     bool lower_inclusive = 4;
     bool upper_inclusive = 5;
+    optional int32 range_limit = 6;
 }
 
 // multi-terms:

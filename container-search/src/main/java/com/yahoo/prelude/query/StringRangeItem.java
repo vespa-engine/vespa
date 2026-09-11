@@ -26,6 +26,8 @@ public class StringRangeItem extends TermItem {
     /** Whether this interval is closed to the right, i.e., whether the left right is included. */
     private final boolean toInclusive;
 
+    private int hitLimit = 0;
+
     /**
      * Create a StringRangeItem.
      */
@@ -35,6 +37,14 @@ public class StringRangeItem extends TermItem {
         this.fromInclusive = fromInclusive && from != null; // Negative infinity cannot be included
         this.to = to;
         this.toInclusive = toInclusive && to != null; // Positive infinity cannot be included
+    }
+
+    /**
+     * Create a StringRangeItem with a hitLimit.
+     */
+    public StringRangeItem(String from, boolean fromInclusive, String to, boolean toInclusive, int hitLimit, String indexName, boolean isFromQuery, Substring origin) {
+        this(from, fromInclusive, to, toInclusive, indexName, isFromQuery, origin);
+        this.hitLimit = hitLimit;
     }
 
     /** Returns the left endpoint of this interval, where null means negative infinity. */
@@ -57,6 +67,27 @@ public class StringRangeItem extends TermItem {
         return toInclusive;
     }
 
+    /**
+     * Returns the number of hits this will match, or 0 if all should be matched.
+     * If this number is positive, the hits closest to <code>from</code> are returned, and if
+     * this number is negative the hits closest to <code>to</code> are returned.
+     */
+    public final int getHitLimit() {
+        return hitLimit;
+    }
+
+    /**
+     * Sets the number of hits this will match, or 0 if all should be
+     * matched. If this number is positive, the hits closest to
+     * <code>from</code> are returned, and if this number is negative the hits
+     * closest to <code>to</code> are returned.
+     *
+     * @param hitLimit number of hits to match for this operator
+     */
+    public final void setHitLimit(int hitLimit) {
+        this.hitLimit = hitLimit;
+    }
+
     /** Returns a string representation of this interval. Can be ambiguous and is only for printing purposes. */
     @Override
     public String getIndexedString() {
@@ -64,6 +95,9 @@ public class StringRangeItem extends TermItem {
         sb.append(this.fromInclusive ? "[" : "<" ).append(this.from != null ? "\"" + this.from + "\"" : "-Infinity");
         sb.append(";");
         sb.append(this.to != null ? "\"" + this.to+ "\"" : "Infinity").append(this.toInclusive ? "]" : ">" );
+        if (hitLimit != 0) {
+            sb.append(";").append(hitLimit);
+        }
         return sb.toString();
     }
 
@@ -153,6 +187,9 @@ public class StringRangeItem extends TermItem {
             builder.setUpperLimit(to);
         }
         builder.setUpperInclusive(toInclusive);
+        if (hitLimit != 0) {
+            builder.setRangeLimit(hitLimit);
+        }
         return SearchProtocol.QueryTreeItem.newBuilder()
                 .setItemStringRangeTerm(builder.build())
                 .build();

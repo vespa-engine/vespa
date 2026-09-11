@@ -42,6 +42,24 @@ public class StringRangeItemTestCase {
         assertFalse(range.isWords());
     }
 
+    @Test
+    void testHitLimit() {
+        StringRangeItem range = new StringRangeItem("aaa", true, "zzz", true, 42, "index", true, null);
+        assertEquals(42, range.getHitLimit());
+        assertEquals("[\"aaa\";\"zzz\"];42", range.getIndexedString());
+        assertEquals("[\"aaa\";\"zzz\"];42", range.getRawWord()); // fallback when no origin provided
+
+        range = new StringRangeItem("aaa", true, "zzz", true, -42, "index", true, null);
+        assertEquals(-42, range.getHitLimit());
+        assertEquals("[\"aaa\";\"zzz\"];-42", range.getIndexedString());
+        assertEquals("[\"aaa\";\"zzz\"];-42", range.getRawWord()); // fallback when no origin provided
+
+        range.setHitLimit(1234);
+        assertEquals(1234, range.getHitLimit());
+        assertEquals("[\"aaa\";\"zzz\"];1234", range.getIndexedString());
+        assertEquals("[\"aaa\";\"zzz\"];1234", range.getRawWord()); // fallback when no origin provided
+    }
+
 
     @Test
     void testStringRemembersOrigin() {
