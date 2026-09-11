@@ -116,6 +116,19 @@ public class IncludeProcessorTest {
         fail("should fail by default to include a non-existent file");
     }
 
+    @Test
+    public void testRecursiveIncludeFailsWithLimit() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        try {
+            File app = new File("src/test/resources/multienvapp_recursive_include");
+            DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
+            new IncludeProcessor(app).process(docBuilder.parse(getServices(app)));
+            fail("should fail because of unbounded recursive include");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Too many includes, max 1000 includes are allowed", e.getMessage());
+        }
+    }
+
     static File getServices(File app) {
         return new File(app, ApplicationPackage.SERVICES);
     }
