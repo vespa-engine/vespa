@@ -17,6 +17,7 @@ import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import com.yahoo.vespa.indexinglanguage.FieldPathUpdateHelper;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
@@ -41,11 +42,14 @@ class DocumentScript {
     private final DocumentType documentType;
     private final Set<String> inputFields;
     private final ScriptExpression expression;
+    private final Set<String> fastMapSearchFields;
 
-    DocumentScript(DocumentType documentType, Collection<String> inputFields, ScriptExpression expression) {
+    DocumentScript(DocumentType documentType, Collection<String> inputFields, ScriptExpression expression,
+                   Set<String> fastMapSearchFields) {
         this.documentType = documentType;
         this.inputFields = new HashSet<>(inputFields);
         this.expression = expression;
+        this.fastMapSearchFields = Set.copyOf(fastMapSearchFields);
         expression.resolve(documentType);
     }
 
@@ -68,7 +72,9 @@ class DocumentScript {
             }
         }
         for (FieldPathUpdate fieldUpdate : update.fieldPathUpdates()) {
-            requireThatFieldIsDeclaredInDocument(fieldUpdate.getFieldPath().get(0).getFieldRef());
+            Field field = fieldUpdate.getFieldPath().get(0).getFieldRef();
+            requireThatFieldIsDeclaredInDocument(field);
+            requireThatFieldPathUpdateIsSupported(field, fieldUpdate);
             if (fieldUpdate instanceof AssignFieldPathUpdate) {
                 removeAnyLinguisticsSpanTree(((AssignFieldPathUpdate)fieldUpdate).getFieldValue());
             }
@@ -79,6 +85,22 @@ class DocumentScript {
     private void requireThatFieldIsDeclaredInDocument(Field field) {
         if (field != null && !inputFields.contains(field.getName()))
             throw new InvalidInputException("Field '" + field.getName() + "' is not part of the declared " + documentType);
+    }
+
+    /**
+     * A map with fast search is indexed into a synthetic key-value attribute derived from the whole map, so a
+     * field path update reaching into the map would leave that attribute holding only the updated entries.
+     * Assigning the whole field is fine, as it is turned into a regular field update which reruns the script.
+     */
+    private void requireThatFieldPathUpdateIsSupported(Field field, FieldPathUpdate fieldUpdate) {
+        if (field == null || !fastMapSearchFields.contains(field.getName())) {
+            return;
+        }
+        if (FieldPathUpdateHelper.isFieldValues(fieldUpdate)) {
+            return;
+        }
+        throw new InvalidInputException("Field '" + field.getName() + "' has 'map: fast-search', which does not " +
+                                        "support field path updates into the map. Assign the whole map instead.");
     }
 
     private void removeAnyLinguisticsSpanTree(ValueUpdate<?> valueUpdate) {

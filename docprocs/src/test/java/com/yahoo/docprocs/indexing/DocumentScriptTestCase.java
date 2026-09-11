@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -263,7 +264,8 @@ public class DocumentScriptTestCase {
     private static DocumentScript newScript(DocumentType type, String fieldName) {
         var script = new ScriptExpression();
         return new DocumentScript(type, List.of(fieldName),
-                                  new ScriptExpression(new StatementExpression(new InputExpression(fieldName), new IndexExpression(fieldName))));
+                                  new ScriptExpression(new StatementExpression(new InputExpression(fieldName), new IndexExpression(fieldName))),
+                                  Set.of());
     }
 
     private static DocumentScript newScript(DocumentType docType) {

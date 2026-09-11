@@ -2,8 +2,10 @@
 package com.yahoo.schema;
 
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.schema.derived.IndexingScript;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -73,6 +75,35 @@ public class MapFastSearchTestCase {
         assertTrue(fastMapSearchOf("field m type map<string, int> { map: fast-search }", true));
         assertTrue(fastMapSearchOf("field m type map<long, string> { map: fast-search }", true));
         assertTrue(fastMapSearchOf("field m type map<string, long> { map: fast-search }", true));
+    }
+
+    @Test
+    void requireFastMapFieldsAreListedInIlscriptsConfig() throws ParseException {
+        String fields = joinLines("field plain type map<string, string> { }",
+                                  "field fast type map<string, string> { map: fast-search }",
+                                  "field alsoFast type map<string, int> { map: fast-search }");
+        var config = ilscriptsConfigOf(build(getSd(fields), true));
+        assertEquals(1, config.ilscript().size());
+        var complexFields = config.ilscript(0).complexfield();
+        assertEquals(2, complexFields.size());
+        // Sorted by field name to keep the config stable.
+        assertEquals("alsoFast", complexFields.get(0).name());
+        assertEquals(IlscriptsConfig.Ilscript.Complexfield.Why.FAST_MAP_SEARCH, complexFields.get(0).why());
+        assertEquals("fast", complexFields.get(1).name());
+        assertEquals(IlscriptsConfig.Ilscript.Complexfield.Why.FAST_MAP_SEARCH, complexFields.get(1).why());
+    }
+
+    @Test
+    void requireNoComplexFieldsInIlscriptsConfigWithoutFastMapSearch() throws ParseException {
+        var config = ilscriptsConfigOf(build(getSd("field m type map<string, string> { }"), true));
+        assertEquals(1, config.ilscript().size());
+        assertTrue(config.ilscript(0).complexfield().isEmpty());
+    }
+
+    private static IlscriptsConfig ilscriptsConfigOf(Schema schema) {
+        var builder = new IlscriptsConfig.Builder();
+        new IndexingScript(schema, false).getConfig(builder);
+        return builder.build();
     }
 
     private static void assertRejected(String field, boolean flagEnabled, String expectedMessage) throws ParseException {

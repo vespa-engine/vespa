@@ -6,6 +6,7 @@ import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;
+import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Complexfield;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * An indexing language script derived from a schema. An indexing script contains a set of indexing
@@ -39,6 +41,8 @@ public final class IndexingScript extends Derived {
 
     private final List<String> docFields = new ArrayList<>();
     private final List<Expression> expressions = new ArrayList<>();
+    /** Sorted to keep the derived config stable. */
+    private final Set<String> fastMapSearchFields = new TreeSet<>();
     private List<ImmutableSDField> fieldsSettingLanguage;
     private final boolean isStreaming;
 
@@ -61,6 +65,11 @@ public final class IndexingScript extends Derived {
 
         if (field.hasFullIndexingDocprocRights())
             docFields.add(field.getName());
+
+        // Must be collected before the returns below, as a map field always uses a map.
+        if (field.hasFastMapSearch()) {
+            fastMapSearchFields.add(field.getName());
+        }
 
         if (field.usesStructOrMap() && ! GeoPos.isAnyPos(field)) return; // unsupported
         if (fieldsSettingLanguage.size() == 1 && fieldsSettingLanguage.get(0).equals(field)) return; // Already added
@@ -94,6 +103,9 @@ public final class IndexingScript extends Derived {
         IlscriptsConfig.Ilscript.Builder ilscriptBuilder = new IlscriptsConfig.Ilscript.Builder();
         ilscriptBuilder.doctype(getName());
         ilscriptBuilder.docfield(docFields);
+        for (String fieldName : fastMapSearchFields) {
+            ilscriptBuilder.complexfield(e -> e.name(fieldName).why(Complexfield.Why.FAST_MAP_SEARCH));
+        }
         addContentInOrder(ilscriptBuilder);
         configBuilder.ilscript(ilscriptBuilder);
     }
