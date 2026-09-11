@@ -141,7 +141,7 @@ public class RankSetupValidator implements Validator {
         writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifcb.build());
     }
 
-    private void writeExtraVerifyRankSetupConfig(List<String> config, Collection<? extends DistributableResource> resources) {
+    void writeExtraVerifyRankSetupConfig(List<String> config, Collection<? extends DistributableResource> resources) {
         for (DistributableResource model : resources) {
             String modelPath = getFileRepositoryPath(model.getFilePath().getName(), model.getFileReference());
             int index = config.size() / 2;
