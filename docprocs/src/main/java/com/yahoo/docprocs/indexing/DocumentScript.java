@@ -30,6 +30,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Preprocesses field values (e.g. removing linguistic annotations), verifies that the
+ * touching fields are declared ijputs of this script, and executes the {@link ScriptExpression}
+ * on a {@link Document} or {@link DocumentUpdate}.
+ *
  * @author Simon Thoresen Hult
  */
 class DocumentScript {

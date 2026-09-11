@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Holds, per document type, the indexing language scripts to run for each input field,
+ * plus one script for running all the statements of that type.
+ *
  * @author Simon Thoresen Hult
  */
 class ScriptManager {
@@ -57,10 +60,16 @@ class ScriptManager {
         return null;
     }
 
+    /**
+     * Returns the script running all indexing statements of this type, or null if there is none.
+     */
     DocumentScript getScript(DocumentType inputType) {
         return getScript(inputType, FULL);
     }
 
+    /**
+     * Returns the script of the statements taking only the given field as input, or null if there is none.
+     */
     DocumentScript getScript(DocumentType inputType, String inputFieldName) {
         Map<String, DocumentScript> fieldScripts = getScripts(inputType);
         if (fieldScripts == null) return null;
@@ -120,9 +129,10 @@ class ScriptManager {
                 }
             }
 
-            var script = new ScriptExpression(allStatements);
-            script.select(fieldPathOptimizer, fieldPathOptimizer);
-            fieldScripts.put(FULL, new DocumentScript(documentType, ilscript.docfield(), script));
+            // One script that runs them all.
+            var allScript = new ScriptExpression(allStatements);
+            allScript.select(fieldPathOptimizer, fieldPathOptimizer);
+            fieldScripts.put(FULL, new DocumentScript(documentType, ilscript.docfield(), allScript));
             documentFieldScripts.put(ilscript.doctype(), Collections.unmodifiableMap(fieldScripts));
         }
         return Collections.unmodifiableMap(documentFieldScripts);
