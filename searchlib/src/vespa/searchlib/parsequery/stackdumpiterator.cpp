@@ -25,15 +25,16 @@ SimpleQueryStackDumpIterator::~SimpleQueryStackDumpIterator() = default;
 
 std::string_view SimpleQueryStackDumpIterator::read_string_view(const char*& p) {
     uint64_t len = readCompressedPositiveInt(p);
-    if ((p + len) > _bufEnd)
+    if ((p + len) > _bufEnd) {
         throw false;
+    }
     std::string_view result(p, len);
     p += len;
     return result;
 }
 
 uint64_t SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char*& p) {
-    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_space(p, _bufEnd - p)) {
+    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_positive_space(p, _bufEnd - p)) {
         throw false;
     }
     uint64_t tmp;
@@ -43,7 +44,7 @@ uint64_t SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char*& p)
 }
 
 int64_t SimpleQueryStackDumpIterator::readCompressedInt(const char*& p) {
-    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_positive_space(p, _bufEnd - p)) {
+    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_space(p, _bufEnd - p)) {
         throw false;
     }
     int64_t tmp;
@@ -71,9 +72,10 @@ bool SimpleQueryStackDumpIterator::next() {
 }
 
 bool SimpleQueryStackDumpIterator::readNext() {
-    if ((_buf + _currEnd) >= _bufEnd)
+    if ((_buf + _currEnd) >= _bufEnd) {
         // End of buffer, so no more items available
         return false;
+    }
 
     // Set the position to the previous end. If just starting, sets pos to _buf
     _currPos = _currEnd;
@@ -104,8 +106,9 @@ bool SimpleQueryStackDumpIterator::readNext() {
     /** flags of the current item **/
     uint8_t currFlags = 0;
     if (__builtin_expect(ParseItem::getFeature_Flags(typefield), false)) {
-        if ((p + sizeof(uint8_t)) > _bufEnd)
+        if ((p + sizeof(uint8_t)) > _bufEnd) {
             return false;
+        }
         currFlags = (uint8_t)*p++;
     }
     _d.noRankFlag = (currFlags & ParseItem::ItemFlags::IFLAG_NORANK) != 0;
