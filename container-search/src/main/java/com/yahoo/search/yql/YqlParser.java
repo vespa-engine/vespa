@@ -2305,6 +2305,11 @@ public class YqlParser implements Parser {
             if (hitLimit != null) {
                 number.setHitLimit(hitLimit);
             }
+        } else if (leaf instanceof StringRangeItem stringRange) {
+            Integer hitLimit = getCappedRangeSearchParameter(ast);
+            if (hitLimit != null) {
+                stringRange.setHitLimit(hitLimit);
+            }
         }
 
         return leaf;
