@@ -123,6 +123,25 @@ public class SchemaValidatorTest {
     }
 
     @Test
+    void rejectsDoctypeDeclaration() {
+        String withExternalDtd = """
+                <?xml version='1.0' encoding='utf-8' ?>
+                <!DOCTYPE services SYSTEM "foo">
+                <services>
+                  <admin version='2.0'>
+                    <adminserver hostalias='node1' />
+                  </admin>
+                </services>
+                """;
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
+            SchemaValidator validator = createValidator();
+            validator.validate(new StringReader(withExternalDtd));
+        });
+        assertTrue(exception.getMessage().contains("DOCTYPE"),
+                   "Expected the parser to reject the DOCTYPE, got: " + exception.getMessage());
+    }
+
+    @Test
     void verifyValidFiles() throws Exception {
         justValidate("application.rnc", "application.xml");
         justValidate("application.rnc", "application.xml");
