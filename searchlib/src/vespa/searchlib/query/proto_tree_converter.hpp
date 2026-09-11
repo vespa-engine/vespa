@@ -402,6 +402,10 @@ public:
         spec->right = item.upper_limit();
         spec->right_closed = item.upper_inclusive();
 
+        if (item.has_range_limit()) {
+            spec->range_limit = item.range_limit();
+        }
+
         query::StringRange range(std::move(spec));
         auto&              term = _builder.add_string_range_term(range, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag)
