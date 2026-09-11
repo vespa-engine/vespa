@@ -96,7 +96,7 @@ FlushContext::List findBestTargetsToFlush(const FlushContext::List&    unsortedF
     FlushTargetCandidates bestSet(candidates, tlsStats, cfg);
     auto                  nextSet = bestSet;
     for (size_t numCandidates = 1; numCandidates <= candidates.size(); ++numCandidates) {
-        nextSet.inc_num_candidates(tlsStats, cfg);
+        nextSet.inc_num_candidates();
         if (LOG_WOULD_LOG(debug)) {
             LOG(debug,
                 "findBestTargetsToFlush(): Created candidate set: "

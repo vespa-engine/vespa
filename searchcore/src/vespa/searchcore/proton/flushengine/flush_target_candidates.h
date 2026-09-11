@@ -31,12 +31,14 @@ public:
     };
 
 private:
-    std::span<const FlushTargetCandidate> _candidates; // NOTE: ownership is handled outside
-    size_t                                _num_candidates;
-    TlsReplayCost                         _tlsReplayCost;
-    double                                _flush_targets_replay_cost;
-    double                                _flushTargetsWriteCost;
-    double                                _flush_targets_read_cost;
+    std::span<const FlushTargetCandidate>         _candidates; // NOTE: ownership is handled outside
+    size_t                                        _num_candidates;
+    TlsReplayCost                                 _tlsReplayCost;
+    double                                        _flush_targets_replay_cost;
+    double                                        _flushTargetsWriteCost;
+    double                                        _flush_targets_read_cost;
+    const flushengine::TlsStats*                  _tls_stats;
+    const flushengine::PrepareRestartCostsConfig* _prepare_restart_costs_config;
 
 public:
     using UP = std::unique_ptr<FlushTargetCandidates>;
@@ -53,8 +55,7 @@ public:
     }
     [[nodiscard]] FlushContext::List getCandidates() const;
     [[nodiscard]] size_t get_num_candidates() const noexcept { return _num_candidates; }
-    void inc_num_candidates(const flushengine::TlsStats&                  tlsStats,
-                            const flushengine::PrepareRestartCostsConfig& cfg) noexcept;
+    void inc_num_candidates() noexcept;
 };
 
 } // namespace proton
