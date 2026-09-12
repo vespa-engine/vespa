@@ -78,6 +78,9 @@ template <typename DataT> struct PostingListSearchContextT<DataT>::FillPart : pu
         _to += count;
     }
     void run() override {
+        if (_doom.soft_doom()) {
+            return;
+        }
         if (_bv == nullptr) {
             _owned_bv = BitVector::create(_docIdLimit);
             _bv = _owned_bv.get();
