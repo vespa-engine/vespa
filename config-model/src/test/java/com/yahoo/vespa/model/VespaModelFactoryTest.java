@@ -4,7 +4,8 @@ package com.yahoo.vespa.model;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.model.api.CommerceDiscoverySchemaProvider;
+import com.yahoo.config.model.api.AdditionalDocuments;
+import com.yahoo.config.model.api.CommerceDiscoveryProvider;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.model.MockModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
@@ -25,6 +26,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionContext;
+import com.yahoo.io.reader.NamedReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -158,22 +160,32 @@ public class VespaModelFactoryTest {
         assertTrue(exception.getMessage().contains("requires Vespa Cloud"), exception.getMessage());
     }
 
-    /** Lock in feature flag and hosted as gating for schema providers for now. */
+    /** Lock in feature flag and hosted as gating for the provider for now. */
     @Test
-    void commerceDiscoverySchemaProviderIsConsultedOnlyInHostedVespaWithTheFlagEnabled() {
-        assertFalse(schemaProviderConsulted(false, false));
-        assertFalse(schemaProviderConsulted(true, false));
-        assertFalse(schemaProviderConsulted(false, true));
-        assertTrue(schemaProviderConsulted(true, true));
+    void commerceDiscoveryProviderIsConsultedOnlyInHostedVespaWithTheFlagEnabled() {
+        assertFalse(providerConsulted(false, false));
+        assertFalse(providerConsulted(true, false));
+        assertFalse(providerConsulted(false, true));
+        assertTrue(providerConsulted(true, true));
     }
 
-    private boolean schemaProviderConsulted(boolean hostedVespa, boolean flagEnabled) {
-        AtomicBoolean consulted = new AtomicBoolean(false);
-        CommerceDiscoverySchemaProvider provider = applicationPackage -> {
-            consulted.set(true);
-            return List.of();
+    /** True if both provider methods were consulted, false if neither was; anything else fails. */
+    private boolean providerConsulted(boolean hostedVespa, boolean flagEnabled) {
+        AtomicBoolean schemasConsulted = new AtomicBoolean(false);
+        AtomicBoolean documentsConsulted = new AtomicBoolean(false);
+        CommerceDiscoveryProvider provider = new CommerceDiscoveryProvider() {
+            @Override
+            public List<NamedReader> schemas(ApplicationPackage applicationPackage) {
+                schemasConsulted.set(true);
+                return List.of();
+            }
+            @Override
+            public AdditionalDocuments documentDeclarations(ApplicationPackage applicationPackage) {
+                documentsConsulted.set(true);
+                return AdditionalDocuments.none();
+            }
         };
-        var providers = new ComponentRegistry<CommerceDiscoverySchemaProvider>();
+        var providers = new ComponentRegistry<CommerceDiscoveryProvider>();
         providers.register(ComponentId.fromString("test-provider"), provider);
         var factory = new VespaModelFactory(new ComponentRegistry<>(), new ComponentRegistry<>(),
                                             new ComponentRegistry<>(), providers, Zone.defaultZone());
@@ -183,7 +195,8 @@ public class VespaModelFactoryTest {
                 return new TestProperties().setHostedVespa(hostedVespa).commerceDiscovery(flagEnabled);
             }
         });
-        return consulted.get();
+        assertEquals(schemasConsulted.get(), documentsConsulted.get(), "both provider methods are gated together");
+        return schemasConsulted.get(); // line above proves they are equal
     }
 
     ApplicationPackage createApplicationPackageThatFailsWhenValidating() {

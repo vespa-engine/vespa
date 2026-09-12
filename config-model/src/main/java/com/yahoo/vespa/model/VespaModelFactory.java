@@ -14,7 +14,7 @@ import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.api.CommerceDiscoverySchemaProvider;
+import com.yahoo.config.model.api.CommerceDiscoveryProvider;
 import com.yahoo.config.model.api.ConfigModelPlugin;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
@@ -58,14 +58,14 @@ public class VespaModelFactory implements ModelFactory {
     private final Version version;
     private final List<Validator> additionalValidators;
     private final Optional<SidecarProvider> sidecarProvider;
-    private final Optional<CommerceDiscoverySchemaProvider> commerceDiscoverySchemaProvider;
+    private final Optional<CommerceDiscoveryProvider> commerceDiscoveryProvider;
 
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<Validator> additionalValidators,
                              ComponentRegistry<SidecarProvider> sidecarProviders,
-                             ComponentRegistry<CommerceDiscoverySchemaProvider> commerceDiscoverySchemaProviders,
+                             ComponentRegistry<CommerceDiscoveryProvider> commerceDiscoveryProviders,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
@@ -78,10 +78,10 @@ public class VespaModelFactory implements ModelFactory {
             throw new IllegalStateException("At most one sidecar provider may be registered, got " + sidecarProviders.allComponents());
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.sidecarProvider = sidecarProviders.allComponents().stream().findFirst();
-        if (commerceDiscoverySchemaProviders.allComponents().size() > 1)
-            throw new IllegalStateException("At most one commerce discovery schema provider may be registered, got " +
-                                            commerceDiscoverySchemaProviders.allComponents());
-        this.commerceDiscoverySchemaProvider = commerceDiscoverySchemaProviders.allComponents().stream().findFirst();
+        if (commerceDiscoveryProviders.allComponents().size() > 1)
+            throw new IllegalStateException("At most one commerce discovery provider may be registered, got " +
+                                            commerceDiscoveryProviders.allComponents());
+        this.commerceDiscoveryProvider = commerceDiscoveryProviders.allComponents().stream().findFirst();
         this.modelImporters = List.of(
                 new VespaImporter(),
                 new OnnxImporter(),
@@ -117,7 +117,7 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = List.of();
         this.additionalValidators = List.of();
         this.sidecarProvider = Optional.empty();
-        this.commerceDiscoverySchemaProvider = Optional.empty();
+        this.commerceDiscoveryProvider = Optional.empty();
         this.zone = zone;
         this.clock = clock;
     }
@@ -219,8 +219,10 @@ public class VespaModelFactory implements ModelFactory {
             .onnxModelCost(modelContext.onnxModelCost());
         sidecarProvider.ifPresent(builder::sidecarProvider);
         if (modelContext.properties().hostedVespa() && modelContext.properties().featureFlags().commerceDiscovery())
-            commerceDiscoverySchemaProvider.ifPresent(provider ->
-                    builder.additionalSchemas(provider.schemas(modelContext.applicationPackage())));
+            commerceDiscoveryProvider.ifPresent(provider -> {
+                builder.additionalSchemas(provider.schemas(modelContext.applicationPackage()));
+                builder.additionalDocuments(provider.documentDeclarations(modelContext.applicationPackage()));
+            });
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);
