@@ -4,8 +4,36 @@
 #include "postingstore.h"
 
 #include <vespa/searchlib/common/growablebitvector.h>
+#include <vespa/vespalib/util/doom.h>
 
 namespace search::attribute {
+
+template <typename DataT>
+template <typename FunctionType>
+void PostingStore<DataT>::foreach_frozen_key(EntryRef ref, FunctionType func, const vespalib::Doom& doom) const {
+    constexpr size_t chunk_size = 4096;
+    if (doom.soft_doom()) {
+        return;
+    }
+    if (frozenSize(ref) <= chunk_size) {
+        foreach_frozen_key(ref, func);
+    } else if (has_btree(ref)) {
+        auto it = beginFrozen(ref);
+        while (it.valid() && !doom.soft_doom()) {
+            auto end = it;
+            end += chunk_size;
+            it.foreach_key_range(end, func);
+            it = end;
+        }
+    } else {
+        const auto& bv = getBitVectorEntry(RefType(ref))->_bv->reader();
+        for (uint32_t docid = bv.getFirstTrueBit(1); docid < bv.size() && !doom.soft_doom();
+             docid = bv.getNextTrueBit(docid + 1))
+        {
+            func(docid);
+        }
+    }
+}
 
 template <typename DataT>
 template <typename FunctionType>

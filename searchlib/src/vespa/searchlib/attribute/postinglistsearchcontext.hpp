@@ -82,17 +82,19 @@ template <typename DataT> struct PostingListSearchContextT<DataT>::FillPart : pu
             _owned_bv = BitVector::create(_docIdLimit);
             _bv = _owned_bv.get();
         }
-        // TODO Add  && !_doom.soft_doom() to loop
-        for (; _from != _to; ++_from) {
-            addToBitVector(PostingListTraverser<PostingStore>(_posting_store, _from.getData().load_acquire()));
+        for (; _from != _to && !_doom.soft_doom(); ++_from) {
+            addToBitVector(_from.getData().load_acquire());
         }
     }
-    void addToBitVector(const PostingListTraverser<PostingStore>& postingList) {
-        postingList.foreach_key([this](uint32_t key) {
-            if (__builtin_expect(key < _docIdLimit, true)) {
-                _bv->setBit(key);
-            }
-        });
+    void addToBitVector(vespalib::datastore::EntryRef ref) {
+        _posting_store.foreach_frozen_key(
+            ref,
+            [this](uint32_t key) {
+                if (__builtin_expect(key < _docIdLimit, true)) {
+                    _bv->setBit(key);
+                }
+            },
+            _doom);
     }
     const vespalib::Doom       _doom;
     const PostingStore&        _posting_store;
@@ -121,6 +123,9 @@ template <typename DataT> void PostingListSearchContextT<DataT>::fillBitVector(c
                            _merger.getDocIdLimit());
     }
     thread_bundle.run(parts);
+    if (exec_info.doom().soft_doom()) {
+        return;
+    }
     std::vector<BitVector*> vectors;
     vectors.reserve(parts.size());
     for (const auto& part : parts) {

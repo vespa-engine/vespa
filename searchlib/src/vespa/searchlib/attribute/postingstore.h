@@ -9,6 +9,10 @@
 
 #include <set>
 
+namespace vespalib {
+class Doom;
+}
+
 namespace search {
 class BitVector;
 class GrowableBitVector;
@@ -176,6 +180,10 @@ public:
     void beginFrozen(const EntryRef ref, std::vector<ConstIterator>& where) const;
 
     template <typename FunctionType> VESPA_DLL_LOCAL void foreach_frozen_key(EntryRef ref, FunctionType func) const;
+
+    // May stop before visiting all keys; callers must discard the query on expiry.
+    template <typename FunctionType>
+    VESPA_DLL_LOCAL void foreach_frozen_key(EntryRef ref, FunctionType func, const vespalib::Doom& doom) const;
 
     template <typename FunctionType> VESPA_DLL_LOCAL void foreach_frozen(EntryRef ref, FunctionType func) const;
 

@@ -4,6 +4,7 @@
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchlib/attribute/postingstore.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
@@ -221,6 +222,56 @@ void PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length) {
 INSTANTIATE_TEST_SUITE_P(PostingStoreMultiTest, PostingStoreTest,
                          testing::Values(PostingStoreSetup(false), PostingStoreSetup(true)),
                          testing::PrintToStringParamName());
+
+TEST_P(PostingStoreTest, deadline_aware_traversal_preserves_all_postings) {
+    for (int length : {4, 30, 10000}) {
+        SCOPED_TRACE(length);
+        auto root = add_sequence(1, length + 1);
+        inc_generation();
+        std::vector<int> keys;
+        _store.foreach_frozen_key(root, [&](uint32_t key) { keys.push_back(key); }, vespalib::Doom::never());
+        EXPECT_EQ(make_exp_sequence(1, length + 1), keys);
+        _store.clear(root);
+        inc_generation();
+    }
+}
+
+TEST_P(PostingStoreTest, expired_deadline_skips_postings) {
+    std::atomic<vespalib::steady_time> now(vespalib::steady_time() + 2s);
+    vespalib::Doom                     doom(now, vespalib::steady_time() + 1s);
+    for (int length : {4, 30, 10000}) {
+        SCOPED_TRACE(length);
+        auto root = add_sequence(1, length + 1);
+        inc_generation();
+        std::vector<int> keys;
+        _store.foreach_frozen_key(root, [&](uint32_t key) { keys.push_back(key); }, doom);
+        EXPECT_TRUE(keys.empty());
+        _store.clear(root);
+        inc_generation();
+    }
+}
+
+TEST_P(PostingStoreTest, deadline_interrupts_a_large_posting_list) {
+    auto root = add_sequence(1, 10001);
+    inc_generation();
+    std::atomic<vespalib::steady_time> now{vespalib::steady_time()};
+    vespalib::Doom                     doom(now, vespalib::steady_time() + 1s);
+    std::vector<int>                   keys;
+    _store.foreach_frozen_key(
+        root,
+        [&](uint32_t key) {
+            keys.push_back(key);
+            if (key == 2000) {
+                now.store(vespalib::steady_time() + 2s);
+            }
+        },
+        doom);
+    EXPECT_GE(keys.size(), 2000u);
+    EXPECT_LE(keys.size(), 4096u);
+    EXPECT_EQ(make_exp_sequence(1, keys.size() + 1), keys);
+    _store.clear(root);
+    inc_generation();
+}
 
 TEST_P(PostingStoreTest, require_that_nodes_for_multiple_small_btrees_are_compacted) {
     test_compact_btree_nodes(30);
