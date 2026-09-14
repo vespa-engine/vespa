@@ -157,6 +157,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("rank-properties", "rank-properties {\n\t$0\n}"),
             CompletionUtils.constructSnippet("second-phase", "second-phase {\n\t$0\n}"),
             CompletionUtils.constructSnippet("significance", "significance {\n\tuse-model: ${1|true,false|}\n}"),
+            CompletionUtils.constructSnippet("sort-features", "sort-features {\n\t$0\n}", "sort-features {}"),
+            CompletionUtils.constructSnippet("sort-features", "sort-features: $0", "sort-features:"),
             CompletionUtils.constructSnippet("summary-features", "summary-features {\n\t$0\n}", "summary-features {}"),
             CompletionUtils.constructSnippet("summary-features", "summary-features: $0", "summary-features:"),
             CompletionUtils.constructSnippet("target-hits-max-adjustment-factor", "target-hits-max-adjustment-factor: $0"),

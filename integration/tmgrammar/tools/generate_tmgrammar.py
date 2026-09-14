@@ -848,7 +848,7 @@ def build_grammar(
     }
 
     # --- feature list block: match-features { ... } ---
-    feature_kws = "match-features|summary-features|rank-features"
+    feature_kws = "match-features|summary-features|rank-features|sort-features"
     feature_lookbehind = r"(?<![a-zA-Z0-9_-])"
     repository["feature-list-block"] = {
         "name": "meta.block.feature-list.vespa",

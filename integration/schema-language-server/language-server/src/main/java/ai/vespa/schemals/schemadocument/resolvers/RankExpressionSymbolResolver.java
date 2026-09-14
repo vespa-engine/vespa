@@ -60,6 +60,9 @@ public class RankExpressionSymbolResolver {
 
         for (RankNode node : rankNodes) {
             traverseRankExpressionTree(node, context, diagnostics);
+            if (ValidateSortFeatures.isSortFeatureList(schemaNode)) {
+                ValidateSortFeatures.validateReference(node, diagnostics);
+            }
         }
     }
 

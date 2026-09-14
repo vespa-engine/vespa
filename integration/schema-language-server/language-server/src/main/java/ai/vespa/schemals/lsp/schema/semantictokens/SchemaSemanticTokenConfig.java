@@ -119,6 +119,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.SEARCH);
         add(TokenType.SECOND_PHASE);
         add(TokenType.SIGNIFICANCE);
+        add(TokenType.SORT_FEATURES);
         add(TokenType.SORTING);
         add(TokenType.STEMMING);
         add(TokenType.STOPWORD_LIMIT);
