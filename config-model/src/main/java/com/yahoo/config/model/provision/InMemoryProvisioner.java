@@ -57,7 +57,7 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     /** Free hosts of each resource size */
     private final ListMap<NodeResources, Host> freeNodes = new ListMap<>();
-    private final Map<ClusterSpec, List<HostSpec>> allocations = new LinkedHashMap<>();
+    private final Map<ClusterGroup, List<HostSpec>> allocations = new LinkedHashMap<>();
 
     /** Indexes must be unique across all groups in a cluster */
     private final Map<Pair<ClusterSpec.Type, ClusterSpec.Id>, Integer> nextIndexInCluster = new HashMap<>();
@@ -143,7 +143,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     /** Returns the current allocations of this as a mutable map */
-    public Map<ClusterSpec, List<HostSpec>> allocations() { return allocations; }
+    public Map<ClusterGroup, List<HostSpec>> allocations() { return allocations; }
 
     @Override
     public HostSpec allocateHost(String alias) {
@@ -173,9 +173,6 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     public List<HostSpec> prepare(ClusterSpec cluster, ClusterResources requested, int groups, boolean required, boolean canFail) {
-        if (cluster.group().isPresent() && requested.groups() > 1)
-            throw new IllegalArgumentException("Cannot both be specifying a group and ask for groups to be created");
-
         int nodes = failOnOutOfCapacity || required
                        ? requested.nodes()
                        : Math.min(requested.nodes(), freeNodes.get(defaultHostResources).size() + totalAllocatedTo(cluster));
@@ -186,7 +183,8 @@ public class InMemoryProvisioner implements HostProvisioner {
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {
-            allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(0))),
+            allocation.addAll(allocateHostGroup(cluster,
+                                                0,
                                                 requested.nodeResources(),
                                                 nodes,
                                                 startIndexForClusters,
@@ -194,7 +192,8 @@ public class InMemoryProvisioner implements HostProvisioner {
         }
         else {
             for (int i = 0; i < groups; i++) {
-                allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(i))),
+                allocation.addAll(allocateHostGroup(cluster,
+                                                    i,
                                                     requested.nodeResources(),
                                                     nodes / groups,
                                                     allocation.size(),
@@ -228,9 +227,14 @@ public class InMemoryProvisioner implements HostProvisioner {
         return resources.withUnspecifiedFieldsFrom(defaultNodeResources);
     }
 
-    private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, NodeResources requestedResourcesOrUnspecified,
-                                             int nodesInGroup, int startIndex, boolean canFail) {
+    private List<HostSpec> allocateHostGroup(ClusterSpec cluster,
+                                             int group,
+                                             NodeResources requestedResourcesOrUnspecified,
+                                             int nodesInGroup,
+                                             int startIndex,
+                                             boolean canFail) {
         var requestedResources = decideResources(requestedResourcesOrUnspecified);
+        var clusterGroup = new ClusterGroup(cluster, group);
         List<HostSpec> allocation = allocations.getOrDefault(clusterGroup, new ArrayList<>());
         allocations.put(clusterGroup, allocation);
 
@@ -246,7 +250,7 @@ public class InMemoryProvisioner implements HostProvisioner {
             }
         }
 
-        int nextIndex = nextIndexInCluster.getOrDefault(new Pair<>(clusterGroup.type(), clusterGroup.id()), startIndex);
+        int nextIndex = nextIndexInCluster.getOrDefault(new Pair<>(cluster.type(), cluster.id()), startIndex);
         while (nonRetiredIn(allocation).size() < nodesInGroup) {
             // Find the smallest host that can fit the requested resources
             Optional<NodeResources> hostResources = freeNodes.keySet().stream()
@@ -255,14 +259,14 @@ public class InMemoryProvisioner implements HostProvisioner {
                     .findFirst();
             if (hostResources.isEmpty()) {
                 if (canFail)
-                    throw new IllegalArgumentException("Insufficient capacity for " + requestedResources + " in cluster " + clusterGroup);
+                    throw new IllegalArgumentException("Insufficient capacity for " + requestedResources + " in cluster " + cluster);
                 else
                     break; // ¯\_(ツ)_/¯
             }
 
             Host newHost = freeNodes.removeValue(hostResources.get(), 0);
             if (freeNodes.get(hostResources.get()).isEmpty()) freeNodes.removeAll(hostResources.get());
-            ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
+            ClusterMembership membership = ClusterMembership.from(cluster, group, nextIndex++);
             NodeResources resources = sharedHosts ? requestedResources : hostResources.get();
             allocation.add(new HostSpec(newHost.hostname(),
                                         resources, resources, requestedResources,
@@ -271,7 +275,7 @@ public class InMemoryProvisioner implements HostProvisioner {
                                         Optional.empty(),
                                         AzName.defaultName()));
         }
-        nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
+        nextIndexInCluster.put(new Pair<>(cluster.type(), cluster.id()), nextIndex);
 
         while (nonRetiredIn(allocation).size() > nodesInGroup)
             allocation.remove(0);
@@ -285,9 +289,9 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     private int totalAllocatedTo(ClusterSpec cluster) {
         int count = 0;
-        for (Map.Entry<ClusterSpec, List<HostSpec>> allocation : allocations.entrySet()) {
-            if ( ! allocation.getKey().type().equals(cluster.type())) continue;
-            if ( ! allocation.getKey().id().equals(cluster.id())) continue;
+        for (Map.Entry<ClusterGroup, List<HostSpec>> allocation : allocations.entrySet()) {
+            if ( ! allocation.getKey().cluster().type().equals(cluster.type())) continue;
+            if ( ! allocation.getKey().cluster().id().equals(cluster.id())) continue;
             count += allocation.getValue().size();
         }
         return count;
@@ -306,5 +310,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     public Set<ClusterSpec> provisionedClusters() { return clusters; }
+
+    public record ClusterGroup(ClusterSpec cluster, int group) {}
 
 }

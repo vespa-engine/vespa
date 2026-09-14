@@ -39,7 +39,7 @@ public class OpenTelemetryConfigGeneratorTest {
 
         var mockHost = new Host(root, "localhost2.local");
         var mockVersion = new com.yahoo.component.Version(8);
-        var mockCluster = ClusterMembership.from("container/feeding/2/3", mockVersion, Optional.empty());
+        var mockCluster = ClusterMembership.from("container/feeding/2/3");
         var noResource = NodeResources.unspecified();
         var mockHostSpec = new HostSpec("localhost1.local",
                                         noResource, noResource, noResource,

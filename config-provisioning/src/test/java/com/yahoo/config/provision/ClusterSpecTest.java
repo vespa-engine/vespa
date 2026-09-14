@@ -48,7 +48,6 @@ public class ClusterSpecTest {
 
     private static ClusterSpec spec(ClusterSpec.Type type, String id) {
         return ClusterSpec.specification(type, ClusterSpec.Id.from(id))
-                          .group(ClusterSpec.Group.from(1))
                           .vespaVersion(Version.emptyVersion)
                           .build();
     }

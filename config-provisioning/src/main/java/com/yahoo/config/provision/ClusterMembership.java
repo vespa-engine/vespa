@@ -9,7 +9,7 @@ import java.util.Optional;
 
 /**
  * A node's membership in a cluster. This is a value object.
- * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired][/stateful]"
+ * The format is "clusterType/clusterId/groupId/index[/retired]"
  *
  * @author bratseth
  */
@@ -108,21 +108,13 @@ public class ClusterMembership {
         return new ClusterMembership(type, id, group, index, false);
     }
 
-    public ClusterMembership with(ClusterSpec newCluster) {
-        return new ClusterMembership(newCluster.type(),
-                                     newCluster.id(),
-                                     newCluster.group().map(ClusterSpec.Group::index).orElse(0),
-                                     index,
-                                     retired);
-    }
-
     public ClusterMembership withGroup(int group) {
         return new ClusterMembership(type, id, group, index, retired);
     }
 
     /**
      * Returns all the information in this as a string which can be used to construct the same ClusterMembership
-     * instance using {@link #from}. This string is currently stored in ZooKeeper on running instances.
+     * instance using {@link #from(String)}. This string is currently stored in ZooKeeper on running instances.
      */
     public String stringValue() { return stringValue; }
 
@@ -147,41 +139,12 @@ public class ClusterMembership {
     @Override
     public String toString() { return stringValue(); }
 
-    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo) {
-        return from(stringValue, vespaVersion, dockerImageRepo, ZoneEndpoint.defaultEndpoint);
+    public static ClusterMembership from(ClusterSpec cluster, int group, int index) {
+        return new ClusterMembership(cluster.type(), cluster.id(), group, index, false);
     }
 
-    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-                                         ZoneEndpoint zoneEndpoint) {
-        return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, List.of());
-    }
-
-    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo, List<SidecarSpec> sidecars) {
-        return from(stringValue, vespaVersion, dockerImageRepo, ZoneEndpoint.defaultEndpoint, sidecars);
-    }
-
-    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-                                         ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars) {
-        return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, List.of());
-    }
-
-    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-                                         ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones) {
-        return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, availabilityZones, Optional.empty());
-    }
-
-    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-                                         ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones,
-                                         Optional<String> profile) {
-        return new ClusterMembership(stringValue);
-    }
-
-    public static ClusterMembership from(ClusterSpec cluster, int index) {
-        return new ClusterMembership(cluster.type(), cluster.id(), cluster.group().map(ClusterSpec.Group::index).orElse(0), index, false);
-    }
-
-    public static ClusterMembership retiredFrom(ClusterSpec cluster, int index) {
-        return new ClusterMembership(cluster.type(), cluster.id(), cluster.group().map(ClusterSpec.Group::index).orElse(0), index, true);
+    public static ClusterMembership retiredFrom(ClusterSpec cluster, int group, int index) {
+        return new ClusterMembership(cluster.type(), cluster.id(), group, index, true);
     }
 
     public static ClusterMembership from(String stringValue) {
