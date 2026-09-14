@@ -81,8 +81,6 @@ class SlimeRequestData {
         return getRequestField(REQUEST_TIMEOUT).asLong();
     }
 
-    String getRequestConfigMd5() { return getRequestField(REQUEST_CONFIG_MD5).asString(); }
-
     String getRequestDefMd5() { return getRequestField(REQUEST_DEF_MD5).asString(); }
 
     PayloadChecksum getRequestConfigXxhash64() {
@@ -93,7 +91,7 @@ class SlimeRequestData {
     }
 
     PayloadChecksums getRequestConfigChecksums() {
-        return PayloadChecksums.from(getRequestConfigMd5(), getRequestConfigXxhash64().asString());
+        return PayloadChecksums.from(getRequestConfigXxhash64());
     }
 
     long getRequestGeneration() {
