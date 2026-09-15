@@ -16,9 +16,20 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
     : Parent(std::move(base_sc), use_bit_vector, to_be_searched), _range_spec(this->get_string_range_spec()) {
     if (this->valid() && _range_spec) {
         // An open (exclusive) boundary uses a less-or-equal comparator instead of an ordinary
-        // less-than one: driving the dictionary walk with it skips past the entry equal to the
+        // less-than one: driving the dictionary walk with it skips past the entries equal to the
         // boundary value, narrowing the walk to exactly the (half-)open range instead of relying
-        // on use_dictionary_entry()'s match() filtering to exclude it after the fact.
+        // on use_dictionary_entry()'s match() filtering to exclude them after the fact.
+        //
+        // With that narrowing, [_lowerDictItr, _upperDictItr> should hold exactly the matching
+        // entries, which would make the match() call in use_dictionary_entry() below redundant -
+        // it runs a folded compare per unique value in the range, in both
+        // calc_estimated_hits_in_range() and fill_array_or_bitvector(). It is kept for now
+        // because the narrowing compares with the enum store's folded comparator (derived from
+        // the dictionary config) while match() compares with StringRangeSearchHelper (derived
+        // from the attribute's match config), and those are separate config fields. Whether they
+        // can actually disagree - and hence whether the filtering is needed at all - needs
+        // further investigation; if they cannot, drop the use_dictionary_entry() override and
+        // let the base implementation accept every entry in the range.
         auto make_lower = [this] {
             return _range_spec->left_closed
                        ? _enumStore.make_folded_comparator(_range_spec->left.c_str())
