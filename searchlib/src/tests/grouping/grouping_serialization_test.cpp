@@ -3,7 +3,7 @@
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
-#include <vespa/searchlib/aggregation/argmin_aggregation_result.h>
+#include <vespa/searchlib/aggregation/argmax_aggregation_result.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/quantile_aggregation_result.h>
@@ -241,17 +241,17 @@ TEST(GroupingSerializationTest, testAggregatorResults) {
     quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(8))).aggregate(DocId(45), HitRank(21));
     f.checkObject(quantile);
 
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(42), HitRank(21));
-    f.checkObject(argmin);
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(42), HitRank(21));
+    f.checkObject(argmax);
 
-    auto argmin_values = MU<Int64ResultNodeVector>();
-    argmin_values->push_back(Int64ResultNode(7)).push_back(Int64ResultNode(8));
-    ArgminAggregationResult argmin_multivalue;
-    argmin_multivalue.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
-    argmin_multivalue.setExpression(MU<ConstantNode>(std::move(argmin_values))).aggregate(DocId(42), HitRank(21));
-    f.checkObject(argmin_multivalue);
+    auto argmax_values = MU<Int64ResultNodeVector>();
+    argmax_values->push_back(Int64ResultNode(7)).push_back(Int64ResultNode(8));
+    ArgmaxAggregationResult argmax_multivalue;
+    argmax_multivalue.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
+    argmax_multivalue.setExpression(MU<ConstantNode>(std::move(argmax_values))).aggregate(DocId(42), HitRank(21));
+    f.checkObject(argmax_multivalue);
 }
 
 TEST(GroupingSerializationTest, testHitList) {

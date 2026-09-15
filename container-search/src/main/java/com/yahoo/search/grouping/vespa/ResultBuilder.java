@@ -24,7 +24,7 @@ import com.yahoo.search.grouping.result.StringBucketId;
 import com.yahoo.search.grouping.result.StringId;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.AggregationResult;
-import com.yahoo.searchlib.aggregation.ArgminAggregationResult;
+import com.yahoo.searchlib.aggregation.ArgmaxAggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
 import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
@@ -308,8 +308,8 @@ class ResultBuilder {
             } else if (execResult instanceof ExpressionCountAggregationResult) {
                 long count = ((ExpressionCountAggregationResult)execResult).getEstimatedUniqueCount();
                 return correctExpressionCountEstimate(count, tag);
-            } else if (execResult instanceof ArgminAggregationResult) {
-                return newResultValue(((ArgminAggregationResult)execResult).getValue());
+            } else if (execResult instanceof ArgmaxAggregationResult) {
+                return newResultValue(((ArgmaxAggregationResult)execResult).getValue());
             } else if (execResult instanceof MaxAggregationResult) {
                 return ((MaxAggregationResult)execResult).getMax().getValue();
             } else if (execResult instanceof MinAggregationResult) {

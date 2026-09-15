@@ -5,7 +5,7 @@
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
-#include <vespa/searchlib/aggregation/argmin_aggregation_result.h>
+#include <vespa/searchlib/aggregation/argmax_aggregation_result.h>
 #include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
@@ -360,73 +360,48 @@ TEST(GroupingTest, testAggregationSimple) {
 }
 
 /**
- * Test that the argmin aggregator keeps the value of the hit with the smallest key, that hits
- * with larger keys do not replace it, and that ties keep the hit that was aggregated first.
+ * Test that the argmax aggregator keeps the value of the hit with the largest key, that hits
+ * with smaller keys do not replace it, and that ties keep the hit that was aggregated first.
  **/
-TEST(GroupingTest, argmin_aggregation_result_keeps_the_value_of_the_smallest_key) {
-    ArgminAggregationResult argmin;
-    EXPECT_FALSE(argmin.has_value());
+TEST(GroupingTest, argmax_aggregation_result_keeps_the_value_of_the_largest_key) {
+    ArgmaxAggregationResult argmax;
+    EXPECT_FALSE(argmax.has_value());
 
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(1.0));
-    EXPECT_TRUE(argmin.has_value());
-    EXPECT_EQ(10, argmin.value().getInteger());
-    EXPECT_EQ(5, argmin.key().getInteger());
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(1.0));
+    EXPECT_TRUE(argmax.has_value());
+    EXPECT_EQ(10, argmax.value().getInteger());
+    EXPECT_EQ(5, argmax.key().getInteger());
 
-    // A hit with a larger key does not replace it.
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(7)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(2.0));
-    EXPECT_EQ(10, argmin.value().getInteger());
+    // A hit with a smaller key does not replace it.
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(3)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(2.0));
+    EXPECT_EQ(10, argmax.value().getInteger());
 
     // Neither does one with an equal key.
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(3.0));
-    EXPECT_EQ(10, argmin.value().getInteger());
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(3.0));
+    EXPECT_EQ(10, argmax.value().getInteger());
 
-    // A hit with a smaller key does, no matter how it ranks.
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(3)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(40))).aggregate(DocId(4), HitRank(0.0));
-    EXPECT_EQ(40, argmin.value().getInteger());
-    EXPECT_EQ(3, argmin.key().getInteger());
+    // A hit with a larger key does, no matter how it ranks.
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(7)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(40))).aggregate(DocId(4), HitRank(0.0));
+    EXPECT_EQ(40, argmax.value().getInteger());
+    EXPECT_EQ(7, argmax.key().getInteger());
 }
 
 /**
- * Test that the argmin aggregator selects the hit with the smallest key when both the key and
+ * Test that the argmax aggregator selects the hit with the largest key when both the key and
  * the value are attributes, regardless of the order the hits arrive in.
  **/
-TEST(GroupingTest, argmin_aggregation_result_selects_by_key_expression) {
+TEST(GroupingTest, argmax_aggregation_result_selects_by_key_expression) {
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
     ctx.add(IntAttrBuilder("value").add(10).add(20).add(30).sp());
-    ctx.add(IntAttrBuilder("key").add(7).add(3).add(5).sp());
+    ctx.add(IntAttrBuilder("key").add(3).add(7).add(5).sp());
 
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<AttributeNode>("key"));
-    argmin.setExpression(MU<AttributeNode>("value"));
-
-    Grouping request;
-    request.setRoot(Group().addResult(argmin));
-    ctx.setup(request);
-    request.aggregate(ctx.result().hits(), ctx.result().size());
-
-    const auto& res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(0));
-    EXPECT_TRUE(res.has_value());
-    EXPECT_EQ(20, res.value().getInteger()); // docid 1 has the smallest key
-    EXPECT_EQ(3, res.key().getInteger());
-}
-
-/**
- * Test that negating the key turns the aggregator into argmax, which is how the container
- * expresses argmax(key, value).
- **/
-TEST(GroupingTest, argmin_aggregation_result_with_negated_key_selects_the_largest_key) {
-    AggregationContext ctx;
-    ctx.result().add(0).add(1).add(2);
-    ctx.add(IntAttrBuilder("value").add(10).add(20).add(30).sp());
-    ctx.add(IntAttrBuilder("key").add(7).add(3).add(5).sp());
-
-    ArgminAggregationResult argmax;
-    argmax.set_key_expression(MU<NegateFunctionNode>(MU<AttributeNode>("key")));
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<AttributeNode>("key"));
     argmax.setExpression(MU<AttributeNode>("value"));
 
     Grouping request;
@@ -434,203 +409,228 @@ TEST(GroupingTest, argmin_aggregation_result_with_negated_key_selects_the_larges
     ctx.setup(request);
     request.aggregate(ctx.result().hits(), ctx.result().size());
 
-    const auto& res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(0));
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_TRUE(res.has_value());
-    EXPECT_EQ(10, res.value().getInteger()); // docid 0 has the largest key
-    EXPECT_EQ(-7, res.key().getInteger());
+    EXPECT_EQ(20, res.value().getInteger()); // docid 1 has the largest key
+    EXPECT_EQ(7, res.key().getInteger());
+}
+
+/**
+ * Test that negating the key turns the aggregator into argmin, which is how the container
+ * expresses argmin(key, value).
+ **/
+TEST(GroupingTest, argmax_aggregation_result_with_negated_key_selects_the_smallest_key) {
+    AggregationContext ctx;
+    ctx.result().add(0).add(1).add(2);
+    ctx.add(IntAttrBuilder("value").add(10).add(20).add(30).sp());
+    ctx.add(IntAttrBuilder("key").add(7).add(3).add(5).sp());
+
+    ArgmaxAggregationResult argmin;
+    argmin.set_key_expression(MU<NegateFunctionNode>(MU<AttributeNode>("key")));
+    argmin.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmin));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits(), ctx.result().size());
+
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_TRUE(res.has_value());
+    EXPECT_EQ(20, res.value().getInteger()); // docid 1 has the smallest key
+    EXPECT_EQ(-3, res.key().getInteger());
 }
 
 /**
  * Test that a multi-value result is forwarded as is: the aggregator does not care what the value
  * is, it only selects which hit it is taken from.
  **/
-TEST(GroupingTest, argmin_aggregation_result_forwards_a_multivalue_result) {
+TEST(GroupingTest, argmax_aggregation_result_forwards_a_multivalue_result) {
     auto values = MU<Int64ResultNodeVector>();
     values->push_back(Int64ResultNode(30)).push_back(Int64ResultNode(10));
 
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
-    argmin.setExpression(MU<ConstantNode>(std::move(values))).aggregate(DocId(1), HitRank(5.0));
-    EXPECT_TRUE(argmin.has_value());
-    ASSERT_TRUE(argmin.value().isMultiValue());
-    const auto& value = static_cast<const ResultNodeVector&>(argmin.value());
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
+    argmax.setExpression(MU<ConstantNode>(std::move(values))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_TRUE(argmax.has_value());
+    ASSERT_TRUE(argmax.value().isMultiValue());
+    const auto& value = static_cast<const ResultNodeVector&>(argmax.value());
     ASSERT_EQ(2u, value.size());
     EXPECT_EQ(30, value.get(0).getInteger());
     EXPECT_EQ(10, value.get(1).getInteger());
 
-    // A later hit with a smaller key replaces the whole multi-value result.
+    // A later hit with a larger key replaces the whole multi-value result.
     auto other = MU<Int64ResultNodeVector>();
     other->push_back(Int64ResultNode(7));
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(3)));
-    argmin.setExpression(MU<ConstantNode>(std::move(other))).aggregate(DocId(2), HitRank(5.0));
-    const auto& replaced = static_cast<const ResultNodeVector&>(argmin.value());
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(8)));
+    argmax.setExpression(MU<ConstantNode>(std::move(other))).aggregate(DocId(2), HitRank(5.0));
+    const auto& replaced = static_cast<const ResultNodeVector&>(argmax.value());
     ASSERT_EQ(1u, replaced.size());
     EXPECT_EQ(7, replaced.get(0).getInteger());
 }
 
 /**
- * Test that a multi-value key is represented by its smallest element, so that a hit is selected
- * when any of its key elements is smaller than the current key.
+ * Test that a multi-value key is represented by its largest element, so that a hit is selected
+ * when any of its key elements is larger than the current key.
  **/
-TEST(GroupingTest, argmin_aggregation_result_uses_the_smallest_element_of_a_multivalue_key) {
+TEST(GroupingTest, argmax_aggregation_result_uses_the_largest_element_of_a_multivalue_key) {
     auto keys = MU<Int64ResultNodeVector>();
-    keys->push_back(Int64ResultNode(9)).push_back(Int64ResultNode(2)).push_back(Int64ResultNode(5));
+    keys->push_back(Int64ResultNode(2)).push_back(Int64ResultNode(9)).push_back(Int64ResultNode(5));
 
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<ConstantNode>(std::move(keys)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
-    EXPECT_TRUE(argmin.has_value());
-    EXPECT_EQ(10, argmin.value().getInteger());
-    EXPECT_EQ(2, argmin.key().getInteger());
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<ConstantNode>(std::move(keys)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_TRUE(argmax.has_value());
+    EXPECT_EQ(10, argmax.value().getInteger());
+    EXPECT_EQ(9, argmax.key().getInteger());
 
-    // Only the smallest element matters: {3, 100} loses to 2.
-    auto larger = MU<Int64ResultNodeVector>();
-    larger->push_back(Int64ResultNode(3)).push_back(Int64ResultNode(100));
-    argmin.set_key_expression(MU<ConstantNode>(std::move(larger)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
-    EXPECT_EQ(10, argmin.value().getInteger());
-
-    // {100, 1} wins because of the 1.
+    // Only the largest element matters: {8, 1} loses to 9.
     auto smaller = MU<Int64ResultNodeVector>();
-    smaller->push_back(Int64ResultNode(100)).push_back(Int64ResultNode(1));
-    argmin.set_key_expression(MU<ConstantNode>(std::move(smaller)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(5.0));
-    EXPECT_EQ(30, argmin.value().getInteger());
-    EXPECT_EQ(1, argmin.key().getInteger());
+    smaller->push_back(Int64ResultNode(8)).push_back(Int64ResultNode(1));
+    argmax.set_key_expression(MU<ConstantNode>(std::move(smaller)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
+    EXPECT_EQ(10, argmax.value().getInteger());
+
+    // {1, 100} wins because of the 100.
+    auto larger = MU<Int64ResultNodeVector>();
+    larger->push_back(Int64ResultNode(1)).push_back(Int64ResultNode(100));
+    argmax.set_key_expression(MU<ConstantNode>(std::move(larger)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(5.0));
+    EXPECT_EQ(30, argmax.value().getInteger());
+    EXPECT_EQ(100, argmax.key().getInteger());
 }
 
-TEST(GroupingTest, argmin_aggregation_result_skips_hits_with_an_empty_multivalue_key) {
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNodeVector>()));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
-    EXPECT_FALSE(argmin.has_value());
+TEST(GroupingTest, argmax_aggregation_result_skips_hits_with_an_empty_multivalue_key) {
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNodeVector>()));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_FALSE(argmax.has_value());
 }
 
 /**
  * Test that a NaN key, which is how an undefined floating point attribute shows up, never selects a
  * hit: not on its own, and not as an element of a multi-value key.
  **/
-TEST(GroupingTest, argmin_aggregation_result_never_selects_a_nan_key) {
+TEST(GroupingTest, argmax_aggregation_result_never_selects_a_nan_key) {
     const double nan = std::numeric_limits<double>::quiet_NaN();
 
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(nan)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
-    EXPECT_FALSE(argmin.has_value());
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(nan)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_FALSE(argmax.has_value());
 
     // A multi-value key consisting only of NaN is skipped too.
     auto all_nan = MU<FloatResultNodeVector>();
     all_nan->push_back(FloatResultNode(nan)).push_back(FloatResultNode(nan));
-    argmin.set_key_expression(MU<ConstantNode>(std::move(all_nan)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
-    EXPECT_FALSE(argmin.has_value());
+    argmax.set_key_expression(MU<ConstantNode>(std::move(all_nan)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
+    EXPECT_FALSE(argmax.has_value());
 
     // NaN elements are ignored, the remaining elements decide.
     auto some_nan = MU<FloatResultNodeVector>();
     some_nan->push_back(FloatResultNode(nan)).push_back(FloatResultNode(4.0)).push_back(FloatResultNode(nan));
-    argmin.set_key_expression(MU<ConstantNode>(std::move(some_nan)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(5.0));
-    EXPECT_TRUE(argmin.has_value());
-    EXPECT_EQ(30, argmin.value().getInteger());
-    EXPECT_EQ(4.0, argmin.key().getFloat());
+    argmax.set_key_expression(MU<ConstantNode>(std::move(some_nan)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30))).aggregate(DocId(3), HitRank(5.0));
+    EXPECT_TRUE(argmax.has_value());
+    EXPECT_EQ(30, argmax.value().getInteger());
+    EXPECT_EQ(4.0, argmax.key().getFloat());
 
     // A regular key wins over a NaN key no matter the order.
-    argmin.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(nan)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(40))).aggregate(DocId(4), HitRank(5.0));
-    EXPECT_EQ(30, argmin.value().getInteger());
+    argmax.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(nan)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(40))).aggregate(DocId(4), HitRank(5.0));
+    EXPECT_EQ(30, argmax.value().getInteger());
 }
 
-TEST(GroupingTest, argmin_aggregation_result_selects_a_negative_infinity_key) {
+TEST(GroupingTest, argmax_aggregation_result_selects_a_positive_infinity_key) {
     const double inf = std::numeric_limits<double>::infinity();
 
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(1.0)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
-    EXPECT_EQ(10, argmin.value().getInteger());
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(1.0)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    EXPECT_EQ(10, argmax.value().getInteger());
 
-    argmin.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(-inf)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
-    EXPECT_EQ(20, argmin.value().getInteger());
-    EXPECT_EQ(-inf, argmin.key().getFloat());
+    argmax.set_key_expression(MU<ConstantNode>(MU<FloatResultNode>(inf)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
+    EXPECT_EQ(20, argmax.value().getInteger());
+    EXPECT_EQ(inf, argmax.key().getFloat());
 }
 
 /**
  * Test that an undefined floating point attribute (NaN) is never selected, also when the key is
- * negated to express argmax.
+ * negated to express argmin.
  **/
-TEST(GroupingTest, argmin_aggregation_result_skips_undefined_float_attribute_keys) {
+TEST(GroupingTest, argmax_aggregation_result_skips_undefined_float_attribute_keys) {
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
     ctx.add(IntAttrBuilder("value").add(10).add(20).add(30).sp());
     ctx.add(FloatAttrBuilder("key").add(getUndefined<double>()).add(3.0).add(5.0).sp());
 
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<AttributeNode>("key"));
-    argmin.setExpression(MU<AttributeNode>("value"));
-    ArgminAggregationResult argmax;
-    argmax.set_key_expression(MU<NegateFunctionNode>(MU<AttributeNode>("key")));
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<AttributeNode>("key"));
     argmax.setExpression(MU<AttributeNode>("value"));
+    ArgmaxAggregationResult argmin;
+    argmin.set_key_expression(MU<NegateFunctionNode>(MU<AttributeNode>("key")));
+    argmin.setExpression(MU<AttributeNode>("value"));
 
     Grouping request;
-    request.setRoot(Group().addResult(argmin).addResult(argmax));
+    request.setRoot(Group().addResult(argmax).addResult(argmin));
     ctx.setup(request);
     request.aggregate(ctx.result().hits(), ctx.result().size());
 
-    const auto& min_res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(0));
-    EXPECT_EQ(20, min_res.value().getInteger()); // docid 1 has the smallest defined key
-    const auto& max_res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(1));
+    const auto& max_res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_EQ(30, max_res.value().getInteger()); // docid 2 has the largest defined key
+    const auto& min_res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(1));
+    EXPECT_EQ(20, min_res.value().getInteger()); // docid 1 has the smallest defined key
 }
 
-TEST(GroupingTest, argmin_aggregation_result_is_empty_after_reset) {
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
-    argmin.reset();
-    EXPECT_FALSE(argmin.has_value());
-    EXPECT_EQ(0, argmin.value().getInteger());
+TEST(GroupingTest, argmax_aggregation_result_is_empty_after_reset) {
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(1), HitRank(5.0));
+    argmax.reset();
+    EXPECT_FALSE(argmax.has_value());
+    EXPECT_EQ(0, argmax.value().getInteger());
 
-    // After a reset any hit is taken, no matter how large its key.
-    argmin.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(100)));
-    argmin.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
-    EXPECT_TRUE(argmin.has_value());
-    EXPECT_EQ(20, argmin.value().getInteger());
-    EXPECT_EQ(100, argmin.key().getInteger());
+    // After a reset any hit is taken, no matter how small its key.
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(-100)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20))).aggregate(DocId(2), HitRank(5.0));
+    EXPECT_TRUE(argmax.has_value());
+    EXPECT_EQ(20, argmax.value().getInteger());
+    EXPECT_EQ(-100, argmax.key().getInteger());
 }
 
 /**
- * Test that merging picks the hit with the smallest key regardless of merge order, which is
+ * Test that merging picks the hit with the largest key regardless of merge order, which is
  * what keeping the key of the winning hit in the result buys us.
  **/
-TEST(GroupingTest, argmin_aggregation_result_merges_by_key) {
-    ArgminAggregationResult a(FloatResultNode(-5.0), Int64ResultNode(10));
+TEST(GroupingTest, argmax_aggregation_result_merges_by_key) {
+    ArgmaxAggregationResult a(FloatResultNode(5.0), Int64ResultNode(10));
     a.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10)));
-    ArgminAggregationResult b(FloatResultNode(-7.0), Int64ResultNode(20));
+    ArgmaxAggregationResult b(FloatResultNode(7.0), Int64ResultNode(20));
     b.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(20)));
-    ArgminAggregationResult empty;
+    ArgmaxAggregationResult empty;
     empty.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(30)));
     EXPECT_FALSE(empty.has_value());
 
-    ArgminAggregationResult a_then_b(a);
+    ArgmaxAggregationResult a_then_b(a);
     a_then_b.merge(b);
     EXPECT_EQ(20, a_then_b.value().getInteger());
-    EXPECT_EQ(-7.0, a_then_b.key().getFloat());
+    EXPECT_EQ(7.0, a_then_b.key().getFloat());
 
-    ArgminAggregationResult b_then_a(b);
+    ArgmaxAggregationResult b_then_a(b);
     b_then_a.merge(a);
     EXPECT_EQ(20, b_then_a.value().getInteger());
-    EXPECT_EQ(-7.0, b_then_a.key().getFloat());
+    EXPECT_EQ(7.0, b_then_a.key().getFloat());
 
     // An empty result never wins, and is filled in by whatever it merges with.
-    ArgminAggregationResult a_then_empty(a);
+    ArgmaxAggregationResult a_then_empty(a);
     a_then_empty.merge(empty);
     EXPECT_EQ(10, a_then_empty.value().getInteger());
 
-    ArgminAggregationResult empty_then_a(empty);
+    ArgmaxAggregationResult empty_then_a(empty);
     empty_then_a.merge(a);
     EXPECT_TRUE(empty_then_a.has_value());
     EXPECT_EQ(10, empty_then_a.value().getInteger());
-    EXPECT_EQ(-5.0, empty_then_a.key().getFloat());
+    EXPECT_EQ(5.0, empty_then_a.key().getFloat());
 }
 
 /**
@@ -2071,20 +2071,20 @@ TEST(GroupingTest, test_that_attributes_can_be_unconditionally_converted_to_docu
 }
 
 /**
- * Test that the key expression of argmin is converted along with the value expression, which is what
+ * Test that the key expression of argmax is converted along with the value expression, which is what
  * streaming search relies on to read the key from the document rather than from an attribute.
  **/
-TEST(GroupingTest, argmin_key_expression_is_converted_to_a_document_field_node) {
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<AttributeNode>("key"));
-    argmin.setExpression(MU<AttributeNode>("value"));
+TEST(GroupingTest, argmax_key_expression_is_converted_to_a_document_field_node) {
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<AttributeNode>("key"));
+    argmax.setExpression(MU<AttributeNode>("value"));
 
     Grouping request;
-    request.setRoot(Group().addResult(argmin));
+    request.setRoot(Group().addResult(argmax));
     aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
     request.select(attr2DocumentAccessor, attr2DocumentAccessor);
 
-    const auto& res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(0));
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_TRUE(res.getExpression()->inherits(DocumentFieldNode::classId));
     ASSERT_TRUE(res.key_expression() != nullptr);
     EXPECT_TRUE(res.key_expression()->inherits(DocumentFieldNode::classId));
@@ -2093,9 +2093,9 @@ TEST(GroupingTest, argmin_key_expression_is_converted_to_a_document_field_node) 
 /**
  * Test the streaming search flow end to end: the attribute nodes of both the key and the value expression
  * are rewritten to document field nodes, the grouping is configured with the document type, and the
- * documents are aggregated directly. The hit with the smallest key must be selected.
+ * documents are aggregated directly. The hit with the largest key must be selected.
  **/
-TEST(GroupingTest, argmin_aggregation_result_selects_by_document_field_key_when_aggregating_documents) {
+TEST(GroupingTest, argmax_aggregation_result_selects_by_document_field_key_when_aggregating_documents) {
     search::test::DocBuilder builder([](auto& header, auto& doc) noexcept {
         doc.addField("key", header.intTypeRef());
         doc.addField("value", header.intTypeRef());
@@ -2107,12 +2107,12 @@ TEST(GroupingTest, argmin_aggregation_result_selects_by_document_field_key_when_
         return doc;
     };
 
-    ArgminAggregationResult argmin;
-    argmin.set_key_expression(MU<AttributeNode>("key"));
-    argmin.setExpression(MU<AttributeNode>("value"));
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<AttributeNode>("key"));
+    argmax.setExpression(MU<AttributeNode>("value"));
 
     Grouping request;
-    request.setRoot(Group().addResult(argmin));
+    request.setRoot(Group().addResult(argmax));
     aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
     request.select(attr2DocumentAccessor, attr2DocumentAccessor);
     request.configureStaticStuff(ConfigureStaticParams(nullptr, &builder.get_document_type()));
@@ -2122,10 +2122,10 @@ TEST(GroupingTest, argmin_aggregation_result_selects_by_document_field_key_when_
     request.aggregate(*make_doc(3, 5, 30), HitRank(1.0));
     request.postAggregate();
 
-    const auto& res = static_cast<const ArgminAggregationResult&>(request.getRoot().getAggregationResult(0));
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_TRUE(res.has_value());
-    EXPECT_EQ(20, res.value().getInteger()); // document 2 has the smallest key
-    EXPECT_EQ(3, res.key().getInteger());
+    EXPECT_EQ(10, res.value().getInteger()); // document 1 has the largest key
+    EXPECT_EQ(7, res.key().getInteger());
 }
 
 TEST(GroupingTest, test_bad_grouping) {

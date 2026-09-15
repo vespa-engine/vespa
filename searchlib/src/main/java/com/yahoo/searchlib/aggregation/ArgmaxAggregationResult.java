@@ -11,14 +11,14 @@ import com.yahoo.vespa.objects.Serializer;
 
 /**
  * This is an aggregated result holding the value of the aggregating expression for the hit whose key expression
- * evaluated to the smallest value: argmin(key, value). argmax(key, value) is the same result with a negated key
+ * evaluated to the largest value: argmax(key, value). argmin(key, value) is the same result with a negated key
  * expression. The value is forwarded as is, so it may be a single value or a multi-value result.
  *
  * @author johsol
  */
-public class ArgminAggregationResult extends AggregationResult {
+public class ArgmaxAggregationResult extends AggregationResult {
 
-    public static final int classId = registerClass(0x4000 + 183, ArgminAggregationResult.class, ArgminAggregationResult::new);
+    public static final int classId = registerClass(0x4000 + 183, ArgmaxAggregationResult.class, ArgmaxAggregationResult::new);
     private ExpressionNode keyExpression = null;
     private SingleResultNode key = new FloatResultNode(0.0);
     private ResultNode value = new FloatResultNode(0.0);
@@ -27,12 +27,12 @@ public class ArgminAggregationResult extends AggregationResult {
     /**
      * Constructs an empty result node.
      */
-    public ArgminAggregationResult() {}
+    public ArgmaxAggregationResult() {}
 
     /**
      * Constructs an instance of this class with the given key and value.
      */
-    public ArgminAggregationResult(SingleResultNode key, ResultNode value) {
+    public ArgmaxAggregationResult(SingleResultNode key, ResultNode value) {
         setKey(key);
         setValue(value);
     }
@@ -47,22 +47,22 @@ public class ArgminAggregationResult extends AggregationResult {
     /**
      * Sets the key of the hit the value was taken from.
      */
-    public final ArgminAggregationResult setKey(SingleResultNode key) {
+    public final ArgmaxAggregationResult setKey(SingleResultNode key) {
         this.key = key;
         return this;
     }
 
     /**
-     * Returns the value of the hit with the smallest key.
+     * Returns the value of the hit with the largest key.
      */
     public final ResultNode getValue() {
         return value;
     }
 
     /**
-     * Sets the value of the hit with the smallest key, marking this as holding a value.
+     * Sets the value of the hit with the largest key, marking this as holding a value.
      */
-    public final ArgminAggregationResult setValue(ResultNode value) {
+    public final ArgmaxAggregationResult setValue(ResultNode value) {
         this.value = value;
         this.hasValue = true;
         return this;
@@ -78,7 +78,7 @@ public class ArgminAggregationResult extends AggregationResult {
     /**
      * Sets the expression producing the key to minimize.
      */
-    public final ArgminAggregationResult setKeyExpression(ExpressionNode keyExpression) {
+    public final ArgmaxAggregationResult setKeyExpression(ExpressionNode keyExpression) {
         this.keyExpression = keyExpression;
         return this;
     }
@@ -120,8 +120,8 @@ public class ArgminAggregationResult extends AggregationResult {
 
     @Override
     protected void onMerge(AggregationResult result) {
-        ArgminAggregationResult rhs = (ArgminAggregationResult)result;
-        if (!rhs.hasValue || (hasValue && rhs.key.compareTo(key) >= 0)) {
+        ArgmaxAggregationResult rhs = (ArgmaxAggregationResult)result;
+        if (!rhs.hasValue || (hasValue && rhs.key.compareTo(key) <= 0)) {
             return;
         }
         key = (SingleResultNode)rhs.key.clone();
@@ -130,8 +130,8 @@ public class ArgminAggregationResult extends AggregationResult {
     }
 
     @Override
-    public ArgminAggregationResult clone() {
-        ArgminAggregationResult obj = (ArgminAggregationResult)super.clone();
+    public ArgmaxAggregationResult clone() {
+        ArgmaxAggregationResult obj = (ArgmaxAggregationResult)super.clone();
         if (keyExpression != null) {
             obj.keyExpression = keyExpression.clone();
         }
@@ -146,7 +146,7 @@ public class ArgminAggregationResult extends AggregationResult {
 
     @Override
     protected boolean equalsAggregation(AggregationResult obj) {
-        ArgminAggregationResult rhs = (ArgminAggregationResult)obj;
+        ArgmaxAggregationResult rhs = (ArgmaxAggregationResult)obj;
         return hasValue == rhs.hasValue && equals(keyExpression, rhs.keyExpression) && equals(key, rhs.key)
                 && equals(value, rhs.value);
     }
