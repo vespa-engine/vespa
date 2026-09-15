@@ -103,6 +103,20 @@ public class TensorTypeTestCase {
     }
 
     @Test
+    public void testMathematicallyEquals() {
+        assertMathematicallyEquals("tensor(x[10])", "tensor(x[10])");
+        assertMathematicallyEquals("tensor(x[10])", "tensor(x[5])");
+        assertMathematicallyEquals("tensor(x[10])", "tensor(x[])");
+        assertMathematicallyEquals("tensor<float>(x[10])", "tensor<double>(x[10])");
+        assertMathematicallyEquals("tensor(x{},y[10])", "tensor(x{},y[5])");
+        assertMathematicallyEquals("tensor(x{})", "tensor(x[10])");
+        assertMathematicallyEquals("tensor(x{})", "tensor(x[])");
+        assertMathematicallyEquals("tensor(x{},y[10])", "tensor(x[10],y[10])");
+        assertMathematicallyUnequal("tensor(x[10])", "tensor(y[10])");
+        assertMathematicallyUnequal("tensor(x[10])", "tensor(x[10],y[10])");
+    }
+
+    @Test
     public void testIndexedSubtype() {
         assertEquals(TensorType.fromSpec("tensor(x[10])"),
                      TensorType.fromSpec("tensor(x[10])").indexedSubtype());
@@ -157,6 +171,16 @@ public class TensorTypeTestCase {
 
     private void assertUnconvertibleTo(String specificType, String generalType) {
         assertFalse(TensorType.fromSpec(specificType).isConvertibleTo(TensorType.fromSpec(generalType)));
+    }
+
+    private void assertMathematicallyEquals(String typeSpec1, String typeSpec2) {
+        assertTrue(TensorType.fromSpec(typeSpec1).mathematicallyEquals(TensorType.fromSpec(typeSpec2)));
+        assertTrue(TensorType.fromSpec(typeSpec2).mathematicallyEquals(TensorType.fromSpec(typeSpec1)));
+    }
+
+    private void assertMathematicallyUnequal(String typeSpec1, String typeSpec2) {
+        assertFalse(TensorType.fromSpec(typeSpec1).mathematicallyEquals(TensorType.fromSpec(typeSpec2)));
+        assertFalse(TensorType.fromSpec(typeSpec2).mathematicallyEquals(TensorType.fromSpec(typeSpec1)));
     }
 
     private void assertValueType(TensorType.Value expectedValueType, String tensorTypeSpec) {
