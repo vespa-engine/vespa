@@ -1,8 +1,8 @@
-name: "dummy_transformer_47d1bdde03c1063e"
+name: "dummy_transformer_ac21d1828d143ce1"
 platform: "onnxruntime_onnx"
 max_batch_size: 1
 instance_group {
-  count: 2
+  count: 8
   kind: KIND_CPU
 }
 parameters {
@@ -32,7 +32,7 @@ parameters {
 parameters {
   key: "intra_op_thread_count"
   value {
-    string_value: "2"
+    string_value: "16"
   }
 }
 parameters {

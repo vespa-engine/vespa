@@ -24,7 +24,7 @@ public record OnnxEvaluatorOptions(
         boolean gpuDeviceRequired,
         boolean optimizeModel,
         int batchingMaxSize,
-        int numModelInstances,
+        Optional<Integer> numModelInstances,
         Optional<Path> modelConfigOverride,
         int availableProcessors
 ) {
@@ -98,7 +98,7 @@ public record OnnxEvaluatorOptions(
         private boolean gpuDeviceRequired;
         private boolean optimizeModel;
         private int batchingMaxSize;
-        private int numModelInstances;
+        private Optional<Integer> numModelInstances;
         private Optional<Path> modelConfigOverride;
 
         // Used to calculate number of threads
@@ -117,7 +117,7 @@ public record OnnxEvaluatorOptions(
             gpuDeviceRequired = false;
             optimizeModel = false;
             batchingMaxSize = 1;
-            numModelInstances = 1;
+            numModelInstances = Optional.empty();
             modelConfigOverride = Optional.empty();
             
             this.availableProcessors = availableProcessors;
@@ -133,6 +133,7 @@ public record OnnxEvaluatorOptions(
             this.batchingMaxSize = options.batchingMaxSize();
             this.numModelInstances = options.numModelInstances();
             this.modelConfigOverride = options.modelConfigOverride;
+            this.availableProcessors = options.availableProcessors();
         }
 
         public Builder setExecutionMode(String mode) {
@@ -194,8 +195,16 @@ public record OnnxEvaluatorOptions(
             return this;
         }
         
+        /**
+         * Sets the number of model instances from a concurrency factor.
+         * A non-positive factor leaves the number of instances unset, so the runtime derives a default.
+         * Application package schemas only allow positive explicit factors; non-positive values can occur through
+         * the config default or a raw config override.
+         */
         public Builder setConcurrency(double concurrencyFactor, ConcurrencyFactorType concurrencyFactorType) {
-            this.numModelInstances = calculateNumModelInstances(concurrencyFactor, concurrencyFactorType);
+            this.numModelInstances = concurrencyFactor > 0
+                    ? Optional.of(calculateNumModelInstances(concurrencyFactor, concurrencyFactorType))
+                    : Optional.empty();
             return this;
         }
 

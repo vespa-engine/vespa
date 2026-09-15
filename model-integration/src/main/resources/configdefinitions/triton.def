@@ -21,6 +21,9 @@ modelControlMode enum {NONE, POLL, EXPLICIT} default=EXPLICIT restart
 # Sharing keeps one copy of the model weights per device. Concurrency is still controlled by the instance count.
 shareOnnxSessionBetweenInstances bool default=false restart
 
+# Minimum GPU count per container node, or -1 when node resources are unknown.
+gpuCount int default=-1 restart
+
 # Default per-call gRPC deadline for inference requests, in milliseconds.
 # Used as a fallback when the caller (e.g. an embedder) does not supply a deadline derived
 # from the Vespa request context. When the caller does supply one, that value takes precedence.

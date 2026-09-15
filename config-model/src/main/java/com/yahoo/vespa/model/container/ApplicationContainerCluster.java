@@ -463,6 +463,23 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(TritonConfig.Builder builder) {
         builder.shareOnnxSessionBetweenInstances(tritonShareOnnxSession);
+        builder.gpuCount(gpuCount());
+    }
+
+    // TritonConfig is shared by the cluster, so use the minimum count across its nodes.
+    // Container clusters are normally homogeneous; unknown resources give an unknown count.
+    private int gpuCount() {
+        if (getContainers().isEmpty()) return -1;
+
+        int gpuCount = Integer.MAX_VALUE;
+        for (var container : getContainers()) {
+            if (container.getHostResource() == null || container.getHostResource().realResources().isUnspecified()) {
+                return -1;
+            }
+            gpuCount = Math.min(gpuCount, container.getHostResource().realResources().gpuResources().count());
+        }
+
+        return gpuCount;
     }
 
     public static class MbusParams {

@@ -42,9 +42,13 @@ import java.util.logging.Logger;
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
     private static final Logger log = Logger.getLogger(TritonOnnxRuntime.class.getName());
 
+    // Two instances overlap GPU execution with preparation of the next request on the host.
+    private static final int DEFAULT_NUM_GPU_MODEL_INSTANCES = 2;
+
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
     private final boolean shareSessionBetweenInstances;
+    private final int gpuCount;
     private final Path modelRepositoryPath;
 
     // The key is a model name containing hash of model content and options.
@@ -69,6 +73,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Takes ownership of the client: deconstruct() closes it.
     TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient) {
         this.tritonClient = tritonClient;
+        this.gpuCount = config.gpuCount();
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         shareSessionBetweenInstances = config.shareOnnxSessionBetweenInstances();
@@ -87,7 +92,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        var modelName = generateModelName(modelPath, options, shareSessionBetweenInstances);
+        var modelName = generateModelName(modelPath, options, shareSessionBetweenInstances, gpuCount > 0);
         var modelReference = referenceModel(modelName, modelPath, options);
 
         try {
@@ -195,11 +200,17 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
     }
 
-    static String generateModelName(String modelPath, OnnxEvaluatorOptions options, boolean shareSession) {
+    static String generateModelName(String modelPath, OnnxEvaluatorOptions options, boolean shareSession,
+                                    boolean gpuAvailable) {
         var fileName = Paths.get(modelPath).getFileName().toString();
         var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
-        var optionsHash = options.calculateHash();
+        var numModelInstances = options.numModelInstances()
+                .orElseGet(() -> defaultNumModelInstances(options, shareSession, gpuAvailable));
+        var resolvedOptions = new OnnxEvaluatorOptions.Builder(options)
+                .setConcurrency(numModelInstances, OnnxEvaluatorOptions.ConcurrencyFactorType.ABSOLUTE)
+                .build();
+        var optionsHash = resolvedOptions.calculateHash();
         var shareSessionHash = shareSession ? 1 : 0;
         var combinedHash = Long.toHexString(31 * modelHash + optionsHash + shareSessionHash);
         return baseName + "_" + combinedHash; // add hash to avoid conflicts
@@ -260,30 +271,23 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     private String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
-        // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is
-        // not available.
-        var deviceKind = options.gpuDeviceRequired()
-                ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU
-                : (options.gpuDeviceNumber() >= 0)
-                        ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO
-                        : ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
-
-        // Each model instance in Triton executes requests sequentially, which is different from EmbeddedOnnxRuntime
-        // where one model instance (session) handles all requests.
-        // To maximize CPU utilization with Triton, available cores are ca. divided between model instances,
-        // Rounding up is used because it is better to overutilize CPU than to underutilize.
-        // Intra-op threads parallelize execution of each operator improving performance for any model.
-        var intraOpThreadCountValue = Integer.toString(
-                Math.max(1, (int) Math.ceil(1d * options.availableProcessors() / options.numModelInstances())));
-
-        var executionModeValue = options.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? "1" : "0";
+        // Each model instance in Triton executes requests sequentially, unlike the single session of
+        // EmbeddedOnnxRuntime which handles all requests. Concurrency comes from the number of instances.
+        // With a shared session, the thread counts match EmbeddedOnnxRuntime.createSessionOptions().
+        // With separate sessions, the CPU cores are divided between the instances as intra-op threads.
+        var executionModeValue = isParallel(options) ? "1" : "0";
+        var numModelInstances = options.numModelInstances()
+                .orElseGet(() -> defaultNumModelInstances(options, shareSessionBetweenInstances, gpuCount > 0));
+        var intraOpThreadCountValue = Integer.toString(shareSessionBetweenInstances
+                ? options.intraOpThreads()
+                : intraOpThreadsForSeparateSessions(options, numModelInstances));
+        var interOpThreadCountValue = Integer.toString(shareSessionBetweenInstances
+                ? effectiveInterOpThreads(options)
+                : options.interOpThreads());
 
         var configBuilder = ModelConfigOuterClass.ModelConfig.newBuilder()
                 .setName(modelName)
-                .addInstanceGroup(ModelConfigOuterClass.ModelInstanceGroup.newBuilder()
-                        .setCount(options.numModelInstances())
-                        .setKind(deviceKind)
-                        .build())
+                .addInstanceGroup(createInstanceGroup(options, numModelInstances, gpuCount > 0))
                 .setPlatform("onnxruntime_onnx")
                 .setMaxBatchSize(options.batchingMaxSize())
                 .putParameters(
@@ -309,7 +313,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .putParameters(
                         "inter_op_thread_count",
                         ModelConfigOuterClass.ModelParameter.newBuilder()
-                                .setStringValue(Integer.toString(options.interOpThreads()))
+                                .setStringValue(interOpThreadCountValue)
                                 .build());
 
         addSessionSharingParameter(configBuilder);
@@ -331,8 +335,69 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         return configBuilder.build().toString();
     }
 
+    private static boolean isParallel(OnnxEvaluatorOptions options) {
+        return options.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL;
+    }
+
+    // Inter-op threads are only used in parallel execution mode, otherwise ONNX Runtime uses one.
+    private static int effectiveInterOpThreads(OnnxEvaluatorOptions options) {
+        return isParallel(options) ? options.interOpThreads() : 1;
+    }
+
+    // Instances with separate sessions each hold a copy of the model, so there is one instance by default.
+    // Instances sharing a session share its thread pool. Each instance adds one calling thread.
+    // One instance per CPU core keeps the cores busy under load.
+    static int defaultNumModelInstances(OnnxEvaluatorOptions options, boolean shareSession, boolean gpuAvailable) {
+        if (!shareSession) {
+            return 1;
+        }
+        return runsOnGpu(options, gpuAvailable)
+                ? DEFAULT_NUM_GPU_MODEL_INSTANCES
+                : Math.max(1, options.availableProcessors());
+    }
+
+    // Instances with separate sessions each have their own thread pool, so the CPU cores are divided between them.
+    // Rounding up is used because it is better to overutilize CPU than to underutilize.
+    static int intraOpThreadsForSeparateSessions(OnnxEvaluatorOptions options, int numModelInstances) {
+        return Math.max(1, (int) Math.ceil(1d * options.availableProcessors() / numModelInstances));
+    }
+
+    // A requested GPU is required when the node has GPUs,
+    // so a broken GPU setup fails instead of silently running on CPU.
+    // Otherwise Triton tries the GPU and falls back to CPU.
+    // This is similar to EmbeddedOnnxRuntime trying CUDA first.
+    static ModelConfigOuterClass.ModelInstanceGroup.Kind deviceKind(OnnxEvaluatorOptions options,
+                                                                    boolean gpuAvailable) {
+        if (!options.requestingGpu()) {
+            return ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU; // Required is ignored without a device
+        }
+        if (options.gpuDeviceRequired() || gpuAvailable) {
+            return ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
+        }
+        return ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO;
+    }
+
+    private static boolean runsOnGpu(OnnxEvaluatorOptions options, boolean gpuAvailable) {
+        return deviceKind(options, gpuAvailable) == ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
+    }
+
+    static ModelConfigOuterClass.ModelInstanceGroup createInstanceGroup(OnnxEvaluatorOptions options,
+                                                                        int numModelInstances,
+                                                                        boolean gpuAvailable) {
+        var kind = deviceKind(options, gpuAvailable);
+        var group = ModelConfigOuterClass.ModelInstanceGroup.newBuilder()
+                .setCount(numModelInstances)
+                .setKind(kind);
+        // Triton converts KIND_AUTO to KIND_CPU without clearing gpus, then rejects the group.
+        // Leave AUTO unpinned to preserve CPU fallback when GPU availability is unknown.
+        if (kind == ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU) {
+            group.addGpus(options.gpuDeviceNumber());
+        }
+        return group.build();
+    }
+
     // Sharing one session per device loads the model weights once per device instead of once per instance.
-    // The parameter is read by the patched ONNX Runtime backend in Vespa's Triton images and ignored by stock images.
+    // The parameter requires a patched Triton ONNX backend.
     private void addSessionSharingParameter(ModelConfigOuterClass.ModelConfig.Builder configBuilder) {
         if (!shareSessionBetweenInstances) {
             return;

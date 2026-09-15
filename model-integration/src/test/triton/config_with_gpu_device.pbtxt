@@ -1,9 +1,8 @@
-name: "dummy_transformer_47d1bdde03c1063e"
+name: "dummy_transformer_42577fdcb5dd44d6"
 platform: "onnxruntime_onnx"
 max_batch_size: 1
 instance_group {
-  count: 2
-  kind: KIND_CPU
+  count: 1
 }
 parameters {
   key: "enable_mem_arena"
@@ -26,18 +25,12 @@ parameters {
 parameters {
   key: "inter_op_thread_count"
   value {
-    string_value: "1"
+    string_value: "2"
   }
 }
 parameters {
   key: "intra_op_thread_count"
   value {
-    string_value: "2"
-  }
-}
-parameters {
-  key: "share_session_between_instances"
-  value {
-    string_value: "true"
+    string_value: "8"
   }
 }
