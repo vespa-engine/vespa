@@ -19,25 +19,25 @@ public class ClusterMembershipTest {
     @Test
     void testContainerServiceInstance() {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        assertContainerService(ClusterMembership.from(cluster, 3));
+        assertContainerService(ClusterMembership.from(cluster, 0, 3));
     }
 
     @Test
     void testSerializationWithOptionalParts() {
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired", Vtag.currentVersion, Optional.empty());
-            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired");
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue());
             assertEquals(instance, serialized);
             assertTrue(instance.retired());
         }
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive", Vtag.currentVersion, Optional.empty());
-            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive");
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue());
             assertEquals(instance, serialized);
         }
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/stateful", Vtag.currentVersion, Optional.empty());
-            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/stateful");
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue());
             assertEquals(instance, serialized);
         }
     }
@@ -45,41 +45,23 @@ public class ClusterMembershipTest {
     @Test
     void testServiceInstance() {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        assertContentService(ClusterMembership.from(cluster, 37));
-    }
-
-    @Test
-    void testServiceInstanceWithGroup() {
-        ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
-                               .group(ClusterSpec.Group.from(4))
-                               .vespaVersion("6.42")
-                               .build();
-        assertContentServiceWithGroup(ClusterMembership.from(cluster, 37));
+        assertContentService(ClusterMembership.from(cluster, 0, 37));
     }
 
     @Test
     void testServiceInstanceWithGroupFromString() {
-        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37", Vtag.currentVersion, Optional.empty()));
+        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37"));
     }
 
     @Test
     void testServiceInstanceWithRetire() {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
-    }
-
-    @Test
-    void testServiceInstanceWithGroupAndRetire() {
-        ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
-                               .group(ClusterSpec.Group.from(4))
-                               .vespaVersion("6.42")
-                               .build();
-        assertContentServiceWithGroupAndRetire(ClusterMembership.retiredFrom(cluster, 37));
+        assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 0, 37));
     }
 
     @Test
     void testServiceInstanceWithGroupAndRetireFromString() {
-        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired", Vtag.currentVersion, Optional.empty()));
+        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired"));
     }
 
     @Test
@@ -88,31 +70,8 @@ public class ClusterMembershipTest {
                                          .vespaVersion("6.42")
                                          .profile("large-storage")
                                          .build();
-        ClusterMembership membership = ClusterMembership.from(cluster, 37);
+        ClusterMembership membership = ClusterMembership.from(cluster, 0, 37);
         assertEquals("content/id1/0/37/stateful", membership.stringValue());
-    }
-
-    @Test
-    void testProfilePropagatedFromDeserializationParameters() {
-        String membershipString = "content/id1/0/37";
-        ClusterMembership withProfile = ClusterMembership.from(
-                membershipString,
-                Vtag.currentVersion,
-                Optional.empty(),
-                ZoneEndpoint.defaultEndpoint,
-                List.of(),
-                List.of(),
-                Optional.of("large-storage")
-        );
-        ClusterMembership withoutProfile = ClusterMembership.from(
-                membershipString,
-                Vtag.currentVersion,
-                Optional.empty(),
-                ZoneEndpoint.defaultEndpoint,
-                List.of(),
-                List.of(),
-                Optional.empty()
-        );
     }
 
     private void assertContainerService(ClusterMembership instance) {

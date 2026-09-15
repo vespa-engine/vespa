@@ -137,7 +137,7 @@ public class HostedDeployNodeAllocationTest {
         }
 
         private HostSpec host(String hostname, NodeResources resources, int index, String version, ClusterSpec cluster) {
-            var membership = ClusterMembership.from(cluster.with(Optional.of(ClusterSpec.Group.from(index))), index);
+            var membership = ClusterMembership.from(cluster, index, index);
             return new HostSpec(hostname,
                                 resources,
                                 resources,

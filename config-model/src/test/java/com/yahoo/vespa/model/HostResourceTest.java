@@ -36,7 +36,7 @@ public class HostResourceTest {
 
     @Test
     void host_with_membership() {
-        HostResource host = hostResourceWithMemberships(ClusterMembership.from(clusterSpec(container, "container"), 0));
+        HostResource host = hostResourceWithMemberships(ClusterMembership.from(clusterSpec(container, "container"), 0, 0));
         assertClusterMembership(host, container, "container");
     }
 
@@ -47,7 +47,7 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.specification(type, ClusterSpec.Id.from(id)).group(ClusterSpec.Group.from(0)).vespaVersion("6.42").build();
+        return ClusterSpec.specification(type, ClusterSpec.Id.from(id)).vespaVersion("6.42").build();
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership membership) {

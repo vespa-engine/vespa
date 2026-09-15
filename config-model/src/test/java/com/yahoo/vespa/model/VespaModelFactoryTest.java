@@ -106,7 +106,7 @@ public class VespaModelFactoryTest {
 
         var host = new HostSpec(hostName,
                                 NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                                ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
+                                ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0, 0),
                                 Optional.empty(), Optional.empty(), Optional.empty(),
                                 AzName.defaultName());
         var mockProvisioner = new MockProvisioner(List.of(host));
