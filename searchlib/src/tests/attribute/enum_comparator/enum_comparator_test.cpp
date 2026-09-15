@@ -6,6 +6,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
@@ -286,6 +287,29 @@ TEST(EnumComparatorTest, require_that_cased_less_or_equal_is_working) {
     auto cmp_le2 = es.make_folded_comparator_less_or_equal("fol"); // 'f' > 'F', so "fol" > "Fol"
     EXPECT_FALSE(cmp_le2.less(EnumIndex(), e1));
     EXPECT_TRUE(cmp_le2.less(e1, EnumIndex()));
+}
+
+TEST(EnumComparatorTest, require_that_unsupported_strategy_transformations_throw) {
+    StringEnumStore           es(false, DictionaryConfig::Type::BTREE);
+    EnumStoreStringComparator uncased_then_cased(es.get_data_store(), false);
+    // UNCASED_THEN_CASED has neither a prefix nor a less-or-equal counterpart. Quietly
+    // folding it to UNCASED would compare differently from the comparator it was derived
+    // from, so both transformations are rejected instead.
+    EXPECT_THROW(uncased_then_cased.make_for_prefix_lookup("fol"), vespalib::IllegalArgumentException);
+    EXPECT_THROW(uncased_then_cased.make_for_less_or_equal_lookup("fol"), vespalib::IllegalArgumentException);
+
+    // Prefix and less-or-equal do not combine either, in either order.
+    auto folded = uncased_then_cased.make_folded();
+    EXPECT_THROW(folded.make_for_prefix_lookup("fol").make_for_less_or_equal_lookup("fol"),
+                 vespalib::IllegalArgumentException);
+    EXPECT_THROW(folded.make_for_less_or_equal_lookup("fol").make_for_prefix_lookup("fol"),
+                 vespalib::IllegalArgumentException);
+
+    // The transformations the call sites actually use are unaffected.
+    EXPECT_NO_THROW((void)folded.make_for_prefix_lookup("fol"));
+    EXPECT_NO_THROW((void)folded.make_for_less_or_equal_lookup("fol"));
+    EXPECT_NO_THROW((void)folded.make_folded());
+    EXPECT_NO_THROW((void)folded.make_for_prefix_lookup("fol").make_folded());
 }
 
 TEST(DfaStringComparatorTest, require_that_folded_less_is_working) {

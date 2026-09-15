@@ -9,6 +9,7 @@
 #include <vespa/vespalib/datastore/unique_store_comparator.h>
 #include <vespa/vespalib/datastore/unique_store_string_comparator.h>
 
+#include <type_traits>
 #include <variant>
 
 namespace search {
@@ -113,15 +114,34 @@ using UncasedLessOrEqual = EnumStoreStringCompareStrategy<CompareStrategy::UNCAS
 using CasedLessOrEqual = EnumStoreStringCompareStrategy<CompareStrategy::CASED, false, true>;
 
 // UncasedThenCased+prefix, and the prefix+LessOrEqual combinations, are never
-// constructed by any call site today; omitted from the variant (the template
-// stays total/uniform for them regardless).
+// constructed by any call site today and are omitted from the variant (the
+// template stays total/uniform for them regardless). The transformations below
+// throw rather than substitute a different strategy when asked for one of them.
 using Strategy =
     std::variant<UncasedThenCased, Uncased, UncasedPrefix, Cased, CasedPrefix, UncasedLessOrEqual, CasedLessOrEqual>;
 
-Strategy folded(const Strategy& strategy) noexcept;        // -> non-prefix counterpart used by make_folded()
-Strategy with_prefix(const Strategy& strategy) noexcept;   // -> prefix counterpart used by make_for_prefix_lookup()
-Strategy less_or_equal(const Strategy& strategy) noexcept; // -> LessOrEqual, non-prefix counterpart used by
-                                                           // make_for_less_or_equal_lookup()
+template <typename T, typename Variant> struct is_alternative_of;
+
+template <typename T, typename... Ts>
+struct is_alternative_of<T, std::variant<Ts...>> : std::bool_constant<(std::is_same_v<T, Ts> || ...)> {};
+
+/*
+ * True when T is one of the strategies Strategy can hold. The transformations
+ * below use it to decide whether the faithful result of the transformation is
+ * representable; when it is not, they throw instead of silently returning a
+ * strategy that compares differently from the one that was asked for.
+ */
+template <typename T> inline constexpr bool is_strategy_alternative_v = is_alternative_of<T, Strategy>::value;
+
+// -> non-prefix counterpart used by make_folded(). Dropping the prefix matches the
+// bare comparator make_folded() has always returned, so this never throws.
+Strategy folded(const Strategy& strategy) noexcept;
+// -> prefix counterpart used by make_for_prefix_lookup(). Throws for UNCASED_THEN_CASED
+// (which has no prefix alternative) and for a LessOrEqual strategy.
+Strategy with_prefix(const Strategy& strategy);
+// -> LessOrEqual counterpart used by make_for_less_or_equal_lookup(). Throws for
+// UNCASED_THEN_CASED (which has no LessOrEqual alternative) and for a prefix strategy.
+Strategy less_or_equal(const Strategy& strategy);
 
 } // namespace enumstorestringcomparator
 
@@ -168,7 +188,7 @@ public:
     EnumStoreStringComparator make_for_lookup(const char* lookup_value) const noexcept {
         return {_store, _strategy, lookup_value};
     }
-    EnumStoreStringComparator make_for_prefix_lookup(const char* lookup_value) const noexcept {
+    EnumStoreStringComparator make_for_prefix_lookup(const char* lookup_value) const {
         return {_store, enumstorestringcomparator::with_prefix(_strategy), lookup_value,
                 static_cast<uint32_t>(FoldedStringCompare::size(lookup_value))};
     }
@@ -180,7 +200,7 @@ public:
      * dictionary entry equal to lookup_value, unlike make_for_lookup()'s
      * ordinary less-than comparator, which includes it.
      */
-    EnumStoreStringComparator make_for_less_or_equal_lookup(const char* lookup_value) const noexcept {
+    EnumStoreStringComparator make_for_less_or_equal_lookup(const char* lookup_value) const {
         return {_store, enumstorestringcomparator::less_or_equal(_strategy), lookup_value};
     }
 
