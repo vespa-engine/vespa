@@ -199,6 +199,9 @@ public:
     template <typename Type> ComparatorType make_folded_comparator_prefix(const Type& lookup_value) const {
         return _foldedComparator.make_for_prefix_lookup(lookup_value);
     }
+    template <typename Type> ComparatorType make_folded_comparator_less_or_equal(const Type& lookup_value) const {
+        return _foldedComparator.make_for_less_or_equal_lookup(lookup_value);
+    }
     template <typename Type> std::vector<IEnumStore::EnumHandle> find_folded_enums(Type value) const {
         auto cmp = make_folded_comparator(value);
         return _dict->find_matching_enums(cmp);

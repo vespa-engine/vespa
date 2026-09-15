@@ -61,31 +61,45 @@ enum class CompareStrategy : uint8_t { UNCASED_THEN_CASED, UNCASED, CASED };
 
 /*
  * Stateless tag type used by EnumStoreStringComparator to select how to compare
- * two string values. less() is fully resolved at compile time from its two
+ * two string values. less() is fully resolved at compile time from its three
  * template parameters, so a given instantiation compiles down to exactly one
  * FoldedStringCompare call.
+ *
+ * LessOrEqual turns less() into a "less than or equal to" test, i.e. it treats
+ * equal values as ordered. This is used to build range-boundary comparators for
+ * string range search: a lower_bound()-style dictionary walk driven by a
+ * less-or-equal comparator for the boundary value skips past values equal to
+ * the boundary, which is exactly what's needed for an exclusive (open) range
+ * endpoint, as opposed to the inclusive (closed) endpoint an ordinary less()
+ * comparator gives.
  */
-template <CompareStrategy Strategy, bool Prefix>
+template <CompareStrategy Strategy, bool Prefix, bool LessOrEqual = false>
 struct EnumStoreStringCompareStrategy {
     bool less(const char* lhs, const char* rhs, uint32_t prefix_len) const noexcept {
+        int cmp;
         if constexpr (Strategy == CompareStrategy::CASED) {
             if constexpr (Prefix) {
-                return FoldedStringCompare::compareFoldedPrefix<false, false>(lhs, rhs, prefix_len) < 0;
+                cmp = FoldedStringCompare::compareFoldedPrefix<false, false>(lhs, rhs, prefix_len);
             } else {
-                return FoldedStringCompare::compareFolded<false, false>(lhs, rhs) < 0;
+                cmp = FoldedStringCompare::compareFolded<false, false>(lhs, rhs);
             }
         } else if constexpr (Strategy == CompareStrategy::UNCASED) {
             if constexpr (Prefix) {
-                return FoldedStringCompare::compareFoldedPrefix<true, true>(lhs, rhs, prefix_len) < 0;
+                cmp = FoldedStringCompare::compareFoldedPrefix<true, true>(lhs, rhs, prefix_len);
             } else {
-                return FoldedStringCompare::compareFolded<true, true>(lhs, rhs) < 0;
+                cmp = FoldedStringCompare::compareFolded<true, true>(lhs, rhs);
             }
         } else { // UNCASED_THEN_CASED
             if constexpr (Prefix) {
-                return FoldedStringCompare::comparePrefix(lhs, rhs, prefix_len) < 0;
+                cmp = FoldedStringCompare::comparePrefix(lhs, rhs, prefix_len);
             } else {
-                return FoldedStringCompare::compare(lhs, rhs) < 0;
+                cmp = FoldedStringCompare::compare(lhs, rhs);
             }
+        }
+        if constexpr (LessOrEqual) {
+            return cmp <= 0;
+        } else {
+            return cmp < 0;
         }
     }
 };
@@ -95,13 +109,19 @@ using Uncased = EnumStoreStringCompareStrategy<CompareStrategy::UNCASED, false>;
 using UncasedPrefix = EnumStoreStringCompareStrategy<CompareStrategy::UNCASED, true>;
 using Cased = EnumStoreStringCompareStrategy<CompareStrategy::CASED, false>;
 using CasedPrefix = EnumStoreStringCompareStrategy<CompareStrategy::CASED, true>;
+using UncasedLessOrEqual = EnumStoreStringCompareStrategy<CompareStrategy::UNCASED, false, true>;
+using CasedLessOrEqual = EnumStoreStringCompareStrategy<CompareStrategy::CASED, false, true>;
 
-// UncasedThenCased+prefix is never constructed by any call site today; omitted from the
-// variant (comparePrefix() above is kept only so the template stays total/uniform).
-using Strategy = std::variant<UncasedThenCased, Uncased, UncasedPrefix, Cased, CasedPrefix>;
+// UncasedThenCased+prefix, and the prefix+LessOrEqual combinations, are never
+// constructed by any call site today; omitted from the variant (the template
+// stays total/uniform for them regardless).
+using Strategy =
+    std::variant<UncasedThenCased, Uncased, UncasedPrefix, Cased, CasedPrefix, UncasedLessOrEqual, CasedLessOrEqual>;
 
-Strategy folded(const Strategy& strategy) noexcept;      // -> non-prefix counterpart used by make_folded()
-Strategy with_prefix(const Strategy& strategy) noexcept; // -> prefix counterpart used by make_for_prefix_lookup()
+Strategy folded(const Strategy& strategy) noexcept;        // -> non-prefix counterpart used by make_folded()
+Strategy with_prefix(const Strategy& strategy) noexcept;   // -> prefix counterpart used by make_for_prefix_lookup()
+Strategy less_or_equal(const Strategy& strategy) noexcept; // -> LessOrEqual, non-prefix counterpart used by
+                                                           // make_for_less_or_equal_lookup()
 
 } // namespace enumstorestringcomparator
 
@@ -151,6 +171,17 @@ public:
     EnumStoreStringComparator make_for_prefix_lookup(const char* lookup_value) const noexcept {
         return {_store, enumstorestringcomparator::with_prefix(_strategy), lookup_value,
                 static_cast<uint32_t>(FoldedStringCompare::size(lookup_value))};
+    }
+    /**
+     * Creates a comparator that treats lookup_value as ordered before an equal
+     * dictionary value (i.e. "less than or equal to" instead of "less than").
+     * Used to build an exclusive (open) range-search boundary: driving a
+     * lower_bound()-style dictionary walk with this comparator skips past a
+     * dictionary entry equal to lookup_value, unlike make_for_lookup()'s
+     * ordinary less-than comparator, which includes it.
+     */
+    EnumStoreStringComparator make_for_less_or_equal_lookup(const char* lookup_value) const noexcept {
+        return {_store, enumstorestringcomparator::less_or_equal(_strategy), lookup_value};
     }
 
 private:

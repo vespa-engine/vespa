@@ -254,6 +254,40 @@ TEST(EnumComparatorTest, require_that_cased_less_is_working) {
     EXPECT_EQ((EnumIndexVector{e1, e4, e3, e2}), vec);
 }
 
+TEST(EnumComparatorTest, require_that_folded_less_or_equal_is_working) {
+    StringEnumStore es(false, DictionaryConfig::Type::BTREE);
+    EnumIndex       e1 = es.insert("Aa");
+    EnumIndex       e2 = es.insert("aB");
+    auto            cmp_lt = es.make_folded_comparator("aa");
+    auto            cmp_le = es.make_folded_comparator_less_or_equal("aa");
+    // "aa" folded-equals "Aa": less() treats them as neither less, less_or_equal() as ordered.
+    EXPECT_FALSE(cmp_lt.less(EnumIndex(), e1));
+    EXPECT_TRUE(cmp_le.less(EnumIndex(), e1));
+    EXPECT_FALSE(cmp_lt.less(e1, EnumIndex()));
+    EXPECT_TRUE(cmp_le.less(e1, EnumIndex()));
+    // "aa" folded-less-than "aB": less() and less_or_equal() agree.
+    EXPECT_TRUE(cmp_lt.less(EnumIndex(), e2));
+    EXPECT_TRUE(cmp_le.less(EnumIndex(), e2));
+    EXPECT_FALSE(cmp_lt.less(e2, EnumIndex()));
+    EXPECT_FALSE(cmp_le.less(e2, EnumIndex()));
+}
+
+TEST(EnumComparatorTest, require_that_cased_less_or_equal_is_working) {
+    StringEnumStore es(false, DictionaryConfig(DictionaryConfig::Type::BTREE, DictionaryConfig::Match::CASED));
+    EnumIndex       e1 = es.insert("Fol");
+    auto            cmp_lt = es.make_folded_comparator("Fol");
+    auto            cmp_le = es.make_folded_comparator_less_or_equal("Fol");
+    // Exact (cased) match: less() treats them as neither less, less_or_equal() as ordered.
+    EXPECT_FALSE(cmp_lt.less(EnumIndex(), e1));
+    EXPECT_TRUE(cmp_le.less(EnumIndex(), e1));
+    EXPECT_FALSE(cmp_lt.less(e1, EnumIndex()));
+    EXPECT_TRUE(cmp_le.less(e1, EnumIndex()));
+    // Case mismatch is a strict (cased) inequality, so less() and less_or_equal() agree.
+    auto cmp_le2 = es.make_folded_comparator_less_or_equal("fol"); // 'f' > 'F', so "fol" > "Fol"
+    EXPECT_FALSE(cmp_le2.less(EnumIndex(), e1));
+    EXPECT_TRUE(cmp_le2.less(e1, EnumIndex()));
+}
+
 TEST(DfaStringComparatorTest, require_that_folded_less_is_working) {
     StringEnumStore     es(false, DictionaryConfig::Type::BTREE);
     EnumIndex           e1 = es.insert("Aa");
