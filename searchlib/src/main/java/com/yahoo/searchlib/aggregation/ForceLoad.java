@@ -10,7 +10,7 @@ public class ForceLoad {
     static {
         String pkg = "com.yahoo.searchlib.aggregation";
         String[] classes = {
-                "ArgminAggregationResult",
+                "ArgmaxAggregationResult",
                 "XorAggregationResult",
                 "SumAggregationResult",
                 "Group",

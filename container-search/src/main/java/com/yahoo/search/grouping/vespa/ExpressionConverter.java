@@ -101,7 +101,7 @@ import com.yahoo.search.grouping.request.YearFunction;
 import com.yahoo.search.grouping.request.ZCurveXFunction;
 import com.yahoo.search.grouping.request.ZCurveYFunction;
 import com.yahoo.searchlib.aggregation.AggregationResult;
-import com.yahoo.searchlib.aggregation.ArgminAggregationResult;
+import com.yahoo.searchlib.aggregation.ArgmaxAggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
 import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
@@ -257,14 +257,14 @@ class ExpressionConverter {
             return new SumAggregationResult()
                     .setExpression(toExpressionNode(aggregator.getExpression()));
         }
-        if (exp instanceof ArgminAggregator aggregator) {
-            return new ArgminAggregationResult()
+        if (exp instanceof ArgmaxAggregator aggregator) {
+            return new ArgmaxAggregationResult()
                     .setKeyExpression(toExpressionNode(aggregator.getKey()))
                     .setExpression(toExpressionNode(aggregator.getExpression()));
         }
-        if (exp instanceof ArgmaxAggregator aggregator) {
-            // argmax(key, value) is argmin(-key, value)
-            return new ArgminAggregationResult()
+        if (exp instanceof ArgminAggregator aggregator) {
+            // argmin(key, value) is argmax(-key, value)
+            return new ArgmaxAggregationResult()
                     .setKeyExpression(new NegateFunctionNode(toExpressionNode(aggregator.getKey())))
                     .setExpression(toExpressionNode(aggregator.getExpression()));
         }

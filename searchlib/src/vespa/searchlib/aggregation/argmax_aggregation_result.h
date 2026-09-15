@@ -9,10 +9,11 @@
 namespace search::aggregation {
 
 /**
- * Aggregator selecting a value based on the minimum of another expression: argmin(key, value)
- * keeps the value of the hit in the group that has the smallest key.
+ * Aggregator selecting a value based on the maximum of another expression: argmax(key, value)
+ * keeps the value of the hit in the group that has the largest key. argmin(key, value) is
+ * expressed as argmax(-key, value) by the container.
  */
-class ArgminAggregationResult : public AggregationResult {
+class ArgmaxAggregationResult : public AggregationResult {
 public:
     using SingleResultNode = expression::SingleResultNode;
     using ExpressionTree = expression::ExpressionTree;
@@ -27,13 +28,13 @@ private:
     bool                            _has_value;
 
 public:
-    DECLARE_AGGREGATIONRESULT(ArgminAggregationResult);
+    DECLARE_AGGREGATIONRESULT(ArgmaxAggregationResult);
 
-    ArgminAggregationResult();
-    ArgminAggregationResult(const SingleResultNode& key, const ResultNode& value);
-    ~ArgminAggregationResult() override;
+    ArgmaxAggregationResult();
+    ArgmaxAggregationResult(const SingleResultNode& key, const ResultNode& value);
+    ~ArgmaxAggregationResult() override;
 
-    ArgminAggregationResult& set_key_expression(ExpressionNode::UP key);
+    ArgmaxAggregationResult& set_key_expression(ExpressionNode::UP key);
     [[nodiscard]] const ExpressionNode* key_expression() const noexcept { return _key_tree->getRoot(); }
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
