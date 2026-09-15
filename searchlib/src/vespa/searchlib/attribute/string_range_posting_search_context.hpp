@@ -20,6 +20,29 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
         // boundary value, narrowing the walk to exactly the (half-)open range instead of relying
         // on use_dictionary_entry()'s match() filtering to exclude them after the fact.
         //
+        // _lowerDictItr.lower_bound(low) bottoms out in std::lower_bound, which calls
+        // low.less(candidate, needle) - candidate first - for each dictionary entry it probes,
+        // and settles on the first entry where that call returns false:
+        //  - an ordinary less comparator computes "candidate < boundary", which turns false at
+        //    the first candidate >= boundary, so the walk starts inclusive of the boundary entry.
+        //  - a less-or-equal comparator computes "candidate <= boundary", which turns false one
+        //    entry later, at the first candidate > boundary, so the walk starts strictly past the
+        //    boundary entry, i.e. exclusive.
+        //
+        // _upperDictItr.seekPast(high) calls high.less(needle, candidate) - needle first, the
+        // opposite order from lower_bound - and keeps advancing past entries while that call
+        // returns false, stopping at the first entry where it turns true:
+        //  - an ordinary less comparator computes "boundary < candidate", which stays false
+        //    while candidate <= boundary, so the walk advances past the boundary entry too,
+        //    keeping it in range (inclusive upper bound).
+        //  - a less-or-equal comparator computes "boundary <= candidate", which turns true one
+        //    entry earlier, at the boundary entry itself, so the walk stops there instead of
+        //    past it, excluding it (exclusive upper bound).
+        //
+        // So although lower_bound and seekPast call the comparator with the candidate and needle
+        // in opposite argument order, swapping in a less-or-equal comparator has the same visible
+        // effect on both sides of the range: the boundary entry drops out of the walk.
+        //
         // With that narrowing, [_lowerDictItr, _upperDictItr> should hold exactly the matching
         // entries, which would make the match() call in use_dictionary_entry() below redundant -
         // it runs a folded compare per unique value in the range, in both
