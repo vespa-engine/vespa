@@ -109,6 +109,27 @@ class TritonOnnxRuntimeDefaultsTest {
         assertEquals(16, defaultNumModelInstances(requiredWithoutDevice, SHARED_SESSION, GPU_AVAILABLE));
     }
 
+    private static String modelName(OnnxEvaluatorOptions options, boolean shareSession, boolean gpuAvailable) {
+        var resolvedOptions = TritonOnnxRuntime.resolveOptions(options, shareSession, gpuAvailable);
+        return TritonOnnxRuntime.generateModelName(MODEL_PATH, resolvedOptions, shareSession, gpuAvailable);
+    }
+
+    // The model name identifies a loaded model, so it must change with the instance group.
+    @Test
+    void model_name_depends_on_the_resolved_device() {
+        var requestedGpu = requestedGpu(8).build();
+        assertNotEquals(modelName(requestedGpu, SEPARATE_SESSIONS, GPU_UNAVAILABLE),
+                        modelName(requestedGpu, SEPARATE_SESSIONS, GPU_AVAILABLE));
+
+        // A required GPU and a CPU model resolve to the same device either way
+        var requiredGpu = requiredGpu(8).build();
+        assertEquals(modelName(requiredGpu, SEPARATE_SESSIONS, GPU_UNAVAILABLE),
+                     modelName(requiredGpu, SEPARATE_SESSIONS, GPU_AVAILABLE));
+        var cpu = cpu(8).build();
+        assertEquals(modelName(cpu, SEPARATE_SESSIONS, GPU_UNAVAILABLE),
+                     modelName(cpu, SEPARATE_SESSIONS, GPU_AVAILABLE));
+    }
+
     @Test
     void model_name_uses_the_effective_instance_count() {
         var automatic = cpu(8).build();
@@ -116,10 +137,10 @@ class TritonOnnxRuntimeDefaultsTest {
                 .setConcurrency(1, OnnxEvaluatorOptions.ConcurrencyFactorType.ABSOLUTE)
                 .build();
 
-        assertEquals(TritonOnnxRuntime.generateModelName(MODEL_PATH, automatic, SEPARATE_SESSIONS, GPU_UNAVAILABLE),
-                     TritonOnnxRuntime.generateModelName(MODEL_PATH, explicitOne, SEPARATE_SESSIONS, GPU_UNAVAILABLE));
-        assertNotEquals(TritonOnnxRuntime.generateModelName(MODEL_PATH, automatic, SHARED_SESSION, GPU_UNAVAILABLE),
-                        TritonOnnxRuntime.generateModelName(MODEL_PATH, explicitOne, SHARED_SESSION, GPU_UNAVAILABLE));
+        assertEquals(modelName(automatic, SEPARATE_SESSIONS, GPU_UNAVAILABLE),
+                     modelName(explicitOne, SEPARATE_SESSIONS, GPU_UNAVAILABLE));
+        assertNotEquals(modelName(automatic, SHARED_SESSION, GPU_UNAVAILABLE),
+                        modelName(explicitOne, SHARED_SESSION, GPU_UNAVAILABLE));
     }
 
     @Test

@@ -48,7 +48,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
     private final boolean shareSessionBetweenInstances;
-    private final int gpuCount;
+    private final boolean gpuAvailable;
     private final Path modelRepositoryPath;
 
     // The key is a model name containing hash of model content and options.
@@ -73,7 +73,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Takes ownership of the client: deconstruct() closes it.
     TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient) {
         this.tritonClient = tritonClient;
-        this.gpuCount = config.gpuCount();
+        this.gpuAvailable = config.gpuAvailable();
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         shareSessionBetweenInstances = config.shareOnnxSessionBetweenInstances();
@@ -92,8 +92,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        var modelName = generateModelName(modelPath, options, shareSessionBetweenInstances, gpuCount > 0);
-        var modelReference = referenceModel(modelName, modelPath, options);
+        var resolvedOptions = resolveOptions(options, shareSessionBetweenInstances, gpuAvailable);
+        var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances, gpuAvailable);
+        var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
 
         try {
             return new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
@@ -200,19 +201,28 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
     }
 
+    // Resolves the number of model instances once. The model name and the model config are both derived
+    // from the resolved options, so they always agree.
+    static OnnxEvaluatorOptions resolveOptions(OnnxEvaluatorOptions options, boolean shareSession,
+                                               boolean gpuAvailable) {
+        if (options.numModelInstances().isPresent()) return options;
+        return options.withNumModelInstances(defaultNumModelInstances(options, shareSession, gpuAvailable));
+    }
+
+    // Takes resolved options, see resolveOptions().
     static String generateModelName(String modelPath, OnnxEvaluatorOptions options, boolean shareSession,
                                     boolean gpuAvailable) {
+        if (options.numModelInstances().isEmpty()) {
+            throw new IllegalArgumentException("The number of model instances must be resolved before naming the model");
+        }
         var fileName = Paths.get(modelPath).getFileName().toString();
         var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
-        var numModelInstances = options.numModelInstances()
-                .orElseGet(() -> defaultNumModelInstances(options, shareSession, gpuAvailable));
-        var resolvedOptions = new OnnxEvaluatorOptions.Builder(options)
-                .setConcurrency(numModelInstances, OnnxEvaluatorOptions.ConcurrencyFactorType.ABSOLUTE)
-                .build();
-        var optionsHash = resolvedOptions.calculateHash();
+        var optionsHash = options.calculateHash();
         var shareSessionHash = shareSession ? 1 : 0;
-        var combinedHash = Long.toHexString(31 * modelHash + optionsHash + shareSessionHash);
+        // The instance group differs between a GPU and an unpinned device, so the name must differ too.
+        var deviceHash = runsOnGpu(options, gpuAvailable) ? 2 : 0;
+        var combinedHash = Long.toHexString(31 * modelHash + optionsHash + shareSessionHash + deviceHash);
         return baseName + "_" + combinedHash; // add hash to avoid conflicts
     }
 
@@ -270,24 +280,24 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .toString();
     }
 
+    // Takes resolved options, see resolveOptions().
     private String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
-        // Each model instance in Triton executes requests sequentially, unlike the single session of
-        // EmbeddedOnnxRuntime which handles all requests. Concurrency comes from the number of instances.
+        // Each model instance in Triton executes requests sequentially. Concurrency comes from the number of instances.
+        // This differs from EmbeddedOnnxRuntime, where one session handles all requests.
         // With a shared session, the thread counts match EmbeddedOnnxRuntime.createSessionOptions().
         // With separate sessions, the CPU cores are divided between the instances as intra-op threads.
-        var executionModeValue = isParallel(options) ? "1" : "0";
-        var numModelInstances = options.numModelInstances()
-                .orElseGet(() -> defaultNumModelInstances(options, shareSessionBetweenInstances, gpuCount > 0));
+        var executionModeValue = options.isParallel() ? "1" : "0";
+        var numModelInstances = options.numModelInstances().orElseThrow();
         var intraOpThreadCountValue = Integer.toString(shareSessionBetweenInstances
                 ? options.intraOpThreads()
                 : intraOpThreadsForSeparateSessions(options, numModelInstances));
         var interOpThreadCountValue = Integer.toString(shareSessionBetweenInstances
-                ? effectiveInterOpThreads(options)
+                ? options.effectiveInterOpThreads()
                 : options.interOpThreads());
 
         var configBuilder = ModelConfigOuterClass.ModelConfig.newBuilder()
                 .setName(modelName)
-                .addInstanceGroup(createInstanceGroup(options, numModelInstances, gpuCount > 0))
+                .addInstanceGroup(createInstanceGroup(options, numModelInstances, gpuAvailable))
                 .setPlatform("onnxruntime_onnx")
                 .setMaxBatchSize(options.batchingMaxSize())
                 .putParameters(
@@ -333,15 +343,6 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
 
         return configBuilder.build().toString();
-    }
-
-    private static boolean isParallel(OnnxEvaluatorOptions options) {
-        return options.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL;
-    }
-
-    // Inter-op threads are only used in parallel execution mode, otherwise ONNX Runtime uses one.
-    private static int effectiveInterOpThreads(OnnxEvaluatorOptions options) {
-        return isParallel(options) ? options.interOpThreads() : 1;
     }
 
     // Instances with separate sessions each hold a copy of the model, so there is one instance by default.

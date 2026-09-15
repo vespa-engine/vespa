@@ -198,8 +198,8 @@ public record OnnxEvaluatorOptions(
         /**
          * Sets the number of model instances from a concurrency factor.
          * A non-positive factor leaves the number of instances unset, so the runtime derives a default.
-         * Application package schemas only allow positive explicit factors; non-positive values can occur through
-         * the config default or a raw config override.
+         * Application package schemas only allow positive explicit factors.
+         * Non-positive values can occur through the config default or a raw config override.
          */
         public Builder setConcurrency(double concurrencyFactor, ConcurrencyFactorType concurrencyFactorType) {
             this.numModelInstances = concurrencyFactor > 0
@@ -241,5 +241,20 @@ public record OnnxEvaluatorOptions(
 
     public boolean requestingGpu() {
         return gpuDeviceNumber > -1;
+    }
+
+    public boolean isParallel() {
+        return executionMode == ExecutionMode.PARALLEL;
+    }
+
+    /** Returns the inter-op threads ONNX Runtime uses. It uses one thread in sequential execution mode. */
+    public int effectiveInterOpThreads() {
+        return isParallel() ? interOpThreads : 1;
+    }
+
+    public OnnxEvaluatorOptions withNumModelInstances(int numModelInstances) {
+        return new OnnxEvaluatorOptions(executionMode, interOpThreads, intraOpThreads, gpuDeviceNumber,
+                                        gpuDeviceRequired, optimizeModel, batchingMaxSize,
+                                        Optional.of(numModelInstances), modelConfigOverride, availableProcessors);
     }
 }

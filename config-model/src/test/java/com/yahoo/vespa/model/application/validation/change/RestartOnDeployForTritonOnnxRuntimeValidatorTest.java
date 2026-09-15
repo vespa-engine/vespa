@@ -170,21 +170,54 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
     }
 
     @Test
-    void gpu_count_reaches_the_runtime_and_requires_restart_on_change() {
-        var previous = createGpuModel(1);
-        var next = createGpuModel(2);
+    void gpu_availability_reaches_the_runtime_and_requires_restart_on_change() {
         var cpuResources = new NodeResources(4, 16, 125, 10);
+        var unknownNodes = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true);
+        var cpuNodes = createModel(SERVICES_XML_WITH_NODES, true, false, cpuResources);
+        var oneGpu = createGpuModel(1);
+        var twoGpus = createGpuModel(2);
 
-        assertEquals(1, tritonConfig(previous).gpuCount());
-        assertEquals(2, tritonConfig(next).gpuCount());
-        assertEquals(0, tritonConfig(createModel(SERVICES_XML_WITH_NODES, true, false, cpuResources)).gpuCount());
-        assertEquals(-1, tritonConfig(createModel(SERVICES_XML_WITH_ONE_CLUSTER, true)).gpuCount());
+        assertFalse(tritonConfig(unknownNodes).gpuAvailable());
+        assertFalse(tritonConfig(cpuNodes).gpuAvailable());
+        assertTrue(tritonConfig(oneGpu).gpuAvailable());
+        assertTrue(tritonConfig(twoGpus).gpuAvailable());
 
-        var result = validateModel(previous, next);
+        var result = validateModel(cpuNodes, oneGpu);
         assertEquals(1, result.size());
-        assertTrue(result.get(0).getMessage().contains("gpuCount"));
+        assertTrue(result.get(0).getMessage().contains("gpuAvailable"));
         assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
         assertEquals(ConfigChange.DEFER_UNTIL_RESTART, ((VespaRestartAction) result.get(0)).configChange());
+
+        // The runtime only needs to know whether a GPU is available, so other changes of the count do not restart
+        assertTrue(validateModel(unknownNodes, cpuNodes).isEmpty());
+        assertTrue(validateModel(oneGpu, twoGpus).isEmpty());
+    }
+
+    // Retired nodes keep serving while a cluster changes node resources, so they count as well.
+    // The provisioner stands in for the change: it allocates the CPU node as retired and adds a GPU node.
+    // Nodes without requested resources get the smallest hosts first, so the hosts are smaller than the admin hosts.
+    @Test
+    void gpu_is_unavailable_while_retired_cpu_nodes_remain_in_a_gpu_cluster() {
+        var cpuResources = new NodeResources(1, 2, 40, 1);
+        var gpuResources = new NodeResources(1, 2.5, 40, 1,
+                                             NodeResources.DiskSpeed.fast,
+                                             NodeResources.StorageType.local,
+                                             NodeResources.Architecture.x86_64,
+                                             new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
+        Map<NodeResources, Collection<Host>> hosts = Map.of(
+                InMemoryProvisioner.defaultHostResources, List.of(new Host("admin1"), new Host("admin2"),
+                                                                  new Host("admin3"), new Host("admin4")),
+                cpuResources, List.of(new Host("retired-cpu-node")),
+                gpuResources, List.of(new Host("gpu-node")));
+        var builder = deployStateBuilder(true, false)
+                .modelHostProvisioner(new InMemoryProvisioner(hosts, true, false, false, false,
+                                                              NodeResources.unspecified(), 0, "retired-cpu-node"));
+        var model = new VespaModelCreatorWithMockPkg(null, SERVICES_XML_WITH_NODES).create(builder);
+
+        var containers = model.getContainerClusters().get("cluster1").getContainers();
+        assertEquals(2, containers.size());
+        assertTrue(containers.stream().anyMatch(container -> container.isRetired()));
+        assertFalse(tritonConfig(model).gpuAvailable());
     }
 
     @Test

@@ -909,9 +909,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Element gpuDeviceElement = XML.getChild(modelElement, "gpu-device");
             if (gpuDeviceElement != null) {
                 int gpuDevice = Integer.parseInt(gpuDeviceElement.getTextContent());
-                boolean hasGpu = cluster.getContainers().stream().anyMatch(container -> container.getHostResource() != null &&
-                                                                                        !container.getHostResource().realResources().gpuResources().isZero());
-                onnxModel.setGpuDevice(gpuDevice, hasGpu);
+                onnxModel.setGpuDevice(gpuDevice, cluster.hasGpu()); // Required only when every node has a GPU
             }
         }
         if (context.getDeployState().featureFlags().forceDisableOnnxModelOptimization()) {
