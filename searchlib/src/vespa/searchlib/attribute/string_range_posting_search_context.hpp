@@ -15,13 +15,26 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
                                                                                        const AttrT& to_be_searched)
     : Parent(std::move(base_sc), use_bit_vector, to_be_searched), _range_spec(this->get_string_range_spec()) {
     if (this->valid() && _range_spec) {
+        // An open (exclusive) boundary uses a less-or-equal comparator instead of an ordinary
+        // less-than one: driving the dictionary walk with it skips past the entry equal to the
+        // boundary value, narrowing the walk to exactly the (half-)open range instead of relying
+        // on use_dictionary_entry()'s match() filtering to exclude it after the fact.
+        auto make_lower = [this] {
+            return _range_spec->left_closed
+                       ? _enumStore.make_folded_comparator(_range_spec->left.c_str())
+                       : _enumStore.make_folded_comparator_less_or_equal(_range_spec->left.c_str());
+        };
+        auto make_upper = [this] {
+            return _range_spec->right_closed
+                       ? _enumStore.make_folded_comparator(_range_spec->right.c_str())
+                       : _enumStore.make_folded_comparator_less_or_equal(_range_spec->right.c_str());
+        };
         if (!_range_spec->left_unbounded && !_range_spec->right_unbounded) {
-            this->lookupRange(_enumStore.make_folded_comparator(_range_spec->left.c_str()),
-                              _enumStore.make_folded_comparator(_range_spec->right.c_str()));
+            this->lookupRange(make_lower(), make_upper());
 
         } else if (!_range_spec->left_unbounded) {
             this->lookupRange(
-                _enumStore.make_folded_comparator(_range_spec->left.c_str()),
+                make_lower(),
                 vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     _enumStore.get_data_store()));
 
@@ -29,7 +42,7 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
             this->lookupRange(
                 vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     _enumStore.get_data_store()),
-                _enumStore.make_folded_comparator(_range_spec->right.c_str()));
+                make_upper());
 
         } else {
             this->lookupRange(
