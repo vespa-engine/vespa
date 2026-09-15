@@ -578,7 +578,15 @@ public class SDField extends Field implements ImmutableSDField {
     public void setMatchingCase(Case casing) {
         this.getMatching().setCase(casing);
         for (SDField structField : getStructFields()) {
-            structField.setMatchingCase(casing);
+            structField.inheritMatchingCase(casing);
+        }
+    }
+
+    /** Set the matching casing for this field and all subfields, as inherited from the enclosing field. */
+    private void inheritMatchingCase(Case casing) {
+        this.getMatching().inheritCase(casing);
+        for (SDField structField : getStructFields()) {
+            structField.inheritMatchingCase(casing);
         }
     }
 

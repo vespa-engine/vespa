@@ -326,6 +326,72 @@ TEST(AttributeManagerTest, require_that_config_can_be_converted) {
     }
 }
 
+using CACA = AttributesConfig::Attribute;
+
+Config convert_string_match(CACA::Match match, CACA::Dictionary::Match dictionary_match) {
+    CACA a;
+    a.name = "s";
+    a.datatype = CACA::Datatype::STRING;
+    a.match = match;
+    a.dictionary.match = dictionary_match;
+    return ConfigConverter::convert(a);
+}
+
+TEST(AttributeManagerTest, require_that_dictionary_match_follows_attribute_match_for_strings) {
+    using CACAM = CACA::Match;
+    using CACADM = CACA::Dictionary::Match;
+
+    // In sync, the normal case.
+    EXPECT_EQ(DictionaryConfig::Match::UNCASED,
+              convert_string_match(CACAM::UNCASED, CACADM::UNCASED).get_dictionary_config().getMatch());
+    EXPECT_EQ(DictionaryConfig::Match::CASED,
+              convert_string_match(CACAM::CASED, CACADM::CASED).get_dictionary_config().getMatch());
+
+    // Out of sync: the attribute match setting wins, since that is the one the query uses.
+    EXPECT_EQ(DictionaryConfig::Match::CASED,
+              convert_string_match(CACAM::CASED, CACADM::UNCASED).get_dictionary_config().getMatch());
+    EXPECT_EQ(DictionaryConfig::Match::UNCASED,
+              convert_string_match(CACAM::UNCASED, CACADM::CASED).get_dictionary_config().getMatch());
+
+    // A cased dictionary can be a hash dictionary, so the type is kept when overriding to cased.
+    CACA a;
+    a.name = "s";
+    a.datatype = CACA::Datatype::STRING;
+    a.match = CACAM::CASED;
+    a.dictionary.type = CACA::Dictionary::Type::BTREE_AND_HASH;
+    a.dictionary.match = CACADM::UNCASED;
+    auto out = ConfigConverter::convert(a).get_dictionary_config();
+    EXPECT_EQ(DictionaryConfig::Type::BTREE_AND_HASH, out.getType());
+    EXPECT_EQ(DictionaryConfig::Match::CASED, out.getMatch());
+}
+
+TEST(AttributeManagerTest, require_that_overriding_to_uncased_drops_the_hash_dictionary) {
+    // An uncased dictionary is folded, and a folded dictionary is btree only, so the hash dictionary has to
+    // go with the casing. Otherwise the config would claim a hash dictionary the enum store cannot build.
+    for (auto type : {CACA::Dictionary::Type::HASH, CACA::Dictionary::Type::BTREE_AND_HASH}) {
+        CACA a;
+        a.name = "s";
+        a.datatype = CACA::Datatype::STRING;
+        a.match = CACA::Match::UNCASED;
+        a.dictionary.type = type;
+        a.dictionary.match = CACA::Dictionary::Match::CASED;
+        auto out = ConfigConverter::convert(a).get_dictionary_config();
+        EXPECT_EQ(DictionaryConfig::Type::BTREE, out.getType());
+        EXPECT_EQ(DictionaryConfig::Match::UNCASED, out.getMatch());
+    }
+}
+
+TEST(AttributeManagerTest, require_that_dictionary_match_is_left_alone_for_non_strings) {
+    // Only string attributes read the dictionary match setting, and 'dictionary: cased' on a numeric
+    // attribute is a legal setting which must not be rewritten from the unused attribute match setting.
+    CACA a;
+    a.name = "n";
+    a.datatype = CACA::Datatype::INT32;
+    a.match = CACA::Match::UNCASED;
+    a.dictionary.match = CACA::Dictionary::Match::CASED;
+    EXPECT_EQ(DictionaryConfig::Match::CASED, ConfigConverter::convert(a).get_dictionary_config().getMatch());
+}
+
 bool gt_attribute(const attribute::IAttributeVector* a, const attribute::IAttributeVector* b) {
     return a->getName() < b->getName();
 }
