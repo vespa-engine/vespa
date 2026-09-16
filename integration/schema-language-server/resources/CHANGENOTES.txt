@@ -1,5 +1,5 @@
-- Added support for the 'documentid' indexing expression.
-- Added the 'queryTermDocumentFrequency' and 'numDocs' rank features, and label support for the 'bm25' rank feature.
-- Added the 'tensorFromLabelsWithOffset' rank feature.
-- Added support for tagged argument identifiers in ranking expressions and the 'optimize-model' onnx-model setting.
-- Fixed a bug caused by use of an internal IntelliJ API.
+- Added support for the 'linguistics' field block, including the 'tokens' setting.
+- Added the 'to_tensor' and 'exhex8encode' indexing expressions.
+- Added the 'matches_for_labels' rank feature.
+- Added support for 'sort-features' in rank profiles.
+- Added support for 'fast-search' on map fields and 'struct-field' selection in document summaries.
