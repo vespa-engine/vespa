@@ -1063,11 +1063,11 @@ IsTruePredicate istruePredicate(GroupingOperation grp) :
 InPredicate inPredicate(GroupingOperation grp) :
 {
     GroupingExpression exp;
-    GroupingExpression arg;
-    java.util.List<GroupingExpression> args = new java.util.ArrayList<GroupingExpression>();
+    String arg;
+    List<String> args = new ArrayList<String>();
 }
 {
-    <IN> lbrace() exp = exp(grp) ( comma() arg = exp(grp) { args.add(arg); } )+ rbrace()
+    <IN> lbrace() exp = exp(grp) ( comma() arg = string() { args.add(arg); } )+ rbrace()
     { return new InPredicate(exp, args); }
 }
 

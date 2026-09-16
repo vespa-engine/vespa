@@ -42,8 +42,8 @@ public:
 
     static std::unique_ptr<FilterPredicateNode> make_istrue(std::unique_ptr<ExpressionNode> result_node);
 
-    template <typename... Nodes>
-    static std::unique_ptr<FilterPredicateNode> make_in(std::unique_ptr<ExpressionNode> result_node, Nodes... nodes);
+    template <typename... Args>
+    static std::unique_ptr<FilterPredicateNode> make_in(std::unique_ptr<ExpressionNode> result_node, Args... args);
 
     static std::unique_ptr<FilterPredicateNode> make_not(std::unique_ptr<FilterPredicateNode> filter_node);
 
@@ -89,12 +89,12 @@ FilterPredicateNodesTest::make_istrue(std::unique_ptr<ExpressionNode> result_nod
     return std::make_unique<IsTruePredicateNode>(std::move(result_node));
 }
 
-template <typename... Nodes>
+template <typename... Args>
 std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_in(std::unique_ptr<ExpressionNode> result_node,
-                                                                       Nodes... nodes) {
-    std::vector<std::unique_ptr<ExpressionNode>> args;
-    (args.emplace_back(std::move(nodes)), ...);
-    return std::make_unique<InPredicateNode>(std::move(result_node), std::move(args));
+                                                                       Args... args) {
+    std::vector<std::string> arg_strings;
+    (arg_strings.emplace_back(std::move(args)), ...);
+    return std::make_unique<InPredicateNode>(std::move(result_node), std::move(arg_strings));
 }
 
 std::unique_ptr<FilterPredicateNode>
@@ -217,16 +217,16 @@ TEST_F(FilterPredicateNodesTest, test_and_three_arguments) {
 }
 
 TEST_F(FilterPredicateNodesTest, test_in_string_match) {
-    EXPECT_TRUE(set_node(make_in(make_result("foo"), make_result("foo"))).evaluate());
-    EXPECT_TRUE(set_node(make_in(make_result("foo"), make_result("bar"), make_result("foo"))).evaluate());
-    EXPECT_FALSE(set_node(make_in(make_result("foo"), make_result("bar"), make_result("baz"))).evaluate());
-    EXPECT_FALSE(set_node(make_in(make_result("foo"), make_result("foobar"))).evaluate());
-    EXPECT_FALSE(set_node(make_in(make_result("foo.*"), make_result("foobar"))).evaluate());
+    EXPECT_TRUE(set_node(make_in(make_result("foo"), "foo")).evaluate());
+    EXPECT_TRUE(set_node(make_in(make_result("foo"), "bar", "foo")).evaluate());
+    EXPECT_FALSE(set_node(make_in(make_result("foo"), "bar", "baz")).evaluate());
+    EXPECT_FALSE(set_node(make_in(make_result("foo"), "foobar")).evaluate());
+    EXPECT_FALSE(set_node(make_in(make_result("foo.*"), "foobar")).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_in_numeric_match) {
-    EXPECT_TRUE(set_node(make_in(make_result(6.0), make_result(6.0))).evaluate());
-    EXPECT_FALSE(set_node(make_in(make_result(6.0), make_result(7.0))).evaluate());
+    EXPECT_TRUE(set_node(make_in(make_result(6.0), "6")).evaluate());
+    EXPECT_FALSE(set_node(make_in(make_result(6.0), "7")).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_istrue_with_true_value) {

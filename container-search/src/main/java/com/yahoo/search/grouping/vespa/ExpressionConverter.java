@@ -296,8 +296,7 @@ class ExpressionConverter {
         } else if (expression instanceof IsTruePredicate rp) {
             return new IsTruePredicateNode(toExpressionNode(rp.getExpression()));
         } else if (expression instanceof InPredicate ip) {
-            var args = ip.getArgs().stream().map(this::toExpressionNode).toList();
-            return new InPredicateNode(toExpressionNode(ip.getExpression()), args);
+            return new InPredicateNode(toExpressionNode(ip.getExpression()), ip.getArgs());
         } else if (expression instanceof NotPredicate np) {
             return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else if (expression instanceof OrPredicate op) {

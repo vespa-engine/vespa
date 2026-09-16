@@ -658,12 +658,13 @@ public class GroupingParserTestCase {
         assertAll("filter with in",
                 () -> assertParse("all(group(foo) filter(in(foo, \"bar\")) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(in(foo, \"bar\", \"baz\")) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(in(foo, 1, 2, 3)) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(in(foo, bar)) each(output(count())))"));
-        assertIllegalArgument("all(group(foo) filter(in(sum(foo), 1)) each(output(count())))",
+                () -> assertParse("all(group(foo) filter(in(foo, bar)) each(output(count())))",
+                                  "all(group(foo) filter(in(foo, \"bar\")) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(in(add(foo, 1), \"2\")) each(output(count())))"));
+        assertIllegalArgument("all(group(foo) filter(in(sum(foo), \"1\")) each(output(count())))",
                 "In predicate cannot be used with an aggregator");
         assertIllegalArgument("all(group(foo) filter(in(foo, sum(bar))) each(output(count())))",
-                "In predicate cannot be used with an aggregator");
+                "Encountered \" \"(\" \"(\"\" at line 1, column 34.");
 
         assertAll("filter with alias",
                 () -> assertParse(

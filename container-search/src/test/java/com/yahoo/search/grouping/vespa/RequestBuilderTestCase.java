@@ -866,9 +866,9 @@ public class RequestBuilderTestCase {
     @Test
     void require_that_in_filter_layout_is_correct() {
         assertLayout("all(group(a) filter(in(a, \"foo\")) each(output(count())))",
-                "[[{ Attribute, filter = [In [Attribute, Constant]], result = [Count] }]]");
-        assertLayout("all(group(a) filter(in(a, \"foo\", 2, b)) each(output(count())))",
-                "[[{ Attribute, filter = [In [Attribute, Constant, Constant, Attribute]], result = [Count] }]]");
+                "[[{ Attribute, filter = [In [Attribute, \"foo\"]], result = [Count] }]]");
+        assertLayout("all(group(a) filter(in(a, \"foo\", \"2\", b)) each(output(count())))",
+                "[[{ Attribute, filter = [In [Attribute, \"foo\", \"2\", \"b\"]], result = [Count] }]]");
     }
 
     @Test
@@ -1196,7 +1196,7 @@ public class RequestBuilderTestCase {
                 return String.format("IsTrue [%s]", expression);
             } else if (filterExp instanceof InPredicateNode ipn) {
                 var expression = ipn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
-                var args = ipn.getArgs().stream().map(LayoutWriter::toSimpleName).collect(Collectors.joining(", "));
+                var args = ipn.getArgs().stream().map(arg -> "\"" + arg + "\"").collect(Collectors.joining(", "));
                 return String.format("In [%s, %s]", expression, args);
             } else if (filterExp instanceof NotPredicateNode npn) {
                 var simpleName = npn.getExpression().map(LayoutWriter::toSimpleName).orElse("");

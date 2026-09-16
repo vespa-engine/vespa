@@ -7,7 +7,6 @@
 #include <vespa/vespalib/objects/deserializer.hpp>
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/visit.hpp>
-#include <vespa/vespalib/util/exceptions.h>
 
 #include <algorithm>
 
@@ -20,37 +19,30 @@ IMPLEMENT_IDENTIFIABLE_NS2(search, expression, InPredicateNode, FilterPredicateN
 
 namespace {
 
-bool equal_string(const ResultNode& value, size_t index, const ResultNode& arg) {
-    HoldString lhs(value, index);
-    HoldString rhs(arg);
-    return std::string_view(lhs) == std::string_view(rhs);
+bool matches_any(const ResultNode& value, size_t index, const std::vector<std::string>& args) {
+    HoldString      held(value, index);
+    std::string_view str(held);
+    return std::ranges::any_of(args, [str](const std::string& arg) { return str == arg; });
 }
 
 } // namespace
 
 bool InPredicateNode::check(const ResultNode* result) const {
-    for (const auto& arg : _args) {
-        const ResultNode* arg_result = arg.getResult();
-        if (result->inherits(ResultNodeVector::classId)) {
-            const auto& result_vector = static_cast<const ResultNodeVector&>(*result);
-            for (size_t i = 0; i < result_vector.size(); i++) {
-                if (equal_string(result_vector, i, *arg_result)) {
-                    return true;
-                }
+    if (result->inherits(ResultNodeVector::classId)) {
+        const auto& result_vector = static_cast<const ResultNodeVector&>(*result);
+        for (size_t i = 0; i < result_vector.size(); i++) {
+            if (matches_any(result_vector, i, _args)) {
+                return true;
             }
-        } else if (equal_string(*result, 0, *arg_result)) {
-            return true;
         }
+        return false;
     }
-    return false;
+    return matches_any(*result, 0, _args);
 }
 
 bool InPredicateNode::allow(const document::Document& doc, HitRank rank) {
     if (_argument.getRoot()) {
         _argument.execute(doc, rank);
-        for (const auto& arg : _args) {
-            arg.execute(doc, rank);
-        }
         return check(_argument.getResult());
     }
     return false;
@@ -59,9 +51,6 @@ bool InPredicateNode::allow(const document::Document& doc, HitRank rank) {
 bool InPredicateNode::allow(DocId docId, HitRank rank) {
     if (_argument.getRoot()) {
         _argument.execute(docId, rank);
-        for (const auto& arg : _args) {
-            arg.execute(docId, rank);
-        }
         return check(_argument.getResult());
     }
     return false;
@@ -75,12 +64,9 @@ InPredicateNode::InPredicateNode(const InPredicateNode&) = default;
 
 InPredicateNode& InPredicateNode::operator=(const InPredicateNode&) = default;
 
-InPredicateNode::InPredicateNode(ExpressionNode::UP input, std::vector<ExpressionNode::UP> args)
+InPredicateNode::InPredicateNode(ExpressionNode::UP input, std::vector<std::string> args)
     : _argument(std::move(input)),
-      _args() {
-    for (auto& arg : args) {
-        _args.emplace_back(std::move(arg));
-    }
+      _args(std::move(args)) {
 }
 
 Serializer& InPredicateNode::onSerialize(Serializer& os) const {
@@ -88,14 +74,7 @@ Serializer& InPredicateNode::onSerialize(Serializer& os) const {
 }
 
 Deserializer& InPredicateNode::onDeserialize(Deserializer& is) {
-    is >> _argument;
-    is >> _args;
-
-    if (std::ranges::any_of(_args, [](const auto& arg) { return arg.getRoot() == nullptr; })) {
-        throw vespalib::IllegalArgumentException("In predicate node received non-present argument node.");
-    }
-
-    return is;
+    return is >> _argument >> _args;
 }
 
 void InPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
@@ -105,9 +84,6 @@ void InPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
 
 void InPredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) {
     _argument.select(predicate, operation);
-    for (auto& arg : _args) {
-        arg.select(predicate, operation);
-    }
 }
 
 } // namespace search::expression

@@ -4,6 +4,7 @@
 #include "expressiontree.h"
 #include "filter_predicate_node.h"
 
+#include <string>
 #include <vector>
 
 namespace search::expression {
@@ -11,11 +12,11 @@ namespace search::expression {
 /**
  * Implements in filter in grouping expressions.
  *
- * Checks if the string value of an expression is equal to the string value of one of the arguments.
+ * Checks if the string value of an expression is equal to one of the string arguments.
  **/
 class InPredicateNode : public FilterPredicateNode {
-    ExpressionTree              _argument;
-    std::vector<ExpressionTree> _args;
+    ExpressionTree           _argument;
+    std::vector<std::string> _args;
 
     [[nodiscard]] bool check(const ResultNode* result) const;
 
@@ -28,7 +29,7 @@ public:
     [[nodiscard]] InPredicateNode* clone() const override { return new InPredicateNode(*this); }
 
     // for unit testing::
-    InPredicateNode(ExpressionNode::UP input, std::vector<ExpressionNode::UP> args);
+    InPredicateNode(ExpressionNode::UP input, std::vector<std::string> args);
 
     DECLARE_IDENTIFIABLE_NS2(search, expression, InPredicateNode);
     DECLARE_NBO_SERIALIZE;

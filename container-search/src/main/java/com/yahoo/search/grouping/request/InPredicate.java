@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Represents a filter expression that matches when the value of the evaluated
- * expression is equal to one of the arguments.
+ * Represents a filter expression that matches when the string value of the evaluated
+ * expression is equal to one of the string arguments.
  *
  * @author johsol
  */
@@ -16,18 +16,15 @@ import java.util.stream.Collectors;
 public class InPredicate extends FilterExpression {
 
     private final GroupingExpression expression;
-    private final List<GroupingExpression> args;
+    private final List<String> args;
 
-    public InPredicate(GroupingExpression expression, List<GroupingExpression> args) {
+    public InPredicate(GroupingExpression expression, List<String> args) {
         if (args == null || args.isEmpty()) {
             throw new IllegalArgumentException("InPredicate requires args to contain at least one element.");
         }
         validateExpression(expression);
-        for (GroupingExpression arg : args) {
-            validateExpression(arg);
-        }
         this.expression = expression;
-        this.args = args;
+        this.args = List.copyOf(args);
     }
 
     private static void validateExpression(GroupingExpression exp) {
@@ -47,19 +44,19 @@ public class InPredicate extends FilterExpression {
         return expression;
     }
 
-    public List<GroupingExpression> getArgs() {
+    public List<String> getArgs() {
         return args;
     }
 
     @Override
     public String toString() {
         return "in(" + expression + ", " + args.stream()
-                .map(Object::toString)
+                .map(arg -> "\"" + arg + "\"")
                 .collect(Collectors.joining(", ")) + ")";
     }
 
     @Override
     public FilterExpression copy() {
-        return new InPredicate(expression.copy(), args.stream().map(GroupingExpression::copy).toList());
+        return new InPredicate(expression.copy(), args);
     }
 }
