@@ -3,7 +3,6 @@ package com.yahoo.search.dispatch.lb;
 
 import com.yahoo.search.dispatch.RequestDuration;
 import com.yahoo.search.dispatch.searchcluster.Group;
-import com.yahoo.search.dispatch.searchcluster.Node;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -50,17 +49,11 @@ public class LoadBalancer {
             case LATENCY_AMORTIZED_OVER_TIME -> new AdaptiveScheduler(AdaptiveScheduler.Type.TIME, new Random(seed), scoreboard);
         };
 
-        // Unless this container and every group has a proper AZ assigned, fall back to non-AZ-aware routing.
-        if (localAvailabilityZone.equals(Node.UNKNOWN_AVAILABILITY_ZONE) ||
-            groups.stream().anyMatch(group -> group.availabilityZone().equals(Node.UNKNOWN_AVAILABILITY_ZONE))) {
-            this.remoteGroups = Set.of();
-        }
-        else {
-            this.remoteGroups = groups.stream()
-                                      .filter(group -> !group.availabilityZone().equals(localAvailabilityZone))
-                                      .map(Group::id)
-                                      .collect(Collectors.toUnmodifiableSet());
-        }
+
+        this.remoteGroups = groups.stream()
+                                  .filter(group -> !group.availabilityZone().equals(localAvailabilityZone))
+                                  .map(Group::id)
+                                  .collect(Collectors.toUnmodifiableSet());
     }
 
     /**
