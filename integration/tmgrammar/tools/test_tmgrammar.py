@@ -385,6 +385,8 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
 
     # --- Capture-based checks ---
     capture_checks = [
+        ("sort-features {", "sort-features", "keyword.control.vespa", "feature-list-block"),
+        ("sort-features: nativeRank", "sort-features", "keyword.control.vespa", "feature-list-inline"),
         # Tensor keyword → keyword.control (begin capture)
         ("tensor<float>(x[384])", "tensor", "keyword.control.vespa", "tensor-type"),
         # Comment # → punctuation
