@@ -42,7 +42,14 @@ export VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX ?= -dev-only
 .DEFAULT_GOAL := pr
 
 main: cpp-test java-test quick-start-guide publish-container publish-artifacts
-pr: basic-search-test
+pr:
+	VV=`git tag --points-at HEAD | grep -oP "\d+\.\d+\.\d+" | sort -V | tail -1` && \
+	VESPA_VERSION=$${VV%.*}.0 && \
+	export VESPA_VERSION && \
+	git fetch origin master:refs/remotes/origin/master && \
+	git -c user.name=buildkite -c user.email=buildkite@vespa.ai merge --no-edit origin/master && \
+	git tag v$${VESPA_VERSION} && \
+	$(MAKE) VESPA_VERSION=$${VESPA_VERSION} -f .buildkite/Makefile basic-search-test
 
 check:
 	@shellcheck -x $(TOP)/*.sh
