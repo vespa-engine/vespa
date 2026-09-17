@@ -69,14 +69,14 @@ public class ArgmaxAggregationResult extends AggregationResult {
     }
 
     /**
-     * Returns the expression producing the key to minimize.
+     * Returns the expression producing the key to maximize.
      */
     public final ExpressionNode getKeyExpression() {
         return keyExpression;
     }
 
     /**
-     * Sets the expression producing the key to minimize.
+     * Sets the expression producing the key to maximize.
      */
     public final ArgmaxAggregationResult setKeyExpression(ExpressionNode keyExpression) {
         this.keyExpression = keyExpression;
