@@ -219,13 +219,6 @@ public class Flags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SEND_OLD_QUERY_STACK = defineFeatureFlag(
-            "send-old-query-stack", false,
-            List.of("arnej"), "2026-05-07", "2026-12-01",
-            "If true, send the old query stack format in addition to protobuf serialization.",
-            "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_MEMORY_FACTOR = defineDoubleFlag(
         "searchnode-reserved-memory-factor", 0.0,
         List.of("toregge"), "2026-06-09", "2027-02-10",
