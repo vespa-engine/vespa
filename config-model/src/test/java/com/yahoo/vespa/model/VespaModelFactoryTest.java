@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -106,7 +107,10 @@ public class VespaModelFactoryTest {
 
         var host = new HostSpec(hostName,
                                 NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                                ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0, 0),
+                                ClusterMembership.from(ClusterSpec.builder(ClusterSpec.Type.container,
+                                                                           new ClusterSpec.Id(routingClusterName),
+                                                                           Capacity.unspecified(),
+                                                                           new Version("6.42")).build(), 0, 0),
                                 Optional.empty(), Optional.empty(), Optional.empty(),
                                 AzName.defaultName());
         var mockProvisioner = new MockProvisioner(List.of(host));
