@@ -1278,7 +1278,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
 
         ApplicationVersions applicationVersions = getActiveApplicationVersions(applicationId)
-                .orElseThrow(() -> new NotFoundException("Unable to get logs for for " + applicationId + " (application not found)"));
+                .orElseThrow(() -> new NotFoundException("Unable to get logs for " + applicationId + " (application not found)"));
         List<Pair<String, Integer>> hostInfo = logserverHostInfo(applicationVersions);
         return hostInfo.stream()
                 .map(h -> HttpURL.create(Scheme.http, DomainName.of(h.getFirst()), h.getSecond(), HttpURL.Path.parse("logs")))
