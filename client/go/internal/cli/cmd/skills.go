@@ -70,7 +70,7 @@ func (c *CLI) maybePromptSkillsInstall(cmd *cobra.Command) {
 	}
 	for p := cmd; p != nil; p = p.Parent() {
 		switch p.Name() {
-		case "skills", "version", "help", "completion", "man", "gendoc":
+		case "skills", "version", "help", "completion", "man", "gendoc", "auth", "destroy":
 			return
 		}
 	}
