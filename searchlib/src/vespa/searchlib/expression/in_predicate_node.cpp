@@ -22,7 +22,7 @@ namespace {
 bool matches_any(const ResultNode& value, size_t index, const std::vector<std::string>& args) {
     HoldString      held(value, index);
     std::string_view str(held);
-    return std::ranges::any_of(args, [str](const std::string& arg) { return str == arg; });
+    return std::ranges::any_of(args, [str](const std::string& arg) noexcept { return str == arg; });
 }
 
 } // namespace
