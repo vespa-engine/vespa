@@ -337,8 +337,8 @@ public class NodesSpecification {
                                                           boolean stateful,
                                                           ClusterInfo info,
                                                           List<SidecarSpec> sidecars) {
-        var capacity = Capacity.from(min, max, groupSize, maxCostFactor, required, canFail, cloudAccount, cloudResourceTags, info);
-        cluster = ClusterSpec.builder(clusterType, clusterId, capacity, version)
+        cluster = ClusterSpec.request(clusterType, clusterId)
+                .vespaVersion(version)
                 .exclusive(exclusive)
                 .dockerImageRepository(dockerImageRepo)
                 .loadBalancerSettings(zoneEndpoint)
@@ -348,7 +348,9 @@ public class NodesSpecification {
                 .profile(profile)
                 .build();
 
-        return hostSystem.allocateHosts(cluster, capacity, deployState);
+        return hostSystem.allocateHosts(cluster,
+                                        Capacity.from(min, max, groupSize, maxCostFactor, required, canFail, cloudAccount, cloudResourceTags, info),
+                                        deployState);
     }
 
     public ClusterSpec cluster() {

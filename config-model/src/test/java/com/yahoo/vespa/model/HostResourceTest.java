@@ -1,11 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.AzName;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
@@ -49,11 +47,7 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.builder(type,
-                                   ClusterSpec.Id.from(id),
-                                   Capacity.unspecified(),
-                                   new Version("6.42"))
-                          .build();
+        return ClusterSpec.specification(type, ClusterSpec.Id.from(id)).vespaVersion("6.42").build();
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership membership) {

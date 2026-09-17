@@ -1282,10 +1282,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                Element nodesElement,
                                                                ConfigModelContext context) {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
-        ClusterSpec clusterSpec = ClusterSpec.builder(ClusterSpec.Type.container,
-                                                      ClusterSpec.Id.from(cluster.getName()),
-                                                      Capacity.fromRequiredNodeType(type),
-                                                      context.getDeployState().getWantedNodeVespaVersion())
+        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
                 .vespaVersion(context.getDeployState().getWantedNodeVespaVersion())
                 .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo())
                 .availabilityZones(context.availabilityZones())
@@ -1326,11 +1323,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     /** The cluster spec to use for clusters which are not allocated from a node repository. */
     private static ClusterSpec defaultSpec(ApplicationContainerCluster cluster, DeployState deployState) {
-        return ClusterSpec.builder(ClusterSpec.Type.container,
-                                   cluster.id(),
-                                   Capacity.unspecified(),
-                                   deployState.getVespaVersion())
-                          .build();
+        return ClusterSpec.request(ClusterSpec.Type.container, cluster.id()).vespaVersion(deployState.getVespaVersion()).build();
     }
 
     private static boolean useCpuSocketAffinity(Element nodesElement) {
