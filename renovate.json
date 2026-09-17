@@ -15,7 +15,7 @@
     },
     // Need to wait for Vespa 9 before using Jetty 12.1.x or higher
     {
-      "matchUpdateTypes": ["minor"],
+      "separateMinorPatch": true,
       "enabled": false,
       "matchPackageNames": [
         "org.eclipse.jetty:{/,}**",
