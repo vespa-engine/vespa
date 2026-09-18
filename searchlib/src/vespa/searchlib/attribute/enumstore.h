@@ -4,6 +4,7 @@
 
 #include "enum_store_compaction_spec.h"
 #include "enum_store_dictionary.h"
+#include "enum_store_string_comparator.h"
 #include "enumcomparator.h"
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
