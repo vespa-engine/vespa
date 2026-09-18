@@ -13,6 +13,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Node {
 
+    /**
+     * The availability zone reported when none is configured; see the "default" value of
+     * node[].availabilityZone in dispatch-nodes.def and of availabilityZone in container.qr.def.
+     * Means "zone unknown", and makes dispatch fall back to availability zone unaware routing.
+     */
+    public static final String UNKNOWN_AVAILABILITY_ZONE = "default";
+
     private final String clusterName;
     private final int key;
     private final String hostname;
@@ -29,7 +36,7 @@ public class Node {
     private volatile boolean working = true;
 
     public Node(String clusterName, int key, String hostname, int group, boolean multipleGroups) {
-        this(clusterName, key, hostname, group, multipleGroups, "default");
+        this(clusterName, key, hostname, group, multipleGroups, UNKNOWN_AVAILABILITY_ZONE);
     }
 
     public Node(String clusterName, int key, String hostname, int group, boolean multipleGroups, String availabilityZone) {

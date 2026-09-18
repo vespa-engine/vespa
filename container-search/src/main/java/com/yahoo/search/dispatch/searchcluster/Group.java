@@ -29,6 +29,22 @@ public class Group {
     private volatile long targetActiveDocuments = 0;
     private volatile boolean isBalanced = true;
 
+    private static String azOf(List<Node> nodes) {
+        String found = null;
+        for (Node n : nodes) {
+            String az = n.availabilityZone();
+            if (found == null) {
+                found = az;
+            } else if (! found.equals(az)) {
+                log.warning("group of content nodes has conflicting availability zones: "
+                            + found + " != " + az);
+                found = null;
+                break;
+            }
+        }
+        return (found == null) ? Node.UNKNOWN_AVAILABILITY_ZONE : found;
+    }
+
     public Group(int id, List<Node> nodes) {
         this.id = id;
         this.nodes = List.copyOf(nodes);
@@ -160,19 +176,6 @@ public class Group {
         if (other == this) return true;
         if (!(other instanceof Group)) return false;
         return ((Group) other).id == this.id;
-    }
-
-    private static String azOf(List<Node> nodes) {
-        String found = null;
-        for (Node n : nodes) {
-            String az = n.availabilityZone();
-            if (found == null) {
-                found = az;
-            } else if (! found.equals(az)) {
-                throw new IllegalArgumentException("group of content nodes has conflicting availability zones: " + found + " != " + az);
-            }
-        }
-        return (found == null) ? "default" : found;
     }
 
 }

@@ -47,6 +47,11 @@ public class LoadBalancerTest {
     }
 
     @Test
+    void test_fallback_to_az_unaware_group_load_balancing() {
+        new LoadBalancerTester(LoadBalancer.Policy.ROUNDROBIN, 0.0).assertFallbackToAzUnawareLoadBalancing();
+    }
+
+    @Test
     void test_search_time_decay() {
         AdaptiveScheduler.DecayByRequests decayer = new AdaptiveScheduler.DecayByRequests(0, Duration.ofSeconds(1));
         TrackedGroup gs = newGroupStatus(1);
