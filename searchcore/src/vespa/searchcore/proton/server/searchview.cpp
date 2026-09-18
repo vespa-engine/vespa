@@ -7,6 +7,7 @@
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.searchview");
@@ -18,6 +19,7 @@ using search::engine::DocsumReply;
 using search::engine::DocsumRequest;
 using search::engine::SearchReply;
 using vespalib::Issue;
+using vespalib::makeLambdaTask;
 using vespalib::ThreadBundle;
 
 namespace proton {
@@ -77,14 +79,45 @@ std::unique_ptr<DocsumReply> createEmptyReply(const DocsumRequest&) {
     return std::make_unique<DocsumReply>();
 }
 
+class DeleteSearchView {
+    std::weak_ptr<vespalib::Executor> _delete_search_view_executor;
+
+public:
+    DeleteSearchView(std::weak_ptr<vespalib::Executor> delete_search_view_executor) noexcept;
+    ~DeleteSearchView();
+    void operator()(SearchView* search_view) const noexcept;
+};
+
+DeleteSearchView::DeleteSearchView(std::weak_ptr<vespalib::Executor> delete_search_view_executor) noexcept
+    : _delete_search_view_executor(std::move(delete_search_view_executor)) {
+}
+
+DeleteSearchView::~DeleteSearchView() = default;
+
+void DeleteSearchView::operator()(SearchView* search_view) const noexcept {
+    auto executor = _delete_search_view_executor.lock();
+    if (executor) {
+        auto task = makeLambdaTask([search_view]() { delete search_view; });
+        auto rejected_task = executor->execute(std::move(task));
+        if (rejected_task) {
+            rejected_task->run();
+        }
+    } else {
+        delete search_view;
+    }
+}
+
 } // namespace
 
 std::shared_ptr<SearchView> SearchView::create(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup,
-                                               std::shared_ptr<MatchView>                      matchView) {
-    return std::shared_ptr<SearchView>(new SearchView(std::move(summarySetup), std::move(matchView)));
+                                               std::shared_ptr<MatchView>                      matchView,
+                                               std::shared_ptr<vespalib::Executor> delete_search_view_executor) {
+    auto view = std::make_unique<SearchView>(std::move(summarySetup), std::move(matchView), ctor_tag{});
+    return std::shared_ptr<SearchView>(view.release(), DeleteSearchView(std::move(delete_search_view_executor)));
 }
+
 SearchView::SearchView(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup,
-                       std::shared_ptr<MatchView>                      matchView)
+                       std::shared_ptr<MatchView>                      matchView, ctor_tag)
     : ISearchHandler(), _summarySetup(std::move(summarySetup)), _matchView(std::move(matchView)) {
 }
 

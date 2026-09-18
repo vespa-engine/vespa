@@ -12,6 +12,7 @@ struct BucketExecutor;
 }
 
 namespace vespalib {
+class Executor;
 class ISequencedTaskExecutor;
 class ThreadExecutor;
 class InvokeService;
@@ -36,6 +37,8 @@ public:
      *   - Writing of data in the document store.
      */
     virtual vespalib::ThreadExecutor& shared() = 0;
+
+    [[nodiscard]] virtual std::shared_ptr<vespalib::Executor> shared_raw() const noexcept = 0;
 
     /**
      * Returns the sequenced executor used to write index and attribute fields in a document db.
