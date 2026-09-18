@@ -3,7 +3,11 @@ package ai.vespa.triton;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static ai.vespa.triton.TritonOnnxRuntime.defaultNumModelInstances;
@@ -112,6 +116,48 @@ class TritonOnnxRuntimeDefaultsTest {
     private static String modelName(OnnxEvaluatorOptions options, boolean shareSession, boolean gpuAvailable) {
         var resolvedOptions = TritonOnnxRuntime.resolveOptions(options, shareSession, gpuAvailable);
         return TritonOnnxRuntime.generateModelName(MODEL_PATH, resolvedOptions, shareSession, gpuAvailable);
+    }
+
+    @Test
+    void model_name_is_stable(@TempDir Path directory) throws IOException {
+        // Naming only hashes the file contents, so a valid ONNX model is unnecessary.
+        var model = Files.writeString(directory.resolve("model.onnx"), "model contents");
+        var options = requestedGpu(8).build().withNumModelInstances(2);
+
+        // A fixed expected name detects changes in hashing or encoding across runs.
+        assertEquals("model_7a1e995f006aef88",
+                     TritonOnnxRuntime.generateModelName(model.toString(), options, SHARED_SESSION, GPU_AVAILABLE));
+    }
+
+    @Test
+    void model_name_depends_on_file_contents(@TempDir Path directory) throws IOException {
+        var model = Files.writeString(directory.resolve("model.onnx"), "model contents");
+        var options = cpu(8).build().withNumModelInstances(1);
+        var originalName = TritonOnnxRuntime.generateModelName(model.toString(), options,
+                                                               SEPARATE_SESSIONS, GPU_UNAVAILABLE);
+
+        Files.writeString(model, "updated model contents");
+
+        assertNotEquals(originalName,
+                        TritonOnnxRuntime.generateModelName(model.toString(), options,
+                                                            SEPARATE_SESSIONS, GPU_UNAVAILABLE));
+    }
+
+    @Test
+    void model_name_depends_on_session_sharing_with_the_same_instance_count() {
+        var options = cpu(8).build().withNumModelInstances(1);
+
+        assertNotEquals(modelName(options, SEPARATE_SESSIONS, GPU_UNAVAILABLE),
+                        modelName(options, SHARED_SESSION, GPU_UNAVAILABLE));
+    }
+
+    @Test
+    void model_name_depends_on_thread_count() {
+        var options = cpu(8).build().withNumModelInstances(1);
+        var moreThreads = new OnnxEvaluatorOptions.Builder(options).setIntraOpThreads(4).build();
+
+        assertNotEquals(modelName(options, SHARED_SESSION, GPU_UNAVAILABLE),
+                        modelName(moreThreads, SHARED_SESSION, GPU_UNAVAILABLE));
     }
 
     // The model name identifies a loaded model, so it must change with the instance group.

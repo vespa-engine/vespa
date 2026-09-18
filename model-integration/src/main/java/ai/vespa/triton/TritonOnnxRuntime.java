@@ -15,9 +15,11 @@ import com.yahoo.language.process.TimeoutException;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 import inference.ModelConfigOuterClass;
+import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -219,11 +221,15 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
         var optionsHash = options.calculateHash();
-        var shareSessionHash = shareSession ? 1 : 0;
-        // The instance group differs between a GPU and an unpinned device, so the name must differ too.
-        var deviceHash = runsOnGpu(options, gpuAvailable) ? 2 : 0;
-        var combinedHash = Long.toHexString(31 * modelHash + optionsHash + shareSessionHash + deviceHash);
-        return baseName + "_" + combinedHash; // add hash to avoid conflicts
+        // Hash a fixed-width encoding of the model identity, including the resolved device kind.
+        var identity = ByteBuffer.allocate(2 * Long.BYTES + Byte.BYTES + Integer.BYTES)
+                .putLong(modelHash)
+                .putLong(optionsHash)
+                .put((byte) (shareSession ? 1 : 0))
+                .putInt(deviceKind(options, gpuAvailable).getNumber())
+                .array();
+        var combinedHash = XXHashFactory.fastestInstance().hash64().hash(identity, 0, identity.length, 0);
+        return baseName + "_" + Long.toHexString(combinedHash); // add hash to avoid conflicts
     }
 
     private Path getModelDirInModelRepository(String modelName) {
