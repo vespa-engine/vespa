@@ -54,6 +54,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     jsonstream.cpp
     jsonwriter.cpp
     kll_sketch.cpp
+    landlock.cpp
     latch.cpp
     left_right_heap.cpp
     limited_thread_bundle_wrapper.cpp
