@@ -891,6 +891,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.prelude.query.Items" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.prelude.query.Item text(java.lang.String, java.lang.String, com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "public static com.yahoo.prelude.query.Item text(java.lang.String, java.lang.String, com.yahoo.search.query.QueryType, com.yahoo.language.Language, java.util.Set, java.util.Set, com.yahoo.search.query.parser.ParserEnvironment)",
+      "public static com.yahoo.prelude.query.Item createText(java.lang.String, java.lang.String, com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.LabelWrapperItem" : {
     "superClass" : "com.yahoo.prelude.query.CompositeTaggableItem",
     "interfaces" : [ ],
