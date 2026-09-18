@@ -20,7 +20,7 @@ public:
     }
     double onGetFloat(size_t index) const override {
         (void)index;
-        return 0;
+        return std::numeric_limits<double>::quiet_NaN();
     }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
         (void)index;
