@@ -8,10 +8,7 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.model.provision.Host;
-import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -20,7 +17,6 @@ import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -69,26 +65,6 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
             <config name='ai.vespa.llm.clients.triton'>
               <timeout>30000</timeout>
             </config>
-          </container>
-        </services>
-        """;
-
-    private static final String SERVICES_XML_WITH_NODES = """
-        <services version='1.0'>
-          <container id='cluster1' version='1.0'>
-            <nodes count='1'/>
-          </container>
-        </services>
-        """;
-
-    private static final String SERVICES_XML_WITH_GPU_NODES = """
-        <services version='1.0'>
-          <container id='cluster1' version='1.0'>
-            <nodes count='1'>
-              <resources vcpu='4' memory='16Gb' disk='125Gb'>
-                <gpu count='%d' memory='16Gb'/>
-              </resources>
-            </nodes>
           </container>
         </services>
         """;
@@ -170,57 +146,6 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
     }
 
     @Test
-    void gpu_availability_reaches_the_runtime_and_requires_restart_on_change() {
-        var cpuResources = new NodeResources(4, 16, 125, 10);
-        var unknownNodes = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true);
-        var cpuNodes = createModel(SERVICES_XML_WITH_NODES, true, false, cpuResources);
-        var oneGpu = createGpuModel(1);
-        var twoGpus = createGpuModel(2);
-
-        assertFalse(tritonConfig(unknownNodes).gpuAvailable());
-        assertFalse(tritonConfig(cpuNodes).gpuAvailable());
-        assertTrue(tritonConfig(oneGpu).gpuAvailable());
-        assertTrue(tritonConfig(twoGpus).gpuAvailable());
-
-        var result = validateModel(cpuNodes, oneGpu);
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getMessage().contains("gpuAvailable"));
-        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
-        assertEquals(ConfigChange.DEFER_UNTIL_RESTART, ((VespaRestartAction) result.get(0)).configChange());
-
-        // The runtime only needs to know whether a GPU is available, so other changes of the count do not restart
-        assertTrue(validateModel(unknownNodes, cpuNodes).isEmpty());
-        assertTrue(validateModel(oneGpu, twoGpus).isEmpty());
-    }
-
-    // Retired nodes keep serving while a cluster changes node resources, so they count as well.
-    // The provisioner stands in for the change: it allocates the CPU node as retired and adds a GPU node.
-    // Nodes without requested resources get the smallest hosts first, so the hosts are smaller than the admin hosts.
-    @Test
-    void gpu_is_unavailable_while_retired_cpu_nodes_remain_in_a_gpu_cluster() {
-        var cpuResources = new NodeResources(1, 2, 40, 1);
-        var gpuResources = new NodeResources(1, 2.5, 40, 1,
-                                             NodeResources.DiskSpeed.fast,
-                                             NodeResources.StorageType.local,
-                                             NodeResources.Architecture.x86_64,
-                                             new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
-        Map<NodeResources, Collection<Host>> hosts = Map.of(
-                InMemoryProvisioner.defaultHostResources, List.of(new Host("admin1"), new Host("admin2"),
-                                                                  new Host("admin3"), new Host("admin4")),
-                cpuResources, List.of(new Host("retired-cpu-node")),
-                gpuResources, List.of(new Host("gpu-node")));
-        var builder = deployStateBuilder(true, false)
-                .modelHostProvisioner(new InMemoryProvisioner(hosts, true, false, false, false,
-                                                              NodeResources.unspecified(), 0, "retired-cpu-node"));
-        var model = new VespaModelCreatorWithMockPkg(null, SERVICES_XML_WITH_NODES).create(builder);
-
-        var containers = model.getContainerClusters().get("cluster1").getContainers();
-        assertEquals(2, containers.size());
-        assertTrue(containers.stream().anyMatch(container -> container.isRetired()));
-        assertFalse(tritonConfig(model).gpuAvailable());
-    }
-
-    @Test
     void no_restart_when_triton_runtime_remains_disabled() {
         var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, false);
         var next = createModel(SERVICES_XML_WITH_ONE_CLUSTER, false);
@@ -263,27 +188,6 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
 
     private static VespaModel createModel(String servicesXml, boolean useTriton, boolean shareSession) {
         var builder = deployStateBuilder(useTriton, shareSession);
-        return new VespaModelCreatorWithMockPkg(null, servicesXml).create(builder);
-    }
-
-    private static VespaModel createGpuModel(int gpuCount) {
-        var resources = new NodeResources(4, 16, 125, 10,
-                                           NodeResources.DiskSpeed.fast,
-                                           NodeResources.StorageType.local,
-                                           NodeResources.Architecture.x86_64,
-                                           new NodeResources.GpuResources(NodeResources.GpuType.T4, gpuCount, 16));
-        return createModel(SERVICES_XML_WITH_GPU_NODES.formatted(gpuCount), true, false, resources);
-    }
-
-    private static VespaModel createModel(String servicesXml, boolean useTriton, boolean shareSession,
-                                          NodeResources resources) {
-        Map<NodeResources, Collection<Host>> hosts = Map.of(
-                InMemoryProvisioner.defaultHostResources, List.of(new Host("admin1"), new Host("admin2"),
-                                                                  new Host("admin3"), new Host("admin4")),
-                resources, List.of(new Host("container")));
-        var builder = deployStateBuilder(useTriton, shareSession)
-                .modelHostProvisioner(new InMemoryProvisioner(hosts, true, false, false, false,
-                                                              NodeResources.unspecified(), 0));
         return new VespaModelCreatorWithMockPkg(null, servicesXml).create(builder);
     }
 

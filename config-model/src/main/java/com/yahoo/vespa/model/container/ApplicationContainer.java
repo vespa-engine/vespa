@@ -97,13 +97,7 @@ public final class ApplicationContainer extends Container implements
 
     @Override public Optional<String> getPreShutdownCommand() { return Optional.of(prepareStopCommand(Duration.ofMinutes(6))); }
 
-    /** Returns the number of GPUs on this node, or empty when the node resources are unknown. */
-    Optional<Integer> gpuCount() {
-        return realResources().map(resources -> resources.gpuResources().count()).filter(count -> count >= 0);
-    }
-
-    /** Returns the resources of this node, or empty when they are unknown. */
-    Optional<NodeResources> realResources() {
+    private Optional<NodeResources> realResources() {
         if (getHostResource() != null) {
             NodeResources nodeResources = getHostResource().realResources();
             if ( ! nodeResources.isUnspecified()) {

@@ -15,6 +15,7 @@ import com.yahoo.text.Text;
 import com.yahoo.language.process.TimeoutException;
 import inference.GRPCInferenceServiceGrpc;
 import inference.GrpcService;
+import inference.ModelConfigOuterClass;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
@@ -125,6 +126,11 @@ public class TritonOnnxClient implements AutoCloseable {
         return response.getReady();
     }
 
+    public ModelConfigOuterClass.ModelConfig getModelConfig(String modelName) {
+        var request = GrpcService.ModelConfigRequest.newBuilder().setName(modelName).build();
+        return invokeGrpc(statusStub(), s -> s.modelConfig(request), "Failed to get model config").getConfig();
+    }
+
     private GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub statusStub() {
         return grpcInferenceStub.withDeadlineAfter(STATUS_CHECK_TIMEOUT);
     }
@@ -169,6 +175,19 @@ public class TritonOnnxClient implements AutoCloseable {
                 .build();
         invokeGrpc(grpcInferenceStub.withDeadlineAfter(LOAD_TIMEOUT),
                 s -> s.repositoryModelLoad(request), "Failed to load model");
+    }
+
+    // Loads an ONNX model without writing to the shared model repository. Requires EXPLICIT model control.
+    public void loadModel(String modelName, String configJson, ByteString model) {
+        var request = GrpcService.RepositoryModelLoadRequest.newBuilder()
+                .setModelName(modelName)
+                .putParameters("config", GrpcService.ModelRepositoryParameter.newBuilder()
+                        .setStringParam(configJson).build())
+                .putParameters("file:1/model.onnx", GrpcService.ModelRepositoryParameter.newBuilder()
+                        .setBytesParam(model).build())
+                .build();
+        invokeGrpc(grpcInferenceStub.withDeadlineAfter(LOAD_TIMEOUT),
+                s -> s.repositoryModelLoad(request), "Failed to load inline model");
     }
 
     public void unloadModel(String modelName) {

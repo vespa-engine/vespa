@@ -463,19 +463,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(TritonConfig.Builder builder) {
         builder.shareOnnxSessionBetweenInstances(tritonShareOnnxSession);
-        builder.gpuAvailable(hasGpu());
-    }
-
-    /**
-     * Returns whether every node of this cluster has a GPU.
-     * Container clusters are normally homogeneous. The exception is a change of node resources.
-     * Then the retired nodes with the old resources serve alongside the new nodes until they are removed.
-     * Retired nodes are included, so a cluster moving to GPUs reports no GPU until the old nodes are gone.
-     * This keeps models loadable on every node. Requiring a GPU on the retired nodes would fail them.
-     */
-    public boolean hasGpu() {
-        return ! getContainers().isEmpty() &&
-               getContainers().stream().allMatch(container -> container.gpuCount().orElse(0) > 0);
     }
 
     public static class MbusParams {

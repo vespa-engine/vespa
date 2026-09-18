@@ -18,17 +18,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
+import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
@@ -112,21 +118,60 @@ class TritonOnnxRuntimeTest {
         assertLoadModel("src/test/triton/config_with_shared_session.pbtxt", opts, true);
     }
 
-    // Without a known GPU on the node, the runtime leaves the device to Triton.
-    // Triton falls back to CPU on a host without a GPU.
-    // Separate sessions use one instance by default regardless of device.
     @Test
-    void load_model_with_gpu_device_and_unknown_gpus() throws IOException {
-        var opts = optsBuilder.setGpuDevice(2).build();
-        assertLoadModel("src/test/triton/config_with_gpu_device.pbtxt", opts, false);
+    void uses_gpu_when_available_otherwise_cpu() throws IOException {
+        try (var client = createClient()) {
+            var devices = new TritonGpuProbe(client).gpuDevices();
+            var device = devices.stream().min(Integer::compareTo).orElse(0);
+            var opts = optsBuilder.setGpuDevice(device).build();
+            var resolved = TritonOnnxRuntime.resolveOptions(opts, false, devices);
+            var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, resolved, false);
+            var runtime = createRuntime();
+            try (var evaluator = runtime.evaluatorOf(MODEL_PATH, opts)) {
+                var group = client.getModelConfig(name).getInstanceGroup(0);
+                assertEquals(devices.isEmpty() ? KIND_CPU : KIND_GPU, group.getKind());
+                assertEquals(devices.isEmpty() ? List.of() : List.of(device), group.getGpusList());
+                assertRepoFileCount(tritonContainer, 1); // No probe files in the shared repository
+            } finally {
+                runtime.deconstruct();
+            }
+        }
     }
 
-    // A known GPU node must not fall back to CPU when its requested device cannot be used.
-    // An invalid device number makes this fail even on test hosts with GPUs.
     @Test
-    void load_model_with_unavailable_gpu_device_cleans_up_repository() {
-        var opts = optsBuilder.setGpuDevice(Integer.MAX_VALUE).build();
-        var runtime = createRuntime(false, true);
+    void falls_back_to_cpu_when_no_gpus_are_available() {
+        try (var client = createClient()) {
+            assumeTrue(new TritonGpuProbe(client).gpuDevices().isEmpty(), "Requires a CPU-only Triton server");
+            var opts = optsBuilder.setGpuDevice(Integer.MAX_VALUE).build();
+            var runtime = createRuntime();
+            try {
+                runtime.evaluatorOf(MODEL_PATH, opts).close();
+                assertRepoFileCount(tritonContainer, 0);
+            } finally {
+                runtime.deconstruct();
+            }
+        }
+    }
+
+    @Test
+    void rejects_unknown_gpu_id_when_gpus_are_available() {
+        try (var client = createClient()) {
+            assumeFalse(new TritonGpuProbe(client).gpuDevices().isEmpty(), "Requires a Triton server with GPUs");
+            var opts = optsBuilder.setGpuDevice(Integer.MAX_VALUE).build();
+            var runtime = createRuntime();
+            try {
+                assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(MODEL_PATH, opts));
+                assertRepoFileCount(tritonContainer, 0);
+            } finally {
+                runtime.deconstruct();
+            }
+        }
+    }
+
+    @Test
+    void fails_when_required_gpu_is_unavailable() {
+        var opts = optsBuilder.setGpuDevice(Integer.MAX_VALUE, true).build();
+        var runtime = createRuntime();
         try {
             assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(MODEL_PATH, opts));
             assertRepoFileCount(tritonContainer, 0);
@@ -320,27 +365,16 @@ class TritonOnnxRuntimeTest {
     }
 
     private TritonOnnxRuntime createRuntime(boolean shareOnnxSessionBetweenInstances) {
-        return createRuntime(shareOnnxSessionBetweenInstances, false);
-    }
-
-    private TritonOnnxRuntime createRuntime(boolean shareOnnxSessionBetweenInstances, boolean gpuAvailable) {
         return new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT,
-                                                shareOnnxSessionBetweenInstances, gpuAvailable));
+                                                shareOnnxSessionBetweenInstances));
     }
 
     private static TritonConfig testConfig(TritonConfig.ModelControlMode.Enum mode, boolean shareOnnxSessionBetweenInstances) {
-        return testConfig(mode, shareOnnxSessionBetweenInstances, false);
-    }
-
-    private static TritonConfig testConfig(TritonConfig.ModelControlMode.Enum mode,
-                                          boolean shareOnnxSessionBetweenInstances,
-                                          boolean gpuAvailable) {
         return new TritonConfig.Builder()
                 .target(tritonContainer.getGrpcEndpoint())
                 .modelControlMode(mode)
                 .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
                 .shareOnnxSessionBetweenInstances(shareOnnxSessionBetweenInstances)
-                .gpuAvailable(gpuAvailable)
                 .build();
     }
 
@@ -357,8 +391,8 @@ class TritonOnnxRuntimeTest {
 
     // The model name of a runtime with separate sessions and no known GPU
     private static String modelName(String modelPath, OnnxEvaluatorOptions opts) {
-        var resolvedOpts = TritonOnnxRuntime.resolveOptions(opts, false, false);
-        return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false, false);
+        var resolvedOpts = TritonOnnxRuntime.resolveOptions(opts, false, Set.of());
+        return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false);
     }
 
     // expectedConfigPath == null means we expect an error during model loading
@@ -368,18 +402,14 @@ class TritonOnnxRuntimeTest {
 
     private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts, boolean shareSession)
             throws IOException {
-        assertLoadModel(expectedConfigPath, evalOpts, shareSession, false);
-    }
-
-    private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts, boolean shareSession,
-                                 boolean gpuAvailable) throws IOException {
         var modelBaseName = "dummy_transformer";
         var testModelFilePath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
-        var resolvedOpts = TritonOnnxRuntime.resolveOptions(evalOpts, shareSession, gpuAvailable);
-        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession, gpuAvailable);
+        var resolvedOpts = evalOpts.modelConfigOverride().isPresent()
+                ? evalOpts : TritonOnnxRuntime.resolveOptions(evalOpts, shareSession, Set.of());
+        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession);
         var modelFilePath = Text.format("%s/1/model.onnx", modelName);
         var modelConfigPath = Text.format("%s/config.pbtxt", modelName);
-        var runtime = createRuntime(shareSession, gpuAvailable);
+        var runtime = createRuntime(shareSession);
 
         try {
             ThrowingSupplier<OnnxEvaluator> evaluatorSupplier = () -> runtime.evaluatorOf(testModelFilePath, evalOpts);
