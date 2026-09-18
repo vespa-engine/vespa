@@ -79,11 +79,16 @@ std::unique_ptr<DocsumReply> createEmptyReply(const DocsumRequest&) {
     return std::make_unique<DocsumReply>();
 }
 
+/*
+ * Schedule deletion of search view on an executor to avoid latency spike for matching or document summary requests in
+ * the last thread using a search view, e.g. after dump of memory index to disk.
+ */
+
 class DeleteSearchView {
     std::weak_ptr<vespalib::Executor> _delete_search_view_executor;
 
 public:
-    DeleteSearchView(std::weak_ptr<vespalib::Executor> delete_search_view_executor) noexcept;
+    explicit DeleteSearchView(std::weak_ptr<vespalib::Executor> delete_search_view_executor) noexcept;
     ~DeleteSearchView();
     void operator()(SearchView* search_view) const noexcept;
 };
