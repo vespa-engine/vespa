@@ -16,7 +16,7 @@ import static java.util.Objects.requireNonNull;
  */
 public final class Capacity {
 
-    private static final Capacity unspecified = Capacity.from(new ClusterResources(1, 0, NodeResources.unspecified()));
+    private static final Capacity unspecified = Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified()));
 
     /** Resources should stay between these values, inclusive */
     private final ClusterResources min, max;
