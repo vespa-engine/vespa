@@ -155,6 +155,14 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_LATENCY.max());
         addMetric(metrics, ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.count());
 
+        // mTLS handshake failures, so a CA rotation (VESPA-28617) can be alarmed on config servers:
+        // invalid/missing client cert are the categories a signer switch produces. Lazily emitted,
+        // so alarm as increase(...invalid_client_cert_rate[..]) > 0, not on static presence.
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN.rate());
+
         return metrics;
     }
 
