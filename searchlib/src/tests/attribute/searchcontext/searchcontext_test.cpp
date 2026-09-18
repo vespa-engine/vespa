@@ -494,11 +494,6 @@ ResultSetPtr SearchContextTest::perform_search(const queryeval::ExecuteInfo& exe
 template <typename V>
 void SearchContextTest::performSearch(const queryeval::ExecuteInfo& executeInfo, const V& vec,
                                       const std::string& term, const DocSet& expected, TermType termType) {
-#if 0
-    std::cout << "performSearch[" << term << "]: {";
-    std::copy(expected.begin(), expected.end(), std::ostream_iterator<uint32_t>(std::cout, ", "));
-    std::cout << "}, prefix(" << (prefix ? "true" : "false") << ")" << std::endl;
-#endif
     { // strict search iterator
         ResultSetPtr rs = performSearch(executeInfo, vec, term, termType);
         checkResultSet(*rs, expected, false);
@@ -508,11 +503,6 @@ void SearchContextTest::performSearch(const queryeval::ExecuteInfo& executeInfo,
 template <typename V>
 void SearchContextTest::perform_search(const queryeval::ExecuteInfo& executeInfo, const V& vec,
                                        std::unique_ptr<QueryTermSimple> term, const DocSet& expected) {
-#if 0
-    std::cout << "performSearch[" << term << "]: {";
-    std::copy(expected.begin(), expected.end(), std::ostream_iterator<uint32_t>(std::cout, ", "));
-    std::cout << "}, prefix(" << (prefix ? "true" : "false") << ")" << std::endl;
-#endif
     { // strict search iterator
         ResultSetPtr rs = perform_search(executeInfo, vec, std::move(term));
         checkResultSet(*rs, expected, false);
