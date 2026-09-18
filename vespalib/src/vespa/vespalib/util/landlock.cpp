@@ -197,13 +197,13 @@ std::optional<Landlock::AccessRules> Landlock::from_env() {
         return std::nullopt;
     }
     AccessRules access;
-    const char* ro_dirs_env = getenv("VESPA_LANDLOCK_PATH");
-    if (!ro_dirs_env) {
+    const char* paths_env = getenv("VESPA_LANDLOCK_PATHS");
+    if (!paths_env) {
         return access;
     }
-    std::string ro_dirs(ro_dirs_env);
+    std::string paths_str(paths_env);
     using std::operator""sv;
-    for (const auto entry : std::views::split(ro_dirs, ":"sv)) {
+    for (const auto entry : std::views::split(paths_str, ":"sv)) {
         std::string_view entry_sv(entry);
         std::string_view dir_sv = entry_sv;
         int              flags = 0;

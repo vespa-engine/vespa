@@ -54,7 +54,7 @@ void init_landlock(const char* landlock_path_env) {
         }
         path_str += "/proc/self:/tmp";
 #endif
-        setenv("VESPA_LANDLOCK_PATH", path_str.c_str(), 1);
+        setenv("VESPA_LANDLOCK_PATHS", path_str.c_str(), 1);
     } else {
         unsetenv("VESPA_ENABLE_LANDLOCK"); // Just in case...
     }
