@@ -45,6 +45,7 @@ import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.Items;
 import com.yahoo.prelude.query.LabelWrapperItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
@@ -101,7 +102,6 @@ import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
-import com.yahoo.search.query.parser.ParserFactory;
 
 /**
  * The YQL query language.
@@ -110,6 +110,7 @@ import com.yahoo.search.query.parser.ParserFactory;
  * Adding anything here will usually require a corresponding addition in
  * VespaSerializer.
  *
+ * @author bratseth
  * @author Steinar Knutsen
  * @author Stian Kristoffersen
  * @author Simon Thoresen Hult
@@ -131,7 +132,6 @@ public class YqlParser implements Parser {
 
     private static final Integer DEFAULT_HITS = 10;
     private static final Integer DEFAULT_OFFSET = 0;
-    public static final Integer DEFAULT_WAND_TARGET_HITS = 10;
     private static final String ACCENT_DROP_DESCRIPTION = "setting for whether to remove accents if field implies it";
     public static final String ANNOTATIONS = "annotations";
     private static final String FILTER_DESCRIPTION = "term filter setting";
@@ -1166,24 +1166,36 @@ public class YqlParser implements Parser {
     private Item buildTextInput(OperatorNode<ExpressionOperator> ast, String field,
                                 Query.Type defaultGrammar, boolean useModelType) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-        String wordData = getStringContents(args.get(0));
+        String text = getStringContents(args.get(0));
         Boolean allowEmpty = getAnnotation(ast, USER_INPUT_ALLOW_EMPTY, Boolean.class,
                                            Boolean.FALSE, "flag for allowing NullItem to be returned");
-        if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
+        if (allowEmpty && (text == null || text.isEmpty())) return new NullItem();
 
         boolean explicitLanguage = hasExplicitLanguageAnnotation(ast);
-        Language language = decideParsingLanguage(ast, wordData);
+        Language language = decideParsingLanguage(ast, text);
+        // userInput should determine the overall language if not set explicitly
+        if (userQuery != null && userQuery.getModel().getLanguage() == null)
+            userQuery.getModel().setLanguage(language);
+
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        defaultGrammar.toString(), "grammar for text processing");
         QueryType queryType = buildQueryType(ast, defaultGrammar, useModelType);
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
-            return assignQueryType(instantiateWordItem(field, wordData, ast, null, SegmentWhen.NEVER, true, language),
+            return assignQueryType(instantiateWordItem(field, text, ast, null, SegmentWhen.NEVER, true, language),
                                    queryType);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
-            return assignQueryType(instantiateWordItem(field, wordData, ast, null, SegmentWhen.ALWAYS, false, language),
+            return assignQueryType(instantiateWordItem(field, text, ast, null, SegmentWhen.ALWAYS, false, language),
                                    queryType);
         } else {
-            Item item = parseUserInput(queryType, field, wordData, language, explicitLanguage, allowEmpty);
+            Item item = Items.text(field, text, queryType, language, docTypes, Set.of(), environment);
+            if ( ! allowEmpty && (item == null || item instanceof NullItem))
+                throw new IllegalArgumentException("Parsing '" + text + "' only resulted in NullItem.");
+
+            // Mark the language used if it was explicitly set or is not the default
+            if (explicitLanguage || language != Language.ENGLISH)
+                // mark all the child items: it will be easier to figure out which item have which language
+                setLanguageRecursively(item, language);
+
             propagateUserInputAnnotationsRecursively(ast, item);
 
             // Set grammar-specific annotations
@@ -1286,29 +1298,6 @@ public class YqlParser implements Parser {
 
     private void propagateUserInputAnnotationsRecursively(OperatorNode<ExpressionOperator> ast, Item item) {
         ToolBox.visit(new AnnotationPropagator(ast), item);
-    }
-
-    private Item parseUserInput(QueryType queryType, String defaultIndex, String wordData,
-                                Language language, boolean explicitLanguage, boolean allowNullItem) {
-        Parser parser = ParserFactory.newInstance(queryType, environment);
-        // perhaps not use already resolved doctypes, but respect source and restrict
-        Item item = parser.parse(new Parsable().setQuery(wordData)
-                                               .addSources(docTypes)
-                                               .setLanguage(language)
-                                               .setDefaultIndexName(defaultIndex)).getRoot();
-
-        if ( ! allowNullItem && (item == null || item instanceof NullItem))
-            throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
-
-        // Mark the language used if it was explicitly set or is not the default
-        if (explicitLanguage || language != Language.ENGLISH)
-            // mark all the child items: it will be easier to figure out which item have which language
-            setLanguageRecursively(item, language);
-
-        // userInput should determine the overall language if not set explicitly
-        if (userQuery != null && userQuery.getModel().getLanguage() == null)
-            userQuery.getModel().setLanguage(language);
-        return item;
     }
 
     private void setLanguageRecursively(Item item, Language language) {
