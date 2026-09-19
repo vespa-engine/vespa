@@ -18,14 +18,15 @@ batching.maxSize int default=1
 # TODO: Deprecated and ignored. Remove in Vespa 9.
 batching.maxDelayMillis long default=0
 
-# Concurrency creates several model instances for concurrent inference.
-# This increases throughput without affecting latency at the cost of memory used by each model instance.
-# This is especially effective for embedding queries on multi-core CPU.
-# With `factorType=absolute`, `factor` is rounded to set the number of model instances.
-# With `factorType=relative`, `factor` is multiplied with the number of CPU cores and rounded to set the number of model instances.
-# Default settings creates a single model instance.
+# Controls the number of requests processed concurrently.
+# This applies only to the Triton runtime. The embedded runtime has no explicit concurrency control.
+# For Triton, concurrency determines how many model instances are created.
+# With `factorType=absolute`, `factor` is rounded to the number of model instances.
+# With `factorType=relative`, `factor` is multiplied by the number of CPU cores and rounded to the number of model instances.
+# With `factor<=0`, the number of model instances is configured automatically based on the device and runtime.
+# Explicit values in services.xml must be positive; omit the concurrency element to use the automatic default.
 concurrency.factorType enum { absolute, relative } default=absolute
-concurrency.factor double default=1.0
+concurrency.factor double default=0.0
 
 # Path to model config file, e.g. `config.pbtxt` used by Triton inference server.
 modelConfigOverride path optional

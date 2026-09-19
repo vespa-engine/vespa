@@ -14,6 +14,8 @@ target string default="triton:8001" restart
 modelRepositoryPath string default="/sidecars/triton/models" restart
 
 # Model control mode. Client will only issue model load/unload requests if mode is EXPLICIT.
+# Only EXPLICIT mode probes CPU/GPU availability and generates model configs.
+# NONE/POLL use externally managed models without probing or modifying the model repository.
 modelControlMode enum {NONE, POLL, EXPLICIT} default=EXPLICIT restart
 
 # Whether the instances of a model share one ONNX Runtime session per device instead of each loading the model.

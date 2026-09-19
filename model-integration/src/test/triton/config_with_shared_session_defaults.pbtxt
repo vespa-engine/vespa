@@ -2,7 +2,7 @@ name: "dummy_transformer_47d1bdde03c1063e"
 platform: "onnxruntime_onnx"
 max_batch_size: 1
 instance_group {
-  count: 2
+  count: 8
   kind: KIND_CPU
 }
 parameters {

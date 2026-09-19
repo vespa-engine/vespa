@@ -191,9 +191,9 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         return new VespaModelCreatorWithMockPkg(null, servicesXml).create(builder);
     }
 
-    // The cluster produces the config for all its Triton components.
+    // Resolve at the runtime component's config id, as dependency injection does.
     private static TritonConfig tritonConfig(VespaModel model) {
-        return model.getConfig(TritonConfig.class, "cluster1");
+        return model.getConfig(TritonConfig.class, "cluster1/component/ai.vespa.triton.TritonOnnxRuntime");
     }
 
     private static DeployState.Builder deployStateBuilder(boolean useTriton, boolean shareSession) {
