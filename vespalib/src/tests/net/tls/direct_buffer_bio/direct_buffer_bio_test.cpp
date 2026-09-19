@@ -133,7 +133,7 @@ TEST(DirectBufferBIOTest, test_BIO_read_on_mutable_BIO_returns_failure) {
     MutableBufferViewGuard g(*f.mutable_bio, &f.tmp_buf[0], f.tmp_buf.size());
 
     std::string dummy_buf;
-    dummy_buf.reserve(128);
+    dummy_buf.resize(128);
     int ret = ::BIO_read(f.mutable_bio.get(), &dummy_buf[0], static_cast<int>(dummy_buf.size()));
     EXPECT_EQ(-1, ret);
     EXPECT_EQ(0, BIO_should_retry(f.mutable_bio.get()));

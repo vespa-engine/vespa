@@ -38,6 +38,12 @@ struct X509ExtensionDeleter {
 
 using X509ExtensionPtr = std::unique_ptr<::X509_EXTENSION, X509ExtensionDeleter>;
 
+struct X509NameDeleter {
+    void operator()(::X509_NAME* name) const noexcept { ::X509_NAME_free(name); }
+};
+
+using X509NamePtr = std::unique_ptr<::X509_NAME, X509NameDeleter>;
+
 std::string bio_to_string(BIO& bio) {
     int written = BIO_pending(&bio);
     assert(written >= 0);
@@ -252,8 +258,9 @@ std::shared_ptr<X509CertificateImpl> X509CertificateImpl::generate_openssl_x509_
         throw CryptoException("X509_set_pubkey");
     }
     // The "subject" is the target entity the certificate is intended to, well, certify.
-    ::X509_NAME* subj_name = ::X509_get_subject_name(cert.get()); // Internal pointer, never null, not owned by us
+    X509NamePtr subj_name(::X509_NAME_dup(::X509_get_subject_name(cert.get())));
     assign_subject_distinguished_name(*subj_name, params.subject_info.dn);
+    X509_set_subject_name(cert.get(), subj_name.get());
 
     // If our parameters indicate that there is no parent issuer of this certificate, the
     // certificate to generate is by definition a self-signed (root) certificate authority.
@@ -261,9 +268,9 @@ std::shared_ptr<X509CertificateImpl> X509CertificateImpl::generate_openssl_x509_
     // If we _do_ have an issuer, we'll record its Subject name as our Issuer name.
     // Note that it's legal to have a self-signed non-CA certificate, though it obviously
     // cannot be used to sign any subordinate certificates.
-    auto*        issuer_cert_impl = dynamic_cast<X509CertificateImpl*>(params.issuer.get()); // May be nullptr.
-    ::X509_NAME* issuer_name =
-        (issuer_cert_impl ? ::X509_get_subject_name(issuer_cert_impl->native_cert()) : subj_name);
+    auto*              issuer_cert_impl = dynamic_cast<X509CertificateImpl*>(params.issuer.get()); // May be nullptr.
+    const ::X509_NAME* issuer_name =
+        (issuer_cert_impl ? ::X509_get_subject_name(issuer_cert_impl->native_cert()) : subj_name.get());
     if (::X509_set_issuer_name(cert.get(), issuer_name) != 1) { // Makes internal copy
         throw CryptoException("X509_set_issuer_name");
     }
