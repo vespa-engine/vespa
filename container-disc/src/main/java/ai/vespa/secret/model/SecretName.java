@@ -10,7 +10,9 @@ import java.util.regex.Pattern;
 public class SecretName extends PatternedStringWrapper<SecretName> {
 
     // TODO: reset max size to 64 when we have stopped using concatenated vault+secret names
-    private static final Pattern namePattern = Pattern.compile("[.a-zA-Z0-9_-]{1,128}");
+    // Each dot-separated segment must start with an alphanumeric or underscore, matching Athenz' EntityName pattern.
+    private static final Pattern namePattern =
+            Pattern.compile("(?=.{1,128}$)[a-zA-Z0-9_][a-zA-Z0-9_-]*(\\.[a-zA-Z0-9_][a-zA-Z0-9_-]*)*");
 
     private SecretName(String name) {
         super(name, namePattern, "Secret name");

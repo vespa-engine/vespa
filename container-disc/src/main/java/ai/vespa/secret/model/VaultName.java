@@ -9,7 +9,9 @@ import java.util.regex.Pattern;
  */
 public class VaultName extends PatternedStringWrapper<VaultName> {
 
-    private static final Pattern namePattern = Pattern.compile("[.a-zA-Z0-9_-]{1,64}");
+    // Each dot-separated segment must start with an alphanumeric or underscore, matching Athenz' EntityName pattern.
+    private static final Pattern namePattern =
+            Pattern.compile("(?=.{1,64}$)[a-zA-Z0-9_][a-zA-Z0-9_-]*(\\.[a-zA-Z0-9_][a-zA-Z0-9_-]*)*");
 
     private VaultName(String name) {
             super(name, namePattern, "Vault name");
