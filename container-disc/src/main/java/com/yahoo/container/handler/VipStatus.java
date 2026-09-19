@@ -33,6 +33,13 @@ public class VipStatus {
 
     private final boolean initiallyInRotation;
 
+    /**
+     * Whether the container is considered live, e.g. not deadlocked or CPU starved.
+     * Unlike the cluster-derived state, this is not auto-recovered by unrelated
+     * addToRotation/removeFromRotation calls - only an explicit setLivenessOk() changes it.
+     */
+    private volatile boolean liveness = true;
+
     /** The current state of this */
     private boolean currentlyInRotation;
 
@@ -97,21 +104,35 @@ public class VipStatus {
         updateCurrentlyInRotation();
     }
 
+    /**
+     * Sets whether this container is considered live, e.g. not deadlocked or CPU starved.
+     * When set to false, this container is taken out of rotation regardless of cluster status,
+     * until liveness is reported ok again.
+     */
+    public void setLivenessOk(boolean ok) {
+        synchronized (mutex) {
+            liveness = ok;
+            updateCurrentlyInRotation();
+        }
+    }
+
     private void updateCurrentlyInRotation() {
         synchronized (mutex) {
             if (rotationOverride != null) {
                 currentlyInRotation = rotationOverride;
             } else {
+                boolean clustersOk;
                 if (healthState.status() == StateMonitor.Status.up) {
-                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ONE);
+                    clustersOk = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ONE);
                 }
                 else if (healthState.status() == StateMonitor.Status.initializing) {
-                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL)
-                                          && initiallyInRotation;
+                    clustersOk = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL)
+                                 && initiallyInRotation;
                 }
                 else {
-                    currentlyInRotation = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL);
+                    clustersOk = clustersStatus.containerShouldReceiveTraffic(ClustersStatus.Require.ALL);
                 }
+                currentlyInRotation = liveness && clustersOk;
             }
 
             // Change to/from 'up' when appropriate but don't change 'initializing' to 'down'

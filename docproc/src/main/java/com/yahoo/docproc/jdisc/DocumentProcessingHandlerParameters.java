@@ -3,6 +3,7 @@ package com.yahoo.docproc.jdisc;
 
 import com.yahoo.component.chain.model.ChainsModel;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
+import com.yahoo.container.handler.VipStatus;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.docproc.proxy.SchemaMap;
 import com.yahoo.document.DocumentTypeManager;
@@ -22,6 +23,10 @@ public class DocumentProcessingHandlerParameters {
     private SchemaMap schemaMap = null;
     private Metric metric = new NullMetric();
     private ContainerDocumentConfig containerDocConfig;
+    private VipStatus vipStatus = new VipStatus();
+    private boolean livenessCheckEnabled = false;
+    private double livenessSampleIntervalSeconds = 5.0;
+    private double livenessStalledThresholdSeconds = 180.0;
 
 
 
@@ -91,6 +96,42 @@ public class DocumentProcessingHandlerParameters {
 
     public ContainerDocumentConfig getContainerDocConfig() {
         return containerDocConfig;
+    }
+
+    public VipStatus getVipStatus() {
+        return vipStatus;
+    }
+
+    public DocumentProcessingHandlerParameters setVipStatus(VipStatus vipStatus) {
+        this.vipStatus = vipStatus;
+        return this;
+    }
+
+    public boolean isLivenessCheckEnabled() {
+        return livenessCheckEnabled;
+    }
+
+    public DocumentProcessingHandlerParameters setLivenessCheckEnabled(boolean livenessCheckEnabled) {
+        this.livenessCheckEnabled = livenessCheckEnabled;
+        return this;
+    }
+
+    public double getLivenessSampleIntervalSeconds() {
+        return livenessSampleIntervalSeconds;
+    }
+
+    public DocumentProcessingHandlerParameters setLivenessSampleIntervalSeconds(double livenessSampleIntervalSeconds) {
+        this.livenessSampleIntervalSeconds = livenessSampleIntervalSeconds;
+        return this;
+    }
+
+    public double getLivenessStalledThresholdSeconds() {
+        return livenessStalledThresholdSeconds;
+    }
+
+    public DocumentProcessingHandlerParameters setLivenessStalledThresholdSeconds(double livenessStalledThresholdSeconds) {
+        this.livenessStalledThresholdSeconds = livenessStalledThresholdSeconds;
+        return this;
     }
 
 }
