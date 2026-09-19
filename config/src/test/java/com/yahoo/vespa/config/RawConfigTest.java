@@ -37,7 +37,7 @@ public class RawConfigTest {
     @Test
     public void basic() {
         RawConfig config = new RawConfig(key, defMd5);
-        assertEquals(config.getKey(), key);
+        assertEquals(key, config.getKey());
         assertEquals(defMd5, config.getDefMd5());
         assertEquals("foo", config.getName());
         assertEquals("bar", config.getDefNamespace());
