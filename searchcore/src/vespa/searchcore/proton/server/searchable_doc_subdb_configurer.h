@@ -54,6 +54,7 @@ private:
     const std::atomic<steady_time>&             _now_ref;
     std::string                                 _subDbName;
     uint32_t                                    _distributionKey;
+    std::shared_ptr<vespalib::Executor>         _delete_search_view_executor;
 
     void reconfigureFeedView(std::shared_ptr<IAttributeWriter>                 attrWriter,
                              std::shared_ptr<const search::index::Schema>      schema,
@@ -77,7 +78,8 @@ public:
                                  FeedViewHolder& feedView, matching::QueryLimiter& queryLimiter,
                                  const vespalib::eval::ConstantValueFactory& constant_value_factory,
                                  const std::atomic<steady_time>& now_ref, const std::string& subDbName,
-                                 uint32_t distributionKey);
+                                 uint32_t                            distributionKey,
+                                 std::shared_ptr<vespalib::Executor> delete_search_view_executor_);
     ~SearchableDocSubDBConfigurer();
 
     std::shared_ptr<Matchers> createMatchers(const DocumentDBConfig& new_config_snapshot);
@@ -94,6 +96,10 @@ public:
     reconfigure(const DocumentDBConfig& newConfig, const DocumentDBConfig& oldConfig, const ReconfigParams& params,
                 IDocumentDBReferenceResolver& resolver, const DocumentSubDBReconfig& prepared_reconfig,
                 search::SerialNum serial_num);
+
+    [[nodiscard]] const std::shared_ptr<vespalib::Executor>& delete_search_view_executor() const noexcept {
+        return _delete_search_view_executor;
+    }
 };
 
 } // namespace proton

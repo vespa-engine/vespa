@@ -46,6 +46,7 @@ public:
         const std::atomic<steady_time>&                       _now_ref;
         vespalib::Executor&                                   _warmupExecutor;
         std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
+        std::shared_ptr<vespalib::Executor>                   _delete_search_view_executor;
 
         Context(const FastAccessDocSubDB::Context& fastUpdCtx, matching::QueryLimiter& queryLimiter,
                 const std::atomic<steady_time>& now_ref, vespalib::Executor& warmupExecutor,

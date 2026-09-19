@@ -48,7 +48,8 @@ SearchableDocSubDB::SearchableDocSubDB(const Config& cfg, const Context& ctx)
       _tensorLoader(FastValueBuilderFactory::get()),
       _constantValueCache(_tensorLoader),
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueCache, ctx._now_ref,
-                  getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
+                  getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey(),
+                  ctx._delete_search_view_executor),
       _warmupExecutor(ctx._warmupExecutor),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
       _flushConfig(),
@@ -196,7 +197,7 @@ void SearchableDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
         SearchView::create(getSummaryManager()->createSummarySetup(
                                configSnapshot.getSummaryConfig(), configSnapshot.getJuniperrcConfig(),
                                configSnapshot.getDocumentTypeRepoSP(), attrMgr, *configSnapshot.getSchemaSP()),
-                           std::move(matchView)));
+                           std::move(matchView), _configurer.delete_search_view_executor()));
 
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
     {
@@ -236,8 +237,9 @@ bool SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure) {
 
     bool ret = true;
 
-    if (configure)
+    if (configure) {
         ret = configure->configure(); // Perform index manager reconfiguration now
+    }
     reconfigureIndexSearchable();
     return ret;
 }

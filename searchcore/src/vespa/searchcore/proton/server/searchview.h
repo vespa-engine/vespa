@@ -7,17 +7,26 @@
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 
+namespace vespalib {
+class Executor;
+}
+
 namespace proton {
 
 class SearchView : public ISearchHandler, public std::enable_shared_from_this<SearchView> {
+    struct ctor_tag {};
+
 public:
     using SessionManager = matching::SessionManager;
     using IndexSearchable = searchcorespi::IndexSearchable;
     using InternalDocsumReply = std::pair<std::unique_ptr<DocsumReply>, bool>;
     using SP = std::shared_ptr<SearchView>;
 
+    SearchView(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup, std::shared_ptr<MatchView> matchView,
+               ctor_tag);
     static std::shared_ptr<SearchView> create(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup,
-                                              std::shared_ptr<MatchView>                      matchView);
+                                              std::shared_ptr<MatchView>                      matchView,
+                                              std::shared_ptr<vespalib::Executor> delete_search_view_executor);
     SearchView(const SearchView&) = delete;
     SearchView(SearchView&&) = delete;
     SearchView& operator=(const SearchView&) = delete;
@@ -46,7 +55,6 @@ public:
     std::unique_ptr<SearchReply> match(const SearchRequest& req, vespalib::ThreadBundle& threadBundle) const override;
 
 private:
-    SearchView(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup, std::shared_ptr<MatchView> matchView);
     InternalDocsumReply getDocsumsInternal(const DocsumRequest& req);
     std::shared_ptr<ISummaryManager::ISummarySetup> _summarySetup;
     std::shared_ptr<MatchView>                      _matchView;
