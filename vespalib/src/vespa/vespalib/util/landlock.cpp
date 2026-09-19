@@ -162,11 +162,10 @@ std::optional<bool> Landlock::landlock_self(const AccessRules& access) {
     default:;
     }
 
-    landlock_ruleset_attr ruleset_attr = {
-        .handled_access_fs = fs_flags,
-        .handled_access_net = net_flags,
-        .scoped = scoped_flags,
-    };
+    landlock_ruleset_attr ruleset_attr{};
+    ruleset_attr.handled_access_fs = fs_flags;
+    ruleset_attr.handled_access_net = net_flags;
+    ruleset_attr.scoped = scoped_flags;
     const FdWrapper ruleset(my_landlock_create_ruleset(&ruleset_attr, sizeof(ruleset_attr), 0));
     if (ruleset.fd < 0) {
         perror("landlock_create_ruleset");
