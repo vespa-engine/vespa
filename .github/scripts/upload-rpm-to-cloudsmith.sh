@@ -11,21 +11,17 @@ if [[ -n "${RUNNER_DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
-if (( $# < 1 )); then
-  echo "Usage: $0 <RPM file>"
+if (( $# < 2 )); then
+  echo "Usage: $0 <RPM file> <OS version>"
   exit 1
 fi
 
-if [ "${CLOUDSMITH_API_TOKEN}" = "" ]; then
-  echo "Environment CLOUDSMITH_API_TOKEN not set. Exiting."
-  exit 1
-fi
-
-RPM=$1
-OS_DISTRO=el
-OS_VERSION=$2
+: "${CLOUDSMITH_API_TOKEN:?Environment variable CLOUDSMITH_API_TOKEN must be set.}"
 
 main() {
+  local RPM=$1 ; shift
+  local OS_VERSION=$2 ; shift
+  local OS_DISTRO=el # Assuming RHEL/CentOS/Alma/Rocky.
 
   FID=$(curl -sSLf \
     --upload-file "$RPM" \
