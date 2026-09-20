@@ -5,6 +5,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -14,6 +15,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -87,5 +89,35 @@ public class FileDBRegistryTestCase {
     void checkConsistentEntry(FileRegistry.Entry entry, FileRegistry registry) {
         assertEquals(entry.reference, registry.addFile(entry.relativePath));
     }
-    
+
+    @Test
+    public void decodeRejectsLineWithMoreThanTwoColumns() {
+        // A control character (CR) embedded in a component filename can cause a single exported
+        // registry entry to be misread as two lines by BufferedReader.readLine(). The forged second
+        // "line" must not be accepted just because it happens to split into 2+ TAB-separated columns.
+        String corruptRegistry = "components/legit\t55dc2c3483b4ee7c\nfoo\t.\tpad.jar\tbar\n";
+        try {
+            FileDBRegistry.decode(new BufferedReader(new StringReader(corruptRegistry)));
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cannot split 'foo\t.\tpad.jar\tbar' into two parts", e.getMessage());
+        }
+    }
+
+    @Test
+    public void addFileRejectsControlCharactersInPath() throws IOException {
+        TemporaryFolder tmpDir = new TemporaryFolder();
+        tmpDir.create();
+        AddFileInterface fileManager =
+                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false);
+        FileRegistry fileRegistry = new FileDBRegistry(fileManager);
+        try {
+            fileRegistry.addFile("files/foo\t.json");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("illegal control character"));
+        }
+        tmpDir.delete();
+    }
+
 }

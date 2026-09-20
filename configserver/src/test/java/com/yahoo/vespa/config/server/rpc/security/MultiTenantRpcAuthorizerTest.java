@@ -150,7 +150,31 @@ public class MultiTenantRpcAuthorizerTest {
         } finally {
             // Denial must be sent back to the client immediately, as a permanent (non-timeout) error -
             // this is what allows FileReferenceDownloader/FileAcquirerImpl to fail fast instead of retrying.
-            verify(fileRequest).setError(eq(0x20001), anyString()); // JrtErrorCode.UNAUTHORIZED
+            verify(fileRequest).setError(eq(MultiTenantRpcAuthorizer.JrtErrorCode.UNAUTHORIZED.code), anyString());
+            verify(fileRequest).returnRequest();
+        }
+    }
+
+    @Test
+    public void tenant_node_cannot_access_dot_file_reference() throws ExecutionException, InterruptedException {
+        // A request for a file reference not registered to the peer's own application is denied regardless of its value.
+        NodeIdentity identity = new NodeIdentity.Builder(NodeType.tenant)
+                .applicationId(APPLICATION_ID)
+                .build();
+
+        HostRegistry hostRegistry = new HostRegistry();
+        hostRegistry.update(APPLICATION_ID, List.of(HOSTNAME.value()));
+
+        RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
+
+        Request fileRequest = createFileRequest(new FileReference("."));
+
+        exceptionRule.expectCause(instanceOf(AuthorizationException.class));
+
+        try {
+            authorizer.authorizeFileRequest(fileRequest).get();
+        } finally {
+            verify(fileRequest).setError(eq(MultiTenantRpcAuthorizer.JrtErrorCode.UNAUTHORIZED.code), anyString());
             verify(fileRequest).returnRequest();
         }
     }
@@ -174,7 +198,7 @@ public class MultiTenantRpcAuthorizerTest {
         try {
             authorizer.authorizeConfigRequest(configRequest).get();
         } finally {
-            verify(configRequest).setError(eq(0x20001), anyString()); // JrtErrorCode.UNAUTHORIZED
+            verify(configRequest).setError(eq(MultiTenantRpcAuthorizer.JrtErrorCode.UNAUTHORIZED.code), anyString());
             verify(configRequest).returnRequest();
         }
     }
