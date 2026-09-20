@@ -32,7 +32,7 @@ public:
                            storage::spi::BucketExecutor& bucket_executor);
     ~SharedThreadingService() override;
 
-    std::shared_ptr<vespalib::Executor> shared_raw() { return _shared; }
+    [[nodiscard]] std::shared_ptr<vespalib::Executor> shared_raw() const noexcept override { return _shared; }
     void sync_all_executors();
 
     vespalib::ThreadExecutor& shared() override { return *_shared; }

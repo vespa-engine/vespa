@@ -75,8 +75,9 @@ const std::string DOC_TYPE("invalid");
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer {
     bool reconfigure(std::unique_ptr<Configure> configure) override {
         bool ret = true;
-        if (configure)
+        if (configure) {
             ret = configure->configure(); // Perform index manager reconfiguration now
+        }
         return ret;
     }
 };
@@ -152,16 +153,32 @@ struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
     void teardown(const search::IAttributeManager&) override {}
 };
 
+class DeleteSearchViewExecutor : public vespalib::Executor {
+    uint64_t _count;
+
+public:
+    DeleteSearchViewExecutor() noexcept : _count(0) {}
+    [[nodiscard]] std::unique_ptr<vespalib::Executor::Task>
+    execute(std::unique_ptr<vespalib::Executor::Task> task) override {
+        task->run();
+        ++_count;
+        return {};
+    }
+    void wakeup() override {}
+    [[nodiscard]] uint64_t get_count() const noexcept { return _count; }
+};
+
 struct Fixture {
-    vespalib::TestClock                    _clock;
-    matching::QueryLimiter                 _queryLimiter;
-    EmptyConstantValueFactory              _constantValueFactory;
-    vespalib::ThreadStackExecutor          _summaryExecutor;
-    std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
-    SessionManager                         _sessionMgr;
-    ViewSet                                _views;
-    MyDocumentDBReferenceResolver          _resolver;
-    ConfigurerUP                           _configurer;
+    vespalib::TestClock                       _clock;
+    matching::QueryLimiter                    _queryLimiter;
+    EmptyConstantValueFactory                 _constantValueFactory;
+    vespalib::ThreadStackExecutor             _summaryExecutor;
+    std::shared_ptr<PendingLidTrackerBase>    _pendingLidsForCommit;
+    SessionManager                            _sessionMgr;
+    std::shared_ptr<DeleteSearchViewExecutor> _delete_search_view_executor;
+    ViewSet                                   _views;
+    MyDocumentDBReferenceResolver             _resolver;
+    ConfigurerUP                              _configurer;
     Fixture();
     ~Fixture();
     void initViewSet(ViewSet& views);
@@ -173,6 +190,9 @@ struct Fixture {
                                              const ReconfigParams&         reconfig_params,
                                              IDocumentDBReferenceResolver& resolver, uint32_t docid_limit,
                                              SerialNum serial_num) const;
+    [[nodiscard]] int64_t get_search_view_delete_count() const noexcept {
+        return _delete_search_view_executor->get_count();
+    }
 };
 
 Fixture::Fixture()
@@ -182,14 +202,17 @@ Fixture::Fixture()
       _summaryExecutor(8),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _sessionMgr(100),
+      _delete_search_view_executor(),
       _views(),
       _resolver(),
       _configurer() {
     std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
     std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
+    _delete_search_view_executor = std::make_shared<DeleteSearchViewExecutor>();
     initViewSet(_views);
-    _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
-                                               _constantValueFactory, _clock.nowRef(), "test", 0);
+    _configurer =
+        std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
+                                     _constantValueFactory, _clock.nowRef(), "test", 0, _delete_search_view_executor);
 }
 Fixture::~Fixture() {
     std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
@@ -225,7 +248,7 @@ void Fixture::initViewSet(ViewSet& views) {
         std::make_shared<MatchView>(matchers, indexSearchable, attrMgr, _sessionMgr, metaStore, views._docIdLimit);
     views.searchView.set(SearchView::create(
         summaryMgr->createSummarySetup(SummaryConfig(), JuniperrcConfig(), views.repo, attrMgr, *schema),
-        std::move(matchView)));
+        std::move(matchView), _delete_search_view_executor));
     views.feedView.set(make_shared<SearchableFeedView>(
         StoreOnlyFeedView::Context(summaryAdapter, schema, views.searchView.get()->getDocumentMetaStore(), views.repo,
                                    _pendingLidsForCommit, *views._gidToLidChangeHandler, views._service.write()),
@@ -451,6 +474,10 @@ TEST(DocSubDBConfigurerTest, require_that_we_can_reconfigure_index_searchable) {
         FeedViewComparer cmp(o.fv, n.fv);
         cmp.expect_equal();
     }
+    EXPECT_NE(o.sv.get(), n.sv.get());
+    EXPECT_EQ(0, f.get_search_view_delete_count());
+    o.sv.reset();
+    EXPECT_EQ(1, f.get_search_view_delete_count());
 }
 
 namespace {
