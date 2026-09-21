@@ -27,7 +27,7 @@ private:
 
 public:
     EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> compare,
-                              std::unique_ptr<UncasedComparator> folded_compare);
+                              std::unique_ptr<EntryComparator> folded_compare);
     ~EnumStoreFoldedDictionary() override;
     vespalib::datastore::UniqueStoreAddResult add(const EntryComparator&    comp,
                                                   std::function<EntryRef()> insertEntry) override;

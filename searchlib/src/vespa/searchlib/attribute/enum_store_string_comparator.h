@@ -83,26 +83,20 @@ private:
 
 class UncasedComparator : public EnumStoreStringComparator {
 public:
-    UncasedComparator(const DataStoreType& data_store) noexcept
+    explicit UncasedComparator(const DataStoreType& data_store) noexcept
         : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED) {}
 };
 
 class UncasedThenCasedComparator : public EnumStoreStringComparator {
+public:
     explicit UncasedThenCasedComparator(const DataStoreType& data_store) noexcept
         : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED_THEN_CASED) {}
-    UncasedThenCasedComparator(const DataStoreType& data_store, bool cased) noexcept
-        : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED_THEN_CASED) {
-        assert(!cased);
-    }
 };
 
 class CasedComparator : public EnumStoreStringComparator {
+public:
     explicit CasedComparator(const DataStoreType& data_store) noexcept
         : EnumStoreStringComparator(data_store, CompareStrategy::CASED) {}
-    CasedComparator(const DataStoreType& data_store, bool cased) noexcept
-        : EnumStoreStringComparator(data_store, CompareStrategy::CASED) {
-        assert(cased);
-    }
 };
 
 } // namespace search

@@ -30,13 +30,13 @@ template <typename EntryT, typename RefT, typename Comparator, typename Allocato
 UniqueStore<EntryT, RefT, Comparator, Allocator>::UniqueStore(
     std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
     : UniqueStore(std::move(memory_allocator),
-                  [](const auto& data_store) noexcept { return ComparatorType(data_store); }) {
+                  [](const auto& data_store) noexcept { return std::make_unique<ComparatorType>(data_store); }) {
 }
 
 template <typename EntryT, typename RefT, typename Comparator, typename Allocator>
 UniqueStore<EntryT, RefT, Comparator, Allocator>::UniqueStore(
-    std::shared_ptr<alloc::MemoryAllocator>                    memory_allocator,
-    const std::function<ComparatorType(const DataStoreType&)>& comparator_factory)
+    std::shared_ptr<alloc::MemoryAllocator>                   memory_allocator,
+    const std::function<ComparatorPtr(const DataStoreType&)>& comparator_factory)
     : _allocator(std::move(memory_allocator)),
       _store(_allocator.get_data_store()),
       _comparator(comparator_factory(_store)),
@@ -53,7 +53,7 @@ void UniqueStore<EntryT, RefT, Comparator, Allocator>::set_dictionary(std::uniqu
 
 template <typename EntryT, typename RefT, typename Comparator, typename Allocator>
 UniqueStoreAddResult UniqueStore<EntryT, RefT, Comparator, Allocator>::add(EntryConstRefType value) {
-    auto                 comp = _comparator.make_for_lookup(value);
+    auto                 comp = _comparator->make_for_lookup(value);
     UniqueStoreAddResult result =
         _dict->add(comp, [this, &value]() -> EntryRef { return _allocator.allocate(value); });
     _allocator.get_wrapped(result.ref()).inc_ref_count();
@@ -62,7 +62,7 @@ UniqueStoreAddResult UniqueStore<EntryT, RefT, Comparator, Allocator>::add(Entry
 
 template <typename EntryT, typename RefT, typename Comparator, typename Allocator>
 EntryRef UniqueStore<EntryT, RefT, Comparator, Allocator>::find(EntryConstRefType value) {
-    auto comp = _comparator.make_for_lookup(value);
+    auto comp = _comparator->make_for_lookup(value);
     return _dict->find(comp);
 }
 
@@ -73,7 +73,7 @@ void UniqueStore<EntryT, RefT, Comparator, Allocator>::remove(EntryRef ref) {
     assert(ref_count > 0u);
     wrapped_entry.dec_ref_count();
     if (ref_count == 1u) {
-        _dict->remove(_comparator, ref);
+        _dict->remove(*_comparator, ref);
         _allocator.hold(ref);
     }
 }

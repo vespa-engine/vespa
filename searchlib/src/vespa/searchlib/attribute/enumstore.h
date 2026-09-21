@@ -57,28 +57,33 @@ public:
 private:
     using UnderlyingDataStoreType = UniqueStoreType::DataStoreType;
 
-    static ComparatorType make_normal_comparator(const UnderlyingDataStoreType& data_store) {
+    static std::unique_ptr<ComparatorType>
+    make_normal_comparator(const UnderlyingDataStoreType& data_store) noexcept {
         if constexpr (std::is_same_v<ComparatorType, EnumStoreStringComparator>) {
-            return ComparatorType(data_store, /* cased: */ false);
+            return std::make_unique<UncasedThenCasedComparator>(data_store);
         } else {
-            return ComparatorType(data_store);
+            return std::make_unique<ComparatorType>(data_store);
         }
     }
-    static ComparatorType make_cased_comparator(const UnderlyingDataStoreType& data_store) {
+    static std::unique_ptr<ComparatorType> make_cased_comparator(const UnderlyingDataStoreType& data_store) noexcept {
         if constexpr (std::is_same_v<ComparatorType, EnumStoreStringComparator>) {
-            return ComparatorType(data_store, /* cased: */ true);
+            return std::make_unique<CasedComparator>(data_store);
         } else {
-            return ComparatorType(data_store);
+            return std::make_unique<ComparatorType>(data_store);
         }
     }
 
     bool                               _use_folding;
     UniqueStoreType                    _store;
     IEnumStoreDictionary*              _dict;
-    ComparatorType                     _foldedComparator;
+    std::unique_ptr<ComparatorType>    _folded_comparator;
     enumstore::EnumStoreCompactionSpec _compaction_spec;
     EntryType                          _default_value;
     AtomicIndex                        _default_value_ref;
+
+    auto choose_make_comparator() const noexcept {
+        return (has_string_type && _use_folding) ? make_normal_comparator : make_cased_comparator;
+    }
 
     void free_value_if_unused(Index idx, IndexList& unused) override;
 
@@ -89,11 +94,11 @@ private:
     ssize_t load_unique_values_internal(const void* src, size_t available, IndexVector& idx);
     ssize_t load_unique_value(const void* src, size_t available, Index& idx);
 
-    ComparatorType make_optionally_folded_comparator() const;
-    std::unique_ptr<UncasedComparator> optionally_allocate_folded_comparator() const;
+    std::unique_ptr<ComparatorType> make_optionally_folded_comparator() const;
+    std::unique_ptr<ComparatorType> optionally_allocate_folded_comparator() const;
 
     std::unique_ptr<ComparatorType> allocate_comparator_copy() const {
-        return std::make_unique<ComparatorType>(get_comparator());
+        return choose_make_comparator()(_store.get_data_store());
     }
 
 public:
@@ -193,7 +198,7 @@ public:
         return _store.get_comparator().make_for_lookup(lookup_value);
     }
 
-    const EntryComparator& get_folded_comparator() const { return _foldedComparator; }
+    const EntryComparator& get_folded_comparator() const { return *_folded_comparator; }
 
     void write_value(BufferWriter& writer, Index idx) const override;
     bool is_folded_change(Index idx1, Index idx2) const override;
@@ -217,10 +222,10 @@ public:
 
     // Methods below are only relevant for strings, and are templated to only be instantiated on demand.
     template <typename Type> ComparatorType make_folded_lookup(const Type& lookup_value) const {
-        return _foldedComparator.make_for_lookup(lookup_value);
+        return _folded_comparator->make_for_lookup(lookup_value);
     }
     template <typename Type> ComparatorType make_folded_prefix_lookup(const Type& lookup_value) const {
-        return _foldedComparator.make_for_prefix_lookup(lookup_value);
+        return _folded_comparator->make_for_prefix_lookup(lookup_value);
     }
     template <typename Type> std::vector<IEnumStore::EnumHandle> find_folded_enums(Type value) const {
         auto cmp = make_folded_lookup(value);

@@ -39,6 +39,7 @@ public:
     using EntryType = EntryT;
     using RefType = RefT;
     using ComparatorType = Comparator;
+    using ComparatorPtr = std::unique_ptr<Comparator>;
     using Enumerator = UniqueStoreEnumerator<RefT>;
     using Builder = UniqueStoreBuilder<Allocator>;
     using Remapper = UniqueStoreRemapper<RefT>;
@@ -47,12 +48,12 @@ public:
 private:
     Allocator                               _allocator;
     DataStoreType&                          _store;
-    ComparatorType                          _comparator;
+    ComparatorPtr                           _comparator;
     std::unique_ptr<IUniqueStoreDictionary> _dict;
 
 public:
-    UniqueStore(std::shared_ptr<alloc::MemoryAllocator>                    memory_allocator,
-                const std::function<ComparatorType(const DataStoreType&)>& comparator_factory);
+    UniqueStore(std::shared_ptr<alloc::MemoryAllocator>                   memory_allocator,
+                const std::function<ComparatorPtr(const DataStoreType&)>& comparator_factory);
     explicit UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~UniqueStore();
     void set_dictionary(std::unique_ptr<IUniqueStoreDictionary> dict);
@@ -85,7 +86,7 @@ public:
     Builder getBuilder(uint32_t uniqueValuesHint);
     Enumerator getEnumerator(bool sort_unique_values);
 
-    const ComparatorType& get_comparator() const noexcept { return _comparator; }
+    const ComparatorType& get_comparator() const noexcept { return *_comparator; }
 
     // Should only be used for unit testing
     const BufferState& bufferState(EntryRef ref) const;

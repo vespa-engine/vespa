@@ -31,9 +31,9 @@ template <> ssize_t EnumStoreT<const char*>::load_unique_value(const void* src, 
 }
 
 std::unique_ptr<IEnumStoreDictionary> make_enum_store_dictionary(IEnumStore& store, bool has_postings,
-                                                                 const DictionaryConfig&            dict_cfg,
-                                                                 std::unique_ptr<EntryComparator>   compare,
-                                                                 std::unique_ptr<UncasedComparator> folded_compare) {
+                                                                 const DictionaryConfig&          dict_cfg,
+                                                                 std::unique_ptr<EntryComparator> compare,
+                                                                 std::unique_ptr<EntryComparator> folded_compare) {
     using NoBTreeDictionary = vespalib::datastore::NoBTreeDictionary;
     using ShardedHashMap = vespalib::datastore::ShardedHashMap;
     if (has_postings) {
