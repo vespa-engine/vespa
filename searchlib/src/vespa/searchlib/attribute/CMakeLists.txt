@@ -49,6 +49,7 @@ vespa_add_library(searchlib_attribute OBJECT
     empty_search_context.cpp
     enum_store_compaction_spec.cpp
     enum_store_dictionary.cpp
+    enum_store_folded_dictionary.cpp
     enum_store_loaders.cpp
     enum_store_string_comparator.cpp
     enumattribute.cpp

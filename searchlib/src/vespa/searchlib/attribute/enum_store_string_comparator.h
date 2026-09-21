@@ -20,7 +20,6 @@ protected:
     using ParentType = vespalib::datastore::UniqueStoreStringComparator<IEnumStore::InternalIndex>;
     using DataStoreType = ParentType::DataStoreType;
 
-private:
     using ParentType::get;
 
     /*
@@ -43,6 +42,8 @@ private:
      */
     enum class CompareStrategy : uint8_t { UNCASED_THEN_CASED, UNCASED, CASED };
 
+    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy) noexcept;
+
 public:
     explicit EnumStoreStringComparator(const DataStoreType& data_store) noexcept
         : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED_THEN_CASED) {}
@@ -51,8 +52,6 @@ public:
                                     cased ? CompareStrategy::CASED : CompareStrategy::UNCASED_THEN_CASED) {}
 
 private:
-    EnumStoreStringComparator(const DataStoreType& data_store, CompareStrategy compare_strategy) noexcept;
-
     /**
      * Creates a comparator using the given low-level data store and that uses the
      * given value during compare if the enum index is invalid.
@@ -80,6 +79,29 @@ private:
     const CompareStrategy _compare_strategy;
     const bool            _prefix;
     uint32_t              _prefix_len;
+};
+
+class UncasedComparator : public EnumStoreStringComparator {
+    UncasedComparator(const DataStoreType& data_store) noexcept
+        : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED) {}
+};
+
+class UncasedThenCasedComparator : public EnumStoreStringComparator {
+    explicit UncasedThenCasedComparator(const DataStoreType& data_store) noexcept
+        : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED_THEN_CASED) {}
+    UncasedThenCasedComparator(const DataStoreType& data_store, bool cased) noexcept
+        : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED_THEN_CASED) {
+        assert(!cased);
+    }
+};
+
+class CasedComparator : public EnumStoreStringComparator {
+    explicit CasedComparator(const DataStoreType& data_store) noexcept
+        : EnumStoreStringComparator(data_store, CompareStrategy::CASED) {}
+    CasedComparator(const DataStoreType& data_store, bool cased) noexcept
+        : EnumStoreStringComparator(data_store, CompareStrategy::CASED) {
+        assert(cased);
+    }
 };
 
 } // namespace search
