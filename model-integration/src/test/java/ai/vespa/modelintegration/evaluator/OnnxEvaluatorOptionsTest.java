@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author glebashnik
@@ -60,6 +61,18 @@ public class OnnxEvaluatorOptionsTest {
         assertEquals(Optional.of(5), copied.numModelInstances());
         assertEquals(16, copied.availableProcessors());
         assertEquals(absolute, copied);
+    }
+
+    @Test
+    public void explicit_instance_count_must_be_positive() {
+        var options = new OnnxEvaluatorOptions.Builder(8).setNumModelInstances(1).build();
+        assertEquals(Optional.of(1), options.numModelInstances());
+
+        for (int count : new int[] { 0, -1 }) {
+            assertThrows(IllegalArgumentException.class,
+                         () -> new OnnxEvaluatorOptions.Builder(options).setNumModelInstances(count));
+            assertThrows(IllegalArgumentException.class, () -> options.withNumModelInstances(count));
+        }
     }
 
     @Test

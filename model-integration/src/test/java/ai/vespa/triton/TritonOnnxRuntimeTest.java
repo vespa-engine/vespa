@@ -335,7 +335,7 @@ class TritonOnnxRuntimeTest {
 
     // The model name of a runtime with separate sessions
     private static String modelName(String modelPath, OnnxEvaluatorOptions opts) {
-        var resolvedOpts = TritonOnnxRuntime.resolveOptions(opts, false);
+        var resolvedOpts = TritonOnnxRuntime.resolveInstanceCount(opts, false);
         return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false);
     }
 
@@ -349,7 +349,7 @@ class TritonOnnxRuntimeTest {
         var modelBaseName = "dummy_transformer";
         var testModelFilePath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
         var resolvedOpts = evalOpts.modelConfigOverride().isPresent()
-                ? evalOpts : TritonOnnxRuntime.resolveOptions(evalOpts, shareSession);
+                ? evalOpts : TritonOnnxRuntime.resolveInstanceCount(evalOpts, shareSession);
         var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession);
         var modelFilePath = Text.format("%s/1/model.onnx", modelName);
         var modelConfigPath = Text.format("%s/config.pbtxt", modelName);

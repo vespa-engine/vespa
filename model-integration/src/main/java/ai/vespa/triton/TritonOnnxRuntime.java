@@ -94,7 +94,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        var resolvedOptions = resolveOptions(options);
+        var resolvedOptions = resolveInstanceCount(options);
         var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances);
         var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
 
@@ -109,10 +109,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Options are used as-is when this runtime does not generate the model config from them:
     // a supplied config override owns its instance configuration, and the other model control modes
     // leave loading to Triton.
-    private OnnxEvaluatorOptions resolveOptions(OnnxEvaluatorOptions options) {
+    private OnnxEvaluatorOptions resolveInstanceCount(OnnxEvaluatorOptions options) {
         return !isModelControlExplicit || options.modelConfigOverride().isPresent()
                 ? options
-                : resolveOptions(options, shareSessionBetweenInstances);
+                : resolveInstanceCount(options, shareSessionBetweenInstances);
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
@@ -212,7 +212,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
     }
 
-    static OnnxEvaluatorOptions resolveOptions(OnnxEvaluatorOptions options, boolean shareSession) {
+    static OnnxEvaluatorOptions resolveInstanceCount(OnnxEvaluatorOptions options, boolean shareSession) {
         return options.numModelInstances().isPresent()
                 ? options : options.withNumModelInstances(defaultNumModelInstances(options, shareSession));
     }
@@ -287,7 +287,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .toString();
     }
 
-    // Takes resolved options, see resolveOptions().
+    // Takes options with a resolved instance count, see resolveInstanceCount().
     private String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
         // Each model instance in Triton executes requests sequentially. Concurrency comes from the number of instances.
         // This is different from EmbeddedOnnxRuntime, where one session handles all requests.

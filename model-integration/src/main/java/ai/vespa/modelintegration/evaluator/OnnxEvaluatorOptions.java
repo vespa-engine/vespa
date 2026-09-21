@@ -211,6 +211,9 @@ public record OnnxEvaluatorOptions(
         }
 
         public Builder setNumModelInstances(int numModelInstances) {
+            if (numModelInstances <= 0) {
+                throw new IllegalArgumentException("Number of model instances must be positive, got " + numModelInstances);
+            }
             this.numModelInstances = Optional.of(numModelInstances);
             return this;
         }

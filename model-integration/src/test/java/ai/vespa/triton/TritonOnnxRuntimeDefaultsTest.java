@@ -5,8 +5,12 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.google.protobuf.TextFormat;
 import inference.ModelConfigOuterClass.ModelConfig;
+import inference.ModelConfigOuterClass.ModelInstanceGroup.Kind;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static ai.vespa.triton.TritonOnnxRuntime.intraOpThreadsForSeparateSessions;
-import static ai.vespa.triton.TritonOnnxRuntime.resolveOptions;
+import static ai.vespa.triton.TritonOnnxRuntime.resolveInstanceCount;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
@@ -47,7 +51,7 @@ class TritonOnnxRuntimeDefaultsTest {
     void separate_sessions_get_one_instance_regardless_of_device() {
         for (int device : List.of(-1, 0, 2)) {
             var options = options(16).setGpuDevice(device).build();
-            assertEquals(1, resolveOptions(options, SEPARATE_SESSIONS).numModelInstances().orElseThrow());
+            assertEquals(1, resolveInstanceCount(options, SEPARATE_SESSIONS).numModelInstances().orElseThrow());
         }
     }
 
@@ -67,22 +71,22 @@ class TritonOnnxRuntimeDefaultsTest {
                                        options(16).setGpuDevice(device).setThreadsFromFactors(1, 32).build(),
                                        options(16).setGpuDevice(device)
                                                .setExecutionMode(OnnxEvaluatorOptions.ExecutionMode.PARALLEL).build())) {
-                assertEquals(16, resolveOptions(options, SHARED_SESSION).numModelInstances().orElseThrow());
+                assertEquals(16, resolveInstanceCount(options, SHARED_SESSION).numModelInstances().orElseThrow());
             }
         }
-        assertEquals(1, resolveOptions(options(1).build(), SHARED_SESSION).numModelInstances().orElseThrow());
-        assertEquals(1, resolveOptions(options(0).build(), SHARED_SESSION).numModelInstances().orElseThrow());
+        assertEquals(1, resolveInstanceCount(options(1).build(), SHARED_SESSION).numModelInstances().orElseThrow());
+        assertEquals(1, resolveInstanceCount(options(0).build(), SHARED_SESSION).numModelInstances().orElseThrow());
     }
 
     @Test
     void explicit_instance_count_is_preserved() {
         var options = options(8).build().withNumModelInstances(3);
-        assertSame(options, resolveOptions(options, SHARED_SESSION));
-        assertSame(options, resolveOptions(options, SEPARATE_SESSIONS));
+        assertSame(options, resolveInstanceCount(options, SHARED_SESSION));
+        assertSame(options, resolveInstanceCount(options, SEPARATE_SESSIONS));
     }
 
     private static String modelName(OnnxEvaluatorOptions options, boolean shareSession) {
-        var resolvedOptions = resolveOptions(options, shareSession);
+        var resolvedOptions = resolveInstanceCount(options, shareSession);
         return TritonOnnxRuntime.generateModelName(MODEL_PATH, resolvedOptions, shareSession);
     }
 
@@ -164,16 +168,23 @@ class TritonOnnxRuntimeDefaultsTest {
                         modelName(explicitOne, SHARED_SESSION));
     }
 
-    @Test
-    void instance_group_respects_device_options() {
-        for (int device : List.of(-1, 0, 2)) {
-            for (boolean required : List.of(false, true)) {
-                var group = TritonOnnxRuntime.createInstanceGroup(options(8).setGpuDevice(device, required).build(), 8);
-                assertEquals(required ? KIND_GPU : device < 0 ? KIND_CPU : KIND_AUTO, group.getKind());
-                assertEquals(8, group.getCount());
-                assertEquals(required && device >= 0 ? List.of(device) : List.of(), group.getGpusList());
-            }
-        }
+    @ParameterizedTest
+    @MethodSource("deviceOptions")
+    void instance_group_respects_device_options(int device, boolean required, Kind expectedKind, List<Integer> expectedGpus) {
+        var group = TritonOnnxRuntime.createInstanceGroup(options(8).setGpuDevice(device, required).build(), 8);
+        assertEquals(expectedKind, group.getKind());
+        assertEquals(8, group.getCount());
+        assertEquals(expectedGpus, group.getGpusList());
+    }
+
+    private static List<Arguments> deviceOptions() {
+        return List.of(
+                Arguments.of(-1, false, KIND_CPU, List.of()),
+                Arguments.of(0, false, KIND_AUTO, List.of()),
+                Arguments.of(2, false, KIND_AUTO, List.of()),
+                Arguments.of(-1, true, KIND_GPU, List.of()),
+                Arguments.of(0, true, KIND_GPU, List.of(0)),
+                Arguments.of(2, true, KIND_GPU, List.of(2)));
     }
 
     @Test
