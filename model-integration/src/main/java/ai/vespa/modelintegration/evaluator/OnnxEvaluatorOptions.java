@@ -166,14 +166,6 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
-        private static int calculateThreads(int threadsFactor, int availableProcessors) {
-            if (threadsFactor >= 0) {
-                return threadsFactor;
-            }
-
-            return Math.max(1, (int) Math.ceil(-1d * availableProcessors / threadsFactor));
-        }
-
         public Builder setGpuDevice(int deviceNumber, boolean required) {
             this.gpuDeviceNumber = deviceNumber;
             this.gpuDeviceRequired = required;
@@ -218,6 +210,11 @@ public record OnnxEvaluatorOptions(
             }
         }
 
+        public Builder setNumModelInstances(int numModelInstances) {
+            this.numModelInstances = Optional.of(numModelInstances);
+            return this;
+        }
+
         public Builder setModelConfigOverride(Optional<Path> configFile) {
             this.modelConfigOverride = configFile;
             return this;
@@ -239,6 +236,19 @@ public record OnnxEvaluatorOptions(
         }
     }
 
+    /**
+     * Returns the number of threads for the given factor.
+     * A non-negative factor is an absolute number of threads.
+     * A negative factor divides the CPU cores by its magnitude, rounding up, with at least one thread.
+     */
+    public static int calculateThreads(int threadsFactor, int availableProcessors) {
+        if (threadsFactor >= 0) {
+            return threadsFactor;
+        }
+
+        return Math.max(1, (int) Math.ceil(-1d * availableProcessors / threadsFactor));
+    }
+
     public boolean requestingGpu() {
         return gpuDeviceNumber > -1;
     }
@@ -253,8 +263,6 @@ public record OnnxEvaluatorOptions(
     }
 
     public OnnxEvaluatorOptions withNumModelInstances(int numModelInstances) {
-        return new OnnxEvaluatorOptions(executionMode, interOpThreads, intraOpThreads, gpuDeviceNumber,
-                                        gpuDeviceRequired, optimizeModel, batchingMaxSize,
-                                        Optional.of(numModelInstances), modelConfigOverride, availableProcessors);
+        return new Builder(this).setNumModelInstances(numModelInstances).build();
     }
 }

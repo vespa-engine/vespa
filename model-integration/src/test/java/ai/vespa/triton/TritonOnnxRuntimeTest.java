@@ -18,23 +18,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
-import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
@@ -64,6 +61,16 @@ class TritonOnnxRuntimeTest {
     void load_model_with_defaults() throws IOException {
         var opts = optsBuilder.build();
         assertLoadModel("src/test/triton/config_with_defaults.pbtxt", opts);
+    }
+
+    @Test
+    void load_model_with_optional_gpu_request() {
+        var runtime = createRuntime();
+        try (var evaluator = runtime.evaluatorOf(MODEL_PATH, optsBuilder.setGpuDevice(0).build())) {
+            assertNotNull(evaluator);
+        } finally {
+            runtime.deconstruct();
+        }
     }
 
     @Test
@@ -116,68 +123,6 @@ class TritonOnnxRuntimeTest {
                 .setConcurrency(2, OnnxEvaluatorOptions.ConcurrencyFactorType.ABSOLUTE)
                 .build();
         assertLoadModel("src/test/triton/config_with_shared_session.pbtxt", opts, true);
-    }
-
-    @Test
-    void uses_gpu_when_available_otherwise_cpu() throws IOException {
-        try (var client = createClient()) {
-            var devices = new TritonGpuProbe(client).gpuDevices();
-            var device = devices.stream().min(Integer::compareTo).orElse(0);
-            var opts = optsBuilder.setGpuDevice(device).build();
-            var resolved = TritonOnnxRuntime.resolveOptions(opts, false, devices);
-            var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, resolved, false);
-            var runtime = createRuntime();
-            try (var evaluator = runtime.evaluatorOf(MODEL_PATH, opts)) {
-                var group = client.getModelConfig(name).getInstanceGroup(0);
-                assertEquals(devices.isEmpty() ? KIND_CPU : KIND_GPU, group.getKind());
-                assertEquals(devices.isEmpty() ? List.of() : List.of(device), group.getGpusList());
-                assertRepoFileCount(tritonContainer, 1); // No probe files in the shared repository
-            } finally {
-                runtime.deconstruct();
-            }
-        }
-    }
-
-    @Test
-    void falls_back_to_cpu_when_no_gpus_are_available() {
-        try (var client = createClient()) {
-            assumeTrue(new TritonGpuProbe(client).gpuDevices().isEmpty(), "Requires a CPU-only Triton server");
-            var opts = optsBuilder.setGpuDevice(Integer.MAX_VALUE).build();
-            var runtime = createRuntime();
-            try {
-                runtime.evaluatorOf(MODEL_PATH, opts).close();
-                assertRepoFileCount(tritonContainer, 0);
-            } finally {
-                runtime.deconstruct();
-            }
-        }
-    }
-
-    @Test
-    void rejects_unknown_gpu_id_when_gpus_are_available() {
-        try (var client = createClient()) {
-            assumeFalse(new TritonGpuProbe(client).gpuDevices().isEmpty(), "Requires a Triton server with GPUs");
-            var opts = optsBuilder.setGpuDevice(Integer.MAX_VALUE).build();
-            var runtime = createRuntime();
-            try {
-                assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(MODEL_PATH, opts));
-                assertRepoFileCount(tritonContainer, 0);
-            } finally {
-                runtime.deconstruct();
-            }
-        }
-    }
-
-    @Test
-    void fails_when_required_gpu_is_unavailable() {
-        var opts = optsBuilder.setGpuDevice(Integer.MAX_VALUE, true).build();
-        var runtime = createRuntime();
-        try {
-            assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(MODEL_PATH, opts));
-            assertRepoFileCount(tritonContainer, 0);
-        } finally {
-            runtime.deconstruct();
-        }
     }
 
     // Sharing a session between instances keeps one copy of the model.
@@ -328,31 +273,31 @@ class TritonOnnxRuntimeTest {
     }
 
     @Test
-    void clean_model_repository_when_runtime_is_created() {
-        var opts = optsBuilder.build();
-        var modelName = modelName(MODEL_PATH, opts);
+    void failed_unload_keeps_files_for_startup_cleanup() {
+        var opts = optsBuilder.setModelConfigOverride(Optional.of(
+                Path.of("src/test/triton/config_with_model_config_override_input.pbtxt"))).build();
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false);
+        var runtimeClient = spy(createClient());
+        var runtime = new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false), runtimeClient);
 
-        var client = createClient();
-        var runtime = createRuntime();
-
-        try {
-            var evaluator = runtime.evaluatorOf(MODEL_PATH, opts);
+        try (var client = createClient()) {
             try {
-                assertModelRepo(client, 1, Map.of(modelName, true));
-
-                // A runtime is only constructed at container start, so leftovers are from a previous run.
-                var newRuntime = createRuntime();
-                try {
-                    assertModelRepo(client, 0, Map.of(modelName, false));
-                } finally {
-                    newRuntime.deconstruct();
-                }
+                runtime.evaluatorOf(MODEL_PATH, opts);
+                doThrow(new TritonOnnxClient.TritonException("unload unavailable"))
+                        .when(runtimeClient).unloadUntilModelNotReady(modelName);
             } finally {
-                evaluator.close();
+                assertDoesNotThrow(runtime::deconstruct);
             }
-        } finally {
-            runtime.deconstruct();
-            client.close();
+
+            verify(runtimeClient).close();
+            assertModelRepo(client, 1, Map.of(modelName, true));
+
+            var nextRuntime = createRuntime();
+            try {
+                assertModelRepo(client, 0, Map.of(modelName, false));
+            } finally {
+                nextRuntime.deconstruct();
+            }
         }
     }
 
@@ -365,8 +310,7 @@ class TritonOnnxRuntimeTest {
     }
 
     private TritonOnnxRuntime createRuntime(boolean shareOnnxSessionBetweenInstances) {
-        return new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT,
-                                                shareOnnxSessionBetweenInstances));
+        return new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT, shareOnnxSessionBetweenInstances));
     }
 
     private static TritonConfig testConfig(TritonConfig.ModelControlMode.Enum mode, boolean shareOnnxSessionBetweenInstances) {
@@ -389,9 +333,9 @@ class TritonOnnxRuntimeTest {
         assertEquals(expected, repoFiles.length);
     }
 
-    // The model name of a runtime with separate sessions and no known GPU
+    // The model name of a runtime with separate sessions
     private static String modelName(String modelPath, OnnxEvaluatorOptions opts) {
-        var resolvedOpts = TritonOnnxRuntime.resolveOptions(opts, false, Set.of());
+        var resolvedOpts = TritonOnnxRuntime.resolveOptions(opts, false);
         return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false);
     }
 
@@ -405,7 +349,7 @@ class TritonOnnxRuntimeTest {
         var modelBaseName = "dummy_transformer";
         var testModelFilePath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
         var resolvedOpts = evalOpts.modelConfigOverride().isPresent()
-                ? evalOpts : TritonOnnxRuntime.resolveOptions(evalOpts, shareSession, Set.of());
+                ? evalOpts : TritonOnnxRuntime.resolveOptions(evalOpts, shareSession);
         var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession);
         var modelFilePath = Text.format("%s/1/model.onnx", modelName);
         var modelConfigPath = Text.format("%s/config.pbtxt", modelName);

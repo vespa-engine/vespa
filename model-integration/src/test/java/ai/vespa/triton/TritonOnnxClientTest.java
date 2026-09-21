@@ -15,8 +15,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
 
-import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
-import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,29 +49,6 @@ class TritonOnnxClientTest {
     void unload_model() {
         try (var tritonClient = createTritonClient()) {
             tritonClient.unloadModel(MODEL_NAME);
-        }
-    }
-
-    @Test
-    void loads_inline_probe_and_reports_resolved_devices() {
-        try (var client = createTritonClient()) {
-            var name = "test_device_probe";
-            try {
-                client.loadModel(name, TritonGpuProbe.configJson(name), TritonGpuProbe.createModel());
-                assertTrue(client.isModelReady(name));
-                var config = client.getModelConfig(name);
-                assertFalse(config.getInstanceGroupList().isEmpty());
-                for (var group : config.getInstanceGroupList()) {
-                    assertTrue(group.getKind() == KIND_CPU || group.getKind() == KIND_GPU);
-                }
-                var metadata = client.getModelMetadata(name);
-                assertEquals(Tensor.from("tensor<float>(d0[1]):[6]"),
-                             client.evaluate(name, metadata, Map.of("input", Tensor.from("tensor<float>(d0[1]):[3]")), "output"));
-            } finally {
-                client.unloadModel(name);
-                client.unloadUntilModelNotReady(name);
-            }
-            assertFalse(client.isModelReady(name));
         }
     }
 

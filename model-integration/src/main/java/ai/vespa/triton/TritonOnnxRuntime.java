@@ -31,7 +31,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,13 +49,9 @@ import java.util.logging.Logger;
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
     private static final Logger log = Logger.getLogger(TritonOnnxRuntime.class.getName());
 
-    // Two instances overlap GPU execution with preparation of the next request on the host.
-    private static final int DEFAULT_NUM_GPU_MODEL_INSTANCES = 2;
-
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
     private final boolean shareSessionBetweenInstances;
-    private final TritonGpuProbe gpuProbe;
     private final Path modelRepositoryPath;
 
     // The key is a model name containing hash of model content and options.
@@ -81,7 +76,6 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Takes ownership of the client: deconstruct() closes it.
     TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient) {
         this.tritonClient = tritonClient;
-        this.gpuProbe = new TritonGpuProbe(tritonClient);
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         shareSessionBetweenInstances = config.shareOnnxSessionBetweenInstances();
@@ -100,9 +94,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        var resolvedOptions = !isModelControlExplicit || options.modelConfigOverride().isPresent()
-                ? options
-                : resolveOptions(options, shareSessionBetweenInstances, gpuProbe.gpuDevices());
+        var resolvedOptions = resolveOptions(options);
         var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances);
         var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
 
@@ -112,6 +104,15 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             modelReference.close(); // Don't leak the model when creating the evaluator fails.
             throw e;
         }
+    }
+
+    // Options are used as-is when this runtime does not generate the model config from them:
+    // a supplied config override owns its instance configuration, and the other model control modes
+    // leave loading to Triton.
+    private OnnxEvaluatorOptions resolveOptions(OnnxEvaluatorOptions options) {
+        return !isModelControlExplicit || options.modelConfigOverride().isPresent()
+                ? options
+                : resolveOptions(options, shareSessionBetweenInstances);
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
@@ -173,7 +174,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 return; // Adopt a model that Triton already has ready
             }
         } catch (TritonOnnxClient.TritonException | TimeoutException e) {
-            // Still attempt to install and load the requested model below.
+            // Still attempt to copy and load the requested model below.
         }
 
         try {
@@ -181,7 +182,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             copyModelFilesToModelRepository(modelName, modelPath, modelConfig);
             tritonClient.loadUntilModelReady(modelName);
         } catch (RuntimeException e) {
-            // A failed load must not leave the model in Triton or its files in the repository.
+            // Attempt to unload the failed model and remove its files; cleanup is best effort.
             cleanUpModel(modelName);
             throw e;
         }
@@ -211,31 +212,12 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
     }
 
-    // Create new options from the existing ones with the GPU device determined from Triton's available devices.
-    static OnnxEvaluatorOptions resolveOptions(OnnxEvaluatorOptions options, boolean shareSession,
-                                               Set<Integer> gpuDevices) {
-        int deviceNumber = -1;
-
-        if (!gpuDevices.isEmpty()) {
-            deviceNumber = options.requestingGpu() ? options.gpuDeviceNumber()
-                    : gpuDevices.stream().min(Integer::compareTo).orElseThrow();
-            if (!gpuDevices.contains(deviceNumber)) {
-                throw new TritonOnnxClient.TritonException("Requested GPU " + deviceNumber
-                        + " is not available in Triton; available devices: " + gpuDevices);
-            }
-        } else if (options.requestingGpu() && options.gpuDeviceRequired()) {
-            throw new TritonOnnxClient.TritonException("Requested GPU " + options.gpuDeviceNumber()
-                    + " is required, but Triton reported no GPU devices");
-        }
-
-        // Clear gpuDeviceRequired so that the same device produces the same model name
-        // no matter whether it is required or not.
-        var resolved = new OnnxEvaluatorOptions.Builder(options).setGpuDevice(deviceNumber, false).build();
-        if (resolved.numModelInstances().isPresent()) return resolved;
-        return resolved.withNumModelInstances(defaultNumModelInstances(resolved, shareSession));
+    static OnnxEvaluatorOptions resolveOptions(OnnxEvaluatorOptions options, boolean shareSession) {
+        return options.numModelInstances().isPresent()
+                ? options : options.withNumModelInstances(defaultNumModelInstances(options, shareSession));
     }
 
-    // Hash options as supplied. Only generated model configs use resolved options.
+    // Hashes the supplied options without resolving defaults.
     static String generateModelName(String modelPath, OnnxEvaluatorOptions options, boolean shareSession) {
         var fileName = Paths.get(modelPath).getFileName().toString();
         var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
@@ -373,28 +355,27 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     // Instances with separate sessions each hold a copy of the model, so there is one instance by default.
     // Instances sharing a session share its thread pool. Each instance adds one calling thread.
-    // One instance per CPU core keeps the cores busy under load.
+    // Use one instance per CPU core, regardless of which device Triton selects.
+    // availableProcessors is this container's core count, which is assumed to match the Triton sidecar's.
     static int defaultNumModelInstances(OnnxEvaluatorOptions options, boolean shareSession) {
-        if (!shareSession) {
-            return 1;
-        }
-        return options.requestingGpu()
-                ? DEFAULT_NUM_GPU_MODEL_INSTANCES
-                : Math.max(1, options.availableProcessors());
+        return shareSession ? Math.max(1, options.availableProcessors()) : 1;
     }
 
     // Instances with separate sessions each have their own thread pool, so the CPU cores are divided between them.
-    // Rounding up is used because it is better to overutilize CPU than to underutilize.
+    // A negative thread factor is exactly that division, rounding up because it is better to
+    // overutilize CPU than to underutilize.
     static int intraOpThreadsForSeparateSessions(OnnxEvaluatorOptions options, int numModelInstances) {
-        return Math.max(1, (int) Math.ceil(1d * options.availableProcessors() / numModelInstances));
+        return OnnxEvaluatorOptions.calculateThreads(-numModelInstances, options.availableProcessors());
     }
 
-    // Options have already been resolved against the probe, so real models never need KIND_AUTO.
     static ModelInstanceGroup createInstanceGroup(OnnxEvaluatorOptions options, int numModelInstances) {
+        var kind = options.gpuDeviceRequired() ? Kind.KIND_GPU
+                : options.requestingGpu() ? Kind.KIND_AUTO : Kind.KIND_CPU;
         var group = ModelInstanceGroup.newBuilder()
                 .setCount(numModelInstances)
-                .setKind(options.requestingGpu() ? Kind.KIND_GPU : Kind.KIND_CPU);
-        if (options.requestingGpu()) {
+                .setKind(kind);
+        // Leave AUTO's GPU list empty so Triton can fall back to CPU without an incompatible GPU list.
+        if (kind == Kind.KIND_GPU && options.requestingGpu()) {
             group.addGpus(options.gpuDeviceNumber());
         }
         return group.build();
