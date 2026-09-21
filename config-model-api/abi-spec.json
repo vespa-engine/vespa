@@ -886,7 +886,7 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.config.model.api.AdditionalDocuments$DocumentTypeDeclaration" : {
+  "com.yahoo.config.model.api.AdditionalContent$DocumentTypeDeclaration" : {
     "superClass" : "java.lang.Record",
     "interfaces" : [ ],
     "attributes" : [
@@ -895,17 +895,17 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, com.yahoo.config.model.api.AdditionalDocuments$Mode, boolean)",
+      "public void <init>(java.lang.String, com.yahoo.config.model.api.AdditionalContent$Mode, boolean)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
       "public java.lang.String type()",
-      "public com.yahoo.config.model.api.AdditionalDocuments$Mode mode()",
+      "public com.yahoo.config.model.api.AdditionalContent$Mode mode()",
       "public boolean global()"
     ],
     "fields" : [ ]
   },
-  "com.yahoo.config.model.api.AdditionalDocuments$Mode" : {
+  "com.yahoo.config.model.api.AdditionalContent$Mode" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],
     "attributes" : [
@@ -914,17 +914,17 @@
       "enum"
     ],
     "methods" : [
-      "public static com.yahoo.config.model.api.AdditionalDocuments$Mode[] values()",
-      "public static com.yahoo.config.model.api.AdditionalDocuments$Mode valueOf(java.lang.String)",
+      "public static com.yahoo.config.model.api.AdditionalContent$Mode[] values()",
+      "public static com.yahoo.config.model.api.AdditionalContent$Mode valueOf(java.lang.String)",
       "public java.lang.String xmlValue()"
     ],
     "fields" : [
-      "public static final enum com.yahoo.config.model.api.AdditionalDocuments$Mode INDEX",
-      "public static final enum com.yahoo.config.model.api.AdditionalDocuments$Mode STREAMING",
-      "public static final enum com.yahoo.config.model.api.AdditionalDocuments$Mode STORE_ONLY"
+      "public static final enum com.yahoo.config.model.api.AdditionalContent$Mode INDEX",
+      "public static final enum com.yahoo.config.model.api.AdditionalContent$Mode STREAMING",
+      "public static final enum com.yahoo.config.model.api.AdditionalContent$Mode STORE_ONLY"
     ]
   },
-  "com.yahoo.config.model.api.AdditionalDocuments" : {
+  "com.yahoo.config.model.api.AdditionalContent" : {
     "superClass" : "java.lang.Record",
     "interfaces" : [ ],
     "attributes" : [
@@ -933,12 +933,13 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(java.util.List)",
-      "public static com.yahoo.config.model.api.AdditionalDocuments none()",
+      "public void <init>(java.util.List, java.util.List)",
+      "public static com.yahoo.config.model.api.AdditionalContent none()",
       "public boolean isEmpty()",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
+      "public java.util.List schemas()",
       "public java.util.List documents()"
     ],
     "fields" : [ ]
@@ -1107,8 +1108,7 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract java.util.List schemas(com.yahoo.config.application.api.ApplicationPackage)",
-      "public abstract com.yahoo.config.model.api.AdditionalDocuments documentDeclarations(com.yahoo.config.application.api.ApplicationPackage)"
+      "public abstract com.yahoo.config.model.api.AdditionalContent additionalContent(com.yahoo.config.application.api.ApplicationPackage)"
     ],
     "fields" : [ ]
   },

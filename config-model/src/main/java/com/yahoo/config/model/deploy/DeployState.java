@@ -12,7 +12,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
-import com.yahoo.config.model.api.AdditionalDocuments;
+import com.yahoo.config.model.api.AdditionalContent;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -34,7 +34,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
-import com.yahoo.io.reader.NamedReader;
 import com.yahoo.schema.Application;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.RankProfileRegistry;
@@ -97,7 +96,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
     private final Optional<SidecarProvider> sidecarProvider;
-    private final AdditionalDocuments additionalDocuments;
+    private final AdditionalContent additionalContent;
 
     private DeployState(Application application,
                         RankProfileRegistry rankProfileRegistry,
@@ -123,7 +122,7 @@ public class DeployState implements ConfigDefinitionStore {
                         Optional<ValidationOverrides> validationOverrides,
                         OnnxModelCost onnxModelCost,
                         Optional<SidecarProvider> sidecarProvider,
-                        AdditionalDocuments additionalDocuments) {
+                        AdditionalContent additionalContent) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.executor = executor;
@@ -153,7 +152,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.reindexing = reindexing;
         this.onnxModelCost = onnxModelCost;
         this.sidecarProvider = sidecarProvider;
-        this.additionalDocuments = additionalDocuments;
+        this.additionalContent = additionalContent;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -316,8 +315,11 @@ public class DeployState implements ConfigDefinitionStore {
     /** Returns the sidecar provider to consult when building container clusters, if any. */
     public Optional<SidecarProvider> getSidecarProvider() { return sidecarProvider; }
 
-    /** Returns the document declarations to add to the application's content clusters, on top of its own. */
-    public AdditionalDocuments getAdditionalDocuments() { return additionalDocuments; }
+    /**
+     * Returns the content added to this application on top of its package. Its schemas were added to the
+     * application when this was built; its document declarations are added by the content cluster builders.
+     */
+    public AdditionalContent getAdditionalContent() { return additionalContent; }
 
     public boolean isHostedTenantApplication(ApplicationType type) {
         boolean isTesterApplication = getProperties().applicationId().instance().isTester();
@@ -354,8 +356,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<ValidationOverrides> validationOverrides = Optional.empty();
         private OnnxModelCost onnxModelCost = OnnxModelCost.disabled();
         private Optional<SidecarProvider> sidecarProvider = Optional.empty();
-        private List<NamedReader> additionalSchemas = List.of();
-        private AdditionalDocuments additionalDocuments = AdditionalDocuments.none();
+        private AdditionalContent additionalContent = AdditionalContent.none();
 
         public Builder() {}
 
@@ -480,13 +481,12 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder additionalSchemas(List<NamedReader> schemas) {
-            this.additionalSchemas = List.copyOf(schemas);
-            return this;
-        }
-
-        public Builder additionalDocuments(AdditionalDocuments declarations) {
-            this.additionalDocuments = Objects.requireNonNull(declarations, "additional documents cannot be null");
+        /**
+         * Sets content to add to the application on top of its package: schemas and their document declarations.
+         * The schemas are added to the application by {@link #build}; the declarations by the content cluster builders.
+         */
+        public Builder additionalContent(AdditionalContent content) {
+            this.additionalContent = Objects.requireNonNull(content, "additional content cannot be null");
             return this;
         }
 
@@ -500,7 +500,7 @@ public class DeployState implements ConfigDefinitionStore {
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
             ApplicationBuilder applicationBuilder = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
                                                                             rankProfileRegistry, queryProfiles.getRegistry());
-            additionalSchemas.forEach(applicationBuilder::addSchema);
+            additionalContent.schemas().forEach(applicationBuilder::addSchema);
             Application application = applicationBuilder.build(! validationParameters.ignoreValidationErrors());
             return new DeployState(application,
                                    rankProfileRegistry,
@@ -526,7 +526,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    validationOverrides,
                                    onnxModelCost,
                                    sidecarProvider,
-                                   additionalDocuments);
+                                   additionalContent);
         }
 
     }

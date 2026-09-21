@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.model.api.AdditionalDocuments;
+import com.yahoo.config.model.api.AdditionalContent;
 import com.yahoo.config.model.api.CommerceDiscoveryProvider;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.model.MockModelContext;
@@ -27,7 +27,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionContext;
-import com.yahoo.io.reader.NamedReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -173,21 +172,11 @@ public class VespaModelFactoryTest {
         assertTrue(providerConsulted(true, true));
     }
 
-    /** True if both provider methods were consulted, false if neither was; anything else fails. */
     private boolean providerConsulted(boolean hostedVespa, boolean flagEnabled) {
-        AtomicBoolean schemasConsulted = new AtomicBoolean(false);
-        AtomicBoolean documentsConsulted = new AtomicBoolean(false);
-        CommerceDiscoveryProvider provider = new CommerceDiscoveryProvider() {
-            @Override
-            public List<NamedReader> schemas(ApplicationPackage applicationPackage) {
-                schemasConsulted.set(true);
-                return List.of();
-            }
-            @Override
-            public AdditionalDocuments documentDeclarations(ApplicationPackage applicationPackage) {
-                documentsConsulted.set(true);
-                return AdditionalDocuments.none();
-            }
+        AtomicBoolean consulted = new AtomicBoolean(false);
+        CommerceDiscoveryProvider provider = applicationPackage -> {
+            consulted.set(true);
+            return AdditionalContent.none();
         };
         var providers = new ComponentRegistry<CommerceDiscoveryProvider>();
         providers.register(ComponentId.fromString("test-provider"), provider);
@@ -199,8 +188,7 @@ public class VespaModelFactoryTest {
                 return new TestProperties().setHostedVespa(hostedVespa).commerceDiscovery(flagEnabled);
             }
         });
-        assertEquals(schemasConsulted.get(), documentsConsulted.get(), "both provider methods are gated together");
-        return schemasConsulted.get(); // line above proves they are equal
+        return consulted.get();
     }
 
     ApplicationPackage createApplicationPackageThatFailsWhenValidating() {

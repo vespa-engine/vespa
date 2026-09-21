@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.content.cluster;
 import com.google.common.base.Preconditions;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.api.AdditionalDocuments;
+import com.yahoo.config.model.api.AdditionalContent.DocumentTypeDeclaration;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -12,7 +12,6 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.documentmodel.DocumentTypeRepo;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.text.XML;
@@ -59,6 +58,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -120,8 +120,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
         public ContentCluster build(ConfigModelContext context, Element w3cContentElement) {
             DeployState deployState = context.getDeployState();
-            addAdditionalDocuments(w3cContentElement, deployState.getAdditionalDocuments(),
-                                   deployState.getDocumentModel().getDocumentManager());
+            addAdditionalDocuments(w3cContentElement, deployState.getAdditionalContent().documents(), deployState.getDeployLogger());
             ModelElement contentElement = new ModelElement(w3cContentElement);
             ModelElement documentsElement = contentElement.child("documents");
             Map<String, NewDocumentType> documentDefinitions =
@@ -231,29 +230,29 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         }
 
         /**
-         * Appends {@link AdditionalDocuments} as {@code <document>} elements to this cluster's {@code <documents>}
-         * before parsing, so they are read exactly like the application's own. Append only: types the application
-         * declares itself are skipped. Only this build's parsed tree is touched. Supplied by a provider in
-         * {@link com.yahoo.vespa.model.VespaModelFactory}, with matching schemas through
-         * {@link DeployState.Builder#additionalSchemas}; a type without its schema fails here by name.
+         * Appends {@link com.yahoo.config.model.api.AdditionalContent} declarations as {@code <document>} elements
+         * to this cluster's {@code <documents>} before parsing. Appending to the DOM rather than to the built model
+         * keeps the several builders parsing {@code <documents>} independently consistent. Only this build's
+         * parsed tree is touched. A type the application declares itself keeps the application's declaration,
+         * with a warning if mode or distribution differ.
          */
-        private static void addAdditionalDocuments(Element contentElement, AdditionalDocuments additional, DocumentTypeRepo documentTypes) {
+        private static void addAdditionalDocuments(Element contentElement, List<DocumentTypeDeclaration> additional, DeployLogger logger) {
             if (additional.isEmpty()) return;
 
             Element documents = XML.getChild(contentElement, "documents");
             if (documents == null)
                 throw new IllegalArgumentException("Additional document declarations need a <documents> element in <content>");
 
-            Set<String> declared = new HashSet<>();
+            Map<String, Element> declared = new HashMap<>();
             for (Element document : XML.getChildren(documents, "document"))
-                declared.add(document.getAttribute("type"));
+                declared.put(document.getAttribute("type"), document);
             Document dom = contentElement.getOwnerDocument();
-            for (var declaration : additional.documents()) {
-                if (documentTypes.getDocumentType(declaration.type()) == null)
-                    throw new IllegalArgumentException("Additional document declaration '" + declaration.type() + "' has no " +
-                                                       "schema: additional documents and additional schemas must come from the " +
-                                                       "same provider and match");
-                if (declared.contains(declaration.type())) continue; // the application's own declaration wins
+            for (var declaration : additional) {
+                Element own = declared.get(declaration.type());
+                if (own != null) { // the application's own declaration wins
+                    warnIfDifferent(own, declaration, contentElement.getAttribute("id"), logger);
+                    continue;
+                }
                 Element document = dom.createElement("document");
                 document.setAttribute("type", declaration.type());
                 document.setAttribute("mode", declaration.mode().xmlValue());
@@ -261,6 +260,23 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                     document.setAttribute("global", "true");
                 documents.appendChild(document);
             }
+        }
+
+        private static void warnIfDifferent(Element own, DocumentTypeDeclaration declaration, String clusterId, DeployLogger logger) {
+            String ownMode = own.getAttribute("mode"); // required by the services.xml schema
+            boolean ownGlobal = Boolean.parseBoolean(own.getAttribute("global"));
+            List<String> differences = new ArrayList<>();
+            if ( ! ownMode.equals(declaration.mode().xmlValue()))
+                differences.add("mode '" + ownMode + "' instead of '" + declaration.mode().xmlValue() + "'");
+            if (ownGlobal != declaration.global())
+                differences.add("global='" + ownGlobal + "' instead of '" + declaration.global() + "'");
+            if (own.hasAttribute("selection")) // additional declarations are not designed to be able to have selections
+                differences.add("a selection, where all documents of the type were to be stored");
+            if (differences.isEmpty()) return;
+            logger.logApplicationPackage(WARNING, "Content cluster '" + clusterId + "' declares document type '" +
+                                                        declaration.type() + "' with " + String.join(" and ", differences) +
+                                                        ", differing from the declaration that would otherwise be added for it. " +
+                                                        "The application's own declaration is used.");
         }
 
         private void setupDocumentProcessing(ContentCluster c, ModelElement e) {

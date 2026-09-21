@@ -2,6 +2,7 @@
 package com.yahoo.config.model.deploy;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.AdditionalContent;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -52,7 +53,7 @@ public class DeployStateTest {
                         "}\n";
         DeployState state = new DeployState.Builder()
                 .applicationPackage(MockApplicationPackage.createEmpty())
-                .additionalSchemas(List.of(new NamedReader("additional.sd", new StringReader(schema))))
+                .additionalContent(new AdditionalContent(List.of(new NamedReader("additional.sd", new StringReader(schema))), List.of()))
                 .build();
         assertTrue(state.getSchemas().stream().anyMatch(s -> s.getName().equals("additional")),
                    "the additional schema must be part of the application");

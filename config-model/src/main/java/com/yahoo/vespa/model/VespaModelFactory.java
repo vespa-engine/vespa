@@ -219,10 +219,8 @@ public class VespaModelFactory implements ModelFactory {
             .onnxModelCost(modelContext.onnxModelCost());
         sidecarProvider.ifPresent(builder::sidecarProvider);
         if (modelContext.properties().hostedVespa() && modelContext.properties().featureFlags().commerceDiscovery())
-            commerceDiscoveryProvider.ifPresent(provider -> {
-                builder.additionalSchemas(provider.schemas(modelContext.applicationPackage()));
-                builder.additionalDocuments(provider.documentDeclarations(modelContext.applicationPackage()));
-            });
+            commerceDiscoveryProvider.ifPresent(provider ->
+                    builder.additionalContent(provider.additionalContent(modelContext.applicationPackage())));
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);
