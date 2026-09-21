@@ -41,3 +41,26 @@ TEST(StringEscapeTest, control_characters_are_escaped_in_content) {
     EXPECT_EQ(xml_content_escaped(std::string_view("\x00", 1)), "&#0;");
     EXPECT_EQ(xml_content_escaped("\x1f"), "&#31;");
 }
+
+TEST(GenericEscapeTest, printable_ascii_chars_are_not_escaped) {
+    EXPECT_EQ(escape("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    EXPECT_EQ(escape("abcdefghijklmnopqrstuvwxyz"), "abcdefghijklmnopqrstuvwxyz");
+    EXPECT_EQ(escape("0123456789"), "0123456789");
+    // Note that we do not escape single quotes
+    EXPECT_EQ(escape("!#$%&'()*+,-./:;<=>?@[~]^_`{}|"), "!#$%&'()*+,-./:;<=>?@[~]^_`{}|");
+}
+
+TEST(GenericEscapeTest, double_quote_and_backslash_chars_are_escaped) {
+    EXPECT_EQ(escape(R"("\)"), R"(\"\\)");
+}
+
+TEST(GenericEscapeTest, special_named_control_chars_are_escaped) {
+    EXPECT_EQ(escape(std::string_view("\0", 1)), "\\0");
+    EXPECT_EQ(escape("\a\b\t\n\v\f\r"), R"(\a\b\t\n\v\f\r)");
+}
+
+TEST(GenericEscapeTest, non_printable_chars_are_hex_escaped) {
+    std::array<uint8_t, 4> raw_u8 = { 1, 127, 128, 255 };
+    std::string raw(reinterpret_cast<const char*>(raw_u8.data()), raw_u8.size());
+    EXPECT_EQ(escape(raw), R"(\x01\x7f\x80\xff)");
+}
