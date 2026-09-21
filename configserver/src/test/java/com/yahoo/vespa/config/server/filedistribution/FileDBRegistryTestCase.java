@@ -92,9 +92,8 @@ public class FileDBRegistryTestCase {
 
     @Test
     public void decodeRejectsLineWithMoreThanTwoColumns() {
-        // A control character (CR) embedded in a component filename can cause a single exported
-        // registry entry to be misread as two lines by BufferedReader.readLine(). The forged second
-        // "line" must not be accepted just because it happens to split into 2+ TAB-separated columns.
+        // A CR or LF embedded in the file reference can cause BufferedReader.readLine() to interpret
+        // one serialized registry entry as two lines.
         String corruptRegistry = "components/legit\t55dc2c3483b4ee7c\nfoo\t.\tpad.jar\tbar\n";
         try {
             FileDBRegistry.decode(new BufferedReader(new StringReader(corruptRegistry)));
