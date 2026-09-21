@@ -22,7 +22,7 @@ NumericDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::l
     if (!key.asInteger(int_term)) {
         return LookupResult();
     }
-    auto comp = this->_enum_store.make_comparator(int_term);
+    auto comp = this->_enum_store.make_lookup_comparator(int_term);
     auto find_result = this->_dict.find_posting_list(comp, dictionary_snapshot);
     if (find_result.first.valid()) {
         auto pidx = find_result.second;

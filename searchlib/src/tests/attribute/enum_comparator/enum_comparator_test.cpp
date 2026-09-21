@@ -62,7 +62,7 @@ TEST(EnumComparatorTest, require_that_numeric_less_is_working) {
     EXPECT_TRUE(cmp1.less(e1, e2));
     EXPECT_FALSE(cmp1.less(e2, e1));
     EXPECT_FALSE(cmp1.less(e1, e1));
-    auto cmp2 = es.make_comparator(20);
+    auto cmp2 = es.make_lookup_comparator(20);
     EXPECT_TRUE(cmp2.less(EnumIndex(), e2));
     EXPECT_FALSE(cmp2.less(e2, EnumIndex()));
 }
@@ -75,7 +75,7 @@ TEST(EnumComparatorTest, require_that_numeric_equal_is_working) {
     EXPECT_FALSE(cmp1.equal(e1, e2));
     EXPECT_FALSE(cmp1.equal(e2, e1));
     EXPECT_TRUE(cmp1.equal(e1, e1));
-    auto cmp2 = es.make_comparator(20);
+    auto cmp2 = es.make_lookup_comparator(20);
     EXPECT_FALSE(cmp2.equal(EnumIndex(), e2));
     EXPECT_FALSE(cmp2.equal(e2, EnumIndex()));
     EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));
@@ -93,7 +93,7 @@ TEST(EnumComparatorTest, require_that_float_less_is_working) {
     EXPECT_TRUE(cmp1.less(e3, e1));  // nan
     EXPECT_FALSE(cmp1.less(e1, e3)); // nan
     EXPECT_FALSE(cmp1.less(e3, e3)); // nan
-    auto cmp2 = es.make_comparator(20.5);
+    auto cmp2 = es.make_lookup_comparator(20.5);
     EXPECT_TRUE(cmp2.less(EnumIndex(), e2));
     EXPECT_FALSE(cmp2.less(e2, EnumIndex()));
 }
@@ -110,7 +110,7 @@ TEST(EnumComparatorTest, require_that_float_equal_is_working) {
     EXPECT_FALSE(cmp1.equal(e3, e1)); // nan
     EXPECT_FALSE(cmp1.equal(e1, e3)); // nan
     EXPECT_TRUE(cmp1.equal(e3, e3));  // nan
-    auto cmp2 = es.make_comparator(20.5);
+    auto cmp2 = es.make_lookup_comparator(20.5);
     EXPECT_FALSE(cmp2.equal(EnumIndex(), e2));
     EXPECT_FALSE(cmp2.equal(e2, EnumIndex()));
     EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));
@@ -127,7 +127,7 @@ TEST(EnumComparatorTest, require_that_string_less_is_working) {
     EXPECT_FALSE(cmp1.less(e1, e1));
     EXPECT_TRUE(cmp1.less(e2, e3));      // folded compare
     EXPECT_TRUE(strcmp("aa", "aB") > 0); // regular
-    auto cmp2 = es.make_comparator("AB");
+    auto cmp2 = es.make_lookup_comparator("AB");
     EXPECT_TRUE(cmp2.less(EnumIndex(), e3));
     EXPECT_FALSE(cmp2.less(e3, EnumIndex()));
 }
@@ -142,7 +142,7 @@ TEST(EnumComparatorTest, require_that_string_equal_is_working) {
     EXPECT_FALSE(cmp1.equal(e2, e1));
     EXPECT_TRUE(cmp1.equal(e1, e1));
     EXPECT_FALSE(cmp1.equal(e2, e3)); // folded compare
-    auto cmp2 = es.make_comparator("AB");
+    auto cmp2 = es.make_lookup_comparator("AB");
     EXPECT_FALSE(cmp2.equal(EnumIndex(), e3));
     EXPECT_FALSE(cmp2.equal(e3, EnumIndex()));
     EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));
@@ -154,7 +154,7 @@ TEST(EnumComparatorTest, require_that_comparator_with_tree_is_working) {
     TreeType                    t;
     NodeAllocator               m;
     for (int32_t v = 100; v > 0; --v) {
-        auto cmp = es.make_comparator(v);
+        auto cmp = es.make_lookup_comparator(v);
         EXPECT_FALSE(t.find(AtomicEntryRef(), m, cmp).valid());
         EnumIndex idx = es.insert(v);
         t.insert(AtomicEntryRef(idx), BTreeNoLeafData(), m, cmp);
@@ -189,8 +189,8 @@ TEST(EnumComparatorTest, require_that_folded_less_is_working) {
     EXPECT_FALSE(cmp1.less(e2, e1)); // similar folded
     EXPECT_TRUE(cmp1.less(e2, e3));  // folded compare
     EXPECT_FALSE(cmp1.less(e3, e2)); // folded compare
-    auto cmp2 = es.make_folded_comparator("fol");
-    auto cmp3 = es.make_folded_comparator_prefix("fol");
+    auto cmp2 = es.make_folded_lookup("fol");
+    auto cmp3 = es.make_folded_prefix_lookup("fol");
     EXPECT_TRUE(cmp2.less(EnumIndex(), e4));
     EXPECT_FALSE(cmp2.less(e4, EnumIndex()));
     EXPECT_FALSE(cmp3.less(EnumIndex(), e4)); // similar when prefix
@@ -237,14 +237,14 @@ TEST(EnumComparatorTest, require_that_cased_less_is_working) {
     EXPECT_FALSE(cmp1.less(e2, e1));
     EXPECT_FALSE(cmp1.less(e2, e3));
     EXPECT_TRUE(cmp1.less(e3, e2));
-    auto cmp2 = es.make_folded_comparator("fol");
-    auto cmp3 = es.make_folded_comparator_prefix("fol");
+    auto cmp2 = es.make_folded_lookup("fol");
+    auto cmp3 = es.make_folded_prefix_lookup("fol");
     EXPECT_FALSE(cmp2.less(EnumIndex(), e4)); // case mismatch
     EXPECT_TRUE(cmp2.less(e4, EnumIndex()));  // case mismatch
     EXPECT_FALSE(cmp3.less(EnumIndex(), e4)); // case mismatch
     EXPECT_TRUE(cmp3.less(e4, EnumIndex()));  // case mismatch
-    auto cmp4 = es.make_folded_comparator("Fol");
-    auto cmp5 = es.make_folded_comparator_prefix("Fol");
+    auto cmp4 = es.make_folded_lookup("Fol");
+    auto cmp5 = es.make_folded_prefix_lookup("Fol");
     EXPECT_TRUE(cmp4.less(EnumIndex(), e4));  // no match
     EXPECT_FALSE(cmp4.less(e4, EnumIndex())); // no match
     EXPECT_FALSE(cmp5.less(EnumIndex(), e4)); // prefix match

@@ -162,10 +162,12 @@ protected:
 template <> void PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute& v) {
     for (size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 0)
+        if (i == 0) {
             continue;
-        if (i == 9)
+        }
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, -42, 27);
@@ -212,10 +214,12 @@ template <> void PostingListAttributeTest::populate<IntegerAttribute>(IntegerAtt
 template <> void PostingListAttributeTest::populate<StringAttribute>(StringAttribute& v) {
     for (size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 0)
+        if (i == 0) {
             continue;
-        if (i == 9)
+        }
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, "foo", 27);
@@ -388,7 +392,8 @@ void PostingListAttributeTest::checkPostingList(const VectorType& vec, const std
         const uint32_t docBegin = range.getBegin(i);
         const uint32_t docEnd = range.getEnd(i);
 
-        auto find_result = dict.find_posting_list(enumStore.make_comparator(values[i]), dict.get_frozen_root());
+        auto find_result =
+            dict.find_posting_list(enumStore.make_lookup_comparator(values[i]), dict.get_frozen_root());
         ASSERT_TRUE(find_result.first.valid());
         bool has_bitvector = VectorType::PostingStore::isBitVector(posting_store.getTypeId(find_result.second));
 
@@ -621,7 +626,8 @@ void PostingListAttributeTest::checkPostingList(AttributeType& vec, ValueType va
     const typename AttributeType::EnumStore& enumStore = vec.getEnumStore();
     auto&                                    dict = enumStore.get_dictionary();
     const auto&                              posting_store = vec.get_posting_store();
-    auto find_result = dict.find_posting_list(vec.getEnumStore().make_comparator(value), dict.get_frozen_root());
+    auto                                     find_result =
+        dict.find_posting_list(vec.getEnumStore().make_lookup_comparator(value), dict.get_frozen_root());
     ASSERT_TRUE(find_result.first.valid());
 
     auto postings = posting_store.begin(find_result.second);
@@ -637,7 +643,8 @@ void PostingListAttributeTest::checkPostingList(AttributeType& vec, ValueType va
 template <typename AttributeType, typename ValueType>
 void PostingListAttributeTest::checkNonExistantPostingList(AttributeType& vec, ValueType value) {
     auto& dict = vec.getEnumStore().get_dictionary();
-    auto  find_result = dict.find_posting_list(vec.getEnumStore().make_comparator(value), dict.get_frozen_root());
+    auto  find_result =
+        dict.find_posting_list(vec.getEnumStore().make_lookup_comparator(value), dict.get_frozen_root());
     EXPECT_TRUE(!find_result.first.valid());
 }
 

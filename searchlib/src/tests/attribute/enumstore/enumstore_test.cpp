@@ -544,7 +544,7 @@ public:
     }
 
     void expect_posting_idx(size_t values_idx, uint32_t exp_posting_idx) const {
-        auto  cmp = store.make_comparator(Values::values[values_idx]);
+        auto  cmp = store.make_lookup_comparator(Values::values[values_idx]);
         auto& dict = store.get_dictionary();
         auto  find_result = dict.find_posting_list(cmp, dict.get_frozen_root());
         ASSERT_TRUE(find_result.first.valid());
@@ -620,7 +620,7 @@ public:
     const std::vector<EntryType>& values() const noexcept { return LoaderTestValues<EnumStoreType>::values; }
 
     typename EnumStoreType::ComparatorType make_bound_comparator(int value_idx) {
-        return store.make_comparator(values()[value_idx]);
+        return store.make_lookup_comparator(values()[value_idx]);
     }
 
     void update_posting_idx(EnumIndex enum_idx, EntryRef old_posting_idx, EntryRef new_posting_idx);
@@ -708,7 +708,7 @@ std::vector<EntryRef> EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::g
     store.freeze_dictionary();
     auto& dict = store.get_dictionary();
     for (uint32_t i = 0; i < cnt; ++i) {
-        auto compare = store.make_comparator(i);
+        auto compare = store.make_lookup_comparator(i);
         auto enum_idx = dict.find(compare);
         EXPECT_TRUE(enum_idx.valid());
         EntryRef posting_idx;
@@ -728,7 +728,7 @@ template <typename EnumStoreTypeAndDictionaryType>
 void EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::clear_sample_values(uint32_t cnt) {
     auto& dict = store.get_dictionary();
     for (uint32_t i = 0; i < cnt; ++i) {
-        auto comparator = store.make_comparator(i);
+        auto comparator = store.make_lookup_comparator(i);
         auto enum_idx = dict.find(comparator);
         EXPECT_TRUE(enum_idx.valid());
         dict.update_posting_list(enum_idx, comparator, [](EntryRef) noexcept -> EntryRef { return {}; });

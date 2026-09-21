@@ -149,7 +149,7 @@ void PostingStoreTest::populate(std::vector<uint32_t>                sequence_le
 EntryRef PostingStoreTest::get_posting_ref(int key) {
     auto& dictionary = _value_store.get_dictionary();
     auto  root = dictionary.get_frozen_root();
-    return dictionary.find_posting_list(_value_store.make_comparator(key), root).second;
+    return dictionary.find_posting_list(_value_store.make_lookup_comparator(key), root).second;
 }
 
 void PostingStoreTest::test_compact_sequence(uint32_t sequence_length) {

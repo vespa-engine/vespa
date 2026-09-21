@@ -28,12 +28,12 @@ void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_
         // we do not have any results for the closed range and, hence, also not any hits if the range is (half-)open.
 
         if (!range_spec->left_unbounded && !range_spec->right_unbounded) {
-            enum_hint_sc.lookupRange(enum_store.make_folded_comparator(range_spec->left.c_str()),
-                                     enum_store.make_folded_comparator(range_spec->right.c_str()));
+            enum_hint_sc.lookupRange(enum_store.make_folded_lookup(range_spec->left.c_str()),
+                                     enum_store.make_folded_lookup(range_spec->right.c_str()));
 
         } else if (!range_spec->left_unbounded) {
             enum_hint_sc.lookupRange(
-                enum_store.make_folded_comparator(range_spec->left.c_str()),
+                enum_store.make_folded_lookup(range_spec->left.c_str()),
                 vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     enum_store.get_data_store()));
 
@@ -41,7 +41,7 @@ void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_
             enum_hint_sc.lookupRange(
                 vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     enum_store.get_data_store()),
-                enum_store.make_folded_comparator(range_spec->right.c_str()));
+                enum_store.make_folded_lookup(range_spec->right.c_str()));
 
         } else {
             enum_hint_sc.lookupRange(

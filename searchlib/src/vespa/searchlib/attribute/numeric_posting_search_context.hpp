@@ -13,7 +13,7 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::NumericPostingSearchContext(B
     : Parent(std::move(base_sc), params_in.useBitVector(), toBeSearched), _params(params_in) {
     if (valid()) {
         if (_low == _high) {
-            auto comp = _enumStore.make_comparator(_low);
+            auto comp = _enumStore.make_lookup_comparator(_low);
             this->lookupTerm(comp);
         } else if (_low < _high) {
             bool shouldApplyRangeLimit = (params().diversityAttribute() == nullptr) && (this->getRangeLimit() != 0);
@@ -31,8 +31,8 @@ void NumericPostingSearchContext<BaseSC, AttrT, DataT>::getIterators(bool should
         _toBeSearched.getBasicType() == BasicType::FLOAT || _toBeSearched.getBasicType() == BasicType::DOUBLE;
     search::Range<BaseType> capped = this->template cappedRange<BaseType>(isFloat);
 
-    auto compLow = _enumStore.make_comparator(capped.lower());
-    auto compHigh = _enumStore.make_comparator(capped.upper());
+    auto compLow = _enumStore.make_lookup_comparator(capped.lower());
+    auto compHigh = _enumStore.make_lookup_comparator(capped.upper());
 
     this->lookupRange(compLow, compHigh);
     if (!this->_dictionary.get_has_btree_dictionary()) {

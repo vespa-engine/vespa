@@ -16,12 +16,12 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
     : Parent(std::move(base_sc), use_bit_vector, to_be_searched), _range_spec(this->get_string_range_spec()) {
     if (this->valid() && _range_spec) {
         if (!_range_spec->left_unbounded && !_range_spec->right_unbounded) {
-            this->lookupRange(_enumStore.make_folded_comparator(_range_spec->left.c_str()),
-                              _enumStore.make_folded_comparator(_range_spec->right.c_str()));
+            this->lookupRange(_enumStore.make_folded_lookup(_range_spec->left.c_str()),
+                              _enumStore.make_folded_lookup(_range_spec->right.c_str()));
 
         } else if (!_range_spec->left_unbounded) {
             this->lookupRange(
-                _enumStore.make_folded_comparator(_range_spec->left.c_str()),
+                _enumStore.make_folded_lookup(_range_spec->left.c_str()),
                 vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     _enumStore.get_data_store()));
 
@@ -29,7 +29,7 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
             this->lookupRange(
                 vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     _enumStore.get_data_store()),
-                _enumStore.make_folded_comparator(_range_spec->right.c_str()));
+                _enumStore.make_folded_lookup(_range_spec->right.c_str()));
 
         } else {
             this->lookupRange(

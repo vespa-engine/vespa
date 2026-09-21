@@ -90,7 +90,7 @@ template <typename B> void SingleValueNumericPostingAttribute<B>::applyValueChan
                 T newValue = this->template applyArithmetic<T, typename Change::DataType>(
                     oldValue, change._data.getArithOperand(), change._type);
                 EnumIndex newIdx;
-                (void)dictionary.find_index(enumStore.make_comparator(newValue), newIdx);
+                (void)dictionary.find_index(enumStore.make_lookup_comparator(newValue), newIdx);
                 currEnumIndices[change._doc] = newIdx;
             }
         } else if (change._type == ChangeBase::CLEARDOC) {

@@ -136,7 +136,7 @@ void dfa_fuzzy_match_in_dictionary(std::string_view target, const StringEnumStor
         auto code_point = reader.getChar();
         writer.putChar(code_point);
     }
-    auto prefix_cmp = store.make_folded_comparator_prefix(target_copy.c_str());
+    auto prefix_cmp = store.make_folded_prefix_lookup(target_copy.c_str());
     auto itr = prefix_size > 0 ? view.lowerBound(AtomicEntryRef(), prefix_cmp) : view.begin();
     auto itr_end = itr;
     if (itr_end.valid()) {

@@ -13,18 +13,18 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::StringPostingSearchContext(Bas
     : Parent(std::move(base_sc), useBitVector, toBeSearched) {
     if (this->valid()) {
         if (this->isPrefix()) {
-            auto comp = _enumStore.make_folded_comparator_prefix(this->queryTerm()->getTerm());
+            auto comp = _enumStore.make_folded_prefix_lookup(this->queryTerm()->getTerm());
             this->lookupRange(comp, comp);
         } else if (this->isRegex()) {
             std::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
-            auto        comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
+            auto        comp = _enumStore.make_folded_prefix_lookup(prefix.c_str());
             this->lookupRange(comp, comp);
         } else if (this->isFuzzy()) {
             std::string prefix(this->getFuzzyMatcher().getPrefix());
-            auto        comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
+            auto        comp = _enumStore.make_folded_prefix_lookup(prefix.c_str());
             this->lookupRange(comp, comp);
         } else {
-            auto comp = _enumStore.make_folded_comparator(this->queryTerm()->getTerm());
+            auto comp = _enumStore.make_folded_lookup(this->queryTerm()->getTerm());
             this->lookupTerm(comp);
         }
         if (this->_uniqueValues == 1u) {
