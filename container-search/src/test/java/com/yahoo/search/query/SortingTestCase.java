@@ -228,6 +228,30 @@ public class SortingTestCase {
     }
 
     @Test
+    void attributeSorterEqualityRequiresSameClass() {
+        var attribute = new Sorting.AttributeSorter("foo");
+        var feature = new Sorting.FeatureSorter("foo");
+        var lowercase = new Sorting.LowerCaseSorter("foo");
+        var raw = new Sorting.RawSorter("foo");
+        var uca = new Sorting.UcaSorter("foo", "en", Sorting.UcaSorter.Strength.PRIMARY);
+
+        assertEquals(attribute, new Sorting.AttributeSorter("foo"));
+        assertEquals(feature, new Sorting.FeatureSorter("foo"));
+        assertEquals(lowercase, new Sorting.LowerCaseSorter("foo"));
+        assertEquals(raw, new Sorting.RawSorter("foo"));
+        assertEquals(uca, new Sorting.UcaSorter("foo", "en", Sorting.UcaSorter.Strength.PRIMARY));
+
+        assertNotEquals(attribute, feature);
+        assertNotEquals(feature, attribute);
+        assertNotEquals(attribute, lowercase);
+        assertNotEquals(lowercase, attribute);
+        assertNotEquals(attribute, raw);
+        assertNotEquals(raw, attribute);
+        assertNotEquals(attribute, uca);
+        assertNotEquals(uca, attribute);
+    }
+
+    @Test
     void featureSortIsNotCanonicalizedAsAnAttributeAlias() {
         Query query = new Query();
         var schema = new SearchDefinition("test");
