@@ -109,8 +109,8 @@ TEST(StreamingQueryBuilderTest, onear_with_negative_terms) {
 TEST(StreamingQueryBuilderTest, string_range_term_is_constructed) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
 
-    auto spec = std::make_unique<search::StringRangeSpec>("aaa", true, false, "zzz", false, false, 100);
-    builder.add_string_range_term(search::query::StringRange(std::move(spec)), "", 42, Weight(24));
+    builder.add_string_range_term(
+        search::query::StringRange(std::in_place, "aaa", true, false, "zzz", false, false, 100), "", 42, Weight(24));
     auto node = builder.build();
 
     // Convert to protobuf

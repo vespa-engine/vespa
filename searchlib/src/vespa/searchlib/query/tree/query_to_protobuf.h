@@ -349,22 +349,22 @@ private:
     }
 
     void visit(StringRangeTerm& node) override {
-        const auto* spec = node.getTerm().get_spec();
-        if (spec == nullptr) {
+        const auto& range = node.getTerm();
+        if (!range) {
             return;
         }
         auto* item = _item_stack.back()->mutable_item_string_range_term();
         copyTermState(node, item->mutable_properties());
-        if (!spec->left_unbounded) {
-            item->set_lower_limit(spec->left);
+        if (!range->left_unbounded) {
+            item->set_lower_limit(range->left);
         }
-        if (!spec->right_unbounded) {
-            item->set_upper_limit(spec->right);
+        if (!range->right_unbounded) {
+            item->set_upper_limit(range->right);
         }
-        item->set_lower_inclusive(spec->left_closed);
-        item->set_upper_inclusive(spec->right_closed);
-        if (spec->has_range_limit()) {
-            item->set_range_limit(spec->range_limit);
+        item->set_lower_inclusive(range->left_closed);
+        item->set_upper_inclusive(range->right_closed);
+        if (range->has_range_limit()) {
+            item->set_range_limit(range->range_limit);
         }
     }
 

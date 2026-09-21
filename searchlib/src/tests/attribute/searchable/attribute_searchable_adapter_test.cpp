@@ -316,9 +316,8 @@ MyAttributeManager make_fast_search_string_attribute_manager(const string& value
 
 SimpleStringRangeTerm make_string_range_term(const string& left, bool left_closed, bool left_unbounded,
                                              const string& right, bool right_closed, bool right_unbounded) {
-    auto spec = std::make_unique<search::StringRangeSpec>(left, left_closed, left_unbounded, right, right_closed,
-                                                          right_unbounded);
-    return {StringRange(std::move(spec)), field, 0, Weight(0)};
+    return {StringRange(std::in_place, left, left_closed, left_unbounded, right, right_closed, right_unbounded),
+            field, 0, Weight(0)};
 }
 
 MyAttributeManager makeFastSearchLongAttributeManager(int64_t value) {
@@ -448,12 +447,15 @@ TEST(AttributeSearchableAdapterTest,
 
 void set_weights(StringAttribute* attr, uint32_t docid, int32_t foo_weight, int32_t bar_weight, int32_t baz_weight) {
     attr->clearDoc(docid);
-    if (foo_weight > 0)
+    if (foo_weight > 0) {
         attr->append(docid, "foo", foo_weight);
-    if (bar_weight > 0)
+    }
+    if (bar_weight > 0) {
         attr->append(docid, "bar", bar_weight);
-    if (baz_weight > 0)
+    }
+    if (baz_weight > 0) {
         attr->append(docid, "baz", baz_weight);
+    }
     attr->commit();
 }
 
