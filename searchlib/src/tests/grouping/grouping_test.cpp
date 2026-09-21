@@ -83,6 +83,7 @@ public:
 };
 
 using IntAttrBuilder = AttrBuilder<SingleIntegerExtAttribute, int64_t>;
+using Int32AttrBuilder = AttrBuilder<SingleInt32ExtAttribute, int32_t>;
 using FloatAttrBuilder = AttrBuilder<SingleFloatExtAttribute, double>;
 using StringAttrBuilder = AttrBuilder<SingleStringExtAttribute, const char*>;
 
@@ -438,6 +439,54 @@ TEST(GroupingTest, argmax_aggregation_result_with_negated_key_selects_the_smalle
     EXPECT_TRUE(res.has_value());
     EXPECT_EQ(20, res.value().getInteger()); // docid 1 has the smallest key
     EXPECT_EQ(-3, res.key().getInteger());
+}
+
+/**
+ * Test that a hit whose integer key attribute has no value is skipped by argmin. The undefined
+ * marker is the type minimum, which the negated key would otherwise turn into the largest key.
+ **/
+TEST(GroupingTest, argmax_aggregation_result_with_negated_key_skips_hits_with_undefined_key) {
+    AggregationContext ctx;
+    ctx.result().add(0).add(1).add(2);
+    ctx.add(IntAttrBuilder("value").add(10).add(20).add(30).sp());
+    ctx.add(Int32AttrBuilder("key").add(7).add(getUndefined<int32_t>()).add(3).sp());
+
+    ArgmaxAggregationResult argmin;
+    argmin.set_key_expression(MU<NegateFunctionNode>(MU<AttributeNode>("key")));
+    argmin.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmin));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits(), ctx.result().size());
+
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_TRUE(res.has_value());
+    EXPECT_EQ(30, res.value().getInteger()); // docid 2 has the smallest defined key
+    EXPECT_EQ(-3, res.key().getInteger());
+}
+
+/**
+ * Test that a group where no hit has a key ends up without a value instead of selecting a hit
+ * whose key is the undefined marker.
+ **/
+TEST(GroupingTest, argmax_aggregation_result_has_no_value_when_every_key_is_undefined) {
+    AggregationContext ctx;
+    ctx.result().add(0).add(1);
+    ctx.add(IntAttrBuilder("value").add(10).add(20).sp());
+    ctx.add(Int32AttrBuilder("key").add(getUndefined<int32_t>()).add(getUndefined<int32_t>()).sp());
+
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<AttributeNode>("key"));
+    argmax.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmax));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits(), ctx.result().size());
+
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_FALSE(res.has_value());
 }
 
 /**
@@ -2100,7 +2149,7 @@ TEST(GroupingTest, argmax_aggregation_result_selects_by_document_field_key_when_
         doc.addField("key", header.intTypeRef());
         doc.addField("value", header.intTypeRef());
     });
-    auto make_doc = [&builder](uint32_t id, int32_t key, int32_t value) {
+    auto                     make_doc = [&builder](uint32_t id, int32_t key, int32_t value) {
         auto doc = builder.make_document("id:ns:searchdocument::" + std::to_string(id));
         doc->setValue("key", document::IntFieldValue(key));
         doc->setValue("value", document::IntFieldValue(value));

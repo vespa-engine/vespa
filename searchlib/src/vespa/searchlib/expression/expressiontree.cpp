@@ -6,6 +6,8 @@
 #include "documentaccessornode.h"
 #include "relevancenode.h"
 
+#include <vespa/searchcommon/attribute/iattributevector.h>
+
 namespace search::expression {
 
 using vespalib::Deserializer;
@@ -107,6 +109,16 @@ void ExpressionTree::execute(DocId docId, HitRank rank) const {
     std::for_each(_relevanceNodes.cbegin(), _relevanceNodes.cend(),
                   [rank](RelevanceNode* node) { node->setRelevance(rank); });
     _root->execute();
+}
+
+bool ExpressionTree::has_undefined_attribute(DocId docId) const noexcept {
+    for (const AttributeNode* node : _attributeNodes) {
+        const auto* attribute = node->getAttribute();
+        if (attribute != nullptr && attribute->isUndefined(docId)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void ExpressionTree::visitMembers(vespalib::ObjectVisitor& visitor) const {
