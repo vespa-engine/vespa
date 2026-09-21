@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-09-20
+Last updated: 2026-09-21
 
 ---
 
@@ -162,13 +162,13 @@ Last updated: 2026-09-20
 
 ---
 
-## bigdecimal 4.1.2 — BSD 2
+## bigdecimal 4.1.3 — BSD 2
 
 - Homepage: <https://github.com/ruby/bigdecimal>
 
 ---
 
-## bigdecimal 4.1.2 — Ruby
+## bigdecimal 4.1.3 — Ruby
 
 - Homepage: <https://github.com/ruby/bigdecimal>
 
