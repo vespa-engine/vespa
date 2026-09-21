@@ -77,7 +77,8 @@ public:
     enumstore::EnumeratedPostingsLoader make_enumerated_postings_loader();
 
     virtual std::unique_ptr<Enumerator> make_enumerator() = 0;
-    virtual std::unique_ptr<vespalib::datastore::EntryComparator> allocate_comparator() const = 0;
+    virtual const vespalib::datastore::EntryComparator& get_comparator() const noexcept = 0;
+
     virtual void clear_default_value_ref() = 0;
     virtual void setup_default_value_ref() = 0;
 };

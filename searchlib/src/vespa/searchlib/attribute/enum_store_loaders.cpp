@@ -33,8 +33,7 @@ void EnumeratedLoaderBase::build_enum_value_remapping() {
     if (!_store.get_dictionary().get_has_btree_dictionary() || _indexes.size() < 2u) {
         return; // No need for unique values to be sorted
     }
-    auto  comp_up = _store.allocate_comparator();
-    auto& comp = *comp_up;
+    const auto& comp = _store.get_comparator();
     if (std::adjacent_find(_indexes.begin(), _indexes.end(),
                            [&comp](Index lhs, Index rhs) { return !comp.less(lhs, rhs); }) == _indexes.end())
     {

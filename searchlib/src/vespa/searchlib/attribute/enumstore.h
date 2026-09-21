@@ -25,6 +25,8 @@
 
 namespace search {
 
+class UncasedComparator;
+
 /**
  * Class storing and providing access to all unique values stored in an enumerated attribute vector.
  *
@@ -88,7 +90,11 @@ private:
     ssize_t load_unique_value(const void* src, size_t available, Index& idx);
 
     ComparatorType make_optionally_folded_comparator() const;
-    std::unique_ptr<EntryComparator> optionally_allocate_folded_comparator() const;
+    std::unique_ptr<UncasedComparator> optionally_allocate_folded_comparator() const;
+
+    std::unique_ptr<ComparatorType> allocate_comparator_copy() const {
+        return std::make_unique<ComparatorType>(get_comparator());
+    }
 
 public:
     EnumStoreT(const EnumStoreT& rhs) = delete;
@@ -181,7 +187,7 @@ public:
 
     BatchUpdater make_batch_updater() { return BatchUpdater(*this); }
 
-    const EntryComparator& get_comparator() const noexcept { return _store.get_comparator(); }
+    const ComparatorType& get_comparator() const noexcept override { return _store.get_comparator(); }
 
     ComparatorType make_lookup_comparator(const EntryType& lookup_value) const {
         return _store.get_comparator().make_for_lookup(lookup_value);
@@ -208,7 +214,6 @@ public:
     uint64_t get_compaction_count() const override { return _store.get_data_store().get_compaction_count(); }
     void inc_compaction_count() override { _store.get_allocator().get_data_store().inc_compaction_count(); }
     std::unique_ptr<Enumerator> make_enumerator() override;
-    std::unique_ptr<EntryComparator> allocate_comparator() const override;
 
     // Methods below are only relevant for strings, and are templated to only be instantiated on demand.
     template <typename Type> ComparatorType make_folded_lookup(const Type& lookup_value) const {

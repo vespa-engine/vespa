@@ -16,7 +16,7 @@ using vespalib::datastore::UniqueStoreAddResult;
 namespace search {
 
 EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> compare,
-                                                     std::unique_ptr<EntryComparator> folded_compare)
+                                                     std::unique_ptr<UncasedComparator> folded_compare)
     : EnumStoreDictionary<EnumPostingTree>(enumStore, std::move(compare)),
       _folded_compare(std::move(folded_compare)) {
 }

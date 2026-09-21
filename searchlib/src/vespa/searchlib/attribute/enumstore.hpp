@@ -38,9 +38,9 @@ Comparator make_enum_store_comparator(const DataStore& data_store, const Diction
 }
 
 std::unique_ptr<IEnumStoreDictionary> make_enum_store_dictionary(IEnumStore& store, bool has_postings,
-                                                                 const search::DictionaryConfig&  dict_cfg,
-                                                                 std::unique_ptr<EntryComparator> compare,
-                                                                 std::unique_ptr<EntryComparator> folded_compare);
+                                                                 const search::DictionaryConfig&    dict_cfg,
+                                                                 std::unique_ptr<EntryComparator>   compare,
+                                                                 std::unique_ptr<UncasedComparator> folded_compare);
 
 template <typename EntryT> void EnumStoreT<EntryT>::free_value_if_unused(Index idx, IndexList& unused) {
     const auto& entry = get_entry_base(idx);
@@ -87,7 +87,7 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_c
       _compaction_spec(),
       _default_value(default_value),
       _default_value_ref() {
-    auto dict_ptr = make_enum_store_dictionary(*this, has_postings, dict_cfg, allocate_comparator(),
+    auto dict_ptr = make_enum_store_dictionary(*this, has_postings, dict_cfg, allocate_comparator_copy(),
                                                optionally_allocate_folded_comparator());
     _dict = dict_ptr.get();
     _store.set_dictionary(std::move(dict_ptr));
@@ -249,14 +249,10 @@ template <typename EntryT> std::unique_ptr<IEnumStore::Enumerator> EnumStoreT<En
     return std::make_unique<Enumerator>(*_dict, _store.get_data_store(), false);
 }
 
-template <typename EntryT> std::unique_ptr<EntryComparator> EnumStoreT<EntryT>::allocate_comparator() const {
-    return std::make_unique<ComparatorType>(_store.get_comparator());
-}
-
 template <typename EntryT>
-std::unique_ptr<EntryComparator> EnumStoreT<EntryT>::optionally_allocate_folded_comparator() const {
-    return (has_string_type && _use_folding) ? std::make_unique<ComparatorType>(_foldedComparator)
-                                             : std::unique_ptr<ComparatorType>();
+std::unique_ptr<UncasedComparator> EnumStoreT<EntryT>::optionally_allocate_folded_comparator() const {
+    return (has_string_type && _use_folding) ? std::make_unique<UncasedComparator>(_store.get_data_store())
+                                             : std::unique_ptr<UncasedComparator>();
 }
 
 template <typename EntryT>
