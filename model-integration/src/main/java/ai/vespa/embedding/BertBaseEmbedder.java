@@ -125,18 +125,17 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
     Tensor embedTokens(List<Integer> tokens, TensorType type, Duration timeout) {
         Tensor inputSequence = createTensorRepresentation(tokens, "d1");
-        Tensor attentionMask = createAttentionMask(inputSequence);
+        Tensor attentionMask = createAttentionMask(inputSequence).expand("d0");
         Tensor tokenTypeIds = createTokenTypeIds(inputSequence);
-
-
+        
         Map<String, Tensor> inputs;
         if (!"".equals(tokenTypeIdsName)) {
             inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                                            attentionMaskName, attentionMask.expand("d0"),
+                                            attentionMaskName, attentionMask,
                                             tokenTypeIdsName, tokenTypeIds.expand("d0"));
         } else {
             inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                                 attentionMaskName, attentionMask.expand("d0"));
+                                 attentionMaskName, attentionMask);
         }
         Map<String, Tensor> outputs = evaluator.evaluate(inputs, timeout);
 

@@ -11,7 +11,7 @@ transformerModel  model
 transformerMaxTokens int default=384
 
 # Pooling strategy
-poolingStrategy enum { cls, mean } default=mean
+poolingStrategy enum { cls, mean, last } default=mean
 
 # Input names
 transformerInputIds      string default=input_ids
