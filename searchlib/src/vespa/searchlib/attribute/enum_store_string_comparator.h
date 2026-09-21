@@ -82,6 +82,7 @@ private:
 };
 
 class UncasedComparator : public EnumStoreStringComparator {
+public:
     UncasedComparator(const DataStoreType& data_store) noexcept
         : EnumStoreStringComparator(data_store, CompareStrategy::UNCASED) {}
 };

@@ -37,9 +37,10 @@ Comparator make_enum_store_comparator(const DataStore& data_store, const Diction
     }
 }
 
-std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore& store, bool has_postings, const search::DictionaryConfig& dict_cfg,
-                           std::unique_ptr<EntryComparator> compare, std::unique_ptr<EntryComparator> folded_compare);
+std::unique_ptr<IEnumStoreDictionary> make_enum_store_dictionary(IEnumStore& store, bool has_postings,
+                                                                 const search::DictionaryConfig&  dict_cfg,
+                                                                 std::unique_ptr<EntryComparator> compare,
+                                                                 std::unique_ptr<EntryComparator> folded_compare);
 
 template <typename EntryT> void EnumStoreT<EntryT>::free_value_if_unused(Index idx, IndexList& unused) {
     const auto& entry = get_entry_base(idx);
@@ -84,14 +85,16 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_c
                  return make_enum_store_comparator<ComparatorType>(data_store, dict_cfg);
              }),
       _dict(),
-      _is_folded(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
+      _is_folded(has_string_type && (dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED)),
       _foldedComparator(make_optionally_folded_comparator(is_folded())),
       _compaction_spec(),
       _default_value(default_value),
       _default_value_ref() {
-    _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg, allocate_comparator(),
-                                                     allocate_optionally_folded_comparator(is_folded())));
-    _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
+
+    auto dict_ptr = make_enum_store_dictionary(*this, has_postings, dict_cfg, allocate_comparator(),
+                                               allocate_optionally_folded_comparator(is_folded()));
+    _dict = dict_ptr.get();
+    _store.set_dictionary(std::move(dict_ptr));
     setup_default_value_ref();
 }
 
