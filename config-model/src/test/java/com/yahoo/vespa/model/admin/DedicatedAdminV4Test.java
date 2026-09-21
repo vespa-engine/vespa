@@ -32,6 +32,7 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -234,6 +235,72 @@ public class DedicatedAdminV4Test {
         // Should create a logserver container on the same node as logserver
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver", "opentelemetrycollector",
                 METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
+    }
+
+    @Test
+    void testSlobroksNodeResourcesWithinLimitsIsAllowed() throws IOException, SAXException {
+        String services = servicesWithSlobroksResources("vcpu='1' memory='2Gb' disk='40Gb'");
+
+        VespaModel model = createModel(hosts, services);
+        assertEquals(3, model.getHosts().size());
+    }
+
+    @Test
+    void testSlobroksVcpuAboveLimitThrows() {
+        String services = servicesWithSlobroksResources("vcpu='5' memory='16Gb' disk='100Gb'");
+        assertNodeSpecificationThrows(services, "vcpu > 4 not allowed for admin cluster");
+    }
+
+    @Test
+    void testSlobroksMemoryAboveLimitThrows() {
+        String services = servicesWithSlobroksResources("vcpu='4' memory='33Gb' disk='100Gb'");
+        assertNodeSpecificationThrows(services, "memoryGiB > 32 not allowed for admin cluster");
+    }
+
+    @Test
+    void testSlobroksDiskAboveLimitThrows() {
+        String services = servicesWithSlobroksResources("vcpu='4' memory='16Gb' disk='1001Gb'");
+        assertNodeSpecificationThrows(services, "diskGb > 1000 not allowed for admin cluster");
+    }
+
+    @Test
+    void testLogserversVcpuAboveLimitThrows() {
+        String services = servicesWithLogserversResources("vcpu='6' memory='16Gb' disk='100Gb'");
+        assertNodeSpecificationThrows(services, "vcpu > 4 not allowed for admin cluster");
+    }
+
+    /** Builds an admin v4 services.xml with the given resources on the slobroks node specification. */
+    private String servicesWithSlobroksResources(String resources) {
+        return "<services>" +
+                "  <admin version='4.0'>" +
+                "    <slobroks>" +
+                "      <nodes count='2' dedicated='true'>" +
+                "        <resources " + resources + "/>" +
+                "      </nodes>" +
+                "    </slobroks>" +
+                "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
+                "  </admin>" +
+                "</services>";
+    }
+
+    /** Builds an admin v4 services.xml with the given resources on the logservers node specification. */
+    private String servicesWithLogserversResources(String resources) {
+        return "<services>" +
+                "  <admin version='4.0'>" +
+                "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
+                "    <logservers>" +
+                "      <nodes count='1' dedicated='true'>" +
+                "        <resources " + resources + "/>" +
+                "      </nodes>" +
+                "    </logservers>" +
+                "  </admin>" +
+                "</services>";
+    }
+
+    private void assertNodeSpecificationThrows(String services, String expectedMessage) {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> createModel(hosts, services));
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
     private Set<String> serviceNames(VespaModel model, String hostname) {
