@@ -3,6 +3,7 @@
 #include "verify_ranksetup.h"
 
 #include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/landlock.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -13,12 +14,18 @@ LOG_SETUP("vespa-verify-ranksetup");
 class App {
 public:
     int usage();
+    int landlock_failure();
     int main(int argc, char** argv);
 };
 
 int App::usage() {
     fprintf(stderr, "Usage: vespa-verify-ranksetup <config-id>\n");
     return 1;
+}
+
+int App::landlock_failure() {
+    fprintf(stderr, "Landlock init failure\n");
+    return 2;
 }
 
 namespace {
@@ -33,9 +40,25 @@ ns_log::Logger::LogLevel toLogLevel(search::fef::Level level) {
     }
     abort();
 }
+
+bool maybe_setup_landlock_from_env() {
+    auto rules = vespalib::Landlock::from_env();
+    if (rules) {
+        auto status = vespalib::Landlock::landlock_self(*rules);
+        if (status && *status == false) {
+            return false;
+        } // else: either landlocked OK or not supported at all by platform
+    } // else: no landlock enforcement configured
+    return true;
+}
+
 } // namespace
 
 int App::main(int argc, char** argv) {
+    if (!maybe_setup_landlock_from_env()) {
+        return landlock_failure();
+    }
+
     SearchMode mode = SearchMode::INDEXED;
     if (argc == 3 && (strcmp("-S", argv[2]) == 0)) {
         mode = SearchMode::STREAMING;
