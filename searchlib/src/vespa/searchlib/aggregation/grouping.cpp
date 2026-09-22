@@ -236,13 +236,13 @@ void Grouping::postProcess() {
     sortById();
 }
 
-void Grouping::aggregate(const RankedHit* rankedHit, unsigned int len) {
+void Grouping::aggregate(std::span<const RankedHit> hits) {
     bool isOrdered(!needResort());
     preAggregate(isOrdered);
     HitsAggregationResult::SetOrdered pred;
     select(pred, pred);
-    for (unsigned int i(0), m(getMaxN(len)); i < m; i++) {
-        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
+    for (const auto& hit : hits) {
+        aggregate(hit.getDocId(), hit.getRank());
     }
     postProcess();
 }
@@ -312,8 +312,9 @@ void Grouping::cleanTemporary() {
 bool Grouping::needResort() const {
     bool resort(_root.needResort());
     for (const auto& level : _levels) {
-        if (resort)
+        if (resort) {
             break;
+        }
         resort = level.needResort();
     }
     return (resort && getTopN() <= 0);

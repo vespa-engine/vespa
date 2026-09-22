@@ -107,7 +107,7 @@ public:
     void cleanupAttributeReferences();
     // Only used by tests
     void aggregate(DocId from, DocId to);
-    void aggregate(const RankedHit* rankedHit, unsigned int len);
+    void aggregate(std::span<const RankedHit> hits);
 };
 
 } // namespace search::aggregation
