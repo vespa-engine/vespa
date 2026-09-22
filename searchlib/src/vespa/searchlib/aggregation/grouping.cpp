@@ -175,6 +175,10 @@ Grouping::Grouping(const Grouping&) = default;
 Grouping& Grouping::operator=(const Grouping&) = default;
 Grouping::~Grouping() = default;
 
+std::span<const RankedHit> Grouping::limit_to_top_n(std::span<const RankedHit> hits) const noexcept {
+    return {hits.data(), getMaxN(hits.size())};
+}
+
 void Grouping::selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) {
     for (GroupingLevel& level : _levels) {
         level.select(predicate, operation);
@@ -241,7 +245,7 @@ void Grouping::aggregate(std::span<const RankedHit> hits) {
     preAggregate(isOrdered);
     HitsAggregationResult::SetOrdered pred;
     select(pred, pred);
-    for (const auto& hit : hits) {
+    for (const auto& hit : limit_to_top_n(hits)) {
         aggregate(hit.getDocId(), hit.getRank());
     }
     postProcess();

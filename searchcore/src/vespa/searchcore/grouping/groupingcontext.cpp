@@ -111,7 +111,7 @@ void GroupingContext::aggregate(Grouping& grouping, const BitVector* bVec, unsig
 
 void GroupingContext::aggregate(Grouping& grouping, std::span<const RankedHit> hits, const BitVector* bVec) const {
     grouping.preAggregate(false);
-    uint32_t count = aggregateRanked(grouping, {hits.data(), grouping.getMaxN(hits.size())});
+    uint32_t count = aggregateRanked(grouping, grouping.limit_to_top_n(hits));
     if (bVec != nullptr) {
         int64_t topN = grouping.getTopN();
         if (topN > count) {
@@ -128,7 +128,7 @@ void GroupingContext::aggregate(Grouping& grouping, std::span<const RankedHit> h
     grouping.preAggregate(isOrdered);
     search::aggregation::HitsAggregationResult::SetOrdered pred;
     grouping.select(pred, pred);
-    aggregateRanked(grouping, {hits.data(), grouping.getMaxN(hits.size())});
+    aggregateRanked(grouping, grouping.limit_to_top_n(hits));
     grouping.postProcess();
 }
 
