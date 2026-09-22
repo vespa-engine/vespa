@@ -84,7 +84,11 @@ relevant data needed for ranking.
 matching the query.
 *second phase*: time spent doing final ranking calculations. This will calculate a new ranking score
 for the best results after first phase ranking. This step is optional and if the time is zero the
-query was executed with only a single ranking phase</AI>`
+query was executed with only a single ranking phase
+*sort features*: time spent evaluating rank features selected as sort keys with sorting=feature(...).
+Document-dependent keys run in the match loop once per recorded hit, after any first-phase drop limit.
+Constant keys and constant sub-features run once during setup. This is zero unless the query sorts by a
+rank feature</AI>`
 
 const protonTimelinePromptStr = `<AI>
 The following table shows the overall timeline of a search on a back-end node.
@@ -132,7 +136,11 @@ relevant data needed for ranking.
 matching the query.
 *second phase*: time spent doing final ranking calculations. This will calculate a new ranking score
 for the best results after first phase ranking. This step is optional and if the time is zero the
-query was executed with only a single ranking phase</AI>`
+query was executed with only a single ranking phase
+*sort features*: time spent evaluating rank features selected as sort keys with sorting=feature(...).
+Document-dependent keys run in the match loop once per recorded hit, after any first-phase drop limit.
+Constant keys and constant sub-features run once during setup. This is zero unless the query sorts by a
+rank feature</AI>`
 
 const matchThreadTimelinePromptStr = `<AI>
 The following table shows the timeline for a single matching thread.
@@ -152,6 +160,11 @@ This is more detailed information about what happens inside the *first phase* ta
 
 const secondPhaseProfilingPromptStr = `<AI>The following table shows profiling information for second phase ranking.
 This is more detailed information about what happens inside the *second phase* task from the table above.
+</AI>`
+
+const sortFeaturesProfilingPromptStr = `<AI>The following table shows profiling information for sort feature evaluation.
+This is more detailed information about what happens inside the *sort features* task from the table above.
+count is the number of times each executor ran, not the number of hits.
 </AI>`
 
 const slowToMedianPromptStr = `<AI>The report for the slowest node is complete.
@@ -279,6 +292,12 @@ func firstPhaseProfilingPrompt(ctx *Context, out *output) {
 func secondPhaseProfilingPrompt(ctx *Context, out *output) {
 	if ctx.makePrompt {
 		out.fmt("%s\n", secondPhaseProfilingPromptStr)
+	}
+}
+
+func sortFeaturesProfilingPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", sortFeaturesProfilingPromptStr)
 	}
 }
 

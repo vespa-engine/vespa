@@ -472,6 +472,16 @@ func (t threadTrace) secondPhasePerf() *topNPerf {
 	return perf
 }
 
+func (t threadTrace) sortFeaturesPerf() *topNPerf {
+	perf := newTopNPerf()
+	slime.Select(t.source, hasTag("sort_features_profiling"), func(p *slime.Path, v slime.Value) {
+		eachSample(v, func(sample perfSample) {
+			perf.addSample(sample.name(), sample.count(), sample.selfTimeMs())
+		})
+	})
+	return perf
+}
+
 func (t threadTrace) matchTimeMs() float64 {
 	p := slime.Find(t.source, hasTag("match_profiling"))
 	if len(p) == 1 {
@@ -496,15 +506,24 @@ func (t threadTrace) secondPhaseTimeMs() float64 {
 	return 0.0
 }
 
+func (t threadTrace) sortFeaturesTimeMs() float64 {
+	p := slime.Find(t.source, hasTag("sort_features_profiling"))
+	if len(p) == 1 {
+		return p[0].Apply(t.source).Field("total_time_ms").AsDouble()
+	}
+	return 0.0
+}
+
 func (t threadTrace) profTimeMs() float64 {
-	return t.matchTimeMs() + t.firstPhaseTimeMs() + t.secondPhaseTimeMs()
+	return t.matchTimeMs() + t.firstPhaseTimeMs() + t.secondPhaseTimeMs() + t.sortFeaturesTimeMs()
 }
 
 type threadSummary struct {
-	id            int
-	matchMs       float64
-	firstPhaseMs  float64
-	secondPhaseMs float64
+	id             int
+	matchMs        float64
+	firstPhaseMs   float64
+	secondPhaseMs  float64
+	sortFeaturesMs float64
 }
 
 func renderThreadSummaries(out *output, threads ...*threadSummary) {
@@ -523,15 +542,17 @@ func renderThreadSummaries(out *output, threads ...*threadSummary) {
 	addRow("matching", func(thread *threadSummary) float64 { return thread.matchMs })
 	addRow("first phase", func(thread *threadSummary) float64 { return thread.firstPhaseMs })
 	addRow("second phase", func(thread *threadSummary) float64 { return thread.secondPhaseMs })
+	addRow("sort features", func(thread *threadSummary) float64 { return thread.sortFeaturesMs })
 	tab.render(out)
 }
 
 func (t threadTrace) extractSummary() *threadSummary {
 	return &threadSummary{
-		id:            t.id,
-		matchMs:       t.matchTimeMs(),
-		firstPhaseMs:  t.firstPhaseTimeMs(),
-		secondPhaseMs: t.secondPhaseTimeMs(),
+		id:             t.id,
+		matchMs:        t.matchTimeMs(),
+		firstPhaseMs:   t.firstPhaseTimeMs(),
+		secondPhaseMs:  t.secondPhaseTimeMs(),
+		sortFeaturesMs: t.sortFeaturesTimeMs(),
 	}
 }
 
@@ -667,12 +688,13 @@ func (p protonTrace) followUpDurationsMs() []float64 {
 }
 
 type protonSummary struct {
-	name          string
-	filterMs      float64
-	annMs         float64
-	matchMs       float64
-	firstPhaseMs  float64
-	secondPhaseMs float64
+	name           string
+	filterMs       float64
+	annMs          float64
+	matchMs        float64
+	firstPhaseMs   float64
+	secondPhaseMs  float64
+	sortFeaturesMs float64
 }
 
 func renderProtonSummaries(out *output, nodes ...*protonSummary) {
@@ -693,6 +715,7 @@ func renderProtonSummaries(out *output, nodes ...*protonSummary) {
 	addRow("matching", func(node *protonSummary) float64 { return node.matchMs })
 	addRow("first phase", func(node *protonSummary) float64 { return node.firstPhaseMs })
 	addRow("second phase", func(node *protonSummary) float64 { return node.secondPhaseMs })
+	addRow("sort features", func(node *protonSummary) float64 { return node.sortFeaturesMs })
 	tab.render(out)
 }
 
@@ -707,6 +730,7 @@ func (p protonTrace) extractSummary() *protonSummary {
 		res.matchMs = thread.matchTimeMs()
 		res.firstPhaseMs = thread.firstPhaseTimeMs()
 		res.secondPhaseMs = thread.secondPhaseTimeMs()
+		res.sortFeaturesMs = thread.sortFeaturesTimeMs()
 	}
 	return res
 }

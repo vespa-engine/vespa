@@ -363,7 +363,7 @@ void MatchThread::secondPhase(MatchTools& tools, HitCollector& hits) {
 
 search::ResultSet::UP MatchThread::findMatches(MatchTools& tools) {
     if (tools.has_sort_selection()) {
-        tools.setup_first_phase_and_sort(first_phase_profiler.get(), match_with_ranking);
+        tools.setup_first_phase_and_sort(first_phase_profiler.get(), sort_features_profiler.get(), match_with_ranking);
     } else {
         tools.setup_first_phase(first_phase_profiler.get());
     }
@@ -499,6 +499,7 @@ MatchThread::MatchThread(size_t thread_id_in, size_t num_threads_in, const Match
       match_profiler(),
       first_phase_profiler(),
       second_phase_profiler(),
+      sort_features_profiler(),
       my_issues() {
     if (trace->getLevel() > 0) {
         if (int32_t depth = trace->match_profile_depth(); depth != 0) {
@@ -509,6 +510,9 @@ MatchThread::MatchThread(size_t thread_id_in, size_t num_threads_in, const Match
         }
         if (int32_t depth = trace->second_phase_profile_depth(); depth != 0) {
             second_phase_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
+        }
+        if (int32_t depth = trace->sort_features_profile_depth(); depth != 0) {
+            sort_features_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
         }
     }
 }
@@ -568,6 +572,11 @@ void MatchThread::run() {
     }
     if (second_phase_profiler) {
         second_phase_profiler->report(trace->createCursor("second_phase_profiling"), [](const std::string& name) {
+            return BlueprintResolver::describe_feature(name);
+        });
+    }
+    if (sort_features_profiler) {
+        sort_features_profiler->report(trace->createCursor("sort_features_profiling"), [](const std::string& name) {
             return BlueprintResolver::describe_feature(name);
         });
     }

@@ -101,7 +101,8 @@ public:
     void give_back_search(std::unique_ptr<SearchIterator> search_in) { _search = std::move(search_in); }
     void tag_search_as_changed() { _search_has_changed = true; }
     void setup_first_phase(ExecutionProfiler* profiler);
-    void setup_first_phase_and_sort(ExecutionProfiler* first_phase_profiler, bool match_with_ranking);
+    void setup_first_phase_and_sort(ExecutionProfiler* first_phase_profiler, ExecutionProfiler* sort_features_profiler,
+                                    bool match_with_ranking);
     void setup_second_phase(ExecutionProfiler* profiler);
     void setup_match_features();
     void setup_summary();

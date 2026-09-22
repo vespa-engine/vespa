@@ -65,6 +65,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -654,6 +655,7 @@ public class QueryTestCase {
         assertEquals(2, q.getTrace().getProfiling().getMatching().getDepth());
         assertEquals(2, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
         assertEquals(2, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+        assertEquals(2, q.getTrace().getProfiling().getSortFeatures().getDepth());
     }
 
     @Test
@@ -661,11 +663,109 @@ public class QueryTestCase {
         var q = new Query("?query=foo&" +
                 "trace.profiling.matching.depth=3&" +
                 "trace.profiling.firstPhaseRanking.depth=5&" +
-                "trace.profiling.secondPhaseRanking.depth=-7");
+                "trace.profiling.secondPhaseRanking.depth=-7&" +
+                "trace.profiling.sortFeatures.depth=4");
         assertEquals(0, q.getTrace().getProfileDepth());
         assertEquals(3, q.getTrace().getProfiling().getMatching().getDepth());
         assertEquals(5, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
         assertEquals(-7, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+        assertEquals(4, q.getTrace().getProfiling().getSortFeatures().getDepth());
+    }
+
+    @Test
+    void profiling_parameters_are_resolved_with_query_profile() {
+        QueryProfile profile = new QueryProfile("test");
+        var q = new Query("?query=foo&trace.level=1&" +
+                "trace.profiling.matching.depth=3&" +
+                "trace.profiling.firstPhaseRanking.depth=5&" +
+                "trace.profiling.secondPhaseRanking.depth=-7&" +
+                "trace.profiling.sortFeatures.depth=4",
+                profile.compile(null));
+        assertEquals(3, q.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(5, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
+        assertEquals(-7, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+        assertEquals(4, q.getTrace().getProfiling().getSortFeatures().getDepth());
+    }
+
+    @Test
+    void profiling_parameters_from_query_profile_are_applied() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.set("trace.profiling.matching.depth", 3, null);
+        profile.set("trace.profiling.sortFeatures.depth", 4, null);
+        var q = new Query("?query=foo&trace.level=1", profile.compile(null));
+        assertEquals(3, q.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(4, q.getTrace().getProfiling().getSortFeatures().getDepth());
+    }
+
+    @Test
+    void profile_depth_does_not_overwrite_explicit_sort_features_depth() {
+        assertProfileDepthDoesNotOverwriteSortFeatures(orderedParams(
+                "query", "foo",
+                "trace.level", "1",
+                "trace.profileDepth", "5",
+                "trace.profiling.sortFeatures.depth", "2"));
+        assertProfileDepthDoesNotOverwriteSortFeatures(orderedParams(
+                "query", "foo",
+                "trace.level", "1",
+                "trace.profiling.sortFeatures.depth", "2",
+                "trace.profileDepth", "5"));
+    }
+
+    private static Map<String, String> orderedParams(String... kv) {
+        Map<String, String> params = new LinkedHashMap<>();
+        for (int i = 0; i < kv.length; i += 2)
+            params.put(kv[i], kv[i + 1]);
+        return params;
+    }
+
+    private static void assertProfileDepthDoesNotOverwriteSortFeatures(Map<String, String> params) {
+        Query q = new Query.Builder().setRequestMap(params).build();
+        assertEquals(5, q.getTrace().getProfileDepth());
+        assertEquals(2, q.getTrace().getProfiling().getSortFeatures().getDepth());
+        assertEquals(5, q.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(5, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
+        assertEquals(5, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+    }
+
+    @Test
+    void changing_profile_depth_updates_inherited_category_depths() {
+        Query q = new Query("?query=foo&trace.level=1&trace.profileDepth=5");
+        q.getTrace().setProfileDepth(2);
+        assertEquals(2, q.getTrace().getProfileDepth());
+        assertEquals(2, q.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(2, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
+        assertEquals(2, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+        assertEquals(2, q.getTrace().getProfiling().getSortFeatures().getDepth());
+    }
+
+    @Test
+    void clearing_profile_depth_clears_inherited_category_depths() {
+        Query q = new Query("?query=foo&trace.level=1&trace.profileDepth=5");
+        q.getTrace().setProfileDepth(0);
+        assertEquals(0, q.getTrace().getProfileDepth());
+        assertEquals(0, q.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(0, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
+        assertEquals(0, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+        assertEquals(0, q.getTrace().getProfiling().getSortFeatures().getDepth());
+    }
+
+    @Test
+    void changing_profile_depth_preserves_explicit_category_depth() {
+        Query q = new Query("?query=foo&trace.level=1&trace.profileDepth=5&trace.profiling.sortFeatures.depth=2");
+        q.getTrace().setProfileDepth(0);
+        assertEquals(0, q.getTrace().getProfileDepth());
+        assertEquals(0, q.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(2, q.getTrace().getProfiling().getSortFeatures().getDepth());
+    }
+
+    @Test
+    void attachContext_applies_parent_profile_depth_without_clobbering_explicit_child_depth() {
+        Query parent = new Query("?query=foo&trace.profileDepth=2");
+        Query child = new Query("?query=foo&trace.profileDepth=5&trace.profiling.sortFeatures.depth=3");
+        parent.attachContext(child);
+        assertEquals(2, child.getTrace().getProfileDepth());
+        assertEquals(2, child.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(3, child.getTrace().getProfiling().getSortFeatures().getDepth());
     }
 
     @Test

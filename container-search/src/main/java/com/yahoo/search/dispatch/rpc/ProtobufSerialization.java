@@ -159,7 +159,11 @@ public class ProtobufSerialization {
         if (prof.getSecondPhaseRanking().getDepth() != 0) {
             profBuilder.setSecondPhase(SearchProtocol.ProfilingParams.newBuilder().setDepth(prof.getSecondPhaseRanking().getDepth()));
         }
-        if (profBuilder.hasMatch() || profBuilder.hasFirstPhase() || profBuilder.hasSecondPhase()) {
+        if (prof.getSortFeatures().getDepth() != 0) {
+            profBuilder.setSortFeatures(SearchProtocol.ProfilingParams.newBuilder().setDepth(prof.getSortFeatures().getDepth()));
+        }
+        if (profBuilder.hasMatch() || profBuilder.hasFirstPhase() || profBuilder.hasSecondPhase() ||
+            profBuilder.hasSortFeatures()) {
             builder.setProfiling(profBuilder);
         }
     }

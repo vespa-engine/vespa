@@ -129,6 +129,11 @@ func (ctx *Context) analyzeThread(trace protonTrace, thread threadTrace, peer *t
 		secondPhaseProfilingPrompt(ctx, out)
 		secondPhasePerf.render(out)
 	}
+	if sortFeaturesPerf := thread.sortFeaturesPerf(); sortFeaturesPerf.impact() != 0.0 {
+		out.fmt("sort feature profiling for thread #%d (total time was %.3f ms)\n", thread.id, thread.sortFeaturesTimeMs())
+		sortFeaturesProfilingPrompt(ctx, out)
+		sortFeaturesPerf.render(out)
+	}
 }
 
 func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out *output) {

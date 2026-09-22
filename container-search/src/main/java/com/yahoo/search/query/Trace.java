@@ -91,10 +91,9 @@ public class Trace implements Cloneable {
     /** Sets the profiling depth. Profiling enabled if non-zero. Higher numbers means increasingly more detail. */
     public void setProfileDepth(int profileDepth) {
         this.profileDepth = profileDepth;
-        profiling.getMatching().setDepth(profileDepth);
-        profiling.getFirstPhaseRanking().setDepth(profileDepth);
-        profiling.getSecondPhaseRanking().setDepth(profileDepth);
+        profiling.applyDefaultDepth(profileDepth);
     }
+
     public int getProfileDepth() { return profile ? 100 : profileDepth; }
 
     /** Returns whether trace entries should have a timestamp. Default is false. */

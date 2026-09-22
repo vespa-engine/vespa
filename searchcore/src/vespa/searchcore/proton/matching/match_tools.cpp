@@ -140,7 +140,8 @@ void MatchTools::setup_first_phase(ExecutionProfiler* profiler) {
           TermwiseLimit::lookup(_queryEnv.getProperties(), _rankSetup.get_termwise_limit()));
 }
 
-void MatchTools::setup_first_phase_and_sort(ExecutionProfiler* first_phase_profiler, bool match_with_ranking) {
+void MatchTools::setup_first_phase_and_sort(ExecutionProfiler* first_phase_profiler,
+                                            ExecutionProfiler* sort_features_profiler, bool match_with_ranking) {
     _sort_programs.clear();
     _sort_seeds.clear();
     _sort_store.reset();
@@ -160,7 +161,7 @@ void MatchTools::setup_first_phase_and_sort(ExecutionProfiler* first_phase_profi
                 sort_setup_failed = true;
                 break;
             }
-            program->setup(*_match_data, _queryEnv, _featureOverrides, nullptr);
+            program->setup(*_match_data, _queryEnv, _featureOverrides, sort_features_profiler);
             search::fef::FeatureResolver seeds(program->get_seeds());
             if (seeds.num_features() != 1u) {
                 // RankSetup::compile() rejects sort features that do not resolve

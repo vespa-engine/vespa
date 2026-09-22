@@ -3,6 +3,7 @@
 package tracedoctor
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,4 +28,25 @@ func TestExtractTiming(t *testing.T) {
 	assert.Equal(t, 500.0, timing.queryMs)
 	assert.Equal(t, 250.0, timing.summaryMs)
 	assert.Equal(t, 1000.0, timing.totalMs)
+}
+
+func TestAnalyzeThreadSortFeatures(t *testing.T) {
+	ctx := NewContext(slime.Object())
+	withSort := twoThreadSortFeatureTraces(true)
+	withoutSort := twoThreadSortFeatureTraces(false)
+	withThreads := withSort.findThreadTraces()
+	withoutThreads := withoutSort.findThreadTraces()
+
+	var buf bytes.Buffer
+	ctx.analyzeThread(withSort, withThreads[1], nil, &output{out: &buf})
+	out := buf.String()
+	assert.Contains(t, out, "sort features")
+	assert.Contains(t, out, "sort feature profiling for thread #1")
+	assert.Contains(t, out, "function has_stock")
+
+	buf.Reset()
+	ctx.analyzeThread(withoutSort, withoutThreads[0], nil, &output{out: &buf})
+	out = buf.String()
+	assert.Contains(t, out, "sort features")
+	assert.NotContains(t, out, "sort feature profiling for thread")
 }

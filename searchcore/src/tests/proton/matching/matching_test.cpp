@@ -35,6 +35,7 @@
 #include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -44,6 +45,8 @@
 #include <vespa/vespalib/util/testclock.h>
 
 #include <initializer_list>
+#include <map>
+#include <string_view>
 
 #include <vespa/log/log.h>
 LOG_SETUP("matching_test");
@@ -211,6 +214,54 @@ size_t feature_index(const std::vector<std::string>& names, const std::string& n
     return names.size();
 }
 
+struct ProfileTagWalk {
+    bool                                              present = false;
+    std::map<std::string, int64_t>                    root_counts;
+    std::map<std::string, std::map<std::string, int64_t>> child_counts;
+};
+
+ProfileTagWalk walk_profile_tag(const SearchRequest& req, std::string_view tag) {
+    ProfileTagWalk out;
+    if (!req.trace().hasTrace()) {
+        return out;
+    }
+    const auto& traces = req.trace().getTraces();
+    for (size_t i = 0; i < traces.entries(); ++i) {
+        if (traces[i]["tag"].asString().make_string() != "query_execution") {
+            continue;
+        }
+        const auto& threads = traces[i]["threads"];
+        for (size_t t = 0; t < threads.entries(); ++t) {
+            const auto& ttraces = threads[t]["traces"];
+            for (size_t j = 0; j < ttraces.entries(); ++j) {
+                if (ttraces[j]["tag"].asString().make_string() != tag) {
+                    continue;
+                }
+                out.present = true;
+                const auto& roots = ttraces[j]["roots"];
+                for (size_t r = 0; r < roots.entries(); ++r) {
+                    const std::string name = roots[r]["name"].asString().make_string();
+                    out.root_counts[name] += roots[r]["count"].asLong();
+                    const auto& children = roots[r]["children"];
+                    for (size_t c = 0; c < children.entries(); ++c) {
+                        out.child_counts[name][children[c]["name"].asString().make_string()] +=
+                            children[c]["count"].asLong();
+                    }
+                }
+            }
+        }
+    }
+    return out;
+}
+
+void enable_sort_feature_profiling(SearchRequest& req, int32_t sort_depth, int32_t first_phase_depth = 0) {
+    req.setTraceLevel(1, 1);
+    req.trace().sort_features_profile_depth(sort_depth);
+    if (first_phase_depth != 0) {
+        req.trace().first_phase_profile_depth(first_phase_depth);
+    }
+}
+
 // Three labeled query items: a term in f1, a term in f2 and a label wrapper
 // (which searches no field of its own) around a term in f1.
 std::string make_labeled_terms_and_wrapper_stack_dump() {
@@ -318,6 +369,14 @@ struct MyWorld {
         // FakeIndexSearchable reports average field length 0. Override it so the
         // synthetic BM25 scores are finite and exercise feature ordering.
         config.add("bm25(f1).averageFieldLength", "10");
+    }
+
+    void setup_sort_feature_expr(const std::string& public_name, const std::string& script) {
+        const std::string backend = "rankingExpression(" + public_name + ")";
+        config.add(indexproperties::sort::Feature::NAME, backend);
+        config.add(backend + ".rankingScript", script);
+        config.add(indexproperties::feature_rename::Rename::NAME, backend);
+        config.add(indexproperties::feature_rename::Rename::NAME, public_name);
     }
 
     void set_property(const std::string& name, const std::string& value) {
@@ -1295,6 +1354,104 @@ TEST_F(MatchingTest, require_that_bm25_sort_feature_unpacks) {
     EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid);
     EXPECT_EQ(zero_rank_value, reply->hits[0].metric);
     EXPECT_FALSE(reply->sortData.empty());
+}
+
+TEST_F(MatchingTest, require_that_sort_features_are_profiled) {
+    for (size_t threads : {size_t(1), size_t(4)}) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setup_sort_feature_by_a1();
+        world.setup_sort_feature_bm25();
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = "-feature(by_a1) -feature(title_bm25)";
+        enable_sort_feature_profiling(*request, 3, 3);
+        SearchReply::UP reply = world.performSearch(*request, threads);
+        ASSERT_EQ(9u, reply->hits.size());
+        auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+        ASSERT_TRUE(sort_walk.present) << "threads=" << threads;
+        EXPECT_EQ(2u, sort_walk.root_counts.size()) << "threads=" << threads;
+        EXPECT_EQ(9, sort_walk.root_counts["rank feature attribute(a1)"]) << "threads=" << threads;
+        EXPECT_EQ(9, sort_walk.root_counts["rank feature bm25(f1)"]) << "threads=" << threads;
+        auto first_walk = walk_profile_tag(*request, "first_phase_profiling");
+        ASSERT_TRUE(first_walk.present) << "threads=" << threads;
+        EXPECT_TRUE(first_walk.root_counts.empty()) << "threads=" << threads;
+    }
+}
+
+TEST_F(MatchingTest, require_that_sort_and_first_phase_profiles_are_independent) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.setup_sort_feature_bm25();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) -feature(title_bm25) -[rank]";
+    enable_sort_feature_profiling(*request, 3, 3);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+    ASSERT_TRUE(sort_walk.present);
+    EXPECT_EQ(2u, sort_walk.root_counts.size());
+    EXPECT_EQ(9, sort_walk.root_counts["rank feature attribute(a1)"]);
+    EXPECT_EQ(9, sort_walk.root_counts["rank feature bm25(f1)"]);
+    auto first_walk = walk_profile_tag(*request, "first_phase_profiling");
+    ASSERT_TRUE(first_walk.present);
+    EXPECT_EQ(1u, first_walk.root_counts.size());
+    EXPECT_EQ(9, first_walk.root_counts["rank feature attribute(a1)"]);
+}
+
+TEST_F(MatchingTest, require_that_sort_features_profiling_is_absent_at_depth_zero) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    enable_sort_feature_profiling(*request, 0);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+    EXPECT_FALSE(sort_walk.present);
+}
+
+TEST_F(MatchingTest, require_that_sort_features_profiling_is_empty_without_feature_sort) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "+a1";
+    enable_sort_feature_profiling(*request, 3);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+    ASSERT_TRUE(sort_walk.present);
+    EXPECT_TRUE(sort_walk.root_counts.empty());
+}
+
+TEST_F(MatchingTest, require_that_sort_features_profiling_pins_shared_constants) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_expr("by_x", "attribute(a1) + rankingExpression(c)");
+    world.setup_sort_feature_expr("by_y", "attribute(a1) * rankingExpression(c)");
+    world.config.add("rankingExpression(c).rankingScript", "3");
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_x) -feature(by_y)";
+    enable_sort_feature_profiling(*request, 3);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+    ASSERT_TRUE(sort_walk.present);
+    EXPECT_EQ(3u, sort_walk.root_counts.size());
+    EXPECT_EQ(9, sort_walk.root_counts["function by_x"]);
+    EXPECT_EQ(9, sort_walk.root_counts["function by_y"]);
+    EXPECT_EQ(2, sort_walk.root_counts["function c"]);
+    EXPECT_EQ(1u, sort_walk.child_counts["function by_x"].size());
+    EXPECT_EQ(9, sort_walk.child_counts["function by_x"]["rank feature attribute(a1)"]);
+    EXPECT_EQ(1u, sort_walk.child_counts["function by_y"].size());
+    EXPECT_EQ(9, sort_walk.child_counts["function by_y"]["rank feature attribute(a1)"]);
+    EXPECT_EQ(0u, sort_walk.child_counts["function c"].size());
 }
 
 ExpressionNode::UP createAttr() {

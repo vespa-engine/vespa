@@ -430,3 +430,96 @@ func TestFindValueWhenNotFound(t *testing.T) {
 	assert.NotNil(t, value)
 	assert.False(t, value.Valid())
 }
+
+func profiling(tag string, totalMs float64, roots ...slime.Value) slime.Value {
+	return slime.MakeObject(func(obj slime.Value) {
+		obj.Set("tag", slime.String(tag))
+		obj.Set("total_time_ms", slime.Double(totalMs))
+		if len(roots) > 0 {
+			obj.Set("roots", slime.MakeArray(func(arr slime.Value) {
+				for _, root := range roots {
+					arr.Add(root)
+				}
+			}))
+		}
+	})
+}
+
+func threadTraceFromEntries(id int, entries ...slime.Value) threadTrace {
+	return threadTrace{
+		id: id,
+		source: slime.MakeObject(func(obj slime.Value) {
+			obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+				for _, e := range entries {
+					arr.Add(e)
+				}
+			}))
+		}),
+	}
+}
+
+func queryExecutionFromThreads(threads ...threadTrace) protonTrace {
+	return protonTrace{source: slime.MakeObject(func(obj slime.Value) {
+		obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_execution"))
+				obj.Set("threads", slime.MakeArray(func(arr slime.Value) {
+					for _, th := range threads {
+						arr.Add(th.source)
+					}
+				}))
+			}))
+		}))
+	})}
+}
+
+func twoThreadSortFeatureTraces(withSort bool) protonTrace {
+	f := testFactory{}
+	thread0 := threadTraceFromEntries(0, profiling("match_profiling", 10))
+	var thread1 threadTrace
+	if withSort {
+		thread1 = threadTraceFromEntries(1,
+			profiling("match_profiling", 1),
+			profiling("sort_features_profiling", 100,
+				f.treeSample("function has_stock", 6, 80, 60).source,
+				f.treeSample("function regional_zone_query_count", 1, 20, 20).source,
+			),
+		)
+	} else {
+		thread1 = threadTraceFromEntries(1, profiling("match_profiling", 1))
+	}
+	return queryExecutionFromThreads(thread0, thread1)
+}
+
+func TestSortFeaturesProfilingExtract(t *testing.T) {
+	proton := twoThreadSortFeatureTraces(true)
+	threads := proton.findThreadTraces()
+	assert.Equal(t, 2, len(threads))
+	assert.Equal(t, 10.0, threads[0].matchTimeMs())
+	assert.Equal(t, 0.0, threads[0].sortFeaturesTimeMs())
+	assert.Equal(t, 100.0, threads[1].sortFeaturesTimeMs())
+	assert.Equal(t, 101.0, threads[1].profTimeMs())
+
+	slowest, _ := selectSlowestThread(append([]threadTrace(nil), threads...))
+	assert.Equal(t, 1, slowest.id)
+
+	assert.Equal(t, 100.0, threads[1].extractSummary().sortFeaturesMs)
+	assert.Equal(t, 100.0, proton.extractSummary().sortFeaturesMs)
+
+	perf := threads[1].sortFeaturesPerf()
+	assert.Equal(t, 2, len(perf.entries))
+	assert.Equal(t, int64(6), perf.entries["function has_stock"].count)
+	assert.Equal(t, 60.0, perf.entries["function has_stock"].selfTimeMs)
+	assert.Equal(t, int64(1), perf.entries["function regional_zone_query_count"].count)
+	assert.Equal(t, 20.0, perf.entries["function regional_zone_query_count"].selfTimeMs)
+}
+
+func TestSortFeaturesProfilingAbsentTag(t *testing.T) {
+	proton := twoThreadSortFeatureTraces(false)
+	threads := proton.findThreadTraces()
+	assert.Equal(t, 0.0, threads[1].sortFeaturesTimeMs())
+	slowest, _ := selectSlowestThread(append([]threadTrace(nil), threads...))
+	assert.Equal(t, 0, slowest.id)
+	assert.Equal(t, 0.0, threads[0].extractSummary().sortFeaturesMs)
+	assert.Equal(t, 0.0, proton.extractSummary().sortFeaturesMs)
+}

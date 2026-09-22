@@ -70,16 +70,19 @@ TEST_F(SearchRequestTest, require_that_profile_depth_is_converted) {
     EXPECT_EQ(request.trace().match_profile_depth(), 7);
     EXPECT_EQ(request.trace().first_phase_profile_depth(), 7);
     EXPECT_EQ(request.trace().second_phase_profile_depth(), 7);
+    EXPECT_EQ(request.trace().sort_features_profile_depth(), 7);
 }
 
 TEST_F(SearchRequestTest, require_that_profiling_params_are_converted) {
     proto.mutable_profiling()->mutable_match()->set_depth(4);
     proto.mutable_profiling()->mutable_first_phase()->set_depth(5);
     proto.mutable_profiling()->mutable_second_phase()->set_depth(6);
+    proto.mutable_profiling()->mutable_sort_features()->set_depth(8);
     convert();
     EXPECT_EQ(request.trace().match_profile_depth(), 4);
     EXPECT_EQ(request.trace().first_phase_profile_depth(), 5);
     EXPECT_EQ(request.trace().second_phase_profile_depth(), 6);
+    EXPECT_EQ(request.trace().sort_features_profile_depth(), 8);
 }
 
 TEST_F(SearchRequestTest, require_that_profile_depth_is_fallback) {
@@ -89,6 +92,7 @@ TEST_F(SearchRequestTest, require_that_profile_depth_is_fallback) {
     EXPECT_EQ(request.trace().match_profile_depth(), 7);
     EXPECT_EQ(request.trace().first_phase_profile_depth(), 5);
     EXPECT_EQ(request.trace().second_phase_profile_depth(), 7);
+    EXPECT_EQ(request.trace().sort_features_profile_depth(), 7);
 }
 
 TEST_F(SearchRequestTest, require_that_sorting_is_converted) {
