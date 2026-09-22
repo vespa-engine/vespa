@@ -25,6 +25,12 @@ struct StringRangeSpec {
     // Wired in from search protocol, but currently not used in matching
     int32_t range_limit = 0;
 
+    StringRangeSpec();
+    StringRangeSpec(std::string left_in, bool left_closed_in, bool left_unbounded_in, std::string right_in,
+                    bool right_closed_in, bool right_unbounded_in);
+    StringRangeSpec(std::string left_in, bool left_closed_in, bool left_unbounded_in, std::string right_in,
+                    bool right_closed_in, bool right_unbounded_in, int32_t range_limit_in);
+    StringRangeSpec(const StringRangeSpec&);
     ~StringRangeSpec();
 
     bool has_range_limit() const noexcept { return range_limit != 0; }

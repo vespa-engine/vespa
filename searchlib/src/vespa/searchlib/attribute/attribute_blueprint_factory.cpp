@@ -661,8 +661,8 @@ public:
     }
 
     void visit(StringRangeTerm& n) override {
-        const StringRangeSpec* spec = n.getTerm().get_spec();
-        auto spec_for_term = spec ? std::make_unique<StringRangeSpec>(*spec) : std::make_unique<StringRangeSpec>();
+        const auto& range = n.getTerm();
+        auto spec_for_term = range ? std::make_unique<StringRangeSpec>(*range) : std::make_unique<StringRangeSpec>();
         auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(spec_for_term));
         setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term),
                                                             createContextParams(_field.isFilter())));
