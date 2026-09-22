@@ -54,6 +54,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                 NodesSpecification.optionalDedicatedFromParent(adminElement.child("slobroks"), context);
         Optional<NodesSpecification> requestedLogservers = 
                 NodesSpecification.optionalDedicatedFromParent(adminElement.child("logservers"), context);
+        validateNodeSpecification(requestedSlobroks);
+        validateNodeSpecification(requestedLogservers);
 
         assignSlobroks(deployState, requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
         assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
@@ -216,6 +218,23 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                                            .collect(Collectors.joining(", "));
         if ( ! used.isEmpty())
             deployState.getDeployLogger().logApplicationPackage(WARNING, "Elements " + used + " in <admin> are deprecated and ignored, please remove");
+    }
+
+    /**
+     * Validates that the given node specification is within reasonable limits for admin clusters
+     * (avoids large allocations, as they can lead to resource exhaustion and has no practical use).
+     * DomAdminV4Builder is only used when on Vespa Cloud
+     */
+    private void validateNodeSpecification(Optional<NodesSpecification> nodesSpecification) {
+        if (nodesSpecification.isEmpty()) return;
+
+        var clusterResources = (nodesSpecification.get().maxResources().justNumbers());
+        if (clusterResources.nodeResources().vcpu() > 4)
+            throw new IllegalArgumentException("vcpu > 4 not allowed for admin cluster");
+        if (clusterResources.nodeResources().memoryGiB() > 32)
+            throw new IllegalArgumentException("memoryGiB > 32 not allowed for admin cluster");
+        if (clusterResources.nodeResources().diskGb() > 1000)
+            throw new IllegalArgumentException("diskGb > 1000 not allowed for admin cluster");
     }
 
 }
