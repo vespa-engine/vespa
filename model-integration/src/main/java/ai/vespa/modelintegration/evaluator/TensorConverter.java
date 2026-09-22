@@ -8,7 +8,6 @@ import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OnnxValue;
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
-import ai.onnxruntime.OrtSession;
 import ai.onnxruntime.TensorInfo;
 import ai.onnxruntime.ValueInfo;
 import ai.onnxruntime.platform.Fp16Conversions;
@@ -37,14 +36,14 @@ import java.util.stream.Collectors;
  */
 class TensorConverter {
 
-    static Map<String, OnnxTensor> toOnnxTensors(Map<String, Tensor> tensorMap, OrtEnvironment env, OrtSession session)
+    static Map<String, OnnxTensor> toOnnxTensors(Map<String, Tensor> tensorMap, Map<String, NodeInfo> inputInfo, OrtEnvironment env)
         throws OrtException
     {
         Map<String, OnnxTensor> result = new HashMap<>();
         for (String name : tensorMap.keySet()) {
             Tensor vespaTensor = tensorMap.get(name);
-            name = toOnnxName(name, session.getInputInfo().keySet());
-            TensorInfo onnxTensorInfo = toTensorInfo(session.getInputInfo().get(name).getInfo());
+            name = toOnnxName(name, inputInfo.keySet());
+            TensorInfo onnxTensorInfo = toTensorInfo(inputInfo.get(name).getInfo());
             OnnxTensor onnxTensor = toOnnxTensor(vespaTensor, onnxTensorInfo, env);
             result.put(name, onnxTensor);
         }
