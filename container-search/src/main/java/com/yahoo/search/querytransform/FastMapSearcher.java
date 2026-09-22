@@ -229,9 +229,6 @@ public class FastMapSearcher extends Searcher {
         if (!(valueItem instanceof IntItem intItem)) {
             return null;
         }
-        if (intItem.getHitLimit() != 0) {
-            return null; // a hit limit counts entries in the value attribute, not the synthetic one
-        }
         Limit fromLimit = intItem.getFromLimit();
         Limit toLimit = intItem.getToLimit();
         Integer from = toIntBound(fromLimit, Integer.MIN_VALUE);
@@ -241,6 +238,7 @@ public class FastMapSearcher extends Searcher {
         }
         return new StringRangeItem(FastMapSearch.toKeyValue8Term(key, from), fromLimit.isInclusive(),
                                    FastMapSearch.toKeyValue8Term(key, to), toLimit.isInclusive(),
+                                   intItem.getHitLimit(),
                                    FastMapSearch.toKeyValueFieldName(fieldName), false, null);
     }
 

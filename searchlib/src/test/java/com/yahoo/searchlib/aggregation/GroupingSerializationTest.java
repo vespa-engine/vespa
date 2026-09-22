@@ -224,12 +224,12 @@ public class GroupingSerializationTest {
                     .updateSketch(7)
                     .updateSketch(8)
                     .setExpression(new ConstantNode(new IntegerResultNode(8))));
-            t.assertMatch(new ArgminAggregationResult(new IntegerResultNode(5), new IntegerResultNode(7))
+            t.assertMatch(new ArgmaxAggregationResult(new IntegerResultNode(5), new IntegerResultNode(7))
                     .setKeyExpression(new ConstantNode(new IntegerResultNode(5)))
                     .setExpression(new ConstantNode(new IntegerResultNode(7))));
             IntegerResultNodeVector argminValues = new IntegerResultNodeVector();
             argminValues.add(new IntegerResultNode(7)).add(new IntegerResultNode(8));
-            t.assertMatch(new ArgminAggregationResult(new IntegerResultNode(5), argminValues)
+            t.assertMatch(new ArgmaxAggregationResult(new IntegerResultNode(5), argminValues)
                     .setKeyExpression(new ConstantNode(new IntegerResultNode(5)))
                     .setExpression(new ConstantNode((IntegerResultNodeVector)argminValues.clone())));
         }

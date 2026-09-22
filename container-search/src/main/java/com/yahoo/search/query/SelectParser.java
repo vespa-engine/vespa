@@ -775,7 +775,11 @@ public class SelectParser implements Parser {
                 if (hitLimit != null) {
                     number.setHitLimit(hitLimit);
                 }
-
+            } else if (out instanceof StringRangeItem stringRange && annotations != null) {
+                Integer hitLimit = getCappedRangeSearchParameter(annotations);
+                if (hitLimit != null) {
+                    stringRange.setHitLimit(hitLimit);
+                }
             }
         }
 

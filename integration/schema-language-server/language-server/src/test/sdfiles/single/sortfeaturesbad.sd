@@ -1,0 +1,25 @@
+schema sortfeaturesbad {
+    document sortfeaturesbad {
+        field title type string {
+            indexing: index | summary
+            index: enable-bm25
+        }
+        field price type int {
+            indexing: attribute | summary
+        }
+    }
+    rank-profile invalid_entries {
+        function key() {
+            expression: 1.0
+        }
+        sort-features {
+            bm25(title)
+            attribute(price)
+            key()
+            random.match
+            foo$
+            foo.out
+            foo$()
+        }
+    }
+}

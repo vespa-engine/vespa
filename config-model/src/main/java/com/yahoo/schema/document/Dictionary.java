@@ -34,4 +34,10 @@ public class Dictionary {
     public Type getType() { return (type != null) ? type : Type.BTREE; }
     public Case getMatch() { return (casing != null) ? casing : Case.UNCASED; }
 
+    /** Returns whether the type was set in the schema, as opposed to being the default. */
+    public boolean isTypeSet() { return type != null; }
+
+    /** Returns whether the casing was set in the schema, as opposed to being the default. */
+    public boolean isMatchSet() { return casing != null; }
+
 }

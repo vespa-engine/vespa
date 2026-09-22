@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,10 @@ public class ClusterMembershipTest {
 
     @Test
     void testContainerServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
+        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.container,
+                                                  ClusterSpec.Id.from("id1"),
+                                                  Capacity.unspecified(),
+                                                  new Version("6.42")).build();
         assertContainerService(ClusterMembership.from(cluster, 0, 3));
     }
 
@@ -44,7 +48,11 @@ public class ClusterMembershipTest {
 
     @Test
     void testServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
+        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("id1"),
+                                                  Capacity.unspecified(),
+                                                  new Version("6.42"))
+                                         .build();
         assertContentService(ClusterMembership.from(cluster, 0, 37));
     }
 
@@ -55,7 +63,11 @@ public class ClusterMembershipTest {
 
     @Test
     void testServiceInstanceWithRetire() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
+        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("id1"),
+                                                  Capacity.unspecified(),
+                                                  new Version("6.42"))
+                                         .build();
         assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 0, 37));
     }
 
@@ -66,8 +78,8 @@ public class ClusterMembershipTest {
 
     @Test
     void testProfilePreservedOnClusterSpec() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
-                                         .vespaVersion("6.42")
+        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("id1"),Capacity.unspecified(), new Version("6.42"))
                                          .profile("large-storage")
                                          .build();
         ClusterMembership membership = ClusterMembership.from(cluster, 0, 37);

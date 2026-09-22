@@ -255,27 +255,32 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(StringRangeTerm& node) override {
         createTermNode(node, ParseItem::ITEM_STRING_RANGE_TERM);
-        const auto* spec = node.getTerm().get_spec();
-        bool        left_unbounded = (spec == nullptr) || spec->left_unbounded;
-        bool        right_unbounded = (spec == nullptr) || spec->right_unbounded;
-        bool        left_closed = (spec == nullptr) || spec->left_closed;
-        bool        right_closed = (spec == nullptr) || spec->right_closed;
+        const auto& range = node.getTerm();
+        bool        left_unbounded = !range || range->left_unbounded;
+        bool        right_unbounded = !range || range->right_unbounded;
+        bool        left_closed = !range || range->left_closed;
+        bool        right_closed = !range || range->right_closed;
         uint8_t     flags = 0;
-        if (left_unbounded)
+        if (left_unbounded) {
             flags |= ParseItem::SRT_LEFT_UNBOUNDED;
-        if (right_unbounded)
+        }
+        if (right_unbounded) {
             flags |= ParseItem::SRT_RIGHT_UNBOUNDED;
-        if (left_closed)
+        }
+        if (left_closed) {
             flags |= ParseItem::SRT_LEFT_CLOSED;
-        if (right_closed)
+        }
+        if (right_closed) {
             flags |= ParseItem::SRT_RIGHT_CLOSED;
+        }
         appendByte(flags);
-        if (!left_unbounded) {
-            appendString(spec->left);
+        if (!left_unbounded) { // This implies that we have a value
+            appendString(range->left);
         }
-        if (!right_unbounded) {
-            appendString(spec->right);
+        if (!right_unbounded) { // This implies that we have a value
+            appendString(range->right);
         }
+        appendCompressedNumber(range.has_value() ? range->range_limit : 0);
     }
 
     void visit(StringTerm& node) override { createTerm(node, ParseItem::ITEM_TERM); }

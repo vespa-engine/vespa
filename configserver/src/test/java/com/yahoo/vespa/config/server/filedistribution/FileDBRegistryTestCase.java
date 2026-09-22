@@ -5,6 +5,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -14,6 +15,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -87,5 +89,34 @@ public class FileDBRegistryTestCase {
     void checkConsistentEntry(FileRegistry.Entry entry, FileRegistry registry) {
         assertEquals(entry.reference, registry.addFile(entry.relativePath));
     }
-    
+
+    @Test
+    public void decodeRejectsLineWithMoreThanTwoColumns() {
+        // A CR or LF embedded in the file reference can cause BufferedReader.readLine() to interpret
+        // one serialized registry entry as two lines.
+        String corruptRegistry = "components/legit\t55dc2c3483b4ee7c\nfoo\t.\tpad.jar\tbar\n";
+        try {
+            FileDBRegistry.decode(new BufferedReader(new StringReader(corruptRegistry)));
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cannot split 'foo\t.\tpad.jar\tbar' into two parts", e.getMessage());
+        }
+    }
+
+    @Test
+    public void addFileRejectsControlCharactersInPath() throws IOException {
+        TemporaryFolder tmpDir = new TemporaryFolder();
+        tmpDir.create();
+        AddFileInterface fileManager =
+                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false);
+        FileRegistry fileRegistry = new FileDBRegistry(fileManager);
+        try {
+            fileRegistry.addFile("files/foo\t.json");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("illegal control character"));
+        }
+        tmpDir.delete();
+    }
+
 }

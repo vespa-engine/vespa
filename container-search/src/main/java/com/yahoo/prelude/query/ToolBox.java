@@ -4,8 +4,6 @@ package com.yahoo.prelude.query;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.search.Query;
 
-import java.util.function.Function;
-
 /**
  * Query tree helper methods and factories.
  *

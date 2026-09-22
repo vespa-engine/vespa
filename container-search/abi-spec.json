@@ -891,6 +891,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.prelude.query.Items" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.prelude.query.Item text(java.lang.String, java.lang.String, com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "public static com.yahoo.prelude.query.Item text(java.lang.String, java.lang.String, com.yahoo.search.query.QueryType, com.yahoo.language.Language, java.util.Set, java.util.Set, com.yahoo.search.query.parser.ParserEnvironment)",
+      "public static com.yahoo.prelude.query.Item createText(java.lang.String, java.lang.String, com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.LabelWrapperItem" : {
     "superClass" : "com.yahoo.prelude.query.CompositeTaggableItem",
     "interfaces" : [ ],
@@ -1719,10 +1733,13 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String, boolean, java.lang.String, boolean, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
+      "public void <init>(java.lang.String, boolean, java.lang.String, boolean, int, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public final java.lang.String getFrom()",
       "public final boolean isFromInclusive()",
       "public final java.lang.String getTo()",
       "public final boolean isToInclusive()",
+      "public final int getHitLimit()",
+      "public final void setHitLimit(int)",
       "public java.lang.String getIndexedString()",
       "public java.lang.String getRawWord()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
@@ -3367,6 +3384,21 @@
       "public void <init>(com.yahoo.search.grouping.request.GroupingExpression)",
       "public com.yahoo.search.grouping.request.HourOfDayFunction copy()",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.InPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression, java.util.List)",
+      "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
+      "public java.util.List getArgs()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
     ],
     "fields" : [ ]
   },

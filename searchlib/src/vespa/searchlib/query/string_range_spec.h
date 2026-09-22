@@ -13,14 +13,24 @@ namespace search {
  */
 
 struct StringRangeSpec {
+    // The actual range/interval
     std::string left;
     bool        left_closed = true;
     bool        left_unbounded = false;
     std::string right;
     bool        right_closed = true;
     bool        right_unbounded = false;
-    int32_t     range_limit = 0;
 
+    // Range limit specified via hitLimit annotation
+    // Wired in from search protocol, but currently not used in matching
+    int32_t range_limit = 0;
+
+    StringRangeSpec();
+    StringRangeSpec(std::string left_in, bool left_closed_in, bool left_unbounded_in, std::string right_in,
+                    bool right_closed_in, bool right_unbounded_in);
+    StringRangeSpec(std::string left_in, bool left_closed_in, bool left_unbounded_in, std::string right_in,
+                    bool right_closed_in, bool right_unbounded_in, int32_t range_limit_in);
+    StringRangeSpec(const StringRangeSpec&);
     ~StringRangeSpec();
 
     bool has_range_limit() const noexcept { return range_limit != 0; }

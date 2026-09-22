@@ -558,11 +558,11 @@
         },
         {
           "name": "entity.name.function.rank-feature.vespa",
-          "match": "\\b(tensorFromWeightedSet|nativeAttributeMatch|customTokenInputIds|elementCompleteness|randomNormalStable|tokenAttentionMask|elementSimilarity|rankingExpression|tensorFromStructs|nativeDotProduct|nativeFieldMatch|tensorFromLabels|nativeProximity|attributeMatch|distanceToPath|fieldTermMatch|firstPhaseRank|globalSequence|queryTermCount|relevanceScore|textSimilarity|tokenInputIds|itemRawScore|randomNormal|termDistance|tokenTypeIds|elementwise|fieldLength|secondPhase|dotProduct|fieldMatch|firstPhase|matchCount|nativeRank|subqueries|attribute|closeness|freshness|onnxModel|constant|distance|lightgbm|rawScore|closest|foreach|matches|xgboost|random|match|query|bm25|file|onnx|term|age|now)\\s*(?=\\()"
+          "match": "\\b(queryTermDocumentFrequency|tensorFromLabelsWithOffset|tensorFromWeightedSet|nativeAttributeMatch|customTokenInputIds|elementCompleteness|averageFieldLength|randomNormalStable|tokenAttentionMask|elementSimilarity|rankingExpression|tensorFromStructs|nativeDotProduct|nativeFieldMatch|tensorFromLabels|nativeProximity|attributeMatch|distanceToPath|fieldTermMatch|firstPhaseRank|globalSequence|queryTermCount|relevanceScore|textSimilarity|tokenInputIds|itemRawScore|randomNormal|termDistance|tokenTypeIds|elementwise|fieldLength|secondPhase|dotProduct|fieldMatch|firstPhase|matchCount|nativeRank|subqueries|attribute|closeness|freshness|onnxModel|constant|distance|lightgbm|rawScore|closest|foreach|matches|xgboost|random|match|query|bm25|file|onnx|term|age|now)\\s*(?=\\()"
         },
         {
           "name": "entity.name.function.rank-feature.vespa",
-          "match": "\\b(reciprocal_rank_fusion|normalize_linear|reciprocal_rank)\\s*(?=\\()"
+          "match": "\\b(reciprocal_rank_fusion|matches_for_labels|normalize_linear|num_docs_indexed|bm25_for_labels|reciprocal_rank)\\s*(?=\\()"
         },
         {
           "name": "keyword.operator.ranking.vespa",
@@ -658,7 +658,7 @@
     },
     "feature-list-block": {
       "name": "meta.block.feature-list.vespa",
-      "begin": "(?<![a-zA-Z0-9_-])(match-features|summary-features|rank-features)(?:\\s+(inherits)\\s+([a-zA-Z_][\\w-]*))?\\s*(\\{)",
+      "begin": "(?<![a-zA-Z0-9_-])(match-features|summary-features|rank-features|sort-features)(?:\\s+(inherits)\\s+([a-zA-Z_][\\w-]*))?\\s*(\\{)",
       "beginCaptures": {
         "1": {
           "name": "keyword.control.vespa"
@@ -687,7 +687,7 @@
     },
     "feature-list-inline": {
       "name": "meta.inline.feature-list.vespa",
-      "begin": "(?<![a-zA-Z0-9_-])(match-features|summary-features|rank-features)\\s*(:)",
+      "begin": "(?<![a-zA-Z0-9_-])(match-features|summary-features|rank-features|sort-features)\\s*(:)",
       "beginCaptures": {
         "1": {
           "name": "keyword.control.vespa"
@@ -745,11 +745,11 @@
       "patterns": [
         {
           "name": "keyword.control.vespa",
-          "match": "(?<![a-zA-Z0-9_-])(target\\-hits\\-max\\-adjustment\\-factor|neighbors\\-to\\-explore\\-at\\-insert|pre\\-post\\-filter\\-tipping\\-point|dense\\-posting\\-list\\-threshold|ignore\\-default\\-rank\\-features|filter\\-first\\-exploration|raw\\-as\\-base64\\-in\\-summary|multi\\-threaded\\-indexing|enable\\-only\\-bit\\-vector|filter\\-first\\-threshold|num\\-threads\\-per\\-search|approximate\\-threshold|create\\-if\\-nonexistent|matched\\-elements\\-only|num\\-search\\-partitions|post\\-filter\\-threshold|rank\\-score\\-drop\\-limit|total\\-keep\\-rank\\-count|max\\-filter\\-coverage|min\\-hits\\-per\\-thread|enable\\-bit\\-vectors|max\\-links\\-per\\-node|select\\-elements\\-by|total\\-rerank\\-count|exploration\\-slack|document\\-summary|evaluation\\-point|exact\\-terminator|filter\\-threshold|max\\-token\\-length|prefetch\\-tensors|summary\\-features|cutoff\\-strategy|distance\\-metric|interop\\-threads|intraop\\-threads|keep\\-rank\\-count|max\\-occurrences|on\\-second\\-phase|rank\\-properties|execution\\-mode|match\\-features|on\\-first\\-phase|remove\\-if\\-zero|stopword\\-limit|termwise\\-limit|total\\-max\\-hits|adjust\\-target|cutoff\\-factor|query\\-command|rank\\-features|global\\-phase|rank\\-profile|rerank\\-count|second\\-phase|struct\\-field|element\\-gap|enable\\-bm25|fast\\-access|fast\\-search|first\\-phase|lower\\-bound|match\\-phase|upper\\-bound|gpu\\-device|max\\-length|min\\-groups|on\\-summary|onnx\\-model|summary\\-to|fast\\-rank|gram\\-size|rank\\-type|use\\-model|max\\-hits|on\\-match)(?![a-zA-Z0-9_-])"
+          "match": "(?<![a-zA-Z0-9_-])(target\\-hits\\-max\\-adjustment\\-factor|neighbors\\-to\\-explore\\-at\\-insert|pre\\-post\\-filter\\-tipping\\-point|dense\\-posting\\-list\\-threshold|ignore\\-default\\-rank\\-features|filter\\-first\\-exploration|raw\\-as\\-base64\\-in\\-summary|multi\\-threaded\\-indexing|enable\\-only\\-bit\\-vector|filter\\-first\\-threshold|num\\-threads\\-per\\-search|approximate\\-threshold|create\\-if\\-nonexistent|matched\\-elements\\-only|num\\-search\\-partitions|post\\-filter\\-threshold|rank\\-score\\-drop\\-limit|total\\-keep\\-rank\\-count|max\\-filter\\-coverage|min\\-hits\\-per\\-thread|enable\\-bit\\-vectors|max\\-links\\-per\\-node|select\\-elements\\-by|total\\-rerank\\-count|exploration\\-slack|document\\-summary|evaluation\\-point|exact\\-terminator|filter\\-threshold|max\\-token\\-length|prefetch\\-tensors|summary\\-features|cutoff\\-strategy|distance\\-metric|interop\\-threads|intraop\\-threads|keep\\-rank\\-count|max\\-occurrences|on\\-second\\-phase|rank\\-properties|execution\\-mode|match\\-features|on\\-first\\-phase|remove\\-if\\-zero|stopword\\-limit|termwise\\-limit|total\\-max\\-hits|adjust\\-target|cutoff\\-factor|query\\-command|rank\\-features|sort\\-features|global\\-phase|rank\\-profile|rerank\\-count|second\\-phase|struct\\-field|element\\-gap|enable\\-bm25|fast\\-access|fast\\-search|first\\-phase|lower\\-bound|match\\-phase|upper\\-bound|gpu\\-device|max\\-length|min\\-groups|on\\-summary|onnx\\-model|summary\\-to|fast\\-rank|gram\\-size|rank\\-type|use\\-model|max\\-hits|on\\-match)(?![a-zA-Z0-9_-])"
         },
         {
           "name": "keyword.control.vespa",
-          "match": "\\b(significance|normalizing|weightedset(?!\\s*<)|annotation|contextual|descending|dictionary|expression|properties|ascending|attribute|constants|diversity|constant|document(?!-)|fieldset|function|indexing|inherits|override|stemming|strength|bolding|mutable|sorting|summary(?!-)|weakand|fields|import|inline|inputs|locale|mutate|output|schema|search|source|strict|struct(?!-)|weight|alias|arity|field|index|input|macro|match(?!-)|order|paged|title|file|hnsw|rank(?!-)|type|uri|url|as|id)\\b"
+          "match": "\\b(significance|linguistics|normalizing|weightedset(?!\\s*<)|annotation|contextual|descending|dictionary|documentid|expression|properties|ascending|attribute|constants|diversity|constant|document(?!-)|fieldset|function|indexing|inherits|override|stemming|strength|bolding|mutable|profile|sorting|summary(?!-)|weakand|fields|import|inline|inputs|locale|mutate|output|schema|search|source|strict|struct(?!-)|weight|alias|arity|field|index|input|macro|match(?!-)|order|paged|title|file|hnsw|rank(?!-)|type|uri|url|as|id)\\b"
         }
       ]
     },

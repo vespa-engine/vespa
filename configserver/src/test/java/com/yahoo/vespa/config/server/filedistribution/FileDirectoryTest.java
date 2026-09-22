@@ -44,6 +44,17 @@ public class FileDirectoryTest {
     }
 
     @Test
+    public void requireThatFileReferenceResolvingToRootIsRejected() throws IOException {
+        createFile("foo");
+        createFile("bar");
+
+        // A reference resolving to the root directory itself must never be served:
+        assertTrue(fileDirectory.getFile(new FileReference(".")).isEmpty());
+        assertTrue(fileDirectory.getFile(new FileReference("./")).isEmpty());
+        assertTrue(fileDirectory.getFile(new FileReference("")).isEmpty());
+    }
+
+    @Test
     public void requireThatFileReferenceWithSubDirectoriesWorks() throws IOException {
         String subdirName = "subdir";
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);

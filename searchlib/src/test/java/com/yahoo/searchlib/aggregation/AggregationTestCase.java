@@ -46,44 +46,44 @@ public class AggregationTestCase {
     }
 
     @Test
-    public void testArgminAggregationResult() {
-        ArgminAggregationResult a = new ArgminAggregationResult(new FloatResultNode(5.0), new IntegerResultNode(6));
+    public void testArgmaxAggregationResult() {
+        ArgmaxAggregationResult a = new ArgmaxAggregationResult(new FloatResultNode(5.0), new IntegerResultNode(6));
         a.setKeyExpression(new AttributeNode("attributeB"));
         a.setExpression(new AttributeNode("attributeA"));
         assertTrue(a.hasValue());
         assertEquals(5.0, a.getKey().getFloat(), delta);
         assertEquals(6, a.getValue().getInteger());
 
-        ArgminAggregationResult b = (ArgminAggregationResult)serializeDeserialize(a);
+        ArgmaxAggregationResult b = (ArgmaxAggregationResult)serializeDeserialize(a);
         assertTrue(b.hasValue());
         assertEquals(5.0, b.getKey().getFloat(), delta);
         assertEquals(6, b.getValue().getInteger());
         assertEquals(a.getKeyExpression(), b.getKeyExpression());
 
-        // The hit with the smallest key wins, no matter which side of the merge it is on.
-        ArgminAggregationResult c = new ArgminAggregationResult(new FloatResultNode(3.0), new IntegerResultNode(7));
+        // The hit with the largest key wins, no matter which side of the merge it is on.
+        ArgmaxAggregationResult c = new ArgmaxAggregationResult(new FloatResultNode(10.0), new IntegerResultNode(7));
         c.setKeyExpression(new AttributeNode("attributeB"));
         c.setExpression(new AttributeNode("attributeA"));
         b.merge(c);
-        assertEquals(3.0, b.getKey().getFloat(), delta);
+        assertEquals(10.0, b.getKey().getFloat(), delta);
         assertEquals(7, b.getValue().getInteger());
         c.merge(a);
-        assertEquals(3.0, c.getKey().getFloat(), delta);
+        assertEquals(10.0, c.getKey().getFloat(), delta);
         assertEquals(7, c.getValue().getInteger());
     }
 
     @Test
-    public void testArgminAggregationResultWithMultivalueResult() {
+    public void testArgmaxAggregationResultWithMultivalueResult() {
         IntegerResultNodeVector values = new IntegerResultNodeVector();
         values.add(new IntegerResultNode(6)).add(new IntegerResultNode(7));
-        ArgminAggregationResult a = new ArgminAggregationResult(new FloatResultNode(5.0), values);
+        ArgmaxAggregationResult a = new ArgmaxAggregationResult(new FloatResultNode(5.0), values);
         a.setKeyExpression(new AttributeNode("attributeB"));
         a.setExpression(new AttributeNode("attributeA"));
         assertTrue(a.hasValue());
         assertEquals(values, a.getValue());
 
         // The multi-value result survives serialization as is.
-        ArgminAggregationResult b = (ArgminAggregationResult)serializeDeserialize(a);
+        ArgmaxAggregationResult b = (ArgmaxAggregationResult)serializeDeserialize(a);
         assertTrue(b.hasValue());
         assertEquals(5.0, b.getKey().getFloat(), delta);
         assertEquals(values, b.getValue());
@@ -91,22 +91,22 @@ public class AggregationTestCase {
         // A smaller key replaces the whole multi-value result.
         IntegerResultNodeVector other = new IntegerResultNodeVector();
         other.add(new IntegerResultNode(8));
-        ArgminAggregationResult c = new ArgminAggregationResult(new FloatResultNode(3.0), other);
+        ArgmaxAggregationResult c = new ArgmaxAggregationResult(new FloatResultNode(10.0), other);
         b.merge(c);
-        assertEquals(3.0, b.getKey().getFloat(), delta);
+        assertEquals(10.0, b.getKey().getFloat(), delta);
         assertEquals(other, b.getValue());
     }
 
     @Test
-    public void testArgminAggregationResultWithoutValue() {
-        ArgminAggregationResult empty = new ArgminAggregationResult();
+    public void testArgmaxAggregationResultWithoutValue() {
+        ArgmaxAggregationResult empty = new ArgmaxAggregationResult();
         empty.setKeyExpression(new AttributeNode("attributeB"));
         empty.setExpression(new AttributeNode("attributeA"));
         assertFalse(empty.hasValue());
-        assertFalse(((ArgminAggregationResult)serializeDeserialize(empty)).hasValue());
+        assertFalse(((ArgmaxAggregationResult)serializeDeserialize(empty)).hasValue());
 
         // An empty result never wins, and is filled in by whatever it merges with.
-        ArgminAggregationResult a = new ArgminAggregationResult(new FloatResultNode(1.0), new IntegerResultNode(8));
+        ArgmaxAggregationResult a = new ArgmaxAggregationResult(new FloatResultNode(1.0), new IntegerResultNode(8));
         a.setKeyExpression(new AttributeNode("attributeB"));
         a.setExpression(new AttributeNode("attributeA"));
         a.merge(empty);

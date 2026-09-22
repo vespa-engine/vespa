@@ -10,10 +10,13 @@ schema sortfeatures {
     }
 
     rank-profile short_form {
+        function title_bm25() {
+            expression: bm25(title)
+        }
         first-phase {
             expression: bm25(title)
         }
-        sort-features: attribute(price)
+        sort-features: title_bm25 nativeRank
     }
 
     rank-profile block_form {
@@ -25,7 +28,7 @@ schema sortfeatures {
         }
         sort-features {
             title_bm25
-            attribute(price)
+            nativeRank
         }
     }
 

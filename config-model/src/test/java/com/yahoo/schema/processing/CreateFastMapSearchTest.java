@@ -40,6 +40,11 @@ public class CreateFastMapSearchTest {
     }
 
     @Test
+    void requireExceptionIsThrownForUnsupportedValueType() throws ParseException {
+        assertThrows(IllegalArgumentException.class, () -> { build(fastSearchMap("foo", "string", "byte")); });
+    }
+
+    @Test
     void requireKeyValueAttributeIsAFastSearchStringArray() throws ParseException {
         for (String valueType : supportedValueTypes) {
             var schema = build(fastSearchMap("foo", "string", valueType));

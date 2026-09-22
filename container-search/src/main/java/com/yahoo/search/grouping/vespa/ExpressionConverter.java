@@ -32,6 +32,7 @@ import com.yahoo.search.grouping.request.GeoDistanceFunction;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.request.HourOfDayFunction;
+import com.yahoo.search.grouping.request.InPredicate;
 import com.yahoo.search.grouping.request.InfiniteValue;
 import com.yahoo.search.grouping.request.InterpolatedLookup;
 import com.yahoo.search.grouping.request.IsTruePredicate;
@@ -101,7 +102,7 @@ import com.yahoo.search.grouping.request.YearFunction;
 import com.yahoo.search.grouping.request.ZCurveXFunction;
 import com.yahoo.search.grouping.request.ZCurveYFunction;
 import com.yahoo.searchlib.aggregation.AggregationResult;
-import com.yahoo.searchlib.aggregation.ArgminAggregationResult;
+import com.yahoo.searchlib.aggregation.ArgmaxAggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
 import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
@@ -133,6 +134,7 @@ import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.GeoDistanceFunctionNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
+import com.yahoo.searchlib.expression.InPredicateNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.InterpolatedLookupNode;
@@ -257,14 +259,14 @@ class ExpressionConverter {
             return new SumAggregationResult()
                     .setExpression(toExpressionNode(aggregator.getExpression()));
         }
-        if (exp instanceof ArgminAggregator aggregator) {
-            return new ArgminAggregationResult()
+        if (exp instanceof ArgmaxAggregator aggregator) {
+            return new ArgmaxAggregationResult()
                     .setKeyExpression(toExpressionNode(aggregator.getKey()))
                     .setExpression(toExpressionNode(aggregator.getExpression()));
         }
-        if (exp instanceof ArgmaxAggregator aggregator) {
-            // argmax(key, value) is argmin(-key, value)
-            return new ArgminAggregationResult()
+        if (exp instanceof ArgminAggregator aggregator) {
+            // argmin(key, value) is argmax(-key, value)
+            return new ArgmaxAggregationResult()
                     .setKeyExpression(new NegateFunctionNode(toExpressionNode(aggregator.getKey())))
                     .setExpression(toExpressionNode(aggregator.getExpression()));
         }
@@ -293,6 +295,8 @@ class ExpressionConverter {
             return new RangePredicateNode(rp.getLower(), rp.getUpper(), toExpressionNode(rp.getExpression()), rp.getLowerInclusive(), rp.getUpperInclusive());
         } else if (expression instanceof IsTruePredicate rp) {
             return new IsTruePredicateNode(toExpressionNode(rp.getExpression()));
+        } else if (expression instanceof InPredicate ip) {
+            return new InPredicateNode(toExpressionNode(ip.getExpression()), ip.getArgs());
         } else if (expression instanceof NotPredicate np) {
             return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else if (expression instanceof OrPredicate op) {

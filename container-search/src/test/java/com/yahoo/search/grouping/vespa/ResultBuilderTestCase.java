@@ -12,7 +12,7 @@ import com.yahoo.search.grouping.result.HitList;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.AggregationResult;
-import com.yahoo.searchlib.aggregation.ArgminAggregationResult;
+import com.yahoo.searchlib.aggregation.ArgmaxAggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
 import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
@@ -84,8 +84,8 @@ public class ResultBuilderTestCase {
         assertResult("3.5", new AverageAggregationResult(new IntegerResultNode(7), 2));
         assertResult("69", new CountAggregationResult(69));
         assertResult("QuantileResult[entries=[Entry[quantile=0.5, value=69.0]]]", new QuantileAggregationResult(List.of(0.5)).updateSketch(69));
-        assertResult("69", new ArgminAggregationResult(new IntegerResultNode(1), new IntegerResultNode(69)));
-        assertResult("[69,70]", new ArgminAggregationResult(new IntegerResultNode(1),
+        assertResult("69", new ArgmaxAggregationResult(new IntegerResultNode(1), new IntegerResultNode(69)));
+        assertResult("[69,70]", new ArgmaxAggregationResult(new IntegerResultNode(1),
                                                             new IntegerResultNodeVector().add(new IntegerResultNode(69))
                                                                                          .add(new IntegerResultNode(70))));
         assertResult("69", new MaxAggregationResult(new IntegerResultNode(69)));

@@ -144,6 +144,7 @@ public class FastMapSearcherTest {
         assertEquals("intvaluemap$keyvalue", closed.getIndexName());
         assertEquals(FastMapSearch.toKeyValue8Term("foo", 5), closed.getFrom());
         assertEquals(FastMapSearch.toKeyValue8Term("foo", 10), closed.getTo());
+        assertEquals(0, closed.getHitLimit());
         assertTrue(closed.isFromInclusive());
         assertTrue(closed.isToInclusive());
 
@@ -175,14 +176,24 @@ public class FastMapSearcherTest {
     }
 
     @Test
+    public void requireIntRangeWithHitLimitRewrittenToLexicalRange() {
+        var searcher = new FastMapSearcher();
+
+        var closed = searcher.makeIntRange("foo", new IntItem("[5;10;42]", "value"), "intvaluemap");
+        assertEquals("intvaluemap$keyvalue", closed.getIndexName());
+        assertEquals(FastMapSearch.toKeyValue8Term("foo", 5), closed.getFrom());
+        assertEquals(FastMapSearch.toKeyValue8Term("foo", 10), closed.getTo());
+        assertEquals(42, closed.getHitLimit());
+        assertTrue(closed.isFromInclusive());
+        assertTrue(closed.isToInclusive());
+    }
+
+    @Test
     public void requireFallbackForRangesWhichAreNotPlainIntRanges() {
         var searcher = new FastMapSearcher();
 
         // A fractional endpoint has no exact int encoding.
         assertNull(searcher.makeIntRange("foo", intRange(new Limit(1.5, true), new Limit(10, true)), "intvaluemap"));
-
-        // A hit limit counts entries in the value attribute, not in the synthetic one.
-        assertNull(searcher.makeIntRange("foo", new IntItem("[5;10;100]", "value"), "intvaluemap"));
 
         // A range on a string-valued map is not an IntItem, and is left alone.
         assertUntouched(sameElement("mymap", new WordItem("foo", "key"),

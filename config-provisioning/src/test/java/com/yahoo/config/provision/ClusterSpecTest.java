@@ -2,7 +2,6 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ClusterSpec.Group;
 import com.yahoo.config.provision.ClusterSpec.Id;
 import org.junit.jupiter.api.Test;
 
@@ -25,12 +24,6 @@ public class ClusterSpecTest {
     }
 
     @Test
-    void testGroupEquals() {
-        assertEquals(Set.of(Group.from(1), Group.from(2), Group.from(3)),
-                               new HashSet<>(List.of(Group.from(1), Group.from(1), Group.from(2), Group.from(3))));
-    }
-
-    @Test
     void testSatisfies() {
         var tests = Map.of(
                                List.of(spec(ClusterSpec.Type.content, "id1"), spec(ClusterSpec.Type.content, "id2")), false,
@@ -47,9 +40,7 @@ public class ClusterSpecTest {
     }
 
     private static ClusterSpec spec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.specification(type, ClusterSpec.Id.from(id))
-                          .vespaVersion(Version.emptyVersion)
-                          .build();
+        return ClusterSpec.builder(type, ClusterSpec.Id.from(id), Capacity.unspecified(), Version.emptyVersion).build();
     }
 
 }
