@@ -79,18 +79,18 @@ template <typename EntryT>
 EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_cfg,
                                std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator,
                                EntryType                                         default_value)
-    : _store(std::move(memory_allocator),
+    : _match_uncased(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
+      _store(std::move(memory_allocator),
              [&dict_cfg](const auto& data_store) {
                  return make_enum_store_comparator<ComparatorType>(data_store, dict_cfg);
              }),
       _dict(),
-      _is_folded(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
-      _foldedComparator(make_optionally_folded_comparator(is_folded())),
+      _lookup_source(make_optionally_folded_comparator(use_folding())),
       _compaction_spec(),
       _default_value(default_value),
       _default_value_ref() {
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg, allocate_comparator(),
-                                                     allocate_optionally_folded_comparator(is_folded())));
+                                                     optionally_allocate_folded_comparator(use_folding())));
     _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
     setup_default_value_ref();
 }
@@ -146,7 +146,7 @@ template <class EntryT> void EnumStoreT<EntryT>::write_value(BufferWriter& write
 }
 
 template <class EntryT> bool EnumStoreT<EntryT>::is_folded_change(Index idx1, Index idx2) const {
-    const auto& cmp = get_folded_comparator();
+    const auto& cmp = get_lookup_source();
     assert(!cmp.less(idx2, idx1));
     return cmp.less(idx1, idx2);
 }
@@ -255,7 +255,7 @@ template <typename EntryT> std::unique_ptr<EntryComparator> EnumStoreT<EntryT>::
 }
 
 template <typename EntryT>
-std::unique_ptr<EntryComparator> EnumStoreT<EntryT>::allocate_optionally_folded_comparator(bool folded) const {
+std::unique_ptr<EntryComparator> EnumStoreT<EntryT>::optionally_allocate_folded_comparator(bool folded) const {
     return (has_string_type && folded) ? std::make_unique<ComparatorType>(_store.get_comparator().make_folded())
                                        : std::unique_ptr<EntryComparator>();
 }

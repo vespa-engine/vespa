@@ -184,7 +184,7 @@ TEST(EnumComparatorTest, require_that_folded_less_is_working) {
     EnumIndex       e2 = es.insert("aa");
     EnumIndex       e3 = es.insert("aB");
     EnumIndex       e4 = es.insert("Folded");
-    const auto&     cmp1 = es.get_folded_comparator();
+    const auto&     cmp1 = es.get_lookup_source();
     EXPECT_FALSE(cmp1.less(e1, e2)); // similar folded
     EXPECT_FALSE(cmp1.less(e2, e1)); // similar folded
     EXPECT_TRUE(cmp1.less(e2, e3));  // folded compare
@@ -232,7 +232,7 @@ TEST(EnumComparatorTest, require_that_cased_less_is_working) {
     EnumIndex       e2 = es.insert("aa");
     EnumIndex       e3 = es.insert("aB");
     EnumIndex       e4 = es.insert("Folded");
-    const auto&     cmp1 = es.get_folded_comparator();
+    const auto&     cmp1 = es.get_lookup_source();
     EXPECT_TRUE(cmp1.less(e1, e2));
     EXPECT_FALSE(cmp1.less(e2, e1));
     EXPECT_FALSE(cmp1.less(e2, e3));

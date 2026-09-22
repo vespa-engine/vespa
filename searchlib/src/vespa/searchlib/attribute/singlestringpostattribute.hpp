@@ -101,7 +101,7 @@ template <typename B> void SingleValueStringPostingAttributeT<B>::applyValueChan
         }
     }
 
-    makePostingChange(enumStore.get_folded_comparator(), dictionary, currEnumIndices, changePost);
+    makePostingChange(enumStore.get_lookup_source(), dictionary, currEnumIndices, changePost);
 
     this->updatePostings(changePost);
 
