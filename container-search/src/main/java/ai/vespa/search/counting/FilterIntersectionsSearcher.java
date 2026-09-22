@@ -5,6 +5,8 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.Item;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -17,7 +19,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.FutureResult;
 import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.search.yql.MinimalQueryInserter;
-import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.search.result.Coverage;
@@ -27,16 +28,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Counts the documents matching the main query intersected with every combination of
  * up to {@code dimensions} named filters, and attaches the counts as a top-level
- * {@code filterIntersections} field. Each cell is run as a concurrent count-only fork
- * of the main query.
+ * {@code filterIntersections} field.
+ *
+ * Each cell is run as a concurrent fork of the main query which asks for zero hits and
+ * keeps the main query's rank profile, so rank profile inputs such as nearestNeighbor
+ * query tensors stay valid. Filters are parsed on their own and combined with the main
+ * query tree using AND.
  *
  * @author sebasabe
  */
@@ -92,9 +99,10 @@ public class FilterIntersectionsSearcher extends Searcher {
             cells = enumerateCells(filters, dimensions);
             YqlParser parser = new YqlParser(ParserEnvironment.fromExecutionContext(execution.context()));
             parser.setQueryParser(false);
+            Map<Filter, Item> parsedFilters = parseFilters(filters, query, parser);
             forks = new ArrayList<>(cells.size());
             for (Cell cell : cells)
-                forks.add(fork(query, cell, parser));
+                forks.add(fork(query, cell, parsedFilters));
         } catch (IllegalArgumentException e) {
             Result error = new Result(query, ErrorMessage.createInvalidQueryParameter(e.getMessage()));
             attachIntersections(error, new Value.ArrayValue());
@@ -149,40 +157,37 @@ public class FilterIntersectionsSearcher extends Searcher {
         return result;
     }
 
-    private static Query fork(Query query, Cell cell, YqlParser parser) {
+    private static Map<Filter, Item> parseFilters(List<Filter> filters, Query query, YqlParser parser) {
+        Map<Filter, Item> parsed = new HashMap<>();
+        for (Filter filter : filters) {
+            try {
+                parser.setUserQuery(query); // the parser clears this after each parse
+                QueryTree tree = parser.parse(Parsable.fromQueryModel(query.getModel())
+                                                      .setQuery("select * from sources * where " + filter.where));
+                parsed.put(filter, tree.getRoot());
+            } catch (RuntimeException e) {
+                throw new IllegalArgumentException("Filter '" + filter.name + "': invalid YQL: " + e.getMessage(), e);
+            }
+        }
+        return parsed;
+    }
+
+    private static Query fork(Query query, Cell cell, Map<Filter, Item> parsedFilters) {
         Query fork = query.clone();
         fork.setHits(0);
         fork.setOffset(0);
         fork.getRanking().getSoftTimeout().setEnable(false);
-        fork.getRanking().setProfile("unranked");
         fork.getPresentation().setSummary(null);
         // Grouping is already parsed at this point
         fork.getSelect().getGrouping().clear();
         fork.getSelect().setGroupingExpressionString(null);
 
-        String yql = composeYql(fork, cell);
-        fork.properties().set(MinimalQueryInserter.YQL, yql);
-
-        QueryTree tree;
-        try {
-            parser.setUserQuery(fork); // the parser clears this after each parse
-            tree = parser.parse(Parsable.fromQueryModel(fork.getModel()).setQuery(yql));
-        } catch (RuntimeException e) {
-            throw new IllegalArgumentException("intersection cell '" + String.join(",", cell.names)
-                                               + "': invalid YQL: " + e.getMessage(), e);
-        }
-        fork.getModel().getQueryTree(false).setRoot(tree.getRoot());
-        return fork;
-    }
-
-    private static String composeYql(Query fork, Cell cell) {
-        Set<String> sources = fork.getModel().getSources();
-        StringBuilder yql = new StringBuilder("select * from sources ")
-                .append(sources.isEmpty() ? "*" : String.join(", ", sources))
-                .append(" where (").append(VespaSerializer.serialize(fork)).append(")");
+        AndItem intersection = new AndItem();
+        intersection.addItem(fork.getModel().getQueryTree().getRoot());
         for (Filter filter : cell.filters)
-            yql.append(" and (").append(filter.where).append(")");
-        return yql.toString();
+            intersection.addItem(parsedFilters.get(filter).clone());
+        fork.getModel().getQueryTree().setRoot(intersection);
+        return fork;
     }
 
     /** The number of non-empty subsets of at most {@code dimensions} filters, saturating at {@link Long#MAX_VALUE}. */

@@ -5,6 +5,7 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.container.protect.Error;
 import com.yahoo.data.access.Inspector;
+import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.WordItem;
@@ -130,8 +131,10 @@ public class FilterIntersectionsSearcherTest {
                 invalidFilters("Filter 'a': duplicate filter name",
                                "[{\"name\": \"a\", \"where\": \"type contains \\\"product\\\"\"},"
                                + " {\"name\": \"a\", \"where\": \"type contains \\\"service\\\"\"}]"),
-                invalidFilters("intersection cell 'broken': invalid YQL",
+                invalidFilters("Filter 'broken': invalid YQL",
                                "[{\"name\": \"broken\", \"where\": \"this is not yql\"}]"),
+                invalidFilters("Filter 'escape': invalid YQL",
+                               "[{\"name\": \"escape\", \"where\": \"true) or true or (false\"}]"),
                 rejected("filterIntersections.dimensions must be at least 1, got 0",
                          "filterIntersections.filters", FILTERS, "filterIntersections.dimensions", "0"),
                 rejected("filterIntersections.maxCells must be at least 1, got 0",
@@ -222,21 +225,38 @@ public class FilterIntersectionsSearcherTest {
         var backend = new Backend();
         search(backend, "filterIntersections.filters", FILTERS,
                "select", "all(group(tier) each(output(count())))",
-               "summary", "short");
+               "summary", "short",
+               "ranking.profile", "myprofile");
 
         Query main = backend.mainQuery();
         assertEquals(1, main.getSelect().getGrouping().size());
         assertEquals("short", main.getPresentation().getSummary());
+        assertEquals("myprofile", main.getRanking().getProfile());
 
         List<Query> forks = backend.countQueries();
         assertEquals(6, forks.size());
         for (Query fork : forks) {
             assertEquals(0, fork.getOffset());
-            assertEquals("unranked", fork.getRanking().getProfile());
+            assertEquals("myprofile", fork.getRanking().getProfile(), "forks keep the rank profile so its inputs stay valid");
             assertFalse(fork.getRanking().getSoftTimeout().getEnable());
             assertTrue(fork.getSelect().getGrouping().isEmpty());
             assertNull(fork.getSelect().getGroupingExpressionString(), "raw 'select' must not survive on forks");
             assertNull(fork.getPresentation().getSummary());
+        }
+    }
+
+    @Test
+    void forksIntersectByCombiningQueryTreesNotByConcatenatingYql() {
+        var backend = new Backend();
+        search(backend, "filterIntersections.filters", FILTERS, "filterIntersections.dimensions", "1");
+
+        Item mainRoot = backend.mainQuery().getModel().getQueryTree().getRoot();
+        for (Query fork : backend.countQueries()) {
+            Item root = fork.getModel().getQueryTree().getRoot();
+            assertTrue(root instanceof AndItem, "fork root is an AND, got " + root);
+            AndItem and = (AndItem) root;
+            assertEquals(2, and.getItemCount(), "main query and one filter");
+            assertEquals(mainRoot.toString(), and.getItem(0).toString(), "main query is the first operand, unchanged");
         }
     }
 
