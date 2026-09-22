@@ -41,11 +41,11 @@ public final class LinguisticsParser extends AbstractParser {
     @Override
     Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
                IndexFacts.Session indexFacts, String fieldOrFieldSet, Parsable parsable) {
-        setState(language, indexFacts, fieldOrFieldSet);
+        setState(parsingLanguage, indexFacts, fieldOrFieldSet);
         List<FieldProfile> linguisticProfiles = linguisticProfilesForFieldArgument(fieldOrFieldSet, parsable);
         List<FieldTokens> tokensPerField =
                 linguisticProfiles.stream().map(fieldProfile -> new FieldTokens(fieldProfile.fieldOrFieldSet(),
-                                                                                tokenize(queryToParse, fieldProfile.profile(), language).iterator())).toList();
+                                                                                tokenize(queryToParse, fieldProfile.profile(), parsingLanguage).iterator())).toList();
         var parent = newComposite();
 
         // Iterate over the tokens of each resulting tokenization in parallel to create an OR item for each token

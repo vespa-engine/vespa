@@ -2,6 +2,7 @@
 package com.yahoo.search.yql;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.simple.SimpleToken;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
@@ -102,6 +103,15 @@ public class TextInputTestCase {
         var tester = new LinguisticsParserTester();
         Item root = tester.parse("select foo from bar where title contains ({language:\"ja\"} text(\"\u30ab\u30bf\u30ab\u30ca\"))").getRoot();
         assertEquals(Language.JAPANESE, root.getLanguage());
+    }
+
+    @Test
+    void languageAnnotationIsPassedToTheTokenizer() {
+        var tester = new LinguisticsParserTester();
+        tester.parse("select foo from bar where title contains ({language:\"ja\"} text(\"\u30ab\u30bf\u30ab\u30ca\"))");
+        assertEquals(List.of(Language.JAPANESE),
+                     tester.tokenizer().invocations().stream().map(LinguisticsParameters::language).toList(),
+                     "The language of the query is what decides which analyzer the linguistics component uses");
     }
 
     @Test
