@@ -53,6 +53,22 @@ public:
     using EntryComparator = vespalib::datastore::EntryComparator;
 
 private:
+    using ParentDataStore = UniqueStoreType::DataStoreType;
+    static ComparatorType make_normal_enum_store_comparator(const ParentDataStore& data_store) {
+        if constexpr (has_string_type) {
+            return ComparatorType(data_store, false);
+        } else {
+            return ComparatorType(data_store);
+        }
+    }
+    static ComparatorType make_cased_enum_store_comparator(const ParentDataStore& data_store) {
+        if constexpr (has_string_type) {
+            return ComparatorType(data_store, true);
+        } else {
+            return ComparatorType(data_store);
+        }
+    }
+
     bool                               _match_uncased;
     UniqueStoreType                    _store;
     IEnumStoreDictionary*              _dict;
@@ -70,8 +86,15 @@ private:
     ssize_t load_unique_values_internal(const void* src, size_t available, IndexVector& idx);
     ssize_t load_unique_value(const void* src, size_t available, Index& idx);
 
-    std::unique_ptr<EntryComparator> optionally_allocate_folded_comparator(bool folded) const;
-    ComparatorType make_optionally_folded_comparator(bool folded) const;
+    ComparatorType make_optionally_folded_comparator() const {
+        if constexpr (has_string_type) {
+            if (use_folding()) {
+                return _store.get_comparator().make_folded();
+            }
+        }
+        return _store.get_comparator();
+    }
+    std::unique_ptr<EntryComparator> optionally_allocate_folded_comparator() const;
 
 public:
     EnumStoreT(const EnumStoreT& rhs) = delete;
