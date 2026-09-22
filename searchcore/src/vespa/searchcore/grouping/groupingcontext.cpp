@@ -87,11 +87,10 @@ void GroupingContext::aggregate(Grouping& grouping, uint32_t docId, HitRank rank
     }
 }
 
-unsigned int GroupingContext::aggregateRanked(Grouping& grouping, const RankedHit* rankedHit,
-                                              unsigned int len) const {
-    unsigned int i(0);
-    for (; (i < len) && !hasExpired(); i++) {
-        aggregate(grouping, rankedHit[i].getDocId(), rankedHit[i].getRank());
+unsigned int GroupingContext::aggregateRanked(Grouping& grouping, std::span<const RankedHit> hits) const {
+    unsigned int i = 0;
+    for (; (i < hits.size()) && !hasExpired(); i++) {
+        aggregate(grouping, hits[i].getDocId(), hits[i].getRank());
     }
     return i;
 }
@@ -110,10 +109,9 @@ void GroupingContext::aggregate(Grouping& grouping, const BitVector* bVec, unsig
     }
 }
 
-void GroupingContext::aggregate(Grouping& grouping, const RankedHit* rankedHit, unsigned int len,
-                                const BitVector* bVec) const {
+void GroupingContext::aggregate(Grouping& grouping, std::span<const RankedHit> hits, const BitVector* bVec) const {
     grouping.preAggregate(false);
-    uint32_t count = aggregateRanked(grouping, rankedHit, grouping.getMaxN(len));
+    uint32_t count = aggregateRanked(grouping, {hits.data(), grouping.getMaxN(hits.size())});
     if (bVec != nullptr) {
         int64_t topN = grouping.getTopN();
         if (topN > count) {
@@ -125,20 +123,19 @@ void GroupingContext::aggregate(Grouping& grouping, const RankedHit* rankedHit, 
     grouping.postProcess();
 }
 
-void GroupingContext::aggregate(Grouping& grouping, const RankedHit* rankedHit, unsigned int len) const {
+void GroupingContext::aggregate(Grouping& grouping, std::span<const RankedHit> hits) const {
     bool isOrdered(!grouping.needResort());
     grouping.preAggregate(isOrdered);
     search::aggregation::HitsAggregationResult::SetOrdered pred;
     grouping.select(pred, pred);
-    aggregateRanked(grouping, rankedHit, grouping.getMaxN(len));
+    aggregateRanked(grouping, {hits.data(), grouping.getMaxN(hits.size())});
     grouping.postProcess();
 }
 
-void GroupingContext::groupUnordered(const RankedHit* searchResults, uint32_t binSize,
-                                     const search::BitVector* overflow) {
+void GroupingContext::groupUnordered(std::span<const RankedHit> hits, const search::BitVector* overflow) {
     for (const auto& g : _groupingList) {
         if (g->needResort()) {
-            aggregate(*g, searchResults, binSize, overflow);
+            aggregate(*g, hits, overflow);
             LOG(debug, "groupUnordered: %s", g->asString().c_str());
             g->cleanTemporary();
             g->cleanupAttributeReferences();
@@ -146,10 +143,10 @@ void GroupingContext::groupUnordered(const RankedHit* searchResults, uint32_t bi
     }
 }
 
-void GroupingContext::groupInRelevanceOrder(const RankedHit* searchResults, uint32_t binSize) {
+void GroupingContext::groupInRelevanceOrder(std::span<const RankedHit> hits) {
     for (const auto& g : _groupingList) {
         if (!g->needResort()) {
-            aggregate(*g, searchResults, binSize);
+            aggregate(*g, hits);
             LOG(debug, "groupInRelevanceOrder: %s", g->asString().c_str());
             g->cleanTemporary();
             g->cleanupAttributeReferences();

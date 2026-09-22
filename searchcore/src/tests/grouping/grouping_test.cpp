@@ -308,7 +308,7 @@ TEST(GroupingTest, testGroupingSession) {
     RankedHit hit;
     hit._docId = 0;
     GroupingManager& manager(session.getGroupingManager());
-    manager.groupInRelevanceOrder(7, &hit, 1);
+    manager.groupInRelevanceOrder(7, {&hit, 1});
     CheckAttributeReferences attrCheck_after;
     GroupingList&            gl3(initContext.getGroupingList());
     for (auto& grouping : gl3) {
@@ -376,7 +376,7 @@ TEST(GroupingTest, testSessionWithRootLevelAggregationResult) {
 
     RankedHit hit;
     hit._docId = 3;
-    session.getGroupingManager().groupInRelevanceOrder(7, &hit, 1);
+    session.getGroupingManager().groupInRelevanceOrder(7, {&hit, 1});
     session.continueExecution(initContext);
     ASSERT_TRUE(!session.finished());
 
@@ -416,7 +416,7 @@ TEST(GroupingTest, testSessionWithMultipleRootLevelAggregationResults) {
 
     RankedHit hit;
     hit._docId = 3;
-    session.getGroupingManager().groupInRelevanceOrder(7, &hit, 1);
+    session.getGroupingManager().groupInRelevanceOrder(7, {&hit, 1});
     session.continueExecution(initContext);
     ASSERT_TRUE(!session.finished());
 
@@ -450,7 +450,7 @@ TEST(GroupingTest, testSessionWithRootLevelAggregationResultAcrossPasses) {
 
     RankedHit hit;
     hit._docId = 3;
-    session.getGroupingManager().groupInRelevanceOrder(7, &hit, 1);
+    session.getGroupingManager().groupInRelevanceOrder(7, {&hit, 1});
 
     // First pass: root level (0) is merged, since firstLevel == 0 here.
     session.continueExecution(initContext);
@@ -509,7 +509,7 @@ TEST(GroupingTest, testEmptySessionId) {
     RankedHit       hit;
     hit._docId = 0;
     GroupingManager& manager(session.getGroupingManager());
-    manager.groupInRelevanceOrder(8, &hit, 1);
+    manager.groupInRelevanceOrder(8, {&hit, 1});
     EXPECT_EQ(id, session.getSessionId());
     ASSERT_TRUE(!session.getGroupingManager().empty());
     ASSERT_TRUE(session.finished() && session.getSessionId().empty());
@@ -573,7 +573,7 @@ void doGrouping(GroupingContext& ctx, uint32_t doc1, double rank1, uint32_t doc2
     hits.emplace_back(doc1, rank1);
     hits.emplace_back(doc2, rank2);
     hits.emplace_back(doc3, rank3);
-    man.groupInRelevanceOrder(9, &hits[0], 3);
+    man.groupInRelevanceOrder(9, {&hits[0], 3});
 }
 
 TEST(GroupingTest, test_grouping_fork_and_join) {

@@ -425,14 +425,16 @@ std::unique_ptr<search::ResultSet> MatchThread::get_matches_after_second_phase_r
 }
 
 void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, ResultProcessor::Context& context) {
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
+    }
     bool hasGrouping = bool(context.grouping);
     if (context.sort->hasSortData() || hasGrouping) {
         result->mergeWithBitOverflow(fallback_rank_value());
     }
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
+    }
     size_t                   totalHits = result->getNumHits(); // Must be done before modifying overflow
     const search::RankedHit* hits = result->getArray();
     size_t                   numHits = result->getArrayUsed();
@@ -440,29 +442,33 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
     if (bits != nullptr && hits != nullptr) {
         bits->andNotWithT(search::RankedHitIterator(hits, numHits));
     }
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
+    }
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
-        man.groupUnordered(_distributionKey, hits, numHits, bits);
+        man.groupUnordered(_distributionKey, {hits, numHits}, bits);
     }
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
+    }
     size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
     result->sort(*context.sort->sorter, sortLimit);
     if (context.sort->sortSpec.feature_values_failed()) {
         // The hits are not in the requested order; the matcher fails the query.
         resultProcessor.note_sort_feature_failure();
     }
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
+    }
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
-        man.groupInRelevanceOrder(_distributionKey, hits, numHits);
+        man.groupInRelevanceOrder(_distributionKey, {hits, numHits});
         man.convertToGlobalId(matchToolsFactory.metaStore());
     }
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
+    }
     fillPartialResult(context, totalHits, numHits, hits, bits);
 
     if (auto task = matchToolsFactory.createOnMatchTask()) {
