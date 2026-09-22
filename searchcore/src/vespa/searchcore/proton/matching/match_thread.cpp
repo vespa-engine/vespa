@@ -19,7 +19,6 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
-#include <limits>
 #include <optional>
 
 #include <vespa/log/log.h>
@@ -27,16 +26,13 @@ LOG_SETUP(".proton.matching.match_thread");
 
 namespace proton::matching {
 
-using search::attribute::AttributeOperation;
 using search::fef::BlueprintResolver;
 using search::fef::FeatureResolver;
 using search::fef::LazyValue;
-using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::queryeval::HitCollector;
 using search::queryeval::ProfiledIterator;
 using search::queryeval::SearchIterator;
-using search::queryeval::SortedHitSequence;
 
 namespace {
 
@@ -435,24 +431,23 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
     if (doom.hard_doom()) {
         return;
     }
-    size_t                   totalHits = result->getNumHits(); // Must be done before modifying overflow
-    const search::RankedHit* hits = result->getArray();
-    size_t                   numHits = result->getArrayUsed();
-    search::BitVector*       bits = result->getBitOverflow();
-    if (bits != nullptr && hits != nullptr) {
-        bits->andNotWithT(search::RankedHitIterator(hits, numHits));
+    size_t             totalHits = result->getNumHits(); // Must be done before modifying overflow
+    const auto&        hits = result->array_view();
+    search::BitVector* bits = result->getBitOverflow();
+    if (bits != nullptr && hits.size() > 0) {
+        bits->andNotWithT(search::RankedHitIterator(hits.data(), hits.size()));
     }
     if (doom.hard_doom()) {
         return;
     }
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
-        man.groupUnordered(_distributionKey, {hits, numHits}, bits);
+        man.groupUnordered(_distributionKey, hits, bits);
     }
     if (doom.hard_doom()) {
         return;
     }
-    size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
+    size_t sortLimit = hasGrouping ? hits.size() : context.result->maxSize();
     result->sort(*context.sort->sorter, sortLimit);
     if (context.sort->sortSpec.feature_values_failed()) {
         // The hits are not in the requested order; the matcher fails the query.
@@ -463,13 +458,13 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
     }
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
-        man.groupInRelevanceOrder(_distributionKey, {hits, numHits});
+        man.groupInRelevanceOrder(_distributionKey, hits);
         man.convertToGlobalId(matchToolsFactory.metaStore());
     }
     if (doom.hard_doom()) {
         return;
     }
-    fillPartialResult(context, totalHits, numHits, hits, bits);
+    fillPartialResult(context, totalHits, hits.size(), hits.data(), bits);
 
     if (auto task = matchToolsFactory.createOnMatchTask()) {
         task->run(result->copyResult());
