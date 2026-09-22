@@ -92,6 +92,9 @@ public class LinguisticsParserTester {
         /** A map from input text to output tokens per profile. */
         Map<String, Map<String, List<Token>>> tokensPerProfile = new HashMap<>();
 
+        /** The parameters of each tokenize call, in the order they were made. */
+        private final List<LinguisticsParameters> invocations = new ArrayList<>();
+
         /** Adds a tokenize result that will override the fallback SimpleTokenizer behavior. */
         public MockTokenizer putTokens(String profile, String input, String ... outputTokens) {
             return putTokens(profile, input, asTokens(outputTokens));
@@ -116,8 +119,12 @@ public class LinguisticsParserTester {
             return tokens;
         }
 
+        /** Returns the parameters this was called with, in the order they were made. */
+        public List<LinguisticsParameters> invocations() { return List.copyOf(invocations); }
+
         @Override
         public Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
+            invocations.add(parameters);
             var profileTokens = tokensPerProfile.get(parameters.profile());
             if (profileTokens != null) {
                 var output = profileTokens.get(input);
