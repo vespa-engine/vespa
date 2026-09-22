@@ -54,14 +54,14 @@ LazyValue get_score_feature(const RankProgram& rankProgram) {
     return resolver.resolve(0);
 }
 
-void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, size_t numHits,
-                       const search::RankedHit* hits, const search::BitVector* bits) __attribute__((noinline));
+void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, std::span<const search::RankedHit> hits,
+                       const search::BitVector* bits) __attribute__((noinline));
 
-void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, size_t numHits,
-                       const search::RankedHit* hits, const search::BitVector* bits) {
+void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, std::span<const search::RankedHit> hits,
+                       const search::BitVector* bits) {
     PartialResult& pr = *context.result;
     pr.totalHits(totalHits);
-    size_t                   maxHits = std::min(numHits, pr.maxSize());
+    size_t                   maxHits = std::min(hits.size(), pr.maxSize());
     const search::BitVector& validLids = context._validLids;
     if (pr.hasSortData()) {
         FastS_SortSpec& spec = context.sort->sortSpec;
@@ -464,7 +464,7 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
     if (doom.hard_doom()) {
         return;
     }
-    fillPartialResult(context, totalHits, hits.size(), hits.data(), bits);
+    fillPartialResult(context, totalHits, hits, bits);
 
     if (auto task = matchToolsFactory.createOnMatchTask()) {
         task->run(result->copyResult());
