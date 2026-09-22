@@ -206,7 +206,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                 .orElseThrow(() -> new AuthorizationException(Text.format("No handler exists for tenant '%s'", tenantName.value())));
     }
 
-    private enum JrtErrorCode {
+    enum JrtErrorCode {
         UNAUTHORIZED(1),
         AUTHORIZATION_FAILED(2);
 
