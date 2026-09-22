@@ -13,7 +13,8 @@ target string default="triton:8001" restart
 # Relative paths will be resolved relative to $VESPA_HOME.
 modelRepositoryPath string default="/sidecars/triton/models" restart
 
-# Model control mode. Client will only issue model load/unload requests if mode is EXPLICIT.
+# Model control mode.
+# Only EXPLICIT mode generates model configs and issues load/unload model requests.
 modelControlMode enum {NONE, POLL, EXPLICIT} default=EXPLICIT restart
 
 # Whether the instances of a model share one ONNX Runtime session per device instead of each loading the model.

@@ -200,7 +200,8 @@ public class Flags {
     public static final UnboundBooleanFlag TRITON_SHARE_ONNX_SESSION = defineFeatureFlag(
             "triton-share-onnx-session", false,
             List.of("glebashnik"), "2026-09-04", "2026-12-01",
-            "Whether model instances in Triton share one ONNX Runtime session per device instead of each loading the model",
+            "Whether model instances in Triton share one ONNX Runtime session per device instead of each loading " +
+            "the model. To be effective, it requires a Triton sidecar image with the share_session_between_instances patch.",
             "Takes effect at redeployment (requires restart)",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
     );

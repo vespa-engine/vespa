@@ -102,9 +102,8 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
                 : OrtSession.SessionOptions.OptLevel.NO_OPT;
         sessionOpts.setOptimizationLevel(optLevel);
         sessionOpts.setSessionLogLevel(OrtLoggingLevel.ORT_LOGGING_LEVEL_INFO);
-        var execMode = vespaOpts.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? PARALLEL : SEQUENTIAL;
-        sessionOpts.setExecutionMode(execMode);
-        sessionOpts.setInterOpNumThreads(execMode == PARALLEL ? vespaOpts.interOpThreads() : 1);
+        sessionOpts.setExecutionMode(vespaOpts.isParallel() ? PARALLEL : SEQUENTIAL);
+        sessionOpts.setInterOpNumThreads(vespaOpts.effectiveInterOpThreads());
         sessionOpts.setIntraOpNumThreads(vespaOpts.intraOpThreads());
         sessionOpts.setCPUArenaAllocator(false);
         if (loadCuda) sessionOpts.addCUDA(vespaOpts.gpuDeviceNumber());
