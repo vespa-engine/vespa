@@ -24,6 +24,7 @@ Landlock::AccessRules::~AccessRules() = default;
 #if VESPA_HAS_LANDLOCK
 
 #include <vespa/vespalib/util/error.h>
+#include <vespa/vespalib/util/string_escape.h>
 
 #include <fcntl.h>
 #include <linux/landlock.h>
@@ -76,14 +77,14 @@ void add_path_ruleset(const int ruleset_fd, const uint64_t supported_flags, cons
                       const int wanted_access) {
     const FdWrapper parent(open(path.c_str(), O_PATH | O_CLOEXEC));
     if (parent.fd == -1) {
-        std::println(std::cerr, "landlock: failed to open '{:?}': {}", path.c_str(), getLastErrorString());
+        std::println(std::cerr, "landlock: failed to open \"{}\": {}", escape(path.c_str()), getLastErrorString());
         return;
     }
     landlock_path_beneath_attr path_beneath{};
     path_beneath.parent_fd = parent.fd;
     struct ::stat statbuf{};
     if (fstat(path_beneath.parent_fd, &statbuf) == -1) {
-        std::println(std::cerr, "landlock: failed to stat '{:?}': {}", path.c_str(), getLastErrorString());
+        std::println(std::cerr, "landlock: failed to stat \"{}\": {}", escape(path.c_str()), getLastErrorString());
         return;
     }
     uint64_t access_flags = 0;
@@ -100,7 +101,8 @@ void add_path_ruleset(const int ruleset_fd, const uint64_t supported_flags, cons
     path_beneath.allowed_access = access_flags & supported_flags;
     int err = my_landlock_add_rule(ruleset_fd, LANDLOCK_RULE_PATH_BENEATH, &path_beneath, 0);
     if (err) {
-        std::println(std::cerr, "landlock: failed to add rule for '{:?}': {}", path.c_str(), getLastErrorString());
+        std::println(std::cerr, "landlock: failed to add rule for \"{}\": {}", escape(path.c_str()),
+                     getLastErrorString());
     }
 }
 
@@ -222,13 +224,13 @@ std::optional<Landlock::AccessRules> Landlock::from_env() {
             } else if (access_sv == "rwx") {
                 flags = READ | WRITE | EXEC;
             } else {
-                std::println(std::cerr, "Unknown access specifier: '{:?}'. Supported are: ro, rw, rx, rwx",
-                             access_sv);
+                std::println(std::cerr, "Unknown access specifier: \"{}\". Supported are: ro, rw, rx, rwx",
+                             escape(access_sv));
             }
             // The presence of multiple commas indicates a misconfiguration or perhaps
             // even some sneaky stuff going on.
             if (access_sv.contains(',')) {
-                std::println(std::cerr, "landlock: illegal duplicate comma in path entry '{:?}'", entry_sv);
+                std::println(std::cerr, "landlock: illegal duplicate comma in path entry \"{}\"", escape(entry_sv));
                 flags = 0;
             }
         } else {
