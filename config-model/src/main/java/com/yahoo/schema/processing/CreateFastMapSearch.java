@@ -139,9 +139,11 @@ public class CreateFastMapSearch extends Processor {
 
     /**
      * Builds "input mapField | for_each { get_field $key . separator . VALUE_EXP } | attribute",
-     * where VALUE_EXP is "(get_field $value | exhex8encode)" if the value type is int,
+     * where VALUE_EXP is
+     * "(get_field $value | exhex8encode)" if the value type is int,
      * "(get_field $value | exhex16encode)" if the value type is long,
-     * and "get_field $value" otherwise (if the value type is string).
+     * "get_field $value" if the value type is string,
+     * and throws an IllegalArgumentException otherwise.
      * */
     private static ScriptExpression keyValueScript(SDField inputField, String fieldName, DataType valueType) {
         return new ScriptExpression(
@@ -159,9 +161,11 @@ public class CreateFastMapSearch extends Processor {
     }
 
     /**
-     * Builds "(get_field $value | exhex8encode)" if the value type is int,
-     * "(get_field $value | exhex16encode)" if the value type is long, and
-     * "get_field $value" otherwise.
+     * Builds
+     * "(get_field $value | exhex8encode)" if the value type is int,
+     * "(get_field $value | exhex16encode)" if the value type is long,
+     * "get_field $value" if the value type is string,
+     * and throws an IllegalArgumentException otherwise.
      * */
     private static Expression valueExpression(DataType valueType) {
         var field = new GetFieldExpression("$value");
@@ -170,8 +174,10 @@ public class CreateFastMapSearch extends Processor {
             return new ParenthesisExpression(new StatementExpression(field, new ExcessHex8EncodeExpression()));
         } else if (valueType == DataType.LONG) {
             return new ParenthesisExpression(new StatementExpression(field, new ExcessHex16EncodeExpression()));
-        } else { // DataType.STRING
+        } else if (valueType == DataType.STRING) {
             return field;
+        } else {
+            throw new IllegalArgumentException("Value type '" + valueType + "' is not supported.");
         }
     }
 
