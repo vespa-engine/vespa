@@ -64,6 +64,19 @@ public class OnnxEvaluatorOptionsTest {
     }
 
     @Test
+    public void optional_components_cannot_be_null() {
+        var options = OnnxEvaluatorOptions.createDefault();
+        assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
+                options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
+                options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
+                options.batchingMaxSize(), null, options.modelConfigOverride(), options.availableProcessors()));
+        assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
+                options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
+                options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
+                options.batchingMaxSize(), options.numModelInstances(), null, options.availableProcessors()));
+    }
+
+    @Test
     public void explicit_instance_count_must_be_positive() {
         var options = new OnnxEvaluatorOptions.Builder(8).setNumModelInstances(1).build();
         assertEquals(Optional.of(1), options.numModelInstances());

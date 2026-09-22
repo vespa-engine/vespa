@@ -37,6 +37,8 @@ public record OnnxEvaluatorOptions(
 
     public OnnxEvaluatorOptions {
         Objects.requireNonNull(executionMode, "executionMode cannot be null");
+        Objects.requireNonNull(numModelInstances, "numModelInstances cannot be null");
+        Objects.requireNonNull(modelConfigOverride, "modelConfigOverride cannot be null");
     }
 
     public static OnnxEvaluatorOptions createDefault() {

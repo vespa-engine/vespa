@@ -94,7 +94,12 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        var resolvedOptions = resolveInstanceCount(options);
+        // Options are used as-is when this runtime does not generate the model config from them:
+        // a supplied config override owns its instance configuration, and the other model control modes
+        // leave loading to Triton.
+        var resolvedOptions = isModelControlExplicit && options.modelConfigOverride().isEmpty()
+                ? resolveInstanceCount(options, shareSessionBetweenInstances)
+                : options;
         var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances);
         var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
 
@@ -104,15 +109,6 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             modelReference.close(); // Don't leak the model when creating the evaluator fails.
             throw e;
         }
-    }
-
-    // Options are used as-is when this runtime does not generate the model config from them:
-    // a supplied config override owns its instance configuration, and the other model control modes
-    // leave loading to Triton.
-    private OnnxEvaluatorOptions resolveInstanceCount(OnnxEvaluatorOptions options) {
-        return !isModelControlExplicit || options.modelConfigOverride().isPresent()
-                ? options
-                : resolveInstanceCount(options, shareSessionBetweenInstances);
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
@@ -220,7 +216,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Hashes the supplied options without resolving defaults.
     static String generateModelName(String modelPath, OnnxEvaluatorOptions options, boolean shareSession) {
         var fileName = Paths.get(modelPath).getFileName().toString();
-        var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
+        var extensionIndex = fileName.lastIndexOf('.');
+        var baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
         var optionsHash = options.calculateHash();
         // Hash a fixed-width encoding of the model contents, options, and session-sharing setting.
@@ -293,15 +290,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         // This is different from EmbeddedOnnxRuntime, where one session handles all requests.
         // With a shared session, the thread counts match EmbeddedOnnxRuntime.createSessionOptions().
         // With separate sessions, the CPU cores are divided between the instances as intra-op threads.
+        // Inter-op threads only matter in parallel execution mode.
         var executionModeValue = options.isParallel() ? "1" : "0";
         var numModelInstances = options.numModelInstances().orElseThrow(() ->
                 new IllegalArgumentException("The number of model instances must be resolved before generating the model config"));
         var intraOpThreadCountValue = Integer.toString(shareSessionBetweenInstances
                 ? options.intraOpThreads()
                 : intraOpThreadsForSeparateSessions(options, numModelInstances));
-        var interOpThreadCountValue = Integer.toString(shareSessionBetweenInstances
-                ? options.effectiveInterOpThreads()
-                : options.interOpThreads());
+        var interOpThreadCountValue = Integer.toString(options.effectiveInterOpThreads());
 
         var configBuilder = ModelConfig.newBuilder()
                 .setName(modelName)
@@ -371,14 +367,11 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     static ModelInstanceGroup createInstanceGroup(OnnxEvaluatorOptions options, int numModelInstances) {
         var kind = options.gpuDeviceRequired() ? Kind.KIND_GPU
                 : options.requestingGpu() ? Kind.KIND_AUTO : Kind.KIND_CPU;
-        var group = ModelInstanceGroup.newBuilder()
+        // The GPU list is left empty so Triton uses all GPUs, and can fall back to CPU for AUTO.
+        return ModelInstanceGroup.newBuilder()
                 .setCount(numModelInstances)
-                .setKind(kind);
-        // Leave AUTO's GPU list empty so Triton can fall back to CPU without an incompatible GPU list.
-        if (kind == Kind.KIND_GPU && options.requestingGpu()) {
-            group.addGpus(options.gpuDeviceNumber());
-        }
-        return group.build();
+                .setKind(kind)
+                .build();
     }
 
     // Sharing one session per device loads the model weights once per device instead of once per instance.

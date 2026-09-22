@@ -99,6 +99,11 @@ class TritonOnnxRuntimeDefaultsTest {
         // A fixed expected name detects changes in hashing or encoding across runs.
         assertEquals("model_98ad6a1dc766eee5",
                      TritonOnnxRuntime.generateModelName(model.toString(), options, SHARED_SESSION));
+
+        // A model file without an extension keeps its whole name.
+        var modelWithoutExtension = Files.writeString(directory.resolve("model"), "model contents");
+        assertEquals("model_98ad6a1dc766eee5",
+                     TritonOnnxRuntime.generateModelName(modelWithoutExtension.toString(), options, SHARED_SESSION));
     }
 
     @Test
@@ -170,21 +175,21 @@ class TritonOnnxRuntimeDefaultsTest {
 
     @ParameterizedTest
     @MethodSource("deviceOptions")
-    void instance_group_respects_device_options(int device, boolean required, Kind expectedKind, List<Integer> expectedGpus) {
+    void instance_group_respects_device_options(int device, boolean required, Kind expectedKind) {
         var group = TritonOnnxRuntime.createInstanceGroup(options(8).setGpuDevice(device, required).build(), 8);
         assertEquals(expectedKind, group.getKind());
         assertEquals(8, group.getCount());
-        assertEquals(expectedGpus, group.getGpusList());
+        assertEquals(List.of(), group.getGpusList(), "The GPU list is left to Triton");
     }
 
     private static List<Arguments> deviceOptions() {
         return List.of(
-                Arguments.of(-1, false, KIND_CPU, List.of()),
-                Arguments.of(0, false, KIND_AUTO, List.of()),
-                Arguments.of(2, false, KIND_AUTO, List.of()),
-                Arguments.of(-1, true, KIND_GPU, List.of()),
-                Arguments.of(0, true, KIND_GPU, List.of(0)),
-                Arguments.of(2, true, KIND_GPU, List.of(2)));
+                Arguments.of(-1, false, KIND_CPU),
+                Arguments.of(0, false, KIND_AUTO),
+                Arguments.of(2, false, KIND_AUTO),
+                Arguments.of(-1, true, KIND_GPU),
+                Arguments.of(0, true, KIND_GPU),
+                Arguments.of(2, true, KIND_GPU));
     }
 
     @Test
