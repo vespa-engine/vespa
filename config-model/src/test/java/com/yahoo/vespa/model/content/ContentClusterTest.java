@@ -3,6 +3,9 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.AdditionalContent;
+import com.yahoo.config.model.api.AdditionalContent.DocumentTypeDeclaration;
+import com.yahoo.config.model.api.AdditionalContent.Mode;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
@@ -22,8 +25,10 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
+import com.yahoo.io.reader.NamedReader;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.metrics.MetricsmanagerConfig;
+import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
@@ -53,6 +58,7 @@ import org.junit.jupiter.api.Test;
 import static com.yahoo.vespa.model.utils.ResourceUtils.GiB;
 import static com.yahoo.vespa.model.utils.ResourceUtils.GB;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -1936,6 +1942,109 @@ public class ContentClusterTest extends ContentBaseTest {
                 "    </engine>" +
                 "  </content>" +
                 " </services>", minGroupUpRatio, groupCount);
+    }
+
+    @Test
+    void additionalDocumentsAreDeclaredWithTheirModeAndDistribution() {
+        VespaModel model = modelWithAdditionalDocuments("<document type='product' mode='index'/>",
+                                                        new DocumentTypeDeclaration("extra", Mode.STORE_ONLY, false),
+                                                        new DocumentTypeDeclaration("other", Mode.INDEX, true));
+        ContentCluster content = model.getContentClusters().get("content");
+        assertEquals(Set.of("product", "extra", "other"), content.getDocumentDefinitions().keySet());
+        assertEquals(SchemaInfo.IndexMode.STORE_ONLY, indexModeOf(content, "extra"));
+        assertFalse(content.isGloballyDistributed(content.getDocumentDefinitions().get("extra")));
+        assertEquals(SchemaInfo.IndexMode.INDEX, indexModeOf(content, "other"));
+        assertTrue(content.isGloballyDistributed(content.getDocumentDefinitions().get("other")));
+    }
+
+    @Test
+    void theApplicationsOwnDeclarationOfAnAdditionalDocumentTypeWinsWithAWarningIfItDiffers() {
+        TestDeployLogger logger = new TestDeployLogger();
+        VespaModel model = modelWithAdditionalDocuments("<document type='extra' mode='index' global='true'/>", logger,
+                                                        new DocumentTypeDeclaration("extra", Mode.STREAMING, false));
+        ContentCluster content = model.getContentClusters().get("content");
+        assertEquals(Set.of("extra"), content.getDocumentDefinitions().keySet());
+        assertEquals(SchemaInfo.IndexMode.INDEX, indexModeOf(content, "extra"));
+        assertTrue(content.isGloballyDistributed(content.getDocumentDefinitions().get("extra")));
+        assertEquals(List.of("Content cluster 'content' declares document type 'extra' with mode 'index' instead of " +
+                             "'streaming' and global='true' instead of 'false', differing from the declaration that would " +
+                             "otherwise be added for it. The application's own declaration is used."),
+                     logger.warnings());
+    }
+
+    @Test
+    void theApplicationsOwnIdenticalDeclarationOfAnAdditionalDocumentTypeIsSilentlyKept() {
+        TestDeployLogger logger = new TestDeployLogger();
+        VespaModel model = modelWithAdditionalDocuments("<document type='extra' mode='index' global='true'/>", logger,
+                                                        new DocumentTypeDeclaration("extra", Mode.INDEX, true));
+        assertEquals(Set.of("extra"), model.getContentClusters().get("content").getDocumentDefinitions().keySet());
+        assertEquals(List.of(), logger.warnings());
+    }
+
+    @Test
+    void anApplicationDeclarationWithASelectionOfAnAdditionalDocumentTypeWarns() {
+        TestDeployLogger logger = new TestDeployLogger();
+        modelWithAdditionalDocuments("<document type='extra' mode='index' global='true' selection='extra.f == \"x\"'/>", logger,
+                                     new DocumentTypeDeclaration("extra", Mode.INDEX, true));
+        assertEquals(List.of("Content cluster 'content' declares document type 'extra' with a selection, where all documents " +
+                             "of the type were to be stored, differing from the declaration that would otherwise be added " +
+                             "for it. The application's own declaration is used."),
+                     logger.warnings());
+    }
+
+    private static SchemaInfo.IndexMode indexModeOf(ContentCluster content, String schema) {
+        return content.getSearch().getSearchCluster().schemas().get(schema).getIndexMode();
+    }
+
+    private static VespaModel modelWithAdditionalDocuments(String documentsXml, DocumentTypeDeclaration... declarations) {
+        return modelWithAdditionalDocuments(documentsXml, new TestDeployLogger(), declarations);
+    }
+
+    /** A model with the given declarations added, each with a schema of the same name. */
+    private static VespaModel modelWithAdditionalDocuments(String documentsXml, DeployLogger logger, DocumentTypeDeclaration... declarations) {
+        List<NamedReader> schemas = new ArrayList<>();
+        for (DocumentTypeDeclaration declaration : declarations)
+            schemas.add(new NamedReader(declaration.type() + ".sd", new StringReader(schema(declaration.type()))));
+        AdditionalContent additional = new AdditionalContent(schemas, List.of(declarations));
+        String hosts = "<hosts><host name='mockhost'><alias>node1</alias></host></hosts>";
+        String services = "<services version='1.0'>" +
+                          "  <container id='default' version='1.0'>" +
+                          "    <search/>" +
+                          "    <document-api/>" +
+                          "    <nodes><node hostalias='node1'/></nodes>" +
+                          "  </container>" +
+                          "  <content id='content' version='1.0'>" +
+                          "    <redundancy>1</redundancy>" +
+                          "    <documents>" + documentsXml + "</documents>" +
+                          "    <nodes><node hostalias='node1' distribution-key='0'/></nodes>" +
+                          "  </content>" +
+                          "</services>";
+        return new VespaModelCreatorWithMockPkg(hosts, services, List.of(schema("product")))
+                .create(new DeployState.Builder().properties(new TestProperties())
+                                                 .deployLogger(logger)
+                                                 .additionalContent(additional));
+    }
+
+    private static class TestDeployLogger implements DeployLogger {
+
+        private final List<String> warnings = new ArrayList<>();
+
+        @Override
+        public void log(Level level, String message) { }
+
+        @Override
+        public void logApplicationPackage(Level level, String message) {
+            if (level == Level.WARNING) warnings.add(message);
+        }
+
+        List<String> warnings() {
+            return warnings.stream().filter(warning -> warning.startsWith("Content cluster")).toList();
+        }
+
+    }
+
+    private static String schema(String name) {
+        return "schema " + name + " { document " + name + " { field f type string { indexing: summary } } }";
     }
 
 }
